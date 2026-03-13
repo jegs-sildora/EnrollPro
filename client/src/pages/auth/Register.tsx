@@ -1,43 +1,38 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { sileo } from 'sileo';
-import { GraduationCap } from 'lucide-react';
-import api from '@/api/axiosInstance';
-import { useAuthStore } from '@/stores/authStore';
-import { toastApiError } from '@/hooks/useApiToast';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { sileo } from "sileo";
+import api from "@/api/axiosInstance";
+import { useAuthStore } from "@/stores/authStore";
+import { useSettingsStore } from "@/stores/settingsStore";
+import { toastApiError } from "@/hooks/useApiToast";
 
 const registerSchema = z
   .object({
-    name: z.string().min(2, 'Name must be at least 2 characters').max(100),
-    email: z.string().email('Invalid email address'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
+    name: z.string().min(2, "Name must be at least 2 characters").max(100),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: 'Passwords do not match',
-    path: ['confirmPassword'],
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
   });
 
 type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function Register() {
   const navigate = useNavigate();
-  const { setAuth } = useAuthStore();
+  const { token, user, setAuth } = useAuthStore();
+  const { schoolName, logoUrl, accentForeground } = useSettingsStore();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:3001";
+
+  const strokeColor = accentForeground === "0 0% 0%" ? "000000" : "ffffff";
 
   const {
     register,
@@ -47,16 +42,25 @@ export default function Register() {
     resolver: zodResolver(registerSchema),
   });
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (token && user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [token, user, navigate]);
+
+  if (token && user) return null;
+
   const onSubmit = async (data: RegisterForm) => {
     setLoading(true);
     try {
-      const res = await api.post('/auth/register', data);
+      const res = await api.post("/auth/register", data);
       setAuth(res.data.token, res.data.user);
       sileo.success({
-        title: 'Account Created',
-        description: 'Welcome to EnrollPro!',
+        title: "Account Created",
+        description: "Welcome to EnrollPro!",
       });
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (err) {
       toastApiError(err as never);
     } finally {
@@ -65,79 +69,312 @@ export default function Register() {
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(var(--primary))]">
-          <GraduationCap className="h-6 w-6 text-[hsl(var(--primary-foreground))]" />
+    <div className="min-h-screen flex bg-white font-['Instrument_Sans',sans-serif] w-full overflow-hidden">
+      {/* Google Font import via style tag */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap');
+        
+        :root {
+          /* Deriving brand colors from the dynamic system accent */
+          --brand: hsl(var(--accent));
+          --brand-foreground: hsl(var(--accent-foreground));
+          --brand-link: hsl(var(--accent-link));
+          --brand-hsl: var(--accent);
+          --brand-dark: color-mix(in srgb, var(--brand), black 15%);
+          --brand-light: color-mix(in srgb, var(--brand), white 15%);
+        }
+
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+        .delay-400 { animation-delay: 0.4s; }
+        .delay-500 { animation-delay: 0.5s; }
+        .delay-600 { animation-delay: 0.6s; }
+
+        .focus-brand:focus {
+          border-color: var(--brand) !important;
+          box-shadow: 0 0 0 4px hsl(var(--accent) / 0.12) !important;
+          background: #fff !important;
+          outline: none !important;
+        }
+
+        .btn-brand {
+          background: var(--brand);
+          color: var(--brand-foreground);
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .btn-brand:hover {
+          background: var(--brand-light);
+          transform: translateY(-1px);
+          box-shadow: 0 10px 25px -5px hsl(var(--accent) / 0.3);
+        }
+
+        .btn-brand:active {
+          background: var(--brand-dark);
+          transform: translateY(0);
+        }
+      `}</style>
+
+      {/* ── Left Decorative Panel (Hidden on small screens) ── */}
+      <div
+        className="hidden lg:flex flex-1 items-center justify-center relative overflow-hidden"
+        style={{ background: "var(--brand)" }}
+      >
+        {/* Pixel grid pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.15]"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect x='2' y='2' width='36' height='36' rx='2' fill='none' stroke='%23${strokeColor}' stroke-width='1.5'/%3E%3Crect x='42' y='2' width='36' height='36' rx='2' fill='none' stroke='%23${strokeColor}' stroke-width='1.5'/%3E%3Crect x='2' y='42' width='36' height='36' rx='2' fill='none' stroke='%23${strokeColor}' stroke-width='1.5'/%3E%3Crect x='42' y='42' width='36' height='36' rx='2' fill='none' stroke='%23${strokeColor}' stroke-width='1.5'/%3E%3C/svg%3E")`,
+            backgroundSize: "80px 80px",
+          }}
+        />
+        
+        {/* Large Gradient Glow */}
+        <div 
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full opacity-50 pointer-events-none"
+          style={{
+            background: "radial-gradient(circle at center, hsl(var(--accent-foreground) / 0.1) 0%, transparent 70%)"
+          }}
+        />
+
+        <div className="relative z-10 flex flex-col items-center gap-8 animate-fade-up">
+          <div 
+            className="p-4 rounded-[2.5rem] backdrop-blur-md border shadow-2xl overflow-hidden size-32 flex items-center justify-center"
+            style={{ 
+              backgroundColor: "hsl(var(--accent-foreground) / 0.1)",
+              borderColor: "hsl(var(--accent-foreground) / 0.2)"
+            }}
+          >
+            {logoUrl ? (
+              <img 
+                src={`${API_BASE}${logoUrl}`} 
+                alt="School Logo" 
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <LogoMark color="var(--brand-foreground)" size={64} />
+            )}
+          </div>
+          <div className="text-center px-8">
+            <h2 
+              className="text-4xl font-bold tracking-tight mb-2 max-w-112.5 mx-auto"
+              style={{ color: "var(--brand-foreground)" }}
+            >
+              {schoolName}
+            </h2>
+            <p 
+              className="text-lg font-medium tracking-wide uppercase"
+              style={{ color: "hsl(var(--accent-foreground) / 0.6)" }}
+            >
+              Enrollment Management System
+            </p>
+          </div>
         </div>
-        <CardTitle className="text-2xl">Create Account</CardTitle>
-        <CardDescription>
-          Set up your school admin account to get started
-        </CardDescription>
-      </CardHeader>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Full Name</Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Juan Dela Cruz"
-              {...register('name')}
+
+        {/* Floating accents */}
+        <div 
+          className="absolute bottom-12 left-12 flex items-center gap-4 text-sm font-medium"
+          style={{ color: "hsl(var(--accent-foreground) / 0.4)" }}
+        >
+          <span className="w-8 h-px" style={{ backgroundColor: "hsl(var(--accent-foreground) / 0.2)" }}></span>
+          <span>© 2026 ENROLLPRO</span>
+        </div>
+      </div>
+
+      {/* ── Right Form Panel ── */}
+      <div className="flex-1 lg:flex-none lg:w-135 xl:w-160 bg-white flex flex-col relative overflow-hidden">
+        
+        {/* Mobile Logo / Brand */}
+        <div className="lg:hidden absolute top-6 left-8 flex items-center gap-3">
+          {logoUrl ? (
+            <img 
+              src={`${API_BASE}${logoUrl}`} 
+              alt="Logo" 
+              className="size-8 object-contain"
             />
-            {errors.name && (
-              <p className="text-xs text-[hsl(var(--destructive))]">{errors.name.message}</p>
-            )}
+          ) : (
+            <LogoMark color="hsl(var(--accent))" size={28} />
+          )}
+          <span className="font-bold text-[#1a1a1a] tracking-tight text-sm">{schoolName}</span>
+        </div>
+
+        <div className="flex-1 flex flex-col justify-center px-8 sm:px-16 lg:px-20 xl:px-24">
+          <div className="w-full max-w-105 mx-auto py-4">
+            
+            {/* Header */}
+            <header className="mb-6 animate-fade-up delay-100">
+              <h1 className="text-3xl font-bold text-[#111] leading-tight tracking-tight mb-1">
+                Create Admin Account
+              </h1>
+              <p className="text-gray-500 text-base">
+                Join your school platform
+              </p>
+            </header>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
+              
+              {/* Name Field */}
+              <div className="animate-fade-up delay-200">
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Juan Dela Cruz"
+                  required
+                  className="focus-brand w-full h-10 rounded-xl border border-[#e2e8f0] bg-[#f8fafc] px-4 text-sm text-[#1a1a1a] placeholder-[#94a3b8] transition-all"
+                  {...register("name")}
+                />
+                {errors.name && (
+                  <p className="mt-1 text-[10px] font-medium text-red-500">{errors.name.message}</p>
+                )}
+              </div>
+
+              {/* Email Field */}
+              <div className="animate-fade-up delay-300">
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  placeholder="admin@school.edu.ph"
+                  required
+                  autoComplete="email"
+                  className="focus-brand w-full h-10 rounded-xl border border-[#e2e8f0] bg-[#f8fafc] px-4 text-sm text-[#1a1a1a] placeholder-[#94a3b8] transition-all"
+                  {...register("email")}
+                />
+                {errors.email && (
+                  <p className="mt-1 text-[10px] font-medium text-red-500">{errors.email.message}</p>
+                )}
+              </div>
+
+              {/* Password Field */}
+              <div className="animate-fade-up delay-400">
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Minimum 8 characters"
+                    required
+                    autoComplete="new-password"
+                    className="focus-brand w-full h-10 rounded-xl border border-[#e2e8f0] bg-[#f8fafc] px-4 pr-11 text-sm text-[#1a1a1a] placeholder-[#94a3b8] transition-all"
+                    {...register("password")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff /> : <Eye />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="mt-1 text-[10px] font-medium text-red-500">{errors.password.message}</p>
+                )}
+              </div>
+
+              {/* Confirm Password Field */}
+              <div className="animate-fade-up delay-500">
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                  Confirm Password
+                </label>
+                <input
+                  type="password"
+                  placeholder="Repeat your password"
+                  required
+                  autoComplete="new-password"
+                  className="focus-brand w-full h-10 rounded-xl border border-[#e2e8f0] bg-[#f8fafc] px-4 text-sm text-[#1a1a1a] placeholder-[#94a3b8] transition-all"
+                  {...register("confirmPassword")}
+                />
+                {errors.confirmPassword && (
+                  <p className="mt-1 text-[10px] font-medium text-red-500">{errors.confirmPassword.message}</p>
+                )}
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn-brand animate-fade-up delay-600 w-full h-11 rounded-xl text-base font-bold tracking-tight cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed mt-2 flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" style={{ color: "var(--brand-foreground)" }}>
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Creating account...
+                  </>
+                ) : "Create Account"}
+              </button>
+
+              {/* Login Link */}
+              <div className="text-center pt-2 animate-fade-up delay-600">
+                <p className="text-gray-500 text-sm font-medium">
+                  Already have an account?{" "}
+                  <Link to="/login" className="text-(--brand-link) font-bold hover:underline underline-offset-4">
+                    Sign in here
+                  </Link>
+                </p>
+              </div>
+            </form>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="admin@school.edu.ph"
-              {...register('email')}
-            />
-            {errors.email && (
-              <p className="text-xs text-[hsl(var(--destructive))]">{errors.email.message}</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              {...register('password')}
-            />
-            {errors.password && (
-              <p className="text-xs text-[hsl(var(--destructive))]">{errors.password.message}</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              placeholder="••••••••"
-              {...register('confirmPassword')}
-            />
-            {errors.confirmPassword && (
-              <p className="text-xs text-[hsl(var(--destructive))]">{errors.confirmPassword.message}</p>
-            )}
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Creating account...' : 'Create Account'}
-          </Button>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Already have an account?{' '}
-            <Link to="/login" className="text-[hsl(var(--primary))] hover:underline">
-              Sign in
-            </Link>
-          </p>
-        </CardFooter>
-      </form>
-    </Card>
+        </div>
+
+        {/* Footer */}
+        <footer className="px-8 sm:px-16 lg:px-20 xl:px-24 py-6 flex flex-col sm:flex-row justify-between items-center gap-2 border-t border-gray-100">
+           <span className="text-xs text-gray-400 font-medium order-2 sm:order-1">
+             © 2026 {schoolName}
+           </span>
+           <div className="flex gap-4 order-1 sm:order-2">
+             <a href="#" className="text-xs font-bold text-gray-500 hover:text-(--brand-link) transition-colors">Privacy</a>
+             <a href="#" className="text-xs font-bold text-gray-500 hover:text-(--brand-link) transition-colors">Terms</a>
+             <a href="#" className="text-xs font-bold text-gray-500 hover:text-(--brand-link) transition-colors">Help</a>
+           </div>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+/* ── Reusable Logo Mark ── */
+function LogoMark({ color = "#851414", size = 48 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="4"  y="4"  width="18" height="18" rx="4" fill={color} opacity="0.95" />
+      <rect x="26" y="4"  width="18" height="18" rx="4" fill={color} opacity="0.45" />
+      <rect x="4"  y="26" width="18" height="18" rx="4" fill={color} opacity="0.45" />
+      <rect x="34" y="34" width="10" height="10" rx="2"   fill={color} opacity="0.95" />
+      <rect x="26" y="26" width="6"  height="6"  rx="1.5" fill={color} opacity="0.70" />
+    </svg>
+  );
+}
+
+/* ── Icon Components ── */
+function Eye() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  );
+}
+
+function EyeOff() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+      <line x1="1" y1="1" x2="23" y2="23"/>
+    </svg>
   );
 }

@@ -8,7 +8,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
   const toastTheme = accentForeground === '0 0% 100%' ? 'light' : 'dark';
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--muted))]/40 font-sans px-4">
+    <div className="min-h-screen font-sans">
       <Toaster
         position="top-right"
         theme={toastTheme}

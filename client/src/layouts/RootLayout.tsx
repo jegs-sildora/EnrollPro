@@ -79,8 +79,16 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     const mutedAccent = parts.length >= 2 ? `${parts[0]} ${parts[1]} 94%` : accent;
     const mutedFg = contrastForeground(mutedAccent);
 
+    // High-contrast version of the accent for links on white background
+    // If accent is too light (meaning its contrast foreground is black), we set the link color to black
+    let linkAccent = accent;
+    if (fg === '0 0% 0%') {
+      linkAccent = '0 0% 0%';
+    }
+
     root.style.setProperty('--accent', accent);
     root.style.setProperty('--accent-foreground', fg);
+    root.style.setProperty('--accent-link', linkAccent);
     root.style.setProperty('--accent-ring', accent);
     root.style.setProperty('--primary', accent);
     root.style.setProperty('--primary-foreground', fg);
