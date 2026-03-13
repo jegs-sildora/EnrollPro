@@ -5,7 +5,7 @@ import { authenticate } from '../middleware/authenticate.js';
 import { registerSchema, loginSchema } from '../validators/auth.validator.js';
 import { rateLimit } from 'express-rate-limit';
 
-const router = Router();
+const router: Router = Router();
 
 const loginLimiter = rateLimit({
   windowMs: 60 * 1000,

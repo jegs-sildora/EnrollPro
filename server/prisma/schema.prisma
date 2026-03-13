@@ -54,9 +54,6 @@ model SchoolSettings {
   logoUrl              String?
   colorScheme          Json?
   selectedAccentHsl    String?
-  enrollmentOpen       Boolean       @default(false)
-  enrollmentOpenAt     DateTime?
-  enrollmentCloseAt    DateTime?
   activeAcademicYearId Int?
 
   activeAcademicYear AcademicYear? @relation(fields: [activeAcademicYearId], references: [id])
@@ -67,8 +64,22 @@ model AcademicYear {
   yearLabel    String             @unique
   status       AcademicYearStatus @default(DRAFT)
   isActive     Boolean            @default(false)
-  startDate    DateTime?
-  endDate      DateTime?
+  
+  // ── DepEd Calendar Dates ──
+  classOpeningDate  DateTime?
+  classEndDate      DateTime?
+
+  // ── Phase 1: Early Registration ──
+  earlyRegOpenDate  DateTime?
+  earlyRegCloseDate DateTime?
+
+  // ── Phase 2: Regular Enrollment ──
+  enrollOpenDate    DateTime?
+  enrollCloseDate   DateTime?
+
+  // ── Manual Override ──
+  manualOverrideOpen Boolean @default(false)
+
   clonedFromId Int?
   createdAt    DateTime           @default(now())
 

@@ -1,14 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { sileo } from 'sileo';
-import {
-  Calendar,
-  Plus,
-  Trash2,
-  ArrowRight,
-  Copy,
-  ChevronDown,
-  ChevronUp,
-} from 'lucide-react';
+import { Calendar as CalendarIcon, Trash2, ChevronDown } from 'lucide-react';
 import api from '@/api/axiosInstance';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { toastApiError } from '@/hooks/useApiToast';
@@ -17,77 +9,175 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { ConfirmationModal } from '@/components/ui/confirmation-modal';
+import { DatePicker } from '@/components/ui/date-picker';
+
+const MANILA_TIME_ZONE = 'Asia/Manila';
+
+function getDatePartsInTimeZone(date: Date, timeZone = MANILA_TIME_ZONE) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+  }).formatToParts(date);
+
+  const lookup = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+
+  return {
+    year: Number(lookup.year),
+    month: Number(lookup.month),
+    day: Number(lookup.day),
+  };
+}
+
+function utcNoonDate(year: number, monthIndex: number, day: number) {
+  return new Date(Date.UTC(year, monthIndex, day, 12, 0, 0, 0));
+}
+
+function normalizeDateToManila(date: Date) {
+  const { year, month, day } = getDatePartsInTimeZone(date);
+  return utcNoonDate(year, month - 1, day);
+}
+
+function addUtcDays(date: Date, days: number) {
+  const nextDate = new Date(date);
+  nextDate.setUTCDate(nextDate.getUTCDate() + days);
+  return nextDate;
+}
+
+function subUtcDays(date: Date, days: number) {
+  return addUtcDays(date, -days);
+}
+
+function lastSaturdayOfJanuary(year: number) {
+  let currentDate = utcNoonDate(year, 0, 31);
+  while (currentDate.getUTCDay() !== 6) {
+    currentDate = subUtcDays(currentDate, 1);
+  }
+  return currentDate;
+}
+
+function lastFridayOfFebruary(year: number) {
+  const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+  let currentDate = utcNoonDate(year, 1, isLeapYear ? 29 : 28);
+  while (currentDate.getUTCDay() !== 5) {
+    currentDate = subUtcDays(currentDate, 1);
+  }
+  return currentDate;
+}
+
+function buildAcademicYearSchedule(classOpeningDate: Date, classEndTemplate?: Date) {
+  const openingDate = normalizeDateToManila(classOpeningDate);
+  const startYear = openingDate.getUTCFullYear();
+  const endYear = startYear + 1;
+  const endTemplate = classEndTemplate ? normalizeDateToManila(classEndTemplate) : utcNoonDate(endYear, 2, 31);
+
+  return {
+    yearLabel: `${startYear}-${endYear}`,
+    classOpeningDate: openingDate,
+    classEndDate: utcNoonDate(endYear, endTemplate.getUTCMonth(), endTemplate.getUTCDate()),
+    earlyRegOpenDate: lastSaturdayOfJanuary(startYear),
+    earlyRegCloseDate: lastFridayOfFebruary(startYear),
+    enrollOpenDate: subUtcDays(openingDate, 7),
+    enrollCloseDate: subUtcDays(openingDate, 1),
+  };
+}
+
+function sameUtcCalendarDate(left?: Date, right?: Date) {
+  return !!left && !!right
+    && left.getUTCFullYear() === right.getUTCFullYear()
+    && left.getUTCMonth() === right.getUTCMonth()
+    && left.getUTCDate() === right.getUTCDate();
+}
+
+function formatManilaDate(value: string | Date | null | undefined) {
+  if (!value) {
+    return 'TBD';
+  }
+
+  const date = typeof value === 'string' ? new Date(value) : value;
+
+  return new Intl.DateTimeFormat('en-PH', {
+    timeZone: MANILA_TIME_ZONE,
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(date);
+}
 
 interface AYItem {
   id: number;
   yearLabel: string;
   status: string;
   isActive: boolean;
-  startDate: string | null;
-  endDate: string | null;
-  clonedFromId: number | null;
+  classOpeningDate: string | null;
+  classEndDate: string | null;
   _count: { gradeLevels: number; strands: number; applicants: number; enrollments: number };
 }
 
-const STATUS_ORDER = ['DRAFT', 'UPCOMING', 'ACTIVE', 'ARCHIVED'] as const;
-
-const STATUS_COLORS: Record<string, string> = {
-  DRAFT: 'bg-yellow-100 text-yellow-800',
-  UPCOMING: 'bg-blue-100 text-blue-700',
-  ACTIVE: 'bg-green-100 text-green-700',
-  ARCHIVED: 'bg-gray-100 text-gray-500',
-};
-
-function nextStatus(current: string): string | null {
-  const idx = STATUS_ORDER.indexOf(current as typeof STATUS_ORDER[number]);
-  if (idx < 0 || idx >= STATUS_ORDER.length - 1) return null;
-  return STATUS_ORDER[idx + 1];
+interface Defaults {
+  yearLabel: string;
+  classOpeningDate: string;
+  classEndDate: string;
+  earlyRegOpenDate: string;
+  earlyRegCloseDate: string;
+  enrollOpenDate: string;
+  enrollCloseDate: string;
 }
 
 export default function AcademicYearTab() {
-  const { activeAcademicYearId, setSettings } = useSettingsStore();
+  const { setSettings } = useSettingsStore();
   const [years, setYears] = useState<AYItem[]>([]);
+  const [defaults, setDefaults] = useState<Defaults | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
-  const [expandedId, setExpandedId] = useState<number | null>(null);
-
-  // Wizard state
-  const [step, setStep] = useState(1);
-  const [yearLabel, setYearLabel] = useState('');
-  const [isManualLabel, setIsManualLabel] = useState(false);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [cloneFrom, setCloneFrom] = useState<number | null>(null);
+  
+  // Create state
   const [creating, setCreating] = useState(false);
+  const [showNextForm, setShowNextForm] = useState(false);
+  
+  // Editable fields for setup
+  const [editYearLabel, setYearLabel] = useState('');
+  const [editClassOpening, setClassOpening] = useState<Date | undefined>();
+  const [editClassEnd, setClassEnd] = useState<Date | undefined>();
 
-  // Delete confirmation
+  const [cloneSettings, setCloneSettings] = useState({
+    gradeLevels: true,
+    strands: true,
+    sections: true,
+    capacities: false,
+  });
+
+  // Delete state
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleteLabel, setDeleteLabel] = useState('');
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    if (!isManualLabel && startDate && endDate) {
-      const startYear = new Date(startDate).getFullYear();
-      const endYear = new Date(endDate).getFullYear();
-      if (!isNaN(startYear) && !isNaN(endYear)) {
-        setYearLabel(`S.Y. ${startYear}-${endYear}`);
-      }
-    }
-  }, [startDate, endDate, isManualLabel]);
+  const currentManilaYear = useMemo(() => getDatePartsInTimeZone(new Date()).year, []);
+  // Min = today in Manila time (no past dates within current year), Max = end of next year
+  const openingMinDate = useMemo(() => normalizeDateToManila(new Date()), []);
+  const openingMaxDate = useMemo(() => utcNoonDate(currentManilaYear + 1, 11, 31), [currentManilaYear]);
 
-  const fetchYears = async () => {
+  const classEndYear = editClassOpening ? editClassOpening.getUTCFullYear() + 1 : currentManilaYear + 1;
+  const classEndMinDate = useMemo(() => utcNoonDate(classEndYear, 0, 1), [classEndYear]);
+  const classEndMaxDate = useMemo(() => utcNoonDate(classEndYear, 11, 31), [classEndYear]);
+
+  const fetchData = async () => {
     try {
-      const res = await api.get('/academic-years');
-      setYears(res.data.years);
+      const [yearsRes, defaultsRes] = await Promise.all([
+        api.get('/academic-years'),
+        api.get('/academic-years/next-defaults'),
+      ]);
+      setYears(yearsRes.data.years);
+      
+      const defs = defaultsRes.data;
+      setDefaults(defs);
+      
+      // Initialize editable fields from defaults
+      setYearLabel(defs.yearLabel);
+      setClassOpening(defs.classOpeningDate ? normalizeDateToManila(new Date(defs.classOpeningDate)) : undefined);
+      setClassEnd(defs.classEndDate ? normalizeDateToManila(new Date(defs.classEndDate)) : undefined);
+      
     } catch {
       // silent
     } finally {
@@ -96,45 +186,69 @@ export default function AcademicYearTab() {
   };
 
   useEffect(() => {
-    fetchYears();
+    fetchData();
   }, []);
 
-  const handleCreate = async () => {
-    if (!yearLabel.trim()) return;
+  useEffect(() => {
+    if (!editClassOpening) {
+      return;
+    }
+
+    const derivedSchedule = buildAcademicYearSchedule(editClassOpening, editClassEnd);
+    setYearLabel(derivedSchedule.yearLabel);
+
+    if (!sameUtcCalendarDate(editClassEnd, derivedSchedule.classEndDate)) {
+      setClassEnd(derivedSchedule.classEndDate);
+    }
+  }, [editClassEnd, editClassOpening]);
+
+  const activeYear = years.find((y) => y.isActive);
+
+  const handleClassOpeningChange = (date?: Date) => {
+    setClassOpening(date ? normalizeDateToManila(date) : undefined);
+  };
+
+  const handleClassEndChange = (date?: Date) => {
+    if (!date) {
+      setClassEnd(undefined);
+      return;
+    }
+
+    const normalizedDate = normalizeDateToManila(date);
+    const endYearToUse = editClassOpening ? editClassOpening.getUTCFullYear() + 1 : normalizedDate.getUTCFullYear();
+    setClassEnd(utcNoonDate(endYearToUse, normalizedDate.getUTCMonth(), normalizedDate.getUTCDate()));
+  };
+
+  const handleActivateNext = async () => {
+    if (!editClassOpening || !editClassEnd) {
+      sileo.error({ title: 'Missing dates', description: 'Select both class opening and class end dates.' });
+      return;
+    }
+
     setCreating(true);
     try {
-      await api.post('/academic-years', {
-        yearLabel: yearLabel.trim(),
-        startDate: startDate || null,
-        endDate: endDate || null,
-        cloneFromId: cloneFrom,
-      });
-      sileo.success({
-        title: 'School Year Created',
-        description: `${yearLabel} has been created${cloneFrom ? ' with cloned structure' : ''}.`,
-      });
-      resetWizard();
-      setShowCreate(false);
-      fetchYears();
+      const derivedSchedule = buildAcademicYearSchedule(editClassOpening, editClassEnd);
+      const payload = {
+        yearLabel: derivedSchedule.yearLabel,
+        classOpeningDate: derivedSchedule.classOpeningDate.toISOString(),
+        classEndDate: derivedSchedule.classEndDate.toISOString(),
+        earlyRegOpenDate: derivedSchedule.earlyRegOpenDate.toISOString(),
+        earlyRegCloseDate: derivedSchedule.earlyRegCloseDate.toISOString(),
+        enrollOpenDate: derivedSchedule.enrollOpenDate.toISOString(),
+        enrollCloseDate: derivedSchedule.enrollCloseDate.toISOString(),
+        cloneFromId: activeYear?.id || null,
+        cloneOptions: cloneSettings,
+      };
+      
+      const res = await api.post('/academic-years/activate', payload);
+      setSettings({ activeAcademicYearId: res.data.year.id });
+      sileo.success({ title: 'School Year Activated', description: `${derivedSchedule.yearLabel} is now active.` });
+      setShowNextForm(false);
+      fetchData();
     } catch (err) {
       toastApiError(err as never);
     } finally {
       setCreating(false);
-    }
-  };
-
-  const handleTransition = async (id: number, status: string) => {
-    try {
-      const res = await api.patch(`/academic-years/${id}/status`, { status });
-      if (status === 'ACTIVE') {
-        setSettings({ activeAcademicYearId: id });
-      } else if (res.data.year && !res.data.year.isActive && activeAcademicYearId === id) {
-        setSettings({ activeAcademicYearId: null });
-      }
-      sileo.success({ title: 'Status Updated', description: `Moved to ${status}.` });
-      fetchYears();
-    } catch (err) {
-      toastApiError(err as never);
     }
   };
 
@@ -145,26 +259,12 @@ export default function AcademicYearTab() {
       await api.delete(`/academic-years/${deleteId}`);
       sileo.success({ title: 'Deleted', description: `${deleteLabel} has been removed.` });
       setDeleteId(null);
-      fetchYears();
+      fetchData();
     } catch (err) {
       toastApiError(err as never);
     } finally {
       setDeleting(false);
     }
-  };
-
-  const openDeleteConfirm = (id: number, label: string) => {
-    setDeleteId(id);
-    setDeleteLabel(label);
-  };
-
-  const resetWizard = () => {
-    setStep(1);
-    setYearLabel('');
-    setIsManualLabel(false);
-    setStartDate('');
-    setEndDate('');
-    setCloneFrom(null);
   };
 
   if (loading) {
@@ -173,239 +273,148 @@ export default function AcademicYearTab() {
 
   return (
     <div className="space-y-6">
-      {/* Lifecycle Pipeline */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <Calendar className="h-5 w-5" />
-            Lifecycle Pipeline
-          </CardTitle>
-          <CardDescription>
-            School years move through four stages: Draft → Upcoming → Active → Archived
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center gap-2 flex-wrap">
-            {STATUS_ORDER.map((s, i) => {
-              const count = years.filter((y) => y.status === s).length;
-              return (
-                <div key={s} className="flex items-center gap-2">
-                  <div className={`flex flex-col items-center gap-1 rounded-lg border px-4 py-3 min-w-[90px] ${
-                    count > 0 ? 'border-[hsl(var(--border))]' : 'border-dashed border-[hsl(var(--border))] opacity-50'
-                  }`}>
-                    <span className={`text-xs font-semibold rounded px-2 py-0.5 ${STATUS_COLORS[s]}`}>{s}</span>
-                    <span className="text-lg font-bold">{count}</span>
-                  </div>
-                  {i < STATUS_ORDER.length - 1 && (
-                    <ArrowRight className="h-4 w-4 text-[hsl(var(--muted-foreground))]" />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Header + New button */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">All School Years</h3>
-        <Button size="sm" onClick={() => { resetWizard(); setShowCreate(true); }}>
-          <Plus className="mr-1 h-4 w-4" /> New School Year
-        </Button>
-      </div>
-
-      {/* Year cards */}
-      {years.length === 0 ? (
-        <Card>
-          <CardContent className="py-8 text-center text-sm text-[hsl(var(--muted-foreground))]">
-            No school years yet. Create one to get started.
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {years.map((y) => {
-            const next = nextStatus(y.status);
-            const isExpanded = expandedId === y.id;
-            return (
-              <Card key={y.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <button
-                      onClick={() => setExpandedId(isExpanded ? null : y.id)}
-                      className="text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
-                    >
-                      {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </button>
-                    <span className="font-semibold">{y.yearLabel}</span>
-                    <span className={`text-xs font-semibold rounded px-2 py-0.5 ${STATUS_COLORS[y.status]}`}>
-                      {y.status}
-                    </span>
-                    {y.isActive && <Badge variant="success">Current</Badge>}
-                    <div className="ml-auto flex items-center gap-2">
-                      {next && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleTransition(y.id, next)}
-                        >
-                          <ArrowRight className="mr-1 h-3 w-3" />
-                          Move to {next}
-                        </Button>
-                      )}
-                      {y.status !== 'ACTIVE' && y._count.applicants === 0 && y._count.enrollments === 0 && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-[hsl(var(--destructive))]"
-                          onClick={() => openDeleteConfirm(y.id, y.yearLabel)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                  {isExpanded && (
-                    <div className="mt-3 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4 border-t border-[hsl(var(--border))] pt-3">
-                      <div>
-                        <span className="text-xs text-[hsl(var(--muted-foreground))]">Grade Levels</span>
-                        <p className="font-medium">{y._count.gradeLevels}</p>
-                      </div>
-                      <div>
-                        <span className="text-xs text-[hsl(var(--muted-foreground))]">Strands</span>
-                        <p className="font-medium">{y._count.strands}</p>
-                      </div>
-                      <div>
-                        <span className="text-xs text-[hsl(var(--muted-foreground))]">Applicants</span>
-                        <p className="font-medium">{y._count.applicants}</p>
-                      </div>
-                      <div>
-                        <span className="text-xs text-[hsl(var(--muted-foreground))]">Enrollments</span>
-                        <p className="font-medium">{y._count.enrollments}</p>
-                      </div>
-                      {y.startDate && (
-                        <div>
-                          <span className="text-xs text-[hsl(var(--muted-foreground))]">Start</span>
-                          <p className="font-medium">{new Date(y.startDate).toLocaleDateString()}</p>
-                        </div>
-                      )}
-                      {y.endDate && (
-                        <div>
-                          <span className="text-xs text-[hsl(var(--muted-foreground))]">End</span>
-                          <p className="font-medium">{new Date(y.endDate).toLocaleDateString()}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Create Wizard Dialog */}
-      <Dialog open={showCreate} onOpenChange={(open) => { if (!open) { resetWizard(); setShowCreate(false); } }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>New School Year</DialogTitle>
-            <DialogDescription>Step {step} of 3</DialogDescription>
-          </DialogHeader>
-
-          {step === 1 && (
-            <div className="space-y-4">
+      {!activeYear || showNextForm ? (
+        <Card className="border-[hsl(var(--primary))] shadow-sm">
+          <CardHeader className="bg-[hsl(var(--muted))] border-3 border-[hsl(var(--border))]">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <CalendarIcon className="h-5 w-5" />
+              Smart Setup: {editYearLabel}
+            </CardTitle>
+            <CardDescription>
+              We've pre-filled the fields based on DepEd's calendar. You can adjust them if needed.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>Year Label</Label>
+                <Label htmlFor="yearLabel">School Year Label</Label>
                 <Input 
-                  placeholder="e.g. S.Y. 2025–2026" 
-                  value={yearLabel} 
-                  onChange={(e) => {
-                    setYearLabel(e.target.value);
-                    setIsManualLabel(true);
-                  }} 
+                  id="yearLabel"
+                  value={`S.Y. ${editYearLabel}`} 
+                  readOnly
+                  placeholder="e.g. 2026-2027"
                 />
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                  Updated based on your start date.
+                </p>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Start Date</Label>
-                  <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>End Date</Label>
-                  <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="space-y-4">
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                Optionally clone grade levels, sections, and strands from an existing year.
-              </p>
               <div className="space-y-2">
-                {years.map((y) => (
-                  <button
-                    key={y.id}
-                    onClick={() => setCloneFrom(cloneFrom === y.id ? null : y.id)}
-                    className={`flex w-full items-center justify-between rounded-lg border p-3 text-left text-sm transition-colors ${
-                      cloneFrom === y.id
-                        ? 'border-[hsl(var(--primary))] bg-[hsl(var(--accent-muted))]'
-                        : 'border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Copy className="h-4 w-4 text-[hsl(var(--muted-foreground))]" />
-                      <span className="font-medium">{y.yearLabel}</span>
-                    </div>
-                    <span className="text-xs text-[hsl(var(--muted-foreground))]">
-                      {y._count.gradeLevels} levels · {y._count.strands} strands
-                    </span>
-                  </button>
-                ))}
-                {years.length === 0 && (
-                  <p className="text-sm text-[hsl(var(--muted-foreground))]">No existing years to clone from.</p>
-                )}
+                <Label>Class Opening</Label>
+                <DatePicker
+                  date={editClassOpening}
+                  setDate={handleClassOpeningChange}
+                  timeZone={MANILA_TIME_ZONE}
+                  minDate={openingMinDate}
+                  maxDate={openingMaxDate}
+                />
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                  Select a date through late {currentManilaYear + 1}.
+                </p>
               </div>
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="space-y-3">
-              <p className="text-sm font-medium">Review</p>
-              <div className="rounded-lg border border-[hsl(var(--border))] p-3 space-y-1 text-sm">
-                <p><span className="text-[hsl(var(--muted-foreground))]">Label:</span> {yearLabel}</p>
-                {startDate && <p><span className="text-[hsl(var(--muted-foreground))]">Start:</span> {startDate}</p>}
-                {endDate && <p><span className="text-[hsl(var(--muted-foreground))]">End:</span> {endDate}</p>}
-                <p>
-                  <span className="text-[hsl(var(--muted-foreground))]">Clone:</span>{' '}
-                  {cloneFrom ? years.find((y) => y.id === cloneFrom)?.yearLabel : 'None'}
+              <div className="space-y-2">
+                <Label>Class End</Label>
+                <DatePicker
+                  date={editClassEnd}
+                  setDate={handleClassEndChange}
+                  timeZone={MANILA_TIME_ZONE}
+                  minDate={classEndMinDate}
+                  maxDate={classEndMaxDate}
+                />
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                  Ends in the next calendar year.
                 </p>
               </div>
             </div>
-          )}
 
-          <DialogFooter className="gap-2">
-            {step > 1 && (
-              <Button variant="outline" onClick={() => setStep(step - 1)}>Back</Button>
+            {activeYear && (
+              <div className="p-4 border rounded-lg space-y-3">
+                <p className="text-sm font-medium">Clone from previous year ({activeYear.yearLabel})?</p>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <input type="checkbox" id="c1" className="h-4 w-4" checked={cloneSettings.gradeLevels} onChange={(e) => setCloneSettings({ ...cloneSettings, gradeLevels: e.target.checked })} />
+                    <label htmlFor="c1" className="text-sm">Grade Levels (Grade 7–12)</label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input type="checkbox" id="c2" className="h-4 w-4" checked={cloneSettings.strands} onChange={(e) => setCloneSettings({ ...cloneSettings, strands: e.target.checked })} />
+                    <label htmlFor="c2" className="text-sm">Strand names (STEM, ABM, HUMSS, GAS)</label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input type="checkbox" id="c3" className="h-4 w-4" checked={cloneSettings.sections} onChange={(e) => setCloneSettings({ ...cloneSettings, sections: e.target.checked })} />
+                    <label htmlFor="c3" className="text-sm">Section names (without student assignments)</label>
+                  </div>
+                </div>
+              </div>
             )}
-            {step < 3 ? (
-              <Button onClick={() => setStep(step + 1)} disabled={step === 1 && !yearLabel.trim()}>
-                Next
+
+            <div className="flex justify-end gap-2">
+              {activeYear && <Button variant="outline" onClick={() => setShowNextForm(false)}>Cancel</Button>}
+              <Button onClick={handleActivateNext} disabled={creating || !editYearLabel.trim()}>
+                {creating ? 'Activating...' : 'Activate This Year'}
               </Button>
-            ) : (
-              <Button onClick={handleCreate} disabled={creating}>
-                {creating ? 'Creating...' : 'Create'}
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border-[hsl(var(--border))]">
+          <CardContent className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Badge variant="success" className="animate-pulse">● ACTIVE</Badge>
+                <span className="text-xl font-bold">{activeYear.yearLabel}</span>
+              </div>
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                Classes: {formatManilaDate(activeYear.classOpeningDate)} 
+                {' '}→{' '} 
+                {formatManilaDate(activeYear.classEndDate)}
+              </p>
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                Enrolled: {activeYear._count.enrollments} students · Sections: {activeYear._count.gradeLevels /* close enough for summary */}
+              </p>
+            </div>
+            <Button onClick={() => setShowNextForm(true)}>
+              Prepare SY {defaults?.yearLabel} <ChevronDown className="ml-2 h-4 w-4" />
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* History */}
+      {years.length > 0 && (
+        <div className="mt-8 space-y-3">
+          <h3 className="text-sm font-semibold text-[hsl(var(--muted-foreground))]">History</h3>
+          {years.map((y) => (
+            <div key={y.id} className="flex items-center justify-between p-3 rounded-lg border border-[hsl(var(--border))] text-sm">
+              <div className="flex items-center gap-3">
+                <span className="font-medium">{y.yearLabel}</span>
+                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{y.status}</span>
+                {y.isActive && <Badge variant="success">Current</Badge>}
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-[hsl(var(--muted-foreground))] hidden sm:inline">
+                  {y._count.enrollments} Enrolled
+                </span>
+                {!y.isActive && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 text-[hsl(var(--destructive))]"
+                    onClick={() => { setDeleteId(y.id); setDeleteLabel(y.yearLabel); }}
+                    disabled={y._count.enrollments > 0}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <ConfirmationModal
         open={!!deleteId}
         onOpenChange={(open) => !open && setDeleteId(null)}
         title="Delete School Year"
-        description={`Are you sure you want to delete "${deleteLabel}"? This action cannot be undone and will remove all associated structure.`}
+        description={`Are you sure you want to delete "${deleteLabel}"?`}
         confirmText="Delete"
         confirmVariant="destructive"
         loading={deleting}

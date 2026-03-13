@@ -47,10 +47,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           logoUrl: res.data.logoUrl,
           colorScheme: res.data.colorScheme,
           selectedAccentHsl: res.data.selectedAccentHsl,
-          enrollmentOpen: res.data.enrollmentOpen,
-          enrollmentOpenAt: res.data.enrollmentOpenAt,
-          enrollmentCloseAt: res.data.enrollmentCloseAt,
           activeAcademicYearId: res.data.activeAcademicYearId,
+          enrollmentPhase: res.data.enrollmentPhase,
         });
       })
       .catch(() => {});

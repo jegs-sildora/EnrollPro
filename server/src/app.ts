@@ -16,7 +16,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const app = express();
+const app: express.Express = express();
 
 // Ensure uploads directory exists
 const uploadsDir = path.resolve(__dirname, '..', 'uploads');

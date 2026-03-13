@@ -1,219 +1,273 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { sileo } from 'sileo';
-import { Clock, CalendarClock, Timer } from 'lucide-react';
+import { CalendarClock } from 'lucide-react';
 import api from '@/api/axiosInstance';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { toastApiError } from '@/hooks/useApiToast';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
+import { DatePicker } from '@/components/ui/date-picker';
 
-function formatCountdown(ms: number): string {
-  if (ms <= 0) return '0d 0h 0m';
-  const d = Math.floor(ms / 86400000);
-  const h = Math.floor((ms % 86400000) / 3600000);
-  const m = Math.floor((ms % 3600000) / 60000);
-  const parts: string[] = [];
-  if (d > 0) parts.push(`${d}d`);
-  if (h > 0) parts.push(`${h}h`);
-  parts.push(`${m}m`);
-  return parts.join(' ');
+interface AYDates {
+  id: number;
+  yearLabel: string;
+  earlyRegOpenDate: string | null;
+  earlyRegCloseDate: string | null;
+  enrollOpenDate: string | null;
+  enrollCloseDate: string | null;
+  manualOverrideOpen: boolean;
+}
+
+function formatDate(dateString: string | null): string {
+  if (!dateString) return 'Not set';
+  return new Date(dateString).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+function getPhaseStatus(openDate: string | null, closeDate: string | null) {
+  if (!openDate || !closeDate) return { label: 'UNSCHEDULED', color: 'bg-gray-100 text-gray-700' };
+  const now = new Date().getTime();
+  const start = new Date(openDate).getTime();
+  const end = new Date(closeDate).getTime();
+
+  if (now < start) {
+    const days = Math.ceil((start - now) / (1000 * 60 * 60 * 24));
+    return { label: `SCHEDULED · Opens in ${days} day(s)`, color: 'bg-blue-100 text-blue-700' };
+  }
+  if (now > end) {
+    return { label: 'CLOSED', color: 'bg-red-100 text-red-700' };
+  }
+  const daysLeft = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+  return { label: `● OPEN · Closes in ${daysLeft} day(s)`, color: 'bg-green-100 text-green-700 animate-pulse' };
 }
 
 export default function EnrollmentGateTab() {
-  const { enrollmentOpen, enrollmentOpenAt, enrollmentCloseAt, setSettings } = useSettingsStore();
-  const [toggling, setToggling] = useState(false);
-  const [openAt, setOpenAt] = useState(enrollmentOpenAt ?? '');
-  const [closeAt, setCloseAt] = useState(enrollmentCloseAt ?? '');
-  const [savingSchedule, setSavingSchedule] = useState(false);
-  const [countdown, setCountdown] = useState('');
-  const [countdownLabel, setCountdownLabel] = useState('');
-  const intervalRef = useRef<ReturnType<typeof setInterval>>(null);
+  const { activeAcademicYearId, enrollmentPhase, setSettings } = useSettingsStore();
+  const [ay, setAy] = useState<AYDates | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    setOpenAt(enrollmentOpenAt ?? '');
-    setCloseAt(enrollmentCloseAt ?? '');
-  }, [enrollmentOpenAt, enrollmentCloseAt]);
+  // Edit mode
+  const [isEditing, setIsEditing] = useState(false);
+  const [earlyRegOpenDate, setEarlyRegOpenDate] = useState<Date | undefined>();
+  const [earlyRegCloseDate, setEarlyRegCloseDate] = useState<Date | undefined>();
+  const [enrollOpenDate, setEnrollOpenDate] = useState<Date | undefined>();
+  const [enrollCloseDate, setEnrollCloseDate] = useState<Date | undefined>();
 
-  // Countdown timer
-  useEffect(() => {
-    const tick = () => {
-      const now = Date.now();
-      if (enrollmentOpen && enrollmentCloseAt) {
-        const diff = new Date(enrollmentCloseAt).getTime() - now;
-        if (diff > 0) {
-          setCountdown(formatCountdown(diff));
-          setCountdownLabel('Enrollment closes in');
-          return;
-        }
-      }
-      if (!enrollmentOpen && enrollmentOpenAt) {
-        const diff = new Date(enrollmentOpenAt).getTime() - now;
-        if (diff > 0) {
-          setCountdown(formatCountdown(diff));
-          setCountdownLabel('Enrollment opens in');
-          return;
-        }
-      }
-      setCountdown('');
-      setCountdownLabel('');
-    };
-    tick();
-    intervalRef.current = setInterval(tick, 60000);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [enrollmentOpen, enrollmentOpenAt, enrollmentCloseAt]);
-
-  const handleToggleGate = async (open: boolean) => {
-    setToggling(true);
+  const fetchAy = async () => {
+    if (!activeAcademicYearId) {
+      setLoading(false);
+      return;
+    }
     try {
-      await api.patch('/settings/enrollment-gate', { enrollmentOpen: open });
-      setSettings({ enrollmentOpen: open });
-      sileo.success({
-        title: open ? 'Enrollment Now Open' : 'Enrollment Closed',
-        description: open
-          ? 'The admission portal is publicly accessible.'
-          : 'The admission portal has been disabled.',
-      });
-    } catch (err) {
-      toastApiError(err as never);
+      const res = await api.get(`/academic-years/${activeAcademicYearId}`);
+      const data = res.data.year;
+      setAy(data);
+      setEarlyRegOpenDate(data.earlyRegOpenDate ? new Date(data.earlyRegOpenDate) : undefined);
+      setEarlyRegCloseDate(data.earlyRegCloseDate ? new Date(data.earlyRegCloseDate) : undefined);
+      setEnrollOpenDate(data.enrollOpenDate ? new Date(data.enrollOpenDate) : undefined);
+      setEnrollCloseDate(data.enrollCloseDate ? new Date(data.enrollCloseDate) : undefined);
+    } catch {
+      // silent
     } finally {
-      setToggling(false);
+      setLoading(false);
     }
   };
 
-  const handleSaveSchedule = async () => {
-    setSavingSchedule(true);
+  useEffect(() => {
+    fetchAy();
+  }, [activeAcademicYearId]);
+
+  const handleToggleOverride = async (checked: boolean) => {
+    if (!ay) return;
     try {
-      await api.put('/settings/enrollment-schedule', {
-        enrollmentOpenAt: openAt || null,
-        enrollmentCloseAt: closeAt || null,
-      });
-      setSettings({
-        enrollmentOpenAt: openAt || null,
-        enrollmentCloseAt: closeAt || null,
-      });
-      sileo.success({ title: 'Schedule Saved', description: 'Enrollment schedule updated.' });
+      await api.patch(`/academic-years/${ay.id}/override`, { manualOverrideOpen: checked });
+      setAy({ ...ay, manualOverrideOpen: checked });
+      
+      // Also fetch public settings to sync store Phase
+      const pubRes = await api.get('/settings/public');
+      setSettings({ enrollmentPhase: pubRes.data.enrollmentPhase });
+
+      if (checked) {
+        sileo.warning({ title: 'Manual Override Active', description: 'The admission portal is now forced OPEN.' });
+      } else {
+        sileo.success({ title: 'Override Disabled', description: 'Enrollment gate is back on schedule.' });
+      }
     } catch (err) {
       toastApiError(err as never);
-    } finally {
-      setSavingSchedule(false);
     }
   };
 
-  const scheduleChanged =
-    (openAt || null) !== (enrollmentOpenAt ?? null) ||
-    (closeAt || null) !== (enrollmentCloseAt ?? null);
+  const handleSaveDates = async () => {
+    if (!ay) return;
+    setSaving(true);
+    try {
+      await api.patch(`/academic-years/${ay.id}/dates`, {
+        earlyRegOpenDate: earlyRegOpenDate?.toISOString() || null,
+        earlyRegCloseDate: earlyRegCloseDate?.toISOString() || null,
+        enrollOpenDate: enrollOpenDate?.toISOString() || null,
+        enrollCloseDate: enrollCloseDate?.toISOString() || null,
+      });
+      setIsEditing(false);
+      sileo.success({ title: 'Dates Updated', description: 'Enrollment schedule has been updated.' });
+      
+      await fetchAy();
+      const pubRes = await api.get('/settings/public');
+      setSettings({ enrollmentPhase: pubRes.data.enrollmentPhase });
+
+    } catch (err) {
+      toastApiError(err as never);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!activeAcademicYearId) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center text-sm text-[hsl(var(--muted-foreground))]">
+          No active school year. Activate a school year to configure the enrollment schedule.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (loading || !ay) {
+    return <div className="text-center py-8 text-sm text-[hsl(var(--muted-foreground))]">Loading schedule…</div>;
+  }
+
+  const phase1Status = getPhaseStatus(ay.earlyRegOpenDate, ay.earlyRegCloseDate);
+  const phase2Status = getPhaseStatus(ay.enrollOpenDate, ay.enrollCloseDate);
 
   return (
     <div className="space-y-6">
-      {/* Manual Gate */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <Clock className="h-5 w-5" />
-            Admission Portal
-          </CardTitle>
-          <CardDescription>
-            Control whether the public admission portal accepts new applications
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between rounded-lg border border-[hsl(var(--border))] p-4">
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Enrollment Status</p>
-              <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                {enrollmentOpen
-                  ? 'The portal is currently accepting applications'
-                  : 'The portal is currently closed to new applications'}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Badge variant={enrollmentOpen ? 'success' : 'danger'}>
-                {enrollmentOpen ? 'OPEN' : 'CLOSED'}
-              </Badge>
-              <Switch
-                checked={enrollmentOpen}
-                onCheckedChange={handleToggleGate}
-                disabled={toggling}
-              />
-            </div>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <CalendarClock className="h-5 w-5" />
+              Enrollment Schedule <span className="text-[hsl(var(--muted-foreground))] text-sm font-normal ml-2">SY {ay.yearLabel}</span>
+            </CardTitle>
+            <CardDescription>
+              DepEd Two-Phase Enrollment structure. The portal opens automatically on these dates.
+            </CardDescription>
           </div>
-        </CardContent>
-      </Card>
+          {!isEditing && (
+            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>Edit Dates</Button>
+          )}
+        </CardHeader>
 
-      {/* Scheduled Window */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <CalendarClock className="h-5 w-5" />
-            Scheduled Window
-          </CardTitle>
-          <CardDescription>
-            Optionally set start and end dates for automatic enrollment gate control
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Opens At</Label>
-              <Input
-                type="datetime-local"
-                value={openAt ? new Date(openAt).toISOString().slice(0, 16) : ''}
-                onChange={(e) => setOpenAt(e.target.value ? new Date(e.target.value).toISOString() : '')}
-              />
+        <CardContent className="space-y-6 pt-4">
+          {/* Phase 1 */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-semibold text-[hsl(var(--foreground))]">PHASE 1 · Early Registration</h4>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">For: Grade 7, Grade 11, Transferees, First-time enrollees</p>
+              </div>
+              {!isEditing && (
+                <span className={`text-xs font-semibold px-2 py-1 rounded-md ${phase1Status.color}`}>
+                  {phase1Status.label}
+                </span>
+              )}
             </div>
-            <div className="space-y-2">
-              <Label>Closes At</Label>
-              <Input
-                type="datetime-local"
-                value={closeAt ? new Date(closeAt).toISOString().slice(0, 16) : ''}
-                onChange={(e) => setCloseAt(e.target.value ? new Date(e.target.value).toISOString() : '')}
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              onClick={handleSaveSchedule}
-              disabled={savingSchedule || !scheduleChanged}
-            >
-              {savingSchedule ? 'Saving...' : 'Save Schedule'}
-            </Button>
-            {(openAt || closeAt) && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => { setOpenAt(''); setCloseAt(''); }}
-              >
-                Clear
-              </Button>
+
+            {isEditing ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border p-3 rounded-lg">
+                <div className="space-y-1">
+                  <Label className="text-xs">Opens On</Label>
+                  <DatePicker date={earlyRegOpenDate} setDate={setEarlyRegOpenDate} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Closes On</Label>
+                  <DatePicker date={earlyRegCloseDate} setDate={setEarlyRegCloseDate} />
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-4 text-sm bg-[hsl(var(--muted))] p-3 rounded-lg border border-[hsl(var(--border))]">
+                <div className="flex-1 text-center border-r border-[hsl(var(--border))]">
+                  <span className="block text-[10px] text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Opens</span>
+                  <span className="font-medium">{formatDate(ay.earlyRegOpenDate)}</span>
+                </div>
+                <div className="flex-1 text-center">
+                  <span className="block text-[10px] text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Closes</span>
+                  <span className="font-medium">{formatDate(ay.earlyRegCloseDate)}</span>
+                </div>
+              </div>
             )}
           </div>
+
+          {/* Phase 2 */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-semibold text-[hsl(var(--foreground))]">PHASE 2 · Regular Enrollment</h4>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">For: All grade levels</p>
+              </div>
+              {!isEditing && (
+                <span className={`text-xs font-semibold px-2 py-1 rounded-md ${phase2Status.color}`}>
+                  {phase2Status.label}
+                </span>
+              )}
+            </div>
+
+            {isEditing ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border p-3 rounded-lg">
+                <div className="space-y-1">
+                  <Label className="text-xs">Opens On</Label>
+                  <DatePicker date={enrollOpenDate} setDate={setEnrollOpenDate} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Closes On</Label>
+                  <DatePicker date={enrollCloseDate} setDate={setEnrollCloseDate} />
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-4 text-sm bg-[hsl(var(--muted))] p-3 rounded-lg border border-[hsl(var(--border))]">
+                <div className="flex-1 text-center border-r border-[hsl(var(--border))]">
+                  <span className="block text-[10px] text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Opens</span>
+                  <span className="font-medium">{formatDate(ay.enrollOpenDate)}</span>
+                </div>
+                <div className="flex-1 text-center">
+                  <span className="block text-[10px] text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Closes</span>
+                  <span className="font-medium">{formatDate(ay.enrollCloseDate)}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {isEditing && (
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+              <Button onClick={handleSaveDates} disabled={saving}>{saving ? 'Saving...' : 'Save Dates'}</Button>
+            </div>
+          )}
+
+          <div className="pt-4 border-t border-[hsl(var(--border))]">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Manual Override</p>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                  Force-open the portal regardless of schedule. Use for emergencies only.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                {enrollmentPhase === 'OVERRIDE' && <Badge variant="warning">OVERRIDE ACTIVE</Badge>}
+                <Switch
+                  checked={ay.manualOverrideOpen}
+                  onCheckedChange={handleToggleOverride}
+                />
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
-
-      {/* Countdown */}
-      {countdown && (
-        <Card>
-          <CardContent className="py-6">
-            <div className="flex flex-col items-center gap-2 text-center">
-              <Timer className="h-6 w-6 text-[hsl(var(--primary))]" />
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">{countdownLabel}</p>
-              <p className="text-3xl font-bold tabular-nums">{countdown}</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <Separator />
-
-      <p className="text-xs text-[hsl(var(--muted-foreground))]">
-        Note: The manual toggle takes immediate effect. The scheduled window is informational and can be used for planning. To automate gate opening/closing, integrate a cron job that checks these timestamps.
-      </p>
     </div>
   );
 }

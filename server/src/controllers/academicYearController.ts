@@ -1,6 +1,31 @@
 import type { Request, Response } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { auditLog } from '../services/auditLogger.js';
+import {
+  deriveAcademicYearScheduleFromOpeningDate,
+  deriveNextAcademicYear,
+  normalizeDateToUtcNoon,
+} from '../services/academicYearService.js';
+
+const MANILA_TIME_ZONE = 'Asia/Manila';
+
+function parseDateInput(value: unknown): Date | null {
+  if (!value || typeof value !== 'string') {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function getCurrentManilaYear(): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: MANILA_TIME_ZONE,
+    year: 'numeric',
+  }).formatToParts(new Date());
+
+  return Number(parts.find((part) => part.type === 'year')?.value ?? new Date().getFullYear());
+}
 
 export async function listAcademicYears(_req: Request, res: Response): Promise<void> {
   const years = await prisma.academicYear.findMany({
@@ -10,6 +35,11 @@ export async function listAcademicYears(_req: Request, res: Response): Promise<v
     },
   });
   res.json({ years });
+}
+
+export async function getNextDefaults(req: Request, res: Response): Promise<void> {
+  const defaults = deriveNextAcademicYear(new Date());
+  res.json(defaults);
 }
 
 export async function getAcademicYear(req: Request, res: Response): Promise<void> {
@@ -30,28 +60,74 @@ export async function getAcademicYear(req: Request, res: Response): Promise<void
 }
 
 export async function createAcademicYear(req: Request, res: Response): Promise<void> {
-  const { yearLabel, startDate, endDate, cloneFromId } = req.body;
+  const { 
+    classOpeningDate, 
+    classEndDate, 
+    cloneFromId 
+  } = req.body;
 
-  if (!yearLabel || typeof yearLabel !== 'string') {
-    res.status(400).json({ message: 'yearLabel is required' });
+  const parsedOpeningDate = parseDateInput(classOpeningDate);
+  if (!parsedOpeningDate) {
+    res.status(400).json({ message: 'A valid classOpeningDate is required' });
     return;
   }
 
-  const existing = await prisma.academicYear.findUnique({ where: { yearLabel } });
+  const normalizedOpeningDate = normalizeDateToUtcNoon(parsedOpeningDate);
+  const openingYear = normalizedOpeningDate.getUTCFullYear();
+  const currentManilaYear = getCurrentManilaYear();
+
+  if (openingYear < currentManilaYear || openingYear > currentManilaYear + 1) {
+    res.status(400).json({
+      message: `Class opening year must be within ${currentManilaYear} and ${currentManilaYear + 1}`,
+    });
+    return;
+  }
+
+  const parsedClassEndDate = classEndDate ? parseDateInput(classEndDate) : null;
+  if (classEndDate && !parsedClassEndDate) {
+    res.status(400).json({ message: 'classEndDate must be a valid date' });
+    return;
+  }
+
+  const schedule = deriveAcademicYearScheduleFromOpeningDate(
+    normalizedOpeningDate,
+    parsedClassEndDate ? normalizeDateToUtcNoon(parsedClassEndDate) : undefined
+  );
+
+  const existing = await prisma.academicYear.findUnique({ where: { yearLabel: schedule.yearLabel } });
   if (existing) {
     res.status(400).json({ message: 'A school year with this label already exists' });
     return;
   }
 
+  // Deactivate others
+  await prisma.academicYear.updateMany({
+    where: { status: 'ACTIVE' },
+    data: { status: 'ARCHIVED', isActive: false },
+  });
+
   const year = await prisma.academicYear.create({
     data: {
-      yearLabel,
-      status: 'DRAFT',
-      startDate: startDate ? new Date(startDate) : null,
-      endDate: endDate ? new Date(endDate) : null,
+      yearLabel: schedule.yearLabel,
+      status: 'ACTIVE',
+      isActive: true,
+      classOpeningDate: schedule.classOpeningDate,
+      classEndDate: schedule.classEndDate,
+      earlyRegOpenDate: schedule.earlyRegOpenDate,
+      earlyRegCloseDate: schedule.earlyRegCloseDate,
+      enrollOpenDate: schedule.enrollOpenDate,
+      enrollCloseDate: schedule.enrollCloseDate,
       clonedFromId: cloneFromId ?? null,
     },
   });
+
+  const settings = await prisma.schoolSettings.findFirst();
+  if (settings) {
+    await prisma.schoolSettings.update({
+      where: { id: settings.id },
+      data: { activeAcademicYearId: year.id },
+    });
+  }
 
   // Clone structure if requested
   if (cloneFromId) {
@@ -104,7 +180,7 @@ export async function createAcademicYear(req: Request, res: Response): Promise<v
   await auditLog({
     userId: req.user!.userId,
     actionType: 'AY_CREATED',
-    description: `Created school year "${yearLabel}"${cloneFromId ? ` (cloned from ID ${cloneFromId})` : ''}`,
+    description: `Created and activated school year "${schedule.yearLabel}"${cloneFromId ? ` (cloned from ID ${cloneFromId})` : ''}`,
     subjectType: 'AcademicYear',
     subjectId: year.id,
     req,
@@ -122,9 +198,56 @@ export async function createAcademicYear(req: Request, res: Response): Promise<v
   res.status(201).json({ year: full });
 }
 
+export async function toggleOverride(req: Request, res: Response): Promise<void> {
+  const id = parseInt(req.params.id as string);
+  const { manualOverrideOpen } = req.body;
+
+  const updated = await prisma.academicYear.update({
+    where: { id },
+    data: { manualOverrideOpen },
+  });
+
+  await auditLog({
+    userId: req.user!.userId,
+    actionType: 'ENROLLMENT_OVERRIDE_TOGGLED',
+    description: `Manual override set to ${manualOverrideOpen ? 'OPEN' : 'OFF'} for year "${updated.yearLabel}"`,
+    subjectType: 'AcademicYear',
+    subjectId: id,
+    req,
+  });
+
+  res.json({ year: updated });
+}
+
+export async function updateDates(req: Request, res: Response): Promise<void> {
+  const id = parseInt(req.params.id as string);
+  const { earlyRegOpenDate, earlyRegCloseDate, enrollOpenDate, enrollCloseDate } = req.body;
+
+  const updated = await prisma.academicYear.update({
+    where: { id },
+    data: {
+      ...(earlyRegOpenDate !== undefined ? { earlyRegOpenDate: earlyRegOpenDate ? new Date(earlyRegOpenDate) : null } : {}),
+      ...(earlyRegCloseDate !== undefined ? { earlyRegCloseDate: earlyRegCloseDate ? new Date(earlyRegCloseDate) : null } : {}),
+      ...(enrollOpenDate !== undefined ? { enrollOpenDate: enrollOpenDate ? new Date(enrollOpenDate) : null } : {}),
+      ...(enrollCloseDate !== undefined ? { enrollCloseDate: enrollCloseDate ? new Date(enrollCloseDate) : null } : {}),
+    },
+  });
+
+  await auditLog({
+    userId: req.user!.userId,
+    actionType: 'ENROLLMENT_DATES_UPDATED',
+    description: `Updated enrollment dates for "${updated.yearLabel}"`,
+    subjectType: 'AcademicYear',
+    subjectId: id,
+    req,
+  });
+
+  res.json({ year: updated });
+}
+
 export async function updateAcademicYear(req: Request, res: Response): Promise<void> {
   const id = parseInt(req.params.id as string);
-  const { yearLabel, startDate, endDate } = req.body;
+  const { yearLabel } = req.body;
 
   const year = await prisma.academicYear.findUnique({ where: { id } });
   if (!year) {
@@ -141,8 +264,6 @@ export async function updateAcademicYear(req: Request, res: Response): Promise<v
     where: { id },
     data: {
       ...(yearLabel ? { yearLabel } : {}),
-      ...(startDate !== undefined ? { startDate: startDate ? new Date(startDate) : null } : {}),
-      ...(endDate !== undefined ? { endDate: endDate ? new Date(endDate) : null } : {}),
     },
   });
 

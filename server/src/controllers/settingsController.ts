@@ -5,26 +5,35 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { extractPalette, extractAccentColor, contrastForeground } from '../services/logoColorService.js';
 import { auditLog } from '../services/auditLogger.js';
+import { getEnrollmentPhase } from '../services/enrollmentGateService.js';
 
 async function getOrCreateSettings() {
-  let settings = await prisma.schoolSettings.findFirst();
+  let settings = await prisma.schoolSettings.findFirst({
+    include: { activeAcademicYear: true }
+  });
   if (!settings) {
-    settings = await prisma.schoolSettings.create({ data: {} });
+    settings = await prisma.schoolSettings.create({ 
+      data: {},
+      include: { activeAcademicYear: true }
+    });
   }
   return settings;
 }
 
 export async function getPublicSettings(req: Request, res: Response): Promise<void> {
   const settings = await getOrCreateSettings();
+  
+  const enrollmentPhase = settings.activeAcademicYear 
+    ? getEnrollmentPhase(settings.activeAcademicYear)
+    : 'CLOSED';
+
   res.json({
     schoolName: settings.schoolName,
     logoUrl: settings.logoUrl,
     colorScheme: settings.colorScheme,
     selectedAccentHsl: settings.selectedAccentHsl,
-    enrollmentOpen: settings.enrollmentOpen,
-    enrollmentOpenAt: settings.enrollmentOpenAt,
-    enrollmentCloseAt: settings.enrollmentCloseAt,
     activeAcademicYearId: settings.activeAcademicYearId,
+    enrollmentPhase,
   });
 }
 
@@ -191,49 +200,5 @@ export async function removeLogo(req: Request, res: Response): Promise<void> {
     logoUrl: updated.logoUrl,
     colorScheme: updated.colorScheme,
     selectedAccentHsl: updated.selectedAccentHsl,
-  });
-}
-
-export async function toggleEnrollmentGate(req: Request, res: Response): Promise<void> {
-  const { enrollmentOpen } = req.body;
-  const settings = await getOrCreateSettings();
-
-  const updated = await prisma.schoolSettings.update({
-    where: { id: settings.id },
-    data: { enrollmentOpen },
-  });
-
-  await auditLog({
-    userId: req.user!.userId,
-    actionType: 'ENROLLMENT_GATE_TOGGLED',
-    description: `Admin set enrollment to ${enrollmentOpen ? 'OPEN' : 'CLOSED'}`,
-    req,
-  });
-
-  res.json({ enrollmentOpen: updated.enrollmentOpen });
-}
-
-export async function updateEnrollmentSchedule(req: Request, res: Response): Promise<void> {
-  const { enrollmentOpenAt, enrollmentCloseAt } = req.body;
-  const settings = await getOrCreateSettings();
-
-  const updated = await prisma.schoolSettings.update({
-    where: { id: settings.id },
-    data: {
-      enrollmentOpenAt: enrollmentOpenAt ? new Date(enrollmentOpenAt) : null,
-      enrollmentCloseAt: enrollmentCloseAt ? new Date(enrollmentCloseAt) : null,
-    },
-  });
-
-  await auditLog({
-    userId: req.user!.userId,
-    actionType: 'ENROLLMENT_SCHEDULE_UPDATED',
-    description: `Enrollment window: ${enrollmentOpenAt ?? 'unset'} → ${enrollmentCloseAt ?? 'unset'}`,
-    req,
-  });
-
-  res.json({
-    enrollmentOpenAt: updated.enrollmentOpenAt,
-    enrollmentCloseAt: updated.enrollmentCloseAt,
   });
 }

@@ -8,15 +8,13 @@ import {
   uploadLogo,
   removeLogo,
   selectAccentColor,
-  toggleEnrollmentGate,
-  updateEnrollmentSchedule,
 } from '../controllers/settingsController.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { authorize } from '../middleware/authorize.js';
 import { validate } from '../middleware/validate.js';
-import { updateIdentitySchema, toggleEnrollmentSchema } from '../validators/settings.validator.js';
+import { updateIdentitySchema } from '../validators/settings.validator.js';
 
-const router = Router();
+const router: Router = Router();
 
 // Multer config for logo upload
 const storage = multer.diskStorage({
@@ -50,7 +48,5 @@ router.put('/identity', authenticate, authorize('REGISTRAR'), validate(updateIde
 router.post('/logo', authenticate, authorize('REGISTRAR'), upload.single('logo'), uploadLogo);
 router.delete('/logo', authenticate, authorize('REGISTRAR'), removeLogo);
 router.put('/accent', authenticate, authorize('REGISTRAR'), selectAccentColor);
-router.patch('/enrollment-gate', authenticate, authorize('REGISTRAR'), validate(toggleEnrollmentSchema), toggleEnrollmentGate);
-router.put('/enrollment-schedule', authenticate, authorize('REGISTRAR'), updateEnrollmentSchedule);
 
 export default router;

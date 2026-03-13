@@ -19,10 +19,8 @@ export interface SettingsState {
   logoUrl: string | null;
   colorScheme: ColorScheme | null;
   selectedAccentHsl: string | null;
-  enrollmentOpen: boolean;
-  enrollmentOpenAt: string | null;
-  enrollmentCloseAt: string | null;
   activeAcademicYearId: number | null;
+  enrollmentPhase: 'EARLY_REGISTRATION' | 'REGULAR_ENROLLMENT' | 'CLOSED' | 'OVERRIDE';
   /** Session-level override for browsing a different AY */
   viewingAcademicYearId: number | null;
   accentForeground: string | null;
@@ -38,10 +36,8 @@ export const useSettingsStore = create<SettingsState>()(
       logoUrl: null,
       colorScheme: null,
       selectedAccentHsl: null,
-      enrollmentOpen: false,
-      enrollmentOpenAt: null,
-      enrollmentCloseAt: null,
       activeAcademicYearId: null,
+      enrollmentPhase: 'CLOSED',
       viewingAcademicYearId: null,
       accentForeground: null,
       accentMutedForeground: null,
