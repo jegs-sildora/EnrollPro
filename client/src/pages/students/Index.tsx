@@ -86,6 +86,7 @@ export default function Students() {
 
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [gradeLevelFilter, setGradeLevelFilter] = useState<string>('all');
@@ -175,7 +176,7 @@ export default function Students() {
   // Fetch students
   const fetchStudents = useCallback(async () => {
     if (!ayId) return;
-    setLoading(true);
+    if (initialLoad) setLoading(true);
     try {
       const params: Record<string, string | number> = {
         academicYearId: ayId,
@@ -198,8 +199,9 @@ export default function Students() {
       setStudents([]);
     } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
-  }, [ayId, page, debouncedSearch, gradeLevelFilter, sectionFilter, statusFilter, sortBy, sortOrder]);
+  }, [ayId, page, debouncedSearch, gradeLevelFilter, sectionFilter, statusFilter, sortBy, sortOrder, initialLoad]);
 
   useEffect(() => {
     fetchStudents();
@@ -275,7 +277,7 @@ export default function Students() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Total Students</CardDescription>
@@ -296,12 +298,6 @@ export default function Students() {
             <CardTitle className="text-2xl text-yellow-600">
               {students.filter(s => s.status === 'PENDING').length}
             </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Grade Levels</CardDescription>
-            <CardTitle className="text-2xl">{gradeLevels.length}</CardTitle>
           </CardHeader>
         </Card>
       </div>

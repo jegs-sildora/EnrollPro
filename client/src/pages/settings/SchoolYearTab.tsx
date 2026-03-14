@@ -370,8 +370,8 @@ export default function AcademicYearTab() {
           <CardContent className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <Badge variant="success" className="animate-pulse">● ACTIVE</Badge>
                 <span className="text-xl font-bold">School Year {activeYear.yearLabel}</span>
+                <Badge variant="success" className="animate-pulse">● ACTIVE</Badge>
               </div>
               <p className="text-sm text-[hsl(var(--muted-foreground))]">
                 Classes: {formatManilaDate(activeYear.classOpeningDate)} 
@@ -387,7 +387,7 @@ export default function AcademicYearTab() {
                 <Trash2 className="h-4 w-4" />
               </Button>
               <Button onClick={() => setShowNextForm(true)}>
-                Prepare SY {defaults?.yearLabel} <ChevronDown className="ml-2 h-4 w-4" />
+                Prepare S.Y. {defaults?.yearLabel} <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </CardContent>

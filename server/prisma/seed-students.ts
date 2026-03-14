@@ -1,43 +1,10 @@
 import 'dotenv/config';
 import { PrismaClient, Sex, ApplicationStatus } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import pg from 'pg';
 import bcrypt from 'bcryptjs';
 
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
-
-// DepEd-based Filipino names
-const lastNames = [
-  'Dela Cruz', 'Garcia', 'Reyes', 'Santos', 'Ramos', 'Mendoza', 'Torres', 'Gonzales',
-  'Fernandez', 'Lopez', 'Villanueva', 'Cruz', 'Bautista', 'Aquino', 'Flores', 'Castro',
-  'Rivera', 'Martinez', 'Perez', 'Sanchez', 'Ramirez', 'Morales', 'Diaz', 'Pascual'
-];
-
-const firstNamesMale = [
-  'Juan', 'Jose', 'Miguel', 'Carlos', 'Pedro', 'Antonio', 'Luis', 'Rafael',
-  'Manuel', 'Ricardo', 'Roberto', 'Fernando', 'Eduardo', 'Andres', 'Gabriel'
-];
-
-const firstNamesFemale = [
-  'Maria', 'Ana', 'Rosa', 'Carmen', 'Elena', 'Sofia', 'Isabel', 'Lucia',
-  'Teresa', 'Patricia', 'Angela', 'Clara', 'Beatriz', 'Cristina', 'Diana'
-];
-
-const middleNames = [
-  'Santos', 'Reyes', 'Cruz', 'Ramos', 'Torres', 'Lopez', 'Garcia', 'Mendoza',
-  'Flores', 'Castro', 'Rivera', 'Perez', 'Morales', 'Diaz', 'Pascual'
-];
-
-const barangays = [
-  'San Antonio', 'San Jose', 'Poblacion', 'Barangay 1', 'Barangay 2', 'Barangay 3',
-  'San Miguel', 'Santa Cruz', 'San Pedro', 'San Juan', 'Santo Niño', 'San Isidro'
-];
-
-function randomItem<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
 
 function generateLRN(): string {
   const year = '10';
@@ -47,36 +14,15 @@ function generateLRN(): string {
   return `${year}${region}${division}${random}`;
 }
 
-function generateBirthDate(gradeLevel: string): Date {
-  const currentYear = 2026;
-  let age: number;
-  
-  switch (gradeLevel) {
-    case 'Grade 7': age = 12 + Math.floor(Math.random() * 2); break;
-    case 'Grade 8': age = 13 + Math.floor(Math.random() * 2); break;
-    case 'Grade 9': age = 14 + Math.floor(Math.random() * 2); break;
-    case 'Grade 10': age = 15 + Math.floor(Math.random() * 2); break;
-    case 'Grade 11': age = 16 + Math.floor(Math.random() * 2); break;
-    case 'Grade 12': age = 17 + Math.floor(Math.random() * 2); break;
-    default: age = 12;
-  }
-  
-  const birthYear = currentYear - age;
-  const month = Math.floor(Math.random() * 12);
-  const day = Math.floor(Math.random() * 28) + 1;
-  
-  return new Date(birthYear, month, day);
-}
-
 function generatePhoneNumber(): string {
   const prefixes = ['0917', '0918', '0919', '0920', '0921', '0922', '0923', '0925', '0926', '0927'];
-  const prefix = randomItem(prefixes);
+  const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
   const suffix = Math.floor(Math.random() * 10000000).toString().padStart(7, '0');
   return `${prefix}-${suffix.slice(0, 3)}-${suffix.slice(3)}`;
 }
 
 async function main() {
-  console.log('🌱 Starting student data seeding...\n');
+  console.log('🌱 Starting Grade 10 student data seeding...\n');
 
   // Create registrar user if not exists
   const registrarEmail = 'registrar@hnhs.edu.ph';
@@ -117,173 +63,137 @@ async function main() {
     console.log('✓ Created academic year 2026-2027');
   }
 
-  // Create grade levels
-  const gradeLevelNames = ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12'];
-  const gradeLevels = [];
+  // Create Grade 10 only
+  let gradeLevel = await prisma.gradeLevel.findFirst({
+    where: {
+      name: 'Grade 10',
+      academicYearId: academicYear.id,
+    },
+  });
 
-  for (let i = 0; i < gradeLevelNames.length; i++) {
-    let gradeLevel = await prisma.gradeLevel.findFirst({
-      where: {
-        name: gradeLevelNames[i],
+  if (!gradeLevel) {
+    gradeLevel = await prisma.gradeLevel.create({
+      data: {
+        name: 'Grade 10',
+        displayOrder: 4,
         academicYearId: academicYear.id,
       },
     });
-
-    if (!gradeLevel) {
-      gradeLevel = await prisma.gradeLevel.create({
-        data: {
-          name: gradeLevelNames[i],
-          displayOrder: i + 1,
-          academicYearId: academicYear.id,
-        },
-      });
-    }
-    gradeLevels.push(gradeLevel);
   }
-  console.log('✓ Created/verified grade levels');
+  console.log('✓ Created/verified Grade 10');
 
-  // Create strands for SHS
-  const strandData = [
-    { name: 'STEM', grades: [4, 5] },
-    { name: 'ABM', grades: [4, 5] },
-    { name: 'HUMSS', grades: [4, 5] },
-    { name: 'GAS', grades: [4, 5] },
-  ];
-
-  const strands = [];
-  for (const strandInfo of strandData) {
-    let strand = await prisma.strand.findFirst({
-      where: {
-        name: strandInfo.name,
-        academicYearId: academicYear.id,
-      },
-    });
-
-    if (!strand) {
-      const applicableIds = strandInfo.grades.map(idx => gradeLevels[idx].id);
-      strand = await prisma.strand.create({
-        data: {
-          name: strandInfo.name,
-          applicableGradeLevelIds: applicableIds,
-          academicYearId: academicYear.id,
-        },
-      });
-    }
-    strands.push(strand);
-  }
-  console.log('✓ Created/verified strands');
-
-  // Create sections
-  const sectionNames = ['Rizal', 'Bonifacio'];
+  // Create sections named after Philippine National Heroes
+  const heroSectionNames = ['Rizal', 'Bonifacio', 'Mabini'];
   const sections = [];
 
-  for (const gradeLevel of gradeLevels) {
-    const isJHS = gradeLevel.displayOrder <= 4;
-    const namesToUse = isJHS ? sectionNames : ['STEM-A', 'HUMSS-A'];
+  for (const sectionName of heroSectionNames) {
+    let section = await prisma.section.findFirst({
+      where: {
+        name: sectionName,
+        gradeLevelId: gradeLevel.id,
+      },
+    });
 
-    for (const sectionName of namesToUse) {
-      let section = await prisma.section.findFirst({
-        where: {
+    if (!section) {
+      section = await prisma.section.create({
+        data: {
           name: sectionName,
+          maxCapacity: 45,
           gradeLevelId: gradeLevel.id,
         },
       });
-
-      if (!section) {
-        section = await prisma.section.create({
-          data: {
-            name: sectionName,
-            maxCapacity: 45,
-            gradeLevelId: gradeLevel.id,
-          },
-        });
-      }
-      sections.push(section);
     }
+    sections.push(section);
   }
-  console.log('✓ Created/verified sections');
+  console.log('✓ Created/verified 3 sections (Rizal, Bonifacio, Mabini)');
 
-  // Generate students
-  const studentsPerGrade = 3;
-  let totalCreated = await prisma.applicant.count();
+  // Generate 3 Grade 10 students (1 per section)
+  const studentData = [
+    {
+      firstName: 'Juan',
+      lastName: 'Dela Cruz',
+      middleName: 'Santos',
+      sex: Sex.MALE,
+      section: sections[0], // Rizal
+    },
+    {
+      firstName: 'Maria',
+      lastName: 'Garcia',
+      middleName: 'Reyes',
+      sex: Sex.FEMALE,
+      section: sections[1], // Bonifacio
+    },
+    {
+      firstName: 'Pedro',
+      lastName: 'Mendoza',
+      middleName: 'Torres',
+      sex: Sex.MALE,
+      section: sections[2], // Mabini
+    },
+  ];
+
+  let totalCreated = 0;
   const usedLRNs = new Set<string>();
 
-  for (const gradeLevel of gradeLevels) {
-    const gradeSections = sections.filter(s => s.gradeLevelId === gradeLevel.id);
-    
-    for (let i = 0; i < studentsPerGrade; i++) {
-      const section = gradeSections[i % gradeSections.length];
-      const sex = Math.random() > 0.5 ? Sex.MALE : Sex.FEMALE;
-        const firstName = sex === Sex.MALE ? randomItem(firstNamesMale) : randomItem(firstNamesFemale);
-        const lastName = randomItem(lastNames);
-        const middleName = Math.random() > 0.2 ? randomItem(middleNames) : null;
-        const suffix = Math.random() > 0.9 ? randomItem(['Jr.', 'Sr.', 'III']) : null;
-
-        let lrn = generateLRN();
-        while (usedLRNs.has(lrn)) {
-          lrn = generateLRN();
-        }
-        usedLRNs.add(lrn);
-
-        const birthDate = generateBirthDate(gradeLevel.name);
-        const barangay = randomItem(barangays);
-        const address = `${Math.floor(Math.random() * 500) + 1} Brgy. ${barangay}, Hinigaran, Negros Occidental`;
-        const parentName = `${randomItem(firstNamesFemale)} ${lastName}`;
-        const phoneNumber = generatePhoneNumber();
-        const email = `${lastName.toLowerCase().replace(' ', '')}${Math.floor(Math.random() * 1000)}@gmail.com`;
-
-        const trackingYear = academicYear.yearLabel.split('-')[0];
-        const trackingSeq = (totalCreated + 1).toString().padStart(5, '0');
-        const trackingNumber = `HNS-${trackingYear}-${trackingSeq}`;
-
-        // Determine strand for SHS
-        let strandId = null;
-        if (gradeLevel.displayOrder >= 5) {
-          const sectionStrand = section.name.split('-')[0];
-          const strand = strands.find(s => s.name === sectionStrand);
-          if (strand) strandId = strand.id;
-        }
-
-        try {
-          const applicant = await prisma.applicant.create({
-            data: {
-              lrn,
-              lastName,
-              firstName,
-              middleName,
-              suffix,
-              birthDate,
-              sex,
-              address,
-              parentGuardianName: parentName,
-              parentGuardianContact: phoneNumber,
-              emailAddress: email,
-              trackingNumber,
-              status: ApplicationStatus.APPROVED,
-              gradeLevelId: gradeLevel.id,
-              strandId,
-              academicYearId: academicYear.id,
-            },
-          });
-
-          await prisma.enrollment.create({
-            data: {
-              applicantId: applicant.id,
-              sectionId: section.id,
-              academicYearId: academicYear.id,
-              enrolledById: registrar.id,
-            },
-          });
-
-          totalCreated++;
-        } catch (error) {
-          console.error(`Error creating student: ${error}`);
-        }
-      }
+  for (const student of studentData) {
+    let lrn = generateLRN();
+    while (usedLRNs.has(lrn)) {
+      lrn = generateLRN();
     }
+    usedLRNs.add(lrn);
 
-  console.log(`\n✅ Successfully seeded ${totalCreated} students across all grade levels`);
-  console.log(`📊 Distribution: ~${studentsPerGrade} students per grade level`);
+    const birthDate = new Date(2011, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
+    const barangays = ['San Antonio', 'San Jose', 'Poblacion', 'San Miguel', 'Santa Cruz'];
+    const barangay = barangays[Math.floor(Math.random() * barangays.length)];
+    const address = `${Math.floor(Math.random() * 500) + 1} Brgy. ${barangay}, Hinigaran, Negros Occidental`;
+    const parentName = `${student.sex === Sex.MALE ? 'Rosa' : 'Carlos'} ${student.lastName}`;
+    const phoneNumber = generatePhoneNumber();
+    const email = `${student.lastName.toLowerCase().replace(' ', '')}${Math.floor(Math.random() * 1000)}@gmail.com`;
+
+    const trackingYear = academicYear.yearLabel.split('-')[0];
+    const trackingSeq = (totalCreated + 1).toString().padStart(5, '0');
+    const trackingNumber = `HNS-${trackingYear}-${trackingSeq}`;
+
+    try {
+      const applicant = await prisma.applicant.create({
+        data: {
+          lrn,
+          lastName: student.lastName,
+          firstName: student.firstName,
+          middleName: student.middleName,
+          suffix: null,
+          birthDate,
+          sex: student.sex,
+          address,
+          parentGuardianName: parentName,
+          parentGuardianContact: phoneNumber,
+          emailAddress: email,
+          trackingNumber,
+          status: ApplicationStatus.APPROVED,
+          gradeLevelId: gradeLevel.id,
+          strandId: null,
+          academicYearId: academicYear.id,
+        },
+      });
+
+      await prisma.enrollment.create({
+        data: {
+          applicantId: applicant.id,
+          sectionId: student.section.id,
+          academicYearId: academicYear.id,
+          enrolledById: registrar.id,
+        },
+      });
+
+      console.log(`✓ Created: ${student.firstName} ${student.lastName} (${student.section.name})`);
+      totalCreated++;
+    } catch (error) {
+      console.error(`Error creating student: ${error}`);
+    }
+  }
+
+  console.log(`\n✅ Successfully seeded ${totalCreated} Grade 10 students`);
+  console.log(`📊 Distribution: 1 student per section (Rizal, Bonifacio, Mabini)`);
   console.log(`🏫 Sections: ${sections.length} total sections`);
 }
 
