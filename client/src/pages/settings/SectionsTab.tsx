@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { sileo } from 'sileo';
-import { Plus, Trash2, Grid3X3 } from 'lucide-react';
+import { Plus, Trash2, Grid3X3, X, Check } from 'lucide-react';
 import api from '@/api/axiosInstance';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { toastApiError } from '@/hooks/useApiToast';
@@ -8,13 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
 import { ConfirmationModal } from '@/components/ui/confirmation-modal';
 
 interface SectionItem {
@@ -54,8 +48,7 @@ export default function SectionsTab() {
   const [groups, setGroups] = useState<GradeLevelGroup[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Add section dialog
-  const [showAdd, setShowAdd] = useState(false);
+  // Inline add section state
   const [addGlId, setAddGlId] = useState<number | null>(null);
   const [sectionName, setSectionName] = useState('');
   const [sectionCap, setSectionCap] = useState('40');
@@ -81,11 +74,14 @@ export default function SectionsTab() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const openAddDialog = (glId: number) => {
-    setAddGlId(glId);
-    setSectionName('');
-    setSectionCap('40');
-    setShowAdd(true);
+  const toggleAddMode = (glId: number) => {
+    if (addGlId === glId) {
+      setAddGlId(null);
+    } else {
+      setAddGlId(glId);
+      setSectionName('');
+      setSectionCap('40');
+    }
   };
 
   const handleAdd = async () => {
@@ -98,7 +94,7 @@ export default function SectionsTab() {
         gradeLevelId: addGlId,
       });
       sileo.success({ title: 'Section Added', description: sectionName.trim() });
-      setShowAdd(false);
+      setAddGlId(null);
       fetchData();
     } catch (err) {
       toastApiError(err as never);
@@ -193,12 +189,56 @@ export default function SectionsTab() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">{g.gradeLevelName}</CardTitle>
-              <Button size="sm" variant="outline" onClick={() => openAddDialog(g.gradeLevelId)}>
-                <Plus className="mr-1 h-3 w-3" /> Add Section
+              <Button 
+                size="sm" 
+                variant={addGlId === g.gradeLevelId ? "ghost" : "outline"} 
+                onClick={() => toggleAddMode(g.gradeLevelId)}
+              >
+                {addGlId === g.gradeLevelId ? (
+                  <><X className="mr-1 h-3 w-3" /> Cancel</>
+                ) : (
+                  <><Plus className="mr-1 h-3 w-3" /> Add Section</>
+                )}
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            {addGlId === g.gradeLevelId && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs">Section Name</Label>
+                    <Input 
+                      placeholder="e.g. Section A" 
+                      value={sectionName} 
+                      onChange={(e) => setSectionName(e.target.value)} 
+                      className="h-9 text-sm"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Max Capacity</Label>
+                    <Input 
+                      type="number" 
+                      min="1" 
+                      value={sectionCap} 
+                      onChange={(e) => setSectionCap(e.target.value)} 
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                </div>
+                <Button 
+                  size="sm" 
+                  className="w-full" 
+                  onClick={handleAdd} 
+                  disabled={adding || !sectionName.trim()}
+                >
+                  {adding ? 'Adding...' : <><Check className="mr-1 h-3 w-3" /> Add Section</>}
+                </Button>
+                <Separator />
+              </div>
+            )}
+
             {g.sections.length === 0 ? (
               <p className="text-sm text-[hsl(var(--muted-foreground))] text-center py-2">No sections</p>
             ) : (
@@ -236,30 +276,6 @@ export default function SectionsTab() {
         </Card>
       ))}
       </div>
-
-      {/* Add Section Dialog */}
-      <Dialog open={showAdd} onOpenChange={setShowAdd}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Add Section</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Section Name</Label>
-              <Input placeholder="e.g. Section A" value={sectionName} onChange={(e) => setSectionName(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Max Capacity</Label>
-              <Input type="number" min="1" value={sectionCap} onChange={(e) => setSectionCap(e.target.value)} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={handleAdd} disabled={adding || !sectionName.trim()}>
-              {adding ? 'Adding...' : 'Add'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <ConfirmationModal
         open={!!deleteId}

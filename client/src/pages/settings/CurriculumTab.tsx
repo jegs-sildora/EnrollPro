@@ -301,7 +301,7 @@ export default function CurriculumTab() {
                 {scp.isOffered && (
                   <div className="p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                     <div className="flex flex-wrap gap-4">
-                      <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
+                      <div className="flex flex-col gap-1 flex-1 min-w-35">
                         <Label className="text-xs flex items-center gap-1"><Calendar className="h-3 w-3" /> Admission Date</Label>
                         <DatePicker 
                           date={scp.examDate ? new Date(scp.examDate) : undefined}
@@ -309,11 +309,11 @@ export default function CurriculumTab() {
                           className="h-8 text-xs"
                         />
                       </div>
-                      <div className="flex flex-col gap-1 flex-1 min-w-[120px]">
+                      <div className="flex flex-col gap-1 flex-1 min-w-30">
                         <Label className="text-xs flex items-center gap-1"><Info className="h-3 w-3" /> Cut-off Score</Label>
                         <Input type="number" placeholder="Min score to pass" className="h-8 text-xs" value={scp.cutoffScore ?? ''} onChange={e => handleUpdateScpField(idx, 'cutoffScore', e.target.value ? parseFloat(e.target.value) : null)} />
                       </div>
-                      <div className="flex flex-col gap-1 flex-1 min-w-[160px]">
+                      <div className="flex flex-col gap-1 flex-1 min-w-40">
                         <Label className="text-xs">Program Notes</Label>
                         <Input placeholder="Additional requirements or details..." className="h-8 text-xs" value={scp.notes || ''} onChange={e => handleUpdateScpField(idx, 'notes', e.target.value)} />
                       </div>
