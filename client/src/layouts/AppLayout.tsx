@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import type React from 'react';
 import { useNavigate, useLocation, Link } from 'react-router';
 import { Toaster } from 'sileo';
 import {
@@ -23,7 +24,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
@@ -88,8 +88,8 @@ function AYSwitcher() {
                 setViewingAY(y.id === activeAcademicYearId ? null : y.id);
                 setOpen(false);
               }}
-              className={`flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs hover:bg-[hsl(var(--sidebar-accent))] hover:text-[hsl(var(--accent-foreground))] ${
-                y.id === currentId ? 'bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]' : ''
+              className={`flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs ${
+                y.id === currentId ? 'bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]' : 'hover:bg-[hsl(var(--sidebar-accent))] hover:text-[hsl(var(--accent-foreground))]'
               }`}
             >
               <span className="flex-1 text-left">{y.yearLabel}</span>
@@ -119,6 +119,20 @@ function NavDivider({ label }: { label: string }) {
   );
 }
 
+function NavItem({ to, icon: Icon, label, pathname }: { to: string; icon: React.ElementType; label: string; pathname: string }) {
+  const isActive = pathname === to || pathname.startsWith(to + '/');
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton asChild isActive={isActive} tooltip={label}>
+        <Link to={to}>
+          <Icon className="size-4" />
+          <span>{label}</span>
+        </Link>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
+}
+
 function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -129,28 +143,11 @@ function AppSidebar() {
   const isAdmin = user?.role === 'SYSTEM_ADMIN';
   const isRegistrar = user?.role === 'REGISTRAR';
   const isTeacher = user?.role === 'TEACHER';
+  const pathname = location.pathname;
 
   const handleLogout = () => {
     clearAuth();
     navigate('/login');
-  };
-
-  const NavItem = ({ to, icon: Icon, label }: { to: string; icon: any; label: string }) => {
-    const isActive = location.pathname === to || location.pathname.startsWith(to + '/');
-    return (
-      <SidebarMenuItem>
-        <SidebarMenuButton
-          asChild
-          isActive={isActive}
-          tooltip={label}
-        >
-          <Link to={to}>
-            <Icon className="size-4" />
-            <span>{label}</span>
-          </Link>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-    );
   };
 
   return (
@@ -191,15 +188,15 @@ function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {/* ── Always visible ── */}
-                <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
+                <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" pathname={pathname} />
 
                 {/* ── Enrollment section (Registrar + Admin) ── */}
                 {(isRegistrar || isAdmin) && (
                   <>
                     <NavDivider label="Enrollment" />
-                    <NavItem to="/applications" icon={ClipboardList} label="Applications" />
-                    <NavItem to="/students" icon={Users} label="Students" />
-                    <NavItem to="/sections" icon={School} label="Sections" />
+                    <NavItem to="/applications" icon={ClipboardList} label="Applications" pathname={pathname} />
+                    <NavItem to="/students" icon={Users} label="Students" pathname={pathname} />
+                    <NavItem to="/sections" icon={School} label="Sections" pathname={pathname} />
                   </>
                 )}
 
@@ -207,7 +204,7 @@ function AppSidebar() {
                 {isTeacher && (
                   <>
                     <NavDivider label="Classes" />
-                    <NavItem to="/my-sections" icon={BookOpen} label="My Sections" />
+                    <NavItem to="/my-sections" icon={BookOpen} label="My Sections" pathname={pathname} />
                   </>
                 )}
 
@@ -215,9 +212,9 @@ function AppSidebar() {
                 {isAdmin && (
                   <>
                     <NavDivider label="System" />
-                    <NavItem to="/admin/users" icon={UserCog} label="User Management" />
-                    <NavItem to="/admin/email-logs" icon={Mail} label="Email Logs" />
-                    <NavItem to="/admin/system" icon={Monitor} label="System Health" />
+                    <NavItem to="/admin/users" icon={UserCog} label="User Management" pathname={pathname} />
+                    <NavItem to="/admin/email-logs" icon={Mail} label="Email Logs" pathname={pathname} />
+                    <NavItem to="/admin/system" icon={Monitor} label="System Health" pathname={pathname} />
                   </>
                 )}
 
@@ -225,8 +222,8 @@ function AppSidebar() {
                 {(isRegistrar || isAdmin) && (
                   <>
                     <NavDivider label="Records" />
-                    <NavItem to="/audit-logs" icon={ScrollText} label="Audit Logs" />
-                    <NavItem to="/settings" icon={Settings} label="Settings" />
+                    <NavItem to="/audit-logs" icon={ScrollText} label="Audit Logs" pathname={pathname} />
+                    <NavItem to="/settings" icon={Settings} label="Settings" pathname={pathname} />
                   </>
                 )}
               </SidebarMenu>

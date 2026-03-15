@@ -4,7 +4,7 @@ import { auditLog } from '../services/auditLogger.js';
 
 export async function listSections(req: Request, res: Response): Promise<void> {
   const ayId = req.params.ayId ? parseInt(req.params.ayId as string) : null;
-  const { gradeLevelId } = req.query;
+  const { gradeLevelId, level } = req.query;
 
   if (gradeLevelId) {
     const sections = await prisma.section.findMany({
@@ -24,8 +24,16 @@ export async function listSections(req: Request, res: Response): Promise<void> {
     return;
   }
 
+  const whereClause: any = { academicYearId: ayId };
+  
+  if (level === 'JHS') {
+    whereClause.displayOrder = { lte: 10 };
+  } else if (level === 'SHS') {
+    whereClause.displayOrder = { gte: 11 };
+  }
+
   const gradeLevels = await prisma.gradeLevel.findMany({
-    where: { academicYearId: ayId },
+    where: whereClause,
     orderBy: { displayOrder: 'asc' },
     include: {
       sections: {

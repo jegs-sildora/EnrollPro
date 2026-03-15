@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ShieldCheck, Loader2, Lock, Eye, EyeOff } from 'lucide-react';
+import { ShieldCheck, Loader2, Lock, Eye, EyeOff, CheckCircle2, Circle } from 'lucide-react';
 import { sileo } from 'sileo';
 import api from '@/api/axiosInstance';
 import { useAuthStore } from '@/stores/authStore';
@@ -31,6 +31,22 @@ export default function ChangePassword() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw] = useState(false);
+  const { register, handleSubmit, control } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    mode: 'onChange',
+  });
+  const newPassword = useWatch({ control, name: 'newPassword', defaultValue: '' });
+  const confirmPassword = useWatch({ control, name: 'confirmPassword', defaultValue: '' });
+
+  const rules = [
+    { label: 'Minimum 8 characters', pass: newPassword.length >= 8 },
+    { label: 'At least one uppercase letter', pass: /[A-Z]/.test(newPassword) },
+    { label: 'At least one number', pass: /[0-9]/.test(newPassword) },
+    { label: 'At least one special character', pass: /[^A-Za-z0-9]/.test(newPassword) },
+    { label: 'Passwords match', pass: newPassword.length > 0 && newPassword === confirmPassword },
+  ];
+  const newPasswordInvalid = newPassword.length > 0 && rules.slice(0, 4).some(r => !r.pass);
+  const confirmPasswordInvalid = confirmPassword.length > 0 && newPassword !== confirmPassword;
 
   // If no token, redirect to login
   if (!token || !user) {
@@ -41,10 +57,6 @@ export default function ChangePassword() {
   if (!user.mustChangePassword) {
     return <Navigate to="/dashboard" replace />;
   }
-
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema)
-  });
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
@@ -62,10 +74,10 @@ export default function ChangePassword() {
       });
       
       navigate('/dashboard');
-    } catch (err: any) {
+    } catch (err: unknown) {
       sileo.error({ 
         title: 'Update Failed', 
-        description: err.response?.data?.message || 'Could not update password. Please try again.' 
+        description: (err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Could not update password. Please try again.' 
       });
     } finally {
       setLoading(false);
@@ -94,7 +106,7 @@ export default function ChangePassword() {
                   id="newPassword"
                   type={showPw ? "text" : "password"}
                   placeholder="••••••••••••"
-                  className="pl-10 pr-10"
+                  className={`pl-10 pr-10 ${newPasswordInvalid ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                   {...register('newPassword')}
                 />
                 <button
@@ -105,9 +117,7 @@ export default function ChangePassword() {
                   {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              {errors.newPassword && (
-                <p className="text-xs font-medium text-destructive">{errors.newPassword.message}</p>
-              )}
+
             </div>
 
             <div className="space-y-2">
@@ -118,22 +128,24 @@ export default function ChangePassword() {
                   id="confirmPassword"
                   type={showPw ? "text" : "password"}
                   placeholder="••••••••••••"
-                  className="pl-10"
+                  className={`pl-10 ${confirmPasswordInvalid ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                   {...register('confirmPassword')}
                 />
               </div>
-              {errors.confirmPassword && (
-                <p className="text-xs font-medium text-destructive">{errors.confirmPassword.message}</p>
-              )}
+
             </div>
 
-            <div className="rounded-lg bg-muted p-3 text-[11px] text-muted-foreground leading-relaxed">
-              <p className="font-bold mb-1 uppercase opacity-70">Password Requirements:</p>
-              <ul className="list-disc pl-4 space-y-0.5">
-                <li>Minimum 8 characters</li>
-                <li>At least one uppercase letter</li>
-                <li>At least one number</li>
-                <li>At least one special character</li>
+            <div className="rounded-lg bg-muted p-3 text-[11px] leading-relaxed">
+              <p className="font-bold mb-2 uppercase opacity-70 text-muted-foreground">Password Requirements:</p>
+              <ul className="space-y-1">
+                {rules.map((r) => (
+                  <li key={r.label} className={`flex items-center gap-2 transition-colors ${r.pass ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                    {r.pass
+                      ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                      : <Circle className="h-3.5 w-3.5 shrink-0" />}
+                    {r.label}
+                  </li>
+                ))}
               </ul>
             </div>
           </CardContent>
