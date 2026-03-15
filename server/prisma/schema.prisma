@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ─── Enums ────────────────────────────────────────────────
@@ -11,6 +12,7 @@ datasource db {
 enum Role {
   REGISTRAR
   TEACHER
+  SYSTEM_ADMIN
 }
 
 enum Sex {
@@ -22,6 +24,10 @@ enum ApplicationStatus {
   PENDING
   APPROVED
   REJECTED
+  EXAM_SCHEDULED
+  EXAM_TAKEN
+  PASSED
+  FAILED
 }
 
 enum AcademicYearStatus {
@@ -34,17 +40,23 @@ enum AcademicYearStatus {
 // ─── Models ───────────────────────────────────────────────
 
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  password  String
-  role      Role
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 Int       @id @default(autoincrement())
+  name               String
+  email              String    @unique
+  password           String
+  role               Role
+  isActive           Boolean   @default(true)
+  lastLoginAt        DateTime?
+  mustChangePassword Boolean   @default(false)
+  createdById        Int?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  sections    Section[]
-  enrollments Enrollment[]
-  auditLogs   AuditLog[]
+  sections     Section[]
+  enrollments  Enrollment[]
+  auditLogs    AuditLog[]
+  createdBy    User?  @relation("UserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdUsers User[] @relation("UserCreatedBy")
 }
 
 model SchoolSettings {
@@ -90,6 +102,7 @@ model AcademicYear {
   applicants     Applicant[]
   enrollments    Enrollment[]
   schoolSettings SchoolSettings[]
+  scpConfigs     ScpConfig[]
 }
 
 model GradeLevel {
@@ -104,12 +117,24 @@ model GradeLevel {
   applicants   Applicant[]
 }
 
+enum CurriculumType {
+  OLD_STRAND
+  ELECTIVE_CLUSTER
+}
+
+enum SHSTrack {
+  ACADEMIC
+  TECHPRO
+}
+
 model Strand {
-  id                      Int      @id @default(autoincrement())
+  id                      Int            @id @default(autoincrement())
   name                    String
   applicableGradeLevelIds Int[]
   academicYearId          Int
-  createdAt               DateTime @default(now())
+  curriculumType          CurriculumType @default(OLD_STRAND)
+  track                   SHSTrack?
+  createdAt               DateTime       @default(now())
 
   academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
   applicants   Applicant[]
@@ -127,6 +152,17 @@ model Section {
   gradeLevel      GradeLevel   @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
   advisingTeacher User?        @relation(fields: [advisingTeacherId], references: [id], onDelete: SetNull)
   enrollments     Enrollment[]
+}
+
+enum ApplicantType {
+  REGULAR
+  STE
+  SPA
+  SPS
+  SPJ
+  SPFL
+  SPTVE
+  STEM_GRADE11
 }
 
 model Applicant {
@@ -148,6 +184,18 @@ model Applicant {
   gradeLevelId          Int
   strandId              Int?
   academicYearId        Int
+  applicantType         ApplicantType     @default(REGULAR)
+  shsTrack              SHSTrack?
+  examDate              DateTime?
+  examScore             Float?
+  examResult            String?
+  examNotes             String?
+  assessmentType        String?
+  interviewDate         DateTime?
+  interviewResult       String?
+  natScore              Float?
+  grade10ScienceGrade   Float?
+  grade10MathGrade      Float?
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
 
@@ -155,9 +203,11 @@ model Applicant {
   strand       Strand?      @relation(fields: [strandId], references: [id])
   academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
   enrollment   Enrollment?
+  emailLogs    EmailLog[]
 
   @@index([status, academicYearId])
   @@index([lrn])
+  @@index([applicantType, status])
 }
 
 model Enrollment {
@@ -189,4 +239,53 @@ model AuditLog {
 
   @@index([actionType])
   @@index([createdAt])
+}
+
+enum EmailTrigger {
+  APPLICATION_SUBMITTED
+  APPLICATION_APPROVED
+  APPLICATION_REJECTED
+  EXAM_SCHEDULED
+  ASSESSMENT_PASSED
+  ASSESSMENT_FAILED
+}
+
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model EmailLog {
+  id           Int          @id @default(autoincrement())
+  recipient    String
+  subject      String
+  trigger      EmailTrigger
+  status       EmailStatus  @default(PENDING)
+  applicantId  Int?
+  errorMessage String?
+  attemptedAt  DateTime     @default(now())
+  sentAt       DateTime?
+
+  applicant Applicant? @relation(fields: [applicantId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([trigger])
+}
+
+model ScpConfig {
+  id             Int           @id @default(autoincrement())
+  academicYearId Int
+  scpType        ApplicantType
+  isOffered      Boolean       @default(false)
+  cutoffScore    Float?
+  examDate       DateTime?
+  artFields      String[]
+  languages      String[]
+  sportsList     String[]
+  notes          String?
+
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@unique([academicYearId, scpType])
 }

@@ -166,6 +166,7 @@ export async function createAcademicYear(req: Request, res: Response): Promise<v
       include: {
         gradeLevels: { include: { sections: true } },
         strands: true,
+        scpConfigs: true,
       },
     });
 
@@ -202,6 +203,22 @@ export async function createAcademicYear(req: Request, res: Response): Promise<v
               .filter((id): id is number => id !== undefined),
             academicYearId: year.id,
           },
+        });
+      }
+
+      for (const scp of source.scpConfigs) {
+        await prisma.scpConfig.create({
+          data: {
+            academicYearId: year.id,
+            scpType: scp.scpType,
+            isOffered: scp.isOffered,
+            cutoffScore: scp.cutoffScore,
+            examDate: scp.examDate,
+            artFields: scp.artFields,
+            languages: scp.languages,
+            sportsList: scp.sportsList,
+            notes: scp.notes,
+          }
         });
       }
     }

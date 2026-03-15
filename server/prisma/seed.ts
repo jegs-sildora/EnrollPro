@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import bcrypt from 'bcryptjs';
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -14,6 +15,34 @@ async function main() {
   } else {
     console.log('SchoolSettings already exists.');
   }
+
+  // Create first SYSTEM_ADMIN account
+  const email = process.env.ADMIN_EMAIL ?? 'admin@hnhs.edu.ph';
+  const password = process.env.ADMIN_PASSWORD ?? 'Admin@HNHS2026!';
+  const name = process.env.ADMIN_NAME ?? 'System Administrator';
+
+  const existingAdmin = await prisma.user.findUnique({ where: { email } });
+  if (existingAdmin) {
+    console.log(`Admin account already exists: ${email}`);
+    return;
+  }
+
+  const hashed = await bcrypt.hash(password, 12);
+
+  await prisma.user.create({
+    data: {
+      name,
+      email,
+      password: hashed,
+      role: 'SYSTEM_ADMIN',
+      isActive: true,
+      mustChangePassword: true,
+    },
+  });
+
+  console.log(`✅ System Admin created: ${email}`);
+  console.log(`   Temporary password:   ${password}`);
+  console.log(`   ⚠  Change this password immediately after first login.`);
 }
 
 main()

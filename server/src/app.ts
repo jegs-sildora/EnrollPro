@@ -12,6 +12,9 @@ import academicYearRoutes from './routes/academicYear.routes.js';
 import curriculumRoutes from './routes/curriculum.routes.js';
 import sectionsRoutes from './routes/sections.routes.js';
 import studentsRoutes from './routes/students.routes.js';
+import applicationRoutes from './routes/application.routes.js';
+import adminRoutes from './routes/admin.routes.js';
+import auditLogRoutes from './routes/auditLog.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -49,6 +52,9 @@ app.use('/api/academic-years', academicYearRoutes);
 app.use('/api/curriculum', curriculumRoutes);
 app.use('/api/sections', sectionsRoutes);
 app.use('/api/students', studentsRoutes);
+app.use('/api/applications', applicationRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/audit-logs', auditLogRoutes);
 
 // Error handler
 app.use(errorHandler);

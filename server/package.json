@@ -12,8 +12,8 @@
     "db:seed-students": "tsx prisma/seed-students.ts"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.5.0",
-    "@prisma/client": "^7.5.0",
+    "@prisma/adapter-pg": "^6",
+    "@prisma/client": "^6",
     "@types/pg": "^8.18.0",
     "bcryptjs": "^3.0.3",
     "color-thief-node": "^1.0.4",
@@ -38,7 +38,7 @@
     "@types/node": "^25.4.0",
     "@types/nodemailer": "^7.0.11",
     "@types/sharp": "^0.32.0",
-    "prisma": "^7.5.0",
+    "prisma": "^6",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }

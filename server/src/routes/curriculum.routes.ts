@@ -8,6 +8,9 @@ import {
   createStrand,
   updateStrand,
   deleteStrand,
+  updateStrandMatrix,
+  listScpConfigs,
+  updateScpConfigs,
 } from '../controllers/curriculumController.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { authorize } from '../middleware/authorize.js';
@@ -25,5 +28,12 @@ router.get('/:ayId/strands', authenticate, authorize('REGISTRAR'), listStrands);
 router.post('/:ayId/strands', authenticate, authorize('REGISTRAR'), createStrand);
 router.put('/strands/:id', authenticate, authorize('REGISTRAR'), updateStrand);
 router.delete('/strands/:id', authenticate, authorize('REGISTRAR'), deleteStrand);
+
+// Strand-to-Grade Matrix
+router.put('/:ayId/strand-matrix', authenticate, authorize('REGISTRAR'), updateStrandMatrix);
+
+// SCP Configs
+router.get('/:ayId/scp-config', authenticate, authorize('REGISTRAR'), listScpConfigs);
+router.put('/:ayId/scp-config', authenticate, authorize('REGISTRAR'), updateScpConfigs);
 
 export default router;

@@ -155,7 +155,7 @@ export const getStudentById = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     const applicant = await prisma.applicant.findUnique({
-      where: { id: parseInt(id, 10) },
+      where: { id: parseInt(id as string, 10) },
       include: {
         gradeLevel: true,
         strand: true,
@@ -248,7 +248,7 @@ export const updateStudent = async (req: Request, res: Response) => {
     } = req.body;
 
     const applicant = await prisma.applicant.findUnique({
-      where: { id: parseInt(id, 10) },
+      where: { id: parseInt(id as string, 10) },
     });
 
     if (!applicant) {
@@ -256,7 +256,7 @@ export const updateStudent = async (req: Request, res: Response) => {
     }
 
     const updated = await prisma.applicant.update({
-      where: { id: parseInt(id, 10) },
+      where: { id: parseInt(id as string, 10) },
       data: {
         firstName,
         lastName,

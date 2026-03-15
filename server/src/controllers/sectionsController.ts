@@ -3,7 +3,26 @@ import { prisma } from '../lib/prisma.js';
 import { auditLog } from '../services/auditLogger.js';
 
 export async function listSections(req: Request, res: Response): Promise<void> {
-  const ayId = parseInt(req.params.ayId as string);
+  const ayId = req.params.ayId ? parseInt(req.params.ayId as string) : null;
+  const { gradeLevelId } = req.query;
+
+  if (gradeLevelId) {
+    const sections = await prisma.section.findMany({
+      where: { gradeLevelId: parseInt(gradeLevelId as string) },
+      include: {
+        advisingTeacher: { select: { id: true, name: true } },
+        _count: { select: { enrollments: true } },
+      },
+      orderBy: { name: 'asc' },
+    });
+    res.json({ sections });
+    return;
+  }
+
+  if (!ayId) {
+    res.status(400).json({ message: 'Academic Year ID or Grade Level ID is required' });
+    return;
+  }
 
   const gradeLevels = await prisma.gradeLevel.findMany({
     where: { academicYearId: ayId },

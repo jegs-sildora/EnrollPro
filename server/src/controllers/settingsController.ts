@@ -202,3 +202,46 @@ export async function removeLogo(req: Request, res: Response): Promise<void> {
     selectedAccentHsl: updated.selectedAccentHsl,
   });
 }
+
+export async function getScpConfig(req: Request, res: Response): Promise<void> {
+  const settings = await prisma.schoolSettings.findFirst({
+    select: { activeAcademicYearId: true }
+  });
+
+  if (!settings?.activeAcademicYearId) {
+    res.json({ scpConfigs: [] });
+    return;
+  }
+
+  const scpConfigs = await prisma.scpConfig.findMany({
+    where: { academicYearId: settings.activeAcademicYearId, isOffered: true },
+  });
+
+  res.json({ scpConfigs });
+}
+
+export async function getShsConfig(req: Request, res: Response): Promise<void> {
+  const settings = await prisma.schoolSettings.findFirst({
+    select: { activeAcademicYearId: true }
+  });
+
+  if (!settings?.activeAcademicYearId) {
+    res.json({ grade11Mode: 'STRENGTHENED', grade12Mode: 'OLD_STRAND', strands: [] });
+    return;
+  }
+
+  // Get all strands/clusters for the active academic year
+  const strands = await prisma.strand.findMany({
+    where: { academicYearId: settings.activeAcademicYearId },
+    include: {
+      _count: false
+    }
+  });
+
+  res.json({
+    grade11Mode: 'STRENGTHENED',
+    grade12Mode: 'OLD_STRAND',
+    strands
+  });
+}
+

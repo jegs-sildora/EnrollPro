@@ -50,6 +50,11 @@ export async function login(req: Request, res: Response): Promise<void> {
     return;
   }
 
+  if (!user.isActive) {
+    res.status(401).json({ message: 'Your account has been deactivated. Contact the system administrator.' });
+    return;
+  }
+
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) {
     res.status(401).json({ message: 'Invalid email or password' });
@@ -57,10 +62,15 @@ export async function login(req: Request, res: Response): Promise<void> {
   }
 
   const token = jwt.sign(
-    { userId: user.id, role: user.role },
+    { userId: user.id, role: user.role, mustChangePassword: user.mustChangePassword },
     process.env.JWT_SECRET!,
     { expiresIn: '8h' }
   );
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { lastLoginAt: new Date() },
+  });
 
   await auditLog({
     userId: user.id,
@@ -71,14 +81,14 @@ export async function login(req: Request, res: Response): Promise<void> {
 
   res.json({
     token,
-    user: { id: user.id, name: user.name, email: user.email, role: user.role },
+    user: { id: user.id, name: user.name, email: user.email, role: user.role, mustChangePassword: user.mustChangePassword },
   });
 }
 
 export async function me(req: Request, res: Response): Promise<void> {
   const user = await prisma.user.findUnique({
     where: { id: req.user!.userId },
-    select: { id: true, name: true, email: true, role: true },
+    select: { id: true, name: true, email: true, role: true, mustChangePassword: true },
   });
 
   if (!user) {
@@ -87,4 +97,25 @@ export async function me(req: Request, res: Response): Promise<void> {
   }
 
   res.json({ user });
+}
+
+export async function changePassword(req: Request, res: Response): Promise<void> {
+  const { newPassword } = req.body;
+  const userId = req.user!.userId;
+
+  const hashed = await bcrypt.hash(newPassword, 12);
+
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: { password: hashed, mustChangePassword: false, updatedAt: new Date() },
+    select: { id: true, name: true, email: true, role: true, mustChangePassword: true },
+  });
+
+  const token = jwt.sign(
+    { userId: updated.id, role: updated.role, mustChangePassword: false },
+    process.env.JWT_SECRET!,
+    { expiresIn: '8h' }
+  );
+
+  res.json({ token, user: updated });
 }

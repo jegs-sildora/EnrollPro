@@ -18,7 +18,7 @@ import {
 } from '../services/enrollmentGateService.js';
 
 // Test Helper: Create a mock AcademicYear object
-function createMockAcademicYear(overrides: Partial<any> = {}) {
+function createMockAcademicYear(overrides: Partial<any> = {}): any {
   return {
     id: 1,
     yearLabel: '2026-2027',

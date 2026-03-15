@@ -115,7 +115,7 @@ export async function listStrands(req: Request, res: Response): Promise<void> {
 
 export async function createStrand(req: Request, res: Response): Promise<void> {
   const ayId = parseInt(req.params.ayId as string);
-  const { name, applicableGradeLevelIds } = req.body;
+  const { name, applicableGradeLevelIds, curriculumType, track } = req.body;
 
   if (!name) {
     res.status(400).json({ message: 'Name is required' });
@@ -127,6 +127,8 @@ export async function createStrand(req: Request, res: Response): Promise<void> {
       name,
       applicableGradeLevelIds: applicableGradeLevelIds ?? [],
       academicYearId: ayId,
+      curriculumType: curriculumType || 'OLD_STRAND',
+      track: track || null,
     },
   });
 
@@ -144,7 +146,7 @@ export async function createStrand(req: Request, res: Response): Promise<void> {
 
 export async function updateStrand(req: Request, res: Response): Promise<void> {
   const id = parseInt(req.params.id as string);
-  const { name, applicableGradeLevelIds } = req.body;
+  const { name, applicableGradeLevelIds, curriculumType, track } = req.body;
 
   const strand = await prisma.strand.findUnique({ where: { id } });
   if (!strand) {
@@ -157,6 +159,8 @@ export async function updateStrand(req: Request, res: Response): Promise<void> {
     data: {
       ...(name ? { name } : {}),
       ...(applicableGradeLevelIds !== undefined ? { applicableGradeLevelIds } : {}),
+      ...(curriculumType !== undefined ? { curriculumType } : {}),
+      ...(track !== undefined ? { track } : {}),
     },
   });
 
@@ -193,6 +197,119 @@ export async function deleteStrand(req: Request, res: Response): Promise<void> {
   });
 
   res.json({ message: 'Strand deleted' });
+}
+
+// ─── Strand-to-Grade Matrix ───────────────────────────────
+
+export async function updateStrandMatrix(req: Request, res: Response): Promise<void> {
+  const ayId = parseInt(req.params.ayId as string);
+  const { matrix } = req.body;
+
+  if (!Array.isArray(matrix)) {
+    res.status(400).json({ message: 'Matrix must be an array' });
+    return;
+  }
+
+  try {
+    // Update all strands in a transaction
+    await prisma.$transaction(
+      matrix.map((item: { strandId: number; gradeLevelIds: number[] }) =>
+        prisma.strand.update({
+          where: { id: item.strandId },
+          data: { applicableGradeLevelIds: item.gradeLevelIds },
+        })
+      )
+    );
+
+    // Fetch updated strands
+    const strands = await prisma.strand.findMany({
+      where: { academicYearId: ayId },
+      orderBy: { name: 'asc' },
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: 'STRAND_MATRIX_UPDATED',
+      description: `Updated strand-to-grade matrix for academic year ${ayId}`,
+      subjectType: 'AcademicYear',
+      subjectId: ayId,
+      req,
+    });
+
+    res.json({ strands });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update strand matrix' });
+  }
+}
+
+// ─── SCP Configs ──────────────────────────────────────────
+
+export async function listScpConfigs(req: Request, res: Response): Promise<void> {
+  const ayId = parseInt(req.params.ayId as string);
+  const scpConfigs = await prisma.scpConfig.findMany({
+    where: { academicYearId: ayId },
+  });
+  res.json({ scpConfigs });
+}
+
+export async function updateScpConfigs(req: Request, res: Response): Promise<void> {
+  const ayId = parseInt(req.params.ayId as string);
+  const { scpConfigs } = req.body;
+
+  if (!Array.isArray(scpConfigs)) {
+    res.status(400).json({ message: 'scpConfigs must be an array' });
+    return;
+  }
+
+  try {
+    const updatedConfigs = await prisma.$transaction(
+      scpConfigs.map((config: any) => {
+        const { id, scpType, isOffered, cutoffScore, examDate, artFields, languages, sportsList, notes } = config;
+        
+        if (id) {
+          return prisma.scpConfig.update({
+            where: { id },
+            data: {
+              isOffered: isOffered ?? false,
+              cutoffScore: cutoffScore ?? null,
+              examDate: examDate ? new Date(examDate) : null,
+              artFields: artFields ?? [],
+              languages: languages ?? [],
+              sportsList: sportsList ?? [],
+              notes: notes ?? null
+            }
+          });
+        } else {
+          return prisma.scpConfig.create({
+            data: {
+              academicYearId: ayId,
+              scpType,
+              isOffered: isOffered ?? false,
+              cutoffScore: cutoffScore ?? null,
+              examDate: examDate ? new Date(examDate) : null,
+              artFields: artFields ?? [],
+              languages: languages ?? [],
+              sportsList: sportsList ?? [],
+              notes: notes ?? null
+            }
+          });
+        }
+      })
+    );
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: 'SCP_CONFIG_UPDATED',
+      description: `Updated SCP configurations for academic year ${ayId}`,
+      subjectType: 'AcademicYear',
+      subjectId: ayId,
+      req,
+    });
+
+    res.json({ scpConfigs: updatedConfigs });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Failed to update SCP configs', error: error.message });
+  }
 }
 
 

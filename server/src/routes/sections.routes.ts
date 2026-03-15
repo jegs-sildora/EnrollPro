@@ -10,6 +10,7 @@ import { authorize } from '../middleware/authorize.js';
 
 const router: Router = Router();
 
+router.get('/', authenticate, authorize('REGISTRAR'), listSections);
 router.get('/:ayId', authenticate, authorize('REGISTRAR'), listSections);
 router.post('/', authenticate, authorize('REGISTRAR'), createSection);
 router.put('/:id', authenticate, authorize('REGISTRAR'), updateSection);

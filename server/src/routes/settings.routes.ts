@@ -8,6 +8,8 @@ import {
   uploadLogo,
   removeLogo,
   selectAccentColor,
+  getScpConfig,
+  getShsConfig,
 } from '../controllers/settingsController.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { authorize } from '../middleware/authorize.js';
@@ -42,6 +44,8 @@ const upload = multer({
 
 // Public
 router.get('/public', getPublicSettings);
+router.get('/scp-config', getScpConfig);
+router.get('/shs-config', getShsConfig);
 
 // Protected
 router.put('/identity', authenticate, authorize('REGISTRAR'), validate(updateIdentitySchema), updateIdentity);
