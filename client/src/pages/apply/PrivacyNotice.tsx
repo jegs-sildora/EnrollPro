@@ -64,7 +64,7 @@ export default function PrivacyNotice({ onAccept }: PrivacyNoticeProps) {
 
               <section>
                 <h4 className="font-bold text-foreground mb-2">What information we collect</h4>
-                <p className="text-muted-foreground"><strong>Personal Info:</strong> Full name, birthdate, sex, place of birth, address, LRN, PSA BC number.</p>
+                <p className="text-muted-foreground"><strong>Personal Information:</strong> Full name, birthdate, sex, place of birth, address, LRN, PSA BC number.</p>
                 <p className="mt-2 text-muted-foreground"><strong>Sensitive Info:</strong> Disability status, IP affiliation, 4Ps status, G10 grades (for STEM).</p>
               </section>
 

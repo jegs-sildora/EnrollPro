@@ -109,31 +109,47 @@ export const getStudents = async (req: Request, res: Response) => {
     });
 
     // Transform data
-    const students = applicants.map((applicant) => ({
-      id: applicant.id,
-      lrn: applicant.lrn,
-      fullName: `${applicant.lastName}, ${applicant.firstName}${applicant.middleName ? ` ${applicant.middleName.charAt(0)}.` : ''}${applicant.suffix ? ` ${applicant.suffix}` : ''}`,
-      firstName: applicant.firstName,
-      lastName: applicant.lastName,
-      middleName: applicant.middleName,
-      suffix: applicant.suffix,
-      sex: applicant.sex,
-      birthDate: applicant.birthDate,
-      address: applicant.address,
-      parentGuardianName: applicant.parentGuardianName,
-      parentGuardianContact: applicant.parentGuardianContact,
-      emailAddress: applicant.emailAddress,
-      trackingNumber: applicant.trackingNumber,
-      status: applicant.status,
-      gradeLevel: applicant.gradeLevel.name,
-      gradeLevelId: applicant.gradeLevelId,
-      strand: applicant.strand?.name || null,
-      strandId: applicant.strandId,
-      section: applicant.enrollment?.section.name || null,
-      sectionId: applicant.enrollment?.sectionId || null,
-      createdAt: applicant.createdAt,
-      updatedAt: applicant.updatedAt,
-    }));
+    const students = applicants.map((applicant) => {
+      const addr = applicant.currentAddress as any;
+      const mother = applicant.motherName as any;
+      const father = applicant.fatherName as any;
+      const guardian = applicant.guardianInfo as any;
+      const parentName = guardian?.firstName
+        ? `${guardian.firstName} ${guardian.lastName}`
+        : mother?.firstName
+          ? `${mother.firstName} ${mother.lastName}`
+          : father?.firstName
+            ? `${father.firstName} ${father.lastName}`
+            : null;
+      const parentContact = guardian?.contactNumber || mother?.contactNumber || father?.contactNumber || null;
+      const addressStr = addr ? [addr.barangay, addr.cityMunicipality, addr.province].filter(Boolean).join(', ') : null;
+
+      return {
+        id: applicant.id,
+        lrn: applicant.lrn,
+        fullName: `${applicant.lastName}, ${applicant.firstName}${applicant.middleName ? ` ${applicant.middleName.charAt(0)}.` : ''}${applicant.suffix ? ` ${applicant.suffix}` : ''}`,
+        firstName: applicant.firstName,
+        lastName: applicant.lastName,
+        middleName: applicant.middleName,
+        suffix: applicant.suffix,
+        sex: applicant.sex,
+        birthDate: applicant.birthDate,
+        address: addressStr,
+        parentGuardianName: parentName,
+        parentGuardianContact: parentContact,
+        emailAddress: applicant.emailAddress,
+        trackingNumber: applicant.trackingNumber,
+        status: applicant.status,
+        gradeLevel: applicant.gradeLevel.name,
+        gradeLevelId: applicant.gradeLevelId,
+        strand: applicant.strand?.name || null,
+        strandId: applicant.strandId,
+        section: applicant.enrollment?.section.name || null,
+        sectionId: applicant.enrollment?.sectionId || null,
+        createdAt: applicant.createdAt,
+        updatedAt: applicant.updatedAt,
+      };
+    });
 
     res.json({
       students,
@@ -189,6 +205,20 @@ export const getStudentById = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Student not found' });
     }
 
+    const addr = applicant.currentAddress as any;
+    const mother = applicant.motherName as any;
+    const father = applicant.fatherName as any;
+    const guardian = applicant.guardianInfo as any;
+    const parentName = guardian?.firstName
+      ? `${guardian.firstName} ${guardian.lastName}`
+      : mother?.firstName
+        ? `${mother.firstName} ${mother.lastName}`
+        : father?.firstName
+          ? `${father.firstName} ${father.lastName}`
+          : null;
+    const parentContact = guardian?.contactNumber || mother?.contactNumber || father?.contactNumber || null;
+    const addressStr = addr ? [addr.barangay, addr.cityMunicipality, addr.province].filter(Boolean).join(', ') : null;
+
     const student = {
       id: applicant.id,
       lrn: applicant.lrn,
@@ -199,9 +229,14 @@ export const getStudentById = async (req: Request, res: Response) => {
       suffix: applicant.suffix,
       sex: applicant.sex,
       birthDate: applicant.birthDate,
-      address: applicant.address,
-      parentGuardianName: applicant.parentGuardianName,
-      parentGuardianContact: applicant.parentGuardianContact,
+      address: addressStr,
+      currentAddress: applicant.currentAddress,
+      permanentAddress: applicant.permanentAddress,
+      motherName: applicant.motherName,
+      fatherName: applicant.fatherName,
+      guardianInfo: applicant.guardianInfo,
+      parentGuardianName: parentName,
+      parentGuardianContact: parentContact,
       emailAddress: applicant.emailAddress,
       trackingNumber: applicant.trackingNumber,
       status: applicant.status,
@@ -241,9 +276,11 @@ export const updateStudent = async (req: Request, res: Response) => {
       suffix,
       sex,
       birthDate,
-      address,
-      parentGuardianName,
-      parentGuardianContact,
+      currentAddress,
+      permanentAddress,
+      motherName,
+      fatherName,
+      guardianInfo,
       emailAddress,
     } = req.body;
 
@@ -264,9 +301,11 @@ export const updateStudent = async (req: Request, res: Response) => {
         suffix,
         sex,
         birthDate: birthDate ? new Date(birthDate) : undefined,
-        address,
-        parentGuardianName,
-        parentGuardianContact,
+        currentAddress: currentAddress ?? undefined,
+        permanentAddress: permanentAddress ?? undefined,
+        motherName: motherName ?? undefined,
+        fatherName: fatherName ?? undefined,
+        guardianInfo: guardianInfo ?? undefined,
         emailAddress,
       },
       include: {

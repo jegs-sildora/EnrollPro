@@ -60,11 +60,11 @@ export default function Step3Background() {
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden"
+                className="overflow-hidden p-1"
               >
                 <div className="pt-4 space-y-2 max-w-sm">
                   <Label htmlFor="ip-group" className="text-xs font-bold uppercase text-muted-foreground">Specify IP Group Name</Label>
-                  <Input autoComplete="off" id="ip-group" {...register('ipGroupName')} placeholder="e.g. Ati, Mangyan" className="h-11 font-bold" />
+                  <Input autoComplete="off" id="ip-group" {...register('ipGroupName')} placeholder="e.g. Ati, Mangyan" className="h-11 font-bold uppercase" />
                 </div>
               </motion.div>
             )}
@@ -101,11 +101,11 @@ export default function Step3Background() {
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden"
+                className="overflow-hidden p-1"
               >
                 <div className="pt-4 space-y-2 max-w-sm">
                   <Label htmlFor="household-id" className="text-xs font-bold uppercase text-muted-foreground">4Ps Household ID Number</Label>
-                  <Input autoComplete="off" id="household-id" {...register('householdId4Ps')} placeholder="Household ID" className="h-11 font-bold" />
+                  <Input autoComplete="off" id="household-id" {...register('householdId4Ps')} placeholder="Household ID" className="h-11 font-bold" inputMode="numeric" onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }} />
                 </div>
               </motion.div>
             )}
@@ -163,7 +163,7 @@ export default function Step3Background() {
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden"
+                className="overflow-hidden p-1"
               >
                 <div className="pt-6">
                   <div className="p-6 border border-border/60 bg-muted/10 rounded-xl space-y-6">
@@ -182,7 +182,7 @@ export default function Step3Background() {
                                 setValue('disabilityType', current.filter((t) => t !== type));
                               }
                             }}
-                            className="w-5 h-5 border-primary data-[state=checked]:bg-primary"
+                            className="w-5 h-5"
                           />
                           <Label htmlFor={`disability-${type}`} className="text-sm font-medium cursor-pointer">{type}</Label>
                         </div>
@@ -198,7 +198,7 @@ export default function Step3Background() {
 
       <Alert className="bg-primary/5 border-primary/10 mt-12">
         <Info className="h-4 w-4 text-primary" />
-        <AlertDescription className="text-[11px] font-medium text-primary/80">
+        <AlertDescription className="font-bold text-primary/80">
           This information is used exclusively to connect the learner to appropriate support services. It will not affect their eligibility for enrollment in any way.
         </AlertDescription>
       </Alert>

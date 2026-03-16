@@ -1,125 +1,188 @@
 import { Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Stepper } from '@/pages/apply/stepper';
 
 interface StepProgressBarProps {
   currentStep: number;
   totalSteps: number;
   steps: { id: number; title: string }[];
+  description?: string;
+  completedUpTo?: number;
 }
 
-export default function StepProgressBar({ currentStep, totalSteps, steps }: StepProgressBarProps) {
+export default function StepProgressBar({ currentStep, totalSteps, steps, description, completedUpTo }: StepProgressBarProps) {
+  const currentStepData = steps[currentStep - 1];
+  const maxCompleted = completedUpTo ?? currentStep;
+
   return (
-    <div className="w-full mb-8">
-      {/* Mobile View */}
-      <div className="flex flex-col items-center gap-3 md:hidden py-4">
-        <div className="flex items-center gap-1.5">
+    <div className="w-full mb-6">
+
+      {/* ── Mobile ── */}
+      <div className="md:hidden">
+        <div 
+          className="flex items-center justify-between mb-4 p-4 rounded-2xl shadow-sm border border-accent/10"
+          style={{ backgroundColor: 'hsl(var(--accent))' }}
+        >
+          <div className="flex flex-col">
+            <span 
+              className="text-[10px] font-bold uppercase tracking-widest opacity-85"
+              style={{ color: 'hsl(var(--accent-foreground))' }}
+            >
+              Step {currentStep} of {totalSteps}
+            </span>
+            <span 
+              className="text-lg font-extrabold leading-tight"
+              style={{ color: 'hsl(var(--accent-foreground))' }}
+            >
+              {currentStepData.title}
+            </span>
+            {description && (
+              <span 
+                className="text-xs font-medium mt-1 opacity-90"
+                style={{ color: 'hsl(var(--accent-foreground))' }}
+              >
+                {description}
+              </span>
+            )}
+          </div>
+          {/* Percentage badge: semi-transparent contrast on accent bg */}
+          <span
+            className="text-xs font-bold tabular-nums px-3 py-1.5 rounded-full bg-background/20 backdrop-blur-md border border-background/10"
+            style={{
+              color: 'hsl(var(--accent-foreground))',
+            }}
+          >
+            {Math.round(((currentStep - 1) / (totalSteps - 1)) * 100)}%
+          </span>
+        </div>
+        {/* Segmented track */}
+        <div className="flex gap-1 px-1">
           {steps.map((step) => (
             <div
               key={step.id}
-              className="h-1 rounded-full transition-all duration-500"
+              className="h-1 flex-1 rounded-full transition-all duration-500"
               style={{
-                width: step.id === currentStep ? '2rem' : '0.75rem',
                 backgroundColor:
                   step.id === currentStep
-                    ? 'hsl(var(--accent-foreground))'
-                    : step.id < currentStep
-                    ? 'hsl(var(--accent-foreground) / 0.5)'
-                    : 'hsl(var(--accent-foreground) / 0.2)',
+                    ? 'hsl(var(--accent) / 0.4)'
+                    : step.id < maxCompleted
+                    ? 'hsl(var(--accent))'
+                    : 'hsl(var(--border))',
               }}
             />
           ))}
         </div>
-        <div className="flex flex-col items-center gap-0.5">
-          <span
-            className="text-[11px] font-semibold uppercase tracking-widest"
-            style={{ color: 'hsl(var(--accent-foreground) / 0.5)' }}
-          >
-            Step {currentStep} of {totalSteps}
-          </span>
-          <span
-            className="text-sm font-bold tracking-tight"
-            style={{ color: 'hsl(var(--accent-foreground))' }}
-          >
-            {steps[currentStep - 1].title}
-          </span>
-        </div>
       </div>
 
-      {/* Desktop View */}
-      <div className="hidden md:block py-6 px-4">
-        <div className="relative flex items-start justify-between">
-          {/* Track */}
-          <div
-            className="absolute left-0 right-0 h-px"
-            style={{
-              top: '1.25rem',
-              backgroundColor: 'hsl(var(--accent-foreground) / 0.15)',
-            }}
-          />
-          {/* Progress fill */}
-          <div
-            className="absolute left-0 h-px transition-all duration-500 ease-in-out"
-            style={{
-              top: '1.25rem',
-              width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%`,
-              backgroundColor: 'hsl(var(--accent-foreground))',
-            }}
-          />
+      {/* ── Desktop — stepperize primitives ── */}
+      <div className="hidden md:block">
+        <Stepper.Root
+          className="rounded-2xl border border-border/60 px-8 py-6"
+          style={{ backgroundColor: 'hsl(var(--card))' }}
+        >
+          <Stepper.List className="flex items-center w-full">
+            {steps.map((step, index) => {
+              const isActive    = step.id === currentStep;
+              // A step is "Done" if it's below the max reached and NOT the one we're currently on
+              const isCompleted = step.id < maxCompleted && !isActive;
+              const isLast      = index === steps.length - 1;
 
-          {steps.map((step) => {
-            const isCompleted = step.id < currentStep;
-            const isActive = step.id === currentStep;
-
-            return (
-              <div key={step.id} className="relative flex flex-col items-center gap-3 z-10">
-                {/* Circle */}
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 border-2"
-                  style={{
-                    backgroundColor: isCompleted
-                      ? 'hsl(var(--accent-foreground))'
-                      : isActive
-                      ? 'hsl(var(--accent-foreground) / 0.12)'
-                      : 'hsl(var(--accent) / 0.6)',
-                    borderColor: isCompleted || isActive
-                      ? 'hsl(var(--accent-foreground))'
-                      : 'hsl(var(--accent-foreground) / 0.25)',
-                    color: isCompleted
-                      ? 'hsl(var(--accent))'
-                      : isActive
-                      ? 'hsl(var(--accent-foreground))'
-                      : 'hsl(var(--accent-foreground) / 0.35)',
-                    boxShadow: isActive
-                      ? '0 0 0 4px hsl(var(--accent-foreground) / 0.12)'
-                      : 'none',
-                  }}
+              return (
+                <Stepper.Item
+                  key={step.id}
+                  step={`step-${step.id}` as never}
+                  className="flex items-center flex-1 last:flex-none"
                 >
-                  {isCompleted ? <Check className="w-4 h-4 stroke-3" /> : step.id}
-                </div>
+                  <div className="flex flex-col items-center gap-2.5">
+                    {/* Circle indicator */}
+                    <Stepper.Indicator
+                      className={cn(
+                        'w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 border-2',
+                      )}
+                      style={{
+                        backgroundColor: isCompleted
+                          ? 'hsl(var(--accent))'
+                          : isActive
+                          ? 'hsl(var(--sidebar-accent))'
+                          : 'hsl(var(--background))',
+                        borderColor: isCompleted || isActive
+                          ? 'hsl(var(--accent))'
+                          : 'hsl(var(--border))',
+                        color: isCompleted
+                          ? 'hsl(var(--accent-foreground))'
+                          : isActive
+                          ? 'hsl(var(--sidebar-accent-foreground))'
+                          : 'hsl(var(--muted-foreground))',
+                        boxShadow: isActive
+                          ? '0 0 0 3px hsl(var(--accent) / 0.2)'
+                          : 'none',
+                      }}
+                    >
+                      {isCompleted ? <Check className="w-4 h-4 stroke-[2.5]" /> : step.id}
+                    </Stepper.Indicator>
 
-                {/* Label */}
-                <div className="flex flex-col items-center gap-0.5">
-                  <span
-                    className="text-[10px] lg:text-[11px] font-bold uppercase tracking-widest text-center whitespace-nowrap"
-                    style={{
-                      color: isCompleted || isActive
-                        ? 'hsl(var(--accent-foreground))'
-                        : 'hsl(var(--accent-foreground) / 0.35)',
-                    }}
-                  >
-                    {isCompleted ? 'Done' : isActive ? step.title : step.title}
-                  </span>
-                  {isActive && (
-                    <div
-                      className="h-0.5 w-4 rounded-full"
-                      style={{ backgroundColor: 'hsl(var(--accent-foreground))' }}
-                    />
+                    {/* Label */}
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span
+                        className="text-[10px] lg:text-[11px] font-semibold uppercase tracking-wider text-center whitespace-nowrap transition-colors duration-200"
+                        style={{
+                          color: isCompleted || isActive
+                            ? 'hsl(var(--foreground))'
+                            : 'hsl(var(--muted-foreground))',
+                        }}
+                      >
+                        {step.title}
+                      </span>
+                      {/* Status badge: accent bg → accent-foreground text (WCAG) */}
+                      <span
+                        className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full transition-all duration-200"
+                        style={
+                          isCompleted
+                            ? {
+                                backgroundColor: 'hsl(var(--accent))',
+                                color: 'hsl(var(--accent-foreground))',
+                              }
+                            : isActive
+                            ? {
+                                backgroundColor: 'hsl(var(--accent) / 0.12)',
+                                color: 'hsl(var(--accent))',
+                              }
+                            : {
+                                backgroundColor: 'transparent',
+                                color: 'transparent',
+                              }
+                        }
+                      >
+                        {isCompleted ? 'Done' : isActive ? 'Current' : '·'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Connector */}
+                  {!isLast && (
+                    <Stepper.Separator
+                      className="flex-1 mx-3 h-px relative overflow-hidden rounded-full"
+                      style={{
+                        marginBottom: '2.25rem',
+                        backgroundColor: 'hsl(var(--border))',
+                      }}
+                    >
+                      <div
+                        className="absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-in-out"
+                        style={{
+                          width: isCompleted ? '100%' : '0%',
+                          backgroundColor: 'hsl(var(--accent))',
+                        }}
+                      />
+                    </Stepper.Separator>
                   )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                </Stepper.Item>
+              );
+            })}
+          </Stepper.List>
+        </Stepper.Root>
       </div>
+
     </div>
   );
 }

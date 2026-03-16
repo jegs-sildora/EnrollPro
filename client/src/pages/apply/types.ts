@@ -105,9 +105,8 @@ export const admissionSchema = z.object({
   spsSports: z.array(z.string()).default([]),
   spflLanguage: z.string().optional(),
 
-  // Section 9.2: Modality
+  // Section 9.2: Learner Type
   learnerType: z.enum(['Regular', 'Transferee', 'Returning Learner', 'OSCYA', 'ALS']),
-  learningModality: z.enum(['Face-to-Face', 'Blended Learning', 'Distance Modular', 'Online Learning', 'Home Schooling']),
 
   // Section 10: Certification
   isCertifiedTrue: z.boolean().refine((val) => val === true, {

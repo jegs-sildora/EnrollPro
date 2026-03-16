@@ -1,18 +1,43 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { auditLog } from '../services/auditLogger.js';
+import { isEnrollmentOpen } from '../services/enrollmentGateService.js';
+import type { ApplicationStatus } from '@prisma/client';
 
+// ── Valid status transitions ──
+const VALID_TRANSITIONS: Record<string, ApplicationStatus[]> = {
+  PENDING: ['APPROVED', 'REJECTED', 'EXAM_SCHEDULED'],
+  EXAM_SCHEDULED: ['EXAM_TAKEN'],
+  EXAM_TAKEN: ['PASSED', 'FAILED'],
+  PASSED: ['APPROVED', 'REJECTED'],
+  FAILED: ['REJECTED'],
+};
+
+function canTransition(from: ApplicationStatus, to: ApplicationStatus): boolean {
+  return VALID_TRANSITIONS[from]?.includes(to) ?? false;
+}
+
+// ── List all applications (paginated, filterable) ──
 export async function index(req: Request, res: Response) {
   try {
     const { search, gradeLevelId, status, applicantType, page = '1', limit = '15' } = req.query;
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
 
     const where: any = {};
+
+    // Scope to active academic year by default
+    const settings = await prisma.schoolSettings.findFirst({ select: { activeAcademicYearId: true } });
+    if (settings?.activeAcademicYearId) {
+      where.academicYearId = settings.activeAcademicYearId;
+    }
+
     if (search) {
+      const s = String(search);
       where.OR = [
-        { lrn: { contains: String(search), mode: 'insensitive' } },
-        { firstName: { contains: String(search), mode: 'insensitive' } },
-        { lastName: { contains: String(search), mode: 'insensitive' } },
+        { lrn: { contains: s, mode: 'insensitive' } },
+        { firstName: { contains: s, mode: 'insensitive' } },
+        { lastName: { contains: s, mode: 'insensitive' } },
+        { trackingNumber: { contains: s, mode: 'insensitive' } },
       ];
     }
     if (gradeLevelId) where.gradeLevelId = parseInt(String(gradeLevelId));
@@ -40,6 +65,7 @@ export async function index(req: Request, res: Response) {
   }
 }
 
+// ── Show single application ──
 export async function show(req: Request, res: Response) {
   try {
     const application = await prisma.applicant.findUnique({
@@ -62,62 +88,237 @@ export async function show(req: Request, res: Response) {
   }
 }
 
+// ── Submit new application (public) ──
 export async function store(req: Request, res: Response) {
   try {
-    const settings = await prisma.schoolSettings.findFirst();
-    const activeYear = settings?.activeAcademicYearId
-      ? await prisma.academicYear.findUnique({ where: { id: settings.activeAcademicYearId } })
-      : null;
+    // 1. Find active academic year
+    const settings = await prisma.schoolSettings.findFirst({
+      include: { activeAcademicYear: true },
+    });
 
-    if (!activeYear) {
-      return res.status(400).json({ message: 'No active academic year configured' });
+    if (!settings?.activeAcademicYear) {
+      return res.status(400).json({ message: 'No active academic year configured. Enrollment is not available.' });
     }
 
-    const year = new Date().getFullYear();
-    const applicant = await prisma.applicant.create({
-      data: {
-        ...req.body,
+    const activeYear = settings.activeAcademicYear;
+
+    // 2. Check enrollment gate
+    if (!isEnrollmentOpen(activeYear)) {
+      return res.status(400).json({ message: 'Enrollment is currently closed. Please check back during the enrollment period.' });
+    }
+
+    const body = req.body;
+
+    // 3. Resolve grade level
+    const gradeLevel = await prisma.gradeLevel.findFirst({
+      where: {
         academicYearId: activeYear.id,
-        trackingNumber: `HNS-${year}-TEMP`,
+        name: { contains: body.gradeLevel, mode: 'insensitive' },
       },
     });
 
+    if (!gradeLevel) {
+      return res.status(400).json({ message: `Grade ${body.gradeLevel} is not available for the current academic year.` });
+    }
+
+    // 4. Check duplicate LRN in same academic year (if LRN provided)
+    if (body.lrn) {
+      const existingByLrn = await prisma.applicant.findFirst({
+        where: {
+          lrn: body.lrn,
+          academicYearId: activeYear.id,
+        },
+      });
+
+      if (existingByLrn) {
+        return res.status(409).json({
+          message: `An application with LRN ${body.lrn} already exists for this academic year. Your tracking number is ${existingByLrn.trackingNumber}.`,
+        });
+      }
+    }
+
+    // 5. Resolve SHS track and strand (for G11)
+    let strandId: number | null = null;
+    let shsTrack: 'ACADEMIC' | 'TECHPRO' | null = null;
+
+    if (body.gradeLevel === '11' && body.shsTrack) {
+      shsTrack = body.shsTrack === 'Academic' ? 'ACADEMIC' : 'TECHPRO';
+
+      if (body.electiveCluster) {
+        const strand = await prisma.strand.findFirst({
+          where: {
+            academicYearId: activeYear.id,
+            name: { contains: body.electiveCluster, mode: 'insensitive' },
+          },
+        });
+        if (strand) {
+          strandId = strand.id;
+        }
+      }
+    }
+
+    // 6. Determine applicant type
+    let applicantType: string = 'REGULAR';
+    if (body.scpApplication && body.scpType) {
+      applicantType = body.scpType;
+    } else if (body.gradeLevel === '11' && body.electiveCluster === 'AC-STEM') {
+      applicantType = 'STEM_GRADE11';
+    }
+
+    // 7. Build parent contact info (primary contact for quick access)
+    const motherContact = body.mother?.contactNumber;
+    const fatherContact = body.father?.contactNumber;
+    const guardianContact = body.guardian?.contactNumber;
+    const emailAddress = body.email || null;
+
+    // 8. Parse birthdate
+    const birthDate = new Date(body.birthdate);
+    if (isNaN(birthDate.getTime())) {
+      return res.status(400).json({ message: 'Invalid birthdate format.' });
+    }
+
+    // 9. Create applicant with a temporary tracking number (will update after ID is known)
+    const year = new Date().getFullYear();
+    const tempTracking = `HNS-${year}-TEMP-${Date.now()}`;
+
+    const applicant = await prisma.applicant.create({
+      data: {
+        lrn: body.lrn || null,
+        psaBcNumber: body.psaBcNumber || null,
+        lastName: body.lastName.trim(),
+        firstName: body.firstName.trim(),
+        middleName: body.middleName?.trim() || null,
+        suffix: body.extensionName?.trim() || null,
+        birthDate,
+        sex: body.sex === 'Male' ? 'MALE' : 'FEMALE',
+        placeOfBirth: body.placeOfBirth?.trim() || null,
+        religion: body.religion?.trim() || null,
+        motherTongue: body.motherTongue?.trim() || null,
+
+        // Address as JSON
+        currentAddress: body.currentAddress,
+        permanentAddress: body.permanentAddress || null,
+
+        // Parent/guardian as JSON
+        motherName: body.mother,
+        fatherName: body.father,
+        guardianInfo: body.guardian || null,
+        emailAddress,
+
+        // Background classifications
+        isIpCommunity: body.isIpCommunity ?? false,
+        ipGroupName: body.isIpCommunity ? body.ipGroupName : null,
+        is4PsBeneficiary: body.is4PsBeneficiary ?? false,
+        householdId4Ps: body.is4PsBeneficiary ? body.householdId4Ps : null,
+        isBalikAral: body.isBalikAral ?? false,
+        lastYearEnrolled: body.isBalikAral ? body.lastYearEnrolled : null,
+        isLearnerWithDisability: body.isLearnerWithDisability ?? false,
+        disabilityType: body.isLearnerWithDisability ? (body.disabilityType || []) : [],
+
+        // Previous school
+        lastSchoolName: body.lastSchoolName?.trim() || null,
+        lastSchoolId: body.lastSchoolId?.trim() || null,
+        lastGradeCompleted: body.lastGradeCompleted || null,
+        syLastAttended: body.syLastAttended || null,
+        lastSchoolAddress: body.lastSchoolAddress?.trim() || null,
+        lastSchoolType: body.lastSchoolType || null,
+
+        // Enrollment preferences
+        learnerType: body.learnerType || null,
+        electiveCluster: body.electiveCluster || null,
+        scpApplication: body.scpApplication ?? false,
+        scpType: body.scpApplication ? body.scpType : null,
+        spaArtField: body.scpType === 'SPA' ? body.spaArtField : null,
+        spsSports: body.scpType === 'SPS' ? (body.spsSports || []) : [],
+        spflLanguage: body.scpType === 'SPFL' ? body.spflLanguage : null,
+
+        // Grades (STEM G11)
+        grade10ScienceGrade: body.g10ScienceGrade ?? null,
+        grade10MathGrade: body.g10MathGrade ?? null,
+
+        // Relations
+        gradeLevelId: gradeLevel.id,
+        strandId,
+        academicYearId: activeYear.id,
+        applicantType: applicantType as any,
+        shsTrack: shsTrack as any,
+        trackingNumber: tempTracking,
+      },
+    });
+
+    // 10. Generate proper tracking number from ID
     const trackingNumber = `HNS-${year}-${String(applicant.id).padStart(5, '0')}`;
-    const updated = await prisma.applicant.update({
+    await prisma.applicant.update({
       where: { id: applicant.id },
       data: { trackingNumber },
     });
 
+    // 11. Audit log
     await auditLog({
       userId: null,
       actionType: 'APPLICATION_SUBMITTED',
-      description: `Guest submitted application for ${updated.firstName} ${updated.lastName} (LRN: ${updated.lrn}). Tracking: ${trackingNumber}`,
+      description: `Guest submitted application for ${applicant.firstName} ${applicant.lastName}${body.lrn ? ` (LRN: ${body.lrn})` : ''}. Tracking: ${trackingNumber}`,
       subjectType: 'Applicant',
-      subjectId: updated.id,
+      subjectId: applicant.id,
       req,
     });
 
-    res.status(201).json({ trackingNumber: updated.trackingNumber });
+    // 12. Create email log entry (email sending is async / background)
+    if (emailAddress) {
+      try {
+        await prisma.emailLog.create({
+          data: {
+            recipient: emailAddress,
+            subject: `Application Received – ${trackingNumber}`,
+            trigger: 'APPLICATION_SUBMITTED',
+            status: 'PENDING',
+            applicantId: applicant.id,
+          },
+        });
+      } catch {
+        // Non-critical – don't fail the submission
+      }
+    }
 
-    // TODO: Send email asynchronously
+    res.status(201).json({ trackingNumber });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error('[ApplicationStore]', error);
+
+    // Handle Prisma unique constraint violations
+    if (error.code === 'P2002') {
+      const target = error.meta?.target;
+      if (target?.includes('lrn')) {
+        return res.status(409).json({ message: 'An application with this LRN already exists.' });
+      }
+      return res.status(409).json({ message: 'A duplicate application was detected.' });
+    }
+
+    res.status(500).json({ message: 'Failed to submit application. Please try again.' });
   }
 }
 
+// ── Track application by tracking number (public) ──
 export async function track(req: Request, res: Response) {
   try {
     const application = await prisma.applicant.findUnique({
       where: { trackingNumber: String(req.params.trackingNumber) },
-      include: {
-        gradeLevel: true,
-        strand: true,
-        enrollment: { include: { section: true } },
+      select: {
+        trackingNumber: true,
+        firstName: true,
+        lastName: true,
+        status: true,
+        applicantType: true,
+        createdAt: true,
+        gradeLevel: { select: { name: true } },
+        strand: { select: { name: true } },
+        enrollment: { select: { section: { select: { name: true } }, enrolledAt: true } },
+        examDate: true,
+        rejectionReason: true,
       },
     });
 
     if (!application) {
-      return res.status(404).json({ message: 'Application not found' });
+      return res.status(404).json({ message: 'No application found with this tracking number.' });
     }
 
     res.json(application);
@@ -126,6 +327,7 @@ export async function track(req: Request, res: Response) {
   }
 }
 
+// ── Approve + Enroll ──
 export async function approve(req: Request, res: Response) {
   try {
     const { sectionId } = req.body;
@@ -134,6 +336,12 @@ export async function approve(req: Request, res: Response) {
     const applicant = await prisma.applicant.findUnique({ where: { id: applicantId } });
     if (!applicant) {
       return res.status(404).json({ message: 'Applicant not found' });
+    }
+
+    if (!canTransition(applicant.status, 'APPROVED')) {
+      return res.status(422).json({
+        message: `Cannot approve an application with status "${applicant.status}". Only PENDING or PASSED applications can be approved.`,
+      });
     }
 
     const result = await prisma.$transaction(async (tx) => {
@@ -168,36 +376,78 @@ export async function approve(req: Request, res: Response) {
     await auditLog({
       userId: req.user!.userId,
       actionType: 'APPLICATION_APPROVED',
-      description: `Approved application #${applicantId} and enrolled to section`,
+      description: `Approved application #${applicantId} for ${applicant.firstName} ${applicant.lastName} and enrolled to section ${sectionId}`,
       subjectType: 'Applicant',
       subjectId: applicantId,
       req,
     });
 
+    // Queue email notification
+    if (applicant.emailAddress) {
+      try {
+        await prisma.emailLog.create({
+          data: {
+            recipient: applicant.emailAddress,
+            subject: `Application Approved – ${applicant.trackingNumber}`,
+            trigger: 'APPLICATION_APPROVED',
+            status: 'PENDING',
+            applicantId,
+          },
+        });
+      } catch { /* non-critical */ }
+    }
+
     res.json(result);
   } catch (error: any) {
-    res.status(422).json({ message: error.message });
+    const status = error.message?.includes('capacity') ? 422 : 500;
+    res.status(status).json({ message: error.message });
   }
 }
 
+// ── Reject ──
 export async function reject(req: Request, res: Response) {
   try {
     const { rejectionReason } = req.body;
     const applicantId = parseInt(String(req.params.id));
 
+    const applicant = await prisma.applicant.findUnique({ where: { id: applicantId } });
+    if (!applicant) {
+      return res.status(404).json({ message: 'Applicant not found' });
+    }
+
+    if (!canTransition(applicant.status, 'REJECTED')) {
+      return res.status(422).json({
+        message: `Cannot reject an application with status "${applicant.status}".`,
+      });
+    }
+
     const updated = await prisma.applicant.update({
       where: { id: applicantId },
-      data: { status: 'REJECTED', rejectionReason: rejectionReason || undefined },
+      data: { status: 'REJECTED', rejectionReason: rejectionReason || null },
     });
 
     await auditLog({
       userId: req.user!.userId,
       actionType: 'APPLICATION_REJECTED',
-      description: `Rejected application #${applicantId}. Reason: ${rejectionReason || 'N/A'}`,
+      description: `Rejected application #${applicantId} for ${applicant.firstName} ${applicant.lastName}. Reason: ${rejectionReason || 'N/A'}`,
       subjectType: 'Applicant',
       subjectId: applicantId,
       req,
     });
+
+    if (applicant.emailAddress) {
+      try {
+        await prisma.emailLog.create({
+          data: {
+            recipient: applicant.emailAddress,
+            subject: `Application Update – ${applicant.trackingNumber}`,
+            trigger: 'APPLICATION_REJECTED',
+            status: 'PENDING',
+            applicantId,
+          },
+        });
+      } catch { /* non-critical */ }
+    }
 
     res.json(updated);
   } catch (error: any) {
@@ -205,24 +455,54 @@ export async function reject(req: Request, res: Response) {
   }
 }
 
+// ── Schedule exam (SCP flow) ──
 export async function scheduleExam(req: Request, res: Response) {
   try {
     const { examDate, assessmentType } = req.body;
     const applicantId = parseInt(String(req.params.id));
 
+    const applicant = await prisma.applicant.findUnique({ where: { id: applicantId } });
+    if (!applicant) {
+      return res.status(404).json({ message: 'Applicant not found' });
+    }
+
+    if (!canTransition(applicant.status, 'EXAM_SCHEDULED')) {
+      return res.status(422).json({
+        message: `Cannot schedule exam for application with status "${applicant.status}". Only PENDING applications can be scheduled.`,
+      });
+    }
+
     const updated = await prisma.applicant.update({
       where: { id: applicantId },
-      data: { status: 'EXAM_SCHEDULED', examDate, assessmentType },
+      data: {
+        status: 'EXAM_SCHEDULED',
+        examDate: new Date(examDate),
+        assessmentType,
+      },
     });
 
     await auditLog({
       userId: req.user!.userId,
       actionType: 'EXAM_SCHEDULED',
-      description: `Scheduled ${assessmentType} for applicant #${applicantId} on ${examDate}`,
+      description: `Scheduled ${assessmentType} for ${applicant.firstName} ${applicant.lastName} (#${applicantId}) on ${examDate}`,
       subjectType: 'Applicant',
       subjectId: applicantId,
       req,
     });
+
+    if (applicant.emailAddress) {
+      try {
+        await prisma.emailLog.create({
+          data: {
+            recipient: applicant.emailAddress,
+            subject: `Exam Scheduled – ${applicant.trackingNumber}`,
+            trigger: 'EXAM_SCHEDULED',
+            status: 'PENDING',
+            applicantId,
+          },
+        });
+      } catch { /* non-critical */ }
+    }
 
     res.json(updated);
   } catch (error: any) {
@@ -230,10 +510,22 @@ export async function scheduleExam(req: Request, res: Response) {
   }
 }
 
+// ── Record exam result ──
 export async function recordResult(req: Request, res: Response) {
   try {
     const { examScore, examResult, examNotes, interviewResult } = req.body;
     const applicantId = parseInt(String(req.params.id));
+
+    const applicant = await prisma.applicant.findUnique({ where: { id: applicantId } });
+    if (!applicant) {
+      return res.status(404).json({ message: 'Applicant not found' });
+    }
+
+    if (!canTransition(applicant.status, 'EXAM_TAKEN')) {
+      return res.status(422).json({
+        message: `Cannot record result for application with status "${applicant.status}". Only EXAM_SCHEDULED applications can record results.`,
+      });
+    }
 
     const updated = await prisma.applicant.update({
       where: { id: applicantId },
@@ -243,7 +535,7 @@ export async function recordResult(req: Request, res: Response) {
     await auditLog({
       userId: req.user!.userId,
       actionType: 'EXAM_RESULT_RECORDED',
-      description: `Recorded result for applicant #${applicantId}: ${examResult} (Score: ${examScore || 'N/A'})`,
+      description: `Recorded result for ${applicant.firstName} ${applicant.lastName} (#${applicantId}): ${examResult || 'N/A'} (Score: ${examScore ?? 'N/A'})`,
       subjectType: 'Applicant',
       subjectId: applicantId,
       req,
@@ -255,9 +547,21 @@ export async function recordResult(req: Request, res: Response) {
   }
 }
 
+// ── Mark as passed ──
 export async function pass(req: Request, res: Response) {
   try {
     const applicantId = parseInt(String(req.params.id));
+
+    const applicant = await prisma.applicant.findUnique({ where: { id: applicantId } });
+    if (!applicant) {
+      return res.status(404).json({ message: 'Applicant not found' });
+    }
+
+    if (!canTransition(applicant.status, 'PASSED')) {
+      return res.status(422).json({
+        message: `Cannot mark as passed. Current status: "${applicant.status}". Only EXAM_TAKEN applications can be marked as passed.`,
+      });
+    }
 
     const updated = await prisma.applicant.update({
       where: { id: applicantId },
@@ -267,11 +571,25 @@ export async function pass(req: Request, res: Response) {
     await auditLog({
       userId: req.user!.userId,
       actionType: 'APPLICATION_PASSED',
-      description: `Marked applicant #${applicantId} as PASSED - ready for section assignment`,
+      description: `Marked ${applicant.firstName} ${applicant.lastName} (#${applicantId}) as PASSED – ready for section assignment`,
       subjectType: 'Applicant',
       subjectId: applicantId,
       req,
     });
+
+    if (applicant.emailAddress) {
+      try {
+        await prisma.emailLog.create({
+          data: {
+            recipient: applicant.emailAddress,
+            subject: `Assessment Passed – ${applicant.trackingNumber}`,
+            trigger: 'ASSESSMENT_PASSED',
+            status: 'PENDING',
+            applicantId,
+          },
+        });
+      } catch { /* non-critical */ }
+    }
 
     res.json(updated);
   } catch (error: any) {
@@ -279,10 +597,22 @@ export async function pass(req: Request, res: Response) {
   }
 }
 
+// ── Mark as failed ──
 export async function fail(req: Request, res: Response) {
   try {
     const { examNotes } = req.body;
     const applicantId = parseInt(String(req.params.id));
+
+    const applicant = await prisma.applicant.findUnique({ where: { id: applicantId } });
+    if (!applicant) {
+      return res.status(404).json({ message: 'Applicant not found' });
+    }
+
+    if (!canTransition(applicant.status, 'FAILED')) {
+      return res.status(422).json({
+        message: `Cannot mark as failed. Current status: "${applicant.status}". Only EXAM_TAKEN applications can be marked as failed.`,
+      });
+    }
 
     const updated = await prisma.applicant.update({
       where: { id: applicantId },
@@ -292,11 +622,25 @@ export async function fail(req: Request, res: Response) {
     await auditLog({
       userId: req.user!.userId,
       actionType: 'APPLICATION_FAILED',
-      description: `Marked applicant #${applicantId} as FAILED. Notes: ${examNotes || 'N/A'}`,
+      description: `Marked ${applicant.firstName} ${applicant.lastName} (#${applicantId}) as FAILED. Notes: ${examNotes || 'N/A'}`,
       subjectType: 'Applicant',
       subjectId: applicantId,
       req,
     });
+
+    if (applicant.emailAddress) {
+      try {
+        await prisma.emailLog.create({
+          data: {
+            recipient: applicant.emailAddress,
+            subject: `Assessment Result – ${applicant.trackingNumber}`,
+            trigger: 'ASSESSMENT_FAILED',
+            status: 'PENDING',
+            applicantId,
+          },
+        });
+      } catch { /* non-critical */ }
+    }
 
     res.json(updated);
   } catch (error: any) {

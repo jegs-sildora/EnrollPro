@@ -30,10 +30,12 @@ const SummaryCard = ({ title, icon: Icon, stepId, onEdit, children }: { title: s
   </div>
 );
 
-const DataItem = ({ label, value }: { label: string, value: string | number | undefined | null }) => (
+const DataItem = ({ label, value, noUppercase }: { label: string, value: string | number | undefined | null, noUppercase?: boolean }) => (
   <div className="space-y-0.5">
     <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-tight">{label}</p>
-    <p className="font-semibold text-foreground truncate">{value || '—'}</p>
+    <p className="font-semibold text-foreground truncate">
+      {value ? (noUppercase ? value : typeof value === 'string' ? value.toUpperCase() : value) : '—'}
+    </p>
   </div>
 );
 
@@ -55,7 +57,7 @@ export default function Step6Review({ onEdit }: Step6ReviewProps) {
         <SummaryCard title="Family & Contact" icon={Users} stepId={2} onEdit={onEdit}>
           <DataItem label="Mother" value={`${data.mother?.firstName} ${data.mother?.lastName}`} />
           <DataItem label="Father" value={`${data.father?.firstName} ${data.father?.lastName}`} />
-          <DataItem label="Primary Email" value={data.email} />
+          <DataItem label="Primary Email" value={data.email} noUppercase />
           <DataItem label="Address" value={`${data.currentAddress?.barangay}, ${data.currentAddress?.cityMunicipality}`} />
         </SummaryCard>
 
@@ -77,7 +79,6 @@ export default function Step6Review({ onEdit }: Step6ReviewProps) {
           <DataItem label="Grade Level" value={`Grade ${data.gradeLevel}`} />
           <DataItem label="Program" value={data.scpApplication ? `SCP (${data.scpType})` : 'Regular Section'} />
           <DataItem label="Learner Type" value={data.learnerType} />
-          <DataItem label="Modality" value={data.learningModality} />
         </SummaryCard>
       </div>
 

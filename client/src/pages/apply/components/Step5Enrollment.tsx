@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { AlertCircle, GraduationCap, BookOpen, AlertTriangle } from 'lucide-react';
+import { GraduationCap, BookOpen, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -30,7 +30,7 @@ export default function Step5Enrollment() {
       {/* Grade Level Selector */}
       <div className="space-y-6">
         <Label className="text-sm font-bold uppercase tracking-widest text-primary">Grade Level to Enroll *</Label>
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mt-2">
           {grades.map((g) => (
             <button
               key={g}
@@ -48,9 +48,9 @@ export default function Step5Enrollment() {
               }}
               className={cn(
                 "h-16 rounded-xl border-2 font-bold text-lg transition-all flex items-center justify-center shadow-sm",
-                gradeLevel === g 
-                  ? "border-primary bg-primary text-primary-foreground ring-4 ring-primary/10" 
-                  : "border-border bg-white text-muted-foreground hover:border-primary/40 hover:text-primary"
+                gradeLevel === g
+                  ? "border-primary bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] pointer-events-none"
+                  : "border-border bg-white text-muted-foreground hover:bg-[hsl(var(--sidebar-accent))]"
               )}
             >
               G{g}
@@ -69,7 +69,7 @@ export default function Step5Enrollment() {
             className="overflow-hidden"
           >
             <div className="space-y-8 pb-8">
-              <div className="p-6 border border-primary/10 bg-primary/5 rounded-2xl space-y-6">
+              <div className="p-6 border border-primary bg-primary rounded-2xl space-y-6">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
                     <BookOpen className="w-5 h-5 text-primary" />
@@ -77,36 +77,33 @@ export default function Step5Enrollment() {
                   <Label className="text-base font-bold">Application Type *</Label>
                 </div>
                 
-                <RadioGroup 
-                  value={scpApplication ? 'SCP' : 'Regular'} 
-                  onValueChange={(val) => {
-                    setValue('scpApplication', val === 'SCP');
-                    if (val === 'Regular') setValue('scpType', undefined);
-                  }}
-                  className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-                >
-                  <div className={cn(
-                    "flex flex-col p-4 rounded-xl border-2 transition-all cursor-pointer",
-                    !scpApplication ? "border-primary bg-white ring-2 ring-primary/5" : "border-border bg-muted/20 opacity-60"
-                  )} onClick={() => setValue('scpApplication', false)}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <button type="button" className={cn(
+                    "flex flex-col p-4 rounded-xl border-2 transition-all cursor-pointer text-left",
+                    !scpApplication ? "border-primary bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] pointer-events-none" : "border-border bg-white hover:bg-[hsl(var(--sidebar-accent))]"
+                  )} onClick={() => { setValue('scpApplication', false); setValue('scpType', undefined); }}>
                     <div className="flex items-center gap-3 mb-1">
-                      <RadioGroupItem value="Regular" id="type-reg" className="w-5 h-5 border-primary" />
-                      <Label htmlFor="type-reg" className="font-bold cursor-pointer">Regular Section</Label>
+                      <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center", !scpApplication ? "border-[hsl(var(--accent-foreground))]" : "border-muted-foreground")}>
+                        {!scpApplication && <div className="w-2.5 h-2.5 rounded-full bg-[hsl(var(--accent-foreground))]" />}
+                      </div>
+                      <span className="font-bold">Regular Section</span>
                     </div>
                     <p className="text-[11px] text-muted-foreground pl-8">Open admission — no entrance exam required.</p>
-                  </div>
+                  </button>
 
-                  <div className={cn(
-                    "flex flex-col p-4 rounded-xl border-2 transition-all cursor-pointer",
-                    scpApplication ? "border-primary bg-white ring-2 ring-primary/5" : "border-border bg-muted/20 opacity-60"
+                  <button type="button" className={cn(
+                    "flex flex-col p-4 rounded-xl border-2 transition-all cursor-pointer text-left",
+                    scpApplication ? "border-primary bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] pointer-events-none" : "border-border bg-white hover:bg-[hsl(var(--sidebar-accent))]"
                   )} onClick={() => setValue('scpApplication', true)}>
                     <div className="flex items-center gap-3 mb-1">
-                      <RadioGroupItem value="SCP" id="type-scp" className="w-5 h-5 border-primary" />
-                      <Label htmlFor="type-scp" className="font-bold cursor-pointer">Special Curricular Program (SCP)</Label>
+                      <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center", scpApplication ? "border-[hsl(var(--accent-foreground))]" : "border-muted-foreground")}>
+                        {scpApplication && <div className="w-2.5 h-2.5 rounded-full bg-[hsl(var(--accent-foreground))]" />}
+                      </div>
+                      <span className="font-bold">Special Curricular Program (SCP)</span>
                     </div>
                     <p className="text-[11px] text-muted-foreground pl-8">Requires qualifying assessment or audition.</p>
-                  </div>
-                </RadioGroup>
+                  </button>
+                </div>
 
                 <AnimatePresence>
                   {scpApplication && (
@@ -323,38 +320,26 @@ export default function Step5Enrollment() {
       <div className="space-y-10 pt-6 border-t border-border/40">
         <div className="space-y-4">
           <Label className="text-sm font-bold uppercase tracking-widest text-primary">Type of Learner *</Label>
-          <RadioGroup 
-            value={watch('learnerType')} 
-            onValueChange={(val: 'Regular' | 'Transferee' | 'Returning Learner' | 'OSCYA' | 'ALS') => setValue('learnerType', val)}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-3"
-          >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {(['Regular', 'Transferee', 'Returning Learner', 'OSCYA', 'ALS'] as const).map((t) => (
-              <div key={t} className={cn(
-                "flex items-center space-x-3 p-4 rounded-xl border-2 transition-all cursor-pointer bg-white",
-                watch('learnerType') === t ? "border-primary bg-primary/5" : "border-border hover:border-primary/20"
-              )} onClick={() => setValue('learnerType', t)}>
-                <RadioGroupItem value={t} id={`ltype-${t}`} className="w-5 h-5 border-primary" />
-                <Label htmlFor={`ltype-${t}`} className="font-bold cursor-pointer">{t}</Label>
-              </div>
+              <button
+                key={t}
+                type="button"
+                onClick={() => setValue('learnerType', t)}
+                className={cn(
+                  "flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left",
+                  watch('learnerType') === t ? "border-primary bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] pointer-events-none" : "border-border bg-white hover:bg-[hsl(var(--sidebar-accent))]"
+                )}
+              >
+                <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0", watch('learnerType') === t ? "border-[hsl(var(--accent-foreground))]" : "border-muted-foreground")}>
+                  {watch('learnerType') === t && <div className="w-2.5 h-2.5 rounded-full bg-[hsl(var(--accent-foreground))]" />}
+                </div>
+                <span className="font-bold">{t}</span>
+              </button>
             ))}
-          </RadioGroup>
+          </div>
         </div>
 
-        <div className="space-y-4">
-          <Label className="text-sm font-bold uppercase tracking-widest text-primary">Preferred Learning Modality *</Label>
-          <Select value={watch('learningModality')} onValueChange={(val: 'Face-to-Face' | 'Blended Learning' | 'Distance Modular' | 'Online Learning' | 'Home Schooling') => setValue('learningModality', val)}>
-            <SelectTrigger className="h-12 border-2 font-bold">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {['Face-to-Face', 'Blended Learning', 'Distance Modular', 'Online Learning', 'Home Schooling'].map(m => (
-                <SelectItem key={m} value={m}>{m}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <AlertCircle className="w-3.5 h-3.5 inline mr-1.5 text-muted-foreground" />
-          <span className="text-[10px] text-muted-foreground italic font-medium uppercase tracking-tight">Most sections follow Face-to-Face modality.</span>
-        </div>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import depedLogo from '@/assets/deped-logo.png';
 import GuestLayout from '@/layouts/GuestLayout';
 import PrivacyNotice from './PrivacyNotice';
 import AdmissionForm from './AdmissionForm';
@@ -13,8 +14,7 @@ export default function Apply() {
   const [hasConsented, setHasConsented] = useState(() => {
     return sessionStorage.getItem(CONSENT_KEY) === 'true';
   });
-  const { schoolName, logoUrl, accentForeground } = useSettingsStore();
-  const strokeColor = accentForeground === '0 0% 0%' ? '000000' : 'ffffff';
+  const { schoolName, logoUrl } = useSettingsStore();
 
   const handleAccept = () => {
     sessionStorage.setItem(CONSENT_KEY, 'true');
@@ -26,17 +26,21 @@ export default function Apply() {
       <div
         className="fixed inset-0 -z-10"
         style={{
-          background: 'hsl(var(--accent))',
+          background: 'hsl(var(--sidebar-background)/0.5)',
         }}
       >
         {/* Pixel grid */}
-        <div
-          className="absolute inset-0 opacity-[0.08]"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect x='2' y='2' width='36' height='36' rx='2' fill='none' stroke='%23${strokeColor}' stroke-width='1.5'/%3E%3Crect x='42' y='2' width='36' height='36' rx='2' fill='none' stroke='%23${strokeColor}' stroke-width='1.5'/%3E%3Crect x='2' y='42' width='36' height='36' rx='2' fill='none' stroke='%23${strokeColor}' stroke-width='1.5'/%3E%3Crect x='42' y='42' width='36' height='36' rx='2' fill='none' stroke='%23${strokeColor}' stroke-width='1.5'/%3E%3C/svg%3E")`,
-            backgroundSize: '80px 80px',
-          }}
-        />
+        <svg className="absolute inset-0 w-full h-full opacity-[0.08]" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="pixel-grid" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+              <rect x="2" y="2" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--accent))" strokeWidth="1.5" />
+              <rect x="42" y="2" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--accent))" strokeWidth="1.5" />
+              <rect x="2" y="42" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--accent))" strokeWidth="1.5" />
+              <rect x="42" y="42" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--accent))" strokeWidth="1.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#pixel-grid)" />
+        </svg>
         {/* Radial glow */}
         <div
           className="absolute inset-0 pointer-events-none"
@@ -49,17 +53,18 @@ export default function Apply() {
             <img
               src={`${API_BASE}${logoUrl}`}
               alt={`${schoolName} logo`}
-              className="h-14 w-14 shrink-0 object-contain"
+              className="h-16 w-16 shrink-0 object-contain"
             />
           ) : (
             <div className="h-14 w-14 shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
               <span className="text-base font-bold text-[hsl(var(--foreground))]">{schoolName.charAt(0)}</span>
             </div>
           )}
-          <div className="flex flex-col leading-tight">
+          <div className="flex flex-col leading-tight text-center">
             <span className="text-base font-bold tracking-tight text-[hsl(var(--foreground))]">{schoolName}</span>
             <span className="text-xs font-medium tracking-wide uppercase text-[hsl(var(--muted-foreground))]">Online Admission Portal</span>
           </div>
+          <img src={depedLogo} alt="DepEd logo" className="h-16 w-16 shrink-0 object-contain" />
         </div>
       </header>
       <div className={cn("min-h-screen", hasConsented ? "py-12 px-4 sm:px-6 lg:px-8" : "")}>

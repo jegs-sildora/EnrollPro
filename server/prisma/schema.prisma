@@ -167,17 +167,56 @@ enum ApplicantType {
 
 model Applicant {
   id                    Int               @id @default(autoincrement())
-  lrn                   String            @unique @db.VarChar(12)
+  lrn                   String?           @db.VarChar(12)
+  psaBcNumber           String?
   lastName              String
   firstName             String
   middleName            String?
   suffix                String?
   birthDate             DateTime
   sex                   Sex
-  address               String
-  parentGuardianName    String
-  parentGuardianContact String
-  emailAddress          String
+  placeOfBirth          String?
+  religion              String?
+  motherTongue          String?
+
+  // ── Address (JSON) ──
+  currentAddress        Json
+  permanentAddress      Json?
+
+  // ── Parent/Guardian ──
+  motherName            Json
+  fatherName            Json
+  guardianInfo          Json?
+  emailAddress          String?
+
+  // ── Background / Classifications ──
+  isIpCommunity         Boolean           @default(false)
+  ipGroupName           String?
+  is4PsBeneficiary      Boolean           @default(false)
+  householdId4Ps        String?
+  isBalikAral           Boolean           @default(false)
+  lastYearEnrolled      String?
+  isLearnerWithDisability Boolean         @default(false)
+  disabilityType        String[]
+
+  // ── Previous School ──
+  lastSchoolName        String?
+  lastSchoolId          String?
+  lastGradeCompleted    String?
+  syLastAttended        String?
+  lastSchoolAddress     String?
+  lastSchoolType        String?
+
+  // ── Enrollment Preferences ──
+  learnerType           String?
+  electiveCluster       String?
+  scpApplication        Boolean           @default(false)
+  scpType               String?
+  spaArtField           String?
+  spsSports             String[]
+  spflLanguage          String?
+
+  // ── Tracking & Status ──
   trackingNumber        String            @unique
   status                ApplicationStatus @default(PENDING)
   rejectionReason       String?
@@ -186,6 +225,8 @@ model Applicant {
   academicYearId        Int
   applicantType         ApplicantType     @default(REGULAR)
   shsTrack              SHSTrack?
+
+  // ── Assessment / Exam (staff-managed) ──
   examDate              DateTime?
   examScore             Float?
   examResult            String?
@@ -196,6 +237,7 @@ model Applicant {
   natScore              Float?
   grade10ScienceGrade   Float?
   grade10MathGrade      Float?
+
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
 
@@ -208,6 +250,7 @@ model Applicant {
   @@index([status, academicYearId])
   @@index([lrn])
   @@index([applicantType, status])
+  @@index([trackingNumber])
 }
 
 model Enrollment {

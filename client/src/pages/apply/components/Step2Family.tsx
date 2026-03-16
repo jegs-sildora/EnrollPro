@@ -18,9 +18,9 @@ export default function Step2Family() {
 
   return (
     <div className="space-y-12">
-      <Alert className="bg-primary/5 border-primary/20">
+      <Alert className="bg-primary/5 border-primary/20 items-center">
         <Info className="h-4 w-4 text-primary" />
-        <AlertDescription className="font-medium text-primary/80">
+        <AlertDescription className="font-bold text-primary/80">
           Important: Application updates and exam schedules will be sent to the email provided below.
         </AlertDescription>
       </Alert>
@@ -55,7 +55,7 @@ export default function Step2Family() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="mom-contact" className="text-xs font-bold uppercase">Contact Number</Label>
-              <Input autoComplete="off" id="mom-contact" {...register('mother.contactNumber')} placeholder="09XX-XXX-XXXX" className="h-11 font-bold" />
+              <Input autoComplete="off" id="mom-contact" {...register('mother.contactNumber')} placeholder="09XXXXXXXXX" className="h-11 font-bold" inputMode="numeric" maxLength={11} onKeyDown={(e) => !/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key) && e.preventDefault()} />
             </div>
           </div>
         </div>
@@ -73,7 +73,7 @@ export default function Step2Family() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="dad-contact" className="text-xs font-bold uppercase">Contact Number</Label>
-              <Input autoComplete="off" id="dad-contact" {...register('father.contactNumber')} placeholder="09XX-XXX-XXXX" className="h-11 font-bold" />
+              <Input autoComplete="off" id="dad-contact" {...register('father.contactNumber')} placeholder="09XXXXXXXXX" className="h-11 font-bold" inputMode="numeric" maxLength={11} onKeyDown={(e) => !/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key) && e.preventDefault()} />
             </div>
           </div>
         </div>
@@ -85,7 +85,7 @@ export default function Step2Family() {
             id="add-guardian" 
             checked={showGuardian} 
             onCheckedChange={(checked) => setShowGuardian(checked === true)} 
-            className="w-5 h-5 border-primary data-[state=checked]:bg-primary"
+            className="w-5 h-5"
           />
           <Label htmlFor="add-guardian" className="text-sm font-semibold cursor-pointer flex items-center gap-2">
             <UserPlus className="w-4 h-4 text-primary" />
@@ -99,10 +99,9 @@ export default function Step2Family() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden"
+              className="overflow-hidden px-1 -mx-1"
             >
-              <div className="pt-8 space-y-6">
-                <h3 className="text-sm font-bold uppercase tracking-widest text-primary">Guardian's Information</h3>
+              <div className="pt-8 space-y-6 px-1 mx-1 pb-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1.5">
                     <Label htmlFor="guard-lastName" className="text-xs font-bold uppercase">Last Name</Label>
@@ -113,12 +112,12 @@ export default function Step2Family() {
                     <Input autoComplete="off" id="guard-firstName" {...register('guardian.firstName')} className="h-11 uppercase font-bold" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="guard-contact" className="text-xs font-bold uppercase">Contact Number</Label>
-                    <Input autoComplete="off" id="guard-contact" {...register('guardian.contactNumber')} className="h-11 font-bold" />
+                    <Label htmlFor="guard-contact" className="text-xs font-bold">Contact Number</Label>
+                    <Input autoComplete="off" id="guard-contact" {...register('guardian.contactNumber')} placeholder="09XXXXXXXXX" className="h-11 font-bold" inputMode="numeric" maxLength={11} onKeyDown={(e) => !/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key) && e.preventDefault()} />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="guard-rel" className="text-xs font-bold uppercase">Relationship to Learner</Label>
-                    <Input autoComplete="off" id="guard-rel" {...register('guardian.relationship')} placeholder="e.g. Grandparent" className="h-11 font-bold" />
+                    <Input autoComplete="off" id="guard-rel" {...register('guardian.relationship')} placeholder="e.g. Grandparent" className="h-11 font-bold uppercase" onChange={(e) => e.target.value = e.target.value.toUpperCase()} />
                   </div>
                 </div>
               </div>
@@ -135,23 +134,23 @@ export default function Step2Family() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-1.5">
             <Label htmlFor="curr-house" className="text-xs font-bold uppercase">House No.</Label>
-            <Input autoComplete="off" id="curr-house" {...register('currentAddress.houseNo')} className="h-11 font-bold" />
+            <Input autoComplete="off" id="curr-house" {...register('currentAddress.houseNo')} className="h-11 font-bold" inputMode="numeric" onKeyDown={(e) => !/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key) && e.preventDefault()} />
           </div>
           <div className="space-y-1.5 md:col-span-2">
             <Label htmlFor="curr-street" className="text-xs font-bold uppercase">Street</Label>
-            <Input autoComplete="off" id="curr-street" {...register('currentAddress.street')} className="h-11 font-bold" />
+            <Input autoComplete="off" id="curr-street" {...register('currentAddress.street')} className="h-11 font-bold uppercase" onChange={(e) => e.target.value = e.target.value.toUpperCase()} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="curr-brgy" className="text-xs font-bold uppercase">Barangay <span className="text-destructive">*</span></Label>
-            <Input autoComplete="off" id="curr-brgy" {...register('currentAddress.barangay')} className={cn("h-11 font-bold", errors.currentAddress?.barangay && "border-destructive")} />
+            <Input autoComplete="off" id="curr-brgy" {...register('currentAddress.barangay')} className={cn("h-11 font-bold uppercase", errors.currentAddress?.barangay && "border-destructive")} onChange={(e) => e.target.value = e.target.value.toUpperCase()} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="curr-city" className="text-xs font-bold uppercase">City / Municipality <span className="text-destructive">*</span></Label>
-            <Input autoComplete="off" id="curr-city" {...register('currentAddress.cityMunicipality')} className={cn("h-11 font-bold", errors.currentAddress?.cityMunicipality && "border-destructive")} />
+            <Input autoComplete="off" id="curr-city" {...register('currentAddress.cityMunicipality')} className={cn("h-11 font-bold uppercase", errors.currentAddress?.cityMunicipality && "border-destructive")} onChange={(e) => e.target.value = e.target.value.toUpperCase()} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="curr-prov" className="text-xs font-bold uppercase">Province <span className="text-destructive">*</span></Label>
-            <Input autoComplete="off" id="curr-prov" {...register('currentAddress.province')} className={cn("h-11 font-bold", errors.currentAddress?.province && "border-destructive")} />
+            <Input autoComplete="off" id="curr-prov" {...register('currentAddress.province')} className={cn("h-11 font-bold uppercase", errors.currentAddress?.province && "border-destructive")} onChange={(e) => e.target.value = e.target.value.toUpperCase()} />
           </div>
         </div>
 
@@ -160,7 +159,7 @@ export default function Step2Family() {
             id="same-address" 
             checked={isPermanentSameAsCurrent} 
             onCheckedChange={(checked) => setValue('isPermanentSameAsCurrent', checked === true)} 
-            className="w-5 h-5 border-primary data-[state=checked]:bg-primary"
+            className="w-5 h-5"
           />
           <Label htmlFor="same-address" className="text-sm font-semibold cursor-pointer select-none">
             Permanent Address is same as Current Address
@@ -175,28 +174,28 @@ export default function Step2Family() {
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
             >
-              <div className="pt-8 space-y-6">
+              <div className="pt-8 pb-1 space-y-6">
                 <h3 className="text-sm font-bold uppercase tracking-widest text-primary">Permanent Address</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-1.5">
                     <Label htmlFor="perm-house" className="text-xs font-bold uppercase">House No.</Label>
-                    <Input autoComplete="off" id="perm-house" {...register('permanentAddress.houseNo')} className="h-11 font-bold" />
+                    <Input autoComplete="off" id="perm-house" {...register('permanentAddress.houseNo')} className="h-11 font-bold" inputMode="numeric" onKeyDown={(e) => !/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key) && e.preventDefault()} />
                   </div>
                   <div className="space-y-1.5 md:col-span-2">
                     <Label htmlFor="perm-street" className="text-xs font-bold uppercase">Street</Label>
-                    <Input autoComplete="off" id="perm-street" {...register('permanentAddress.street')} className="h-11 font-bold" />
+                    <Input autoComplete="off" id="perm-street" {...register('permanentAddress.street')} className="h-11 font-bold uppercase" onChange={(e) => e.target.value = e.target.value.toUpperCase()} />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="perm-brgy" className="text-xs font-bold uppercase">Barangay</Label>
-                    <Input autoComplete="off" id="perm-brgy" {...register('permanentAddress.barangay')} className="h-11 font-bold" />
+                    <Input autoComplete="off" id="perm-brgy" {...register('permanentAddress.barangay')} className="h-11 font-bold uppercase" onChange={(e) => e.target.value = e.target.value.toUpperCase()} />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="perm-city" className="text-xs font-bold uppercase">City / Municipality</Label>
-                    <Input autoComplete="off" id="perm-city" {...register('permanentAddress.cityMunicipality')} className="h-11 font-bold" />
+                    <Input autoComplete="off" id="perm-city" {...register('permanentAddress.cityMunicipality')} className="h-11 font-bold uppercase" onChange={(e) => e.target.value = e.target.value.toUpperCase()} />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="perm-prov" className="text-xs font-bold uppercase">Province</Label>
-                    <Input autoComplete="off" id="perm-prov" {...register('permanentAddress.province')} className="h-11 font-bold" />
+                    <Input autoComplete="off" id="perm-prov" {...register('permanentAddress.province')} className="h-11 font-bold uppercase" onChange={(e) => e.target.value = e.target.value.toUpperCase()} />
                   </div>
                 </div>
               </div>

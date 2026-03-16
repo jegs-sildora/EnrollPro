@@ -26,8 +26,8 @@ export default function Step4PreviousSchool() {
           <Input autoComplete="off" 
             id="prev-school" 
             {...register('lastSchoolName')} 
-            placeholder="e.g. Hinigaran Central Elementary School" 
-            className={cn("h-11 font-bold", errors.lastSchoolName && "border-destructive")} 
+            placeholder="e.g. Negros Occidental High School" 
+            className={cn("h-11 font-bold uppercase", errors.lastSchoolName && "border-destructive")} 
           />
           {errors.lastSchoolName && <p className="text-[11px] text-destructive font-medium">{errors.lastSchoolName.message}</p>}
         </div>
@@ -38,7 +38,7 @@ export default function Step4PreviousSchool() {
               <Label htmlFor="prev-school-id" className="text-sm font-bold">DepEd School ID</Label>
               <HelpCircle className="w-3.5 h-3.5 text-muted-foreground cursor-help" />
             </div>
-            <Input autoComplete="off" id="prev-school-id" {...register('lastSchoolId')} placeholder="6-digit ID (if known)" className="h-11 font-bold font-mono" maxLength={6} />
+            <Input autoComplete="off" id="prev-school-id" {...register('lastSchoolId')} placeholder="6-digit ID (if known)" className="h-11 font-bold font-mono" maxLength={6}  inputMode="numeric" onKeyDown={(e) => { if (!/[0-9]|Backspace|Delete|ArrowLeft|ArrowRight|Tab/.test(e.key)) e.preventDefault(); }} />
           </div>
 
           <div className="space-y-2">
@@ -97,7 +97,7 @@ export default function Step4PreviousSchool() {
 
         <div className="space-y-2 pt-2">
           <Label htmlFor="prev-addr" className="text-sm font-bold text-muted-foreground">School Address / Division (Optional)</Label>
-          <Input autoComplete="off" id="prev-addr" {...register('lastSchoolAddress')} placeholder="City/Municipality, Province" className="h-11 font-bold" />
+          <Input autoComplete="off" id="prev-addr" {...register('lastSchoolAddress')} placeholder="City/Municipality, Province" className="h-11 font-bold uppercase" />
         </div>
       </div>
 

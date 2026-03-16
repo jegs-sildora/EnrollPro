@@ -240,40 +240,23 @@ export default function Step3Preferences() {
 
       <Separator />
 
-      {/* Section 9: Learner Type & Modality */}
+      {/* Section 9: Learner Type */}
       <div className="space-y-6">
-        <h3 className="text-lg font-semibold">Section 9: Learner Type & Modality</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label>Type of Learner <span className="text-destructive">*</span></Label>
-            <Select value={watch('learnerType')} onValueChange={(val: 'Regular' | 'Transferee' | 'Returning Learner' | 'OSCYA' | 'ALS') => setValue('learnerType', val)}>
-              <SelectTrigger className="font-bold">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Regular">Regular</SelectItem>
-                <SelectItem value="Transferee">Transferee</SelectItem>
-                <SelectItem value="Returning Learner">Returning Learner (Balik-Aral)</SelectItem>
-                <SelectItem value="OSCYA">Out-of-School Children Youth & Adults (OSCYA)</SelectItem>
-                <SelectItem value="ALS">ALS Learner</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Preferred Learning Modality <span className="text-destructive">*</span></Label>
-            <Select value={watch('learningModality')} onValueChange={(val: 'Face-to-Face' | 'Blended Learning' | 'Distance Modular' | 'Online Learning' | 'Home Schooling') => setValue('learningModality', val)}>
-              <SelectTrigger className="font-bold">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Face-to-Face">Face-to-Face</SelectItem>
-                <SelectItem value="Blended Learning">Blended Learning</SelectItem>
-                <SelectItem value="Distance Modular">Distance Modular</SelectItem>
-                <SelectItem value="Online Learning">Online Learning</SelectItem>
-                <SelectItem value="Home Schooling">Home Schooling</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <h3 className="text-lg font-semibold">Section 9: Learner Type</h3>
+        <div className="space-y-2">
+          <Label>Type of Learner <span className="text-destructive">*</span></Label>
+          <Select value={watch('learnerType')} onValueChange={(val: 'Regular' | 'Transferee' | 'Returning Learner' | 'OSCYA' | 'ALS') => setValue('learnerType', val)}>
+            <SelectTrigger className="font-bold">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Regular">Regular</SelectItem>
+              <SelectItem value="Transferee">Transferee</SelectItem>
+              <SelectItem value="Returning Learner">Returning Learner (Balik-Aral)</SelectItem>
+              <SelectItem value="OSCYA">Out-of-School Children Youth & Adults (OSCYA)</SelectItem>
+              <SelectItem value="ALS">ALS Learner</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
