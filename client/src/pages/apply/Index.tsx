@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import depedLogo from '@/assets/deped-logo.png';
+import depedLogo from '@/assets/Deped-logo.png';
 import GuestLayout from '@/layouts/GuestLayout';
 import PrivacyNotice from './PrivacyNotice';
 import AdmissionForm from './AdmissionForm';
@@ -65,28 +65,25 @@ export default function Apply() {
       </div>
 
       <header className="sticky top-0 z-50 w-full border-b border-border bg-card shadow-sm">
-        <div className="max-w-360 mx-auto px-4 sm:px-12 h-20 sm:h-28 flex items-center justify-center">
-          {/* ── Branding Group (Always Centered) ── */}
-          <div className="flex items-center gap-4 sm:gap-10 justify-center">
-            {logoUrl ? (
-              <img
-                src={`${API_BASE}${logoUrl}`}
-                alt={`${schoolName} logo`}
-                className="h-10 w-10 sm:h-20 sm:w-20 shrink-0 object-contain"
-              />
-            ) : (
-              <div className="h-10 w-10 sm:h-16 sm:w-16 shrink-0 rounded-full bg-[#061E29]/10 flex items-center justify-center">
-                <span className="text-sm sm:text-2xl font-bold text-foreground">{schoolName.charAt(0)}</span>
-              </div>
-            )}
-            
-            <div className="flex flex-col leading-tight text-center sm:text-left min-0 max-w-87.5 sm:max-w-175">
-              <span className="text-sm sm:text-xl font-black tracking-tight text-foreground line-clamp-2 leading-none text-center uppercase">{schoolName}</span>
-              <span className="text-[8px] sm:text-[11px] font-black tracking-[0.3em] uppercase text-muted-foreground mt-1 text-center">Online Admission Portal</span>
+        <div className="max-w-360 mx-auto px-4 sm:px-12 h-20 sm:h-28 flex items-center justify-center gap-3">
+          {logoUrl ? (
+            <img
+              src={`${API_BASE}${logoUrl}`}
+              alt={`${schoolName} logo`}
+              className="h-15 w-15 sm:h-20 sm:w-20 shrink-0 object-contain"
+            />
+          ) : (
+            <div className="h-10 w-10 sm:h-16 sm:w-16 shrink-0 rounded-full bg-[#061E29]/10 flex items-center justify-center">
+              <span className="text-sm sm:text-2xl font-bold text-foreground">{schoolName.charAt(0)}</span>
             </div>
-
-            <img src={depedLogo} alt="DepEd logo" className="h-10 w-10 sm:h-20 sm:w-20 shrink-0 object-contain ml-2" />
+          )}
+          
+          <div className="flex flex-col leading-tight text-center sm:text-left min-w-0 max-w-87.5 sm:max-w-175">
+            <span className="text-sm sm:text-xl font-black tracking-tight text-foreground line-clamp-2 leading-none uppercase">{schoolName}</span>
+            <span className="text-[8px] sm:text-[11px] font-black tracking-[0.3em] uppercase text-muted-foreground mt-1">Online Admission Portal</span>
           </div>
+
+          <img src={depedLogo} alt="DepEd logo" className="hidden md:block w-60 h-60 shrink-0 object-contain" />
         </div>
       </header>
 

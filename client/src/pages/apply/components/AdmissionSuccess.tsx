@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2, FileText, Download, Home, Copy, Check, Loader2 } from 'lucide-react';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { cn } from '@/lib/utils';
-import depedLogo from '@/assets/deped-logo.png';
+import depedLogo from '@/assets/Deped-logo.png';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import Confetti from 'react-confetti';
