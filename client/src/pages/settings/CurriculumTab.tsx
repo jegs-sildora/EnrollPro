@@ -202,7 +202,7 @@ export default function CurriculumTab() {
   if (!ayId) {
     return (
       <Card>
-        <CardContent className="py-8 text-center text-sm text-[hsl(var(--muted-foreground))]">
+        <CardContent className="py-8 text-center text-sm text-muted-foreground">
           No school year selected. Set an active year or choose one from the header switcher.
         </CardContent>
       </Card>
@@ -258,29 +258,29 @@ export default function CurriculumTab() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[hsl(var(--muted-foreground))] border-b pb-1">Junior High School</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground border-b pb-1">Junior High School</p>
               {[...gradeLevels]
                 .filter((gl) => gl.displayOrder >= 7 && gl.displayOrder <= 10)
                 .sort((a, b) => a.displayOrder - b.displayOrder)
                 .map((gl) => (
-                  <div key={gl.id} className="rounded-lg border border-[hsl(var(--border))] px-3 py-2 hover:bg-[hsl(var(--muted))] transition-colors">
+                  <div key={gl.id} className="rounded-lg border border-border px-3 py-2 hover:bg-muted transition-colors">
                     <div className="flex flex-col">
                       <span className="text-sm font-medium">{gl.name}</span>
-                      <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{gl.sections.length} sections</span>
+                      <span className="text-[10px] text-muted-foreground">{gl.sections.length} sections</span>
                     </div>
                   </div>
                 ))}
             </div>
             <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[hsl(var(--muted-foreground))] border-b pb-1">Senior High School</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground border-b pb-1">Senior High School</p>
               {[...gradeLevels]
                 .filter((gl) => gl.displayOrder >= 11)
                 .sort((a, b) => a.displayOrder - b.displayOrder)
                 .map((gl) => (
-                  <div key={gl.id} className="rounded-lg border border-[hsl(var(--border))] px-3 py-2 hover:bg-[hsl(var(--muted))] transition-colors">
+                  <div key={gl.id} className="rounded-lg border border-border px-3 py-2 hover:bg-muted transition-colors">
                     <div className="flex flex-col">
                       <span className="text-sm font-medium">{gl.name}</span>
-                      <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{gl.sections.length} sections</span>
+                      <span className="text-[10px] text-muted-foreground">{gl.sections.length} sections</span>
                     </div>
                   </div>
                 ))}
@@ -306,8 +306,8 @@ export default function CurriculumTab() {
         <CardContent>
           <div className="space-y-6">
             {scpConfigs.map((scp, idx) => (
-              <div key={scp.scpType} className="rounded-xl border border-[hsl(var(--border))] overflow-hidden bg-[hsl(var(--card))]">
-                <div className="flex items-center justify-between px-4 py-3 bg-[hsl(var(--muted))] border-b">
+              <div key={scp.scpType} className="rounded-xl border border-border overflow-hidden bg-card">
+                <div className="flex items-center justify-between px-4 py-3 bg-muted border-b">
                   <div className="flex items-center gap-3">
                     <Switch 
                       checked={scp.isOffered} 
@@ -406,14 +406,14 @@ export default function CurriculumTab() {
           {/* DM 012 Curriculum (Grade 11) */}
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Grade 11: Elective Clusters</h3>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Grade 11: Elective Clusters</h3>
               <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200">Track-Based</Badge>
             </div>
             
             <div className="space-y-6">
               {/* Academic Track */}
               <div className="space-y-3">
-                <p className="text-xs font-semibold text-[hsl(var(--muted-foreground))] flex items-center gap-2">
+                <p className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
                   <span className="h-1 w-1 rounded-full bg-blue-500" /> ACADEMIC TRACK
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -426,15 +426,15 @@ export default function CurriculumTab() {
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left ${
                           isOffered 
                             ? 'bg-blue-50/50 border-blue-200 ring-1 ring-blue-100' 
-                            : 'bg-[hsl(var(--card))] border-[hsl(var(--border))] hover:border-blue-200 hover:bg-[hsl(var(--muted))]'
+                            : 'bg-card border-border hover:border-blue-200 hover:bg-muted'
                         }`}
                       >
                         {isOffered ? (
                           <CheckCircle2 className="h-5 w-5 text-blue-600 shrink-0" />
                         ) : (
-                          <Circle className="h-5 w-5 text-[hsl(var(--muted-foreground))] shrink-0" />
+                          <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
                         )}
-                        <span className={`text-sm font-medium ${isOffered ? 'text-blue-900' : 'text-[hsl(var(--foreground))]'}`}>
+                        <span className={`text-sm font-medium ${isOffered ? 'text-blue-900' : 'text-foreground'}`}>
                           {cluster.label}
                         </span>
                       </button>
@@ -445,7 +445,7 @@ export default function CurriculumTab() {
 
               {/* TechPro Track */}
               <div className="space-y-3">
-                <p className="text-xs font-semibold text-[hsl(var(--muted-foreground))] flex items-center gap-2">
+                <p className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
                   <span className="h-1 w-1 rounded-full bg-orange-500" /> TECHNICAL-PROFESSIONAL (TECHPRO) TRACK
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -458,15 +458,15 @@ export default function CurriculumTab() {
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left ${
                           isOffered 
                             ? 'bg-orange-50/50 border-orange-200 ring-1 ring-orange-100' 
-                            : 'bg-[hsl(var(--card))] border-[hsl(var(--border))] hover:border-orange-200 hover:bg-[hsl(var(--muted))]'
+                            : 'bg-card border-border hover:border-orange-200 hover:bg-muted'
                         }`}
                       >
                         {isOffered ? (
                           <CheckCircle2 className="h-5 w-5 text-orange-600 shrink-0" />
                         ) : (
-                          <Circle className="h-5 w-5 text-[hsl(var(--muted-foreground))] shrink-0" />
+                          <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
                         )}
-                        <span className={`text-sm font-medium ${isOffered ? 'text-orange-900' : 'text-[hsl(var(--foreground))]'}`}>
+                        <span className={`text-sm font-medium ${isOffered ? 'text-orange-900' : 'text-foreground'}`}>
                           {cluster.label}
                         </span>
                       </button>
@@ -482,8 +482,8 @@ export default function CurriculumTab() {
           {/* Old Strand Curriculum (Grade 12) */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Grade 12: Old Strands</h3>
-              <Badge variant="outline" className="bg-[hsl(var(--muted))]">Transition</Badge>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Grade 12: Old Strands</h3>
+              <Badge variant="outline" className="bg-muted">Transition</Badge>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
               {OLD_STRANDS.map(strand => {
@@ -494,8 +494,8 @@ export default function CurriculumTab() {
                     onClick={() => toggleStrandPresence(strand.label, 'OLD_STRAND', null)}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all text-left ${
                       isOffered 
-                        ? 'bg-[hsl(var(--primary))] border-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]' 
-                        : 'bg-[hsl(var(--card))] border-[hsl(var(--border))] hover:border-[hsl(var(--primary))] hover:bg-[hsl(var(--muted))]'
+                        ? 'bg-primary border-primary text-primary-foreground' 
+                        : 'bg-card border-border hover:border-primary hover:bg-muted'
                     }`}
                   >
                     {isOffered ? (
@@ -536,25 +536,25 @@ export default function CurriculumTab() {
             )}
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto rounded-xl border border-[hsl(var(--border))]">
+            <div className="overflow-x-auto rounded-xl border border-border">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-[hsl(var(--muted))] border-b">
-                    <th className="text-left px-4 py-3 font-bold text-[hsl(var(--muted-foreground))] w-64">Item</th>
+                  <tr className="bg-muted border-b">
+                    <th className="text-left px-4 py-3 font-bold text-muted-foreground w-64">Item</th>
                     {[...gradeLevels].sort((a,b) => a.displayOrder - b.displayOrder).map((gl) => (
-                      <th key={gl.id} className="px-3 py-3 text-center font-bold text-[hsl(var(--muted-foreground))]">
+                      <th key={gl.id} className="px-3 py-3 text-center font-bold text-muted-foreground">
                         {gl.name}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[hsl(var(--border))]">
+                <tbody className="divide-y divide-border">
                   {strands.map((s) => (
-                    <tr key={s.id} className="hover:bg-[hsl(var(--muted))] transition-colors">
+                    <tr key={s.id} className="hover:bg-muted transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex flex-col">
                           <span className="font-bold">{s.name}</span>
-                          <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{s.curriculumType.replace('_', ' ')}</span>
+                          <span className="text-[10px] text-muted-foreground">{s.curriculumType.replace('_', ' ')}</span>
                         </div>
                       </td>
                       {[...gradeLevels].sort((a,b) => a.displayOrder - b.displayOrder).map((gl) => {
@@ -565,7 +565,7 @@ export default function CurriculumTab() {
                               type="checkbox"
                               checked={checked}
                               onChange={() => toggleMatrixCell(s.id, gl.id)}
-                              className="h-5 w-5 rounded border-[hsl(var(--border))] accent-[hsl(var(--primary))] cursor-pointer transition-transform hover:scale-110"
+                              className="h-5 w-5 rounded border-border accent-primary cursor-pointer transition-transform hover:scale-110"
                             />
                           </td>
                         );

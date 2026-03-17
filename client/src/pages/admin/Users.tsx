@@ -216,7 +216,7 @@ export default function AdminUsers() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1 text-left">
           <h1 className="text-2xl md:text-3xl font-bold flex items-center justify-start gap-2 text-balance">
-            <UserCog className="h-7 w-7 md:h-8 md:w-8 text-[hsl(var(--primary))]" />
+            <UserCog className="h-7 w-7 md:h-8 md:w-8 text-primary" />
             User Management
           </h1>
           <p className="text-sm text-muted-foreground text-balance">

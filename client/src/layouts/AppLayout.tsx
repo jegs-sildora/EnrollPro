@@ -76,11 +76,11 @@ function AYSwitcher() {
         onClick={() => setOpen(!open)}
       >
         <Calendar className="size-3.5" />
-        <span className={isOverride ? 'text-[hsl(var(--destructive))]' : ''}>{currentLabel}</span>
+        <span className={isOverride ? 'text-destructive' : ''}>{currentLabel}</span>
         <ChevronsUpDown className="size-3 opacity-50" />
       </Button>
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 min-w-45 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--popover))] p-1 shadow-md">
+        <div className="absolute right-0 top-full z-50 mt-1 min-w-45 rounded-md border border-border bg-popover">
           {years.map((y) => (
             <button
               key={y.id}
@@ -89,7 +89,7 @@ function AYSwitcher() {
                 setOpen(false);
               }}
               className={`flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs ${
-                y.id === currentId ? 'bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]' : 'hover:bg-[hsl(var(--sidebar-accent))] hover:text-[hsl(var(--accent-foreground))]'
+                y.id === currentId ? 'bg-accent text-accent-foreground' : 'hover:bg-sidebar-accent hover:text-accent-foreground'
               }`}
             >
               <span className="flex-1 text-left">{y.yearLabel}</span>
@@ -112,7 +112,7 @@ function AYSwitcher() {
 function NavDivider({ label }: { label: string }) {
   return (
     <div className="px-3 py-2 mt-2">
-      <span className="text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))] opacity-60">
+      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground opacity-60">
         {label}
       </span>
     </div>
@@ -157,7 +157,7 @@ function AppSidebar() {
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton size="lg" className="data-[state=open]:bg-[hsl(var(--sidebar-accent))]" tooltip={schoolName}>
+              <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent" tooltip={schoolName}>
                 {logoUrl ? (
                   <div className="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden">
                     <img
@@ -167,13 +167,13 @@ function AppSidebar() {
                     />
                   </div>
                 ) : (
-                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]">
+                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                     <span className="text-xs font-bold">E</span>
                   </div>
                 )}
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">{schoolName}</span>
-                  <span className="truncate text-xs text-[hsl(var(--muted-foreground))]">Enrollment System</span>
+                  <span className="truncate text-xs text-muted-foreground">Enrollment System</span>
                 </div>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -236,12 +236,12 @@ function AppSidebar() {
               >
                 {/* Collapsed State: LogOut Icon only */}
                 <div className="absolute inset-0 flex items-center justify-center transition-all duration-200 opacity-0 group-data-[collapsible=icon]:opacity-100 group-data-[collapsible=icon]:scale-100 scale-75">
-                  <LogOut className="size-4 text-[hsl(var(--muted-foreground))]" />
+                  <LogOut className="size-4 text-muted-foreground" />
                 </div>
 
                 {/* Expanded State: Full Profile */}
                 <div className="flex w-full items-center gap-2 transition-all duration-200 opacity-100 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:scale-95 group-data-[collapsible=icon]:pointer-events-none">
-                  <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] overflow-hidden">
+                  <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground overflow-hidden">
                     <span className="text-xs font-semibold">
                       {user?.name?.charAt(0).toUpperCase() ?? 'U'}
                     </span>
@@ -265,9 +265,9 @@ function AppSidebar() {
                         </Badge>
                       )}
                     </div>
-                    <span className="truncate text-xs text-[hsl(var(--muted-foreground))]">{user?.email}</span>
+                    <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
                   </div>
-                  <LogOut className="ml-auto size-4 shrink-0 text-[hsl(var(--muted-foreground))]" />
+                  <LogOut className="ml-auto size-4 shrink-0 text-muted-foreground" />
                 </div>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -305,10 +305,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         />
 
         {/* Top bar */}
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b border-[hsl(var(--border))] bg-[hsl(var(--background))] px-4">
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4!" />
-          <span className="text-sm font-medium text-[hsl(var(--muted-foreground))]">EnrollPro</span>
+          <span className="text-sm font-medium text-muted-foreground">EnrollPro</span>
           <div className="ml-auto">
             <AYSwitcher />
           </div>

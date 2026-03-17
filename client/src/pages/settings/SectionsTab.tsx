@@ -174,7 +174,7 @@ export default function SectionsTab() {
   if (!ayId) {
     return (
       <Card>
-        <CardContent className="py-8 text-center text-sm text-[hsl(var(--muted-foreground))]">
+        <CardContent className="py-8 text-center text-sm text-muted-foreground">
           No school year selected. Set an active year or choose one from the header switcher.
         </CardContent>
       </Card>
@@ -239,33 +239,33 @@ export default function SectionsTab() {
             </CardHeader>
             <CardContent>
               {groups.length === 0 ? (
-                <p className="text-sm text-[hsl(var(--muted-foreground))] text-center py-4">No grade levels with sections found.</p>
+                <p className="text-sm text-muted-foreground text-center py-4">No grade levels with sections found.</p>
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {groups.flatMap((g) =>
                     g.sections.map((s) => (
                       <div
                         key={s.id}
-                        className="flex items-center gap-3 rounded-lg border border-[hsl(var(--border))] p-3"
+                        className="flex items-center gap-3 rounded-lg border border-border p-3"
                       >
                         <span className="text-lg">{fillEmoji(s.fillPercent)}</span>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{g.gradeLevelName} — {s.name}</p>
-                          <div className="mt-1 h-2 w-full rounded-full bg-[hsl(var(--muted))]">
+                          <div className="mt-1 h-2 w-full rounded-full bg-muted">
                             <div
                               className={`h-2 rounded-full transition-all ${fillColor(s.fillPercent)}`}
                               style={{ width: `${Math.min(s.fillPercent, 100)}%` }}
                             />
                           </div>
                         </div>
-                        <span className="text-xs font-mono text-[hsl(var(--muted-foreground))] whitespace-nowrap">
+                        <span className="text-xs font-mono text-muted-foreground whitespace-nowrap">
                           {s.enrolledCount}/{s.maxCapacity}
                         </span>
                       </div>
                     ))
                   )}
                   {groups.every((g) => g.sections.length === 0) && (
-                    <p className="col-span-full text-sm text-[hsl(var(--muted-foreground))] text-center py-4">
+                    <p className="col-span-full text-sm text-muted-foreground text-center py-4">
                       No sections created yet. Add sections to grade levels below.
                     </p>
                   )}
@@ -346,22 +346,22 @@ export default function SectionsTab() {
                 )}
 
                 {g.sections.length === 0 ? (
-                  <p className="text-sm text-[hsl(var(--muted-foreground))] text-center py-2">No sections</p>
+                  <p className="text-sm text-muted-foreground text-center py-2">No sections</p>
                 ) : (
                   <div className="space-y-2">
                     {g.sections.map((s) => (
                       <div
                         key={s.id}
-                        className="flex items-center gap-3 rounded-lg border border-[hsl(var(--border))] px-3 py-2"
+                        className="flex items-center gap-3 rounded-lg border border-border px-3 py-2"
                       >
                         <span className="text-sm">{fillEmoji(s.fillPercent)}</span>
                         <span className="flex-1 text-sm font-medium">{s.name}</span>
                         {s.advisingTeacher && (
-                          <span className="text-xs text-[hsl(var(--muted-foreground))] truncate max-w-25" title={s.advisingTeacher.name}>
+                          <span className="text-xs text-muted-foreground truncate max-w-25" title={s.advisingTeacher.name}>
                             {s.advisingTeacher.name}
                           </span>
                         )}
-                        <span className="text-xs font-mono text-[hsl(var(--muted-foreground))]">
+                        <span className="text-xs font-mono text-muted-foreground">
                           {s.enrolledCount}/{s.maxCapacity} ({s.fillPercent}%)
                         </span>
                         <Button
@@ -376,7 +376,7 @@ export default function SectionsTab() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-7 w-7 p-0 text-[hsl(var(--destructive))]"
+                          className="h-7 w-7 p-0 text-destructive"
                           onClick={() => { setDeleteId(s.id); setDeleteName(s.name); }}
                           disabled={s.enrolledCount > 0}
                           title={s.enrolledCount > 0 ? 'Cannot delete — has enrolled students' : 'Delete section'}

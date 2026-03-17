@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { sileo } from 'sileo';
 import { CalendarClock } from 'lucide-react';
 import api from '@/api/axiosInstance';
@@ -12,7 +12,6 @@ import { Switch } from '@/components/ui/switch';
 import { DatePicker } from '@/components/ui/date-picker';
 
 import { Skeleton } from '@/components/ui/skeleton';
-import { useMemo } from 'react';
 
 const MANILA_TIME_ZONE = 'Asia/Manila';
 
@@ -33,11 +32,6 @@ function getDatePartsInTimeZone(date: Date, timeZone = MANILA_TIME_ZONE) {
 
 function utcNoonDate(year: number, monthIndex: number, day: number) {
   return new Date(Date.UTC(year, monthIndex, day, 12, 0, 0, 0));
-}
-
-function normalizeDateToManila(date: Date) {
-  const { year, month, day } = getDatePartsInTimeZone(date);
-  return utcNoonDate(year, month - 1, day);
 }
 
 interface AYDates {
@@ -94,7 +88,7 @@ export default function EnrollmentGateTab() {
   const minDate = useMemo(() => utcNoonDate(currentManilaYear, 0, 1), [currentManilaYear]);
   const maxDate = useMemo(() => utcNoonDate(currentManilaYear + 1, 11, 31), [currentManilaYear]);
 
-  const fetchAy = async () => {
+  const fetchAy = useCallback(async () => {
     if (!activeAcademicYearId) {
       setLoading(false);
       return;
@@ -112,11 +106,11 @@ export default function EnrollmentGateTab() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeAcademicYearId]);
 
   useEffect(() => {
     fetchAy();
-  }, [activeAcademicYearId]);
+  }, [fetchAy]);
 
   const handleToggleOverride = async (checked: boolean) => {
     if (!ay) return;
@@ -165,7 +159,7 @@ export default function EnrollmentGateTab() {
   if (!activeAcademicYearId) {
     return (
       <Card>
-        <CardContent className="py-8 text-center text-sm text-[hsl(var(--muted-foreground))]">
+        <CardContent className="py-8 text-center text-sm text-muted-foreground">
           No active school year. Activate a school year to configure the enrollment schedule.
         </CardContent>
       </Card>
@@ -205,7 +199,7 @@ export default function EnrollmentGateTab() {
           <div>
             <CardTitle className="flex items-center gap-2 text-xl">
               <CalendarClock className="h-5 w-5" />
-              Enrollment Schedule <span className="text-[hsl(var(--muted-foreground))] text-sm font-normal ml-2">SY {ay.yearLabel}</span>
+              Enrollment Schedule <span className="text-muted-foreground text-sm font-normal ml-2">SY {ay.yearLabel}</span>
             </CardTitle>
             <CardDescription>
               DepEd Two-Phase Enrollment structure. The portal opens automatically on these dates.
@@ -221,8 +215,8 @@ export default function EnrollmentGateTab() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-semibold text-[hsl(var(--foreground))]">PHASE 1 · Early Registration</h4>
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">For: Grade 7, Grade 11, Transferees, First-time enrollees</p>
+                <h4 className="font-semibold text-foreground">PHASE 1 · Early Registration</h4>
+                <p className="text-xs text-muted-foreground">For: Grade 7, Grade 11, Transferees, First-time enrollees</p>
               </div>
               {!isEditing && (
                 <span className={`text-xs font-semibold px-2 py-1 rounded-md ${phase1Status.color}`}>
@@ -253,13 +247,13 @@ export default function EnrollmentGateTab() {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-4 text-sm bg-[hsl(var(--muted))] p-3 rounded-lg border border-[hsl(var(--border))]">
-                <div className="flex-1 text-center border-r border-[hsl(var(--border))]">
-                  <span className="block text-[10px] text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Opens</span>
+              <div className="flex items-center gap-4 text-sm bg-muted p-3 rounded-lg border border-border">
+                <div className="flex-1 text-center border-r border-border">
+                  <span className="block text-[10px] text-muted-foreground uppercase tracking-wider">Opens</span>
                   <span className="font-medium">{formatDate(ay.earlyRegOpenDate)}</span>
                 </div>
                 <div className="flex-1 text-center">
-                  <span className="block text-[10px] text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Closes</span>
+                  <span className="block text-[10px] text-muted-foreground uppercase tracking-wider">Closes</span>
                   <span className="font-medium">{formatDate(ay.earlyRegCloseDate)}</span>
                 </div>
               </div>
@@ -270,8 +264,8 @@ export default function EnrollmentGateTab() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-semibold text-[hsl(var(--foreground))]">PHASE 2 · Regular Enrollment</h4>
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">For: All grade levels</p>
+                <h4 className="font-semibold text-foreground">PHASE 2 · Regular Enrollment</h4>
+                <p className="text-xs text-muted-foreground">For: All grade levels</p>
               </div>
               {!isEditing && (
                 <span className={`text-xs font-semibold px-2 py-1 rounded-md ${phase2Status.color}`}>
@@ -302,13 +296,13 @@ export default function EnrollmentGateTab() {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-4 text-sm bg-[hsl(var(--muted))] p-3 rounded-lg border border-[hsl(var(--border))]">
-                <div className="flex-1 text-center border-r border-[hsl(var(--border))]">
-                  <span className="block text-[10px] text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Opens</span>
+              <div className="flex items-center gap-4 text-sm bg-muted p-3 rounded-lg border border-border">
+                <div className="flex-1 text-center border-r border-border">
+                  <span className="block text-[10px] text-muted-foreground uppercase tracking-wider">Opens</span>
                   <span className="font-medium">{formatDate(ay.enrollOpenDate)}</span>
                 </div>
                 <div className="flex-1 text-center">
-                  <span className="block text-[10px] text-[hsl(var(--muted-foreground))] uppercase tracking-wider">Closes</span>
+                  <span className="block text-[10px] text-muted-foreground uppercase tracking-wider">Closes</span>
                   <span className="font-medium">{formatDate(ay.enrollCloseDate)}</span>
                 </div>
               </div>
@@ -322,11 +316,11 @@ export default function EnrollmentGateTab() {
             </div>
           )}
 
-          <div className="pt-4 border-t border-[hsl(var(--border))]">
+          <div className="pt-4 border-t border-border">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium">Manual Override</p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                <p className="text-xs text-muted-foreground">
                   Force-open the portal regardless of schedule. Use for emergencies only.
                 </p>
               </div>

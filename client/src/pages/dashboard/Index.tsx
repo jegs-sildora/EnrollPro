@@ -121,13 +121,13 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-[hsl(var(--foreground))]">Dashboard</h1>
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Welcome back, <span className="font-semibold text-[hsl(var(--primary))]">{user?.name}</span>
+          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">
+            Welcome back, <span className="font-semibold text-primary">{user?.name}</span>
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="h-6 gap-1 bg-[hsl(var(--sidebar-accent))] text-[hsl(var(--primary))] border-[hsl(var(--primary))] border-opacity-20">
+          <Badge variant="outline" className="h-6 gap-1 bg-sidebar-accent text-primary border-primary border-opacity-20">
             <ShieldCheck className="h-3 w-3" />
             {user?.role} Access
           </Badge>
@@ -171,8 +171,8 @@ export default function Dashboard() {
       {/* Enrollment Stats Section */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-[hsl(var(--primary))] opacity-80">Enrollment Progress</h2>
-          <div className="h-px flex-1 bg-[hsl(var(--sidebar-accent))]"></div>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-primary opacity-80">Enrollment Progress</h2>
+          <div className="h-px flex-1 bg-sidebar-accent"></div>
         </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           {statCards.map((stat) => (
@@ -209,7 +209,7 @@ export default function Dashboard() {
               <div className="rounded-full bg-muted p-3">
                 <Activity className="h-6 w-6 text-muted-foreground opacity-20" />
               </div>
-              <p className="text-xs text-muted-foreground max-w-[200px]">
+              <p className="text-xs text-muted-foreground max-w-50">
                 Charts and analytics are being prepared for the current school year.
               </p>
             </div>
@@ -222,7 +222,7 @@ export default function Dashboard() {
             <CardDescription>Latest administrative actions</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex h-40 items-center justify-center text-sm text-[hsl(var(--muted-foreground))]">
+            <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
               No recent activity to display.
             </div>
           </CardContent>

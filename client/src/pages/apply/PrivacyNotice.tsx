@@ -30,12 +30,12 @@ export default function PrivacyNotice({ onAccept }: PrivacyNoticeProps) {
       <Card className="shadow-lg border-border rounded-2xl overflow-hidden">
         <CardHeader className="bg-muted/30 border-b pb-6">
           <div className="flex flex-col items-center text-center gap-2">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-              <Lock className="w-6 h-6 text-primary" />
+            <div className="w-12 h-12 rounded-full bg-black/10 flex items-center justify-center mb-2">
+              <Lock className="w-6 h-6 text-black" />
             </div>
             <CardTitle className="text-2xl font-bold tracking-tight">Data Privacy Notice</CardTitle>
             <p className="text-sm text-muted-foreground font-medium">
-              Republic Act No. 10173 · SY 2026–2027
+              Republic Act No. 10173
             </p>
           </div>
         </CardHeader>
@@ -85,7 +85,7 @@ export default function PrivacyNotice({ onAccept }: PrivacyNoticeProps) {
 
             <div className={cn(
               "flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-widest transition-all duration-500 py-1",
-              hasScrolledNotice ? "text-primary" : "text-primary/60 animate-pulse"
+              hasScrolledNotice ? "text-black" : "text-black/60 animate-pulse"
             )}>
               {hasScrolledNotice ? (
                 <>

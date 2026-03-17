@@ -86,9 +86,9 @@ export default function ChangePassword() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
-      <Card className="w-full max-w-xl shadow-lg border-t-4 border-t-[hsl(var(--primary))]">
+      <Card className="w-full max-w-xl shadow-lg border-t-4 border-t-primary">
         <CardHeader className="space-y-1 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(var(--sidebar-accent))] text-[hsl(var(--primary))]">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-sidebar-accent text-primary">
             <ShieldCheck className="h-6 w-6" />
           </div>
           <CardTitle className="text-2xl font-bold">Secure Your Account</CardTitle>

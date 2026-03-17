@@ -18,8 +18,8 @@ export default function Settings() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-[hsl(var(--foreground))] tracking-tight">System Configuration</h1>
-        <p className="text-sm text-[hsl(var(--muted-foreground))] font-medium">
+        <h1 className="text-3xl font-bold text-foreground tracking-tight">System Configuration</h1>
+        <p className="text-sm text-muted-foreground font-medium">
           Manage school identity, school year, curriculum, and enrollment settings
         </p>
       </div>
@@ -29,7 +29,7 @@ export default function Settings() {
         onValueChange={handleTabChange}
         className="w-full"
       >
-        <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-6 p-1 bg-[hsl(var(--muted))] border-[hsl(var(--border))]">
+        <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-6 p-1 bg-muted border-border">
           <TabsTrigger value="profile" className="flex-1 min-w-25 font-bold transition-all">School Profile</TabsTrigger>
           <TabsTrigger value="academic-year" className="flex-1 min-w-25 font-bold transition-all">School Year</TabsTrigger>
           <TabsTrigger value="curriculum" className="flex-1 min-w-25 font-bold transition-all">Curriculum</TabsTrigger>

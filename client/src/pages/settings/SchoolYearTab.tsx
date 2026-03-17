@@ -301,7 +301,7 @@ export default function AcademicYearTab() {
     <div className="space-y-6">
       {!activeYear || showNextForm ? (
         <Card className="shadow-sm">
-          <CardHeader className="bg-[hsl(var(--muted))] border-3 border-[hsl(var(--border))] rounded-tl-lg rounded-t-lg">
+          <CardHeader className="bg-muted border-3 border-border rounded-tl-lg rounded-t-lg">
             <CardTitle className="flex items-center gap-2 text-xl">
               <CalendarIcon className="h-5 w-5" />
               Smart Setup: School Year {editYearLabel}
@@ -320,7 +320,7 @@ export default function AcademicYearTab() {
                   readOnly
                   placeholder="e.g. 2026-2027"
                 />
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                <p className="text-xs text-muted-foreground">
                   Updated based on your start date.
                 </p>
               </div>
@@ -333,7 +333,7 @@ export default function AcademicYearTab() {
                   minDate={openingMinDate}
                   maxDate={openingMaxDate}
                 />
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                <p className="text-xs text-muted-foreground">
                   Select a date through late {currentManilaYear + 1}.
                 </p>
               </div>
@@ -346,7 +346,7 @@ export default function AcademicYearTab() {
                   minDate={classEndMinDate}
                   maxDate={classEndMaxDate}
                 />
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                <p className="text-xs text-muted-foreground">
                   Ends in the next calendar year.
                 </p>
               </div>
@@ -376,7 +376,7 @@ export default function AcademicYearTab() {
               {activeYear && (
                 <Button
                   variant="ghost"
-                  className="text-[hsl(var(--destructive))] mr-auto"
+                  className="text-destructive mr-auto"
                   onClick={() => { setDeleteId(activeYear.id); setDeleteLabel(activeYear.yearLabel); }}
                   disabled={activeYear._count.enrollments > 0}
                 >
@@ -392,24 +392,24 @@ export default function AcademicYearTab() {
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-[hsl(var(--border))]">
+        <Card className="border-border">
           <CardContent className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xl font-bold">School Year {activeYear.yearLabel}</span>
                 <Badge variant="success" className="animate-pulse">● ACTIVE</Badge>
               </div>
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+              <p className="text-sm text-muted-foreground">
                 Classes: {formatManilaDate(activeYear.classOpeningDate)} 
                 {' '}→{' '} 
                 {formatManilaDate(activeYear.classEndDate)}
               </p>
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+              <p className="text-sm text-muted-foreground">
                 Enrolled: {activeYear._count.enrollments} students
               </p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" className="text-[hsl(var(--destructive))]" onClick={() => { setDeleteId(activeYear.id); setDeleteLabel(activeYear.yearLabel); }} disabled={activeYear._count.enrollments > 0}>
+              <Button variant="outline" className="text-destructive" onClick={() => { setDeleteId(activeYear.id); setDeleteLabel(activeYear.yearLabel); }} disabled={activeYear._count.enrollments > 0}>
                 <Trash2 className="h-4 w-4" />
               </Button>
               <Button onClick={() => setShowNextForm(true)}>
@@ -423,22 +423,22 @@ export default function AcademicYearTab() {
       {/* History */}
       {years.length > 0 && (
         <div className="mt-8 space-y-3">
-          <h3 className="text-sm font-semibold text-[hsl(var(--muted-foreground))]">History</h3>
+          <h3 className="text-sm font-semibold text-muted-foreground">History</h3>
           {years.map((y) => (
-            <div key={y.id} className="flex items-center justify-between p-3 rounded-lg border border-[hsl(var(--border))] text-sm">
+            <div key={y.id} className="flex items-center justify-between p-3 rounded-lg border border-border text-sm">
               <div className="flex items-center gap-3">
                 <span className="font-medium">{y.yearLabel}</span>
                 <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{y.status}</span>
                 {y.isActive && <Badge variant="success">Current</Badge>}
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-[hsl(var(--muted-foreground))] hidden sm:inline">
+                <span className="text-muted-foreground hidden sm:inline">
                   {y._count.enrollments} Enrolled
                 </span>
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-8 w-8 p-0 text-[hsl(var(--destructive))]"
+                  className="h-8 w-8 p-0 text-destructive"
                   onClick={() => { setDeleteId(y.id); setDeleteLabel(y.yearLabel); }}
                   disabled={y._count.enrollments > 0}
                 >
