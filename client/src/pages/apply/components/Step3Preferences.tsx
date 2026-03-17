@@ -170,6 +170,7 @@ export default function Step3Preferences() {
                               if (checked) setValue('spsSports', [...current, s]);
                               else setValue('spsSports', current.filter((i) => i !== s));
                             }}
+                            className="data-[state=checked]:bg-[#061E29] data-[state=checked]:text-white border-[#061E29]"
                           />
                           <Label htmlFor={`sport-${s}`} className="text-sm">{s}</Label>
                         </div>
@@ -280,6 +281,7 @@ export default function Step3Preferences() {
             id="certify" 
             checked={watch('isCertifiedTrue')} 
             onCheckedChange={(checked) => setValue('isCertifiedTrue', checked === true)} 
+            className="data-[state=checked]:bg-[#061E29] data-[state=checked]:text-white border-[#061E29]"
           />
           <Label htmlFor="certify" className="text-sm font-medium leading-tight">
             I certify the accuracy of the information provided above. <span className="text-destructive">*</span>

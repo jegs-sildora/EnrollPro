@@ -182,7 +182,7 @@ export default function Step3Background() {
                                 setValue('disabilityType', current.filter((t) => t !== type));
                               }
                             }}
-                            className="w-5 h-5"
+                            className="w-5 h-5 data-[state=checked]:bg-[#061E29] data-[state=checked]:text-white border-[#061E29]"
                           />
                           <Label htmlFor={`disability-${type}`} className="text-sm font-medium cursor-pointer">{type}</Label>
                         </div>

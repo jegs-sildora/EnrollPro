@@ -27,6 +27,11 @@ export default function Apply() {
     setHasConsented(true);
   };
 
+  const handleReset = () => {
+    sessionStorage.removeItem(CONSENT_KEY);
+    setHasConsented(false);
+  };
+
   const handleTabChange = (tab: 'form' | 'monitor') => {
     sessionStorage.setItem(TAB_KEY, tab);
     setActiveTab(tab);
@@ -60,7 +65,7 @@ export default function Apply() {
       </div>
 
       <header className="sticky top-0 z-50 w-full border-b border-border bg-card shadow-sm">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-12 h-20 sm:h-28 flex items-center justify-center">
+        <div className="max-w-360 mx-auto px-4 sm:px-12 h-20 sm:h-28 flex items-center justify-center">
           {/* ── Branding Group (Always Centered) ── */}
           <div className="flex items-center gap-4 sm:gap-10 justify-center">
             {logoUrl ? (
@@ -75,7 +80,7 @@ export default function Apply() {
               </div>
             )}
             
-            <div className="flex flex-col leading-tight text-center sm:text-left min-w-0 max-w-[350px] sm:max-w-[700px]">
+            <div className="flex flex-col leading-tight text-center sm:text-left min-0 max-w-87.5 sm:max-w-175">
               <span className="text-sm sm:text-xl font-black tracking-tight text-foreground line-clamp-2 leading-none text-center uppercase">{schoolName}</span>
               <span className="text-[8px] sm:text-[11px] font-black tracking-[0.3em] uppercase text-muted-foreground mt-1 text-center">Online Admission Portal</span>
             </div>
@@ -90,7 +95,7 @@ export default function Apply() {
           
           {/* ── Tab Switcher (Placed at the top of the content area) ── */}
           <div className="flex justify-center">
-            <div className="flex bg-white/80 p-1.5 rounded-2xl border  border-[#061E29]/80 w-full sm:w-auto shadow-inner">
+            <div className="flex bg-white/80 p-1.5 rounded-2xl border-3 border-[#061E29]/80 w-full sm:w-auto shadow-inner">
               <button 
                 onClick={() => handleTabChange('form')}
                 className={cn(
@@ -145,7 +150,7 @@ export default function Apply() {
                 exit={{ opacity: 0, scale: 1.02 }}
                 transition={{ duration: 0.4, ease: "easeOut" }}
               >
-                <AdmissionForm />
+                <AdmissionForm onReset={handleReset} />
               </motion.div>
             )}
           </AnimatePresence>

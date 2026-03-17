@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Search, Loader2, CheckCircle2, Clock, AlertCircle, FileText, Calendar, User } from 'lucide-react';
+import { Search, Loader2, CheckCircle2, Clock, AlertCircle, FileText, Calendar, User, BookOpen } from 'lucide-react';
 import api from '@/api/axiosInstance';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -30,6 +30,8 @@ interface ApplicationStatus {
   enrollment?: { section: { name: string }; enrolledAt: string };
   examDate?: string;
   rejectionReason?: string;
+  scpApplication?: boolean;
+  scpType?: string;
 }
 
 const statusConfig: Record<string, { label: string; icon: React.ComponentType<{ className?: string }>; color: string; desc: string }> = {
@@ -101,6 +103,15 @@ const statusConfig: Record<string, { label: string; icon: React.ComponentType<{ 
   },
 };
 
+const SCP_LABELS: Record<string, string> = {
+  STE: 'Science, Tech & Eng.',
+  SPA: 'Arts (SPA)',
+  SPS: 'Sports (SPS)',
+  SPJ: 'Journalism (SPJ)',
+  SPFL: 'Foreign Lang. (SPFL)',
+  SPTVE: 'Tech-Voc (SPTVE)',
+};
+
 export default function TrackApplication() {
   const [status, setStatus] = useState<ApplicationStatus | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -132,7 +143,7 @@ export default function TrackApplication() {
   const Icon = config?.icon;
 
   return (
-    <div className="max-w-2xl mx-auto py-8 px-4">
+    <div className="max-w-4xl mx-auto py-8 px-4">
       <Card className="shadow-xl border-2 border-[#061E29]/5 rounded-3xl overflow-hidden">
         <CardHeader className="bg-[#061E29] text-white p-8 text-center">
           <CardTitle className="text-2xl font-black uppercase tracking-tight">Application Monitor</CardTitle>
@@ -204,26 +215,42 @@ export default function TrackApplication() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
+                <div className={cn(
+                  "grid gap-4 text-center",
+                  status.scpApplication ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1 md:grid-cols-2"
+                )}>
                   <div className="p-5 bg-muted/50 border border-border/50 rounded-2xl space-y-1">
-                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-1.5">
+                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center justify-center gap-1.5">
                       <User className="w-3 h-3" /> Applicant Name
                     </p>
                     <p className="font-black text-[#061E29] uppercase">{status.lastName}, {status.firstName}</p>
                   </div>
                   <div className="p-5 bg-muted/50 border border-border/50 rounded-2xl space-y-1">
-                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-1.5">
+                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center justify-center gap-1.5">
                       <FileText className="w-3 h-3" /> Grade Level
                     </p>
                     <p className="font-black text-[#061E29] uppercase">
-                      {status.gradeLevel.name} 
-                      {status.strand ? ` — ${status.strand.name}` : ''}
+                      {status.gradeLevel.name}
                     </p>
                   </div>
+
+                  {status.scpApplication && (
+                    <div className="p-5 bg-[#061E29]/5 border border-[#061E29]/10 rounded-2xl space-y-1">
+                      <p className="text-[10px] font-black uppercase text-[#061E29]/60 tracking-widest flex items-center justify-center gap-1.5">
+                        <BookOpen className="w-3 h-3" /> SCP Program
+                      </p>
+                      <p className="font-black text-[#061E29] uppercase">
+                        {status.scpType ? (SCP_LABELS[status.scpType] || status.scpType) : 'Special Program'}
+                      </p>
+                    </div>
+                  )}
                   
                   {status.status === 'ASSESSMENT_SCHEDULED' && status.examDate && (
-                    <div className="p-5 bg-purple-50 border border-purple-200 rounded-2xl space-y-1 md:col-span-2">
-                      <p className="text-[10px] font-black uppercase text-purple-600 tracking-widest flex items-center gap-1.5">
+                    <div className={cn(
+                      "p-5 bg-purple-50 border border-purple-200 rounded-2xl space-y-1",
+                      status.scpApplication ? "md:col-span-3" : "md:col-span-2"
+                    )}>
+                      <p className="text-[10px] font-black uppercase text-purple-600 tracking-widest flex items-center justify-center gap-1.5">
                         <Calendar className="w-3 h-3" /> Scheduled Assessment
                       </p>
                       <p className="font-black text-purple-900 uppercase">
@@ -233,8 +260,11 @@ export default function TrackApplication() {
                   )}
 
                   {status.status === 'FOR_REVISION' && status.rejectionReason && (
-                    <div className="p-5 bg-destructive/5 border border-destructive/20 rounded-2xl space-y-1 md:col-span-2">
-                      <p className="text-[10px] font-black uppercase text-destructive tracking-widest flex items-center gap-1.5">
+                    <div className={cn(
+                      "p-5 bg-destructive/5 border border-destructive/20 rounded-2xl space-y-1",
+                      status.scpApplication ? "md:col-span-3" : "md:col-span-2"
+                    )}>
+                      <p className="text-[10px] font-black uppercase text-destructive tracking-widest flex items-center justify-center gap-1.5">
                         <AlertCircle className="w-3 h-3" /> Revision Details
                       </p>
                       <p className="font-bold text-destructive/90 italic">
@@ -243,7 +273,10 @@ export default function TrackApplication() {
                     </div>
                   )}
 
-                  <div className="p-5 bg-white border border-border rounded-2xl space-y-1 md:col-span-2 text-center">
+                  <div className={cn(
+                    "p-5 bg-white border border-border rounded-2xl space-y-1 text-center",
+                    status.scpApplication ? "md:col-span-3" : "md:col-span-2"
+                  )}>
                     <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Date Submitted</p>
                     <p className="text-xs font-bold text-muted-foreground">
                       {format(new Date(status.createdAt), 'MMMM dd, yyyy')}

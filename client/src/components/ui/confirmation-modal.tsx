@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface ConfirmationModalProps {
   open: boolean;
@@ -16,6 +17,7 @@ interface ConfirmationModalProps {
   onConfirm: () => void;
   confirmText?: string;
   loading?: boolean;
+  confirmClassName?: string;
 }
 
 export function ConfirmationModal({
@@ -26,6 +28,7 @@ export function ConfirmationModal({
   onConfirm,
   confirmText = 'Confirm',
   loading = false,
+  confirmClassName,
 }: ConfirmationModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -52,7 +55,7 @@ export function ConfirmationModal({
               if (!loading) onOpenChange(false);
             }}
             disabled={loading}
-            className="h-11 px-6 font-bold sm:w-auto w-full rounded-xl hover:opacity-90"
+            className={cn("h-11 px-6 font-bold sm:w-auto w-full rounded-xl hover:opacity-90", confirmClassName)}
           >
             {loading ? (
               <span className="flex items-center gap-2">

@@ -4,9 +4,7 @@ import { ACADEMIC_CLUSTERS, TECHPRO_CLUSTERS, SPA_ART_FIELDS, SPS_SPORTS, SPFL_L
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import { GraduationCap, BookOpen, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -50,7 +48,7 @@ export default function Step5Enrollment() {
                 "h-16 rounded-xl border-2 font-bold text-lg transition-all flex items-center justify-center shadow-sm",
                 gradeLevel === g
                   ? "border-[#061E29] bg-[#061E29] text-white pointer-events-none"
-                  : "border-border bg-white text-muted-foreground hover:bg-primary/5"
+                  : "border-border bg-white text-muted-foreground hover:bg-[#061E29]/5"
               )}
             >
               G{g}
@@ -88,7 +86,7 @@ export default function Step5Enrollment() {
                       </div>
                       <span className="font-bold">Regular Section</span>
                     </div>
-                    <p className={cn("text-[11px] pl-8", !scpApplication ? "text-white/80" : "text-muted")}>Open admission — no entrance exam required.</p>
+                    <p className={cn("text-[11px] pl-8", !scpApplication ? "text-white/80" : "text-muted-foreground")}>Open admission — no entrance exam required.</p>
                   </button>
 
                   <button type="button" className={cn(
@@ -114,13 +112,8 @@ export default function Step5Enrollment() {
                       className="overflow-hidden"
                     >
                       <div className="pt-6 space-y-6">
-                        <Separator className="opacity-20" />
                         <Label className="text-sm font-bold uppercase tracking-widest text-[#061E29]">Select SCP Program *</Label>
-                        <RadioGroup 
-                          value={scpType} 
-                          onValueChange={(val: 'STE' | 'SPA' | 'SPS' | 'SPJ' | 'SPFL' | 'SPTVE') => setValue('scpType', val)}
-                          className="grid grid-cols-1 gap-3"
-                        >
+                        <div className="grid grid-cols-1 gap-3">
                           {[
                             { id: 'STE', label: 'Science, Technology & Engineering (STE)', desc: 'Written entrance exam administered by the SDO.' },
                             { id: 'SPA', label: 'Special Program in the Arts (SPA)', desc: 'Written exam + Audition + Interview.' },
@@ -129,69 +122,96 @@ export default function Step5Enrollment() {
                             { id: 'SPFL', label: 'Special Program in Foreign Language (SPFL)', desc: 'Based on NAT English score.' },
                             { id: 'SPTVE', label: 'Special Program in Tech-Voc Education (SPTVE)', desc: 'Aptitude assessment.' },
                           ].map((p) => (
-                            <div key={p.id} className={cn(
-                              "flex flex-col p-4 rounded-xl border-2 transition-all cursor-pointer",
-                              scpType === p.id ? "border-[#061E29] bg-white" : "border-border hover:border-[#061E29]/30"
-                            )} onClick={() => setValue('scpType', p.id as 'STE' | 'SPA' | 'SPS' | 'SPJ' | 'SPFL' | 'SPTVE')}>
-                              <div className="flex items-center gap-3 mb-1">
-                                <RadioGroupItem value={p.id} id={`scp-${p.id}`} className="w-5 h-5 border-[#061E29] text-[#061E29]" />
-                                <Label htmlFor={`scp-${p.id}`} className="font-bold cursor-pointer">{p.label}</Label>
-                              </div>
-                              <p className="text-[11px] text-muted-foreground pl-8 italic">{p.desc}</p>
-                              
-                              {/* Sub-fields */}
-                              {scpType === 'SPA' && p.id === 'SPA' && (
-                                <div className="pl-8 pt-4 space-y-2">
-                                  <Label className="text-[10px] font-bold uppercase text-[#061E29]">Preferred Art Field *</Label>
-                                  <Select onValueChange={(val) => setValue('spaArtField', val)} defaultValue={watch('spaArtField')}>
-                                    <SelectTrigger className="h-10 bg-muted/30 font-bold">
-                                      <SelectValue placeholder="Select Art Field" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {SPA_ART_FIELDS.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              )}
-
-                              {scpType === 'SPS' && p.id === 'SPS' && (
-                                <div className="pl-8 pt-4 space-y-2">
-                                  <Label className="text-[10px] font-bold uppercase text-[#061E29]">Primary Sport *</Label>
-                                  <div className="grid grid-cols-2 gap-2">
-                                    {SPS_SPORTS.map(s => (
-                                      <div key={s} className="flex items-center space-x-2">
-                                        <Checkbox 
-                                          id={`sport-${s}`} 
-                                          checked={watch('spsSports')?.includes(s)}
-                                          onCheckedChange={(checked) => {
-                                            const curr = watch('spsSports') || [];
-                                            if (checked) setValue('spsSports', [...curr, s]);
-                                            else setValue('spsSports', curr.filter(i => i !== s));
-                                          }}
-                                        />
-                                        <Label htmlFor={`sport-${s}`} className="text-xs font-medium cursor-pointer">{s}</Label>
-                                      </div>
-                                    ))}
+                            <div key={p.id} className="space-y-0">
+                              <button 
+                                type="button"
+                                className={cn(
+                                  "w-full flex flex-col p-4 rounded-xl border-2 transition-all cursor-pointer text-left",
+                                  scpType === p.id 
+                                    ? "border-[#061E29] bg-[#061E29] text-white pointer-events-none shadow-md" 
+                                    : "border-border bg-white text-foreground hover:bg-[#061E29]/5"
+                                )} 
+                                onClick={() => setValue('scpType', p.id as 'STE' | 'SPA' | 'SPS' | 'SPJ' | 'SPFL' | 'SPTVE')}
+                              >
+                                <div className="flex items-center gap-3 mb-1">
+                                  <div className={cn(
+                                    "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0",
+                                    scpType === p.id ? "border-white" : "border-muted-foreground"
+                                  )}>
+                                    {scpType === p.id && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
                                   </div>
+                                  <span className="font-bold">{p.label}</span>
                                 </div>
-                              )}
+                                <p className={cn("text-[11px] pl-8 italic", scpType === p.id ? "text-white/80" : "text-muted-foreground")}>{p.desc}</p>
+                              </button>
+                              
+                              {/* Sub-fields rendered outside button to avoid nesting issues */}
+                              <AnimatePresence>
+                                {scpType === p.id && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    className="overflow-hidden"
+                                  >
+                                    <div className="pl-8 pb-4 pt-4 space-y-4">
+                                      {p.id === 'SPA' && (
+                                        <div className="space-y-2">
+                                          <Label className="text-[10px] font-bold uppercase text-[#061E29]">Preferred Art Field *</Label>
+                                          <Select onValueChange={(val) => setValue('spaArtField', val)} defaultValue={watch('spaArtField')}>
+                                            <SelectTrigger className="h-10 bg-white border-2 font-bold">
+                                              <SelectValue placeholder="Select Art Field" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              {SPA_ART_FIELDS.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                                            </SelectContent>
+                                          </Select>
+                                        </div>
+                                      )}
 
-                              {scpType === 'SPFL' && p.id === 'SPFL' && (
-                                <div className="pl-8 pt-4 space-y-2">
-                                  <Label className="text-[10px] font-bold uppercase text-[#061E29]">Preferred Language *</Label>
-                                  <Select onValueChange={(val) => setValue('spflLanguage', val)} defaultValue={watch('spflLanguage')}>
-                                    <SelectTrigger className="h-10 bg-muted/30 font-bold">
-                                      <SelectValue placeholder="Select Language" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {SPFL_LANGUAGES.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              )}
+                                      {p.id === 'SPS' && (
+                                        <div className="space-y-2">
+                                          <Label className="text-[10px] font-bold uppercase text-[#061E29]">Primary Sport *</Label>
+                                          <div className="grid grid-cols-2 gap-2">
+                                            {SPS_SPORTS.map(s => (
+                                              <div key={s} className="flex items-center space-x-2">
+                                                <Checkbox 
+                                                  id={`sport-${s}`} 
+                                                  checked={watch('spsSports')?.includes(s)}
+                                                  onCheckedChange={(checked) => {
+                                                    const curr = watch('spsSports') || [];
+                                                    if (checked) setValue('spsSports', [...curr, s]);
+                                                    else setValue('spsSports', curr.filter(i => i !== s));
+                                                  }}
+                                                  className="data-[state=checked]:bg-[#061E29] data-[state=checked]:text-white border-[#061E29]"
+                                                />
+                                                <Label htmlFor={`sport-${s}`} className="text-xs font-medium cursor-pointer">{s}</Label>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {p.id === 'SPFL' && (
+                                        <div className="space-y-2">
+                                          <Label className="text-[10px] font-bold uppercase text-[#061E29]">Preferred Language *</Label>
+                                          <Select onValueChange={(val) => setValue('spflLanguage', val)} defaultValue={watch('spflLanguage')}>
+                                            <SelectTrigger className="h-10 bg-white border-2 font-bold">
+                                              <SelectValue placeholder="Select Language" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              {SPFL_LANGUAGES.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                                            </SelectContent>
+                                          </Select>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
                             </div>
                           ))}
-                        </RadioGroup>
+                        </div>
                       </div>
                     </motion.div>
                   )}
@@ -222,24 +242,32 @@ export default function Step5Enrollment() {
 
                 <div className="space-y-4">
                   <Label className="text-sm font-bold uppercase tracking-widest text-[#061E29] opacity-70">Choose Track</Label>
-                  <RadioGroup 
-                    value={shsTrack} 
-                    onValueChange={(val: 'Academic' | 'TechPro') => {
-                      setValue('shsTrack', val);
-                      setValue('electiveCluster', undefined);
-                    }}
-                    className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-                  >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {(['Academic', 'TechPro'] as const).map((t) => (
-                      <div key={t} className={cn(
-                        "flex items-center space-x-3 p-4 rounded-xl border-2 transition-all cursor-pointer bg-white",
-                        shsTrack === t ? "border-[#061E29] ring-2 ring-[#061E29]/5 shadow-sm" : "border-border hover:border-[#061E29]/20"
-                      )} onClick={() => setValue('shsTrack', t)}>
-                        <RadioGroupItem value={t} id={`track-${t}`} className="w-5 h-5 border-[#061E29] text-[#061E29]" />
-                        <Label htmlFor={`track-${t}`} className="font-bold cursor-pointer">{t === 'Academic' ? 'Academic Track' : 'Tech-Voc Track'}</Label>
-                      </div>
+                      <button 
+                        key={t}
+                        type="button"
+                        className={cn(
+                          "flex items-center space-x-3 p-4 rounded-xl border-2 transition-all cursor-pointer bg-white text-left",
+                          shsTrack === t 
+                            ? "border-[#061E29] bg-[#061E29] text-white pointer-events-none shadow-md" 
+                            : "border-border bg-white text-foreground hover:bg-[#061E29]/5"
+                        )} 
+                        onClick={() => {
+                          setValue('shsTrack', t);
+                          setValue('electiveCluster', undefined);
+                        }}
+                      >
+                        <div className={cn(
+                          "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0",
+                          shsTrack === t ? "border-white" : "border-muted-foreground"
+                        )}>
+                          {shsTrack === t && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
+                        </div>
+                        <span className="font-bold">{t === 'Academic' ? 'Academic Track' : 'Tech-Voc Track'}</span>
+                      </button>
                     ))}
-                  </RadioGroup>
+                  </div>
                 </div>
 
                 <AnimatePresence>

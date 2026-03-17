@@ -103,7 +103,10 @@ export default function Step6Review({ onEdit, isSubmitting, onSubmitClick }: Ste
                   id="cert-check" 
                   checked={field.value} 
                   onCheckedChange={field.onChange} 
-                  className={cn("w-6 h-6 mt-0.5", errors.isCertifiedTrue && "border-destructive")}
+                  className={cn(
+                    "w-6 h-6 mt-0.5 border-[#061E29] data-[state=checked]:bg-[#061E29] data-[state=checked]:text-white",
+                    errors.isCertifiedTrue && "border-destructive"
+                  )}
                 />
               )}
             />
@@ -138,7 +141,7 @@ export default function Step6Review({ onEdit, isSubmitting, onSubmitClick }: Ste
             size="lg"
             onClick={onSubmitClick}
             disabled={isSubmitting}
-            className="h-12 px-10 font-bold sm:w-auto w-full hover:opacity-90 bg-primary"
+            className="h-12 px-10 font-bold sm:w-auto w-full hover:opacity-90 bg-[#061E29] text-white transition-all"
           >
             {isSubmitting ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

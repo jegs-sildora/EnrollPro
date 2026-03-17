@@ -346,6 +346,8 @@ export async function track(req: Request, res: Response) {
         enrollment: { select: { section: { select: { name: true } }, enrolledAt: true } },
         examDate: true,
         rejectionReason: true,
+        scpApplication: true,
+        scpType: true,
       },
     });
 

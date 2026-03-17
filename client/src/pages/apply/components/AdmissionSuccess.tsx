@@ -2,23 +2,27 @@ import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, FileText, Download, Home, Copy, Check, Loader2 } from 'lucide-react';
-import { Link } from 'react-router';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { cn } from '@/lib/utils';
 import depedLogo from '@/assets/deped-logo.png';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import Confetti from 'react-confetti';
+import { useWindowSize } from 'react-use';
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3001';
 
 interface AdmissionSuccessProps {
   trackingNumber: string;
+  onBackHome?: () => void;
 }
 
-export default function AdmissionSuccess({ trackingNumber }: AdmissionSuccessProps) {
+export default function AdmissionSuccess({ trackingNumber, onBackHome }: AdmissionSuccessProps) {
   const { schoolName, logoUrl } = useSettingsStore();
   const [copied, setCopied] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [numPieces, setNumPieces] = useState(1000);
+  const { width, height } = useWindowSize();
   const pdfRef = useRef<HTMLDivElement>(null);
 
   const handleCopy = () => {
@@ -79,6 +83,17 @@ export default function AdmissionSuccess({ trackingNumber }: AdmissionSuccessPro
 
   return (
     <div className="max-w-3xl mx-auto p-4 md:p-8">
+      {numPieces > 0 && (
+        <Confetti
+          width={width}
+          height={height}
+          recycle={false}
+          numberOfPieces={numPieces}
+          gravity={0.15}
+          onConfettiComplete={() => setNumPieces(0)}
+          style={{ position: 'fixed', top: 0, left: 0, zIndex: 10000, pointerEvents: 'none' }}
+        />
+      )}
       {/* ── PDF Container (Using hardcoded hex colors to avoid oklch parsing errors) ── */}
       <div 
         ref={pdfRef} 
@@ -193,7 +208,7 @@ export default function AdmissionSuccess({ trackingNumber }: AdmissionSuccessPro
           </div>
           <CardTitle className="text-2xl font-bold text-[#061E29]">Application Submitted Successfully!</CardTitle>
           <CardDescription className="text-lg">
-            Thank you for applying{schoolName ? ` to ${schoolName}` : ''}.
+            Thank you for applying to{schoolName ? <span className="font-bold"> {schoolName}</span> : ''}.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6 pt-6">
@@ -201,7 +216,7 @@ export default function AdmissionSuccess({ trackingNumber }: AdmissionSuccessPro
             onClick={handleCopy}
             className={cn(
               "bg-muted p-8 rounded-2xl text-center space-y-3 border-2 border-dashed cursor-pointer transition-all duration-200 group relative overflow-hidden",
-              copied ? "border-[#061E29] bg-[#061E29]/5" : "border-muted-foreground/20 hover:border-[#061E29]/50 hover:bg-[#061E29]/[0.02]"
+              copied ? "border-[#061E29] bg-[#061E29]/5" : "border-muted-foreground/20 hover:border-[#061E29]/50 hover:bg-[#061E29]/2"
             )}
           >
             <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-black">Your Application Tracking Number</p>
@@ -257,11 +272,12 @@ export default function AdmissionSuccess({ trackingNumber }: AdmissionSuccessPro
               )}
               {isGenerating ? 'Generating PDF...' : 'Download Confirmation Slip (PDF)'}
             </Button>
-            <Button asChild className="flex-1 gap-2 h-12 font-bold">
-              <Link to="/apply">
-                <Home className="w-4 h-4" />
-                Back to Home
-              </Link>
+            <Button 
+              className="flex-1 gap-2 h-12 font-bold"
+              onClick={onBackHome}
+            >
+              <Home className="w-4 h-4" />
+              Back to Home
             </Button>
           </div>
         </CardContent>

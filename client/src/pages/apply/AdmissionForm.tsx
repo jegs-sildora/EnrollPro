@@ -19,10 +19,11 @@ import { ArrowLeft, ArrowRight, AlertCircle } from 'lucide-react';
 import api from '@/api/axiosInstance';
 import { ConfirmationModal } from '@/components/ui/confirmation-modal';
 import { toUpperCaseRecursive } from '@/lib/utils';
+import { sileo } from 'sileo';
 
 
 
-export default function AdmissionForm() {
+export default function AdmissionForm({ onReset }: { onReset: () => void }) {
   const stepper = useStepper();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState('');
@@ -31,6 +32,44 @@ export default function AdmissionForm() {
   const [maxStepReached, setMaxStepReached] = useState(1);
   const [isEditing, setIsEditing] = useState(false);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+
+  const handleFullReset = () => {
+    // 1. Reset React Hook Form to initial defaults
+    reset({
+      schoolYear: '2026-2027',
+      privacyConsentGiven: true,
+      gradeLevel: '7',
+      isIpCommunity: false,
+      is4PsBeneficiary: false,
+      isBalikAral: false,
+      isLearnerWithDisability: false,
+      isPermanentSameAsCurrent: true,
+      scpApplication: false,
+      learnerType: 'Regular',
+      isCertifiedTrue: false,
+      dateAccomplished: new Date(),
+    });
+
+    // 2. Reset local component states
+    setIsSubmitted(false);
+    setTrackingNumber('');
+    setMaxStepReached(1);
+    setIsEditing(false);
+    setShowSubmitConfirm(false);
+    setSubmitError('');
+
+    // 3. Reset stepper to first step
+    stepper.navigation.goTo('personal');
+
+    // 4. Clear all session storage related to the application
+    sessionStorage.removeItem('enrollpro_apply_draft');
+    sessionStorage.removeItem('enrollpro_apply_step');
+    sessionStorage.removeItem('enrollpro_apply_max_step');
+    sessionStorage.removeItem('enrollpro_apply_editing');
+
+    // 5. Notify parent (Index.tsx) to reset consent state
+    onReset();
+  };
 
   const methods = useForm<AdmissionFormData, unknown, AdmissionFormData>({
     resolver: zodResolver(admissionSchema) as import('react-hook-form').Resolver<AdmissionFormData>,
@@ -194,6 +233,12 @@ export default function AdmissionForm() {
 
       const response = await api.post('/applications', payload);
       setTrackingNumber(response.data.trackingNumber);
+      
+      sileo.success({
+        title: 'Application Submitted!',
+        description: `Your tracking number is ${response.data.trackingNumber}. Keep it safe!`,
+      });
+
       setIsSubmitted(true);
       reset(); // Reset form values
       sessionStorage.removeItem('enrollpro_apply_draft');
@@ -211,7 +256,7 @@ export default function AdmissionForm() {
   };
 
   if (isSubmitted) {
-    return <AdmissionSuccess trackingNumber={trackingNumber} />;
+    return <AdmissionSuccess trackingNumber={trackingNumber} onBackHome={handleFullReset} />;
   }
 
   const isLastStep = stepper.state.isLast;
@@ -331,6 +376,7 @@ export default function AdmissionForm() {
         confirmText="Confirm Submission"
         onConfirm={() => handleSubmit(onSubmit)()}
         loading={isSubmitting}
+        confirmClassName="bg-[#061E29] text-white hover:bg-[#061E29]/90"
       />
     </div>
   );
