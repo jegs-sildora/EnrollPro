@@ -11,6 +11,35 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { DatePicker } from '@/components/ui/date-picker';
 
+import { Skeleton } from '@/components/ui/skeleton';
+import { useMemo } from 'react';
+
+const MANILA_TIME_ZONE = 'Asia/Manila';
+
+function getDatePartsInTimeZone(date: Date, timeZone = MANILA_TIME_ZONE) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+  }).formatToParts(date);
+  const lookup = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return {
+    year: Number(lookup.year),
+    month: Number(lookup.month),
+    day: Number(lookup.day),
+  };
+}
+
+function utcNoonDate(year: number, monthIndex: number, day: number) {
+  return new Date(Date.UTC(year, monthIndex, day, 12, 0, 0, 0));
+}
+
+function normalizeDateToManila(date: Date) {
+  const { year, month, day } = getDatePartsInTimeZone(date);
+  return utcNoonDate(year, month - 1, day);
+}
+
 interface AYDates {
   id: number;
   yearLabel: string;
@@ -59,6 +88,11 @@ export default function EnrollmentGateTab() {
   const [earlyRegCloseDate, setEarlyRegCloseDate] = useState<Date | undefined>();
   const [enrollOpenDate, setEnrollOpenDate] = useState<Date | undefined>();
   const [enrollCloseDate, setEnrollCloseDate] = useState<Date | undefined>();
+
+  const currentManilaYear = useMemo(() => getDatePartsInTimeZone(new Date()).year, []);
+  // Min = start of current year, Max = end of next year
+  const minDate = useMemo(() => utcNoonDate(currentManilaYear, 0, 1), [currentManilaYear]);
+  const maxDate = useMemo(() => utcNoonDate(currentManilaYear + 1, 11, 31), [currentManilaYear]);
 
   const fetchAy = async () => {
     if (!activeAcademicYearId) {
@@ -139,7 +173,26 @@ export default function EnrollmentGateTab() {
   }
 
   if (loading || !ay) {
-    return <div className="text-center py-8 text-sm text-[hsl(var(--muted-foreground))]">Loading schedule…</div>;
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-8 w-64 mb-2" />
+            <Skeleton className="h-4 w-96" />
+          </CardHeader>
+          <CardContent className="space-y-8 pt-4">
+            <div className="space-y-4">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-16 w-full rounded-lg" />
+            </div>
+            <div className="space-y-4">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-16 w-full rounded-lg" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   const phase1Status = getPhaseStatus(ay.earlyRegOpenDate, ay.earlyRegCloseDate);
@@ -182,11 +235,21 @@ export default function EnrollmentGateTab() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border p-3 rounded-lg">
                 <div className="space-y-1">
                   <Label className="text-xs">Opens On</Label>
-                  <DatePicker date={earlyRegOpenDate} setDate={setEarlyRegOpenDate} />
+                  <DatePicker 
+                    date={earlyRegOpenDate} 
+                    setDate={setEarlyRegOpenDate} 
+                    minDate={minDate}
+                    maxDate={maxDate}
+                  />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Closes On</Label>
-                  <DatePicker date={earlyRegCloseDate} setDate={setEarlyRegCloseDate} />
+                  <DatePicker 
+                    date={earlyRegCloseDate} 
+                    setDate={setEarlyRegCloseDate} 
+                    minDate={minDate}
+                    maxDate={maxDate}
+                  />
                 </div>
               </div>
             ) : (
@@ -221,11 +284,21 @@ export default function EnrollmentGateTab() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border p-3 rounded-lg">
                 <div className="space-y-1">
                   <Label className="text-xs">Opens On</Label>
-                  <DatePicker date={enrollOpenDate} setDate={setEnrollOpenDate} />
+                  <DatePicker 
+                    date={enrollOpenDate} 
+                    setDate={setEnrollOpenDate} 
+                    minDate={minDate}
+                    maxDate={maxDate}
+                  />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Closes On</Label>
-                  <DatePicker date={enrollCloseDate} setDate={setEnrollCloseDate} />
+                  <DatePicker 
+                    date={enrollCloseDate} 
+                    setDate={setEnrollCloseDate} 
+                    minDate={minDate}
+                    maxDate={maxDate}
+                  />
                 </div>
               </div>
             ) : (

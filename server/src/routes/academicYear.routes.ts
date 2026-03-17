@@ -17,13 +17,13 @@ const router: Router = Router();
 
 // TEACHER needs list to see the AYSwitcher, SYSTEM_ADMIN needs access to manage
 router.get('/', authenticate, authorize('REGISTRAR', 'SYSTEM_ADMIN', 'TEACHER'), listAcademicYears);
-router.get('/next-defaults', authenticate, authorize('REGISTRAR', 'SYSTEM_ADMIN'), getNextDefaults);
-router.get('/:id', authenticate, authorize('REGISTRAR', 'SYSTEM_ADMIN'), getAcademicYear);
-router.post('/activate', authenticate, authorize('REGISTRAR', 'SYSTEM_ADMIN'), createAcademicYear);
-router.put('/:id', authenticate, authorize('REGISTRAR', 'SYSTEM_ADMIN'), updateAcademicYear);
-router.patch('/:id/status', authenticate, authorize('REGISTRAR', 'SYSTEM_ADMIN'), transitionAcademicYear);
-router.patch('/:id/override', authenticate, authorize('REGISTRAR', 'SYSTEM_ADMIN'), toggleOverride);
-router.patch('/:id/dates', authenticate, authorize('REGISTRAR', 'SYSTEM_ADMIN'), updateDates);
-router.delete('/:id', authenticate, authorize('REGISTRAR', 'SYSTEM_ADMIN'), deleteAcademicYear);
+router.get('/next-defaults', authenticate, authorize('SYSTEM_ADMIN'), getNextDefaults);
+router.get('/:id', authenticate, authorize('SYSTEM_ADMIN'), getAcademicYear);
+router.post('/activate', authenticate, authorize('SYSTEM_ADMIN'), createAcademicYear);
+router.put('/:id', authenticate, authorize('SYSTEM_ADMIN'), updateAcademicYear);
+router.patch('/:id/status', authenticate, authorize('SYSTEM_ADMIN'), transitionAcademicYear);
+router.patch('/:id/override', authenticate, authorize('SYSTEM_ADMIN'), toggleOverride);
+router.patch('/:id/dates', authenticate, authorize('SYSTEM_ADMIN'), updateDates);
+router.delete('/:id', authenticate, authorize('SYSTEM_ADMIN'), deleteAcademicYear);
 
 export default router;

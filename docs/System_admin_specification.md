@@ -1,10 +1,9 @@
 # System Administrator Role Specification
-## Admission & Enrollment Information Management System
+## Web-Based School Admission, Enrollment & Information Management System
 
 **Document Type:** Full Role Specification — System Admin
-**Derives From:** PRD v2.2.1 · Sidebar Navigation Spec · Registrar Storyboard
+**Derives From:** PRD v3.0.0 · Sidebar Navigation Spec · Registrar Storyboard
 **Policy Basis:** DepEd Order No. 017, s. 2025 · DM 012, s. 2026 · RA 10173 (Data Privacy Act)
-**PRD Impact:** Additive — extends PRD v2.2.1 to v2.3.0
 **Stack:** PERN (PostgreSQL · Express · React · Node.js) · Prisma 6 · JWT · shadcn/ui
 
 ---
@@ -95,9 +94,14 @@ The System Admin is **not** involved in day-to-day enrollment operations — tha
 | View own sections + class lists | ✅ | ✅ | ✅ |
 | View all applications | ❌ | ✅ | ✅ |
 | Approve / Reject applications | ❌ | ✅ | ✅ |
+| Manage SCP assessment workflow | ❌ | ✅ | ✅ |
+| Enter F2F walk-in applications | ❌ | ✅ | ✅ |
 | Manage sections (CRUD) | ❌ | ✅ | ✅ |
 | Search all students | ❌ | ✅ | ✅ |
-| Manage settings (school profile, AY, strands, gate) | ❌ | ✅ | ✅ |
+| Edit student records (4-tab profile) | ❌ | ✅ | ✅ |
+| Manage teachers (CRUD) | ❌ | ✅ | ✅ |
+| Provision teacher system accounts | ❌ | ✅ | ✅ |
+| Manage settings (school profile, AY, strands, SCP, gate) | ❌ | ✅ | ✅ |
 | View audit logs | ❌ | ✅ (own + system) | ✅ (all users) |
 | Create / Edit / Deactivate user accounts | ❌ | ❌ | ✅ |
 | Reset another user's password | ❌ | ❌ | ✅ |
@@ -127,17 +131,19 @@ enum Role {
 
 ```prisma
 model User {
-  id           Int       @id @default(autoincrement())
-  name         String
-  email        String    @unique
-  password     String    // bcrypt hash, 12 rounds
-  role         Role
-  isActive     Boolean   @default(true)   // ← new: soft deactivation
-  lastLoginAt  DateTime?                  // ← new: track last login timestamp
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  createdById  Int?                        // ← new: who created this account
-  
+  id                 Int       @id @default(autoincrement())
+  name               String
+  email              String    @unique
+  password           String    // bcrypt hash, 12 rounds
+  role               Role
+  isActive           Boolean   @default(true)   // soft deactivation
+  mustChangePassword Boolean   @default(true)   // force PW change on first login
+  lastLoginAt        DateTime?                  // track last login timestamp
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  createdById        Int?                        // who created this account
+
+  teacher    Teacher?
   sections     Section[]
   enrollments  Enrollment[]
   auditLogs    AuditLog[]
@@ -146,11 +152,12 @@ model User {
 }
 ```
 
-**New fields explained:**
+**Fields explained:**
 
 | Field | Type | Purpose |
 |---|---|---|
 | `isActive` | `Boolean` | Soft-deactivation flag. Inactive users cannot log in but their data (audit logs, enrollment records) is preserved. |
+| `mustChangePassword` | `Boolean` | When `true`, user is redirected to `/change-password` after login. Set on account creation and admin password reset. |
 | `lastLoginAt` | `DateTime?` | Updated on every successful login. Shown in the User Management table. Helps Admin identify dormant accounts. |
 | `createdById` | `Int?` | Foreign key to the Admin who created this account. Enables accountability on who provisioned each account. |
 

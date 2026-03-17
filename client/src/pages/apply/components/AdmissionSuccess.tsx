@@ -13,12 +13,12 @@ export default function AdmissionSuccess({ trackingNumber }: AdmissionSuccessPro
 
   return (
     <div className="max-w-3xl mx-auto p-4 md:p-8">
-      <Card className="shadow-lg border-2 border-primary/20">
+      <Card className="shadow-lg border-2 border-black/10">
         <CardHeader className="text-center pb-2">
           <div className="flex justify-center mb-4">
-            <CheckCircle2 className="w-16 h-16 text-primary" />
+            <CheckCircle2 className="w-16 h-16 text-black" />
           </div>
-          <CardTitle className="text-2xl font-bold text-primary">Application Submitted Successfully!</CardTitle>
+          <CardTitle className="text-2xl font-bold text-black">Application Submitted Successfully!</CardTitle>
           <CardDescription className="text-lg">
             Thank you for applying{schoolName ? ` to ${schoolName}` : ''}.
           </CardDescription>

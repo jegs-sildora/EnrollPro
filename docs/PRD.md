@@ -1,8 +1,7 @@
 # Product Requirements Document (PRD)
 
-**Project Name:** Web-Based Admission Portal and Enrollment Information Management System
-**Beneficiary:** [School Name]
-**Document Version:** 2.2.0
+**Project Name:** Web-Based School Admission, Enrollment & Information Management System
+**Document Version:** 3.0.0
 **Status:** Ready for Implementation
 **Target Actor:** Claude Code (AI Full-Stack Developer)
 **Stack:** PERN (PostgreSQL · Express · React · Node.js)
@@ -14,645 +13,258 @@
 1. [Project Overview](#1-project-overview)
 2. [Technology Stack & Architecture](#2-technology-stack--architecture)
 3. [Design System & Visual Identity](#3-design-system--visual-identity)
-   - 3.1 [Typography](#31-typography)
-   - 3.2 [Dynamic Color Scheme System](#32-dynamic-color-scheme-system)
-   - 3.3 [Visual Design Principles](#33-visual-design-principles)
-   - 3.4 [Responsive Design Requirements](#34-responsive-design-requirements)
-   - 3.5 [Toast Notifications — Sileo](#35-toast-notifications--sileo)
 4. [User Roles & Permissions](#4-user-roles--permissions)
 5. [Database Schema — Prisma](#5-database-schema--prisma)
 6. [Core Modules](#6-core-modules)
    - 6.1 [Online Admission Portal](#61-online-admission-portal)
-   - 6.2 [Registrar Administration Dashboard](#62-registrar-administration-dashboard)
-   - 6.3 [Enrollment Management & Section Setting](#63-enrollment-management--section-setting)
-   - 6.4 [Academic Year Configuration](#64-academic-year-configuration)
-   - 6.5 [Student Record Search & Filtering](#65-student-record-search--filtering)
-   - 6.6 [System Audit Trail & Activity Logging](#66-system-audit-trail--activity-logging)
-   - 6.7 [Automated Email Notification System](#67-automated-email-notification-system)
+   - 6.2 [Face-to-Face (F2F) Admission](#62-face-to-face-f2f-admission)
+   - 6.3 [Registrar Administration Dashboard](#63-registrar-administration-dashboard)
+   - 6.4 [Enrollment Management](#64-enrollment-management)
+   - 6.5 [Student Information Management System (SIMS)](#65-student-information-management-system-sims)
+   - 6.6 [Teacher Management](#66-teacher-management)
+   - 6.7 [Grade Level & Sectioning Management](#67-grade-level--sectioning-management)
+   - 6.8 [Academic Year Configuration](#68-academic-year-configuration)
+   - 6.9 [System Audit Trail & Activity Logging](#69-system-audit-trail--activity-logging)
+   - 6.10 [Automated Email Notification System](#610-automated-email-notification-system)
 7. [REST API Contracts](#7-rest-api-contracts)
 8. [Frontend Routing Structure](#8-frontend-routing-structure)
 9. [Security Requirements](#9-security-requirements)
-10. [Out-of-Scope Limitations](#10-out-of-scope-limitations)
-11. [Acceptance Criteria](#11-acceptance-criteria)
+   - 9.1 [Login Access Guard — Layer 1 (Frontend)](#91-login-access-guard--layer-1-frontend)
+   - 9.2 [Pre-Flight Login Token — Layer 2 (Backend)](#92-pre-flight-login-token--layer-2-backend)
+10. [Dynamic School Configuration](#10-dynamic-school-configuration)
+11. [Out-of-Scope Limitations](#11-out-of-scope-limitations)
+12. [Acceptance Criteria](#12-acceptance-criteria)
 
 ---
 
 ## 1. Project Overview
 
-The school requires a centralized digital platform to replace its paper-based student admission and enrollment workflows. This system provides:
+This system is a **school-agnostic**, multi-module platform that replaces paper-based admission, enrollment, and student records workflows for any Philippine public secondary school. It is designed to be fully configurable — the school name, logo, grade levels, SCP programs, strand offerings, and admission rules are all runtime settings, not hardcoded values.
 
-- A **public-facing admission portal** for incoming students to register their demographic profiles online.
-- A **secure registrar dashboard** for administrators to review applications, assign sections, manage configurations, and monitor enrollment capacity.
-- An **automated communication layer** to notify applicants of their status without manual intervention.
+**Five primary modules:**
 
-**Primary Goal:** Eliminate administrative bottlenecks, reduce data entry errors, enforce section capacity limits, and provide real-time enrollment analytics.
+| Module | Primary Actor | Description |
+|---|---|---|
+| Admission (Online + F2F) | Public (online) · Registrar (F2F) | Accept and process applications from both channels |
+| Enrollment Management | Registrar | Review, approve, assign sections, manage capacity |
+| Student Information Management System (SIMS) | Registrar · System Admin | Complete, searchable student records and academic history |
+| Teacher Management | Registrar · System Admin | Teacher profiles, section assignments, account provisioning |
+| Grade Level & Sectioning Management | Registrar · System Admin | Configure grade levels, strands, sections, and capacity |
+
+**Core design principles:**
+- Zero hardcoded school data — every school-specific value flows from `SchoolSettings` and admin-configured records in the database
+- All admission and enrollment processes adapt dynamically to the school's configured grade levels, SCP offerings, and strand structure
+- The `/login` route is inaccessible to the public by direct URL — protected by a two-layer gate (§9.1, §9.2)
 
 ---
 
 ## 2. Technology Stack & Architecture
 
-> **Instruction for Claude Code:** All technology choices below are non-negotiable. Do not substitute or introduce alternative frameworks. This is a PERN stack project — PostgreSQL, Express, React, Node.js.
+> **Instruction for Claude Code:** All technology choices below are non-negotiable. Do not substitute or introduce alternative frameworks. This is a PERN stack project.
 
 ### Stack Overview
 
 | Layer | Technology | Version | Notes |
 |---|---|---|---|
-| Package Manager | pnpm | 10.x | Use exclusively — no npm or yarn. Monorepo managed with `pnpm-workspace.yaml` |
-| Runtime | Node.js | 22 LTS | Minimum 22.12+ required by Vite 7; use ES modules (`"type": "module"`) |
-| Backend Framework | Express.js | 5.1 | RESTful API server; now default on npm |
-| ORM | Prisma | 6.x | Type-safe PostgreSQL access; all DB interactions through Prisma Client |
-| Database | PostgreSQL | 18 | Hosted locally or via managed service (e.g., Supabase, Railway) |
-| Frontend Framework | React | 19.x | Functional components only; no class components |
-| Frontend Routing | React Router | v7 | SPA routing; `createBrowserRouter` API |
-| UI Component Library | shadcn/ui | Latest | Built on Radix UI + Tailwind CSS v4 |
-| Styling | Tailwind CSS | v4.x | Vite-native plugin (`@tailwindcss/vite`); no `tailwind.config.js` — config lives in CSS via `@theme` |
-| Authentication | JWT | — | `jsonwebtoken` (BE) + Axios interceptors (FE) for token attachment |
-| Form Validation (FE) | React Hook Form + Zod | Latest | All forms must use this combination |
-| Input Validation (BE) | Zod | Latest | Validate all request bodies in Express middleware before reaching controllers |
-| HTTP Client (FE) | Axios | Latest | All API calls from React; centralized instance with JWT interceptor |
-| Toast Notifications | Sileo | Latest | Gooey spring-physics toasts; replaces all `alert()` and inline error banners |
-| Email | Nodemailer + Resend SMTP | Latest | Async via `setImmediate()`; never blocks HTTP response |
+| Package Manager | pnpm | 10.x | Monorepo via `pnpm-workspace.yaml` |
+| Runtime | Node.js | 22 LTS | ES modules (`"type": "module"`) |
+| Backend Framework | Express.js | 5.1 | RESTful API only — renders no HTML |
+| ORM | Prisma | 6.x | All DB access through Prisma Client |
+| Database | PostgreSQL | 18 | Local or managed (Supabase, Railway) |
+| Frontend Framework | React | 19.x | Functional components only |
+| Frontend Routing | React Router | v7 | `createBrowserRouter` API |
+| UI Components | shadcn/ui | Latest | Radix UI + Tailwind CSS v4 |
+| Styling | Tailwind CSS | v4.x | `@tailwindcss/vite`; config in CSS via `@theme` |
+| Authentication | JWT | — | `jsonwebtoken` (BE) + Axios interceptors (FE) |
+| Form Validation (FE) | React Hook Form + Zod | Latest | All forms use this combination |
+| Input Validation (BE) | Zod | Latest | Middleware validation before every controller |
+| HTTP Client (FE) | Axios | Latest | Centralized instance with JWT interceptor |
+| Toast Notifications | Sileo | Latest | Spring-physics toasts; no `alert()` anywhere |
+| Email | Nodemailer + Resend SMTP | Latest | Async via `setImmediate()`; never blocks HTTP |
 | Build Tool (FE) | Vite | 7.x | Requires Node.js 22.12+ |
-| File Upload | Multer | Latest | Express middleware for logo/image uploads |
-| Color Extraction | color-thief-node | Latest | Server-side dominant accent color extraction from uploaded logos |
+| File Upload | Multer | Latest | Logo/document uploads |
+| Color Extraction | color-thief-node | Latest | Server-side accent extraction from logos |
+| State Management (FE) | Zustand | Latest | Auth store, settings store, sidebar store |
 
 ### Repository Structure
 
 ```
 /
-├── pnpm-workspace.yaml            # Declares server/ and client/ as workspace packages
-├── server/                        # Express backend
+├── pnpm-workspace.yaml
+├── server/
 │   ├── prisma/
-│   │   ├── schema.prisma          # Single source of truth for DB schema
-│   │   └── migrations/            # Auto-generated by prisma migrate
+│   │   ├── schema.prisma
+│   │   └── migrations/
 │   ├── src/
-│   │   ├── controllers/           # Route handler logic
-│   │   ├── middleware/            # auth, validation, error handler, audit
-│   │   ├── routes/                # Express routers grouped by domain
-│   │   ├── services/              # Business logic (enrollment, email, color)
-│   │   ├── validators/            # Zod schemas for request validation
-│   │   └── app.ts                 # Express app setup
-│   └── server.ts                  # Entry point
+│   │   ├── controllers/
+│   │   ├── middleware/        # auth, loginToken, validation, error, audit
+│   │   ├── routes/
+│   │   ├── services/
+│   │   ├── validators/
+│   │   └── app.ts
+│   └── server.ts
 │
-└── client/                        # React + Vite frontend (TypeScript)
+└── client/
     ├── src/
-    │   ├── api/                   # Axios instance + API call functions
-    │   ├── components/            # Shared UI components (.tsx)
-    │   ├── hooks/                 # Custom React hooks (.ts)
-    │   ├── layouts/               # AppLayout.tsx, GuestLayout.tsx, AuthLayout.tsx
-    │   ├── pages/                 # Route-level page components (.tsx)
-    │   ├── router/                # React Router v7 config (index.tsx)
-    │   └── stores/                # Zustand stores (.ts)
+    │   ├── api/               # Axios instance + API call functions
+    │   ├── components/        # Shared UI components (.tsx)
+    │   ├── hooks/
+    │   ├── layouts/           # AppLayout.tsx, GuestLayout.tsx, AuthLayout.tsx
+    │   ├── pages/
+    │   │   ├── admission/     # Apply.tsx, F2FAdmission.tsx, TrackApplication.tsx
+    │   │   ├── dashboard/
+    │   │   ├── applications/
+    │   │   ├── students/      # SIMS: Index.tsx, Profile.tsx
+    │   │   ├── teachers/      # Teacher Mgmt: Index.tsx, Profile.tsx
+    │   │   ├── sections/
+    │   │   ├── audit/
+    │   │   └── settings/
+    │   ├── router/            # index.tsx + navigationRef.ts
+    │   └── stores/
     ├── vite.config.ts
-    ├── tsconfig.json
     └── index.html
 ```
-
-### Architecture Pattern
-
-```
-[Browser — React SPA]
-        ↕  HTTP / JSON  (Axios + JWT Bearer Token)
-[Express.js REST API]
-        ↕
-[Prisma Client ORM]
-        ↕
-[PostgreSQL 18 Database]
-```
-
-The React frontend is a fully decoupled SPA served by Vite in development and a static file server (or CDN) in production. Express serves exclusively as a JSON REST API — it renders no HTML.
 
 ---
 
 ## 3. Design System & Visual Identity
 
-> **Instruction for Claude Code:** This section defines the entire visual language of the application. Every UI component, layout, and interaction must comply with these specifications.
-
 ### 3.1 Typography
 
-**Font Family:** `Instrument Sans` — loaded exclusively from Bunny Fonts (privacy-friendly Google Fonts alternative).
+**Font:** `Instrument Sans` — loaded from Bunny Fonts exclusively.
 
 ```html
-<!-- client/index.html — inside <head> -->
+<!-- client/index.html -->
 <link rel="preconnect" href="https://fonts.bunny.net" />
-<link
-  href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700&display=swap"
-  rel="stylesheet"
-/>
-```
-
-**Tailwind v4 Setup** — no `tailwind.config.js`. Font and theme tokens are declared directly in CSS using the `@theme` directive.
-
-```ts
-// client/vite.config.ts
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite';
-
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-});
+<link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700&display=swap" rel="stylesheet"/>
 ```
 
 ```css
 /* client/src/index.css */
 @import "tailwindcss";
-
 @theme {
   --font-sans: 'Instrument Sans', ui-sans-serif, system-ui;
 }
 ```
 
-Apply `font-sans` as the base class on `<body>` globally. All text elements inherit this.
-
-| Token | Usage | Tailwind Class |
-|---|---|---|
-| Display | Page titles, hero headings | `text-3xl font-bold` |
-| Heading 1 | Section headings | `text-2xl font-semibold` |
-| Heading 2 | Card titles, module labels | `text-xl font-semibold` |
-| Body | Paragraphs, form labels | `text-sm font-normal` |
-| Caption | Helper text, timestamps | `text-xs font-normal text-muted-foreground` |
-
----
+Apply `font-sans` as a base class on `<body>` globally.
 
 ### 3.2 Dynamic Color Scheme System
 
-#### Design Intent
-
-The application uses a **two-layer color model**:
+**Two-layer model:**
 
 | Layer | Role | Behavior |
 |---|---|---|
-| **Main (White)** | Page background, surfaces, cards, dialogs | **Permanent — never changes** |
-| **Accent (Blue → Logo-derived)** | Buttons, active states, links, badges, focus rings, sidebar highlights | **Default blue; replaced by the dominant color extracted from the uploaded school logo** |
+| Main (White) | Page backgrounds, surfaces, cards | Permanent — never changes |
+| Accent (Blue → Logo-derived) | Buttons, active states, focus rings, sidebar highlights | Default blue; replaced by dominant color from the uploaded school logo |
 
-When an admin uploads a school logo, only the **accent color tokens** are updated to reflect the logo's dominant color. The white main layer, foreground text, borders, and muted surfaces are all preserved exactly as defined below.
-
----
-
-#### Default Color Tokens
+#### Default CSS Tokens
 
 ```css
-/* client/src/index.css
-   ─── PERMANENT MAIN LAYER — never overridden by logo extraction ─── */
 :root {
-  --background:            0 0% 100%;        /* White — page & card backgrounds */
-  --foreground:            222 47% 11%;       /* Near-black — all body text */
-  --muted:                 220 14% 96%;       /* Off-white — table rows, input bg */
-  --muted-foreground:      215 16% 47%;       /* Mid-grey — placeholder, captions */
-  --border:                220 13% 91%;       /* Light grey — dividers, input borders */
-  --card:                  0 0% 100%;         /* White — card surface */
-  --card-foreground:       222 47% 11%;
-  --popover:               0 0% 100%;
-  --popover-foreground:    222 47% 11%;
+  /* ─── PERMANENT MAIN LAYER — never overridden ─── */
+  --background:         0 0% 100%;
+  --foreground:         222 47% 11%;
+  --muted:              220 14% 96%;
+  --muted-foreground:   215 16% 47%;
+  --border:             220 13% 91%;
+  --card:               0 0% 100%;
+  --card-foreground:    222 47% 11%;
+  --popover:            0 0% 100%;
+  --popover-foreground: 222 47% 11%;
 
-  /* ─── DEFAULT ACCENT LAYER — blue; replaced on logo upload ─── */
-  --accent:                221 83% 53%;       /* #2563EB — Tailwind Blue-600 (default) */
-  --accent-foreground:     0 0% 100%;         /* White text on accent bg */
-  --accent-muted:          213 97% 94%;       /* Light blue tint for hover states */
-  --accent-ring:           221 83% 53%;       /* Focus ring color */
+  /* ─── DEFAULT ACCENT LAYER — blue; overridden on logo upload ─── */
+  --accent:             221 83% 53%;
+  --accent-foreground:  0 0% 100%;
+  --accent-muted:       213 97% 94%;
+  --accent-ring:        221 83% 53%;
 
   /* shadcn/ui semantic aliases — point to accent tokens */
-  --primary:               var(--accent);
-  --primary-foreground:    var(--accent-foreground);
-  --ring:                  var(--accent-ring);
+  --primary:            var(--accent);
+  --primary-foreground: var(--accent-foreground);
+  --ring:               var(--accent-ring);
 }
 ```
 
-> **Instruction for Claude Code:** `--primary` and `--ring` are intentional aliases for `--accent`. All shadcn/ui components that use `bg-primary`, `text-primary`, `ring-primary` etc. will automatically reflect the correct accent color — both the default blue and any logo-extracted replacement — without any component-level changes.
-
----
-
-#### Logo-Driven Accent Extraction — Implementation Spec
-
-When an admin uploads a school logo, the server extracts the dominant **non-white, non-near-white** color and uses it to replace only the accent tokens.
-
-**Step 1 — Server-Side Extraction (Node.js)**
-
-```bash
-# server/
-pnpm add color-thief-node
-```
-
-```js
-// server/src/services/logoColorService.ts
-import ColorThief from 'color-thief-node';
-
-/**
- * Extracts the dominant accent color from an uploaded logo.
- * Filters out near-white and near-black colors to ensure a
- * usable, saturated accent is always returned.
- *
- * @param {string} filePath - Absolute path to the uploaded image
- * @returns {string} HSL string, e.g. "221 83% 53%"
- */
-export async function extractAccentColor(filePath) {
-  const thief = new ColorThief();
-  // Extract top 5 colors from the palette
-  const palette = await thief.getPaletteFromURL(filePath, 5);
-
-  // Filter out near-whites (lightness > 85%) and near-blacks (lightness < 15%)
-  // to avoid setting white or black as the accent
-  const usable = palette
-    .map(rgbToHslObject)
-    .filter(({ s, l }) => l >= 15 && l <= 85 && s >= 20);
-
-  // Use the most dominant usable color; fall back to default blue if none found
-  const chosen = usable[0] ?? { h: 221, s: 83, l: 53 };
-  return `${chosen.h} ${chosen.s}% ${chosen.l}%`;
-}
-
-function rgbToHslObject([r, g, b]) {
-  r /= 255; g /= 255; b /= 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s = 0, l = (max + min) / 2;
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-      case g: h = ((b - r) / d + 2) / 6; break;
-      case b: h = ((r - g) / d + 4) / 6; break;
-    }
-  }
-  return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
-}
-```
-
-**Step 2 — Persist Only the Accent HSL**
-
-Store just the extracted accent value in `SchoolSettings.colorScheme`. The main/white layer is never stored because it never changes.
-
-```json
-{
-  "accent_hsl": "27 95% 53%",
-  "extracted_at": "2025-01-15T10:30:00Z"
-}
-```
-
-**Step 3 — Serve via Public Settings API**
-
-`GET /api/settings/public` (no auth required) returns `colorScheme` so React can apply the accent on first load.
-
-**Step 4 — Apply Only Accent Tokens in React**
-
-```tsx
-// client/src/layouts/RootLayout.tsx
-import { useEffect } from 'react';
-import { useSettingsStore } from '@/stores/settingsStore';
-
-// Default blue accent — used when no logo has been uploaded
-const DEFAULT_ACCENT_HSL     = '221 83% 53%';
-const DEFAULT_ACCENT_MUTED   = '213 97% 94%';
-
-export default function RootLayout({ children }) {
-  const { colorScheme } = useSettingsStore();
-
-  useEffect(() => {
-    const root = document.documentElement;
-    const accent = colorScheme?.accent_hsl ?? DEFAULT_ACCENT_HSL;
-
-    // Only the accent tokens are updated — the white main layer is untouched
-    root.style.setProperty('--accent',           accent);
-    root.style.setProperty('--accent-foreground','0 0% 100%');
-    root.style.setProperty('--accent-ring',      accent);
-    root.style.setProperty('--primary',          accent);
-    root.style.setProperty('--primary-foreground','0 0% 100%');
-    root.style.setProperty('--ring',             accent);
-
-    // Derive a lightened muted tint from the accent (increase lightness to ~94%)
-    // This keeps hover states and subtle tints on-brand
-    const [h, s] = accent.split(' ');
-    root.style.setProperty('--accent-muted', `${h} ${s} 94%`);
-  }, [colorScheme]);
-
-  return (
-    <div className="min-h-screen bg-background font-sans">
-      {children}
-    </div>
-  );
-}
-```
-
-**What changes on logo upload vs. what stays fixed:**
-
-| CSS Token | Default Value | After Logo Upload | Locked? |
-|---|---|---|---|
-| `--background` | `0 0% 100%` (white) | Unchanged | ✅ Always white |
-| `--card` | `0 0% 100%` (white) | Unchanged | ✅ Always white |
-| `--foreground` | `222 47% 11%` (near-black) | Unchanged | ✅ Always dark |
-| `--border` | `220 13% 91%` (light grey) | Unchanged | ✅ Always grey |
-| `--muted` | `220 14% 96%` (off-white) | Unchanged | ✅ Always off-white |
-| `--accent` | `221 83% 53%` (blue) | Logo dominant color | 🎨 Changes |
-| `--primary` | alias → `--accent` | Follows `--accent` | 🎨 Changes |
-| `--ring` | alias → `--accent` | Follows `--accent` | 🎨 Changes |
-| `--accent-muted` | `213 97% 94%` (light blue) | Derived tint of new accent | 🎨 Changes |
-
-> **Fallback Rule:** If no logo has been uploaded, if the uploaded file fails extraction, or if all extracted colors are filtered out as near-white/near-black, the default blue accent (`221 83% 53%`) is applied. The white main layer is applied unconditionally at all times. Wrap extraction in a `try/catch` — failures must be silent to the end user and logged server-side only.
-
----
+> **Rule:** `--primary` and `--ring` are intentional aliases for `--accent`. All shadcn/ui components auto-reflect the school's brand color without any component-level changes.
 
 ### 3.3 Visual Design Principles
 
-The UI must be **professional, clean, and institutional** — suitable for a Philippine public high school administrative system.
-
-| Principle | Implementation Requirement |
+| Principle | Requirement |
 |---|---|
-| **Minimal Chrome** | No decorative gradients; drop shadows only on cards/modals (`shadow-sm`) |
-| **High Contrast** | All text must pass WCAG AA (4.5:1 ratio minimum) |
-| **Consistent Spacing** | Tailwind spacing scale exclusively: `p-4`, `gap-6`, `space-y-4` etc. |
-| **Fully Responsive** | Every page is functional at all screen sizes (≥320px). See §3.4. |
-| **shadcn/ui Components** | Use `Card`, `Table`, `Dialog`, `Badge`, `Select`, `Input`, `Button`, `Switch`, `Tabs`. Do not build custom primitives. |
-| **Sidebar Navigation** | Dashboard uses a collapsible left sidebar on desktop; collapses to a hamburger `Sheet` drawer on mobile/tablet |
-| **Status Badges** | `Pending` → yellow, `Approved` → green, `Rejected` → red. Use `Badge` variant `"outline"` |
-| **Empty States** | Every table/list must have a designed empty state (icon + message + optional CTA) |
-| **Loading States** | Use `Skeleton` from shadcn/ui during API fetches and page transitions |
-| **Toast Notifications** | All user feedback uses Sileo exclusively. Never use `alert()` or inline error banners. See §3.5. |
+| Minimal Chrome | No decorative gradients; `shadow-sm` on cards/modals only |
+| High Contrast | All text passes WCAG AA (4.5:1 ratio minimum) |
+| Consistent Spacing | Tailwind spacing scale exclusively |
+| Fully Responsive | Every page functional at ≥320px |
+| shadcn/ui Only | Use `Card`, `Table`, `Dialog`, `Badge`, `Select`, `Input`, `Button`, `Switch`, `Tabs`; do not build custom primitives |
+| Sidebar Navigation | Dashboard uses collapsible left sidebar; hamburger `Sheet` on mobile |
+| Status Badges | PENDING → yellow · APPROVED → green · REJECTED → red — use `Badge` variant `"outline"` |
+| Empty States | Every table must have icon + message + optional CTA |
+| Loading States | Skeleton from shadcn/ui during all API fetches |
+| Toast Notifications | Sileo exclusively; never `alert()` or inline banners |
 
----
+### 3.4 Responsive Design
 
-### 3.4 Responsive Design Requirements
-
-> **Instruction for Claude Code:** Every page in the application — public and authenticated — must be fully responsive. No desktop-only layouts are acceptable.
-
-#### Breakpoint Strategy
-
-Use Tailwind responsive prefixes exclusively. No raw CSS media queries.
-
-| Breakpoint | Prefix | Min Width | Target Devices |
+| Breakpoint | Prefix | Min Width | Devices |
 |---|---|---|---|
-| Mobile | _(default)_ | 320px | Phones (portrait & landscape) |
-| Tablet | `md:` | 768px | Tablets, large phones |
-| Desktop | `lg:` | 1024px | Laptops, desktops |
+| Mobile | (default) | 320px | Phones |
+| Tablet | `md:` | 768px | Tablets |
+| Desktop | `lg:` | 1024px | Laptops |
 | Wide | `xl:` | 1280px | Large monitors |
 
-#### Layout Adaptation Rules
-
-**Public Admission Portal (`/apply`)**
-- Mobile: Single-column, full-width form card with `px-4` padding. Compact step progress bar.
-- Tablet: Centered card, `max-w-2xl`.
-- Desktop: Centered card, `max-w-3xl`, two-column field grid for side-by-side inputs.
-
-**Registrar Dashboard — Sidebar**
-- Mobile + Tablet (`< lg`): Sidebar hidden; hamburger opens a full-height `Sheet` drawer from the left.
-- Desktop (`lg+`): Sidebar always visible as a fixed left panel (`w-64`), collapsible to icon-only (`w-16`).
-
-```tsx
-<div className="flex min-h-screen">
-  {/* Desktop sidebar */}
-  <aside className="hidden lg:flex lg:w-64 lg:flex-col ...">
-    <SidebarContent />
-  </aside>
-  {/* Mobile drawer */}
-  <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-    <SheetContent side="left" className="w-64 p-0">
-      <SidebarContent />
-    </SheetContent>
-  </Sheet>
-  <main className="flex-1 overflow-auto">{children}</main>
-</div>
-```
-
-**Dashboard Stat Cards:** `grid-cols-1` → `md:grid-cols-2` → `lg:grid-cols-4`
-
-**Data Tables:** Horizontally scrollable on mobile inside `overflow-x-auto`. Hide lower-priority columns via `hidden md:table-cell`.
-
-```tsx
-<div className="w-full overflow-x-auto rounded-lg border">
-  <Table>
-    <TableHeader>
-      <TableRow>
-        <TableHead>LRN</TableHead>
-        <TableHead>Full Name</TableHead>
-        <TableHead className="hidden md:table-cell">Grade Level</TableHead>
-        <TableHead className="hidden lg:table-cell">Section</TableHead>
-        <TableHead>Status</TableHead>
-        <TableHead className="hidden md:table-cell">Date Applied</TableHead>
-        <TableHead>Actions</TableHead>
-      </TableRow>
-    </TableHeader>
-  </Table>
-</div>
-```
-
-**Dialogs:** Mobile: `w-full mx-4`. Tablet+: `max-w-md` or `max-w-lg`.
-
-**Charts:** Mobile: full container width, `min-h-[200px]`, legends below. Desktop: natural container width.
-
-#### Responsive Testing Checklist (per page)
-
-- [ ] 375px (iPhone SE)
-- [ ] 768px (iPad)
-- [ ] 1024px (small laptop)
-- [ ] 1440px (standard desktop)
-
----
-
-### 3.5 Toast Notifications — Sileo
-
-> **Instruction for Claude Code:** All transient user feedback must use **Sileo** exclusively. Reference: https://sileo.aaryan.design/docs
-
-#### Installation
-
-```bash
-# client/
-pnpm add sileo
-```
-
-#### Global Setup
-
-```tsx
-// client/src/layouts/AppLayout.tsx
-import { Toaster } from 'sileo';
-
-export default function AppLayout({ children }) {
-  return (
-    <div className="min-h-screen bg-background font-sans">
-      <Toaster position="top-right" />
-      {children}
-    </div>
-  );
-}
-```
-
-```tsx
-// client/src/layouts/GuestLayout.tsx
-import { Toaster } from 'sileo';
-
-export default function GuestLayout({ children }) {
-  return (
-    <div className="min-h-screen bg-muted/40 font-sans">
-      <Toaster position="top-center" />
-      {children}
-    </div>
-  );
-}
-```
-
-#### Usage Patterns
-
-```tsx
-import { sileo } from 'sileo';
-
-sileo.success({ title: 'Application Submitted', description: 'Your tracking number is APP-2025-00042.' });
-sileo.error({ title: 'Enrollment Failed', description: 'This section has reached maximum capacity.' });
-sileo.warning({ title: 'Capacity Warning', description: 'Grade 7 - Rizal is at 95% capacity.' });
-sileo.info({ title: 'Enrollment Closed', description: 'The admission period is not accepting applications.' });
-
-// Action toast
-sileo.success({
-  title: 'Application Approved',
-  description: 'Student assigned to Grade 7 - Rizal.',
-  action: { label: 'View Record', onClick: () => navigate(`/applications/${id}`) },
-});
-
-// Promise toast (wraps async API calls)
-sileo.promise(apiCall(), {
-  loading: 'Submitting application...',
-  success: 'Application submitted successfully!',
-  error: 'Something went wrong. Please try again.',
-});
-```
-
-#### Centralized API Error → Toast Hook
-
-```tsx
-// client/src/hooks/useApiToast.ts
-import { sileo } from 'sileo';
-import type { AxiosError } from 'axios';
-
-export function toastApiError(error: AxiosError<{ message?: string; errors?: Record<string, string[]> }>) {
-  const data = error.response?.data;
-  if (data?.errors) {
-    const first = Object.values(data.errors).flat()[0];
-    sileo.error({ title: 'Validation Error', description: first });
-  } else {
-    sileo.error({ title: 'Error', description: data?.message ?? 'Something went wrong.' });
-  }
-}
-```
-
-Call `toastApiError(err)` inside every Axios `.catch()` block.
-
-#### Mandatory Toast Events
-
-| Event | Type | Title | Description |
-|---|---|---|---|
-| Application submitted | `success` | "Application Received" | "Your tracking number is `{tracking_number}`." |
-| Application approved | `success` | "Application Approved" | "Student enrolled in `{section_name}`." |
-| Application rejected | `info` | "Application Rejected" | "Status updated and notification sent." |
-| Section created | `success` | "Section Created" | "`{name}` added to `{grade_level}`." |
-| Section at capacity (blocked) | `error` | "Section Full" | "Please select a different section." |
-| Settings saved | `success` | "Settings Saved" | "Your changes have been applied." |
-| Logo uploaded + colors extracted | `success` | "Accent Color Updated" | "Interactive elements now reflect your logo's color." |
-| Color extraction failure | `warning` | "Color Extraction Failed" | "Default blue accent applied instead." |
-| Enrollment gate opened | `success` | "Enrollment Now Open" | "The admission portal is publicly accessible." |
-| Enrollment gate closed | `info` | "Enrollment Closed" | "The admission portal has been disabled." |
-| Backend validation error | `error` | "Validation Error" | First error message from API response. |
-| Network / server 500 error | `error` | "Server Error" | "Something went wrong. Please try again." |
+**Sidebar:** `< lg` → hamburger Sheet drawer · `≥ lg` → fixed left panel (`w-64`), collapsible to icon-only (`w-16`).
 
 ---
 
 ## 4. User Roles & Permissions
 
-| Role | Access Level | Auth Mechanism |
-|---|---|---|
-| **Applicant (Guest)** | Public admission portal only | None — unauthenticated |
-| **School Registrar** | Full API + dashboard access, all CRUD | JWT — role: `REGISTRAR` |
-| **Advising Teacher** | Read-only: assigned sections + enrolled student lists | JWT — role: `TEACHER` |
+```
+SYSTEM_ADMIN
+  └─ Inherits all REGISTRAR capabilities
+     + User & Teacher account management
+     + Email delivery logs
+     + System health diagnostics
+     + Full cross-user audit log access
 
-### JWT Implementation
+REGISTRAR
+  └─ Full enrollment operations
+     Online/F2F Admission · Enrollment Management
+     SIMS · Teacher Management
+     Sections · Settings · Audit Logs
 
-**Backend — Token Issuance**
-
-```js
-// server/src/controllers/authController.ts
-import jwt from 'jsonwebtoken';
-
-const token = jwt.sign(
-  { userId: user.id, role: user.role },
-  process.env.JWT_SECRET,
-  { expiresIn: '8h' }
-);
-res.json({ token, user: { id: user.id, name: user.name, role: user.role } });
+TEACHER
+  └─ Read-only, scoped to own sections
+     My Sections · Limited Dashboard
 ```
 
-**Backend — Auth & Authorization Middleware**
-
-```js
-// server/src/middleware/authenticate.ts
-export function authenticate(req, res, next) {
-  const auth = req.headers.authorization;
-  if (!auth?.startsWith('Bearer ')) return res.status(401).json({ message: 'Unauthorized' });
-  try {
-    req.user = jwt.verify(auth.split(' ')[1], process.env.JWT_SECRET);
-    next();
-  } catch {
-    res.status(401).json({ message: 'Invalid or expired token' });
-  }
-}
-
-// server/src/middleware/authorize.ts
-export const authorize = (...roles) => (req, res, next) => {
-  if (!roles.includes(req.user.role))
-    return res.status(403).json({ message: 'Forbidden' });
-  next();
-};
-```
-
-Usage: `router.post('/enroll', authenticate, authorize('REGISTRAR'), enrollController.store)`
-
-**Frontend — Axios Interceptor**
-
-```ts
-// client/src/api/axiosInstance.ts
-import axios from 'axios';
-
-const api = axios.create({ baseURL: import.meta.env.VITE_API_URL });
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
-
-api.interceptors.response.use(
-  (res) => res,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
-
-export default api;
-```
-
-**Frontend — Auth Store (Zustand)**
-
-```ts
-// client/src/stores/authStore.ts
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-
-export const useAuthStore = create(persist(
-  (set) => ({
-    token: null,
-    user: null,
-    setAuth: (token, user) => set({ token, user }),
-    clearAuth: () => set({ token: null, user: null }),
-  }),
-  { name: 'auth-storage' }
-));
-```
+| Capability | TEACHER | REGISTRAR | SYSTEM_ADMIN |
+|---|---|---|---|
+| Submit online admission (public portal) | N/A | N/A | N/A |
+| Enter F2F (walk-in) admission | ❌ | ✅ | ✅ |
+| View & process applications | ❌ | ✅ | ✅ |
+| Approve / Reject applications | ❌ | ✅ | ✅ |
+| Manage enrollments | ❌ | ✅ | ✅ |
+| View full SIMS student profiles | ❌ | ✅ | ✅ |
+| Edit student information | ❌ | ✅ | ✅ |
+| Manage grade levels & strands | ❌ | ✅ | ✅ |
+| Manage SCP program configurations | ❌ | ✅ | ✅ |
+| Manage sections (CRUD) | ❌ | ✅ | ✅ |
+| View own assigned sections | ✅ | ✅ | ✅ |
+| Manage teacher records | ❌ | ✅ | ✅ |
+| Provision teacher system accounts | ❌ | ✅ | ✅ |
+| Manage system settings | ❌ | ✅ | ✅ |
+| View audit logs | ❌ | ✅ (partial) | ✅ (full) |
+| Create / deactivate user accounts | ❌ | ❌ | ✅ |
+| Reset user passwords | ❌ | ❌ | ✅ |
+| View email delivery logs | ❌ | ❌ | ✅ |
+| View system health | ❌ | ❌ | ✅ |
+| Assign SYSTEM_ADMIN role | ❌ | ❌ | ❌ (CLI/seed only) |
+| Delete audit logs | ❌ | ❌ | ❌ (no one can) |
+| Delete enrollment records | ❌ | ❌ | ❌ (no one can) |
 
 ---
 
 ## 5. Database Schema — Prisma
-
-> **Instruction for Claude Code:** Define the entire schema in `server/prisma/schema.prisma`. Run `npx prisma migrate dev` to apply. All database access must go through Prisma Client — never interpolate variables into raw SQL strings.
 
 ```prisma
 // server/prisma/schema.prisma
@@ -666,11 +278,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── Enums ────────────────────────────────────────────────
+// ─── Enums ────────────────────────────────────────────────────────────
 
 enum Role {
-  REGISTRAR
   TEACHER
+  REGISTRAR
+  SYSTEM_ADMIN
 }
 
 enum Sex {
@@ -680,67 +293,120 @@ enum Sex {
 
 enum ApplicationStatus {
   PENDING
+  EXAM_SCHEDULED
+  EXAM_TAKEN
+  PASSED
+  FAILED
   APPROVED
   REJECTED
+  ENROLLED
 }
 
-// ─── Models ───────────────────────────────────────────────
+enum AdmissionChannel {
+  ONLINE      // submitted via the public /apply portal
+  F2F         // entered by registrar on behalf of a walk-in applicant
+}
+
+enum LearnerType {
+  NEW_ENROLLEE
+  TRANSFEREE
+  RETURNING    // Balik-Aral
+  CONTINUING   // existing student moving up a grade
+}
+
+// ─── Auth & Pre-flight Token ──────────────────────────────────────────
 
 model User {
-  id          Int          @id @default(autoincrement())
-  name        String
-  email       String       @unique
-  password    String
-  role        Role
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id                 Int        @id @default(autoincrement())
+  name               String
+  email              String     @unique
+  password           String     // bcrypt hash, 12 rounds
+  role               Role
+  isActive           Boolean    @default(true)
+  mustChangePassword Boolean    @default(true)
+  lastLoginAt        DateTime?
+  createdById        Int?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
 
-  sections    Section[]
-  enrollments Enrollment[]
-  auditLogs   AuditLog[]
+  teacherProfile     Teacher?
+  sections           Section[]  // sections advised (legacy join, use Teacher relation primarily)
+  enrollments        Enrollment[]
+  auditLogs          AuditLog[]
+  createdBy          User?      @relation("UserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdUsers       User[]     @relation("UserCreatedBy")
 }
+
+// One-time pre-flight token; consumed on every POST /auth/login call (Layer 2)
+model LoginToken {
+  id        Int       @id @default(autoincrement())
+  token     String    @unique   // SHA-256 hash of the raw token sent to client
+  expiresAt DateTime
+  usedAt    DateTime?
+  ipAddress String?   @db.VarChar(45)
+  createdAt DateTime  @default(now())
+
+  @@index([token])
+}
+
+// ─── School Configuration ─────────────────────────────────────────────
 
 model SchoolSettings {
   id                   Int           @id @default(autoincrement())
   schoolName           String
+  schoolId             String?       // DepEd School ID (configurable per school)
+  division             String?       // e.g. "Schools Division of Negros Occidental"
+  region               String?       // e.g. "Region VI - Western Visayas"
   logoPath             String?
   logoUrl              String?
-  colorScheme          Json?         // { primary_hsl, secondary_hsl, extracted_at }
+  colorScheme          Json?         // { accent_hsl: "221 83% 53%", extracted_at: "..." }
   enrollmentOpen       Boolean       @default(false)
   activeAcademicYearId Int?
+  admissionChannels    String[]      @default(["ONLINE", "F2F"])
 
   activeAcademicYear   AcademicYear? @relation(fields: [activeAcademicYearId], references: [id])
 }
 
+// ─── Academic Structure ───────────────────────────────────────────────
+
 model AcademicYear {
-  id             Int              @id @default(autoincrement())
-  yearLabel      String           @unique  // e.g. "2025-2026"
-  isActive       Boolean          @default(false)
-  createdAt      DateTime         @default(now())
+  id           Int              @id @default(autoincrement())
+  yearLabel    String           @unique  // e.g. "2025-2026"
+  isActive     Boolean          @default(false)
+  classStart   DateTime?
+  classEnd     DateTime?
+  phase1Start  DateTime?        // Early Registration start
+  phase1End    DateTime?        // Early Registration end
+  phase2Start  DateTime?        // Regular Enrollment start
+  phase2End    DateTime?        // Regular Enrollment end
+  createdAt    DateTime         @default(now())
 
   gradeLevels    GradeLevel[]
   strands        Strand[]
+  scpPrograms    ScpProgram[]
   applicants     Applicant[]
   enrollments    Enrollment[]
   SchoolSettings SchoolSettings[]
 }
 
 model GradeLevel {
-  id             Int          @id @default(autoincrement())
-  name           String       // e.g. "Grade 7"
-  displayOrder   Int
-  academicYearId Int
-  createdAt      DateTime     @default(now())
+  id              Int          @id @default(autoincrement())
+  name            String       // e.g. "Grade 7", "Grade 11" — school-configurable
+  displayOrder    Int
+  requiresEarlyReg Boolean     @default(false)  // Grade 7, 11, transferees per DepEd policy
+  academicYearId  Int
+  createdAt       DateTime     @default(now())
 
-  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-  sections       Section[]
-  applicants     Applicant[]
+  academicYear    AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  sections        Section[]
+  applicants      Applicant[]
 }
 
 model Strand {
   id                      Int          @id @default(autoincrement())
-  name                    String       // e.g. "STEM", "ABM"
-  applicableGradeLevelIds Int[]        // Array of GradeLevel IDs
+  name                    String       // e.g. "STEM", "ABM", "HUMSS", "GAS"
+  track                   String?      // e.g. "Academic", "TechPro" — school-configurable
+  applicableGradeLevelIds Int[]
   academicYearId          Int
   createdAt               DateTime     @default(now())
 
@@ -748,41 +414,139 @@ model Strand {
   applicants              Applicant[]
 }
 
-model Section {
+// SCP programs are fully configurable — schools add only the ones they offer
+model ScpProgram {
   id                Int          @id @default(autoincrement())
-  name              String       // e.g. "Rizal"
-  maxCapacity       Int          @default(40)
-  gradeLevelId      Int
-  advisingTeacherId Int?
+  code              String       // e.g. "STE", "SPA", "SPS", "SPJ", "SPFL", "SPTVE"
+  name              String       // Full program name for display
+  applicableGradeLevelIds Int[]  // which grade levels can apply
+  assessmentType    String       // "EXAM_ONLY" | "EXAM_AUDITION" | "AUDITION_ONLY" | "APTITUDE" | "NAT_REVIEW"
+  requiresInterview Boolean      @default(false)
+  academicYearId    Int
+  isActive          Boolean      @default(true)
   createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
 
-  gradeLevel        GradeLevel   @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
-  advisingTeacher   User?        @relation(fields: [advisingTeacherId], references: [id], onDelete: SetNull)
+  academicYear      AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+}
+
+// ─── Teacher ──────────────────────────────────────────────────────────
+
+model Teacher {
+  id              Int       @id @default(autoincrement())
+  userId          Int       @unique  // links to a User with role: TEACHER
+  employeeId      String?   @unique  // DepEd Employee ID (optional but recommended)
+  firstName       String
+  lastName        String
+  middleName      String?
+  contactNumber   String?
+  specialization  String?   // e.g. "Mathematics", "Science"
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sections        Section[]
+}
+
+// ─── Sections ────────────────────────────────────────────────────────
+
+model Section {
+  id                Int       @id @default(autoincrement())
+  name              String    // e.g. "Rizal", "Bonifacio" — school-configurable
+  maxCapacity       Int       @default(40)
+  gradeLevelId      Int
+  advisingTeacherId Int?      // links to Teacher.id
+  scpCode           String?   // if this section is a designated SCP section (e.g. "STE")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  gradeLevel        GradeLevel  @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
+  advisingTeacher   Teacher?    @relation(fields: [advisingTeacherId], references: [id], onDelete: SetNull)
   enrollments       Enrollment[]
 }
 
+// ─── Applicants ──────────────────────────────────────────────────────
+
 model Applicant {
-  id                    Int               @id @default(autoincrement())
-  lrn                   String            @unique @db.VarChar(12)
-  lastName              String
-  firstName             String
-  middleName            String?
-  suffix                String?
-  birthDate             DateTime
-  sex                   Sex
-  address               String
-  parentGuardianName    String
-  parentGuardianContact String
-  emailAddress          String
-  trackingNumber        String            @unique
-  status                ApplicationStatus @default(PENDING)
-  rejectionReason       String?
-  gradeLevelId          Int
-  strandId              Int?
-  academicYearId        Int
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
+  id Int @id @default(autoincrement())
+
+  // Identity
+  lrn          String   @unique @db.VarChar(12)
+  lastName     String
+  firstName    String
+  middleName   String?
+  suffix       String?
+  birthDate    DateTime
+  sex          Sex
+  birthPlace   String?
+  nationality  String?  @default("Filipino")
+  religion     String?
+  motherTongue String?
+
+  // Classifications
+  learnerType            LearnerType @default(NEW_ENROLLEE)
+  isIndigenousPeople     Boolean     @default(false)
+  ipCommunity            String?
+  is4PsBeneficiary       Boolean     @default(false)
+  householdId            String?
+  isPersonWithDisability Boolean     @default(false)
+  disabilityType         String?
+
+  // Address
+  address      String
+  barangay     String?
+  municipality String?
+  province     String?
+
+  // Family / Contact
+  fatherName         String?
+  fatherOccupation   String?
+  motherName         String?
+  motherOccupation   String?
+  guardianName       String
+  guardianRelationship String?
+  guardianContact    String
+  emailAddress       String
+
+  // Previous School
+  lastSchoolAttended  String?
+  lastSchoolYear      String?
+  lastGradeCompleted  String?
+  generalAverage      Float?
+
+  // Admission metadata
+  admissionChannel    AdmissionChannel @default(ONLINE)
+  applicantType       String           @default("REGULAR")  // REGULAR | STE | SPA | SPS | SPJ | SPFL | SPTVE | STEM_GRADE11
+  scpProgramCode      String?          // mirrors ScpProgram.code
+  trackingNumber      String           @unique
+  status              ApplicationStatus @default(PENDING)
+  rejectionReason     String?
+  encodedById         Int?             // for F2F: User.id of the registrar who entered it
+  privacyConsentGiven Boolean          @default(false)
+
+  // SCP Assessment
+  examDate        DateTime?
+  assessmentType  String?
+  examScore       Float?
+  examResult      String?   // "PASSED" | "FAILED"
+  examNotes       String?
+  auditionResult  String?   // "CLEARED" | "NOT_CLEARED"
+  interviewDate   DateTime?
+  interviewResult String?   // "CLEARED" | "NOT_CLEARED"
+  natScore        Float?
+  grade10ScienceGrade Float?
+  grade10MathGrade    Float?
+
+  // SCP-specific detail fields (school-configurable via settings)
+  artField         String?   // for SPA
+  sport            String?   // for SPS
+  foreignLanguage  String?   // for SPFL
+
+  gradeLevelId   Int
+  strandId       Int?
+  academicYearId Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   gradeLevel   GradeLevel   @relation(fields: [gradeLevelId], references: [id])
   strand       Strand?      @relation(fields: [strandId], references: [id])
@@ -791,14 +555,18 @@ model Applicant {
 
   @@index([status, academicYearId])
   @@index([lrn])
+  @@index([applicantType, status])
+  @@index([admissionChannel])
 }
 
+// ─── Enrollment ──────────────────────────────────────────────────────
+
 model Enrollment {
-  id             Int          @id @default(autoincrement())
-  applicantId    Int          @unique   // one enrollment per applicant
+  id             Int      @id @default(autoincrement())
+  applicantId    Int      @unique   // one enrollment per applicant
   sectionId      Int
   academicYearId Int
-  enrolledAt     DateTime     @default(now())
+  enrolledAt     DateTime @default(now())
   enrolledById   Int
 
   applicant    Applicant    @relation(fields: [applicantId], references: [id], onDelete: Cascade)
@@ -806,6 +574,8 @@ model Enrollment {
   academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
   enrolledBy   User         @relation(fields: [enrolledById], references: [id])
 }
+
+// ─── Audit Log ────────────────────────────────────────────────────────
 
 model AuditLog {
   id          Int      @id @default(autoincrement())
@@ -829,293 +599,363 @@ model AuditLog {
 
 ## 6. Core Modules
 
+---
+
 ### 6.1 Online Admission Portal
 
-**Frontend Route:** `/apply` — public, unauthenticated. React Router loader redirects to `/closed` if `enrollmentOpen = false`.
+**Route:** `/apply` — public, unauthenticated
+**Page:** `client/src/pages/admission/Apply.tsx`
+**Gate:** React Router loader redirects to `/closed` if `settings.enrollmentOpen = false`
 
-**React Page:** `client/src/pages/admission/Apply.tsx`
+#### Multi-Step Wizard (7 steps)
 
-#### Layout & UX
-
-- Full-page centered form card: school logo, school name, active academic year label.
-- Multi-step wizard: ① Personal Information → ② Family & Contact → ③ Enrollment Preferences.
-- Step progress indicator at the top.
-- On success: form replaced by a **Success Panel** showing the `trackingNumber` in a prominent, copyable display.
-
-#### Fields
-
-| Field | Type | Validation |
+| Step | Title | Key Content |
 |---|---|---|
-| Last Name | Text | required, max 100 |
-| First Name | Text | required, max 100 |
-| Middle Name | Text | optional, max 100 |
-| Suffix | Select (Jr./Sr./III/IV/N/A) | optional |
-| Birth Date | Date Picker | required, applicant must be ≥10 years old |
-| Sex | Radio (Male / Female) | required |
-| LRN | Text | required, exactly 12 digits, unique |
-| Home Address | Textarea | required, max 300 |
-| Parent/Guardian Name | Text | required |
-| Parent/Guardian Contact | Text | required, valid PH mobile format |
-| Email Address | Email | required |
-| Grade Level | Dynamic Select (from API) | required |
-| Strand | Dynamic Select (filtered by Grade Level) | required for SHS grade levels only |
+| 0 | Privacy Notice & Consent | RA 10173 notice; checkbox + confirm before form unlocks |
+| 1 | Personal Information | Name, LRN, birthdate, sex, birthplace, religion, mother tongue |
+| 2 | Family & Contact | Father/mother/guardian info, contact number, email |
+| 3 | Background & Classification | Learner type, 4Ps, IP status, PWD status |
+| 4 | Previous School | Last school attended, last grade, general average |
+| 5 | Enrollment Preferences | Grade level, SCP selection (dynamic), strand (if SHS) |
+| 6 | Review & Submit | Summary of all entries, submit button |
 
-#### Backend
+**SCP options in Step 5 load dynamically** from `GET /api/scp-programs?gradeLevelId=X` for the active academic year. A school that does not offer SPA simply will not have it in the list. There is no hardcoded SCP enum in the frontend.
 
-- **Route:** `POST /api/applications`
-- **Zod Validator:** `server/src/validators/application.validator.ts`
-- **Tracking Number:** `APP-${year}-${String(applicant.id).padStart(5, '0')}` — generated in the service layer after DB insert.
+On success: form replaced by a **Success Panel** showing the tracking number in a copyable display. Email sent asynchronously.
 
 ---
 
-### 6.2 Registrar Administration Dashboard
+### 6.2 Face-to-Face (F2F) Admission
 
-**Frontend Route:** `/dashboard` — requires JWT, role: `REGISTRAR`.
+**Route:** `/f2f-admission` — requires JWT, role: REGISTRAR or SYSTEM_ADMIN
+**Page:** `client/src/pages/admission/F2FAdmission.tsx`
 
-**React Page:** `client/src/pages/dashboard/Index.tsx`
+The F2F admission form is the **registrar-facing equivalent** of the public portal, used when a student or parent walks in to apply in person. The registrar fills all fields on the applicant's behalf.
+
+**Key differences from online admission:**
+
+| Aspect | Online | F2F |
+|---|---|---|
+| Enrollment gate | Redirects to `/closed` when OFF | Always accessible (registrar override) |
+| `admissionChannel` stored | `ONLINE` | `F2F` |
+| `encodedById` | null | Registrar's `User.id` |
+| Privacy consent | Applicant checks on screen | Registrar confirms physical signature checkbox |
+| Email delivery | Always attempted | Attempted if `emailAddress` provided |
+| Fast-track option | Not available | Registrar may set initial status to `APPROVED` if documents are complete at submission |
+| Tracking number delivery | On-screen + email | On-screen (registrar prints or writes down) + email if address provided |
+
+All the same validation rules, SCP conditional fields, and strand selection logic apply identically.
+
+**Sidebar:** "Walk-in Admission" (`UserPlus` icon) appears in the Admission section for REGISTRAR and SYSTEM_ADMIN.
+
+---
+
+### 6.3 Registrar Administration Dashboard
+
+**Route:** `/dashboard` — requires JWT, role: REGISTRAR or SYSTEM_ADMIN
+**Page:** `client/src/pages/dashboard/Index.tsx`
+**API:** `GET /api/dashboard/stats`
 
 #### Stat Cards
 
-| Card | Data Source |
-|---|---|
-| Total Pending | `COUNT(applicants WHERE status = 'PENDING')` |
-| Total Enrolled | `COUNT(enrollments)` for active academic year |
-| Total Approved (Awaiting Enrollment) | `COUNT(applicants WHERE status = 'APPROVED')` |
-| Sections at Capacity | `COUNT(sections WHERE enrollment_count >= maxCapacity)` |
-
-Use shadcn/ui `Card` per stat. Include a Lucide React icon per card.
+| Card | Icon | Data Source |
+|---|---|---|
+| Total Pending | `Clock` | COUNT applicants WHERE status = PENDING AND activeAY |
+| Total Enrolled | `UserCheck` | COUNT enrollments for activeAY |
+| Approved Awaiting | `Hourglass` | COUNT applicants WHERE status = APPROVED AND activeAY |
+| Sections at Capacity | `AlertCircle` | COUNT sections WHERE enrolled_count >= maxCapacity |
 
 #### Charts (Recharts)
 
-- **Enrollment by Grade Level** — `BarChart` (horizontal).
-- **Application Status Distribution** — `PieChart` (donut).
+- Enrollment by Grade Level — `BarChart` (horizontal)
+- Application Status Distribution — `PieChart` (donut)
+- Admission Channel Breakdown — `PieChart` (Online vs F2F)
 
-Both consume data from `GET /api/dashboard/stats`.
+#### SCP Pipeline Panel
+
+Shown only when the school has configured and activated SCP programs. Displays PENDING / EXAM_SCHEDULED / EXAM_TAKEN / PASSED / FAILED counts per SCP program code for the active year. Collapses gracefully if no SCP programs are configured.
 
 #### Recent Activity Feed
 
-Last 10 `AuditLog` entries in a timeline-style list inside a `Card`.
+Last 10 `AuditLog` entries in a timeline-style `Card` (reverse chronological).
+
+#### Teacher View
+
+When the authenticated user is a TEACHER, the dashboard shows only: section enrollment counts for their own sections. No stat cards for Pending/Approved/Capacity. No action buttons.
 
 ---
 
-### 6.3 Enrollment Management & Section Setting
+### 6.4 Enrollment Management
 
-#### 6.3.1 Section Management
+**Routes:**
+- `/applications` — paginated application inbox
+- `/applications/:id` — application detail and workflow
 
-**Frontend Route:** `/sections`
-**API:** `GET /api/sections`, `POST`, `PUT /api/sections/:id`, `DELETE /api/sections/:id`
+**Pages:** `client/src/pages/applications/Index.tsx` · `[id].tsx`
 
-- Table: Grade Level, Section Name, Advising Teacher, Max Capacity, Enrolled Count, Available Slots.
-- Inline `Badge`: `Full` (red) when `enrolledCount >= maxCapacity`, `Available` (green) with slot count.
-- Create/Edit via shadcn/ui `Dialog`.
+#### Application Inbox
 
-#### 6.3.2 Application Review & Enrollment Workflow
+**Filters:** Academic year · Grade level · Applicant type (all configured SCP codes + REGULAR) · Status (all values including SCP-specific) · Admission channel (Online / F2F)
 
-**Frontend Route:** `/applications`
+**Search:** LRN (exact 12 digits) or name (300ms debounce, no full reload)
 
-**Approval Flow:**
+**Pagination:** 15 per page
 
-1. Registrar opens applicant detail (`Dialog` or side sheet).
-2. Clicks **"Approve & Enroll"**.
-3. Second `Dialog` renders a `Select` pre-filtered to sections matching the applicant's grade level where `enrolledCount < maxCapacity`.
-4. Registrar selects a section and confirms.
+**Columns:** # · Applicant Name · LRN · Grade · Type/Track · Status · Channel · Date · Actions
 
-**Backend Capacity Validation — Race Condition Safe:**
+#### Two-Path Approval Workflow
 
-```js
-// server/src/services/enrollmentService.ts
-import { prisma } from '../lib/prisma.js';
-
-export async function enrollApplicant({ applicantId, sectionId, enrolledById, academicYearId }) {
-  return await prisma.$transaction(async (tx) => {
-    // Row-level lock prevents concurrent over-enrollment
-    const [section] = await tx.$queryRaw`
-      SELECT id, "maxCapacity" FROM "Section"
-      WHERE id = ${sectionId}
-      FOR UPDATE
-    `;
-
-    if (!section) throw Object.assign(new Error('Section not found.'), { statusCode: 404 });
-
-    const enrolledCount = await tx.enrollment.count({ where: { sectionId } });
-
-    if (enrolledCount >= section.maxCapacity) {
-      throw Object.assign(
-        new Error('This section has reached maximum capacity.'),
-        { statusCode: 422 }
-      );
-    }
-
-    const enrollment = await tx.enrollment.create({
-      data: { applicantId, sectionId, enrolledById, academicYearId },
-    });
-
-    await tx.applicant.update({
-      where: { id: applicantId },
-      data: { status: 'APPROVED' },
-    });
-
-    return enrollment;
-  });
-}
+**Path A — Regular Admission:**
+```
+PENDING → [Verify Docs → Approve & Assign Section] → APPROVED → ENROLLED
 ```
 
-> **Instruction for Claude Code:** The `FOR UPDATE` row lock inside `prisma.$transaction` is mandatory. This prevents two simultaneous approval requests from both succeeding when only one slot remains.
-
-**Rejection Flow:** Registrar clicks **"Reject"** → `Dialog` prompts for optional reason → `PATCH /api/applications/:id/reject` → status updated → email dispatched.
-
----
-
-### 6.4 Academic Year Configuration
-
-**Frontend Route:** `/settings`
-**React Page:** `client/src/pages/settings/Index.tsx`
-
-Organized into shadcn/ui `Tabs`:
-
-#### Tab 1: School Identity
-
-- **Logo Upload:** `<input type="file" />` accepting `.png`, `.jpg`, `.webp`, max 2MB. Client-side `FileReader` preview. On save: `POST /api/settings/logo` (multipart/form-data via Axios + Multer). Backend runs `logoColorService`, updates `SchoolSettings`, returns new `colorScheme`. React updates Zustand settings store → CSS variables re-applied globally.
-- **School Name:** Text input → `PUT /api/settings/identity`.
-
-#### Tab 2: Academic Year
-
-- CRUD table for `AcademicYear` records.
-- Only one year can have `isActive = true` — activating one deactivates all others in a single transaction.
-
-#### Tab 3: Grade Levels & Strands
-
-- Two side-by-side CRUD lists.
-- Strands have a multi-select for applicable grade levels.
-
-#### Tab 4: Enrollment Gate
-
-- Large shadcn/ui `Switch` labeled **"Enrollment Period"**.
-- OFF: `Enrollment is CLOSED` badge (red). ON: `Enrollment is OPEN` badge (green).
-- Toggle calls `PATCH /api/settings/enrollment-gate`.
-- **Frontend Guard:** React Router v7 `loader` on `/apply` fetches `GET /api/settings/public` and redirects to `/closed` if `enrollmentOpen = false`.
-
----
-
-### 6.5 Student Record Search & Filtering
-
-**Frontend Route:** `/students`
-**API:** `GET /api/students?search=&gradeLevelId=&sectionId=&status=&page=&limit=`
-
-#### Table Columns
-
-| Column | Sortable | Notes |
-|---|---|---|
-| LRN | Yes | Monospace font |
-| Full Name | Yes | Last, First MI |
-| Grade Level | Yes | Badge |
-| Section | Yes | — |
-| Status | Yes | Colored Badge |
-| Date Applied | Yes | Formatted date |
-| Actions | — | View, Approve, Reject |
-
-#### Filter Toolbar
-
-- **Real-time Search:** 300ms debounce on LRN or Name → triggers GET with `?search=` query param.
-- **Filters:** Grade Level, Section (filtered by Grade Level), Status, Academic Year — all bound to URL search params via React Router v7 `useSearchParams()`.
-- Server-side pagination, 15 records/page default.
-
----
-
-### 6.6 System Audit Trail & Activity Logging
-
-**Frontend Route:** `/audit-logs`
-
-#### Logging Service
-
-```js
-// server/src/services/auditLogger.ts
-import { prisma } from '../lib/prisma.js';
-
-export async function auditLog({ userId, actionType, description, subjectType, subjectId, req }) {
-  await prisma.auditLog.create({
-    data: {
-      userId:      userId ?? null,
-      actionType,
-      description,
-      subjectType: subjectType ?? null,
-      subjectId:   subjectId ?? null,
-      ipAddress:   req.ip,
-      userAgent:   req.headers['user-agent'] ?? null,
-    },
-  });
-}
+**Path B — SCP Admission** (adapts to the program's configured `assessmentType`):
+```
+PENDING → EXAM_SCHEDULED → EXAM_TAKEN → PASSED/FAILED
+  PASSED  → [Assign Section] → APPROVED → ENROLLED
+  FAILED  → [Offer Regular Section (optional)] → APPROVED → ENROLLED
+          OR → REJECTED
 ```
 
-#### Mandatory Logged Events
+Action buttons displayed per applicant are **conditional on `applicantType` and current `status`** — the registrar never sees inapplicable buttons.
 
-| Action Type | Description Template |
+#### Section Assignment Dialog
+
+When approving, a dialog lists available sections for the applicant's grade level. Each section shows `enrolled / maxCapacity`. Full sections are disabled. The system uses a `FOR UPDATE` row lock (raw SQL within a Prisma transaction) to prevent race conditions on the last available slot.
+
+---
+
+### 6.5 Student Information Management System (SIMS)
+
+**Routes:**
+- `/students` — paginated, searchable student directory
+- `/students/:id` — full tabbed student profile
+
+**Pages:** `client/src/pages/students/Index.tsx` · `Profile.tsx`
+
+The SIMS is the **permanent records module** — every student who has ever applied or enrolled in this school system has a record here, across all academic years.
+
+#### Student Directory (`/students`)
+
+**Search:** LRN (300ms debounce) or name
+**Filters:** Grade level · Section · Academic year · Enrollment status · Admission channel
+
+**Columns:** LRN · Full Name · Grade · Section · Admission Channel · Status · Actions (View · Edit)
+
+#### Student Profile (`/students/:id`) — 4 tabs
+
+**Tab 1 — Personal Information**
+All demographic fields from the `Applicant` model. Editable by REGISTRAR and SYSTEM_ADMIN. Edit mode shows a form with Save/Cancel buttons. All changes write an `AuditLog` entry with `actionType: STUDENT_RECORD_UPDATED` listing changed field names.
+
+LRN is immutable after record creation (displayed as read-only).
+
+**Tab 2 — Academic History**
+Chronological list of all enrollments across academic years:
+- Academic Year · Grade Level · Section · Date Enrolled · Enrolled By
+- General average carried from previous school (if any)
+- Transfer records (if applicable)
+
+**Tab 3 — Application Record**
+- Original application details: channel, tracking number, submission date
+- SCP assessment records (if applicable): dates, scores, results, notes
+- Status timeline (derived from AuditLog entries for this applicant's ID)
+
+**Tab 4 — Classifications & Special Programs**
+- Learner type badge (New Enrollee / Transferee / Returning / Continuing)
+- IP community status
+- 4Ps beneficiary status + household ID
+- PWD status + disability type
+- Current SCP designation (if enrolled in an SCP section)
+
+**Editing rules:**
+- Status changes must go through the proper workflow (no direct override to ENROLLED without a section)
+- Sensitive classification fields (4Ps, IP, PWD) trigger an additional confirmation dialog before saving
+- All edits are reversible via audit log review but not automatically undone
+
+---
+
+### 6.6 Teacher Management
+
+**Routes:**
+- `/teachers` — teacher directory
+- `/teachers/:id` — teacher profile
+
+**Pages:** `client/src/pages/teachers/Index.tsx` · `Profile.tsx`
+
+#### Teacher Directory (`/teachers`)
+
+**Columns:** Employee ID · Full Name · Specialization · Assigned Sections (count) · Account Status · Actions (View · Edit · Provision Account)
+
+**Create Teacher:** Opens a modal/sheet with fields: Last Name, First Name, Middle Name, Employee ID (optional), Contact Number, Specialization.
+
+**Provision System Account:** If a teacher profile exists but has no system login, a "Provision Account" action opens a dialog asking for an email address. The system:
+1. Creates a `User` record with `role: TEACHER`, `mustChangePassword: true`, a system-generated temporary password
+2. Links the `Teacher.userId` to the new user
+3. Sends a welcome email with the school name (`SchoolSettings.schoolName`), temporary password, and login instructions
+4. Writes `TEACHER_ACCOUNT_PROVISIONED` to the audit log
+
+#### Teacher Profile (`/teachers/:id`) — 3 tabs
+
+**Tab 1 — Profile**
+Fields: Full name, Employee ID, Contact Number, Specialization. Editable by REGISTRAR and SYSTEM_ADMIN.
+
+**Tab 2 — Assigned Sections**
+All sections currently assigned to this teacher for the active academic year:
+- Grade Level · Section Name · Enrolled Count / Max · Academic Year
+
+"Unassign" removes the teacher from that section (confirmation dialog; audit logged as `SECTION_UPDATED`).
+
+**Tab 3 — System Account**
+Account status badge (Active / Inactive / Not Provisioned). If active: last login timestamp, account creation date, role.
+SYSTEM_ADMIN additionally sees: Deactivate Account button, Reset Password button.
+
+---
+
+### 6.7 Grade Level & Sectioning Management
+
+**Route:** `/sections` — requires JWT, role: REGISTRAR or SYSTEM_ADMIN
+**Page:** `client/src/pages/sections/Index.tsx`
+
+#### Section List View
+
+Grouped by grade level. Each section displayed as a card with:
+- Section name · Enrolled count / Max capacity · Advising teacher (or "Unassigned")
+- Capacity bar: green < 80% · amber 80–99% · red 100%
+- SCP designation badge (if applicable)
+- Actions: Edit · Delete
+
+**Create Section dialog:**
+- Name (free text)
+- Grade Level (dynamic dropdown — loaded from active AY's grade levels)
+- Max Capacity (numeric, default 40, minimum 1)
+- Advising Teacher (searchable dropdown from Teacher directory — shows Employee ID + Name)
+- SCP Code (optional dropdown — loaded from active AY's SCP programs)
+
+**Edit Section:** Same fields. Cannot reduce `maxCapacity` below current enrolled count (returns `422`).
+
+**Delete Section:** Blocked if any `Enrollment` records reference this section. The UI shows a blocking message listing how many enrolled students must be reassigned first.
+
+#### Teacher Assignment to Sections
+
+Advising teacher assignment is driven by the Teacher model, not the User model directly. This ensures only teachers with complete profiles can be assigned. One teacher can advise multiple sections across grade levels.
+
+---
+
+### 6.8 Academic Year Configuration
+
+**Route:** `/settings` — requires JWT, role: REGISTRAR or SYSTEM_ADMIN
+**Page:** `client/src/pages/settings/Index.tsx`
+
+#### Tab 1 — School Profile
+
+Fields: School Name · School ID (DepEd) · Division · Region · Logo Upload.
+
+Logo upload triggers server-side accent color extraction. Extracted HSL is stored in `SchoolSettings.colorScheme` and returned via `GET /api/settings/public`. All instances of the school name across the UI and emails source from this record.
+
+#### Tab 2 — Academic Year
+
+Create, activate, and archive academic years.
+
+**Smart Auto-Fill:** When the registrar types a year label (e.g., "2026-2027"), the system auto-calculates:
+- Class opening (first Monday of June)
+- Class end (March 31)
+- Phase 1 Early Registration dates (last Saturday of January → last Friday of February)
+- Phase 2 Regular Enrollment dates (~1 week before class opening)
+
+Registrar confirms or adjusts the auto-filled dates before saving.
+
+Only one academic year can be `isActive = true` at a time. Activating a new year deactivates the previous one.
+
+#### Tab 3 — Grade Levels, Strands & SCP Programs
+
+Three sub-tabs:
+
+**Grade Levels:** CRUD within the active AY. Each grade level has a `requiresEarlyReg` toggle. Display order determines how they appear in dropdowns and tables. Schools with non-standard grade level names (e.g., "Kindergarten Preparatory") can configure them here.
+
+**Strands & Tracks:** CRUD. Each strand links to one or more grade levels and a track label. Schools that offer only JHS (no SHS) simply have no strands configured.
+
+**SCP Programs:** CRUD. Each program entry has:
+- Code (short identifier used in filters and badges)
+- Full name (displayed in the admission form)
+- Applicable grade levels
+- Assessment type (drives the SCP workflow)
+- Requires interview toggle
+- Active / Inactive toggle
+
+**A school that offers only Regular admission leaves this sub-tab empty.** The admission form will show no SCP options. The F2F form behaves identically.
+
+#### Tab 4 — Enrollment Gate
+
+Large, clearly labeled toggle for `enrollmentOpen`. When OFF, the public `/apply` portal redirects all visitors to `/closed`. The F2F route (`/f2f-admission`) is unaffected by this gate. Displays current state and the last time it was toggled.
+
+---
+
+### 6.9 System Audit Trail & Activity Logging
+
+**Route:** `/audit-logs`
+**Page:** `client/src/pages/audit/Index.tsx`
+
+All significant actions write an immutable `AuditLog` record. No delete endpoint exists. Logs cannot be cleared or purged through the UI.
+
+**REGISTRAR** sees own actions and system-level events.
+**SYSTEM_ADMIN** sees all users' actions with a user filter dropdown.
+
+**Filterable by:** action type · date range · user (admin only) · subject type
+
+#### Complete Action Type Reference
+
+| actionType | Template |
 |---|---|
-| `APPLICATION_SUBMITTED` | `"Guest submitted application for {name} (LRN: {lrn}). Tracking: {tracking}"` |
-| `APPLICATION_APPROVED` | `"Registrar {user} approved application #{id} — assigned to {section}"` |
-| `APPLICATION_REJECTED` | `"Registrar {user} rejected application #{id}. Reason: {reason}"` |
-| `SECTION_CREATED` | `"Admin created section {name} under {grade_level} with capacity {n}"` |
-| `SECTION_UPDATED` | `"Admin updated capacity for {grade_level} - {section} to {n}"` |
-| `ENROLLMENT_GATE_TOGGLED` | `"Admin {user} set enrollment to {OPEN/CLOSED}"` |
-| `SETTINGS_UPDATED` | `"Admin updated school identity settings"` |
-| `USER_LOGIN` | `"User {email} logged in from {ip}"` |
-
-#### Audit Log UI
-
-- shadcn/ui `Table`: Timestamp, User, Action Type (Badge), Description, IP Address.
-- Filters: Action Type, Date Range.
-- Non-destructive: no delete endpoint or UI exists for audit logs.
+| `USER_LOGIN` | User [email] logged in from [IP] |
+| `USER_LOGOUT` | User [email] logged out |
+| `APPLICATION_SUBMITTED` | Online application submitted — Tracking #[n], Applicant: [name] |
+| `F2F_APPLICATION_ENTERED` | F2F application entered by [user] for [name], Tracking #[n] |
+| `APPLICATION_APPROVED` | [user] approved [name] → Section [section] |
+| `APPLICATION_REJECTED` | [user] rejected [name] — Reason: [text] |
+| `EXAM_SCHEDULED` | [user] scheduled [assessmentType] for [name] on [date] |
+| `EXAM_RESULT_RECORDED` | [user] recorded result for [name]: [result] (Score: [score]) |
+| `APPLICATION_PASSED` | [user] marked [name] as PASSED |
+| `APPLICATION_FAILED` | [user] marked [name] as FAILED. Notes: [notes] |
+| `STUDENT_RECORD_UPDATED` | [user] updated record for LRN [lrn] — Changed: [fieldList] |
+| `ENROLLMENT_GATE_TOGGLED` | [user] toggled enrollment gate to [OPEN/CLOSED] |
+| `SECTION_CREATED` | [user] created section [name] for [grade] (cap: [n]) |
+| `SECTION_UPDATED` | [user] updated section [name] |
+| `SECTION_DELETED` | [user] deleted section [name] |
+| `TEACHER_CREATED` | [user] added teacher [name] (EmpID: [id]) |
+| `TEACHER_UPDATED` | [user] updated teacher [name] |
+| `TEACHER_ACCOUNT_PROVISIONED` | [user] provisioned login account for teacher [name] |
+| `ACADEMIC_YEAR_CREATED` | [user] created AY [label] |
+| `ACADEMIC_YEAR_ACTIVATED` | [user] activated AY [label] |
+| `SCHOOL_SETTINGS_UPDATED` | [user] updated school profile — Changed: [fields] |
+| `ADMIN_USER_CREATED` | Admin [name] created account for [email] (role: [role]) |
+| `ADMIN_USER_DEACTIVATED` | Admin [name] deactivated account [email] |
+| `ADMIN_PASSWORD_RESET` | Admin [name] reset password for [email] |
 
 ---
 
-### 6.7 Automated Email Notification System
+### 6.10 Automated Email Notification System
 
-**Stack:** Nodemailer + Resend SMTP.
+All emails dispatched asynchronously via `setImmediate()`. The HTTP response is always sent before the email fires.
 
-```bash
-# server/
-pnpm add nodemailer
-```
+**Email templates use `SchoolSettings.schoolName` at send time — never a hardcoded school name.**
 
-```js
-// server/src/services/mailer.ts
-import nodemailer from 'nodemailer';
-
-export const transporter = nodemailer.createTransport({
-  host:   'smtp.resend.com',
-  port:   465,
-  secure: true,
-  auth: { user: 'resend', pass: process.env.RESEND_API_KEY },
-});
-```
-
-#### Email Template Requirements
-
-All HTML email templates must:
-- Display the school logo (`logoUrl` from `SchoolSettings`).
-- Use the active `primary_hsl` color for the header band.
-- Include `Instrument Sans` via the Bunny Fonts CDN `<link>` in `<head>`.
-- Include the school name and address in the footer.
-
-#### Trigger Map
-
-| Trigger | Subject |
+| Trigger | Subject Template |
 |---|---|
-| Application submitted | `Your Application Has Been Received — Tracking #APP-XXXX` |
-| Application approved | `Congratulations! Your Enrollment is Confirmed` |
-| Application rejected | `Update on Your Application to [School Name]` |
+| Online application submitted | `Your Application Has Been Received — #[tracking] · [schoolName]` |
+| F2F application entered | `Your Walk-in Application Has Been Recorded — #[tracking] · [schoolName]` |
+| Exam/Assessment scheduled | `Your [programName] Assessment Date — [schoolName]` |
+| Assessment passed | `Congratulations! You Passed the Assessment — [schoolName]` |
+| Assessment failed | `Update on Your [programName] Application — [schoolName]` |
+| Enrollment confirmed | `Your Enrollment is Confirmed — [schoolName], SY [yearLabel]` |
+| Application rejected | `Update on Your Application to [schoolName]` |
+| Teacher account provisioned | `Welcome to [schoolName] — Your System Account Details` |
 
-#### Async Dispatch — Critical
-
-```js
+```ts
 // server/src/controllers/applicationController.ts
 export async function store(req, res) {
   const applicant = await applicationService.create(req.body);
-
-  // Send response immediately — do NOT await the email
   res.status(201).json({ trackingNumber: applicant.trackingNumber });
-
-  // Fire-and-forget after the HTTP response is fully sent
   setImmediate(async () => {
     try {
       await mailer.sendApplicationReceived(applicant);
@@ -1126,67 +966,119 @@ export async function store(req, res) {
 }
 ```
 
-> **Instruction for Claude Code:** Never `await` a mail-sending function before calling `res.json()`. Use `setImmediate()` to dispatch emails after the HTTP response is sent. This prevents the React frontend from stalling during form submission.
-
 ---
 
 ## 7. REST API Contracts
 
-All endpoints prefixed with `/api`. All responses are `Content-Type: application/json`.
+All endpoints prefixed with `/api`. All responses `Content-Type: application/json`.
 
 ### Authentication
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| `POST` | `/auth/login` | None | Returns JWT token + user object |
-| `GET` | `/auth/me` | JWT | Returns current authenticated user |
+| `GET` | `/auth/login-token` | None | Issues 5-min pre-flight token (rate-limited) |
+| `POST` | `/auth/login` | loginToken in body | Returns JWT + user object |
+| `GET` | `/auth/me` | JWT | Current authenticated user |
+| `POST` | `/auth/change-password` | JWT | Change password (required on first login) |
 
 ### Public (No Auth Required)
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/settings/public` | Returns `schoolName`, `logoUrl`, `colorScheme`, `enrollmentOpen`, `activeAcademicYear` |
-| `GET` | `/grade-levels` | Grade levels for the active academic year |
-| `GET` | `/strands?gradeLevelId=` | Strands filtered by grade level |
-| `POST` | `/applications` | Submit admission application |
-| `GET` | `/applications/track/:trackingNumber` | Look up status by tracking number |
+| `GET` | `/settings/public` | School name, logo, colorScheme, enrollmentOpen, activeAY |
+| `GET` | `/grade-levels` | Grade levels for active AY |
+| `GET` | `/strands?gradeLevelId=` | Strands for a grade level |
+| `GET` | `/scp-programs?gradeLevelId=` | Active, configured SCP programs (dynamic) |
+| `POST` | `/applications` | Submit online admission |
+| `GET` | `/applications/track/:trackingNumber` | Status lookup by tracking number |
 
-### Registrar (JWT + role: REGISTRAR)
+### Registrar + System Admin (JWT required)
 
+**Dashboard:**
+`GET /dashboard/stats` — stat card data, chart data, SCP pipeline counts
+
+**Applications / Enrollment:**
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/dashboard/stats` | Stat cards + chart data |
-| `GET` | `/applications` | Paginated list with filters |
+| `GET` | `/applications` | Paginated + filterable list |
 | `GET` | `/applications/:id` | Single application detail |
-| `PATCH` | `/applications/:id/approve` | Approve + enroll into section |
+| `POST` | `/applications/f2f` | Enter F2F walk-in application |
+| `PATCH` | `/applications/:id/approve` | Approve + assign section |
 | `PATCH` | `/applications/:id/reject` | Reject with optional reason |
-| `GET` | `/students` | Paginated student list with search + filters |
+| `PATCH` | `/applications/:id/schedule-exam` | SCP: schedule assessment |
+| `PATCH` | `/applications/:id/record-result` | SCP: record result |
+| `PATCH` | `/applications/:id/pass` | SCP: mark PASSED |
+| `PATCH` | `/applications/:id/fail` | SCP: mark FAILED |
+
+**SIMS:**
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/students` | Paginated, searchable list |
+| `GET` | `/students/:id` | Full student profile |
+| `PUT` | `/students/:id` | Update student record (audit logged) |
+| `GET` | `/students/:id/history` | All enrollment records across AYs |
+
+**Teacher Management:**
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/teachers` | Paginated teacher directory |
+| `POST` | `/teachers` | Create teacher profile |
+| `GET` | `/teachers/:id` | Profile + sections + account info |
+| `PUT` | `/teachers/:id` | Update teacher profile |
+| `POST` | `/teachers/:id/provision-account` | Create system login for teacher |
+| `PATCH` | `/teachers/:id/deactivate` | Soft-deactivate teacher (isActive = false) |
+
+**Sections:**
+| Method | Endpoint | Description |
+|---|---|---|
 | `GET` | `/sections` | All sections with enrolled count |
 | `POST` | `/sections` | Create section |
 | `PUT` | `/sections/:id` | Update section |
-| `DELETE` | `/sections/:id` | Delete section (blocked if enrollments exist) |
-| `GET` | `/academic-years` | List all academic years |
-| `POST` | `/academic-years` | Create academic year |
-| `PUT` | `/academic-years/:id` | Update academic year |
-| `DELETE` | `/academic-years/:id` | Delete academic year |
-| `GET` | `/grade-levels/all` | All grade levels |
-| `POST` | `/grade-levels` | Create grade level |
-| `PUT` | `/grade-levels/:id` | Update grade level |
-| `DELETE` | `/grade-levels/:id` | Delete grade level |
-| `POST` | `/strands` | Create strand |
-| `PUT` | `/strands/:id` | Update strand |
-| `DELETE` | `/strands/:id` | Delete strand |
-| `PUT` | `/settings/identity` | Update school name |
+| `DELETE` | `/sections/:id` | Delete (blocked if enrollments exist) |
+| `PATCH` | `/sections/:id/assign-teacher` | Assign advising teacher |
+
+**Academic Year / Grade Levels / Strands / SCP:**
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/academic-years` | All academic years |
+| `POST` | `/academic-years` | Create AY (auto-calculates dates) |
+| `PUT` | `/academic-years/:id` | Update AY |
+| `PATCH` | `/academic-years/:id/activate` | Set as active |
+| `GET/POST/PUT/DELETE` | `/grade-levels/*` | Grade level CRUD |
+| `GET/POST/PUT/DELETE` | `/strands/*` | Strand CRUD |
+| `GET` | `/scp-programs/all` | All SCP programs for active AY |
+| `POST` | `/scp-programs` | Create SCP program config |
+| `PUT` | `/scp-programs/:id` | Update SCP program |
+| `PATCH` | `/scp-programs/:id/toggle` | Activate / deactivate |
+
+**Settings:**
+| Method | Endpoint | Description |
+|---|---|---|
+| `PUT` | `/settings/identity` | School name, ID, division, region |
 | `POST` | `/settings/logo` | Upload logo + trigger color extraction |
-| `PATCH` | `/settings/enrollment-gate` | Toggle enrollment open/closed |
-| `GET` | `/audit-logs` | Paginated audit logs with filters |
+| `PATCH` | `/settings/enrollment-gate` | Toggle open/closed |
+
+**Audit:**
+`GET /audit-logs` — paginated, filterable
 
 ### Teacher (JWT + role: TEACHER)
 
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/teacher/sections` | Sections assigned to logged-in teacher |
-| `GET` | `/teacher/sections/:id` | Students enrolled in a specific section |
+| `GET` | `/teacher/sections/:id` | Students enrolled in a section |
+
+### System Admin Only (JWT + role: SYSTEM_ADMIN)
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/admin/users` | All system accounts |
+| `POST` | `/admin/users` | Create REGISTRAR or TEACHER account |
+| `PUT` | `/admin/users/:id` | Update user details |
+| `PATCH` | `/admin/users/:id/deactivate` | Deactivate account |
+| `PATCH` | `/admin/users/:id/reset-password` | Admin password reset |
+| `GET` | `/admin/email-logs` | Email delivery log |
+| `GET` | `/admin/system` | System health diagnostics |
 
 ### Standard Error Response
 
@@ -1199,7 +1091,7 @@ All endpoints prefixed with `/api`. All responses are `Content-Type: application
 }
 ```
 
-HTTP status codes: `200` OK, `201` Created, `400` Bad Request, `401` Unauthorized, `403` Forbidden, `404` Not Found, `422` Unprocessable Entity, `500` Internal Server Error.
+HTTP codes: `200` · `201` · `400` · `401` · `403` · `404` · `422` · `500`
 
 ---
 
@@ -1209,7 +1101,8 @@ HTTP status codes: `200` OK, `201` Created, `400` Bad Request, `401` Unauthorize
 // client/src/router/index.tsx
 
 export const router = createBrowserRouter([
-  // ── Public ──────────────────────────────────────────────
+
+  // ── Public routes ───────────────────────────────────────────────────
   {
     path: '/',
     loader: async () => {
@@ -1228,29 +1121,106 @@ export const router = createBrowserRouter([
   },
   { path: '/closed',                element: <GuestLayout><EnrollmentClosed /></GuestLayout> },
   { path: '/track/:trackingNumber', element: <GuestLayout><TrackApplication /></GuestLayout> },
-  { path: '/login',                 element: <AuthLayout><Login /></AuthLayout> },
 
-  // ── Protected (Registrar + Teacher) ─────────────────────
+  // ── Login — TWO-LAYER GATE ──────────────────────────────────────────
+  // Layer 1: loader inspects history state; direct URL visits bounce to /
   {
-    element: <ProtectedRoute allowedRoles={['REGISTRAR', 'TEACHER']} />,
+    path: '/login',
+    loader: () => {
+      const state = window.history.state?.usr;  // RR v7 writes navigate() state under .usr
+      if (!state?.loginAccess) return redirect('/');
+      return null;
+    },
+    element: <AuthLayout><Login /></AuthLayout>,
+  },
+
+  // Forced password change (accessible after first login)
+  { path: '/change-password', element: <AuthLayout><ChangePassword /></AuthLayout> },
+
+  // ── Protected — Registrar + System Admin ────────────────────────────
+  {
+    element: <ProtectedRoute allowedRoles={['REGISTRAR', 'SYSTEM_ADMIN']} />,
     children: [
-      { path: '/dashboard',        element: <AppLayout><Dashboard /></AppLayout> },
-      { path: '/applications',     element: <AppLayout><Applications /></AppLayout> },
-      { path: '/applications/:id', element: <AppLayout><ApplicationDetail /></AppLayout> },
-      { path: '/students',         element: <AppLayout><Students /></AppLayout> },
-      { path: '/sections',         element: <AppLayout><Sections /></AppLayout> },
-      { path: '/audit-logs',       element: <AppLayout><AuditLogs /></AppLayout> },
-      { path: '/settings',         element: <AppLayout><Settings /></AppLayout> },
-      { path: '/my-sections',      element: <AppLayout><MySections /></AppLayout> },
+      { path: '/dashboard',          element: <AppLayout><Dashboard /></AppLayout> },
+      { path: '/f2f-admission',      element: <AppLayout><F2FAdmission /></AppLayout> },
+      { path: '/applications',       element: <AppLayout><Applications /></AppLayout> },
+      { path: '/applications/:id',   element: <AppLayout><ApplicationDetail /></AppLayout> },
+      { path: '/students',           element: <AppLayout><Students /></AppLayout> },
+      { path: '/students/:id',       element: <AppLayout><StudentProfile /></AppLayout> },
+      { path: '/teachers',           element: <AppLayout><Teachers /></AppLayout> },
+      { path: '/teachers/:id',       element: <AppLayout><TeacherProfile /></AppLayout> },
+      { path: '/sections',           element: <AppLayout><Sections /></AppLayout> },
+      { path: '/audit-logs',         element: <AppLayout><AuditLogs /></AppLayout> },
+      { path: '/settings',           element: <AppLayout><Settings /></AppLayout> },
     ],
   },
 
-  // ── Fallback ─────────────────────────────────────────────
+  // ── Protected — Teacher only ─────────────────────────────────────────
+  {
+    element: <ProtectedRoute allowedRoles={['TEACHER']} />,
+    children: [
+      { path: '/dashboard',          element: <AppLayout><Dashboard /></AppLayout> },
+      { path: '/my-sections',        element: <AppLayout><MySections /></AppLayout> },
+      { path: '/my-sections/:id',    element: <AppLayout><SectionRoster /></AppLayout> },
+    ],
+  },
+
+  // ── System Admin only ────────────────────────────────────────────────
+  {
+    element: <ProtectedRoute allowedRoles={['SYSTEM_ADMIN']} />,
+    children: [
+      { path: '/admin/users',        element: <AppLayout><UserManagement /></AppLayout> },
+      { path: '/admin/email-logs',   element: <AppLayout><EmailLogs /></AppLayout> },
+      { path: '/admin/system',       element: <AppLayout><SystemHealth /></AppLayout> },
+    ],
+  },
+
+  // ── Fallback ──────────────────────────────────────────────────────────
   { path: '*', element: <NotFound /> },
 ]);
 ```
 
-`<ProtectedRoute>` reads the JWT from the Zustand auth store, decodes the role, and redirects unauthenticated users to `/login`.
+### navigationRef Singleton (required for Axios 401 interceptor redirect)
+
+```ts
+// client/src/router/navigationRef.ts
+import { NavigateFunction } from 'react-router-dom';
+
+let _navigate: NavigateFunction | null = null;
+export const setNavigate = (fn: NavigateFunction) => { _navigate = fn; };
+export const getNavigate = () => _navigate!;
+```
+
+```tsx
+// client/src/layouts/AppLayout.tsx
+import { useNavigate } from 'react-router-dom';
+import { setNavigate } from '@/router/navigationRef';
+import { useEffect } from 'react';
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate();
+  useEffect(() => { setNavigate(navigate); }, [navigate]);
+  // ... rest of layout
+}
+```
+
+```ts
+// client/src/api/axiosInstance.ts
+import { getNavigate } from '@/router/navigationRef';
+import { useAuthStore } from '@/stores/authStore';
+
+axiosInstance.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response?.status === 401) {
+      useAuthStore.getState().clearAuth();
+      const navigate = getNavigate();
+      if (navigate) navigate('/login', { state: { loginAccess: true } });
+    }
+    return Promise.reject(error);
+  }
+);
+```
 
 ---
 
@@ -1258,773 +1228,203 @@ export const router = createBrowserRouter([
 
 | Requirement | Implementation |
 |---|---|
-| SQL Injection Prevention | Prisma parameterized queries exclusively; no string-interpolated raw SQL |
-| XSS Prevention | React JSX escaping by default; never use `dangerouslySetInnerHTML` |
-| CORS | `cors` middleware with explicit `origin` allowlist; no wildcard `*` in production |
-| Rate Limiting | `express-rate-limit`: 10 req/min on `POST /api/applications`; 20 req/min on `POST /api/auth/login` |
-| File Upload Safety | Multer validates MIME type + max 2MB; files stored in `server/uploads/` with path traversal protection |
-| JWT Secret | Stored in `.env` as `JWT_SECRET`; minimum 32-character random string; never committed to version control |
-| Password Hashing | `bcryptjs`, salt rounds: 12 |
-| Input Validation | Zod schema validation on every Express route before the controller is called |
-| Mass Assignment Prevention | All Prisma `create`/`update` calls use explicitly destructured fields — never spread `req.body` directly |
-| PII Handling | LRN treated as PII; never logged in plaintext in audit log descriptions beyond initial submission |
-| Environment Variables | Provide `.env.example` with all required keys; never commit `.env` |
+| SQL Injection | Prisma parameterized queries; no string-interpolated raw SQL |
+| XSS | React JSX escaping by default; no `dangerouslySetInnerHTML` |
+| CORS | `cors` with explicit `origin` allowlist; no wildcard in production |
+| Rate Limiting | `express-rate-limit`: 10/min on `POST /api/applications`; 20/min on `/auth/login-token` and `POST /auth/login` |
+| File Upload | Multer validates MIME type + max 2MB |
+| JWT Secret | Stored in `.env` as `JWT_SECRET`; minimum 32 chars; never committed |
+| Password Hashing | `bcryptjs`, 12 salt rounds |
+| Input Validation | Zod schema on every route before controller |
+| Mass Assignment | All Prisma calls use explicitly destructured fields — never spread `req.body` |
+| PII | LRN never logged in plaintext in audit log descriptions beyond initial submission |
 
 ---
 
-## 10. Out-of-Scope Limitations
+### 9.1 Login Access Guard — Layer 1 (Frontend)
 
-| Feature | Reason for Exclusion |
+**Problem:** Any guest can navigate directly to `/login` by typing it in the address bar, defeating the intent to have a staff-only login.
+
+**Solution:** The `/login` route loader reads `window.history.state?.usr` — the internal state object React Router v7 writes when `navigate()` is called. Direct URL visits carry no state, so the loader returns `redirect('/')`. Only navigation calls that explicitly pass `{ state: { loginAccess: true } }` are permitted.
+
+**Three legitimate state injectors:**
+
+```tsx
+// 1. ProtectedRoute — unauthenticated user tries to reach a protected route
+<Navigate to="/login" replace state={{ loginAccess: true, from: location.pathname }} />
+
+// 2. Staff login link in the public portal footer (/apply and /closed pages)
+const navigate = useNavigate();
+<button
+  type="button"
+  onClick={() => navigate('/login', { state: { loginAccess: true } })}
+  className="text-xs text-muted-foreground hover:underline underline-offset-4"
+>
+  Staff Login
+</button>
+
+// 3. Axios 401 interceptor — session expired mid-use
+// (uses the navigationRef singleton — see §8 above)
+navigate('/login', { state: { loginAccess: true } });
+```
+
+**Result:** Typing `/login` in the address bar bounces to `/`. The only path to the login form is through the system's own navigation.
+
+---
+
+### 9.2 Pre-Flight Login Token — Layer 2 (Backend)
+
+**Problem:** Even with Layer 1 blocking the UI, a determined attacker with a tool like Postman can still call `POST /api/auth/login` directly to attempt credential stuffing.
+
+**Solution:** `POST /api/auth/login` requires a server-issued, single-use, short-lived token in the request body. This token is only obtainable by calling `GET /api/auth/login-token`, which is what the Login page does silently on mount.
+
+**Flow:**
+1. `Login.tsx` mounts → immediately calls `GET /api/auth/login-token` (no user action required)
+2. Server generates 32 random bytes, stores the SHA-256 hash in `LoginToken`, sets 5-minute expiry → returns `{ loginToken: <raw> }`
+3. Login form stores `loginToken` in component state (not localStorage)
+4. User types email + password → form submits `{ email, password, loginToken }`
+5. `validateLoginToken` middleware: verifies hash, checks not expired, checks not already used → marks `usedAt = now()` → calls `next()`
+6. `authController.login` runs only after the token is consumed
+7. Any direct `POST /api/auth/login` without a valid `loginToken` returns `400 Bad Request` immediately — no password check attempted
+
+```ts
+// server/src/controllers/authController.ts
+import crypto from 'crypto';
+
+export async function issueLoginToken(req: Request, res: Response) {
+  const raw = crypto.randomBytes(32).toString('hex');
+  const hash = crypto.createHash('sha256').update(raw).digest('hex');
+  await prisma.loginToken.create({
+    data: {
+      token: hash,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+      ipAddress: req.ip,
+    },
+  });
+  res.json({ loginToken: raw }); // send raw; store only hash
+}
+```
+
+```ts
+// server/src/middleware/validateLoginToken.ts
+import crypto from 'crypto';
+
+export async function validateLoginToken(req: Request, res: Response, next: NextFunction) {
+  const { loginToken } = req.body;
+  if (!loginToken) {
+    return res.status(400).json({ message: 'Missing login token.' });
+  }
+
+  const hash = crypto.createHash('sha256').update(loginToken).digest('hex');
+  const record = await prisma.loginToken.findUnique({ where: { token: hash } });
+
+  if (!record || record.usedAt || record.expiresAt < new Date()) {
+    return res.status(400).json({ message: 'Invalid or expired login token.' });
+  }
+
+  // Consume immediately — single use only
+  await prisma.loginToken.update({
+    where: { id: record.id },
+    data: { usedAt: new Date() },
+  });
+
+  next();
+}
+```
+
+```ts
+// server/src/routes/auth.routes.ts
+router.get('/login-token', loginTokenRateLimiter, issueLoginToken);   // 20/min
+router.post('/login',      loginRateLimiter, validateLoginToken, authController.login);
+```
+
+**Periodic cleanup:** A cron job or startup task deletes expired, used tokens older than 24 hours to keep the `LoginToken` table lean.
+
+---
+
+## 10. Dynamic School Configuration
+
+This system must deploy at any Philippine public secondary school with **zero code changes**. Every school-identifying value is a runtime configuration stored in the database.
+
+| What varies by school | Where it is configured |
+|---|---|
+| School name | `SchoolSettings.schoolName` — Settings Tab 1 |
+| DepEd School ID | `SchoolSettings.schoolId` — Settings Tab 1 |
+| Division & Region | `SchoolSettings.division / region` — Settings Tab 1 |
+| Logo & accent color | Logo upload in Settings Tab 1; color auto-extracted |
+| Grade levels offered | Configured per AY in Settings Tab 3 |
+| Tracks & strands offered | Configured per AY in Settings Tab 3 |
+| SCP programs offered | Configured per AY in Settings Tab 3 (SCP sub-tab) |
+| Active admission channels | `SchoolSettings.admissionChannels` |
+| Section names & capacity | Per grade level configuration |
+| Enrollment phase dates | Auto-calculated per DepEd rules; editable per AY |
+
+**Hardcoding rules — enforced at code review:**
+- `schoolName` never appears as a string literal in any component. Always `settings.schoolName`.
+- SCP options in the admission form load from `GET /api/scp-programs`, never from a hardcoded array.
+- Grade level names are never hardcoded — they always come from the database for the active AY.
+- Email subjects and bodies use `${settings.schoolName}` token substitution at send time.
+- Division and region labels in the privacy notice come from `SchoolSettings`, not hardcoded text.
+
+---
+
+## 11. Out-of-Scope Limitations
+
+| Feature | Reason Excluded |
 |---|---|
 | Grading System | Does not compute or store academic grades |
-| Class Scheduling / Timetables | No subject or teacher scheduling engine |
-| DepEd Official Form Generation (SF1, SF4) | No automated printing of official DepEd forms |
-| Cashiering / School Fee Payments | No financial or billing module |
-| SMS Notifications | Email only; no SMS gateway integration |
-| Student / Parent Portal Login | Applicants interact only via the public form |
-| Multi-School / Multi-Branch Support | Single-school installation only |
-| WebSocket / Real-time Push | No live updates; standard API polling/refetch is acceptable |
+| Class Scheduling / Timetables | No subject or teacher period scheduling |
+| DepEd Official Form Generation (SF1, SF4) | No automated printing of DepEd forms |
+| Cashiering / School Fees | No financial or billing module |
+| SMS Notifications | Email only; no SMS gateway |
+| Student / Parent Portal Login | Applicants interact via public form only |
+| Multi-School / Multi-Branch Support | Single-school installation |
+| WebSocket / Real-time Push | Standard API polling/refetch is acceptable |
 
 ---
 
-## 11. Acceptance Criteria
+## 12. Acceptance Criteria
 
-| # | Acceptance Test |
+| # | Test |
 |---|---|
-| AC-01 | A guest can submit an admission form and receive a tracking number on-screen and via email. |
-| AC-02 | The admission portal (`/apply`) redirects to `/closed` when the enrollment gate is OFF. |
-| AC-03 | The registrar can log in with email + password and receive a valid JWT returned in the response. |
-| AC-04 | A request to any protected route without a valid JWT returns HTTP 401. |
-| AC-05 | A teacher JWT cannot access registrar-only endpoints — returns HTTP 403. |
-| AC-06 | The registrar can approve an applicant and assign them to a section with available capacity. |
-| AC-07 | The system blocks enrollment into a section at `maxCapacity` with HTTP 422 and a clear error message. |
-| AC-08 | Concurrent enrollment attempts on the same last-slot section do not result in over-enrollment (race condition validated by `FOR UPDATE` lock). |
-| AC-09 | Uploading any logo changes only the `--accent` (and aliased `--primary`, `--ring`) CSS tokens to the extracted dominant color. The `--background`, `--card`, `--foreground`, `--border`, and `--muted` tokens remain white/grey at all times. |
-| AC-10 | Uploading a logo with an orange-dominant color sets the accent to an orange HSL value across all interactive elements (buttons, links, focus rings, sidebar highlights). The page background remains white. |
-| AC-11 | Removing a logo (or a failed extraction) resets `--accent` to the default blue (`221 83% 53%`). All other main tokens remain unchanged. |
-| AC-12 | All text in the application renders in `Instrument Sans`. |
-| AC-13 | The registrar can search students by LRN or name in real-time (300ms debounce, no full page reload). |
-| AC-14 | Every critical action (approve, reject, toggle enrollment, update settings) appears in the audit log with correct user, IP, and timestamp. |
-| AC-15 | Email notifications are sent asynchronously — the API `201` response returns before the email is dispatched. |
-| AC-16 | An advising teacher can view only their assigned sections; all other dashboard routes return 403. |
-| AC-17 | The admission portal is fully usable at 375px (iPhone SE) with no horizontal overflow or broken layout. |
-| AC-18 | The dashboard sidebar collapses to a hamburger `Sheet` drawer on viewports below 1024px. |
-| AC-19 | All dashboard pages are fully usable at 768px (tablet) viewport. |
-| AC-20 | Data tables on mobile are horizontally scrollable with no layout breakage. |
-| AC-21 | Every successful form submission triggers a Sileo `success` toast. |
-| AC-22 | Every server-side validation error triggers a Sileo `error` toast displaying the first error message. |
-| AC-23 | A capacity-blocking enrollment attempt shows a Sileo `error` toast with a section-full message. |
-| AC-24 | No native `alert()`, `confirm()`, or inline dismissible error banners appear anywhere in the application. |
+| AC-01 | A guest submits an online admission form and receives a tracking number on screen and via email. |
+| AC-02 | `/apply` redirects to `/closed` when the enrollment gate is OFF. |
+| AC-03 | A registrar enters a F2F walk-in application via `/f2f-admission` regardless of the enrollment gate state. |
+| AC-04 | F2F applications are stored with `admissionChannel: F2F` and `encodedById` set to the registrar's user ID. |
+| AC-05 | Typing `/login` directly in the address bar redirects to `/`. |
+| AC-06 | Clicking "Staff Login" in the public portal footer navigates to `/login` successfully. |
+| AC-07 | `POST /api/auth/login` without a valid `loginToken` returns `400 Bad Request`. |
+| AC-08 | A `loginToken` that has already been used cannot be reused — returns `400`. |
+| AC-09 | A `loginToken` older than 5 minutes is rejected — returns `400`. |
+| AC-10 | A registrar logs in and receives a valid JWT. Redirected to `/dashboard`. |
+| AC-11 | A request to any protected route without a JWT returns `401`. |
+| AC-12 | A TEACHER JWT cannot access registrar-only endpoints — returns `403`. |
+| AC-13 | A new user with `mustChangePassword: true` is redirected to `/change-password` after first login. |
+| AC-14 | The registrar views a full student profile at `/students/:id` with all tabs populated. |
+| AC-15 | Editing a student record creates an `AuditLog` entry with `STUDENT_RECORD_UPDATED` listing changed fields. |
+| AC-16 | The LRN field is displayed as read-only in the student profile edit form. |
+| AC-17 | The registrar creates a teacher profile and provisions a system login from `/teachers`. |
+| AC-18 | A provisioned teacher receives a welcome email using `SchoolSettings.schoolName` — no hardcoded school name. |
+| AC-19 | The provisioned teacher must change their password on first login. |
+| AC-20 | The teacher sees only their own assigned sections at `/my-sections`. |
+| AC-21 | SCP options shown in the online and F2F admission form match only active SCP programs in the database. |
+| AC-22 | A school with no SCP programs configured sees no SCP fields in the admission form. |
+| AC-23 | Section creation allows selecting an advising teacher from the Teacher directory. |
+| AC-24 | Deleting a section with active enrollments returns an error describing how many students are affected. |
+| AC-25 | Concurrent enrollment into the last section slot does not over-enroll (FOR UPDATE lock). |
+| AC-26 | A section at `maxCapacity` is disabled in the section assignment dialog. |
+| AC-27 | All school-identifying text (name, division, region) in UI and emails comes from `SchoolSettings`. |
+| AC-28 | Uploading a logo changes only accent CSS tokens; main layer tokens remain unchanged. |
+| AC-29 | Every critical action appears in the audit log with the correct user, IP, and timestamp. |
+| AC-30 | Email notifications are sent asynchronously — API `201` returns before email dispatches. |
+| AC-31 | The admission portal is fully usable at 375px with no horizontal overflow. |
+| AC-32 | The dashboard sidebar collapses to a hamburger drawer on viewports below 1024px. |
+| AC-33 | No `alert()`, `confirm()`, or inline dismissible banners appear anywhere in the system. |
 
 ---
 
-*End of Document — PRD v2.2.0*
+*PRD v3.0.0*
+*Scope: Admission (Online + F2F) · Enrollment Management · SIMS · Teacher Management · Grade Level & Sectioning Management*
 *Stack: PERN (PostgreSQL 18 · Express.js 5.1 · React 19.x · Node.js 22 LTS)*
-*ORM: Prisma 6 · Auth: JWT · Routing: React Router v7 · Build: Vite 7 · Styles: Tailwind CSS v4*
-*Package Manager: pnpm 10.x · All components: .tsx*
-*Prepared for: Claude Code Implementation*
-*School: [School Name]*
-
----
-
----
-
-## ADDENDUM — DM 012, s. 2026: Strengthened SHS Curriculum Integration
-### Document Version Addendum: PRD v2.2.1
-
-**Governing Memorandum:** DepEd Memorandum No. 012, s. 2026 — Full Implementation of the Strengthened Senior High School Curriculum in School Year 2026–2027
-**Issued:** February 27, 2026
-**Source:** https://www.deped.gov.ph/2026/02/27/february-27-2026-dm-012-s-2026-full-implementation-of-the-strengthened-senior-high-school-curriculum-in-school-year-2026-2027/
-**PRD Impact:** Additive only — no existing module is removed. The `Strand` model, API, and UI are extended to support the new Strengthened SHS Curriculum alongside the old strand-based system for Grade 12.
-
----
-
-### Policy Context
-
-Starting SY 2026–2027, DepEd replaces the traditional SHS strand system with a **two-track, elective-cluster** framework for **incoming Grade 11 learners only**. Grade 12 learners in SY 2026–2027 remain on the old strand-based curriculum.
-
-The system must therefore support **both policies simultaneously** within the same academic year.
-
-| Grade Level | Active Policy | Curriculum Unit Declared |
-|---|---|---|
-| Grade 11 (new entrant) | DM 012, s. 2026 — Strengthened SHS | **Track** (Academic or TechPro) + Elective Cluster |
-| Grade 12 (continuing) | Old K–12 SHS strand framework | **Strand** (STEM, ABM, HUMSS, GAS) |
-| Grades 7–10 | DO 017, s. 2025 — JHS unchanged | N/A |
-
----
-
-### A.1 — Database Schema Extension
-
-No new Prisma models are required. The existing `Strand` model is extended semantically:
-
-```prisma
-// ADDENDUM to server/prisma/schema.prisma
-// Extend the Strand model with two new fields to support DM 012, s. 2026
-
-model Strand {
-  id                      Int          @id @default(autoincrement())
-  name                    String       // e.g. "STEM", "ICT Support and Computer Programming"
-  applicableGradeLevelIds Int[]        // Array of GradeLevel IDs
-  academicYearId          Int
-  createdAt               DateTime     @default(now())
-
-  // ── DM 012, s. 2026 additions ──────────────────────────────
-  curriculumType          CurriculumType @default(OLD_STRAND)
-  // OLD_STRAND   : traditional strand (STEM, ABM, HUMSS, GAS) — for Grade 12 in SY 2026–2027
-  // ELECTIVE_CLUSTER : new cluster under Strengthened SHS — for Grade 11 SY 2026–2027+
-  // TRACK           : top-level track declaration (Academic, TechPro) — not selectable as a section unit
-
-  track                   SHSTrack?
-  // ACADEMIC   : applies to all Academic elective clusters
-  // TECHPRO    : applies to all TechPro elective clusters
-  // null       : for old strands (Grade 12 legacy) or JHS (not applicable)
-  // ────────────────────────────────────────────────────────────
-
-  academicYear            AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-  applicants              Applicant[]
-}
-
-enum CurriculumType {
-  OLD_STRAND        // STEM, ABM, HUMSS, GAS — Grade 12 SY 2026–2027
-  ELECTIVE_CLUSTER  // New Strengthened SHS clusters — Grade 11 SY 2026–2027+
-}
-
-enum SHSTrack {
-  ACADEMIC
-  TECHPRO
-}
-```
-
-**The `Applicant` model requires one additional field:**
-
-```prisma
-// ADDENDUM to model Applicant in server/prisma/schema.prisma
-
-model Applicant {
-  // ... all existing fields unchanged ...
-
-  // ── DM 012, s. 2026 addition ───────────────────────────────
-  shsTrack    SHSTrack?   // ACADEMIC or TECHPRO — null for JHS and Grade 12 legacy
-  // ────────────────────────────────────────────────────────────
-}
-```
-
----
-
-### A.2 — Online Admission Portal Updates (§6.1 Extension)
-
-**Route:** `/apply` — the admission form's Grade 11 enrollment preference step changes.
-
-#### Old behavior (Grade 11):
-```
-Grade Level: [Grade 11 ▾]
-Strand:      [STEM ▾]  ← single dropdown from Strand table
-```
-
-#### New behavior (Grade 11) — SY 2026–2027+:
-```
-Grade Level: [Grade 11 ▾]
-
-SHS Track: *
-  ○  Academic            (for higher education pathways)
-  ○  Technical-Professional (TechPro)   (for employment, TESDA, entrepreneurship)
-
-Preferred Elective Cluster: *   ← dynamically filtered by selected Track
-  [ STEM (Academic)                             ▾ ]
-  (Options change based on Track selection above;
-   only clusters offered by this school are shown)
-```
-
-#### Implementation — React component logic:
-
-```tsx
-// client/src/pages/admission/Apply.tsx — Step 3 (Enrollment Preferences)
-
-// When grade level = Grade 11 AND academic year uses Strengthened SHS:
-<>
-  <RadioGroup name="shsTrack" required>
-    <RadioGroupItem value="ACADEMIC" label="Academic" />
-    <RadioGroupItem value="TECHPRO" label="Technical-Professional (TechPro)" />
-  </RadioGroup>
-
-  {/* Strand (now elective cluster) — filtered by track AND by what school offers */}
-  {shsTrack && (
-    <Select
-      name="strandId"
-      label="Preferred Elective Cluster *"
-      options={clusters.filter(c => c.track === shsTrack && c.curriculumType === 'ELECTIVE_CLUSTER')}
-      placeholder="Select your preferred elective cluster"
-    />
-  )}
-</>
-
-// When grade level = Grade 12 (old strand system):
-<Select
-  name="strandId"
-  label="Strand *"
-  options={strands.filter(s => s.curriculumType === 'OLD_STRAND')}
-  placeholder="Select your strand"
-/>
-
-// When grade level = Grade 7–10: Strand/Cluster field hidden entirely
-```
-
-#### API changes for the public portal:
-
-The existing endpoint `GET /api/strands?gradeLevelId=` is extended with an optional filter:
-
-```
-GET /api/strands?gradeLevelId={id}&track=ACADEMIC
-GET /api/strands?gradeLevelId={id}&track=TECHPRO
-GET /api/strands?gradeLevelId={id}  ← returns all (for Grade 12 old strands)
-```
-
-Response shape (unchanged, new fields added):
-```json
-[
-  {
-    "id": 5,
-    "name": "STEM",
-    "curriculumType": "ELECTIVE_CLUSTER",
-    "track": "ACADEMIC",
-    "applicableGradeLevelIds": [5]
-  },
-  {
-    "id": 6,
-    "name": "ICT Support and Computer Programming Technologies",
-    "curriculumType": "ELECTIVE_CLUSTER",
-    "track": "TECHPRO",
-    "applicableGradeLevelIds": [5]
-  }
-]
-```
-
----
-
-### A.3 — Settings Module Updates (§6.4 Extension — Tab 3: Grade Levels & Strands)
-
-**Tab 3** is extended to support configuring both curriculum types:
-
-#### Updated UI — Strands / Clusters Panel
-
-```
-SETTINGS > Grade Levels & Strands > Strands & Clusters
-
-  Academic Year Context: [ SY 2026–2027 ▾ ]
-
-  ┌─────────────────────────────────────────────────────────────────┐
-  │  FOR GRADE 11 — Strengthened SHS (DM 012, s. 2026)            │
-  │  Elective Clusters offered by this school:                     │
-  │                                                                │
-  │  ACADEMIC TRACK                                                │
-  │  ✓ STEM (Science, Technology, Engineering & Mathematics)       │
-  │  ✓ Arts, Social Sciences, and Humanities                       │
-  │  ✓ Business and Entrepreneurship                               │
-  │  ☐ Sports, Health, and Wellness                                │
-  │  ☐ Field Experience                                            │
-  │                                                                │
-  │  TECHPRO TRACK                                                 │
-  │  ✓ ICT Support and Computer Programming Technologies           │
-  │  ✓ Hospitality and Tourism                                     │
-  │  ☐ Construction and Building Technologies                      │
-  │  ☐ Automotive and Small Engine Technologies                    │
-  │  ☐ Industrial Technologies                                     │
-  │  ☐ Agri-Fishery Business and Food Innovation                   │
-  │  ☐ Artisanry and Creative Enterprise                           │
-  │  ☐ Aesthetic, Wellness, and Human Care                         │
-  │  ☐ Creative Arts and Design Technologies                       │
-  │  ☐ Maritime Transport                                          │
-  │                                              [Save Clusters]   │
-  ├─────────────────────────────────────────────────────────────────┤
-  │  FOR GRADE 12 — Old Strand-Based Curriculum (SY 2026–2027)    │
-  │  (Grade 12 continues under the existing strand framework)      │
-  │                                                                │
-  │  Strand Name     │  Applicable Grades  │  Actions             │
-  │  ────────────────┼─────────────────────┼────────────────────── │
-  │  STEM            │  Grade 12           │  [Edit]  [Delete]    │
-  │  ABM             │  Grade 12           │  [Edit]  [Delete]    │
-  │  HUMSS           │  Grade 12           │  [Edit]  [Delete]    │
-  │  GAS             │  Grade 12           │  [Edit]  [Delete]    │
-  │                                        [+ Add Old Strand]     │
-  └─────────────────────────────────────────────────────────────────┘
-```
-
-> **Instruction for Claude Code:** The Grade 11 cluster list is rendered from the master DM 012 cluster list (hardcoded in the frontend as a constant — DepEd defines these, they are not user-created). The Registrar checks/unchecks which ones the school offers. Each checked cluster is saved as a `Strand` record with `curriculumType: 'ELECTIVE_CLUSTER'` and the corresponding `track`. The Grade 12 old strands remain fully CRUD-able as before.
-
----
-
-### A.4 — Zod Validator Update (§2 Extension — Input Validation)
-
-```ts
-// server/src/validators/application.validator.ts — ADDENDUM
-
-import { z } from 'zod';
-
-// Existing Grade 11 applicant validator must now accept shsTrack
-export const applicationSchema = z.object({
-  // ... all existing fields unchanged ...
-
-  // SHS-specific — required when gradeLevelId maps to Grade 11 or 12
-  strandId:   z.number().int().positive().optional(),
-  shsTrack:   z.enum(['ACADEMIC', 'TECHPRO']).optional(),
-
-}).superRefine((data, ctx) => {
-  // If applicant is Grade 11 under Strengthened SHS: shsTrack required
-  // If applicant is Grade 12 (old): strandId required, shsTrack not applicable
-  // If applicant is Grade 7–10: neither required
-  // (grade level to curriculum type mapping is resolved by the service layer
-  //  using the active AcademicYear's SHS curriculum config)
-});
-```
-
----
-
-### A.5 — New Acceptance Criteria (Appended to §11)
-
-| # | Acceptance Test |
-|---|---|
-| AC-25 | When Grade 11 is selected on the admission portal for SY 2026–2027, the form shows a **Track** selector (Academic / TechPro) instead of a Strand dropdown. |
-| AC-26 | After selecting **Academic**, the Elective Cluster dropdown shows only Academic track clusters offered by the school (no TechPro clusters visible). |
-| AC-27 | After selecting **TechPro**, the Elective Cluster dropdown shows only TechPro clusters offered by the school. |
-| AC-28 | When **Grade 12** is selected on the admission portal (transferee or walk-in), the form shows the old **Strand** selector (STEM, ABM, HUMSS, GAS) — not the new cluster system. |
-| AC-29 | Grade 7–10 selections on the form show **neither** a Track nor a Strand/Cluster field. |
-| AC-30 | In Settings → Grade Levels & Strands, the registrar can enable/disable which elective clusters the school offers for Grade 11 using a checklist. Changes immediately reflect in the admission portal dropdown. |
-| AC-31 | The `Strand` model in the database correctly stores both old strands (`curriculumType: OLD_STRAND`) and new elective clusters (`curriculumType: ELECTIVE_CLUSTER`) as separate record sets under the same academic year. |
-| AC-32 | An applicant's approval email correctly labels: "Track: Academic · Elective Cluster: STEM" (for Grade 11 new system) or "Strand: HUMSS" (for Grade 12 legacy) — never mixing the two terminologies. |
-
----
-
-### A.6 — Terminology Reference (Old vs. New)
-
-This reference prevents terminology inconsistency across the UI, emails, and audit log descriptions:
-
-| Context | Old Terminology (Grade 12 / JHS) | New Terminology (Grade 11, SY 2026–2027+) |
-|---|---|---|
-| Top-level program grouping | Track (Academic, TVL, Sports, Arts & Design) | **Track** (Academic, TechPro) |
-| Specific program within track | **Strand** (STEM, ABM, HUMSS, GAS) | **Elective Cluster** (STEM, ICT, HospTour, etc.) |
-| Field on BEEF form | Strand | Track + Preferred Elective Cluster |
-| Field on admission portal | Strand dropdown | Track radio + Elective Cluster dropdown |
-| Section naming example | Grade 11 – STEM-A | Grade 11 – Academic-A OR Grade 11 – STEM-A (cluster-focused) |
-| Email to parent | "Strand: STEM" | "Track: Academic · Cluster: STEM" |
-| Audit log description | "assigned to Grade 11 STEM-A" | "assigned to Grade 11 Academic-A (STEM cluster)" |
-| Settings label | Strands | Strands (Grade 12) / Elective Clusters (Grade 11) |
-
----
-
-*Addendum to PRD v2.2.0 — Version now: PRD v2.2.1*
-*Added: DM 012, s. 2026 — Strengthened SHS Curriculum integration*
-*Source: https://www.deped.gov.ph/2026/02/27/february-27-2026-dm-012-s-2026-full-implementation-of-the-strengthened-senior-high-school-curriculum-in-school-year-2026-2027/*
-*All prior PRD sections remain valid. This addendum layers on top of the existing specification.*
-
-
----
-
----
-
-## ADDENDUM — System Administrator Role (PRD v2.3.0)
-
-**Document Version Update:** PRD v2.2.1 → v2.3.0
-**Full Specification:** See `SYSTEM_ADMIN_SPECIFICATION.md` for complete detail.
-
----
-
-### Role Addition
-
-A third authenticated role `SYSTEM_ADMIN` is added to the system. This role is held by the school's IT coordinator or designated technical officer and is responsible for user account management, email delivery monitoring, and system health oversight.
-
-### Updated `Role` Enum
-
-```prisma
-enum Role {
-  REGISTRAR
-  TEACHER
-  SYSTEM_ADMIN   // ← new
-}
-```
-
-### Updated `User` Model (additions only)
-
-```prisma
-model User {
-  // ... all existing fields unchanged ...
-
-  // ── v2.3.0 additions ───────────────────────────────────
-  isActive        Boolean   @default(true)   // soft deactivation
-  lastLoginAt     DateTime?                  // updated on every successful login
-  mustChangePassword Boolean @default(false) // force PW change on first login
-  createdById     Int?                       // FK to the Admin who created this account
-
-  createdBy       User?  @relation("UserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  createdUsers    User[] @relation("UserCreatedBy")
-  // ────────────────────────────────────────────────────────
-}
-```
-
-### New `EmailLog` Model
-
-```prisma
-model EmailLog {
-  id           Int          @id @default(autoincrement())
-  recipient    String
-  subject      String
-  trigger      EmailTrigger
-  status       EmailStatus  @default(PENDING)
-  applicantId  Int?
-  errorMessage String?
-  attemptedAt  DateTime     @default(now())
-  sentAt       DateTime?
-
-  applicant    Applicant?   @relation(fields: [applicantId], references: [id], onDelete: SetNull)
-}
-
-enum EmailTrigger {
-  APPLICATION_SUBMITTED
-  APPLICATION_APPROVED
-  APPLICATION_REJECTED
-}
-
-enum EmailStatus {
-  PENDING
-  SENT
-  FAILED
-}
-```
-
-### New Admin-Only Frontend Routes
-
-```tsx
-// Added to client/src/router/index.tsx
-
-{
-  element: <ProtectedRoute allowedRoles={['SYSTEM_ADMIN']} />,
-  children: [
-    { path: '/admin/users',      element: <AppLayout><AdminUsers /></AppLayout> },
-    { path: '/admin/email-logs', element: <AppLayout><AdminEmailLogs /></AppLayout> },
-    { path: '/admin/system',     element: <AppLayout><AdminSystemHealth /></AppLayout> },
-  ],
-},
-```
-
-### New Admin API Endpoints
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/admin/users` | Paginated user list with role and status filters |
-| `POST` | `/admin/users` | Create REGISTRAR or TEACHER account |
-| `PUT` | `/admin/users/:id` | Update name, email, or role |
-| `PATCH` | `/admin/users/:id/deactivate` | Soft-deactivate — sets `isActive = false` |
-| `PATCH` | `/admin/users/:id/reactivate` | Re-enable — sets `isActive = true` |
-| `PATCH` | `/admin/users/:id/reset-password` | Admin-initiated password reset |
-| `GET` | `/admin/email-logs` | Paginated email delivery log |
-| `GET` | `/admin/email-logs/:id` | Single email log with full error message |
-| `PATCH` | `/admin/email-logs/:id/resend` | Manually resend a failed email |
-| `GET` | `/admin/email-logs/export` | CSV export of filtered email logs |
-| `GET` | `/admin/system/health` | DB, email, storage, server info, record counts |
-| `GET` | `/admin/dashboard/stats` | Admin-only system panel data for Dashboard |
-
-### Updated `authenticate` Middleware
-
-The `authenticate` middleware must now check `User.isActive` on every request. An inactive user's request returns `HTTP 401` even with a valid JWT.
-
-### New Audit Log Action Types
-
-| Action Type | Trigger |
-|---|---|
-| `ADMIN_USER_CREATED` | Admin creates a new user account |
-| `ADMIN_USER_UPDATED` | Admin edits name, email, or role |
-| `ADMIN_USER_DEACTIVATED` | Admin deactivates an account |
-| `ADMIN_USER_REACTIVATED` | Admin reactivates an account |
-| `ADMIN_PASSWORD_RESET` | Admin resets a user's password |
-| `ADMIN_EMAIL_RESENT` | Admin manually resends a failed email |
-
-`ADMIN_*` action types are filtered out of the Registrar's audit log response. Only `SYSTEM_ADMIN` sees them.
-
-### First Admin Account — Seeder
-
-The `SYSTEM_ADMIN` role cannot be assigned through the API or UI. The first Admin account is created via the Prisma seed script:
-
-```bash
-# server/
-pnpm prisma db seed
-```
-
-See `SYSTEM_ADMIN_SPECIFICATION.md §13` for full seeder code and environment variable configuration.
-
-### New Acceptance Criteria: AC-33 through AC-48
-
-See `SYSTEM_ADMIN_SPECIFICATION.md §12` for the full list of 16 new acceptance criteria covering Admin login, user management, email logs, system health, audit log visibility rules, and password enforcement.
-
----
-
-*PRD updated to v2.3.0 — System Admin role added*
-*Full specification: SYSTEM_ADMIN_SPECIFICATION.md*
-
-
----
-
----
-
-## ADDENDUM — Admission Process Integration (PRD v2.4.0)
-### DepEd Admission Pathways: Open Admission & Special Curricular Program (SCP)
-
-**Research Basis:** DepEd Memorandum No. 149, s. 2011 · Division Memorandum No. 157, s. 2025 · DO 017, s. 2025 · school-specific admission announcements
-**Document Version Update:** PRD v2.3.0 → v2.4.0
-**Impact:** Extends the Applicant model, ApplicationStatus enum, admission portal, and registrar workflow to handle two distinct admission pathways
-
----
-
-### Policy Summary
-
-DepEd public secondary schools operate two fundamentally different admission pathways:
-
-| Pathway | Who | Assessment | PRD Impact |
-|---|---|---|---|
-| **Open Admission** | Regular Grade 7 and Grade 11 (non-STEM tracks) | No exam — document verification only | Existing workflow unchanged |
-| **SCP Admission** | Applicants to STE, SPA, SPS, SPJ, SPFL, SPTVE, and Grade 11 STEM | Exam / audition / tryout / screening | New statuses, new fields, new workflow scenes |
-
----
-
-### B1. Updated Database Schema
-
-#### Updated `ApplicationStatus` Enum
-
-```prisma
-// server/prisma/schema.prisma — UPDATED (v2.4.0)
-
-enum ApplicationStatus {
-  // ── Open Admission Path (existing) ───────────────────────────
-  PENDING               // Submitted; awaiting registrar document review
-  APPROVED              // Verified and assigned to a section
-  REJECTED              // Rejected (data error, SCP failure, or no capacity)
-
-  // ── SCP Admission Path (new) ─────────────────────────────────
-  EXAM_SCHEDULED        // Registrar has set exam / audition / tryout date
-  EXAM_TAKEN            // Applicant appeared and completed the assessment
-  PASSED                // Met SCP cut-off — ready for section assignment
-  FAILED                // Did not meet SCP cut-off — offered alternative or rejected
-}
-```
-
-#### New `ApplicantType` Enum
-
-```prisma
-// server/prisma/schema.prisma — NEW (v2.4.0)
-
-enum ApplicantType {
-  REGULAR               // Open admission — Grade 7 regular, Grade 11 non-STEM
-  STE                   // Science, Technology, Engineering (Grade 7 SCP)
-  SPA                   // Special Program in Arts (Grade 7 SCP)
-  SPS                   // Special Program in Sports (Grade 7 SCP)
-  SPJ                   // Special Program in Journalism (Grade 7 SCP)
-  SPFL                  // Special Program in Foreign Language (Grade 7 SCP)
-  SPTVE                 // Special Program in Tech-Voc Education (Grade 7 SCP)
-  STEM_GRADE11          // Grade 11 STEM — placement exam + interview
-}
-```
-
-#### Updated `Applicant` Model
-
-```prisma
-// server/prisma/schema.prisma — UPDATED Applicant model (v2.4.0)
-
-model Applicant {
-  id                    Int               @id @default(autoincrement())
-  lrn                   String            @unique @db.VarChar(12)
-  lastName              String
-  firstName             String
-  middleName            String?
-  suffix                String?
-  birthDate             DateTime
-  sex                   Sex
-  address               String
-  parentGuardianName    String
-  parentGuardianContact String
-  emailAddress          String
-  trackingNumber        String            @unique
-  status                ApplicationStatus @default(PENDING)
-  rejectionReason       String?
-  gradeLevelId          Int
-  strandId              Int?
-  academicYearId        Int
-
-  // ── v2.4.0 additions ─────────────────────────────────────────
-  applicantType         ApplicantType     @default(REGULAR)
-
-  // SCP Assessment fields (null for REGULAR applicants)
-  examDate              DateTime?         // scheduled exam / audition / tryout date
-  examScore             Float?            // written exam score (STE, SPA, SPJ)
-  examResult            String?           // "PASSED" / "FAILED" / raw notes
-  examNotes             String?           // registrar notes on assessment outcome
-  assessmentType        String?           // "WRITTEN_EXAM" / "AUDITION" / "TRYOUT" / "NAT_SCREENING"
-  interviewDate         DateTime?         // separate interview date (SPA, SPJ, STEM Grade 11)
-  interviewResult       String?           // "CLEARED" / "NOT_CLEARED"
-  natScore              Float?            // NAT English score (SPFL only)
-  grade10ScienceGrade   Float?            // Grade 10 Science final grade (STEM G11 eligibility)
-  grade10MathGrade      Float?            // Grade 10 Math final grade (STEM G11 eligibility)
-  // ─────────────────────────────────────────────────────────────
-
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
-
-  gradeLevel   GradeLevel   @relation(fields: [gradeLevelId], references: [id])
-  strand       Strand?      @relation(fields: [strandId], references: [id])
-  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
-  enrollment   Enrollment?
-
-  @@index([status, academicYearId])
-  @@index([lrn])
-  @@index([applicantType, status])   // ← new index for filtering by type
-}
-```
-
----
-
-### B2. Updated Online Admission Portal (§6.1 Extension)
-
-The public portal's **Step 3 — Enrollment Preferences** now includes an `applicantType` selector that drives the rest of the form.
-
-#### Updated Step 3 Fields
-
-```
-STEP 3 — ENROLLMENT PREFERENCES
-
-  Grade Level *
-  ● Grade 7    ● Grade 8   ● Grade 9   ● Grade 10   ● Grade 11   ● Grade 12
-
-  ─── If Grade 7 selected ───────────────────────────────────────────────────
-
-  Application Type *
-  ○  Regular Section           (open admission — no exam required)
-  ○  Special Curricular Program (SCP)  (requires qualifying assessment)
-
-  If SCP selected:
-  Which SCP are you applying for? *
-  ○  Science, Technology & Engineering (STE)
-  ○  Special Program in the Arts (SPA)      → Art Field: [ Visual Arts ▾ ]
-  ○  Special Program in Sports (SPS)        → Sport/s: [ Basketball ▾ ]
-  ○  Special Program in Journalism (SPJ)
-  ○  Special Program in Foreign Language (SPFL) → Language: [ Japanese ▾ ]
-  ○  Special Program in Tech-Voc (SPTVE)
-
-  ─── If Grade 11 selected ──────────────────────────────────────────────────
-
-  SHS Track *
-  ○  Academic    ○  Technical-Professional (TechPro)
-
-  Preferred Cluster *  (filtered by track)
-  [ STEM ▾ ]
-
-  If STEM selected, Grade 10 Final Grades are required:
-  Science Grade (Grade 10) *   [ _____ ]   (must be 85 or above)
-  Math Grade (Grade 10) *      [ _____ ]   (must be 85 or above)
-
-  ⚠  STEM applicants will be required to take a placement exam and interview
-     before final enrollment is confirmed. You will be notified of the schedule.
-```
-
-#### Validation Rules (Zod — Backend)
-
-```ts
-// server/src/validators/application.validator.ts — UPDATED (v2.4.0)
-
-// STEM Grade 11 grade check
-if (data.applicantType === 'STEM_GRADE11') {
-  if (!data.grade10ScienceGrade || data.grade10ScienceGrade < 85) {
-    ctx.addIssue({ path: ['grade10ScienceGrade'], message: 'Science grade must be 85 or above for STEM.' });
-  }
-  if (!data.grade10MathGrade || data.grade10MathGrade < 85) {
-    ctx.addIssue({ path: ['grade10MathGrade'], message: 'Math grade must be 85 or above for STEM.' });
-  }
-}
-```
-
----
-
-### B3. Updated Registrar Workflow — Two-Path Approval
-
-#### Path A — Regular / Open Admission (unchanged)
-
-```
-PENDING → [Registrar: Verify docs → Approve & Assign Section] → APPROVED → ENROLLED
-```
-
-One-step approval. Section dialog opens immediately after "Approve & Assign Section" is clicked.
-
-#### Path B — SCP Admission (new)
-
-```
-PENDING
-  ↓
-[Registrar: Verify docs → Schedule Exam]
-  ↓
-EXAM_SCHEDULED  ← system records exam date; notifies applicant by email
-  ↓
-[Registrar: Record Assessment Result]
-  ↓
-EXAM_TAKEN  ← system records score/result/notes
-  ↓
-  ├── PASSED → [Registrar: Assign Section] → APPROVED → ENROLLED
-  │
-  └── FAILED → [Registrar: Optional — offer regular section]
-                  ├── Accepts regular section → mark as REGULAR type → APPROVED → ENROLLED
-                  └── Declines → REJECTED → email sent with reason
-```
-
----
-
-### B4. Updated REST API — New SCP Endpoints
-
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| `PATCH` | `/api/applications/:id/schedule-exam` | REGISTRAR, ADMIN | Set `status = EXAM_SCHEDULED`, store `examDate`, `assessmentType` |
-| `PATCH` | `/api/applications/:id/record-result` | REGISTRAR, ADMIN | Set `status = EXAM_TAKEN`, store `examScore`, `examResult`, `examNotes`, `interviewResult` |
-| `PATCH` | `/api/applications/:id/pass` | REGISTRAR, ADMIN | Set `status = PASSED` (triggers email: exam passed notification) |
-| `PATCH` | `/api/applications/:id/fail` | REGISTRAR, ADMIN | Set `status = FAILED` (triggers email: exam failed, alternative offer) |
-| `GET` | `/api/applications?applicantType=STE` | REGISTRAR, ADMIN | Filter applications by applicant type |
-| `GET` | `/api/applications?status=EXAM_SCHEDULED` | REGISTRAR, ADMIN | Filter by SCP status |
-
----
-
-### B5. Updated Email Trigger Map (§6.7 Extension)
-
-| Trigger | Subject | When |
-|---|---|---|
-| Application submitted | `Your Application Has Been Received — #APP-XXXX` | On `POST /api/applications` |
-| Exam scheduled | `Your Exam / Assessment Date — [School Name]` | On `PATCH .../schedule-exam` |
-| Assessment result — passed | `Congratulations! You Passed the Assessment — [School Name]` | On `PATCH .../pass` |
-| Assessment result — failed | `Update on Your SCP Application — [School Name]` | On `PATCH .../fail` (with alternative offer if applicable) |
-| Enrollment confirmed | `Congratulations! Your Enrollment is Confirmed` | On full approval + section assignment |
-| Application rejected | `Update on Your Application to [School Name]` | On `PATCH .../reject` |
-
----
-
-### B6. Updated Audit Log Action Types
-
-| Action Type | Description Template |
-|---|---|
-| `EXAM_SCHEDULED` | `"Registrar {user} scheduled {assessmentType} for {applicant name} on {examDate}"` |
-| `EXAM_RESULT_RECORDED` | `"Registrar {user} recorded result for {applicant name}: {examResult} (Score: {examScore})"` |
-| `APPLICATION_PASSED` | `"Registrar {user} marked {applicant name} as PASSED — ready for section assignment"` |
-| `APPLICATION_FAILED` | `"Registrar {user} marked {applicant name} as FAILED. Notes: {examNotes}"` |
-
----
-
-### B7. Updated Acceptance Criteria (v2.4.0)
-
-| # | Acceptance Test |
-|---|---|
-| AC-49 | The admission portal shows an `Application Type` selector (Regular / SCP) when Grade 7 is selected. |
-| AC-50 | When `SCP` is selected, a second selector appears listing all 6 SCPs offered by the school. |
-| AC-51 | When Grade 11 STEM is selected, Science and Math grade fields appear. Submitting with grades below 85 returns a validation error. |
-| AC-52 | A regular Grade 7 applicant follows the existing two-step path (PENDING → APPROVED) with no exam steps. |
-| AC-53 | An SCP applicant follows the extended path: PENDING → EXAM_SCHEDULED → EXAM_TAKEN → PASSED/FAILED. |
-| AC-54 | When the registrar schedules an exam, the applicant receives an email with the exam date and venue. |
-| AC-55 | When the registrar marks an applicant as PASSED, the applicant receives an email confirmation and the registrar can immediately assign a section. |
-| AC-56 | When the registrar marks an applicant as FAILED, the applicant receives an email. The registrar may offer the applicant a regular section (changing `applicantType` to `REGULAR`). |
-| AC-57 | The `/applications` inbox can be filtered by `applicantType` (REGULAR, STE, SPA, etc.) and by SCP-specific statuses (EXAM_SCHEDULED, EXAM_TAKEN, PASSED, FAILED). |
-| AC-58 | A FAILED SCP applicant who accepts a regular section placement is re-enrolled under `applicantType: REGULAR` with a new section assignment. |
-
----
-
-*PRD updated to v2.4.0 — Admission Process (Open Admission + SCP) integrated*
-*Research basis: DepEd Memorandum No. 149, s. 2011 · Division Memorandum No. 157, s. 2025 · school-specific admission announcements*
+*Auth: JWT + Layer 1 (navigation state guard) + Layer 2 (pre-flight login token)*
+*Design: fully school-agnostic — zero hardcoded school data*

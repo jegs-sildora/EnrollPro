@@ -175,13 +175,13 @@ export default function SchoolProfileTab() {
         <CardContent className="space-y-6">
           {/* Logo preview & upload */}
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-            <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-[hsl(var(--border))] bg-[hsl(var(--muted))]">
+            <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted">
               {logoPreview ? (
                 <img src={logoPreview} alt="Preview" className="h-full w-full rounded-lg object-contain p-1" />
               ) : logoUrl ? (
                 <img src={`${API_BASE}${logoUrl}`} alt="School Logo" className="h-full w-full rounded-lg object-contain p-1" />
               ) : (
-                <Upload className="h-8 w-8 text-[hsl(var(--muted-foreground))]" />
+                <Upload className="h-8 w-8 text-muted-foreground" />
               )}
             </div>
             <div className="flex flex-1 flex-col gap-3">
@@ -199,13 +199,13 @@ export default function SchoolProfileTab() {
                   {uploading ? 'Uploading...' : 'Upload Logo'}
                 </Button>
                 {logoUrl && (
-                  <Button variant="outline" onClick={handleRemoveLogo} disabled={removingLogo} className="text-[hsl(var(--destructive))]">
+                  <Button variant="outline" onClick={handleRemoveLogo} disabled={removingLogo} className="text-destructive">
                     <Trash2 className="mr-2 h-4 w-4" />
                     {removingLogo ? 'Removing...' : 'Remove'}
                   </Button>
                 )}
               </div>
-              <p className="text-xs text-[hsl(var(--muted-foreground))]">Accepted: .png, .jpg, .webp — Max 2MB</p>
+              <p className="text-xs text-muted-foreground">Accepted: .png, .jpg, .webp — Max 2MB</p>
             </div>
           </div>
 
@@ -215,7 +215,7 @@ export default function SchoolProfileTab() {
           {palette.length > 0 && (
             <div className="space-y-3">
               <h4 className="text-sm font-medium">Extracted Colors</h4>
-              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+              <p className="text-xs text-muted-foreground">
                 Click a swatch to set it as the accent color. The system automatically adjusts text contrast for WCAG compliance.
               </p>
               <div className="flex flex-wrap gap-3">
@@ -228,8 +228,8 @@ export default function SchoolProfileTab() {
                         disabled={selectingAccent}
                         className={`group relative h-12 w-12 rounded-lg border-2 transition-all hover:scale-110 ${
                           isSelected
-                            ? 'border-[hsl(var(--foreground))] ring-2 ring-[hsl(var(--foreground))] ring-offset-2'
-                            : 'border-[hsl(var(--border))] hover:border-[hsl(var(--foreground))]'
+                            ? 'border-foreground ring-2 ring-foreground ring-offset-2'
+                            : 'border-border hover:border-foreground'
                         }`}
                         style={{ backgroundColor: color.hex }}
                         title={`${color.hex} — hsl(${color.hsl})`}
@@ -241,7 +241,7 @@ export default function SchoolProfileTab() {
                           />
                         )}
                       </button>
-                      <span className="text-[10px] font-mono text-[hsl(var(--muted-foreground))]">
+                      <span className="text-[10px] font-mono text-muted-foreground">
                         {color.hex}
                       </span>
                     </div>
@@ -256,15 +256,15 @@ export default function SchoolProfileTab() {
             <h4 className="text-sm font-medium">Current Accent Color</h4>
             <div className="flex items-center gap-4">
               <div
-                className="h-10 w-10 rounded-lg shadow-sm border border-[hsl(var(--border))]"
+                className="h-10 w-10 rounded-lg shadow-sm border border-border"
                 style={{ backgroundColor: `hsl(${currentAccent})` }}
               />
               <div>
                 <p className="text-sm font-mono">{`hsl(${currentAccent})`}</p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                <p className="text-xs text-muted-foreground">
                   {logoUrl ? 'From extracted palette' : 'Default blue'}
                 </p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   Text contrast: {isAccentLight(currentAccent) ? 'Dark text (on light accent)' : 'White text (on dark accent)'}
                 </p>
               </div>
@@ -272,12 +272,12 @@ export default function SchoolProfileTab() {
           </div>
 
           {/* Live Preview */}
-          <div className="rounded-lg border border-[hsl(var(--border))] p-4 space-y-3">
+          <div className="rounded-lg border border-border p-4 space-y-3">
             <p className="text-sm font-medium">Live Preview</p>
             <div className="flex flex-wrap gap-3">
               <Button size="sm">Primary Button</Button>
               <Button size="sm" variant="outline">Outline Button</Button>
-              <a href="#" onClick={(e) => e.preventDefault()} className="text-sm text-[hsl(var(--primary))] hover:underline pt-2">
+              <a href="#" onClick={(e) => e.preventDefault()} className="text-sm text-primary hover:underline pt-2">
                 Accent Link
               </a>
             </div>

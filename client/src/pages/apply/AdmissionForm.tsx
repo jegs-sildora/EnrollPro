@@ -15,8 +15,9 @@ import StepProgressBar from './components/StepProgressBar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'motion/react';
-import { Loader2, ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import { ArrowLeft, ArrowRight, AlertCircle } from 'lucide-react';
 import api from '@/api/axiosInstance';
+import { ConfirmationModal } from '@/components/ui/confirmation-modal';
 
 
 
@@ -28,6 +29,7 @@ export default function AdmissionForm() {
   const [submitError, setSubmitError] = useState('');
   const [maxStepReached, setMaxStepReached] = useState(1);
   const [isEditing, setIsEditing] = useState(false);
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
   const methods = useForm<AdmissionFormData, unknown, AdmissionFormData>({
     resolver: zodResolver(admissionSchema) as import('react-hook-form').Resolver<AdmissionFormData>,
@@ -42,7 +44,7 @@ export default function AdmissionForm() {
       isPermanentSameAsCurrent: true,
       scpApplication: false,
       learnerType: 'Regular',
-      isCertifiedTrue: true,
+      isCertifiedTrue: false,
       dateAccomplished: new Date(),
     },
     mode: 'onBlur',
@@ -125,7 +127,7 @@ export default function AdmissionForm() {
     let fieldsToValidate: FieldPath<AdmissionFormData>[] = [];
 
     if (stepper.state.current.data.id === 'personal') {
-      fieldsToValidate = ['lastName', 'firstName', 'birthdate', 'sex', 'placeOfBirth', 'motherTongue'];
+      fieldsToValidate = ['lastName', 'firstName', 'birthdate', 'sex', 'placeOfBirth', 'lrn'];
     } else if (stepper.state.current.data.id === 'family') {
       fieldsToValidate = [
         'currentAddress.barangay', 'currentAddress.cityMunicipality', 'currentAddress.province',
@@ -133,6 +135,10 @@ export default function AdmissionForm() {
       ] as FieldPath<AdmissionFormData>[];
     } else if (stepper.state.current.data.id === 'previousSchool') {
       fieldsToValidate = ['lastSchoolName', 'lastGradeCompleted', 'syLastAttended', 'lastSchoolType'];
+    } else if (stepper.state.current.data.id === 'preferences') {
+      fieldsToValidate = ['gradeLevel', 'learnerType'];
+      if (watch('scpApplication')) fieldsToValidate.push('scpType');
+      if (watch('gradeLevel') === '11') fieldsToValidate.push('shsTrack', 'electiveCluster');
     }
 
     const isValid = fieldsToValidate.length > 0 ? await trigger(fieldsToValidate) : true;
@@ -158,7 +164,17 @@ export default function AdmissionForm() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleAttemptSubmit = async () => {
+    const isValid = await trigger();
+    if (isValid) {
+      setShowSubmitConfirm(true);
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   const onSubmit = async (data: AdmissionFormData) => {
+    setShowSubmitConfirm(false);
     setIsSubmitting(true);
     setSubmitError('');
 
@@ -207,11 +223,7 @@ export default function AdmissionForm() {
           <div className="mb-8 pb-6 border-b border-border/50">
             <div className="flex items-center gap-3">
               <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shrink-0"
-                style={{
-                  backgroundColor: 'hsl(var(--accent))',
-                  color: 'hsl(var(--accent-foreground))',
-                }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 bg-primary text-primary-foreground"
               >
                 {currentIndex}
               </div>
@@ -248,10 +260,30 @@ export default function AdmissionForm() {
                     background:     () => <Step3Background />,
                     previousSchool: () => <Step4PreviousSchool />,
                     preferences:    () => <Step5Enrollment />,
-                    review:         () => <Step6Review onEdit={goToStep} />,
+                    review:         () => <Step6Review onEdit={goToStep} isSubmitting={isSubmitting} onSubmitClick={handleAttemptSubmit} />,
                   })}
                 </motion.div>
               </AnimatePresence>
+
+              {Object.keys(methods.formState.errors).length > 0 && (
+                <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl space-y-2 mt-8">
+                  <div className="flex items-center gap-2 text-destructive font-bold text-sm">
+                    <AlertCircle className="w-4 h-4" />
+                    Please provide the following required information to proceed:
+                  </div>
+                  <ul className="list-disc pl-6 text-xs font-medium text-destructive/80 space-y-1">
+                    {Array.from(new Set(
+                      Object.values(methods.formState.errors).flatMap((err: Record<string, { message?: string }> | { message?: string }) => 
+                        (err as { message?: string })?.message
+                          ? [(err as { message?: string }).message!]
+                          : Object.values(err as Record<string, { message?: string }> || {}).map((e) => e?.message).filter(Boolean)
+                      )
+                    )).map((msg, i) => (
+                      <li key={i}>{msg as string}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 pt-10 border-t border-border/60">
                 <Button
@@ -266,29 +298,15 @@ export default function AdmissionForm() {
                   Back
                 </Button>
 
-                {!isLastStep ? (
+                {!isLastStep && (
                   <Button
                     type="button"
                     size="lg"
                     onClick={nextStep}
-                    className="h-12 px-8 font-semibold sm:w-auto w-full"
+                    className="h-12 px-8 font-semibold sm:w-auto w-full bg-primary"
                   >
                     {isEditing ? 'Update & Review' : 'Next Step'}
                     <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button
-                    type="submit"
-                    size="lg"
-                    disabled={isSubmitting}
-                    className="h-12 px-10 font-bold bg-primary hover:bg-primary/90 sm:w-auto w-full"
-                  >
-                    {isSubmitting ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Check className="mr-2 h-5 w-5 stroke-3" />
-                    )}
-                    {isSubmitting ? 'Submitting...' : 'Submit Application'}
                   </Button>
                 )}
               </div>
@@ -296,6 +314,16 @@ export default function AdmissionForm() {
           </FormProvider>
         </CardContent>
       </Card>
+
+      <ConfirmationModal
+        open={showSubmitConfirm}
+        onOpenChange={setShowSubmitConfirm}
+        title="Finalize Application"
+        description="Please confirm that all information provided is accurate and complete. Once submitted, you will no longer be able to modify your application during the initial review phase."
+        confirmText="Confirm Submission"
+        onConfirm={() => handleSubmit(onSubmit)()}
+        loading={isSubmitting}
+      />
     </div>
   );
 }

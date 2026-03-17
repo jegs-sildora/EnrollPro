@@ -8,9 +8,7 @@ export const admissionSchema = z.object({
 
   // Section 1: Reference Numbers
   schoolYear: z.string().min(1, 'School year is required'),
-  lrn: z.string().optional().refine((val) => !val || /^\d{12}$/.test(val), {
-    message: 'LRN must be exactly 12 numeric digits',
-  }),
+  lrn: z.string().min(1, 'LRN is required').regex(/^\d{12}$/, 'LRN must be exactly 12 numeric digits'),
   psaBcNumber: z.string().optional(),
 
   // Section 2: Grade Level & Program
@@ -30,7 +28,6 @@ export const admissionSchema = z.object({
   sex: z.enum(['Male', 'Female']),
   placeOfBirth: z.string().min(1, 'Place of birth is required'),
   religion: z.string().optional(),
-  motherTongue: z.string().min(1, 'Mother tongue is required'),
 
   // Section 4: Special Classifications
   isIpCommunity: z.boolean().default(false),
@@ -86,7 +83,7 @@ export const admissionSchema = z.object({
     contactNumber: z.string().optional().nullable(),
     relationship: z.string().optional().nullable(),
   }).optional().nullable(),
-  email: z.string().email('Invalid email address').optional().nullable().or(z.literal('')),
+  email: z.string().email('Invalid email address').min(1, 'Email address is required'),
 
   // Section 7: Previous School Information
   lastSchoolName: z.string().min(1, 'Last school name is required'),
@@ -138,6 +135,17 @@ export const TECHPRO_CLUSTERS = [
   { value: 'TP-INDTECH', label: 'Industrial Technologies' },
   { value: 'TP-ICT', label: 'ICT Support and Computer Programming Technologies' },
   { value: 'TP-MARITIME', label: 'Maritime Transport transport' },
+];
+
+export const OLD_STRANDS = [
+  { value: 'OS-STEM', label: 'STEM (Science, Technology, Engineering, and Mathematics)' },
+  { value: 'OS-ABM', label: 'ABM (Accountancy, Business, and Management)' },
+  { value: 'OS-HUMSS', label: 'HUMSS (Humanities and Social Sciences)' },
+  { value: 'OS-GAS', label: 'GAS (General Academic Strand)' },
+  { value: 'OS-TVLICT', label: 'TVL - ICT (Information and Communications Technology)' },
+  { value: 'OS-TVLHE', label: 'TVL - Home Economics' },
+  { value: 'OS-TVLAF', label: 'TVL - Agri-Fishery Arts' },
+  { value: 'OS-TVLIA', label: 'TVL - Industrial Arts' },
 ];
 
 export const DISABILITY_TYPES = [

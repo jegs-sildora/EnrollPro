@@ -96,22 +96,6 @@ export const router = createBrowserRouter([
           </AppLayout>
         ),
       },
-      {
-        path: '/audit-logs',
-        element: (
-          <AppLayout>
-            <AuditLogs />
-          </AppLayout>
-        ),
-      },
-      {
-        path: '/settings',
-        element: (
-          <AppLayout>
-            <Settings />
-          </AppLayout>
-        ),
-      },
     ],
   },
 
@@ -140,6 +124,22 @@ export const router = createBrowserRouter([
         element: (
           <AppLayout>
             <SystemHealth />
+          </AppLayout>
+        ),
+      },
+      {
+        path: '/audit-logs',
+        element: (
+          <AppLayout>
+            <AuditLogs />
+          </AppLayout>
+        ),
+      },
+      {
+        path: '/settings',
+        element: (
+          <AppLayout>
+            <Settings />
           </AppLayout>
         ),
       },

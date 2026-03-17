@@ -1,28 +1,25 @@
-# DepEd Enrollment Process — Grades 7 to 12
-## Comprehensive Reference Document
+# DepEd Enrollment Process — Policy Reference
+## School Admission, Enrollment & Information Management System
 
+**Document Version:** 3.0.0
 **Governing Policy:** DepEd Order No. 017, s. 2025 — *Revised Basic Education Enrollment Policy*
 **Effective:** School Year 2025–2026 and all subsequent school years
 **Supersedes:** DepEd Order No. 03, s. 2018 (Basic Education Enrollment Policy)
 **Signed by:** Secretary Sonny Angara, June 13, 2025
 **Scope:** All public and private secondary schools offering Grades 7 to 12 nationwide
 
+**How this document is used:** This is the policy foundation for all five system modules. Every form field, workflow state, and database model in this system is traceable to a provision in the documents cited here. When in doubt about a process decision, consult this reference first.
+
 ---
 
 ## Table of Contents
 
+**Policy Sections**
 1. [Legal Basis & Policy Overview](#1-legal-basis--policy-overview)
 2. [School Year Calendar Structure](#2-school-year-calendar-structure)
 3. [The Two-Phase Enrollment Framework](#3-the-two-phase-enrollment-framework)
 4. [Who Enrolls in Each Phase — Grade-Level Matrix](#4-who-enrolls-in-each-phase--grade-level-matrix)
 5. [Enrollment by Learner Type](#5-enrollment-by-learner-type)
-   - 5.1 [Incoming Grade 7 (JHS New Entrants)](#51-incoming-grade-7-jhs-new-entrants)
-   - 5.2 [Continuing Grades 8, 9, 10 (Pre-Registered)](#52-continuing-grades-8-9-10-pre-registered)
-   - 5.3 [Incoming Grade 11 (SHS New Entrants)](#53-incoming-grade-11-shs-new-entrants)
-   - 5.4 [Continuing Grade 12 (Pre-Registered)](#54-continuing-grade-12-pre-registered)
-   - 5.5 [Transferees (All Grade Levels)](#55-transferees-all-grade-levels)
-   - 5.6 [Balik-Aral (Returning Learners)](#56-balik-aral-returning-learners)
-   - 5.7 [Out-of-School Children, Youth & Adults (OSCYA)](#57-out-of-school-children-youth--adults-oscya)
 6. [Documentary Requirements — Complete Matrix](#6-documentary-requirements--complete-matrix)
 7. [The Basic Education Enrollment Form (BEEF)](#7-the-basic-education-enrollment-form-beef)
 8. [Enrollment Modes](#8-enrollment-modes)
@@ -34,6 +31,14 @@
 14. [Prohibited Practices](#14-prohibited-practices)
 15. [Late Enrollment Policy](#15-late-enrollment-policy)
 16. [End-of-Year Enrollment Reporting](#16-end-of-year-enrollment-reporting)
+
+**System Design Implications**
+- [A1. Two Admission Pathways — Open Admission vs. SCP](#a1-the-two-admission-pathways--a-critical-distinction)
+- [A2. Pathway 1 — Open Admission (Regular Sections)](#a2-pathway-1--open-admission-regular-sections)
+- [A3. Pathway 2 — Special Curricular Program (SCP) Admission](#a3-pathway-2--special-curricular-program-scp-admission)
+- [A4. Grade 11 SHS — Special Program Admission](#a4-grade-11-shs--special-program-admission)
+- [A5. System Module Design Implications — All Five Modules](#a5-system-module-design-implications--all-five-modules)
+- [A6. Admission Process Timeline — Full Calendar View](#a6-admission-process-timeline--full-calendar-view)
 
 ---
 
@@ -54,7 +59,7 @@
 
 1. **Universal Access** — All types of learners (school-age, OSCYA, learners with disabilities, IP learners) shall be accepted in any basic education institution upon presentation of minimum documentary requirements.
 2. **No Collection of Fees** — Early registration, enrollment, and all related school forms are free. No voluntary or compulsory fees may be collected during any stage of the enrollment process.
-3. **One-Time Document Submission** — Under the revised policy, a learner's PSA Birth Certificate is submitted **only once** for the entire K–12 journey. Schools record the PSA certificate number and retain it in the learner's permanent record — parents no longer re-submit it each year.
+3. **One-Time Document Submission** — A learner's PSA Birth Certificate is submitted **only once** for the entire K–12 journey. Schools record the PSA certificate number and retain it in the learner's permanent record — parents no longer re-submit it each year.
 4. **Data Privacy** — All learner data collected is governed by RA 10173. Schools may not share, sell, or expose personal enrollment data beyond lawful purposes.
 5. **No Withholding of Records** — Schools may **never** withhold a learner's academic records (SF9, SF10) due to unpaid fees or financial obligations.
 
@@ -69,7 +74,7 @@ The school year structure is legally fixed under RA 7797 (as amended by RA 11480
 | Milestone | Date | Notes |
 |---|---|---|
 | **Class Opening** | June 16, 2025 | First Monday of June |
-| **Brigada Eskwela (School Prep Week)** | ~June 9–13, 2025 | National Schools Maintenance Week preceding opening |
+| **Brigada Eskwela** | ~June 9–13, 2025 | National Schools Maintenance Week preceding opening |
 | **Christmas Break** | December 20, 2025 – January 4, 2026 | Fixed annually |
 | **Graduation / Moving-Up** | ~March 2026 | School-determined within the calendar |
 | **Class End** | March 31, 2026 | Legally fixed |
@@ -81,6 +86,8 @@ The school year structure is legally fixed under RA 7797 (as amended by RA 11480
 | Phase | Dates | Governed by |
 |---|---|---|
 | **Early Registration SY 2026–2027** | January 31 – February 27, 2026 | DepEd Order No. 17, s. 2025 |
+
+> **System implication:** The system automatically calculates Phase 1 and Phase 2 dates from the year label when creating a new academic year, using the fixed DepEd calendar rules above. See the Academic Year configuration module in Settings Tab 2.
 
 ---
 
@@ -108,7 +115,7 @@ NOT official enrollment)         of record)
 | **Annual Window** | Last Saturday of January to last Friday of February |
 | **SY 2026–2027 Dates** | January 31 – February 27, 2026 |
 | **Who is Covered** | Incoming Grade 7, Grade 11, transferees to public schools, first-time ALS learners |
-| **Who is NOT Covered** | Grades 8–10 and Grade 12 (they are pre-registered; see §4) |
+| **Who is NOT Covered** | Grades 8–10 and Grade 12 (they are pre-registered) |
 | **Legal Status** | Pre-registration only — **not** official enrollment. Participation does not guarantee a slot. |
 | **Primary Purpose** | Schools project resource needs: classrooms, teachers, learning materials, budget requests |
 | **Extension Authority** | Schools Division Offices (SDOs) may extend the period for unforeseen circumstances |
@@ -122,7 +129,7 @@ NOT official enrollment)         of record)
 | **SY 2025–2026 Dates** | ~June 9–14, 2025 (coincides with Brigada Eskwela week) |
 | **Who is Covered** | **All grade levels** — pre-registered and new entrants finalize enrollment |
 | **Legal Status** | **Official enrollment of record** — learners become officially enrolled |
-| **Purpose** | Establishes the official learner headcount; triggers classroom and section assignments |
+| **Purpose** | Establishes the official learner headcount; triggers section assignments |
 | **LIS Action** | School records official enrollment in LIS Beginning of School Year (BOSY) facility |
 
 > **Important Distinction:** A learner who completes Phase 1 (Early Registration) is **pre-registered**, not enrolled. They must still complete Phase 2 to be officially enrolled and assigned to a section.
@@ -134,15 +141,17 @@ NOT official enrollment)         of record)
 | Grade Level | Phase 1 (Early Registration) | Phase 2 (Regular Enrollment) | Form Required |
 |---|---|---|---|
 | **Grade 7** | ✅ Required (new JHS entrant) | ✅ Required (confirm/finalize) | BEEF |
-| **Grade 8** | ❌ Pre-registered (no action required) | ✅ Confirmation slip only | Confirmation Slip (Annex C) |
-| **Grade 9** | ❌ Pre-registered | ✅ Confirmation slip only | Confirmation Slip (Annex C) |
-| **Grade 10** | ❌ Pre-registered | ✅ Confirmation slip only | Confirmation Slip (Annex C) |
+| **Grade 8** | ❌ Pre-registered (no action) | ✅ Confirmation slip only | Annex C — Confirmation Slip |
+| **Grade 9** | ❌ Pre-registered | ✅ Confirmation slip only | Annex C |
+| **Grade 10** | ❌ Pre-registered | ✅ Confirmation slip only | Annex C |
 | **Grade 11** | ✅ Required (new SHS entrant) | ✅ Required (confirm + strand) | BEEF |
-| **Grade 12** | ❌ Pre-registered | ✅ Confirmation slip only | Confirmation Slip (Annex C) |
-| **Transferees (Any Grade)** | ✅ If transferring to public (Phase 1 window) | ✅ Required | BEEF + transfer documents |
+| **Grade 12** | ❌ Pre-registered | ✅ Confirmation slip only | Annex C |
+| **Transferees (Any Grade)** | ✅ If transferring to public | ✅ Required | BEEF + transfer documents |
 | **Balik-Aral (Returnees)** | ✅ Covered in Phase 1 window | ✅ Required | BEEF + alternative docs |
 
-**Pre-registered** means: learners in Grades 8–10 and Grade 12 who have an existing Learner Reference Number (LRN) in the LIS are automatically considered registered for the next grade level. They do not undergo Early Registration but **must** still submit a confirmation slip during Phase 2 to be officially enrolled.
+**Pre-registered** = learners in Grades 8–10 and Grade 12 with an existing LRN in LIS who do not undergo Early Registration but **must** submit a confirmation slip during Phase 2 to be officially enrolled.
+
+> **System implication for Sectioning module:** The distinction between Grade 7/11 (who need section assignment) and pre-registered grades (who already have a section from the prior year) drives the section management workflow. Pre-registered students confirm their existing section; new entrants are assigned.
 
 ---
 
@@ -151,756 +160,311 @@ NOT official enrollment)         of record)
 ### 5.1 Incoming Grade 7 (JHS New Entrants)
 
 **Who qualifies:**
-- Learners who have completed a DepEd-accredited Grade 6 program.
-- Learners who have passed the Philippine Educational Placement Test (PEPT) or Accreditation and Equivalency (A&E) Test as a substitute for Grade 6 completion.
-
-**Step-by-Step Process:**
+- Learners who have completed a DepEd-accredited Grade 6 program
+- Learners who have passed the PEPT or A&E Test as a Grade 6 substitute
 
 ```
-STEP 1 — PHASE 1: EARLY REGISTRATION (Jan–Feb)
-  ├─ Parent/guardian visits the chosen public school
-  ├─ Presents PSA Birth Certificate (for verification only; not collected if already on record)
-  ├─ Presents Grade 6 SF9 (Report Card / formerly Form 138)
-  ├─ Accomplishes and submits Basic Education Enrollment Form (BEEF)
-  │    └─ OR submits via dropbox, online, or email (remote enrollment)
-  ├─ School verifies eligibility and logs in LIS Early Registration facility
-  └─ Learner receives pre-registration acknowledgment (not yet official)
+PHASE 1 — EARLY REGISTRATION (Jan–Feb)
+  └─ Parent presents PSA BC + Grade 6 SF9 + BEEF
+     School logs pre-registration in LIS Early Registration facility
+     Status: PRE-REGISTERED
 
-STEP 2 — CONFIRMATION: PHASE 2 REGULAR ENROLLMENT (~1 week before class opening)
-  ├─ Parent/guardian returns to confirm enrollment at the chosen school
-  ├─ School assigns learner to a Grade 7 section
-  ├─ School encodes official enrollment in LIS (BOSY facility)
-  └─ Learner is now officially enrolled for the school year
-
-STEP 3 — FIRST DAY OF CLASSES
-  ├─ Class adviser collects supporting documents (PSA BC, if not already on file)
-  ├─ Adviser encodes/validates learner profile in LIS
-  └─ LRN is generated or validated for the learner
+PHASE 2 — REGULAR ENROLLMENT (~1 week before June opening)
+  └─ Parent confirms → School assigns Grade 7 section → LIS BOSY
+     Status: OFFICIALLY ENROLLED
 ```
 
-**Required Documents:**
+**Documents:**
 
-| Document | Status | Notes |
-|---|---|---|
-| PSA/NSO Birth Certificate | Required (for verification) | Submitted only once per school under the revised policy; school records the PSA number |
-| Grade 6 SF9 (Report Card, formerly Form 138) | Required | Must indicate learner's LRN if already issued |
-| Basic Education Enrollment Form (BEEF) | Required | Official DepEd enrollment form |
-| PEPT / A&E Test Result | Required only if no Grade 6 SF9 | For learners entering from non-formal education or after a gap |
-
-> **Note:** SF10 (formerly Form 137 — Permanent Academic Record) is **not** an initial enrollment requirement for incoming Grade 7. It is requested by the receiving school from the sending school after the learner is temporarily enrolled, in accordance with DO 54, s. 2016.
+| Document | Status |
+|---|---|
+| PSA/NSO Birth Certificate | Required (once-only verification) |
+| Grade 6 SF9 (Report Card) | Required |
+| Basic Education Enrollment Form (BEEF) | Required |
+| PEPT / A&E Test Result | Only if no Grade 6 SF9 |
 
 ---
 
 ### 5.2 Continuing Grades 8, 9, 10 (Pre-Registered)
 
-These learners are **automatically pre-registered** in the LIS. They do not go through Phase 1 Early Registration.
-
-**Process:**
+Automatically pre-registered in LIS. Phase 1 not applicable.
 
 ```
-PHASE 2 ONLY — REGULAR ENROLLMENT (~1 week before class opening)
-  ├─ Parent/guardian or learner submits CONFIRMATION SLIP (Annex C of DO 017, s. 2025)
-  │    └─ Via in-person drop at school, dropbox, or remotely (email/online)
-  ├─ Learner with at least a 1-year gap in schooling: submits SF9 instead of confirmation slip
-  ├─ School validates existing LIS record and assigns section
-  └─ Learner is officially enrolled
+PHASE 2 ONLY — REGULAR ENROLLMENT
+  └─ Parent/learner submits Confirmation Slip (Annex C)
+     School validates LIS record and assigns section
+     Status: OFFICIALLY ENROLLED
 ```
-
-**Required Documents:**
-
-| Document | Status | Notes |
-|---|---|---|
-| Confirmation Slip (Annex C) | Required | Replaces the full BEEF; acknowledges intent to continue |
-| SF9 (for Balik-Aral only) | Required only if ≥1 year gap | Learner with school gap must submit their last report card |
 
 ---
 
 ### 5.3 Incoming Grade 11 (SHS New Entrants)
 
-**Who qualifies:**
-- Learners who have completed a DepEd-accredited Grade 10 / Junior High School program.
-- Learners who have passed the PEPT or A&E Test as an equivalent to Grade 10 completion.
-
-**Additional Complexity vs. Grade 7:** Grade 11 enrollment involves **strand/track selection**, which has eligibility implications and requires guidance counseling in some schools (see §9).
-
-**Step-by-Step Process:**
+**Additional complexity vs. Grade 7:** Strand/track selection with eligibility implications.
 
 ```
-STEP 1 — PHASE 1: EARLY REGISTRATION (Jan–Feb)
-  ├─ Parent/guardian visits preferred Senior High School
-  ├─ Presents Grade 10 SF9 (Report Card)
-  ├─ Presents PSA Birth Certificate (for verification; once-only submission)
-  ├─ Accomplishes BEEF — includes selection of SHS Track and Strand
-  ├─ School verifies JHS completion and strand eligibility
-  ├─ School logs pre-registration in LIS Early Registration facility
-  └─ Learner receives pre-registration slip (not yet officially enrolled)
+PHASE 1 — EARLY REGISTRATION (Jan–Feb)
+  └─ Parent presents Grade 10 SF9 + PSA BC + BEEF (includes strand selection)
+     School verifies JHS completion; logs in LIS Early Reg
+     Status: PRE-REGISTERED
 
-STEP 2 — CONFIRMATION: PHASE 2 REGULAR ENROLLMENT (~1 week before class opening)
-  ├─ Parent/guardian confirms enrollment at the chosen school
-  ├─ School validates strand and section capacity
-  ├─ School assigns learner to Grade 11 section under chosen strand
-  ├─ School encodes official enrollment in LIS (BOSY facility)
-  └─ Learner is now officially enrolled
-
-STEP 3 — FIRST DAY OF CLASSES
-  ├─ Class adviser validates learner profile in LIS
-  ├─ School initiates request for SF10-JHS (Form 137) from sending JHS through LIS Transfer facility
-  └─ LRN carries over from JHS; no new LRN issued
+PHASE 2 — REGULAR ENROLLMENT (~1 week before June opening)
+  └─ Parent confirms; school validates strand capacity; assigns section
+     Status: OFFICIALLY ENROLLED
 ```
 
-**Required Documents:**
+**Documents:**
 
-| Document | Status | Notes |
-|---|---|---|
-| Grade 10 SF9 (Report Card / formerly Form 138) | Required | Must be signed by the school head |
-| Basic Education Enrollment Form (BEEF) | Required | Includes strand/track selection |
-| PSA/NSO Birth Certificate | Required (for verification) | Once-only submission if new to the school |
-| Grade 10 Certificate of Completion | Recommended | Some schools require; validates JHS completion |
-| PEPT / A&E Test Result | Required only if no Grade 10 SF9 | For non-traditional learners |
-| Good Moral Character Certificate | Not required by DepEd (public schools); may be required by private schools | |
-
-> **Note:** SF10-JHS (formerly Form 137, JHS version) is **not** an initial enrollment requirement. The receiving SHS requests it from the sending JHS through the LIS portal after the learner is enrolled. The learner carries the SF9 as the primary credential.
+| Document | Status |
+|---|---|
+| Grade 10 SF9 (Report Card) | Required |
+| BEEF | Required (includes strand/track selection) |
+| PSA Birth Certificate | Required (once-only if new to school) |
+| Grade 10 Certificate of Completion | Recommended |
+| Good Moral Certificate | Not required by DepEd for public schools |
 
 ---
 
 ### 5.4 Continuing Grade 12 (Pre-Registered)
 
-Pre-registered in LIS. Same simplified process as Grades 8–10.
+Same simplified process as Grades 8–10. Phase 2 only.
 
-**Process:**
-
-```
-PHASE 2 ONLY — REGULAR ENROLLMENT (2nd Semester enrollment in LIS is a separate facility)
-  ├─ Parent/guardian or learner of legal age submits CONFIRMATION SLIP (Annex C)
-  ├─ School validates LIS record, confirms strand continuation
-  ├─ School assigns learner to Grade 12 section
-  └─ Learner is officially enrolled
-```
-
-> **SHS Note:** Senior High School has **two semesters**. The LIS has separate BOSY facilities for SHS 1st Semester and SHS 2nd Semester enrollment. Grade 12 2nd Semester enrollment is processed within the school year (typically December–January window in LIS).
+> **SHS Note:** SHS has two semesters. Grade 12 2nd Semester enrollment is a separate LIS facility (December–January window). The system's Academic Year configuration must account for this second enrollment window.
 
 ---
 
 ### 5.5 Transferees (All Grade Levels)
 
-Transferees are learners changing schools — from public to public, private to public, or private to private.
+Key rules:
+- Schools **cannot deny enrollment** due to unpaid fees at a previous school
+- **LRN does not change** upon transfer — the same 12-digit LRN follows the learner
+- Receiving school initiates SF10 request via LIS Transfer facility
 
-**Key Rules:**
-- Schools **cannot deny enrollment** to a transferee solely due to their financial obligations at a previous school.
-- If a learner transfers from a private school with unresolved fees, the receiving public school assists the parent/guardian in executing an **Affidavit of Undertaking** to address the balance separately.
-- The **LRN does not change** upon transfer. The same 12-digit LRN follows the learner throughout basic education.
-- The receiving school initiates the request for SF10 (Form 137) from the sending school through the LIS Portal Transfer/Tracking facility.
+**Documents:**
 
-**Required Documents for Transferees:**
-
-| Document | Status | Notes |
-|---|---|---|
-| Basic Education Enrollment Form (BEEF) | Required | New school requires new enrollment form |
-| SF9 (Report Card, formerly Form 138) | Required | Signed by the sending school's head; learner carries this |
-| PSA Birth Certificate | Required only if not yet on file | Once-only submission rule applies |
-| Certification Letter | Accepted if SF9 is unavailable | Issued by sending school head, certifying last grade level completed |
-| LRN | Required (must be validated) | Ensures no duplicate LRN records are created in LIS |
-| Affidavit of Undertaking | Required only if transferring from private school with unpaid fees | Drafted with assistance of receiving public school |
-
-**Transfer Process (School-to-School):**
-
-```
-AT SENDING SCHOOL:
-  ├─ Parent requests transfer clearance (school cannot withhold records for financial reasons)
-  ├─ Sending school issues SF9 (latest report card)
-  ├─ Sending school acknowledges transfer request in LIS
-
-AT RECEIVING SCHOOL:
-  ├─ Learner presents SF9 + BEEF + supporting documents
-  ├─ School validates LRN in LIS
-  ├─ School temporarily enrolls learner
-  ├─ School initiates formal request for SF10 via LIS Portal Transfer/Tracking facility
-  │    └─ For public schools: official school email (schoolid@deped.gov.ph) for scanned copies
-  └─ Learner is fully enrolled; SF10 transmitted in background
-```
+| Document | Status |
+|---|---|
+| BEEF | Required |
+| SF9 (Report Card) | Required |
+| PSA Birth Certificate | Required if not already on file |
+| Certification Letter | Alternative if SF9 unavailable |
+| LRN | Required (validated against LIS) |
+| Affidavit of Undertaking | Only if private → public with unpaid fees |
 
 ---
 
 ### 5.6 Balik-Aral (Returning Learners)
 
-**Definition:** A learner who returns to school after **at least one year** of dropping out or discontinuing study.
+Learners returning after at least one year out of school. Protected under DO 017, s. 2025 — must not be turned away due to missing records.
 
-**Key Provision:** Balik-Aral learners are specifically protected under DO 017, s. 2025. They must not be turned away due to missing records or long gaps.
+**Documents (flexible):** SF9 (last report card) · PSA BC (if not on file) · Any credible document proving last grade completed.
 
-**Required Documents (Flexible):**
-
-| Document | Status | Notes |
-|---|---|---|
-| SF9 (last Report Card) | Primary requirement | Submitted to school of choice; physical submission required |
-| PSA Birth Certificate | Required if not already on file | Once-only submission |
-| Any supporting document proving last grade level | Alternative if SF9 is unavailable | Certification from previous school, barangay, or any credible attestation |
-
-**Process:** Balik-Aral learners are covered in Phase 1 (Early Registration window) and must complete Phase 2 for official enrollment. The school coordinates with the SDO for any LIS record reconciliation needed due to the enrollment gap.
+Phase 1 window applies. Must complete Phase 2 for official enrollment.
 
 ---
 
 ### 5.7 Out-of-School Children, Youth & Adults (OSCYA)
 
-DO 017, s. 2025 explicitly mandates that OSCYA shall be accepted in any basic education institution. They may present alternative documentation and may be directed to the Alternative Learning System (ALS) depending on their circumstances.
-
-For secondary school (Grades 7–12), OSCYA applicants seeking formal enrollment follow the same process as transferees or Balik-Aral learners. If their records are entirely unavailable, the school coordinates with the SDO for a Philippine Educational Placement Test (PEPT) assessment to determine appropriate grade level placement.
+DO 017, s. 2025 mandates acceptance in any basic education institution. May present alternative documentation. Follows same process as transferees or Balik-Aral. If records entirely unavailable, SDO coordinates PEPT assessment for grade placement.
 
 ---
 
 ## 6. Documentary Requirements — Complete Matrix
 
-Under **DO 017, s. 2025**, documents are presented for **verification only** and are **not collected** from learners (except for the one-time PSA Birth Certificate submission). Schools record document numbers and file them in the learner's permanent record.
+Under **DO 017, s. 2025**, documents are presented for **verification only** — not collected from learners (except the one-time PSA Birth Certificate submission).
 
-| Learner Type | PSA Birth Certificate | SF9 (Report Card) | BEEF | Confirmation Slip | SF10 (Form 137) | PEPT/A&E Result | Other |
-|---|---|---|---|---|---|---|---|
-| **Incoming Grade 7** | ✅ Once-only | ✅ Grade 6 SF9 | ✅ | — | ❌ Not initial req. | Only if no SF9 | — |
-| **Grade 8 (continuing)** | ❌ Already on file | — | — | ✅ | ❌ | — | — |
-| **Grade 9 (continuing)** | ❌ Already on file | — | — | ✅ | ❌ | — | — |
-| **Grade 10 (continuing)** | ❌ Already on file | — | — | ✅ | ❌ | — | — |
-| **Incoming Grade 11** | ✅ Once-only | ✅ Grade 10 SF9 | ✅ | — | ❌ Not initial req. | Only if no SF9 | Strand selection |
-| **Grade 12 (continuing)** | ❌ Already on file | — | — | ✅ | ❌ | — | — |
-| **Transferee (any grade)** | ✅ If not on file | ✅ Latest SF9 | ✅ | — | Requested by school | — | Affidavit of Undertaking (if priv. → public with unpaid fees) |
-| **Balik-Aral** | ✅ If not on file | ✅ Last SF9 (physical submission) | ✅ | — | Coordinated via SDO | If SF9 unavailable | — |
-| **OSCYA** | ✅ | Alternative docs acceptable | ✅ | — | If available | Often required | — |
-
-> **Legend:** ✅ Required · ❌ Not required at enrollment · — Not applicable
+| Learner Type | PSA BC | SF9 | BEEF | Confirmation Slip | SF10 |
+|---|---|---|---|---|---|
+| Incoming Grade 7 | ✅ Once-only | ✅ Grade 6 | ✅ | — | ❌ |
+| Grade 8–10 (continuing) | ❌ On file | — | — | ✅ | ❌ |
+| Incoming Grade 11 | ✅ Once-only | ✅ Grade 10 | ✅ | — | ❌ |
+| Grade 12 (continuing) | ❌ On file | — | — | ✅ | ❌ |
+| Transferee | ✅ If not on file | ✅ Latest | ✅ | — | School-requested |
+| Balik-Aral | ✅ If not on file | ✅ Last (physical) | ✅ | — | SDO-coordinated |
+| OSCYA | ✅ | Alternative docs | ✅ | — | If available |
 
 ---
 
 ## 7. The Basic Education Enrollment Form (BEEF)
 
-The **Basic Education Enrollment Form (BEEF)** is the official DepEd enrollment document, issued under DO 017, s. 2025 and updated January 15, 2026 per the Philstar report.
+The BEEF is the official DepEd enrollment document under DO 017, s. 2025.
 
-### Fields Collected in the BEEF
+### BEEF Section Map → System Field Mapping
 
-| Section | Fields |
-|---|---|
-| **Learner Identity** | Last Name, First Name, Middle Name, Extension (Jr./Sr./III/etc.), Sex, Date of Birth, Place of Birth |
-| **Reference Numbers** | PSA Birth Certificate Number (if available), Learner Reference Number (LRN) |
-| **Special Classification** | Is the learner a Learner with Disability? (Yes/No) — if yes, type of disability |
-| **Indigenous Peoples Status** | Is the learner an IP learner? Which ethnolinguistic group? |
-| **Address** | Current home address, barangay, city/municipality, province |
-| **Parent/Guardian** | Name, relationship, contact number |
-| **School Information** | Grade level to enroll, strand/track (for Grade 11), preferred learning modality |
-| **Certification** | Parent/guardian signature certifying information accuracy and consenting to LIS data use |
+| BEEF Section | Fields | System Model |
+|---|---|---|
+| **Learner Identity** | Last Name, First Name, Middle Name, Suffix, Sex, Date of Birth, Place of Birth | `Applicant` model personal fields |
+| **Reference Numbers** | PSA Birth Certificate Number, LRN | `Applicant.lrn` |
+| **Special Classification** | Disability type | `Applicant.isPersonWithDisability`, `disabilityType` |
+| **IP Status** | IP learner flag, ethnolinguistic group | `Applicant.isIndigenousPeople`, `ipCommunity` |
+| **Address** | Home address, barangay, municipality, province | `Applicant.address*` fields |
+| **Parent / Guardian** | Name, relationship, contact number | `Applicant.guardian*` fields |
+| **School Information** | Grade level, strand/track (G11), learning modality | `Applicant.gradeLevelId`, `strandId` |
+| **Certification** | Parent/guardian signature | `Applicant.privacyConsentGiven` |
 
-### BEEF Availability
-
-- Physical copies: available at any public school, barangay hall, or SDO
-- Digital/printable versions: DepEd Central Office website, Regional Office websites, SDO websites, LIS Support page
-- The form is free of charge
+The BEEF fields are also captured in the system's online admission form (for applicants who apply via `/apply`) and the F2F admission form (for walk-in applicants processed by the registrar at `/f2f-admission`).
 
 ---
 
 ## 8. Enrollment Modes
 
-DO 017, s. 2025 provides three equally valid enrollment modes to increase accessibility:
+DO 017, s. 2025 provides three equally valid enrollment modes. The system supports all three:
 
-### Mode A — In-Person Enrollment
+### Mode A — In-Person Enrollment (F2F Channel)
 
-- Parent/guardian physically visits the school.
-- Presents documents for verification to a school personnel.
-- Accomplishes BEEF with assistance if needed.
-- School personnel assist parents/guardians who have difficulty filling out forms.
+Parent/guardian visits the school in person. Registrar enters the application via `/f2f-admission`. Records stored with `admissionChannel: F2F`.
 
 ### Mode B — Online Enrollment
 
-- Parent/guardian downloads the digital BEEF from the school or DepEd website.
-- Accomplishes the form digitally or prints, fills, and scans.
-- Submits via the **school's official DepEd email** (`schoolid@deped.gov.ph`) or any of the school's designated messaging platforms.
-- Scanned copies of documentary requirements are attached.
-- School personnel acknowledge receipt and validate remotely.
+Parent/guardian submits via the school's online portal at `/apply` (when `enrollmentOpen = true`). Records stored with `admissionChannel: ONLINE`.
 
-### Mode C — Dropbox Enrollment
+### Mode C — Remote / Alternative Enrollment
 
-- Parent/guardian accomplishes the printed BEEF.
-- Deposits the completed form (with supporting document copies) in **designated enrollment drop boxes** located at:
-  - The school gate or entrance
-  - Barangay halls
-  - Other strategic community locations designated by the SDO
-- School personnel collect, process, and acknowledge forms from drop boxes.
-
-> **Legal-age learners** (18 and above) may enroll themselves directly through any of the three modes without a parent/guardian.
+Documents submitted via dropbox, email, or a designated school representative. Registrar enters the data via `/f2f-admission` using the physical form, checking the "physical consent confirmed" box. Stored as `admissionChannel: F2F`.
 
 ---
 
 ## 9. Senior High School Strand Selection (Grade 11)
 
-Incoming Grade 11 learners must declare a **SHS Track and Strand** as part of enrollment. This is a significant decision as it shapes their two-year SHS curriculum.
+### Tracks Under DM 012, s. 2026 (Strengthened SHS Curriculum)
 
-### SHS Track and Strand Structure
-
-| Track | Strand | Typical Career Path |
+| Track | Strands / Clusters | Notes |
 |---|---|---|
-| **Academic** | Science, Technology, Engineering, and Mathematics (STEM) | STEM college programs, engineering, medicine |
-| **Academic** | Accountancy, Business and Management (ABM) | Business, accountancy, management |
-| **Academic** | Humanities and Social Sciences (HUMSS) | Law, social sciences, journalism, education |
-| **Academic** | General Academic Strand (GAS) | Broad academic preparation; undecided path |
-| **Technical-Vocational-Livelihood (TVL)** | Home Economics (HE) | Culinary, tourism, hospitality |
-| **TVL** | Information and Communications Technology (ICT) | Programming, IT support, networking |
-| **TVL** | Agri-Fishery Arts | Agricultural and fishery livelihoods |
-| **TVL** | Industrial Arts | Construction, electrical, automotive trades |
-| **Arts & Design** | Arts & Design | Fine arts, media arts, performing arts |
-| **Sports** | Sports | Physical education, coaching, sports science |
+| **Academic** | HUMSS, ABM, GAS | No entrance exam for regular Academic sections |
+| **Academic — STEM** | STEM | Requires Grade 10 Science + Math ≥ 85; may require additional school-level assessment |
+| **TechPro (formerly TVL)** | ICT, HospTour, HA, AFA, Industrial Arts, and others | Practical/aptitude screening varies by school |
 
-### Strand Selection Rules
+> **School-agnostic design rule:** The strands offered at a given school are configured in Settings → Tab 3 → Strands. The system does not hardcode any strand list. A school that offers only Academic + STEM configures only those strands. The admission form and the section management module both read from the database.
 
-- The strand declared during enrollment determines the learner's specialized subjects.
-- A school is only required to offer strands for which it has **DepEd-recognized program offerings**.
-- If a learner's preferred strand is not offered at their chosen school, they may transfer to a school that offers it.
-- **Strand changes** are permitted but carry consequences:
-  - Best window: before the end of the **first grading period of Grade 11**.
-  - Mid-year changes: allowed case-by-case with bridging modules; some specialized subjects may require make-up work.
-  - Grade 12 strand changes: exceptional cases; may result in delayed completion.
-- The **school head** approves strand changes, guided by counseling records and section capacity.
-- The **LRN remains unchanged** regardless of strand or school changes.
+### Guidance Counselor Involvement
 
-### Eligible Grade 11 Applicants
-
-| Applicant Profile | Eligible for SHS? | Notes |
-|---|---|---|
-| Grade 10 completer (DepEd-accredited JHS) | ✅ Yes | Presents Grade 10 SF9 |
-| ALS Junior HS completer | ✅ Yes | Certificate of Rating / Portfolio Assessment accepted |
-| PEPT passer (Junior HS equivalent) | ✅ Yes | PEPT result serves as Grade 10 equivalent |
-| Transferee from another SHS (Grade 11) | ✅ Yes | SF9 required; strand continuity assessed |
-| International student (foreign school graduate) | ✅ Yes | Authenticated foreign records required |
-| Out-of-school youth meeting JHS equivalent | ✅ Yes | PEPT or A&E test required |
+Schools are encouraged to conduct career advocacy counseling before or during Phase 1 to help Grade 11 applicants select the most appropriate strand. This is outside the system's scope but can be documented in the Applicant record's notes field.
 
 ---
 
 ## 10. The Learner Reference Number (LRN)
 
-The **LRN** is the cornerstone of DepEd's learner tracking system.
+The LRN is a **permanent, nationally unique 12-digit identifier** assigned to every learner in the Philippine basic education system.
 
 | Attribute | Detail |
 |---|---|
-| **Format** | 12-digit number |
-| **Issuing Body** | DepEd Database Management Unit, Office of Planning Service, Central Office |
-| **Permanence** | Permanent for life — does not change upon school transfer, grade promotion, or moving from elementary to secondary |
-| **Uniqueness** | One LRN per learner. No learner may have two LRNs. |
-| **Found on** | Report card (SF9), any DepEd-issued school form |
-| **System** | Linked to the learner's profile in the Learner Information System (LIS) |
+| **Format** | 12-digit numeric string, left-padded with zeros if needed |
+| **Assignment** | Assigned once; never changes throughout K–12 |
+| **Does not change on** | Transfer · Grade advancement · SCP admission · School year change |
+| **Source of truth** | DepEd Learner Information System (LIS) |
+| **First-time issuance** | Assigned by the school when a learner first enrolls without an LRN |
+| **Duplicate prevention** | School must validate against LIS before creating a new LRN |
 
-### LRN in Enrollment Context
-
-- **Grade 7 new entrant without an LRN:** The school encodes the learner's BEEF data into LIS, which generates a new LRN. The LRN is issued and tied to the learner permanently.
-- **Grade 7 entrant with an existing LRN (from a private elementary school):** The existing LRN must be validated and carried over. The school validates in LIS and **must not create a duplicate LRN**.
-- **Transferees:** The receiving school validates the existing LRN in LIS before encoding to prevent duplication. If a learner was accidentally issued two LRNs, the SDO coordinates deduplication.
-- **Learners without an LRN (e.g., OSCYA with no prior enrollment):** LIS generates a new LRN upon first enrollment.
+> **System rule:** The `Applicant.lrn` field is a `@unique` constraint in the Prisma schema and is **immutable** after creation. The SIMS student profile displays LRN as a read-only field even in edit mode.
 
 ---
 
 ## 11. School Forms Reference
 
-Understanding DepEd school forms is essential for the enrollment process. The table below clarifies the commonly confused forms:
-
-| Old Name | New Name | Purpose | When Relevant |
+| Form | Old Name | Description | Relevance to System |
 |---|---|---|---|
-| **Form 137** | **SF10 (School Form 10)** — *Learner's Permanent Academic Record* | Cumulative academic record covering all grades in a level (ES: G1–6; JHS: G7–10; SHS: G11–12) | Requested by receiving school after learner is enrolled; NOT an enrollment prerequisite |
-| **Form 138** | **SF9 (School Form 9)** — *Learner's Progress Report Card* | End-of-year grades per subject; the primary credential for enrollment | Required at enrollment for Grade 7, Grade 11, transferees |
-| **SF1** | **SF1** — *School Register* | Official class list maintained by the class adviser | Generated after enrollment; not a learner-submitted form |
-| **SF5** | **SF5** — *Report on Promotion and Level of Proficiency* | End-of-year report summarizing learner performance and promotion status | End-of-year; used by school admin |
-| — | **BEEF** | Basic Education Enrollment Form | Submitted by learner/parent at enrollment (new entrants and transferees) |
-| — | **Confirmation Slip (Annex C)** | Simplified form for pre-registered continuing learners | Submitted by Grades 8–10 and Grade 12 during Phase 2 |
-
-### SF10 Version Breakdown
-
-| Version | Covers | Issued at Completion of |
-|---|---|---|
-| **SF10-ES** | Grades 1–6 (Elementary) | Grade 6 graduation |
-| **SF10-JHS** | Grades 7–10 (Junior High School) | Grade 10 completion |
-| **SF10-SHS** | Grades 11–12 (Senior High School) | Grade 12 graduation |
-
-> Schools issue three separate SF10s across the learner's K–12 journey. Each SF10 is transmitted school-to-school via the LIS Portal Transfer/Tracking facility (DO 54, s. 2016).
+| **SF1** | Class Record / Enrollment Register | Daily attendance register; official enrollment headcount | Out of scope |
+| **SF2** | Daily Attendance Report | Monthly attendance summary | Out of scope |
+| **SF9** | Report Card (formerly Form 138) | Quarterly and final grades; primary credential for enrollment | Referenced in documentary requirements; general average stored in `Applicant.generalAverage` |
+| **SF10** | Permanent Academic Record (formerly Form 137) | Complete grade history; requested by receiving schools | Referenced in transfer workflow documentation |
+| **BEEF** | Basic Education Enrollment Form | The enrollment form filled out by each learner | Directly maps to `Applicant` model |
+| **Annex C** | Confirmation Slip | Used by pre-registered continuing learners | Recorded in system as enrollment confirmation |
 
 ---
 
 ## 12. Learner Information System (LIS) Protocols
 
-The **Learner Information System (LIS)** is DepEd's official web-based platform for registering, enrolling, tracking, and maintaining data on all basic education learners.
+The DepEd LIS is the national registry of all K–12 learners. This system does **not** integrate with or replace the LIS. It serves as the school's local intake, processing, and records management system. All LIS uploads remain the registrar's responsibility through the DepEd LIS portal.
 
-### Key LIS Facilities Relevant to Secondary Enrollment
+Key LIS facilities referenced in enrollment workflows:
 
-| LIS Facility | Purpose | Timing |
-|---|---|---|
-| **Early Registration Facility** | Encodes Phase 1 pre-registration data for incoming G7, G11, and transferees | January–February; SDO may extend |
-| **BOSY (Beginning of School Year)** | Encodes official Phase 2 enrollment; assigns LRN; records section assignments | June–July (start of school year) |
-| **SHS 1st Semester Enrollment** | Records enrollment for SHS learners' 1st semester | June–July |
-| **SHS 2nd Semester Enrollment** | Records enrollment for SHS learners' 2nd semester | November–January |
-| **Transfer/Tracking Facility** | School-to-school transmission of SF10; tracks transfer requests | Throughout school year |
-| **EOSY (End of School Year)** | Updates final status: promoted, retained, dropped, completed | March–May |
-| **Quick Count** | Fast enrollment headcount system used during the opening weeks | June–July |
-
-### LIS Responsibilities
-
-| Role | LIS Responsibility |
+| LIS Facility | When Used |
 |---|---|
-| **Class Adviser** | Encodes and validates individual learner profiles; tags section assignment; monitors promotion status |
-| **School Registrar** | Supervises LIS data integrity; approves transfer requests; ensures BOSY completion |
-| **School Head** | Certifies school's enrollment data in BOSY and EOSY |
-| **SDO (Division Office)** | Validates and approves data; coordinates LRN deduplication; oversees LIS compliance |
+| **Early Registration** | Phase 1 — recording Grade 7, Grade 11, transferee pre-registrations |
+| **BOSY (Beginning of School Year)** | Phase 2 — official enrollment record for all grade levels |
+| **Transfer/Tracking** | When receiving a transferee from another school |
+| **EOSY (End of School Year)** | After March 31 — final enrollment counts, movers, dropouts |
+| **SHS 2nd Semester** | December–January — Grade 12 SHS second semester enrollment |
 
 ---
 
 ## 13. Special Cases & Edge Conditions
 
-### No PSA Birth Certificate
+### Missing PSA Birth Certificate
 
-If a PSA Birth Certificate is unavailable, the learner may present alternative documents until **October 31** of the school year:
+**Policy:** Schools shall not refuse enrollment due to a missing PSA Birth Certificate. If unavailable at enrollment time, the school grants a grace period until **October 31** of the school year.
 
-- Late registration Birth Certificate from the Local Civil Registrar
-- Barangay Certification containing the learner's basic personal information (name, date of birth, address)
-- National ID (PhilSys ID)
-- Any other government-issued document that establishes the learner's identity
+**System implication:** The `privacyConsentGiven` flag is separate from document completeness. The applicant's status can be set to APPROVED with a note that PSA BC is pending.
 
-The school enrolls the learner provisionally and gives the family until October 31 to submit the birth certificate or its acceptable alternative.
+### Previously Enrolled Learner — LRN Lookup
 
-### No SF9 (Report Card)
+When a returning learner's LRN is entered in the admission form, the system checks for an existing `Applicant` record and pre-fills available fields. This prevents duplicate records and ensures the same LRN is used.
 
-If the SF9 is unavailable:
-- **Grade 7:** Accepted alternatives — PEPT/A&E Test result, or a certification letter from the sending school head certifying Grade 6 completion.
-- **Grade 11:** SF9 from Grade 10 is the primary requirement. If unavailable, a certification letter from the JHS school head certifying Grade 10 completion is accepted.
-- **Transferees:** Certification letter from the sending school is accepted as an alternative.
+### Learner Enrolled at Two Schools
 
-### Learner with No LRN (Not Previously Enrolled in DepEd System)
+Not permitted under LIS rules. The system's LRN uniqueness constraint per academic year enforces this — a learner already enrolled in the active AY cannot submit a second application.
 
-The school encodes the learner's BEEF into LIS. The system generates a new LRN. The school must validate that no existing LRN is already linked to the learner (e.g., from a private school not yet in LIS) to prevent duplication.
+### Section Capacity Exceeded
 
-### Learner Transferring from Private School with Unpaid Fees
-
-The private school **cannot withhold the SF9 or deny the transfer** due to unpaid fees. The receiving public school:
-1. Enrolls the learner based on the SF9 presented.
-2. Assists the parent/guardian in executing an **Affidavit of Undertaking** — a formal written commitment to settle the balance with the private school.
-3. Initiates the SF10 request through the LIS portal.
-
-### Learners with Disabilities (LWD)
-
-Learners with disabilities are enrolled in the general secondary education track. The BEEF includes a disability classification field. Schools may refer learners to SPED centers or inclusive education programs depending on the nature of the disability and school capacity. **Enrollment cannot be denied** solely on the basis of disability.
-
-### Indigenous Peoples (IP) Learners
-
-IP learners are enrolled using the BEEF (which includes an IP classification field). Schools in IP communities implement the Indigenous Peoples Education (IPEd) curriculum. IP learners follow the same grade-level eligibility requirements.
+The system enforces `maxCapacity` as a hard limit per section. The registrar may not assign more students than the configured capacity. If all sections for a grade are full, the registrar must create a new section before enrollment can proceed.
 
 ---
 
 ## 14. Prohibited Practices
 
-The following are explicitly prohibited under DO 017, s. 2025 and related issuances:
+Under DO 017, s. 2025 and RA 10173, the following are prohibited and must not be facilitated by this system:
 
-| Prohibited Practice | Legal Basis |
+| Prohibited Practice | Policy Basis |
 |---|---|
-| **Collecting any fee during enrollment or early registration** | DO 017, s. 2025, §II (No Collection of Fees); RA 10533 |
-| **Requiring PSA Birth Certificate every year** (it is a once-only submission) | DO 017, s. 2025; RA 11909 |
-| **Withholding SF9 or SF10 due to unpaid fees** | DO 017, s. 2025; DepEd Zero-Tolerance Policy on Record Withholding |
-| **Refusing enrollment solely due to missing records** | DO 017, s. 2025 (flexible documentation provisions) |
-| **Refusing enrollment due to disability** | RA 7277 (Magna Carta for Disabled Persons); DO 017, s. 2025 |
-| **Requiring additional documents not listed in DO 017** | DO 017, s. 2025, §III |
-| **Requiring Good Moral Character certificate in public schools** | Not a DepEd public school requirement (private schools may still require) |
-| **Assigning two LRNs to the same learner** | LIS data integrity policy |
+| Requiring entrance examinations for regular (non-SCP) sections | DO 017, s. 2025 — open admission for regular sections |
+| Collecting fees during enrollment | DO 017, s. 2025 — all enrollment is free |
+| Withholding academic records (SF9, SF10) due to unpaid fees | DO 017, s. 2025 |
+| Requiring Good Moral Certificate from public school applicants | DO 017, s. 2025 |
+| Collecting original PSA Birth Certificates | DO 017, s. 2025 — verification only; once-only recording |
+| Sharing or selling learner personal data | RA 10173 |
+| Denying enrollment to an IP learner, PWD learner, or OSCYA | DO 017, s. 2025 — universal access |
+
+> **System enforcement:** The online admission form and F2F form do not include a fee field or a "Good Moral Certificate" checkbox. These are intentionally excluded to prevent facilitating prohibited practices.
 
 ---
 
 ## 15. Late Enrollment Policy
 
-Learners who miss the regular enrollment window may still be accepted under the following conditions:
+Learners who attempt to enroll after the school year has opened are still accepted.
 
-- The learner has attended **at least 80% of the number of school days** in the current school year.
-- The learner **passes the quarterly requirements** for the subjects missed.
-- If both conditions are met, the learner is enrolled and counted in LIS with a notation.
-- If the 80% threshold cannot be met, the **school head** may still decide to accept the learner and provide **catch-up interventions**.
+| Scenario | Policy |
+|---|---|
+| Learner enrolls during the first quarter (June–August) | Accepted; marks late enrollment date in LIS |
+| Learner enrolls during 2nd quarter (September–October) | Accepted; SDO endorsement may be required |
+| Learner enrolls after October 31 | Accepted at principal's discretion with SDO coordination |
 
-Late enrollment is recorded in LIS and flagged for monitoring. The learner's status is not penalized in their permanent record if they meet academic requirements.
+**System implication:** The enrollment gate (`enrollmentOpen`) toggles the public portal only. The registrar can always process enrollment via the F2F admission route regardless of the gate state.
 
 ---
 
 ## 16. End-of-Year Enrollment Reporting
 
-After the school year ends, schools update the **EOSY (End of School Year)** facility in LIS to reflect the final status of each learner:
+At the end of the school year (after March 31), the registrar reports:
 
-| Status | Meaning |
-|---|---|
-| **Promoted** | Passed all subjects; moves to the next grade level |
-| **Retained** | Did not meet promotion requirements; repeats the same grade level |
-| **Completed** | Finished Grade 10 (JHS completer) or Grade 12 (SHS graduate) |
-| **Dropped** | Withdrew or stopped attending before the school year ended |
-| **No Longer in School** | Confirmed out-of-school; various coded reasons (economic, health, etc.) |
-| **Transferred Out** | Moved to another school; SF10 transmitted to receiving school |
-
-EOSY data feeds directly into the **next school year's pre-registration pool** — learners tagged as Promoted, Retained, or Transferred Out are automatically pre-registered for the relevant grade level in the LIS Early Registration facility for the next SY.
-
----
-
-## Summary Reference — Quick-Access Card
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│         DEPED ENROLLMENT QUICK REFERENCE — GRADES 7 TO 12          │
-├──────────────┬──────────────────────┬──────────────────────────────┤
-│ GRADE LEVEL  │ PHASE 1 (Jan–Feb)    │ PHASE 2 (~1 wk before June)  │
-├──────────────┼──────────────────────┼──────────────────────────────┤
-│ Grade 7      │ Early Reg (BEEF +    │ Confirm + Section Assign     │
-│ (new entrant)│ PSA BC + G6 SF9)     │ (LIS BOSY encoding)          │
-├──────────────┼──────────────────────┼──────────────────────────────┤
-│ Grade 8      │ Pre-registered ✗     │ Confirmation Slip only       │
-│ Grade 9      │ Pre-registered ✗     │ Confirmation Slip only       │
-│ Grade 10     │ Pre-registered ✗     │ Confirmation Slip only       │
-├──────────────┼──────────────────────┼──────────────────────────────┤
-│ Grade 11     │ Early Reg (BEEF +    │ Confirm + Strand + Section   │
-│ (new entrant)│ PSA BC + G10 SF9 +  │ (LIS BOSY SHS 1st Sem)       │
-│              │ Strand selection)    │                              │
-├──────────────┼──────────────────────┼──────────────────────────────┤
-│ Grade 12     │ Pre-registered ✗     │ Confirmation Slip only       │
-│              │                      │ (+ SHS 2nd Sem in Dec/Jan)   │
-├──────────────┼──────────────────────┼──────────────────────────────┤
-│ Transferees  │ Covered in Phase 1   │ BEEF + SF9 + LRN validation  │
-│ Balik-Aral   │ window if applicable │ SF9 physical submission req. │
-└──────────────┴──────────────────────┴──────────────────────────────┘
-
-KEY DOCUMENT FACTS:
-• PSA Birth Certificate: submitted ONCE per school (DO 017, s. 2025 / RA 11909)
-• SF9 (old Form 138): required at G7, G11 entry and for transferees
-• SF10 (old Form 137): NOT an enrollment prerequisite; requested school-to-school via LIS
-• BEEF: required for all new entrants and transferees
-• Confirmation Slip (Annex C): required for pre-registered continuing learners (G8–10, G12)
-• LRN: permanent 12-digit ID; never changes; no fees to generate
-• All enrollment processes are FREE; no fees may be collected
-```
-
----
-
-*Document compiled from:*
-- *DepEd Order No. 017, s. 2025 — Revised Basic Education Enrollment Policy (June 13, 2025)*
-- *DepEd Order No. 12, s. 2025 — Multi-Year Implementing Guidelines on the School Calendar*
-- *RA 7797 as amended by RA 11480 — School Year Act*
-- *RA 11909 — Permanent Validity of Civil Registry Documents Act*
-- *RA 10173 — Data Privacy Act of 2012*
-- *Philippine Information Agency Report, February 2, 2026 — SY 2026–2027 Early Registration*
-- *Philstar Report, January 31, 2026 — Early Registration opens nationwide*
-- *Manila Bulletin, June 15, 2025 — DepEd SY 2025–2026 Enrollment Policy Update*
-- *DepEd CALABARZON Official Release, June 14, 2025 — DO 017 Implementation*
-- *DepEd Learner Information System (LIS) Help Portal*
-
----
-
----
-
-## ADDENDUM — DepEd Memorandum No. 012, s. 2026
-### Strengthened Senior High School Curriculum: Full Implementation Starting SY 2026–2027
-
-**Issuance:** DepEd Memorandum No. 012, s. 2026
-**Date Issued:** February 27, 2026
-**Signed by:** Secretary Sonny Angara
-**Official Source:** https://www.deped.gov.ph/2026/02/27/february-27-2026-dm-012-s-2026-full-implementation-of-the-strengthened-senior-high-school-curriculum-in-school-year-2026-2027/
-**PDF:** https://www.deped.gov.ph/wp-content/uploads/DM_s2026_012r.pdf
-**Supersedes:** The SHS Track and Strand structure defined in the K–12 Curriculum Guide (DepEd Order No. 21, s. 2019 and related issuances)
-**Effective:** SY 2026–2027 — incoming Grade 11 learners only
-
----
-
-### Overview
-
-DepEd DM 012, s. 2026 is one of the most significant structural reforms to Senior High School since the launch of the K–12 program. Starting SY 2026–2027, the traditional **four-track, strand-based SHS system** is replaced by a **two-track, elective-cluster-based Strengthened SHS Curriculum** for all incoming Grade 11 learners nationwide.
-
-> **Critical Transition Rule:** Grade 12 learners in SY 2026–2027 are **NOT** affected. They continue under the existing strand-based curriculum for a smooth transition. The new curriculum applies exclusively to **incoming Grade 11** learners starting SY 2026–2027.
-
----
-
-### What Changed: Old vs. New SHS Structure
-
-| Dimension | Old System (until SY 2025–2026) | New System (SY 2026–2027 onward, Grade 11) |
+| Report | What it Covers | LIS Facility |
 |---|---|---|
-| **Number of tracks** | 4 (Academic, TVL, Sports, Arts & Design) | **2** (Academic, Technical-Professional / TechPro) |
-| **Curriculum unit** | Fixed Strand (STEM, ABM, HUMSS, GAS, HE, ICT, etc.) | **Flexible Elective Cluster** (learner selects subjects across clusters) |
-| **Subject lock-in** | Learner locked into a strand's subject set | Learner may **mix subjects from multiple clusters** |
-| **Number of core subjects** | ~15 core subjects | **5 core subjects** (decongested) |
-| **Enrollment declaration** | Strand declared at enrollment (binding) | **Track** declared at enrollment (Academic or TechPro); elective clusters chosen with guidance counselor |
-| **Exit pathways** | Higher education, employment, entrepreneurship, middle-level skills | Same 4 pathways preserved |
+| **EOSY Enrollment Data** | Final headcount of enrolled, transferred, dropped, and promoted learners | EOSY facility |
+| **Cohort Tracking** | Movement of learners from one grade to the next | LIS internal |
+| **SCP Program Report** | Count of SCP students by program | Division-level report |
 
----
-
-### The Two New Tracks
-
-#### Track 1 — Academic
-
-For learners intending to pursue **higher education** after SHS. Academic track learners choose elective subjects from any of the following clusters:
-
-| Academic Elective Cluster | Representative Subjects / Focus |
-|---|---|
-| **Arts, Social Sciences, and Humanities** | Literature, social science research, creative writing, culture studies |
-| **Science, Technology, Engineering, and Mathematics (STEM)** | Advanced physics, calculus, chemistry, engineering fundamentals |
-| **Sports, Health, and Wellness** | Physical education science, sports management, health sciences |
-| **Business and Entrepreneurship** | Business math, economics, enterprise management |
-| **Field Experience** | Work immersion, community service, practicum modules |
-
-> **Note:** "STEM" now refers to an **elective cluster within the Academic track**, not a strand. Learners are no longer *locked into* STEM — they may mix STEM cluster subjects with subjects from other clusters.
-
-#### Track 2 — Technical-Professional (TechPro)
-
-For learners intending to enter the **workforce, technical education (TESDA), or entrepreneurship** after SHS. TechPro learners choose from industry-aligned clusters:
-
-| TechPro Elective Cluster | Industry Focus |
-|---|---|
-| **Aesthetic, Wellness, and Human Care** | Beauty services, caregiving, health support |
-| **Agri-Fishery Business and Food Innovation** | Agriculture, aquaculture, food processing |
-| **Artisanry and Creative Enterprise** | Handcrafts, design, cultural products |
-| **Automotive and Small Engine Technologies** | Vehicle maintenance, engine repair |
-| **Construction and Building Technologies** | Carpentry, masonry, plumbing, electrical |
-| **Creative Arts and Design Technologies** | Graphic design, multimedia, visual arts |
-| **Hospitality and Tourism** | Front office, food and beverage, travel management |
-| **Industrial Technologies** | Welding, electronics, machine operation |
-| **ICT Support and Computer Programming Technologies** | Programming, networking, systems administration |
-| **Maritime Transport** | Seafaring, port logistics, vessel operations |
-
-> **Note:** Not all schools are required to offer all TechPro clusters. Availability depends on school resources, TESDA accreditation, and DepEd-approved program offerings. Schools offer only the clusters they are equipped to deliver.
-
----
-
-### The Five New Core Subjects (All Grade 11 Learners, Both Tracks)
-
-All incoming Grade 11 learners in SY 2026–2027 take the same five core subjects, regardless of track or elective cluster choices:
-
-| Core Subject | Filipino Title |
-|---|---|
-| Effective Communication | Mabisang Komunikasyon |
-| Life and Career Skills | — |
-| General Mathematics | — |
-| General Science | — |
-| Philippine History and Social Studies | Pag-aaral ng Kasaysayan at Lipunang Pilipino |
-
-**Removed from SHS core (previously required):** Oral Communication, Reading and Writing, Komunikasyon at Pananaliksik, Pagbasa at Pagsusuri, 21st Century Literature, Contemporary Philippine Arts, Media and Information Literacy, Statistics and Probability, Earth and Life Science, Physical Science, Personal Development, Understanding Culture Society and Politics, Introduction to Philosophy, and Physical Education and Health.
-
----
-
-### Dual-Policy Enrollment Scenario: SY 2026–2027
-
-Because the new curriculum applies **only to Grade 11** while Grade 12 remains on the old system, SY 2026–2027 is a **dual-policy school year** for SHS:
-
-| Grade Level | Curriculum | Enrollment Declaration | Section Naming |
-|---|---|---|---|
-| **Grade 11** (incoming) | **Strengthened SHS** — NEW | Track (Academic or TechPro) | By track or cluster (e.g., "Academic-A", "TechPro-ICT-A") |
-| **Grade 12** (continuing) | **Old strand-based** — UNCHANGED | Strand continues from Grade 11 declaration | Same as SY 2025–2026 (STEM-A, ABM-A, HUMSS-A, GAS-A) |
-
----
-
-### Impact on Enrollment Process (Appended to §5.3 and §9)
-
-#### Grade 11 Enrollment Under the New System (SY 2026–2027 onward)
-
-**What the learner declares on the BEEF / admission form:**
-- **Track:** Academic OR Technical-Professional (TechPro)
-- **Preferred Elective Cluster(s):** One or more clusters within the chosen track (guidance counselor assists in final selection)
-- The old "Strand" field is **replaced** by "Track" and "Preferred Elective Cluster(s)"
-
-**What the school section structure looks like:**
-- Sections may be organized by **track** (e.g., Academic-A, TechPro-A) or by **elective cluster focus** if the school designates cluster-specific sections (e.g., ICT-A, STEM-A as a cluster label, not a strand)
-- Section naming convention is **school-discretionary** — DepEd does not mandate a specific naming format under DM 012
-
-**Strand changes (old system) → Cluster/Track changes (new system):**
-- Learners may adjust their elective cluster selections with guidance counselor approval, typically within the first grading period
-- **Track changes** (Academic ↔ TechPro) are more significant and require school head approval
-- Grade 12 learners in SY 2026–2027 cannot switch to the new curriculum mid-stream — they complete their strand
-
----
-
-### Updated SHS Track and Cluster Structure for the Admission Form
-
-For the online admission portal, the **Strand dropdown** (Grade 11) becomes:
-
-**Step 1 — Track Selection:**
-- `○ Academic`
-- `○ Technical-Professional (TechPro)`
-
-**Step 2 — Preferred Elective Cluster (conditional on Track):**
-
-If Academic:
-- Arts, Social Sciences, and Humanities
-- STEM (Science, Technology, Engineering, and Mathematics)
-- Sports, Health, and Wellness
-- Business and Entrepreneurship
-- Field Experience
-- Undecided / To be advised by guidance counselor
-
-If TechPro:
-- ICT Support and Computer Programming Technologies
-- Hospitality and Tourism
-- Construction and Building Technologies
-- Automotive and Small Engine Technologies
-- Industrial Technologies
-- Agri-Fishery Business and Food Innovation
-- Creative Arts and Design Technologies
-- Artisanry and Creative Enterprise
-- Aesthetic, Wellness, and Human Care
-- Maritime Transport
-- Undecided / To be advised by guidance counselor
-
-> **Important:** Not all clusters are available at every school. The admission portal should display only the clusters offered at the school. The school configures available clusters in the system settings before opening the portal.
-
----
-
-### Grade 12 in SY 2026–2027: No Change to Enrollment Process
-
-Grade 12 learners in SY 2026–2027:
-- Are **pre-registered** (Confirmation Slip only — Annex C of DO 017, s. 2025)
-- Continue under their existing strand (STEM, ABM, HUMSS, GAS, or TVL)
-- Their sections, subject loads, and academic records follow the old strand-based framework
-- No re-declaration of strand or cluster is required
-- Their SF10-SHS (Form 137) will reflect their original strand upon graduation
-
----
-
-### Updated Phase 1 Early Registration Impact (Grade 11, SY 2026–2027)
-
-During Early Registration (January 31 – February 27, 2026 for SY 2026–2027), incoming Grade 11 learners now declare:
-- **Track** (Academic or TechPro) instead of Strand
-- **Preferred elective cluster(s)** (indicative, subject to guidance counseling)
-
-The school uses this data to:
-- Project how many Academic vs. TechPro sections to prepare
-- Identify which TechPro clusters have sufficient demand to open
-- Plan equipment and teacher readiness per cluster
-
----
-
-### Pilot History
-
-DM 012, s. 2026 formalizes a national rollout based on a **successful pilot program conducted in over 800 schools** across the Philippines. Schools that participated in the pilot already have familiarity with the cluster-based system. For non-pilot schools like those in the Negros Occidental division, SY 2026–2027 is the first year of full implementation.
-
----
-
-### Policy Coexistence Summary
-
-This document now governs enrollment under **two simultaneously active DepEd policy frameworks** for SHS:
-
-| Policy | Governs |
-|---|---|
-| **DO 017, s. 2025** (Revised Basic Education Enrollment Policy) | All grade levels, all enrollment procedures, documentary requirements, LRN, gate, phases |
-| **DM 012, s. 2026** (Strengthened SHS Curriculum) | Grade 11 only — curriculum structure, track/cluster declaration, section organization starting SY 2026–2027 |
-| **Old K–12 SHS Strand Framework** (still active for Grade 12 in SY 2026–2027) | Grade 12 only in SY 2026–2027 — strand continuation, subject loads, SF10 |
-
----
-
-*Addendum compiled from:*
-- *DepEd Memorandum No. 012, s. 2026 — Full Implementation of the Strengthened Senior High School Curriculum in School Year 2026–2027 (February 27, 2026)*
-- *Official Source: https://www.deped.gov.ph/2026/02/27/february-27-2026-dm-012-s-2026-full-implementation-of-the-strengthened-senior-high-school-curriculum-in-school-year-2026-2027/*
-- *The Summit Express Report, March 2, 2026 — No more strands: DepEd to fully implement Strengthened SHS Curriculum in SY 2026–2027*
-- *DepEd Strengthened SHS Program Page: https://www.deped.gov.ph/strengthened-shs-program/*
-
+The system's Audit Log and SIMS module provide the source data for these reports. Export functions are available in the audit log (for SYSTEM_ADMIN) to assist the registrar in compiling LIS uploads.
 
 ---
 
 ---
 
-## ADDENDUM — DepEd Admission Process: Grade 7 JHS & Grade 11 SHS
-### Including Special Curricular Programs (SCPs) for Junior High School
-
-**Research Basis:** DepEd Order No. 017, s. 2025 · DepEd Memorandum No. 149, s. 2011 · Division Memorandum No. 157, s. 2025 · TeacherPH SCP Reference · USHAT Guidelines
-**Relevance:** Defines the two distinct admission pathways that the system must handle — Open Admission and Special Program Admission
+# SYSTEM DESIGN IMPLICATIONS
 
 ---
 
 ## A1. The Two Admission Pathways — A Critical Distinction
 
-Before any system design decision is made, it is essential to understand that DepEd public secondary schools operate under **two fundamentally different admission pathways** that coexist within the same school year:
+Before any system design decision is made, understand that DepEd public secondary schools operate under **two fundamentally different admission pathways** that coexist within the same school year:
 
 ```
 APPLICANT ARRIVES
@@ -920,7 +484,9 @@ APPLICANT ARRIVES
  FAIL → rejected        no score threshold
 ```
 
-These two paths have **completely different workflows, timelines, and document requirements.** A school system that treats them as identical will fail to accurately capture the admission process.
+These two paths have **completely different workflows, timelines, and document requirements.** A system that treats them as identical will fail to accurately capture the admission process.
+
+> **School-agnostic rule:** Whether a school offers any SCP programs at all is a runtime configuration, not a hardcoded assumption. A school that offers no SCP programs will see only the Open Admission path in the system. A school that offers STE and SPA will see both. Configure via Settings → Tab 3 → SCP Programs.
 
 ---
 
@@ -928,60 +494,24 @@ These two paths have **completely different workflows, timelines, and document r
 
 ### Grade 7 Regular Sections — No Exam, No Barrier
 
-For learners enrolling in **regular (non-SCP) Grade 7 sections**, DepEd policy under DO 017, s. 2025 mandates open, barrier-free admission. No school may require an entrance examination, interview, portfolio, or any assessment instrument for regular section placement.
+For learners enrolling in regular (non-SCP) Grade 7 sections, DO 017, s. 2025 mandates open, barrier-free admission. No school may require an entrance examination, interview, or any assessment instrument for regular section placement.
 
-**Who this covers:** All Grade 7 applicants who are NOT applying for a Special Curricular Program.
-
-**Requirements (from DO 017, s. 2025):**
-
-| Document | Status | Notes |
-|---|---|---|
-| PSA Birth Certificate | Required (once-only) | Physical verification; school records PSA number |
-| Grade 6 SF9 (Report Card) | Required | Must be signed by the elementary school head |
-| Basic Education Enrollment Form (BEEF) | Required | Accomplished and submitted by parent/guardian |
-| PEPT / A&E Test Result | Only if no SF9 | For non-traditional learners |
-
-**Process:**
-
+**Registrar workflow in the system:**
 ```
-PHASE 1 — Early Registration (Last Sat Jan → Last Fri Feb)
-  Parent presents documents → Registrar verifies → Records in LIS Early Reg
-  Status: PRE-REGISTERED (not yet officially enrolled)
-
-PHASE 2 — Regular Enrollment (~1 week before June class opening)
-  Parent returns to confirm → Registrar assigns section → Records in LIS BOSY
-  Status: OFFICIALLY ENROLLED
+Phase 1 Application received (ONLINE or F2F)
+  └─ Status: PENDING
+       │
+       ▼
+Registrar verifies documents in /applications detail view
+  └─ Status: APPROVED (+ section assigned)
+       │
+       ▼
+Phase 2 confirmation → Status: ENROLLED
 ```
-
-**Key rule:** A school **cannot deny enrollment** to a regular Grade 7 applicant for any document-related reason. Missing PSA BC → enroll provisionally, give until October 31. Missing SF9 → accept certification letter. No exceptions based on academic performance for regular sections.
-
----
 
 ### Grade 11 Non-Exam Tracks — Grade Criteria Only
 
-For learners enrolling in **Grade 11 general tracks** (HUMSS, ABM, GAS, TechPro clusters under DM 012, s. 2026), there is no entrance examination. Entry is based on Grade 10 SF9 grades.
-
-**Minimum grade criteria (DepEd guidelines):**
-
-| Track / Strand | Grade Requirement | Assessment |
-|---|---|---|
-| HUMSS | No prescribed cut-off | No exam required |
-| ABM | No prescribed cut-off | No exam required |
-| GAS | No prescribed cut-off | No exam required |
-| TVL / TechPro clusters | No prescribed cut-off | No exam; aptitude/interest may be assessed informally |
-
-**Process:**
-
-```
-PHASE 1 — Early Registration (Last Sat Jan → Last Fri Feb)
-  Parent presents Grade 10 SF9 → Registrar verifies grades
-  Parent declares preferred track/strand
-  Status: PRE-REGISTERED
-
-PHASE 2 — Regular Enrollment (June)
-  Parent confirms → Registrar assigns to track section → LIS BOSY
-  Status: OFFICIALLY ENROLLED
-```
+For Grade 11 applicants in non-STEM tracks (HUMSS, ABM, GAS, TechPro clusters), entry is based on Grade 10 SF9 grades. No entrance examination. Minimum grade criteria per DepEd are low or absent for most tracks.
 
 ---
 
@@ -989,236 +519,222 @@ PHASE 2 — Regular Enrollment (June)
 
 ### Overview
 
-DepEd authorizes public secondary schools to conduct competitive admission assessments for Special Curricular Programs. These programs serve learners with specific gifts, talents, and aptitudes. Unlike regular sections, SCP placement is **not guaranteed** — it requires a qualifying assessment, and only those who meet the prescribed criteria are admitted.
+DepEd authorizes public secondary schools to conduct competitive admission assessments for Special Curricular Programs (SCPs). These serve learners with specific gifts, talents, and aptitudes. Unlike regular sections, SCP placement requires a qualifying assessment.
 
 **Legal basis:** DepEd Memorandum No. 149, s. 2011 — Special Curricular Programs in JHS
-**Additional basis:** Division-level memoranda (varies by SDO — the school follows DepEd Division of Negros Occidental guidelines)
 
----
+> **School-agnostic design rule:** The SCP programs a school offers are configured in Settings → Tab 3 → SCP Programs. A school with no SCP programs configured sees no SCP fields in the admission form and no SCP columns in the applications inbox. All SCP-related UI is conditional on the school's configuration.
 
-### The 6 Official DepEd Special Curricular Programs for JHS
+### The Six Official DepEd SCPs for JHS
 
-#### SCP 1 — Science, Technology, and Engineering (STE) Program
-*Formerly known as Engineering and Science Education Program (ESEP)*
+#### STE — Science, Technology, and Engineering
 
 | Attribute | Detail |
 |---|---|
-| **Purpose** | Develops learners with interest and aptitude for careers in science, technology, and engineering; prepares them for higher education in STEM fields |
-| **Admission Method** | Written entrance examination — standardized and administered division-wide on a single designated Saturday, typically in January–February |
+| **Admission Method** | Written entrance exam — standardized and administered division-wide |
 | **Exam Scope** | Science, Mathematics, English, Abstract/Logical Reasoning |
-| **Exam Coordinator** | Schools Division Office (SDO) — not individual schools; the division sets the date and releases results collectively |
-| **Cut-off score** | Division-determined; typically top percentile of all examinees qualify for available STE slots |
-| **Section capacity** | One STE class per grade level (maximum 40–45 students) |
-| **Additional screening** | Some divisions may include interview after written exam |
-| **For Grade 11 STEM** | A final grade of **85 and above** in both Science and Mathematics in Grade 10; percentile rank of **86 and above** in the STEM subtest of the career assessment exam |
-| **LRN requirement** | Same LRN carries over; no new LRN issued for SCP enrollment |
+| **Exam Coordinator** | Schools Division Office (SDO) — not individual schools |
+| **Cut-off Score** | Division-determined; typically top percentile of examinees |
+| **Section Capacity** | One STE class per grade level (maximum 40–45 students) |
 
-**School Context:** Division Memorandum No. 157, s. 2025 specifically governs STE admission testing for incoming Grade 7 in the Negros Occidental SDO. The school has confirmed STE sections are offered.
-
----
-
-#### SCP 2 — Special Program in the Arts (SPA)
+#### SPA — Special Program in the Arts
 
 | Attribute | Detail |
 |---|---|
-| **Purpose** | Develops young artists with aesthetic potential; preserves and enriches Filipino culture and heritage |
-| **Art Fields Covered** | Visual Arts, Music (Vocal and Instrumental), Theatre Arts, Dance Arts, Media Arts, Creative Writing (English and Filipino) |
-| **Admission Method** | Written qualifying examination + **audition** + interview — all typically conducted on the same day |
-| **Audition Process** | Facilitated per art field by designated audition facilitators; applicant is assessed in their specific area of talent |
-| **Results Timeline** | Released approximately one week after the qualifying assessment day |
-| **Portfolio requirement** | Some schools require a portfolio or sample works submission prior to audition day |
-| **Interview** | Conducted after audition to assess commitment, family support, and background |
-| **Section naming** | SPA sections may be named by art field (e.g., "SPA-Music-A", "SPA-Dance-A") or as a combined SPA section |
+| **Art Fields** | Visual Arts · Music · Theatre Arts · Dance Arts · Media Arts · Creative Writing |
+| **Admission Method** | Written qualifying exam + audition + interview (all on the same day) |
+| **Results Timeline** | Released approximately one week after assessment day |
 
----
-
-#### SCP 3 — Special Program in Sports (SPS)
+#### SPS — Special Program in Sports
 
 | Attribute | Detail |
 |---|---|
-| **Purpose** | Provides training for athletes to compete in national and international sports competitions |
-| **Sports Required (minimum)** | 5 individual/dual sports: Archery, Arnis, Badminton, Chess, Gymnastics, Table Tennis, Taekwondo, Tennis, Dance Sports; AND 3 team sports: Basketball, Football, Volleyball, Baseball, Softball, or Sepak Takraw |
-| **Admission Method** | Physical skills assessment / tryout conducted by sports coaches or PE teachers |
-| **Requirements** | Must be physically fit for intensive sports training; must have participated in at least one school-level sports competition; parental support required |
-| **Additional documents** | Certificate of Good Moral Character from Grade 6 principal; sports achievement records / certificates of participation |
-| **Medical clearance** | Required in most divisions — applicant must be cleared by a school physician or barangay health center |
-| **No written exam** | Skills-based assessment only — no written test |
+| **Admission Method** | Physical skills assessment / tryout by sports coaches |
+| **No Written Exam** | Skills-based only |
+| **Additional** | Medical clearance required in most divisions |
 
----
-
-#### SCP 4 — Special Program in Journalism (SPJ)
+#### SPJ — Special Program in Journalism
 
 | Attribute | Detail |
 |---|---|
-| **Purpose** | Develops learners with talent in writing and broadcasting; strengthens free and responsible journalism |
-| **Fields Covered** | Mass communication, print media, online media, broadcast media |
-| **Admission Method** | Written qualifying examination (SPJQE) + interview |
-| **Exam Content** | Journalism concepts, English proficiency, news writing, grammar, media literacy |
-| **Recommendation letter** | Required — from the Grade 6 school paper adviser or English teacher |
-| **Selection basis** | Combined results of SPJQE score and interview; typically top 35 students are admitted per class |
-| **Retention requirement** | Learner must maintain an average of 85% in Journalism and Advanced English; 83% in core subjects to remain in the program |
-| **Interview focus** | Communication skills, interest in current events, reading habits, writing motivation |
+| **Admission Method** | SPJQE written exam + interview |
+| **Selection** | Top 35 students admitted; combined score + interview |
+| **Recommendation** | Required from Grade 6 paper adviser or English teacher |
 
----
-
-#### SCP 5 — Special Program in Foreign Language (SPFL)
+#### SPFL — Special Program in Foreign Language
 
 | Attribute | Detail |
 |---|---|
-| **Purpose** | Develops learners' listening, reading, writing, speaking, and viewing skills in a foreign language; prepares them for a linguistically diverse workplace |
-| **Languages Offered** | Spanish, Japanese (Nihongo), French, German, Chinese (Mandarin), Korean (school offers at least one) |
-| **Admission Method** | Screening based on **National Achievement Test (NAT)** English competency score from Grade 6 — no separate written exam |
-| **Eligibility** | Must demonstrate competence in English as a baseline; the foreign language is learned on top of English proficiency |
-| **Class size** | Maximum 35 students per class; at least one class per grade level |
-| **No tryout/audition** | Entry is document-based (NAT results) — not a competitive performance assessment |
+| **Languages** | Spanish · Japanese · French · German · Chinese (Mandarin) · Korean (school configures which are offered) |
+| **Admission Method** | NAT English score screening — no separate exam |
+| **No Tryout/Audition** | Document-based entry only |
 
----
-
-#### SCP 6 — Special Program in Technical-Vocational Education (SPTVE)
+#### SPTVE — Special Program in Technical-Vocational Education
 
 | Attribute | Detail |
 |---|---|
-| **Purpose** | Equips learners with technical-vocational and academic competencies; bridges JHS to TVL/TechPro track in SHS |
-| **Admission Method** | Skills aptitude assessment — school-determined; method varies by SDO and school |
-| **Common assessment types** | Aptitude test, manual dexterity test, practical skills demonstration, or interest inventory |
-| **No standardized national exam** | Unlike STE, there is no division-wide standardized test; each school/SDO sets its own assessment |
-| **TESDA link** | SPTVE graduates may pursue TESDA National Certificates (NC) in SHS TVL track |
-| **Specializations common in Visayas** | Dressmaking, Food Technology, Electrical Installation, Computer Hardware Servicing |
+| **Admission Method** | Aptitude test or practical skills demo — school-determined |
+| **No Standardized National Exam** | Each school/SDO sets its own assessment |
 
----
+### Complete SCP Assessment Matrix
 
-### Complete SCP Comparison Matrix
+| SCP | Written Exam | Audition/Tryout | Interview | NAT Score |
+|---|---|---|---|---|
+| STE | ✅ Division-wide | ❌ | Sometimes | ❌ |
+| SPA | ✅ Qualifying | ✅ Per art field | ✅ | ❌ |
+| SPS | ❌ | ✅ Sports tryout | ❌ | ❌ |
+| SPJ | ✅ SPJQE | ❌ | ✅ | ❌ |
+| SPFL | ❌ | ❌ | ❌ | ✅ English NAT |
+| SPTVE | School-determined | School-determined | ❌ | ❌ |
 
-| SCP | Assessment Type | Written Exam | Audition / Tryout | Interview | Recommendation Letter | NAT Score |
-|---|---|---|---|---|---|---|
-| **STE** | Written entrance exam | ✅ Standardized, division-wide | ❌ | Sometimes | ❌ | ❌ |
-| **SPA** | Exam + audition + interview | ✅ Qualifying exam | ✅ Per art field | ✅ | ❌ | ❌ |
-| **SPS** | Skills/physical tryout | ❌ | ✅ Sports tryout | ❌ | ✅ Good moral cert. | ❌ |
-| **SPJ** | SPJQE exam + interview | ✅ SPJQE | ❌ | ✅ | ✅ From teacher | ❌ |
-| **SPFL** | NAT score screening | ❌ | ❌ | ❌ | ❌ | ✅ English NAT |
-| **SPTVE** | Aptitude assessment | School-determined | School-determined | ❌ | ❌ | ❌ |
+### SCP Workflow States in the System
+
+```prisma
+enum ApplicationStatus {
+  PENDING          // Application received; awaiting registrar review
+  EXAM_SCHEDULED   // Registrar has set the assessment date
+  EXAM_TAKEN       // Applicant appeared and completed the assessment
+  PASSED           // Met cut-off; equivalent to APPROVED; ready for section assignment
+  FAILED           // Did not meet cut-off; may be offered regular section
+  APPROVED         // Verified and assigned to section (open admission path)
+  REJECTED         // Definitively rejected
+  ENROLLED         // Officially enrolled and section confirmed
+}
+```
 
 ---
 
 ## A4. Grade 11 SHS — Special Program Admission
 
-### Grade 11 STEM — Criteria + Placement Exam + Interview (School-Specific)
-
-The school conducts **both a placement exam and an interview** for Grade 11 STEM aspirants — consistent with DepEd's national STEM entry criteria and the school's own admission procedure.
+### Grade 11 STEM — Criteria + School-Level Assessment
 
 **DepEd national minimum criteria for STEM:**
 
-| Criterion | Minimum Requirement |
+| Criterion | Minimum |
 |---|---|
-| Final Grade in Science (Grade 10) | **85 and above** |
-| Final Grade in Mathematics (Grade 10) | **85 and above** |
-| Career Assessment Exam — STEM subtest | Percentile rank of **86 and above** |
+| Final Grade in Science (Grade 10) | 85 and above |
+| Final Grade in Mathematics (Grade 10) | 85 and above |
+| Career Assessment Exam — STEM subtest | Percentile rank 86 and above |
 
-**School-specific additions:**
+Schools may add a placement examination and/or interview on top of the national criteria. The system supports this via the `ScpProgram.requiresInterview` flag and the assessment workflow.
 
-| Addition | Detail |
-|---|---|
-| Placement examination | Administered to all Grade 11 STEM aspirants; tests Science and Math proficiency |
-| Interview | Conducted separately for STEM aspirants; assesses motivation, aptitude, and career plan |
-| Schedule coordination | Registrar announces exam and interview schedule after Early Registration closes |
+### Grade 11 Non-STEM — Open to Grade 10 Completers
 
-**Process flow for Grade 11 STEM at the school:**
-
-```
-EARLY REGISTRATION (Jan–Feb)
-  Applicant submits BEEF + Grade 10 SF9 + PSA BC
-  Declares track: Academic / Strand preference: STEM
-  Status: PRE-REGISTERED (pending exam)
-        ↓
-REGISTRAR SCHEDULES PLACEMENT EXAM
-  School announces exam date (typically March–April or before June)
-  Applicant is notified via school bulletin / Facebook / SMS
-  Status: EXAM_SCHEDULED
-        ↓
-PLACEMENT EXAM DAY
-  Applicant takes written exam (Science + Mathematics)
-  Registrar records that applicant appeared
-  Status: EXAM_TAKEN
-        ↓
-INTERVIEW (if applicable)
-  Applicant attends interview with panel (school head, subject teachers)
-  Status: INTERVIEWED
-        ↓
-RESULTS RELEASED
-  ├── PASSED (met score threshold + interview cleared)
-  │     Status: APPROVED → proceeds to Phase 2 Regular Enrollment
-  │     Assigned to Grade 11 STEM section in June
-  │
-  └── FAILED (did not meet threshold)
-        Status: REJECTED (from STEM) → may apply to another strand (ABM, HUMSS, GAS)
-        Registrar informs applicant; offers alternative strand placement
-```
-
----
-
-### Grade 11 Non-STEM Tracks — Open to Grade 10 Completers
-
-For Grade 11 applicants who are NOT applying for STEM, the process is simpler — no exam, no interview. Entry is based on Grade 10 SF9 grades meeting minimum DepEd criteria (which are very low or absent for most tracks):
-
-| Track | Admission | Registrar Action |
+| Track | Admission | System Action |
 |---|---|---|
-| Academic — HUMSS | Present Grade 10 SF9 | Verify grades; assign to HUMSS section |
-| Academic — ABM | Present Grade 10 SF9 | Verify grades; assign to ABM section |
-| Academic — GAS | Present Grade 10 SF9 | Verify grades; assign to GAS section |
-| TechPro — ICT | Present Grade 10 SF9 | Verify completion; assign to ICT section |
-| TechPro — HospTour | Present Grade 10 SF9 | Verify completion; assign section |
-| *(other TechPro clusters)* | Present Grade 10 SF9 | Verify completion; assign section |
+| Academic — HUMSS | Verify Grade 10 SF9 | Approve + assign section (open path) |
+| Academic — ABM | Verify Grade 10 SF9 | Approve + assign section |
+| Academic — GAS | Verify Grade 10 SF9 | Approve + assign section |
+| TechPro clusters | Verify Grade 10 SF9 | Approve + assign section |
 
 ---
 
-## A5. System Design Implications
+## A5. System Module Design Implications — All Five Modules
 
-### Updated ApplicationStatus Enum (Required Change to PRD)
+### Module 1 — Admission (Online + F2F)
 
-The current three-value enum (`PENDING`, `APPROVED`, `REJECTED`) is insufficient for schools with SCP programs. The following extended enum is required:
+**Key policy facts that drive design:**
+- Two admission channels (ONLINE and F2F) produce identical `Applicant` records. Only `admissionChannel` and `encodedById` differ.
+- The school configures which channels are active (`SchoolSettings.admissionChannels`). A school that does not offer online admission disables the public portal entirely.
+- SCP options in the admission form are loaded dynamically from `GET /api/scp-programs`. Schools configure only the SCPs they offer; the form shows only those. No SCP list is hardcoded.
+- The online portal is gated by `enrollmentOpen`. The F2F route is never gated — registrars always have access.
+- Privacy notice text (RA 10173) uses `SchoolSettings.schoolName`, `division`, and `region` — no hardcoded school name.
 
+**`admissionChannel` stored in `Applicant`:**
 ```prisma
-enum ApplicationStatus {
-  // ── Open Admission Path ──────────────────
-  PENDING               // Submitted; awaiting registrar review
-  APPROVED              // Verified; assigned to section
-  REJECTED              // Rejected (data integrity issue or SCP failure)
-
-  // ── SCP Admission Path (new) ─────────────
-  EXAM_SCHEDULED        // Registrar has set the exam/audition/tryout date
-  EXAM_TAKEN            // Applicant appeared and completed the assessment
-  PASSED                // Met SCP cut-off; now equivalent to APPROVED; ready for section assignment
-  FAILED                // Did not meet SCP cut-off; may be offered regular section
+enum AdmissionChannel {
+  ONLINE   // submitted via /apply
+  F2F      // entered by registrar at /f2f-admission
 }
 ```
 
-### New `applicantType` Field Required
+### Module 2 — Enrollment Management (Registrar Only)
 
-The system must distinguish between a regular applicant and an SCP applicant from the moment of submission:
+**Key policy facts that drive design:**
+- Only the Registrar (and System Admin) can process applications, assign sections, and confirm enrollment. Teachers have no access to this module.
+- The two-path workflow (open admission vs. SCP) must be visually distinguished in the `/applications` inbox.
+- Section assignment during enrollment must respect `maxCapacity` and use a `FOR UPDATE` row lock to prevent over-enrollment.
+- Pre-registered students (Grades 8–10, 12) can be enrolled directly without going through the full application workflow — they submit a confirmation slip and are assigned to a section.
+- The enrollment gate (`enrollmentOpen`) controls the public portal only. F2F enrollment is always open.
 
-```prisma
-enum ApplicantType {
-  REGULAR               // Open admission — no exam required
-  STE                   // Science, Technology, Engineering exam
-  SPA                   // Special Program in Arts — exam + audition
-  SPS                   // Special Program in Sports — tryout
-  SPJ                   // Special Program in Journalism — SPJQE + interview
-  SPFL                  // Special Program in Foreign Language — NAT screening
-  SPTVE                 // Special Program in Tech-Voc — aptitude assessment
-  STEM_GRADE11          // Grade 11 STEM — placement exam + interview
-}
+**Status machine:**
+```
+PENDING → EXAM_SCHEDULED → EXAM_TAKEN → PASSED → APPROVED → ENROLLED   (SCP path)
+PENDING → APPROVED → ENROLLED                                            (open path)
+PENDING → REJECTED                                                       (either path)
 ```
 
-### Two Workflow Paths in `/applications`
+### Module 3 — Student Information Management System (SIMS)
 
-The registrar's `/applications` inbox must visually distinguish the two paths:
+**Key policy facts that drive design:**
+- A learner's LRN is **permanent and immutable**. It must be displayed as read-only in the SIMS profile edit form.
+- PSA Birth Certificate is submitted only once. The system records the PSA certificate number, not the physical document.
+- Academic records (SF9, SF10) must never be withheld — the system enforces this by having no fee field and no "hold records" functionality.
+- The SIMS must support all learner types: New Enrollee, Transferee, Balik-Aral, Continuing, OSCYA.
+- IP status, 4Ps beneficiary status, and PWD status are sensitive classifications collected for DepEd planning purposes only. They are never displayed in filterable public-facing views.
+- Learner history across multiple academic years must be preserved in `Enrollment` records — the system never deletes historical enrollment data.
+- All edits to student records create an `AuditLog` entry with `STUDENT_RECORD_UPDATED` listing changed field names — this satisfies RA 10173 accountability requirements.
 
-| Regular Applicant | SCP Applicant |
-|---|---|
-| Verify documents | Verify documents |
-| Approve & Assign Section (1 step) | Schedule exam → Record result → Approve/Reject (3 steps) |
-| No exam date, no score | Has exam date, has score/result |
-| Immediate | 2–6 weeks between submission and enrollment |
+**LRN immutability enforcement (both backend and frontend):**
+```ts
+// Backend: the lrn field is excluded from the update schema
+// const updateSchema = admissionSchema.omit({ lrn: true });
+
+// Frontend: LRN is rendered as a read-only display, not an input
+<p className="font-mono text-sm">{student.lrn}</p>  // Not an <input>
+```
+
+### Module 4 — Teacher Management
+
+**Key policy facts that drive design:**
+- Teachers in this system are both staff members (with login accounts) and section advisers (assigned to sections).
+- A teacher may not have a system account initially — the registrar creates their profile first, then optionally provisions an account.
+- Teacher accounts have `role: TEACHER` — they have read-only access to their own sections and no access to enrollment, SIMS, or settings.
+- Teachers are identified by their DepEd Employee ID (`Teacher.employeeId`) — this is the canonical identifier in DepEd HR records.
+- When a teacher account is provisioned, a welcome email is sent using `SchoolSettings.schoolName` in the subject. No hardcoded school name.
+- A deactivated teacher account (`isActive = false`) takes effect on the teacher's very next API call — they are not manually logged out but are rejected on the next request.
+
+**Teacher ↔ Section relationship:**
+```
+Teacher     1────* Section    (advising teacher assignment)
+User        1────1 Teacher    (optional; teacher may have no login account)
+```
+
+### Module 5 — Grade Level & Sectioning Management
+
+**Key policy facts that drive design:**
+- Grade levels, strands, and SCP programs are configured **per academic year**, not globally. A new academic year may offer different strands or discontinue an SCP.
+- Section names are school-defined (e.g., "Rizal", "Bonifacio") — no hardcoded naming convention.
+- Maximum section capacity defaults to 40 but is configurable per section. DepEd does not mandate a specific class size for all schools; the system allows any value.
+- Grade levels that `requiresEarlyReg = true` (Grade 7, Grade 11, and transferees) must have their sections ready before the Phase 1 Early Registration window opens.
+- Pre-registered students (Grades 8–10, 12) are assigned to sections during Phase 2. Section assignment for these students may be automated or manual.
+- SCP sections may be designated by setting `Section.scpCode` — e.g., a "Grade 7 STE" section. This is informational only; the system does not enforce SCP section exclusivity.
+- Section deletion is permanently blocked if any `Enrollment` record references it. The UI shows how many enrolled students must be reassigned before deletion is allowed.
+
+**Dynamic grade level loading:**
+```ts
+// Grade levels are NEVER hardcoded in any dropdown, form, or filter
+// They are always loaded from the active AY:
+GET /api/grade-levels         // public (admission form)
+GET /api/grade-levels/all     // authenticated (registrar tools)
+```
+
+### Cross-Module: School-Agnostic Configuration
+
+Every school-specific value is a runtime setting stored in `SchoolSettings` and `AcademicYear`:
+
+| What varies per school | Where configured | System reads from |
+|---|---|---|
+| School name | Settings Tab 1 | `SchoolSettings.schoolName` |
+| School ID, Division, Region | Settings Tab 1 | `SchoolSettings.schoolId/division/region` |
+| Logo and accent color | Settings Tab 1 | `SchoolSettings.logoUrl` + `colorScheme` |
+| Grade levels offered | Settings Tab 3 | `GradeLevel` table for active AY |
+| Strands and tracks | Settings Tab 3 | `Strand` table for active AY |
+| SCP programs offered | Settings Tab 3 | `ScpProgram` table for active AY |
+| Admission channels | Settings Tab 1 | `SchoolSettings.admissionChannels` |
+| Enrollment phase dates | Settings Tab 2 | `AcademicYear.phase1Start/End`, `phase2Start/End` |
+
+No component, controller, or email template contains a hardcoded school name, grade level name, strand name, or SCP code.
 
 ---
 
@@ -1227,26 +743,33 @@ The registrar's `/applications` inbox must visually distinguish the two paths:
 ```
 CALENDAR YEAR (during active school year)              NEXT CALENDAR YEAR
 ──────────────────────────────────────────────────────────────────────────────
-NOV–DEC         JAN–FEB              MAR–APR         MAY–JUN
+NOV–DEC             JAN–FEB              MAR–APR         MAY–JUN
 ────────────────────────────────────────────────────────────────────────────
-[SCP SCREENING   ] [EARLY REGISTRATION] [SCP EXAMS &   ] [REGULAR ENROLLMENT]
-Announcements      Phase 1 (DO 017):    RESULTS:          Phase 2 (DO 017):
-- STE exam date    G7 + G11 applicants  STE written exam   All grade levels
-- SPA audition     submit BEEF +        SPA audition       confirm enrollment
-- SPS tryout       documents            SPS tryout         Section assignment
-- SPJ SPJQE date   Pre-registration     SPJ interview      Classes open June
-- SPFL NAT check   (not yet enrolled)   Results released
-                                        PASSED → APPROVED
-                                        FAILED → Alt offer
+[SCP ANNOUNCEMENTS] [EARLY REGISTRATION] [SCP EXAMS &   ] [REGULAR ENROLLMENT]
+Schools announce:   Phase 1 (DO 017):    RESULTS:          Phase 2 (DO 017):
+- STE exam date     G7 + G11 applicants  STE written exam   All grade levels
+- SPA audition      submit BEEF +        SPA audition        confirm enrollment
+- SPS tryout date   documents via        SPS tryout          Section assignment
+- SPJ SPJQE date    ONLINE or F2F        SPJ SPJQE exam      Enrollment gate
+- SPFL NAT check    Pre-registration     Results released     opens online
+                    (not yet enrolled)   PASSED → APPROVED   Classes open June
+                                         FAILED → Alt offer
 ```
+
+**System gate states across the timeline:**
+
+| Period | `enrollmentOpen` | What it affects |
+|---|---|---|
+| NOV–DEC | Typically OFF | Online portal at `/apply` shows `/closed` page |
+| JAN–FEB (Phase 1) | ON | Public `/apply` portal accepts Early Registration applications |
+| MAR–MAY (SCP Processing) | Registrar-discretion | F2F always open; online may stay ON or close |
+| JUN (Phase 2) | ON briefly | Confirmation period; online may reopen for late entrants |
+| Classes in session | Typically OFF | Walk-in (F2F) only; online portal closed |
 
 ---
 
-*Addendum compiled from:*
-- *DepEd Memorandum No. 149, s. 2011 — Special Curricular Programs in JHS*
-- *Division Memorandum No. 157, s. 2025 — STE Admission Test, Negros Occidental SDO*
-- *DepEd Order No. 017, s. 2025 — Revised Basic Education Enrollment Policy*
-- *DepEd DM 012, s. 2026 — Strengthened Senior High School Curriculum*
-- *TeacherPH — List of DepEd Special Curricular Programs (SCPs)*
-- *USHAT Guidelines — Unified Science High School Admissions Test*
-- *School Facebook Page — SY 2024–2025 Grade 11 Placement Exam and STEM Interview Announcements*
+*Document v3.0.0*
+*System: School Admission, Enrollment & Information Management System*
+*Modules: Admission (Online + F2F) · Enrollment Management · SIMS · Teacher Management · Grade Level & Sectioning Management*
+*Policy basis: DepEd Order No. 017, s. 2025 · DM 012, s. 2026 · DM 149, s. 2011 · RA 10173 · RA 7797 as amended by RA 11480*
+*School-agnostic: all school-specific values (name, grade levels, strands, SCP programs) are runtime-configurable*

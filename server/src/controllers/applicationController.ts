@@ -208,7 +208,6 @@ export async function store(req: Request, res: Response) {
         sex: body.sex === 'Male' ? 'MALE' : 'FEMALE',
         placeOfBirth: body.placeOfBirth?.trim() || null,
         religion: body.religion?.trim() || null,
-        motherTongue: body.motherTongue?.trim() || null,
 
         // Address as JSON
         currentAddress: body.currentAddress,

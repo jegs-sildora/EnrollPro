@@ -1,8 +1,8 @@
 # Sidebar Navigation Specification
-## Admission & Enrollment Information Management System
+## Web-Based School Admission, Enrollment & Information Management System
 
 **Document Type:** Sidebar Navigation Reference
-**Derived From:** PRD v2.2.1 · Registrar Storyboard Workflow · School Year Setup Architecture
+**Derived From:** PRD v3.0.0 · Registrar Storyboard Workflow · School Year Setup Architecture
 **Policy Basis:** DepEd Order No. 017, s. 2025 · DepEd Memorandum No. 012, s. 2026
 **Stack:** React 19 · React Router v7 · shadcn/ui · Tailwind CSS v4 · Lucide React Icons
 
@@ -15,7 +15,7 @@ The application has two distinct navigation contexts:
 | Context | Who Sees It | Layout |
 |---|---|---|
 | **Public** | Unauthenticated visitors | No sidebar — full-page guest layout |
-| **Authenticated Dashboard** | REGISTRAR · TEACHER | Left sidebar with role-filtered nav items |
+| **Authenticated Dashboard** | REGISTRAR · SYSTEM_ADMIN · TEACHER | Left sidebar with role-filtered nav items |
 
 The sidebar is rendered inside `AppLayout.tsx` and is shared by both roles. Each nav item is conditionally rendered based on the JWT role decoded from the Zustand `authStore`.
 
@@ -69,12 +69,14 @@ The sidebar is rendered inside `AppLayout.tsx` and is shared by both roles. Each
 
 | # | Label | Icon (Lucide React) | Route | Role Access | PRD Section |
 |---|---|---|---|---|---|
-| 1 | Dashboard | `LayoutDashboard` | `/dashboard` | REGISTRAR only | §6.2 |
-| 2 | Applications | `ClipboardList` | `/applications` | REGISTRAR only | §6.3.2 |
-| 3 | Students | `Users` | `/students` | REGISTRAR only | §6.5 |
-| 4 | Sections | `School` | `/sections` | REGISTRAR only | §6.3.1 |
-| 5 | Audit Logs | `ScrollText` | `/audit-logs` | REGISTRAR only | §6.6 |
-| 6 | Settings | `Settings` | `/settings` | REGISTRAR only | §6.4 |
+| 1 | Dashboard | `LayoutDashboard` | `/dashboard` | ALL roles | §6.3 |
+| 2 | Walk-in Admission | `UserPlus` | `/f2f-admission` | REGISTRAR, SYSTEM_ADMIN | §6.2 |
+| 3 | Applications | `ClipboardList` | `/applications` | REGISTRAR, SYSTEM_ADMIN | §6.4 |
+| 4 | Students | `Users` | `/students` | REGISTRAR, SYSTEM_ADMIN | §6.5 |
+| 5 | Teachers | `GraduationCap` | `/teachers` | REGISTRAR, SYSTEM_ADMIN | §6.6 |
+| 6 | Sections | `School` | `/sections` | REGISTRAR, SYSTEM_ADMIN | §6.7 |
+| 7 | Audit Logs | `ScrollText` | `/audit-logs` | REGISTRAR, SYSTEM_ADMIN | §6.9 |
+| 8 | Settings | `Settings` | `/settings` | REGISTRAR, SYSTEM_ADMIN | §6.8 |
 
 ---
 
@@ -98,7 +100,7 @@ The sidebar is rendered inside `AppLayout.tsx` and is shared by both roles. Each
 ```
 Icon  : LayoutDashboard
 Route : /dashboard
-Auth  : JWT required — REGISTRAR and TEACHER (different content per role)
+Auth  : JWT required — ALL roles (different content per role)
 Page  : client/src/pages/dashboard/Index.tsx
 API   : GET /api/dashboard/stats
 ```
@@ -124,6 +126,18 @@ API   : GET /api/dashboard/stats
 │  │  ...                        │  │  ● Pending   ● Approved      │  │
 │  └─────────────────────────────┘  └──────────────────────────────┘  │
 │                                                                      │
+│  ┌──────────────────────────────┐                                    │
+│  │  PieChart (donut)            │                                    │
+│  │  Admission Channel Breakdown │                                    │
+│  │  ● Online  ● F2F (Walk-in)   │                                    │
+│  └──────────────────────────────┘                                    │
+│                                                                      │
+│  SCP PIPELINE  (shown only if SCP programs are configured)           │
+│  ┌──────────────────────────────────────────────────────────────────┐│
+│  │  STE: 5 Pending · 3 Exam Scheduled · 2 Passed · 1 Failed       ││
+│  │  SPA: 3 Pending · 2 Exam Scheduled · 1 Passed · 0 Failed       ││
+│  └──────────────────────────────────────────────────────────────────┘│
+│                                                                      │
 │  RECENT ACTIVITY (last 10 AuditLog entries)                         │
 │  • Feb 3, 9:14 AM  Registrar Cruz  APPLICATION_APPROVED → #42      │
 │  • Feb 1, 8:00 AM  Registrar Cruz  ENROLLMENT_GATE_TOGGLED → OPEN  │
@@ -143,6 +157,12 @@ API   : GET /api/dashboard/stats
 **Charts:**
 - `BarChart` (Recharts, horizontal) — enrollment count per grade level for the active academic year
 - `PieChart` (Recharts, donut) — proportion of PENDING / APPROVED / ENROLLED / REJECTED applications
+- `PieChart` (Recharts, donut) — Admission Channel Breakdown: Online vs F2F
+
+**SCP Pipeline Panel:**
+- Shown only when the school has configured and activated SCP programs for the active AY
+- Displays PENDING / EXAM_SCHEDULED / EXAM_TAKEN / PASSED / FAILED counts per SCP program code
+- Collapses gracefully if no SCP programs are configured
 
 **Recent Activity Feed:**
 - Last 10 `AuditLog` entries in chronological reverse order
@@ -156,18 +176,53 @@ API   : GET /api/dashboard/stats
 
 ---
 
-### 2. Applications — `/applications`
+### 2. Walk-in Admission — `/f2f-admission`
+
+```
+Icon  : UserPlus
+Route : /f2f-admission
+Auth  : JWT required — REGISTRAR, SYSTEM_ADMIN
+Page  : client/src/pages/admission/F2FAdmission.tsx
+API   : POST /api/applications/f2f
+```
+
+**What the registrar sees:**
+
+The F2F admission form is the registrar-facing equivalent of the public portal, used when a student or parent walks in to apply in person. The registrar fills all fields on the applicant's behalf.
+
+**Key differences from online admission:**
+
+| Aspect | Online | F2F |
+|---|---|---|
+| Enrollment gate | Redirects to `/closed` when OFF | Always accessible (registrar override) |
+| `admissionChannel` stored | `ONLINE` | `F2F` |
+| `encodedById` | null | Registrar's `User.id` |
+| Privacy consent | Applicant checks on screen | Registrar confirms physical signature checkbox |
+| Email delivery | Always attempted | Attempted if `emailAddress` provided |
+| Fast-track option | Not available | Registrar may set initial status to `APPROVED` if documents are complete |
+| Tracking number delivery | On-screen + email | On-screen (registrar prints or writes down) + email if address provided |
+
+All the same validation rules, SCP conditional fields, and strand selection logic apply identically.
+
+---
+
+### 3. Applications — `/applications`
 
 ```
 Icon  : ClipboardList
 Route : /applications
-Auth  : JWT required — REGISTRAR only
+Auth  : JWT required — REGISTRAR, SYSTEM_ADMIN
 Page  : client/src/pages/applications/Index.tsx
         client/src/pages/applications/[id].tsx  (detail view)
-API   : GET  /api/applications?status=&gradeLevelId=&page=&limit=
+API   : GET  /api/applications?status=&gradeLevelId=&applicantType=&admissionChannel=&page=&limit=
         GET  /api/applications/:id
+        POST /api/applications/f2f
         PATCH /api/applications/:id/approve  { sectionId }
         PATCH /api/applications/:id/reject   { rejectionReason? }
+        PATCH /api/applications/:id/schedule-exam
+        PATCH /api/applications/:id/record-result
+        PATCH /api/applications/:id/pass
+        PATCH /api/applications/:id/fail
 ```
 
 **What the registrar sees:**
@@ -189,15 +244,18 @@ APPLICATIONS                     [ Search by LRN or name... 🔍 ]  [Filter ▾]
 **Filter toolbar:**
 - Real-time search: 300ms debounce on LRN or full name → `?search=` query param (no page reload)
 - Grade Level filter: dynamic dropdown from active academic year's grade levels
-- Status filter: ALL / PENDING / APPROVED / REJECTED / ENROLLED
+- Applicant Type filter: ALL / REGULAR / configured SCP codes (dynamic from `GET /api/scp-programs/all`)
+- Status filter: ALL / PENDING / APPROVED / REJECTED / ENROLLED / EXAM_SCHEDULED / EXAM_TAKEN / PASSED / FAILED
+- Admission Channel filter: ALL / ONLINE / F2F
 - Academic Year filter: defaults to active year; can be switched to view historical data
 
 **Application detail view (`/applications/:id`):**
 - Full applicant record: personal info, family & contact, enrollment preference (grade, track, cluster/strand)
 - Phase indicator: PHASE 1 (pre-registration) or PHASE 2 (official enrollment)
-- Two primary actions:
-  - **Approve & Assign Section** → opens section selector Dialog (capacity-safe, FOR UPDATE lock)
-  - **Reject Application** → opens Dialog with optional rejection reason text area
+- Admission channel badge: `ONLINE` or `F2F`
+- Two-path approval actions determined by `applicantType` and current `status`:
+  - **Regular path:** `[ Approve & Assign Section ]` · `[ Reject Application ]`
+  - **SCP path:** `[ Verify & Schedule Exam ]` → `[ Record Result ]` → `[ Mark as Passed & Assign Section ]` or `[ Mark as Failed ]`
 - For SY 2026–2027 Grade 11: shows `Track` and `Elective Cluster` fields instead of `Strand`
 - For Grade 12 and JHS: shows `Strand` (Grade 12) or `N/A` (Grade 7–10)
 
@@ -211,14 +269,18 @@ APPLICATIONS                     [ Search by LRN or name... 🔍 ]  [Filter ▾]
 
 ---
 
-### 3. Students — `/students`
+### 4. Students — `/students`
 
 ```
 Icon  : Users
 Route : /students
-Auth  : JWT required — REGISTRAR only
+Auth  : JWT required — REGISTRAR, SYSTEM_ADMIN
 Page  : client/src/pages/students/Index.tsx
-API   : GET /api/students?search=&gradeLevelId=&sectionId=&status=&academicYearId=&page=&limit=
+        client/src/pages/students/Profile.tsx  (student profile)
+API   : GET /api/students?search=&gradeLevelId=&sectionId=&status=&admissionChannel=&academicYearId=&page=&limit=
+        GET /api/students/:id
+        PUT /api/students/:id
+        GET /api/students/:id/history
 ```
 
 **What the registrar sees:**
@@ -244,15 +306,27 @@ STUDENTS                   [ Search by LRN or name... 🔍 ]
 | Full Name | Yes | LAST, First MI — uppercase last name |
 | Grade Level | Yes | `Badge` component |
 | Section | Yes | Plain text |
+| Admission Channel | Yes | `Badge` — `ONLINE` or `F2F` |
 | Status | Yes | Colored `Badge` (PENDING / APPROVED / ENROLLED / REJECTED) |
 | Date Applied | Yes | Formatted: `Mon DD, YYYY` |
-| Actions | No | `[View]` button → opens application detail |
+| Actions | No | `[View]` · `[Edit]` buttons → opens student profile |
 
 **Filter toolbar:**
 - Real-time search: 300ms debounce — searches both LRN and full name simultaneously
 - All filters bound to URL search params via `useSearchParams()` — shareable deep-link URLs
 - Section dropdown is dynamically filtered by the selected Grade Level (cascading filter)
+- Admission Channel filter: ALL / ONLINE / F2F
 - Pagination: 15 records per page (server-side)
+
+**Student Profile (`/students/:id`) — 4 tabs:**
+
+**Tab 1 — Personal Information:** All demographic fields from the `Applicant` model. Editable by REGISTRAR and SYSTEM_ADMIN. LRN is read-only. All changes write an `AuditLog` entry with `actionType: STUDENT_RECORD_UPDATED`.
+
+**Tab 2 — Academic History:** Chronological list of all enrollments across academic years (year, grade, section, date enrolled, enrolled by).
+
+**Tab 3 — Application Record:** Original application details, SCP assessment records (if applicable), status timeline from AuditLog entries.
+
+**Tab 4 — Classifications & Special Programs:** Learner type, IP community, 4Ps, PWD, current SCP designation.
 
 **Purpose:** This is the primary lookup tool during busy enrollment days. When a parent calls asking about their child's section, or a teacher asks which section a student is in, the registrar searches here. It is also used to find a specific learner before editing their record or assigning/confirming their section.
 
@@ -260,12 +334,58 @@ STUDENTS                   [ Search by LRN or name... 🔍 ]
 
 ---
 
-### 4. Sections — `/sections`
+### 5. Teachers — `/teachers`
+
+```
+Icon  : GraduationCap
+Route : /teachers
+Auth  : JWT required — REGISTRAR, SYSTEM_ADMIN
+Page  : client/src/pages/teachers/Index.tsx
+        client/src/pages/teachers/Profile.tsx  (teacher profile)
+API   : GET    /api/teachers?search=&page=&limit=
+        POST   /api/teachers
+        GET    /api/teachers/:id
+        PUT    /api/teachers/:id
+        POST   /api/teachers/:id/provision-account
+```
+
+**What the registrar sees:**
+
+```
+TEACHERS                                    [ + Add Teacher ]
+
+  Employee ID │ Full Name             │ Specialization     │ Assigned Sections │ Account Status │ Actions
+  ────────────┼───────────────────────┼────────────────────┼───────────────────┼────────────────┼──────────────────────────
+  T-2024-001  │ Santos, Caridad M.    │ Math & Science     │ 2                 │ ● Active       │ [View] [Edit]
+  T-2024-002  │ Reyes, Jun P.         │ English            │ 1                 │ ● Active       │ [View] [Edit]
+  —           │ Flores, Ana L.        │ Filipino           │ 1                 │ ○ Not Provisioned │ [View] [Edit] [Provision Account]
+```
+
+**Create Teacher dialog fields:**
+- Last Name, First Name, Middle Name
+- Employee ID (optional)
+- Contact Number
+- Specialization
+
+**Provision System Account:**
+When a teacher profile has no system login, a "Provision Account" action opens a dialog asking for an email address. The system creates a `User` record with `role: TEACHER`, `mustChangePassword: true`, a system-generated temporary password. Sends a welcome email with the school name, temporary password, and login instructions.
+
+**Teacher Profile (`/teachers/:id`) — 3 tabs:**
+
+**Tab 1 — Profile:** Full name, Employee ID, Contact Number, Specialization. Editable by REGISTRAR and SYSTEM_ADMIN.
+
+**Tab 2 — Assigned Sections:** All sections assigned to this teacher for the active AY. Shows grade level, section name, enrolled count / max capacity. "Unassign" removes the teacher (confirmation dialog; audit logged).
+
+**Tab 3 — System Account:** Account status badge (Active / Inactive / Not Provisioned). If active: last login timestamp, account creation date, role. SYSTEM_ADMIN additionally sees: Deactivate Account button, Reset Password button.
+
+---
+
+### 6. Sections — `/sections`
 
 ```
 Icon  : School
 Route : /sections
-Auth  : JWT required — REGISTRAR only
+Auth  : JWT required — REGISTRAR, SYSTEM_ADMIN
 Page  : client/src/pages/sections/Index.tsx
 API   : GET    /api/sections?academicYearId=&gradeLevelId=
         POST   /api/sections
@@ -307,8 +427,9 @@ SECTIONS                Year: [ SY 2026–2027 ▾ ]   Grade: [ All ▾ ]   [ + 
 |---|---|---|
 | Grade Level | `Select` | Dropdown from active academic year's grade levels |
 | Section Name | `Input` | Free text (e.g., "Rizal", "STEM-A", "ICT-A") |
-| Max Capacity | `Input` (number) | Default: 40 |
-| Advising Teacher | `Select` (optional) | Dropdown from all TEACHER-role users |
+| Max Capacity | `Input` (number) | Default: 40, minimum: 1 |
+| Advising Teacher | `Select` (optional) | Searchable dropdown from Teacher directory — shows Employee ID + Name |
+| SCP Code | `Select` (optional) | Dropdown from active AY's SCP programs |
 
 **Delete behavior:**
 - A section with zero enrollments: deletable with confirmation Dialog
@@ -323,14 +444,14 @@ For SY 2026–2027, sections are named either by track (e.g., `Academic-A`) or b
 
 ---
 
-### 5. Audit Logs — `/audit-logs`
+### 7. Audit Logs — `/audit-logs`
 
 ```
 Icon  : ScrollText
 Route : /audit-logs
-Auth  : JWT required — REGISTRAR only
+Auth  : JWT required — REGISTRAR, SYSTEM_ADMIN (different visibility rules)
 Page  : client/src/pages/audit-logs/Index.tsx
-API   : GET /api/audit-logs?actionType=&dateFrom=&dateTo=&page=&limit=
+API   : GET /api/audit-logs?actionType=&dateFrom=&dateTo=&userId=&page=&limit=&export=csv
 ```
 
 **What the registrar sees:**
@@ -354,13 +475,36 @@ AUDIT LOGS          [ Action Type: All ▾ ]   [ Date Range: __ to __ ]
 | Action Type | Trigger |
 |---|---|
 | `USER_LOGIN` | Every successful JWT login |
+| `USER_LOGOUT` | User logs out |
 | `APPLICATION_SUBMITTED` | Any applicant submits the public form at `/apply` |
+| `F2F_APPLICATION_ENTERED` | Registrar enters a walk-in application via `/f2f-admission` |
 | `APPLICATION_APPROVED` | Registrar approves + assigns a section |
 | `APPLICATION_REJECTED` | Registrar rejects with or without a reason |
+| `EXAM_SCHEDULED` | Registrar schedules SCP assessment |
+| `EXAM_RESULT_RECORDED` | Registrar records assessment result (score, pass/fail) |
+| `APPLICATION_PASSED` | Registrar marks SCP applicant as PASSED |
+| `APPLICATION_FAILED` | Registrar marks SCP applicant as FAILED |
+| `STUDENT_RECORD_UPDATED` | Registrar updates a student's personal information |
 | `SECTION_CREATED` | Registrar creates a new section |
 | `SECTION_UPDATED` | Registrar edits section name, capacity, or advising teacher |
+| `SECTION_DELETED` | Registrar deletes a section |
+| `TEACHER_CREATED` | Registrar adds a new teacher profile |
+| `TEACHER_UPDATED` | Registrar updates a teacher profile |
+| `TEACHER_ACCOUNT_PROVISIONED` | Registrar provisions a system account for a teacher |
 | `ENROLLMENT_GATE_TOGGLED` | Registrar opens or closes the public enrollment portal |
-| `SETTINGS_UPDATED` | School name, logo, or academic year changes |
+| `ACADEMIC_YEAR_CREATED` | Registrar creates a new academic year |
+| `ACADEMIC_YEAR_ACTIVATED` | Registrar activates an academic year |
+| `SCHOOL_SETTINGS_UPDATED` | School name, logo, or profile changes |
+| `ADMIN_USER_CREATED` | SYSTEM_ADMIN creates a user account (admin-only visibility) |
+| `ADMIN_USER_UPDATED` | SYSTEM_ADMIN updates a user account (admin-only visibility) |
+| `ADMIN_USER_DEACTIVATED` | SYSTEM_ADMIN deactivates a user account (admin-only visibility) |
+| `ADMIN_USER_REACTIVATED` | SYSTEM_ADMIN reactivates a user account (admin-only visibility) |
+| `ADMIN_PASSWORD_RESET` | SYSTEM_ADMIN resets a user's password (admin-only visibility) |
+| `ADMIN_EMAIL_RESENT` | SYSTEM_ADMIN manually resends a failed email (admin-only visibility) |
+
+**Role-based visibility:**
+- **REGISTRAR** sees all action types **except** `ADMIN_*` types. No user filter dropdown. No CSV export.
+- **SYSTEM_ADMIN** sees all action types including `ADMIN_*`. Has a user filter dropdown. Can export as CSV.
 
 **Filters:**
 - Action Type dropdown: ALL or any single action type
@@ -373,12 +517,12 @@ AUDIT LOGS          [ Action Type: All ▾ ]   [ Date Range: __ to __ ]
 
 ---
 
-### 6. Settings — `/settings`
+### 8. Settings — `/settings`
 
 ```
 Icon  : Settings
 Route : /settings
-Auth  : JWT required — REGISTRAR only
+Auth  : JWT required — REGISTRAR, SYSTEM_ADMIN
 Page  : client/src/pages/settings/Index.tsx
 API   : Various (per tab — see below)
 ```
@@ -387,11 +531,11 @@ Settings is organized into **4 tabs** using shadcn/ui `Tabs`. All tabs are rende
 
 ---
 
-#### Settings Tab 1 — School Profile (formerly "School Identity")
+#### Settings Tab 1 — School Profile
 
 ```
 Tab Label : School Profile
-API       : PUT   /api/settings/identity   (school name)
+API       : PUT   /api/settings/identity   (school name, school ID, division, region)
             POST  /api/settings/logo       (logo upload + color extraction)
 ```
 
@@ -401,7 +545,18 @@ API       : PUT   /api/settings/identity   (school name)
 SETTINGS > School Profile
 
   School Name *
-  [ [School Name]                                     ]   [ Save Name ]
+  [ [School Name]                                     ]
+
+  School ID (DepEd) *
+  [ 304123                                             ]
+
+  Division *
+  [ Division of Imus City                              ]
+
+  Region *
+  [ Region IV-A (CALABARZON)                           ]
+
+  [ Save Profile ]
 
   ─────────────────────────────────────────────────────────────────
   School Logo
@@ -587,7 +742,7 @@ SETTINGS > Enrollment Gate
 
 ---
 
-### 7. My Sections — `/my-sections` (TEACHER ONLY)
+### 9. My Sections — `/my-sections` (TEACHER ONLY)
 
 ```
 Icon  : BookOpen
@@ -628,20 +783,28 @@ MY SECTIONS
 
 ## Route Access Matrix
 
-| Route | REGISTRAR | TEACHER | Unauthenticated |
-|---|---|---|---|
-| `/dashboard` | ✅ Full | ✅ Limited (section stats only) | → `/login` |
-| `/applications` | ✅ Full | ❌ 403 | → `/login` |
-| `/applications/:id` | ✅ Full | ❌ 403 | → `/login` |
-| `/students` | ✅ Full | ❌ 403 | → `/login` |
-| `/sections` | ✅ Full CRUD | ❌ 403 | → `/login` |
-| `/audit-logs` | ✅ Full | ❌ 403 | → `/login` |
-| `/settings` | ✅ Full | ❌ 403 | → `/login` |
-| `/my-sections` | ❌ Hidden | ✅ Read-only (own sections) | → `/login` |
-| `/apply` | N/A (public) | N/A (public) | ✅ if gate OPEN; → `/closed` if gate OFF |
-| `/closed` | N/A (public) | N/A (public) | ✅ Always accessible |
-| `/track/:trackingNumber` | N/A (public) | N/A (public) | ✅ Always accessible |
-| `/login` | Redirect to `/dashboard` | Redirect to `/dashboard` | ✅ Login form |
+| Route | TEACHER | REGISTRAR | SYSTEM_ADMIN | Unauthenticated |
+|---|---|---|---|---|
+| `/dashboard` | ✅ Limited (section stats only) | ✅ Full | ✅ Full + System Panel | → `/login` |
+| `/f2f-admission` | ❌ 403 | ✅ Full | ✅ Full | → `/login` |
+| `/applications` | ❌ 403 | ✅ Full | ✅ Full | → `/login` |
+| `/applications/:id` | ❌ 403 | ✅ Full | ✅ Full | → `/login` |
+| `/students` | ❌ 403 | ✅ Full | ✅ Full | → `/login` |
+| `/students/:id` | ❌ 403 | ✅ Full (4-tab profile) | ✅ Full (4-tab profile) | → `/login` |
+| `/teachers` | ❌ 403 | ✅ Full CRUD | ✅ Full CRUD | → `/login` |
+| `/teachers/:id` | ❌ 403 | ✅ Full (3-tab profile) | ✅ Full (3-tab profile + admin actions) | → `/login` |
+| `/sections` | ❌ 403 | ✅ Full CRUD | ✅ Full CRUD | → `/login` |
+| `/audit-logs` | ❌ 403 | ✅ Own + system events (no ADMIN_ types, no user filter, no export) | ✅ Full (all users, ADMIN_ types, user filter, CSV export) | → `/login` |
+| `/settings` | ❌ 403 | ✅ Full (all 4 tabs) | ✅ Full (all 4 tabs) | → `/login` |
+| `/my-sections` | ✅ Read-only (own sections) | ❌ Hidden | ❌ Hidden | → `/login` |
+| `/admin/users` | ❌ 403 | ❌ 403 | ✅ Full CRUD | → `/login` |
+| `/admin/email-logs` | ❌ 403 | ❌ 403 | ✅ Full + Resend | → `/login` |
+| `/admin/system` | ❌ 403 | ❌ 403 | ✅ Read-only | → `/login` |
+| `/change-password` | ✅ (when required) | ✅ (when required) | ✅ (when required) | → `/login` |
+| `/apply` | N/A (public) | N/A (public) | N/A (public) | ✅ if gate OPEN; → `/closed` if gate OFF |
+| `/closed` | N/A (public) | N/A (public) | N/A (public) | ✅ Always accessible |
+| `/track/:trackingNumber` | N/A (public) | N/A (public) | N/A (public) | ✅ Always accessible |
+| `/login` | → `/dashboard` | → `/dashboard` | → `/dashboard` | ✅ Login form |
 
 ---
 
@@ -659,7 +822,33 @@ client/src/
 │   └── sidebar/
 │       ├── SidebarContent.tsx  ← shared between desktop <aside> and mobile <Sheet>
 │       ├── NavItem.tsx         ← individual nav link with icon, label, active state
+│       ├── NavDivider.tsx      ← section divider with label ("Enrollment", "System", "Records")
 │       └── SidebarHeader.tsx   ← school logo + name + active year badge
+│
+├── pages/
+│   ├── dashboard/Index.tsx     ← /dashboard
+│   ├── admission/
+│   │   └── F2FAdmission.tsx    ← /f2f-admission
+│   ├── applications/
+│   │   ├── Index.tsx           ← /applications
+│   │   └── [id].tsx            ← /applications/:id
+│   ├── students/
+│   │   ├── Index.tsx           ← /students
+│   │   └── Profile.tsx         ← /students/:id
+│   ├── teachers/
+│   │   ├── Index.tsx           ← /teachers
+│   │   └── Profile.tsx         ← /teachers/:id
+│   ├── sections/Index.tsx      ← /sections
+│   ├── audit-logs/Index.tsx    ← /audit-logs
+│   ├── settings/Index.tsx      ← /settings (4 tabs)
+│   ├── my-sections/Index.tsx   ← /my-sections (teacher only)
+│   ├── auth/
+│   │   ├── Login.tsx           ← /login
+│   │   └── ChangePassword.tsx  ← /change-password
+│   └── admin/
+│       ├── Users.tsx           ← /admin/users (admin only)
+│       ├── EmailLogs.tsx       ← /admin/email-logs (admin only)
+│       └── SystemHealth.tsx    ← /admin/system (admin only)
 │
 └── stores/
     ├── authStore.ts            ← { user, token, role } — drives nav item visibility
@@ -671,7 +860,14 @@ client/src/
 
 ## Sidebar Implementation Notes for Claude Code
 
-1. **Role filtering** — `NavItem` components are wrapped in a conditional: `{user.role === 'REGISTRAR' && <NavItem ... />}`. The `user` object comes from `useAuthStore()`.
+1. **Role filtering** — The sidebar renders three conditional sections based on role:
+   - **Always visible:** Dashboard
+   - **Admission section** (REGISTRAR + SYSTEM_ADMIN): Walk-in Admission, Applications, Students, Teachers, Sections
+   - **Teacher-only:** My Sections
+   - **System section** (SYSTEM_ADMIN only): User Management, Email Logs, System Health
+   - **Records section** (REGISTRAR + SYSTEM_ADMIN): Audit Logs, Settings
+
+   Section dividers use the `NavDivider` component with labels ("Enrollment", "System", "Records").
 
 2. **Active state** — Use React Router v7 `<NavLink>` with `className={({ isActive }) => isActive ? 'active-styles' : 'default-styles'}`. Do NOT use manual `window.location.pathname` comparisons.
 
@@ -689,34 +885,28 @@ client/src/
 
 ---
 
-*Document compiled from: PRD v2.2.1 · Registrar Storyboard Workflow · School Year Setup Architecture*
+*Document compiled from: PRD v3.0.0 · Registrar Storyboard Workflow · School Year Setup Architecture · System Admin Specification*
 *Policy: DepEd Order No. 017, s. 2025 · DepEd Memorandum No. 012, s. 2026*
-*School: [School Name]*
-
 
 ---
 
----
+## Admin Sidebar Layout (Quick Reference)
 
-## ADDENDUM — System Administrator Sidebar (v2.3.0)
-
-**Full Specification:** See `SYSTEM_ADMIN_SPECIFICATION.md` for per-item detail on all 9 Admin nav items.
-
----
-
-### Admin Sidebar Layout (Quick Reference)
+The SYSTEM_ADMIN role sees the full sidebar including admin-only items. The sidebar renders three grouped sections with `NavDivider` labels.
 
 ```
 ┌─────────────────────────────────┐
 │  [School Logo]                  │
-│  [School Name]               │
+│  [School Name]                  │
 │  SY 2026–2027  ● ACTIVE         │
 ├─────────────────────────────────┤
 │  📊  Dashboard                  │  ← all roles
 │                                 │
-│  ── ENROLLMENT ──               │
+│  ── ADMISSION ──                │
+│  ✍️  Walk-in Admission          │  ← REGISTRAR, ADMIN
 │  📋  Applications               │  ← REGISTRAR, ADMIN
 │  👤  Students                   │  ← REGISTRAR, ADMIN
+│  🎓  Teachers                   │  ← REGISTRAR, ADMIN
 │  🏫  Sections                   │  ← REGISTRAR, ADMIN
 │                                 │
 │  ── SYSTEM ──                   │  ← ADMIN ONLY section
@@ -734,13 +924,15 @@ client/src/
 └─────────────────────────────────┘
 ```
 
-### Updated Three-Role Sidebar Comparison
+### Three-Role Sidebar Comparison
 
 | Nav Item | Route | TEACHER | REGISTRAR | SYSTEM_ADMIN |
 |---|---|---|---|---|
 | Dashboard | `/dashboard` | ✅ Limited | ✅ Full | ✅ Full + System Panel |
+| Walk-in Admission | `/f2f-admission` | ❌ | ✅ | ✅ |
 | Applications | `/applications` | ❌ | ✅ | ✅ |
 | Students | `/students` | ❌ | ✅ | ✅ |
+| Teachers | `/teachers` | ❌ | ✅ | ✅ |
 | Sections | `/sections` | ❌ | ✅ | ✅ |
 | My Sections | `/my-sections` | ✅ | ❌ | ❌ |
 | User Management | `/admin/users` | ❌ | ❌ | ✅ |
@@ -749,7 +941,7 @@ client/src/
 | Audit Logs | `/audit-logs` | ❌ | ✅ (partial) | ✅ (full + export) |
 | Settings | `/settings` | ❌ | ✅ | ✅ |
 
-### Updated `SidebarContent.tsx` Rendering Logic
+### `SidebarContent.tsx` Rendering Logic
 
 ```tsx
 const isAdmin     = user?.role === 'SYSTEM_ADMIN';
@@ -757,13 +949,13 @@ const isRegistrar = user?.role === 'REGISTRAR';
 const isTeacher   = user?.role === 'TEACHER';
 
 // Dashboard:         always shown
-// Applications/Students/Sections: isRegistrar || isAdmin
+// Walk-in/Applications/Students/Teachers/Sections: isRegistrar || isAdmin
 // My Sections:       isTeacher only
 // User Mgmt/Email Logs/System Health: isAdmin only
 // Audit Logs/Settings: isRegistrar || isAdmin
 ```
 
-### Admin Role Badge
+### Role Badge Colors (Sidebar Footer)
 
 | Role | Sidebar Footer Badge | Color |
 |---|---|---|
@@ -773,63 +965,20 @@ const isTeacher   = user?.role === 'TEACHER';
 
 ---
 
-*Addendum: v2.3.0 — System Admin sidebar added*
-*Full per-item detail: SYSTEM_ADMIN_SPECIFICATION.md §5*
-
-
----
-
----
-
-## ADDENDUM — Sidebar Impact of Two-Path Admission System (v2.4.0)
-
-**PRD Reference:** v2.4.0 — Admission Process (Open Admission + SCP)
-
----
-
-### What Changes in `/applications` for the Registrar
-
-The `/applications` sidebar item now serves **two distinct workflows** — the open admission path (unchanged) and the new SCP exam path — within the same page. The visible difference is in the filter toolbar and the action buttons inside each application record.
-
-#### Updated Filter Toolbar
-
-```
-APPLICATIONS    [ Search by LRN or name... 🔍 ]    [Filter ▾]
-
-  Year:      [ SY 2026–2027 ▾ ]
-  Grade:     [ All ▾ ]
-  Type:      [ All ▾ ]   ← NEW: Regular | STE | SPA | SPS | SPJ | SPFL | SPTVE | STEM G11
-  Status:    [ All ▾ ]   ← UPDATED: now includes EXAM_SCHEDULED · EXAM_TAKEN · PASSED · FAILED
-```
-
-#### Action Buttons — Two Paths
-
-| If `applicantType = REGULAR` | If `applicantType = SCP / STEM_GRADE11` |
-|---|---|
-| `[ Approve & Assign Section ]` | `[ Verify & Schedule Exam ]` |
-| `[ Reject Application ]` | `[ Record Result ]` (after exam date) |
-| — | `[ Mark as Passed & Assign Section ]` (after result) |
-| — | `[ Mark as Failed ]` (after result) |
-
-The correct action buttons are shown **conditionally based on `applicantType` and current `status`** — the registrar never sees inapplicable buttons for a given applicant's state.
-
----
-
-### Updated Status Badge Reference
+### Status Badge Reference (All Applicant Statuses)
 
 | Status | Badge | Path |
 |---|---|---|
 | `PENDING` | ● amber | Both paths |
 | `APPROVED` | ✓ green | Both paths |
 | `REJECTED` | ✗ red | Both paths |
+| `ENROLLED` | ✓ blue/accent | Both paths |
 | `EXAM_SCHEDULED` | ⏳ amber | SCP path only |
 | `EXAM_TAKEN` | 📋 blue | SCP path only |
 | `PASSED` | ✅ green | SCP path only |
 | `FAILED` | ❌ red | SCP path only |
 
----
-
-### Updated Applicant Type Badge Reference
+### Applicant Type Badge Reference
 
 | Type | Badge Label | Color |
 |---|---|---|
@@ -844,11 +993,4 @@ The correct action buttons are shown **conditionally based on `applicantType` an
 
 ---
 
-### Settings Sidebar — Panel C Addition
-
-The Settings page (`/settings`) now includes **SCP Configuration** as a new section inside Tab 3: Grade Levels & Strands. No new sidebar item is added — it lives within the existing Settings route. The registrar accesses it by navigating to Settings → Tab 3 and scrolling to the SCP block.
-
----
-
-*Addendum to Sidebar Navigation Specification*
-*Based on: PRD v2.4.0 — Admission Process Integration*
+*Full per-item detail for admin-only pages: System_admin_specification.md §5*

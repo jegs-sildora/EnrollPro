@@ -1,9 +1,10 @@
 # Architecture Proposal
 ## Smart Academic Year Configuration Module
-**For:** Admission & Enrollment System
+**For:** Web-Based School Admission, Enrollment & Information Management System
 **Author Role:** System Architect
 **Bases On:** DepEd Order No. 12, s. 2025 · DepEd Order No. 03, s. 2018 (Basic Education Enrollment Policy)
-**Status:** Proposal — Pending Team Approval Before PRD Integration
+**Aligned With:** PRD v3.0.0
+**Status:** Integrated into PRD — reference document retained for architecture rationale
 
 ---
 
@@ -116,29 +117,30 @@ Three UX principles drive the redesign:
 
 ---
 
-### 3.2 Revised Settings Page Layout
+### 3.2 Revised Settings Page Layout (PRD v3.0.0 — 4 Tabs)
 
-Replace the current 4-tab layout with a **5-panel single-scroll page** (no tabs required for navigation — panels are always visible, reducing the tab-switching overhead):
+The PRD v3.0.0 implements Settings as **4 tabs** using shadcn/ui `Tabs`, all on the `/settings` route:
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  ⚙  System Configuration                                         │
+│  ⚙  Settings                                                      │
 ├──────────────────────────────────────────────────────────────────┤
-│  Panel A │ School Profile       (logo, name)                     │
-│  Panel B │ Academic Year Setup  ← REDESIGNED (see §3.3)          │
-│  Panel C │ Curriculum Structure (grade levels, strands, matrix)  │
-│  Panel D │ Sections & Capacity  (section CRUD, capacity map)     │
-│  Panel E │ Enrollment Schedule  ← REDESIGNED (see §3.4)          │
+│  Tab 1 │ School Profile      (name, school ID, division,         │
+│         │                      region, logo upload)               │
+│  Tab 2 │ Academic Year        ← smart auto-fill (see §3.3)       │
+│  Tab 3 │ Grade Levels, Strands & SCP Programs                    │
+│         │   ├─ Grade Levels CRUD                                  │
+│         │   ├─ Strands/Clusters (DM 012)                         │
+│         │   └─ SCP Programs CRUD (school-configured)             │
+│  Tab 4 │ Enrollment Gate      (enrollmentOpen toggle)            │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-Each panel is a `Card` component — always visible on the page, no tab switching needed. The registrar scrolls vertically through the configuration. On desktop, Panels A–E are visible with a sticky left mini-nav for jump-links.
-
 ---
 
-### 3.3 Panel B — Smart Academic Year Setup Card
+### 3.3 Tab 2 — Smart Academic Year Setup (Auto-Fill)
 
-This is the most significant redesign. Instead of a blank CRUD form, this panel is a **single intelligent card** that behaves differently based on whether a current year already exists.
+This is the most significant redesign. Instead of a blank CRUD form, this tab uses a **smart auto-fill** that pre-calculates DepEd dates when the registrar types a year label.
 
 #### State 1: No Year Configured Yet (First-Time Setup)
 
@@ -169,7 +171,7 @@ The card renders with every field **pre-filled** using DepEd rules computed from
 **What the system auto-computes:**
 
 ```ts
-// server/src/services/academicYearService.ts
+// server/src/services/academicYearService.ts — aligned with PRD v3.0.0 schema field names
 
 export function deriveNextAcademicYear(today: Date): AcademicYearDefaults {
   const year = today.getMonth() >= 5   // June or later
@@ -179,28 +181,28 @@ export function deriveNextAcademicYear(today: Date): AcademicYearDefaults {
   const nextStartYear = year + 1;
   const nextEndYear   = year + 2;
 
-  // Class opening = first Monday of June of nextStartYear
-  const classOpening = firstMondayOfJune(nextStartYear);
+  // Class start = first Monday of June of nextStartYear
+  const classStart = firstMondayOfJune(nextStartYear);
 
   // Class end = March 31 of nextEndYear
   const classEnd = new Date(nextEndYear, 2, 31); // Month is 0-indexed
 
-  // Early Registration = last Saturday of January → last Friday of February
-  const earlyRegOpen  = lastSaturdayOfJanuary(nextStartYear);
-  const earlyRegClose = lastFridayOfFebruary(nextStartYear);
+  // Phase 1: Early Registration = last Saturday of January → last Friday of February
+  const phase1Start = lastSaturdayOfJanuary(nextStartYear);
+  const phase1End   = lastFridayOfFebruary(nextStartYear);
 
-  // Regular Enrollment = 7 days before class opening
-  const enrollOpen  = subDays(classOpening, 7);
-  const enrollClose = subDays(classOpening, 1);
+  // Phase 2: Regular Enrollment = 7 days before class opening
+  const phase2Start = subDays(classStart, 7);
+  const phase2End   = subDays(classStart, 1);
 
   return {
-    yearLabel:      `${nextStartYear}–${nextEndYear}`,
-    classOpening,
+    yearLabel:   `${nextStartYear}-${nextEndYear}`,
+    classStart,
     classEnd,
-    earlyRegOpen,
-    earlyRegClose,
-    enrollOpen,
-    enrollClose,
+    phase1Start,
+    phase1End,
+    phase2Start,
+    phase2End,
   };
 }
 ```
@@ -235,55 +237,44 @@ When an active year is already set, the card shows a compact **year status banne
 
 ---
 
-### 3.4 Panel E — Two-Phase Enrollment Schedule (Replaces the Single Toggle)
+### 3.4 Tab 4 — Enrollment Gate (Manual Toggle)
 
-The current enrollment gate is a single ON/OFF switch. This does not reflect DepEd's two-phase structure and forces the registrar to remember to manually open and close the portal at the right times.
+Per PRD v3.0.0, the enrollment gate is a **manual toggle** (`SchoolSettings.enrollmentOpen`). The registrar toggles it ON when the enrollment period opens and OFF when it closes. The phase dates stored on `AcademicYear` serve as reference information — they remind the registrar of DepEd's schedule but do not automatically control the gate.
 
-The new Panel E is a **schedule-driven dual-phase gate** with manual override.
-
-#### Panel E Layout
+#### Tab 4 Layout (per PRD v3.0.0)
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  🗓  Enrollment Schedule              SY 2026–2027               │
-│  ─────────────────────────────────────────────────────────────  │
-│                                                                 │
-│  PHASE 1 · Early Registration                                    │
-│  For: Grade 7, Grade 11, Transferees, First-time enrollees      │
-│  ┌────────────────────────────────────────────────────────────┐ │
-│  │  Opens   [  Jan 31, 2026  ]   Closes  [  Feb 27, 2026  ]  │ │
-│  │  Status: ● OPEN  ════════════════════════╗                 │ │
-│  │          Closes in  27 days, 14 hours    ║                 │ │
-│  └────────────────────────────────────────────────────────────┘ │
-│                                                                 │
-│  PHASE 2 · Regular Enrollment                                    │
-│  For: All grade levels                                          │
-│  ┌────────────────────────────────────────────────────────────┐ │
-│  │  Opens   [  May 26, 2026  ]   Closes  [  Jun 1, 2026   ]  │ │
-│  │  Status: ○ SCHEDULED  ·  Opens in 116 days               │ │
-│  └────────────────────────────────────────────────────────────┘ │
-│                                                                 │
-│  ─────────────────────────────────────────────────────────────  │
-│  Manual Override    ○──● (OFF)   Force-open regardless of       │
-│                                  schedule (emergency use only)  │
-└─────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│  Enrollment Gate                                                │
+│                                                                │
+│  ────●────────  ON                                             │
+│  Status:  ● OPEN  (green badge)                                │
+│                                                                │
+│  The public admission portal is currently LIVE at:             │
+│  https://[school-domain]/apply                                 │
+│                                                                │
+│  Toggle OFF to close the portal. Visitors will be             │
+│  redirected to the "Enrollment Closed" page.                   │
+│                                                                │
+│  Note: The F2F admission route (/f2f-admission) is            │
+│  unaffected by this gate — registrars can enter walk-in       │
+│  applications regardless of the toggle state.                  │
+└────────────────────────────────────────────────────────────────┘
 ```
 
 #### How It Works
 
-- **Dates are pre-filled automatically** from the `AcademicYear` record (computed in §3.3). The registrar does not type dates — they only adjust if their school deviates from the DepEd standard.
-- **The portal (`/apply`) opens and closes automatically** based on the schedule. A Node.js cron job (`node-cron`) runs every 5 minutes and checks: `if (now >= phase1Open && now <= phase1Close) enrollmentOpen = true`.
-- **Phase awareness in the admission form** — When Phase 1 is active, the admission form shows: *"Early Registration is open for incoming Grade 7, Grade 11, and transferees."* When Phase 2 is active, it shows the regular message. The `gradeLevel` dropdown is not filtered — the school may choose to accept all grades during Phase 1 — but the Phase label informs the applicant.
-- **Manual override toggle** is available for emergencies (e.g., SDO extends the period). It bypasses the schedule and forces the portal open. A Sileo `warning` toast fires to confirm the override is active.
+- **Phase dates are auto-filled** when creating a new Academic Year. The registrar confirms or adjusts before saving.
+- **The portal (`/apply`) opens and closes based on the manual toggle.** The React Router loader on `/apply` calls `GET /api/settings/public` on every page load — if `enrollmentOpen = false`, it redirects to `/closed`.
+- **F2F admission bypasses the gate entirely.** The `/f2f-admission` route is always accessible to REGISTRAR and SYSTEM_ADMIN, regardless of the toggle state (PRD v3.0.0 §6.2).
+- **Phase awareness** — When Phase 1 dates are active, the admission form can show: *"Early Registration is open for incoming Grade 7, Grade 11, and transferees."* This is informational; the gate logic remains the manual toggle.
 
-#### Enrollment Schedule Status Values
+#### Enrollment Gate Toggle States (per PRD v3.0.0)
 
-| Status | Visual | Meaning |
+| State | Visual | Public Portal Behavior |
 |---|---|---|
-| `SCHEDULED` | Grey dot + "Opens in X days" | Upcoming; portal closed |
-| `OPEN` | Green dot + "Closes in X days" | Portal is live |
-| `CLOSED` | Red badge | Period has passed |
-| `EXTENDED` | Orange badge | Manual override active |
+| OFF | `● CLOSED` red badge | `/apply` redirects to `/closed` via React Router loader |
+| ON | `● OPEN` green badge | `/apply` renders the full admission form |
 
 ---
 
@@ -306,71 +297,54 @@ This is a **zero-click improvement** — the UI explains the rule, reducing phon
 The current Prisma schema needs the following additions to support the two-phase gate and smart defaults:
 
 ```prisma
-// Addition to the AcademicYear model in server/prisma/schema.prisma
+// AcademicYear model in server/prisma/schema.prisma — aligned with PRD v3.0.0
 
 model AcademicYear {
   id             Int      @id @default(autoincrement())
-  yearLabel      String   @unique           // e.g. "2026–2027"
+  yearLabel      String   @unique           // e.g. "2025-2026"
   isActive       Boolean  @default(false)
 
-  // ── DepEd Calendar Dates (auto-computed; editable) ──
-  classOpeningDate  DateTime               // First Monday of June
-  classEndDate      DateTime               // March 31
+  // ── DepEd Calendar Dates (auto-computed on create; editable) ──
+  classStart     DateTime?                 // First Monday of June
+  classEnd       DateTime?                 // March 31
 
   // ── Phase 1: Early Registration ─────────────────────
-  earlyRegOpenDate  DateTime               // Last Saturday of January
-  earlyRegCloseDate DateTime               // Last Friday of February
+  phase1Start    DateTime?                 // Last Saturday of January
+  phase1End      DateTime?                 // Last Friday of February
 
   // ── Phase 2: Regular Enrollment ─────────────────────
-  enrollOpenDate    DateTime               // 7 days before classOpeningDate
-  enrollCloseDate   DateTime               // 1 day before classOpeningDate
-
-  // ── Manual Override ──────────────────────────────────
-  manualOverrideOpen Boolean @default(false)  // Force-open regardless of schedule
+  phase2Start    DateTime?                 // ~7 days before classStart
+  phase2End      DateTime?                 // ~1 day before classStart
 
   createdAt      DateTime @default(now())
 
-  // (existing relations remain unchanged)
   gradeLevels    GradeLevel[]
   strands        Strand[]
+  scpPrograms    ScpProgram[]
   applicants     Applicant[]
   enrollments    Enrollment[]
   SchoolSettings SchoolSettings[]
 }
 ```
 
-**SchoolSettings.enrollmentOpen is deprecated.** The enrollment open state is now derived at runtime from the `AcademicYear` date fields — it is never stored as a boolean flag. The API computes it:
+**`SchoolSettings.enrollmentOpen` remains the runtime gate.** The PRD v3.0.0 retains this boolean toggle (Settings Tab 4 — Enrollment Gate). The phase dates on `AcademicYear` serve as a reference for the registrar, who manually toggles the gate according to DepEd's schedule. The system auto-fills dates as smart defaults when creating an academic year.
 
 ```ts
-// server/src/services/enrollmentGateService.ts
+// server/src/services/enrollmentGateService.ts — reference helper for phase awareness
 
-export function isEnrollmentOpen(year: AcademicYear): boolean {
-  if (year.manualOverrideOpen) return true;
+export function getEnrollmentPhase(year: AcademicYear): 'EARLY_REGISTRATION' | 'REGULAR_ENROLLMENT' | 'CLOSED' {
   const now = new Date();
-  const inPhase1 = now >= year.earlyRegOpenDate && now <= year.earlyRegCloseDate;
-  const inPhase2 = now >= year.enrollOpenDate   && now <= year.enrollCloseDate;
-  return inPhase1 || inPhase2;
-}
-
-export function getEnrollmentPhase(year: AcademicYear): 'EARLY_REGISTRATION' | 'REGULAR_ENROLLMENT' | 'CLOSED' | 'OVERRIDE' {
-  if (year.manualOverrideOpen) return 'OVERRIDE';
-  const now = new Date();
-  if (now >= year.earlyRegOpenDate && now <= year.earlyRegCloseDate) return 'EARLY_REGISTRATION';
-  if (now >= year.enrollOpenDate   && now <= year.enrollCloseDate)   return 'REGULAR_ENROLLMENT';
+  if (year.phase1Start && year.phase1End && now >= year.phase1Start && now <= year.phase1End) {
+    return 'EARLY_REGISTRATION';
+  }
+  if (year.phase2Start && year.phase2End && now >= year.phase2Start && now <= year.phase2End) {
+    return 'REGULAR_ENROLLMENT';
+  }
   return 'CLOSED';
 }
 ```
 
-The cron job is lightweight — it only needs to invalidate a cache key, not write to the database:
-
-```ts
-// server/src/jobs/enrollmentGateCron.ts
-import cron from 'node-cron';
-import { broadcastGateStatus } from '../services/enrollmentGateService.ts';
-
-// Runs every 5 minutes — checks active year and updates in-memory gate status
-cron.schedule('*/5 * * * *', broadcastGateStatus);
-```
+**Note:** Per PRD v3.0.0, the enrollment gate is a manual toggle (`SchoolSettings.enrollmentOpen`), not an automated schedule. The phase dates serve as smart defaults and reference information for the registrar. No cron job is needed for gate management.
 
 ---
 
@@ -378,11 +352,12 @@ cron.schedule('*/5 * * * *', broadcastGateStatus);
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| `GET` | `/api/academic-years/next-defaults` | JWT (REGISTRAR) | Returns auto-computed Smart Defaults for the next SY (year label, all dates) |
-| `POST` | `/api/academic-years/activate` | JWT (REGISTRAR) | Creates + activates a year using smart defaults (with optional clone flags) |
-| `GET` | `/api/settings/public` | None | Now returns `enrollmentPhase` (`EARLY_REGISTRATION` \| `REGULAR_ENROLLMENT` \| `CLOSED` \| `OVERRIDE`) instead of a boolean |
-| `PATCH` | `/api/academic-years/:id/override` | JWT (REGISTRAR) | Toggle manual override ON/OFF |
-| `PATCH` | `/api/academic-years/:id/dates` | JWT (REGISTRAR) | Update any of the 4 date window fields (for SDO-approved deviations) |
+| `GET` | `/api/academic-years` | JWT (REGISTRAR, SYSTEM_ADMIN) | List all academic years |
+| `POST` | `/api/academic-years` | JWT (REGISTRAR, SYSTEM_ADMIN) | Create AY with auto-calculated dates from year label |
+| `PUT` | `/api/academic-years/:id` | JWT (REGISTRAR, SYSTEM_ADMIN) | Update AY dates or label |
+| `PATCH` | `/api/academic-years/:id/activate` | JWT (REGISTRAR, SYSTEM_ADMIN) | Set as active (deactivates all others in one transaction) |
+| `GET` | `/api/settings/public` | None | Returns school name, logo, colorScheme, `enrollmentOpen`, active AY |
+| `PATCH` | `/api/settings/enrollment-gate` | JWT (REGISTRAR, SYSTEM_ADMIN) | Toggle `enrollmentOpen` ON/OFF |
 
 ---
 
@@ -399,15 +374,15 @@ cron.schedule('*/5 * * * *', broadcastGateStatus);
 
 ---
 
-## 7. Summary of Proposed Changes to §6.4 in the PRD
+## 7. Summary — How This Architecture Aligns with PRD v3.0.0
 
-| Current | Proposed Replacement |
+| Architecture Proposal | PRD v3.0.0 Implementation |
 |---|---|
-| Tab 2: CRUD table for Academic Year (blank form) | Panel B: Smart Year Setup Card with auto-computed DepEd defaults |
-| Tab 4: Single `enrollmentOpen` boolean toggle | Panel E: Two-Phase Enrollment Schedule with auto-open/close and manual override |
-| `SchoolSettings.enrollmentOpen` boolean column | Derived runtime from `AcademicYear` date fields |
-| No concept of Early Registration vs. Regular Enrollment | Phase-aware gate exposed in the public API and admission form UI |
-| Grades and strands re-entered manually every year | One-click clone from previous year (checkboxes) |
+| Smart Year Setup Card with auto-computed DepEd defaults | Tab 2 (Academic Year): Smart Auto-Fill when year label is typed — auto-calculates all dates (§6.8) |
+| Two-Phase Enrollment Schedule with auto-open/close | Phase dates stored on `AcademicYear` as reference; manual `enrollmentOpen` toggle in Tab 4 (§6.8) |
+| Derived runtime enrollment state from date fields | `enrollmentOpen` remains on `SchoolSettings` as the authoritative gate (§6.8, §6.1) |
+| Phase-aware gate exposed in the public API and admission form UI | Phase dates serve as registrar reference; F2F route bypasses gate entirely (§6.2) |
+| Grades and strands re-entered manually every year | School-agnostic: grade levels, strands, SCP programs are CRUD per academic year (§6.8 Tab 3) |
 
 ---
 
@@ -549,11 +524,13 @@ One additional endpoint is needed to serve the DM 012 dual-policy context to the
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| `GET` | `/api/settings/shs-config` | None (public) | Returns the SHS curriculum mode for each grade level: `{ grade11: "STRENGTHENED", grade12: "OLD_STRAND" }` and the list of offered tracks and clusters for Grade 11 |
+| `GET` | `/api/scp-programs?gradeLevelId=` | None (public) | Returns active SCP programs for the given grade level in the active AY — drives the admission form dynamically |
+| `GET` | `/api/scp-programs/all` | JWT (REGISTRAR, SYSTEM_ADMIN) | All SCP programs for active AY (including inactive) |
+| `POST` | `/api/scp-programs` | JWT (REGISTRAR, SYSTEM_ADMIN) | Create SCP program config |
+| `PUT` | `/api/scp-programs/:id` | JWT (REGISTRAR, SYSTEM_ADMIN) | Update SCP program |
+| `PATCH` | `/api/scp-programs/:id/toggle` | JWT (REGISTRAR, SYSTEM_ADMIN) | Activate / deactivate |
 
-The public admission form uses this to conditionally render:
-- For **Grade 11**: Track selector (Academic/TechPro) → Elective Cluster selector
-- For **Grade 12**: Strand selector (STEM/ABM/HUMSS/GAS — old system, for any Grade 12 transferees or walk-ins)
+The public admission form uses `GET /api/scp-programs?gradeLevelId=X` to dynamically render SCP options. **No hardcoded SCP list exists in the frontend** — a school that does not offer SPA simply has no SPA entry in the database, and the form shows no SPA option.
 
 ---
 
@@ -623,32 +600,31 @@ SETTINGS > Panel C: Curriculum Structure        Year: [ SY 2026–2027 ▾ ]
  Grade 11 Elective Clusters · Grade 12 Old Strands
 ```
 
-**SCP configuration drives the admission portal:** When the admission portal loads, it calls `GET /api/settings/scp-config` and shows only the SCPs the school has enabled. If SPS is unchecked, it does not appear as an option in the applicant's form.
+**SCP configuration drives the admission portal:** When the admission portal loads, it calls `GET /api/scp-programs?gradeLevelId=X` and shows only the active SCP programs the school has configured for that grade level. If SPS is not configured in the database, it does not appear as an option in the applicant's form. This is fully school-agnostic — no SCP program is hardcoded.
 
 ---
 
-### New Database Model — `ScpConfig`
+### New Database Model — `ScpProgram` (aligned with PRD v3.0.0)
 
 ```prisma
-// server/prisma/schema.prisma — NEW (v2.4.0)
+// server/prisma/schema.prisma — from PRD v3.0.0
 
-model ScpConfig {
-  id             Int          @id @default(autoincrement())
-  academicYearId Int
-  scpType        ApplicantType  // STE, SPA, SPS, SPJ, SPFL, SPTVE
-  isOffered      Boolean      @default(false)
-  cutoffScore    Float?        // for STE, SPA, SPJ (written exam cut-off)
-  examDate       DateTime?     // division/school-set exam/audition/tryout date
-  artFields      String[]      // for SPA: ["Dance", "Visual Arts", "Music", etc.]
-  languages      String[]      // for SPFL: ["Japanese", "Spanish", etc.]
-  sportsList     String[]      // for SPS: ["Basketball", "Volleyball", etc.]
-  notes          String?       // registrar notes (e.g., "SDO Memo No. 157")
+model ScpProgram {
+  id                Int          @id @default(autoincrement())
+  code              String       // e.g. "STE", "SPA", "SPS", "SPJ", "SPFL", "SPTVE"
+  name              String       // Full program name for display
+  applicableGradeLevelIds Int[]  // which grade levels can apply
+  assessmentType    String       // "EXAM_ONLY" | "EXAM_AUDITION" | "AUDITION_ONLY" | "APTITUDE" | "NAT_REVIEW"
+  requiresInterview Boolean      @default(false)
+  academicYearId    Int
+  isActive          Boolean      @default(true)
+  createdAt         DateTime     @default(now())
 
-  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-
-  @@unique([academicYearId, scpType])
+  academicYear      AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
 }
 ```
+
+> **Note:** The old `ScpConfig` model proposed in the original architecture addendum has been replaced by `ScpProgram` in PRD v3.0.0. SCP programs are now fully configurable per academic year with CRUD operations in Settings Tab 3 (SCP Programs sub-tab). Schools add only the programs they offer — a school with no SCP programs simply leaves the sub-tab empty and no SCP fields appear in the admission form.
 
 ---
 
@@ -679,4 +655,4 @@ model ScpConfig {
 ---
 
 *Addendum to School Year Setup Architecture*
-*Based on: DepEd Memorandum No. 149, s. 2011 · PRD v2.4.0*
+*Based on: DepEd Memorandum No. 149, s. 2011 · PRD v3.0.0*

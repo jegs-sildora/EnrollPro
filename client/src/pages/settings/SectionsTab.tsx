@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+import { Skeleton } from '@/components/ui/skeleton';
+
 interface Teacher {
   id: number;
   name: string;
@@ -193,7 +195,35 @@ export default function SectionsTab() {
       </Tabs>
 
       {loading ? (
-        <div className="text-center py-8 text-sm text-[hsl(var(--muted-foreground))]">Loading sections…</div>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-8 w-48 mb-2" />
+              <Skeleton className="h-4 w-80" />
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <Skeleton key={i} className="h-16 w-full rounded-lg" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          <div className="grid gap-6 md:grid-cols-2">
+            {[1, 2].map((i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <Skeleton className="h-6 w-32" />
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {[1, 2, 3].map((j) => (
+                    <Skeleton key={j} className="h-12 w-full rounded-lg" />
+                  ))}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
       ) : (
         <>
           {/* Capacity Heatmap overview */}

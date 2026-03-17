@@ -20,37 +20,30 @@ export default function StepProgressBar({ currentStep, totalSteps, steps, descri
       {/* ── Mobile ── */}
       <div className="md:hidden">
         <div 
-          className="flex items-center justify-between mb-4 p-4 rounded-2xl shadow-sm border border-accent/10"
-          style={{ backgroundColor: 'hsl(var(--accent))' }}
+          className="flex items-center justify-between mb-4 p-4 rounded-2xl shadow-sm border border-black/10 bg-black text-white"
         >
           <div className="flex flex-col">
             <span 
-              className="text-[10px] font-bold uppercase tracking-widest opacity-85"
-              style={{ color: 'hsl(var(--accent-foreground))' }}
+              className="text-[10px] font-bold uppercase tracking-widest opacity-85 text-white"
             >
               Step {currentStep} of {totalSteps}
             </span>
             <span 
-              className="text-lg font-extrabold leading-tight"
-              style={{ color: 'hsl(var(--accent-foreground))' }}
+              className="text-lg font-extrabold leading-tight text-white"
             >
               {currentStepData.title}
             </span>
             {description && (
               <span 
-                className="text-xs font-medium mt-1 opacity-90"
-                style={{ color: 'hsl(var(--accent-foreground))' }}
+                className="text-xs font-medium mt-1 opacity-90 text-white"
               >
                 {description}
               </span>
             )}
           </div>
-          {/* Percentage badge: semi-transparent contrast on accent bg */}
+          {/* Percentage badge: semi-transparent contrast on black bg */}
           <span
-            className="text-xs font-bold tabular-nums px-3 py-1.5 rounded-full bg-background/20 backdrop-blur-md border border-background/10"
-            style={{
-              color: 'hsl(var(--accent-foreground))',
-            }}
+            className="text-xs font-bold tabular-nums px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/10 text-white"
           >
             {Math.round(((currentStep - 1) / (totalSteps - 1)) * 100)}%
           </span>
@@ -64,9 +57,9 @@ export default function StepProgressBar({ currentStep, totalSteps, steps, descri
               style={{
                 backgroundColor:
                   step.id === currentStep
-                    ? 'hsl(var(--accent) / 0.4)'
+                    ? 'rgba(0,0,0,0.2)'
                     : step.id < maxCompleted
-                    ? 'hsl(var(--accent))'
+                    ? 'black'
                     : 'hsl(var(--border))',
               }}
             />
@@ -77,8 +70,7 @@ export default function StepProgressBar({ currentStep, totalSteps, steps, descri
       {/* ── Desktop — stepperize primitives ── */}
       <div className="hidden md:block">
         <Stepper.Root
-          className="rounded-2xl border border-border/60 px-8 py-6"
-          style={{ backgroundColor: 'hsl(var(--card))' }}
+          className="rounded-2xl border border-border/60 px-8 py-6 bg-card"
         >
           <Stepper.List className="flex items-center w-full">
             {steps.map((step, index) => {
@@ -98,25 +90,12 @@ export default function StepProgressBar({ currentStep, totalSteps, steps, descri
                     <Stepper.Indicator
                       className={cn(
                         'w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 border-2',
+                        isCompleted
+                          ? 'bg-black border-black text-white'
+                          : isActive
+                          ? 'bg-black border-black text-white shadow-[0_0_0_3px_rgba(0,0,0,0.1)]'
+                          : 'bg-background border-border text-muted-foreground'
                       )}
-                      style={{
-                        backgroundColor: isCompleted
-                          ? 'hsl(var(--accent))'
-                          : isActive
-                          ? 'hsl(var(--sidebar-accent))'
-                          : 'hsl(var(--background))',
-                        borderColor: isCompleted || isActive
-                          ? 'hsl(var(--accent))'
-                          : 'hsl(var(--border))',
-                        color: isCompleted
-                          ? 'hsl(var(--accent-foreground))'
-                          : isActive
-                          ? 'hsl(var(--sidebar-accent-foreground))'
-                          : 'hsl(var(--muted-foreground))',
-                        boxShadow: isActive
-                          ? '0 0 0 3px hsl(var(--accent) / 0.2)'
-                          : 'none',
-                      }}
                     >
                       {isCompleted ? <Check className="w-4 h-4 stroke-[2.5]" /> : step.id}
                     </Stepper.Indicator>
@@ -124,34 +103,23 @@ export default function StepProgressBar({ currentStep, totalSteps, steps, descri
                     {/* Label */}
                     <div className="flex flex-col items-center gap-0.5">
                       <span
-                        className="text-[10px] lg:text-[11px] font-semibold uppercase tracking-wider text-center whitespace-nowrap transition-colors duration-200"
-                        style={{
-                          color: isCompleted || isActive
-                            ? 'hsl(var(--foreground))'
-                            : 'hsl(var(--muted-foreground))',
-                        }}
+                        className={cn(
+                          "text-[10px] lg:text-[11px] font-semibold uppercase tracking-wider text-center whitespace-nowrap transition-colors duration-200",
+                          isCompleted || isActive ? "text-foreground" : "text-muted-foreground"
+                        )}
                       >
                         {step.title}
                       </span>
-                      {/* Status badge: accent bg → accent-foreground text (WCAG) */}
+                      {/* Status badge */}
                       <span
-                        className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full transition-all duration-200"
-                        style={
-                          isCompleted
-                            ? {
-                                backgroundColor: 'hsl(var(--accent))',
-                                color: 'hsl(var(--accent-foreground))',
-                              }
-                            : isActive
-                            ? {
-                                backgroundColor: 'hsl(var(--accent) / 0.12)',
-                                color: 'hsl(var(--accent))',
-                              }
-                            : {
-                                backgroundColor: 'transparent',
-                                color: 'transparent',
-                              }
-                        }
+                        className={cn(
+                          "text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full transition-all duration-200",
+                          isCompleted 
+                            ? "bg-black text-white" 
+                            : isActive 
+                            ? "bg-black/10 text-black" 
+                            : "bg-transparent text-transparent"
+                        )}
                       >
                         {isCompleted ? 'Done' : isActive ? 'Current' : '·'}
                       </span>
@@ -161,18 +129,14 @@ export default function StepProgressBar({ currentStep, totalSteps, steps, descri
                   {/* Connector */}
                   {!isLast && (
                     <Stepper.Separator
-                      className="flex-1 mx-3 h-px relative overflow-hidden rounded-full"
-                      style={{
-                        marginBottom: '2.25rem',
-                        backgroundColor: 'hsl(var(--border))',
-                      }}
+                      className="flex-1 mx-3 h-px relative overflow-hidden rounded-full bg-border"
+                      style={{ marginBottom: '2.25rem' }}
                     >
                       <div
-                        className="absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-in-out"
-                        style={{
-                          width: isCompleted ? '100%' : '0%',
-                          backgroundColor: 'hsl(var(--accent))',
-                        }}
+                        className={cn(
+                          "absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-in-out bg-black",
+                          isCompleted ? "w-full" : "w-0"
+                        )}
                       />
                     </Stepper.Separator>
                   )}

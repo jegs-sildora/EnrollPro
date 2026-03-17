@@ -199,6 +199,83 @@ export async function deleteStrand(req: Request, res: Response): Promise<void> {
   res.json({ message: 'Strand deleted' });
 }
 
+export async function syncStrands(req: Request, res: Response): Promise<void> {
+  const ayId = parseInt(req.params.ayId as string);
+  const { strands: desiredStrands } = req.body; // Array of { name, curriculumType, track }
+
+  if (!Array.isArray(desiredStrands)) {
+    res.status(400).json({ message: 'strands must be an array' });
+    return;
+  }
+
+  try {
+    const currentStrands = await prisma.strand.findMany({
+      where: { academicYearId: ayId },
+    });
+
+    const toCreate = desiredStrands.filter(
+      (ds: any) => !currentStrands.some((cs) => cs.name === ds.name && cs.curriculumType === ds.curriculumType)
+    );
+
+    const toDelete = currentStrands.filter(
+      (cs) => !desiredStrands.some((ds: any) => ds.name === cs.name && ds.curriculumType === cs.curriculumType)
+    );
+
+    // Check for applicants before deleting
+    const strandsWithApplicants = await prisma.strand.findMany({
+      where: {
+        id: { in: toDelete.map((s) => s.id) },
+        applicants: { some: {} },
+      },
+      select: { id: true, name: true },
+    });
+
+    if (strandsWithApplicants.length > 0) {
+      res.status(400).json({
+        message: `Cannot remove strands with existing applicants: ${strandsWithApplicants.map((s) => s.name).join(', ')}`,
+      });
+      return;
+    }
+
+    await prisma.$transaction([
+      // Delete old ones
+      prisma.strand.deleteMany({
+        where: { id: { in: toDelete.map((s) => s.id) } },
+      }),
+      // Create new ones
+      ...toCreate.map((ds: any) =>
+        prisma.strand.create({
+          data: {
+            name: ds.name,
+            curriculumType: ds.curriculumType,
+            track: ds.track || null,
+            academicYearId: ayId,
+            applicableGradeLevelIds: [],
+          },
+        })
+      ),
+    ]);
+
+    const updatedStrands = await prisma.strand.findMany({
+      where: { academicYearId: ayId },
+      orderBy: { name: 'asc' },
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: 'STRANDS_SYNCED',
+      description: `Synchronized SHS curriculum strands for academic year ${ayId}`,
+      subjectType: 'AcademicYear',
+      subjectId: ayId,
+      req,
+    });
+
+    res.json({ strands: updatedStrands });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Failed to sync strands', error: error.message });
+  }
+}
+
 // ─── Strand-to-Grade Matrix ───────────────────────────────
 
 export async function updateStrandMatrix(req: Request, res: Response): Promise<void> {

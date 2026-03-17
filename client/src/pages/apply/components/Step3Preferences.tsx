@@ -265,13 +265,13 @@ export default function Step3Preferences() {
       <Separator />
 
       {/* Section 10: Certification */}
-      <div className="space-y-4 bg-muted/30 p-6 rounded-lg border border-primary/20">
+      <div className="space-y-4 bg-black/5 p-6 rounded-lg border border-black/20">
         <h3 className="text-lg font-semibold flex items-center gap-2">
-          <InfoIcon className="w-5 h-5 text-primary" />
+          <InfoIcon className="w-5 h-5 text-black" />
           Section 10: Certification & Consent
         </h3>
         
-        <div className="bg-background border border-primary/10 rounded-md p-4 text-sm">
+        <div className="bg-background border border-black/10 rounded-md p-4 text-sm">
           I certify that all information I have provided on this form is true, correct, and complete to the best of my knowledge and belief.
         </div>
 

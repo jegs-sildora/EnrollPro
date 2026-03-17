@@ -47,10 +47,10 @@ router.get('/public', getPublicSettings);
 router.get('/scp-config', getScpConfig);
 router.get('/shs-config', getShsConfig);
 
-// Protected - REGISTRAR + SYSTEM_ADMIN
-router.put('/identity', authenticate, authorize('REGISTRAR', 'SYSTEM_ADMIN'), validate(updateIdentitySchema), updateIdentity);
-router.post('/logo', authenticate, authorize('REGISTRAR', 'SYSTEM_ADMIN'), upload.single('logo'), uploadLogo);
-router.delete('/logo', authenticate, authorize('REGISTRAR', 'SYSTEM_ADMIN'), removeLogo);
-router.put('/accent', authenticate, authorize('REGISTRAR', 'SYSTEM_ADMIN'), selectAccentColor);
+// Protected - SYSTEM_ADMIN
+router.put('/identity', authenticate, authorize('SYSTEM_ADMIN'), validate(updateIdentitySchema), updateIdentity);
+router.post('/logo', authenticate, authorize('SYSTEM_ADMIN'), upload.single('logo'), uploadLogo);
+router.delete('/logo', authenticate, authorize('SYSTEM_ADMIN'), removeLogo);
+router.put('/accent', authenticate, authorize('SYSTEM_ADMIN'), selectAccentColor);
 
 export default router;

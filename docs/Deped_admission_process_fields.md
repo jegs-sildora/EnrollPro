@@ -1,64 +1,47 @@
-# DepEd Admission Process — Complete Reference
-## Grade 7 JHS & Grade 11 SHS | Input Fields & Required Student Information
+# DepEd Admission Process Fields
+## Complete BEEF Field Reference & System Implementation Guide
 
-**Governing Policies:**
-- DepEd Order No. 017, s. 2025 — Revised Basic Education Enrollment Policy
-- DepEd Memorandum No. 012, s. 2026 — Strengthened SHS Curriculum (Grade 11, SY 2026–2027)
-- DepEd Memorandum No. 149, s. 2011 — Special Curricular Programs (SCPs)
-- Division Memorandum No. 157, s. 2025 — STE Admission Test Guidelines
-- RA 10173 — Data Privacy Act of 2012
+**Document Version:** 3.0.0
+**System:** School Admission, Enrollment & Information Management System
+**Policy Basis:** DepEd Order No. 017, s. 2025 · RA 10173 (Data Privacy Act) · DM 149, s. 2011 · DM 012, s. 2026
+**Applies To:** Online Admission (`/apply`) · F2F Admission (`/f2f-admission`) · Enrollment Management (`/applications`) · SIMS (`/students`) · Teacher Management (`/teachers`) · Grade Level & Sectioning (`/sections`)
 
-**Effective:** SY 2025–2026 and all subsequent school years
-**Scope:** All public secondary schools offering Grades 7 to 12
+> **Dynamic rule enforced system-wide:** All school-identifying text (school name, division, region) is sourced from `SchoolSettings` at runtime. Grade levels, strands, and SCP options in every form, dropdown, and filter across all modules are loaded from the active academic year's database configuration. Nothing is hardcoded.
 
 ---
 
 ## Table of Contents
 
-0. [RA 10173 — Data Privacy Notice (Displayed at Top of Admission Form)](#0-ra-10173--data-privacy-notice-displayed-at-top-of-admission-form)
-1. [Overview — Two Admission Pathways](#1-overview--two-admission-pathways)
-2. [The Basic Education Enrollment Form (BEEF)](#2-the-basic-education-enrollment-form-beef)
-   - 2.1 [Form Header & Instructions](#21-form-header--instructions)
-   - 2.2 [Section 1 — School Year & Reference Numbers](#22-section-1--school-year--reference-numbers)
-   - 2.3 [Section 2 — Grade Level & Program](#23-section-2--grade-level--program)
-   - 2.4 [Section 3 — Personal Information](#24-section-3--personal-information)
-   - 2.5 [Section 4 — Special Classifications](#25-section-4--special-classifications)
-   - 2.6 [Section 5 — Address Information](#26-section-5--address-information)
-   - 2.7 [Section 6 — Parent / Guardian Information](#27-section-6--parent--guardian-information)
-   - 2.8 [Section 7 — Previous School Information](#28-section-7--previous-school-information)
-   - 2.9 [Section 8 — SHS Track & Elective Cluster (Grade 11 Only)](#29-section-8--shs-track--elective-cluster-grade-11-only)
-   - 2.10 [Section 9 — Learner Type & Modality](#210-section-9--learner-type--modality)
-   - 2.11 [Section 10 — Certification & Consent](#211-section-10--certification--consent)
-3. [Complete Field Reference — All BEEF Fields](#3-complete-field-reference--all-beef-fields)
-4. [Confirmation Slip (Annex C) — Continuing Learners](#4-confirmation-slip-annex-c--continuing-learners)
-5. [Documentary Requirements by Learner Type](#5-documentary-requirements-by-learner-type)
-6. [SCP Admission — Additional Requirements & Input Fields](#6-scp-admission--additional-requirements--input-fields)
-7. [Data Privacy Compliance (RA 10173)](#7-data-privacy-compliance-ra-10173)
-8. [Field-by-Field Mapping to LIS](#8-field-by-field-mapping-to-lis)
-9. [Validation Rules for Each Field](#9-validation-rules-for-each-field)
-10. [System Design Notes for the Admission Portal](#10-system-design-notes-for-the-admission-portal)
+1. [RA 10173 — Data Privacy Notice](#1-ra-10173--data-privacy-notice)
+2. [Two Admission Pathways](#2-two-admission-pathways)
+3. [The Basic Education Enrollment Form (BEEF)](#3-the-basic-education-enrollment-form-beef)
+   - 3.1 [Section 1 — School Year & LRN](#31-section-1--school-year--lrn)
+   - 3.2 [Section 2 — Grade Level & Program](#32-section-2--grade-level--program)
+   - 3.3 [Section 3 — Personal Information](#33-section-3--personal-information)
+   - 3.4 [Section 4 — Special Classifications](#34-section-4--special-classifications)
+   - 3.5 [Section 5 — Address](#35-section-5--address)
+   - 3.6 [Section 6 — Parent / Guardian Information](#36-section-6--parent--guardian-information)
+   - 3.7 [Section 7 — Previous School](#37-section-7--previous-school)
+   - 3.8 [Section 8 — SHS Track & Cluster](#38-section-8--shs-track--cluster)
+   - 3.9 [Section 9 — Learner Type & Modality](#39-section-9--learner-type--modality)
+   - 3.10 [Section 10 — Certification & Consent](#310-section-10--certification--consent)
+4. [Complete Field Reference Table](#4-complete-field-reference-table)
+5. [SCP-Specific Additional Fields](#5-scp-specific-additional-fields)
+6. [F2F Admission — Field Differences](#6-f2f-admission--field-differences)
+7. [Validation Rules](#7-validation-rules)
+8. [Prisma Model Mapping](#8-prisma-model-mapping)
+9. [Data Privacy & Sensitive Field Handling](#9-data-privacy--sensitive-field-handling)
+10. [System Design Notes — All Five Modules](#10-system-design-notes--all-five-modules)
 
 ---
 
-## 0. RA 10173 — Data Privacy Notice (Displayed at Top of Admission Form)
+## 1. RA 10173 — Data Privacy Notice
 
-> **Design Instruction for Claude Code:** This section must render as the **very first visible element** on the `/apply` admission portal page — above the school logo, above Step 1 of the wizard, above every form field. It is a full-width, non-collapsible notice banner. The applicant must scroll through it, check a consent checkbox, and click a confirmation button before the form fields become interactive. This mirrors the RA 10173 requirement for informed, specific, and freely given consent before collection of personal data.
+The Data Privacy Notice is the **first element rendered** on both `/apply` and `/f2f-admission`. No form field is visible or interactive until consent is confirmed.
 
----
+### 1.1 Privacy Notice — Full Text (Template)
 
-### 0.1 What RA 10173 Is
-
-**Republic Act No. 10173**, known as the **Data Privacy Act of 2012**, is the Philippine law that protects the privacy of individuals by regulating how personal and sensitive personal information is collected, stored, processed, used, and disposed of. It is administered by the **National Privacy Commission (NPC)**.
-
-DepEd is a personal information controller (PIC) under RA 10173. Every piece of information collected on the Basic Education Enrollment Form (BEEF) — including the learner's name, birthdate, address, disability status, and family contact details — is subject to this law.
-
----
-
-### 0.2 The Privacy Notice — Full Text
-
-The following is the exact privacy notice that must appear at the top of the online admission form. This is to be rendered as a styled notice card, not a tooltip or fine-print footnote.
-
----
+All `[SchoolSettings.schoolName]`, `[SchoolSettings.division]`, and `[SchoolSettings.region]` values are substituted at runtime. The notice uses brackets to mark dynamic values — there is no hardcoded school name, division, or region anywhere in the codebase.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -67,541 +50,268 @@ The following is the exact privacy notice that must appear at the top of the onl
 │  National Privacy Commission Advisory Opinions                          │
 │  ─────────────────────────────────────────────────────────────────────  │
 │                                                                          │
-│  [School Name]                                          │
-│  Schools Division of Negros Occidental                                   │
-│  Department of Education — Region VI (Western Visayas)                  │
+│  [SchoolSettings.schoolName]                                             │
+│  [SchoolSettings.division]                                               │
+│  Department of Education — [SchoolSettings.region]                      │
 │                                                                          │
 │  Why we collect your information                                         │
 │  ─────────────────────────────────────────────────────────────────────  │
-│  The Department of Education (DepEd) and [School Name]                    │
-│  collect the personal information on this form for the            │
-│  following specific and legitimate purposes only:                        │
+│  The Department of Education (DepEd) and [SchoolSettings.schoolName]    │
+│  collect the personal information on this form for the following         │
+│  specific and legitimate purposes only:                                  │
 │                                                                          │
 │    1. To process your child's admission and enrollment application.      │
-│    2. To assign the learner to a grade level, section, and program.      │
+│    2. To assign the learner to a grade level, section, and program.     │
 │    3. To encode the learner's profile into the DepEd Learner             │
-│       Information System (LIS) as required by national policy.           │
+│       Information System (LIS) as required by national policy.          │
 │    4. To communicate with you regarding your child's application         │
 │       status, exam schedules, and enrollment confirmation.               │
-│    5. To comply with DepEd reporting requirements to the Schools         │
-│       Division Office (SDO) and DepEd Central Office.                    │
-│    6. To tag equity program beneficiaries (4Ps, IP learners, Learners    │
-│       with Disabilities) for appropriate support services.               │
+│    5. To comply with DepEd reporting requirements to the SDO.           │
+│    6. To tag equity program beneficiaries for appropriate support.       │
 │                                                                          │
 │  What information we collect                                             │
 │  ─────────────────────────────────────────────────────────────────────  │
 │  Personal Information:                                                   │
-│    • Full name, date of birth, sex, place of birth, age                  │
-│    • Home address (current and permanent)                                │
-│    • Mother tongue and religion                                          │
-│    • Learner Reference Number (LRN)                                      │
-│    • PSA Birth Certificate number                                        │
-│                                                                          │
+│    • Full name, date of birth, sex, place of birth                       │
+│    • Home address · Mother tongue · Religion · LRN                       │
 │  Sensitive Personal Information:                                         │
 │    • Disability status and type (if applicable)                          │
 │    • Indigenous Peoples (IP) cultural community affiliation              │
 │    • 4Ps Pantawid Pamilyang Pilipino Program beneficiary status          │
-│      and Household ID number                                             │
-│    • Grade 10 subject grades (for Grade 11 STEM applicants)             │
-│                                                                          │
+│    • Grade 10 subject grades (for applicable SCP applicants only)       │
 │  Contact Information:                                                    │
 │    • Parent/guardian name, contact number, and email address             │
 │                                                                          │
 │  Your rights under RA 10173                                              │
 │  ─────────────────────────────────────────────────────────────────────  │
-│  As a data subject (or as the parent/guardian of a minor data            │
-│  subject), you have the right to:                                        │
-│                                                                          │
-│    ✓ Be informed — you have the right to know what data is collected     │
-│      and why (this notice fulfills that obligation).                     │
-│    ✓ Access — you may request a copy of your child's personal data       │
-│      held by the school at any time.                                     │
-│    ✓ Rectification — you may request corrections to inaccurate or        │
-│      incomplete data by visiting the Registrar's Office.                 │
-│    ✓ Object — you may object to the processing of your personal data     │
-│      in certain circumstances, subject to DepEd's legal mandate.        │
-│    ✓ Erasure or Blocking — you may request that your data be deleted     │
-│      or blocked if it is no longer necessary for the stated purposes,    │
-│      subject to DepEd's legal record-keeping requirements.               │
-│    ✓ Damages — you have the right to be indemnified for damages          │
-│      sustained due to inaccurate, incomplete, outdated, false,           │
-│      unlawfully obtained, or unauthorized use of personal data.          │
-│    ✓ File a complaint — you may file a complaint with the National       │
-│      Privacy Commission (NPC) at privacy.gov.ph if you believe          │
-│      your data privacy rights have been violated.                        │
-│                                                                          │
-│  How we protect your information                                         │
-│  ─────────────────────────────────────────────────────────────────────  │
-│    • All data collected on this form is stored in the DepEd Learner     │
-│      Information System (LIS), which is protected by DepEd's            │
-│      information security standards.                                     │
-│    • Your contact number and email address will be used exclusively      │
-│      for school-related communications. They will never be shared        │
-│      with third parties or used for marketing.                           │
-│    • Physical BEEF forms collected during enrollment shall be retained   │
-│      for no longer than one (1) year, after which they shall be          │
-│      properly disposed of in accordance with DepEd Records               │
-│      Management Regulations.                                             │
-│    • The PSA Birth Certificate Number and LRN are treated as            │
-│      personally identifiable information and will not be displayed       │
-│      in any publicly accessible record.                                  │
-│    • Disability and 4Ps data are classified as sensitive personal        │
-│      information and access is restricted to the registrar, class        │
-│      adviser, and school head only.                                      │
+│    ✓ Be informed   ✓ Access   ✓ Rectification                            │
+│    ✓ Object        ✓ Erasure / Blocking   ✓ Damages                     │
+│    ✓ File a complaint with the NPC (privacy.gov.ph)                     │
 │                                                                          │
 │  Data Privacy Officer Contact                                            │
 │  ─────────────────────────────────────────────────────────────────────  │
-│  For questions, requests to access or correct your data, or to file      │
-│  a complaint, contact:                                                   │
-│                                                                          │
-│    [School Name]                                                         │
-│    Registrar's Office                                                    │
-│    [City/Municipality], [Province]                                          │
-│    Email: [school official email]                                        │
-│    Telephone: [school telephone number]                                  │
-│                                                                          │
-│  National Privacy Commission (NPC)                                       │
-│    Website: https://www.privacy.gov.ph                                   │
-│    Email: info@privacy.gov.ph                                            │
-│    Hotline: +63 2 8234-2228                                              │
+│  [SchoolSettings.schoolName] Registrar's Office                         │
+│  National Privacy Commission: privacy.gov.ph · info@privacy.gov.ph      │
 │                                                                          │
 │  ─────────────────────────────────────────────────────────────────────  │
-│  By checking the box below and proceeding with this form, I confirm     │
-│  that I have read and understood this Data Privacy Notice, and I        │
-│  freely and voluntarily consent to the collection and processing of     │
-│  my child's personal information by [School Name]                       │
-│  and the Department of Education for the purposes stated above,         │
-│  in accordance with RA 10173 and its Implementing Rules and             │
-│  Regulations.                                                            │
-│                                                                          │
 │  ☐  I have read and I agree to the Data Privacy Notice above.  *        │
-│     (This field is required to proceed.)                                 │
+│     (This field is required to proceed.)                                │
 │                                                                          │
-│                        [ Proceed to Application Form → ]                │
+│  [ Proceed to Application Form → ]   ← disabled until checked          │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
+### 1.2 Consent Implementation
+
+**Scroll-to-read enforcement:** The checkbox is disabled until the user scrolls to the bottom of the notice box.
+
+```tsx
+// client/src/components/admission/PrivacyNoticeGate.tsx
+const handleNoticeScroll = (e: React.UIEvent<HTMLDivElement>) => {
+  const el = e.currentTarget;
+  const atBottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 10;
+  if (atBottom) setHasScrolledNotice(true);
+};
+```
+
+**State machine:**
+```
+hasScrolledNotice = false  →  checkbox disabled (opacity-50, pointer-events-none)
+hasScrolledNotice = true   →  checkbox enabled
+consentChecked    = false  →  "Proceed" button disabled
+consentChecked    = true   →  "Proceed" button active (school accent color via var(--accent))
+```
+
+**Audit trail fields stored on the `Applicant` record:**
+
+```prisma
+privacyConsentGiven     Boolean   @default(false)
+privacyConsentTimestamp DateTime?
+privacyConsentVersion   String?   // e.g. "RA10173-v2025-DO017"
+```
+
+**F2F difference:** On `/f2f-admission` the notice appears in a condensed block. The registrar checks: *"The applicant / parent / guardian has physically signed the RA 10173 Data Privacy consent form and a copy has been retained on file."*
+
+### 1.3 Lawful Basis per Data Category (RA 10173 §12 / §13)
+
+| Data Category | Lawful Basis |
+|---|---|
+| Learner identity (name, birthdate, sex, LRN) | DepEd's constitutional mandate (RA 10533); government function |
+| Address | School district assignment; emergency contact — government function |
+| Mother tongue | MTB-MLE program requirement — government function |
+| Religion | Values class scheduling — optional; no adverse effect if blank |
+| Family contact | Communication re enrollment and exam schedules — necessary for stated purpose |
+| **Disability status (SPI)** | SNEd/SPED referral and accommodation — explicit consent required |
+| **IP affiliation (SPI)** | IPEd program tagging — explicit consent + additional safeguards |
+| **4Ps status and Household ID (SPI)** | DSWD-DepEd coordination — strict access control |
+| Grade 10 grades | Collected **only** for applicable SCP applicants — data minimization principle |
+| SCP assessment scores | Collected only for SCP applicants; retained in SIMS after enrollment |
+
 ---
 
-### 0.3 Consent Checkbox Field Specification
+## 2. Two Admission Pathways
 
-| # | Field | Type | Required | Behavior |
+### Path A — Online Admission (`/apply`)
+
+- Public, unauthenticated — no login required
+- **Gate:** React Router loader redirects to `/closed` when `enrollmentOpen = false`
+- `admissionChannel: ONLINE` stored on the `Applicant` record
+- Privacy consent captured on-screen before any field is accessible
+
+### Path B — F2F Walk-in Admission (`/f2f-admission`)
+
+- Requires JWT authentication — role: REGISTRAR or SYSTEM_ADMIN
+- **Never gated by the enrollment gate** — always accessible to authorized staff
+- `admissionChannel: F2F` and `encodedById: <registrar userId>` stored
+- Registrar confirms physical consent signature checkbox
+- Same validation rules and SCP conditional fields apply as Path A
+
+Both pathways produce an identical `Applicant` record in the database. The only differences are `admissionChannel`, `encodedById`, and the initial `status` (F2F may be set to `APPROVED` immediately if documents are verified on the spot).
+
+---
+
+## 3. The Basic Education Enrollment Form (BEEF)
+
+The BEEF is the official DepEd enrollment document under DO 017, s. 2025. The system's admission form captures all relevant BEEF sections. Sections that apply only to lower grade levels (Kindergarten, Grades 1–6) are omitted — this system serves secondary schools (Grades 7–12) only.
+
+### 3.1 Section 1 — School Year & LRN
+
+| # | Field | Type | Required | Notes |
 |---|---|---|---|---|
-| 0.1 | **Data Privacy Consent** | Checkbox | ✅ Required | Must be checked `true` before the "Proceed" button becomes active. Unchecked = disabled proceed button. |
-| 0.2 | **Timestamp of Consent** | System-generated | Auto | Recorded invisibly when checkbox is checked. Stored as `consentTimestamp` in the `Applicant` record. Used as an audit trail for consent. |
-| 0.3 | **Consent Version** | System-generated | Auto | Stores the version of the privacy notice the user consented to (e.g., `"RA10173-v2025-DO017"`). If the notice is updated, all future submissions are tagged with the new version. |
+| 1.1 | School Year | Auto-filled | ✅ | Set from active `AcademicYear.yearLabel` — not editable by applicant |
+| 1.2 | Learner Reference Number (LRN) | Text (12 digits) | ✅ | Unique system-wide; checked against existing records on blur |
+| 1.3 | PSA Birth Certificate Number | Text | If available | Once-only submission; stored for LIS reference; never logged in plaintext |
 
-**Implementation note — backend:**
-
-```ts
-// The Applicant model must store consent metadata
-// server/prisma/schema.prisma — add to Applicant model
-
-model Applicant {
-  // ... all existing fields ...
-
-  // ── RA 10173 Consent fields ───────────────────────────────────
-  privacyConsentGiven     Boolean   @default(false)
-  privacyConsentTimestamp DateTime?
-  privacyConsentVersion   String?   // e.g. "RA10173-v2025-DO017"
-  // ─────────────────────────────────────────────────────────────
-}
-```
-
-**Implementation note — Zod validator:**
-
-```ts
-// server/src/validators/application.validator.ts
-// Add to the root application schema
-
-privacyConsentGiven: z.literal(true, {
-  errorMap: () => ({
-    message: 'You must read and agree to the Data Privacy Notice to proceed.'
-  })
-}),
-```
+**LRN on-blur behavior:**
+- Calls `GET /api/applicants/check-lrn/:lrn`
+- Already enrolled in active AY → inline error: "This LRN is already enrolled for SY [year]."
+- Exists from prior year → pre-fills name and birthdate with a confirmation toast
+- New → proceed normally
 
 ---
 
-### 0.4 Legal Basis for Each Data Category Collected
+### 3.2 Section 2 — Grade Level & Program
 
-Under RA 10173, every category of personal data collected must have a lawful basis. The table below documents the legal basis for each data category on the BEEF:
+| # | Field | Type | Required | Notes |
+|---|---|---|---|---|
+| 2.1 | Grade Level | Select | ✅ | **Loaded dynamically from `GET /api/grade-levels`** — active AY only; never hardcoded |
+| 2.2 | SCP Application | Select | Conditional | Shown only when active SCP programs exist for the selected grade level; loaded from `GET /api/scp-programs?gradeLevelId=` |
+| 2.3 | SHS Track | Radio | Grade 11 | Academic / TechPro — shown only when Grade 11 selected |
+| 2.4 | Elective Cluster | Select | Grade 11 | **Loaded from `GET /api/strands?gradeLevelId=`** — school-configured; never hardcoded |
 
-| Data Category | Examples | Legal Basis (RA 10173 §12 / §13) |
+> **School-agnostic rule:** A school that offers no SHS strands will see no strand field. A school that offers no SCP programs will see no SCP dropdown. These are not feature flags — they follow directly from what is configured in Settings Tab 3.
+
+---
+
+### 3.3 Section 3 — Personal Information
+
+| # | Field | Type | Required | Validation |
+|---|---|---|---|---|
+| 3.1 | Last Name | Text | ✅ | Min 2 chars; letters, spaces, hyphens; Filipino accented chars (ñ, á, etc.) allowed |
+| 3.2 | First Name | Text | ✅ | Same as last name |
+| 3.3 | Middle Name | Text | — | Optional; "N/A" accepted |
+| 3.4 | Extension Name (Suffix) | Select | — | Jr. · Sr. · II · III · IV · N/A |
+| 3.5 | Date of Birth | Date picker | ✅ | Valid calendar date; Grade 7 learner ≥ 10 years old; Grade 11 ≥ 14 years old |
+| 3.6 | Sex | Radio | ✅ | Male / Female — per PSA Birth Certificate; DepEd uses binary classification |
+| 3.7 | Place of Birth | Text | — | City/Municipality, Province |
+| 3.8 | Nationality | Text | — | Default: "Filipino" |
+| 3.9 | Religion | Text | — | Free text; optional |
+| 3.10 | Mother Tongue | Text | — | First language learned at home |
+
+> These fields collect **Personal Information (PI)** under RA 10173. All are included in the online and F2F forms.
+
+---
+
+### 3.4 Section 4 — Special Classifications
+
+These fields are for equity program tagging and inclusion services. A "Yes" answer triggers additional support services — **not disqualification from enrollment**.
+
+| # | Field | Type | Required | Follow-up |
+|---|---|---|---|---|
+| 4.1 | Belonging to an IP Cultural Community? | Checkbox | — | If Yes → IP Community name (free text) |
+| 4.2 | 4Ps Beneficiary? | Checkbox | — | If Yes → 4Ps Household ID (numeric) |
+| 4.3 | Learner with Disability (LWD)? | Checkbox | — | If Yes → Disability Type (multi-select) |
+| 4.4 | Disability Type | Multi-select | Conditional | Visual Impairment · Hearing Impairment · Physical/Motor · Intellectual · Learning · Speech/Language · Emotional/Behavioral · Autism Spectrum · Multiple · Other |
+
+> These fields collect **Sensitive Personal Information (SPI)** under RA 10173. Access in SIMS is restricted to REGISTRAR and SYSTEM_ADMIN only. SPI fields are **never included in paginated list API responses** — they are returned only on single-record detail views.
+
+---
+
+### 3.5 Section 5 — Address
+
+**Current Address:**
+
+| # | Field | Required |
 |---|---|---|
-| Learner identity | Name, birthdate, sex, LRN | Fulfillment of DepEd's constitutional mandate to provide basic education (RA 10533); lawful processing for government function |
-| Address | Current and permanent address | Necessary for school district assignment and emergency contact — lawful government function |
-| Family contact | Parent/guardian name, phone, email | Necessary for communication regarding enrollment, assessment results, and emergency notifications |
-| Mother tongue | Language spoken at home | Required by DepEd's Mother Tongue-Based Multilingual Education (MTB-MLE) program — lawful government function |
-| Religion | Professed religion | Used for religion class scheduling (MAPEH); optional; no adverse effect if not provided |
-| **PSA Birth Certificate Number** | Document reference number | Identity verification for LIS registration — sensitive PII; strict access control required |
-| **Disability status and type** | Visual, hearing, physical, intellectual, autism | **Sensitive personal information** under §3(l) RA 10173 — requires explicit consent; collected for SNEd/SPED program referral and accommodation planning |
-| **IP affiliation** | Ethnolinguistic group | **Sensitive personal information** — collected for Indigenous Peoples Education (IPEd) program tagging; school must implement additional safeguards |
-| **4Ps status and Household ID** | DSWD-issued ID | **Sensitive personal information** — collected for conditional cash transfer program coordination; shared only with DepEd LIS |
-| Grade 10 subject grades | Science grade, Math grade | Collected only for STEM eligibility screening; not collected for non-STEM applicants — data minimization principle |
-| SCP assessment scores | Exam score, audition result | Collected only for SCP applicants — data minimization; retained in learner's permanent record after enrollment |
+| 5.1 | House No. / Street | — |
+| 5.2 | Barangay | ✅ |
+| 5.3 | City / Municipality | ✅ |
+| 5.4 | Province | ✅ |
+| 5.5 | Country | — (default: Philippines) |
 
-> **Data Minimization Principle (RA 10173 §11(c)):** Only data that is adequate, relevant, and not excessive in relation to the purpose of processing may be collected. The system must not ask for Grade 10 grades from non-STEM applicants. It must not ask for disability information and then leave it unused. Every field on the form must serve a stated purpose.
+**Permanent Address:** A checkbox "Same as Current Address" reveals a duplicate set of fields when unchecked.
 
 ---
 
-### 0.5 Sensitive Personal Information — Special Handling Rules
+### 3.6 Section 6 — Parent / Guardian Information
 
-The following fields are classified as **Sensitive Personal Information (SPI)** under §3(l) of RA 10173 and require stricter handling than ordinary personal data:
+| Group | Key Fields | Required |
+|---|---|---|
+| Mother | Full name, contact number | — (required if primary contact) |
+| Father | Full name, contact number | — (required if primary contact) |
+| Legal Guardian | Full name, relationship, contact number | ✅ (at least one guardian contact required) |
+| Email Address | Parent/guardian email | ✅ (online) · Optional (F2F) |
 
-| SPI Field | Who May Access It | Storage Rule | Prohibited Actions |
+> Email is used for tracking number delivery and all status notifications. Contact numbers and emails are collected under the stated purpose of school communication only — RA 10173 prohibits sharing these with third parties.
+
+---
+
+### 3.7 Section 7 — Previous School
+
+| # | Field | Required |
+|---|---|---|
+| 7.1 | Last School Attended (full name) | ✅ |
+| 7.2 | DepEd School ID of sending school | — |
+| 7.3 | Last Grade Level Completed | ✅ |
+| 7.4 | School Year Last Attended | — |
+| 7.5 | General Average (last grade) | — |
+
+General average is stored in `Applicant.generalAverage` and displayed in the SIMS profile's Academic History tab.
+
+---
+
+### 3.8 Section 8 — SHS Track & Cluster
+
+> **Conditionally shown only** when the selected grade level has strands configured for the active academic year. Hidden for JHS-only schools and for all non-SHS grade level selections.
+
+**For Grade 11 (new entrants under DM 012, s. 2026):**
+
+| # | Field | Required |
+|---|---|---|
+| 8.1 | SHS Track | ✅ — Academic / TechPro |
+| 8.2 | Elective Cluster | ✅ — loaded from configured strands |
+| 8.3 | Grade 10 Science Grade | Required if STEM cluster selected |
+| 8.4 | Grade 10 Mathematics Grade | Required if STEM cluster selected |
+
+**For Grade 12 transferees (old strand system — SY 2026–2027 transition):**
+These students are continuing under the pre-DM012 strand classification (STEM, ABM, HUMSS, GAS, TVL variants). The system should show the old strand selector for Grade 12 transferees only.
+
+> **Clusters are not hardcoded.** The elective cluster dropdown loads from `GET /api/strands?gradeLevelId=` — only the clusters the school has configured for the active academic year are shown.
+
+---
+
+### 3.9 Section 9 — Learner Type & Modality
+
+| # | Field | Required | Options |
 |---|---|---|---|
-| Disability status and type | Registrar, Class Adviser, School Head, Guidance Counselor | Stored in LIS with restricted access flag; never displayed in general student lists | Cannot be disclosed to other students, parents of other students, or non-DepEd entities |
-| IP cultural community | Registrar, School Head, IPEd Coordinator | Stored in LIS; used for IPEd program tagging only | Cannot be used to discriminate or deny services |
-| 4Ps Household ID | Registrar, School Head | Stored in LIS; shared only with DSWD for program coordination via official DepEd channels | Cannot be shared with commercial entities or third parties |
-| PSA BC Number | Registrar only | Recorded in physical enrollment logbook and LIS; never displayed in public-facing system views | Cannot appear in audit log plaintext descriptions; cannot be included in bulk exports |
-| Grade 10 subject grades | Registrar, School Head, Guidance Counselor | Used only for STEM eligibility determination; not retained beyond the admission decision | Cannot be used to rank, shame, or publicly compare applicants |
+| 9.1 | Type of Learner | ✅ | New Enrollee · Transferee · Returning (Balik-Aral) · Continuing · OSCYA |
+| 9.2 | Preferred Learning Modality | — | Face-to-Face · Blended · Distance Modular · Online · Home Schooling |
 
 ---
 
-### 0.6 Privacy Notice Placement on the Digital Form
+### 3.10 Section 10 — Certification & Consent
 
-The privacy notice defined in §0.2 must be implemented with the following UX rules on the `/apply` portal:
-
-```
-PAGE LOAD → /apply
-    │
-    ▼
-┌─────────────────────────────────────────────────────┐
-│  [School Logo]  [School Name]  SY 2026–2027         │
-│  Online Admission Application                        │
-│                                                      │
-│  ┌─────────────────────────────────────────────────┐ │
-│  │  🔒  DATA PRIVACY NOTICE (RA 10173)             │ │
-│  │  [Full notice text — scrollable box, 300px h]  │ │
-│  │                                                 │ │
-│  │  ☐  I have read and agree to the Data Privacy  │ │
-│  │     Notice.  *                                  │ │
-│  └─────────────────────────────────────────────────┘ │
-│                                                      │
-│  [ Proceed to Application Form → ]  ← disabled      │
-│    (button activates only when checkbox is ✓)        │
-└─────────────────────────────────────────────────────┘
-    │
-    │  (only after consent checkbox is checked and
-    │   Proceed is clicked)
-    ▼
-STEP 1: Personal Information
-STEP 2: Family & Contact
-STEP 3: Enrollment Preferences
-```
-
-**Styling requirements:**
-- Notice card: white background, `border border-border rounded-lg p-6 shadow-sm`
-- Notice heading: accent color, `text-lg font-semibold` with a lock icon (`🔒`)
-- Notice body: `text-sm text-muted-foreground`, scrollable with `max-h-72 overflow-y-auto`
-- Checkbox: standard shadcn/ui `Checkbox` component with a red asterisk label
-- Proceed button: `variant="default"` (accent color) — disabled state (`opacity-50 cursor-not-allowed`) when checkbox is unchecked
-- The notice must NOT be dismissible, collapsible, or hideable — it must be fully visible on page load
-
----
-
-### 0.7 Re-consent Requirement
-
-If the Privacy Notice text is materially updated (e.g., new data categories added, new processing purposes), all **new** submissions after the update are tagged with the new consent version. **Existing** applicant records retain their original consent version tag — they do not need to re-consent retroactively. However, the school's Data Privacy Officer must assess whether existing applicants should be notified of material changes.
-
----
-
-## 1. Overview — Two Admission Pathways
-
-Under the revised guidelines, parents or guardians must submit the original or a certified true copy of the learner's PSA/NSO-issued birth certificate only once. Beyond that one-time document, the full admission workflow depends on which of the two pathways the learner is entering:
-
-```
-INCOMING LEARNER (Grade 7 or Grade 11)
-          │
-          ▼
-  Is the learner applying for a
-  Special Curricular Program (SCP)?
-          │
-    YES ──┤              NO ──────────────────────────────────┐
-          │                                                   │
-          ▼                                                   ▼
-   SCP ADMISSION PATH                           OPEN ADMISSION PATH
-   (competitive assessment)                    (document verification only)
-          │                                                   │
-   Submit BEEF +                               Submit BEEF +
-   SCP-specific documents                      PSA BC + SF9
-          │                                                   │
-   Wait for exam /                             Registrar verifies
-   audition schedule                           documents
-          │                                                   │
-   Take exam / audition                        APPROVED →
-          │                                    Assign section
-   PASSED → Enroll
-   FAILED → Offer regular section
-          or reject
-```
-
-**Pathway A — Open Admission** applies to: all regular Grade 7 applicants and all Grade 11 applicants for non-competitive tracks (HUMSS, ABM, GAS, TechPro non-STEM).
-
-**Pathway B — SCP Admission** applies to: Grade 7 applicants to STE, SPA, SPS, SPJ, SPFL, SPTVE, and Grade 11 STEM aspirants.
-
-Both pathways use the **same BEEF form** as their primary admission document. The difference lies in additional documents and the post-submission workflow.
-
----
-
-## 2. The Basic Education Enrollment Form (BEEF)
-
-**Form title:** Basic Education Enrollment Form (BEEF)
-**Official source:** DepEd Central Office; available on the LIS Support page, Regional Office websites, SDO websites, and individual school websites
-**Legal notice on form:** *"THIS FORM IS NOT FOR SALE"*
-**Instructions on form:** *"Print legibly all information required in CAPITAL LETTERS and check all appropriate boxes. Submit accomplished form to the Adviser. Use black or blue pen only."*
-**Availability:** Physical copies at any public school, barangay hall, or SDO; digital/printable version on DepEd official websites
-**Latest version:** Updated under DO 017, s. 2025 (SY 2025–2026 and onwards); further updated January 15, 2026 with the SHS Track/Cluster fields reflecting DM 012, s. 2026
-
----
-
-### 2.1 Form Header & Instructions
-
-**On the physical paper BEEF**, the form header contains:
-- Republic of the Philippines wordmark
-- Department of Education seal
-- Text: "BASIC EDUCATION ENROLLMENT FORM"
-- Legal notice: "THIS FORM IS NOT FOR SALE"
-- Instruction block: print in capital letters, black or blue pen only, submit to adviser
-- A brief data privacy clause near the bottom of the form (Section 10 — Certification)
-
-**On the digital online portal (`/apply`)**, the form header is preceded by the full **RA 10173 Data Privacy Notice** (see §0) which must be the first element the applicant interacts with. The privacy notice replaces the brief clause on the paper form with a comprehensive, scrollable, consent-gated notice.
-
-This section contains **no fillable fields** — it is informational only. The only interactive element at this stage is the Privacy Consent Checkbox (§0.3).
-
----
-
-### 2.2 Section 1 — School Year & Reference Numbers
-
-| # | Field Label | Field Type | Required? | Format / Validation |
-|---|---|---|---|---|
-| 1.1 | **School Year** | Text / Select | Required | Format: `YYYY–YYYY` (e.g., `2026–2027`) — auto-filled if digital |
-| 1.2 | **Learner Reference Number (LRN)** | Text | Optional at early registration; required if learner already has one | Exactly 12 numeric digits; no spaces; no dashes. Leave blank if learner has never been enrolled in a DepEd-accredited school. |
-| 1.3 | **PSA Birth Certificate Number** | Text | Optional at early registration; required for official enrollment | Format: varies — typically 9 to 15 digits or alphanumeric depending on PSA issuance year |
-
-**Notes on LRN:**
-- If the learner was previously enrolled in a DepEd-accredited school, they should already have an LRN visible on their SF9 (Report Card) or SF10 (Form 137)
-- Submitting an LRN that already exists in the LIS will link the application to the existing learner record — prevents duplicate profiles
-- If the learner has no LRN (e.g., transferee from a non-DepEd school, returning learner with a long gap, or first-time enrollee from a non-recognized private school), LRN is left blank and the registrar will request LRN generation from the SDO after enrollment in LIS
-
----
-
-### 2.3 Section 2 — Grade Level & Program
-
-| # | Field Label | Field Type | Required? | Options |
-|---|---|---|---|---|
-| 2.1 | **Grade Level to Enroll** | Select (radio or dropdown) | Required | Kindergarten · Grade 1 · Grade 2 · Grade 3 · Grade 4 · Grade 5 · Grade 6 · Grade 7 · Grade 8 · Grade 9 · Grade 10 · Grade 11 · Grade 12 |
-| 2.2 | **For Special Needs Education (SNEd) Only** | Conditional text | Required only if learner has SNEd needs | Specify the SNEd grade level or program type |
-| 2.3 | **SHS Track** | Select (radio) | Required if Grade 11 | Academic · Technical-Professional (TechPro) — per DM 012, s. 2026 |
-| 2.4 | **Preferred Elective Cluster** | Select (dropdown) | Required if Grade 11 | Filtered by selected Track (see Section 2.9 for full list) |
-| 2.5 | **SCP Application (JHS)** | Select (radio) | Required if Grade 7 SCP applicant | Regular Section · STE · SPA · SPS · SPJ · SPFL · SPTVE |
-
-**Note on Grade 12 (Continuing learners):** Grade 12 applicants in SY 2026–2027 do NOT use the new Track/Cluster fields — they continue under the old strand system (STEM, ABM, HUMSS, GAS). The BEEF for a Grade 12 transferee still shows the old Strand field, not the new Track/Cluster fields.
-
----
-
-### 2.4 Section 3 — Personal Information
-
-This is the most data-dense section of the BEEF. Every field here maps directly to the learner's profile in the DepEd Learner Information System (LIS).
-
-| # | Field Label | Field Type | Required? | Format / Validation |
-|---|---|---|---|---|
-| 3.1 | **Last Name** | Text | Required | All caps; max 50 chars; no numbers; consistent with PSA Birth Certificate |
-| 3.2 | **First Name** | Text | Required | All caps; max 50 chars; no numbers |
-| 3.3 | **Middle Name** | Text | Optional | All caps; write `N/A` if none (e.g., for learners with only one surname) |
-| 3.4 | **Extension Name** | Text | Optional | Jr. · Sr. · II · III · IV · V — write `N/A` if not applicable |
-| 3.5 | **Birthdate** | Date | Required | Format: `MM/DD/YYYY`; must match PSA Birth Certificate exactly |
-| 3.6 | **Age** | Number | Required | Auto-computed from birthdate in digital forms; must match as of enrollment date |
-| 3.7 | **Sex** | Radio | Required | Male · Female (DepEd uses binary sex classification as recorded on PSA Birth Certificate; not self-identified gender) |
-| 3.8 | **Place of Birth** | Text | Required | City / Municipality, Province — consistent with PSA Birth Certificate |
-| 3.9 | **PSA Birth Certificate Number** | Text | Conditional | Required if not previously submitted to this school; optional if already on file from prior enrollment |
-| 3.10 | **Religion** | Text | Optional | Free text — write the learner's professed religion (e.g., Roman Catholic, Islam, Iglesia ni Cristo) |
-| 3.11 | **Mother Tongue** | Text | Required | The first language learned at home (e.g., Hiligaynon, Filipino, Cebuano, Waray, English) — used for MTB-MLE program assignment in lower grades; still collected for profiling at JHS level |
-
----
-
-### 2.5 Section 4 — Special Classifications
-
-These fields are used for equity program tagging, inclusion services, and national statistics. They are **not used to deny or restrict enrollment** — a "Yes" answer in any of these fields should trigger additional support services, not disqualification.
-
-| # | Field Label | Field Type | Required? | Options & Follow-up Fields |
-|---|---|---|---|---|
-| 4.1 | **Belonging to any Indigenous Peoples (IP) Cultural Community?** | Yes / No | Required | If Yes → specify the name of the ethnolinguistic group (e.g., Ati, Mangyan, Lumad, Igorot, B'laan) |
-| 4.2 | **Is your family a beneficiary of the 4Ps (Pantawid Pamilyang Pilipino Program)?** | Yes / No | Required | If Yes → write the **4Ps Household ID Number** (format: numeric, typically 9–12 digits) |
-| 4.3 | **Is the learner a returning learner (Balik-Aral)?** | Yes / No | Optional (collected for LIS monitoring) | If Yes → provide the last year enrolled and the last grade level attended |
-| 4.4 | **Learner with Disability (LWD)?** | Yes / No | Required | If Yes → specify the type of disability: |
-| | ↳ Type of Disability | Select (multiple allowed) | Conditional | Visual Impairment · Hearing Impairment · Physical/Motor Disability · Intellectual Disability · Learning Disability · Speech/Language Disorder · Emotional/Behavioral Disorder · Autism Spectrum Disorder · Multiple Disabilities · Other (specify) |
-| 4.5 | **Special Needs Education (SNEd) Program** | Yes / No | Required if LWD | If Yes → indicate preferred SNEd placement: Inclusive Education (integrated in regular class) · Special Education Center (separate SPED class) |
-
----
-
-### 2.6 Section 5 — Address Information
-
-The BEEF collects **two** addresses — current and permanent — because families in agricultural areas or with migratory work patterns may have a seasonal current address different from their legal permanent address.
-
-**Current Address (where the learner lives now):**
-
-| # | Field Label | Field Type | Required? | Format |
-|---|---|---|---|---|
-| 5.1 | **House No.** | Text | Optional | Unit/House number |
-| 5.2 | **Street Name** | Text | Optional | Name of street/road |
-| 5.3 | **Barangay** | Text | Required | Name of barangay |
-| 5.4 | **City / Municipality** | Text | Required | Name of city or municipality |
-| 5.5 | **Province** | Text | Required | Name of province |
-| 5.6 | **Country** | Text | Required | Default: Philippines; specify if overseas (rare case for returning OFW families) |
-| 5.7 | **Zip Code** | Text | Optional | 4-digit Philippine zip code |
-
-**Permanent Address:**
-
-| # | Field Label | Field Type | Required? |
-|---|---|---|---|
-| 5.8 | **Same as Current Address?** | Yes / No checkbox | Required |
-| 5.9–5.15 | **Permanent Address fields** (House No., Street, Barangay, Municipality, Province, Country, Zip) | Same as above | Required only if "No" is checked in 5.8 |
-
----
-
-### 2.7 Section 6 — Parent / Guardian Information
-
-The BEEF collects contact information for up to **three** adult contacts: Mother, Father, and Legal Guardian (if different from parents). This covers cases where learners are in the custody of a grandparent, aunt/uncle, older sibling, or legal guardian.
-
-**Mother's Information:**
-
-| # | Field Label | Field Type | Required? | Notes |
-|---|---|---|---|---|
-| 6.1 | **Mother's Last Name** | Text | Required | Maiden name or current legal surname |
-| 6.2 | **Mother's First Name** | Text | Required | |
-| 6.3 | **Mother's Middle Name** | Text | Optional | |
-| 6.4 | **Mother's Contact Number** | Text | Required if mother is primary contact | Format: 11-digit PH mobile (e.g., 09171234567) or landline with area code |
-| 6.5 | **Mother's Maiden Name** (separate sub-field) | Text | Optional | Last name, First name, Middle name — used for identity verification |
-
-**Father's Information:**
-
-| # | Field Label | Field Type | Required? |
-|---|---|---|---|
-| 6.6 | **Father's Last Name** | Text | Required |
-| 6.7 | **Father's First Name** | Text | Required |
-| 6.8 | **Father's Middle Name** | Text | Optional |
-| 6.9 | **Father's Contact Number** | Text | Required if father is primary contact |
-
-**Legal Guardian's Information** (if different from parents):
-
-| # | Field Label | Field Type | Required? | Notes |
-|---|---|---|---|---|
-| 6.10 | **Guardian's Last Name** | Text | Conditional | Required if neither parent is available or if custody is with a guardian |
-| 6.11 | **Guardian's First Name** | Text | Conditional | |
-| 6.12 | **Guardian's Middle Name** | Text | Optional | |
-| 6.13 | **Guardian's Contact Number** | Text | Conditional | |
-| 6.14 | **Relationship to Learner** | Text | Conditional | Grandparent · Aunt/Uncle · Older Sibling · Foster Parent · Other |
-
-**Email Address:**
-
-| # | Field Label | Field Type | Required? | Notes |
-|---|---|---|---|---|
-| 6.15 | **Email Address** | Email | Strongly recommended | Parent/guardian email for school communication and notification; required for remote enrollment |
-
-> **Data Privacy Note (RA 10173):** Contact numbers and email addresses collected here may only be used for school-related communications. They must not be shared, sold, or used for any other purpose. These fields are subject to the Data Privacy Act and the National Privacy Commission's guidelines.
-
----
-
-### 2.8 Section 7 — Previous School Information
-
-This section establishes the learner's educational history and is used by the registrar to request SF10 (Form 137) from the sending school.
-
-| # | Field Label | Field Type | Required? | Notes |
-|---|---|---|---|---|
-| 7.1 | **Name of Last School Attended** | Text | Required | Full official school name |
-| 7.2 | **School ID (DepEd School ID)** | Text | Optional | 6-digit DepEd school ID if known; helps LIS match records |
-| 7.3 | **Last Grade Level Completed** | Select | Required | Grade 6 (for Grade 7 entrants) · Grade 10 (for Grade 11 entrants) · other grade (for transferees) |
-| 7.4 | **School Year Last Attended** | Text | Required | Format: `YYYY–YYYY` |
-| 7.5 | **School Address / Division** | Text | Optional | City/municipality and SDO of the sending school — helps locate school records |
-| 7.6 | **Type of Last School** | Radio | Required | Public · Private · International · ALS / Non-formal |
-
----
-
-### 2.9 Section 8 — SHS Track & Elective Cluster (Grade 11 Only)
-
-This section only appears on the BEEF when **Grade 11** is selected. Under DM 012, s. 2026 (effective SY 2026–2027), the old "Strand" field is replaced by "Track" and "Preferred Elective Cluster."
-
-**For Grade 11 incoming learners (SY 2026–2027 onward):**
-
-| # | Field Label | Field Type | Required? | Options |
-|---|---|---|---|---|
-| 8.1 | **SHS Track** | Radio | Required | ● Academic ● Technical-Professional (TechPro) |
-| 8.2 | **Preferred Elective Cluster** | Select | Required | Filtered by Track selection (see full list below) |
-| 8.3 | **Grade 10 Science Final Grade** | Number | Required if STEM cluster | Must be ≥ 85 per DepEd minimum criteria |
-| 8.4 | **Grade 10 Mathematics Final Grade** | Number | Required if STEM cluster | Must be ≥ 85 per DepEd minimum criteria |
-
-**Academic Track — Elective Cluster Options:**
-
-| Cluster Code | Cluster Name |
-|---|---|
-| AC-STEM | Science, Technology, Engineering, and Mathematics (STEM) |
-| AC-ARTSOC | Arts, Social Sciences, and Humanities |
-| AC-SPORTS | Sports, Health, and Wellness |
-| AC-BUSENT | Business and Entrepreneurship |
-| AC-FIELDEXP | Field Experience |
-
-**Technical-Professional (TechPro) Track — Elective Cluster Options:**
-
-| Cluster Code | Cluster Name |
-|---|---|
-| TP-AESTWH | Aesthetic, Wellness, and Human Care |
-| TP-AGRIFOOD | Agri-Fishery Business and Food Innovation |
-| TP-ARTISAN | Artisanry and Creative Enterprise |
-| TP-AUTO | Automotive and Small Engine Technologies |
-| TP-CONST | Construction and Building Technologies |
-| TP-CREATIVE | Creative Arts and Design Technologies |
-| TP-HOSPTOUR | Hospitality and Tourism |
-| TP-INDTECH | Industrial Technologies |
-| TP-ICT | ICT Support and Computer Programming Technologies |
-| TP-MARITIME | Maritime Transport |
-
-> **Note:** Not all clusters are available at every school. The admission portal should display only the clusters offered by the school as configured in Settings. An applicant selecting a cluster not offered should receive a clear message.
-
-**For Grade 12 transferees in SY 2026–2027 (old strand system):**
-
-| # | Field Label | Field Type | Required? | Options |
-|---|---|---|---|---|
-| 8.5 | **SHS Strand (OLD SYSTEM — Grade 12 only)** | Select | Required | STEM · ABM · HUMSS · GAS · HE · ICT · Agri-Fishery · Industrial Arts |
-
----
-
-### 2.10 Section 9 — Learner Type & Modality
-
-| # | Field Label | Field Type | Required? | Options |
-|---|---|---|---|---|
-| 9.1 | **Type of Learner** | Radio | Required | Regular · Transferee · Returning Learner (Balik-Aral) · Out-of-School Children Youth & Adults (OSCYA) · ALS Learner |
-| 9.2 | **Preferred Learning Modality** | Select | Required | Face-to-Face · Blended Learning · Distance Modular · Online Learning · Home Schooling |
-| 9.3 | **SCP Application (Grade 7)** | Radio | Required if Grade 7 | Regular Section · Special Curricular Program (SCP) |
-| 9.4 | **Which SCP?** | Select | Conditional | Science, Technology & Engineering (STE) · Special Program in the Arts (SPA) · Special Program in Sports (SPS) · Special Program in Journalism (SPJ) · Special Program in Foreign Language (SPFL) · Special Program in Tech-Voc Education (SPTVE) |
-| 9.5 | **SPA Art Field** | Select | Conditional (SPA only) | Visual Arts · Music (Vocal) · Music (Instrumental) · Theatre Arts · Dance Arts · Media Arts · Creative Writing (English) · Creative Writing (Filipino) |
-| 9.6 | **SPS Sport/s** | Multi-select | Conditional (SPS only) | Basketball · Volleyball · Football · Badminton · Table Tennis · Swimming · Arnis · Taekwondo · Athletics · Chess · Other (specify) |
-| 9.7 | **SPFL Preferred Language** | Select | Conditional (SPFL only) | Japanese (Nihongo) · Spanish · French · German · Chinese (Mandarin) · Korean |
-
----
-
-### 2.11 Section 10 — Certification & Consent
-
-This is the final section of the paper BEEF. It must be signed by the parent/guardian (or by the learner themselves if 18 years old or older).
-
-> **On the digital portal:** The equivalent of this section is split into two parts. The **Data Privacy Consent** is captured at the very beginning of the form (§0 — before any fields are shown). The **Certification of accuracy** is captured at the end of Step 3 before the final Submit button. This mirrors best practice UX for informed consent — the privacy notice comes first (before data is collected), and the accuracy certification comes last (after data is entered).
-
-| # | Field Label | Field Type | Required? | Notes |
-|---|---|---|---|---|
-| 10.1 | **Certification statement** | Pre-printed text | — | *"I certify that the above information is true and correct to the best of my knowledge and belief."* |
-| 10.2 | **Data Privacy Consent statement** | Pre-printed text | — | *"I consent to the collection and use of this information by the Department of Education for enrollment and other educational purposes in accordance with RA 10173."* — On the digital portal, this consent is captured at §0 (top of form), not here. This field on the digital form shows: *"I confirm that the Data Privacy Notice was read and consented to at the start of this form."* (read-only, auto-checked) |
-| 10.3 | **Signature of Parent/Guardian** | Signature | Required | Physical signature on printed form; for digital forms, a typed full name confirmation acts as e-signature |
-| 10.4 | **Printed Name of Parent/Guardian** | Text | Required | Full name of signatory |
-| 10.5 | **Date Accomplished** | Date | Required | Format: `Month DD, YYYY` |
-| 10.6 | **Relationship to Learner** | Text | Required if not parent | Mother · Father · Guardian (specify relationship) |
-
-**For learners 18 years old or older:**
-- The learner themselves may sign the certification without a parent/guardian
-- The learner's own signature replaces the parent/guardian signature
-- Field label changes to: *"Signature of Learner (if of legal age)"*
-
-**On the digital portal — final step before Submit:**
+The final step of the admission form. On the **digital portal**:
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -611,442 +321,536 @@ This is the final section of the paper BEEF. It must be signed by the parent/gua
 │     this form is true, correct, and complete to the best    │
 │     of my knowledge and belief.  *                          │
 │                                                              │
-│  Full Name of Parent/Guardian (or Learner if 18+) *          │
+│  Full Name of Parent / Guardian (or Learner if 18+) *        │
 │  [ _________________________________ ]                       │
 │                                                              │
-│  Date  *                                                     │
-│  [ March 5, 2027            📅 ]                            │
+│  Date  *    [ auto-filled: today ]                           │
 │                                                              │
-│  (Your Data Privacy consent was recorded at the start        │
-│   of this form on [timestamp]. ✓)                           │
+│  (Your Data Privacy consent was recorded at the start of     │
+│   this form on [privacyConsentTimestamp]. ✓)                 │
 │                                                              │
 │              [ ← Back ]    [ Submit Application → ]         │
 └──────────────────────────────────────────────────────────────┘
 ```
 
+The privacy consent timestamp display confirms the consent was captured in Phase 0 — no re-consent required at this step.
+
 ---
 
-## 3. Complete Field Reference — All BEEF Fields
+## 4. Complete Field Reference Table
 
-Summary master table of every BEEF field organized by section:
+Summary master table of every BEEF field captured in this system:
 
-| Section | # | Field | Type | Required | Grade 7 | Grade 11 | All Grades |
+| Section | # | Field | Type | Required | G7 | G11 | Transferee |
 |---|---|---|---|---|---|---|---|
-| **Header** | — | Form instructions | Static | — | — | — | ✓ |
-| **1: Reference** | 1.1 | School Year | Text | ✅ | ✓ | ✓ | ✓ |
-| | 1.2 | LRN | Number (12 digits) | If available | ✓ | ✓ | ✓ |
+| **1 Reference** | 1.2 | LRN | Numeric (12) | ✅ | ✓ | ✓ | ✓ |
 | | 1.3 | PSA BC Number | Text | If available | ✓ | ✓ | ✓ |
-| **2: Grade/Program** | 2.1 | Grade Level | Select | ✅ | ✓ | ✓ | ✓ |
-| | 2.3 | SHS Track | Radio | Grade 11 | — | ✓ | — |
-| | 2.4 | Elective Cluster | Select | Grade 11 | — | ✓ | — |
-| | 2.5 | SCP Application | Radio | Grade 7 SCP | ✓ (SCP) | — | — |
-| **3: Personal** | 3.1 | Last Name | Text | ✅ | ✓ | ✓ | ✓ |
-| | 3.2 | First Name | Text | ✅ | ✓ | ✓ | ✓ |
-| | 3.3 | Middle Name | Text | Optional | ✓ | ✓ | ✓ |
-| | 3.4 | Extension Name | Text | Optional | ✓ | ✓ | ✓ |
-| | 3.5 | Birthdate | Date | ✅ | ✓ | ✓ | ✓ |
-| | 3.6 | Age | Number | ✅ | ✓ | ✓ | ✓ |
-| | 3.7 | Sex | Radio | ✅ | ✓ | ✓ | ✓ |
-| | 3.8 | Place of Birth | Text | ✅ | ✓ | ✓ | ✓ |
-| | 3.9 | PSA BC Number | Text | Once-only | ✓ | ✓ | ✓ |
-| | 3.10 | Religion | Text | Optional | ✓ | ✓ | ✓ |
-| | 3.11 | Mother Tongue | Text | ✅ | ✓ | ✓ | ✓ |
-| **4: Special** | 4.1 | IP Community | Yes/No | ✅ | ✓ | ✓ | ✓ |
-| | 4.1a | IP Group Name | Text | If IP=Yes | ✓ | ✓ | ✓ |
-| | 4.2 | 4Ps Beneficiary | Yes/No | ✅ | ✓ | ✓ | ✓ |
-| | 4.2a | 4Ps Household ID | Number | If 4Ps=Yes | ✓ | ✓ | ✓ |
-| | 4.3 | Balik-Aral | Yes/No | Optional | ✓ | ✓ | ✓ |
-| | 4.4 | Learner with Disability | Yes/No | ✅ | ✓ | ✓ | ✓ |
-| | 4.4a | Disability Type | Multi-select | If LWD=Yes | ✓ | ✓ | ✓ |
-| | 4.5 | SNEd Placement | Select | If LWD=Yes | ✓ | ✓ | ✓ |
-| **5: Address** | 5.1–5.7 | Current Address (7 sub-fields) | Text | ✅ (Barangay, Municipality, Province) | ✓ | ✓ | ✓ |
-| | 5.8 | Same as Current? | Checkbox | ✅ | ✓ | ✓ | ✓ |
-| | 5.9–5.15 | Permanent Address (7 sub-fields) | Text | If 5.8=No | ✓ | ✓ | ✓ |
-| **6: Guardian** | 6.1–6.4 | Mother info (4 sub-fields) | Text | ✅ | ✓ | ✓ | ✓ |
-| | 6.5 | Mother's Maiden Name | Text | Optional | ✓ | ✓ | ✓ |
-| | 6.6–6.9 | Father info (4 sub-fields) | Text | ✅ | ✓ | ✓ | ✓ |
-| | 6.10–6.14 | Guardian info (5 sub-fields) | Text | If applicable | ✓ | ✓ | ✓ |
-| | 6.15 | Email Address | Email | Recommended | ✓ | ✓ | ✓ |
-| **7: Prev School** | 7.1 | Last School Name | Text | ✅ | ✓ | ✓ | ✓ |
-| | 7.2 | School ID | Number | Optional | ✓ | ✓ | ✓ |
-| | 7.3 | Last Grade Completed | Select | ✅ | Grade 6 | Grade 10 | ✓ |
-| | 7.4 | SY Last Attended | Text | ✅ | ✓ | ✓ | ✓ |
-| | 7.5 | School Address / Division | Text | Optional | ✓ | ✓ | ✓ |
-| | 7.6 | Type of Last School | Radio | ✅ | ✓ | ✓ | ✓ |
-| **8: SHS** | 8.1 | SHS Track | Radio | G11 only | — | ✅ | — |
-| | 8.2 | Elective Cluster | Select | G11 only | — | ✅ | — |
-| | 8.3 | G10 Science Grade | Number | If STEM | — | ✅ (STEM) | — |
-| | 8.4 | G10 Math Grade | Number | If STEM | — | ✅ (STEM) | — |
-| | 8.5 | Old Strand (G12) | Select | G12 only | — | — | — |
-| **9: Learner Type** | 9.1 | Learner Type | Radio | ✅ | ✓ | ✓ | ✓ |
-| | 9.2 | Learning Modality | Select | ✅ | ✓ | ✓ | ✓ |
-| | 9.3 | SCP Application | Radio | G7 SCP | ✓ | — | — |
-| | 9.4 | SCP Type | Select | If SCP=Yes | ✓ | — | — |
-| | 9.5 | SPA Art Field | Select | SPA only | ✓ | — | — |
-| | 9.6 | SPS Sports | Multi-select | SPS only | ✓ | — | — |
-| | 9.7 | SPFL Language | Select | SPFL only | ✓ | — | — |
-| **10: Certification** | 10.1 | Certification text | Static | — | ✓ | ✓ | ✓ |
-| | 10.2 | Privacy consent | Static | — | ✓ | ✓ | ✓ |
-| | 10.3 | Signature | Signature | ✅ | ✓ | ✓ | ✓ |
-| | 10.4 | Printed Name | Text | ✅ | ✓ | ✓ | ✓ |
-| | 10.5 | Date Accomplished | Date | ✅ | ✓ | ✓ | ✓ |
-| | 10.6 | Relationship to Learner | Text | If guardian | ✓ | ✓ | ✓ |
-
-**Total Fields:** Approximately 55–65 fields (varies depending on conditional branches activated)
+| **2 Grade/Program** | 2.1 | Grade Level | Select | ✅ | ✓ | ✓ | ✓ |
+| | 2.2 | SCP Application | Select | Conditional | ✓ | — | — |
+| | 2.3 | SHS Track | Radio | G11 | — | ✓ | ✓ (G11) |
+| | 2.4 | Elective Cluster | Select | G11 | — | ✓ | ✓ (G11) |
+| **3 Personal** | 3.1–3.2 | Last + First Name | Text | ✅ | ✓ | ✓ | ✓ |
+| | 3.3–3.4 | Middle + Suffix | Text | — | ✓ | ✓ | ✓ |
+| | 3.5 | Date of Birth | Date | ✅ | ✓ | ✓ | ✓ |
+| | 3.6 | Sex | Radio | ✅ | ✓ | ✓ | ✓ |
+| | 3.7–3.10 | Birth place, Nationality, Religion, Mother Tongue | Text | — | ✓ | ✓ | ✓ |
+| **4 Classification** | 4.1 | IP Status | Checkbox | — | ✓ | ✓ | ✓ |
+| | 4.2 | 4Ps Status | Checkbox | — | ✓ | ✓ | ✓ |
+| | 4.3–4.4 | LWD + Disability Type | Checkbox + Select | — | ✓ | ✓ | ✓ |
+| **5 Address** | 5.1–5.5 | Current Address | Text | ✅ (barangay+) | ✓ | ✓ | ✓ |
+| **6 Guardian** | 6.1–6.14 | Mother/Father/Guardian | Text | ✅ (guardian) | ✓ | ✓ | ✓ |
+| | 6.15 | Email | Email | ✅ (online) | ✓ | ✓ | ✓ |
+| **7 Previous School** | 7.1–7.5 | School, Grade, SY, Average | Text | ✅ (school+grade) | ✓ | ✓ | ✓ |
+| **8 SHS** | 8.3–8.4 | G10 Science + Math grades | Number | STEM only | — | ✓ | ✓ (G11) |
+| **9 Learner Type** | 9.1 | Learner Type | Select | ✅ | ✓ | ✓ | ✓ |
+| | 9.2 | SCP Selection | Select | Conditional | ✓ | — | — |
 
 ---
 
-## 4. Confirmation Slip (Annex C) — Continuing Learners
+## 5. SCP-Specific Additional Fields
 
-Grades 8–10 and Grade 12 pre-registered learners do **not** fill out the full BEEF. They submit a **Confirmation Slip** (Annex C of DO 017, s. 2025). This is a much shorter document confirming their intent to continue at the same school.
+These fields are only collected for SCP applicants. They are **conditionally shown** based on `applicantType` and the SCP program's configured `assessmentType`. They are not hardcoded — the system reads from the `ScpProgram.assessmentType` field to decide which fields to show.
 
-### Confirmation Slip Fields
+### 5.1 Fields Present on the Admission Form (Step 5)
 
-| # | Field | Type | Required? |
+| SCP | Additional Field | Label | `Applicant` Field |
 |---|---|---|---|
-| 1 | School Year | Text | ✅ |
-| 2 | Learner Reference Number (LRN) | Number (12 digits) | ✅ |
-| 3 | Learner's Full Name (Last, First, Middle) | Text | ✅ |
-| 4 | Grade Level for Upcoming School Year | Select | ✅ |
-| 5 | Current Section | Text | Optional |
-| 6 | Has there been a gap in schooling? | Yes/No | ✅ |
-| 7 | Contact Number (Parent/Guardian) | Text | Recommended |
-| 8 | Email Address | Email | Recommended |
-| 9 | Signature of Parent/Guardian (or learner if 18+) | Signature | ✅ |
-| 10 | Date | Date | ✅ |
+| SPA | Art field preference | Art Field | `artField` |
+| SPS | Sport preference | Sport / Discipline | `sport` |
+| SPFL | Foreign language preference | Foreign Language | `foreignLanguage` |
+| STEM G11 | Grade 10 Science grade | Grade 10 Science Final Grade | `grade10ScienceGrade` |
+| STEM G11 | Grade 10 Mathematics grade | Grade 10 Mathematics Final Grade | `grade10MathGrade` |
 
-**Rule:** If a continuing learner has a gap of **one year or more** (Balik-Aral), they cannot use the Confirmation Slip — they must submit the full BEEF with their last SF9.
+> STEM grade fields appear retroactively when the applicant goes back to Step 4 after selecting the STEM strand in Step 5. Both fields are required for STEM applicants. A warning (not a hard block) is shown if either grade is below 85.
 
----
+### 5.2 Fields Filled by the Registrar (in `/applications`, not by the applicant)
 
-## 5. Documentary Requirements by Learner Type
+| Field | Label | `Applicant` Field | When Set |
+|---|---|---|---|
+| Assessment Date | `examDate` | `examDate` | When registrar schedules via PATCH `/schedule-exam` |
+| Assessment Type | `assessmentType` | `assessmentType` | Set automatically from `ScpProgram.assessmentType` |
+| Assessment Score | `examScore` | `examScore` | After assessment, via PATCH `/record-result` |
+| Exam Result | `examResult` | `examResult` | PASSED / FAILED |
+| Exam Notes | `examNotes` | `examNotes` | Optional — any time after assessment |
+| Audition Result | `auditionResult` | `auditionResult` | SPA / SPS only; CLEARED / NOT_CLEARED |
+| Interview Date | `interviewDate` | `interviewDate` | When interview is scheduled |
+| Interview Result | `interviewResult` | `interviewResult` | CLEARED / NOT_CLEARED |
+| NAT Score | `natScore` | `natScore` | SPFL only |
 
-### Required Documents at Enrollment — Complete Matrix
+### 5.3 SCP Assessment Type → Workflow Steps Mapping
 
-| Learner Type | PSA Birth Certificate | SF9 / Report Card | BEEF | Confirmation Slip | PEPT/A&E Result | Notes |
-|---|---|---|---|---|---|---|
-| **Grade 7 — New Entrant** | ✅ Once-only | ✅ Grade 6 SF9 | ✅ | — | Only if no SF9 | |
-| **Grade 7 — SCP Applicant** | ✅ Once-only | ✅ Grade 6 SF9 | ✅ | — | Only if no SF9 | + SCP-specific docs (see §6) |
-| **Grade 8 — Continuing** | Already on file | — | — | ✅ | — | |
-| **Grade 9 — Continuing** | Already on file | — | — | ✅ | — | |
-| **Grade 10 — Continuing** | Already on file | — | — | ✅ | — | |
-| **Grade 11 — New Entrant** | ✅ Once-only | ✅ Grade 10 SF9 | ✅ | — | Only if no SF9 | +G10 grades if STEM |
-| **Grade 12 — Continuing** | Already on file | — | — | ✅ | — | |
-| **Transferee (any grade)** | ✅ If not on file | ✅ Latest SF9 | ✅ | — | — | + Affidavit of Undertaking if from private school with unpaid fees |
-| **Balik-Aral (any grade)** | ✅ If not on file | ✅ Last SF9 (physical) | ✅ | — | If SF9 unavailable | |
-| **OSCYA** | ✅ | Alternative docs accepted | ✅ | — | Often required | Flexible documentation per DO 017 |
-
-### What "Once-Only" Means for PSA Birth Certificate
-
-Under the revised guidelines, parents or guardians must submit the original or a certified true copy of the learner's PSA/NSO-issued birth certificate only once. The school records the PSA certificate number in the learner's permanent record in LIS. From that point forward, the family is not required to re-submit or bring the document again — not in subsequent school years, not during Regular Enrollment, not when moving to JHS or SHS.
-
-### What SF10 (Form 137) is NOT
-
-A common misunderstanding: SF10 is the Learner's Permanent Academic Record and is NOT an initial requirement for enrollment. The registrar requests it from the sending school through the LIS Portal Transfer/Tracking facility after the learner is enrolled. The learner and parent never carry this document themselves.
-
----
-
-## 6. SCP Admission — Additional Requirements & Input Fields
-
-Each SCP has unique additional documents and assessment inputs beyond the standard BEEF.
-
-### STE (Science, Technology, Engineering)
-
-| Requirement | Type | Notes |
+| SCP | `assessmentType` | Workflow Steps |
 |---|---|---|
-| BEEF | Form | Standard |
-| Grade 6 SF9 | Document | Must show grades in Science and Mathematics |
-| Entrance Exam Score | Assessed in school | Written exam administered by SDO on a designated Saturday; no pre-registration required |
-| Division-set Cut-off Score | System field | Registrar inputs after SDO releases the threshold |
+| STE | `EXAM_ONLY` | Schedule exam → Record score → Pass/Fail |
+| SPA | `EXAM_AUDITION` | Schedule (exam + audition same day) → Record score + audition result → Pass/Fail |
+| SPS | `AUDITION_ONLY` | Schedule tryout → Record tryout result → Pass/Fail |
+| SPJ | `EXAM_ONLY` + `requiresInterview: true` | Schedule exam → Record score → Schedule interview → Record interview → Pass/Fail |
+| SPFL | `NAT_REVIEW` | Record NAT score (no scheduled exam) → Pass/Fail |
+| SPTVE | `APTITUDE` | Schedule aptitude test → Record result → Pass/Fail |
+| STEM G11 | `EXAM_ONLY` + `requiresInterview: true` | Verify G10 grades → Schedule exam → Record score → Schedule interview → Record result → Pass/Fail |
 
-**Additional system fields for STE applicants:**
-- `examDate` — Date the STE entrance exam was taken
-- `examScore` — Numerical score out of 100
-- `cutoffScore` — Division-set qualifying score
-- `examResult` — PASSED / FAILED / ABSENT
-
----
-
-### SPA (Special Program in the Arts)
-
-| Requirement | Type | Notes |
-|---|---|---|
-| BEEF | Form | Must specify Art Field (field 9.5) |
-| Grade 6 SF9 | Document | |
-| Portfolio (optional) | Document | Sample works in the declared art field; some schools require prior to audition day |
-| Qualifying Exam Score | Assessed in school | Written test |
-| Audition Result | Assessed in school | Per art field; assessed by subject teachers / judges |
-| Interview Result | Assessed in school | |
-
-**Additional system fields:**
-- `artField` — Declared art specialization
-- `qualifyingExamScore` — Score from written qualifying exam
-- `auditionResult` — CLEARED / NOT CLEARED
-- `interviewResult` — CLEARED / NOT CLEARED
-- `overallResult` — PASSED / FAILED
+The `assessmentType` field on `ScpProgram` drives which buttons and forms appear in the registrar's `/applications` detail view. This is dynamic — a school that configures STE with `EXAM_ONLY` will not see an audition result field.
 
 ---
 
-### SPS (Special Program in Sports)
+## 6. F2F Admission — Field Differences
 
-| Requirement | Type | Notes |
+The F2F form at `/f2f-admission` uses identical fields and validation rules with the following behavioral differences:
+
+| Aspect | Online (`/apply`) | F2F (`/f2f-admission`) |
 |---|---|---|
-| BEEF | Form | Must list sports (field 9.6) |
-| Grade 6 SF9 | Document | |
-| Good Moral Character Certificate | Document | From Grade 6 principal or school head |
-| Sports Achievement Records | Document | Certificates of participation in school-level or higher competitions |
-| Medical Clearance | Document | Certificate from school physician or barangay health center |
-| Physical Tryout Result | Assessed | Conducted by sports coaches |
-
-**Additional system fields:**
-- `sportsDisciplines` — Array of sports (e.g., ["Basketball", "Badminton"])
-- `sportsAchievements` — Text notes on competition history
-- `medicalClearance` — YES / NO / PENDING
-- `tryoutResult` — PASSED / FAILED / NEEDS REASSESSMENT
+| Auth required | None (public) | JWT + REGISTRAR or SYSTEM_ADMIN |
+| Enrollment gate | Redirects to `/closed` when OFF | Always accessible — registrar override |
+| `admissionChannel` stored | `ONLINE` | `F2F` |
+| `encodedById` stored | `null` | Registrar's `User.id` (auto from JWT) |
+| Form layout | Multi-step wizard (6 steps) | Single scrollable page (6 sections) |
+| Privacy consent | Applicant scrolls + checks on screen | Registrar checks physical signature confirmation |
+| Fast-track option | Not available | "Save as Approved" button (status = APPROVED immediately) |
+| Email requirement | Required | Optional — field shown; email sent only if provided |
+| Tracking display | Prominent on-screen success panel + email | On-screen success toast + email if address given |
+| `sessionStorage` backup | Yes — survives browser refresh | No — registrar does not need draft recovery |
 
 ---
 
-### SPJ (Special Program in Journalism)
+## 7. Validation Rules
 
-| Requirement | Type | Notes |
-|---|---|---|
-| BEEF | Form | Standard |
-| Grade 6 SF9 | Document | |
-| Recommendation Letter | Document | From Grade 6 school paper adviser or English teacher — must specify the student's writing ability and communication skills |
-| SPJQE Exam Score | Assessed | Written qualifying examination covering journalism, English, news writing |
-| Interview Result | Assessed | Assesses communication skills, current events awareness, reading habits |
+### Backend — Zod (`server/src/validators/application.validator.ts`)
 
-**Additional system fields:**
-- `recommendationLetter` — Confirmed received (YES / NO)
-- `spjqeScore` — Numerical score
-- `interviewResult` — CLEARED / NOT CLEARED
-- `admissionRank` — Numerical rank among all SPJ applicants (top 35 admitted)
+```typescript
+import { z } from 'zod';
+
+export const applicationSchema = z.object({
+  // Identity
+  lrn:         z.string().regex(/^\d{12}$/, 'LRN must be exactly 12 digits'),
+  lastName:    z.string().min(2).max(50),
+  firstName:   z.string().min(2).max(50),
+  middleName:  z.string().max(50).optional(),
+  suffix:      z.enum(['Jr.', 'Sr.', 'II', 'III', 'IV', 'N/A', '']).optional(),
+  birthDate:   z.string().refine(isValidBirthDate, 'Invalid or out-of-range birth date'),
+  sex:         z.enum(['MALE', 'FEMALE']),
+
+  // Contact
+  guardianName:    z.string().min(2),
+  guardianContact: z.string().regex(/^(09\d{9}|\(0\d{2}\) \d{4}-\d{4})$/, 'Invalid PH phone number'),
+  emailAddress:    z.string().email(),
+  address:         z.string().min(5),
+
+  // Classification
+  learnerType:             z.enum(['NEW_ENROLLEE', 'TRANSFEREE', 'RETURNING', 'CONTINUING']),
+  isIndigenousPeople:      z.boolean(),
+  ipCommunity:             z.string().optional(),
+  is4PsBeneficiary:        z.boolean(),
+  householdId:             z.string().optional(),
+  isPersonWithDisability:  z.boolean(),
+  disabilityType:          z.string().optional(),
+
+  // Previous school
+  lastSchoolAttended:  z.string().min(2),
+  lastGradeCompleted:  z.string().min(2),
+  generalAverage:      z.number().min(0).max(100).optional(),
+
+  // Enrollment preference
+  gradeLevelId:   z.number({ required_error: 'Grade level is required' }),
+  strandId:       z.number().optional(),
+  applicantType:  z.string().default('REGULAR'),
+  scpProgramCode: z.string().optional(),
+
+  // SCP-specific
+  artField:            z.string().optional(),
+  sport:               z.string().optional(),
+  foreignLanguage:     z.string().optional(),
+  grade10ScienceGrade: z.number().min(0).max(100).optional(),
+  grade10MathGrade:    z.number().min(0).max(100).optional(),
+
+  // Consent
+  privacyConsentGiven: z.literal(true, {
+    errorMap: () => ({ message: 'Data Privacy consent is required.' }),
+  }),
+}).superRefine((data, ctx) => {
+  // G10 grades required for STEM G11
+  if (data.applicantType === 'STEM_GRADE11') {
+    if (data.grade10ScienceGrade === undefined)
+      ctx.addIssue({ code: 'custom', path: ['grade10ScienceGrade'], message: 'Required for STEM applicants' });
+    if (data.grade10MathGrade === undefined)
+      ctx.addIssue({ code: 'custom', path: ['grade10MathGrade'], message: 'Required for STEM applicants' });
+  }
+  // IP community required if IP flag set
+  if (data.isIndigenousPeople && !data.ipCommunity) {
+    ctx.addIssue({ code: 'custom', path: ['ipCommunity'], message: 'IP community name is required.' });
+  }
+  // 4Ps Household ID required if 4Ps flag set
+  if (data.is4PsBeneficiary && !data.householdId) {
+    ctx.addIssue({ code: 'custom', path: ['householdId'], message: '4Ps Household ID is required.' });
+  }
+});
+```
+
+The same schema is used for both the online form and the F2F form — shared via the `client/src/validators/admissionSchema.ts` file on the frontend.
+
+### Frontend — React Hook Form + Zod
+
+```typescript
+// client/src/validators/admissionSchema.ts — mirrors the backend schema
+// Import in both Apply.tsx and F2FAdmission.tsx:
+import { applicationSchema } from '@/validators/admissionSchema';
+const { register, handleSubmit, formState: { errors } } = useForm({
+  resolver: zodResolver(applicationSchema),
+  defaultValues: sessionStorage.getItem('admission_form_draft')
+    ? JSON.parse(sessionStorage.getItem('admission_form_draft')!)
+    : {},
+});
+```
+
+Validation fires on `onBlur` — never on every keystroke.
+
+### LRN Uniqueness Check
+
+```typescript
+// Fires on onBlur of the LRN field, only when the field is 12 digits
+const checkLrn = async (lrn: string) => {
+  if (lrn.length !== 12) return;
+  const { data } = await api.get(`/applicants/check-lrn/${lrn}`);
+  if (data.alreadyEnrolled) {
+    setError('lrn', { message: `This LRN is already enrolled for SY ${data.yearLabel}.` });
+  } else if (data.existingApplicant) {
+    // Pre-fill name and birthdate from prior year record
+    setValue('lastName', data.existingApplicant.lastName);
+    setValue('firstName', data.existingApplicant.firstName);
+    toast.info('We found an existing record for this LRN. Please verify the pre-filled details.');
+  }
+};
+```
+
+### Complete Validation Reference
+
+| Field | Rule |
+|---|---|
+| LRN | Exactly 12 numeric digits; unique per active AY |
+| Birthdate | Valid date; Grade 7: ≥ 10 years old; Grade 11: ≥ 14 years old |
+| Name fields | Letters only (including ñ, accented vowels); no numbers; hyphens allowed |
+| Middle Name | Same as name fields; "N/A" accepted |
+| Suffix | Only: Jr. / Sr. / II / III / IV / N/A |
+| Sex | Required; binary (Male / Female) |
+| Email | Standard email format |
+| Contact Number | PH mobile: `09XXXXXXXXX` (11 digits) OR landline with area code |
+| G10 Science/Math | Numeric 0–100; advisory (not hard block) if below 85 for STEM |
+| Exam Score | Numeric 0–100; required after exam is taken |
+| Grade Level | Must match a `GradeLevel.id` from the active academic year |
+| Elective Cluster | Must match a `Strand.id` configured for the selected grade level and active AY |
+| SCP Code | Must match an active `ScpProgram.code` for the selected grade level and active AY |
+| `privacyConsentGiven` | Must be `true` — API rejects any submission where this is false |
 
 ---
 
-### SPFL (Special Program in Foreign Language)
+## 8. Prisma Model Mapping
 
-| Requirement | Type | Notes |
-|---|---|---|
-| BEEF | Form | Must specify preferred language (field 9.7) |
-| Grade 6 SF9 | Document | |
-| NAT Result (if available) | Document | English subtest score used as screening basis |
-| Grade 6 English Grade | System field | From SF9 — used if NAT result is unavailable |
+Key notes on how BEEF fields map to the `Applicant` Prisma model:
 
-**Additional system fields:**
-- `preferredLanguage` — Japanese / Spanish / French / German / Mandarin / Korean
-- `natEnglishScore` — NAT English subtest score (if available)
-- `grade6EnglishGrade` — Final English grade from Grade 6 SF9
+```prisma
+model Applicant {
+  id Int @id @default(autoincrement())
+
+  // Section 1
+  lrn                  String   @unique @db.VarChar(12)  // immutable after creation
+
+  // Section 3
+  lastName             String
+  firstName            String
+  middleName           String?
+  suffix               String?
+  birthDate            DateTime
+  sex                  Sex
+  birthPlace           String?
+  nationality          String?
+  religion             String?
+  motherTongue         String?
+
+  // Section 4 — Sensitive Personal Information
+  isIndigenousPeople   Boolean @default(false)
+  ipCommunity          String?
+  is4PsBeneficiary     Boolean @default(false)
+  householdId          String?
+  isPersonWithDisability Boolean @default(false)
+  disabilityType       String?
+
+  // Section 5–6
+  address              String
+  barangay             String?
+  municipality         String?
+  province             String?
+  fatherName           String?
+  motherName           String?
+  guardianName         String
+  guardianRelationship String?
+  guardianContact      String
+  emailAddress         String
+
+  // Section 7
+  lastSchoolAttended   String?
+  lastGradeCompleted   String?
+  generalAverage       Float?
+
+  // Section 8 (SHS — driven by configured strands)
+  grade10ScienceGrade  Float?
+  grade10MathGrade     Float?
+
+  // Section 9
+  learnerType          LearnerType @default(NEW_ENROLLEE)
+
+  // Admission metadata
+  admissionChannel     AdmissionChannel @default(ONLINE)
+  applicantType        String           @default("REGULAR")
+  scpProgramCode       String?
+  trackingNumber       String           @unique   // auto-generated server-side
+  status               ApplicationStatus @default(PENDING)
+  encodedById          Int?              // F2F: registrar's User.id; null for online
+  privacyConsentGiven  Boolean          @default(false)
+  privacyConsentTimestamp DateTime?
+  privacyConsentVersion   String?
+
+  // SCP assessment fields (filled by registrar, not applicant)
+  examDate         DateTime?
+  assessmentType   String?
+  examScore        Float?
+  examResult       String?
+  examNotes        String?
+  auditionResult   String?
+  interviewDate    DateTime?
+  interviewResult  String?
+  natScore         Float?
+  artField         String?
+  sport            String?
+  foreignLanguage  String?
+
+  // Foreign keys
+  gradeLevelId   Int
+  strandId       Int?
+  academicYearId Int     // auto-set server-side to active AY — not sent by client
+}
+```
+
+**Immutability rules enforced at the API and SIMS level:**
+- `lrn` — immutable after creation; displayed as read-only in all edit forms
+- `academicYearId` — set server-side; never sent by client
+- `trackingNumber` — auto-generated UUID; never sent by client
+- `encodedById` — set from JWT for F2F; never sent by client
+- `admissionChannel` — set server-side based on endpoint (`/applications` vs `/applications/f2f`)
 
 ---
 
-### SPTVE (Special Program in Technical-Vocational Education)
+## 9. Data Privacy & Sensitive Field Handling
 
-| Requirement | Type | Notes |
+### 9.1 Sensitive Personal Information (SPI) — Access Controls
+
+| SPI Field | API Exposure | UI Location |
 |---|---|---|
-| BEEF | Form | Standard |
-| Grade 6 SF9 | Document | |
-| Aptitude Test Result | Assessed in school | School-determined; may be written or practical demonstration |
-| Manual Dexterity Test | Assessed (some schools) | Practical skills test |
+| `isPersonWithDisability` + `disabilityType` | Detail view only (`GET /students/:id`) | SIMS Profile Tab 4 |
+| `isIndigenousPeople` + `ipCommunity` | Detail view only | SIMS Profile Tab 4 |
+| `is4PsBeneficiary` + `householdId` | Detail view only | SIMS Profile Tab 4 |
+| Grade 10 grades | Application detail only (`GET /applications/:id`) | Application Detail — SCP applicants only |
+| SCP assessment scores | Application detail only | Application Detail — SCP applicants only |
 
-**Additional system fields:**
-- `aptitudeScore` — Test score
-- `aptitudeType` — WRITTEN / PRACTICAL / COMBINED
-- `aptitudeResult` — PASSED / FAILED
+### 9.2 SPI Fields in Lists and Exports
 
----
+SPI fields are **excluded from all paginated list responses**:
+```typescript
+// server/src/controllers/studentController.ts
+// Select only non-SPI fields for list views:
+const students = await prisma.applicant.findMany({
+  select: {
+    id: true, lrn: true, lastName: true, firstName: true,
+    status: true, admissionChannel: true,
+    gradeLevel: { select: { name: true } },
+    enrollment: { select: { section: { select: { name: true } } } },
+    // isIndigenousPeople, is4PsBeneficiary, isPersonWithDisability — EXCLUDED
+  }
+});
+```
 
-### Grade 11 STEM (Academic Track — Placement Exam + Interview)
+### 9.3 Audit Logging for SPI Edits
 
-| Requirement | Type | Notes |
-|---|---|---|
-| BEEF | Form | Must show Track: Academic and Cluster: STEM |
-| Grade 10 SF9 | Document | Must show Science ≥ 85 and Math ≥ 85 |
-| Grade 10 Certificate of Completion | Document | Recommended |
-| Placement Exam Score | Assessed | school-administered; Science and Mathematics |
-| Interview Result | Assessed | Panel interview by school faculty |
+When a registrar edits an SPI field in SIMS, the audit log entry records field **names only** — never field values:
 
-**Minimum Grade 10 Grade Requirements for STEM (DepEd national standard):**
-- Final Grade in Science: **85 and above**
-- Final Grade in Mathematics: **85 and above**
+```
+✅ STUDENT_RECORD_UPDATED — LRN 123456789012 — Changed: is4PsBeneficiary, householdId
+❌ Changed: householdId from "4PS-12345" to "4PS-99999"  ← values NEVER in audit log
+```
 
-**Additional system fields:**
-- `grade10ScienceGrade` — Numeric (0–100)
-- `grade10MathGrade` — Numeric (0–100)
-- `grade10ScienceEligible` — Computed: true if ≥ 85
-- `grade10MathEligible` — Computed: true if ≥ 85
-- `placementExamScore` — Numeric
-- `interviewDate` — Date
-- `interviewResult` — CLEARED / NOT_CLEARED
-- `overallResult` — PASSED / FAILED
-
----
-
-## 7. Data Privacy Compliance (RA 10173)
-
-> **See §0 for the full RA 10173 Privacy Notice** — including the complete notice text, consent field specification, legal basis for each data category, sensitive personal information handling rules, and the UX placement specification for the digital form.
-
-This section summarizes the ongoing compliance obligations for the school after the form is submitted — covering how collected data must be handled throughout the learner's enrollment lifecycle, not just at the point of collection.
-
-### 7.1 — RA 10173 Compliance Obligations Summary
-
-| Obligation | Requirement | Section 0 Reference |
-|---|---|---|
-| **Informed consent before collection** | Full Privacy Notice must be displayed and consented to before any form field is filled | §0.2, §0.3 |
-| **Collection limitation** | Collect only the fields listed in the official BEEF — no additional fields may be added by individual schools without DepEd authorization | §0.4 |
-| **Purpose limitation** | Data collected on the BEEF may only be used for enrollment, LIS encoding, school communications, and DepEd program administration | §0.2 |
-| **Data minimization** | Grade 10 grades collected only for STEM applicants; disability data collected only when LWD = Yes; SCP scores collected only for SCP applicants | §0.4 |
-| **Retention limit** | All physical BEEF forms retained no longer than one (1) year; properly disposed of per DepEd Records Management Regulations | §0.2 |
-| **Contact data restriction** | Phone numbers and email addresses used exclusively for school-to-parent communication — never shared with third parties | §0.2 |
-| **PSA BC Number** | Sensitive PII — stored in LIS only; never written in public-facing system views; never included in audit log plaintext descriptions | §0.5 |
-| **LRN** | PII — never exposed in public-facing URLs; never logged in plaintext in system audit logs beyond initial submission entry | §0.5 |
-| **Disability data** | Sensitive Personal Information — access strictly restricted to Registrar, Class Adviser, School Head, and Guidance Counselor only | §0.5 |
-| **IP and 4Ps data** | Sensitive Personal Information — used only for equity program tagging; never shared with non-DepEd entities | §0.5 |
-| **Consent versioning** | Every submitted form records the privacy notice version consented to (`privacyConsentVersion` field) | §0.3 |
-| **Data subject rights** | Applicants and parents may request access, rectification, or erasure by visiting the Registrar's Office or contacting the school's Data Privacy Officer | §0.2 |
-
-### 7.2 — System-Level Enforcement
-
-The admission system enforces RA 10173 compliance through the following technical controls:
+### 9.4 Additional Controls
 
 | Control | Implementation |
 |---|---|
-| Consent gate | `privacyConsentGiven: z.literal(true)` Zod validation — API rejects any submission where consent is false |
-| Consent audit trail | `privacyConsentTimestamp` and `privacyConsentVersion` stored in the `Applicant` record |
-| SPI access restriction | Disability, IP, and 4Ps fields are not returned by default in the `GET /api/students` paginated list — only fetched on single-record `GET /api/applications/:id` by authenticated REGISTRAR or SYSTEM_ADMIN |
-| PSA BC in audit logs | `auditLogger.ts` must never include the PSA BC number in the `description` field — use `PSA BC on file` as the log entry instead of the actual number |
-| LRN in audit logs | LRN may be included in the initial `APPLICATION_SUBMITTED` log entry only; all subsequent logs reference the applicant by name and tracking number, not LRN |
-| URL privacy | Applicant tracking uses `trackingNumber` (APP-YYYY-NNNNN) in public-facing URLs — never the applicant's `id`, `lrn`, or any PII |
+| Consent gate | `privacyConsentGiven: z.literal(true)` — API rejects submission if false |
+| Consent audit trail | `privacyConsentTimestamp` + `privacyConsentVersion` stored on `Applicant` |
+| PSA BC in audit logs | Never include PSA BC number in log descriptions — use "PSA BC on file" |
+| LRN in audit logs | Included only in the initial `APPLICATION_SUBMITTED` entry; subsequent logs use name + tracking number |
+| URL privacy | Public-facing tracking URLs use `trackingNumber` (APP-YYYY-NNNNN) — never `id`, `lrn`, or any PII |
 
 ---
 
-## 8. Field-by-Field Mapping to LIS
+## 10. System Design Notes — All Five Modules
 
-When the registrar encodes the BEEF into the DepEd Learner Information System (LIS), each BEEF field maps to a corresponding LIS data field:
-
-| BEEF Field | LIS Field Name | LIS Section |
-|---|---|---|
-| School Year | SY | Enrollment Record |
-| LRN | Learner Reference Number | Learner Profile |
-| Last Name | Last Name | Basic Profile |
-| First Name | First Name | Basic Profile |
-| Middle Name | Middle Name | Basic Profile |
-| Extension Name | Extension | Basic Profile |
-| Birthdate | Date of Birth | Basic Profile |
-| Sex | Sex | Basic Profile |
-| Place of Birth | Place of Birth | Basic Profile |
-| Religion | Religion | Other Info |
-| Mother Tongue | Mother Tongue | Other Info |
-| IP Status | IP Tag | Equity Tags |
-| 4Ps Status | 4Ps Tag + Household ID | Equity Tags |
-| Disability | Disability Tag + Type | SPED Tags |
-| Current Address | Current Address | Address |
-| Permanent Address | Home Address | Address |
-| Mother/Father/Guardian | Parent/Guardian Info | Family Info |
-| Last School | Previous School | Enrollment History |
-| Grade Level | Grade Level | Enrollment Record |
-| SHS Track | Track | SHS Record |
-| Elective Cluster | Strand/Program | SHS Record |
-
-Note: For Senior High Schools participating in the Pilot Implementation of the Strengthened SHS Curriculum, encode Academic learners to General Academic Strand (GAS) and TechPro learners to Technical-Vocational-Livelihood (TVL) Track in LIS for the transition period.
+This section documents how the BEEF fields and admission data flow **beyond** the admission form — through all five system modules.
 
 ---
 
-## 9. Validation Rules for Each Field
+### Module 1 — Admission (Online + F2F)
 
-These rules apply to both the paper BEEF (registrar-enforced) and the digital online admission portal (system-enforced):
+The BEEF fields map directly to the `Applicant` table. All fields documented in §3–5 apply equally to both channels.
 
-| Field | Validation Rule |
+**Key decisions driven by BEEF data:**
+- `gradeLevelId` determines which sections appear in the enrollment assignment dialog
+- `applicantType` determines which workflow path (open admission vs. SCP) the application follows in `/applications`
+- `strandId` filters the available sections to those matching the strand or SCP code
+- `admissionChannel` distinguishes Online from F2F records in filters, dashboards, and the channel breakdown chart
+
+**Shared components:**
+- `GradeLevelSelect`, `ScpProgramSelect`, `StrandSelect`, `ScpConditionalFields` — shared between `Apply.tsx` and `F2FAdmission.tsx`. Any change applies to both channels.
+
+---
+
+### Module 2 — Enrollment Management (Registrar Only)
+
+The enrollment management module (`/applications`) reads every `Applicant` field and exposes the SCP workflow fields to the registrar.
+
+**How admission data drives the enrollment UI:**
+
+| `Applicant` field | Effect in `/applications` |
 |---|---|
-| LRN | Exactly 12 numeric digits; no letters; no spaces; must not already exist in system under a different learner name (duplicate check) |
-| Birthdate | Must be a valid calendar date; for Grade 7: learner must be at least 10 years old as of enrollment date; for Grade 11: learner must be at least 14 years old |
-| First/Last Name | Letters only (including accented Filipino characters: ñ, á, é, í, ó, ú); no numbers; no special characters except hyphen for hyphenated names |
-| Middle Name | Same as name; "N/A" accepted if learner has no middle name |
-| Extension Name | Only: Jr. / Sr. / II / III / IV / V / N/A |
-| Sex | Required; binary (Male / Female); must match PSA Birth Certificate |
-| Email Address | Standard email format (user@domain.tld); validated as a real email format |
-| Contact Number | Philippine mobile: `09XXXXXXXXX` (11 digits starting with 09); OR landline: `(0XX) XXXX-XXXX` |
-| PSA BC Number | Alphanumeric; validated as non-empty if submitted |
-| 4Ps Household ID | Numeric; required only if 4Ps = Yes |
-| G10 Science/Math Grade | Numeric 0–100; must be ≥ 85 for STEM eligibility; system warns (not blocks) if below 85 |
-| Exam Score | Numeric 0–100; required after exam is taken |
-| Grade Level | Must be one of: Grade 7–12; system checks against the active academic year's configured grade levels |
-| SHS Track | Required when Grade Level = Grade 11; must be one of: Academic / TechPro |
-| Elective Cluster | Required when Grade Level = Grade 11; must be from the school's configured offered clusters |
+| `applicantType` | Determines which action buttons appear (Approve vs. Schedule Exam vs. Record Result) |
+| `status` | Drives the state machine — only valid transitions are shown |
+| `strandId` | Filters the section assignment dialog to matching sections |
+| `gradeLevelId` | Groups applications in the inbox filter and determines which sections are offered |
+| `grade10ScienceGrade` / `grade10MathGrade` | Displayed in the SCP detail panel with ✅ / ⚠️ indicators |
+| `scpProgramCode` | Matches `ScpProgram.assessmentType` to show the correct assessment workflow |
+| `admissionChannel` | Shown as a badge (Online / Walk-in); filterable in the inbox |
+
+**Enrollment restriction:** The Enrollment Management module is accessible only to REGISTRAR and SYSTEM_ADMIN roles. TEACHER has no access to applications or enrollment records.
 
 ---
 
-## 10. System Design Notes for the Admission Portal
+### Module 3 — Student Information Management System (SIMS)
 
-Based on the complete BEEF field analysis, the following design decisions apply to the school's online admission portal (`/apply`):
+After a learner is enrolled (`status = ENROLLED`), their `Applicant` record becomes their **permanent student profile** in the SIMS. The `/students/:id` profile is a tabbed view over the same data.
 
-### Fields to Include in the Digital Portal
+**BEEF data in SIMS tabs:**
 
-The portal should capture all BEEF fields. However, some fields that apply to lower grade levels (Kindergarten, Grades 1–6) are not relevant to the school (which starts at Grade 7) and should be omitted:
-
-**Include (school-specific):**
-- All of Section 1 (school year, LRN, PSA BC number)
-- Section 2: Grade Level (7–12 only), SHS Track, Elective Cluster (conditional), SCP selection (conditional)
-- All of Section 3 (personal information — all 11 fields)
-- All of Section 4 (IP, 4Ps, disability, Balik-Aral)
-- All of Section 5 (address — both current and permanent)
-- All of Section 6 (parent/guardian — all three persons + email)
-- Section 7 (previous school — all fields)
-- Section 8 (SHS track/cluster fields — conditional on Grade 11)
-- Section 9 (learner type, modality, SCP type)
-- Section 10 (certification checkbox + date)
-
-**Omit (not applicable to the school):**
-- SNEd grade level specification (the school handles this offline)
-- ALS-specific fields (the school does not offer ALS)
-- Kindergarten age validation fields
-
-### Step-by-Step Wizard Mapping
-
-| Step | Fields Covered |
+| SIMS Tab | `Applicant` Fields Shown |
 |---|---|
-| **Step 1: Personal Information** | Sections 1 (Reference #s) + 3 (Personal info — all 11 fields) |
-| **Step 2: Family & Contact** | Sections 4 (Special classifications) + 5 (Address) + 6 (Parent/Guardian info) |
-| **Step 3: School & Enrollment Preferences** | Sections 2 (Grade/Program) + 7 (Previous school) + 8 (SHS-specific) + 9 (Learner type) + 10 (Certification) |
+| Tab 1 — Personal Information | All Section 3 fields (name, birthdate, sex, etc.); address fields; contact fields. All editable by REGISTRAR — changes create `STUDENT_RECORD_UPDATED` audit entries listing changed field names |
+| Tab 2 — Academic History | `generalAverage` from previous school; all `Enrollment` records across AYs (grade level, section, enrolled date, enrolled by) |
+| Tab 3 — Application Record | `trackingNumber`, `admissionChannel`, `createdAt`, full SCP assessment history (`examDate`, `examScore`, `examResult`, `auditionResult`, `interviewResult`, `examNotes`) |
+| Tab 4 — Classifications | `learnerType`, `isIndigenousPeople`, `ipCommunity`, `is4PsBeneficiary`, `householdId`, `isPersonWithDisability`, `disabilityType` — RESTRICTED to REGISTRAR and SYSTEM_ADMIN only |
 
-### Conditional Field Logic Summary
+**Immutability rule:** `lrn` is displayed as plain text in the edit form — not an `<input>`. The backend rejects any `PUT /students/:id` body that includes the `lrn` field.
+
+**LRN uniqueness across school years:** The same LRN may appear in multiple academic years (the learner re-enrolls each year). The `@unique` constraint is on `Applicant.lrn`, which means an LRN cannot have two `Applicant` records — the system recognizes the same learner across years via their single `Applicant` record, which accumulates multiple `Enrollment` records over time.
+
+---
+
+### Module 4 — Teacher Management
+
+Teacher records are independent of the `Applicant` / BEEF data, but they are connected through the section assignment that links enrolled students to teacher-advised sections.
+
+**How admission data connects to Teacher Management:**
 
 ```
-IF Grade Level = Grade 11
-  → SHOW: SHS Track (Academic / TechPro)
-  → SHOW: Elective Cluster (filtered by track and school config)
-  → IF Cluster = STEM
-      → SHOW: G10 Science Grade + G10 Math Grade
-      → VALIDATE: both must be ≥ 85
-
-IF Grade Level = Grade 7
-  → SHOW: Application Type (Regular / SCP)
-  → IF SCP selected
-      → SHOW: SCP Type dropdown
-      → IF SCP = SPA → SHOW: Art Field
-      → IF SCP = SPS → SHOW: Sports multi-select
-      → IF SCP = SPFL → SHOW: Preferred Language
-
-IF Grade Level = Grade 12 (transferee only)
-  → SHOW: Old Strand selector (STEM / ABM / HUMSS / GAS / TVL variants)
-  → HIDE: SHS Track / Elective Cluster (new system)
-
-IF IP = Yes → SHOW: IP Group Name field
-IF 4Ps = Yes → SHOW: 4Ps Household ID field
-IF LWD = Yes → SHOW: Disability Type multi-select + SNEd Placement
-IF Balik-Aral = Yes → SHOW: Last Year Enrolled + Last Grade Level
-IF Permanent Address ≠ Current → SHOW: Full Permanent Address fields
+Applicant (lrn, name, gradeLevelId)
+    ↓ enrolled into
+Enrollment (sectionId, enrolledById)
+    ↓ section is advised by
+Section (advisingTeacherId → Teacher.id → User.id)
+    ↓ teacher views via
+/my-sections → GET /api/teacher/sections → filtered by req.user → Teacher.id
 ```
+
+**What teachers see about BEEF data:** Teachers can view the **roster** of their assigned sections at `/my-sections/:id` — this shows learner names, LRNs, and grade levels only. SPI fields (disability, IP, 4Ps status), SCP assessment records, and application history are **not shown to teachers**. These remain restricted to REGISTRAR and SYSTEM_ADMIN.
+
+**Teacher account provisioning:** When the registrar provisions a system account for a teacher from `/teachers/:id`, a welcome email is sent. The email subject and body use `SchoolSettings.schoolName` at send time — never a hardcoded school name.
 
 ---
 
-*Document compiled from:*
-- *DepEd Order No. 017, s. 2025 — Revised Basic Education Enrollment Policy*
-- *DepEd Memorandum No. 032, s. 2024 — BEEF form (Enclosure 1, latest template)*
-- *DepEd Memorandum No. 012, s. 2026 — Strengthened SHS Curriculum (Grade 11 Track/Cluster fields)*
-- *DepEd Memorandum No. 149, s. 2011 — Special Curricular Programs*
-- *DepEd LIS Help Portal — lis.deped.gov.ph*
-- *RA 10173 — Data Privacy Act of 2012*
-- *RA 11909 — Permanent Validity of Civil Registry Documents Act*
-- *DepEd CALABARZON Official Release, June 14, 2025*
-- *Studocu — BEEF SY 2024–2025 form transcription (Father Saturnino Urios University)*
+### Module 5 — Grade Level & Sectioning Management
+
+The BEEF fields `gradeLevelId` and `strandId` are both foreign keys that point directly into the Grade Level and Sectioning module's configuration tables.
+
+**How sectioning configuration drives admission:**
+
+```
+Settings Tab 3
+  GradeLevel.name = "Grade 7"  (school-configured, not hardcoded)
+       ↓ feeds
+  GET /api/grade-levels  →  admission form Grade Level dropdown
+       ↓ applicant selects Grade 7
+  GET /api/scp-programs?gradeLevelId=  →  SCP dropdown (only active programs for G7)
+  GET /api/strands?gradeLevelId=       →  Strand dropdown (only configured strands for G7)
+       ↓ applicant submits
+  Applicant.gradeLevelId = 1
+       ↓ enrollment assigned
+  Section.gradeLevelId = 1  →  only Grade 7 sections appear in assignment dialog
+```
+
+**Section capacity enforcement:** When the registrar approves an application and assigns a section, the server:
+1. Counts current `Enrollment` records for that `sectionId`
+2. Compares against `Section.maxCapacity`
+3. If at capacity → returns `422 Unprocessable Entity`: "This section is at full capacity."
+4. If near-concurrent → uses a `FOR UPDATE` PostgreSQL row lock within a transaction to prevent over-enrollment
+
+**`Section.scpCode` field:** A section may be designated as an SCP section (e.g., `scpCode: "STE"`). This is informational only — the system does not enforce that only STE applicants are assigned to STE sections. It is visible as a badge in the section list and used for filtering.
+
+**Capacity bar in `/sections`:**
+
+```tsx
+// Capacity bar uses semantic colors — NOT the school's accent color
+const pct = (enrolled / maxCapacity) * 100;
+const barColor =
+  pct < 80  ? 'bg-green-500'  :
+  pct < 100 ? 'bg-amber-500'  :
+              'bg-red-500';
+```
+
+The capacity bar must never use `var(--accent)` — its meaning (safe / warning / full) must remain consistent across all schools regardless of brand color.
+
+---
+
+### Cross-Module: Dynamic Data Flow Summary
+
+```
+SchoolSettings.schoolName  ──────────────────────► All UI headers, privacy notice, emails
+AcademicYear.yearLabel     ──────────────────────► Form header, stat cards, filter defaults
+GradeLevel (per active AY) ──── /api/grade-levels ► Grade dropdown in admission + SIMS filters
+Strand (per active AY)     ── /api/strands?gl=id  ► Strand dropdown in admission + section create
+ScpProgram (per active AY) ─ /api/scp-programs?gl ► SCP dropdown in admission + application filter
+Section (per grade level)  ──────────────────────► Section assignment dialog in enrollment
+Teacher (per school)       ──────────────────────► Advising teacher assignment in sections
+```
+
+Every dropdown in the system is data-driven. A school that offers only Grades 7–10 (no SHS) will see no strand fields. A school that offers no SCP programs will see no SCP fields. A school that has no teachers registered will see an empty teacher dropdown in section creation. The system adapts to each school's configuration without any code changes.
+
+---
+
+*Document v3.0.0*
+*System: School Admission, Enrollment & Information Management System*
+*Modules: Admission (Online + F2F) · Enrollment Management · SIMS · Teacher Management · Grade Level & Sectioning Management*
+*Policy: DepEd Order No. 017, s. 2025 · RA 10173 · DM 149, s. 2011 · DM 012, s. 2026*
+*Design: School-agnostic — all grade levels, strands, SCP options, and school name are runtime-configurable*

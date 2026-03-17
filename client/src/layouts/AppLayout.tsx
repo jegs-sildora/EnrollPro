@@ -215,13 +215,6 @@ function AppSidebar() {
                     <NavItem to="/admin/users" icon={UserCog} label="User Management" pathname={pathname} />
                     <NavItem to="/admin/email-logs" icon={Mail} label="Email Logs" pathname={pathname} />
                     <NavItem to="/admin/system" icon={Monitor} label="System Health" pathname={pathname} />
-                  </>
-                )}
-
-                {/* ── Records section (Registrar + Admin) ── */}
-                {(isRegistrar || isAdmin) && (
-                  <>
-                    <NavDivider label="Records" />
                     <NavItem to="/audit-logs" icon={ScrollText} label="Audit Logs" pathname={pathname} />
                     <NavItem to="/settings" icon={Settings} label="Settings" pathname={pathname} />
                   </>
@@ -239,34 +232,43 @@ function AppSidebar() {
                 size="lg"
                 tooltip={user?.name ?? 'User'}
                 onClick={() => setShowLogoutConfirm(true)}
+                className="relative"
               >
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] overflow-hidden">
-                  <span className="text-xs font-semibold">
-                    {user?.name?.charAt(0).toUpperCase() ?? 'U'}
-                  </span>
+                {/* Collapsed State: LogOut Icon only */}
+                <div className="absolute inset-0 flex items-center justify-center transition-all duration-200 opacity-0 group-data-[collapsible=icon]:opacity-100 group-data-[collapsible=icon]:scale-100 scale-75">
+                  <LogOut className="size-4 text-[hsl(var(--muted-foreground))]" />
                 </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate font-semibold">{user?.name}</span>
-                    {user?.role === 'SYSTEM_ADMIN' && (
-                      <Badge variant="outline" className="h-4 px-1 text-[9px] font-bold border-purple-200 bg-purple-50 text-purple-700">
-                        ADMIN
-                      </Badge>
-                    )}
-                    {user?.role === 'REGISTRAR' && (
-                      <Badge variant="outline" className="h-4 px-1 text-[9px] font-bold border-blue-200 bg-blue-50 text-blue-700">
-                        REGISTRAR
-                      </Badge>
-                    )}
-                    {user?.role === 'TEACHER' && (
-                      <Badge variant="outline" className="h-4 px-1 text-[9px] font-bold border-emerald-200 bg-emerald-50 text-emerald-700">
-                        TEACHER
-                      </Badge>
-                    )}
+
+                {/* Expanded State: Full Profile */}
+                <div className="flex w-full items-center gap-2 transition-all duration-200 opacity-100 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:scale-95 group-data-[collapsible=icon]:pointer-events-none">
+                  <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] overflow-hidden">
+                    <span className="text-xs font-semibold">
+                      {user?.name?.charAt(0).toUpperCase() ?? 'U'}
+                    </span>
                   </div>
-                  <span className="truncate text-xs text-[hsl(var(--muted-foreground))]">{user?.email}</span>
+                  <div className="grid flex-1 text-left text-sm leading-tight overflow-hidden">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate font-semibold">{user?.name}</span>
+                      {user?.role === 'SYSTEM_ADMIN' && (
+                        <Badge variant="outline" className="h-4 px-1 shrink-0 text-[9px] font-bold border-purple-200 bg-purple-50 text-purple-700">
+                          ADMIN
+                        </Badge>
+                      )}
+                      {user?.role === 'REGISTRAR' && (
+                        <Badge variant="outline" className="h-4 px-1 shrink-0 text-[9px] font-bold border-blue-200 bg-blue-50 text-blue-700">
+                          REGISTRAR
+                        </Badge>
+                      )}
+                      {user?.role === 'TEACHER' && (
+                        <Badge variant="outline" className="h-4 px-1 shrink-0 text-[9px] font-bold border-emerald-200 bg-emerald-50 text-emerald-700">
+                          TEACHER
+                        </Badge>
+                      )}
+                    </div>
+                    <span className="truncate text-xs text-[hsl(var(--muted-foreground))]">{user?.email}</span>
+                  </div>
+                  <LogOut className="ml-auto size-4 shrink-0 text-[hsl(var(--muted-foreground))]" />
                 </div>
-                <LogOut className="ml-auto size-4 text-[hsl(var(--muted-foreground))]" />
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

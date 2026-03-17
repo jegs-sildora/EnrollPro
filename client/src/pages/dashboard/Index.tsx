@@ -50,7 +50,7 @@ export default function Dashboard() {
         if (adminRes.data) setAdminStats(adminRes.data);
       } catch {
         // Fallbacks
-        setStats({ totalPending: 0, totalEnrolled: 0, totalApproved: 0, sectionsAtCapacity: 0 });
+        setStats({ totalPending: 0, totalEnrolled: 0, totalPreRegistered: 0, sectionsAtCapacity: 0 });
       } finally {
         setLoading(false);
       }

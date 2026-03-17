@@ -1,19 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
-import { BookOpen, Layers, Plus, Trash2, Edit2, ShieldCheck, Calendar, Info } from 'lucide-react';
+import { BookOpen, Layers, ShieldCheck, Calendar, Info, CheckCircle2, Circle } from 'lucide-react';
 import { sileo } from 'sileo';
 import api from '@/api/axiosInstance';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { toastApiError } from '@/hooks/useApiToast';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { DatePicker } from '@/components/ui/date-picker';
+import { ACADEMIC_CLUSTERS, TECHPRO_CLUSTERS, OLD_STRANDS } from '@/pages/apply/types';
+
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface GradeLevel {
   id: number;
@@ -62,12 +63,8 @@ export default function CurriculumTab() {
   const [scpConfigs, setScpConfigs] = useState<ScpConfig[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [stDialogOpen, setStDialogOpen] = useState(false);
-  const [stEditing, setStEditing] = useState<Strand | null>(null);
-  const [stName, setStName] = useState('');
-  const [stType, setStType] = useState<'OLD_STRAND' | 'ELECTIVE_CLUSTER'>('OLD_STRAND');
-  const [stTrack, setStTrack] = useState<'ACADEMIC' | 'TECHPRO' | 'NONE'>('NONE');
-
+  const [curriculumDirty, setCurriculumDirty] = useState(false);
+  const [savingCurriculum, setSavingCurriculum] = useState(false);
   const [matrixDirty, setMatrixDirty] = useState(false);
   const [savingMatrix, setSavingMatrix] = useState(false);
   const [savingScp, setSavingScp] = useState(false);
@@ -83,6 +80,7 @@ export default function CurriculumTab() {
       ]);
       setGradeLevels(glRes.data.gradeLevels);
       setStrands(stRes.data.strands);
+      setCurriculumDirty(false);
       
       // Merge official SCP types with fetched configs
       const fetched = scpRes.data.scpConfigs as ScpConfig[];
@@ -111,37 +109,34 @@ export default function CurriculumTab() {
 
   // ─── Strand Actions ───────────────────────────────────────
 
-
-  const handleSaveStrand = async () => {
-    if (!ayId || !stName) return;
-    try {
-      const data = {
-        name: stName,
-        curriculumType: stType,
-        track: stTrack === 'NONE' ? null : stTrack,
-      };
-      if (stEditing) {
-        await api.put(`/curriculum/strands/${stEditing.id}`, data);
-        sileo.success({ title: 'Updated', description: 'Curriculum item updated.' });
+  const toggleStrandPresence = (name: string, curriculumType: 'OLD_STRAND' | 'ELECTIVE_CLUSTER', track: 'ACADEMIC' | 'TECHPRO' | null) => {
+    setStrands((prev) => {
+      const exists = prev.some((s) => s.name === name && s.curriculumType === curriculumType);
+      if (exists) {
+        return prev.filter((s) => !(s.name === name && s.curriculumType === curriculumType));
       } else {
-        await api.post(`/curriculum/${ayId}/strands`, data);
-        sileo.success({ title: 'Created', description: 'Curriculum item created.' });
+        return [...prev, { id: Math.random(), name, curriculumType, track, applicableGradeLevelIds: [] } as Strand];
       }
-      setStDialogOpen(false);
-      fetchData();
-    } catch (err) {
-      toastApiError(err as never);
-    }
+    });
+    setCurriculumDirty(true);
   };
 
-  const handleDeleteStrand = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this curriculum item?')) return;
+  const handleSaveCurriculum = async () => {
+    if (!ayId) return;
+    setSavingCurriculum(true);
     try {
-      await api.delete(`/curriculum/strands/${id}`);
-      sileo.success({ title: 'Deleted', description: 'Curriculum item removed.' });
+      const payload = strands.map(s => ({
+        name: s.name,
+        curriculumType: s.curriculumType,
+        track: s.track,
+      }));
+      await api.put(`/curriculum/${ayId}/strands/sync`, { strands: payload });
+      sileo.success({ title: 'Curriculum Saved', description: 'Available clusters and strands updated.' });
       fetchData();
     } catch (err) {
       toastApiError(err as never);
+    } finally {
+      setSavingCurriculum(false);
     }
   };
 
@@ -215,7 +210,36 @@ export default function CurriculumTab() {
   }
 
   if (loading) {
-    return <div className="text-center py-8 text-sm text-[hsl(var(--muted-foreground))]">Loading curriculum…</div>;
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-32" />
+                {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
+              </div>
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-32" />
+                {[1, 2].map((i) => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-8 w-64" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -362,125 +386,139 @@ export default function CurriculumTab() {
 
       {/* Strands / Clusters / Tracks */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <Layers className="h-5 w-5" />
-              SHS Curriculum & Tracks
-            </CardTitle>
-            <CardDescription>
-              DepEd DM 012, s. 2026: Tracks & Clusters for G11 · Strands for G12
-            </CardDescription>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Layers className="h-5 w-5" />
+                SHS Curriculum & Tracks
+              </CardTitle>
+              <CardDescription>
+                Select which elective clusters (G11) and strands (G12) this school offers
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="font-mono text-[10px]">DEPED DM 012, S. 2026</Badge>
+            </div>
           </div>
-          <Dialog open={stDialogOpen} onOpenChange={setStDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" onClick={() => { setStEditing(null); setStName(''); setStType('OLD_STRAND'); setStTrack('NONE'); }}>
-                <Plus className="h-4 w-4 mr-1" /> Add
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{stEditing ? 'Edit Curriculum Item' : 'Add Curriculum Item'}</DialogTitle>
-                <DialogDescription>Define a Track, Cluster, or Strand.</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>Name</Label>
-                  <Input placeholder="e.g. Academic, STEM, ICT Cluster" value={stName} onChange={e => setStName(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Type</Label>
-                  <Select value={stType} onValueChange={(v: 'OLD_STRAND' | 'ELECTIVE_CLUSTER') => setStType(v)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ELECTIVE_CLUSTER">Elective Cluster / Track (DM 012)</SelectItem>
-                      <SelectItem value="OLD_STRAND">Old Strand (Transition)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Track (Optional)</Label>
-                  <Select value={stTrack} onValueChange={(v: 'ACADEMIC' | 'TECHPRO' | 'NONE') => setStTrack(v)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="NONE">No Specific Track</SelectItem>
-                      <SelectItem value="ACADEMIC">Academic</SelectItem>
-                      <SelectItem value="TECHPRO">Technical-Professional (TechPro)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setStDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleSaveStrand}>Save</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-8">
-            {/* DM 012 Curriculum */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold uppercase text-[hsl(var(--muted-foreground))]">DM 012, s. 2026 Curriculum (Grade 11)</h3>
-                <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200">Track-Based</Badge>
+        <CardContent className="space-y-8">
+          {/* DM 012 Curriculum (Grade 11) */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Grade 11: Elective Clusters</h3>
+              <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200">Track-Based</Badge>
+            </div>
+            
+            <div className="space-y-6">
+              {/* Academic Track */}
+              <div className="space-y-3">
+                <p className="text-xs font-semibold text-[hsl(var(--muted-foreground))] flex items-center gap-2">
+                  <span className="h-1 w-1 rounded-full bg-blue-500" /> ACADEMIC TRACK
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {ACADEMIC_CLUSTERS.map(cluster => {
+                    const isOffered = strands.some(s => s.name === cluster.label && s.curriculumType === 'ELECTIVE_CLUSTER');
+                    return (
+                      <button
+                        key={cluster.value}
+                        onClick={() => toggleStrandPresence(cluster.label, 'ELECTIVE_CLUSTER', 'ACADEMIC')}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left ${
+                          isOffered 
+                            ? 'bg-blue-50/50 border-blue-200 ring-1 ring-blue-100' 
+                            : 'bg-[hsl(var(--card))] border-[hsl(var(--border))] hover:border-blue-200 hover:bg-[hsl(var(--muted))]'
+                        }`}
+                      >
+                        {isOffered ? (
+                          <CheckCircle2 className="h-5 w-5 text-blue-600 shrink-0" />
+                        ) : (
+                          <Circle className="h-5 w-5 text-[hsl(var(--muted-foreground))] shrink-0" />
+                        )}
+                        <span className={`text-sm font-medium ${isOffered ? 'text-blue-900' : 'text-[hsl(var(--foreground))]'}`}>
+                          {cluster.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {strands.filter(s => s.curriculumType === 'ELECTIVE_CLUSTER').map(s => (
-                  <div key={s.id} className="flex items-center justify-between group rounded-xl border border-[hsl(var(--border))] px-4 py-3 bg-[hsl(var(--card))]">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-bold">{s.name}</span>
-                      <div className="flex gap-2 mt-1">
-                        {s.track && <Badge variant="secondary" className="text-[10px] h-4">{s.track}</Badge>}
-                        <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{s.applicableGradeLevelIds.length} levels</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setStEditing(s); setStName(s.name); setStType(s.curriculumType); setStTrack(s.track || 'NONE'); setStDialogOpen(true); }}>
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteStrand(s.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+
+              {/* TechPro Track */}
+              <div className="space-y-3">
+                <p className="text-xs font-semibold text-[hsl(var(--muted-foreground))] flex items-center gap-2">
+                  <span className="h-1 w-1 rounded-full bg-orange-500" /> TECHNICAL-PROFESSIONAL (TECHPRO) TRACK
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {TECHPRO_CLUSTERS.map(cluster => {
+                    const isOffered = strands.some(s => s.name === cluster.label && s.curriculumType === 'ELECTIVE_CLUSTER');
+                    return (
+                      <button
+                        key={cluster.value}
+                        onClick={() => toggleStrandPresence(cluster.label, 'ELECTIVE_CLUSTER', 'TECHPRO')}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left ${
+                          isOffered 
+                            ? 'bg-orange-50/50 border-orange-200 ring-1 ring-orange-100' 
+                            : 'bg-[hsl(var(--card))] border-[hsl(var(--border))] hover:border-orange-200 hover:bg-[hsl(var(--muted))]'
+                        }`}
+                      >
+                        {isOffered ? (
+                          <CheckCircle2 className="h-5 w-5 text-orange-600 shrink-0" />
+                        ) : (
+                          <Circle className="h-5 w-5 text-[hsl(var(--muted-foreground))] shrink-0" />
+                        )}
+                        <span className={`text-sm font-medium ${isOffered ? 'text-orange-900' : 'text-[hsl(var(--foreground))]'}`}>
+                          {cluster.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
+          </div>
 
-            <Separator />
+          <Separator />
 
-            {/* Old Strand Curriculum */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold uppercase text-[hsl(var(--muted-foreground))]">Old Strand-Based Curriculum (Grade 12)</h3>
-                <Badge variant="outline">Transition</Badge>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {strands.filter(s => s.curriculumType === 'OLD_STRAND').map(s => (
-                  <div key={s.id} className="flex items-center justify-between group rounded-xl border border-[hsl(var(--border))] px-4 py-3 bg-[hsl(var(--card))]">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-bold">{s.name}</span>
-                      <span className="text-[10px] text-[hsl(var(--muted-foreground))] mt-1">{s.applicableGradeLevelIds.length} levels</span>
-                    </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setStEditing(s); setStName(s.name); setStType(s.curriculumType); setStTrack(s.track || 'NONE'); setStDialogOpen(true); }}>
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteStrand(s.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+          {/* Old Strand Curriculum (Grade 12) */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Grade 12: Old Strands</h3>
+              <Badge variant="outline" className="bg-[hsl(var(--muted))]">Transition</Badge>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              {OLD_STRANDS.map(strand => {
+                const isOffered = strands.some(s => s.name === strand.label && s.curriculumType === 'OLD_STRAND');
+                return (
+                  <button
+                    key={strand.value}
+                    onClick={() => toggleStrandPresence(strand.label, 'OLD_STRAND', null)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all text-left ${
+                      isOffered 
+                        ? 'bg-[hsl(var(--primary))] border-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]' 
+                        : 'bg-[hsl(var(--card))] border-[hsl(var(--border))] hover:border-[hsl(var(--primary))] hover:bg-[hsl(var(--muted))]'
+                    }`}
+                  >
+                    {isOffered ? (
+                      <CheckCircle2 className="h-4 w-4 shrink-0" />
+                    ) : (
+                      <Circle className="h-4 w-4 shrink-0 opacity-40" />
+                    )}
+                    <span className="text-xs font-semibold leading-tight">
+                      {strand.label}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </CardContent>
+        {curriculumDirty && (
+          <CardFooter className="flex justify-end pt-0 pb-6 pr-6">
+            <Button size="sm" onClick={handleSaveCurriculum} disabled={savingCurriculum}>
+              {savingCurriculum ? 'Saving...' : 'Save Configuration'}
+            </Button>
+          </CardFooter>
+        )}
       </Card>
 
       {/* Strand-to-Grade Matrix */}

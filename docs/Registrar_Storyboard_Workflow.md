@@ -1,12 +1,13 @@
-# Registrar & Enrollment Clerk — Complete System Storyboard
-## EnrollPro
-## Web-Based Admission Portal & Enrollment Information Management System
+# Registrar — Complete System Storyboard
+## School Admission, Enrollment & Information Management System
 
+**Document Version:** 3.0.0
 **Document Type:** Full Workflow Storyboard — All Scenarios, All Screens
-**Primary Actor:** School Registrar / Enrollment Clerk (role: `REGISTRAR`)
-**Supporting Actor:** Advising Teacher (role: `TEACHER`)
+**Primary Actor:** School Registrar (role: `REGISTRAR`)
+**Supporting Actor:** Advising Teacher (role: `TEACHER`) · System Administrator (role: `SYSTEM_ADMIN`)
 **Policy Basis:** DepEd Order No. 017, s. 2025 — Revised Basic Education Enrollment Policy
-**System Reference:** PRD v2.2.0 (PERN Stack — PostgreSQL · Express · React · Node.js)
+**System Reference:** PRD v3.0.0 (PERN Stack — PostgreSQL · Express · React · Node.js)
+**Modules Covered:** Admission (Online + F2F) · Enrollment Management · SIMS · Teacher Management · Grade Level & Sectioning Management
 
 ---
 
@@ -30,16 +31,17 @@ Outcome — final system state after this scene.
 Branch points — what happens in alternate / edge cases.
 ```
 
-Scenes are organized into **six acts** that map to the real DepEd school year:
+Scenes are organized into **six acts** that map to the real DepEd school year, plus a special scenarios section:
 
 | Act | Title | Real-World Period |
 |---|---|---|
 | **Act 0** | System Setup & Annual Rollover | April–January (off-peak preparation) |
 | **Act 1** | Phase 1 — Early Registration | Last Saturday of January → Last Friday of February |
 | **Act 2** | Phase 2 — Regular Enrollment | ~1 week before class opening in June |
-| **Act 3** | Active School Year — Ongoing Operations | June → March (transferees, late, management) |
+| **Act 3** | Active School Year — Ongoing Operations | June → March |
 | **Act 4** | SHS Second Semester | December–January |
 | **Act 5** | End of Year & Archival | March–April |
+| **Special T** | Advising Teacher Login & My Sections | Any time during school year |
 
 ---
 
@@ -54,8 +56,8 @@ JANUARY         FEBRUARY        MARCH    APRIL–DECEMBER       JANUARY      FEB
                                             │
                                          APRIL–MAY
                                          ACT 0: SETUP
-                                         New AY config
-                                         Sections / Strands
+                                         New AY config · Sections
+                                         Teachers · SCP Programs
                                             │
                                          JUNE (1 week before opening)
                                          │◄─ PHASE 2: REGULAR ENROLLMENT ─►│
@@ -65,7 +67,8 @@ JANUARY         FEBRUARY        MARCH    APRIL–DECEMBER       JANUARY      FEB
                                             │
                                          JUNE (First Monday)
                                          CLASSES OPEN — ACT 3 BEGINS
-                                         Ongoing: transferees, late, updates
+                                         Ongoing: F2F walk-ins, transferees,
+                                         late enrollees, SIMS record edits
                                             │
                                          DECEMBER–JANUARY
                                          ACT 4: SHS 2nd Semester (G12)
@@ -75,33 +78,39 @@ JANUARY         FEBRUARY        MARCH    APRIL–DECEMBER       JANUARY      FEB
 
 ---
 
-## System Navigation Map (Registrar's Full Menu)
+## System Navigation Map — Registrar's Full Menu
 
 ```
 [SIDEBAR — always visible on desktop ≥1024px; hamburger drawer on mobile]
 │
-├─ 📊  /dashboard       — Stats, charts, recent activity
+├─ 📊  /dashboard       — Stats, charts, SCP pipeline, recent activity
 │
-├─ 📋  /applications    — All submitted applications; approve/reject/enroll
+├─ 👤+ /f2f-admission   — Walk-in (F2F) admission entry (NEW)
 │
-├─ 👤  /students        — Search any applicant/enrolled student by LRN or name
+├─ 📋  /applications    — All applications (Online + F2F); approve/reject/enroll/SCP workflow
+│
+├─ 👤  /students        — Full SIMS: search, view, and edit any student record
+│
+├─ 🎓  /teachers        — Teacher directory; create profiles; provision system accounts
 │
 ├─ 🏫  /sections        — Section CRUD; capacity monitor; teacher assignment
 │
 ├─ 📜  /audit-logs      — Full immutable activity log
 │
 └─ ⚙️   /settings       — 4 tabs:
-         Tab 1: School Profile  (logo, school name)
-         Tab 2: Academic Year   (create, activate, archive)
-         Tab 3: Grade Levels & Strands
+         Tab 1: School Profile  (logo, school name, division, region)
+         Tab 2: Academic Year   (create, activate, archive; smart date auto-fill)
+         Tab 3: Grade Levels, Strands & SCP Programs
          Tab 4: Enrollment Gate (open/close public portal)
 
 [PUBLIC-FACING — not the registrar's screen, but the registrar monitors it]
 │
 ├─ /apply              — Online admission form (open when gate is ON)
-├─ /closed             — Shown when gate is OFF
+├─ /closed             — Shown when gate is OFF; contains "Staff Login" link
 └─ /track/:trackingNo  — Applicant self-service status lookup
 ```
+
+> **Dynamic rule:** All school-specific values — school name, logo, grade levels, strand options, SCP programs — are read from the database at runtime. No page in this system has any school name, division, or grade level hardcoded.
 
 ---
 
@@ -115,38 +124,55 @@ JANUARY         FEBRUARY        MARCH    APRIL–DECEMBER       JANUARY      FEB
 
 ---
 
-## SCENE 0.1 — First Login
+## SCENE 0.1 — First Login (with Layer 1 & Layer 2 Security Gates)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ WHEN   │ Any time — typically April after the school year ends  │
-│ WHERE  │ /login                                                  │
+│ WHERE  │ /login (reached via the "Staff Login" link only)       │
 │ WHY    │ Registrar needs authenticated access to all modules    │
-│ POLICY │ JWT-based auth; 8-hour token expiry (PRD §2)           │
+│ POLICY │ JWT-based auth; 8-hour token expiry (PRD §9)           │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+**How to reach the login page (Layer 1):**
+
+The `/login` route is **not directly accessible** by URL. Typing `/login` in the address bar redirects to `/` (the public portal or closed page). The only valid entry points are:
+
+1. Clicking **"Staff Login"** in the footer of `/apply` or `/closed` (injects `{ loginAccess: true }` navigation state)
+2. Being redirected by `ProtectedRoute` after attempting to visit a dashboard route while unauthenticated
+3. Being redirected by the Axios interceptor after a session expires (401 response)
+
+This is by design — the login page is a staff tool, not a publicly bookmarkable URL.
+
 **What the registrar sees:**
 The login page renders full-screen, centered. It shows:
-- The school logo (if already uploaded) and school name
+- The school logo (if already uploaded) and school name — **always from `SchoolSettings`, never hardcoded**
 - An email field, a password field, and a "Sign In" button
-- No registration link — accounts are created by system administrators only
+- No registration link — accounts are created by the System Administrator only
 
 **Steps:**
-1. Registrar navigates to the school system URL in the browser.
-2. Enters their `@` email address and password.
-3. Clicks **Sign In**.
+1. Registrar clicks **"Staff Login"** from the public portal footer.
+2. `/login` opens (Layer 1 gate passed via navigation state).
+3. The page silently fetches a one-time pre-flight token from `GET /api/auth/login-token` (Layer 2 — invisible to the user, happens on mount).
+4. Registrar enters their email address and password.
+5. Clicks **Sign In**.
 
 **System:**
-- `POST /api/auth/login` — bcrypt validates password (12 salt rounds).
-- On success → JWT signed `{ userId, role: 'REGISTRAR' }` with 8-hour expiry is returned.
-- Zustand `authStore` saves the token; React Router redirects to `/dashboard`.
-- `AuditLog` entry written: `USER_LOGIN — "User [email] logged in from [IP]"`.
+- `POST /api/auth/login` with `{ email, password, loginToken }` (Layer 2 token included).
+- `validateLoginToken` middleware verifies the token, marks it as used — **any direct API call without this token returns 400**.
+- `bcrypt.compare(password, user.password)` — 12 salt rounds.
+- On success → JWT signed `{ userId, role: 'REGISTRAR', mustChangePassword }` with 8-hour expiry.
+- Zustand `authStore.setAuth(token, user)` → persisted in `localStorage`.
+- If `mustChangePassword = true` (first login): React Router redirects to `/change-password`.
+- Otherwise: React Router redirects to `/dashboard`.
+- `AuditLog` entry: `USER_LOGIN — "User [email] logged in from [IP]"`.
 - Sileo `success` toast: *"Welcome back, [Name]."*
 
-**Outcome:** Registrar is authenticated and lands on the Dashboard.
+**Outcome:** Registrar is authenticated and lands on the Dashboard (or forced password change screen on first login).
 
-**Edge — Wrong password:** Sileo `error` toast: *"Invalid email or password."* No account lockout on first attempt but rate-limited to 20 req/min on this endpoint.
+**Edge — Wrong password:** Sileo `error` toast: *"Invalid email or password."* Rate-limited to 20 req/min.
+**Edge — Login token expired:** Token has a 5-minute TTL. If the page sits idle > 5 min before submitting, the page auto-fetches a fresh token on submit. The user never sees this.
 
 ---
 
@@ -165,39 +191,29 @@ The login page renders full-screen, centered. It shows:
 
 ```
 ╔══════════════════════════════════════════════════════════════════╗
-║  [School Name]           SY 2025–2026  ACTIVE  ║
+║  [SchoolSettings.schoolName]     SY 2025–2026  ACTIVE           ║
 ╠══════════════╦══════════════╦══════════════╦════════════════════╣
 ║  1,243       ║  0           ║  0           ║  0                 ║
 ║  ENROLLED    ║  PENDING     ║  APPROVED    ║  SECTIONS          ║
 ║              ║  Applications║  Awaiting    ║  At Capacity       ║
 ╠══════════════╩══════════════╩══════════════╩════════════════════╣
-║                                                                  ║
 ║  [BAR CHART — Enrollment by Grade Level]                         ║
-║   Grade 7   ████████████████████ 215                            ║
-║   Grade 8   ███████████████████  203                            ║
-║   Grade 9   ███████████████████  198                            ║
-║   Grade 10  █████████████████    188                            ║
-║   Grade 11  ████████████████████ 214                            ║
-║   Grade 12  ████████████████     183                            ║
-║                                                                  ║
 ║  [DONUT CHART — Status Distribution]                             ║
-║   ENROLLED 1243 · REJECTED 14 · PENDING 0                       ║
+║  [DONUT CHART — Online vs F2F Admission]                         ║
 ║                                                                  ║
 ║  RECENT ACTIVITY                                                 ║
-║  • Mar 31  Registrar Cruz  ENROLLMENT_GATE_TOGGLED → CLOSED      ║
-║  • Mar 30  Registrar Cruz  APPLICATION_APPROVED → #1243          ║
-║  • Mar 28  Registrar Cruz  SECTION_UPDATED → Grade 12 Mabini     ║
+║  • Mar 31  Registrar [Name]  ENROLLMENT_GATE_TOGGLED → CLOSED   ║
+║  • Mar 30  Registrar [Name]  APPLICATION_APPROVED → #1243       ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
-**Steps:**
-1. Registrar reads the final enrollment count: **1,243 enrolled students**.
-2. Notes all pending and approved are zero — the school year is fully closed.
-3. Reviews the grade-level bar chart to see distribution across JHS and SHS.
-4. Reads the recent activity feed to confirm no actions were taken incorrectly.
-5. Proceeds to Settings to begin configuring the next school year.
+> Note: All text shown in `[brackets]` above is dynamically sourced from `SchoolSettings` or the active `AcademicYear`. No school name, grade label, or section name is hardcoded.
 
-**Outcome:** Registrar has a clean end-of-year reference point before starting setup.
+**Steps:**
+1. Registrar reads the final enrollment count.
+2. Notes pending and approved are zero — the school year is fully closed.
+3. Reviews the grade-level bar chart and the Online vs F2F breakdown chart.
+4. Proceeds to Settings to begin configuring the next school year.
 
 ---
 
@@ -207,54 +223,27 @@ The login page renders full-screen, centered. It shows:
 ┌─────────────────────────────────────────────────────────────────┐
 │ WHEN   │ April–May — after current SY ends                      │
 │ WHERE  │ /settings → Tab 2: Academic Year                       │
-│ WHY    │ System needs a year record before sections and grade    │
-│        │ levels can be configured for the incoming SY           │
-│ POLICY │ One academic year active at a time (PRD §6.4)         │
+│ WHY    │ System needs a year record before sections, grade       │
+│        │ levels, and SCP programs can be configured             │
+│ POLICY │ One academic year active at a time (PRD §6.8)          │
 └─────────────────────────────────────────────────────────────────┘
-```
-
-**What the registrar sees:**
-
-```
-SETTINGS > Academic Year
-
- Year Label     │  Status   │  Actions
-─────────────────┼───────────┼──────────────────
- 2025–2026       │  ● ACTIVE │  [Edit]
- 2024–2025       │  Archived │  [View]
-
-                                    [ + New Academic Year ]
 ```
 
 **Steps:**
 1. Registrar clicks **+ New Academic Year**.
-2. A `Dialog` modal opens with a single field:
-
-```
-┌─────────────────────────────────────────────────────┐
-│  Create Academic Year                                │
-│  ─────────────────────────────────────────────────  │
-│  Year Label *                                        │
-│  [ 2026–2027                                    ]    │
-│                                                      │
-│  Format: YYYY–YYYY (e.g. 2026–2027)                  │
-│                                                      │
-│           [Cancel]        [Create Year]              │
-└─────────────────────────────────────────────────────┘
-```
-
-3. Registrar types `2026–2027` and clicks **Create Year**.
+2. Dialog opens with a single field: Year Label (e.g., `2026–2027`).
+3. Registrar types the year label and clicks **Create Year**.
 
 **System:**
-- `POST /api/academic-years` → `{ yearLabel: "2026–2027" }`.
-- New `AcademicYear` record created with `isActive: false`.
-- Table now shows three rows; the new year appears as `INACTIVE`.
-- `AuditLog`: `SETTINGS_UPDATED — "Admin created Academic Year 2026–2027"`.
-- Sileo `success` toast: *"Academic Year Created — SY 2026–2027 has been added."*
+- Smart auto-fill: the system calculates `classStart` (first Monday of June), `classEnd` (March 31), `phase1Start` (last Saturday of January), `phase1End` (last Friday of February), `phase2Start` (~1 week before class opening) — all from the typed year label.
+- A confirmation dialog shows the auto-filled dates for the registrar to verify before saving.
+- `POST /api/academic-years` → new `AcademicYear` record with `isActive: false`.
+- `AuditLog`: `ACADEMIC_YEAR_CREATED`.
+- Sileo toast: *"Academic Year Created — SY 2026–2027 has been added."*
 
-**Outcome:** SY 2026–2027 exists in the system as an inactive scaffold. SY 2025–2026 remains active — the system still reports under it.
+**Outcome:** SY 2026–2027 exists as an inactive scaffold. SY 2025–2026 remains active.
 
-> ⚠️ **Critical:** Do NOT activate the new year yet. Grade levels and sections must be built first. The new year is activated in Scene 0.7 only after the full structure is in place.
+> ⚠️ **Critical:** Do NOT activate the new year yet. Grade levels, strands, SCP programs, teachers, and sections must all be built first. Activation happens in Scene 0.8.
 
 ---
 
@@ -264,113 +253,88 @@ SETTINGS > Academic Year
 ┌─────────────────────────────────────────────────────────────────┐
 │ WHEN   │ April–May — immediately after Scene 0.3               │
 │ WHERE  │ /settings → Tab 3: Grade Levels & Strands              │
-│ WHY    │ Grade levels are the base unit — sections and          │
-│        │ applicant routing depend on them                       │
-│ POLICY │ The school offers Grade 7 through Grade 12 (RA 10533)   │
+│ WHY    │ Grade levels are the base unit — sections, SCP         │
+│        │ programs, and applicant routing all depend on them     │
+│ POLICY │ DepEd K-12 framework (RA 10533)                        │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**What the registrar sees:**
-
-The tab has a year-context dropdown at the top. Registrar must switch it to `SY 2026–2027` first, otherwise additions will be attached to the wrong year.
-
-```
-SETTINGS > Grade Levels & Strands
-
-  Academic Year Context:  [ SY 2026–2027 ▾ ]    ← must switch this first
-
-  GRADE LEVELS                     │  STRANDS
-  ─────────────────────────────────│─────────────────────────────
-  (empty — no grade levels yet)    │  (empty — no strands yet)
-                  [+ Add Grade Level]         [+ Add Strand]
-```
+The tab has a year-context dropdown at the top. Registrar must switch to `SY 2026–2027` first.
 
 **Steps:**
-1. Registrar switches year context to `SY 2026–2027` from the dropdown.
-2. Clicks **+ Add Grade Level**.
-3. Small inline form or mini-Dialog appears:
+1. Switch year context to `SY 2026–2027`.
+2. Click **+ Add Grade Level** for each grade the school offers.
+3. For each entry: Grade Level Name (e.g., "Grade 7") and Display Order (1–6).
 
-```
-  Grade Level Name *   [ Grade 7         ]
-  Display Order *      [ 1               ]
-                       [Add]
-```
+**Grade levels the registrar adds (example for a standard secondary school):**
 
-4. Registrar types `Grade 7`, display order `1`, clicks **Add**.
-5. Repeats for each grade level:
+| Grade Level Name | Display Order | `requiresEarlyReg` |
+|---|---|---|
+| Grade 7  | 1 | ✅ Yes |
+| Grade 8  | 2 | ❌ No (pre-registered) |
+| Grade 9  | 3 | ❌ No |
+| Grade 10 | 4 | ❌ No |
+| Grade 11 | 5 | ✅ Yes |
+| Grade 12 | 6 | ❌ No |
 
-| Grade Level Name | Display Order |
-|---|---|
-| Grade 7  | 1 |
-| Grade 8  | 2 |
-| Grade 9  | 3 |
-| Grade 10 | 4 |
-| Grade 11 | 5 |
-| Grade 12 | 6 |
+> **School-agnostic:** A JHS-only school adds only Grades 7–10. A school with a non-standard structure can configure whatever grade names apply. The admission form, filters, and section management all read from this list dynamically.
 
-6. After all six, the left panel shows an ordered list.
+**System:** `POST /api/grade-levels` per entry → cascade-linked to `SY 2026–2027`.
 
-**System:**
-- `POST /api/grade-levels` per entry → `{ name, displayOrder, academicYearId: [2026–2027 ID] }`.
-- Each `GradeLevel` is cascade-linked to the academic year.
-- Sileo `success` toast after each: *"Grade Level Added."*
-
-**Outcome:** Six grade levels exist under SY 2026–2027. The admission portal's grade-level dropdown will now show these six when the portal is opened.
+**Outcome:** Grade levels configured. The admission portal's grade-level dropdown will show exactly these grades when the portal opens.
 
 ---
 
-## SCENE 0.5 — Configuring SHS Strands
+## SCENE 0.5 — Configuring Strands and SCP Programs
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ WHEN   │ April–May — immediately after Scene 0.4               │
-│ WHERE  │ /settings → Tab 3: Grade Levels & Strands (right panel)│
-│ WHY    │ Grade 11 applicants must select a strand on the portal │
-│ POLICY │ The school offers Academic track (STEM/ABM/HUMSS/GAS)  │
-│        │ Grades 11–12 (DO 17, s. 2025; RA 10533 K–12 framework) │
+│ WHERE  │ /settings → Tab 3: Grade Levels & Strands (three       │
+│        │ sub-tabs: Grade Levels · Strands · SCP Programs)       │
+│ WHY    │ Strands drive the Grade 11 admission form. SCP         │
+│        │ programs drive the SCP type dropdown and the entire    │
+│        │ SCP workflow in /applications.                          │
+│ POLICY │ DM 012, s. 2026 (SHS tracks) · DM 149, s. 2011 (SCPs)│
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+### Sub-tab A: Strands
+
 **Steps:**
-1. Still on `SY 2026–2027` context, Registrar clicks **+ Add Strand** in the right panel.
-2. Dialog opens:
+1. Still on `SY 2026–2027` context. Click **Strands** sub-tab. Click **+ Add Strand**.
+2. Fill in: Strand Name · Track (Academic / TechPro) · Applicable Grade Levels (checkboxes).
+3. Save each strand.
 
-```
-┌─────────────────────────────────────────────────────┐
-│  Add Strand                                          │
-│  ─────────────────────────────────────────────────  │
-│  Strand Name *                                       │
-│  [ STEM                                         ]    │
-│                                                      │
-│  Applicable Grade Levels *                           │
-│  ┌────────────────────────────────────────────┐     │
-│  │  ☑ Grade 7     ☑ Grade 8     ☑ Grade 9   │     │
-│  │  ☑ Grade 10   ☑ Grade 11   ☑ Grade 12   │     │
-│  └────────────────────────────────────────────┘     │
-│  (Check only Grade 11 and Grade 12 for STEM)         │
-│                                                      │
-│           [Cancel]         [Save Strand]             │
-└─────────────────────────────────────────────────────┘
-```
+**Example — school offers Academic track only:**
 
-3. Registrar types `STEM`, checks **Grade 11** and **Grade 12** only, clicks **Save Strand**.
-4. Repeats for:
+| Strand Name | Track | Applicable Grades |
+|---|---|---|
+| STEM | Academic | Grade 11, Grade 12 |
+| ABM  | Academic | Grade 11, Grade 12 |
+| HUMSS | Academic | Grade 11, Grade 12 |
+| GAS  | Academic | Grade 11, Grade 12 |
 
-| Strand | Applicable Grades |
-|---|---|
-| ABM   | Grade 11, Grade 12 |
-| HUMSS | Grade 11, Grade 12 |
-| GAS   | Grade 11, Grade 12 |
+> **School-agnostic:** A school offering TechPro adds ICT, HospTour, etc. A school offering no SHS leaves this sub-tab empty — no strand fields will appear in the admission form or filters.
 
-**System:**
-- `POST /api/strands` → `{ name, applicableGradeLevelIds: [G11.id, G12.id], academicYearId }`.
-- `applicableGradeLevelIds` stored as `Int[]` in Prisma (PostgreSQL array).
-- Sileo `success` toast after each: *"Strand Saved."*
+**System:** `POST /api/strands` → `{ name, track, applicableGradeLevelIds, academicYearId }`.
 
-**Effect on the public portal:**
-When an applicant on `/apply` selects **Grade 11** or **Grade 12** as their grade level, the Strand dropdown dynamically loads `STEM`, `ABM`, `HUMSS`, `GAS`. For Grades 7–10, the Strand dropdown does not appear (not applicable to JHS).
+### Sub-tab B: SCP Programs
 
-**Outcome:** Four SHS strands fully configured for SY 2026–2027.
+**Steps:**
+1. Click **SCP Programs** sub-tab. Click **+ Add SCP Program**.
+2. Fill in each SCP the school offers:
+
+| SCP Code | Full Name | Assessment Type | Requires Interview | Applicable Grades |
+|---|---|---|---|---|
+| STE | Science, Technology, Engineering | EXAM_ONLY | No | Grade 7–10 |
+| SPA | Special Program in the Arts | EXAM_AUDITION | Yes | Grade 7–10 |
+
+**If the school offers no SCP programs:** leave this sub-tab empty. The SCP dropdown will not appear anywhere — not in `/apply`, not in `/f2f-admission`, not in the `/applications` filter. The system adapts automatically.
+
+**System:** `POST /api/scp-programs` → `{ code, name, assessmentType, requiresInterview, applicableGradeLevelIds, academicYearId }`.
+
+**Outcome:** The admission form, F2F form, and applications inbox all reflect exactly what this school has configured — no hardcoded SCP lists anywhere.
 
 ---
 
@@ -378,30 +342,18 @@ When an applicant on `/apply` selects **Grade 11** or **Grade 12** as their grad
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ April–May — after grade levels and strands are done    │
+│ WHEN   │ April–May — after grade levels, strands, and SCP       │
+│        │ programs are configured                                 │
 │ WHERE  │ /sections                                               │
 │ WHY    │ Sections are the physical classrooms. The enrollment   │
-│        │ approval workflow requires at least one section to     │
-│        │ exist per grade level before any applicant can be      │
-│        │ enrolled.                                               │
-│ POLICY │ PRD §6.3.1 — sections have name, max capacity,        │
-│        │ grade level, and optional advising teacher              │
+│        │ approval workflow requires at least one section per    │
+│        │ grade level before any applicant can be enrolled.      │
+│ POLICY │ PRD §6.7 — sections have name, capacity, grade level, │
+│        │ optional advising teacher, optional SCP code           │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**What the registrar sees:**
-
-```
-SECTIONS                      Year: [ SY 2026–2027 ▾ ]       [ + New Section ]
-
-  Grade Level  │  Section     │  Adviser         │  Capacity  │  Enrolled
-  ─────────────┼──────────────┼──────────────────┼────────────┼────────────
-  (empty)
-```
-
-**Steps — Creating one section (full dialog walkthrough):**
-1. Registrar clicks **+ New Section**.
-2. Dialog opens:
+**Create Section dialog:**
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -409,6 +361,7 @@ SECTIONS                      Year: [ SY 2026–2027 ▾ ]       [ + New Section
 │  ─────────────────────────────────────────────────  │
 │  Grade Level *                                       │
 │  [ Grade 7                                    ▾ ]    │
+│  (loaded from active AY grade levels)                │
 │                                                      │
 │  Section Name *                                      │
 │  [ Rizal                                        ]    │
@@ -417,138 +370,102 @@ SECTIONS                      Year: [ SY 2026–2027 ▾ ]       [ + New Section
 │  [ 45                                           ]    │
 │                                                      │
 │  Advising Teacher (optional)                         │
-│  [ Ms. Caridad Santos                         ▾ ]    │
+│  [ Santos, Caridad                            ▾ ]    │
+│  (loaded from Teacher directory — see Scene 0.7)     │
+│                                                      │
+│  SCP Code (optional — for designated SCP sections)   │
+│  [ STE                                        ▾ ]    │
+│  (loaded from active AY SCP programs)                │
 │                                                      │
 │           [Cancel]        [Create Section]           │
 └─────────────────────────────────────────────────────┘
 ```
 
-3. Registrar fills in all fields and clicks **Create Section**.
-4. Repeats the dialog for each planned section.
+> **Advising teacher assignment** pulls from the **Teacher directory** (`/teachers`), not from the User table directly. This ensures only teachers with complete profiles (name, employee ID) are assigned. See Scene 0.7 for teacher setup.
 
-**Sections the registrar creates (example for the school):**
+**System:** `POST /api/sections` → `{ name, maxCapacity, gradeLevelId, advisingTeacherId, scpCode }`.
+- `advisingTeacherId` references `Teacher.id`, not `User.id`.
+- `AuditLog`: `SECTION_CREATED` for each section.
 
-*Junior High School — 4 sections per grade level:*
-
-| Grade | Section Name | Capacity | Adviser |
-|---|---|---|---|
-| Grade 7 | Rizal     | 45 | Ms. Santos |
-| Grade 7 | Bonifacio | 45 | Mr. Reyes  |
-| Grade 7 | Luna      | 45 | Ms. Flores |
-| Grade 7 | Mabini    | 45 | Mr. Torres |
-| Grade 8 | Rizal     | 45 | Ms. Cruz   |
-| Grade 8 | Bonifacio | 45 | Mr. Garcia |
-| Grade 8 | Luna      | 45 | Ms. Bautista |
-| Grade 8 | Mabini    | 45 | Mr. Villanueva |
-| *(repeat for Grade 9, Grade 10)* | | | |
-
-*Senior High School — sections named by strand:*
-
-| Grade | Section Name | Strand Context | Capacity | Adviser |
-|---|---|---|---|---|
-| Grade 11 | STEM-A  | STEM strand  | 45 | Mr. Lim    |
-| Grade 11 | ABM-A   | ABM strand   | 45 | Ms. Aquino |
-| Grade 11 | HUMSS-A | HUMSS strand | 45 | Mr. Marcos |
-| Grade 11 | GAS-A   | GAS strand   | 45 | Ms. Palma  |
-| Grade 12 | STEM-A  | STEM strand  | 45 | Mr. Lim    |
-| *(repeat for G12 ABM, HUMSS, GAS)* | | | |
-
-> **Note:** The system does not link sections to strands directly at the database level. The registrar names SHS sections descriptively (e.g., "STEM-A") and the section is associated to Grade 11 (the grade level). When approving a Grade 11 STEM applicant, the registrar manually selects the STEM-A section from the filtered list. This is by PRD design.
-
-**System:**
-- `POST /api/sections` per entry → `{ name, maxCapacity, gradeLevelId, advisingTeacherId }`.
-- `AuditLog`: `SECTION_CREATED` for each.
-- Sileo `success` toast: *"Section Created — Grade 7 Rizal (max: 45)."*
-
-**What the registrar sees after building all sections:**
-
-```
-SECTIONS                      Year: [ SY 2026–2027 ▾ ]
-
-  Grade Level  │  Section  │  Adviser           │  Capacity  │  Enrolled
-  ─────────────┼───────────┼────────────────────┼────────────┼──────────────
-  Grade 7      │  Rizal    │  Ms. Santos        │  45        │  0/45  ● Avail
-  Grade 7      │  Bonifacio│  Mr. Reyes         │  45        │  0/45  ● Avail
-  Grade 7      │  Luna     │  Ms. Flores        │  45        │  0/45  ● Avail
-  Grade 7      │  Mabini   │  Mr. Torres        │  45        │  0/45  ● Avail
-  Grade 8      │  Rizal    │  Ms. Cruz          │  45        │  0/45  ● Avail
-  ...
-  Grade 11     │  STEM-A   │  Mr. Lim           │  45        │  0/45  ● Avail
-  Grade 11     │  ABM-A    │  Ms. Aquino        │  45        │  0/45  ● Avail
-  ...
-```
-
-**Outcome:** All sections are built. The enrollment approval workflow is now fully operational — the registrar can assign applicants to these sections.
+**Outcome:** All sections are built. The enrollment approval workflow is now fully operational.
 
 ---
 
-## SCENE 0.7 — Activating the New Academic Year
+## SCENE 0.7 — Managing the Teacher Directory
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ May–January — any time before Early Registration opens │
-│ WHERE  │ /settings → Tab 2: Academic Year                       │
-│ WHY    │ Activating the year makes it the system's operating    │
-│        │ context: the dashboard shows its stats, the portal     │
-│        │ labels applications under it, sections become live     │
-│ POLICY │ Only one active year at a time; transaction-safe swap  │
-│        │ (PRD §6.4 Tab 2)                                       │
+│ WHEN   │ Any time — typically before building sections (Scene   │
+│        │ 0.6) so teachers are available in the adviser dropdown │
+│ WHERE  │ /teachers                                               │
+│ WHY    │ Teacher profiles are the source of truth for section   │
+│        │ adviser assignment. They also optionally hold system   │
+│        │ login accounts (role: TEACHER) for My Sections access. │
+│ POLICY │ PRD §6.6 — Teacher module; REGISTRAR can create        │
+│        │ profiles and provision login accounts                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**What the registrar sees:**
+**What the registrar sees at `/teachers`:**
 
 ```
-SETTINGS > Academic Year
+TEACHERS                                              [ + Create Teacher ]
 
- Year Label    │  Status    │  Actions
-───────────────┼────────────┼──────────────────────────
- 2026–2027     │  INACTIVE  │  [Activate]  [Edit]
- 2025–2026     │  ● ACTIVE  │  [Edit]
- 2024–2025     │  Archived  │  [View]
+  Employee ID   │  Full Name           │  Specialization │  Sections  │  Account      │  Actions
+  ──────────────┼──────────────────────┼─────────────────┼────────────┼───────────────┼──────────
+  101-458-2021  │  Santos, Caridad M.  │  Mathematics    │  2 sections│  ● Active     │  [View]
+  101-789-2020  │  Reyes, Miguel A.    │  Science        │  1 section │  ● Active     │  [View]
+  —             │  Flores, Luisa B.    │  English        │  0 sections│  No Account   │  [View]
 ```
+
+### Creating a Teacher Profile
 
 **Steps:**
-1. Registrar clicks **[Activate]** next to `2026–2027`.
-2. A confirmation Dialog appears — this is a high-impact irreversible action:
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  ⚠  Activate SY 2026–2027?                                   │
-│  ──────────────────────────────────────────────────────────  │
-│  This will make SY 2026–2027 the active operating year.      │
-│  SY 2025–2026 will be moved to ARCHIVED.                     │
-│                                                              │
-│  All new applications, sections, and enrollments will be     │
-│  recorded under SY 2026–2027 from this point forward.        │
-│                                                              │
-│  Historical SY 2025–2026 data is preserved and viewable,     │
-│  but cannot be modified.                                     │
-│                                                              │
-│  This cannot be undone. Proceed?                             │
-│                                                              │
-│        [ Cancel ]               [ Yes, Activate ]           │
-└──────────────────────────────────────────────────────────────┘
-```
-
-3. Registrar confirms: **Yes, Activate**.
+1. Click **+ Create Teacher**.
+2. Fill in: Last Name, First Name, Middle Name, Employee ID (DepEd), Contact Number, Specialization.
+3. Click **Save**.
 
 **System:**
-```
-DB transaction:
-  UPDATE academic_years SET is_active = false WHERE is_active = true
-  UPDATE academic_years SET is_active = true  WHERE id = [2026–2027 id]
-  UPDATE school_settings SET active_academic_year_id = [2026–2027 id]
-```
-- `AuditLog`: `SETTINGS_UPDATED — "Admin activated Academic Year SY 2026–2027"`.
-- Dashboard header immediately updates to show `SY 2026–2027  ACTIVE`.
-- Sileo `success` toast: *"SY 2026–2027 is now the active academic year."*
+- `POST /api/teachers` → new `Teacher` record.
+- `AuditLog`: `TEACHER_CREATED — "Registrar [name] added teacher [name] (EmpID: [id])"`.
+- Sileo toast: *"Teacher Created."*
 
-**Outcome:**
-- SY 2026–2027 is now the live operating year.
-- SY 2025–2026 is ARCHIVED — all data preserved and viewable, no modifications.
-- The public portal `/apply` will tag any future applications under SY 2026–2027.
-- The Enrollment Gate is still `CLOSED`. The portal is not yet open to the public.
+The teacher profile now appears in the **Advising Teacher** dropdown when creating or editing sections.
+
+### Provisioning a System Login Account
+
+A teacher profile can exist without a login account (used only for section assignment). When the teacher needs to view their class roster via `/my-sections`, the registrar provisions an account:
+
+**Steps from the teacher profile (`/teachers/:id` → Tab 3: System Account):**
+1. Click **Provision System Account**.
+2. Enter the teacher's email address.
+3. Click **Create Account**.
+
+**System:**
+- Creates a `User` record with `role: TEACHER`, `mustChangePassword: true`, auto-generated temporary password.
+- Links `Teacher.userId` to the new `User.id`.
+- Sends a welcome email using `SchoolSettings.schoolName` in the subject — **never a hardcoded school name**.
+- `AuditLog`: `TEACHER_ACCOUNT_PROVISIONED — "Registrar [name] provisioned login for teacher [name]"`.
+- Sileo toast: *"Account Created — [Teacher Name] will receive login instructions by email."*
+
+**Teacher's first-login experience:** Teacher receives the welcome email with a temporary password. On first login, they are redirected to `/change-password`. After setting a new password, they land on `/dashboard` (limited) and `/my-sections`.
+
+### Editing a Teacher Profile
+
+**From `/teachers/:id` → Tab 1: Profile:**
+- Edit Name, Employee ID, Contact Number, Specialization.
+- `AuditLog`: `TEACHER_UPDATED`.
+
+### Deactivating a Teacher Account
+
+If a teacher leaves the school:
+1. Go to `/teachers/:id` → Tab 3: System Account.
+2. Click **Deactivate Account**.
+3. Confirm. The teacher's `User.isActive` is set to `false`.
+4. The teacher's very next API call returns 401 — they are effectively logged out.
+5. Their sections remain assigned; the registrar can reassign them at any time.
+
+**Outcome:** Teacher directory is populated. All teachers appear in the section adviser dropdown. Teachers with accounts can log in and view their assigned sections.
 
 ---
 
@@ -556,70 +473,97 @@ DB transaction:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ Any time — typically done during initial setup or      │
-│        │ when the school receives a new official logo from SDO  │
+│ WHEN   │ Any time — typically at initial setup                  │
 │ WHERE  │ /settings → Tab 1: School Profile                      │
-│ WHY    │ The logo and school name appear on the public portal,  │
-│        │ login page, email notifications, and dashboard header  │
-│ POLICY │ PRD §3.2 — logo dominant color auto-extracted and      │
-│        │ applied as the system's accent color                   │
+│ WHY    │ The school name and logo appear on the public portal,  │
+│        │ login page, email notifications, and the dashboard     │
+│        │ header. Division and region appear in the privacy      │
+│        │ notice on both the online and F2F admission forms.     │
+│ POLICY │ PRD §3.2 — logo dominant color extracted and applied   │
+│        │ as the system's accent color across all modules        │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**What the registrar sees:**
+**Fields in Tab 1:**
 
 ```
 SETTINGS > School Profile
 
-  School Name
-  [ [School Name]                                ]      [Save Name]
+  School Name *
+  [ _________________________________ ]      [Save]
+
+  DepEd School ID (optional)
+  [ ____________ ]
+
+  Schools Division
+  [ _________________________________ ]
+
+  Region
+  [ _________________________________ ]
 
   School Logo
   ┌───────────────────────────────┐
-  │  [current logo thumbnail]     │    PNG · JPG · WEBP · max 2MB
+  │  [current logo thumbnail]     │   PNG · JPG · WEBP · max 2MB
   └───────────────────────────────┘
   [Change Logo]
 
   Accent Color Preview
-  Extracted from logo:  ██████  HSL(221 83% 53%)  (default blue)
-  ┌─────────────────────────────────────────────────────────────┐
-  │  Button  │  Badge   │  Sidebar Highlight  │  Link           │
-  │ [Save]   │  ●ACTIVE │  ▌ Applications     │  View details → │
-  └─────────────────────────────────────────────────────────────┘
+  Extracted from logo: ██████  HSL(221 83% 53%)  (default blue)
 ```
 
-**Steps — Logo upload:**
-1. Registrar clicks **Change Logo**.
-2. OS file picker opens. Registrar selects the new official logo PNG (< 2MB).
-3. `FileReader` API immediately shows a preview thumbnail on-screen.
-4. Below the preview, a color swatch updates in real time (client-side preview).
-5. Registrar confirms the extracted accent color looks correct.
-6. Clicks **Save** to submit.
+**Logo upload steps:**
+1. Click **Change Logo** → OS file picker.
+2. Select PNG/JPG/WEBP (< 2MB).
+3. Client-side preview appears immediately.
+4. Click **Save** to submit.
 
 **System:**
-- `POST /api/settings/logo` (multipart/form-data via Multer).
-- Server validates: MIME type must be `image/png`, `image/jpeg`, or `image/webp`; size ≤ 2MB.
-- `logoColorService` runs `color-thief-node`:
-  - Extracts top 5 dominant palette colors from the image.
-  - Filters out near-whites (lightness > 85%) and near-blacks (lightness < 15%, saturation < 20%).
-  - Picks the most saturated remaining color as the accent.
-  - Stores `{ accent_hsl: "0 72% 38%", extracted_at: "..." }` in `SchoolSettings.colorScheme`.
+- `POST /api/settings/logo` (multipart/form-data via Multer, MIME + size validation).
+- Server: `color-thief-node` extracts the dominant chromatic color → stored as `SchoolSettings.colorScheme.accent_hsl`.
 - API returns `{ logoUrl, colorScheme }`.
-- React: Zustand `settingsStore` updates → `RootLayout.tsx` `useEffect` fires:
-  ```ts
-  document.documentElement.style.setProperty('--accent', accent_hsl)
-  document.documentElement.style.setProperty('--primary', accent_hsl)
-  document.documentElement.style.setProperty('--ring', accent_hsl)
-  ```
-- The entire dashboard, sidebar, and all interactive elements instantly repaint.
-- `--background`, `--card`, `--foreground`, `--border`, `--muted` are **never touched** — the white layout is permanent.
-- `AuditLog`: `SETTINGS_UPDATED — "Admin updated school identity settings"`.
-- Sileo `success` toast: *"Logo updated. Accent color applied from logo."*
+- Zustand `settingsStore` updates → `RootLayout` `useLayoutEffect` fires → CSS variable `--accent` (and all aliases) override.
+- The entire dashboard, sidebar, public portal, F2F form, and all interactive elements repaint to the school's brand color.
+- `--background`, `--card`, `--foreground`, `--border` are **never touched** — the white layout is permanent.
+- `AuditLog`: `SCHOOL_SETTINGS_UPDATED`.
+- Sileo toast: *"Logo updated. Accent color applied from logo."*
 
-**Outcome:** New logo appears in the sidebar, login page header, and all email templates. Dashboard repaints to the school's brand accent color.
+> **Why this matters for all 5 modules:** The school name appears in every email subject, the privacy notice on both admission forms, the sidebar header, and the dashboard. The accent color appears on every button, active nav item, and focus ring across all five modules. These are runtime configuration — not hardcoded anywhere.
 
-**Edge — Logo with no extractable color (all white/black):**
-System falls back to default blue `HSL(221 83% 53%)`. Toast: *"Logo saved. Could not extract accent color — default blue applied."*
+---
+
+## SCENE 0.9 — Activating the New Academic Year
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ WHEN   │ May–January — after all setup is complete              │
+│ WHERE  │ /settings → Tab 2: Academic Year                       │
+│ WHY    │ Activating the year makes it the operating context:    │
+│        │ dashboard shows its stats, portal labels applications  │
+│        │ under it, sections become live for enrollment.         │
+│ POLICY │ Only one active year at a time; transaction-safe swap  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Steps:**
+1. Click **[Activate]** next to `2026–2027`.
+2. Confirmation dialog warns: "SY 2025–2026 will be moved to ARCHIVED. This cannot be undone."
+3. Registrar confirms: **Yes, Activate**.
+
+**System:**
+```sql
+BEGIN TRANSACTION;
+  UPDATE academic_years SET is_active = false WHERE is_active = true;
+  UPDATE academic_years SET is_active = true  WHERE id = [2026–2027 id];
+  UPDATE school_settings SET active_academic_year_id = [2026–2027 id];
+COMMIT;
+```
+- Dashboard header updates immediately to `SY 2026–2027 ● ACTIVE`.
+- `AuditLog`: `ACADEMIC_YEAR_ACTIVATED`.
+
+**Outcome:**
+- SY 2026–2027 is the live operating year.
+- SY 2025–2026 is ARCHIVED — preserved and viewable, no modifications.
+- The Enrollment Gate is still `CLOSED`. Portal not yet open to the public.
 
 ---
 
@@ -631,7 +575,6 @@ System falls back to default blue `HSL(221 83% 53%)`. Toast: *"Logo saved. Could
 ## Period: Last Saturday of January → Last Friday of February
 ## Purpose: Pre-registration of incoming Grade 7, Grade 11, transferees, Balik-Aral.
 ## Legal Status: Pre-registration ONLY — not official enrollment.
-## DepEd Basis: DO 017, s. 2025 § Definition (d): Early Registration
 
 ---
 
@@ -641,10 +584,11 @@ System falls back to default blue `HSL(221 83% 53%)`. Toast: *"Logo saved. Could
 ┌─────────────────────────────────────────────────────────────────┐
 │ WHEN   │ Last Saturday of January (e.g., January 31, 2026)      │
 │ WHERE  │ /settings → Tab 4: Enrollment Gate                     │
-│ WHY    │ The public portal must be turned on so parents can      │
-│        │ submit their children's pre-registration online         │
-│ POLICY │ DO 017, s. 2025 — Early Registration opens last Sat    │
-│        │ of January. School head determines portal access.       │
+│ WHY    │ The online portal must be turned on so parents can      │
+│        │ submit online applications. F2F admission is always     │
+│        │ available regardless of this gate.                      │
+│ POLICY │ DO 017, s. 2025 — Early Registration opens last        │
+│        │ Saturday of January.                                    │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -654,128 +598,90 @@ System falls back to default blue `HSL(221 83% 53%)`. Toast: *"Logo saved. Could
 SETTINGS > Enrollment Gate
 
   ┌───────────────────────────────────────────────────────────────┐
-  │  Enrollment Period                                             │
+  │  Enrollment Portal — Online Admission                          │
   │                                                               │
-  │  ○────────────   OFF                                          │
+  │  ○────────────   OFF   (current state)                        │
   │  Status: ● CLOSED                                             │
   │                                                               │
-  │  When OPEN, the public admission portal is accessible at:     │
-  │  https://[school-domain]/apply                                │
+  │  When OPEN: the public /apply portal accepts applications     │
+  │  When CLOSED: /apply redirects to /closed                     │
   │                                                               │
-  │  When CLOSED, all visitors are redirected to /closed          │
+  │  Note: Face-to-face (walk-in) admission at /f2f-admission    │
+  │  is unaffected by this gate — always accessible to staff.    │
   └───────────────────────────────────────────────────────────────┘
 ```
 
 **Steps:**
-1. Registrar clicks the toggle switch to `ON`.
-2. A confirmation Dialog appears:
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  Open Enrollment Portal?                                     │
-│  ──────────────────────────────────────────────────────────  │
-│  The public admission form will become accessible.           │
-│  Parents and students can begin submitting applications.     │
-│                                                              │
-│        [ Cancel ]           [ Yes, Open Enrollment ]        │
-└──────────────────────────────────────────────────────────────┘
-```
-
-3. Registrar confirms: **Yes, Open Enrollment**.
+1. Registrar clicks the toggle → `ON`.
+2. Confirmation dialog: *"This will open the public online admission portal. Proceed?"*
+3. Confirms.
 
 **System:**
 - `PATCH /api/settings/enrollment-gate` → `{ enrollmentOpen: true }`.
-- `SchoolSettings.enrollmentOpen = true` in database.
-- React Router loader on `/apply` now returns settings (not redirect).
-- `AuditLog`: `ENROLLMENT_GATE_TOGGLED — "Admin [user] set enrollment to OPEN"`.
-- Sileo `success` toast: *"Enrollment is now OPEN. The portal is live."*
-
-**What the public portal now shows at `/apply`:**
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│            [School Name]                        │
-│            [school logo]                                         │
-│            Admission Application — SY 2026–2027                  │
-│                                                                  │
-│  ●────────○────────○                                             │
-│  Step 1: Personal Info                                           │
-│                                                                  │
-│  Last Name *        [ __________________________ ]               │
-│  First Name *       [ __________________________ ]               │
-│  Middle Name        [ __________________________ ]               │
-│  Suffix             [ N/A ▾ ]                                    │
-│  Date of Birth *    [ MM/DD/YYYY          📅 ]                  │
-│  Sex *              ○ Male   ○ Female                            │
-│  LRN *              [ ____________ ] (12 digits)                 │
-│                                                                  │
-│                              [ Next → ]                          │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-**Outcome:** The portal is live. Parents can now submit applications for Grade 7, Grade 11, transferees, and Balik-Aral learners.
+- `AuditLog`: `ENROLLMENT_GATE_TOGGLED — "Registrar [name] opened the enrollment gate"`.
+- `/apply` is now accessible to the public.
+- `/f2f-admission` was already accessible and remains so.
 
 ---
 
-## SCENE 1.2 — The Applications Inbox: Daily Monitoring
+## SCENE 1.2 — The Applications Inbox During Early Registration
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ Every morning during Early Registration (Jan–Feb)      │
+│ WHEN   │ Daily during Early Registration (January–February)     │
 │ WHERE  │ /applications                                           │
-│ WHY    │ New applications arrive overnight from parents who     │
-│        │ submitted online. Registrar reviews and processes them. │
+│ WHY    │ The registrar's primary daily workspace during this     │
+│        │ period. Applications arrive from both channels:        │
+│        │ Online (/apply) and Walk-in (/f2f-admission).          │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**What the registrar sees (example: Day 5 of Early Registration, 42 applications in):**
+**What the registrar sees — the updated applications inbox:**
 
 ```
-APPLICATIONS           [ Search by LRN or name... 🔍 ]      [Filter ▾]
+APPLICATIONS    [ Search by LRN or name... 🔍 ]   [Filter ▾]
 
-  Academic Year: SY 2026–2027    Grade: All ▾    Status: All ▾
+  Year: SY 2026–2027   Grade: All ▾   Type: All ▾   Status: All ▾   Channel: All ▾
 
-  #   │  Learner Name          │  LRN             │  Grade    │  Strand  │  Status    │  Applied On       │  Actions
-  ────┼────────────────────────┼──────────────────┼───────────┼──────────┼────────────┼───────────────────┼──────────
-  42  │  Dela Cruz, Juan R.    │  123456789012    │  Grade 7  │  —       │  ● PENDING │  Feb 3, 2026 9:14 │  [View]
-  41  │  Santos, Maria L.      │  876543219012    │  Grade 11 │  STEM    │  ● PENDING │  Feb 3, 2026 8:55 │  [View]
-  40  │  Reyes, Pedro M.       │  112233445566    │  Grade 7  │  —       │  ● PENDING │  Feb 2, 2026 7:22 │  [View]
-  39  │  Fernandez, Clara B.   │  998877665544    │  Grade 11 │  ABM     │  ● PENDING │  Feb 1, 2026      │  [View]
-  38  │  Torres, Miguel A.     │  444433332222    │  Grade 7  │  —       │  ✓ APPROVED│  Jan 31, 2026     │  [View]
-  ...
+  #   │ Learner Name          │ LRN          │ Grade    │ Type      │ Channel  │ Status      │ Actions
+  ────┼───────────────────────┼──────────────┼──────────┼───────────┼──────────┼─────────────┼────────
+  055 │ Dela Cruz, Juan R.    │ 123456789012 │ Grade 7  │ REGULAR   │ Online   │ ● PENDING   │ [View]
+  054 │ Santos, Maria L.      │ 876543219012 │ Grade 11 │ STEM G11  │ Walk-in  │ ● PENDING   │ [View]
+  053 │ Reyes, Pedro M.       │ 112233445566 │ Grade 7  │ STE       │ Online   │ ● PENDING   │ [View]
+  052 │ Garcia, Ana B.        │ 998877665544 │ Grade 7  │ SPA(Dance)│ Walk-in  │ ⏳EXAM_SCHED│ [View]
+  051 │ Torres, Carlo M.      │ 444433332222 │ Grade 7  │ STE       │ Online   │ ✅ PASSED   │ [View]
 ```
+
+**Channel badge:** "Online" (globe icon) · "Walk-in" (person icon with +). Filterable.
 
 **Registrar's daily routine:**
-1. Sorts by `Status: PENDING` to isolate unprocessed applications.
-2. Filters by `Grade: Grade 7` first to batch-process JHS new entrants.
-3. Reviews each application → approves or rejects (see Scenes 1.3 and 1.4).
-4. Switches filter to `Grade: Grade 11` and processes SHS new entrants.
-5. Notes any unusual entries (duplicate LRN, suspiciously young birth dates).
-
-**Tracking number format visible in each record:** `APP-2026-00042`
+1. Filter by `Status: PENDING` to isolate unprocessed applications.
+2. Filter by `Channel: Walk-in` when processing F2F applications entered by the registrar.
+3. Process each application — approve, reject, or for SCP applicants, schedule exam (see Scenes 1.3–1.8).
 
 ---
 
-## SCENE 1.3 — Opening and Reading a Grade 7 Application Record
+## SCENE 1.3 — Opening and Approving a Regular Grade 7 Application
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ During Early Registration review session               │
-│ WHERE  │ /applications → click [View] on a PENDING application  │
-│ WHY    │ Registrar must verify all submitted data before        │
-│        │ approving. Physical document verification happens in   │
-│        │ the office; the system is the digital record.          │
-│ POLICY │ DO 017, s. 2025 — Grade 7 requires: BEEF + Grade 6    │
+│ WHEN   │ During Early Registration review                       │
+│ WHERE  │ /applications → click [View] on a PENDING regular app  │
+│ WHY    │ Registrar verifies submitted data before approving.    │
+│        │ Physical document verification happens at the counter; │
+│        │ the system is the digital record.                       │
+│ POLICY │ DO 017, s. 2025 — Grade 7 requires BEEF + Grade 6     │
 │        │ SF9 + PSA Birth Certificate (once-only)                │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**What the registrar sees (application detail panel/sheet):**
+**Application detail panel:**
 
 ```
 ╔══════════════════════════════════════════════════════════════════════╗
 ║  APPLICATION DETAIL                                                  ║
-║  #APP-2026-00042                              Status: ● PENDING      ║
+║  #APP-2026-00055                              Status: ● PENDING      ║
+║  Channel: Online ● (submitted via /apply)                            ║
 ╠══════════════════════════════════════════════════════════════════════╣
 ║  PERSONAL INFORMATION                                                ║
 ║  Full Name    :  DELA CRUZ, Juan Reyes                               ║
@@ -784,191 +690,163 @@ APPLICATIONS           [ Search by LRN or name... 🔍 ]      [Filter ▾]
 ║  LRN          :  123456789012                                        ║
 ║                                                                      ║
 ║  FAMILY & CONTACT                                                    ║
-║  Home Address :  123 Brgy. San Antonio, [City/Municipality], [Province] ║
+║  Home Address :  123 [Street], [Barangay], [Municipality], [Province]║
 ║  Guardian     :  Maria Dela Cruz (Mother)                            ║
 ║  Contact No.  :  0917-123-4567                                       ║
 ║  Email        :  delacruz.maria@gmail.com                            ║
 ║                                                                      ║
 ║  ENROLLMENT PREFERENCE                                               ║
-║  Grade Level  :  Grade 7                                             ║
-║  Strand       :  Not Applicable (JHS)                                ║
-║                                                                      ║
-║  SUBMISSION                                                          ║
-║  Submitted    :  February 3, 2026 at 9:14 AM                        ║
-║  Tracking No. :  APP-2026-00042                                      ║
+║  Grade Level  :  Grade 7      Program: Regular Admission             ║
 ╠══════════════════════════════════════════════════════════════════════╣
-║                                                                      ║
-║  ⚠  PHASE 1: This is a PRE-REGISTRATION. Approval assigns a section ║
-║     slot. Official enrollment is confirmed in Phase 2 (June).        ║
-║                                                                      ║
 ║         [ Approve & Assign Section ]    [ Reject Application ]       ║
 ╚══════════════════════════════════════════════════════════════════════╝
 ```
 
-**Registrar's verification checklist (done in person when parent visits, or by phone):**
+**Registrar verification checklist:**
 
-| Check | Criterion | Result |
-|---|---|---|
-| LRN format | Exactly 12 digits | ✓ 123456789012 |
-| Age appropriateness | ~11–13 years for Grade 7 | ✓ Born March 12, 2014 → 11 yrs |
-| Grade level match | Applying for Grade 7 (JHS) | ✓ |
-| Duplicate LRN | LRN not already in system under different name | ✓ (system would flag on submission) |
-| PSA Birth Certificate | Present and verified in person | ✓ PSA# noted in physical log |
-| Grade 6 SF9 | Present and signed by sending school head | ✓ SF9 from [Elementary School name] |
-
-All checks pass → proceed to approval.
-
----
-
-## SCENE 1.4 — Approving a Grade 7 Application & Assigning a Section
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ After in-person/phone document verification            │
-│ WHERE  │ Application detail view → "Approve & Assign Section"  │
-│ WHY    │ Approval locks in a section slot for the applicant     │
-│ POLICY │ PRD §6.3.2 — capacity enforced via FOR UPDATE lock;   │
-│        │ full sections not selectable                           │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Steps:**
-1. Registrar clicks **Approve & Assign Section**.
-2. A second Dialog opens — the section selector:
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  Assign Section                                                   │
-│  Juan Dela Cruz  ·  Grade 7                                      │
-│  ────────────────────────────────────────────────────────────── │
-│                                                                  │
-│  Available sections for Grade 7:                                 │
-│                                                                  │
-│  ○  Grade 7 – Rizal       Ms. Santos        38 / 45   ● 7 slots │
-│  ○  Grade 7 – Bonifacio   Mr. Reyes         41 / 45   ● 4 slots │
-│  ○  Grade 7 – Luna        Ms. Flores        44 / 45   ⚠ 1 slot  │
-│  ✗  Grade 7 – Mabini      Mr. Torres        45 / 45   ✗ FULL    │
-│                                                                  │
-│  Selected: ○ Grade 7 – Rizal                                     │
-│                                                                  │
-│           [ Cancel ]           [ Confirm Enrollment ]           │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-> **Key UX detail:** Grade 7 – Mabini is shown greyed-out and marked FULL. It cannot be selected. The registrar can only pick from sections with available slots.
-
-3. Registrar selects **Grade 7 – Rizal** (7 available slots, most balanced choice).
-4. Clicks **Confirm Enrollment**.
-
-**System — Race-Condition-Safe Enrollment Transaction:**
-```
-POST /api/applications/42/approve  { sectionId: [Rizal ID] }
-
-Server:
-  BEGIN TRANSACTION (Prisma $transaction)
-    SELECT id, "maxCapacity" FROM "Section"
-    WHERE id = [Rizal ID] FOR UPDATE       ← row-level lock
-    COUNT enrollments WHERE sectionId = [Rizal ID]  → 38
-    38 < 45 → capacity OK
-    INSERT INTO enrollments { applicantId: 42, sectionId: [Rizal ID], enrolledById: [Reg ID] }
-    UPDATE applicants SET status = 'APPROVED' WHERE id = 42
-  COMMIT
-
-  AuditLog:
-    actionType: APPLICATION_APPROVED
-    description: "Registrar Cruz approved #APP-2026-00042 — assigned to Grade 7 Rizal"
-
-  setImmediate(() => {
-    sendEmail(to: "delacruz.maria@gmail.com",
-              subject: "Congratulations! Your Enrollment is Confirmed",
-              body: includes name, grade, section, tracking number, school logo)
-  })
-```
-
-**Email sent to parent (non-blocking, fire-and-forget):**
-
-```
-From: noreply@school.edu.ph
-To:   delacruz.maria@gmail.com
-Subject: Congratulations! Your Enrollment is Confirmed
-
-[SCHOOL LOGO HEADER — accent color band]
-[School Name]
-
-Dear Ms. Dela Cruz,
-
-We are pleased to confirm that your child's application
-has been approved for SY 2026–2027.
-
-  Learner Name  :  DELA CRUZ, Juan Reyes
-  Grade Level   :  Grade 7
-  Section       :  Grade 7 – Rizal
-  Tracking No.  :  APP-2026-00042
-
-Please report to the school during the regular enrollment
-period (1 week before June class opening) for final
-document verification and official enrollment confirmation.
-
-[SCHOOL FOOTER]
-```
-
-**System outcome in the UI:**
-- Sileo `success` toast: *"Application Approved — Juan Dela Cruz enrolled in Grade 7 Rizal."*
-- Application row in the inbox now shows `✓ APPROVED` (green badge).
-- Grade 7 Rizal section capacity: **39/45** (was 38/45).
-
-**Registrar returns to inbox — SCENE 1.2 — and processes the next application.**
-
----
-
-## SCENE 1.5 — Approving a Grade 11 Application (SHS — Strand-Sensitive Sectioning)
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ During Early Registration review                       │
-│ WHERE  │ Application detail → Grade 11 STEM applicant          │
-│ WHY    │ Grade 11 approval is slightly more complex than G7:    │
-│        │ the section dialog must be filtered not only by grade  │
-│        │ level but also by the chosen strand                    │
-│ POLICY │ DO 017, s. 2025 §9 — Strand declared at enrollment.   │
-│        │ Sections must match the strand.                        │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Applicant: Santos, Maria L. — Grade 11 STEM**
-
-Documents verified in person:
-- ✓ PSA Birth Certificate (new to this school — recorded once)
-- ✓ Grade 10 SF9 from her previous JHS, signed by school head
-- ✓ LRN: 876543219012 (matches SF9)
+| Check | Criterion |
+|---|---|
+| LRN format | Exactly 12 digits |
+| Age | ~11–13 years for Grade 7 |
+| Grade level match | Applying for Grade 7 |
+| PSA Birth Certificate | Verified in person; PSA# noted |
+| Grade 6 SF9 | Present; signed by sending school head |
 
 **Registrar clicks Approve & Assign Section. Section dialog opens:**
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │  Assign Section                                                   │
-│  Maria Santos  ·  Grade 11  ·  Strand: STEM                     │
+│  Juan Dela Cruz  ·  Grade 7                                      │
 │  ────────────────────────────────────────────────────────────── │
+│  Available sections for Grade 7:                                 │
+│  ○  Rizal       Ms. Santos    38/45  ● 7 slots                  │
+│  ○  Bonifacio   Mr. Reyes     41/45  ● 4 slots                  │
+│  ○  Luna        Ms. Flores    44/45  ⚠ 1 slot                   │
+│  ✗  Mabini      Mr. Torres    45/45  ✗ FULL (disabled)           │
 │                                                                  │
-│  Showing Grade 11 sections:                                      │
-│                                                                  │
-│  ○  Grade 11 – STEM-A    Mr. Lim          32 / 45   ● 13 slots  │
-│  ✗  Grade 11 – STEM-B    Ms. Bautista     45 / 45   ✗ FULL      │
-│  ○  Grade 11 – ABM-A     Ms. Aquino       28 / 45   ● 17 slots  │
-│  ○  Grade 11 – HUMSS-A   Mr. Marcos       25 / 45   ● 20 slots  │
-│  ○  Grade 11 – GAS-A     Ms. Palma        30 / 45   ● 15 slots  │
-│                                                                  │
-│  Selected: ○ Grade 11 – STEM-A                                   │
-│                                                                  │
-│           [ Cancel ]           [ Confirm Enrollment ]           │
+│           [ Cancel ]     [ Confirm Enrollment ]                  │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-> **Design note:** The dialog lists ALL Grade 11 sections regardless of strand. The registrar selects the section that matches the applicant's declared strand (STEM-A for a STEM applicant). This is a process control, not a technical filter — the registrar's judgment is the gate.
+**System — Race-Condition-Safe Transaction:**
+```
+POST /api/applications/55/approve  { sectionId: [Rizal ID] }
 
-**Registrar selects STEM-A. Confirms enrollment.**
+  BEGIN TRANSACTION;
+    SELECT id, "maxCapacity" FROM "Section"
+    WHERE id = [Rizal ID] FOR UPDATE   ← row-level lock prevents race conditions
+    COUNT enrollments WHERE sectionId = [Rizal ID]  → 38
+    38 < 45 → OK
+    INSERT INTO enrollments { applicantId: 55, sectionId, enrolledById: [reg ID] }
+    UPDATE applicants SET status = 'APPROVED' WHERE id = 55
+  COMMIT;
 
-**System:** Same transaction as Scene 1.4. Email sent. STEM-A capacity: 33/45.
+  AuditLog: APPLICATION_APPROVED — "Registrar approved #055 → Grade 7 Rizal"
+
+  setImmediate(() => sendEmail(to: delacruz.maria@gmail.com,
+    subject: "Congratulations! Your Enrollment is Confirmed — [SchoolSettings.schoolName]"))
+```
+
+**Email subject uses `SchoolSettings.schoolName` — never a hardcoded school name.**
+
+**Outcome:** Application shows `✓ APPROVED`. Section capacity: 39/45. Parent receives confirmation email.
+
+---
+
+## SCENE 1.4 — Entering a Walk-In Application via F2F Admission
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ WHEN   │ Any time a parent walks in to apply in person          │
+│ WHERE  │ /f2f-admission                                          │
+│ WHY    │ The parent did not apply online. The registrar enters  │
+│        │ the application directly on behalf of the applicant.   │
+│ POLICY │ DO 017, s. 2025 — enrollment may be done in-person     │
+│        │ (Mode A). F2F route is unaffected by the enrollment    │
+│        │ gate — always accessible to REGISTRAR.                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**What the registrar sees at `/f2f-admission`:**
+
+```
+WALK-IN ADMISSION                         [WALK-IN (F2F) badge]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  PHYSICAL CONSENT CONFIRMATION
+  ────────────────────────────────────────────────────────────────
+  ☐  The applicant / parent / guardian has physically signed the
+     RA 10173 Data Privacy Consent form and a copy has been
+     retained on file. *  (Required before submission)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  A. PERSONAL INFORMATION
+  ─ (all BEEF fields in a 2-column grid) ─
+
+  B. FAMILY & CONTACT
+  ─ (guardian, contact, email — email is optional for F2F) ─
+
+  C. BACKGROUND & CLASSIFICATION
+  ─ (IP, 4Ps, PWD checkboxes + conditional sub-fields) ─
+
+  D. PREVIOUS SCHOOL
+  ─ (last school, grade completed, general average) ─
+
+  E. ENROLLMENT PREFERENCES
+  ─ Grade Level: [dropdown from active AY — dynamic, not hardcoded] ─
+  ─ SCP Program: [only shown if SCP programs are configured] ─
+  ─ Strand:      [only shown if SHS grade level selected] ─
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [ Save as Pending ]         [ Save as Approved ]
+  (docs need further review)  (all docs verified in person now)
+```
+
+**Key differences from the online form:**
+- Auth required (REGISTRAR or SYSTEM_ADMIN JWT)
+- Always accessible — the enrollment gate (`enrollmentOpen`) does not affect this route
+- All sections on one scrollable page (no wizard steps)
+- "Save as Approved" fast-track button: sets `status = APPROVED` immediately if all documents are verified at the counter
+- Physical consent checkbox replaces the online scroll-to-consent gate
+- Email field is optional — if left blank, no notification is sent; registrar prints or notes the tracking number
+
+**Steps:**
+1. Parent arrives at the registrar's window.
+2. Registrar checks the physical consent checkbox (after showing the applicant/parent the RA 10173 notice).
+3. Fills in all fields on behalf of the parent/applicant.
+4. Verifies documents (Grade 6 SF9, PSA BC, etc.) in person.
+5. If documents are complete: clicks **Save as Approved** → section assignment dialog opens immediately.
+6. If documents need follow-up: clicks **Save as Pending** → applicant can bring remaining docs later.
+
+**System (`POST /api/applications/f2f`):**
+- `admissionChannel: 'F2F'` stored on the `Applicant` record.
+- `encodedById: req.user.userId` stored — the registrar's user ID.
+- All other validation rules are identical to the online form.
+- `AuditLog`: `F2F_APPLICATION_ENTERED — "Registrar [name] entered walk-in application for [LRN], Tracking #[n]"`.
+- If email provided: confirmation email sent (same template as online, using `SchoolSettings.schoolName`).
+- Sileo toast: *"Walk-in Application Saved — Tracking #APP-2026-00198."*
+
+**Outcome:** Walk-in application appears in `/applications` inbox with a "Walk-in" channel badge. Indistinguishable from an online application in terms of data — only the `admissionChannel` field differs.
+
+---
+
+## SCENE 1.5 — Approving a Grade 11 Application (SHS — Strand-Sensitive)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ WHEN   │ During Early Registration review                       │
+│ WHERE  │ Application detail → Grade 11 applicant               │
+│ WHY    │ Grade 11 approval requires strand-matched section      │
+│        │ selection. The section dialog shows all Grade 11       │
+│        │ sections; the registrar's judgment picks the right one.│
+└─────────────────────────────────────────────────────────────────┘
+```
+
+Identical flow to Scene 1.3, with two differences:
+1. The application detail shows **SHS Track** and **Elective Cluster** (loaded from configured strands for Grade 11).
+2. The section assignment dialog lists all Grade 11 sections. The registrar selects the section matching the applicant's declared strand/cluster. The system does not filter by strand — section assignment is the registrar's judgment call.
 
 ---
 
@@ -977,145 +855,82 @@ Documents verified in person:
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ WHEN   │ When a data integrity issue is found (duplicate LRN,  │
-│        │ fictitious information, applicant already enrolled)    │
+│        │ fictitious information, already enrolled)              │
 │ WHERE  │ Application detail view → "Reject Application"        │
-│ WHY    │ The system must prevent duplicate records or invalid   │
-│        │ entries from entering the enrollment data              │
-│ POLICY │ DO 017, s. 2025: Rejection is NEVER for missing docs  │
-│        │ or disability. Rejection is only for verified          │
-│        │ data integrity failures. Missing docs → still enroll. │
+│ POLICY │ DO 017, s. 2025: Rejection is NEVER for missing docs, │
+│        │ disability, or unpaid fees. Only for verified data     │
+│        │ integrity failures.                                    │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Scenario:** Application #55 — Applicant submitted LRN `123456789012` which is already in the system under a different learner's name. Possible typo on the form.
-
 **Steps:**
-1. Registrar opens Application #55. Notices the LRN matches Application #42 (Juan Dela Cruz) but the name is entirely different.
-2. Clicks **Reject Application**.
-3. Rejection Dialog opens:
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  Reject Application #APP-2026-00055                              │
-│  ────────────────────────────────────────────────────────────── │
-│                                                                  │
-│  Rejection Reason (optional but strongly recommended):           │
-│  ┌────────────────────────────────────────────────────────┐     │
-│  │ The submitted LRN 123456789012 is already registered    │     │
-│  │ under a different learner in our system. Please         │     │
-│  │ resubmit your application using the correct 12-digit    │     │
-│  │ LRN found on your Grade 6 Report Card (SF9).            │     │
-│  └────────────────────────────────────────────────────────┘     │
-│                                                                  │
-│  ⚠  The parent will be notified by email with this reason.      │
-│                                                                  │
-│           [ Cancel ]           [ Confirm Rejection ]            │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-4. Registrar types a clear, actionable reason and clicks **Confirm Rejection**.
+1. Registrar clicks **Reject Application**.
+2. Rejection dialog opens with an optional (but strongly recommended) reason textarea.
+3. Registrar types a clear, actionable reason.
+4. Clicks **Confirm Rejection**.
 
 **System:**
-- `PATCH /api/applications/55/reject` → `{ rejectionReason: "LRN conflict..." }`.
-- `Applicant.status = 'REJECTED'`, `Applicant.rejectionReason` saved.
-- `AuditLog`: `APPLICATION_REJECTED — "Registrar Cruz rejected #55. Reason: LRN conflict."`.
-- Email dispatched (non-blocking):
-  ```
-  Subject: Update on Your Application — [School Name]
-  Body: Rejection reason + clear instructions to resubmit correctly.
-  ```
-- Sileo `info` toast: *"Application Rejected — Notification sent to parent."*
+- `PATCH /api/applications/:id/reject` → `{ rejectionReason }`.
+- `Applicant.status = 'REJECTED'`.
+- `AuditLog`: `APPLICATION_REJECTED`.
+- Email dispatched with the rejection reason and instructions to resubmit if applicable.
+- Subject uses `SchoolSettings.schoolName` — never hardcoded.
 
-**Outcome:** Parent receives an email with the exact reason. They can resubmit via `/apply` with the corrected LRN. The new submission will be a fresh application with a new tracking number.
-
-**When rejection is NOT appropriate (DO 017, s. 2025):**
-- ❌ Parent does not have PSA BC yet → Do NOT reject. Approve with a note to bring PSA by October 31.
-- ❌ Grade 6 SF9 missing → Do NOT reject. Accept PEPT result or school certification letter.
-- ❌ Learner has unpaid fees at previous school → Do NOT reject. Enroll + Affidavit of Undertaking.
-- ❌ Learner has a disability → Do NOT reject under any circumstances.
+**When rejection is NOT appropriate:**
+- ❌ PSA BC missing → Approve provisionally; collect by October 31.
+- ❌ Grade 6 SF9 missing → Accept PEPT result or school certification letter.
+- ❌ Unpaid fees at previous school → Enroll + Affidavit of Undertaking.
+- ❌ Learner has a disability → Never reject for this reason.
 
 ---
 
-## SCENE 1.7 — Monitoring Section Capacity Throughout Early Registration
+## SCENE 1.7 — Monitoring Section Capacity
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ Daily during Early Registration (January–February)     │
+│ WHEN   │ Daily during Early Registration                        │
 │ WHERE  │ /sections                                               │
-│ WHY    │ Registrar must track which sections are filling up     │
-│        │ and make proactive decisions (open a new section,      │
-│        │ raise capacity, or inform SDO)                         │
+│ WHY    │ Registrar tracks which sections are filling up and     │
+│        │ makes proactive decisions                               │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**What the registrar sees at mid-February (example):**
+**Section list view with capacity bars:**
 
 ```
-SECTIONS              Year: [ SY 2026–2027 ▾ ]   Grade: [ Grade 7 ▾ ]
+SECTIONS                      Year: [ SY 2026–2027 ▾ ]
 
-  Grade   │  Section   │  Adviser       │  Capacity │  Enrolled       │  Status
-  ────────┼────────────┼────────────────┼───────────┼─────────────────┼──────────
-  Grade 7 │  Rizal     │  Ms. Santos    │  45       │  █████████ 42/45 │  ⚠ Near Full
-  Grade 7 │  Bonifacio │  Mr. Reyes     │  45       │  ████████  38/45 │  ● Available
-  Grade 7 │  Luna      │  Ms. Flores    │  45       │  ████████  36/45 │  ● Available
-  Grade 7 │  Mabini    │  Mr. Torres    │  45       │  ██████████45/45 │  ✗ FULL
+  Grade 7
+  ┌────────────────────────────────────────────────────────────┐
+  │  Rizal     │ Ms. Santos    │  43/45  ████████████████░  ⚠  │
+  │  Bonifacio │ Mr. Reyes     │  40/45  ████████████████     │
+  │  Luna      │ Ms. Flores    │  45/45  ████████████████  ✗  │  ← FULL
+  │  Mabini    │ Mr. Torres    │  22/45  ████████░░░░░░░░     │
+  └────────────────────────────────────────────────────────────┘
 ```
 
-**Registrar observes:** Grade 7 Mabini is FULL. Rizal is nearly full. At current rate, all Grade 7 sections may fill before February ends.
+**Capacity bar colors:**
+- < 80% → `bg-green-500` (available)
+- 80–99% → `bg-amber-500` (near full)
+- 100% → `bg-red-500` (full)
 
-**Options available:**
-- **Edit capacity** on a near-full section (if school head approves):
-  - Click `[Edit]` on Grade 7 Rizal → Change Max Capacity from 45 to 48 → Save.
-- **Create a new Grade 7 section** (if a room and teacher are available):
-  - Click `+ New Section` → Grade 7, new section name, new teacher.
-- **Inform the school head** and document that the section is full — new applicants to Grade 7 Rizal and Mabini will be redirected to other sections.
+> These semantic colors are **never** the school's accent color. Their meaning (safe/warning/full) must be consistent across all schools.
 
-**What the registrar does NOT do:** Block or reject applicants because sections are full. Per DO 017, every learner has the right to enroll. If the school genuinely cannot accommodate, the SDO must be consulted for guidance.
+**If a section fills up and more applicants are incoming:**
+1. Click **[Edit]** on the section → increase `maxCapacity` (must have school head approval).
+2. Or click **+ New Section** to create an additional section for the grade level.
 
 ---
 
-## SCENE 1.8 — Closing the Enrollment Gate at End of Early Registration
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ Last Friday of February — end of Early Registration    │
-│ WHERE  │ /settings → Tab 4: Enrollment Gate                     │
-│ WHY    │ The school enters the preparation period (March–May).  │
-│        │ No more pre-registrations should be accepted until     │
-│        │ Phase 2 Regular Enrollment opens in June.              │
-│ POLICY │ DO 017, s. 2025 — Phase 1 window closes last Friday    │
-│        │ of February. SDO may grant extensions.                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+## SCENE 1.8 — Closing the Enrollment Gate After Early Registration
 
 **Steps:**
-1. Registrar opens Settings → Tab 4.
-2. Toggles the gate switch from `ON` to `OFF`.
-3. Confirmation Dialog: *"Close the portal? All visitors will be redirected to the Enrollment Closed page."*
-4. Confirms: **Yes, Close**.
+1. Navigate to `/settings → Tab 4`.
+2. Toggle gate from `ON` → `OFF`.
+3. Confirm. `/apply` now redirects to `/closed`.
+4. `AuditLog`: `ENROLLMENT_GATE_TOGGLED — "closed"`.
 
-**System:**
-- `PATCH /api/settings/enrollment-gate` → `{ enrollmentOpen: false }`.
-- `/apply` now redirects all visitors to `/closed`:
-  ```
-  ┌────────────────────────────────────────────────────────────┐
-  │         [School Name]                     │
-  │         [logo]                                             │
-  │                                                            │
-  │  Enrollment is currently CLOSED.                           │
-  │                                                            │
-  │  The Early Registration period has ended.                  │
-  │  Regular Enrollment will open before the start of          │
-  │  classes in June.                                          │
-  │                                                            │
-  │  Track your existing application:                          │
-  │  [ APP-2026-_____ ]     [ Track Status ]                   │
-  └────────────────────────────────────────────────────────────┘
-  ```
-- `AuditLog`: `ENROLLMENT_GATE_TOGGLED — "Admin set enrollment to CLOSED"`.
-- Sileo `info` toast: *"Enrollment Closed — The portal has been disabled."*
-
-**Outcome:** Phase 1 is complete. All pre-registrations are in the system. The registrar now has March–May to finalize section capacity, prepare for Phase 2, and report Early Registration data to the school head.
+**Note:** F2F admission (`/f2f-admission`) remains accessible to the registrar regardless.
 
 ---
 
@@ -1124,118 +939,67 @@ SECTIONS              Year: [ SY 2026–2027 ▾ ]   Grade: [ Grade 7 ▾ ]
 # ═══════════════════════════════════════════
 # ACT 2 — PHASE 2: REGULAR ENROLLMENT
 # ═══════════════════════════════════════════
-## Period: ~1 week before class opening (e.g., June 9–14, coinciding with Brigada Eskwela)
-## Purpose: OFFICIAL enrollment of ALL grade levels.
-## Legal Status: THIS is the official enrollment of record. DepEd LIS BOSY encoding happens here.
-## DepEd Basis: DO 017, s. 2025; RA 7797 as amended by RA 11480
+## Period: ~1 week before class opening (first Monday of June)
+## Purpose: Official enrollment of record for all grade levels.
 
 ---
 
-## SCENE 2.1 — Re-Opening the Gate for Regular Enrollment
+## SCENE 2.1 — Re-opening the Gate for Regular Enrollment
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ ~June 9 (1 week before class opening on June 16)       │
-│ WHERE  │ /settings → Tab 4: Enrollment Gate                     │
-│ WHY    │ Phase 2 serves ALL grade levels — it is the gate for   │
-│        │ confirming pre-registered G7/G11, processing walk-ins, │
-│        │ and enrolling continuing G8–10 and G12 learners        │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-Same gate-open procedure as Scene 1.1. Registrar toggles `ON` → Confirms → Portal live.
-
-**Important difference from Phase 1:** During Phase 2, the registrar is processing far higher volumes — all grade levels simultaneously, parents arriving in person, walk-ins, and confirmation slips. The system's search capability (`/students`, `/applications`) and the filtered sections dialog become the primary productivity tools.
+Same process as Scene 1.1. Registrar opens the gate `ON` during Brigada Eskwela week (~1 week before class opening).
 
 ---
 
-## SCENE 2.2 — Confirming a Pre-Registered Grade 7 Applicant (Phase 2 Confirmation)
+## SCENE 2.2 — Confirming a Pre-Registered Grade 7 Applicant
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ WHEN   │ Phase 2 — June Brigada Eskwela week                    │
 │ WHERE  │ /applications → search for pre-approved applicant      │
-│ WHY    │ Juan Dela Cruz was approved in Phase 1 (SCENE 1.4).    │
-│        │ He is now back at school with his parent for final     │
-│        │ document verification. The registrar confirms his      │
-│        │ enrollment in the system.                               │
+│ WHY    │ A learner approved in Phase 1 returns for Phase 2      │
+│        │ document verification and official enrollment.         │
 │ POLICY │ DO 017, s. 2025 — Phase 2 is the official enrollment.  │
 │        │ Phase 1 approval is pre-registration only.             │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 **Steps:**
-1. Registrar types `Dela Cruz` in the search bar at `/applications`.
-2. Application #42 appears: **Juan Dela Cruz — Grade 7 Rizal — ✓ APPROVED**.
-3. Registrar opens the record.
-4. Verifies physical documents in hand:
-   - ✓ PSA Birth Certificate (original — PSA number matches what was noted in Phase 1)
-   - ✓ Grade 6 SF9 (original, signed by sending school head)
-5. All documents verified. Section assignment (Grade 7 Rizal) is already in the system from Phase 1.
-6. **No change needed.** The enrollment record is already created. The registrar simply notes *"Phase 2 docs verified — June 10, 2026"* in the physical enrollment logbook.
-7. Registrar informs the parent: *"Your child is officially enrolled in Grade 7 Rizal. Classes begin June 16."*
+1. Registrar searches for the applicant in `/applications`.
+2. Record shows: **APPROVED** (section already assigned from Phase 1).
+3. Registrar verifies physical documents in hand.
+4. No additional system action needed — the enrollment record exists.
+5. Registrar informs the parent: *"Your child is officially enrolled."*
 
-**System:** No additional API call is needed if all data was correctly captured in Phase 1. The enrollment record exists. The registrar's action here is physical document verification and verbal confirmation.
-
-**If a data correction is needed** (e.g., parent reports a name typo in the form):
-- Registrar edits the applicant record: `PUT /api/applicants/42` → corrects the field → saves.
-- `AuditLog` captures the edit.
-
-**Outcome:** Juan Dela Cruz's enrollment is officially confirmed for SY 2026–2027, Grade 7 Rizal.
+If a data correction is needed: `PUT /api/students/:id` → corrects the field → `AuditLog: STUDENT_RECORD_UPDATED`.
 
 ---
 
-## SCENE 2.3 — Processing Continuing Grade 8–10 and Grade 12 Learners (Confirmation Slips)
+## SCENE 2.3 — Processing Continuing Grade 8–10 and Grade 12 Learners
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ WHEN   │ Phase 2 — June enrollment week                        │
 │ WHERE  │ /students → find existing learner → assign to section  │
-│ WHY    │ Grades 8–10 and Grade 12 do NOT submit a full BEEF.   │
-│        │ They submit a Confirmation Slip (Annex C of DO 017).   │
-│        │ The registrar locates their existing record and        │
-│        │ assigns them to a section for the new school year.     │
-│ POLICY │ DO 017, s. 2025 §4 — continuing learners are          │
-│        │ pre-registered in LIS; only a Confirmation Slip needed │
+│ WHY    │ Pre-registered continuing learners submit Confirmation │
+│        │ Slips (Annex C) — no full BEEF required.              │
+│ POLICY │ DO 017, s. 2025 §4 — continuing learners pre-         │
+│        │ registered in LIS; Confirmation Slip only             │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Scenario:** A Grade 8 student, Pedro Reyes, arrives with his Confirmation Slip. He was in Grade 7 last year and is now moving up.
-
 **Steps:**
-1. Registrar goes to `/students` and searches `Reyes Pedro`.
-2. His record appears: **Grade 7 – Rizal — SY 2025–2026 — ENROLLED**. (His last year's record.)
-3. Since it is SY 2026–2027 now, the registrar initiates his enrollment for the new year:
-   - Clicks **[Enroll for New Year]** or the equivalent action button.
-   - Or navigates through `/applications` if he submitted a fresh Confirmation Slip online.
-4. Section assignment dialog opens, now filtered to **Grade 8** sections:
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  Assign Section                                                   │
-│  Pedro Reyes  ·  Grade 8  (Promoted from Grade 7 – Rizal)       │
-│  ────────────────────────────────────────────────────────────── │
-│                                                                  │
-│  Available sections for Grade 8:                                 │
-│                                                                  │
-│  ○  Grade 8 – Rizal       Ms. Cruz         20 / 45   ● 25 slots │
-│  ○  Grade 8 – Bonifacio   Mr. Garcia       18 / 45   ● 27 slots │
-│  ○  Grade 8 – Luna        Ms. Bautista     22 / 45   ● 23 slots │
-│  ○  Grade 8 – Mabini      Mr. Villanueva   19 / 45   ● 26 slots │
-│                                                                  │
-│           [ Cancel ]           [ Confirm Enrollment ]           │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-5. Registrar selects **Grade 8 – Rizal** and confirms.
+1. Registrar goes to `/students` and searches the learner's name or LRN.
+2. Learner's prior year record appears.
+3. Initiates enrollment for the new year via the "Enroll for New Year" action.
+4. Section assignment dialog opens, filtered to the next grade level's sections.
+5. Registrar selects a section and confirms.
 
 **System:**
-- Enrollment record created: `{ learnerId: [Pedro], sectionId: [G8-Rizal], academicYearId: [SY2026-2027] }`.
-- Status: **ENROLLED**.
-- Sileo `success` toast: *"Enrollment Confirmed — Pedro Reyes enrolled in Grade 8 Rizal."*
-- `AuditLog`: `APPLICATION_APPROVED — "Registrar Cruz confirmed enrollment for Pedro Reyes → Grade 8 Rizal"`.
+- `Enrollment` record created for the new `academicYearId`.
+- `AuditLog`: `APPLICATION_APPROVED — "Registrar confirmed enrollment for [name] → [section]"`.
+- Sileo toast: *"Enrollment Confirmed."*
 
-**Scale reality:** During Phase 2 week, the registrar and clerks may process 200–400 confirmation slips in a single day. The 300ms debounce search and streamlined one-dialog confirmation flow are the primary speed tools.
+**Scale reality:** During Phase 2 week, 200–400 confirmation slips may be processed in a single day. The 300ms debounce search and single-dialog confirmation flow are the primary speed tools.
 
 ---
 
@@ -1244,74 +1008,39 @@ Same gate-open procedure as Scene 1.1. Registrar toggles `ON` → Confirms → P
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ WHEN   │ Phase 2 — June enrollment week                        │
-│ WHERE  │ /apply (school computer) OR /applications (registrar) │
+│ WHERE  │ /f2f-admission (preferred) or /apply at the office     │
 │ WHY    │ A parent arrives during Brigada Eskwela with a child  │
-│        │ who did NOT pre-register in January–February.         │
-│ POLICY │ DO 017, s. 2025 — School CANNOT turn away a learner   │
-│        │ who missed early registration. All learners must be   │
-│        │ accepted during the regular enrollment period if       │
-│        │ capacity allows.                                       │
+│        │ who did not pre-register. School CANNOT turn them away.│
+│ POLICY │ DO 017, s. 2025 — all learners must be accepted if    │
+│        │ capacity allows; missed early registration is not      │
+│        │ grounds for denial.                                    │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 **Steps:**
-1. Parent arrives at the registrar's window with child (no prior application).
-2. Registrar directs the parent to fill out the online form at a computer in the office — or offers to fill it out on their behalf.
-3. The form at `/apply` is filled out (3-step wizard: Personal Info → Family & Contact → Enrollment Preferences).
-4. On submission, the system generates a tracking number: `APP-2026-00198`.
-5. The application immediately appears in the registrar's `/applications` inbox as **PENDING**.
-6. Since the parent is physically present, the registrar:
-   a. Verifies documents immediately.
-   b. Processes the application on the spot (Scene 1.3 → 1.4 flow).
-7. Result: Walk-in applicant is approved and section-assigned **within the same visit**.
+1. Parent arrives at the registrar's window.
+2. Registrar opens `/f2f-admission` and enters the application on the parent's behalf.
+3. Since documents are present, clicks **Save as Approved** → section dialog → confirms.
+4. Walk-in applicant is enrolled within the same visit.
 
-**Capacity check before approving:**
-
-If the first section the registrar tries is full, they see the full section greyed out in the dialog and select a different one. If **all** Grade 7 sections are full, the registrar:
-- Does NOT reject the applicant.
-- Informs the school head immediately.
-- School head decides: raise capacity on an existing section, open a new section, or escalate to SDO.
-- Applicant is placed in **APPROVED** status (section assigned as soon as capacity is resolved) — never rejected for capacity reasons.
+If all sections for the grade level are full: the registrar does not reject the applicant. Informs the school head; school head raises a section's capacity or creates a new section. Applicant is placed in `APPROVED` status until capacity is resolved.
 
 ---
 
-## SCENE 2.5 — Processing a Transferee During Phase 2
+## SCENE 2.5 — Processing a Transferee
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ WHEN   │ Phase 2 or any time during the school year             │
-│ WHERE  │ /apply → then /applications                            │
-│ WHY    │ A learner is changing schools. The receiving school    │
-│        │ must enroll them regardless of outstanding fees at     │
-│        │ the sending school.                                     │
-│ POLICY │ DO 017, s. 2025 §5.5 — Schools cannot deny transferee  │
+│ WHERE  │ /f2f-admission → /applications                         │
+│ POLICY │ DO 017, s. 2025 §5.5 — schools cannot deny transferee  │
 │        │ enrollment due to unpaid private school fees.          │
 │        │ LRN must be validated; SF10 is requested post-         │
-│        │ enrollment, not pre-enrollment.                        │
+│        │ enrollment through DepEd LIS (external system).        │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Scenario:** Carlos Fernandez, Grade 9, transferring from a private school in Bacolod. He has his Grade 8 SF9 but the private school has unpaid tuition.
-
-**Document checklist:**
-
-| Document | Presented? | Action |
-|---|---|---|
-| SF9 (Grade 8 Report Card) | ✓ Yes | Verified; grades noted |
-| PSA Birth Certificate | ✓ Yes | New to this school — recorded once |
-| LRN: 998877665544 | ✓ Yes | Found on SF9; validated in system |
-| Private school unpaid fees | ⚠ Yes | DO NOT block. Assist with Affidavit of Undertaking. |
-| SF10 (Grade 7 and 8 records) | ✗ No | NOT required at enrollment. Registrar initiates request to sending school through DepEd LIS (external system). |
-
-**Steps:**
-1. Parent fills `/apply` form with Carlos's information and LRN.
-2. Registrar reviews application — notes the LRN (`998877665544`) exists in DepEd LIS under a private school.
-3. Verifies SF9 grade and completion.
-4. Informs parent about the Affidavit of Undertaking for the private school fees — assists them in preparing it (done offline/physically, not in this system).
-5. Clicks **Approve & Assign Section** → selects Grade 9 section → confirms.
-6. Separately, in DepEd LIS (external system), initiates the SF10 transfer request from the sending school.
-
-**System outcome:** Carlos Fernandez enrolled in Grade 9. The school system shows `ENROLLED`. The SF10 transfer is tracked outside this system in DepEd LIS.
+**Registrar enters the application via `/f2f-admission`** (or the parent submits via `/apply`). Verifies SF9 and LRN. If transferring from a private school with unpaid fees: assists parent with Affidavit of Undertaking (physical, not in this system). Approves and assigns section. SF10 transfer request is initiated separately in DepEd LIS.
 
 ---
 
@@ -1320,33 +1049,18 @@ If the first section the registrar tries is full, they see the full section grey
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ WHEN   │ Phase 2 or any time during the school year             │
-│ WHERE  │ /apply → then /applications                            │
-│ WHY    │ A learner who dropped out ≥1 year ago wants to return. │
 │ POLICY │ DO 017, s. 2025 §5.6 — Balik-Aral learners cannot be  │
-│        │ turned away due to gaps or missing records. Physical   │
-│        │ submission of SF9 is required (the last report card    │
-│        │ they received before dropping out).                    │
+│        │ turned away due to gaps or missing records.            │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Scenario:** Ana Gonzales, 18 years old, dropped out 2 years ago during Grade 9. She now wants to return to Grade 10.
-
-**Document scenarios:**
-
-| Case | Documents Available | Registrar Action |
-|---|---|---|
-| **Best case** | Grade 9 SF9 (last report card) + PSA BC | Standard approval flow |
-| **No SF9** | PSA BC only | Accept certification letter from previous school, or barangay certification of last grade attended |
-| **No LRN** | Has PSA BC but never had an LRN | Enroll anyway; coordinator handles LRN generation through SDO |
-| **No documents at all** | Nothing available | Enroll provisionally; give family until October 31 to submit; coordinate with SDO |
-
-**Key registrar behavior:** Never refuse. Process the enrollment with whatever documents are available. Flag the record for follow-up in the physical enrollment logbook.
+**Key registrar behavior:** Never refuse. Accept whatever documentation is available. If SF9 is missing, accept a school certification letter, barangay certification, or any credible attestation of last grade attended. Enroll provisionally and coordinate with SDO for any LIS reconciliation needed.
 
 ---
 
 ## SCENE 2.7 — Closing the Gate After Regular Enrollment
 
-Same process as Scene 1.8. Registrar toggles gate `OFF` after Brigada Eskwela week ends. Classes begin Monday. The portal closes — `/apply` redirects to `/closed` for the rest of the school year (except for exceptional late enrollment periods).
+Same as Scene 1.8. Gate toggled `OFF` after Brigada Eskwela week. Classes begin Monday. `/apply` redirects to `/closed`. F2F admission at `/f2f-admission` remains available for late enrollees.
 
 ---
 
@@ -1356,95 +1070,139 @@ Same process as Scene 1.8. Registrar toggles gate `OFF` after Brigada Eskwela we
 # ACT 3 — ACTIVE SCHOOL YEAR: ONGOING OPERATIONS
 # ═══════════════════════════════════════════
 ## Period: June → March (classes in session)
-## Purpose: Manage sections, process late enrollees and mid-year transferees, monitor data.
 
 ---
 
-## SCENE 3.1 — Processing a Late Enrollee (After Classes Open)
+## SCENE 3.1 — Processing a Late Enrollee
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ Any time after class opening, through roughly March    │
-│ WHERE  │ /settings → enrollment gate toggle → /apply → process  │
-│ WHY    │ A student missed all enrollment periods due to a       │
-│        │ family emergency, illness, or other legitimate cause   │
-│ POLICY │ DO 017, s. 2025 §15 — Late enrollment accepted if      │
+│ WHEN   │ Any time after class opening                           │
+│ WHERE  │ /f2f-admission (the preferred entry point for walk-ins)│
+│ WHY    │ Student missed all enrollment periods                  │
+│ POLICY │ DO 017, s. 2025 §15 — late enrollment accepted if      │
 │        │ learner can attend ≥80% of school days remaining.      │
-│        │ School head decides in edge cases.                     │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 **Steps:**
-1. School head authorizes the late enrollment in writing (physical document).
-2. Registrar temporarily opens the Enrollment Gate (`ON`) — this is a deliberate act.
-3. Applicant fills the form at `/apply`, or registrar fills it on their behalf.
-4. Application reviewed and approved → section assigned.
-5. Registrar immediately closes the gate again (`OFF`) after processing.
-6. Notes in the physical enrollment logbook: *"Late enrollment authorized by School Head [name] on [date]."*
+1. School head authorizes in writing (physical document).
+2. Registrar enters the application via `/f2f-admission` — no need to toggle the online gate.
+3. Selects an available section with remaining capacity.
+4. Confirms enrollment.
+5. Notes in physical enrollment logbook: *"Late enrollment authorized by School Head [name] on [date]."*
 
-**Critical note:** The system does not prevent late enrollment technically — the gate toggle is the registrar's control. The registrar is responsible for ensuring the school head's authorization exists before opening the gate outside the scheduled periods.
-
----
-
-## SCENE 3.2 — Mid-Year Transferee (After Classes Open)
-
-Same flow as Scene 2.5. Gate opened → application submitted → application reviewed → approved → section assigned → gate closed.
-
-Additional step for mid-year transfer: The registrar also notes in the record which quarter the learner entered so the class adviser can give appropriate catch-up work. This is noted in the physical records, not this system.
+**Critical note:** The online gate controls only `/apply`. The registrar's access to `/f2f-admission` is governed by their JWT — it is always accessible.
 
 ---
 
-## SCENE 3.3 — Adjusting Section Capacity
+## SCENE 3.2 — Editing a Student Record in SIMS
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ Any time — when school head approves more seats        │
-│ WHERE  │ /sections → [Edit] on the section                      │
-│ WHY    │ A section nearing capacity needs more slots to         │
-│        │ accommodate approved applicants from the waiting list  │
+│ WHEN   │ Any time — parent reports a name spelling error,       │
+│        │ address change, or updated guardian contact            │
+│ WHERE  │ /students → /students/:id                              │
+│ WHY    │ Student information must remain accurate in the system │
+│        │ for LIS encoding and official records.                 │
+│ POLICY │ RA 10173 — all edits are audit-logged; field names     │
+│        │ (not values) logged for SPI fields                     │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Steps:**
-1. Registrar clicks `[Edit]` on the target section.
-2. Edit Dialog opens with current values.
-3. Registrar changes `Max Capacity` from `45` to `48` (or whatever the school head approved).
-4. Clicks **Save**.
+**What the registrar sees at `/students/:id`:**
+
+```
+STUDENT PROFILE — DELA CRUZ, Juan Reyes
+LRN: 123456789012  [read-only — immutable]
+
+  Tab 1: Personal Information  |  Tab 2: Academic History
+  Tab 3: Application Record    |  Tab 4: Classifications
+
+[ Edit Record ]    [ Cancel ]    [ Save Changes ]
+```
+
+**Tab 1 — Personal Information (editable fields):**
+- Name (Last, First, Middle, Suffix)
+- Date of Birth · Sex · Place of Birth · Nationality · Religion · Mother Tongue
+- Home Address · Barangay · Municipality · Province
+- Guardian Name · Relationship · Contact Number · Email Address
+
+**LRN is immutable.** Displayed as plain text — not an `<input>`. The API rejects any `PUT /students/:id` body that includes the `lrn` field.
+
+**Tab 2 — Academic History:**
+- All enrollment records across academic years: AY · Grade Level · Section · Date Enrolled · Enrolled By
+- Read-only.
+
+**Tab 3 — Application Record:**
+- Original submission details: tracking number, admission channel (Online/F2F), date.
+- SCP assessment records: exam date, score, results (read-only).
+- Status history derived from AuditLog entries.
+
+**Tab 4 — Classifications (SPI — restricted display):**
+- Learner type badge · IP status · 4Ps status + Household ID · PWD status + Disability type.
+- These SPI fields are **only visible to REGISTRAR and SYSTEM_ADMIN**. TEACHER cannot see them.
+
+**Editing steps:**
+1. Click **Edit Record**.
+2. Fields become editable. LRN remains read-only.
+3. Make corrections.
+4. Click **Save Changes**.
 
 **System:**
-- `PUT /api/sections/:id` → updates `maxCapacity`.
-- Capacity badge on the sections list immediately reflects the new value.
-- `AuditLog`: `SECTION_UPDATED — "Admin updated capacity for Grade 11 STEM-A to 48"`.
-- Sileo `success` toast: *"Section Updated."*
+- `PUT /api/students/:id` with the updated fields.
+- `AuditLog`: `STUDENT_RECORD_UPDATED — "Registrar [name] updated record for LRN [lrn] — Changed: [fieldList]"`.
+- For SPI fields: the audit log records field **names only**, never values (e.g., `Changed: is4PsBeneficiary, householdId`).
+- Sileo toast: *"Record Updated."*
 
 ---
 
-## SCENE 3.4 — Searching for a Student Record
+## SCENE 3.3 — Searching for a Student Record
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ WHEN   │ Any time during the school year                        │
 │ WHERE  │ /students                                               │
-│ WHY    │ A teacher asks "Which section is [student] in?" or a   │
-│        │ parent calls asking for their child's section name.    │
+│ WHY    │ A teacher asks which section a student is in, or a    │
+│        │ parent calls about their child's enrollment status.    │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Steps:**
-1. Registrar types the student's LRN or name in the search bar.
-2. Results appear after **300ms debounce** (no page reload, no search button needed).
-3. Table shows: LRN, Full Name, Grade Level, Section, Status, Date Applied.
-4. Registrar reads the section assignment and informs the teacher or parent.
-
-**Example search — "Dela Cruz":**
+**Registrar types the student's LRN or name in the search bar. Results appear after 300ms debounce.**
 
 ```
 STUDENTS    [ Dela Cruz                    🔍 ]
 
-  LRN            │  Full Name            │  Grade   │  Section  │  Status    │  Applied
-  ───────────────┼───────────────────────┼──────────┼───────────┼────────────┼──────────
-  123456789012   │  Dela Cruz, Juan R.   │  Grade 7 │  Rizal    │  ✓ ENROLLED│  Feb 3
+  LRN            │  Full Name            │  Grade   │  Section  │  Channel  │  Status
+  ───────────────┼───────────────────────┼──────────┼───────────┼───────────┼──────────
+  123456789012   │  Dela Cruz, Juan R.   │  Grade 7 │  Rizal    │  Online   │  ENROLLED
 ```
+
+**Filters available:** Grade Level · Section · Academic Year · Status · Admission Channel (Online/Walk-in).
+
+---
+
+## SCENE 3.4 — Adjusting Section Capacity or Reassigning Adviser
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ WHEN   │ Any time — when school head approves more seats, or    │
+│        │ a teacher transfers / goes on leave                    │
+│ WHERE  │ /sections → [Edit] on the section                      │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Capacity increase:**
+1. Click **[Edit]** on the target section.
+2. Change `Max Capacity` to new value (e.g., 45 → 48).
+3. Save. Cannot decrease below current enrolled count.
+
+**Adviser reassignment:**
+1. Click **[Edit]** → change Advising Teacher dropdown to a different teacher from the directory.
+2. Save.
+3. The old teacher loses the section assignment; the new teacher gains it in `/my-sections`.
+
+Both actions: `PUT /api/sections/:id` → `AuditLog: SECTION_UPDATED`.
 
 ---
 
@@ -1452,80 +1210,29 @@ STUDENTS    [ Dela Cruz                    🔍 ]
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ Any time during or after the enrollment period         │
-│ WHERE  │ /track/:trackingNumber (public page — no login needed) │
-│ WHY    │ Parents who submitted online can check their child's   │
-│        │ current application status without calling the school. │
+│ WHEN   │ Any time after application submission                  │
+│ WHERE  │ /track/:trackingNumber — public page, no login needed  │
+│ WHY    │ Parents check status without calling the school.       │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**What the parent sees at `/track/APP-2026-00042`:**
+**What the parent sees at `/track/APP-2026-00055`:**
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│          [School Name]                          │
-│          Application Status Tracker                              │
+│  [SchoolSettings.schoolName]                                     │
+│  Application Status Tracker                                      │
 │                                                                  │
-│  Tracking Number:  APP-2026-00042                                │
-│                                                                  │
+│  Tracking Number:  APP-2026-00055                                │
 │  ✓  APPROVED & ENROLLED                                          │
 │                                                                  │
-│  Learner   :  DELA CRUZ, Juan Reyes                              │
-│  Grade     :  Grade 7                                            │
-│  Section   :  Grade 7 – Rizal                                    │
-│  Applied   :  February 3, 2026                                   │
-│  Approved  :  February 3, 2026                                   │
-│                                                                  │
-│  Please report to school during the enrollment week.            │
+│  Learner  :  DELA CRUZ, Juan Reyes                               │
+│  Grade    :  Grade 7 — Section Rizal                             │
+│  SY       :  2026–2027                                           │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-**Registrar's role here:** Zero — this is a fully self-service public page. The system handles it. Registrar only needs to tell the parent the URL and their tracking number.
-
----
-
-## SCENE 3.6 — Reading the Audit Log (Accountability & Compliance)
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ Any time — on demand from the school head, auditor,   │
-│        │ or in response to a complaint                          │
-│ WHERE  │ /audit-logs                                             │
-│ WHY    │ Every critical action is logged: who did what, when,  │
-│        │ from which IP address, with what outcome               │
-│ POLICY │ PRD §6.6 — Non-destructive. No delete endpoint.       │
-│        │ All logs are permanent.                                │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**What the registrar sees:**
-
-```
-AUDIT LOGS         [ Action Type: All ▾ ]   [ Date: Feb 1–3, 2026 ▾ ]
-
-  Timestamp              │  User          │  Action Type              │  Description
-  ───────────────────────┼────────────────┼───────────────────────────┼─────────────────────────────────────────────
-  Feb 3, 2026  9:14 AM   │  Cruz, Regina  │  APPLICATION_APPROVED     │  Approved #42 → assigned to Grade 7 Rizal
-  Feb 3, 2026  9:11 AM   │  Cruz, Regina  │  APPLICATION_SUBMITTED    │  Guest submitted application for Juan Dela Cruz (LRN: 123456789012)
-  Feb 3, 2026  8:55 AM   │  Cruz, Regina  │  APPLICATION_APPROVED     │  Approved #41 → assigned to Grade 11 STEM-A
-  Feb 2, 2026  4:30 PM   │  Cruz, Regina  │  SECTION_UPDATED          │  Updated capacity for Grade 7 Mabini to 48
-  Feb 1, 2026  8:00 AM   │  Cruz, Regina  │  ENROLLMENT_GATE_TOGGLED  │  Admin set enrollment to OPEN
-```
-
-**Logged events for every critical action:**
-
-| Action Type | When It Fires |
-|---|---|
-| `USER_LOGIN` | Every successful login |
-| `APPLICATION_SUBMITTED` | When any applicant submits the public form |
-| `APPLICATION_APPROVED` | When registrar approves + assigns section |
-| `APPLICATION_REJECTED` | When registrar rejects with reason |
-| `SECTION_CREATED` | When registrar creates a new section |
-| `SECTION_UPDATED` | When registrar edits section name/capacity/teacher |
-| `ENROLLMENT_GATE_TOGGLED` | Every open or close of the public portal |
-| `SETTINGS_UPDATED` | School name, logo, or academic year changes |
-
-**The audit log cannot be deleted** — no delete button, no delete API endpoint exists in the system.
+No API authentication required. Tracking number is the only identifier — no LRN or other PII exposed in the URL.
 
 ---
 
@@ -1534,35 +1241,19 @@ AUDIT LOGS         [ Action Type: All ▾ ]   [ Date: Feb 1–3, 2026 ▾ ]
 # ═══════════════════════════════════════════
 # ACT 4 — SHS SECOND SEMESTER (GRADE 12)
 # ═══════════════════════════════════════════
-## Period: December–January (within the school year)
-## Purpose: Senior High School operates on semesters. Grade 12 must be formally enrolled for 2nd semester in DepEd LIS.
-## Note: This is handled primarily in the external DepEd LIS system. This school system records the enrollment; the LIS update is done separately.
-
----
 
 ## SCENE 4.1 — Processing Grade 12 Second Semester Enrollment
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ December–January (typically before Christmas break or  │
-│        │ first week back in January)                             │
+│ WHEN   │ December–January (before or after Christmas break)     │
 │ WHERE  │ /students → locate Grade 12 learners                   │
-│ WHY    │ SHS is semester-based. Grade 12 learners need a formal  │
-│        │ enrollment record for Semester 2 in both this system   │
-│        │ and DepEd LIS.                                          │
-│ POLICY │ DO 017, s. 2025 §5.4 — Grade 12 is pre-registered.     │
-│        │ Confirmation Slip (Annex C) required for official       │
-│        │ enrollment of record in 2nd semester.                  │
+│ POLICY │ DO 017, s. 2025 §5.4 — SHS is semester-based.         │
+│        │ Grade 12 Confirmation Slip required for Semester 2.    │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Steps:**
-1. Grade 12 learners submit their Confirmation Slips (same physical form as Grades 8–10).
-2. Registrar processes each in the system — confirming their continued enrollment in the same section for Semester 2.
-3. Section assignments do not change between 1st and 2nd semester for Grade 12 (learners stay in their strand section).
-4. In DepEd LIS (external system), registrar accesses the SHS 2nd Semester Enrollment facility and encodes accordingly.
-
-**In this system:** Grade 12 2nd Semester is a confirmation action — no new section assignment needed. The registrar simply confirms their status remains `ENROLLED` in the existing section.
+Grade 12 learners submit Confirmation Slips. Registrar confirms their continued enrollment in the same section for Semester 2 — no new section assignment needed. In DepEd LIS (external system, outside this application), the registrar encodes the SHS 2nd Semester Enrollment facility separately.
 
 ---
 
@@ -1571,118 +1262,105 @@ AUDIT LOGS         [ Action Type: All ▾ ]   [ Date: Feb 1–3, 2026 ▾ ]
 # ═══════════════════════════════════════════
 # ACT 5 — END OF YEAR & ARCHIVAL
 # ═══════════════════════════════════════════
-## Period: March–April (after March 31 class end)
-## Purpose: Close the school year, verify final numbers, archive data, prepare for next cycle.
 
----
-
-## SCENE 5.1 — Final Dashboard Review (End-of-Year Snapshot)
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ First week of April — after March 31 class end         │
-│ WHERE  │ /dashboard                                              │
-│ WHY    │ School head needs final enrollment numbers for the     │
-│        │ annual report and for submission to the SDO            │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**What the registrar sees and reports to the school head:**
-
-```
-╔══════════════════════════════════════════════════════════════════╗
-║  [School Name]           SY 2026–2027  ACTIVE  ║
-╠══════════════╦══════════════╦══════════════╦════════════════════╣
-║  1,284       ║  0           ║  0           ║  0                 ║
-║  ENROLLED    ║  PENDING     ║  APPROVED    ║  AT CAPACITY       ║
-╠═══════════════════════════════════════════════════════════════════╣
-║                                                                  ║
-║  Final Enrollment by Grade Level:                                ║
-║   Grade 7   215  Grade 8  203  Grade 9  199                     ║
-║   Grade 10  188  Grade 11 214  Grade 12 183   TOTAL: 1,202      ║
-║                                                                  ║
-║  NOTE: 1,284 enrolled vs 1,202 still in section. The difference ║
-║  may represent drop-outs or transfers during the year —         ║
-║  these would be handled through the DepEd LIS EOSY facility.   ║
-╚══════════════════════════════════════════════════════════════════╝
-```
+## SCENE 5.1 — Final Dashboard Review
 
 **Steps:**
-1. Registrar reviews all four stat cards — confirms zero pending, zero approved-awaiting.
-2. Cross-checks bar chart totals by grade level with the physical enrollment logbook.
-3. Identifies any remaining APPROVED applications (learners who got a slot but never confirmed in Phase 2) — resolves them by contacting parents or formally rejecting after no-show.
-4. Screenshots or notes the final totals for the school head's EOSY report.
+1. Review all four stat cards — confirm zero pending, zero approved-awaiting.
+2. Cross-check bar chart totals with physical enrollment logbook.
+3. Review the Online vs F2F admission breakdown chart for the annual report.
+4. Identify any remaining APPROVED applications (no-shows) → resolve by contacting parents or formally rejecting.
+5. Note the final totals for the school head's EOSY report.
 
 ---
 
 ## SCENE 5.2 — Confirming Gate is Closed & No Outstanding Actions
 
-**Steps:**
-1. Registrar goes to `/settings → Tab 4: Enrollment Gate` — confirms it is **CLOSED**.
-2. Goes to `/applications` → filters `Status: PENDING` — confirms zero.
-3. Filters `Status: APPROVED` — resolves any remaining (contact parent or reject).
-4. Runs a final audit log check for the last week of school — no unauthorized actions.
+1. `/settings → Tab 4` — confirm gate is **CLOSED**.
+2. `/applications → filter Status: PENDING` — confirm zero.
+3. `/applications → filter Status: APPROVED` — resolve any remaining.
+4. `/audit-logs` — final week review for unauthorized actions.
 
 ---
 
-## SCENE 5.3 — Archiving the School Year (Activating Next Year)
+## SCENE 5.3 — Archiving and Starting the Next Cycle
 
-When the registrar has already configured the next academic year (SY 2027–2028) in Act 0:
-
-1. Navigate to `/settings → Tab 2: Academic Year`.
-2. Click **[Activate]** on the `SY 2027–2028` row.
-3. Confirm activation.
+1. Navigate to `/settings → Tab 2`.
+2. Click **[Activate]** on the next SY row.
+3. Confirm.
 
 **What happens:**
-- SY 2026–2027 → `ARCHIVED`. All data preserved permanently.
-- SY 2027–2028 → `ACTIVE`. Dashboard, sections, and portal now operate under it.
-- Historical data for SY 2026–2027 is still viewable — change the year context dropdown in `/sections` or `/students` to see past records.
+- Current SY → `ARCHIVED`. All data preserved permanently. Historical data viewable via the year-context dropdown in `/sections` and `/students`.
+- Next SY → `ACTIVE`. Dashboard, sections, and portal operate under it.
 
-**Outcome:** System is fully reset for the next annual cycle. The loop returns to **Act 0**.
+**System loop returns to Act 0.** The cycle repeats.
 
 ---
 
 ---
 
 # ═══════════════════════════════════════════
-# SPECIAL SCENARIO: ADVISING TEACHER LOGIN
+# SPECIAL SCENARIO T — ADVISING TEACHER LOGIN
 # ═══════════════════════════════════════════
 
-## SCENE T.1 — Teacher Logs In and Views Their Section
+## SCENE T.1 — Teacher Logs In for the First Time (Forced Password Change)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ WHEN   │ After the registrar provisions the teacher account     │
+│ WHERE  │ /login → /change-password → /dashboard                 │
+│ WHY    │ mustChangePassword = true on all provisioned accounts  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Steps:**
+1. Teacher receives the welcome email with a temporary password.
+2. Clicks "Staff Login" on `/closed` or `/apply` footer → navigates to `/login` (Layer 1 gate passed via navigation state).
+3. Enters email + temporary password → clicks Sign In.
+4. System detects `mustChangePassword = true` → redirects to `/change-password`.
+5. Teacher sets a new password (min 8 chars).
+6. System issues a fresh JWT with `mustChangePassword = false` → redirects to `/dashboard`.
+
+---
+
+## SCENE T.2 — Teacher Views Their Section Class List
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ WHEN   │ Any time during the school year                        │
-│ WHERE  │ /login → /my-sections                                  │
-│ WHY    │ Advising teachers need to see the list of students     │
-│        │ officially enrolled in their section                   │
-│ POLICY │ PRD §4 — TEACHER role has READ-ONLY access to their   │
-│        │ assigned sections only. No approval/rejection access.  │
+│ WHERE  │ /my-sections → /my-sections/:id                        │
+│ WHY    │ Advising teachers need the class roster to take        │
+│        │ attendance, update records, etc.                       │
+│ POLICY │ PRD §4 — TEACHER role: READ-ONLY access to own        │
+│        │ sections only. No access to any other module.          │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**What the teacher sees after login:**
+**Sidebar shown to TEACHER:**
+```
+  Dashboard         ← limited view (own section stats only)
+  My Sections       ← /my-sections
+```
 
-The sidebar shows a reduced menu — only Dashboard (limited) and **My Sections**. All registrar-only routes (`/applications`, `/settings`, `/sections` edit, `/audit-logs`) return `HTTP 403`.
+All other routes (`/applications`, `/students`, `/teachers`, `/sections`, `/settings`, `/audit-logs`) return `HTTP 403 Forbidden` if a teacher attempts to navigate to them.
+
+**What the teacher sees:**
 
 ```
 MY SECTIONS
 
-  Section         │  Grade    │  Enrolled  │  Available
-  ────────────────┼───────────┼────────────┼──────────────
-  Grade 7 – Rizal │  Grade 7  │  43        │  [View Class List]
+  Grade 7 – Rizal  │  43 enrolled  │  [View Class List]
 
-
-[View Class List] → shows all enrolled students in this section:
+[View Class List] →
 
   #   │  LRN             │  Full Name           │  Status
   ────┼──────────────────┼──────────────────────┼──────────
   1   │  123456789012    │  DELA CRUZ, Juan R.  │  ENROLLED
-  2   │  234567890123    │  GARCIA, Ana M.      │  ENROLLED
+  2   │  234567890123    │  GARCIA, Ana M.       │  ENROLLED
   ...
 ```
 
-**The teacher cannot:** approve applications, reject applications, change section capacity, view other sections, or access settings.
+**What the teacher cannot see:** SPI fields (IP status, 4Ps, disability), SCP assessment records, application history, other teachers' sections, settings, or audit logs.
 
 ---
 
@@ -1692,1089 +1370,127 @@ MY SECTIONS
 
 ```
                    APPLICANT SUBMITS FORM
-                   (POST /api/applications)
+                   (Online: POST /api/applications)
+                   (F2F:    POST /api/applications/f2f)
                           │
                           ▼
                     ● PENDING
-                    System assigns tracking number.
-                    Parent receives "Application Received" email.
+                    Tracking number assigned.
+                    Email sent (if address provided).
                           │
-              ┌───────────┴───────────┐
-              │                       │
-              ▼                       ▼
-        ✓ APPROVED                ✗ REJECTED
-        Registrar selects         Registrar enters
-        section → enrollment      optional reason →
-        record created.           parent notified
-        Parent receives           by email.
-        "Confirmed" email.        Parent may resubmit.
-              │
-              │  (Phase 2 physical doc verification)
-              │
-              ▼
-         ✓ ENROLLED
-         Official enrollment of record.
-         Section assigned, capacity decremented.
-              │
-              │  (End of school year)
-              │
-              ▼
-         ARCHIVED
-         Read-only. Data permanent.
-         Never deleted.
+              ┌───────────┴────────────────┐
+              │                            │
+              ▼                            ▼
+    ── REGULAR PATH ──          ── SCP PATH ──────────────────┐
+    ✓ APPROVED                  ⏳ EXAM_SCHEDULED             │
+    + section assigned           (after doc verification)     │
+    Enrollment record created.         │                      │
+    Email: "Confirmed"                 ▼                      │
+                                  📋 EXAM_TAKEN               │
+                                  (after assessment)          │
+                                       │              ────────┘
+                                   ✅ PASSED    ❌ FAILED
+                                   + section     Offer regular
+                                   assigned      section OR reject
+                                       │
+                              ✓ APPROVED
+                              + enrollment record
+                                       │
+                              ✓ ENROLLED (Phase 2 confirmation)
+                                       │
+                              ARCHIVED (end of year)
+                              Read-only. Never deleted.
+        ✗ REJECTED (any path)
+        Parent notified. May resubmit.
 ```
 
 ---
 
-# APPENDIX B — Section Capacity Status Indicators
+# APPENDIX B — Section Capacity Indicators
 
-| Badge | Condition | Meaning | Registrar Action |
+| Badge | Condition | Color | Registrar Action |
 |---|---|---|---|
-| `● Available` (green) | `enrolled < maxCapacity` | Slots open | Normal approvals |
-| `⚠ Near Full` (amber) | `enrolled >= 86% of maxCapacity` | Approaching limit | Monitor; consider adding section |
-| `✗ Full` (red) | `enrolled >= maxCapacity` | No slots | Cannot approve into this section; see Scene 1.7 |
+| `● Available` | enrolled < 80% of maxCapacity | Green | Normal approvals |
+| `⚠ Near Full` | enrolled ≥ 80% of maxCapacity | Amber | Monitor; consider adding section |
+| `✗ Full` | enrolled ≥ maxCapacity | Red | Cannot approve into section; edit capacity or add section |
+
+Capacity bar always uses semantic colors (green/amber/red) — **never the school's accent color** — so the meaning is consistent across all schools.
 
 ---
 
 # APPENDIX C — DO 017 Compliance Checklist for the Registrar
 
-The registrar must **never** do the following. The system does not technically block all of these, so the registrar's knowledge is the safeguard:
-
-| ❌ PROHIBITED ACTION | ✅ CORRECT ALTERNATIVE | Legal Basis |
+| ❌ PROHIBITED | ✅ CORRECT ALTERNATIVE | Legal Basis |
 |---|---|---|
-| Reject applicant for missing PSA Birth Certificate | Enroll provisionally; collect by October 31 | DO 017, s. 2025; RA 11909 |
-| Reject applicant for missing SF9 | Accept PEPT/A&E result or school certification letter | DO 017, s. 2025 §13 |
-| Reject transferee due to unpaid private school fees | Enroll; assist with Affidavit of Undertaking | DO 017, s. 2025 §5.5 |
+| Reject for missing PSA Birth Certificate | Enroll provisionally; collect by October 31 | DO 017, s. 2025; RA 11909 |
+| Reject for missing SF9 | Accept PEPT/A&E result or school certification letter | DO 017, s. 2025 §13 |
+| Reject transferee for unpaid private school fees | Enroll; assist with Affidavit of Undertaking | DO 017, s. 2025 §5.5 |
 | Block enrollment of learner with disability | Enroll; coordinate with SPED/inclusive ed | RA 7277; DO 017 §5 |
-| Require Good Moral Character certificate | Not a DepEd public school requirement | DO 017, s. 2025 §III |
+| Require Good Moral Certificate (public schools) | Not required by DepEd | DO 017, s. 2025 §III |
 | Withhold SF9 or SF10 for any reason | Issue immediately upon request | DO 017, s. 2025 §1.5 |
 | Collect any fee during enrollment | All enrollment is FREE | DO 017 §II; RA 10533 |
-| Create a duplicate LRN | Validate existing LRN before encoding in LIS | LIS Data Integrity Policy |
-| Require PSA BC to be re-submitted annually | PSA BC collected ONCE per school | RA 11909; DO 017 §1.3 |
+| Create a duplicate LRN | Validate existing LRN before encoding | LIS Data Integrity Policy |
+| Re-submit PSA BC annually | PSA BC collected ONCE per school | RA 11909; DO 017 §1.3 |
 
 ---
 
-# APPENDIX D — Quick Grade-Level Reference for the Registrar
+# APPENDIX D — Quick Grade-Level Reference
 
-| Grade Level | Phase 1 Required? | Document | Phase 2 Action | Strand Required? |
+| Grade Level | Phase 1 Required? | Document | Phase 2 Action | Strand/Cluster? |
 |---|---|---|---|---|
 | **Grade 7** | ✅ Yes | BEEF + PSA BC + Grade 6 SF9 | Confirm + section assign | No |
 | **Grade 8** | ❌ Pre-registered | Confirmation Slip (Annex C) | Section assign | No |
 | **Grade 9** | ❌ Pre-registered | Confirmation Slip (Annex C) | Section assign | No |
 | **Grade 10** | ❌ Pre-registered | Confirmation Slip (Annex C) | Section assign | No |
-| **Grade 11** | ✅ Yes | BEEF + PSA BC + Grade 10 SF9 + Strand | Confirm + strand section assign | ✅ Yes |
-| **Grade 12** | ❌ Pre-registered | Confirmation Slip (Annex C) | Section assign; 2nd sem in Dec–Jan | No (continues from G11) |
-| **Transferee (any)** | ✅ During Phase 1 window | BEEF + SF9 + LRN validation | Same as new entrant | If Grade 11/12 |
-| **Balik-Aral (any)** | ✅ During Phase 1 window | Last SF9 (physical) or alternative | Same as new entrant | If Grade 11/12 |
+| **Grade 11** | ✅ Yes | BEEF + PSA BC + Grade 10 SF9 | Confirm + section assign | ✅ Yes |
+| **Grade 12** | ❌ Pre-registered | Confirmation Slip (Annex C) | Section assign; 2nd sem Dec–Jan | Continues from G11 |
+| **Transferee** | ✅ During Phase 1 | BEEF + SF9 + LRN validation | Same as new entrant | If Grade 11/12 |
+| **Balik-Aral** | ✅ During Phase 1 | Last SF9 or alternative | Same as new entrant | If Grade 11/12 |
 
----
-
-*Storyboard prepared by: System Design Team*
-*Sources: DepEd Order No. 017, s. 2025 · PRD v2.2.0 · RA 7797 as amended by RA 11480 · RA 11909*
-*Covers: Full SY Cycle — Act 0 (Setup) through Act 5 (Year Close) + Special Scenarios*
-*School: [School Name] · System: PERN Stack (PostgreSQL · Express · React · Node.js)*
+> **School-agnostic:** This table shows a standard Grades 7–12 secondary school. A school offering only Grades 7–10 would have no Grade 11/12 rows. The actual grade levels available in the system's dropdowns and filters always reflect what was configured in Settings Tab 3.
 
 ---
 
 ---
 
-# ADDENDUM — DM 012, s. 2026: Strengthened SHS Curriculum Workflow Scenarios
+# ADDENDUM A — DM 012, s. 2026: Strengthened SHS Curriculum Workflow
 
 **Governing Memorandum:** DepEd Memorandum No. 012, s. 2026
-**Issued:** February 27, 2026
-**Source:** https://www.deped.gov.ph/2026/02/27/february-27-2026-dm-012-s-2026-full-implementation-of-the-strengthened-senior-high-school-curriculum-in-school-year-2026-2027/
+**Starting:** SY 2026–2027 — incoming Grade 11 only. Grade 12 continues old strand system.
 
-Starting SY 2026–2027, the traditional strand-based SHS system is replaced by a two-track, elective-cluster framework **for incoming Grade 11 learners only**. Grade 12 learners continue under their existing strands. The scenes below append to the main storyboard to cover the new workflows this policy introduces.
+The Addendum A scenes (A.1 through A.7 and Appendix E) from the original storyboard remain fully applicable. Key updates for v3.0.0:
 
----
+- **SCENE A.1** (Configure elective clusters): now uses the **SCP Programs sub-tab** in Settings Tab 3 — NOT a separate UI. The Track/Cluster configuration for DM 012 is handled through the Strand configuration system with `track: 'ACADEMIC'` or `track: 'TECHPRO'` field.
 
-## SCENE A.1 — Registrar Configures the New Grade 11 Elective Clusters in Settings
+- **SCENE A.6** (Unavailable cluster): The system displays a warning banner `"Selected cluster is not configured for this school"` because the admission form only shows clusters loaded from the active AY's strand configuration. If the applicant somehow submitted a cluster not in the database, it would be rejected at the API level. This is the school-agnostic dynamic system enforcing consistency.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ Act 0 — System Setup, April–May (before Early Reg)    │
-│ WHERE  │ /settings → Tab 3: Grade Levels & Strands             │
-│ WHY    │ Under DM 012, s. 2026, Grade 11 no longer uses        │
-│        │ strands. The registrar must configure which elective  │
-│        │ clusters the school offers — only those will appear on the  │
-│        │ public admission portal's Grade 11 dropdown.          │
-│ POLICY │ DM 012, s. 2026 — schools offer only clusters for    │
-│        │ which they have teachers, equipment, and DepEd        │
-│        │ recognition. Not all 15 clusters are required.        │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**What the registrar sees (new split UI in Tab 3):**
-
-```
-SETTINGS > Grade Levels & Strands       Year: [ SY 2026–2027 ▾ ]
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- GRADE 11 — Strengthened SHS Curriculum (DM 012, s. 2026)
- Select elective clusters offered by this school:
-
-  ACADEMIC TRACK
-  ☑  STEM (Science, Technology, Engineering & Mathematics)
-  ☑  Arts, Social Sciences, and Humanities
-  ☑  Business and Entrepreneurship
-  ☐  Sports, Health, and Wellness
-  ☐  Field Experience
-
-  TECHPRO TRACK
-  ☑  ICT Support and Computer Programming Technologies
-  ☑  Hospitality and Tourism
-  ☐  Construction and Building Technologies
-  ☐  Automotive and Small Engine Technologies
-  ☐  Industrial Technologies
-  ☐  Agri-Fishery Business and Food Innovation
-  ☐  Artisanry and Creative Enterprise
-  ☐  Aesthetic, Wellness, and Human Care
-  ☐  Creative Arts and Design Technologies
-  ☐  Maritime Transport
-
-                                               [ Save Clusters ]
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- GRADE 12 — Old Strand-Based Curriculum (SY 2026–2027 transition)
- Grade 12 continues under the existing strand system.
-
-  Strand    │  Grade         │  Actions
-  ──────────┼────────────────┼────────────────────────────────
-  STEM      │  Grade 12      │  [Edit]  [Delete]
-  ABM       │  Grade 12      │  [Edit]  [Delete]
-  HUMSS     │  Grade 12      │  [Edit]  [Delete]
-  GAS       │  Grade 12      │  [Edit]  [Delete]
-                               [ + Add Strand ]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-**Steps:**
-1. Registrar checks with the school head and department heads which clusters the school is equipped to offer for SY 2026–2027.
-2. Checks the appropriate boxes in the Academic and TechPro sections.
-3. Leaves Grade 12 old strands as-is (they were cloned from the previous year or already configured).
-4. Clicks **Save Clusters**.
-
-**System:**
-- Each checked Academic cluster → `POST /api/strands` with `{ name, curriculumType: 'ELECTIVE_CLUSTER', track: 'ACADEMIC', applicableGradeLevelIds: [Grade11.id] }`.
-- Each checked TechPro cluster → same, `track: 'TECHPRO'`.
-- Grade 12 old strands: `curriculumType: 'OLD_STRAND'`, `track: null`, `applicableGradeLevelIds: [Grade12.id]`.
-- Sileo `success` toast: *"Elective Clusters saved — 5 Academic + 2 TechPro clusters configured for Grade 11."*
-- `AuditLog`: `SETTINGS_UPDATED — "Admin configured SY 2026–2027 Grade 11 elective clusters"`.
-
-**Outcome:** The admission portal's Grade 11 section now shows Track radio buttons and a correctly-filtered Elective Cluster dropdown. Grade 12 applicants (transferees) still see the old strand dropdown.
-
----
-
-## SCENE A.2 — Registrar Creates Grade 11 Sections Under the New System
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ Act 0 — Section setup, after Scene A.1                 │
-│ WHERE  │ /sections                                               │
-│ WHY    │ Grade 11 sections are now organized by track or        │
-│        │ cluster focus, not by the old strand names             │
-│ POLICY │ DM 012, s. 2026 — section naming is school-           │
-│        │ discretionary; DepEd mandates the curriculum, not      │
-│        │ the section label                                      │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Registrar creates the following Grade 11 sections for SY 2026–2027:**
-
-*Option chosen by the school: cluster-focused naming (mirrors old strand naming for continuity):*
-
-| Grade | Section Name | Cluster Focus | Adviser |
-|---|---|---|---|
-| Grade 11 | STEM-A | Academic / STEM cluster | Mr. Lim |
-| Grade 11 | ArSocHum-A | Academic / Arts, Soc Sci, Humanities | Ms. Aquino |
-| Grade 11 | BusEnt-A | Academic / Business and Entrepreneurship | Mr. Marcos |
-| Grade 11 | ICT-A | TechPro / ICT Support & Programming | Ms. Palma |
-| Grade 11 | HospTour-A | TechPro / Hospitality and Tourism | Mr. Bautista |
-
-**Grade 12 sections (unchanged from previous year's naming):**
-
-| Grade | Section Name | Strand | Adviser |
-|---|---|---|---|
-| Grade 12 | STEM-A | STEM (old) | Mr. Lim |
-| Grade 12 | ABM-A | ABM (old) | Ms. Reyes |
-| Grade 12 | HUMSS-A | HUMSS (old) | Mr. Cruz |
-| Grade 12 | GAS-A | GAS (old) | Ms. Torres |
-
-**Outcome:** The `/sections` page now shows a clear two-tier structure — Grade 11 with cluster-labeled sections and Grade 12 with strand-labeled sections. Both are managed in the same interface.
-
----
-
-## SCENE A.3 — Processing an Incoming Grade 11 Application Under the New System
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ Act 1 — Phase 1 Early Registration (Jan–Feb 2026)      │
-│ WHERE  │ /applications → PENDING Grade 11 application           │
-│ WHY    │ Grade 11 applicant submitted under the new two-track   │
-│        │ system. Registrar must verify Track and Elective       │
-│        │ Cluster selection, then assign to the appropriate     │
-│        │ section.                                               │
-│ POLICY │ DM 012, s. 2026 — Track declaration is binding at     │
-│        │ enrollment. Cluster adjustments permitted within       │
-│        │ 1st grading period with guidance counselor approval.   │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Application on the portal (what the parent filled out):**
-
-```
-ENROLLMENT PREFERENCE (Step 3 of 3)
-
-  Grade Level *       ●  Grade 11
-
-  SHS Track *         ●  Academic
-                      ○  Technical-Professional (TechPro)
-
-  Preferred Elective Cluster *
-                      [ STEM (Science, Technology, Engineering & Mathematics)  ▾ ]
-```
-
-**What the registrar sees in the application detail:**
-
-```
-╔══════════════════════════════════════════════════════════════════╗
-║  APPLICATION DETAIL                                              ║
-║  #APP-2026-00041                          Status: ● PENDING      ║
-╠══════════════════════════════════════════════════════════════════╣
-║  PERSONAL INFORMATION                                            ║
-║  Full Name   :  SANTOS, Maria Luz                                ║
-║  LRN         :  876543219012                                     ║
-║  DOB         :  July 4, 2010  (Age: 15 yrs)                     ║
-║                                                                  ║
-║  ENROLLMENT PREFERENCE                                           ║
-║  Grade Level :  Grade 11                                         ║
-║  SHS Track   :  Academic                                         ║
-║  Elective    :  STEM                                             ║
-║  Curriculum  :  Strengthened SHS (DM 012, s. 2026)              ║
-╠══════════════════════════════════════════════════════════════════╣
-║                                                                  ║
-║  ⚠  PHASE 1: Pre-registration only. Official enrollment         ║
-║     confirmed in Phase 2 (June).                                 ║
-║                                                                  ║
-║   [ Approve & Assign Section ]   [ Reject Application ]         ║
-╚══════════════════════════════════════════════════════════════════╝
-```
-
-**Registrar verifies:**
-
-| Check | Criterion | Result |
-|---|---|---|
-| LRN format | 12 digits | ✓ |
-| Age for Grade 11 | ~15–17 years | ✓ Born July 4, 2010 → 15 yrs |
-| Grade 10 SF9 | Presented in person | ✓ Signed by JHS school head |
-| PSA Birth Certificate | New to school — once-only | ✓ PSA # noted |
-| Track declared | Academic or TechPro | ✓ Academic |
-| Cluster offered | STEM offered at the school | ✓ |
-
-**Registrar clicks Approve & Assign Section. Dialog opens:**
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  Assign Section                                                   │
-│  Maria Santos  ·  Grade 11  ·  Academic Track  ·  STEM Cluster  │
-│  ────────────────────────────────────────────────────────────── │
-│                                                                  │
-│  Grade 11 sections:                                              │
-│                                                                  │
-│  ○  Grade 11 – STEM-A      Mr. Lim        28/45  ● 17 slots    │
-│  ○  Grade 11 – ArSocHum-A  Ms. Aquino     22/45  ● 23 slots    │
-│  ○  Grade 11 – BusEnt-A    Mr. Marcos     19/45  ● 26 slots    │
-│  ○  Grade 11 – ICT-A       Ms. Palma      30/45  ● 15 slots    │
-│  ○  Grade 11 – HospTour-A  Mr. Bautista   25/45  ● 20 slots    │
-│                                                                  │
-│  Selected: ○ Grade 11 – STEM-A                                   │
-│                                                                  │
-│           [ Cancel ]           [ Confirm Enrollment ]           │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-> **Registrar note:** All Grade 11 sections are shown, regardless of cluster focus, consistent with the existing PRD design (section assignment is a registrar judgment call, not a system filter). The Track and Cluster labels on the dialog header inform the registrar which section to pick.
-
-**Registrar selects STEM-A. Confirms.**
-
-**System:**
-- Enrollment transaction (unchanged mechanism, `FOR UPDATE` lock).
-- Email to parent:
-  ```
-  Congratulations! Your Enrollment is Confirmed.
-
-  Learner      :  SANTOS, Maria Luz
-  Grade Level  :  Grade 11
-  SHS Track    :  Academic
-  Elective     :  STEM
-  Section      :  Grade 11 – STEM-A
-  Curriculum   :  Strengthened SHS Curriculum (DM 012, s. 2026)
-  ```
-- Sileo `success` toast: *"Application Approved — Maria Santos enrolled in Grade 11 STEM-A (Academic / STEM)."*
-- `AuditLog`: `APPLICATION_APPROVED — "Registrar Cruz approved #41 → Grade 11 STEM-A (Academic Track / STEM Cluster)"`.
-
----
-
-## SCENE A.4 — Processing a Grade 11 TechPro Applicant
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ Act 1 — Phase 1 Early Registration                     │
-│ WHERE  │ /applications → PENDING Grade 11 TechPro application   │
-│ WHY    │ Learner chose TechPro track with ICT cluster.          │
-│ POLICY │ DM 012, s. 2026 — TechPro replaces TVL. Cluster       │
-│        │ availability depends on school resources.              │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Application detail:**
-```
-Grade Level :  Grade 11
-SHS Track   :  Technical-Professional (TechPro)
-Elective    :  ICT Support and Computer Programming Technologies
-```
-
-**Registrar verifies:** ICT cluster is offered at the school (confirmed in Scene A.1 setup).
-
-**Section assignment:** Registrar selects Grade 11 – ICT-A.
-
-**Email to parent:**
-```
-SHS Track    :  Technical-Professional (TechPro)
-Elective     :  ICT Support and Computer Programming Technologies
-Section      :  Grade 11 – ICT-A
-```
-
----
-
-## SCENE A.5 — Processing a Grade 12 Applicant (Transferee — Old Strand System Still Active)
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ Act 2 — Phase 2 Regular Enrollment / any time SY       │
-│        │ 2026–2027                                               │
-│ WHERE  │ /applications → Grade 12 transferee application        │
-│ WHY    │ A Grade 12 transferee arrives from another school.     │
-│        │ They were on the OLD strand system. The system must    │
-│        │ enroll them under the OLD strand — NOT the new         │
-│        │ Strengthened SHS curriculum.                           │
-│ POLICY │ DM 012, s. 2026 — Grade 12 in SY 2026–2027 continues  │
-│        │ under the existing strand framework for a smooth        │
-│        │ transition. No Grade 12 learner moves to the new       │
-│        │ curriculum mid-stream.                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**What the portal showed this applicant at Step 3:**
-```
-Grade Level :  Grade 12
-
-Strand *
-  [ STEM ▾ ]
-  (STEM / ABM / HUMSS / GAS)
-```
-*(The portal correctly showed OLD strand options for Grade 12, not the new cluster system.)*
-
-**Application detail:**
-```
-Grade Level :  Grade 12
-Curriculum  :  Old Strand-Based (Continuing)
-Strand      :  STEM
-```
-
-**Registrar verifies:** Grade 11 SF9 from sending school shows STEM strand. The learner was on STEM — continuity confirmed.
-
-**Section assignment:** Registrar selects Grade 12 – STEM-A.
-
-**Email to parent:**
-```
-Grade Level  :  Grade 12
-Strand       :  STEM
-Section      :  Grade 12 – STEM-A
-Note         :  Grade 12 continues under the strand-based curriculum.
-```
-
-**Outcome:** The two systems co-exist cleanly. The application record stores the correct curriculum type. Audit log, email, and section assignment all use the correct old-system terminology for this Grade 12 learner.
-
----
-
-## SCENE A.6 — Handling a Grade 11 Applicant Who Selected an Unavailable Cluster
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ During review of a PENDING Grade 11 application        │
-│ WHERE  │ /applications → application detail                     │
-│ WHY    │ A learner submitted via the portal and selected        │
-│        │ "Hospitality and Tourism" as their cluster. However,   │
-│        │ the school later decided NOT to offer this cluster     │
-│        │ due to insufficient kitchen facilities.                │
-│ POLICY │ DM 012, s. 2026 — schools offer only clusters they    │
-│        │ are equipped to deliver. Learners whose preferred      │
-│        │ cluster is unavailable may: (a) choose another offered │
-│        │ cluster, or (b) transfer to a school that offers it.   │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Application detail:**
-```
-Grade Level :  Grade 11
-SHS Track   :  TechPro
-Elective    :  Hospitality and Tourism   ⚠ NOT offered at the school
-```
-*(System flags this with a warning banner: "Selected cluster is not configured for this school.")*
-
-**Registrar's options:**
-
-**Option A — Contact parent, offer alternative cluster:**
-1. Registrar calls or emails the parent.
-2. Parent agrees to switch to ICT cluster (also TechPro, but offered at the school).
-3. Registrar edits the application: changes `strandId` to the ICT cluster record.
-4. Approves and assigns to Grade 11 – ICT-A.
-
-**Option B — Reject with guidance to transfer:**
-1. Registrar clicks Reject.
-2. Rejection reason: *"The Hospitality and Tourism cluster is not offered at [School Name] for SY 2026–2027. We encourage the learner to apply at [nearest school with HospTour] or to select an available cluster: ICT Support and Computer Programming Technologies."*
-3. Parent receives the rejection email with clear instructions.
-
-> **Note:** Per DO 017, s. 2025, rejections must never be punitive. The reason must always be actionable and constructive. Option A (contact and offer alternative) is the preferred approach before resorting to rejection.
-
----
-
-## SCENE A.7 — Checking the Dashboard: Dual-Policy Enrollment Summary
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ Any time during SY 2026–2027                           │
-│ WHERE  │ /dashboard                                              │
-│ WHY    │ The school head wants a breakdown of Grade 11          │
-│        │ enrollment by track and cluster, plus the Grade 12     │
-│        │ old-strand breakdown                                    │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Dashboard — SHS breakdown panel (proposed addition):**
-
-```
-SHS ENROLLMENT BREAKDOWN                          SY 2026–2027
-
-  GRADE 11 — Strengthened SHS Curriculum (DM 012, s. 2026)
-  ┌──────────────────┬──────────────────┬───────────┬──────────┐
-  │  Track           │  Cluster         │  Enrolled │  Section │
-  ├──────────────────┼──────────────────┼───────────┼──────────┤
-  │  Academic        │  STEM            │  42       │  STEM-A  │
-  │  Academic        │  Arts/Soc/Hum    │  38       │  ArSocHum│
-  │  Academic        │  Business & Ent. │  35       │  BusEnt-A│
-  │  TechPro         │  ICT             │  44       │  ICT-A   │
-  │  TechPro         │  Hospitality     │  39       │  HospTour│
-  ├──────────────────┼──────────────────┼───────────┼──────────┤
-  │  GRADE 11 TOTAL  │                  │  198      │          │
-  └──────────────────┴──────────────────┴───────────┴──────────┘
-
-  GRADE 12 — Old Strand-Based Curriculum (transition year)
-  ┌──────────────────┬───────────┬──────────┐
-  │  Strand          │  Enrolled │  Section │
-  ├──────────────────┼───────────┼──────────┤
-  │  STEM            │  44       │  STEM-A  │
-  │  ABM             │  40       │  ABM-A   │
-  │  HUMSS           │  45       │  HUMSS-A │
-  │  GAS             │  38       │  GAS-A   │
-  ├──────────────────┼───────────┼──────────┤
-  │  GRADE 12 TOTAL  │  167      │          │
-  └──────────────────┴───────────┴──────────┘
-```
-
-**Registrar uses this view to:**
-- Report to the school head how many learners chose Academic vs. TechPro track.
-- Identify if any cluster sections are under-enrolled (possible consolidation).
-- Prepare data for the SDO's SHS curriculum implementation monitoring report.
-
----
-
-## APPENDIX E — Updated Appendix D (Quick Grade-Level Reference — DM 012 Revised)
-
-The original Appendix D is updated below to reflect the dual-policy SHS landscape:
-
-| Grade | Phase 1 Required? | Document | Phase 2 Action | Program Declaration |
-|---|---|---|---|---|
-| **Grade 7** | ✅ Yes | BEEF + PSA BC + Grade 6 SF9 | Confirm + section | None (JHS) |
-| **Grade 8** | ❌ Pre-registered | Confirmation Slip (Annex C) | Section assign | None |
-| **Grade 9** | ❌ Pre-registered | Confirmation Slip (Annex C) | Section assign | None |
-| **Grade 10** | ❌ Pre-registered | Confirmation Slip (Annex C) | Section assign | None |
-| **Grade 11 (NEW)** | ✅ Yes | BEEF + PSA BC + Grade 10 SF9 | Confirm + track/cluster section | **Track** (Academic/TechPro) + **Elective Cluster** — per DM 012, s. 2026 |
-| **Grade 12 (OLD)** | ❌ Pre-registered | Confirmation Slip (Annex C) | Section assign | **Strand** (STEM/ABM/HUMSS/GAS) continues — old system |
-| **Transferee G11** | ✅ During Phase 1 | BEEF + SF9 + LRN | Confirm + section | Track + Cluster (if from a school already on Strengthened SHS) OR from Old system assessment |
-| **Transferee G12** | ✅ During Phase 1 | BEEF + SF9 + LRN | Confirm + section | **Old strand** (Grade 12 does not shift to new system mid-stream) |
-
----
-
-*Addendum to Registrar Storyboard Workflow*
-*Based on: DepEd Memorandum No. 012, s. 2026 — Full Implementation of the Strengthened Senior High School Curriculum in SY 2026–2027*
-*Source: https://www.deped.gov.ph/2026/02/27/february-27-2026-dm-012-s-2026-full-implementation-of-the-strengthened-senior-high-school-curriculum-in-school-year-2026-2027/*
-*All prior storyboard scenes remain valid. These scenes are additive — covering Grade 11 Strengthened SHS and dual-policy Grade 12 workflows.*
-
+- All section names in Addendum A scenes (STEM-A, ICT-A, etc.) are **examples only** — the actual section names for any school are whatever the registrar configured in `/sections`.
 
 ---
 
 ---
 
-# ADDENDUM — Admission Process Workflows (Open Admission & SCP)
-## DepEd Admission Pathways: Regular Sections and Special Curricular Programs
+# ADDENDUM B — Admission Process Workflows (Open Admission & SCP)
 
-**Research Basis:** DepEd Memorandum No. 149, s. 2011 · Division Memorandum No. 157, s. 2025 · school-specific announcement research
-**PRD Reference:** v2.4.0
+**Policy Basis:** DepEd Memorandum No. 149, s. 2011 · DO 017, s. 2025
+**PRD Reference:** v3.0.0
 
----
+The Addendum B scenes (B.1 through B.10 and Appendix F) from the original storyboard remain fully applicable. Key updates for v3.0.0:
 
-## Policy Context
+- **SCP programs shown in the applications inbox and the admission form** are loaded dynamically from the school's `ScpProgram` configuration. A school that does not offer SPA will not see the SPA type badge, the SPA exam fields, or the SPA row in the SCP pipeline dashboard panel.
 
-DepEd public high schools operate two distinct admission pathways for incoming Grade 7 and Grade 11 learners. The registrar's workflow differs significantly depending on which pathway the applicant is on.
+- **All email subjects and bodies** in SCP workflow emails (exam scheduled, passed, failed) use `SchoolSettings.schoolName` at send time — never a hardcoded school name.
 
-| Pathway | Applicants | Registrar Steps |
-|---|---|---|
-| **Open Admission** | Regular Grade 7 and Grade 11 non-STEM applicants | Verify docs → Approve → Assign section (1 action) |
-| **SCP Admission** | STE, SPA, SPS, SPJ, SPFL, SPTVE, and Grade 11 STEM applicants | Verify docs → Schedule exam → Record result → Pass/Fail → Assign section (4 actions) |
+- **Division Memorandum references** in the SCP scenes describe the general DepEd framework for division-administered exams. The specific division memorandum number for STE testing will vary by SDO — the system is not tied to any specific division.
+
+- **The `ScpProgram.assessmentType` field** drives which dialog fields appear in each SCP scene. A school that configures STE with `EXAM_ONLY` and no interview will never see an audition result field in Scene B.3. The scenes in Addendum B describe the general workflow pattern; the system adapts based on each SCP program's configuration.
 
 ---
 
-## SCENE B.1 — Identifying Applicant Type in the Inbox
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ Daily during Early Registration (January–February)     │
-│ WHERE  │ /applications                                           │
-│ WHY    │ The registrar must distinguish REGULAR applicants from │
-│        │ SCP applicants at a glance — they require completely   │
-│        │ different actions and timelines                         │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**What the registrar sees — updated applications table:**
-
-```
-APPLICATIONS           [ Search by LRN or name... 🔍 ]      [Filter ▾]
-
-  Year: SY 2026–2027   Grade: All ▾   Type: All ▾   Status: All ▾
-
-  #   │ Learner Name          │ LRN          │ Grade    │ Type         │ Status         │ Actions
-  ────┼───────────────────────┼──────────────┼──────────┼──────────────┼────────────────┼────────
-  055 │ Dela Cruz, Juan R.    │ 123456789012 │ Grade 7  │ REGULAR      │ ● PENDING      │ [View]
-  054 │ Santos, Maria L.      │ 876543219012 │ Grade 11 │ STEM G11     │ ● PENDING      │ [View]
-  053 │ Reyes, Pedro M.       │ 112233445566 │ Grade 7  │ STE          │ ● PENDING      │ [View]
-  052 │ Garcia, Ana B.        │ 998877665544 │ Grade 7  │ SPA (Dance)  │ ✅ EXAM_SCHED  │ [View]
-  051 │ Torres, Carlo M.      │ 444433332222 │ Grade 7  │ STE          │ ✅ PASSED      │ [View]
-  050 │ Lim, Rosa A.          │ 333322221111 │ Grade 7  │ STE          │ ❌ FAILED      │ [View]
-```
-
-**Type badge colors:**
-- `REGULAR` → grey outline badge
-- `STE`, `SPA`, `SPS`, `SPJ`, `SPFL`, `SPTVE` → blue outline badge
-- `STEM G11` → purple outline badge
-
-**Status badge colors for SCP path:**
-- `EXAM_SCHEDULED` → amber badge
-- `EXAM_TAKEN` → blue badge
-- `PASSED` → green badge
-- `FAILED` → red badge
-
----
-
-## SCENE B.2 — Processing a Regular Grade 7 Applicant (Open Admission Path — unchanged)
-
-This is the same as the original storyboard scenes 1.3 and 1.4. No changes to the open admission workflow. Registrar opens the applicant → verifies documents → clicks **Approve & Assign Section** → selects section → confirms → done.
-
-The `applicantType` field shows `REGULAR` in the application detail view. No exam-related fields are visible.
-
----
-
-## SCENE B.3 — Opening an SCP Applicant Record (STE Example)
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ During Early Registration review (January–February)    │
-│ WHERE  │ /applications → click [View] on STE applicant #053     │
-│ WHY    │ STE applicants require an entrance exam before section │
-│        │ assignment. The registrar must verify documents first, │
-│        │ then schedule the exam — not approve immediately.       │
-│ POLICY │ Division Memorandum No. 157, s. 2025 — STE admission  │
-│        │ test is administered division-wide on a set Saturday   │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**What the registrar sees — SCP application detail view:**
-
-```
-╔══════════════════════════════════════════════════════════════════════╗
-║  APPLICATION DETAIL                                                  ║
-║  #APP-2026-00053                              Status: ● PENDING      ║
-╠══════════════════════════════════════════════════════════════════════╣
-║  PERSONAL INFORMATION                                                ║
-║  Full Name    :  REYES, Pedro Manuel                                 ║
-║  Date of Birth:  April 8, 2014  (Age: 11 yrs)                       ║
-║  LRN          :  112233445566                                        ║
-║                                                                      ║
-║  FAMILY & CONTACT                                                    ║
-║  Home Address :  Brgy. Balabag, [City/Municipality], [Province]         ║
-║  Guardian     :  Luz Reyes (Mother)   · 0918-555-1234               ║
-║  Email        :  reyes.luz@gmail.com                                 ║
-║                                                                      ║
-║  ENROLLMENT PREFERENCE                                               ║
-║  Grade Level  :  Grade 7                                             ║
-║  Application  :  ⚡ SPECIAL CURRICULAR PROGRAM                      ║
-║  SCP Type     :  Science, Technology & Engineering (STE)             ║
-║                                                                      ║
-║  SCP ASSESSMENT STATUS                                               ║
-║  Exam Date    :  Not yet scheduled                                   ║
-║  Exam Score   :  —                                                   ║
-║  Result       :  —                                                   ║
-╠══════════════════════════════════════════════════════════════════════╣
-║  ⚠  SCP applicant: Document verification required before scheduling ║
-║     the entrance exam. Do NOT use Approve & Assign Section yet.     ║
-║                                                                      ║
-║  [ ✓ Verify & Schedule Exam ]          [ ✗ Reject Application ]     ║
-╚══════════════════════════════════════════════════════════════════════╝
-```
-
-**Registrar checks:**
-- ✓ PSA Birth Certificate (verified in person — PSA# noted)
-- ✓ Grade 6 SF9 (verified — signed by principal)
-- ✓ LRN format: 12 digits ✓
-- ✓ Age appropriate for Grade 7 ✓
-
-Documents are complete. Registrar now schedules the exam.
-
----
-
-## SCENE B.4 — Scheduling the SCP Entrance Exam
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ After document verification during Early Registration  │
-│ WHERE  │ /applications → SCP applicant detail → "Verify &       │
-│        │ Schedule Exam"                                          │
-│ WHY    │ The STE exam date is set by the SDO (Division Office). │
-│        │ The school announces the date to applicants after Early      │
-│        │ Registration closes. Registrar logs this in the system.│
-│ POLICY │ Division Memorandum No. 157, s. 2025 — STE exam        │
-│        │ conducted on a division-designated Saturday             │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Registrar clicks "Verify & Schedule Exam". Dialog opens:**
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  Schedule Assessment — Reyes, Pedro (STE)                        │
-│  ────────────────────────────────────────────────────────────── │
-│                                                                  │
-│  Assessment Type                                                 │
-│  [ Written Entrance Exam ▾ ]   (auto-filled for STE)            │
-│                                                                  │
-│  Exam / Assessment Date *                                        │
-│  [ February 22, 2027              📅 ]                           │
-│                                                                  │
-│  Exam Venue (optional)                                           │
-│  [ [School Building] — Room 201                           ]     │
-│                                                                  │
-│  ☑  Notify applicant by email with exam details                  │
-│                                                                  │
-│       [ Cancel ]           [ Confirm Schedule ]                  │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-**Registrar fills in the SDO-designated exam date and clicks Confirm.**
-
-**System:**
-- `PATCH /api/applications/53/schedule-exam`
-  `{ examDate: "2027-02-22", assessmentType: "WRITTEN_EXAM", venue: "[School Building]..." }`
-- `Applicant.status` → `EXAM_SCHEDULED`
-- `Applicant.examDate` → `2027-02-22`
-- `AuditLog`: `EXAM_SCHEDULED — "Registrar Cruz scheduled WRITTEN_EXAM for Pedro Reyes on Feb 22, 2027"`
-- Email dispatched to `reyes.luz@gmail.com`:
-  ```
-  Subject: Your STE Entrance Exam — [School Name]
-  Body:
-    Dear Ms. Reyes,
-    Your child Pedro Manuel Reyes is scheduled to take the STE Entrance Exam.
-
-    Date    :  February 22, 2027 (Saturday)
-    Venue   :  [School Building] — Room 201
-    Bring   :  Two valid IDs (school ID or PSA BC), pencils, ballpen
-
-    Please ensure your child arrives 30 minutes before the exam.
-    Tracking Number: APP-2027-00053
-  ```
-- Sileo success toast: *"Exam Scheduled — Pedro Reyes notified for February 22, 2027."*
-
-**Updated application row:**
-```
-  053 │ Reyes, Pedro M. │ 112233445566 │ Grade 7 │ STE │ ⏳ EXAM_SCHEDULED │ [View]
-```
-
----
-
-## SCENE B.5 — Recording the Exam Result (STE Written Exam)
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ After the exam date has passed (e.g., February 23)     │
-│ WHERE  │ /applications → STE applicant with EXAM_SCHEDULED      │
-│ WHY    │ The SDO releases the STE exam results. The registrar   │
-│        │ records each applicant's result in the system.          │
-│ POLICY │ Division Memorandum No. 157, s. 2025 — results         │
-│        │ released by SDO after exam day                          │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Registrar opens Pedro Reyes's record. Status is EXAM_SCHEDULED. Registrar clicks "Record Result":**
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  Record Assessment Result — Reyes, Pedro (STE)                   │
-│  ────────────────────────────────────────────────────────────── │
-│                                                                  │
-│  Assessment Type    :  Written Entrance Exam (STE)               │
-│  Exam Date          :  February 22, 2027                         │
-│                                                                  │
-│  Did the applicant appear for the exam?                          │
-│  ●  Yes — appeared     ○  No — absent                            │
-│                                                                  │
-│  Exam Score (if applicable)   [ 87.5                        ]    │
-│                                                                  │
-│  Division Cut-off Score       [ 75.0  ]  (from SDO memo)         │
-│                                                                  │
-│  Result                                                          │
-│  ●  PASSED  (score meets or exceeds cut-off)                     │
-│  ○  FAILED  (score below cut-off)                                │
-│                                                                  │
-│  Notes (optional)                                                │
-│  [ Top 15% of division examinees — recommended for STE-A   ]    │
-│                                                                  │
-│       [ Cancel ]             [ Save Result ]                     │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-**Registrar enters score 87.5, marks as PASSED, adds optional notes, clicks Save Result.**
-
-**System:**
-- `PATCH /api/applications/53/record-result`
-  `{ examScore: 87.5, examResult: "PASSED", examNotes: "Top 15%..." }`
-- `Applicant.status` → `EXAM_TAKEN`
-- `Applicant.examScore` → `87.5`
-- `Applicant.examResult` → `"PASSED"`
-- `AuditLog`: `EXAM_RESULT_RECORDED — "Registrar Cruz recorded STE result for Pedro Reyes: PASSED (87.5)"`
-- Sileo success toast: *"Result Recorded — Pedro Reyes: PASSED (87.5)."*
-
----
-
-## SCENE B.6 — Marking as PASSED and Assigning Section
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ After recording the exam result as PASSED              │
-│ WHERE  │ /applications → EXAM_TAKEN applicant → "Mark as Passed"│
-│ WHY    │ PASSED status officially clears the applicant for      │
-│        │ section assignment. The registrar confirms and assigns │
-│        │ the STE section.                                        │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Updated application detail after recording result:**
-
-```
-║  SCP ASSESSMENT STATUS                                           ║
-║  Exam Date    :  February 22, 2027                               ║
-║  Exam Score   :  87.5 / 100                                      ║
-║  Result       :  PASSED                                          ║
-║  Notes        :  Top 15% of division examinees                   ║
-╠══════════════════════════════════════════════════════════════════╣
-║  [ ✅ Mark as Passed & Assign Section ]   [ ❌ Mark as Failed ]  ║
-```
-
-**Registrar clicks "Mark as Passed & Assign Section". Section dialog opens (filtered to STE section only):**
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  Assign Section — Reyes, Pedro (Grade 7 STE)                     │
-│  ────────────────────────────────────────────────────────────── │
-│                                                                  │
-│  Grade 7 STE sections:                                           │
-│                                                                  │
-│  ●  Grade 7 – STE-A   Ms. Bautista   28/45  ● 17 slots          │
-│  ○  Grade 7 – STE-B   Mr. Tan        30/45  ● 15 slots          │
-│                                                                  │
-│       [ Cancel ]         [ Confirm Enrollment ]                  │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-**Registrar selects STE-A. Confirms.**
-
-**System:**
-- `PATCH /api/applications/53/pass` + `{ sectionId: [STE-A ID] }`
-- `Applicant.status` → `PASSED` then `APPROVED`
-- Enrollment record created: Pedro → Grade 7 STE-A
-- `AuditLog`: `APPLICATION_PASSED — "Registrar Cruz: Pedro Reyes PASSED STE exam, assigned to Grade 7 STE-A"`
-- Email to parent:
-  ```
-  Subject: Congratulations! Pedro Passed the STE Entrance Exam — [School Name]
-  Body:
-    Pedro Manuel Reyes has passed the STE Entrance Exam and is enrolled.
-    Grade Level : Grade 7
-    Program     : Science, Technology & Engineering (STE)
-    Section     : Grade 7 – STE-A
-    Report on the first day of classes, June 16, 2027.
-  ```
-- Sileo success toast: *"Passed & Enrolled — Pedro Reyes assigned to Grade 7 STE-A."*
-
----
-
-## SCENE B.7 — Marking as FAILED (and Offering Regular Section)
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ After recording an exam result below the cut-off       │
-│ WHERE  │ /applications → EXAM_TAKEN applicant → "Mark as Failed"│
-│ WHY    │ Applicant did not qualify for STE. Per DepEd policy,   │
-│        │ the registrar should offer the applicant a regular     │
-│        │ section rather than leaving them with no placement.    │
-│ POLICY │ DO 017, s. 2025 — no learner may be turned away from   │
-│        │ basic education due to performance on an optional test  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Registrar clicks "Mark as Failed". A two-option dialog opens:**
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  Record Failure — Lim, Rosa (STE)                                │
-│  ────────────────────────────────────────────────────────────── │
-│                                                                  │
-│  Exam Score    :  62.0 / 100                                     │
-│  Cut-off       :  75.0                                           │
-│  Result        :  Did not meet cut-off                           │
-│                                                                  │
-│  What would you like to do?                                      │
-│                                                                  │
-│  ●  Offer a Regular Section                                      │
-│     (Switch applicant to open admission; assign to a             │
-│      regular Grade 7 section. Parent/student must be             │
-│      informed of the change.)                                    │
-│                                                                  │
-│  ○  Reject Application                                           │
-│     (If parent declines regular section placement or             │
-│      applicant is enrolling elsewhere.)                          │
-│                                                                  │
-│  Rejection / Offer Reason (required)                             │
-│  [ Did not meet STE cut-off score. Offering regular section. ]   │
-│                                                                  │
-│       [ Cancel ]               [ Confirm ]                       │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-**If "Offer a Regular Section" is selected:**
-- `Applicant.status` → `FAILED` then updated to `PENDING` (open admission path)
-- `Applicant.applicantType` → `REGULAR`
-- `Applicant.examResult` → `"FAILED"` preserved for records
-- Registrar proceeds to the standard open-admission approval flow
-- Email to parent:
-  ```
-  Subject: STE Assessment Result — [School Name]
-  Body:
-    We regret to inform you that Rosa did not qualify for the STE program
-    (Score: 62.0; Required: 75.0).
-
-    However, we are pleased to offer Rosa a place in a regular Grade 7 section.
-    Please visit the registrar's office or contact us to confirm this placement.
-    Tracking Number: APP-2027-00050
-  ```
-
-**If "Reject Application" is selected:**
-- `Applicant.status` → `REJECTED`
-- Standard rejection email sent
-- Parent may re-enroll at another school
-
----
-
-## SCENE B.8 — Grade 11 STEM Placement Exam + Interview Workflow
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ March–April (between Early Registration close and       │
-│        │ Regular Enrollment opening in June)                     │
-│ WHERE  │ /applications → STEM_GRADE11 applicant                 │
-│ WHY    │ The school conducts a placement exam AND an interview for    │
-│        │ Grade 11 STEM aspirants. Both are required before      │
-│        │ section assignment.                                     │
-│ POLICY │ DepEd minimum: Science + Math Grade 10 final grade ≥85 │
-│        │ School-specific addition: placement exam + interview (confirmed    │
-│        │ via the school's Facebook announcements SY 2024–2025)           │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Application detail for a Grade 11 STEM applicant:**
-
-```
-║  ENROLLMENT PREFERENCE                                           ║
-║  Grade Level  :  Grade 11                                        ║
-║  Application  :  ⚡ STEM ASPIRANT (Placement Exam + Interview)  ║
-║  Track        :  Academic                                        ║
-║  Cluster      :  STEM                                            ║
-║                                                                  ║
-║  G10 GRADE ELIGIBILITY CHECK                                     ║
-║  Science Grade (G10)  :  88.0  ✅ (≥ 85)                        ║
-║  Math Grade (G10)     :  90.0  ✅ (≥ 85)                        ║
-║                                                                  ║
-║  SCP ASSESSMENT STATUS                                           ║
-║  Placement Exam Date  :  Not yet scheduled                       ║
-║  Interview Date       :  Not yet scheduled                       ║
-║  Exam Score           :  —                                       ║
-║  Interview Result     :  —                                       ║
-```
-
-**Workflow steps (same pattern as STE, with interview added):**
-
-```
-STEP 1 — Schedule Placement Exam
-  Registrar: PATCH /schedule-exam → examDate set → status: EXAM_SCHEDULED
-  Email: "Your STEM Placement Exam is scheduled for [date]"
-
-STEP 2 — Record Exam Result
-  Registrar: PATCH /record-result → examScore + examResult → status: EXAM_TAKEN
-
-STEP 3 — Schedule Interview (if exam passed)
-  Registrar: PATCH /schedule-interview → interviewDate set
-  Email: "You have been invited for a STEM Interview on [date]"
-
-STEP 4 — Record Interview Result
-  Registrar: PATCH /record-interview-result → interviewResult: "CLEARED" / "NOT_CLEARED"
-
-STEP 5 — Mark as PASSED (both exam + interview cleared) → Assign Section
-  OR
-  Mark as FAILED → Offer alternative track (ABM, HUMSS, GAS, TechPro)
-```
-
-**If applicant fails the exam but Grade 10 grades are sufficient for a non-STEM track:**
-- Registrar offers ABM, HUMSS, GAS, or TechPro cluster placement
-- `applicantType` updated to appropriate track
-- No re-examination required for non-STEM tracks
-
----
-
-## SCENE B.9 — SPA (Arts) Application — Exam + Audition + Interview
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ March–April (SPA audition period)                       │
-│ WHERE  │ /applications → SPA applicant                          │
-│ WHY    │ SPA has the most complex admission process: written     │
-│        │ qualifying exam followed by an audition in a specific  │
-│        │ art field, then an interview — all typically on the     │
-│        │ same day                                                │
-│ POLICY │ DepEd Memorandum No. 149, s. 2011 — SPA admission      │
-│        │ procedure                                               │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Application detail for SPA applicant:**
-
-```
-║  Application  :  ⚡ SPECIAL PROGRAM IN THE ARTS (SPA)           ║
-║  Art Field    :  Dance Arts                                      ║
-║                                                                  ║
-║  SCP ASSESSMENT STATUS                                           ║
-║  Qualifying Exam    :  Not yet scheduled                         ║
-║  Audition (Dance)   :  Not yet scheduled                         ║
-║  Interview          :  Not yet scheduled                         ║
-```
-
-**The registrar schedules all three on the same date (SPA audition day):**
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  Schedule SPA Assessment — Garcia, Ana (Dance Arts)             │
-│  ────────────────────────────────────────────────────────────── │
-│                                                                  │
-│  Assessment Type    :  Qualifying Exam + Audition + Interview    │
-│  Assessment Date    :  March 8, 2027                             │
-│  Art Field          :  Dance Arts                                │
-│  Venue              :  [School Venue]            │
-│                                                                  │
-│       [ Confirm Schedule ]                                       │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-**Recording SPA results — registrar records three separate scores/results:**
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  Record SPA Results — Garcia, Ana (Dance Arts)                   │
-│                                                                  │
-│  Qualifying Exam Score    [ 78.0    ]  (out of 100)              │
-│  Audition Result          ○ CLEARED   ● NOT_CLEARED              │
-│  Interview Result         ●  CLEARED  ○ NOT_CLEARED              │
-│                                                                  │
-│  Overall Result:   ○  PASSED   ●  FAILED                         │
-│  Notes: [ Audition: needs improvement in technique. ]            │
-│                                                                  │
-│       [ Save Results ]                                           │
-└──────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## SCENE B.10 — Dashboard Impact: SCP Monitoring View
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ WHEN   │ Any time during the admission and early registration   │
-│        │ period (January–May)                                    │
-│ WHERE  │ /dashboard                                              │
-│ WHY    │ The registrar needs a quick overview of how many SCP  │
-│        │ applicants are at each stage of the exam process       │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Dashboard — SCP tracking panel (new section below the main stat cards):**
-
-```
-SCP ADMISSION PIPELINE                            SY 2026–2027
-
-  STE Program
-  ├─ PENDING (docs review)    :  8
-  ├─ EXAM_SCHEDULED           :  24
-  ├─ EXAM_TAKEN               :  3
-  ├─ PASSED                   :  19
-  └─ FAILED (offered regular) :  2
-
-  SPA (Arts)
-  ├─ PENDING                  :  4
-  ├─ EXAM_SCHEDULED           :  10
-  ├─ PASSED                   :  7
-  └─ FAILED                   :  3
-
-  Grade 11 STEM
-  ├─ PENDING                  :  12
-  ├─ EXAM_SCHEDULED           :  18
-  ├─ EXAM_TAKEN               :  5
-  ├─ PASSED                   :  14
-  └─ FAILED (offered alt)     :  4
-```
-
----
-
-## APPENDIX F — SCP Admission Quick Reference for Registrar
-
-| SCP | Assessment Day Activity | Registrar Records | Pass/Fail Basis |
-|---|---|---|---|
-| **STE** | Written exam (SDO-administered, one Saturday) | Exam score | Score ≥ division cut-off |
-| **SPA** | Qualifying exam + audition + interview (same day) | Exam score + audition result + interview result | All three must be cleared |
-| **SPS** | Physical skills tryout (coaches assess) | Tryout result + sports background | Coach recommendation + physical fitness |
-| **SPJ** | SPJQE written exam + interview | SPJQE score + interview result | Combined score; top 35 admitted |
-| **SPFL** | NAT score review (no separate exam) | NAT English score from elementary | Sufficient English proficiency |
-| **SPTVE** | Aptitude test / practical demo (school-determined) | Aptitude score / demo result | School-set cut-off |
-| **STEM G11** | Placement exam + interview (separate dates) | Exam score + interview result | Exam pass + interview cleared + G10 grades ≥85 |
-
----
-
-*Addendum to Registrar Storyboard Workflow*
-*Based on: DepEd Memorandum No. 149, s. 2011 · Division Memorandum No. 157, s. 2025 · school-specific SY 2024–2025 admission announcements*
-*PRD Reference: v2.4.0*
+*Document v3.0.0*
+*System: School Admission, Enrollment & Information Management System*
+*Modules: Admission (Online + F2F) · Enrollment Management · SIMS · Teacher Management · Grade Level & Sectioning Management*
+*Stack: PERN (PostgreSQL 18 · Express.js 5.1 · React 19.x · Node.js 22 LTS)*
+*Auth: JWT + Layer 1 (navigation state guard) + Layer 2 (pre-flight login token)*
+*Policy: DepEd Order No. 017, s. 2025 · DM 012, s. 2026 · DM 149, s. 2011 · RA 7797 as amended · RA 10173*
+*Design: School-agnostic — all school name, grade levels, strands, SCP programs, and section names are runtime-configurable*

@@ -1,61 +1,90 @@
-# Online Admission Form — UX/UI Technological Requirements
-## Admission & Enrollment Information Management System
+# Admission Form — UX/UI Specification
+## School Admission, Enrollment & Information Management System
 
-**Document Type:** UX/UI Engineering Specification
-**Author Role:** UX/UI Engineer
-**Route:** `/apply` — public, unauthenticated
-**Component:** `client/src/pages/admission/Apply.tsx`
+**Document Version:** 3.0.0
+**Module:** Admission (Online + Face-to-Face)
+**Routes:**
+- `/apply` — public, unauthenticated (Online Admission)
+- `/f2f-admission` — authenticated, role: REGISTRAR or SYSTEM_ADMIN (F2F Walk-in Admission)
+
+**Components:**
+- `client/src/pages/admission/Apply.tsx` (Online)
+- `client/src/pages/admission/F2FAdmission.tsx` (F2F)
+
 **Design System:** Instrument Sans · shadcn/ui · Tailwind CSS v4 · Sileo Toasts · Dynamic Accent Color
 **Policy Basis:** RA 10173 · DO 017, s. 2025 · DM 012, s. 2026
-**PRD Reference:** v2.4.0
+**PRD Reference:** v3.0.0
 
 ---
 
 ## Table of Contents
 
-1. [Design Principles for This Form](#1-design-principles-for-this-form)
-2. [Page Architecture & Layout](#2-page-architecture--layout)
-3. [Wizard Step Structure](#3-wizard-step-structure)
-4. [Phase 0 — Privacy Notice Gate](#4-phase-0--privacy-notice-gate)
-5. [Step 1 — Personal Information](#5-step-1--personal-information)
-6. [Step 2 — Family & Contact](#6-step-2--family--contact)
-7. [Step 3 — Background & Classification](#7-step-3--background--classification)
-8. [Step 4 — Previous School](#8-step-4--previous-school)
-9. [Step 5 — Enrollment Preferences](#9-step-5--enrollment-preferences)
-10. [Step 6 — Review & Submit](#10-step-6--review--submit)
-11. [Success Screen](#11-success-screen)
-12. [Closed State (`/closed`)](#12-closed-state-closed)
-13. [Component Specifications](#13-component-specifications)
-14. [Validation Behavior & Error States](#14-validation-behavior--error-states)
-15. [Responsive Behavior](#15-responsive-behavior)
-16. [Accessibility Requirements](#16-accessibility-requirements)
-17. [Performance Requirements](#17-performance-requirements)
-18. [State Management](#18-state-management)
-19. [Full File & Component Structure](#19-full-file--component-structure)
-20. [Acceptance Criteria](#20-acceptance-criteria)
+1. [Design Principles](#1-design-principles)
+2. [Two Admission Channels — Overview](#2-two-admission-channels--overview)
+3. [Online Admission — Page Architecture](#3-online-admission--page-architecture)
+4. [Wizard Step Structure](#4-wizard-step-structure)
+5. [Phase 0 — Privacy Notice Gate](#5-phase-0--privacy-notice-gate)
+6. [Step 1 — Personal Information](#6-step-1--personal-information)
+7. [Step 2 — Family & Contact](#7-step-2--family--contact)
+8. [Step 3 — Background & Classification](#8-step-3--background--classification)
+9. [Step 4 — Previous School](#9-step-4--previous-school)
+10. [Step 5 — Enrollment Preferences](#10-step-5--enrollment-preferences)
+11. [Step 6 — Review & Submit](#11-step-6--review--submit)
+12. [Success Screen](#12-success-screen)
+13. [Closed State (`/closed`)](#13-closed-state-closed)
+14. [F2F Walk-in Admission (`/f2f-admission`)](#14-f2f-walk-in-admission-f2f-admission)
+15. [Component Specifications](#15-component-specifications)
+16. [Validation Behavior & Error States](#16-validation-behavior--error-states)
+17. [Responsive Behavior](#17-responsive-behavior)
+18. [Accessibility Requirements](#18-accessibility-requirements)
+19. [Performance Requirements](#19-performance-requirements)
+20. [State Management](#20-state-management)
+21. [Full File & Component Structure](#21-full-file--component-structure)
+22. [Acceptance Criteria](#22-acceptance-criteria)
 
 ---
 
-## 1. Design Principles for This Form
+## 1. Design Principles
 
-The admission form is the **first touchpoint** a student or parent has with the school's digital system. It must be trustworthy, clear, and forgiving. The following principles govern every decision in this spec.
+The admission form is the **first touchpoint** a student or parent has with the school's digital system. It must be trustworthy, clear, and forgiving. These principles govern every decision in this specification.
 
 | Principle | What It Means in This Form |
 |---|---|
-| **One thing at a time** | Each wizard step covers one logical topic. Never put unrelated fields on the same step. |
-| **Progressive disclosure** | Conditional fields appear only when triggered — never show fields that don't apply to the current user's situation. |
+| **One thing at a time** | Each wizard step covers one logical topic. Unrelated fields never share a step. |
+| **Progressive disclosure** | Conditional fields appear only when triggered by a prior answer. |
 | **Forgive first, validate second** | Inline validation fires on `onBlur`, not on every keystroke. The user completes their thought before being corrected. |
-| **Never lose data** | All form state persists across step navigation. Going back to Step 1 does not clear Step 3. `sessionStorage` backs the form state. |
-| **Mobile is primary** | Every layout decision starts at 375px and scales up, not the reverse. |
-| **Speak the user's language** | Labels use plain Filipino/English, not bureaucratic field names. "Pangalan ng Ina" or "Mother's Full Name" — never "Parent_Guardian_Type: MOTHER". |
-| **The accent color is the school** | Every interactive element — buttons, focus rings, step indicators, progress bars — uses `var(--accent)`. When the school uploads their logo, the form instantly becomes on-brand. |
-| **Trust but verify** | The form never blocks a user from proceeding due to optional fields. Required fields are clearly marked with `*`. |
+| **Never lose data** | All form state persists across step navigation. Going back to Step 1 does not clear Step 5. `sessionStorage` backs the form. |
+| **Mobile is primary** | Every layout decision starts at 375px and scales up — never the reverse. |
+| **Speak the user's language** | Labels use plain Filipino/English. "Mother's Full Name" — never `Parent_Guardian_Type: MOTHER`. |
+| **The accent color is the school** | Every interactive element uses `var(--accent)`. When the school uploads their logo, both the online and F2F forms instantly become on-brand. School name in the header always comes from `SchoolSettings.schoolName`. |
+| **Trust but verify** | The form never blocks a user due to optional fields. Required fields are marked with `*`. |
+| **Two channels, one data model** | Online and F2F submissions produce identical `Applicant` records. The only difference is `admissionChannel` (ONLINE vs F2F) and `encodedById` (null vs registrar's user ID). |
 
 ---
 
-## 2. Page Architecture & Layout
+## 2. Two Admission Channels — Overview
 
-### 2.1 Overall Page Structure
+| Attribute | Online (`/apply`) | F2F Walk-in (`/f2f-admission`) |
+|---|---|---|
+| **Who fills the form** | Student / parent | Registrar (on behalf of walk-in applicant) |
+| **Auth required** | No — public route | Yes — JWT, role: REGISTRAR or SYSTEM_ADMIN |
+| **Enrollment gate check** | Yes — redirects to `/closed` when OFF | No — always accessible regardless of gate |
+| **`admissionChannel` stored** | `ONLINE` | `F2F` |
+| **`encodedById` stored** | `null` | Registrar's `User.id` |
+| **Privacy consent** | Applicant checks box on screen | Registrar confirms physical consent checkbox ("applicant signed in person") |
+| **Email delivery** | Always attempted to `emailAddress` | Attempted if `emailAddress` provided |
+| **Tracking number display** | Prominent on-screen + emailed | On-screen (registrar prints or notes it) + emailed if address provided |
+| **Fast-track option** | Not available | Registrar may set initial `status = APPROVED` at submission if documents are complete |
+| **SCP conditional fields** | Show based on `applicantType` selection | Same — identical conditional logic |
+| **Strand selection** | Shown for SHS grade levels only | Same — driven by configured strands for the selected grade level |
+
+Both channels use identical form field sets, identical Zod validation schemas, and identical field ordering. The only UI-level differences are documented in §14.
+
+---
+
+## 3. Online Admission — Page Architecture
+
+### 3.1 Overall Page Structure
 
 The `/apply` page uses `GuestLayout` — no sidebar, no dashboard header. The entire viewport is the form.
 
@@ -65,1157 +94,773 @@ VIEWPORT (any screen size)
 ├── GuestLayout wrapper
 │   └── <Toaster position="top-center" />   ← Sileo, top-center for guest pages
 │
-└── Apply.tsx (the form page)
+└── Apply.tsx
     │
-    ├── PAGE HEADER (sticky, not scrolling)
+    ├── PAGE HEADER (sticky, full-width, light border-b)
     │   ├── School logo thumbnail (40×40px, rounded-full)
-    │   ├── School name (font-semibold text-base)
-    │   └── Academic year badge ("SY 2026–2027")
+    │   │     — from settingsStore.logoUrl; shows <School /> icon if null
+    │   ├── School name (font-semibold text-sm md:text-base)
+    │   │     — from settingsStore.schoolName; NEVER a hardcoded string
+    │   └── Academic year badge ("SY 2026–2027" from settingsStore.activeYear.yearLabel)
     │
-    ├── FORM CARD (scrollable, centered)
-    │   ├── Phase 0: Privacy Notice Gate  ← pre-step, blocks all fields
-    │   ├── Step Progress Bar             ← Steps 1–6
+    ├── FORM CARD (scrollable, centered, max-w-3xl)
+    │   ├── Phase 0: Privacy Notice Gate  ← pre-step; all fields locked until consent
+    │   ├── Step Progress Bar             ← Steps 1–6 (numbered dots + labels)
     │   ├── Step Content                  ← active step's fields
-    │   └── Navigation Footer             ← Back / Next / Submit
+    │   └── Navigation Footer             ← Back · Next · Submit
     │
-    └── PAGE FOOTER (minimal)
-        └── "[School Name] · Powered by EnrollPro"
+    └── PAGE FOOTER (minimal, full-width, border-t)
+        └── "[School Name] · Online Admission Portal"
+              — {settingsStore.schoolName} — no hardcoded school name
 ```
 
-### 2.2 Form Card Sizing
+### 3.2 Form Card Sizing
 
 | Breakpoint | Card Width | Padding | Field Layout |
 |---|---|---|---|
 | Mobile (≤ 767px) | `w-full` | `px-4 py-6` | Single column, full-width fields |
-| Tablet (768px–1023px) | `max-w-2xl mx-auto` | `px-8 py-8` | Single column |
-| Desktop (≥ 1024px) | `max-w-3xl mx-auto` | `px-10 py-10` | Two-column grid for side-by-side fields |
-| Wide (≥ 1440px) | `max-w-3xl mx-auto` | Same as desktop | Same as desktop |
+| Tablet (768–1023px) | `max-w-2xl mx-auto` | `px-8 py-8` | Single column |
+| Desktop (≥ 1024px) | `max-w-3xl mx-auto` | `px-10 py-10` | Two-column grid for paired fields |
+| Wide (≥ 1440px) | `max-w-3xl mx-auto` | Same | Same |
 
-### 2.3 Page Background
+### 3.3 Page Background
 
 ```css
-/* GuestLayout applies this to the full viewport */
-bg-muted/40   /* Off-white tinted background behind the form card */
-```
+/* GuestLayout: off-white tinted backdrop behind the form card */
+bg-muted/40
 
-The form card itself: `bg-white rounded-2xl shadow-sm border border-border`
+/* Form card: */
+bg-white rounded-2xl shadow-sm border border-border
+```
 
 ---
 
-## 3. Wizard Step Structure
-
-The admission form is organized into **6 steps** (expanded from the original 3-step PRD spec to accommodate all BEEF fields fully and cleanly). A **Privacy Notice Gate** precedes all steps.
+## 4. Wizard Step Structure
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  PRIVACY NOTICE GATE (Phase 0)                                  │
-│  Must consent before any field becomes interactive              │
+│  PHASE 0 — PRIVACY NOTICE GATE                                  │
+│  Must scroll + consent before any field becomes interactive     │
 └─────────────────┬───────────────────────────────────────────────┘
-                  │ (after consent is given)
+                  │ (after consent given)
                   ▼
   ●─────────○─────────○─────────○─────────○─────────○
   1         2         3         4         5         6
-Personal  Family &  Background  Previous  Enrollment Review &
- Info     Contact    & Class.    School   Preferences Submit
+Personal  Family &  Background  Previous  Enrollment  Review &
+ Info     Contact    & Class.    School   Preferences   Submit
 ```
 
-### Step Overview Table
+**Step progress bar:**
+- Completed steps: filled circle with checkmark, accent color
+- Active step: filled circle, accent color, step number label bold
+- Upcoming steps: empty circle, muted color
 
-| Step | Title | Tagline Shown to User | BEEF Sections Covered | Est. Time |
-|---|---|---|---|---|
-| **Phase 0** | Data Privacy Notice | — | §0 (RA 10173) | 1 min |
-| **Step 1** | Personal Information | *"Tell us about the learner"* | §1 (Reference#s) + §3 (Personal info) | 2 min |
-| **Step 2** | Family & Contact | *"Who do we contact?"* | §5 (Address) + §6 (Parent/Guardian) | 2 min |
-| **Step 3** | Background & Classification | *"A few more details"* | §4 (IP, 4Ps, Disability, Balik-Aral) | 1 min |
-| **Step 4** | Previous School | *"Where did the learner study last?"* | §7 (Previous school info) | 1 min |
-| **Step 5** | Enrollment Preferences | *"What is the learner applying for?"* | §2 + §8 + §9 (Grade, SCP, Track, Modality) | 2 min |
-| **Step 6** | Review & Submit | *"Check everything before submitting"* | Summary of all steps | 1 min |
-
-**Total estimated completion time: 8–10 minutes**
-
-### Step Progress Bar Component
-
-```tsx
-// client/src/pages/admission/components/StepProgressBar.tsx
-
-interface StepProgressBarProps {
-  currentStep: number; // 1–6
-  totalSteps:  number; // 6
-}
-```
-
-**Rendering:**
-
-```
-Mobile (< 768px): numbered dots with connecting line + "Step 2 of 6" text label
-Tablet+ (≥ 768px): numbered dots + step title labels
-
-  ●━━━━●━━━━○━━━━○━━━━○━━━━○
-  1    2    3    4    5    6
- Done Done  Active ───────────
-       ↑
-  "Step 3 of 6 — Background & Classification"
-```
-
-**Dot states:**
-
-| State | Visual | Tailwind |
-|---|---|---|
-| Completed | Solid filled circle with checkmark `✓` | `bg-[var(--accent)] text-white` |
-| Active (current) | Solid filled circle with step number | `bg-[var(--accent)] text-white ring-2 ring-[var(--accent)] ring-offset-2` |
-| Upcoming | Empty circle with step number | `bg-white border-2 border-border text-muted-foreground` |
-
-**Connecting line:** `h-0.5 flex-1 bg-border` — turns `bg-[var(--accent)]` for completed segments.
+**Navigation footer:**
+- Step 1: `[Next →]` only (no back on first step)
+- Steps 2–5: `[← Back]` · `[Next →]`
+- Step 6: `[← Back]` · `[Submit Application]`
+- All primary buttons use `bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]`
 
 ---
 
-## 4. Phase 0 — Privacy Notice Gate
+## 5. Phase 0 — Privacy Notice Gate
 
-> The Privacy Notice is the first thing rendered on the page. No form field is visible or interactive until consent is given.
+**What it is:** A full-screen notice rendered before Step 1 that satisfies the RA 10173 requirement for informed, specific, freely given consent before collecting personal data.
 
-### 4.1 Visual Layout
+**Layout:** Full-width, non-collapsible notice card. The applicant must scroll through it entirely before the consent checkbox becomes active.
+
+**Notice content (renders dynamically from `settingsStore`):**
+
+```
+┌────────────────────────────────────────────────────────────────────────────┐
+│  🔒  DATA PRIVACY NOTICE                                                    │
+│  Republic Act No. 10173 — Data Privacy Act of 2012                         │
+│  ─────────────────────────────────────────────────────────────────────────  │
+│  {schoolName}                                                               │
+│  {division}                                                                 │
+│  Department of Education — {region}                                         │
+│                                                                             │
+│  Why we collect your information                                            │
+│  ─────────────────────────────────────────────────────────────────────────  │
+│  The Department of Education (DepEd) and {schoolName} collect the           │
+│  personal information on this form for the following specific and           │
+│  legitimate purposes only:                                                  │
+│                                                                             │
+│  1. To process your child's admission and enrollment application.           │
+│  2. To assign the learner to an appropriate grade level and section.        │
+│  3. To issue or verify the Learner Reference Number (LRN).                  │
+│  4. To upload data to the DepEd Learner Information System (LIS).           │
+│  5. To communicate application status updates via the email provided.       │
+│                                                                             │
+│  Your rights under RA 10173                                                 │
+│  You have the right to access, correct, object to processing, and          │
+│  request erasure of your personal data at any time by contacting           │
+│  {schoolName}.                                                              │
+│                                                                             │
+│  ─────────────────────────────────────────────────────────────────────────  │
+│  ☐  I have read and understood this notice. I consent to the collection     │
+│     and processing of the personal information I am about to provide.      │
+│                                                                             │
+│                          [ Begin Application ]                              │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+- All `{schoolName}`, `{division}`, `{region}` values are **runtime substitutions from `settingsStore`** — never hardcoded
+- "Begin Application" button is **disabled** until the checkbox is checked
+- Until consent is given, all step navigation is disabled
+- Consent state is stored in `sessionStorage` so a browser refresh does not force re-consent within the same session
+
+---
+
+## 6. Step 1 — Personal Information
+
+**Fields:**
+
+| Field | Type | Required | Validation |
+|---|---|---|---|
+| Last Name | Text | ✅ | Min 2 chars; alpha + spaces + hyphens |
+| First Name | Text | ✅ | Min 2 chars |
+| Middle Name | Text | — | Optional |
+| Suffix | Select | — | Jr · Sr · II · III · IV · None |
+| Learner Reference Number (LRN) | Text | ✅ | Exactly 12 digits; not already enrolled in current AY |
+| Date of Birth | Date picker | ✅ | Must be ≥ 10 years ago; ≤ 30 years ago |
+| Sex | Radio | ✅ | Male / Female |
+| Place of Birth | Text | — | |
+| Nationality | Text | — | Default: "Filipino" |
+| Religion | Text | — | |
+| Mother Tongue | Text | — | |
+
+**LRN lookup behavior:**
+- On `onBlur` of the LRN field: calls `GET /api/applicants/check-lrn/:lrn`
+- If LRN is already enrolled in the active academic year → inline error: "This LRN is already enrolled for SY [year]."
+- If LRN exists from a prior year → auto-fills available fields (name, birthdate) with a confirmation toast: "We found a record for this LRN. Please verify the pre-filled details."
+- If LRN is new → no action (proceed normally)
+
+**Layout (desktop):** Two-column grid — Last Name / First Name · Middle Name / Suffix · (LRN full-width) · Date of Birth / Sex · Place of Birth / Nationality
+
+---
+
+## 7. Step 2 — Family & Contact
+
+**Fields:**
+
+| Field | Type | Required |
+|---|---|---|
+| Father's Full Name | Text | — |
+| Father's Occupation | Text | — |
+| Mother's Full Name | Text | — |
+| Mother's Occupation | Text | — |
+| Guardian's Full Name | Text | ✅ |
+| Guardian's Relationship | Select | — |
+| Guardian's Contact Number | Tel | ✅ |
+| Email Address | Email | ✅ |
+| Complete Address | Textarea | ✅ |
+| Barangay | Text | — |
+| Municipality / City | Text | — |
+| Province | Text | — |
+
+**Guardian relationship options:** Father · Mother · Grandmother · Grandfather · Aunt · Uncle · Sibling · Legal Guardian · Other
+
+**Email validation:** Standard email format; used for tracking number delivery and status notifications.
+
+---
+
+## 8. Step 3 — Background & Classification
+
+This step collects sensitive classifications required by DepEd for LIS data and resource planning.
+
+**Fields:**
+
+| Field | Type | Required | Conditional |
+|---|---|---|---|
+| Learner Type | Select | ✅ | Drives other fields below |
+| Is Indigenous Peoples (IP) Learner? | Checkbox | — | If checked: show IP Community field |
+| IP Community | Text | — | Only if IP = true |
+| Is 4Ps Beneficiary? | Checkbox | — | If checked: show Household ID field |
+| 4Ps Household ID | Text | — | Only if 4Ps = true |
+| Is Learner with Disability (LWD)? | Checkbox | — | If checked: show Disability Type field |
+| Disability Type | Select | — | Only if LWD = true |
+
+**Learner type values:**
+- New Enrollee (first time enrolling in this school)
+- Transferee (from another school)
+- Returning Learner (Balik-Aral)
+- Continuing (from Grade 8–10 or Grade 12 — pre-registered)
+
+**Disability type options:** Visual Impairment · Hearing Impairment · Learning Disability · Communication Disorder · Intellectual Disability · Physical / Orthopedic Disability · Multiple Disabilities · Other
+
+**Sensitivity notice:** A small `ℹ️` tooltip on IP, 4Ps, and PWD fields reads: "This information is collected by DepEd solely for educational planning and resource allocation. It will not be shared beyond DepEd-authorized purposes."
+
+---
+
+## 9. Step 4 — Previous School
+
+**Fields:**
+
+| Field | Type | Required | Shown When |
+|---|---|---|---|
+| Last School Attended | Text | ✅ | Always |
+| Last School Year | Text | — | Always |
+| Last Grade Level Completed | Text | ✅ | Always |
+| General Average (Last Grade) | Number | — | Always |
+| Grade 10 Science Grade | Number | — | Only for STEM applicants (see Step 5) |
+| Grade 10 Math Grade | Number | — | Only for STEM applicants (see Step 5) |
+
+**Grade 10 Science/Math grades** are shown retroactively when the applicant returns to Step 4 after selecting the STEM strand in Step 5. They are validated to be between 0 and 100. If below 85, an amber advisory is shown (not a hard block): "DepEd's minimum requirement for STEM is 85 in both Science and Math in Grade 10."
+
+---
+
+## 10. Step 5 — Enrollment Preferences
+
+This step is **fully dynamic** — all options are loaded from the active academic year configuration in the database. No grade level name, strand name, or SCP code is hardcoded in the frontend.
+
+### Grade Level
+
+```
+Grade Level *
+[ Dropdown loaded from GET /api/grade-levels — active AY only ]
+```
+
+Loading state: `<Skeleton className="h-10 w-full" />` while fetching.
+
+### SCP Program (Shown when grade level is selected AND school has active SCP programs)
+
+```
+Are you applying for a Special Curricular Program (SCP)?
+[ Dropdown loaded from GET /api/scp-programs?gradeLevelId={id} ]
+  — "No, Regular Admission"
+  — "STE — Science, Technology, Engineering"    (if configured)
+  — "SPA — Special Program in the Arts"         (if configured)
+  — (other SCPs the school has activated)
+```
+
+If the school has configured **zero SCP programs** for the selected grade level, this entire block is hidden. The applicant sees only the grade level and strand dropdowns. This is the correct behavior for schools that offer only regular admission.
+
+### Strand (SHS only — shown when Grade 11 or Grade 12 is selected)
+
+```
+Track / Strand *
+[ Dropdown loaded from GET /api/strands?gradeLevelId={id} ]
+  e.g. Academic — STEM · Academic — ABM · Academic — HUMSS · TechPro — ICT
+```
+
+Strands are loaded dynamically from the active academic year. Schools that offer only JHS (no SHS) and have no configured strands will simply not see this field.
+
+### SCP-Specific Conditional Fields
+
+When the applicant selects an SCP program, additional fields appear based on the program's configured `assessmentType`:
+
+| SCP Selected | Additional fields shown |
+|---|---|
+| STE | No extra fields (exam scheduled by registrar later) |
+| SPA | Art Field (Select: Music · Dance · Visual Arts · Theater · Creative Writing · Media Arts) |
+| SPS | Sport (Text field) |
+| SPJ | No extra fields |
+| SPFL | Foreign Language (Select from school-configured languages) |
+| SPTVE | No extra fields |
+| STEM (G11) | Grade 10 Science grade and Math grade (shown back in Step 4) |
+
+---
+
+## 11. Step 6 — Review & Submit
+
+A read-only summary of all fields across all steps, organized in the same section groupings.
+
+```
+REVIEW YOUR APPLICATION
+
+  ── PERSONAL INFORMATION ────────────────────────────────────────
+  Name:          Dela Cruz, Juan Ramon
+  LRN:           123456789012
+  Date of Birth: March 15, 2012 (13 years old)
+  Sex:           Male
+
+  ── FAMILY & CONTACT ────────────────────────────────────────────
+  Guardian:      Dela Cruz, Maria (Mother)
+  Contact:       +63 912 345 6789
+  Email:         jrdelacruz@gmail.com
+  Address:       123 Rizal St., Brgy. San Jose, Kabankalan City, Negros Occidental
+
+  ── PREVIOUS SCHOOL ─────────────────────────────────────────────
+  Last School:   Kabankalan City Elementary School
+  Last Grade:    Grade 6
+  Average:       92.5
+
+  ── ENROLLMENT PREFERENCE ───────────────────────────────────────
+  Grade Level:   Grade 7
+  Program:       Regular Admission
+
+  [ ← Back to Edit ]   [ Submit Application ]
+```
+
+**Edit navigation:** "Back to Edit" returns to Step 1 with all data intact.
+
+**Submit button behavior:**
+- Single-click only — disabled after first click to prevent double-submission
+- Shows a spinner: `[Submitting…]`
+- On success: replace the form card with the Success Screen (§12)
+- On error: re-enable the button; display a Sileo error toast with the server's error message
+
+---
+
+## 12. Success Screen
+
+Replaces the form card upon successful submission. The form card is NOT unmounted (the same container shows this panel).
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│   ✅   Application Submitted Successfully                        │
+│                                                                  │
+│   Thank you, Juan Ramon! Your application to                     │
+│   {schoolName} for SY {yearLabel} has been received.            │
+│                                                                  │
+│   YOUR TRACKING NUMBER                                           │
+│   ┌──────────────────────────────────────────────────────────┐   │
+│   │   APP-2026-00042                                         │   │
+│   │                                        [ Copy Number ]  │   │
+│   └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│   Save this number to track your application status.            │
+│   A confirmation email has been sent to jrdelacruz@gmail.com.   │
+│                                                                  │
+│   What happens next?                                             │
+│   The registrar will review your documents and notify you        │
+│   via email once a decision has been made.                       │
+│                                                                  │
+│   [ Track My Application ]   [ Submit Another Application ]      │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+- "Track My Application" links to `/track/{trackingNumber}`
+- "Submit Another Application" clears the session storage and reloads the wizard from Phase 0
+- `{schoolName}` and `{yearLabel}` are always from the settings store — never hardcoded
+
+---
+
+## 13. Closed State (`/closed`)
+
+Shown when `enrollmentOpen = false`. The router loader redirects `/apply` to `/closed`.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  [School Logo]  [School Name]                                   │
-│  Online Admission Application · SY 2026–2027                     │
-├──────────────────────────────────────────────────────────────────┤
+│                  [School Logo]                                   │
+│                  {schoolName}                                    │
 │                                                                  │
-│  🔒  Data Privacy Notice                                         │
-│      Republic Act No. 10173                                      │
-│  ────────────────────────────────────────────────────────────── │
+│   📋   Online Enrollment Is Currently Closed                     │
 │                                                                  │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  [Full notice text — scrollable box]                     │   │
-│  │                                                          │   │
-│  │  Why we collect your information...                      │   │
-│  │  What information we collect...                          │   │
-│  │  Your rights under RA 10173...                           │   │
-│  │  How we protect your information...                      │   │
-│  │  Data Privacy Officer contact...                         │   │
-│  │                                                          │   │
-│  │  ↓ Scroll to read the full notice                        │   │
-│  └──────────────────────────────────────────────────────────┘   │
+│   The online admission portal for SY {yearLabel} is not yet      │
+│   open. Please check back later or contact the school            │
+│   registrar directly.                                            │
 │                                                                  │
-│  ☐  I have read and I agree to the Data Privacy Notice above. * │
+│   📍  {schoolName}                                               │
 │                                                                  │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  [ Proceed to Application Form → ]    (disabled/grey)    │   │
-│  └──────────────────────────────────────────────────────────┘   │
+│   [ Track an Existing Application ]                              │
 │                                                                  │
+│   ───────────────────────────────────────────────────────────    │
+│   Staff?  [ Staff Login ]     ← navigate('/login', { state: { loginAccess: true } })
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-### 4.2 Behavior Specification
+**"Staff Login" link is the Layer 1 injector** — it calls `navigate('/login', { state: { loginAccess: true } })`, which is the only way to reach the `/login` route from the public portal. Direct URL navigation to `/login` is blocked by the router loader (see PRD §9.1).
 
-**Scroll-to-read enforcement:**
-The notice text box has `max-h-72 overflow-y-auto` on mobile and `max-h-80` on desktop. The consent checkbox is initially disabled and grayed out. It becomes enabled only after the user has **scrolled to the bottom** of the notice text. This ensures actual reading, not just clicking through.
+All `{schoolName}` and `{yearLabel}` values come from `settingsStore`.
+
+---
+
+## 14. F2F Walk-in Admission (`/f2f-admission`)
+
+### 14.1 Overview
+
+The F2F admission form is the **registrar's tool** for entering applications from students who walk in to the school office in person. It mirrors the online form exactly in field structure, validation rules, and SCP conditional logic. The registrar fills all fields on behalf of the applicant.
+
+**Auth guard:** This route is wrapped in `<ProtectedRoute allowedRoles={['REGISTRAR', 'SYSTEM_ADMIN']}>`. Unauthenticated visitors are redirected to `/login` with `loginAccess: true`.
+
+### 14.2 Page Layout
+
+The F2F form sits inside `AppLayout` (with the sidebar). Unlike the online wizard, it renders as a **single scrollable form page** (not a multi-step wizard) because the registrar is working at a desk with full context and benefits more from a complete, reviewable layout than a step-by-step flow.
+
+```
+/f2f-admission
+│
+├── AppLayout (sidebar + header)
+│   └── Page content area
+│       │
+│       ├── PAGE HEADER
+│       │   ├── Heading: "Walk-in Admission"
+│       │   ├── Breadcrumb: Dashboard → Walk-in Admission
+│       │   └── Submission mode badge: "FACE-TO-FACE (F2F)"
+│       │
+│       └── FORM (scrollable, max-w-4xl)
+│           ├── Section A: Personal Information
+│           ├── Section B: Family & Contact
+│           ├── Section C: Background & Classification
+│           ├── Section D: Previous School
+│           ├── Section E: Enrollment Preferences (dynamic — same as online)
+│           ├── Section F: Privacy Consent Confirmation
+│           └── FORM FOOTER
+│               ├── [ Save as Pending ]    ← status = PENDING (default)
+│               └── [ Save as Approved ]  ← status = APPROVED (documents verified on spot)
+```
+
+### 14.3 Differences from Online Form
+
+**No wizard steps** — all sections on one scrollable page. The registrar can see the full form at once.
+
+**Fast-track approval:** Two submit buttons at the bottom:
+- "Save as Pending" — default; `status = PENDING`; registrar still needs to verify docs
+- "Save as Approved" — available when documents are physically verified at the counter; `status = APPROVED`; registrar assigns section immediately in the next screen
+
+**Privacy consent block (replaces Phase 0 gate):**
+
+```
+┌────────────────────────────────────────────────────────────────────────────┐
+│  PHYSICAL CONSENT CONFIRMATION                                              │
+│  ─────────────────────────────────────────────────────────────────────────  │
+│  ☐  The applicant / parent / guardian has physically signed the RA 10173   │
+│     Data Privacy consent form and a copy has been retained on file.        │
+│                                                                             │
+│  (This field is required before this form can be submitted.)               │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Admission channel label:** A non-editable "Walk-in (F2F)" badge is always visible at the top of the form, clearly indicating the record will be stored with `admissionChannel: F2F`.
+
+**Encoded by:** Populated automatically from the JWT (`req.user.userId`) — the registrar never fills this field. Not shown in the UI.
+
+**Email field behavior:** If `emailAddress` is provided, a confirmation email is sent (same as online). If left blank, no email is sent and the registrar is expected to print or note the tracking number.
+
+### 14.4 Section Layout
+
+Because this is a full-page form for a desktop user, fields use a **two-column grid throughout** (`grid-cols-2 gap-4`), collapsing to single column on tablet (`sm:grid-cols-1`).
+
+Section headings use `<h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-2 mb-4">`.
+
+### 14.5 Enrollment Preferences Section (F2F)
+
+The grade level dropdown, SCP program dropdown, and strand dropdown are **loaded from the same API endpoints as the online form**:
+- `GET /api/grade-levels` (active AY)
+- `GET /api/scp-programs?gradeLevelId={id}`
+- `GET /api/strands?gradeLevelId={id}`
+
+A school with no SCP programs sees no SCP field. A school with no strands configured sees no strand field. The behavior is identical to the online portal.
+
+### 14.6 Submission
+
+```typescript
+// POST /api/applications/f2f
+// Body: all Applicant fields + admissionChannel: 'F2F' (set by server) + encodedById (from JWT)
+
+// Server side:
+const applicant = await prisma.applicant.create({
+  data: {
+    ...validatedFields,
+    admissionChannel: 'F2F',
+    encodedById:      req.user.userId,   // registrar's user ID
+    status:           req.body.saveAsApproved ? 'APPROVED' : 'PENDING',
+    trackingNumber:   generateTrackingNumber(),
+  }
+});
+```
+
+On success: Sileo success toast with the tracking number. The form is cleared and the registrar can optionally be redirected to the new application's detail page via a toast action button.
+
+---
+
+## 15. Component Specifications
+
+### `<StepIndicator>` (Online only)
 
 ```tsx
-// Detect when user has scrolled to the bottom of the notice
-const handleNoticeScroll = (e: React.UIEvent<HTMLDivElement>) => {
-  const el = e.currentTarget;
-  const atBottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 10;
-  if (atBottom) setHasScrolledNotice(true);
+interface StepIndicatorProps {
+  steps:       string[];   // Step labels
+  currentStep: number;     // 1-indexed
+}
+```
+
+Renders a horizontal row of numbered circles connected by lines. Completed steps show a `<CheckIcon />` in the filled accent circle. The active step shows the number in a filled accent circle with a ring. Future steps are empty circles with muted text.
+
+### `<FormField>` (shared)
+
+Wraps `<label>` + input/select/textarea + optional help text + error message. Consistent spacing and focus ring (`ring-[hsl(var(--accent-ring))]`).
+
+### `<PrivacyNoticeGate>` (Online — Phase 0)
+
+Renders the RA 10173 notice with `schoolName`, `division`, and `region` from props (sourced from `settingsStore`). Emits `onConsentGiven()` callback when the user checks the box and clicks "Begin Application."
+
+### `<F2FConsentBlock>` (F2F only)
+
+Single checkbox confirming physical signature. Blocks form submission until checked.
+
+### `<TrackingNumberDisplay>` (Success Screen)
+
+Renders the tracking number in a monospace, high-contrast box with a `[Copy]` button that calls `navigator.clipboard.writeText()`.
+
+---
+
+## 16. Validation Behavior & Error States
+
+### Field-Level Validation
+
+- Fires on `onBlur` (not on every keystroke)
+- Error message appears below the field in `text-xs text-destructive`
+- Field border changes to `border-destructive` (red) when invalid
+- Error clears immediately when the user corrects the value
+
+### Step-Level Validation (Online form)
+
+- "Next" button click triggers validation for all fields in the current step
+- If any field is invalid, scroll to the first invalid field and focus it
+- Step navigation is blocked until all required fields in the current step are valid
+
+### Form-Level Validation (F2F form)
+
+- "Save" button click triggers `handleSubmit` from React Hook Form
+- All validation runs at once; first invalid field is scrolled to and focused
+- The form is validated against a Zod schema identical to the one used on the backend
+
+### LRN Uniqueness Check
+
+```typescript
+// Fires on onBlur of the LRN field
+const checkLrn = async (lrn: string) => {
+  if (lrn.length !== 12) return;  // Only check when fully entered
+  const { data } = await api.get(`/applicants/check-lrn/${lrn}`);
+  if (data.alreadyEnrolled) {
+    setError('lrn', { message: `This LRN is already enrolled for SY ${data.yearLabel}.` });
+  } else if (data.existingApplicant) {
+    // Pre-fill available fields and show confirmation toast
+    setValue('lastName',  data.existingApplicant.lastName);
+    setValue('firstName', data.existingApplicant.firstName);
+    toast.info('We found an existing record for this LRN. Please verify the pre-filled details.');
+  }
 };
 ```
 
-**State machine:**
-
-```
-hasScrolledNotice = false → checkbox disabled (opacity-50, cursor-not-allowed)
-hasScrolledNotice = true  → checkbox enabled
-consentChecked    = false → "Proceed" button disabled
-consentChecked    = true  → "Proceed" button active (accent color)
-```
-
-**"Proceed" button:**
-```tsx
-<Button
-  disabled={!consentChecked}
-  className="w-full"
-  onClick={handleProceed}
->
-  Proceed to Application Form →
-</Button>
-```
-
-**On proceed:**
-- `consentTimestamp` recorded as `new Date().toISOString()`
-- `consentVersion` recorded as `"RA10173-v2025-DO017"`
-- Form steps become visible and Step 1 mounts
-- Privacy gate unmounts (replaced by the step wizard)
-- Sileo `info` toast: *"Privacy notice accepted. You may now fill out the form."*
-
-### 4.3 shadcn/ui Components Used
-
-- `Card`, `CardHeader`, `CardContent` — outer wrapper
-- `ScrollArea` — the scrollable notice box (ensures cross-browser consistent scrollbar)
-- `Checkbox` — consent checkbox
-- `Label` — checkbox label with `*` required asterisk
-- `Button` — Proceed button
-
----
-
-## 5. Step 1 — Personal Information
-
-**Tagline:** *"Tell us about the learner"*
-
-### 5.1 Field Layout (Desktop — 2-column grid)
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Step 1 of 6 — Personal Information                             │
-│  Tell us about the learner.                                      │
-│  ─────────────────────────────────────────────────────────────  │
-│                                                                  │
-│  ┌─────────────────────────┐  ┌─────────────────────────────┐   │
-│  │  Last Name *             │  │  First Name *               │   │
-│  │  [ Dela Cruz           ] │  │  [ Juan                   ] │   │
-│  └─────────────────────────┘  └─────────────────────────────┘   │
-│                                                                  │
-│  ┌─────────────────────────┐  ┌─────────────────────────────┐   │
-│  │  Middle Name             │  │  Suffix (Extension)         │   │
-│  │  [ Reyes               ] │  │  [ N/A ▾ ]                  │   │
-│  │  (Write N/A if none)     │  │                             │   │
-│  └─────────────────────────┘  └─────────────────────────────┘   │
-│                                                                  │
-│  ┌─────────────────────────┐  ┌─────────────────────────────┐   │
-│  │  Date of Birth *         │  │  Age                        │   │
-│  │  [ March 12, 2014  📅 ] │  │  [ 12       ] (auto-filled) │   │
-│  └─────────────────────────┘  └─────────────────────────────┘   │
-│                                                                  │
-│  Sex *                                                           │
-│  ○  Male      ○  Female                                          │
-│  (As recorded on PSA Birth Certificate)                          │
-│                                                                  │
-│  ┌─────────────────────────┐  ┌─────────────────────────────┐   │
-│  │  Place of Birth *        │  │  Religion                   │   │
-│  │  [ [City/Municipality]  ]│  │  [ Roman Catholic          ]│   │
-│  └─────────────────────────┘  └─────────────────────────────┘   │
-│                                                                  │
-│  Mother Tongue *                                                 │
-│  [ Hiligaynon                                              ▾ ]   │
-│  (The language first learned at home)                            │
-│                                                                  │
-│  ────────── Reference Numbers ──────────────────────────────     │
-│                                                                  │
-│  Learner Reference Number (LRN)                                  │
-│  [ 123456789012                                              ]    │
-│  12 digits — found on your Grade 6 Report Card (SF9).            │
-│  Leave blank if the learner has never enrolled in a DepEd school.│
-│                                                                  │
-│  PSA Birth Certificate Number                                    │
-│  [ ________________________                                  ]    │
-│  Found on the birth certificate (optional — submit by Oct 31).   │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 5.2 Field Specifications
-
-| Field | Component | Placeholder | Helper Text | Validation |
-|---|---|---|---|---|
-| Last Name | `Input` | — | — | Required; letters + hyphens only; max 50 |
-| First Name | `Input` | — | — | Required; letters + hyphens only; max 50 |
-| Middle Name | `Input` | "Write N/A if none" | — | Optional; "N/A" accepted |
-| Suffix | `Select` | "N/A" | — | Optional; options: N/A · Jr. · Sr. · II · III · IV · V |
-| Date of Birth | `DatePicker` | "MM/DD/YYYY" | — | Required; age ≥ 10 yrs for G7; ≥ 14 yrs for G11 |
-| Age | `Input` (read-only) | — | "Auto-computed" | Computed from DoB; not editable |
-| Sex | `RadioGroup` | — | "As recorded on PSA BC" | Required; Male / Female |
-| Place of Birth | `Input` | "City/Municipality, Province" | — | Required; max 100 |
-| Religion | `Input` | "e.g., Roman Catholic" | — | Optional; free text |
-| Mother Tongue | `Select` (searchable) | "Select language" | "The language first learned at home" | Required; options: Hiligaynon · Cebuano · Filipino · English · Waray · Kinaray-a · Other (specify) |
-| LRN | `Input` | "000000000000" | "12 digits, found on Grade 6 SF9" | Optional; if filled: exactly 12 numeric digits; unique check on submit |
-| PSA BC Number | `Input` | — | "Optional — submit by October 31" | Optional; alphanumeric |
-
-### 5.3 UX Details
-
-**Age auto-computation:**
-When the user finishes entering the date of birth, the `Age` field auto-fills with the computed age. The field is read-only (visually distinct: `bg-muted text-muted-foreground cursor-not-allowed`). This prevents common errors where the age does not match the birthdate.
-
-**LRN helper expansion:**
-A small `(?)` info icon sits next to the LRN label. Clicking it opens a `Popover` with an annotated sample SF9 image (or illustration) showing exactly where the LRN appears on the report card. This reduces confusion for parents who have never seen the form.
-
-**Mother Tongue — searchable select:**
-The `Select` component is enhanced with a search input. A parent can type "Hil" and see "Hiligaynon" appear immediately. For a school in Negros Occidental, Hiligaynon should be the **default pre-selected value** (overrideable).
-
----
-
-## 6. Step 2 — Family & Contact
-
-**Tagline:** *"Who do we contact?"*
-
-### 6.1 Field Layout
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Step 2 of 6 — Family & Contact                                 │
-│  Who do we contact about this application?                       │
-│  ─────────────────────────────────────────────────────────────  │
-│                                                                  │
-│  ────── Mother's Information ───────────────────────────────     │
-│  ┌─────────────────────────┐  ┌─────────────────────────────┐   │
-│  │  Mother's Last Name *    │  │  Mother's First Name *      │   │
-│  │  [                     ] │  │  [                        ] │   │
-│  └─────────────────────────┘  └─────────────────────────────┘   │
-│  ┌─────────────────────────┐  ┌─────────────────────────────┐   │
-│  │  Mother's Middle Name    │  │  Mother's Contact No. *     │   │
-│  │  [                     ] │  │  [ 09XX-XXX-XXXX          ] │   │
-│  └─────────────────────────┘  └─────────────────────────────┘   │
-│                                                                  │
-│  ────── Father's Information ───────────────────────────────     │
-│  (same 4-field layout as above)                                  │
-│                                                                  │
-│  ────── Legal Guardian (if different from parents) ─────────     │
-│  ☐  Add Guardian / Primary Contact                               │
-│  (Expands if checked — same field layout + Relationship field)   │
-│                                                                  │
-│  ────── Contact & Communication ────────────────────────────     │
-│  Email Address *                                                 │
-│  [ parent@email.com                                         ]    │
-│  Application updates, exam schedules, and enrollment            │
-│  confirmation will be sent to this email.                        │
-│                                                                  │
-│  ────── Current Address ────────────────────────────────────     │
-│  ┌────────────────┐  ┌──────────────────┐  ┌──────────────┐     │
-│  │ House No.      │  │  Street          │  │  Barangay *  │     │
-│  │ [             ]│  │  [             ] │  │  [          ]│     │
-│  └────────────────┘  └──────────────────┘  └──────────────┘     │
-│  ┌─────────────────────────┐  ┌─────────────────────────────┐   │
-│  │  Municipality/City *     │  │  Province *                 │   │
-│  │  [ [City/Municipality]  ] │  │  [ Negros Occidental      ] │   │
-│  └─────────────────────────┘  └─────────────────────────────┘   │
-│  ┌─────────────────────────┐  ┌─────────────────────────────┐   │
-│  │  Country                 │  │  ZIP Code                   │   │
-│  │  [ Philippines         ] │  │  [ 6107                   ] │   │
-│  └─────────────────────────┘  └─────────────────────────────┘   │
-│                                                                  │
-│  Permanent Address                                               │
-│  ☑  Same as Current Address                                      │
-│  (Unchecking expands the permanent address fields below)         │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 6.2 UX Details
-
-**Guardian toggle:**
-The guardian section is hidden behind a `Checkbox` labeled "The primary contact is someone other than the parents (guardian, grandparent, sibling)." When checked, an `Animated Collapsible` (`shadcn/ui Collapsible` with Tailwind transition) smoothly expands the guardian fields. This keeps the form clean for the common case while making the edge case accessible.
-
-**Same address toggle:**
-The "Same as Current Address" checkbox is **checked by default**, collapsing the permanent address fields. When unchecked, the permanent address fields expand with a smooth height transition.
-
-**Email importance indicator:**
-The email field has a subtle amber info banner below it:
-
-```
-ⓘ  Important: All application updates and exam schedules will be sent
-   to this email. Make sure it is correct and accessible.
-```
-
-This is an inline `Alert` component (not a toast) — it persists as long as the user is on this step.
-
-**Phone number formatting:**
-The contact number field auto-formats as the user types:
-- Input: `09171234567`
-- Display: `0917-123-4567`
-- Validated as: `/^09\d{9}$/`
-
----
-
-## 7. Step 3 — Background & Classification
-
-**Tagline:** *"A few more details"*
-
-This step handles the equity and classification fields from BEEF §4. These are sensitive fields — the UX must be non-stigmatizing and purely informational.
-
-### 7.1 Field Layout
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Step 3 of 6 — Background & Classification                      │
-│  These details help the school provide the right support.       │
-│  All information is kept strictly confidential.                  │
-│  ─────────────────────────────────────────────────────────────  │
-│                                                                  │
-│  Is the learner a member of an Indigenous Peoples (IP)          │
-│  cultural community? *                                           │
-│  ○  No      ○  Yes → specify: [ _____________________ ]         │
-│                                                                  │
-│  Is your family a beneficiary of the 4Ps (Pantawid              │
-│  Pamilyang Pilipino Program)? *                                  │
-│  ○  No      ○  Yes → 4Ps Household ID: [ _______________ ]      │
-│                                                                  │
-│  Is this learner returning to school after a gap of             │
-│  1 year or more? (Balik-Aral) *                                  │
-│  ○  No      ○  Yes                                               │
-│                                                                  │
-│  Does the learner have a disability? *                           │
-│  ○  No                                                           │
-│  ○  Yes — please describe (check all that apply):               │
-│     ☐  Visual Impairment                                         │
-│     ☐  Hearing Impairment                                        │
-│     ☐  Physical / Motor Disability                               │
-│     ☐  Intellectual Disability                                   │
-│     ☐  Learning Disability                                       │
-│     ☐  Speech / Language Disorder                                │
-│     ☐  Emotional / Behavioral Disorder                           │
-│     ☐  Autism Spectrum Disorder                                  │
-│     ☐  Multiple Disabilities                                     │
-│     ☐  Other: [ ___________________ ]                            │
-│                                                                  │
-│  ─────────────────────────────────────────────────────────────  │
-│  ⓘ  This information is used exclusively to connect the learner │
-│     to appropriate support services. It will not affect their   │
-│     eligibility for enrollment in any way.                       │
-│  ─────────────────────────────────────────────────────────────  │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 7.2 UX Details
-
-**Non-stigmatizing framing:**
-The step tagline explicitly says "All information is kept strictly confidential." The info banner at the bottom says "This will not affect eligibility for enrollment in any way." These are not legal disclaimers — they are reassurances that reduce abandonment.
-
-**Disability multi-select:**
-The disability options are hidden until "Yes" is selected for the disability question. They expand smoothly via `Collapsible`. The "Other" option has an inline text input that appears when its checkbox is checked.
-
-**All questions use `RadioGroup`, not `Switch`:**
-Binary Yes/No questions use `RadioGroup` with `RadioGroupItem` components. `Switch` components imply ON/OFF states — not appropriate for these sensitive classification questions.
-
-**Confidentiality badge:**
-Each sensitive section (IP, 4Ps, Disability) has a small `🔒 Confidential` badge next to its label, rendered as a `Badge variant="outline"` with a lock icon. This reinforces RA 10173 compliance and builds trust.
-
----
-
-## 8. Step 4 — Previous School
-
-**Tagline:** *"Where did the learner study last?"*
-
-### 8.1 Field Layout
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Step 4 of 6 — Previous School                                  │
-│  Where did the learner study last?                               │
-│  ─────────────────────────────────────────────────────────────  │
-│                                                                  │
-│  Name of Last School Attended *                                  │
-│  [ [Previous School Name]                     ]     │
-│                                                                  │
-│  ┌─────────────────────────┐  ┌─────────────────────────────┐   │
-│  │  DepEd School ID         │  │  School Year Last Attended * │   │
-│  │  [ 123456  ]             │  │  [ 2025–2026 ▾ ]            │   │
-│  │  (6 digits, if known)    │  │                             │   │
-│  └─────────────────────────┘  └─────────────────────────────┘   │
-│                                                                  │
-│  Last Grade Level Completed *                                    │
-│  ○  Grade 6    ○  Grade 10    ○  Other: [ _______ ]              │
-│                                                                  │
-│  Type of Last School *                                           │
-│  ○  Public (DepEd)    ○  Private    ○  International    ○  ALS   │
-│                                                                  │
-│  School Address / Division (optional)                            │
-│  [ [City], [Province] — [SDO]            ]     │
-│                                                                  │
-│  ─────────────────────────────────────────────────────────────  │
-│  ⓘ  If the learner does not have a Report Card (SF9), they may │
-│     still enroll. The school will accept a certification letter │
-│     from the previous school principal as an alternative.       │
-│  ─────────────────────────────────────────────────────────────  │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 8.2 UX Details
-
-**School Year dropdown:**
-Offers the last 10 school years as options (e.g., `2025–2026`, `2024–2025`, ...). Sorted newest first. This is sufficient for the vast majority of cases including Balik-Aral learners.
-
-**SF9 reassurance banner:**
-An `Alert` (shadcn/ui, `variant="default"`) at the bottom of the step explains that a missing report card is not a barrier. This directly addresses one of the most common reasons parents hesitate to apply.
-
-**Smart default for Grade 7 applicants:**
-When the user selected Grade 7 in Step 5 (enrollment preference — see note below), the "Last Grade Level Completed" field pre-selects "Grade 6". This reduces clicks. The user can still change it.
-
-> **Step ordering note:** Step 5 (Enrollment Preferences) contains the grade level selector. In the form's internal state, the grade level is captured in Step 5 but the component for Step 4 reads the current grade level value from state to show smart defaults. This does not require the user to complete Step 5 first — it simply means if they do Step 5 before Step 4 (not possible in linear wizard), or if they go back, the defaults apply.
-
----
-
-## 9. Step 5 — Enrollment Preferences
-
-**Tagline:** *"What is the learner applying for?"*
-
-This is the most complex step due to conditional branching. It determines the applicant's type, SCP program (if any), SHS track, and modality.
-
-### 9.1 Field Layout — Base State (Grade 7, Regular)
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Step 5 of 6 — Enrollment Preferences                           │
-│  What is the learner applying for?                               │
-│  ─────────────────────────────────────────────────────────────  │
-│                                                                  │
-│  Grade Level to Enroll *                                         │
-│  ┌──────┐  ┌──────┐  ┌──────┐  ┌──────┐  ┌──────┐  ┌──────┐   │
-│  │  G7  │  │  G8  │  │  G9  │  │ G10  │  │ G11  │  │ G12  │   │
-│  └──────┘  └──────┘  └──────┘  └──────┘  └──────┘  └──────┘   │
-│  (Card-style selector — one selected = accent border + fill)     │
-│                                                                  │
-│  ────────────────────────────────────────────────────────────── │
-│  ── SHOWS WHEN GRADE 7 IS SELECTED: ─────────────────────────── │
-│                                                                  │
-│  Application Type *                                              │
-│  ○  Regular Section                                              │
-│     (Open admission — no entrance exam required)                 │
-│  ○  Special Curricular Program (SCP)                             │
-│     (Requires a qualifying assessment or audition)               │
-│                                                                  │
-│  ── SHOWS WHEN SCP IS SELECTED (still Grade 7): ─────────────── │
-│                                                                  │
-│  Which SCP are you applying for? *                               │
-│  ○  Science, Technology & Engineering (STE)                      │
-│     Written entrance exam · Administered by the SDO              │
-│  ○  Special Program in the Arts (SPA)                            │
-│     Written qualifying exam + Audition + Interview               │
-│     └─ Art Field: [ Visual Arts ▾ ]  (shows when SPA selected)  │
-│  ○  Special Program in Sports (SPS)                              │
-│     Physical tryout · Sports background required                 │
-│     └─ Sport/s: [ Basketball ▾ ]  (multi-select, shows for SPS) │
-│  ○  Special Program in Journalism (SPJ)                          │
-│     Written exam (SPJQE) + Interview + Recommendation letter     │
-│  ○  Special Program in Foreign Language (SPFL)                   │
-│     Based on NAT English score · No separate exam                │
-│     └─ Language: [ Japanese ▾ ]  (shows when SPFL selected)     │
-│  ○  Special Program in Tech-Voc (SPTVE)                          │
-│     Aptitude assessment · School-administered                    │
-│                                                                  │
-│  ── SHOWS WHEN GRADE 11 IS SELECTED: ─────────────────────────  │
-│                                                                  │
-│  SHS Track *                                                     │
-│  ○  Academic             ○  Technical-Professional (TechPro)     │
-│                                                                  │
-│  Preferred Elective Cluster *  (filtered by track)              │
-│  [ STEM (Science, Technology, Engineering & Mathematics) ▾ ]     │
-│                                                                  │
-│  ── SHOWS WHEN STEM CLUSTER IS SELECTED: ─────────────────────  │
-│                                                                  │
-│  ┌────────────────────────────────────────────────────────────┐  │
-│  │  ⚠  STEM Eligibility Check                                 │  │
-│  │  STEM requires a Grade 10 Science and Math grade of 85+.  │  │
-│  │                                                            │  │
-│  │  Grade 10 Science Final Grade *   [ ______ ]              │  │
-│  │  Grade 10 Math Final Grade *      [ ______ ]              │  │
-│  │                                                            │  │
-│  │  ⓘ  You will also be required to take a placement exam    │  │
-│  │     and interview before final enrollment is confirmed.   │  │
-│  └────────────────────────────────────────────────────────────┘  │
-│                                                                  │
-│  ────────── General Fields (all applicants) ───────────────────  │
-│                                                                  │
-│  Type of Learner *                                               │
-│  ○  New Enrollee           ○  Transferee                         │
-│  ○  Returning (Balik-Aral) ○  Out-of-School Youth (OSCYA)        │
-│                                                                  │
-│  Preferred Learning Modality *                                   │
-│  ○  Face-to-Face (F2F) — most common                             │
-│  ○  Blended Learning                                             │
-│  ○  Distance / Modular                                           │
-│  ○  Online Learning                                              │
-│  ○  Home Schooling                                               │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 9.2 Grade Level Selector — Card Style
-
-```tsx
-// Grade level cards — pill/card style instead of a dropdown
-// This makes selection visual and tactile, especially on mobile
-
-<div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
-  {gradeLevels.map((gl) => (
-    <button
-      key={gl.id}
-      type="button"
-      onClick={() => setValue('gradeLevelId', gl.id)}
-      className={cn(
-        "rounded-lg border-2 py-3 text-sm font-medium transition-all",
-        selectedGradeId === gl.id
-          ? "border-(--accent) bg-(--accent) text-white"
-          : "border-border bg-white text-foreground hover:border-(--accent)"
-      )}
-    >
-      {gl.name}
-    </button>
-  ))}
-</div>
-```
-
-### 9.3 SCP Info Cards
-
-Each SCP radio option includes a brief description of the admission requirement. This saves parents from having to research separately. The description renders in `text-xs text-muted-foreground` below the SCP name label.
-
-### 9.4 STEM Eligibility Panel
-
-When STEM is selected as the cluster, a distinct amber-bordered panel appears with a warning icon and two number input fields. If the user enters a grade below 85 in either field, an inline warning appears:
-
-```
-⚠  This grade is below the minimum required for STEM (85).
-   You may still submit your application — the registrar will
-   review your documents and contact you.
-```
-
-Critically: the system shows a **warning**, not a hard block. Per DO 017, the school cannot deny enrollment due to grades — the registrar makes the final decision.
-
-### 9.5 Conditional Field Animations
-
-All conditional field groups (SCP type, art field, SHS track, STEM grades) use `shadcn/ui Collapsible` with CSS height transitions:
-
-```tsx
-<Collapsible open={showSCPFields}>
-  <CollapsibleContent className="overflow-hidden transition-all duration-300 ease-in-out">
-    {/* SCP-specific fields */}
-  </CollapsibleContent>
-</Collapsible>
-```
-
----
-
-## 10. Step 6 — Review & Submit
-
-**Tagline:** *"Check everything before submitting"*
-
-### 10.1 Layout
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Step 6 of 6 — Review & Submit                                  │
-│  Please review all information before submitting.               │
-│  ─────────────────────────────────────────────────────────────  │
-│                                                                  │
-│  PERSONAL INFORMATION                               [Edit Step 1]│
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Name       :  DELA CRUZ, Juan Reyes                     │   │
-│  │  Birthdate  :  March 12, 2014 (Age: 12)                  │   │
-│  │  Sex        :  Male                                      │   │
-│  │  Place of   :  [City/Municipality], [Province]              │   │
-│  │  Birth                                                   │   │
-│  │  LRN        :  123456789012                              │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                                                                  │
-│  FAMILY & CONTACT                                   [Edit Step 2]│
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Mother     :  Maria Dela Cruz · 0917-123-4567           │   │
-│  │  Father     :  Roberto Dela Cruz · 0918-234-5678         │   │
-│  │  Email      :  delacruz.maria@gmail.com                  │   │
-│  │  Address    :  123 Brgy. San Antonio, [City/Municipality]           │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                                                                  │
-│  BACKGROUND                                         [Edit Step 3]│
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  IP Community  :  No                                     │   │
-│  │  4Ps           :  No                                     │   │
-│  │  Disability    :  No                                     │   │
-│  │  Balik-Aral    :  No                                     │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                                                                  │
-│  PREVIOUS SCHOOL                                    [Edit Step 4]│
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Last School   :  [Previous School Name]    │   │
-│  │  Grade Completed: Grade 6  ·  SY 2025–2026  ·  Public   │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                                                                  │
-│  ENROLLMENT PREFERENCES                             [Edit Step 5]│
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Grade Level   :  Grade 7                                │   │
-│  │  Program       :  Regular Section                        │   │
-│  │  Learner Type  :  New Enrollee                           │   │
-│  │  Modality      :  Face-to-Face (F2F)                     │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                                                                  │
-│  ─────────────────────────────────────────────────────────────  │
-│                                                                  │
-│  ✓ Accuracy Certification *                                      │
-│  ☐  I certify that all information is true and correct to the   │
-│     best of my knowledge and belief.                             │
-│                                                                  │
-│  Full Name of Parent/Guardian (or Learner if 18+) *             │
-│  [ Maria Dela Cruz                                          ]    │
-│                                                                  │
-│  Date *                                                          │
-│  [ March 5, 2027                📅 ]   (auto-filled with today) │
-│                                                                  │
-│  (Privacy consent was accepted at the start of this form ✓)     │
-│                                                                  │
-│       ← Back            [ Submit Application ]                   │
-│                          (disabled until checkbox checked)       │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 10.2 UX Details
-
-**Edit shortcuts:**
-Each section card has a small `[Edit]` link in the top-right corner that jumps directly back to that step. This is a `Button variant="ghost" size="sm"` labeled "Edit Step N" in `text-primary`. Clicking it navigates back to that step without losing any data.
-
-**Read-only display:**
-All review data is displayed in `text-sm text-foreground` with `text-xs text-muted-foreground` labels. This is not an editable form — it is a clean summary.
-
-**Submit button state:**
-```
-Accuracy checkbox unchecked → Submit button: disabled, opacity-50
-Accuracy checkbox checked   → Submit button: enabled, accent color
-```
-
-**Loading state on submit:**
-When the Submit button is clicked:
-1. Button shows a spinner: `<Loader2 className="animate-spin mr-2" />  Submitting...`
-2. Button is disabled (prevents double-submit)
-3. Sileo `promise` toast wraps the API call:
-   ```tsx
-   sileo.promise(submitApplication(formData), {
-     loading: 'Submitting your application...',
-     success: 'Application received!',
-     error:   'Something went wrong. Please try again.',
-   });
-   ```
-
----
-
-## 11. Success Screen
-
-On successful API response, the entire wizard is replaced by the Success Screen. This is not a new page — it is an in-place replacement via conditional rendering within `Apply.tsx`.
-
-### 11.1 Layout
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  [School Logo]  [School Name]                  │
-│  Online Admission Application · SY 2026–2027                    │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│               ✅  Application Submitted!                         │
-│                                                                  │
-│  Your application has been received by [School Name].            │
-│  The school registrar will review your documents and             │
-│  contact you regarding the next steps.                           │
-│                                                                  │
-│  ─────────────────────────────────────────────────────────────  │
-│                                                                  │
-│  Your Tracking Number                                            │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │                                                          │   │
-│  │                  APP-2027-00042                          │   │
-│  │             (large, monospace, accent color)             │   │
-│  │                                                          │   │
-│  │  [ 📋 Copy Tracking Number ]                             │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                                                                  │
-│  📧  A confirmation email has been sent to:                      │
-│      delacruz.maria@gmail.com                                    │
-│                                                                  │
-│  ─────────────────────────────────────────────────────────────  │
-│  What happens next?                                              │
-│                                                                  │
-│  1️⃣  The registrar will review your submitted information.       │
-│  2️⃣  You will be contacted by email or phone regarding          │
-│      document verification and any required assessments.         │
-│  3️⃣  Once approved, you will receive a section assignment        │
-│      confirmation before the first day of classes.               │
-│                                                                  │
-│  Track your application status anytime:                          │
-│  [ 🔍 Track My Application ]  → /track/APP-2027-00042           │
-│                                                                  │
-│  ─────────────────────────────────────────────────────────────  │
-│  [ Submit Another Application ]   (ghost button, small)         │
-│  (For families with multiple children applying)                  │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 11.2 Copy Tracking Number
-
-```tsx
-const handleCopy = async () => {
-  await navigator.clipboard.writeText(trackingNumber);
-  sileo.success({ title: 'Copied!', description: 'Tracking number copied to clipboard.' });
-};
-```
-
-The Copy button label changes to "✓ Copied!" for 2 seconds after clicking, then reverts.
-
-### 11.3 SCP-Specific Next Steps
-
-For SCP applicants, the "What happens next?" section is customized:
-
-```
-For STE applicants:
-  2️⃣  You will be notified of the STE entrance exam schedule.
-       The exam is administered by the Schools Division Office.
-
-For SPA applicants:
-  2️⃣  You will be notified of the qualifying exam and audition date.
-       Bring your portfolio (if applicable) on the assessment day.
-
-For Grade 11 STEM applicants:
-  2️⃣  The school will contact you regarding the STEM placement exam
-       and interview schedule (March–April).
-```
-
----
-
-## 12. Closed State (`/closed`)
-
-When the enrollment gate is OFF, the `/apply` loader redirects all visitors to `/closed`.
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  [School Logo]  [School Name]                  │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│              🔒  Enrollment is Currently Closed                  │
-│                                                                  │
-│  The online admission portal is not accepting applications       │
-│  at this time.                                                   │
-│                                                                  │
-│  Next enrollment period:                                         │
-│  Early Registration for SY 2027–2028 will open on               │
-│  the last Saturday of January 2027.                              │
-│                                                                  │
-│  ─────────────────────────────────────────────────────────────  │
-│  Already submitted an application?                               │
-│                                                                  │
-│  [ APP-2027-_____ ]  [ 🔍 Track My Application ]                │
-│                                                                  │
-│  ─────────────────────────────────────────────────────────────  │
-│  For inquiries, contact the Registrar's Office:                  │
-│  📞  [school phone]     📧  [school email]                       │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 13. Component Specifications
-
-### 13.1 Full Component Map
-
-| Section | shadcn/ui Component | Notes |
-|---|---|---|
-| Form card wrapper | `Card`, `CardHeader`, `CardContent` | `rounded-2xl shadow-sm` |
-| Privacy notice scroll area | `ScrollArea` | Fixed height, custom scrollbar |
-| Privacy consent | `Checkbox` + `Label` | Disabled until scrolled |
-| Step progress | Custom `StepProgressBar` | Built from divs + CSS vars |
-| Text inputs | `Input` | Full width, `h-10` |
-| Date picker | `Input type="date"` or `DatePicker` from shadcn | Custom calendar popover |
-| Select dropdowns | `Select`, `SelectTrigger`, `SelectContent`, `SelectItem` | Searchable for long lists |
-| Searchable select | `Command` + `Popover` (shadcn Combobox pattern) | Mother tongue, school name |
-| Radio groups | `RadioGroup`, `RadioGroupItem` | Vertical stack on mobile |
-| Checkboxes | `Checkbox` + `Label` | Used for multi-select disability types |
-| Grade level cards | Custom card-buttons | Accent border when selected |
-| Collapsible fields | `Collapsible`, `CollapsibleContent` | Smooth height transitions |
-| Navigation buttons | `Button` | Back = `variant="outline"`, Next/Submit = `variant="default"` |
-| Info banners | `Alert`, `AlertDescription` | `variant="default"` for info, no `variant="destructive"` |
-| Field errors | Inline `<p>` with `text-xs text-destructive` | Below each field |
-| Toast notifications | `sileo` | `position="top-center"` (GuestLayout) |
-| Loading spinner | `Loader2` from Lucide React | Inside submit button |
-| Success checkmark | `CheckCircle2` from Lucide React | Large, accent colored |
-| Copy button | `Button variant="outline"` + `Copy` icon | Changes to `Check` on success |
-| Skeleton loading | `Skeleton` | During API data fetch (grade levels, strands) |
-
-### 13.2 Form State Libraries
-
-```
-React Hook Form    — form state, validation triggering, field registration
-Zod                — schema validation (client-side mirrors server-side schemas)
-@hookform/resolvers/zod — bridge between RHF and Zod
-```
-
-```ts
-// client/src/pages/admission/Apply.tsx
-
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { applicationSchema } from './schemas/application.schema.ts';
-
-const form = useForm({
-  resolver: zodResolver(applicationSchema),
-  defaultValues: {
-    privacyConsentGiven: false,
-    lastName:            '',
-    firstName:           '',
-    middleName:          '',
-    suffix:              'N/A',
-    // ... all fields with safe defaults
-  },
-  mode: 'onBlur',   // validate on field exit, not on every keystroke
+### Zod Schema (abbreviated)
+
+```typescript
+// client/src/validators/admissionSchema.ts
+// Used by BOTH Apply.tsx (online) and F2FAdmission.tsx
+export const admissionSchema = z.object({
+  lrn:          z.string().regex(/^\d{12}$/, 'LRN must be exactly 12 digits'),
+  lastName:     z.string().min(2, 'Last name is required'),
+  firstName:    z.string().min(2, 'First name is required'),
+  birthDate:    z.string().refine(d => isValidAge(d, 10, 30), 'Invalid date of birth'),
+  sex:          z.enum(['MALE', 'FEMALE']),
+  guardianName: z.string().min(2, 'Guardian name is required'),
+  guardianContact: z.string().min(10, 'Valid contact number required'),
+  emailAddress: z.string().email('Valid email address required'),
+  address:      z.string().min(5, 'Complete address is required'),
+  gradeLevelId: z.number({ required_error: 'Grade level is required' }),
+  // ... SCP fields are conditionally required via .superRefine()
 });
 ```
 
 ---
 
-## 14. Validation Behavior & Error States
+## 17. Responsive Behavior
 
-### 14.1 Validation Timing Strategy
+### Online Form
 
-| Event | Behavior |
+| Breakpoint | Step indicator | Field columns | Navigation footer |
+|---|---|---|---|
+| `< sm` (375px) | Horizontal scroll with visible current step only | 1 column | Stacked (Back above Next) |
+| `sm` (640px) | All steps visible | 1 column | Side by side |
+| `md` (768px) | All steps with labels | 1 column | Side by side |
+| `lg` (1024px) | All steps with full labels | 2 columns for paired fields | Side by side |
+
+### F2F Form
+
+| Breakpoint | Layout |
 |---|---|
-| User typing | No validation — let them finish their thought |
-| Field loses focus (`onBlur`) | Validate that field immediately; show error if invalid |
-| "Next" button clicked | Validate all fields on current step; scroll to first error |
-| "Submit" clicked | Full form validation; scroll to first error across all steps |
-| Server returns 422 | Show server-side errors mapped to their fields; toast for first error |
-
-### 14.2 Error Display Pattern
-
-```tsx
-// Each field + its error message = one unit
-
-<div className="space-y-1.5">
-  <Label htmlFor="lastName">
-    Last Name <span className="text-destructive">*</span>
-  </Label>
-  <Input
-    id="lastName"
-    {...form.register('lastName')}
-    className={cn(errors.lastName && "border-destructive focus-visible:ring-destructive")}
-  />
-  {errors.lastName && (
-    <p className="text-xs text-destructive flex items-center gap-1">
-      <AlertCircle className="h-3 w-3" />
-      {errors.lastName.message}
-    </p>
-  )}
-</div>
-```
-
-**Error border:** `border-destructive` (shadcn/ui red token)
-**Error ring on focus:** `focus-visible:ring-destructive`
-**Error message:** `text-xs text-destructive` with a small `AlertCircle` icon
-
-### 14.3 Step-Level Validation Before Advancing
-
-```tsx
-const handleNext = async () => {
-  const fieldsOnThisStep = getFieldsForStep(currentStep);
-  const valid = await form.trigger(fieldsOnThisStep);
-
-  if (!valid) {
-    // Scroll to the first error field on this step
-    const firstError = Object.keys(form.formState.errors)[0];
-    document.getElementById(firstError)?.scrollIntoView({
-      behavior: 'smooth', block: 'center',
-    });
-    sileo.error({
-      title: 'Please fix the errors below',
-      description: 'Some required fields are incomplete or incorrect.',
-    });
-    return;
-  }
-
-  setCurrentStep((s) => s + 1);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-```
-
-### 14.4 LRN Duplicate Check (Real-Time)
-
-```tsx
-// When LRN field blurs, check against existing records
-const handleLrnBlur = async (lrn: string) => {
-  if (lrn.length !== 12) return;
-
-  const { data } = await api.get(`/applications/check-lrn?lrn=${lrn}`);
-  if (data.exists) {
-    form.setError('lrn', {
-      message: 'This LRN already has an application for this school year.',
-    });
-  }
-};
-```
+| `< md` | Single column (sidebar closed) |
+| `md` | 2-column grid within each section |
+| `lg` | 2-column grid, wider max-w-4xl |
 
 ---
 
-## 15. Responsive Behavior
-
-### 15.1 Layout at Each Breakpoint
-
-| Breakpoint | Form Card | Field Grid | Step Progress | Navigation |
-|---|---|---|---|---|
-| 375px (iPhone SE) | Full width, no margin | 1 column | Dots only + "Step N of 6" text | Back + Next stack vertically |
-| 768px (iPad) | `max-w-2xl`, centered | 1 column | Dots + step titles (abbreviated) | Back + Next side by side |
-| 1024px+ (Desktop) | `max-w-3xl`, centered | 2 columns for paired fields | Dots + full step titles | Back left, Next right |
-
-### 15.2 Touch Targets
-
-All interactive elements meet a **minimum 44×44px touch target** per WCAG 2.5.5:
-- Radio buttons: `RadioGroupItem` uses `h-5 w-5` with `p-3` label wrapping
-- Checkboxes: `h-5 w-5` with full-row clickable label
-- Buttons: minimum `h-10` (40px) with `px-4` horizontal padding; Submit button is `h-12 w-full`
-- Grade level cards: minimum `h-14 w-full`
-
-### 15.3 Mobile-Specific Adjustments
-
-- **Date picker:** Uses native `<input type="date">` on mobile (opens the OS date picker — fastest UX). Custom calendar popover on desktop.
-- **Select dropdowns:** Use native `<select>` on mobile via `useIsMobile()` hook. Custom shadcn/ui `Select` on desktop.
-- **Step progress bar:** On mobile, the step titles are hidden. Only numbered dots + "Step N of 6 — [Step Name]" text below the dots.
-- **Two-column fields (Last/First Name):** Collapse to single column on mobile.
-
----
-
-## 16. Accessibility Requirements
-
-All requirements follow **WCAG 2.1 Level AA**.
+## 18. Accessibility Requirements
 
 | Requirement | Implementation |
 |---|---|
-| Color contrast | All text meets 4.5:1 ratio against background. Accent color checked against white — default blue (`#2563EB` on white = 5.9:1 ✓). Logo-extracted colors must be validated at extraction time; if ratio < 4.5:1, fall back to default blue. |
-| Focus indicators | Every interactive element has a visible focus ring via `ring-2 ring-[var(--accent)] ring-offset-2`. Never use `outline: none` without a replacement. |
-| Keyboard navigation | All form fields, buttons, and interactive elements are fully keyboard-navigable. Tab order follows visual reading order. |
-| Screen reader labels | Every input has an associated `<Label>` via `htmlFor`/`id`. Error messages use `aria-describedby` pointing to the error `<p>`. |
-| Required field indication | `*` asterisk after the label text + `aria-required="true"` on the input element. |
-| Error announcements | Error messages use `role="alert"` so screen readers announce them immediately on appearance. |
-| Step progress | Step progress bar includes `aria-label="Step 3 of 6 — Background and Classification"` |
-| Disabled state | Disabled elements use `aria-disabled="true"` in addition to the visual `opacity-50` treatment |
-| Language | `<html lang="en">` in `index.html`. If future bilingual support is needed, individual sections can use `lang="fil"`. |
+| All form fields have associated `<label>` | Via `htmlFor` + `id` pairing on every `<FormField>` |
+| Error messages linked to fields | `aria-describedby` pointing to the error `<p>` id |
+| Required fields marked | `aria-required="true"` + visual `*` in label |
+| Focus management on step change | `focus()` called on the first field of the new step after transition |
+| Color not the only error indicator | Error state: border + text + icon, not color alone |
+| Keyboard navigable | All interactive elements reachable via Tab; dropdowns keyboard-navigable via shadcn/ui Select |
+| Step progress readable by screen readers | `aria-label` on step dots: `"Step 2 of 6: Family & Contact. Completed."` |
+| Consent checkbox labeled | `htmlFor` on the RA 10173 consent checkbox |
 
 ---
 
-## 17. Performance Requirements
+## 19. Performance Requirements
 
-### 17.1 Initial Load
-
-| Metric | Target | Implementation |
+| Requirement | Target | How |
 |---|---|---|
-| First Contentful Paint | < 1.5s | Bunny Fonts `display=swap`; CSS-only skeleton for form card before JS loads |
-| Largest Contentful Paint | < 2.5s | Form card + privacy notice is the LCP element; no large images above fold |
-| Cumulative Layout Shift | < 0.1 | All conditional sections use `min-h` to prevent layout shift; Skeleton components for API-loaded content |
-| Time to Interactive | < 3.5s | React lazy-loads step content; only Step 1 renders on mount |
-
-### 17.2 API Calls
-
-| Call | Timing | Notes |
-|---|---|---|
-| `GET /api/settings/public` | On page load (React Router loader) | Fetches school name, logo, active year, enrollment status. Blocks render only if enrollment is closed (redirect). |
-| `GET /api/grade-levels` | On mount of Step 5 | Lazy — only when the user reaches Step 5 |
-| `GET /api/strands?gradeLevelId=` | On grade level selection in Step 5 | Only when grade = 11 |
-| `GET /api/settings/scp-config` | On mount of Step 5 | Fetches which SCPs the school offers |
-| `GET /api/applications/check-lrn?lrn=` | On LRN field blur in Step 1 | Debounced 500ms |
-| `POST /api/applications` | On Submit button click | Wrapped in `sileo.promise()` |
-
-### 17.3 Form State Persistence
-
-All form data is saved to `sessionStorage` after every step transition. If the browser is accidentally refreshed mid-form, the user picks up where they left off:
-
-```ts
-// Save on every step transition
-sessionStorage.setItem('enrollpro_apply_draft', JSON.stringify(form.getValues()));
-
-// Restore on mount
-const draft = sessionStorage.getItem('enrollpro_apply_draft');
-if (draft) form.reset(JSON.parse(draft));
-```
-
-On successful submission or deliberate "Start Over," the draft is cleared:
-```ts
-sessionStorage.removeItem('enrollpro_apply_draft');
-```
+| Time to First Contentful Paint | < 1.5s | School name and logo cached in `settingsStore`; form renders immediately |
+| API calls on load | ≤ 2 | `GET /api/settings/public` (settings + color) + `GET /api/grade-levels` (prefetched) |
+| Step navigation | < 100ms | No API calls between steps; state is local |
+| LRN check debounce | 300ms after `onBlur` | Avoids redundant checks on partial input |
+| Grade level → SCP/strand fetch | < 500ms | Triggered once when grade level changes |
+| Bundle size | React Hook Form + Zod + Axios | No additional form library or schema library |
+| `sessionStorage` write | After every step | Prevents data loss on accidental refresh |
 
 ---
 
-## 18. State Management
+## 20. State Management
 
-The admission form is entirely **local state** — no Zustand store, no global state. All form data lives in React Hook Form's internal state.
+### Online Form State
 
+```typescript
+// client/src/pages/admission/Apply.tsx
+// All form state is managed by React Hook Form with defaultValues pre-hydrated
+// from sessionStorage on mount.
+
+interface AdmissionFormState {
+  // Phase 0
+  consentGiven: boolean;
+
+  // Step 1 — Personal Info
+  lrn: string;
+  lastName: string;
+  firstName: string;
+  middleName?: string;
+  suffix?: string;
+  birthDate: string;
+  sex: 'MALE' | 'FEMALE';
+  birthPlace?: string;
+  nationality?: string;
+  religion?: string;
+  motherTongue?: string;
+
+  // Step 2 — Family & Contact
+  fatherName?: string;
+  fatherOccupation?: string;
+  motherName?: string;
+  motherOccupation?: string;
+  guardianName: string;
+  guardianRelationship?: string;
+  guardianContact: string;
+  emailAddress: string;
+  address: string;
+  barangay?: string;
+  municipality?: string;
+  province?: string;
+
+  // Step 3 — Classifications
+  learnerType: string;
+  isIndigenousPeople: boolean;
+  ipCommunity?: string;
+  is4PsBeneficiary: boolean;
+  householdId?: string;
+  isPersonWithDisability: boolean;
+  disabilityType?: string;
+
+  // Step 4 — Previous School
+  lastSchoolAttended: string;
+  lastSchoolYear?: string;
+  lastGradeCompleted: string;
+  generalAverage?: number;
+  grade10ScienceGrade?: number;
+  grade10MathGrade?: number;
+
+  // Step 5 — Enrollment Preferences
+  gradeLevelId: number;
+  applicantType: string;
+  scpProgramCode?: string;
+  strandId?: number;
+  artField?: string;
+  sport?: string;
+  foreignLanguage?: string;
+}
+
+// sessionStorage key
+const SESSION_KEY = 'admission_form_draft';
+
+// Load on mount
+const saved = sessionStorage.getItem(SESSION_KEY);
+const defaultValues = saved ? JSON.parse(saved) : {};
+
+// Save after every change
+useEffect(() => {
+  const subscription = watch((values) => {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(values));
+  });
+  return () => subscription.unsubscribe();
+}, [watch]);
+
+// Clear on successful submission
+sessionStorage.removeItem(SESSION_KEY);
 ```
-Apply.tsx
-├── useForm()                    — all 65+ BEEF fields
-├── useState(currentStep)        — active step 0–6
-├── useState(consentGiven)       — privacy gate
-├── useState(hasScrolledNotice)  — scroll-to-enable logic
-├── useState(submitSuccess)      — toggles wizard → success screen
-└── useState(trackingNumber)     — from API response
-```
 
-**No Zustand for the form.** The admission portal is a guest-facing, single-session interaction. Data does not need to persist between sessions (beyond `sessionStorage` draft). Using a global store would add unnecessary complexity.
+### F2F Form State
+
+The F2F form uses React Hook Form with the same `AdmissionFormState` interface. No `sessionStorage` persistence is needed — the registrar is working at a desk and won't accidentally refresh the page. If the form is cleared, a confirmation dialog warns: "You have unsaved data. Are you sure you want to clear the form?"
 
 ---
 
-## 19. Full File & Component Structure
+## 21. Full File & Component Structure
 
 ```
-client/src/pages/admission/
-├── Apply.tsx                        ← main page component; routing gate, step orchestrator
-├── ApplyClosed.tsx                  ← /closed route page
+client/src/
+├── pages/
+│   └── admission/
+│       ├── Apply.tsx                     ← Online admission wizard
+│       ├── F2FAdmission.tsx              ← F2F form (registrar)
+│       ├── TrackApplication.tsx          ← Status tracker by tracking number
+│       └── EnrollmentClosed.tsx          ← /closed page
 │
 ├── components/
-│   ├── PrivacyNoticeGate.tsx        ← Phase 0: RA 10173 notice + consent
-│   ├── StepProgressBar.tsx          ← numbered step progress indicator
-│   ├── NavigationFooter.tsx         ← Back / Next / Submit buttons
-│   ├── SuccessScreen.tsx            ← post-submit tracking number display
-│   │
-│   ├── steps/
-│   │   ├── Step1PersonalInfo.tsx    ← name, DoB, sex, LRN, PSA BC, mother tongue
-│   │   ├── Step2FamilyContact.tsx   ← parents, guardian, address
-│   │   ├── Step3Background.tsx      ← IP, 4Ps, disability, Balik-Aral
-│   │   ├── Step4PreviousSchool.tsx  ← last school, grade completed, type
-│   │   ├── Step5Enrollment.tsx      ← grade, SCP/regular, SHS track, modality
-│   │   └── Step6Review.tsx          ← read-only summary + certification
-│   │
-│   └── fields/
-│       ├── GradeLevelSelector.tsx   ← card-style grade picker
-│       ├── SCPSelector.tsx          ← SCP radio group with descriptions
-│       ├── SHSTrackSelector.tsx     ← Academic / TechPro + cluster dropdown
-│       ├── STEMGradePanel.tsx       ← STEM eligibility grade inputs + warning
-│       ├── DisabilitySelector.tsx   ← yes/no + multi-checkbox expansion
-│       ├── AddressFields.tsx        ← reusable address block (used in Step 2 twice)
-│       └── GuardianFields.tsx       ← reusable guardian block (used in Step 2 × 3)
+│   └── admission/
+│       ├── StepIndicator.tsx             ← Progress dots (online wizard)
+│       ├── PrivacyNoticeGate.tsx         ← Phase 0 consent wall (online)
+│       ├── F2FConsentBlock.tsx           ← Physical consent checkbox (F2F)
+│       ├── TrackingNumberDisplay.tsx     ← Success screen tracking box
+│       ├── GradeLevelSelect.tsx          ← Shared — loads from API
+│       ├── ScpProgramSelect.tsx          ← Shared — conditional; loads from API
+│       ├── StrandSelect.tsx              ← Shared — conditional; loads from API
+│       └── ScpConditionalFields.tsx      ← Shared — shows art/sport/language field
 │
-└── schemas/
-    └── application.schema.ts        ← Zod schema matching server-side validator
+└── validators/
+    └── admissionSchema.ts                ← Shared Zod schema (online + F2F)
 ```
 
----
-
-## 20. Acceptance Criteria
-
-| # | Acceptance Test |
-|---|---|
-| UX-01 | The Privacy Notice is the first element visible on `/apply`. No form field is accessible or interactive until the consent checkbox is checked. |
-| UX-02 | The consent checkbox is disabled until the user scrolls to the bottom of the notice text box. |
-| UX-03 | The "Proceed" button is disabled (visually greyed, `cursor-not-allowed`) until the consent checkbox is checked. |
-| UX-04 | All 6 wizard steps are accessible only after the Privacy Notice is consented to. |
-| UX-05 | The step progress bar correctly highlights the active step with the school's accent color. |
-| UX-06 | Clicking "Edit Step N" on the Review screen navigates back to that step without clearing any field data. |
-| UX-07 | The Age field auto-fills when a valid Date of Birth is entered. It is not manually editable. |
-| UX-08 | The LRN field shows a real-time duplicate warning after a 500ms debounce if the LRN already exists. |
-| UX-09 | The Grade Level selector renders as clickable cards, not a dropdown. The selected card shows an accent-colored border and background. |
-| UX-10 | Selecting "Grade 7" shows the Application Type radio (Regular / SCP). Selecting any other grade hides it. |
-| UX-11 | Selecting "SCP" shows the SCP type radio group. Selecting "Regular" hides it. |
-| UX-12 | Selecting "SPA" shows the Art Field dropdown. Selecting "SPS" shows the Sports multi-select. Selecting "SPFL" shows the Language dropdown. All other SCP types show no sub-field. |
-| UX-13 | Selecting "Grade 11" shows the SHS Track selector. Selecting STEM as the cluster shows the Grade 10 grade fields. |
-| UX-14 | Entering a Grade 10 grade below 85 for STEM shows an amber warning, but does NOT block form submission. |
-| UX-15 | Clicking "Next" on any step validates only the fields on that step, not the entire form. |
-| UX-16 | If a step has validation errors when "Next" is clicked, the page scrolls to the first error field and a Sileo error toast appears. |
-| UX-17 | All conditional field sections (disability checkboxes, guardian fields, permanent address, SCP fields) animate in/out smoothly using CSS height transitions, not instant show/hide. |
-| UX-18 | Refreshing the browser mid-form restores all previously entered data from `sessionStorage`. |
-| UX-19 | The Submit button shows a spinner and is disabled during the API call. Double-submit is not possible. |
-| UX-20 | On successful submission, the wizard is replaced by the Success Screen showing the tracking number in large monospace accent-colored text. |
-| UX-21 | The "Copy Tracking Number" button copies to clipboard and shows a `✓ Copied!` confirmation for 2 seconds. |
-| UX-22 | SCP applicants see customized "What happens next?" messaging relevant to their SCP type on the Success Screen. |
-| UX-23 | The form is fully usable at 375px viewport width with no horizontal overflow. |
-| UX-24 | All interactive elements have a minimum touch target of 44×44px. |
-| UX-25 | All form fields have visible focus rings using the school's accent color. |
-| UX-26 | The form passes WCAG 2.1 AA color contrast checks even when a custom logo-extracted accent color is applied. |
-| UX-27 | The `/closed` page shows the school's contact details and a tracking number lookup field. |
-| UX-28 | Grade level options and SCP configurations shown in the form exactly match what the school has configured in Settings. |
+**Key rule:** `GradeLevelSelect`, `ScpProgramSelect`, `StrandSelect`, and `ScpConditionalFields` are shared between `Apply.tsx` and `F2FAdmission.tsx`. Any change to how these dropdowns behave applies to both channels simultaneously.
 
 ---
 
-*Document prepared by: UX/UI Engineering*
-*System: Admission & Enrollment Information Management System*
-*Design System: Instrument Sans · shadcn/ui · Tailwind CSS v4 · Sileo · Dynamic Accent Color*
-*Policy: RA 10173 · DO 017, s. 2025 · DM 012, s. 2026 · WCAG 2.1 AA*
-*PRD Reference: v2.4.0*
+## 22. Acceptance Criteria
+
+| # | Channel | Test |
+|---|---|---|
+| AC-01 | Online | Guest submits the form and receives a tracking number on screen and via email. |
+| AC-02 | Online | `/apply` redirects to `/closed` when `enrollmentOpen = false`. |
+| AC-03 | Online | Phase 0 consent checkbox is disabled until the user has scrolled to the bottom of the notice. |
+| AC-04 | Online | "Begin Application" is disabled until Phase 0 consent is checked. |
+| AC-05 | Online | Clicking "Next" without filling required fields displays inline error messages; step does not advance. |
+| AC-06 | Online | Going back to Step 1 from Step 5 does not clear any previously entered data. |
+| AC-07 | Online | LRN field shows a pre-fill toast when a returning LRN is entered. |
+| AC-08 | Online | LRN field shows an error when the LRN is already enrolled in the current AY. |
+| AC-09 | Both | SCP program dropdown is hidden when no SCP programs are configured for the selected grade level. |
+| AC-10 | Both | Strand dropdown is hidden for non-SHS grade levels. |
+| AC-11 | Both | Art field appears when SPA is selected; sport field appears when SPS is selected. |
+| AC-12 | Both | School name in the page header, success screen, and privacy notice comes from `settingsStore.schoolName` — never hardcoded. |
+| AC-13 | F2F | `/f2f-admission` is accessible by REGISTRAR and SYSTEM_ADMIN regardless of `enrollmentOpen` state. |
+| AC-14 | F2F | Unauthenticated user navigating to `/f2f-admission` is redirected to `/login` with `loginAccess: true`. |
+| AC-15 | F2F | Submission stores `admissionChannel: F2F` and `encodedById` = the registrar's user ID. |
+| AC-16 | F2F | "Save as Approved" button sets `status = APPROVED` in the created record. |
+| AC-17 | F2F | The physical consent checkbox is required before either submit button is active. |
+| AC-18 | Both | All buttons, focus rings, and step indicators use `var(--accent)` — they change when the school uploads a new logo. |
+| AC-19 | Both | The form is fully usable at 375px with no horizontal overflow. |
+| AC-20 | Both | No `alert()` or `confirm()` dialogs are used — all feedback is via Sileo toasts. |
+
+---
+
+*Document v3.0.0*
+*Module: Admission (Online + Face-to-Face)*
+*System: School Admission, Enrollment & Information Management System*
+*Stack: PERN (PostgreSQL 18 · Express.js 5.1 · React 19.x · Node.js 22 LTS)*
+*Design: School-agnostic — all school-specific text and colors are runtime-configurable*

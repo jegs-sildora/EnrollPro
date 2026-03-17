@@ -12,6 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { ConfirmationModal } from '@/components/ui/confirmation-modal';
 import { DatePicker } from '@/components/ui/date-picker';
 
+import { Skeleton } from '@/components/ui/skeleton';
+
 const MANILA_TIME_ZONE = 'Asia/Manila';
 
 function getDatePartsInTimeZone(date: Date, timeZone = MANILA_TIME_ZONE) {
@@ -268,7 +270,31 @@ export default function AcademicYearTab() {
   };
 
   if (loading) {
-    return <div className="text-center py-8 text-sm text-[hsl(var(--muted-foreground))]">Loading school years…</div>;
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row justify-between gap-4">
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-64" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+              <div className="flex gap-2">
+                <Skeleton className="h-10 w-10" />
+                <Skeleton className="h-10 w-48" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <div className="mt-8 space-y-3">
+          <Skeleton className="h-4 w-20" />
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-14 w-full rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (

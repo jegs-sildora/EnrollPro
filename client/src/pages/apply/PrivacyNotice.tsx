@@ -85,7 +85,7 @@ export default function PrivacyNotice({ onAccept }: PrivacyNoticeProps) {
 
             <div className={cn(
               "flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-widest transition-all duration-500 py-1",
-              hasScrolledNotice ? "text-green-600" : "text-primary animate-pulse"
+              hasScrolledNotice ? "text-primary" : "text-primary/60 animate-pulse"
             )}>
               {hasScrolledNotice ? (
                 <>
@@ -110,7 +110,7 @@ export default function PrivacyNotice({ onAccept }: PrivacyNoticeProps) {
               id="privacy-consent" 
               checked={agreed} 
               onCheckedChange={(checked) => setAgreed(checked === true)}
-              className="mt-1"
+              className="mt-1 border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
             />
             <Label 
               htmlFor="privacy-consent" 
@@ -123,7 +123,7 @@ export default function PrivacyNotice({ onAccept }: PrivacyNoticeProps) {
           <Button 
             onClick={onAccept} 
             disabled={!agreed} 
-            className="w-full h-12 text-base font-semibold transition-all"
+            className="w-full h-12 text-base font-semibold transition-all bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
           >
             Proceed to Application Form →
           </Button>

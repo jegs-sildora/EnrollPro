@@ -22,9 +22,7 @@ const optionalAddressSchema = z.object({
 
 export const applicationSubmitSchema = z.object({
   // Reference numbers
-  lrn: z.string().optional().nullable().refine((val) => !val || /^\d{12}$/.test(val), {
-    message: 'LRN must be exactly 12 numeric digits',
-  }),
+  lrn: z.string().min(1, 'LRN is required').regex(/^\d{12}$/, 'LRN must be exactly 12 numeric digits'),
   psaBcNumber: z.string().optional().nullable(),
 
   // Grade level & program
@@ -43,7 +41,6 @@ export const applicationSubmitSchema = z.object({
   sex: z.enum(['Male', 'Female']),
   placeOfBirth: z.string().min(1, 'Place of birth is required'),
   religion: z.string().optional().nullable(),
-  motherTongue: z.string().min(1, 'Mother tongue is required'),
 
   // Special classifications
   isIpCommunity: z.boolean().default(false),
@@ -80,7 +77,7 @@ export const applicationSubmitSchema = z.object({
     contactNumber: z.string().optional().nullable(),
     relationship: z.string().optional().nullable(),
   }).optional().nullable(),
-  email: z.string().email('Invalid email address').optional().nullable().or(z.literal('')),
+  email: z.string().email('Invalid email address').min(1, 'Email address is required'),
 
   // Previous school
   lastSchoolName: z.string().min(1, 'Last school name is required'),

@@ -65,7 +65,7 @@ export default function Step4PreviousSchool() {
           >
             {['Grade 6', 'Grade 10', 'Grade 11', 'Other'].map((opt) => (
               <div key={opt} className="flex items-center space-x-2">
-                <RadioGroupItem value={opt} id={`grade-${opt}`} className="w-5 h-5 border-primary" />
+                <RadioGroupItem value={opt} id={`grade-${opt}`} className="w-5 h-5 border-black text-black" />
                 <Label htmlFor={`grade-${opt}`} className="font-semibold cursor-pointer">{opt}</Label>
               </div>
             ))}
@@ -88,7 +88,7 @@ export default function Step4PreviousSchool() {
           >
             {['Public', 'Private', 'International', 'ALS'].map((opt) => (
               <div key={opt} className="flex items-center space-x-2">
-                <RadioGroupItem value={opt} id={`type-${opt}`} className="w-5 h-5 border-primary" />
+                <RadioGroupItem value={opt} id={`type-${opt}`} className="w-5 h-5 border-black text-black" />
                 <Label htmlFor={`type-${opt}`} className="font-semibold cursor-pointer">{opt}</Label>
               </div>
             ))}
@@ -101,9 +101,9 @@ export default function Step4PreviousSchool() {
         </div>
       </div>
 
-      <Alert className="bg-muted/50 border-border/60 mt-12">
-        <Info className="h-4 w-4 text-muted-foreground" />
-        <AlertDescription className="text-[11px] font-medium text-muted-foreground leading-relaxed">
+      <Alert className="bg-black/5 border-black/20 mt-12">
+        <Info className="h-4 w-4 text-black" />
+        <AlertDescription className="text-sm font-bold text-black leading-relaxed">
           If the learner does not have a Report Card (SF9), they may still enroll. The school will accept a certification letter from the previous school principal as an alternative.
         </AlertDescription>
       </Alert>

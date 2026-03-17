@@ -69,10 +69,13 @@ export function DatePicker({
       <PopoverContent className="w-auto p-0 bg-white" align="center">
         <Calendar
           mode="single"
+          required
           selected={date}
           onSelect={(d) => {
-            setDate(d ?? undefined)
-            setOpen(false)
+            if (d) {
+              setDate(d)
+              setOpen(false)
+            }
           }}
           hideNavigation
           // Restrict navigation to only the allowed year range

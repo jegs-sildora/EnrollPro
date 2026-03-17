@@ -18,9 +18,9 @@ export default function Step2Family() {
 
   return (
     <div className="space-y-12">
-      <Alert className="bg-primary/5 border-primary/20 items-center">
-        <Info className="h-4 w-4 text-primary" />
-        <AlertDescription className="font-bold text-primary/80">
+      <Alert className="bg-black/5 border-black/20 items-center">
+        <Info className="h-4 w-4 text-black" />
+        <AlertDescription className="font-bold text-black/80">
           Important: Application updates and exam schedules will be sent to the email provided below.
         </AlertDescription>
       </Alert>
@@ -32,7 +32,7 @@ export default function Step2Family() {
           id="email" 
           type="email" 
           {...register('email')} 
-          placeholder="parent@email.com" 
+          placeholder="email@email.com" 
           className={cn("h-11 font-bold", errors.email && "border-destructive")} 
         />
         {errors.email && <p className="text-[11px] text-destructive font-medium">{errors.email.message}</p>}
@@ -43,7 +43,7 @@ export default function Step2Family() {
       {/* Parents Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         <div className="space-y-6">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-primary">Mother's Information</h3>
+          <h3 className="text-sm font-bold uppercase tracking-widest text-black">Mother's Information</h3>
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="mom-lastName" className="text-xs font-bold uppercase">Last Name <span className="text-destructive">*</span></Label>
@@ -61,7 +61,7 @@ export default function Step2Family() {
         </div>
 
         <div className="space-y-6">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-primary">Father's Information</h3>
+          <h3 className="text-sm font-bold uppercase tracking-widest text-black">Father's Information</h3>
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="dad-lastName" className="text-xs font-bold uppercase">Last Name <span className="text-destructive">*</span></Label>
@@ -85,10 +85,10 @@ export default function Step2Family() {
             id="add-guardian" 
             checked={showGuardian} 
             onCheckedChange={(checked) => setShowGuardian(checked === true)} 
-            className="w-5 h-5"
+            className="w-5 h-5 border-black data-[state=checked]:bg-black data-[state=checked]:text-white"
           />
           <Label htmlFor="add-guardian" className="text-sm font-semibold cursor-pointer flex items-center gap-2">
-            <UserPlus className="w-4 h-4 text-primary" />
+            <UserPlus className="w-4 h-4 text-black" />
             Add Guardian / Primary Contact (If different from parents)
           </Label>
         </div>
@@ -130,7 +130,7 @@ export default function Step2Family() {
 
       {/* Address Information */}
       <div className="space-y-8">
-        <h3 className="text-sm font-bold uppercase tracking-widest text-primary">Current Address</h3>
+        <h3 className="text-sm font-bold uppercase tracking-widest text-black">Current Address</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-1.5">
             <Label htmlFor="curr-house" className="text-xs font-bold uppercase">House No.</Label>
@@ -159,7 +159,7 @@ export default function Step2Family() {
             id="same-address" 
             checked={isPermanentSameAsCurrent} 
             onCheckedChange={(checked) => setValue('isPermanentSameAsCurrent', checked === true)} 
-            className="w-5 h-5"
+            className="w-5 h-5 border-black data-[state=checked]:bg-black data-[state=checked]:text-white"
           />
           <Label htmlFor="same-address" className="text-sm font-semibold cursor-pointer select-none">
             Permanent Address is same as Current Address
@@ -175,7 +175,7 @@ export default function Step2Family() {
               className="overflow-hidden"
             >
               <div className="pt-8 pb-1 space-y-6">
-                <h3 className="text-sm font-bold uppercase tracking-widest text-primary">Permanent Address</h3>
+                <h3 className="text-sm font-bold uppercase tracking-widest text-black">Permanent Address</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-1.5">
                     <Label htmlFor="perm-house" className="text-xs font-bold uppercase">House No.</Label>
