@@ -19,6 +19,24 @@ const VALID_TRANSITIONS: Record<string, ApplicationStatus[]> = {
   WITHDRAWN: [],
 };
 
+/**
+ * Recursively converts all string values in an object to uppercase and trims them.
+ */
+function toUpperCaseRecursive(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(v => toUpperCaseRecursive(v));
+  } else if (obj !== null && typeof obj === 'object' && !(obj instanceof Date)) {
+    const newObj: any = {};
+    for (const key in obj) {
+      newObj[key] = toUpperCaseRecursive(obj[key]);
+    }
+    return newObj;
+  } else if (typeof obj === 'string') {
+    return obj.trim().toUpperCase();
+  }
+  return obj;
+}
+
 function canTransition(from: ApplicationStatus, to: ApplicationStatus): boolean {
   return VALID_TRANSITIONS[from]?.includes(to) ?? false;
 }
@@ -122,7 +140,7 @@ export async function store(req: Request, res: Response) {
       return res.status(400).json({ message: 'Enrollment is currently closed. Please check back during the enrollment period.' });
     }
 
-    const body = req.body;
+    const body = toUpperCaseRecursive(req.body);
 
     // 3. Resolve grade level
     const gradeLevel = await prisma.gradeLevel.findFirst({
@@ -157,7 +175,7 @@ export async function store(req: Request, res: Response) {
     let shsTrack: 'ACADEMIC' | 'TECHPRO' | null = null;
 
     if (body.gradeLevel === '11' && body.shsTrack) {
-      shsTrack = body.shsTrack === 'Academic' ? 'ACADEMIC' : 'TECHPRO';
+      shsTrack = body.shsTrack === 'ACADEMIC' ? 'ACADEMIC' : 'TECHPRO';
 
       if (body.electiveCluster) {
         const strand = await prisma.strand.findFirst({
@@ -200,14 +218,14 @@ export async function store(req: Request, res: Response) {
       data: {
         lrn: body.lrn || null,
         psaBcNumber: body.psaBcNumber || null,
-        lastName: body.lastName.trim(),
-        firstName: body.firstName.trim(),
-        middleName: body.middleName?.trim() || null,
-        suffix: body.extensionName?.trim() || null,
+        lastName: body.lastName,
+        firstName: body.firstName,
+        middleName: body.middleName || null,
+        suffix: body.extensionName || null,
         birthDate,
-        sex: body.sex === 'Male' ? 'MALE' : 'FEMALE',
-        placeOfBirth: body.placeOfBirth?.trim() || null,
-        religion: body.religion?.trim() || null,
+        sex: body.sex === 'MALE' ? 'MALE' : 'FEMALE',
+        placeOfBirth: body.placeOfBirth || null,
+        religion: body.religion || null,
 
         // Address as JSON
         currentAddress: body.currentAddress,
@@ -457,7 +475,7 @@ export async function enroll(req: Request, res: Response) {
 // ── Request Revision ──
 export async function requestRevision(req: Request, res: Response) {
   try {
-    const { message } = req.body;
+    const { message } = toUpperCaseRecursive(req.body);
     const applicantId = parseInt(String(req.params.id));
 
     const applicant = await prisma.applicant.findUnique({ where: { id: applicantId } });
@@ -522,7 +540,7 @@ export async function withdraw(req: Request, res: Response) {
 // ── Reject ──
 export async function reject(req: Request, res: Response) {
   try {
-    const { rejectionReason } = req.body;
+    const { rejectionReason } = toUpperCaseRecursive(req.body);
     const applicantId = parseInt(String(req.params.id));
 
     const applicant = await prisma.applicant.findUnique({ where: { id: applicantId } });
@@ -609,7 +627,7 @@ export async function markEligible(req: Request, res: Response) {
 // ── Schedule assessment (SCP flow) ──
 export async function scheduleExam(req: Request, res: Response) {
   try {
-    const { examDate, assessmentType } = req.body;
+    const { examDate, assessmentType } = toUpperCaseRecursive(req.body);
     const applicantId = parseInt(String(req.params.id));
 
     const applicant = await prisma.applicant.findUnique({ where: { id: applicantId } });
@@ -664,7 +682,7 @@ export async function scheduleExam(req: Request, res: Response) {
 // ── Record assessment result ──
 export async function recordResult(req: Request, res: Response) {
   try {
-    const { examScore, examResult, examNotes, interviewResult } = req.body;
+    const { examScore, examResult, examNotes, interviewResult } = toUpperCaseRecursive(req.body);
     const applicantId = parseInt(String(req.params.id));
 
     const applicant = await prisma.applicant.findUnique({ where: { id: applicantId } });

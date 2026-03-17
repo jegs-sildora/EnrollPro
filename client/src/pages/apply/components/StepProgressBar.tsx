@@ -20,7 +20,7 @@ export default function StepProgressBar({ currentStep, totalSteps, steps, descri
       {/* ── Mobile ── */}
       <div className="md:hidden">
         <div 
-          className="flex items-center justify-between mb-4 p-4 rounded-2xl shadow-sm border border-black/10 bg-black text-white"
+          className="flex items-center justify-between mb-4 p-4 rounded-2xl shadow-sm border border-[#061E29]/10 bg-[#061E29] text-white"
         >
           <div className="flex flex-col">
             <span 
@@ -57,9 +57,9 @@ export default function StepProgressBar({ currentStep, totalSteps, steps, descri
               style={{
                 backgroundColor:
                   step.id === currentStep
-                    ? 'rgba(0,0,0,0.2)'
+                    ? 'rgba(6,30,41,0.2)'
                     : step.id < maxCompleted
-                    ? 'black'
+                    ? '#061E29'
                     : 'hsl(var(--border))',
               }}
             />
@@ -91,9 +91,9 @@ export default function StepProgressBar({ currentStep, totalSteps, steps, descri
                       className={cn(
                         'w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 border-2',
                         isCompleted
-                          ? 'bg-black border-black text-white'
+                          ? 'bg-[#061E29] border-[#061E29] text-white'
                           : isActive
-                          ? 'bg-black border-black text-white shadow-[0_0_0_3px_rgba(0,0,0,0.1)]'
+                          ? 'bg-[#061E29] border-[#061E29] text-white shadow-[0_0_0_3px_rgba(6,30,41,0.1)]'
                           : 'bg-background border-border text-muted-foreground'
                       )}
                     >
@@ -115,9 +115,9 @@ export default function StepProgressBar({ currentStep, totalSteps, steps, descri
                         className={cn(
                           "text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full transition-all duration-200",
                           isCompleted 
-                            ? "bg-black text-white" 
+                            ? "bg-[#061E29] text-white" 
                             : isActive 
-                            ? "bg-black/10 text-black" 
+                            ? "bg-[#061E29]/10 text-[#061E29]" 
                             : "bg-transparent text-transparent"
                         )}
                       >
@@ -134,7 +134,7 @@ export default function StepProgressBar({ currentStep, totalSteps, steps, descri
                     >
                       <div
                         className={cn(
-                          "absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-in-out bg-black",
+                          "absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-in-out bg-[#061E29]",
                           isCompleted ? "w-full" : "w-0"
                         )}
                       />

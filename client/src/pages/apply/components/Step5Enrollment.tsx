@@ -29,7 +29,7 @@ export default function Step5Enrollment() {
     <div className="space-y-12">
       {/* Grade Level Selector */}
       <div className="space-y-6">
-        <Label className="text-sm font-bold uppercase tracking-widest text-black">Grade Level to Enroll *</Label>
+        <Label className="text-sm font-bold uppercase tracking-widest text-[#061E29]">Grade Level to Enroll *</Label>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mt-2">
           {grades.map((g) => (
             <button
@@ -49,7 +49,7 @@ export default function Step5Enrollment() {
               className={cn(
                 "h-16 rounded-xl border-2 font-bold text-lg transition-all flex items-center justify-center shadow-sm",
                 gradeLevel === g
-                  ? "border-primary bg-primary text-primary-foreground pointer-events-none"
+                  ? "border-[#061E29] bg-[#061E29] text-white pointer-events-none"
                   : "border-border bg-white text-muted-foreground hover:bg-primary/5"
               )}
             >
@@ -69,18 +69,18 @@ export default function Step5Enrollment() {
             className="overflow-hidden"
           >
             <div className="space-y-8 pb-8">
-              <div className="p-6 border bg-black/5 border-black/20 rounded-2xl space-y-6 shadow-sm">
+              <div className="p-6 border bg-[#061E29]/5 border-[#061E29]/20 rounded-2xl space-y-6 shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
-                    <BookOpen className="w-5 h-5 text-black" />
+                    <BookOpen className="w-5 h-5 text-[#061E29]" />
                   </div>
-                  <Label className="text-base font-bold text-black">Application Type *</Label>
+                  <Label className="text-base font-bold text-[#061E29]">Application Type *</Label>
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <button type="button" className={cn(
                     "flex flex-col p-4 rounded-xl border-2 transition-all cursor-pointer text-left",
-                    !scpApplication ? "border-black bg-black text-white pointer-events-none" : "border-border bg-white hover:bg-black/5"
+                    !scpApplication ? "border-[#061E29] bg-[#061E29] text-white pointer-events-none" : "border-border bg-white hover:bg-[#061E29]/5"
                   )} onClick={() => { setValue('scpApplication', false); setValue('scpType', undefined); }}>
                     <div className="flex items-center gap-3 mb-1">
                       <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center", !scpApplication ? "border-white" : "border-muted-foreground")}>
@@ -93,7 +93,7 @@ export default function Step5Enrollment() {
 
                   <button type="button" className={cn(
                     "flex flex-col p-4 rounded-xl border-2 transition-all cursor-pointer text-left",
-                    scpApplication ? "border-black bg-black text-white pointer-events-none" : "border-border bg-white hover:bg-black/5"
+                    scpApplication ? "border-[#061E29] bg-[#061E29] text-white pointer-events-none" : "border-border bg-white hover:bg-[#061E29]/5"
                   )} onClick={() => setValue('scpApplication', true)}>
                     <div className="flex items-center gap-3 mb-1">
                       <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center", scpApplication ? "border-white" : "border-muted-foreground")}>
@@ -115,7 +115,7 @@ export default function Step5Enrollment() {
                     >
                       <div className="pt-6 space-y-6">
                         <Separator className="opacity-20" />
-                        <Label className="text-sm font-bold uppercase tracking-widest text-black">Select SCP Program *</Label>
+                        <Label className="text-sm font-bold uppercase tracking-widest text-[#061E29]">Select SCP Program *</Label>
                         <RadioGroup 
                           value={scpType} 
                           onValueChange={(val: 'STE' | 'SPA' | 'SPS' | 'SPJ' | 'SPFL' | 'SPTVE') => setValue('scpType', val)}
@@ -131,10 +131,10 @@ export default function Step5Enrollment() {
                           ].map((p) => (
                             <div key={p.id} className={cn(
                               "flex flex-col p-4 rounded-xl border-2 transition-all cursor-pointer",
-                              scpType === p.id ? "border-black bg-white" : "border-border hover:border-black/30"
+                              scpType === p.id ? "border-[#061E29] bg-white" : "border-border hover:border-[#061E29]/30"
                             )} onClick={() => setValue('scpType', p.id as 'STE' | 'SPA' | 'SPS' | 'SPJ' | 'SPFL' | 'SPTVE')}>
                               <div className="flex items-center gap-3 mb-1">
-                                <RadioGroupItem value={p.id} id={`scp-${p.id}`} className="w-5 h-5 border-black text-black" />
+                                <RadioGroupItem value={p.id} id={`scp-${p.id}`} className="w-5 h-5 border-[#061E29] text-[#061E29]" />
                                 <Label htmlFor={`scp-${p.id}`} className="font-bold cursor-pointer">{p.label}</Label>
                               </div>
                               <p className="text-[11px] text-muted-foreground pl-8 italic">{p.desc}</p>
@@ -142,7 +142,7 @@ export default function Step5Enrollment() {
                               {/* Sub-fields */}
                               {scpType === 'SPA' && p.id === 'SPA' && (
                                 <div className="pl-8 pt-4 space-y-2">
-                                  <Label className="text-[10px] font-bold uppercase text-black">Preferred Art Field *</Label>
+                                  <Label className="text-[10px] font-bold uppercase text-[#061E29]">Preferred Art Field *</Label>
                                   <Select onValueChange={(val) => setValue('spaArtField', val)} defaultValue={watch('spaArtField')}>
                                     <SelectTrigger className="h-10 bg-muted/30 font-bold">
                                       <SelectValue placeholder="Select Art Field" />
@@ -156,7 +156,7 @@ export default function Step5Enrollment() {
 
                               {scpType === 'SPS' && p.id === 'SPS' && (
                                 <div className="pl-8 pt-4 space-y-2">
-                                  <Label className="text-[10px] font-bold uppercase text-black">Primary Sport *</Label>
+                                  <Label className="text-[10px] font-bold uppercase text-[#061E29]">Primary Sport *</Label>
                                   <div className="grid grid-cols-2 gap-2">
                                     {SPS_SPORTS.map(s => (
                                       <div key={s} className="flex items-center space-x-2">
@@ -178,7 +178,7 @@ export default function Step5Enrollment() {
 
                               {scpType === 'SPFL' && p.id === 'SPFL' && (
                                 <div className="pl-8 pt-4 space-y-2">
-                                  <Label className="text-[10px] font-bold uppercase text-black">Preferred Language *</Label>
+                                  <Label className="text-[10px] font-bold uppercase text-[#061E29]">Preferred Language *</Label>
                                   <Select onValueChange={(val) => setValue('spflLanguage', val)} defaultValue={watch('spflLanguage')}>
                                     <SelectTrigger className="h-10 bg-muted/30 font-bold">
                                       <SelectValue placeholder="Select Language" />
@@ -212,16 +212,16 @@ export default function Step5Enrollment() {
             className="overflow-hidden"
           >
             <div className="space-y-8 pb-8">
-              <div className="p-6 border border-black/20 bg-black/5 rounded-2xl space-y-8 shadow-sm">
+              <div className="p-6 border border-[#061E29]/20 bg-[#061E29]/5 rounded-2xl space-y-8 shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
-                    <GraduationCap className="w-5 h-5 text-black" />
+                    <GraduationCap className="w-5 h-5 text-[#061E29]" />
                   </div>
-                  <Label className="text-base font-bold text-black">SHS Program Selection *</Label>
+                  <Label className="text-base font-bold text-[#061E29]">SHS Program Selection *</Label>
                 </div>
 
                 <div className="space-y-4">
-                  <Label className="text-sm font-bold uppercase tracking-widest text-black opacity-70">Choose Track</Label>
+                  <Label className="text-sm font-bold uppercase tracking-widest text-[#061E29] opacity-70">Choose Track</Label>
                   <RadioGroup 
                     value={shsTrack} 
                     onValueChange={(val: 'Academic' | 'TechPro') => {
@@ -233,9 +233,9 @@ export default function Step5Enrollment() {
                     {(['Academic', 'TechPro'] as const).map((t) => (
                       <div key={t} className={cn(
                         "flex items-center space-x-3 p-4 rounded-xl border-2 transition-all cursor-pointer bg-white",
-                        shsTrack === t ? "border-black ring-2 ring-black/5 shadow-sm" : "border-border hover:border-black/20"
+                        shsTrack === t ? "border-[#061E29] ring-2 ring-[#061E29]/5 shadow-sm" : "border-border hover:border-[#061E29]/20"
                       )} onClick={() => setValue('shsTrack', t)}>
-                        <RadioGroupItem value={t} id={`track-${t}`} className="w-5 h-5 border-black text-black" />
+                        <RadioGroupItem value={t} id={`track-${t}`} className="w-5 h-5 border-[#061E29] text-[#061E29]" />
                         <Label htmlFor={`track-${t}`} className="font-bold cursor-pointer">{t === 'Academic' ? 'Academic Track' : 'Tech-Voc Track'}</Label>
                       </div>
                     ))}
@@ -252,7 +252,7 @@ export default function Step5Enrollment() {
                     >
                       <div className="space-y-6 pt-4">
                         <div className="space-y-2">
-                          <Label className="text-sm font-bold uppercase tracking-widest text-black/60">Preferred Elective Cluster *</Label>
+                          <Label className="text-sm font-bold uppercase tracking-widest text-[#061E29]/60">Preferred Elective Cluster *</Label>
                           <Select value={electiveCluster} onValueChange={(val) => setValue('electiveCluster', val)}>
                             <SelectTrigger className="h-12 bg-white border-2 font-bold">
                               <SelectValue placeholder="Select Elective Cluster" />
@@ -319,7 +319,7 @@ export default function Step5Enrollment() {
       {/* General Preferences (All applicants) */}
       <div className="space-y-10 pt-6 border-t border-border/40">
         <div className="space-y-4">
-          <Label className="text-sm font-bold uppercase tracking-widest text-black">Type of Learner *</Label>
+          <Label className="text-sm font-bold uppercase tracking-widest text-[#061E29]">Type of Learner *</Label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {(['Regular', 'Transferee', 'Returning Learner', 'OSCYA', 'ALS'] as const).map((t) => (
               <button
@@ -328,7 +328,7 @@ export default function Step5Enrollment() {
                 onClick={() => setValue('learnerType', t)}
                 className={cn(
                   "flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left",
-                  watch('learnerType') === t ? "border-black bg-black text-white pointer-events-none" : "border-border bg-white hover:bg-black/5"
+                  watch('learnerType') === t ? "border-[#061E29] bg-[#061E29] text-white pointer-events-none" : "border-border bg-white hover:bg-[#061E29]/5"
                 )}
               >
                 <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0", watch('learnerType') === t ? "border-white" : "border-muted-foreground")}>

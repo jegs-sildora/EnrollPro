@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Lock, ArrowDown, Check } from 'lucide-react';
+import {  ArrowDown, Check, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSettingsStore } from '@/stores/settingsStore';
 
@@ -30,8 +30,8 @@ export default function PrivacyNotice({ onAccept }: PrivacyNoticeProps) {
       <Card className="shadow-lg border-border rounded-2xl overflow-hidden">
         <CardHeader className="bg-muted/30 border-b pb-6">
           <div className="flex flex-col items-center text-center gap-2">
-            <div className="w-12 h-12 rounded-full bg-black/10 flex items-center justify-center mb-2">
-              <Lock className="w-6 h-6 text-black" />
+            <div className="w-12 h-12 rounded-full bg-[#061E29]/10 flex items-center justify-center mb-2">
+              <ShieldCheck className="w-6 h-6 text-[#061E29]" />
             </div>
             <CardTitle className="text-2xl font-bold tracking-tight">Data Privacy Notice</CardTitle>
             <p className="text-sm text-muted-foreground font-medium">
@@ -85,7 +85,7 @@ export default function PrivacyNotice({ onAccept }: PrivacyNoticeProps) {
 
             <div className={cn(
               "flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-widest transition-all duration-500 py-1",
-              hasScrolledNotice ? "text-black" : "text-black/60 animate-pulse"
+              hasScrolledNotice ? "text-[#061E29]" : "text-[#061E29]/60 animate-pulse"
             )}>
               {hasScrolledNotice ? (
                 <>
@@ -110,7 +110,7 @@ export default function PrivacyNotice({ onAccept }: PrivacyNoticeProps) {
               id="privacy-consent" 
               checked={agreed} 
               onCheckedChange={(checked) => setAgreed(checked === true)}
-              className="mt-1 border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+              className="mt-1 border-[#061E29] data-[state=checked]:bg-[#061E29] data-[state=checked]:text-white"
             />
             <Label 
               htmlFor="privacy-consent" 
@@ -123,7 +123,7 @@ export default function PrivacyNotice({ onAccept }: PrivacyNoticeProps) {
           <Button 
             onClick={onAccept} 
             disabled={!agreed} 
-            className="w-full h-12 text-base font-semibold transition-all bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
+            className="w-full h-12 text-base font-semibold transition-all bg-[#061E29] text-white hover:bg-[#061E29]/90 disabled:bg-muted disabled:text-muted-foreground"
           >
             Proceed to Application Form →
           </Button>

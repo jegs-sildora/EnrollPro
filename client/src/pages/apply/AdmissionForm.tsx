@@ -18,6 +18,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, ArrowRight, AlertCircle } from 'lucide-react';
 import api from '@/api/axiosInstance';
 import { ConfirmationModal } from '@/components/ui/confirmation-modal';
+import { toUpperCaseRecursive } from '@/lib/utils';
 
 
 
@@ -179,15 +180,22 @@ export default function AdmissionForm() {
     setSubmitError('');
 
     try {
+      // Convert all strings to uppercase for database uniformity
+      const uppercaseData = toUpperCaseRecursive(data);
+
       const payload = {
-        ...data,
+        ...uppercaseData,
         birthdate: data.birthdate instanceof Date ? data.birthdate.toISOString() : data.birthdate,
-        permanentAddress: data.isPermanentSameAsCurrent ? data.currentAddress : data.permanentAddress,
+        // Ensure permanent address is handled correctly if same as current
+        permanentAddress: uppercaseData.isPermanentSameAsCurrent 
+          ? uppercaseData.currentAddress 
+          : uppercaseData.permanentAddress,
       };
 
       const response = await api.post('/applications', payload);
       setTrackingNumber(response.data.trackingNumber);
       setIsSubmitted(true);
+      reset(); // Reset form values
       sessionStorage.removeItem('enrollpro_apply_draft');
       sessionStorage.removeItem('enrollpro_apply_consent');
       sessionStorage.removeItem('enrollpro_apply_step');
@@ -223,7 +231,7 @@ export default function AdmissionForm() {
           <div className="mb-8 pb-6 border-b border-border/50">
             <div className="flex items-center gap-3">
               <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 bg-primary text-primary-foreground"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 bg-[#061E29] text-white"
               >
                 {currentIndex}
               </div>
@@ -303,7 +311,7 @@ export default function AdmissionForm() {
                     type="button"
                     size="lg"
                     onClick={nextStep}
-                    className="h-12 px-8 font-semibold sm:w-auto w-full bg-primary"
+                    className="h-12 px-8 font-semibold sm:w-auto w-full bg-[#061E29] text-white hover:bg-[#061E29]/90"
                   >
                     {isEditing ? 'Update & Review' : 'Next Step'}
                     <ArrowRight className="ml-2 h-4 w-4" />

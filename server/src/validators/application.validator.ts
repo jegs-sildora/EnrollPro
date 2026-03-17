@@ -27,7 +27,7 @@ export const applicationSubmitSchema = z.object({
 
   // Grade level & program
   gradeLevel: z.enum(['7', '8', '9', '10', '11', '12']),
-  shsTrack: z.enum(['Academic', 'TechPro']).optional().nullable(),
+  shsTrack: z.enum(['ACADEMIC', 'TECHPRO']).optional().nullable(),
   electiveCluster: z.string().optional().nullable(),
   scpApplication: z.boolean().default(false),
   scpType: z.enum(['STE', 'SPA', 'SPS', 'SPJ', 'SPFL', 'SPTVE']).optional().nullable(),
@@ -38,7 +38,7 @@ export const applicationSubmitSchema = z.object({
   middleName: z.string().optional().nullable(),
   extensionName: z.string().optional().nullable(),
   birthdate: z.string().or(z.date()),
-  sex: z.enum(['Male', 'Female']),
+  sex: z.enum(['MALE', 'FEMALE']),
   placeOfBirth: z.string().min(1, 'Place of birth is required'),
   religion: z.string().optional().nullable(),
 
@@ -85,7 +85,7 @@ export const applicationSubmitSchema = z.object({
   lastGradeCompleted: z.string().min(1, 'Last grade completed is required'),
   syLastAttended: z.string().min(1, 'School year last attended is required'),
   lastSchoolAddress: z.string().optional().nullable(),
-  lastSchoolType: z.enum(['Public', 'Private', 'International', 'ALS']),
+  lastSchoolType: z.enum(['PUBLIC', 'PRIVATE', 'INTERNATIONAL', 'ALS']),
 
   // STEM grades (G11 STEM only)
   g10ScienceGrade: z.number().optional().nullable(),
@@ -97,7 +97,7 @@ export const applicationSubmitSchema = z.object({
   spflLanguage: z.string().optional().nullable(),
 
   // Learner type
-  learnerType: z.enum(['Regular', 'Transferee', 'Returning Learner', 'OSCYA', 'ALS']),
+  learnerType: z.enum(['REGULAR', 'TRANSFEREE', 'RETURNING LEARNER', 'OSCYA', 'ALS']),
 });
 
 export const approveSchema = z.object({

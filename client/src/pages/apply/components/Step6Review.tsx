@@ -19,10 +19,10 @@ const SummaryCard = ({ title, icon: Icon, stepId, onEdit, children }: { title: s
   <div className="border border-border/60 rounded-2xl overflow-hidden bg-white shadow-sm">
     <div className="px-5 py-3 bg-muted/30 border-b border-border/40 flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <Icon className="w-4 h-4 text-black" />
+        <Icon className="w-4 h-4 text-[#061E29]" />
         <h4 className="text-xs font-bold uppercase tracking-wider text-foreground/70">{title}</h4>
       </div>
-      <Button type="button" variant="ghost" size="sm" onClick={() => onEdit(stepId)} className="h-7 text-[10px] font-bold uppercase text-black hover:text-black hover:bg-black/5 gap-1">
+      <Button type="button" variant="ghost" size="sm" onClick={() => onEdit(stepId)} className="h-7 text-[10px] font-bold uppercase text-[#061E29] hover:text-[#061E29] hover:bg-[#061E29]/5 gap-1">
         <Edit2 className="w-3 h-3" /> Edit
       </Button>
     </div>
@@ -88,10 +88,10 @@ export default function Step6Review({ onEdit, isSubmitting, onSubmitClick }: Ste
       </div>
 
       <div className="pt-10 border-t border-border/60 space-y-8">
-        <div className="p-6 bg-black/5 border border-black/10 rounded-2xl space-y-6">
+        <div className="p-6 bg-[#061E29]/5 border border-[#061E29]/10 rounded-2xl space-y-6">
           <div className="flex items-center gap-2 mb-2">
-            <ShieldCheck className="w-5 h-5 text-black" />
-            <h3 className="text-sm font-bold uppercase tracking-widest text-black">Accuracy Certification</h3>
+            <ShieldCheck className="w-5 h-5 text-[#061E29]" />
+            <h3 className="text-sm font-bold uppercase tracking-widest text-[#061E29]">Accuracy Certification</h3>
           </div>
           
           <div className="flex items-start space-x-3">
@@ -115,12 +115,12 @@ export default function Step6Review({ onEdit, isSubmitting, onSubmitClick }: Ste
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
             <div className="space-y-2">
-              <Label htmlFor="sig" className="text-[10px] font-bold uppercase text-black/60">Full Name of Parent / Guardian *</Label>
+              <Label htmlFor="sig" className="text-[10px] font-bold uppercase text-[#061E29]/60">Full Name of Parent / Guardian *</Label>
               <Input autoComplete="off" id="sig" {...register('parentGuardianSignature')} placeholder="Type your full name" className={cn("h-12 border-2 font-bold uppercase", errors.parentGuardianSignature && "border-destructive")} />
               {errors.parentGuardianSignature && <p className="text-xs text-destructive font-bold">{errors.parentGuardianSignature.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase text-black/60">Date Accomplished</Label>
+              <Label className="text-[10px] font-bold uppercase text-[#061E29]/60">Date Accomplished</Label>
               <Input autoComplete="off" value={format(new Date(), "MMMM dd, yyyy")} readOnly className="h-12 bg-muted/50 font-bold text-muted-foreground cursor-not-allowed uppercase" />
             </div>
           </div>

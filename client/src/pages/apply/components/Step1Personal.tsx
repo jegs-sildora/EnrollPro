@@ -86,11 +86,11 @@ export default function Step1Personal() {
             className="flex gap-6 pt-1"
           >
             <div className="flex items-center space-x-2.5">
-              <RadioGroupItem value="Male" id="sex-male" className="w-5 h-5 border-black text-black" />
+              <RadioGroupItem value="Male" id="sex-male" className="w-5 h-5 border-[#061E29] text-[#061E29]" />
               <Label htmlFor="sex-male" className="font-medium cursor-pointer text-sm">Male</Label>
             </div>
             <div className="flex items-center space-x-2.5">
-              <RadioGroupItem value="Female" id="sex-female" className="w-5 h-5 border-black text-black" />
+              <RadioGroupItem value="Female" id="sex-female" className="w-5 h-5 border-[#061E29] text-[#061E29]" />
               <Label htmlFor="sex-female" className="font-medium cursor-pointer text-sm">Female</Label>
             </div>
           </RadioGroup>
@@ -113,7 +113,7 @@ export default function Step1Personal() {
       </div>
 
       <div className="pt-6 border-t border-border/40">
-        <h3 className="text-sm font-bold uppercase tracking-widest text-black mb-6">Reference Numbers</h3>
+        <h3 className="text-sm font-bold uppercase tracking-widest text-[#061E29] mb-6">Reference Numbers</h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
