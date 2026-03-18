@@ -1,9 +1,0 @@
-// .vscode/settings.json
-{
-  "tailwindCSS.files.exclude": [
-    "**/.git/**",
-    "**/node_modules/**",
-    "**/.hg/**",
-    "**/docs/**"
-  ]
-}
