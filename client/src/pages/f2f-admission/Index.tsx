@@ -21,6 +21,7 @@ import { ConfirmationModal } from '@/components/ui/confirmation-modal';
 import { toUpperCaseRecursive } from '@/lib/utils';
 import { sileo } from 'sileo';
 import { useAuthStore } from '@/stores/authStore';
+import { useSettingsStore } from '@/stores/settingsStore';
 
 const DRAFT_KEY = 'enrollpro_f2f_draft';
 const STEP_KEY = 'enrollpro_f2f_step';
@@ -30,6 +31,7 @@ const EDITING_KEY = 'enrollpro_f2f_editing';
 export default function F2FAdmission() {
   const stepper = useStepper();
   const { user } = useAuthStore();
+  const { colorScheme, selectedAccentHsl } = useSettingsStore();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,6 +40,17 @@ export default function F2FAdmission() {
   const [isEditing, setIsEditing] = useState(false);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  const accentHsl = selectedAccentHsl ?? colorScheme?.accent_hsl;
+  const currentHex = colorScheme?.palette?.find(p => p.hsl === accentHsl)?.hex;
+  const isFefe01 = currentHex?.toLowerCase() === '#fefe01';
+
+  // Check if color is "light" (uses black foreground)
+  const accentForeground = colorScheme?.palette?.find(p => p.hsl === accentHsl)?.foreground 
+    ?? colorScheme?.accent_foreground;
+  const isLightColor = accentForeground === '0 0% 0%';
+
+  const applyOverride = isFefe01 || isLightColor;
 
   const methods = useForm<AdmissionFormData, unknown, AdmissionFormData>({
     resolver: zodResolver(admissionSchema) as import('react-hook-form').Resolver<AdmissionFormData>,
@@ -268,13 +281,19 @@ export default function F2FAdmission() {
   const isLastStep = stepper.state.isLast;
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div 
+      className="max-w-5xl mx-auto"
+      style={applyOverride ? {
+        '--primary': '200 68% 9%',
+        '--primary-foreground': '0 0% 100%',
+      } as React.CSSProperties : {}}
+    >
       {/* Header */}
       <Card className="mb-6 border-none shadow-none bg-transparent">
         <CardHeader className="px-0 pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-[#061E29] text-white">
+              <div className="p-2.5 rounded-xl bg-primary text-primary-foreground">
                 <UserPlus className="w-5 h-5" />
               </div>
               <div>
@@ -312,7 +331,7 @@ export default function F2FAdmission() {
           {/* Step Header */}
           <div className="mb-8 pb-6 border-b border-border/50">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 bg-[#061E29] text-white">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 bg-primary text-primary-foreground">
                 {currentIndex}
               </div>
               <div>
@@ -396,7 +415,7 @@ export default function F2FAdmission() {
                     type="button"
                     size="lg"
                     onClick={nextStep}
-                    className="h-12 px-8 font-semibold sm:w-auto w-full bg-[#061E29] text-white hover:bg-[#061E29]/90"
+                    className="h-12 px-8 font-semibold sm:w-auto w-full bg-primary text-primary-foreground hover:opacity-90"
                   >
                     {isEditing ? 'Update & Review' : 'Next Step'}
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -417,6 +436,7 @@ export default function F2FAdmission() {
         confirmText="Submit Application"
         onConfirm={() => handleSubmit(onSubmit)()}
         loading={isSubmitting}
+        confirmClassName="bg-primary text-primary-foreground hover:opacity-90"
       />
 
       {/* Reset Confirmation Modal */}
@@ -427,7 +447,7 @@ export default function F2FAdmission() {
         description="Are you sure you want to reset the form? All entered data will be cleared and you will start from the beginning."
         confirmText="Reset"
         onConfirm={handleFullReset}
-        confirmClassName="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+        confirmClassName="bg-primary text-primary-foreground hover:opacity-90"
       />
     </div>
   );

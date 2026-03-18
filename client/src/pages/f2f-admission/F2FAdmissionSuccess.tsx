@@ -5,6 +5,7 @@ import { CheckCircle2, Copy, Check, UserPlus, FileText, ClipboardList, ArrowRigh
 import { useNavigate } from 'react-router';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { useSettingsStore } from '@/stores/settingsStore';
 
 interface F2FAdmissionSuccessProps {
   trackingNumber: string;
@@ -15,6 +16,18 @@ interface F2FAdmissionSuccessProps {
 export default function F2FAdmissionSuccess({ trackingNumber, encodedBy, onNewApplication }: F2FAdmissionSuccessProps) {
   const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
+  const { colorScheme, selectedAccentHsl } = useSettingsStore();
+
+  const accentHsl = selectedAccentHsl ?? colorScheme?.accent_hsl;
+  const currentHex = colorScheme?.palette?.find(p => p.hsl === accentHsl)?.hex;
+  const isFefe01 = currentHex?.toLowerCase() === '#fefe01';
+
+  // Check if color is "light" (uses black foreground)
+  const accentForeground = colorScheme?.palette?.find(p => p.hsl === accentHsl)?.foreground 
+    ?? colorScheme?.accent_foreground;
+  const isLightColor = accentForeground === '0 0% 0%';
+
+  const applyOverride = isFefe01 || isLightColor;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(trackingNumber);
@@ -23,12 +36,18 @@ export default function F2FAdmissionSuccess({ trackingNumber, encodedBy, onNewAp
   };
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <Card className="shadow-lg border-2 border-[#061E29]/20">
+    <div 
+      className="max-w-3xl mx-auto"
+      style={applyOverride ? {
+        '--primary': '200 68% 9%',
+        '--primary-foreground': '0 0% 100%',
+      } as React.CSSProperties : {}}
+    >
+      <Card className="shadow-lg border-2 border-primary/20">
         <CardHeader className="text-center pb-2">
           <div className="flex justify-center mb-4">
-            <div className="p-4 rounded-full bg-[#061E29]/10">
-              <CheckCircle2 className="w-12 h-12 text-[#061E29]" />
+            <div className="p-4 rounded-full bg-primary/10">
+              <CheckCircle2 className="w-12 h-12 text-primary" />
             </div>
           </div>
           <CardTitle className="text-2xl font-bold">F2F Application Submitted</CardTitle>
@@ -43,7 +62,7 @@ export default function F2FAdmissionSuccess({ trackingNumber, encodedBy, onNewAp
             onClick={handleCopy}
             className={cn(
               "bg-muted p-8 rounded-2xl text-center space-y-3 border-2 border-dashed cursor-pointer transition-all duration-200 group relative overflow-hidden",
-              copied ? "border-[#061E29] bg-[#061E29]/5" : "border-muted-foreground/20 hover:border-[#061E29]/50 hover:bg-[#061E29]/5"
+              copied ? "border-primary bg-primary/5" : "border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/5"
             )}
           >
             <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-black">
@@ -53,14 +72,14 @@ export default function F2FAdmissionSuccess({ trackingNumber, encodedBy, onNewAp
               <p className="text-4xl font-mono font-black text-foreground tracking-tighter">{trackingNumber}</p>
               <div className={cn(
                 "p-2 rounded-lg transition-colors",
-                copied ? "bg-[#061E29] text-white" : "bg-muted-foreground/10 group-hover:bg-[#061E29]/20"
+                copied ? "bg-primary text-primary-foreground" : "bg-muted-foreground/10 group-hover:bg-primary/20"
               )}>
                 {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
               </div>
             </div>
             <p className={cn(
               "text-xs font-bold transition-all duration-200",
-              copied ? "text-[#061E29] scale-110" : "text-muted-foreground"
+              copied ? "text-primary scale-110" : "text-muted-foreground"
             )}>
               {copied ? "COPIED TO CLIPBOARD!" : "CLICK TO COPY"}
             </p>
@@ -113,7 +132,7 @@ export default function F2FAdmissionSuccess({ trackingNumber, encodedBy, onNewAp
               View Applications
             </Button>
             <Button
-              className="flex-1 gap-2 h-12 font-bold bg-[#061E29] text-white hover:bg-[#061E29]/90"
+              className="flex-1 gap-2 h-12 font-bold bg-primary text-primary-foreground hover:opacity-90"
               onClick={onNewApplication}
             >
               <UserPlus className="w-4 h-4" />

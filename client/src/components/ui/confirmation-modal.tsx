@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useSettingsStore } from '@/stores/settingsStore';
 
 interface ConfirmationModalProps {
   open: boolean;
@@ -30,9 +31,28 @@ export function ConfirmationModal({
   loading = false,
   confirmClassName,
 }: ConfirmationModalProps) {
+  const { colorScheme, selectedAccentHsl } = useSettingsStore();
+
+  const accentHsl = selectedAccentHsl ?? colorScheme?.accent_hsl;
+  const currentHex = colorScheme?.palette?.find(p => p.hsl === accentHsl)?.hex;
+  const isFefe01 = currentHex?.toLowerCase() === '#fefe01';
+
+  // Check if color is "light" (uses black foreground)
+  const accentForeground = colorScheme?.palette?.find(p => p.hsl === accentHsl)?.foreground 
+    ?? colorScheme?.accent_foreground;
+  const isLightColor = accentForeground === '0 0% 0%';
+
+  const applyOverride = isFefe01 || isLightColor;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-md p-6 sm:p-8 rounded-2xl overflow-hidden">
+      <DialogContent 
+        className="w-[calc(100%-2rem)] sm:max-w-md p-6 sm:p-8 rounded-2xl overflow-hidden"
+        style={applyOverride ? {
+          '--primary': '200 68% 9%',
+          '--primary-foreground': '0 0% 100%',
+        } as React.CSSProperties : {}}
+      >
         <DialogHeader className="space-y-3">
           <DialogTitle className="text-xl font-bold tracking-tight">{title}</DialogTitle>
           <DialogDescription className="text-sm leading-relaxed font-medium">
@@ -44,7 +64,7 @@ export function ConfirmationModal({
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={loading}
-            className="h-11 px-6 font-semibold sm:w-auto w-full rounded-xl"
+            className="h-11 px-6 font-semibold sm:w-auto w-full rounded-xl hover:bg-primary/10 hover:text-foreground"
           >
             Cancel
           </Button>
