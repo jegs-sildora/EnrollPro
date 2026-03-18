@@ -79,8 +79,8 @@ export default function Apply() {
           )}
           
           <div className="flex flex-col leading-tight text-center sm:text-left min-w-0 max-w-87.5 sm:max-w-175">
-            <span className="text-sm sm:text-xl font-black tracking-tight text-foreground line-clamp-2 leading-none uppercase">{schoolName}</span>
-            <span className="text-[8px] sm:text-[11px] font-black tracking-[0.3em] uppercase text-muted-foreground mt-1">Online Admission Portal</span>
+            <span className="text-sm sm:text-xl font-black tracking-tight text-foreground line-clamp-2 leading-none uppercase text-center">{schoolName}</span>
+            <span className="text-[8px] sm:text-[11px] font-black tracking-[0.3em] uppercase text-muted-foreground mt-1 text-center">Online Admission Portal</span>
           </div>
 
           <img src={depedLogo} alt="DepEd logo" className="hidden md:block w-60 h-60 shrink-0 object-contain" />
