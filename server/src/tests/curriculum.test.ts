@@ -1,50 +1,51 @@
 // @ts-nocheck
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import request from 'supertest';
-import app from '../app.js';
-import { prisma } from '../lib/prisma.js';
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import request from "supertest";
+import app from "../app.js";
+import { prisma } from "../lib/prisma.js";
 
-describe('Curriculum API', () => {
+describe("Curriculum API", () => {
   let authToken: string;
-  let academicYearId: number;
+  let schoolYearId: number;
   let gradeLevelId: number;
   let strandId: number;
 
   beforeAll(async () => {
     // Create test user
-    const hashedPassword = '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYIeWEHaSuu'; // 'password'
+    const hashedPassword =
+      "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYIeWEHaSuu"; // 'password'
     const user = await prisma.user.create({
       data: {
-        name: 'Test Registrar',
-        email: 'test-curriculum@test.com',
+        name: "Test Registrar",
+        email: "test-curriculum@test.com",
         password: hashedPassword,
-        role: 'REGISTRAR',
+        role: "REGISTRAR",
       },
     });
 
     // Login to get token
     const loginRes = await request(app)
-      .post('/api/auth/login')
-      .send({ email: 'test-curriculum@test.com', password: 'password' });
-    
+      .post("/api/auth/login")
+      .send({ email: "test-curriculum@test.com", password: "password" });
+
     authToken = loginRes.body.token;
 
-    // Create academic year
-    const ay = await prisma.academicYear.create({
+    // Create school year
+    const ay = await prisma.schoolYear.create({
       data: {
-        yearLabel: '2026-2027',
-        status: 'ACTIVE',
+        yearLabel: "2026-2027",
+        status: "ACTIVE",
         isActive: true,
       },
     });
-    academicYearId = ay.id;
+    schoolYearId = ay.id;
 
     // Create grade level
     const gl = await prisma.gradeLevel.create({
       data: {
-        name: 'Grade 11',
+        name: "Grade 11",
         displayOrder: 11,
-        academicYearId,
+        schoolYearId,
       },
     });
     gradeLevelId = gl.id;
@@ -52,9 +53,9 @@ describe('Curriculum API', () => {
     // Create strand
     const strand = await prisma.strand.create({
       data: {
-        name: 'STEM',
+        name: "STEM",
         applicableGradeLevelIds: [],
-        academicYearId,
+        schoolYearId,
       },
     });
     strandId = strand.id;
@@ -62,17 +63,19 @@ describe('Curriculum API', () => {
 
   afterAll(async () => {
     // Cleanup
-    await prisma.strand.deleteMany({ where: { academicYearId } });
-    await prisma.gradeLevel.deleteMany({ where: { academicYearId } });
-    await prisma.academicYear.delete({ where: { id: academicYearId } });
-    await prisma.user.deleteMany({ where: { email: 'test-curriculum@test.com' } });
+    await prisma.strand.deleteMany({ where: { schoolYearId } });
+    await prisma.gradeLevel.deleteMany({ where: { schoolYearId } });
+    await prisma.schoolYear.delete({ where: { id: schoolYearId } });
+    await prisma.user.deleteMany({
+      where: { email: "test-curriculum@test.com" },
+    });
     await prisma.$disconnect();
   });
 
-  it('should list grade levels', async () => {
+  it("should list grade levels", async () => {
     const res = await request(app)
-      .get(`/api/curriculum/${academicYearId}/grade-levels`)
-      .set('Authorization', `Bearer ${authToken}`);
+      .get(`/api/curriculum/${schoolYearId}/grade-levels`)
+      .set("Authorization", `Bearer ${authToken}`);
 
     expect(res.status).toBe(200);
     expect(res.body.gradeLevels).toBeDefined();
@@ -80,10 +83,10 @@ describe('Curriculum API', () => {
     expect(res.body.gradeLevels.length).toBeGreaterThan(0);
   });
 
-  it('should list strands', async () => {
+  it("should list strands", async () => {
     const res = await request(app)
-      .get(`/api/curriculum/${academicYearId}/strands`)
-      .set('Authorization', `Bearer ${authToken}`);
+      .get(`/api/curriculum/${schoolYearId}/strands`)
+      .set("Authorization", `Bearer ${authToken}`);
 
     expect(res.status).toBe(200);
     expect(res.body.strands).toBeDefined();
@@ -91,7 +94,7 @@ describe('Curriculum API', () => {
     expect(res.body.strands.length).toBeGreaterThan(0);
   });
 
-  it('should update strand-to-grade matrix', async () => {
+  it("should update strand-to-grade matrix", async () => {
     const matrix = [
       {
         strandId,
@@ -100,8 +103,8 @@ describe('Curriculum API', () => {
     ];
 
     const res = await request(app)
-      .put(`/api/curriculum/${academicYearId}/strand-matrix`)
-      .set('Authorization', `Bearer ${authToken}`)
+      .put(`/api/curriculum/${schoolYearId}/strand-matrix`)
+      .set("Authorization", `Bearer ${authToken}`)
       .send({ matrix });
 
     expect(res.status).toBe(200);
@@ -114,19 +117,20 @@ describe('Curriculum API', () => {
     expect(updatedStrand.applicableGradeLevelIds).toContain(gradeLevelId);
   });
 
-  it('should return 400 if matrix is not an array', async () => {
+  it("should return 400 if matrix is not an array", async () => {
     const res = await request(app)
-      .put(`/api/curriculum/${academicYearId}/strand-matrix`)
-      .set('Authorization', `Bearer ${authToken}`)
-      .send({ matrix: 'invalid' });
+      .put(`/api/curriculum/${schoolYearId}/strand-matrix`)
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({ matrix: "invalid" });
 
     expect(res.status).toBe(400);
-    expect(res.body.message).toBe('Matrix must be an array');
+    expect(res.body.message).toBe("Matrix must be an array");
   });
 
-  it('should require authentication', async () => {
-    const res = await request(app)
-      .get(`/api/curriculum/${academicYearId}/grade-levels`);
+  it("should require authentication", async () => {
+    const res = await request(app).get(
+      `/api/curriculum/${schoolYearId}/grade-levels`,
+    );
 
     expect(res.status).toBe(401);
   });

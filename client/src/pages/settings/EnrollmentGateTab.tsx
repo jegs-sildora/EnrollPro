@@ -71,7 +71,7 @@ function getPhaseStatus(openDate: string | null, closeDate: string | null) {
 }
 
 export default function EnrollmentGateTab() {
-  const { activeAcademicYearId, enrollmentPhase, setSettings } = useSettingsStore();
+  const { activeSchoolYearId, enrollmentPhase, setSettings } = useSettingsStore();
   const [ay, setAy] = useState<AYDates | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -89,12 +89,12 @@ export default function EnrollmentGateTab() {
   const maxDate = useMemo(() => utcNoonDate(currentManilaYear + 1, 11, 31), [currentManilaYear]);
 
   const fetchAy = useCallback(async () => {
-    if (!activeAcademicYearId) {
+    if (!activeSchoolYearId) {
       setLoading(false);
       return;
     }
     try {
-      const res = await api.get(`/academic-years/${activeAcademicYearId}`);
+      const res = await api.get(`/school-years/${activeSchoolYearId}`);
       const data = res.data.year;
       setAy(data);
       setEarlyRegOpenDate(data.earlyRegOpenDate ? new Date(data.earlyRegOpenDate) : undefined);
@@ -106,7 +106,7 @@ export default function EnrollmentGateTab() {
     } finally {
       setLoading(false);
     }
-  }, [activeAcademicYearId]);
+  }, [activeSchoolYearId]);
 
   useEffect(() => {
     fetchAy();
@@ -115,7 +115,7 @@ export default function EnrollmentGateTab() {
   const handleToggleOverride = async (checked: boolean) => {
     if (!ay) return;
     try {
-      await api.patch(`/academic-years/${ay.id}/override`, { manualOverrideOpen: checked });
+      await api.patch(`/school-years/${ay.id}/override`, { manualOverrideOpen: checked });
       setAy({ ...ay, manualOverrideOpen: checked });
       
       // Also fetch public settings to sync store Phase
@@ -136,7 +136,7 @@ export default function EnrollmentGateTab() {
     if (!ay) return;
     setSaving(true);
     try {
-      await api.patch(`/academic-years/${ay.id}/dates`, {
+      await api.patch(`/school-years/${ay.id}/dates`, {
         earlyRegOpenDate: earlyRegOpenDate?.toISOString() || null,
         earlyRegCloseDate: earlyRegCloseDate?.toISOString() || null,
         enrollOpenDate: enrollOpenDate?.toISOString() || null,
@@ -156,7 +156,7 @@ export default function EnrollmentGateTab() {
     }
   };
 
-  if (!activeAcademicYearId) {
+  if (!activeSchoolYearId) {
     return (
       <Card>
         <CardContent className="py-8 text-center text-sm text-muted-foreground">

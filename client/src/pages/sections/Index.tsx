@@ -69,8 +69,8 @@ function fillEmoji(pct: number): string {
 }
 
 export default function Sections() {
-  const { activeAcademicYearId, viewingAcademicYearId } = useSettingsStore();
-  const ayId = viewingAcademicYearId ?? activeAcademicYearId;
+  const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
+  const ayId = viewingSchoolYearId ?? activeSchoolYearId;
 
   const [activeLevel, setActiveLevel] = useState("JHS");
   const [groups, setGroups] = useState<GradeLevelGroup[]>([]);
@@ -259,7 +259,7 @@ export default function Sections() {
             <CardContent>
               {groups.length === 0 ? (
                 <p className='text-sm text-[hsl(var(--muted-foreground))] text-center py-4'>
-                  No grade levels found for this academic year.
+                  No grade levels found for this School Year.
                 </p>
               ) : (
                 <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>

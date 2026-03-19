@@ -1,43 +1,53 @@
-import type { Request, Response } from 'express';
-import path from 'path';
-import fs from 'fs';
-import { Prisma } from '@prisma/client';
-import { prisma } from '../lib/prisma.js';
-import { extractPalette, extractAccentColor, contrastForeground } from '../services/logoColorService.js';
-import { auditLog } from '../services/auditLogger.js';
-import { getEnrollmentPhase } from '../services/enrollmentGateService.js';
+import type { Request, Response } from "express";
+import path from "path";
+import fs from "fs";
+import { Prisma } from "@prisma/client";
+import { prisma } from "../lib/prisma.js";
+import {
+  extractPalette,
+  extractAccentColor,
+  contrastForeground,
+} from "../services/logoColorService.js";
+import { auditLog } from "../services/auditLogger.js";
+import { getEnrollmentPhase } from "../services/enrollmentGateService.js";
 
 async function getOrCreateSettings() {
   let settings = await prisma.schoolSettings.findFirst({
-    include: { activeAcademicYear: true }
+    include: { activeSchoolYear: true },
   });
   if (!settings) {
     settings = await prisma.schoolSettings.create({
-      data: { schoolName: 'My School' },
-      include: { activeAcademicYear: true }
+      data: { schoolName: "My School" },
+      include: { activeSchoolYear: true },
     });
   }
   return settings;
 }
 
-export async function getPublicSettings(req: Request, res: Response): Promise<void> {
+export async function getPublicSettings(
+  req: Request,
+  res: Response,
+): Promise<void> {
   const settings = await getOrCreateSettings();
-  
-  const enrollmentPhase = settings.activeAcademicYear 
-    ? getEnrollmentPhase(settings.activeAcademicYear)
-    : 'CLOSED';
+
+  const enrollmentPhase = settings.activeSchoolYear
+    ? getEnrollmentPhase(settings.activeSchoolYear)
+    : "CLOSED";
 
   res.json({
     schoolName: settings.schoolName,
     logoUrl: settings.logoUrl,
     colorScheme: settings.colorScheme,
     selectedAccentHsl: settings.selectedAccentHsl,
-    activeAcademicYearId: settings.activeAcademicYearId,
+    activeSchoolYearId: settings.activeSchoolYearId,
     enrollmentPhase,
   });
 }
 
-export async function updateIdentity(req: Request, res: Response): Promise<void> {
+export async function updateIdentity(
+  req: Request,
+  res: Response,
+): Promise<void> {
   const { schoolName } = req.body;
   const settings = await getOrCreateSettings();
 
@@ -48,7 +58,7 @@ export async function updateIdentity(req: Request, res: Response): Promise<void>
 
   await auditLog({
     userId: req.user!.userId,
-    actionType: 'SETTINGS_UPDATED',
+    actionType: "SETTINGS_UPDATED",
     description: `Admin updated school name to "${schoolName}"`,
     req,
   });
@@ -58,7 +68,7 @@ export async function updateIdentity(req: Request, res: Response): Promise<void>
 
 export async function uploadLogo(req: Request, res: Response): Promise<void> {
   if (!req.file) {
-    res.status(400).json({ message: 'No file uploaded' });
+    res.status(400).json({ message: "No file uploaded" });
     return;
   }
 
@@ -78,12 +88,13 @@ export async function uploadLogo(req: Request, res: Response): Promise<void> {
 
   // Extract full palette
   const palette = await extractPalette(absolutePath);
-  const accentHsl = palette.find((c) => {
-    const parts = c.hsl.split(' ');
-    const s = parseInt(parts[1]);
-    const l = parseInt(parts[2]);
-    return s >= 20 && l >= 15 && l <= 85;
-  })?.hsl ?? '221 83% 53%';
+  const accentHsl =
+    palette.find((c) => {
+      const parts = c.hsl.split(" ");
+      const s = parseInt(parts[1]);
+      const l = parseInt(parts[2]);
+      return s >= 20 && l >= 15 && l <= 85;
+    })?.hsl ?? "221 83% 53%";
 
   const colorScheme = {
     accent_hsl: accentHsl,
@@ -103,8 +114,8 @@ export async function uploadLogo(req: Request, res: Response): Promise<void> {
 
   await auditLog({
     userId: req.user!.userId,
-    actionType: 'SETTINGS_UPDATED',
-    description: 'Admin uploaded school logo and accent color extracted',
+    actionType: "SETTINGS_UPDATED",
+    description: "Admin uploaded school logo and accent color extracted",
     req,
   });
 
@@ -115,10 +126,13 @@ export async function uploadLogo(req: Request, res: Response): Promise<void> {
   });
 }
 
-export async function selectAccentColor(req: Request, res: Response): Promise<void> {
+export async function selectAccentColor(
+  req: Request,
+  res: Response,
+): Promise<void> {
   const { hsl } = req.body;
-  if (!hsl || typeof hsl !== 'string') {
-    res.status(400).json({ message: 'hsl is required' });
+  if (!hsl || typeof hsl !== "string") {
+    res.status(400).json({ message: "hsl is required" });
     return;
   }
   const accentHsl = hsl;
@@ -126,9 +140,13 @@ export async function selectAccentColor(req: Request, res: Response): Promise<vo
   const settings = await getOrCreateSettings();
 
   // Validate: must be from the palette
-  const palette = (settings.colorScheme as { palette?: { hsl: string }[] } | null)?.palette;
+  const palette = (
+    settings.colorScheme as { palette?: { hsl: string }[] } | null
+  )?.palette;
   if (palette && !palette.some((c: { hsl: string }) => c.hsl === accentHsl)) {
-    res.status(400).json({ message: 'Selected color is not in the extracted palette' });
+    res
+      .status(400)
+      .json({ message: "Selected color is not in the extracted palette" });
     return;
   }
 
@@ -140,7 +158,8 @@ export async function selectAccentColor(req: Request, res: Response): Promise<vo
   const foreground = contrastForeground(h, s, l);
 
   // Update colorScheme.accent_hsl too
-  const colorSchemeData = (settings.colorScheme as Record<string, unknown>) ?? {};
+  const colorSchemeData =
+    (settings.colorScheme as Record<string, unknown>) ?? {};
   const updatedColorScheme = {
     ...colorSchemeData,
     accent_hsl: accentHsl,
@@ -157,7 +176,7 @@ export async function selectAccentColor(req: Request, res: Response): Promise<vo
 
   await auditLog({
     userId: req.user!.userId,
-    actionType: 'SETTINGS_UPDATED',
+    actionType: "SETTINGS_UPDATED",
     description: `Admin selected accent color: ${accentHsl}`,
     req,
   });
@@ -191,8 +210,9 @@ export async function removeLogo(req: Request, res: Response): Promise<void> {
 
   await auditLog({
     userId: req.user!.userId,
-    actionType: 'SETTINGS_UPDATED',
-    description: 'Admin removed school logo — accent color reset to default blue',
+    actionType: "SETTINGS_UPDATED",
+    description:
+      "Admin removed school logo — accent color reset to default blue",
     req,
   });
 
@@ -205,16 +225,16 @@ export async function removeLogo(req: Request, res: Response): Promise<void> {
 
 export async function getScpConfig(req: Request, res: Response): Promise<void> {
   const settings = await prisma.schoolSettings.findFirst({
-    select: { activeAcademicYearId: true }
+    select: { activeSchoolYearId: true },
   });
 
-  if (!settings?.activeAcademicYearId) {
+  if (!settings?.activeSchoolYearId) {
     res.json({ scpConfigs: [] });
     return;
   }
 
   const scpConfigs = await prisma.scpConfig.findMany({
-    where: { academicYearId: settings.activeAcademicYearId, isOffered: true },
+    where: { schoolYearId: settings.activeSchoolYearId, isOffered: true },
   });
 
   res.json({ scpConfigs });
@@ -222,26 +242,29 @@ export async function getScpConfig(req: Request, res: Response): Promise<void> {
 
 export async function getShsConfig(req: Request, res: Response): Promise<void> {
   const settings = await prisma.schoolSettings.findFirst({
-    select: { activeAcademicYearId: true }
+    select: { activeSchoolYearId: true },
   });
 
-  if (!settings?.activeAcademicYearId) {
-    res.json({ grade11Mode: 'STRENGTHENED', grade12Mode: 'OLD_STRAND', strands: [] });
+  if (!settings?.activeSchoolYearId) {
+    res.json({
+      grade11Mode: "STRENGTHENED",
+      grade12Mode: "OLD_STRAND",
+      strands: [],
+    });
     return;
   }
 
-  // Get all strands/clusters for the active academic year
+  // Get all strands/clusters for the active school year
   const strands = await prisma.strand.findMany({
-    where: { academicYearId: settings.activeAcademicYearId },
+    where: { schoolYearId: settings.activeSchoolYearId },
     include: {
-      _count: false
-    }
+      _count: false,
+    },
   });
 
   res.json({
-    grade11Mode: 'STRENGTHENED',
-    grade12Mode: 'OLD_STRAND',
-    strands
+    grade11Mode: "STRENGTHENED",
+    grade12Mode: "OLD_STRAND",
+    strands,
   });
 }
-

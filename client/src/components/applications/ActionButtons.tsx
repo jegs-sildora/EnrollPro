@@ -10,6 +10,7 @@ interface Props {
   onPass: () => void;
   onFail: () => void;
   onOfferRegular: () => void;
+  onTemporarilyEnroll: () => void;
 }
 
 export function ActionButtons({ applicant, ...handlers }: Props) {
@@ -19,6 +20,7 @@ export function ActionButtons({ applicant, ...handlers }: Props) {
 
   return (
     <div className='flex flex-col gap-2 p-4 border-t bg-background mt-auto'>
+      {/* Existing action for regular applicants */}
       {isRegular &&
         ["SUBMITTED", "UNDER_REVIEW", "ELIGIBLE"].includes(status) && (
           <>
@@ -35,6 +37,16 @@ export function ActionButtons({ applicant, ...handlers }: Props) {
             </Button>
           </>
         )}
+
+      {/* Temporary Enrollment - Phase 2 (Missing Docs) */}
+      {(status === "UNDER_REVIEW" || status === "PRE_REGISTERED") && (
+        <Button
+          variant='secondary'
+          className='w-full border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100'
+          onClick={handlers.onTemporarilyEnroll}>
+          Mark as Temporarily Enrolled
+        </Button>
+      )}
 
       {isSCP && ["SUBMITTED", "UNDER_REVIEW", "ELIGIBLE"].includes(status) && (
         <>

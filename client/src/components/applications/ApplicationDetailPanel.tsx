@@ -26,6 +26,7 @@ interface Props {
   onPass: () => void;
   onFail: () => void;
   onOfferRegular: () => void;
+  onTemporarilyEnroll: () => void;
 }
 
 export function ApplicationDetailPanel({
@@ -38,6 +39,7 @@ export function ApplicationDetailPanel({
   onPass,
   onFail,
   onOfferRegular,
+  onTemporarilyEnroll,
 }: Props) {
   const { data: applicant, loading, error } = useApplicationDetail(id);
 
@@ -111,7 +113,7 @@ export function ApplicationDetailPanel({
       </div>
 
       {/* Scrollable Content */}
-      <div className='flex-1 overflow-y-auto p-4 space-y-4'>
+      <div className='flex-1 overflow-y-auto p-4 space-y-4 font-bold'>
         {/* Summary Block */}
         <div className='bg-[hsl(var(--muted))] p-4 rounded-md border'>
           <div className='flex justify-between items-start mb-2'>
@@ -121,7 +123,7 @@ export function ApplicationDetailPanel({
                 {applicant.middleName}
               </h3>
               <p className='text-sm'>
-                Grade {applicant.gradeLevel.name} ·{" "}
+                {applicant.gradeLevel.name} ·{" "}
                 {applicant.applicantType === "REGULAR"
                   ? "Regular Admission"
                   : `⚡ ${applicant.applicantType}`}
@@ -169,6 +171,7 @@ export function ApplicationDetailPanel({
         onPass={onPass}
         onFail={onFail}
         onOfferRegular={onOfferRegular}
+        onTemporarilyEnroll={onTemporarilyEnroll}
       />
     </div>
   );

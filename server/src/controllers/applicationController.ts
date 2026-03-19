@@ -3,6 +3,39 @@ import { prisma } from "../lib/prisma.js";
 import { auditLog } from "../services/auditLogger.js";
 import { isEnrollmentOpen } from "../services/enrollmentGateService.js";
 import type { ApplicationStatus } from "@prisma/client";
+import { getRequiredDocuments } from "../services/enrollmentRequirementService.js";
+
+// Get Required Documents for an Applicant
+export async function getRequirements(req: Request, res: Response) {
+  try {
+    const applicantId = parseInt(String(req.params.id));
+
+    const applicant = await prisma.applicant.findUnique({
+      where: { id: applicantId },
+      include: { gradeLevel: true },
+    });
+
+    if (!applicant) {
+      return res.status(404).json({ message: "Applicant not found" });
+    }
+
+    const requirements = getRequiredDocuments({
+      learnerType: applicant.learnerType,
+      gradeLevel: applicant.gradeLevel.name,
+      applicantType: applicant.applicantType,
+      isLwd: applicant.isLearnerWithDisability,
+      // We don't have a direct isPeptAePasser field,
+      // but we can infer it if it was provided in some way
+      // or if applicantType is something specific.
+      // For now, let's assume it's false unless we add a field for it.
+      isPeptAePasser: false,
+    });
+
+    res.json({ requirements });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+}
 
 // â"€â"€ Valid status transitions â"€â"€
 const VALID_TRANSITIONS: Record<string, ApplicationStatus[]> = {
@@ -11,6 +44,7 @@ const VALID_TRANSITIONS: Record<string, ApplicationStatus[]> = {
     "FOR_REVISION",
     "ELIGIBLE",
     "PRE_REGISTERED",
+    "TEMPORARILY_ENROLLED",
     "REJECTED",
     "WITHDRAWN",
   ],
@@ -19,7 +53,8 @@ const VALID_TRANSITIONS: Record<string, ApplicationStatus[]> = {
   ASSESSMENT_SCHEDULED: ["ASSESSMENT_TAKEN", "WITHDRAWN"],
   ASSESSMENT_TAKEN: ["PASSED", "NOT_QUALIFIED", "WITHDRAWN"],
   PASSED: ["PRE_REGISTERED", "WITHDRAWN"],
-  PRE_REGISTERED: ["ENROLLED", "WITHDRAWN"],
+  PRE_REGISTERED: ["ENROLLED", "TEMPORARILY_ENROLLED", "WITHDRAWN"],
+  TEMPORARILY_ENROLLED: ["ENROLLED", "WITHDRAWN"],
   NOT_QUALIFIED: ["UNDER_REVIEW", "WITHDRAWN", "REJECTED"],
   ENROLLED: ["WITHDRAWN"],
   REJECTED: ["UNDER_REVIEW", "WITHDRAWN"],
@@ -70,12 +105,12 @@ export async function index(req: Request, res: Response) {
 
     const where: any = {};
 
-    // Scope to active academic year by default
+    // Scope to active School Year by default
     const settings = await prisma.schoolSettings.findFirst({
-      select: { activeAcademicYearId: true },
+      select: { activeSchoolYearId: true },
     });
-    if (settings?.activeAcademicYearId) {
-      where.academicYearId = settings.activeAcademicYearId;
+    if (settings?.activeSchoolYearId) {
+      where.schoolYearId = settings.activeSchoolYearId;
     }
 
     if (search) {
@@ -127,7 +162,9 @@ export async function show(req: Request, res: Response) {
       include: {
         gradeLevel: true,
         strand: true,
-        academicYear: true,
+        schoolYear: true,
+        documents: true,
+        checklist: true,
         encodedBy: { select: { id: true, name: true, role: true } },
         enrollment: {
           include: {
@@ -176,19 +213,19 @@ export async function show(req: Request, res: Response) {
 // â"€â"€ Submit new application (public) â"€â"€
 export async function store(req: Request, res: Response) {
   try {
-    // 1. Find active academic year
+    // 1. Find active School Year
     const settings = await prisma.schoolSettings.findFirst({
-      include: { activeAcademicYear: true },
+      include: { activeSchoolYear: true },
     });
 
-    if (!settings?.activeAcademicYear) {
+    if (!settings?.activeSchoolYear) {
       return res.status(400).json({
         message:
-          "No active academic year configured. Enrollment is not available.",
+          "No active School Year configured. Enrollment is not available.",
       });
     }
 
-    const activeYear = settings.activeAcademicYear;
+    const activeYear = settings.activeSchoolYear;
 
     // 2. Check enrollment gate
     if (!isEnrollmentOpen(activeYear)) {
@@ -203,29 +240,29 @@ export async function store(req: Request, res: Response) {
     // 3. Resolve grade level
     const gradeLevel = await prisma.gradeLevel.findFirst({
       where: {
-        academicYearId: activeYear.id,
+        schoolYearId: activeYear.id,
         name: { contains: body.gradeLevel, mode: "insensitive" },
       },
     });
 
     if (!gradeLevel) {
       return res.status(400).json({
-        message: `Grade ${body.gradeLevel} is not available for the current academic year.`,
+        message: `Grade ${body.gradeLevel} is not available for the current School Year.`,
       });
     }
 
-    // 4. Check duplicate LRN in same academic year (if LRN provided)
+    // 4. Check duplicate LRN in same School Year (if LRN provided)
     if (body.lrn) {
       const existingByLrn = await prisma.applicant.findFirst({
         where: {
           lrn: body.lrn,
-          academicYearId: activeYear.id,
+          schoolYearId: activeYear.id,
         },
       });
 
       if (existingByLrn) {
         return res.status(409).json({
-          message: `An application with LRN ${body.lrn} already exists for this academic year. Your tracking number is ${existingByLrn.trackingNumber}.`,
+          message: `An application with LRN ${body.lrn} already exists for this School Year. Your tracking number is ${existingByLrn.trackingNumber}.`,
         });
       }
     }
@@ -240,7 +277,7 @@ export async function store(req: Request, res: Response) {
       if (body.electiveCluster) {
         const strand = await prisma.strand.findFirst({
           where: {
-            academicYearId: activeYear.id,
+            schoolYearId: activeYear.id,
             name: { contains: body.electiveCluster, mode: "insensitive" },
           },
         });
@@ -258,19 +295,25 @@ export async function store(req: Request, res: Response) {
       applicantType = "STEM_GRADE11";
     }
 
-    // 7. Build parent contact info (primary contact for quick access)
-    const motherContact = body.mother?.contactNumber;
-    const fatherContact = body.father?.contactNumber;
-    const guardianContact = body.guardian?.contactNumber;
+    // 7. Map Learner Type
+    let lType: "NEW_ENROLLEE" | "TRANSFEREE" | "RETURNING" | "CONTINUING" =
+      "NEW_ENROLLEE";
+    const bodyLType = String(body.learnerType).toUpperCase();
+    if (bodyLType === "TRANSFEREE") lType = "TRANSFEREE";
+    else if (bodyLType === "RETURNING" || bodyLType === "BALIK_ARAL")
+      lType = "RETURNING";
+    else if (bodyLType === "CONTINUING") lType = "CONTINUING";
+
+    // 8. Build parent contact info (primary contact for quick access)
     const emailAddress = body.email || null;
 
-    // 8. Parse birthdate
+    // 9. Parse birthdate
     const birthDate = new Date(body.birthdate);
     if (isNaN(birthDate.getTime())) {
       return res.status(400).json({ message: "Invalid birthdate format." });
     }
 
-    // 9. Create applicant with a temporary tracking number (will update after ID is known)
+    // 10. Create applicant with a temporary tracking number (will update after ID is known)
     const year = new Date().getFullYear();
     const tempTracking = `APP-${year}-TEMP-${Date.now()}`;
 
@@ -324,7 +367,7 @@ export async function store(req: Request, res: Response) {
         lastSchoolType: body.lastSchoolType || null,
 
         // Enrollment preferences
-        learnerType: body.learnerType || null,
+        learnerType: lType,
         learningModalities: body.learningModalities || [],
         electiveCluster: body.electiveCluster || null,
         scpApplication: body.scpApplication ?? false,
@@ -340,14 +383,17 @@ export async function store(req: Request, res: Response) {
         // Relations
         gradeLevelId: gradeLevel.id,
         strandId,
-        academicYearId: activeYear.id,
+        schoolYearId: activeYear.id,
         applicantType: applicantType as any,
         shsTrack: shsTrack as any,
         trackingNumber: tempTracking,
+        checklist: {
+          create: {}, // Default false for all
+        },
       },
     });
 
-    // 10. Generate proper tracking number from ID
+    // 11. Generate proper tracking number from ID
     const trackingNumber = `APP-${year}-${String(applicant.id).padStart(5, "0")}`;
     await prisma.applicant.update({
       where: { id: applicant.id },
@@ -407,19 +453,19 @@ export async function store(req: Request, res: Response) {
 // â"€â"€ Submit F2F walk-in application (authenticated - REGISTRAR/SYSTEM_ADMIN) â"€â"€
 export async function storeF2F(req: Request, res: Response) {
   try {
-    // 1. Find active academic year
+    // 1. Find active School Year
     const settings = await prisma.schoolSettings.findFirst({
-      include: { activeAcademicYear: true },
+      include: { activeSchoolYear: true },
     });
 
-    if (!settings?.activeAcademicYear) {
+    if (!settings?.activeSchoolYear) {
       return res.status(400).json({
         message:
-          "No active academic year configured. Enrollment is not available.",
+          "No active School Year configured. Enrollment is not available.",
       });
     }
 
-    const activeYear = settings.activeAcademicYear;
+    const activeYear = settings.activeSchoolYear;
 
     // 2. Check enrollment gate
     if (!isEnrollmentOpen(activeYear)) {
@@ -434,29 +480,29 @@ export async function storeF2F(req: Request, res: Response) {
     // 3. Resolve grade level
     const gradeLevel = await prisma.gradeLevel.findFirst({
       where: {
-        academicYearId: activeYear.id,
+        schoolYearId: activeYear.id,
         name: { contains: body.gradeLevel, mode: "insensitive" },
       },
     });
 
     if (!gradeLevel) {
       return res.status(400).json({
-        message: `Grade ${body.gradeLevel} is not available for the current academic year.`,
+        message: `Grade ${body.gradeLevel} is not available for the current School Year.`,
       });
     }
 
-    // 4. Check duplicate LRN in same academic year (if LRN provided)
+    // 4. Check duplicate LRN in same School Year (if LRN provided)
     if (body.lrn) {
       const existingByLrn = await prisma.applicant.findFirst({
         where: {
           lrn: body.lrn,
-          academicYearId: activeYear.id,
+          schoolYearId: activeYear.id,
         },
       });
 
       if (existingByLrn) {
         return res.status(409).json({
-          message: `An application with LRN ${body.lrn} already exists for this academic year. Tracking number: ${existingByLrn.trackingNumber}.`,
+          message: `An application with LRN ${body.lrn} already exists for this School Year. Tracking number: ${existingByLrn.trackingNumber}.`,
         });
       }
     }
@@ -471,7 +517,7 @@ export async function storeF2F(req: Request, res: Response) {
       if (body.electiveCluster) {
         const strand = await prisma.strand.findFirst({
           where: {
-            academicYearId: activeYear.id,
+            schoolYearId: activeYear.id,
             name: { contains: body.electiveCluster, mode: "insensitive" },
           },
         });
@@ -489,16 +535,25 @@ export async function storeF2F(req: Request, res: Response) {
       applicantType = "STEM_GRADE11";
     }
 
-    // 7. Build parent contact info (primary contact for quick access)
+    // 7. Map Learner Type
+    let lType: "NEW_ENROLLEE" | "TRANSFEREE" | "RETURNING" | "CONTINUING" =
+      "NEW_ENROLLEE";
+    const bodyLType = String(body.learnerType).toUpperCase();
+    if (bodyLType === "TRANSFEREE") lType = "TRANSFEREE";
+    else if (bodyLType === "RETURNING" || bodyLType === "BALIK_ARAL")
+      lType = "RETURNING";
+    else if (bodyLType === "CONTINUING") lType = "CONTINUING";
+
+    // 8. Build parent contact info (primary contact for quick access)
     const emailAddress = body.email || null;
 
-    // 8. Parse birthdate
+    // 9. Parse birthdate
     const birthDate = new Date(body.birthdate);
     if (isNaN(birthDate.getTime())) {
       return res.status(400).json({ message: "Invalid birthdate format." });
     }
 
-    // 9. Create applicant with a temporary tracking number (will update after ID is known)
+    // 10. Create applicant with a temporary tracking number (will update after ID is known)
     const year = new Date().getFullYear();
     const tempTracking = `F2F-${year}-TEMP-${Date.now()}`;
 
@@ -552,7 +607,7 @@ export async function storeF2F(req: Request, res: Response) {
         lastSchoolType: body.lastSchoolType || null,
 
         // Enrollment preferences
-        learnerType: body.learnerType || null,
+        learnerType: lType,
         learningModalities: body.learningModalities || [],
         electiveCluster: body.electiveCluster || null,
         scpApplication: body.scpApplication ?? false,
@@ -568,7 +623,7 @@ export async function storeF2F(req: Request, res: Response) {
         // Relations
         gradeLevelId: gradeLevel.id,
         strandId,
-        academicYearId: activeYear.id,
+        schoolYearId: activeYear.id,
         applicantType: applicantType as any,
         shsTrack: shsTrack as any,
         trackingNumber: tempTracking,
@@ -576,10 +631,13 @@ export async function storeF2F(req: Request, res: Response) {
         // F2F EARLY REGISTRATION tracking
         admissionChannel: "F2F",
         encodedById: req.user!.userId,
+        checklist: {
+          create: {},
+        },
       },
     });
 
-    // 10. Generate proper tracking number from ID (F2F prefix)
+    // 11. Generate proper tracking number from ID (F2F prefix)
     const trackingNumber = `F2F-${year}-${String(applicant.id).padStart(5, "0")}`;
     await prisma.applicant.update({
       where: { id: applicant.id },
@@ -707,7 +765,7 @@ export async function approve(req: Request, res: Response) {
         data: {
           applicantId,
           sectionId,
-          academicYearId: applicant.academicYearId,
+          schoolYearId: applicant.schoolYearId,
           enrolledById: req.user!.userId,
         },
       });
@@ -753,8 +811,113 @@ export async function approve(req: Request, res: Response) {
   }
 }
 
-// â"€â"€ Finalize Enrollment (Phase 2 complete) â"€â"€
+// Finalize Enrollment (Phase 2 complete)
 export async function enroll(req: Request, res: Response) {
+  try {
+    const applicantId = parseInt(String(req.params.id));
+
+    const applicant = await prisma.applicant.findUnique({
+      where: { id: applicantId },
+      include: {
+        gradeLevel: true,
+        checklist: true,
+      },
+    });
+    if (!applicant) {
+      return res.status(404).json({ message: "Applicant not found" });
+    }
+
+    if (!canTransition(applicant.status, "ENROLLED")) {
+      return res.status(422).json({
+        message: `Cannot finalize enrollment. Current status: "${applicant.status}". Only PRE_REGISTERED or TEMPORARILY_ENROLLED applications can be enrolled.`,
+      });
+    }
+
+    // Validate mandatory requirements for official enrollment
+    const requirements = getRequiredDocuments({
+      learnerType: applicant.learnerType,
+      gradeLevel: applicant.gradeLevel.name,
+      applicantType: applicant.applicantType,
+      isLwd: applicant.isLearnerWithDisability,
+      isPeptAePasser: false, // Default
+    });
+
+    const checklist = applicant.checklist;
+    if (!checklist) {
+      return res
+        .status(422)
+        .json({
+          message: "Requirement checklist not found for this applicant.",
+        });
+    }
+
+    const missingMandatory: string[] = [];
+
+    requirements.forEach((req) => {
+      if (req.isRequired) {
+        let isMet = false;
+        switch (req.type) {
+          case "BEEF":
+            // BEEF is the form itself, we assume it's met if they applied
+            isMet = true;
+            break;
+          case "CONFIRMATION_SLIP":
+            isMet = checklist.confirmationSlipStatus;
+            break;
+          case "PSA_BIRTH_CERTIFICATE":
+            // Official enrollment REQUIRES PSA BC (presented now or already on file).
+            // Secondary proof only allows TEMPORARY enrollment.
+            isMet = checklist.psaBirthCertStatus || checklist.psaBcOnFile;
+            break;
+          case "SF9_REPORT_CARD":
+          case "ACADEMIC_RECORD":
+            isMet = checklist.sf9ReportCardStatus;
+            break;
+          case "PEPT_AE_CERTIFICATE":
+            isMet = checklist.peptAeCertificateStatus;
+            break;
+          // PWD_ID and MEDICAL_EVALUATION are marked as isRequired: false in our service for now
+        }
+
+        if (!isMet) {
+          missingMandatory.push(req.label);
+        }
+      }
+    });
+
+    if (missingMandatory.length > 0) {
+      return res.status(422).json({
+        message:
+          "Cannot finalize official enrollment due to missing mandatory documents. Please mark as TEMPORARILY ENROLLED instead.",
+        missingRequirements: missingMandatory,
+      });
+    }
+
+    const updated = await prisma.applicant.update({
+      where: { id: applicantId },
+      data: {
+        status: "ENROLLED",
+        isTemporarilyEnrolled: false,
+      },
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "APPLICATION_ENROLLED",
+      description: `Finalized official enrollment for ${applicant.firstName} ${applicant.lastName} (#${applicantId}) - All mandatory docs verified`,
+      subjectType: "Applicant",
+      subjectId: applicantId,
+      req,
+    });
+
+    res.json(updated);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
+// â"€â"€ Mark as Temporarily Enrolled (Phase 2 - Missing Docs) â"€â"€
+export async function markTemporarilyEnrolled(req: Request, res: Response) {
   try {
     const applicantId = parseInt(String(req.params.id));
 
@@ -765,21 +928,51 @@ export async function enroll(req: Request, res: Response) {
       return res.status(404).json({ message: "Applicant not found" });
     }
 
-    if (!canTransition(applicant.status, "ENROLLED")) {
+    if (!canTransition(applicant.status, "TEMPORARILY_ENROLLED")) {
       return res.status(422).json({
-        message: `Cannot finalize enrollment. Current status: "${applicant.status}". Only PRE_REGISTERED applications can be enrolled.`,
+        message: `Cannot mark as temporarily enrolled. Current status: "${applicant.status}".`,
       });
     }
 
     const updated = await prisma.applicant.update({
       where: { id: applicantId },
-      data: { status: "ENROLLED" },
+      data: {
+        status: "TEMPORARILY_ENROLLED",
+        isTemporarilyEnrolled: true,
+      },
     });
 
     await auditLog({
       userId: req.user!.userId,
-      actionType: "APPLICATION_ENROLLED",
-      description: `Finalized enrollment for ${applicant.firstName} ${applicant.lastName} (#${applicantId})`,
+      actionType: "APPLICATION_TEMPORARILY_ENROLLED",
+      description: `Marked ${applicant.firstName} ${applicant.lastName} (#${applicantId}) as TEMPORARILY ENROLLED (awaiting docs)`,
+      subjectType: "Applicant",
+      subjectId: applicantId,
+      req,
+    });
+
+    res.json(updated);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
+// â"€â"€ Update Requirement Checklist â"€â"€
+export async function updateChecklist(req: Request, res: Response) {
+  try {
+    const applicantId = parseInt(String(req.params.id));
+    const data = req.body;
+
+    const updated = await prisma.requirementChecklist.upsert({
+      where: { applicantId },
+      update: data,
+      create: { ...data, applicantId },
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "CHECKLIST_UPDATED",
+      description: `Updated requirement checklist for applicant #${applicantId}`,
       subjectType: "Applicant",
       subjectId: applicantId,
       req,
@@ -888,7 +1081,8 @@ export async function reject(req: Request, res: Response) {
     // Require reason when rejecting from FAILED/NOT_QUALIFIED state per UX spec
     if (applicant.status === "NOT_QUALIFIED" && !rejectionReason) {
       return res.status(400).json({
-        message: "A rejection reason is required when the applicant is not qualified.",
+        message:
+          "A rejection reason is required when the applicant is not qualified.",
       });
     }
 
@@ -1286,7 +1480,7 @@ export async function offerRegular(req: Request, res: Response) {
         data: {
           applicantId,
           sectionId,
-          academicYearId: applicant.academicYearId,
+          schoolYearId: applicant.schoolYearId,
           enrolledById: req.user!.userId,
         },
       });
@@ -1343,12 +1537,12 @@ export async function navigate(req: Request, res: Response) {
     // Build the same filter as the list
     const where: any = {};
 
-    // Scope to active academic year by default
+    // Scope to active School Year by default
     const settings = await prisma.schoolSettings.findFirst({
-      select: { activeAcademicYearId: true },
+      select: { activeSchoolYearId: true },
     });
-    if (settings?.activeAcademicYearId) {
-      where.academicYearId = settings.activeAcademicYearId;
+    if (settings?.activeSchoolYearId) {
+      where.schoolYearId = settings.activeSchoolYearId;
     }
 
     if (search) {
@@ -1469,7 +1663,7 @@ export async function getSectionsForAssignment(req: Request, res: Response) {
 export async function update(req: Request, res: Response) {
   try {
     const applicantId = parseInt(String(req.params.id));
-    const { status, trackingNumber, academicYearId, id, ...data } = req.body;
+    const { status, trackingNumber, schoolYearId, id, ...data } = req.body;
 
     const updated = await prisma.applicant.update({
       where: { id: applicantId },
@@ -1477,8 +1671,10 @@ export async function update(req: Request, res: Response) {
         ...data,
         birthDate: data.birthDate ? new Date(data.birthDate) : undefined,
         examDate: data.examDate ? new Date(data.examDate) : undefined,
-        interviewDate: data.interviewDate ? new Date(data.interviewDate) : undefined,
-      }
+        interviewDate: data.interviewDate
+          ? new Date(data.interviewDate)
+          : undefined,
+      },
     });
 
     await auditLog({
@@ -1504,7 +1700,9 @@ export async function showDetailed(req: Request, res: Response) {
       include: {
         gradeLevel: true,
         strand: true,
-        academicYear: true,
+        schoolYear: true,
+        documents: true,
+        checklist: true,
         encodedBy: { select: { id: true, name: true, role: true } },
         enrollment: {
           include: {
@@ -1519,9 +1717,9 @@ export async function showDetailed(req: Request, res: Response) {
           },
         },
         emailLogs: {
-          orderBy: { attemptedAt: 'desc' },
-          take: 10
-        }
+          orderBy: { attemptedAt: "desc" },
+          take: 10,
+        },
       },
     });
 

@@ -90,8 +90,8 @@ const APPLICANT_TYPES = [
 ];
 
 export default function EarlyRegistration() {
-  const { activeAcademicYearId, viewingAcademicYearId } = useSettingsStore();
-  const ayId = viewingAcademicYearId ?? activeAcademicYearId;
+  const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
+  const ayId = viewingSchoolYearId ?? activeSchoolYearId;
 
   const [applications, setApplications] = useState<Application[]>([]);
   const [total, setTotal] = useState(0);
@@ -420,28 +420,28 @@ export default function EarlyRegistration() {
                     applications.map((app) => (
                       <TableRow
                         key={app.id}
-                        className={`hover:bg-[hsl(var(--muted))] transition-colors text-center cursor-pointer ${selectedId === app.id ? "bg-[hsl(var(--muted))] shadow-inner border-l-4 border-l-[hsl(var(--primary))]" : ""}`}
+                        className={`hover:bg-[hsl(var(--muted))] transition-colors text-center cursor-pointer ${selectedId === app.id ? "bg-[hsl(var(--muted))] shadow-inner" : ""}`}
                         onClick={() => setSelectedId(app.id)}>
                         <TableCell>
                           <div className='flex flex-col text-left'>
                             <span className='font-bold text-sm uppercase'>
                               {app.lastName}, {app.firstName}
                             </span>
-                            <span className='text-[10px] text-[hsl(var(--muted-foreground))]'>
+                            <span className='text-[hsl(var(--muted-foreground))]'>
                               #{app.trackingNumber}
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell className='text-xs hidden md:table-cell'>
+                        <TableCell className='hidden md:table-cell'>
                           {app.lrn}
                         </TableCell>
                         <TableCell>
                           <div className='flex flex-col'>
-                            <span className='text-xs font-medium'>
+                            <span className='font-medium'>
                               {app.gradeLevel.name}
                             </span>
                             {app.strand && (
-                              <span className='text-[10px] text-[hsl(var(--muted-foreground))]'>
+                              <span className='text-[hsl(var(--muted-foreground))]'>
                                 {app.strand.name}
                               </span>
                             )}
@@ -450,18 +450,18 @@ export default function EarlyRegistration() {
                         <TableCell className='hidden lg:table-cell'>
                           <Badge
                             variant='outline'
-                            className='text-[10px] font-bold px-1.5 py-0 h-4 border-slate-300 text-slate-600'>
+                            className='font-bold px-1.5 py-0 h-4 border-slate-300 text-slate-600'>
                             {app.applicantType}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge
                             variant='outline'
-                            className={`text-[10px] font-bold ${STATUS_COLORS[app.status]}`}>
+                            className={`font-bold ${STATUS_COLORS[app.status]}`}>
                             {app.status.replace("_", " ")}
                           </Badge>
                         </TableCell>
-                        <TableCell className='text-xs text-[hsl(var(--muted-foreground))] hidden xl:table-cell'>
+                        <TableCell className='text-[hsl(var(--muted-foreground))] hidden xl:table-cell'>
                           {format(new Date(app.createdAt), "MMM dd, yyyy")}
                         </TableCell>
                         <TableCell className='text-center'>
@@ -585,6 +585,24 @@ export default function EarlyRegistration() {
                   setSelectedApp(app);
                   setActionType("APPROVE"); // reuse APPROVE dialog for section selection
                   fetchSections(app.gradeLevelId);
+                }
+              }}
+              onTemporarilyEnroll={async () => {
+                if (
+                  !confirm(
+                    "Mark this applicant as temporarily enrolled? This means they can attend classes while documents are pending.",
+                  )
+                )
+                  return;
+                try {
+                  await api.patch(`/applications/${selectedId}/temporarily-enroll`);
+                  sileo.success({
+                    title: "Updated",
+                    description: "Applicant is now temporarily enrolled.",
+                  });
+                  fetchData();
+                } catch (e) {
+                  toastApiError(e as never);
                 }
               }}
             />

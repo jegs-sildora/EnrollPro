@@ -53,8 +53,8 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function Enrollment() {
-  const { activeAcademicYearId, viewingAcademicYearId } = useSettingsStore();
-  const ayId = viewingAcademicYearId ?? activeAcademicYearId;
+  const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
+  const ayId = viewingSchoolYearId ?? activeSchoolYearId;
 
   const [applications, setApplications] = useState<Application[]>([]);
   const [total, setTotal] = useState(0);

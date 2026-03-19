@@ -73,8 +73,8 @@ interface Student {
 
 interface StudentDetail extends Student {
   rejectionReason: string | null;
-  academicYear: string;
-  academicYearId: number;
+  schoolYear: string;
+  schoolYearId: number;
   enrollment: {
     id: number;
     section: string;
@@ -113,8 +113,8 @@ interface ApiGradeLevelGroup {
 }
 
 export default function Students() {
-  const { activeAcademicYearId, viewingAcademicYearId } = useSettingsStore();
-  const ayId = viewingAcademicYearId ?? activeAcademicYearId;
+  const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
+  const ayId = viewingSchoolYearId ?? activeSchoolYearId;
 
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
@@ -218,7 +218,7 @@ export default function Students() {
     if (initialLoad) setLoading(true);
     try {
       const params: Record<string, string | number> = {
-        academicYearId: ayId,
+        schoolYearId: ayId,
         page,
         limit: 15,
         sortBy,
@@ -730,9 +730,9 @@ export default function Students() {
                 <div className='grid grid-cols-2 gap-4'>
                   <div>
                     <Label className='text-xs text-[hsl(var(--muted-foreground))]'>
-                      Academic Year
+                      School Year
                     </Label>
-                    <p className='text-sm'>{selectedStudent.academicYear}</p>
+                    <p className='text-sm'>{selectedStudent.schoolYear}</p>
                   </div>
                   <div>
                     <Label className='text-xs text-[hsl(var(--muted-foreground))]'>

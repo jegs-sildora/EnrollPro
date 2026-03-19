@@ -1,18 +1,18 @@
-import { Request, Response } from 'express';
-import { prisma } from '../lib/prisma.js';
+import { Request, Response } from "express";
+import { prisma } from "../lib/prisma.js";
 
 export const getStudents = async (req: Request, res: Response) => {
   try {
     const {
-      academicYearId,
-      search = '',
+      schoolYearId,
+      search = "",
       gradeLevelId,
       sectionId,
       status,
-      page = '1',
-      limit = '15',
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      page = "1",
+      limit = "15",
+      sortBy = "createdAt",
+      sortOrder = "desc",
     } = req.query;
 
     const pageNum = parseInt(page as string, 10);
@@ -22,33 +22,33 @@ export const getStudents = async (req: Request, res: Response) => {
     // Build where clause
     const where: any = {};
 
-    // Filter by academic year (REQUIRED for data consistency)
-    if (academicYearId) {
-      where.academicYearId = parseInt(academicYearId as string, 10);
+    // Filter by school year (REQUIRED for data consistency)
+    if (schoolYearId) {
+      where.schoolYearId = parseInt(schoolYearId as string, 10);
     }
 
     // Search by LRN or name
-    if (search && typeof search === 'string' && search.trim()) {
+    if (search && typeof search === "string" && search.trim()) {
       where.OR = [
-        { lrn: { contains: search.trim(), mode: 'insensitive' } },
-        { firstName: { contains: search.trim(), mode: 'insensitive' } },
-        { lastName: { contains: search.trim(), mode: 'insensitive' } },
-        { middleName: { contains: search.trim(), mode: 'insensitive' } },
+        { lrn: { contains: search.trim(), mode: "insensitive" } },
+        { firstName: { contains: search.trim(), mode: "insensitive" } },
+        { lastName: { contains: search.trim(), mode: "insensitive" } },
+        { middleName: { contains: search.trim(), mode: "insensitive" } },
       ];
     }
 
     // Filter by grade level
-    if (gradeLevelId && typeof gradeLevelId === 'string') {
+    if (gradeLevelId && typeof gradeLevelId === "string") {
       where.gradeLevelId = parseInt(gradeLevelId, 10);
     }
 
     // Filter by status
-    if (status && typeof status === 'string') {
+    if (status && typeof status === "string") {
       where.status = status;
     }
 
     // Filter by section (via enrollment)
-    if (sectionId && typeof sectionId === 'string') {
+    if (sectionId && typeof sectionId === "string") {
       where.enrollment = {
         sectionId: parseInt(sectionId, 10),
       };
@@ -56,36 +56,37 @@ export const getStudents = async (req: Request, res: Response) => {
 
     // Build orderBy clause
     const orderBy: any = [];
-    
+
     const sortField = sortBy as string;
-    const order = (sortOrder as string).toLowerCase() === 'asc' ? 'asc' : 'desc';
+    const order =
+      (sortOrder as string).toLowerCase() === "asc" ? "asc" : "desc";
 
     // Map frontend sort fields to database fields
     switch (sortField) {
-      case 'lrn':
+      case "lrn":
         orderBy.push({ lrn: order });
         break;
-      case 'lastName':
+      case "lastName":
         orderBy.push({ lastName: order });
         orderBy.push({ firstName: order });
         break;
-      case 'gradeLevel':
+      case "gradeLevel":
         orderBy.push({ gradeLevel: { displayOrder: order } });
         break;
-      case 'section':
+      case "section":
         orderBy.push({ enrollment: { section: { name: order } } });
         break;
-      case 'strand':
+      case "strand":
         orderBy.push({ strand: { name: order } });
         break;
-      case 'status':
+      case "status":
         orderBy.push({ status: order });
         break;
-      case 'createdAt':
+      case "createdAt":
         orderBy.push({ createdAt: order });
         break;
       default:
-        orderBy.push({ createdAt: 'desc' });
+        orderBy.push({ createdAt: "desc" });
     }
 
     // Get total count
@@ -121,13 +122,21 @@ export const getStudents = async (req: Request, res: Response) => {
           : father?.firstName
             ? `${father.firstName} ${father.lastName}`
             : null;
-      const parentContact = guardian?.contactNumber || mother?.contactNumber || father?.contactNumber || null;
-      const addressStr = addr ? [addr.barangay, addr.cityMunicipality, addr.province].filter(Boolean).join(', ') : null;
+      const parentContact =
+        guardian?.contactNumber ||
+        mother?.contactNumber ||
+        father?.contactNumber ||
+        null;
+      const addressStr = addr
+        ? [addr.barangay, addr.cityMunicipality, addr.province]
+            .filter(Boolean)
+            .join(", ")
+        : null;
 
       return {
         id: applicant.id,
         lrn: applicant.lrn,
-        fullName: `${applicant.lastName}, ${applicant.firstName}${applicant.middleName ? ` ${applicant.middleName.charAt(0)}.` : ''}${applicant.suffix ? ` ${applicant.suffix}` : ''}`,
+        fullName: `${applicant.lastName}, ${applicant.firstName}${applicant.middleName ? ` ${applicant.middleName.charAt(0)}.` : ""}${applicant.suffix ? ` ${applicant.suffix}` : ""}`,
         firstName: applicant.firstName,
         lastName: applicant.lastName,
         middleName: applicant.middleName,
@@ -161,8 +170,8 @@ export const getStudents = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Error fetching students:', error);
-    res.status(500).json({ message: 'Failed to fetch students' });
+    console.error("Error fetching students:", error);
+    res.status(500).json({ message: "Failed to fetch students" });
   }
 };
 
@@ -175,7 +184,7 @@ export const getStudentById = async (req: Request, res: Response) => {
       include: {
         gradeLevel: true,
         strand: true,
-        academicYear: true,
+        schoolYear: true,
         enrollment: {
           include: {
             section: {
@@ -203,7 +212,7 @@ export const getStudentById = async (req: Request, res: Response) => {
     });
 
     if (!applicant) {
-      return res.status(404).json({ message: 'Student not found' });
+      return res.status(404).json({ message: "Student not found" });
     }
 
     const addr = applicant.currentAddress as any;
@@ -217,13 +226,21 @@ export const getStudentById = async (req: Request, res: Response) => {
         : father?.firstName
           ? `${father.firstName} ${father.lastName}`
           : null;
-    const parentContact = guardian?.contactNumber || mother?.contactNumber || father?.contactNumber || null;
-    const addressStr = addr ? [addr.barangay, addr.cityMunicipality, addr.province].filter(Boolean).join(', ') : null;
+    const parentContact =
+      guardian?.contactNumber ||
+      mother?.contactNumber ||
+      father?.contactNumber ||
+      null;
+    const addressStr = addr
+      ? [addr.barangay, addr.cityMunicipality, addr.province]
+          .filter(Boolean)
+          .join(", ")
+      : null;
 
     const student = {
       id: applicant.id,
       lrn: applicant.lrn,
-      fullName: `${applicant.lastName}, ${applicant.firstName}${applicant.middleName ? ` ${applicant.middleName.charAt(0)}.` : ''}${applicant.suffix ? ` ${applicant.suffix}` : ''}`,
+      fullName: `${applicant.lastName}, ${applicant.firstName}${applicant.middleName ? ` ${applicant.middleName.charAt(0)}.` : ""}${applicant.suffix ? ` ${applicant.suffix}` : ""}`,
       firstName: applicant.firstName,
       lastName: applicant.lastName,
       middleName: applicant.middleName,
@@ -246,26 +263,28 @@ export const getStudentById = async (req: Request, res: Response) => {
       gradeLevelId: applicant.gradeLevelId,
       strand: applicant.strand?.name || null,
       strandId: applicant.strandId,
-      academicYear: applicant.academicYear.yearLabel,
-      academicYearId: applicant.academicYearId,
-      enrollment: applicant.enrollment ? {
-        id: applicant.enrollment.id,
-        section: applicant.enrollment.section.name,
-        sectionId: applicant.enrollment.sectionId,
-        advisingTeacher: applicant.enrollment.section.advisingTeacher
-          ? `${applicant.enrollment.section.advisingTeacher.lastName}, ${applicant.enrollment.section.advisingTeacher.firstName}${applicant.enrollment.section.advisingTeacher.middleName ? ` ${applicant.enrollment.section.advisingTeacher.middleName.charAt(0)}.` : ''}`
-          : null,
-        enrolledAt: applicant.enrollment.enrolledAt,
-        enrolledBy: applicant.enrollment.enrolledBy.name,
-      } : null,
+      schoolYear: applicant.schoolYear.yearLabel,
+      schoolYearId: applicant.schoolYearId,
+      enrollment: applicant.enrollment
+        ? {
+            id: applicant.enrollment.id,
+            section: applicant.enrollment.section.name,
+            sectionId: applicant.enrollment.sectionId,
+            advisingTeacher: applicant.enrollment.section.advisingTeacher
+              ? `${applicant.enrollment.section.advisingTeacher.lastName}, ${applicant.enrollment.section.advisingTeacher.firstName}${applicant.enrollment.section.advisingTeacher.middleName ? ` ${applicant.enrollment.section.advisingTeacher.middleName.charAt(0)}.` : ""}`
+              : null,
+            enrolledAt: applicant.enrollment.enrolledAt,
+            enrolledBy: applicant.enrollment.enrolledBy.name,
+          }
+        : null,
       createdAt: applicant.createdAt,
       updatedAt: applicant.updatedAt,
     };
 
     res.json({ student });
   } catch (error) {
-    console.error('Error fetching student:', error);
-    res.status(500).json({ message: 'Failed to fetch student details' });
+    console.error("Error fetching student:", error);
+    res.status(500).json({ message: "Failed to fetch student details" });
   }
 };
 
@@ -292,7 +311,7 @@ export const updateStudent = async (req: Request, res: Response) => {
     });
 
     if (!applicant) {
-      return res.status(404).json({ message: 'Student not found' });
+      return res.status(404).json({ message: "Student not found" });
     }
 
     const updated = await prisma.applicant.update({
@@ -326,18 +345,18 @@ export const updateStudent = async (req: Request, res: Response) => {
     await prisma.auditLog.create({
       data: {
         userId: (req as any).user?.userId || null,
-        actionType: 'STUDENT_UPDATED',
+        actionType: "STUDENT_UPDATED",
         description: `Updated student record for ${updated.firstName} ${updated.lastName} (LRN: ${updated.lrn})`,
-        subjectType: 'Applicant',
+        subjectType: "Applicant",
         subjectId: updated.id,
-        ipAddress: req.ip || 'unknown',
-        userAgent: req.headers['user-agent'] || null,
+        ipAddress: req.ip || "unknown",
+        userAgent: req.headers["user-agent"] || null,
       },
     });
 
-    res.json({ message: 'Student updated successfully', student: updated });
+    res.json({ message: "Student updated successfully", student: updated });
   } catch (error) {
-    console.error('Error updating student:', error);
-    res.status(500).json({ message: 'Failed to update student' });
+    console.error("Error updating student:", error);
+    res.status(500).json({ message: "Failed to update student" });
   }
 };

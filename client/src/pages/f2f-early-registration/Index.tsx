@@ -30,8 +30,10 @@ import {
   AlertCircle,
   UserPlus,
   RotateCcw,
+  BookOpen,
 } from "lucide-react";
 import api from "@/api/axiosInstance";
+import { Link } from "react-router";
 import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 import { toUpperCaseRecursive } from "@/lib/utils";
 import { sileo } from "sileo";
@@ -366,14 +368,26 @@ export default function F2FEarlyRegistration() {
                 </CardDescription>
               </div>
             </div>
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={() => setShowResetConfirm(true)}
-              className='gap-2'>
-              <RotateCcw className='w-4 h-4' />
-              Reset Form
-            </Button>
+            <div className='flex items-center gap-3'>
+              <Button
+                variant='outline'
+                size='sm'
+                asChild
+                className='gap-2 hidden md:flex'>
+                <Link to='/enrollment/requirements' target='_blank'>
+                  <BookOpen className='w-4 h-4' />
+                  Requirements Guide
+                </Link>
+              </Button>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => setShowResetConfirm(true)}
+                className='gap-2'>
+                <RotateCcw className='w-4 h-4' />
+                Reset Form
+              </Button>
+            </div>
           </div>
         </CardHeader>
       </Card>

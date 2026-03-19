@@ -24,14 +24,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { DatePicker } from "@/components/ui/date-picker";
-import {
-  ACADEMIC_CLUSTERS,
-  TECHPRO_CLUSTERS,
-  OLD_STRANDS,
-} from "@/pages/apply/types";
+import { ACADEMIC_CLUSTERS, TECHPRO_CLUSTERS } from "@/pages/apply/types";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -74,8 +69,8 @@ const SCP_TYPES = [
 ];
 
 export default function CurriculumTab() {
-  const { activeAcademicYearId, viewingAcademicYearId } = useSettingsStore();
-  const ayId = viewingAcademicYearId ?? activeAcademicYearId;
+  const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
+  const ayId = viewingSchoolYearId ?? activeSchoolYearId;
 
   const [gradeLevels, setGradeLevels] = useState<GradeLevel[]>([]);
   const [strands, setStrands] = useState<Strand[]>([]);

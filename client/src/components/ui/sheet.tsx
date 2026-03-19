@@ -88,7 +88,7 @@ const SheetContent = React.forwardRef<
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
                 className={cn(sheetVariants({ side }), className)}>
                 {children}
-                <DialogPrimitive.Close className='absolute right-6 top-6 rounded-sm opacity-90 ring-offset-[hsl(var(--background))] transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-foreground))] focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-[hsl(var(--primary-foreground))] bg-primary-foreground'>
+                <DialogPrimitive.Close className='absolute right-6 top-6 rounded-sm opacity-90 ring-offset-[hsl(var(--background))] transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-foreground))] focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-[hsl(var(--primary-foreground))] bg-primary-foreground text-primary'>
                   <X className='h-5 w-5' />
                   <span className='sr-only'>Close</span>
                 </DialogPrimitive.Close>

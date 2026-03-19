@@ -1,19 +1,48 @@
 import { Request, Response } from 'express';
+import nodemailer from 'nodemailer';
 import { prisma } from '../lib/prisma.js';
 import { auditLog } from '../services/auditLogger.js';
+
+function parsePositiveInt(value: unknown): number | null {
+  const parsed = Number.parseInt(String(value), 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function parseOptionalDate(value: unknown): Date | null {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+  const parsed = new Date(String(value));
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function csvEscape(value: unknown): string {
+  const raw = value == null ? '' : String(value);
+  return `"${raw.replace(/"/g, '""')}"`;
+}
 
 export async function index(req: Request, res: Response) {
   try {
     const { status, trigger, dateFrom, dateTo, page = '1', limit = '20' } = req.query;
-    const skip = (parseInt(String(page)) - 1) * parseInt(String(limit));
+    const pageNum = parsePositiveInt(page);
+    const limitNum = parsePositiveInt(limit);
+    if (!pageNum || !limitNum) {
+      return res.status(400).json({ message: 'page and limit must be positive integers' });
+    }
+    const fromDate = parseOptionalDate(dateFrom);
+    const toDate = parseOptionalDate(dateTo);
+    if ((dateFrom && !fromDate) || (dateTo && !toDate)) {
+      return res.status(400).json({ message: 'dateFrom/dateTo must be valid dates' });
+    }
+    const skip = (pageNum - 1) * limitNum;
 
     const where: any = {};
     if (status) where.status = status;
     if (trigger) where.trigger = trigger;
-    if (dateFrom || dateTo) {
+    if (fromDate || toDate) {
       where.attemptedAt = {};
-      if (dateFrom) where.attemptedAt.gte = new Date(String(dateFrom));
-      if (dateTo) where.attemptedAt.lte = new Date(String(dateTo));
+      if (fromDate) where.attemptedAt.gte = fromDate;
+      if (toDate) where.attemptedAt.lte = toDate;
     }
 
     const [logs, total] = await Promise.all([
@@ -31,12 +60,12 @@ export async function index(req: Request, res: Response) {
         },
         orderBy: { attemptedAt: 'desc' },
         skip,
-        take: parseInt(String(limit)),
+        take: limitNum,
       }),
       prisma.emailLog.count({ where }),
     ]);
 
-    res.json({ logs, total, page: parseInt(String(page)), limit: parseInt(String(limit)) });
+    res.json({ logs, total, page: pageNum, limit: limitNum });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
@@ -44,8 +73,13 @@ export async function index(req: Request, res: Response) {
 
 export async function show(req: Request, res: Response) {
   try {
+    const id = parsePositiveInt(req.params.id);
+    if (!id) {
+      return res.status(400).json({ message: 'Invalid email log id' });
+    }
+
     const log = await prisma.emailLog.findUnique({
-      where: { id: parseInt(String(req.params.id)) },
+      where: { id },
       include: {
         applicant: {
           select: {
@@ -70,7 +104,11 @@ export async function show(req: Request, res: Response) {
 
 export async function resend(req: Request, res: Response) {
   try {
-    const logId = parseInt(String(req.params.id));
+    const logId = parsePositiveInt(req.params.id);
+    if (!logId) {
+      return res.status(400).json({ message: 'Invalid email log id' });
+    }
+
     const originalLog = await prisma.emailLog.findUnique({
       where: { id: logId },
       include: { applicant: true },
@@ -100,14 +138,61 @@ export async function resend(req: Request, res: Response) {
       req,
     });
 
-    // TODO: Actually send the email via mailer service
-    // For now, mark as sent
-    await prisma.emailLog.update({
-      where: { id: newLog.id },
-      data: { status: 'SENT', sentAt: new Date() },
+    const smtpHost = process.env.SMTP_HOST;
+    const smtpPort = Number.parseInt(process.env.SMTP_PORT ?? '', 10);
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS;
+    const fromAddress = process.env.SMTP_FROM || smtpUser;
+
+    if (!smtpHost || !smtpPort || !fromAddress || !smtpUser || !smtpPass) {
+      await prisma.emailLog.update({
+        where: { id: newLog.id },
+        data: {
+          status: 'FAILED',
+          errorMessage: 'SMTP configuration missing',
+        },
+      });
+      return res.status(503).json({
+        message: 'Email service is not configured (missing SMTP settings)',
+        newLogId: newLog.id,
+      });
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: { user: smtpUser, pass: smtpPass },
     });
 
-    res.json({ message: 'Email queued for resend', newLogId: newLog.id });
+    try {
+      await transporter.sendMail({
+        from: fromAddress,
+        to: originalLog.recipient,
+        subject: originalLog.subject,
+        text: `This is a resend for "${originalLog.subject}".`,
+      });
+
+      await prisma.emailLog.update({
+        where: { id: newLog.id },
+        data: { status: 'SENT', sentAt: new Date(), errorMessage: null },
+      });
+    } catch (mailError: any) {
+      await prisma.emailLog.update({
+        where: { id: newLog.id },
+        data: {
+          status: 'FAILED',
+          errorMessage: mailError?.message || 'Unknown email send failure',
+        },
+      });
+
+      return res.status(502).json({
+        message: 'Failed to resend email',
+        newLogId: newLog.id,
+      });
+    }
+
+    res.json({ message: 'Email resent successfully', newLogId: newLog.id });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
@@ -116,14 +201,19 @@ export async function resend(req: Request, res: Response) {
 export async function exportCsv(req: Request, res: Response) {
   try {
     const { status, trigger, dateFrom, dateTo } = req.query;
+    const fromDate = parseOptionalDate(dateFrom);
+    const toDate = parseOptionalDate(dateTo);
+    if ((dateFrom && !fromDate) || (dateTo && !toDate)) {
+      return res.status(400).json({ message: 'dateFrom/dateTo must be valid dates' });
+    }
 
     const where: any = {};
     if (status) where.status = status;
     if (trigger) where.trigger = trigger;
-    if (dateFrom || dateTo) {
+    if (fromDate || toDate) {
       where.attemptedAt = {};
-      if (dateFrom) where.attemptedAt.gte = new Date(String(dateFrom));
-      if (dateTo) where.attemptedAt.lte = new Date(String(dateTo));
+      if (fromDate) where.attemptedAt.gte = fromDate;
+      if (toDate) where.attemptedAt.lte = toDate;
     }
 
     const logs = await prisma.emailLog.findMany({
@@ -143,14 +233,14 @@ export async function exportCsv(req: Request, res: Response) {
       ...logs.map((log) =>
         [
           log.id,
-          log.recipient,
-          `"${log.subject}"`,
+          csvEscape(log.recipient),
+          csvEscape(log.subject),
           log.trigger,
           log.status,
           log.attemptedAt.toISOString(),
           log.sentAt?.toISOString() || '',
-          log.applicant?.trackingNumber || '',
-          `"${log.errorMessage || ''}"`,
+          csvEscape(log.applicant?.trackingNumber || ''),
+          csvEscape(log.errorMessage || ''),
         ].join(',')
       ),
     ].join('\n');

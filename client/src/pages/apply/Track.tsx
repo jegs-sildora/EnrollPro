@@ -118,7 +118,7 @@ const statusConfig: Record<
     label: "Officially Enrolled",
     icon: CheckCircle2,
     color: "text-green-700 bg-green-100 border-green-300",
-    desc: "Welcome! You are now an officially enrolled student for the academic year.",
+    desc: "Welcome! You are now an officially enrolled student for the School Year.",
   },
   REJECTED: {
     label: "Rejected",

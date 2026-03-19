@@ -48,14 +48,14 @@ model SchoolSettings {
   logoUrl              String?
   colorScheme          Json?
   selectedAccentHsl    String?
-  activeAcademicYearId Int?
-  activeAcademicYear   AcademicYear? @relation(fields: [activeAcademicYearId], references: [id])
+  activeSchoolYearId          Int?
+  activeSchoolYear   SchoolYear? @relation(fields: [activeSchoolYearId], references: [id])
 }
 
-model AcademicYear {
-  id                 Int                @id @default(autoincrement())
+model SchoolYear {
+  id                 Int              @id @default(autoincrement())
   yearLabel          String             @unique
-  status             AcademicYearStatus @default(DRAFT)
+  status             SchoolYearStatus @default(DRAFT)
   isActive           Boolean            @default(false)
   classOpeningDate   DateTime?
   classEndDate       DateTime?
@@ -66,8 +66,8 @@ model AcademicYear {
   manualOverrideOpen Boolean            @default(false)
   clonedFromId       Int?
   createdAt          DateTime           @default(now())
-  clonedFrom         AcademicYear?      @relation("AYClone", fields: [clonedFromId], references: [id])
-  clones             AcademicYear[]     @relation("AYClone")
+  clonedFrom         SchoolYear?      @relation("AYClone", fields: [clonedFromId], references: [id])
+  clones             SchoolYear[]     @relation("AYClone")
   applicants         Applicant[]
   enrollments        Enrollment[]
   gradeLevels        GradeLevel[]
@@ -80,10 +80,10 @@ model GradeLevel {
   id             Int          @id @default(autoincrement())
   name           String
   displayOrder   Int
-  academicYearId Int
+  schoolYearId          Int
   createdAt      DateTime     @default(now())
   applicants     Applicant[]
-  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  schoolYear   SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
   sections       Section[]
 }
 
@@ -91,12 +91,12 @@ model Strand {
   id                      Int            @id @default(autoincrement())
   name                    String
   applicableGradeLevelIds Int[]
-  academicYearId          Int
+  schoolYearId          Int
   curriculumType          CurriculumType @default(OLD_STRAND)
   track                   SHSTrack?
   createdAt               DateTime       @default(now())
   applicants              Applicant[]
-  academicYear            AcademicYear   @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  schoolYear            SchoolYear   @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
 }
 
 model Section {
@@ -145,7 +145,7 @@ model Applicant {
   syLastAttended          String?
   lastSchoolAddress       String?
   lastSchoolType          String?
-  learnerType             String?
+  learnerType             LearnerType       @default(NEW_ENROLLEE)
   electiveCluster         String?
   scpApplication          Boolean           @default(false)
   scpType                 String?
@@ -157,7 +157,7 @@ model Applicant {
   rejectionReason         String?
   gradeLevelId            Int
   strandId                Int?
-  academicYearId          Int
+  schoolYearId          Int
   applicantType           ApplicantType     @default(REGULAR)
   shsTrack                SHSTrack?
   examDate                DateTime?
@@ -174,6 +174,8 @@ model Applicant {
   natScore                Float?
   grade10ScienceGrade     Float?
   grade10MathGrade        Float?
+  generalAverage          Float?
+  privacyConsentGiven     Boolean           @default(false)
   createdAt               DateTime          @default(now())
   updatedAt               DateTime          @updatedAt
   admissionChannel        AdmissionChannel  @default(ONLINE)
@@ -181,27 +183,100 @@ model Applicant {
   snedCategory            String?
   hasPwdId                Boolean           @default(false)
   learningModalities      String[]
-  academicYear            AcademicYear      @relation(fields: [academicYearId], references: [id])
+  isTemporarilyEnrolled   Boolean           @default(false)
+  schoolYear            SchoolYear      @relation(fields: [schoolYearId], references: [id])
   encodedBy               User?             @relation("ApplicantEncodedBy", fields: [encodedById], references: [id])
   gradeLevel              GradeLevel        @relation(fields: [gradeLevelId], references: [id])
   strand                  Strand?           @relation(fields: [strandId], references: [id])
+  documents               Document[]
+  checklist               RequirementChecklist?
   emailLogs               EmailLog[]
   enrollment              Enrollment?
 
-  @@index([status, academicYearId])
+  @@index([status, schoolYearId])
   @@index([lrn])
   @@index([applicantType, status])
   @@index([trackingNumber])
+}
+
+model Document {
+  id               Int            @id @default(autoincrement())
+  applicantId      Int
+  documentType     DocumentType
+  status           DocumentStatus @default(SUBMITTED)
+  fileName         String?
+  originalName     String?
+  mimeType         String?
+  size             Int?
+  verificationNote String?
+  isPresentedOnly  Boolean        @default(false)
+  uploadedAt       DateTime       @default(now())
+  verifiedAt       DateTime?
+  verifiedById     Int?
+  applicant        Applicant      @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+
+  @@index([applicantId])
+}
+
+model RequirementChecklist {
+  id                        Int       @id @default(autoincrement())
+  applicantId               Int       @unique
+  psaBirthCertStatus        Boolean   @default(false) // Whether PSA BC was presented/verified
+  psaBcOnFile               Boolean   @default(false) // Whether PSA BC is already in school records (Rule 1)
+  originalPsaBcCollected    Boolean   @default(false) // Collected during Phase 2
+  secondaryBirthProofStatus Boolean   @default(false) // Secondary proof (Brgy Cert, etc.) if PSA BC unavailable
+  sf9ReportCardStatus       Boolean   @default(false)
+  sf10PermanentStatus       Boolean   @default(false) // Not an enrollment requirement, but tracked
+  goodMoralStatus           Boolean   @default(false) // Not an enrollment requirement, but tracked
+  peptAeCertificateStatus   Boolean   @default(false) // For PEPT/A&E passers
+  pwdIdStatus               Boolean   @default(false) // For LWD
+  medicalEvaluationStatus   Boolean   @default(false) // For LWD
+  undertakingStatus         Boolean   @default(false) // Affidavit of Undertaking (Transferees)
+  confirmationSlipStatus    Boolean   @default(false) // For continuing learners
+  otherStatus               Boolean   @default(false)
+  lastUpdated               DateTime  @updatedAt
+  applicant                 Applicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+}
+
+enum DocumentStatus {
+  SUBMITTED
+  VERIFIED
+  REJECTED
+  MISSING
+}
+
+enum LearnerType {
+  NEW_ENROLLEE
+  TRANSFEREE
+  RETURNING
+  CONTINUING
+}
+
+enum DocumentType {
+  PSA_BIRTH_CERTIFICATE
+  SECONDARY_BIRTH_PROOF
+  SF9_REPORT_CARD
+  SF10_PERMANENT_RECORD
+  GOOD_MORAL_CERTIFICATE
+  MEDICAL_CERTIFICATE
+  MEDICAL_EVALUATION
+  PEPT_AE_CERTIFICATE
+  PWD_ID
+  PSA_MARRIAGE_CERTIFICATE
+  UNDERTAKING
+  AFFIDAVIT_OF_UNDERTAKING
+  CONFIRMATION_SLIP
+  OTHERS
 }
 
 model Enrollment {
   id             Int          @id @default(autoincrement())
   applicantId    Int          @unique
   sectionId      Int
-  academicYearId Int
+  schoolYearId          Int
   enrolledAt     DateTime     @default(now())
   enrolledById   Int
-  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+  schoolYear   SchoolYear @relation(fields: [schoolYearId], references: [id])
   applicant      Applicant    @relation(fields: [applicantId], references: [id], onDelete: Cascade)
   enrolledBy     User         @relation(fields: [enrolledById], references: [id])
   section        Section      @relation(fields: [sectionId], references: [id])
@@ -241,7 +316,7 @@ model EmailLog {
 
 model ScpConfig {
   id             Int           @id @default(autoincrement())
-  academicYearId Int
+  schoolYearId          Int
   scpType        ApplicantType
   isOffered      Boolean       @default(false)
   cutoffScore    Float?
@@ -250,9 +325,9 @@ model ScpConfig {
   languages      String[]
   sportsList     String[]
   notes          String?
-  academicYear   AcademicYear  @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  schoolYear   SchoolYear  @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
 
-  @@unique([academicYearId, scpType])
+  @@unique([schoolYearId, scpType])
 }
 
 enum Role {
@@ -274,13 +349,14 @@ enum ApplicationStatus {
   ASSESSMENT_TAKEN
   PASSED
   PRE_REGISTERED
+  TEMPORARILY_ENROLLED
   NOT_QUALIFIED
   ENROLLED
   REJECTED
   WITHDRAWN
 }
 
-enum AcademicYearStatus {
+enum SchoolYearStatus {
   DRAFT
   UPCOMING
   ACTIVE

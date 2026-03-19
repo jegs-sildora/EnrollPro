@@ -1,14 +1,17 @@
-import type { Request, Response } from 'express';
-import { prisma } from '../lib/prisma.js';
-import { auditLog } from '../services/auditLogger.js';
+import type { Request, Response } from "express";
+import { prisma } from "../lib/prisma.js";
+import { auditLog } from "../services/auditLogger.js";
 
 // ─── Grade Levels ─────────────────────────────────────────
 
-export async function listGradeLevels(req: Request, res: Response): Promise<void> {
+export async function listGradeLevels(
+  req: Request,
+  res: Response,
+): Promise<void> {
   const ayId = parseInt(req.params.ayId as string);
   const gradeLevels = await prisma.gradeLevel.findMany({
-    where: { academicYearId: ayId },
-    orderBy: { displayOrder: 'asc' },
+    where: { schoolYearId: ayId },
+    orderBy: { displayOrder: "asc" },
     include: {
       sections: {
         include: { _count: { select: { enrollments: true } } },
@@ -18,30 +21,35 @@ export async function listGradeLevels(req: Request, res: Response): Promise<void
   res.json({ gradeLevels });
 }
 
-export async function createGradeLevel(req: Request, res: Response): Promise<void> {
+export async function createGradeLevel(
+  req: Request,
+  res: Response,
+): Promise<void> {
   const ayId = parseInt(req.params.ayId as string);
   const { name, displayOrder } = req.body;
 
   if (!name) {
-    res.status(400).json({ message: 'Name is required' });
+    res.status(400).json({ message: "Name is required" });
     return;
   }
 
-  const count = await prisma.gradeLevel.count({ where: { academicYearId: ayId } });
+  const count = await prisma.gradeLevel.count({
+    where: { schoolYearId: ayId },
+  });
 
   const gl = await prisma.gradeLevel.create({
     data: {
       name,
       displayOrder: displayOrder ?? count + 1,
-      academicYearId: ayId,
+      schoolYearId: ayId,
     },
   });
 
   await auditLog({
     userId: req.user!.userId,
-    actionType: 'GRADE_LEVEL_CREATED',
+    actionType: "GRADE_LEVEL_CREATED",
     description: `Created grade level "${name}"`,
-    subjectType: 'GradeLevel',
+    subjectType: "GradeLevel",
     subjectId: gl.id,
     req,
   });
@@ -49,13 +57,16 @@ export async function createGradeLevel(req: Request, res: Response): Promise<voi
   res.status(201).json({ gradeLevel: gl });
 }
 
-export async function updateGradeLevel(req: Request, res: Response): Promise<void> {
+export async function updateGradeLevel(
+  req: Request,
+  res: Response,
+): Promise<void> {
   const id = parseInt(req.params.id as string);
   const { name, displayOrder } = req.body;
 
   const gl = await prisma.gradeLevel.findUnique({ where: { id } });
   if (!gl) {
-    res.status(404).json({ message: 'Grade level not found' });
+    res.status(404).json({ message: "Grade level not found" });
     return;
   }
 
@@ -70,7 +81,10 @@ export async function updateGradeLevel(req: Request, res: Response): Promise<voi
   res.json({ gradeLevel: updated });
 }
 
-export async function deleteGradeLevel(req: Request, res: Response): Promise<void> {
+export async function deleteGradeLevel(
+  req: Request,
+  res: Response,
+): Promise<void> {
   const id = parseInt(req.params.id as string);
 
   const gl = await prisma.gradeLevel.findUnique({
@@ -79,12 +93,16 @@ export async function deleteGradeLevel(req: Request, res: Response): Promise<voi
   });
 
   if (!gl) {
-    res.status(404).json({ message: 'Grade level not found' });
+    res.status(404).json({ message: "Grade level not found" });
     return;
   }
 
   if (gl._count.applicants > 0) {
-    res.status(400).json({ message: 'Cannot delete a grade level with existing applicants' });
+    res
+      .status(400)
+      .json({
+        message: "Cannot delete a grade level with existing applicants",
+      });
     return;
   }
 
@@ -92,14 +110,14 @@ export async function deleteGradeLevel(req: Request, res: Response): Promise<voi
 
   await auditLog({
     userId: req.user!.userId,
-    actionType: 'GRADE_LEVEL_DELETED',
+    actionType: "GRADE_LEVEL_DELETED",
     description: `Deleted grade level "${gl.name}"`,
-    subjectType: 'GradeLevel',
+    subjectType: "GradeLevel",
     subjectId: id,
     req,
   });
 
-  res.json({ message: 'Grade level deleted' });
+  res.json({ message: "Grade level deleted" });
 }
 
 // ─── Strands ──────────────────────────────────────────────
@@ -107,8 +125,8 @@ export async function deleteGradeLevel(req: Request, res: Response): Promise<voi
 export async function listStrands(req: Request, res: Response): Promise<void> {
   const ayId = parseInt(req.params.ayId as string);
   const strands = await prisma.strand.findMany({
-    where: { academicYearId: ayId },
-    orderBy: { name: 'asc' },
+    where: { schoolYearId: ayId },
+    orderBy: { name: "asc" },
   });
   res.json({ strands });
 }
@@ -118,7 +136,7 @@ export async function createStrand(req: Request, res: Response): Promise<void> {
   const { name, applicableGradeLevelIds, curriculumType, track } = req.body;
 
   if (!name) {
-    res.status(400).json({ message: 'Name is required' });
+    res.status(400).json({ message: "Name is required" });
     return;
   }
 
@@ -126,17 +144,17 @@ export async function createStrand(req: Request, res: Response): Promise<void> {
     data: {
       name,
       applicableGradeLevelIds: applicableGradeLevelIds ?? [],
-      academicYearId: ayId,
-      curriculumType: curriculumType || 'OLD_STRAND',
+      schoolYearId: ayId,
+      curriculumType: curriculumType || "OLD_STRAND",
       track: track || null,
     },
   });
 
   await auditLog({
     userId: req.user!.userId,
-    actionType: 'STRAND_CREATED',
+    actionType: "STRAND_CREATED",
     description: `Created strand "${name}"`,
-    subjectType: 'Strand',
+    subjectType: "Strand",
     subjectId: strand.id,
     req,
   });
@@ -150,7 +168,7 @@ export async function updateStrand(req: Request, res: Response): Promise<void> {
 
   const strand = await prisma.strand.findUnique({ where: { id } });
   if (!strand) {
-    res.status(404).json({ message: 'Strand not found' });
+    res.status(404).json({ message: "Strand not found" });
     return;
   }
 
@@ -158,7 +176,9 @@ export async function updateStrand(req: Request, res: Response): Promise<void> {
     where: { id },
     data: {
       ...(name ? { name } : {}),
-      ...(applicableGradeLevelIds !== undefined ? { applicableGradeLevelIds } : {}),
+      ...(applicableGradeLevelIds !== undefined
+        ? { applicableGradeLevelIds }
+        : {}),
       ...(curriculumType !== undefined ? { curriculumType } : {}),
       ...(track !== undefined ? { track } : {}),
     },
@@ -176,12 +196,14 @@ export async function deleteStrand(req: Request, res: Response): Promise<void> {
   });
 
   if (!strand) {
-    res.status(404).json({ message: 'Strand not found' });
+    res.status(404).json({ message: "Strand not found" });
     return;
   }
 
   if (strand._count.applicants > 0) {
-    res.status(400).json({ message: 'Cannot delete a strand with existing applicants' });
+    res
+      .status(400)
+      .json({ message: "Cannot delete a strand with existing applicants" });
     return;
   }
 
@@ -189,14 +211,14 @@ export async function deleteStrand(req: Request, res: Response): Promise<void> {
 
   await auditLog({
     userId: req.user!.userId,
-    actionType: 'STRAND_DELETED',
+    actionType: "STRAND_DELETED",
     description: `Deleted strand "${strand.name}"`,
-    subjectType: 'Strand',
+    subjectType: "Strand",
     subjectId: id,
     req,
   });
 
-  res.json({ message: 'Strand deleted' });
+  res.json({ message: "Strand deleted" });
 }
 
 export async function syncStrands(req: Request, res: Response): Promise<void> {
@@ -204,21 +226,29 @@ export async function syncStrands(req: Request, res: Response): Promise<void> {
   const { strands: desiredStrands } = req.body; // Array of { name, curriculumType, track }
 
   if (!Array.isArray(desiredStrands)) {
-    res.status(400).json({ message: 'strands must be an array' });
+    res.status(400).json({ message: "strands must be an array" });
     return;
   }
 
   try {
     const currentStrands = await prisma.strand.findMany({
-      where: { academicYearId: ayId },
+      where: { schoolYearId: ayId },
     });
 
     const toCreate = desiredStrands.filter(
-      (ds: any) => !currentStrands.some((cs) => cs.name === ds.name && cs.curriculumType === ds.curriculumType)
+      (ds: any) =>
+        !currentStrands.some(
+          (cs) =>
+            cs.name === ds.name && cs.curriculumType === ds.curriculumType,
+        ),
     );
 
     const toDelete = currentStrands.filter(
-      (cs) => !desiredStrands.some((ds: any) => ds.name === cs.name && ds.curriculumType === cs.curriculumType)
+      (cs) =>
+        !desiredStrands.some(
+          (ds: any) =>
+            ds.name === cs.name && ds.curriculumType === cs.curriculumType,
+        ),
     );
 
     // Check for applicants before deleting
@@ -232,7 +262,7 @@ export async function syncStrands(req: Request, res: Response): Promise<void> {
 
     if (strandsWithApplicants.length > 0) {
       res.status(400).json({
-        message: `Cannot remove strands with existing applicants: ${strandsWithApplicants.map((s) => s.name).join(', ')}`,
+        message: `Cannot remove strands with existing applicants: ${strandsWithApplicants.map((s) => s.name).join(", ")}`,
       });
       return;
     }
@@ -249,41 +279,46 @@ export async function syncStrands(req: Request, res: Response): Promise<void> {
             name: ds.name,
             curriculumType: ds.curriculumType,
             track: ds.track || null,
-            academicYearId: ayId,
+            schoolYearId: ayId,
             applicableGradeLevelIds: [],
           },
-        })
+        }),
       ),
     ]);
 
     const updatedStrands = await prisma.strand.findMany({
-      where: { academicYearId: ayId },
-      orderBy: { name: 'asc' },
+      where: { schoolYearId: ayId },
+      orderBy: { name: "asc" },
     });
 
     await auditLog({
       userId: req.user!.userId,
-      actionType: 'STRANDS_SYNCED',
-      description: `Synchronized SHS curriculum strands for academic year ${ayId}`,
-      subjectType: 'AcademicYear',
+      actionType: "STRANDS_SYNCED",
+      description: `Synchronized SHS curriculum strands for school year ${ayId}`,
+      subjectType: "SchoolYear",
       subjectId: ayId,
       req,
     });
 
     res.json({ strands: updatedStrands });
   } catch (error: any) {
-    res.status(500).json({ message: 'Failed to sync strands', error: error.message });
+    res
+      .status(500)
+      .json({ message: "Failed to sync strands", error: error.message });
   }
 }
 
 // ─── Strand-to-Grade Matrix ───────────────────────────────
 
-export async function updateStrandMatrix(req: Request, res: Response): Promise<void> {
+export async function updateStrandMatrix(
+  req: Request,
+  res: Response,
+): Promise<void> {
   const ayId = parseInt(req.params.ayId as string);
   const { matrix } = req.body;
 
   if (!Array.isArray(matrix)) {
-    res.status(400).json({ message: 'Matrix must be an array' });
+    res.status(400).json({ message: "Matrix must be an array" });
     return;
   }
 
@@ -294,55 +329,71 @@ export async function updateStrandMatrix(req: Request, res: Response): Promise<v
         prisma.strand.update({
           where: { id: item.strandId },
           data: { applicableGradeLevelIds: item.gradeLevelIds },
-        })
-      )
+        }),
+      ),
     );
 
     // Fetch updated strands
     const strands = await prisma.strand.findMany({
-      where: { academicYearId: ayId },
-      orderBy: { name: 'asc' },
+      where: { schoolYearId: ayId },
+      orderBy: { name: "asc" },
     });
 
     await auditLog({
       userId: req.user!.userId,
-      actionType: 'STRAND_MATRIX_UPDATED',
-      description: `Updated strand-to-grade matrix for academic year ${ayId}`,
-      subjectType: 'AcademicYear',
+      actionType: "STRAND_MATRIX_UPDATED",
+      description: `Updated strand-to-grade matrix for school year ${ayId}`,
+      subjectType: "SchoolYear",
       subjectId: ayId,
       req,
     });
 
     res.json({ strands });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to update strand matrix' });
+    res.status(500).json({ message: "Failed to update strand matrix" });
   }
 }
 
 // ─── SCP Configs ──────────────────────────────────────────
 
-export async function listScpConfigs(req: Request, res: Response): Promise<void> {
+export async function listScpConfigs(
+  req: Request,
+  res: Response,
+): Promise<void> {
   const ayId = parseInt(req.params.ayId as string);
   const scpConfigs = await prisma.scpConfig.findMany({
-    where: { academicYearId: ayId },
+    where: { schoolYearId: ayId },
   });
   res.json({ scpConfigs });
 }
 
-export async function updateScpConfigs(req: Request, res: Response): Promise<void> {
+export async function updateScpConfigs(
+  req: Request,
+  res: Response,
+): Promise<void> {
   const ayId = parseInt(req.params.ayId as string);
   const { scpConfigs } = req.body;
 
   if (!Array.isArray(scpConfigs)) {
-    res.status(400).json({ message: 'scpConfigs must be an array' });
+    res.status(400).json({ message: "scpConfigs must be an array" });
     return;
   }
 
   try {
     const updatedConfigs = await prisma.$transaction(
       scpConfigs.map((config: any) => {
-        const { id, scpType, isOffered, cutoffScore, examDate, artFields, languages, sportsList, notes } = config;
-        
+        const {
+          id,
+          scpType,
+          isOffered,
+          cutoffScore,
+          examDate,
+          artFields,
+          languages,
+          sportsList,
+          notes,
+        } = config;
+
         if (id) {
           return prisma.scpConfig.update({
             where: { id },
@@ -353,13 +404,13 @@ export async function updateScpConfigs(req: Request, res: Response): Promise<voi
               artFields: artFields ?? [],
               languages: languages ?? [],
               sportsList: sportsList ?? [],
-              notes: notes ?? null
-            }
+              notes: notes ?? null,
+            },
           });
         } else {
           return prisma.scpConfig.create({
             data: {
-              academicYearId: ayId,
+              schoolYearId: ayId,
               scpType,
               isOffered: isOffered ?? false,
               cutoffScore: cutoffScore ?? null,
@@ -367,26 +418,26 @@ export async function updateScpConfigs(req: Request, res: Response): Promise<voi
               artFields: artFields ?? [],
               languages: languages ?? [],
               sportsList: sportsList ?? [],
-              notes: notes ?? null
-            }
+              notes: notes ?? null,
+            },
           });
         }
-      })
+      }),
     );
 
     await auditLog({
       userId: req.user!.userId,
-      actionType: 'SCP_CONFIG_UPDATED',
-      description: `Updated SCP configurations for academic year ${ayId}`,
-      subjectType: 'AcademicYear',
+      actionType: "SCP_CONFIG_UPDATED",
+      description: `Updated SCP configurations for school year ${ayId}`,
+      subjectType: "SchoolYear",
       subjectId: ayId,
       req,
     });
 
     res.json({ scpConfigs: updatedConfigs });
   } catch (error: any) {
-    res.status(500).json({ message: 'Failed to update SCP configs', error: error.message });
+    res
+      .status(500)
+      .json({ message: "Failed to update SCP configs", error: error.message });
   }
 }
-
-

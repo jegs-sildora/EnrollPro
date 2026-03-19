@@ -71,8 +71,8 @@ function fillEmoji(pct: number): string {
 }
 
 export default function SectionsTab() {
-  const { activeAcademicYearId, viewingAcademicYearId } = useSettingsStore();
-  const ayId = viewingAcademicYearId ?? activeAcademicYearId;
+  const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
+  const ayId = viewingSchoolYearId ?? activeSchoolYearId;
 
   const [activeLevel, setActiveLevel] = useState("JHS");
   const [groups, setGroups] = useState<GradeLevelGroup[]>([]);

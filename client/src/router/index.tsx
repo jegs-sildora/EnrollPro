@@ -15,6 +15,7 @@ import Students from '@/pages/students/Index';
 import Sections from '@/pages/sections/Index';
 import AuditLogs from '@/pages/audit-logs/Index';
 import Settings from '@/pages/settings/Index';
+import DocumentaryRequirements from '@/pages/enrollment/DocumentaryRequirements';
 import NotFound from '@/pages/NotFound';
 
 // Admin Pages
@@ -112,6 +113,14 @@ export const router = createBrowserRouter([
             element: (
               <AppLayout>
                 <Sections />
+              </AppLayout>
+            ),
+          },
+          {
+            path: '/enrollment/requirements',
+            element: (
+              <AppLayout>
+                <DocumentaryRequirements />
               </AppLayout>
             ),
           },

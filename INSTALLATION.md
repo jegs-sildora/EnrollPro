@@ -46,7 +46,8 @@ Open `.env` and configure the following:
 
 - `DATABASE_URL`: Set your PostgreSQL connection string (e.g., `postgresql://user:password@localhost:5432/enrollpro`).
 - `JWT_SECRET`: A secure random string for authentication.
-- `RESEND_API_KEY`: (Optional) Your Resend API key for email notifications.
+- `RESEND_API_KEY`: (Optional) Reserved for Resend integration.
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`: Required for admin email resend (`/admin/email-logs/:id/resend`).
 - `PORT`: Default is `5000`.
 - `CLIENT_URL`: Default is `http://localhost:5173`.
 

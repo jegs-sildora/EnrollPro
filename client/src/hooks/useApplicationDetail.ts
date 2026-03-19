@@ -32,7 +32,7 @@ export interface EnrollmentDetail {
   id: number;
   applicantId: number;
   sectionId: number;
-  academicYearId: number;
+  schoolYearId: number;
   enrolledAt: string;
   enrolledById: number;
   section: {
@@ -61,6 +61,31 @@ export interface EmailLog {
   attemptedAt: string;
   sentAt: string | null;
 }
+
+export interface ChecklistData {
+  id: number;
+  applicantId: number;
+  psaBirthCertStatus: boolean;
+  psaBcOnFile: boolean;
+  originalPsaBcCollected: boolean;
+  secondaryBirthProofStatus: boolean;
+  sf9ReportCardStatus: boolean;
+  sf10PermanentStatus: boolean;
+  goodMoralStatus: boolean;
+  peptAeCertificateStatus: boolean;
+  pwdIdStatus: boolean;
+  medicalEvaluationStatus: boolean;
+  undertakingStatus: boolean;
+  confirmationSlipStatus: boolean;
+  otherStatus: boolean;
+  lastUpdated: string;
+}
+
+export type LearnerType =
+  | "NEW_ENROLLEE"
+  | "TRANSFEREE"
+  | "RETURNING"
+  | "CONTINUING";
 
 export interface ApplicantDetail {
   id: number;
@@ -95,7 +120,7 @@ export interface ApplicantDetail {
   syLastAttended: string | null;
   lastSchoolAddress: string | null;
   lastSchoolType: string | null;
-  learnerType: string | null;
+  learnerType: LearnerType;
   electiveCluster: string | null;
   scpApplication: boolean;
   scpType: string | null;
@@ -107,7 +132,7 @@ export interface ApplicantDetail {
   rejectionReason: string | null;
   gradeLevelId: number;
   strandId: number | null;
-  academicYearId: number;
+  schoolYearId: number;
   applicantType: string;
   shsTrack: string | null;
   examDate: string | null;
@@ -131,15 +156,33 @@ export interface ApplicantDetail {
   snedCategory: string | null;
   hasPwdId: boolean;
   learningModalities: string[];
+  isTemporarilyEnrolled: boolean;
   gradeLevel: { id: number; name: string };
   strand: { id: number; name: string } | null;
-  academicYear: { id: number; yearLabel: string };
+  schoolYear: { id: number; yearLabel: string };
   encodedBy: { id: number; name: string; role: string } | null;
   enrollment: EnrollmentDetail | null;
+  documents?: {
+    id: number;
+    documentType: string;
+    status: "SUBMITTED" | "VERIFIED" | "REJECTED" | "MISSING";
+    fileName: string | null;
+    originalName: string | null;
+    mimeType: string | null;
+    size: number | null;
+    verificationNote: string | null;
+    isPresentedOnly: boolean;
+    uploadedAt: string;
+    verifiedAt: string | null;
+  }[];
+  checklist?: ChecklistData;
   emailLogs?: EmailLog[];
 }
 
-export function useApplicationDetail(id: number | null, isDetailed: boolean = false) {
+export function useApplicationDetail(
+  id: number | null,
+  isDetailed: boolean = false,
+) {
   const [data, setData] = useState<ApplicantDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -152,12 +195,18 @@ export function useApplicationDetail(id: number | null, isDetailed: boolean = fa
     setLoading(true);
     setError(null);
     try {
-      const endpoint = isDetailed ? `/applications/${id}/detailed` : `/applications/${id}`;
+      const endpoint = isDetailed
+        ? `/applications/${id}/detailed`
+        : `/applications/${id}`;
       const res = await api.get(endpoint);
       setData(res.data);
     } catch (err: unknown) {
       if (isAxiosError(err)) {
-        setError(err.response?.data?.message || err.message || "Failed to load application detail");
+        setError(
+          err.response?.data?.message ||
+            err.message ||
+            "Failed to load application detail",
+        );
       } else if (err instanceof Error) {
         setError(err.message);
       } else {

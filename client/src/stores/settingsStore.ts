@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 export interface PaletteColor {
   hsl: string;
@@ -19,33 +19,37 @@ export interface SettingsState {
   logoUrl: string | null;
   colorScheme: ColorScheme | null;
   selectedAccentHsl: string | null;
-  activeAcademicYearId: number | null;
-  enrollmentPhase: 'EARLY_REGISTRATION' | 'REGULAR_ENROLLMENT' | 'CLOSED' | 'OVERRIDE';
-  /** Session-level override for browsing a different AY */
-  viewingAcademicYearId: number | null;
+  activeSchoolYearId: number | null;
+  enrollmentPhase:
+    | "EARLY_REGISTRATION"
+    | "REGULAR_ENROLLMENT"
+    | "CLOSED"
+    | "OVERRIDE";
+  /** Session-level override for browsing a different SY */
+  viewingSchoolYearId: number | null;
   accentForeground: string | null;
   accentMutedForeground: string | null;
   setSettings: (settings: Partial<SettingsState>) => void;
-  setViewingAY: (id: number | null) => void;
+  setViewingSY: (id: number | null) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
-      schoolName: '',
+      schoolName: "",
       logoUrl: null,
       colorScheme: null,
       selectedAccentHsl: null,
-      activeAcademicYearId: null,
-      enrollmentPhase: 'CLOSED',
-      viewingAcademicYearId: null,
+      activeSchoolYearId: null,
+      enrollmentPhase: "CLOSED",
+      viewingSchoolYearId: null,
       accentForeground: null,
       accentMutedForeground: null,
       setSettings: (settings) => set((state) => ({ ...state, ...settings })),
-      setViewingAY: (id) => set({ viewingAcademicYearId: id }),
+      setViewingSY: (id) => set({ viewingSchoolYearId: id }),
     }),
     {
-      name: 'enrollpro-settings',
-    }
-  )
+      name: "enrollpro-settings",
+    },
+  ),
 );

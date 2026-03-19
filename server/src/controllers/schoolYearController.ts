@@ -2,10 +2,10 @@ import type { Request, Response } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { auditLog } from '../services/auditLogger.js';
 import {
-  deriveAcademicYearScheduleFromOpeningDate,
-  deriveNextAcademicYear,
+  deriveSchoolYearScheduleFromOpeningDate,
+  deriveNextSchoolYear,
   normalizeDateToUtcNoon,
-} from '../services/academicYearService.js';
+} from '../services/schoolYearService.js';
 
 const MANILA_TIME_ZONE = 'Asia/Manila';
 
@@ -14,11 +14,11 @@ const DEFAULT_GRADES = [
   { name: 'Grade 11', displayOrder: 11 },
 ];
 
-async function ensureDefaultGradeLevels(academicYearId: number) {
+async function ensureDefaultGradeLevels(schoolYearId: number) {
   for (const grade of DEFAULT_GRADES) {
     const existing = await prisma.gradeLevel.findFirst({
       where: {
-        academicYearId,
+        schoolYearId,
         name: grade.name,
       },
     });
@@ -28,7 +28,7 @@ async function ensureDefaultGradeLevels(academicYearId: number) {
         data: {
           name: grade.name,
           displayOrder: grade.displayOrder,
-          academicYearId,
+          schoolYearId,
         },
       });
     }
@@ -53,8 +53,8 @@ function getCurrentManilaYear(): number {
   return Number(parts.find((part) => part.type === 'year')?.value ?? new Date().getFullYear());
 }
 
-export async function listAcademicYears(_req: Request, res: Response): Promise<void> {
-  const years = await prisma.academicYear.findMany({
+export async function listSchoolYears(_req: Request, res: Response): Promise<void> {
+  const years = await prisma.schoolYear.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
       _count: { select: { gradeLevels: true, strands: true, applicants: true, enrollments: true } },
@@ -64,13 +64,13 @@ export async function listAcademicYears(_req: Request, res: Response): Promise<v
 }
 
 export async function getNextDefaults(req: Request, res: Response): Promise<void> {
-  const defaults = deriveNextAcademicYear(new Date());
+  const defaults = deriveNextSchoolYear(new Date());
   res.json(defaults);
 }
 
-export async function getAcademicYear(req: Request, res: Response): Promise<void> {
+export async function getSchoolYear(req: Request, res: Response): Promise<void> {
   const id = parseInt(req.params.id as string);
-  const year = await prisma.academicYear.findUnique({
+  const year = await prisma.schoolYear.findUnique({
     where: { id },
     include: {
       gradeLevels: { orderBy: { displayOrder: 'asc' }, include: { sections: { include: { _count: { select: { enrollments: true } } } } } },
@@ -85,7 +85,7 @@ export async function getAcademicYear(req: Request, res: Response): Promise<void
   res.json({ year });
 }
 
-export async function createAcademicYear(req: Request, res: Response): Promise<void> {
+export async function createSchoolYear(req: Request, res: Response): Promise<void> {
   const { 
     classOpeningDate, 
     classEndDate, 
@@ -115,24 +115,24 @@ export async function createAcademicYear(req: Request, res: Response): Promise<v
     return;
   }
 
-  const schedule = deriveAcademicYearScheduleFromOpeningDate(
+  const schedule = deriveSchoolYearScheduleFromOpeningDate(
     normalizedOpeningDate,
     parsedClassEndDate ? normalizeDateToUtcNoon(parsedClassEndDate) : undefined
   );
 
-  const existing = await prisma.academicYear.findUnique({ where: { yearLabel: schedule.yearLabel } });
+  const existing = await prisma.schoolYear.findUnique({ where: { yearLabel: schedule.yearLabel } });
   if (existing) {
     res.status(400).json({ message: 'A school year with this label already exists' });
     return;
   }
 
   // Deactivate others
-  await prisma.academicYear.updateMany({
+  await prisma.schoolYear.updateMany({
     where: { status: 'ACTIVE' },
     data: { status: 'ARCHIVED', isActive: false },
   });
 
-  const year = await prisma.academicYear.create({
+  const year = await prisma.schoolYear.create({
     data: {
       yearLabel: schedule.yearLabel,
       status: 'ACTIVE',
@@ -151,13 +151,13 @@ export async function createAcademicYear(req: Request, res: Response): Promise<v
   if (settings) {
     await prisma.schoolSettings.update({
       where: { id: settings.id },
-      data: { activeAcademicYearId: year.id },
+      data: { activeSchoolYearId: year.id },
     });
   }
 
   // Clone structure if requested
   if (cloneFromId) {
-    const source = await prisma.academicYear.findUnique({
+    const source = await prisma.schoolYear.findUnique({
       where: { id: cloneFromId },
       include: {
         gradeLevels: { include: { sections: true } },
@@ -174,7 +174,7 @@ export async function createAcademicYear(req: Request, res: Response): Promise<v
           data: {
             name: gl.name,
             displayOrder: gl.displayOrder,
-            academicYearId: year.id,
+            schoolYearId: year.id,
           },
         });
         gradeLevelIdMap.set(gl.id, newGl.id);
@@ -197,7 +197,7 @@ export async function createAcademicYear(req: Request, res: Response): Promise<v
             applicableGradeLevelIds: strand.applicableGradeLevelIds
               .map((id) => gradeLevelIdMap.get(id))
               .filter((id): id is number => id !== undefined),
-            academicYearId: year.id,
+            schoolYearId: year.id,
           },
         });
       }
@@ -205,7 +205,7 @@ export async function createAcademicYear(req: Request, res: Response): Promise<v
       for (const scp of source.scpConfigs) {
         await prisma.scpConfig.create({
           data: {
-            academicYearId: year.id,
+            schoolYearId: year.id,
             scpType: scp.scpType,
             isOffered: scp.isOffered,
             cutoffScore: scp.cutoffScore,
@@ -226,14 +226,14 @@ export async function createAcademicYear(req: Request, res: Response): Promise<v
 
   await auditLog({
     userId: req.user!.userId,
-    actionType: 'AY_CREATED',
+    actionType: 'SY_CREATED',
     description: `Created and activated school year "${schedule.yearLabel}"${cloneFromId ? ` (cloned from ID ${cloneFromId})` : ''}`,
-    subjectType: 'AcademicYear',
+    subjectType: 'SchoolYear',
     subjectId: year.id,
     req,
   });
 
-  const full = await prisma.academicYear.findUnique({
+  const full = await prisma.schoolYear.findUnique({
     where: { id: year.id },
     include: {
       gradeLevels: { orderBy: { displayOrder: 'asc' } },
@@ -249,7 +249,7 @@ export async function toggleOverride(req: Request, res: Response): Promise<void>
   const id = parseInt(req.params.id as string);
   const { manualOverrideOpen } = req.body;
 
-  const updated = await prisma.academicYear.update({
+  const updated = await prisma.schoolYear.update({
     where: { id },
     data: { manualOverrideOpen },
   });
@@ -258,7 +258,7 @@ export async function toggleOverride(req: Request, res: Response): Promise<void>
     userId: req.user!.userId,
     actionType: 'ENROLLMENT_OVERRIDE_TOGGLED',
     description: `Manual override set to ${manualOverrideOpen ? 'OPEN' : 'OFF'} for year "${updated.yearLabel}"`,
-    subjectType: 'AcademicYear',
+    subjectType: 'SchoolYear',
     subjectId: id,
     req,
   });
@@ -270,7 +270,7 @@ export async function updateDates(req: Request, res: Response): Promise<void> {
   const id = parseInt(req.params.id as string);
   const { earlyRegOpenDate, earlyRegCloseDate, enrollOpenDate, enrollCloseDate } = req.body;
 
-  const updated = await prisma.academicYear.update({
+  const updated = await prisma.schoolYear.update({
     where: { id },
     data: {
       ...(earlyRegOpenDate !== undefined ? { earlyRegOpenDate: earlyRegOpenDate ? new Date(earlyRegOpenDate) : null } : {}),
@@ -284,7 +284,7 @@ export async function updateDates(req: Request, res: Response): Promise<void> {
     userId: req.user!.userId,
     actionType: 'ENROLLMENT_DATES_UPDATED',
     description: `Updated enrollment dates for "${updated.yearLabel}"`,
-    subjectType: 'AcademicYear',
+    subjectType: 'SchoolYear',
     subjectId: id,
     req,
   });
@@ -292,11 +292,11 @@ export async function updateDates(req: Request, res: Response): Promise<void> {
   res.json({ year: updated });
 }
 
-export async function updateAcademicYear(req: Request, res: Response): Promise<void> {
+export async function updateSchoolYear(req: Request, res: Response): Promise<void> {
   const id = parseInt(req.params.id as string);
   const { yearLabel } = req.body;
 
-  const year = await prisma.academicYear.findUnique({ where: { id } });
+  const year = await prisma.schoolYear.findUnique({ where: { id } });
   if (!year) {
     res.status(404).json({ message: 'School year not found' });
     return;
@@ -307,7 +307,7 @@ export async function updateAcademicYear(req: Request, res: Response): Promise<v
     return;
   }
 
-  const updated = await prisma.academicYear.update({
+  const updated = await prisma.schoolYear.update({
     where: { id },
     data: {
       ...(yearLabel ? { yearLabel } : {}),
@@ -316,9 +316,9 @@ export async function updateAcademicYear(req: Request, res: Response): Promise<v
 
   await auditLog({
     userId: req.user!.userId,
-    actionType: 'AY_UPDATED',
+    actionType: 'SY_UPDATED',
     description: `Updated school year "${updated.yearLabel}"`,
-    subjectType: 'AcademicYear',
+    subjectType: 'SchoolYear',
     subjectId: id,
     req,
   });
@@ -326,7 +326,7 @@ export async function updateAcademicYear(req: Request, res: Response): Promise<v
   res.json({ year: updated });
 }
 
-export async function transitionAcademicYear(req: Request, res: Response): Promise<void> {
+export async function transitionSchoolYear(req: Request, res: Response): Promise<void> {
   const id = parseInt(req.params.id as string);
   const { status } = req.body;
 
@@ -336,7 +336,7 @@ export async function transitionAcademicYear(req: Request, res: Response): Promi
     return;
   }
 
-  const year = await prisma.academicYear.findUnique({ where: { id } });
+  const year = await prisma.schoolYear.findUnique({ where: { id } });
   if (!year) {
     res.status(404).json({ message: 'School year not found' });
     return;
@@ -344,12 +344,12 @@ export async function transitionAcademicYear(req: Request, res: Response): Promi
 
   // If setting to ACTIVE, deactivate all others and update settings
   if (status === 'ACTIVE') {
-    await prisma.academicYear.updateMany({
+    await prisma.schoolYear.updateMany({
       where: { status: 'ACTIVE', id: { not: id } },
       data: { status: 'ARCHIVED', isActive: false },
     });
 
-    await prisma.academicYear.update({
+    await prisma.schoolYear.update({
       where: { id },
       data: { status: 'ACTIVE', isActive: true },
     });
@@ -362,11 +362,11 @@ export async function transitionAcademicYear(req: Request, res: Response): Promi
     if (settings) {
       await prisma.schoolSettings.update({
         where: { id: settings.id },
-        data: { activeAcademicYearId: id },
+        data: { activeSchoolYearId: id },
       });
     }
   } else {
-    await prisma.academicYear.update({
+    await prisma.schoolYear.update({
       where: { id },
       data: {
         status,
@@ -377,10 +377,10 @@ export async function transitionAcademicYear(req: Request, res: Response): Promi
     // If was active, clear settings
     if (year.isActive) {
       const settings = await prisma.schoolSettings.findFirst();
-      if (settings && settings.activeAcademicYearId === id) {
+      if (settings && settings.activeSchoolYearId === id) {
         await prisma.schoolSettings.update({
           where: { id: settings.id },
-          data: { activeAcademicYearId: null },
+          data: { activeSchoolYearId: null },
         });
       }
     }
@@ -388,21 +388,21 @@ export async function transitionAcademicYear(req: Request, res: Response): Promi
 
   await auditLog({
     userId: req.user!.userId,
-    actionType: 'AY_STATUS_CHANGED',
+    actionType: 'SY_STATUS_CHANGED',
     description: `School year "${year.yearLabel}" status changed to ${status}`,
-    subjectType: 'AcademicYear',
+    subjectType: 'SchoolYear',
     subjectId: id,
     req,
   });
 
-  const updated = await prisma.academicYear.findUnique({ where: { id } });
+  const updated = await prisma.schoolYear.findUnique({ where: { id } });
   res.json({ year: updated });
 }
 
-export async function deleteAcademicYear(req: Request, res: Response): Promise<void> {
+export async function deleteSchoolYear(req: Request, res: Response): Promise<void> {
   const id = parseInt(req.params.id as string);
 
-  const year = await prisma.academicYear.findUnique({
+  const year = await prisma.schoolYear.findUnique({
     where: { id },
     include: { _count: { select: { applicants: true, enrollments: true } } },
   });
@@ -419,23 +419,23 @@ export async function deleteAcademicYear(req: Request, res: Response): Promise<v
 
   const wasActive = year.status === 'ACTIVE' || year.isActive;
 
-  await prisma.academicYear.delete({ where: { id } });
+  await prisma.schoolYear.delete({ where: { id } });
 
   if (wasActive) {
     const settings = await prisma.schoolSettings.findFirst();
-    if (settings && settings.activeAcademicYearId === id) {
+    if (settings && settings.activeSchoolYearId === id) {
       await prisma.schoolSettings.update({
         where: { id: settings.id },
-        data: { activeAcademicYearId: null },
+        data: { activeSchoolYearId: null },
       });
     }
   }
 
   await auditLog({
     userId: req.user!.userId,
-    actionType: 'AY_DELETED',
+    actionType: 'SY_DELETED',
     description: `Deleted school year "${year.yearLabel}"`,
-    subjectType: 'AcademicYear',
+    subjectType: 'SchoolYear',
     subjectId: id,
     req,
   });

@@ -150,12 +150,12 @@ export default function PrivacyNotice({ onAccept }: PrivacyNoticeProps) {
                   </p>
                   <p>
                     <strong>Sensitive Information:</strong> Disability status,
-                    IP affiliation, 4Ps ID, and academic records.
+                    IP affiliation, 4Ps ID, and school records.
                     <br />
                     <span className='italic'>
                       <strong>Sensitibo nga Impormasyon:</strong> Kon may
                       disabilidad, IP affiliation (tribu), 4Ps status, kag mga
-                      academic records.
+                      school records.
                     </span>
                   </p>
                 </div>

@@ -16,11 +16,11 @@ async function test() {
     const where: any = {};
 
     const settings = await prisma.schoolSettings.findFirst({
-      select: { activeAcademicYearId: true },
+      select: { activeSchoolYearId: true },
     });
     console.log("Settings:", settings);
-    if (settings?.activeAcademicYearId) {
-      where.academicYearId = settings.activeAcademicYearId;
+    if (settings?.activeSchoolYearId) {
+      where.SchoolYearId = settings.activeSchoolYearId;
     }
 
     console.log("Where:", where);

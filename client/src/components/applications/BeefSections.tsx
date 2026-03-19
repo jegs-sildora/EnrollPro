@@ -12,10 +12,10 @@ function CollapsibleSection({ title, children }: SectionProps) {
   const [isOpen, setIsOpen] = useState(true);
 
   return (
-    <div className="border rounded-md mb-2 bg-[hsl(var(--card))] overflow-hidden">
+    <div className="border rounded-md mb-4 bg-[hsl(var(--card))] overflow-hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between w-full p-3 font-semibold text-sm cursor-pointer hover:bg-[hsl(var(--muted)/50)] transition-colors"
+        className="flex items-center justify-between w-full p-3 font-bold text-sm cursor-pointer hover:bg-[hsl(var(--muted)/50)] transition-colors"
       >
         <span>{isOpen ? "▾" : "▸"} {title}</span>
         <span className={`text-xs text-muted-foreground ${isOpen ? 'opacity-60' : ''}`}>
@@ -30,7 +30,7 @@ function CollapsibleSection({ title, children }: SectionProps) {
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
           >
-            <div className="p-3 pt-0 text-sm border-t grid grid-cols-[120px_1fr] gap-1">
+            <div className="p-4 pt-4 text-sm border-t grid grid-cols-[120px_1fr] gap-1 font-bold">
               {children}
             </div>
           </motion.div>
@@ -42,12 +42,12 @@ function CollapsibleSection({ title, children }: SectionProps) {
 
 export function PersonalInfo({ applicant }: { applicant: ApplicantDetail }) {
   return (
-    <CollapsibleSection title="Personal Info">
+    <CollapsibleSection title="Personal Information">
       <span className="text-muted-foreground">Date of Birth:</span>
       <span>{format(new Date(applicant.birthDate), "MMMM d, yyyy")}</span>
 
       <span className="text-muted-foreground">Sex:</span>
-      <span className="capitalize">{applicant.sex?.toLowerCase() ?? "N/A"}</span>
+      <span className="uppercase">{applicant.sex?.toLowerCase() ?? "N/A"}</span>
 
       <span className="text-muted-foreground">Place of Birth:</span>
       <span>{applicant.placeOfBirth || "N/A"}</span>
@@ -95,13 +95,13 @@ export function Classifications({ applicant }: { applicant: ApplicantDetail }) {
   return (
     <CollapsibleSection title="Classifications">
       <span className="text-muted-foreground">IP Community:</span>
-      <span>{applicant.isIpCommunity ? `Yes (${applicant.ipGroupName})` : "No"}</span>
+      <span>{applicant.isIpCommunity ? `YES (${applicant.ipGroupName})` : "NO"}</span>
 
       <span className="text-muted-foreground">4Ps:</span>
-      <span>{applicant.is4PsBeneficiary ? `Yes (${applicant.householdId4Ps})` : "No"}</span>
+      <span>{applicant.is4PsBeneficiary ? `YES (${applicant.householdId4Ps})` : "NO"}</span>
 
       <span className="text-muted-foreground">Disability:</span>
-      <span>{applicant.isLearnerWithDisability ? "Yes" : "No"}</span>
+      <span>{applicant.isLearnerWithDisability ? "YES" : "NO  "}</span>
     </CollapsibleSection>
   );
 }

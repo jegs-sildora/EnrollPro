@@ -4,8 +4,8 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { sileo } from "sileo";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { motion } from "motion/react";
+import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import api from "@/api/axiosInstance";
 import { useAuthStore } from "@/stores/authStore";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -24,6 +24,7 @@ export default function Login() {
   const { schoolName, logoUrl, accentForeground } = useSettingsStore();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const { sessionExpired, setSessionExpired } = useAuthStore();
 
   // Show a session-expired toast once when the user lands here after expiry
@@ -49,9 +50,18 @@ export default function Login() {
     register,
     handleSubmit,
     formState: { errors },
+    watch,
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
   });
+
+  // Clear error when user types
+  useEffect(() => {
+    const subscription = watch(() => {
+      if (loginError) setLoginError(null);
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, loginError]);
 
   // Redirect if already authenticated — ProtectedRoute handles the inverse,
   // but we also need to push away from /login when already logged in.
@@ -62,6 +72,7 @@ export default function Login() {
 
   const onSubmit = async (data: LoginForm) => {
     setLoading(true);
+    setLoginError(null);
     try {
       const res = await api.post("/auth/login", data);
       setAuth(res.data.token, res.data.user);
@@ -70,8 +81,12 @@ export default function Login() {
         description: `Logged in as ${res.data.user.name}`,
       });
       navigate("/dashboard");
-    } catch (err) {
-      toastApiError(err as never);
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        setLoginError("Invalid email or password");
+      } else {
+        toastApiError(err as never);
+      }
     } finally {
       setLoading(false);
     }
@@ -272,6 +287,21 @@ export default function Login() {
                 {errors.password && (
                   <p className="mt-2 text-sm font-medium text-red-500">{errors.password.message}</p>
                 )}
+
+                <AnimatePresence>
+                  {loginError && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      className="mt-4 p-3 rounded-lg bg-red-50 border border-red-100 flex items-center gap-2 text-red-600 shadow-sm"
+                    >
+                      <AlertCircle className="size-4 shrink-0" />
+                      <p className="text-sm font-semibold tracking-tight">{loginError}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
 
               {/* Submit Button */}

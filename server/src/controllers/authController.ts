@@ -66,6 +66,18 @@ export async function changePassword(req: Request, res: Response): Promise<void>
   const { newPassword } = req.body;
   const userId = req.user!.userId;
 
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    res.status(404).json({ message: 'User not found' });
+    return;
+  }
+
+  const isSamePassword = await bcrypt.compare(newPassword, user.password);
+  if (isSamePassword) {
+    res.status(400).json({ message: 'New password cannot be the same as your current password.' });
+    return;
+  }
+
   const hashed = await bcrypt.hash(newPassword, 12);
 
   const updated = await prisma.user.update({

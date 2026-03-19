@@ -54,31 +54,31 @@ import { useWindowSize } from "react-use";
 const API_BASE =
   import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:3001";
 
-interface AcademicYearItem {
+interface SchoolYearItem {
   id: number;
   yearLabel: string;
   status: string;
   isActive: boolean;
 }
 
-function AYSwitcher() {
-  const { activeAcademicYearId, viewingAcademicYearId, setViewingAY } =
+function SYSwitcher() {
+  const { activeSchoolYearId, viewingSchoolYearId, setViewingSY } =
     useSettingsStore();
-  const [years, setYears] = useState<AcademicYearItem[]>([]);
+  const [years, setYears] = useState<SchoolYearItem[]>([]);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
     api
-      .get("/academic-years")
+      .get("/school-years")
       .then((r) => setYears(r.data.years))
       .catch(() => {});
   }, []);
 
-  const currentId = viewingAcademicYearId ?? activeAcademicYearId;
+  const currentId = viewingSchoolYearId ?? activeSchoolYearId;
   const currentLabel =
     years.find((y) => y.id === currentId)?.yearLabel ?? "No School Year Set";
   const isOverride =
-    viewingAcademicYearId && viewingAcademicYearId !== activeAcademicYearId;
+    viewingSchoolYearId && viewingSchoolYearId !== activeSchoolYearId;
 
   if (years.length === 0) return null;
 
@@ -101,7 +101,7 @@ function AYSwitcher() {
             <button
               key={y.id}
               onClick={() => {
-                setViewingAY(y.id === activeAcademicYearId ? null : y.id);
+                setViewingSY(y.id === activeSchoolYearId ? null : y.id);
                 setOpen(false);
               }}
               className={`flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs ${
@@ -236,7 +236,7 @@ function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, clearAuth } = useAuthStore();
-  const { schoolName, logoUrl, activeAcademicYearId } = useSettingsStore();
+  const { schoolName, logoUrl, activeSchoolYearId } = useSettingsStore();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [pendingCount, setPendingCount] = useState<number>(0);
   const [activeYearLabel, setActiveYearLabel] = useState<string | null>(null);
@@ -251,15 +251,15 @@ function AppSidebar() {
       .then((r) => setPendingCount(r.data.earlyRegistrationPending ?? 0))
       .catch(() => {});
     api
-      .get("/academic-years")
+      .get("/school-years")
       .then((r) => {
         const found = r.data.years?.find(
-          (y: AcademicYearItem) => y.id === activeAcademicYearId,
+          (y: SchoolYearItem) => y.id === activeSchoolYearId,
         );
         setActiveYearLabel(found?.yearLabel ?? null);
       })
       .catch(() => {});
-  }, [activeAcademicYearId]);
+  }, [activeSchoolYearId]);
 
   const handleLogout = () => {
     clearAuth();
@@ -299,8 +299,8 @@ function AppSidebar() {
                   <div className='flex items-center gap-1 mt-0.5'>
                     {activeYearLabel ? (
                       <>
-                        <span className='truncate text-[11px] text-muted-foreground'>
-                          {activeYearLabel}
+                        <span className='truncate text-[11px] text-foreground'>
+                          S.Y. {activeYearLabel}
                         </span>
                         <span className='shrink-0 text-[10px] font-semibold text-green-600'>
                           ● ACTIVE
@@ -370,6 +370,12 @@ function AppSidebar() {
                       to='/students'
                       icon={Users}
                       label='Students'
+                      pathname={pathname}
+                    />
+                    <NavItem
+                      to='/enrollment/requirements'
+                      icon={FileText}
+                      label='Documentary Requirements'
                       pathname={pathname}
                     />
                     <NavItem
@@ -518,7 +524,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             EnrollPro
           </span>
           <div className='ml-auto'>
-            <AYSwitcher />
+            <SYSwitcher />
           </div>
         </header>
 

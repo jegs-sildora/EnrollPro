@@ -11,9 +11,31 @@ import {
   rescheduleExamSchema,
 } from "../validators/application.validator.js";
 import * as ctrl from "../controllers/applicationController.js";
+import * as docCtrl from "../controllers/documentController.js";
 import rateLimit from "express-rate-limit";
+import multer from "multer";
+import path from "path";
 
 const router: Router = Router();
+
+// Multer config for document upload
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.resolve("uploads"));
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(
+      null,
+      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname),
+    );
+  },
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+});
 
 // Rate-limit public submission endpoint (15 submissions per 15-min window per IP)
 const submitLimiter = rateLimit({
@@ -69,11 +91,33 @@ router.get(
   ctrl.getSectionsForAssignment,
 );
 router.get(
+  "/:id/requirements",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.getRequirements,
+);
+router.get(
   "/:id/navigate",
   authenticate,
   authorize("REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.navigate,
 );
+
+// Document Management
+router.post(
+  "/:id/documents",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  upload.single("document"),
+  docCtrl.upload,
+);
+router.delete(
+  "/documents/:docId",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  docCtrl.remove,
+);
+
 router.put(
   "/:id",
   authenticate,
@@ -92,6 +136,18 @@ router.patch(
   authenticate,
   authorize("REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.enroll,
+);
+router.patch(
+  "/:id/temporarily-enroll",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.markTemporarilyEnrolled,
+);
+router.patch(
+  "/:id/checklist",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.updateChecklist,
 );
 router.patch(
   "/:id/reject",
