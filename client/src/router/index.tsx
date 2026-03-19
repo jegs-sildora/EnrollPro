@@ -9,6 +9,7 @@ import Login from '@/pages/auth/Login';
 import ChangePassword from '@/pages/auth/ChangePassword';
 import Dashboard from '@/pages/dashboard/Index';
 import EarlyRegistration from '@/pages/applications/early-registration/EarlyRegistrationList';
+import EarlyRegistrationDetail from '@/pages/applications/early-registration/EarlyRegistrationDetail';
 import Enrollment from '@/pages/applications/enrollment/Index';
 import Students from '@/pages/students/Index';
 import Sections from '@/pages/sections/Index';
@@ -79,6 +80,14 @@ export const router = createBrowserRouter([
             element: (
               <AppLayout>
                 <EarlyRegistration />
+              </AppLayout>
+            ),
+          },
+          {
+            path: '/applications/admission/:id',
+            element: (
+              <AppLayout>
+                <EarlyRegistrationDetail />
               </AppLayout>
             ),
           },

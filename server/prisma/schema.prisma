@@ -7,145 +7,84 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ──â”€ Enums ────────────────────────────────────────────────
-
-enum Role {
-  REGISTRAR
-  SYSTEM_ADMIN
-}
-
-enum Sex {
-  MALE
-  FEMALE
-}
-
-enum ApplicationStatus {
-  SUBMITTED            // replaces: PENDING (on submission)
-  UNDER_REVIEW         // replaces: PENDING (after registrar opens record)
-  FOR_REVISION         // new â€” fixable issue; parent asked to correct
-  ELIGIBLE             // new â€” SCP: docs verified, cleared for assessment
-  ASSESSMENT_SCHEDULED // replaces: EXAM_SCHEDULED
-  ASSESSMENT_TAKEN     // replaces: EXAM_TAKEN
-  PRE_REGISTERED       // replaces: APPROVED (Phase 1 complete)
-  NOT_QUALIFIED        // replaces: FAILED (SCP assessment not passed)
-  ENROLLED             // was implied; now explicit (Phase 2 complete)
-  REJECTED             // retained â€” data integrity issues only
-  WITHDRAWN            // new â€” voluntary withdrawal by applicant
-}
-
-enum AcademicYearStatus {
-  DRAFT
-  UPCOMING
-  ACTIVE
-  ARCHIVED
-}
-
-// ──â”€ Models ──────────────────────────────────────────────â”€
-
 model User {
-  id                 Int       @id @default(autoincrement())
+  id                 Int          @id @default(autoincrement())
   name               String
-  email              String    @unique
+  email              String       @unique
   password           String
-  role               Role      // role is REGISTRAR or SYSTEM_ADMIN only
-  isActive           Boolean   @default(true)
+  role               Role
+  isActive           Boolean      @default(true)
   lastLoginAt        DateTime?
-  mustChangePassword Boolean   @default(false)
+  mustChangePassword Boolean      @default(false)
   createdById        Int?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-
-  enrollments  Enrollment[]
-  auditLogs    AuditLog[]
-  encodedApplicants Applicant[] @relation("ApplicantEncodedBy")
-  createdBy    User?  @relation("UserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  createdUsers User[] @relation("UserCreatedBy")
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  encodedApplicants  Applicant[]  @relation("ApplicantEncodedBy")
+  auditLogs          AuditLog[]
+  enrollments        Enrollment[]
+  createdBy          User?        @relation("UserCreatedBy", fields: [createdById], references: [id])
+  createdUsers       User[]       @relation("UserCreatedBy")
 }
 
-// Teachers are NOT system users â€” no login account, no userId link.
-// This model exists for section adviser assignment and subject tracking only.
 model Teacher {
-  id              Int       @id @default(autoincrement())
-  employeeId      String?   @unique
-  firstName       String
-  lastName        String
-  middleName      String?
-  contactNumber   String?
-  specialization  String?
-  subjects        String[]  @default([])
-  isActive        Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  sections        Section[]
+  id             Int       @id @default(autoincrement())
+  employeeId     String?   @unique
+  firstName      String
+  lastName       String
+  middleName     String?
+  contactNumber  String?
+  specialization String?
+  subjects       String[]  @default([])
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  sections       Section[]
 }
 
 model SchoolSettings {
   id                   Int           @id @default(autoincrement())
-  schoolName           String        
+  schoolName           String
   logoPath             String?
   logoUrl              String?
   colorScheme          Json?
   selectedAccentHsl    String?
   activeAcademicYearId Int?
-
-  activeAcademicYear AcademicYear? @relation(fields: [activeAcademicYearId], references: [id])
+  activeAcademicYear   AcademicYear? @relation(fields: [activeAcademicYearId], references: [id])
 }
 
 model AcademicYear {
-  id           Int                @id @default(autoincrement())
-  yearLabel    String             @unique
-  status       AcademicYearStatus @default(DRAFT)
-  isActive     Boolean            @default(false)
-  
-  // ── DepEd Calendar Dates ──
-  classOpeningDate  DateTime?
-  classEndDate      DateTime?
-
-  // ── Phase 1: Early Registration ──
-  earlyRegOpenDate  DateTime?
-  earlyRegCloseDate DateTime?
-
-  // ── Phase 2: Regular Enrollment ──
-  enrollOpenDate    DateTime?
-  enrollCloseDate   DateTime?
-
-  // ── Manual Override ──
-  manualOverrideOpen Boolean @default(false)
-
-  clonedFromId Int?
-  createdAt    DateTime           @default(now())
-
-  clonedFrom     AcademicYear?  @relation("AYClone", fields: [clonedFromId], references: [id], onDelete: SetNull)
-  clones         AcademicYear[] @relation("AYClone")
-  gradeLevels    GradeLevel[]
-  strands        Strand[]
-  applicants     Applicant[]
-  enrollments    Enrollment[]
-  schoolSettings SchoolSettings[]
-  scpConfigs     ScpConfig[]
+  id                 Int                @id @default(autoincrement())
+  yearLabel          String             @unique
+  status             AcademicYearStatus @default(DRAFT)
+  isActive           Boolean            @default(false)
+  classOpeningDate   DateTime?
+  classEndDate       DateTime?
+  earlyRegOpenDate   DateTime?
+  earlyRegCloseDate  DateTime?
+  enrollOpenDate     DateTime?
+  enrollCloseDate    DateTime?
+  manualOverrideOpen Boolean            @default(false)
+  clonedFromId       Int?
+  createdAt          DateTime           @default(now())
+  clonedFrom         AcademicYear?      @relation("AYClone", fields: [clonedFromId], references: [id])
+  clones             AcademicYear[]     @relation("AYClone")
+  applicants         Applicant[]
+  enrollments        Enrollment[]
+  gradeLevels        GradeLevel[]
+  schoolSettings     SchoolSettings[]
+  scpConfigs         ScpConfig[]
+  strands            Strand[]
 }
 
 model GradeLevel {
-  id             Int      @id @default(autoincrement())
+  id             Int          @id @default(autoincrement())
   name           String
   displayOrder   Int
   academicYearId Int
-  createdAt      DateTime @default(now())
-
-  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-  sections     Section[]
-  applicants   Applicant[]
-}
-
-enum CurriculumType {
-  OLD_STRAND
-  ELECTIVE_CLUSTER
-}
-
-enum SHSTrack {
-  ACADEMIC
-  TECHPRO
+  createdAt      DateTime     @default(now())
+  applicants     Applicant[]
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  sections       Section[]
 }
 
 model Strand {
@@ -156,130 +95,98 @@ model Strand {
   curriculumType          CurriculumType @default(OLD_STRAND)
   track                   SHSTrack?
   createdAt               DateTime       @default(now())
-
-  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-  applicants   Applicant[]
+  applicants              Applicant[]
+  academicYear            AcademicYear   @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
 }
 
 model Section {
-  id                Int      @id @default(autoincrement())
+  id                Int          @id @default(autoincrement())
   name              String
-  maxCapacity       Int      @default(40)
+  maxCapacity       Int          @default(40)
   gradeLevelId      Int
   advisingTeacherId Int?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  gradeLevel      GradeLevel   @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
-  advisingTeacher Teacher?     @relation(fields: [advisingTeacherId], references: [id], onDelete: SetNull)
-  enrollments     Enrollment[]
-}
-
-enum ApplicantType {
-  REGULAR
-  STE
-  SPA
-  SPS
-  SPJ
-  SPFL
-  SPTVE
-  STEM_GRADE11
-}
-
-enum EarlyRegistrationChannel {
-  ONLINE
-  F2F
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  enrollments       Enrollment[]
+  advisingTeacher   Teacher?     @relation(fields: [advisingTeacherId], references: [id])
+  gradeLevel        GradeLevel   @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
 }
 
 model Applicant {
-  id                    Int               @id @default(autoincrement())
-  lrn                   String?           @db.VarChar(12)
-  psaBcNumber           String?
-  lastName              String
-  firstName             String
-  middleName            String?
-  suffix                String?
-  birthDate             DateTime
-  sex                   Sex
-  placeOfBirth          String?
-  religion              String?
-  motherTongue          String?
-
-  // ── Address (JSON) ──
-  currentAddress        Json
-  permanentAddress      Json?
-
-  // ── Parent/Guardian ──
-  motherName            Json
-  fatherName            Json
-  guardianInfo          Json?
-  emailAddress          String?
-
-  // ── Background / Classifications ──
-  isIpCommunity         Boolean           @default(false)
-  ipGroupName           String?
-  is4PsBeneficiary      Boolean           @default(false)
-  householdId4Ps        String?
-  isBalikAral           Boolean           @default(false)
-  lastYearEnrolled      String?
-  isLearnerWithDisability Boolean         @default(false)
-  snedCategory          String?
-  hasPwdId              Boolean           @default(false)
-  disabilityType        String[]
-
-  // ── Previous School ──
-  lastSchoolName        String?
-  lastSchoolId          String?
-  lastGradeCompleted    String?
-  syLastAttended        String?
-  lastSchoolAddress     String?
-  lastSchoolType        String?
-
-  // ── Enrollment Preferences ──
-  learnerType           String?
-  learningModalities    String[]
-  electiveCluster       String?
-  scpApplication        Boolean           @default(false)
-  scpType               String?
-  spaArtField           String?
-  spsSports             String[]
-  spflLanguage          String?
-
-  // ── Tracking & Status ──
-  trackingNumber        String            @unique
-  status                ApplicationStatus @default(SUBMITTED)
-  rejectionReason       String?
-  gradeLevelId          Int
-  strandId              Int?
-  academicYearId        Int
-  applicantType         ApplicantType     @default(REGULAR)
-  shsTrack              SHSTrack?
-
-  // ── Assessment / Exam (staff-managed) ──
-  examDate              DateTime?
-  examScore             Float?
-  examResult            String?
-  examNotes             String?
-  assessmentType        String?
-  interviewDate         DateTime?
-  interviewResult       String?
-  natScore              Float?
-  grade10ScienceGrade   Float?
-  grade10MathGrade      Float?
-
-  // ── EARLY REGISTRATION Tracking ──
-  earlyRegistrationChannel  EarlyRegistrationChannel  @default(ONLINE)
-  encodedById           Int?
-
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
-
-  gradeLevel   GradeLevel   @relation(fields: [gradeLevelId], references: [id])
-  strand       Strand?      @relation(fields: [strandId], references: [id])
-  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
-  enrollment   Enrollment?
-  emailLogs    EmailLog[]
-  encodedBy    User?        @relation("ApplicantEncodedBy", fields: [encodedById], references: [id], onDelete: SetNull)
+  id                      Int               @id @default(autoincrement())
+  lrn                     String?           @db.VarChar(12)
+  psaBcNumber             String?
+  lastName                String
+  firstName               String
+  middleName              String?
+  suffix                  String?
+  birthDate               DateTime
+  sex                     Sex
+  placeOfBirth            String?
+  religion                String?
+  motherTongue            String?
+  currentAddress          Json
+  permanentAddress        Json?
+  motherName              Json
+  fatherName              Json
+  guardianInfo            Json?
+  emailAddress            String?
+  isIpCommunity           Boolean           @default(false)
+  ipGroupName             String?
+  is4PsBeneficiary        Boolean           @default(false)
+  householdId4Ps          String?
+  isBalikAral             Boolean           @default(false)
+  lastYearEnrolled        String?
+  isLearnerWithDisability Boolean           @default(false)
+  disabilityType          String[]
+  lastSchoolName          String?
+  lastSchoolId            String?
+  lastGradeCompleted      String?
+  syLastAttended          String?
+  lastSchoolAddress       String?
+  lastSchoolType          String?
+  learnerType             String?
+  electiveCluster         String?
+  scpApplication          Boolean           @default(false)
+  scpType                 String?
+  spaArtField             String?
+  spsSports               String[]
+  spflLanguage            String?
+  trackingNumber          String            @unique
+  status                  ApplicationStatus @default(SUBMITTED)
+  rejectionReason         String?
+  gradeLevelId            Int
+  strandId                Int?
+  academicYearId          Int
+  applicantType           ApplicantType     @default(REGULAR)
+  shsTrack                SHSTrack?
+  examDate                DateTime?
+  examVenue               String?
+  examScore               Float?
+  examResult              String?
+  examNotes               String?
+  assessmentType          String?
+  interviewDate           DateTime?
+  interviewResult         String?
+  interviewNotes          String?
+  auditionResult          String?
+  tryoutResult            String?
+  natScore                Float?
+  grade10ScienceGrade     Float?
+  grade10MathGrade        Float?
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+  admissionChannel        AdmissionChannel  @default(ONLINE)
+  encodedById             Int?
+  snedCategory            String?
+  hasPwdId                Boolean           @default(false)
+  learningModalities      String[]
+  academicYear            AcademicYear      @relation(fields: [academicYearId], references: [id])
+  encodedBy               User?             @relation("ApplicantEncodedBy", fields: [encodedById], references: [id])
+  gradeLevel              GradeLevel        @relation(fields: [gradeLevelId], references: [id])
+  strand                  Strand?           @relation(fields: [strandId], references: [id])
+  emailLogs               EmailLog[]
+  enrollment              Enrollment?
 
   @@index([status, academicYearId])
   @@index([lrn])
@@ -288,17 +195,16 @@ model Applicant {
 }
 
 model Enrollment {
-  id             Int      @id @default(autoincrement())
-  applicantId    Int      @unique
+  id             Int          @id @default(autoincrement())
+  applicantId    Int          @unique
   sectionId      Int
   academicYearId Int
-  enrolledAt     DateTime @default(now())
+  enrolledAt     DateTime     @default(now())
   enrolledById   Int
-
-  applicant    Applicant    @relation(fields: [applicantId], references: [id], onDelete: Cascade)
-  section      Section      @relation(fields: [sectionId], references: [id], onDelete: Restrict)
-  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
-  enrolledBy   User         @relation(fields: [enrolledById], references: [id])
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+  applicant      Applicant    @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  enrolledBy     User         @relation(fields: [enrolledById], references: [id])
+  section        Section      @relation(fields: [sectionId], references: [id])
 }
 
 model AuditLog {
@@ -311,11 +217,95 @@ model AuditLog {
   ipAddress   String   @db.VarChar(45)
   userAgent   String?
   createdAt   DateTime @default(now())
-
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user        User?    @relation(fields: [userId], references: [id])
 
   @@index([actionType])
   @@index([createdAt])
+}
+
+model EmailLog {
+  id           Int          @id @default(autoincrement())
+  recipient    String
+  subject      String
+  trigger      EmailTrigger
+  status       EmailStatus  @default(PENDING)
+  applicantId  Int?
+  errorMessage String?
+  attemptedAt  DateTime     @default(now())
+  sentAt       DateTime?
+  applicant    Applicant?   @relation(fields: [applicantId], references: [id])
+
+  @@index([status])
+  @@index([trigger])
+}
+
+model ScpConfig {
+  id             Int           @id @default(autoincrement())
+  academicYearId Int
+  scpType        ApplicantType
+  isOffered      Boolean       @default(false)
+  cutoffScore    Float?
+  examDate       DateTime?
+  artFields      String[]
+  languages      String[]
+  sportsList     String[]
+  notes          String?
+  academicYear   AcademicYear  @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@unique([academicYearId, scpType])
+}
+
+enum Role {
+  REGISTRAR
+  SYSTEM_ADMIN
+}
+
+enum Sex {
+  MALE
+  FEMALE
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  FOR_REVISION
+  ELIGIBLE
+  ASSESSMENT_SCHEDULED
+  ASSESSMENT_TAKEN
+  PASSED
+  PRE_REGISTERED
+  NOT_QUALIFIED
+  ENROLLED
+  REJECTED
+  WITHDRAWN
+}
+
+enum AcademicYearStatus {
+  DRAFT
+  UPCOMING
+  ACTIVE
+  ARCHIVED
+}
+
+enum CurriculumType {
+  OLD_STRAND
+  ELECTIVE_CLUSTER
+}
+
+enum SHSTrack {
+  ACADEMIC
+  TECHPRO
+}
+
+enum ApplicantType {
+  REGULAR
+  STE
+  SPA
+  SPS
+  SPJ
+  SPFL
+  SPTVE
+  STEM_GRADE11
 }
 
 enum EmailTrigger {
@@ -333,36 +323,7 @@ enum EmailStatus {
   FAILED
 }
 
-model EmailLog {
-  id           Int          @id @default(autoincrement())
-  recipient    String
-  subject      String
-  trigger      EmailTrigger
-  status       EmailStatus  @default(PENDING)
-  applicantId  Int?
-  errorMessage String?
-  attemptedAt  DateTime     @default(now())
-  sentAt       DateTime?
-
-  applicant Applicant? @relation(fields: [applicantId], references: [id], onDelete: SetNull)
-
-  @@index([status])
-  @@index([trigger])
-}
-
-model ScpConfig {
-  id             Int           @id @default(autoincrement())
-  academicYearId Int
-  scpType        ApplicantType
-  isOffered      Boolean       @default(false)
-  cutoffScore    Float?
-  examDate       DateTime?
-  artFields      String[]
-  languages      String[]
-  sportsList     String[]
-  notes          String?
-
-  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-
-  @@unique([academicYearId, scpType])
+enum AdmissionChannel {
+  ONLINE
+  F2F
 }

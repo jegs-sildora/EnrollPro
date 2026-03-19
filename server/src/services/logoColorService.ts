@@ -71,41 +71,49 @@ export async function extractPalette(filePath: string): Promise<PaletteColor[]> 
 
     // Increased resize for better sampling of small but vibrant features
     const { data, info } = await sharp(filePath)
-      .resize(200, 200, { fit: 'inside', withoutEnlargement: true })
+      .resize(200, 200, { fit: "inside", withoutEnlargement: true })
       .flatten({ background: { r: 255, g: 255, b: 255 } })
       .raw()
       .toBuffer({ resolveWithObject: true });
 
-    const buckets = new Map<string, { r: number; g: number; b: number; count: number }>();
+    const buckets = new Map<
+      string,
+      { r: number; g: number; b: number; count: number }
+    >();
 
     for (let i = 0; i < data.length; i += info.channels) {
-      const r = data[i], g = data[i + 1], b = data[i + 2];
+      const r = data[i],
+        g = data[i + 1],
+        b = data[i + 2];
       // Use 4-bit bucketing (16 levels) for better grouping of noisy/similar colors
       const key = `${(r >> 4) << 4}-${(g >> 4) << 4}-${(b >> 4) << 4}`;
       const existing = buckets.get(key);
       if (existing) {
-        existing.r += r; existing.g += g; existing.b += b; existing.count++;
+        existing.r += r;
+        existing.g += g;
+        existing.b += b;
+        existing.count++;
       } else {
         buckets.set(key, { r, g, b, count: 1 });
       }
     }
 
     // Sort by frequency
-    const candidates = [...buckets.values()]
+    const applicants = [...buckets.values()]
       .sort((a, b) => b.count - a.count)
       .map((b) => rgbToHsl(b.r / b.count, b.g / b.count, b.b / b.count));
 
     const unique: { h: number; s: number; l: number }[] = [];
-    
-    // Process top candidates to find unique colors
-    for (const c of candidates) {
+
+    // Process top applicants to find unique colors
+    for (const c of applicants) {
       // Exclude white
       if (c.l > 96 && c.s < 10) continue;
 
       const isDupe = unique.some((u) => {
         const lDiff = Math.abs(u.l - c.l);
         const sDiff = Math.abs(u.s - c.s);
-        
+
         // If both are very low saturation (grays), only compare lightness
         if (u.s < 8 && c.s < 8) {
           return lDiff < 12;
@@ -115,7 +123,7 @@ export async function extractPalette(filePath: string): Promise<PaletteColor[]> 
         let hDiff = Math.abs(u.h - c.h);
         if (hDiff > 180) hDiff = 360 - hDiff;
 
-        // Tighter thresholds for vibrant colors to allow more variety, 
+        // Tighter thresholds for vibrant colors to allow more variety,
         // but still deduplicate very similar ones.
         return hDiff < 15 && sDiff < 15 && lDiff < 15;
       });
@@ -123,7 +131,7 @@ export async function extractPalette(filePath: string): Promise<PaletteColor[]> 
       if (!isDupe) {
         unique.push(c);
       }
-      
+
       // Increased limit to 64 to ensure "ALL" available colors are captured
       if (unique.length >= 64) break;
     }

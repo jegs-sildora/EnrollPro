@@ -39,8 +39,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
+import { ApplicationDetailPanel } from "@/components/applications/ApplicationDetailPanel";
 
 interface Application {
   id: number;
@@ -128,6 +130,8 @@ export default function EarlyRegistration() {
   >([]);
   const [selectedSectionId, setSelectedSectionId] = useState<string>("");
 
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+
   const fetchData = useCallback(async () => {
     if (!ayId) {
       setLoading(false);
@@ -138,11 +142,7 @@ export default function EarlyRegistration() {
       const params = new URLSearchParams();
       if (search) params.append("search", search);
 
-      // Filter out ENROLLED and PRE_REGISTERED if status is ALL to focus on intake
-      if (status === "ALL") {
-        // You could add a specialized param in the backend, but for now we'll filter client-side or assume /applications returns what we need
-        // Actually, let's just use the current backend behavior and maybe filter if status=ALL
-      } else {
+      if (status !== "ALL") {
         params.append("status", status);
       }
 
@@ -152,7 +152,6 @@ export default function EarlyRegistration() {
 
       const res = await api.get(`/applications?${params.toString()}`);
 
-      // Filter out already enrolled/pre-registered if in "All Statuses" mode to maintain module separation
       let filteredApps = res.data.applications;
       if (status === "ALL") {
         filteredApps = filteredApps.filter(
@@ -199,6 +198,7 @@ export default function EarlyRegistration() {
         description: "Student moved to Enrollment phase.",
       });
       setActionType(null);
+      setSelectedId(null);
       fetchData();
     } catch (err) {
       toastApiError(err as never);
@@ -231,6 +231,7 @@ export default function EarlyRegistration() {
         description: "Application has been rejected.",
       });
       setActionType(null);
+      setSelectedId(null);
       fetchData();
     } catch (err) {
       toastApiError(err as never);
@@ -286,320 +287,322 @@ export default function EarlyRegistration() {
     }
   };
 
+  const handleOfferRegular = async () => {
+    if (!selectedApp || !selectedSectionId) return;
+    try {
+      await api.patch(`/applications/${selectedApp.id}/offer-regular`, {
+        sectionId: parseInt(selectedSectionId),
+      });
+      sileo.success({
+        title: "Regular Section Offered",
+        description: "Student moved to Enrollment phase under Regular program.",
+      });
+      setActionType(null);
+      setSelectedId(null);
+      fetchData();
+    } catch (err) {
+      toastApiError(err as never);
+    }
+  };
+
   return (
-    <div className='space-y-6'>
-      <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
-        <div>
-          <h1 className='text-3xl font-bold tracking-tight'>
-            Early Registration Intake
-          </h1>
-          <p className='text-sm text-[hsl(var(--muted-foreground))]'>
-            Candidate screening and assessment workflow
-          </p>
-        </div>
-        <div className='flex items-center gap-2'>
-          <Badge variant='outline' className='bg-blue-50 text-blue-700'>
-            Early Registration Queue: {total}
-          </Badge>
-        </div>
-      </div>
-
-      <Card className='border-none shadow-sm bg-[hsl(var(--card))]'>
-        <CardHeader className='pb-3'>
-          <div className='flex flex-col md:flex-row gap-4 items-end'>
-            <div className='flex-1 space-y-2 w-full'>
-              <Label className='text-xs uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]'>
-                Search Applicant
-              </Label>
-              <div className='relative'>
-                <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-[hsl(var(--muted-foreground))]' />
-                <Input
-                  placeholder='LRN, First Name, Last Name...'
-                  className='pl-9 h-10'
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className='space-y-2 w-full md:w-48'>
-              <Label className='text-xs uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]'>
-                Intake Status
-              </Label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger className='h-10'>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='ALL'>All Active Intake</SelectItem>
-                  <SelectItem value='SUBMITTED'>Submitted</SelectItem>
-                  <SelectItem value='UNDER_REVIEW'>Under Review</SelectItem>
-                  <SelectItem value='FOR_REVISION'>For Revision</SelectItem>
-                  <SelectItem value='ELIGIBLE'>Eligible</SelectItem>
-                  <SelectItem value='ASSESSMENT_SCHEDULED'>
-                    Assessment Scheduled
-                  </SelectItem>
-                  <SelectItem value='ASSESSMENT_TAKEN'>
-                    Assessment Taken
-                  </SelectItem>
-                  <SelectItem value='NOT_QUALIFIED'>Not Qualified</SelectItem>
-                  <SelectItem value='REJECTED'>Rejected</SelectItem>
-                  <SelectItem value='WITHDRAWN'>Withdrawn</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className='space-y-2 w-full md:w-48'>
-              <Label className='text-xs uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]'>
-                Type
-              </Label>
-              <Select value={type} onValueChange={setType}>
-                <SelectTrigger className='h-10'>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {APPLICANT_TYPES.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button
-              variant='outline'
-              className='h-10 px-3'
-              onClick={() => {
-                setSearch("");
-                setStatus("ALL");
-                setType("ALL");
-              }}>
-              Reset
-            </Button>
+    <div className='flex h-[calc(100vh-2rem)] overflow-hidden space-x-4'>
+      <div className={`flex-1 flex flex-col space-y-6 overflow-auto transition-all duration-200 ${selectedId ? "md:mr-[45%] lg:mr-[40%]" : ""}`}>
+        <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
+          <div>
+            <h1 className='text-3xl font-bold tracking-tight'>
+              Early Registration Monitoring Dashboard
+            </h1>
+            <p className='text-sm text-[hsl(var(--muted-foreground))]'>
+              Applicant screening and assessment workflow
+            </p>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className='rounded-xl border border-[hsl(var(--border))] overflow-hidden'>
-            <Table>
-              <TableHeader className='bg-[hsl(var(--muted))]'>
-                <TableRow>
-                  <TableHead className='font-bold'>Applicant</TableHead>
-                  <TableHead className='font-bold'>LRN</TableHead>
-                  <TableHead className='font-bold'>Grade / Strand</TableHead>
-                  <TableHead className='font-bold'>Type</TableHead>
-                  <TableHead className='font-bold'>Status</TableHead>
-                  <TableHead className='font-bold'>Date</TableHead>
-                  <TableHead className='text-right font-bold'>
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
+          <div className='flex items-center gap-2'>
+            <Badge variant='outline' className='bg-blue-50 text-blue-700'>
+              Early Registration Queue: {total}
+            </Badge>
+          </div>
+        </div>
+
+        <Card className='border-none shadow-sm bg-[hsl(var(--card))]'>
+          <CardHeader className='pb-3'>
+            <div className='flex flex-col md:flex-row gap-4 items-end'>
+              <div className='flex-1 space-y-2 w-full'>
+                <Label className='text-xs uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]'>
+                  Search Applicant
+                </Label>
+                <div className='relative'>
+                  <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-[hsl(var(--muted-foreground))]' />
+                  <Input
+                    placeholder='LRN, First Name, Last Name...'
+                    className='pl-9 h-10'
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className='space-y-2 w-full md:w-48'>
+                <Label className='text-xs uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]'>
+                  Intake Status
+                </Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger className='h-10'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='ALL'>All Active Intake</SelectItem>
+                    <SelectItem value='SUBMITTED'>Submitted</SelectItem>
+                    <SelectItem value='UNDER_REVIEW'>Under Review</SelectItem>
+                    <SelectItem value='FOR_REVISION'>For Revision</SelectItem>
+                    <SelectItem value='ELIGIBLE'>Eligible</SelectItem>
+                    <SelectItem value='ASSESSMENT_SCHEDULED'>
+                      Assessment Scheduled
+                    </SelectItem>
+                    <SelectItem value='ASSESSMENT_TAKEN'>
+                      Assessment Taken
+                    </SelectItem>
+                    <SelectItem value='NOT_QUALIFIED'>Not Qualified</SelectItem>
+                    <SelectItem value='REJECTED'>Rejected</SelectItem>
+                    <SelectItem value='WITHDRAWN'>Withdrawn</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className='space-y-2 w-full md:w-48'>
+                <Label className='text-xs uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]'>
+                  Type
+                </Label>
+                <Select value={type} onValueChange={setType}>
+                  <SelectTrigger className='h-10'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {APPLICANT_TYPES.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>
+                        {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                variant='outline'
+                className='h-10 px-3'
+                onClick={() => {
+                  setSearch("");
+                  setStatus("ALL");
+                  setType("ALL");
+                }}>
+                Reset
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className='rounded-xl border border-[hsl(var(--border))] overflow-hidden'>
+              <Table>
+                <TableHeader className='bg-[hsl(var(--accent))]'>
                   <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className='h-24 text-center text-sm text-[hsl(var(--muted-foreground))]'>
-                      Loading early registration queue...
-                    </TableCell>
+                    <TableHead className='text-center font-bold text-accent-foreground'>
+                      Applicant
+                    </TableHead>
+                    <TableHead className='text-center font-bold text-accent-foreground hidden md:table-cell'>
+                      LRN
+                    </TableHead>
+                    <TableHead className='text-center font-bold text-accent-foreground'>
+                      Grade
+                    </TableHead>
+                    <TableHead className='text-center font-bold text-accent-foreground hidden lg:table-cell'>
+                      Type
+                    </TableHead>
+                    <TableHead className='text-center font-bold text-accent-foreground'>
+                      Status
+                    </TableHead>
+                    <TableHead className='text-center font-bold text-accent-foreground hidden xl:table-cell'>
+                      Date
+                    </TableHead>
+                    <TableHead className='text-center font-bold text-accent-foreground'>
+                      Actions
+                    </TableHead>
                   </TableRow>
-                ) : applications.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className='h-24 text-center text-sm text-[hsl(var(--muted-foreground))]'>
-                      No candidates found.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  applications.map((app) => (
-                    <TableRow
-                      key={app.id}
-                      className='hover:bg-[hsl(var(--muted))] transition-colors'>
-                      <TableCell>
-                        <div className='flex flex-col'>
-                          <span className='font-bold text-sm'>
-                            {app.lastName}, {app.firstName}
-                          </span>
-                          <span className='text-[10px] text-[hsl(var(--muted-foreground))]'>
-                            #{app.trackingNumber}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className=' text-xs'>{app.lrn}</TableCell>
-                      <TableCell>
-                        <div className='flex flex-col'>
-                          <span className='text-xs font-medium'>
-                            {app.gradeLevel.name}
-                          </span>
-                          {app.strand && (
-                            <span className='text-[10px] text-[hsl(var(--muted-foreground))]'>
-                              {app.strand.name}
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant='outline'
-                          className='text-[10px] font-bold px-1.5 py-0 h-4 border-slate-300 text-slate-600'>
-                          {app.applicantType}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant='outline'
-                          className={`text-[10px] font-bold ${STATUS_COLORS[app.status]}`}>
-                          {app.status.replace("_", " ")}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className='text-xs text-[hsl(var(--muted-foreground))]'>
-                        {format(new Date(app.createdAt), "MMM dd, yyyy")}
-                      </TableCell>
-                      <TableCell className='text-right'>
-                        <div className='flex justify-end gap-1'>
-                          {app.status === "UNDER_REVIEW" && (
-                            <>
-                              <Button
-                                variant='ghost'
-                                size='icon'
-                                className='h-8 w-8 text-cyan-600'
-                                title='Mark Eligible'
-                                onClick={() => {
-                                  setSelectedApp(app);
-                                  setActionType("ELIGIBLE");
-                                }}>
-                                <ClipboardCheck className='h-4 w-4' />
-                              </Button>
-                              <Button
-                                variant='ghost'
-                                size='icon'
-                                className='h-8 w-8 text-emerald-600'
-                                title='Pre-register'
-                                onClick={() => {
-                                  setSelectedApp(app);
-                                  setActionType("APPROVE");
-                                  fetchSections(app.gradeLevelId);
-                                }}>
-                                <UserCheck className='h-4 w-4' />
-                              </Button>
-                            </>
-                          )}
-
-                          {app.status === "ELIGIBLE" && (
-                            <>
-                              <Button
-                                variant='ghost'
-                                size='icon'
-                                className='h-8 w-8 text-blue-600'
-                                title='Schedule Assessment'
-                                onClick={() => {
-                                  setSelectedApp(app);
-                                  setActionType("SCHEDULE");
-                                }}>
-                                <Calendar className='h-4 w-4' />
-                              </Button>
-                              <Button
-                                variant='ghost'
-                                size='icon'
-                                className='h-8 w-8 text-emerald-600'
-                                title='Pre-register'
-                                onClick={() => {
-                                  setSelectedApp(app);
-                                  setActionType("APPROVE");
-                                  fetchSections(app.gradeLevelId);
-                                }}>
-                                <UserCheck className='h-4 w-4' />
-                              </Button>
-                            </>
-                          )}
-
-                          {app.status === "ASSESSMENT_SCHEDULED" && (
-                            <Button
-                              variant='ghost'
-                              size='icon'
-                              className='h-8 w-8 text-purple-600'
-                              title='Record Result'
-                              onClick={() => {
-                                setSelectedApp(app);
-                                setActionType("RESULT");
-                              }}>
-                              <ClipboardCheck className='h-4 w-4' />
-                            </Button>
-                          )}
-
-                          {app.status === "ASSESSMENT_TAKEN" && (
-                            <Button
-                              variant='ghost'
-                              size='icon'
-                              className='h-8 w-8 text-emerald-600'
-                              title='Pre-register'
-                              onClick={() => {
-                                setSelectedApp(app);
-                                setActionType("APPROVE");
-                                fetchSections(app.gradeLevelId);
-                              }}>
-                              <UserCheck className='h-4 w-4' />
-                            </Button>
-                          )}
-
-                          <Button
-                            variant='ghost'
-                            size='icon'
-                            className='h-8 w-8'
-                            onClick={() => {
-                              /* TODO: View full details */
-                            }}>
-                            <Eye className='h-4 w-4' />
-                          </Button>
-
-                          {app.status !== "REJECTED" &&
-                            app.status !== "WITHDRAWN" && (
-                              <Button
-                                variant='ghost'
-                                size='icon'
-                                className='h-8 w-8 text-destructive'
-                                title='Reject'
-                                onClick={() => {
-                                  setSelectedApp(app);
-                                  setActionType("REJECT");
-                                }}>
-                                <XCircle className='h-4 w-4' />
-                              </Button>
-                            )}
-                        </div>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        className='h-24 text-center text-sm text-[hsl(var(--muted-foreground))]'>
+                        Loading early registration queue...
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-
-          <div className='flex items-center justify-between mt-4'>
-            <span className='text-xs text-[hsl(var(--muted-foreground))]'>
-              Showing {applications.length} candidates
-            </span>
-            <div className='flex items-center gap-2'>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}>
-                Previous
-              </Button>
-              <Badge variant='secondary' className='px-3 h-8'>
-                Page {page}
-              </Badge>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => setPage((p) => p + 1)}
-                disabled={page * 15 >= total}>
-                Next
-              </Button>
+                  ) : applications.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        className='h-24 text-center text-sm text-[hsl(var(--muted-foreground))]'>
+                        No applicants found.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    applications.map((app) => (
+                      <TableRow
+                        key={app.id}
+                        className={`hover:bg-[hsl(var(--muted))] transition-colors text-center cursor-pointer ${selectedId === app.id ? "bg-[hsl(var(--muted))] shadow-inner border-l-4 border-l-[hsl(var(--primary))]" : ""}`}
+                        onClick={() => setSelectedId(app.id)}
+                      >
+                        <TableCell>
+                          <div className='flex flex-col text-left'>
+                            <span className='font-bold text-sm uppercase'>
+                              {app.lastName}, {app.firstName}
+                            </span>
+                            <span className='text-[10px] text-[hsl(var(--muted-foreground))]'>
+                              #{app.trackingNumber}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className='text-xs hidden md:table-cell'>{app.lrn}</TableCell>
+                        <TableCell>
+                          <div className='flex flex-col'>
+                            <span className='text-xs font-medium'>
+                              {app.gradeLevel.name}
+                            </span>
+                            {app.strand && (
+                              <span className='text-[10px] text-[hsl(var(--muted-foreground))]'>
+                                {app.strand.name}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className='hidden lg:table-cell'>
+                          <Badge
+                            variant='outline'
+                            className='text-[10px] font-bold px-1.5 py-0 h-4 border-slate-300 text-slate-600'>
+                            {app.applicantType}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant='outline'
+                            className={`text-[10px] font-bold ${STATUS_COLORS[app.status]}`}>
+                            {app.status.replace("_", " ")}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className='text-xs text-[hsl(var(--muted-foreground))] hidden xl:table-cell'>
+                          {format(new Date(app.createdAt), "MMM dd, yyyy")}
+                        </TableCell>
+                        <TableCell className='text-center'>
+                          <Button
+                            variant='secondary'
+                            size='sm'
+                            className='h-8 text-xs font-medium'
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedId(app.id);
+                            }}>
+                            <Eye className='h-3 w-3 mr-1' /> View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+
+            <div className='flex items-center justify-between mt-4'>
+              <span className='text-xs text-[hsl(var(--muted-foreground))]'>
+                Showing {applications.length} applicants
+              </span>
+              <div className='flex items-center gap-2'>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}>
+                  Previous
+                </Button>
+                <Badge variant='secondary' className='px-3 h-8'>
+                  Page {page}
+                </Badge>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={page * 15 >= total}>
+                  Next
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* TIER 1 - SLIDE-OVER PANEL */}
+      <Sheet open={selectedId !== null} onOpenChange={(open) => { if (!open) setSelectedId(null); }}>
+        <SheetContent
+          side="right"
+          className="w-[90%] md:w-[45%] min-w-[480px] max-w-[640px] p-0 flex flex-col border-l"
+          style={{ position: 'absolute', top: 0, right: 0, height: '100%', zIndex: 50 }}
+        >
+          {selectedId && (
+            <ApplicationDetailPanel
+              id={selectedId}
+              onClose={() => setSelectedId(null)}
+              onApprove={() => {
+                const app = applications.find(a => a.id === selectedId);
+                if (app) {
+                  setSelectedApp(app);
+                  setActionType("APPROVE");
+                  fetchSections(app.gradeLevelId);
+                }
+              }}
+              onReject={() => {
+                const app = applications.find(a => a.id === selectedId);
+                if (app) {
+                  setSelectedApp(app);
+                  setActionType("REJECT");
+                }
+              }}
+              onScheduleExam={() => {
+                const app = applications.find(a => a.id === selectedId);
+                if (app) {
+                  setSelectedApp(app);
+                  setActionType("SCHEDULE");
+                }
+              }}
+              onRecordResult={() => {
+                const app = applications.find(a => a.id === selectedId);
+                if (app) {
+                  setSelectedApp(app);
+                  setActionType("RESULT");
+                }
+              }}
+              onPass={async () => {
+                try {
+                  await api.patch(`/applications/${selectedId}/pass`);
+                  sileo.success({ title: 'Passed', description: 'Applicant marked as PASSED.' });
+                  fetchData();
+                  // Re-fetch detail panel content implicitly by state updates or let the user close/re-open. 
+                  // But usually useApplicationDetail will refetch or we can just trigger a list refetch which is fine.
+                } catch(e) { toastApiError(e as never); }
+              }}
+              onFail={async () => {
+                try {
+                  await api.patch(`/applications/${selectedId}/fail`);
+                  sileo.success({ title: 'Failed', description: 'Applicant marked as FAILED.' });
+                  fetchData();
+                } catch(e) { toastApiError(e as never); }
+              }}
+              onOfferRegular={() => {
+                const app = applications.find(a => a.id === selectedId);
+                if (app) {
+                  setSelectedApp(app);
+                  setActionType("APPROVE"); // reuse APPROVE dialog for section selection
+                  fetchSections(app.gradeLevelId);
+                }
+              }}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
 
       {/* Action Dialogs */}
       <Dialog

@@ -1,45 +1,55 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 const addressSchema = z.object({
   houseNo: z.string().optional(),
   street: z.string().optional(),
-  barangay: z.string().min(1, 'Barangay is required'),
-  cityMunicipality: z.string().min(1, 'City/Municipality is required'),
-  province: z.string().min(1, 'Province is required'),
-  country: z.string().default('Philippines'),
+  barangay: z.string().min(1, "Barangay is required"),
+  cityMunicipality: z.string().min(1, "City/Municipality is required"),
+  province: z.string().min(1, "Province is required"),
+  country: z.string().default("Philippines"),
   zipCode: z.string().optional(),
 });
 
-const optionalAddressSchema = z.object({
-  houseNo: z.string().optional(),
-  street: z.string().optional(),
-  barangay: z.string().optional(),
-  cityMunicipality: z.string().optional(),
-  province: z.string().optional(),
-  country: z.string().default('Philippines'),
-  zipCode: z.string().optional(),
-}).optional().nullable();
+const optionalAddressSchema = z
+  .object({
+    houseNo: z.string().optional(),
+    street: z.string().optional(),
+    barangay: z.string().optional(),
+    cityMunicipality: z.string().optional(),
+    province: z.string().optional(),
+    country: z.string().default("Philippines"),
+    zipCode: z.string().optional(),
+  })
+  .optional()
+  .nullable();
 
 export const applicationSubmitSchema = z.object({
   // Reference numbers
-  lrn: z.string().regex(/^\d{12}$/, 'LRN must be exactly 12 numeric digits').optional().nullable(),
+  lrn: z
+    .string()
+    .regex(/^\d{12}$/, "LRN must be exactly 12 numeric digits")
+    .optional()
+    .nullable(),
   psaBcNumber: z.string().optional().nullable(),
 
   // Grade level & program
-  gradeLevel: z.enum(['7', '11']),
-  shsTrack: z.enum(['ACADEMIC', 'TECHPRO']).optional().nullable(),
+  gradeLevel: z.enum(["7", "11"]),
+  shsTrack: z.enum(["ACADEMIC", "TECHPRO"]).optional().nullable(),
   electiveCluster: z.string().optional().nullable(),
   scpApplication: z.boolean().default(false),
-  scpType: z.enum(['STE', 'SPA', 'SPS', 'SPJ', 'SPFL', 'SPTVE']).optional().nullable(),
+  scpType: z
+    .enum(["STE", "SPA", "SPS", "SPJ", "SPFL", "SPTVE"])
+    .optional()
+    .nullable(),
 
   // Personal information
-  lastName: z.string().min(1, 'Last name is required').max(100),
-  firstName: z.string().min(1, 'First name is required').max(100),
+  lastName: z.string().min(1, "Last name is required").max(100),
+  firstName: z.string().min(1, "First name is required").max(100),
   middleName: z.string().optional().nullable(),
   extensionName: z.string().optional().nullable(),
   birthdate: z.string().or(z.date()),
-  sex: z.enum(['MALE', 'FEMALE']),
-  placeOfBirth: z.string().min(1, 'Place of birth is required'),
+  sex: z.enum(["MALE", "FEMALE"]),
+  placeOfBirth: z.string().min(1, "Place of birth is required"),
   religion: z.string().optional().nullable(),
 
   // Special classifications
@@ -50,7 +60,7 @@ export const applicationSubmitSchema = z.object({
   isBalikAral: z.boolean().default(false),
   lastYearEnrolled: z.string().optional().nullable(),
   isLearnerWithDisability: z.boolean().default(false),
-  snedCategory: z.enum(['a1', 'a2']).optional().nullable(),
+  snedCategory: z.enum(["a1", "a2"]).optional().nullable(),
   hasPwdId: z.boolean().default(false),
   disabilityType: z.array(z.string()).default([]),
 
@@ -72,22 +82,28 @@ export const applicationSubmitSchema = z.object({
     middleName: z.string().optional().nullable(),
     contactNumber: z.string().optional().nullable(),
   }),
-  guardian: z.object({
-    lastName: z.string().optional().nullable(),
-    firstName: z.string().optional().nullable(),
-    middleName: z.string().optional().nullable(),
-    contactNumber: z.string().optional().nullable(),
-    relationship: z.string().optional().nullable(),
-  }).optional().nullable(),
-  email: z.string().email('Invalid email address').min(1, 'Email address is required'),
+  guardian: z
+    .object({
+      lastName: z.string().optional().nullable(),
+      firstName: z.string().optional().nullable(),
+      middleName: z.string().optional().nullable(),
+      contactNumber: z.string().optional().nullable(),
+      relationship: z.string().optional().nullable(),
+    })
+    .optional()
+    .nullable(),
+  email: z
+    .string()
+    .email("Invalid email address")
+    .min(1, "Email address is required"),
 
   // Previous school
-  lastSchoolName: z.string().min(1, 'Last school name is required'),
+  lastSchoolName: z.string().min(1, "Last school name is required"),
   lastSchoolId: z.string().optional().nullable(),
-  lastGradeCompleted: z.string().min(1, 'Last grade completed is required'),
-  syLastAttended: z.string().min(1, 'School year last attended is required'),
+  lastGradeCompleted: z.string().min(1, "Last grade completed is required"),
+  syLastAttended: z.string().min(1, "School year last attended is required"),
   lastSchoolAddress: z.string().optional().nullable(),
-  lastSchoolType: z.enum(['PUBLIC', 'PRIVATE', 'INTERNATIONAL', 'ALS']),
+  lastSchoolType: z.enum(["PUBLIC", "PRIVATE", "INTERNATIONAL", "ALS"]),
 
   // STEM grades (G11 STEM only)
   g10ScienceGrade: z.number().optional().nullable(),
@@ -99,12 +115,18 @@ export const applicationSubmitSchema = z.object({
   spflLanguage: z.string().optional().nullable(),
 
   // Learner type
-  learnerType: z.enum(['REGULAR', 'TRANSFEREE', 'RETURNING LEARNER', 'OSCYA', 'ALS']),
+  learnerType: z.enum([
+    "REGULAR",
+    "TRANSFEREE",
+    "RETURNING LEARNER",
+    "OSCYA",
+    "ALS",
+  ]),
   learningModalities: z.array(z.string()).default([]),
 });
 
 export const approveSchema = z.object({
-  sectionId: z.number().int().positive('Section ID is required'),
+  sectionId: z.number().int().positive("Section ID is required"),
 });
 
 export const rejectSchema = z.object({
@@ -113,7 +135,8 @@ export const rejectSchema = z.object({
 
 export const scheduleExamSchema = z.object({
   examDate: z.string().or(z.date()),
-  assessmentType: z.string().min(1, 'Assessment type is required'),
+  assessmentType: z.string().min(1, "Assessment type is required"),
+  examVenue: z.string().optional().nullable(),
 });
 
 export const recordResultSchema = z.object({
@@ -121,4 +144,14 @@ export const recordResultSchema = z.object({
   examResult: z.string().optional().nullable(),
   examNotes: z.string().optional().nullable(),
   interviewResult: z.string().optional().nullable(),
+  interviewDate: z.string().or(z.date()).optional().nullable(),
+  interviewNotes: z.string().optional().nullable(),
+  auditionResult: z.string().optional().nullable(),
+  tryoutResult: z.string().optional().nullable(),
+  natScore: z.number().optional().nullable(),
+});
+
+export const rescheduleExamSchema = z.object({
+  examDate: z.string().or(z.date()),
+  examVenue: z.string().optional().nullable(),
 });
