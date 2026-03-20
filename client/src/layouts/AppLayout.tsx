@@ -151,7 +151,7 @@ function NavItem({
   label: string;
   pathname: string;
 }) {
-  const isActive = pathname === to || pathname.startsWith(to + "/");
+  const isActive = pathname === to || (to !== "/" && pathname.startsWith(to + "/"));
   return (
     <SidebarMenuItem>
       <SidebarMenuButton asChild isActive={isActive} tooltip={label}>
@@ -210,7 +210,13 @@ function NavItemChild({
   pathname: string;
   badgeCount?: number;
 }) {
-  const isActive = pathname === to || pathname.startsWith(to + "/");
+  let isActive = pathname === to || pathname.startsWith(to + "/");
+  
+  // Specific case: Early Registration detail page should highlight Early Registration child
+  if (to === "/applications/early-registration" && pathname.startsWith("/applications/admission/")) {
+    isActive = true;
+  }
+
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
@@ -536,7 +542,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className='flex-1 overflow-auto p-4 md:p-6'>
+            className='flex-1 overflow-auto py-3 px-6'>
             {children}
           </motion.main>
         </AnimatePresence>

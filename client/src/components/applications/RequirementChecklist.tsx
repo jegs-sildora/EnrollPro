@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
-import { Check, AlertCircle, Info, Loader2, ExternalLink, BookOpen } from "lucide-react";
+import {
+  Check,
+  AlertCircle,
+  Info,
+  Loader2,
+  ExternalLink,
+  BookOpen,
+  Save,
+} from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "react-router";
 import api from "@/api/axiosInstance";
@@ -10,7 +18,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { LearnerType, ChecklistData } from "@/hooks/useApplicationDetail";
 
 interface Props {
@@ -27,9 +40,16 @@ interface RequirementItem {
   isMandatory: boolean;
 }
 
-export function RequirementChecklist({ applicantId, learnerType, checklist, onRefresh }: Props) {
+export function RequirementChecklist({
+  applicantId,
+  learnerType,
+  checklist,
+  onRefresh,
+}: Props) {
   const [isUpdating, setIsUpdating] = useState(false);
-  const [localChecklist, setLocalChecklist] = useState<Partial<ChecklistData>>(checklist || {});
+  const [localChecklist, setLocalChecklist] = useState<Partial<ChecklistData>>(
+    checklist || {},
+  );
 
   useEffect(() => {
     if (checklist) {
@@ -41,43 +61,37 @@ export function RequirementChecklist({ applicantId, learnerType, checklist, onRe
     {
       key: "isPsaBirthCertPresented",
       label: "PSA Birth Certificate",
-      description: "Submitted once per school stay. Mandatory for new enrollees and transferees if not already on file.",
-      isMandatory: learnerType !== "CONTINUING" && !localChecklist.isPsaBcOnFile,
-    },
-    {
-      key: "isPsaBcOnFile",
-      label: "PSA BC Already on File",
-      description: "Mark if the PSA Birth Certificate was already submitted in previous years at this school. If checked, new PSA BC is not required.",
-      isMandatory: false,
-    },
-    {
-      key: "isSecondaryBirthProofSubmitted",
-      label: "Secondary Proof of Birth",
-      description: "Accepted if PSA Birth Certificate is unavailable (e.g., Brgy Cert, Baptismal). Required for temporary enrollment.",
-      isMandatory: false,
-    },
-    {
-      key: "isOriginalPsaBcCollected",
-      label: "Original PSA BC Collected",
-      description: "Phase 2: The actual physical original document has been received and filed in the student's folder.",
-      isMandatory: false,
+      description:
+        "Submitted once per school stay. Mandatory for new enrollees and transferees if not already on file.",
+      isMandatory:
+        learnerType !== "CONTINUING" && !localChecklist.isPsaBcOnFile,
     },
     {
       key: "isSf9Submitted",
       label: "SF9 / Report Card",
-      description: "Proof of last grade level completed. Mandatory for new enrollees and transferees.",
+      description:
+        "Proof of last grade level completed. Mandatory for new enrollees and transferees.",
       isMandatory: learnerType !== "CONTINUING",
+    },
+    {
+      key: "isSecondaryBirthProofSubmitted",
+      label: "Secondary Proof of Birth",
+      description:
+        "Accepted if PSA Birth Certificate is unavailable (e.g., Brgy Cert, Baptismal). Required for temporary enrollment.",
+      isMandatory: false,
     },
     {
       key: "isConfirmationSlipReceived",
       label: "Confirmation Slip",
-      description: "Mandatory for Grade 8-10 and Grade 12 continuing learners to confirm intent to enroll.",
+      description:
+        "Mandatory for Grade 8-10 and Grade 12 continuing learners to confirm intent to enroll.",
       isMandatory: learnerType === "CONTINUING",
     },
     {
       key: "isSf10Requested",
       label: "SF10 (Permanent Record)",
-      description: "NOT an initial requirement. Transmitted school-to-school via LIS tracking after enrollment.",
+      description:
+        "NOT an initial requirement. Transmitted school-to-school via LIS tracking after enrollment.",
       isMandatory: false,
     },
     {
@@ -89,27 +103,38 @@ export function RequirementChecklist({ applicantId, learnerType, checklist, onRe
     {
       key: "isMedicalEvalSubmitted",
       label: "Medical Evaluation",
-      description: "Not required unless for specific health-related program requirements or LWD.",
+      description:
+        "Not required unless for specific health-related program requirements or LWD.",
       isMandatory: false,
     },
     {
       key: "isUndertakingSigned",
       label: "Affidavit of Undertaking",
-      description: "Required for transferees with unpaid private school fees or missing documents (Temporary Enrollment).",
+      description:
+        "Required for transferees with unpaid private school fees or missing documents (Temporary Enrollment).",
       isMandatory: learnerType === "TRANSFEREE",
     },
   ];
 
-  const handleToggle = async (key: keyof ChecklistData, value: boolean) => {
-    setIsUpdating(true);
-    const updatedData = { [key]: value };
+  const handleToggle = (key: keyof ChecklistData, value: boolean) => {
+    setLocalChecklist((prev) => ({ ...prev, [key]: value }));
+  };
 
+  const hasChanges = requirements.some(
+    (req) => !!localChecklist[req.key] !== !!checklist?.[req.key]
+  );
+
+  const handleSave = async () => {
+    setIsUpdating(true);
     try {
-      await api.patch(`/applications/${applicantId}/checklist`, updatedData);
-      setLocalChecklist((prev) => ({ ...prev, ...updatedData }));
+      // Strip non-updatable fields
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id: _id, applicantId: _aid, updatedAt: _ua, ...payload } = localChecklist;
+
+      await api.patch(`/applications/${applicantId}/checklist`, payload);
       sileo.success({
         title: "Checklist Updated",
-        description: "Requirement status has been updated.",
+        description: "Documentary Checklist has been updated.",
       });
       onRefresh();
     } catch (error) {
@@ -121,17 +146,22 @@ export function RequirementChecklist({ applicantId, learnerType, checklist, onRe
 
   const getLearnerTypeLabel = (type: LearnerType) => {
     switch (type) {
-      case "NEW_ENROLLEE": return "New Enrollee";
-      case "TRANSFEREE": return "Transferee";
-      case "RETURNING": return "Returning (Balik-Aral)";
-      case "CONTINUING": return "Continuing";
-      default: return type;
+      case "NEW_ENROLLEE":
+        return "New Enrollee";
+      case "TRANSFEREE":
+        return "Transferee";
+      case "RETURNING":
+        return "Returning (Balik-Aral)";
+      case "CONTINUING":
+        return "Continuing";
+      default:
+        return type;
     }
   };
 
   const mandatoryMet = requirements
-    .filter(r => r.isMandatory)
-    .every(r => localChecklist[r.key]);
+    .filter((r) => r.isMandatory)
+    .every((r) => localChecklist[r.key]);
 
   return (
     <Card>
@@ -139,44 +169,71 @@ export function RequirementChecklist({ applicantId, learnerType, checklist, onRe
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
             Documentary Checklist
-            {isUpdating && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+            {isUpdating && (
+              <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+            )}
           </CardTitle>
-          <Badge variant={mandatoryMet ? "success" : "secondary"}>
-            {mandatoryMet ? "Mandatory Docs Met" : "Pending Mandatory Docs"}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant={mandatoryMet ? "success" : "secondary"}>
+              {mandatoryMet ? "Mandatory Documents Met" : "Pending Mandatory Documents"}
+            </Badge>
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={isUpdating || !hasChanges}
+              className="h-7 text-[10px] font-bold uppercase tracking-tight gap-1.5"
+            >
+              {isUpdating ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Save className="h-3 w-3" />
+              )}
+              Save Changes
+            </Button>
+          </div>
         </div>
         <p className="text-[10px] text-muted-foreground mt-1">
-          Learner Type: <span className="font-bold text-primary">{getLearnerTypeLabel(learnerType)}</span>
+          Learner Type:{" "}
+          <span className="font-bold text-primary">
+            {getLearnerTypeLabel(learnerType)}
+          </span>
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
           {requirements.map((req) => (
-            <div key={req.key} className="flex items-start space-x-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+            <div
+              key={req.key}
+              className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border/50"
+            >
               <Checkbox
                 id={req.key}
                 checked={!!localChecklist[req.key]}
                 onCheckedChange={(checked) => handleToggle(req.key, !!checked)}
                 disabled={isUpdating}
-                className="mt-1"
+                className="shrink-0"
               />
-              <div className="flex-1 space-y-1">
+              <div className="flex-1 space-y-1 overflow-hidden">
                 <div className="flex items-center gap-2">
                   <Label
                     htmlFor={req.key}
-                    className="text-xs font-bold leading-none cursor-pointer"
+                    className="text-[11px] font-bold leading-tight cursor-pointer truncate"
+                    title={req.label}
                   >
                     {req.label}
                   </Label>
                   {req.isMandatory && (
-                    <Badge variant="outline" className="text-[9px] h-4 px-1 text-red-600 border-red-200 bg-red-50">
-                      Mandatory
+                    <Badge
+                      variant="outline"
+                      className="text-[8px] h-3.5 px-1 text-red-600 border-red-200 bg-red-50 shrink-0"
+                    >
+                      M
                     </Badge>
                   )}
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                        <Info className="h-3 w-3 text-muted-foreground cursor-help shrink-0" />
                       </TooltipTrigger>
                       <TooltipContent>
                         <p className="max-w-xs text-xs">{req.description}</p>
@@ -185,25 +242,30 @@ export function RequirementChecklist({ applicantId, learnerType, checklist, onRe
                   </TooltipProvider>
                 </div>
               </div>
-              {localChecklist[req.key] ? (
-                <Check className="h-4 w-4 text-green-600" />
-              ) : (
-                req.isMandatory && <AlertCircle className="h-4 w-4 text-amber-500" />
-              )}
+              <div className="shrink-0">
+                {localChecklist[req.key] ? (
+                  <Check className="h-3.5 w-3.5 text-green-600" />
+                ) : (
+                  req.isMandatory && (
+                    <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+                  )
+                )}
+              </div>
             </div>
           ))}
         </div>
 
         {checklist?.updatedAt && (
           <p className="text-[9px] text-right text-muted-foreground pt-2 border-t">
-            Last updated: {format(new Date(checklist.updatedAt), "MMM dd, yyyy hh:mm a")}
+            Last updated:{" "}
+            {format(new Date(checklist.updatedAt), "MMM dd, yyyy hh:mm a")}
           </p>
         )}
 
         <div className="pt-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="w-full text-[10px] h-8 font-bold gap-2 uppercase tracking-tight"
             asChild
           >

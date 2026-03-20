@@ -42,6 +42,7 @@ interface Props {
   applicantId: number;
   documents: Document[];
   onRefresh: () => void;
+  hideUpload?: boolean;
 }
 
 const DOCUMENT_TYPES = [
@@ -60,7 +61,7 @@ const DOCUMENT_TYPES = [
   { value: "OTHERS", label: "Other Supporting Documents" },
 ];
 
-export function DocumentManagement({ applicantId, documents, onRefresh }: Props) {
+export function DocumentManagement({ applicantId, documents, onRefresh, hideUpload = false }: Props) {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedType, setSelectedType] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -129,55 +130,57 @@ export function DocumentManagement({ applicantId, documents, onRefresh }: Props)
 
   return (
     <div className='space-y-6'>
-      <Card>
-        <CardHeader>
-          <CardTitle className='text-sm font-bold uppercase tracking-wider'>
-            Upload New Document
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-4 items-end'>
-            <div className='space-y-2'>
-              <Label htmlFor='doc-type'>Document Type</Label>
-              <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger id='doc-type'>
-                  <SelectValue placeholder='Select type...' />
-                </SelectTrigger>
-                <SelectContent>
-                  {DOCUMENT_TYPES.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+      {!hideUpload && (
+        <Card>
+          <CardHeader>
+            <CardTitle className='text-sm font-bold uppercase tracking-wider'>
+              Upload New Document
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className='grid grid-cols-1 md:grid-cols-3 gap-4 items-end'>
+              <div className='space-y-2'>
+                <Label htmlFor='doc-type'>Document Type</Label>
+                <Select value={selectedType} onValueChange={setSelectedType}>
+                  <SelectTrigger id='doc-type'>
+                    <SelectValue placeholder='Select type...' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DOCUMENT_TYPES.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>
+                        {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className='space-y-2'>
+                <Label htmlFor='file-upload'>File (Max 5MB)</Label>
+                <Input
+                  id='file-upload'
+                  type='file'
+                  accept='.pdf,.jpg,.jpeg,.png'
+                  onChange={handleFileChange}
+                />
+              </div>
+              <Button
+                onClick={handleUpload}
+                disabled={isUploading || !selectedType || !selectedFile}
+                className='flex items-center gap-2'>
+                {isUploading ? (
+                  <Loader2 className='h-4 w-4 animate-spin' />
+                ) : (
+                  <Upload className='h-4 w-4' />
+                )}
+                {isUploading ? "Uploading..." : "Upload Document"}
+              </Button>
             </div>
-            <div className='space-y-2'>
-              <Label htmlFor='file-upload'>File (Max 5MB)</Label>
-              <Input
-                id='file-upload'
-                type='file'
-                accept='.pdf,.jpg,.jpeg,.png'
-                onChange={handleFileChange}
-              />
-            </div>
-            <Button
-              onClick={handleUpload}
-              disabled={isUploading || !selectedType || !selectedFile}
-              className='flex items-center gap-2'>
-              {isUploading ? (
-                <Loader2 className='h-4 w-4 animate-spin' />
-              ) : (
-                <Upload className='h-4 w-4' />
-              )}
-              {isUploading ? "Uploading..." : "Upload Document"}
-            </Button>
-          </div>
-          <p className='text-[10px] text-muted-foreground mt-2'>
-            Accepted formats: PDF, JPEG, PNG.
-          </p>
-        </CardContent>
-      </Card>
+            <p className='text-[10px] text-muted-foreground mt-2'>
+              Accepted formats: PDF, JPEG, PNG.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
@@ -189,11 +192,9 @@ export function DocumentManagement({ applicantId, documents, onRefresh }: Props)
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Type</TableHead>
-                <TableHead>File Name</TableHead>
-                <TableHead>Size</TableHead>
-                <TableHead>Date Uploaded</TableHead>
-                <TableHead className='text-right'>Actions</TableHead>
+                <TableHead>Document Name</TableHead>
+                <TableHead>Modified By</TableHead>
+                <TableHead>Last Modified</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -237,13 +238,15 @@ export function DocumentManagement({ applicantId, documents, onRefresh }: Props)
                             <Download className='h-4 w-4' />
                           </a>
                         </Button>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='h-8 w-8 text-red-600'
-                          onClick={() => handleDelete(doc.id)}>
-                          <Trash2 className='h-4 w-4' />
-                        </Button>
+                        {!hideUpload && (
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='h-8 w-8 text-red-600'
+                            onClick={() => handleDelete(doc.id)}>
+                            <Trash2 className='h-4 w-4' />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

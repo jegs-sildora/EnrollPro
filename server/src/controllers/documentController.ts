@@ -38,6 +38,27 @@ export async function upload(req: Request, res: Response) {
       return res.status(404).json({ message: "Applicant not found" });
     }
 
+    // Backend restriction: No uploads for Early Registration stage (ELIGIBLE to PRE_REGISTERED)
+    // except for SYSTEM_ADMIN
+    const earlyRegStatuses = [
+      "ELIGIBLE",
+      "ASSESSMENT_SCHEDULED",
+      "ASSESSMENT_TAKEN",
+      "PRE_REGISTERED",
+    ];
+    if (
+      earlyRegStatuses.includes(applicant.status) &&
+      req.user?.role !== "SYSTEM_ADMIN"
+    ) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (e) {}
+      return res.status(403).json({
+        message:
+          "Document upload is restricted during this stage of Early Registration.",
+      });
+    }
+
     const document = await prisma.document.create({
       data: {
         applicantId,
@@ -80,6 +101,23 @@ export async function remove(req: Request, res: Response) {
 
     if (!document) {
       return res.status(404).json({ message: "Document not found" });
+    }
+
+    // Backend restriction: No deletion for Early Registration stage
+    const earlyRegStatuses = [
+      "ELIGIBLE",
+      "ASSESSMENT_SCHEDULED",
+      "ASSESSMENT_TAKEN",
+      "PRE_REGISTERED",
+    ];
+    if (
+      earlyRegStatuses.includes(document.applicant.status) &&
+      req.user?.role !== "SYSTEM_ADMIN"
+    ) {
+      return res.status(403).json({
+        message:
+          "Document deletion is restricted during this stage of Early Registration.",
+      });
     }
 
     // Delete file from filesystem
