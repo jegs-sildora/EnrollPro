@@ -32,9 +32,6 @@ const variantStyles: Record<ConfirmationModalVariant, {
   iconRing: string;
   iconText: string;
   btnBg: string;
-  btnHover: string;
-  btnActive: string;
-  btnShadow: string;
   btnText: string;
 }> = {
   danger: {
@@ -43,9 +40,6 @@ const variantStyles: Record<ConfirmationModalVariant, {
     iconRing: "ring-[6px] ring-[hsl(var(--primary)/0.1)]",
     iconText: "text-[hsl(var(--primary-foreground))]",
     btnBg: "bg-red-500",
-    btnHover: "hover:bg-red-600",
-    btnActive: "active:bg-red-700",
-    btnShadow: "shadow-red-200",
     btnText: "text-white",
   },
   warning: {
@@ -54,9 +48,6 @@ const variantStyles: Record<ConfirmationModalVariant, {
     iconRing: "ring-[6px] ring-[hsl(var(--primary)/0.1)]",
     iconText: "text-[hsl(var(--primary-foreground))]",
     btnBg: "bg-amber-500",
-    btnHover: "hover:bg-amber-600",
-    btnActive: "active:bg-amber-700",
-    btnShadow: "shadow-amber-200",
     btnText: "text-white",
   },
   info: {
@@ -65,9 +56,6 @@ const variantStyles: Record<ConfirmationModalVariant, {
     iconRing: "ring-[6px] ring-[hsl(var(--primary)/0.1)]",
     iconText: "text-[hsl(var(--primary-foreground))]",
     btnBg: "bg-blue-500",
-    btnHover: "hover:bg-blue-600",
-    btnActive: "active:bg-blue-700",
-    btnShadow: "shadow-blue-200",
     btnText: "text-white",
   },
   success: {
@@ -76,9 +64,6 @@ const variantStyles: Record<ConfirmationModalVariant, {
     iconRing: "ring-[6px] ring-[hsl(var(--primary)/0.1)]",
     iconText: "text-[hsl(var(--primary-foreground))]",
     btnBg: "bg-green-500",
-    btnHover: "hover:bg-green-600",
-    btnActive: "active:bg-green-700",
-    btnShadow: "shadow-green-200",
     btnText: "text-white",
   },
   primary: {
@@ -87,9 +72,6 @@ const variantStyles: Record<ConfirmationModalVariant, {
     iconRing: "ring-[6px] ring-[hsl(var(--primary)/0.1)]",
     iconText: "text-[hsl(var(--primary-foreground))]",
     btnBg: "bg-[hsl(var(--primary))]",
-    btnHover: "hover:opacity-90",
-    btnActive: "active:scale-[0.98]",
-    btnShadow: "shadow-[hsl(var(--primary)/0.2)]",
     btnText: "text-[hsl(var(--primary-foreground))]",
   }
 };
@@ -190,8 +172,8 @@ export function ConfirmationModal({
             disabled={loading}
             className={cn(
               "flex-1 h-12 rounded-2xl font-semibold text-sm",
-              style.btnBg, style.btnHover, style.btnActive, style.btnText,
-              "shadow-md", style.btnShadow,
+              style.btnBg, style.btnText,
+              "shadow-md",
               "transition-all duration-150 active:scale-[0.97]",
               confirmClassName,
             )}

@@ -252,7 +252,7 @@ export default function TrackApplication({
 
   return (
     <div
-      className={cn("max-w-4xl mx-auto py-8 px-4 transition-all duration-500")}
+      className={cn("max-w-4xl mx-auto p-4 md:p-8 transition-all duration-500")}
     >
       <Card
         className={cn(

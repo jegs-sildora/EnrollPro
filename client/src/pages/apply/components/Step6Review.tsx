@@ -112,7 +112,7 @@ export default function Step6Review({
           onEdit={onEdit}>
           {data.studentPhoto && (
             <div className='sm:col-span-2 flex justify-center pb-2'>
-              <div className='relative w-48 h-48 rounded-lg overflow-hidden border-2 border-primary/10 shadow-sm'>
+              <div className='relative w-48 h-48 rounded-lg overflow-hidden border-2 border-dashed border-primary shadow-sm'>
                 <img
                   src={data.studentPhoto}
                   alt='Student'

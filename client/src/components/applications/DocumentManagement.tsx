@@ -256,10 +256,9 @@ export function DocumentManagement({
             <TableHeader>
               <TableRow>
                 <TableHead className='w-[30%]'>Document Name</TableHead>
-                <TableHead className='w-[20%]'>Modified By</TableHead>
-                <TableHead className='w-[25%]'>Last Modified</TableHead>
+                <TableHead className='w-[30%]'>Modified By</TableHead>
+                <TableHead className='w-[30%]'>Last Modified</TableHead>
                 <TableHead className='w-[10%]'>Action</TableHead>
-                <TableHead className='text-right w-[15%]'>Files</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
