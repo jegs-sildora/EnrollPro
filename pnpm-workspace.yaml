@@ -1,8 +1,9 @@
 packages:
   - server
   - client
+  - shared
 allowBuilds:
-  '@prisma/engines': true
+  "@prisma/engines": true
   canvas: true
   core-js: true
   esbuild: true

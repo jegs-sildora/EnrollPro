@@ -10,12 +10,12 @@ import {
   deriveSchoolYearScheduleFromOpeningDate,
   deriveNextSchoolYear,
   normalizeDateToUtcNoon,
-} from "../services/schoolYearService.js";
+} from "../features/school-year/school-year.service.js";
 
 import {
   isEnrollmentOpen,
   getEnrollmentPhase,
-} from "../services/enrollmentGateService.js";
+} from "../features/settings/enrollment-gate.service.js";
 
 // Test Helper: Create a mock SchoolYear object
 function createMockSchoolYear(overrides: Partial<any> = {}): any {

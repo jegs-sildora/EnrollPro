@@ -1,0 +1,11 @@
+{
+  "run_id": "eval-0-with_skill",
+  "expectations": [
+    {"text": "Prisma model Department uses @@map('departments')", "passed": true, "evidence": "model Department { ... @@map('departments') } found in schema.prisma"},
+    {"text": "Prisma fields created_at/updated_at use @map", "passed": true, "evidence": "createdAt DateTime @default(now()) @map('created_at') found"},
+    {"text": "Controller uses prisma.department.create and prisma.department.findMany", "passed": true, "evidence": "Both methods used in departmentController.ts"},
+    {"text": "Controller includes auditLog call for creation", "passed": true, "evidence": "await auditLog({ ... actionType: 'CREATE_DEPARTMENT' ... }) found"},
+    {"text": "Validator uses Zod for input validation", "passed": true, "evidence": "export const createDepartmentSchema = z.object({ ... }) found"},
+    {"text": "Route uses the validator and controller", "passed": true, "evidence": "router.post('/', authenticate, validate(createDepartmentSchema), createDepartment) found"}
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "eval_id": 2,
+  "eval_name": "refactor-student-search",
+  "prompt": "Refactor the student search logic from 'students.controller.ts' into a new 'studentService.ts' file. The service should handle the complex prisma query (filtering by name, LRNo, or grade level) and return the result. Update the controller to use this new service.",
+  "assertions": [
+    "studentService.ts created with searchStudents function",
+    "students.controller.ts uses studentService for search",
+    "studentService.ts handles prisma filtering",
+    "Controller retains pagination logic or service handles it correctly",
+    "ESM imports use .js extension"
+  ]
+}

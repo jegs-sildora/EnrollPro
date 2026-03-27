@@ -1,0 +1,12 @@
+{
+  "eval_id": 1,
+  "eval_name": "add-teacher-email",
+  "prompt": "Modify the 'Teacher' model in schema.prisma to add an optional 'email' field. Update the 'teachersController.ts' and its validator to support this new field when creating or updating a teacher. Make sure to use @map in prisma and appropriate zod validation.",
+  "assertions": [
+    "Prisma model Teacher includes email field with @map('email')",
+    "teachersController.ts store function includes email",
+    "teachersController.ts update function includes email",
+    "Validator includes email with z.string().email().optional()",
+    "ESM imports in controller use .js extension"
+  ]
+}

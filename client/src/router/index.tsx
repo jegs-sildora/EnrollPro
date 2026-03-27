@@ -1,35 +1,35 @@
 import { createBrowserRouter, Navigate } from 'react-router';
 
-import AuthLayout from '@/layouts/AuthLayout';
-import AppLayout from '@/layouts/AppLayout';
-import RootLayout from '@/layouts/RootLayout';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import AuthLayout from '@/shared/layouts/AuthLayout';
+import AppLayout from '@/shared/layouts/AppLayout';
+import RootLayout from '@/shared/layouts/RootLayout';
+import ProtectedRoute from '@/shared/components/ProtectedRoute';
 
-import Login from '@/pages/auth/Login';
-import ChangePassword from '@/pages/auth/ChangePassword';
-import Dashboard from '@/pages/dashboard/Index';
-import EarlyRegistration from '@/pages/applications/early-registration/EarlyRegistrationList';
-import EarlyRegistrationDetail from '@/pages/applications/early-registration/EarlyRegistrationDetail';
-import Enrollment from '@/pages/applications/enrollment/Index';
-import Students from '@/pages/students/Index';
-import Profile from '@/pages/students/Profile';
-import LearnerPortal from '@/pages/learner/LearnerPortal';
-import Sections from '@/pages/sections/Index';
-import AuditLogs from '@/pages/audit-logs/Index';
-import Settings from '@/pages/settings/Index';
-import DocumentaryRequirements from '@/pages/enrollment/DocumentaryRequirements';
-import NotFound from '@/pages/NotFound';
+import Login from '@/features/auth/pages/Login';
+import ChangePassword from '@/features/auth/pages/ChangePassword';
+import Dashboard from '@/features/dashboard/pages/Index';
+import EarlyRegistration from '@/features/admission/pages/early-registration/EarlyRegistrationList';
+import EarlyRegistrationDetail from '@/features/admission/pages/early-registration/EarlyRegistrationDetail';
+import Enrollment from '@/features/enrollment/pages/Index';
+import Students from '@/features/students/pages/Index';
+import Profile from '@/features/students/pages/Profile';
+import LearnerPortal from '@/features/learner/pages/LearnerPortal';
+import Sections from '@/features/sections/pages/Index';
+import AuditLogs from '@/features/audit-logs/pages/Index';
+import Settings from '@/features/settings/pages/Index';
+import DocumentaryRequirements from '@/features/enrollment/pages/DocumentaryRequirements';
+import NotFound from '@/shared/components/NotFound';
 
 // Admin Pages
-import AdminUsers from '@/pages/admin/Users';
-import EmailLogs from '@/pages/admin/EmailLogs';
-import SystemHealth from '@/pages/admin/SystemHealth';
-import Teachers from '@/pages/teachers/Index';
+import AdminUsers from '@/features/admin/pages/Users';
+import EmailLogs from '@/features/admin/pages/EmailLogs';
+import SystemHealth from '@/features/admin/pages/SystemHealth';
+import Teachers from '@/features/teachers/pages/Index';
 
 // F2F EARLY REGISTRATION Page
-import F2FEarlyRegistration from '@/pages/f2f-early-registration/Index';
+import F2FEarlyRegistration from '@/features/admission/pages/f2f/Index';
 
-import Apply from '@/pages/apply/Index';
+import Apply from '@/features/admission/pages/apply/Index';
 
 export const router = createBrowserRouter([
   {

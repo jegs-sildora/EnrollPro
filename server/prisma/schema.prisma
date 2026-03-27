@@ -7,6 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// System users: registrars and system administrators who manage the enrollment process
 model User {
   id                 Int          @id @default(autoincrement())
   firstName          String       @map("first_name")
@@ -38,6 +39,7 @@ model User {
   @@map("users")
 }
 
+/// Faculty members who serve as section advisers; not login users
 model Teacher {
   id             Int       @id @default(autoincrement())
   employeeId     String?   @unique(map: "uq_teachers_employee_id") @map("employee_id")
@@ -56,6 +58,7 @@ model Teacher {
   @@map("teachers")
 }
 
+/// Singleton config: school identity (name, logo, accent color) and active school year pointer
 model SchoolSettings {
   id                   Int           @id @default(autoincrement())
   schoolName           String        @map("school_name")
@@ -69,6 +72,7 @@ model SchoolSettings {
   @@map("school_settings")
 }
 
+/// Academic year with enrollment window dates and lifecycle status (DRAFT → UPCOMING → ACTIVE → ARCHIVED)
 model SchoolYear {
   id                 Int              @id @default(autoincrement())
   yearLabel          String           @unique(map: "uq_school_years_year_label") @map("year_label")
@@ -96,6 +100,7 @@ model SchoolYear {
   @@map("school_years")
 }
 
+/// K-12 grade levels (e.g. Grade 7, Grade 11) cloned per school year
 model GradeLevel {
   id             Int          @id @default(autoincrement())
   name           String
@@ -109,6 +114,7 @@ model GradeLevel {
   @@map("grade_levels")
 }
 
+/// SHS academic tracks/strands (e.g. STEM, ABM) and elective clusters, cloned per school year
 model Strand {
   id                      Int            @id @default(autoincrement())
   name                    String
@@ -123,6 +129,7 @@ model Strand {
   @@map("strands")
 }
 
+/// Class section with capacity, grade level, and optional advising teacher
 model Section {
   id                Int          @id @default(autoincrement())
   name              String
@@ -138,6 +145,7 @@ model Section {
   @@map("sections")
 }
 
+/// Central entity: a student application through the admission pipeline (SUBMITTED → ... → ENROLLED)
 model Applicant {
   id                      Int               @id @default(autoincrement())
   studentPhoto            String?           @map("student_photo")
@@ -231,6 +239,7 @@ model Applicant {
   @@map("applicants")
 }
 
+/// Uploaded documentary requirements (PSA, SF9, etc.) attached to an applicant
 model Document {
   id               Int            @id @default(autoincrement())
   applicantId      Int            @map("applicant_id")
@@ -253,6 +262,7 @@ model Document {
   @@map("documents")
 }
 
+/// DepEd documentary requirement checklist per applicant (presented/collected flags)
 model RequirementChecklist {
   id                                 Int       @id @default(autoincrement())
   applicantId                        Int       @unique(map: "uq_requirement_checklists_applicant_id") @map("applicant_id")
@@ -272,6 +282,7 @@ model RequirementChecklist {
   @@map("requirement_checklists")
 }
 
+/// Final enrollment record linking an approved applicant to a section in a school year
 model Enrollment {
   id             Int          @id @default(autoincrement())
   applicantId    Int          @unique(map: "uq_enrollments_applicant_id") @map("applicant_id")
@@ -287,6 +298,7 @@ model Enrollment {
   @@map("enrollments")
 }
 
+/// Academic department (future use)
 model Department {
   id          Int      @id @default(autoincrement())
   name        String
@@ -298,6 +310,7 @@ model Department {
   @@map("departments")
 }
 
+/// Immutable audit trail of all system actions with actor, IP, and user-agent
 model AuditLog {
   id          Int      @id @default(autoincrement())
   userId      Int?     @map("user_id")
@@ -315,6 +328,7 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+/// Transactional email log tracking delivery status to applicant email addresses
 model EmailLog {
   id           Int          @id @default(autoincrement())
   recipient    String
@@ -332,6 +346,7 @@ model EmailLog {
   @@map("email_logs")
 }
 
+/// Student health measurement (SF8): weight, height per assessment period (BOSY/EOSY)
 model HealthRecord {
   id               Int              @id @default(autoincrement())
   applicantId      Int              @map("applicant_id")
@@ -355,6 +370,7 @@ model HealthRecord {
   @@map("health_records")
 }
 
+/// Special Curricular Program configuration per school year and applicant type
 model ScpConfig {
   id             Int           @id @default(autoincrement())
   schoolYearId   Int           @map("school_year_id")
@@ -374,6 +390,7 @@ model ScpConfig {
   @@map("scp_configs")
 }
 
+/// User role: REGISTRAR handles enrollment; SYSTEM_ADMIN has full access
 enum Role {
   REGISTRAR
   SYSTEM_ADMIN
@@ -381,6 +398,7 @@ enum Role {
   @@map("user_role")
 }
 
+/// Biological sex per DepEd SF1
 enum Sex {
   MALE
   FEMALE
@@ -388,6 +406,7 @@ enum Sex {
   @@map("sex")
 }
 
+/// Admission pipeline stages from initial submission through final enrollment
 enum ApplicationStatus {
   SUBMITTED
   UNDER_REVIEW
@@ -406,6 +425,7 @@ enum ApplicationStatus {
   @@map("application_status")
 }
 
+/// School year lifecycle: DRAFT (config) → UPCOMING (visible) → ACTIVE (current) → ARCHIVED
 enum SchoolYearStatus {
   DRAFT
   UPCOMING
@@ -415,6 +435,7 @@ enum SchoolYearStatus {
   @@map("school_year_status")
 }
 
+/// SHS curriculum types per MATATAG/K-12 reforms
 enum CurriculumType {
   OLD_STRAND
   ELECTIVE_CLUSTER
@@ -422,6 +443,7 @@ enum CurriculumType {
   @@map("curriculum_type")
 }
 
+/// SHS tracks: Academic or Technical-Professional
 enum SHSTrack {
   ACADEMIC
   TECHPRO
@@ -429,6 +451,7 @@ enum SHSTrack {
   @@map("shs_track")
 }
 
+/// Enrollment classification: REGULAR standard admission, STE/SPA/SPS/SPJ/SPFL/SPTVE are Special Curricular Programs
 enum ApplicantType {
   REGULAR
   STE
@@ -442,6 +465,7 @@ enum ApplicantType {
   @@map("applicant_type")
 }
 
+/// Events that trigger automated email notifications
 enum EmailTrigger {
   APPLICATION_SUBMITTED
   APPLICATION_APPROVED
@@ -453,6 +477,7 @@ enum EmailTrigger {
   @@map("email_trigger")
 }
 
+/// Email delivery status
 enum EmailStatus {
   PENDING
   SENT
@@ -461,6 +486,7 @@ enum EmailStatus {
   @@map("email_status")
 }
 
+/// How the application was submitted: ONLINE (self-service) or F2F (registrar-encoded)
 enum AdmissionChannel {
   ONLINE
   F2F
@@ -468,6 +494,7 @@ enum AdmissionChannel {
   @@map("admission_channel")
 }
 
+/// Document verification status in the requirement checklist
 enum DocumentStatus {
   SUBMITTED
   VERIFIED
@@ -477,6 +504,7 @@ enum DocumentStatus {
   @@map("document_status")
 }
 
+/// DepEd documentary requirement types per enrollment policy
 enum DocumentType {
   PSA_BIRTH_CERTIFICATE
   SECONDARY_BIRTH_PROOF
@@ -496,6 +524,7 @@ enum DocumentType {
   @@map("document_type")
 }
 
+/// Student enrollment type classification
 enum LearnerType {
   NEW_ENROLLEE
   TRANSFEREE
@@ -505,6 +534,7 @@ enum LearnerType {
   @@map("learner_type")
 }
 
+/// Health record assessment period: Beginning of School Year or End of School Year
 enum AssessmentPeriod {
   BOSY
   EOSY

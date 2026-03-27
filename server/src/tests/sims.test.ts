@@ -1,5 +1,8 @@
 import { prisma } from "../lib/prisma.js";
-import { generatePortalPin, verifyPin } from "../services/portalPinService.js";
+import {
+  generatePortalPin,
+  verifyPin,
+} from "../features/learner/portal-pin.service.js";
 
 async function runTests() {
   console.log("Starting SIMS Tests...");
@@ -14,20 +17,31 @@ async function runTests() {
 
     // 2. We can't easily test full controllers without express, but we can test the service functions.
     // Ensure we can create a test applicant and test the schema.
-    const activeYear = await prisma.schoolYear.findFirst({
-        where: { isActive: true }
-    }) || await prisma.schoolYear.create({
-        data: { yearLabel: "TEST-2026", status: "ACTIVE", isActive: true }
-    });
+    const activeYear =
+      (await prisma.schoolYear.findFirst({
+        where: { isActive: true },
+      })) ||
+      (await prisma.schoolYear.create({
+        data: { yearLabel: "TEST-2026", status: "ACTIVE", isActive: true },
+      }));
 
-    const gradeLevel = await prisma.gradeLevel.findFirst() || await prisma.gradeLevel.create({
-        data: { name: "Grade 7", displayOrder: 7, schoolYearId: activeYear.id }
-    });
+    const gradeLevel =
+      (await prisma.gradeLevel.findFirst()) ||
+      (await prisma.gradeLevel.create({
+        data: { name: "Grade 7", displayOrder: 7, schoolYearId: activeYear.id },
+      }));
 
     // Create a user for recording
-    const user = await prisma.user.findFirst() || await prisma.user.create({
-        data: { name: "Test User", email: "test@test.com", password: "pwd", role: "REGISTRAR" }
-    });
+    const user =
+      (await prisma.user.findFirst()) ||
+      (await prisma.user.create({
+        data: {
+          name: "Test User",
+          email: "test@test.com",
+          password: "pwd",
+          role: "REGISTRAR",
+        },
+      }));
 
     const testApplicant = await prisma.applicant.create({
       data: {
@@ -45,48 +59,50 @@ async function runTests() {
         fatherName: { firstName: "Dad" },
         portalPin: hash,
         portalPinChangedAt: new Date(),
-      }
+      },
     });
     console.log("Test Applicant created with ENROLLED status and portal PIN.");
 
     // Test health record creation
     const record = await prisma.healthRecord.create({
-        data: {
-            applicantId: testApplicant.id,
-            schoolYearId: activeYear.id,
-            assessmentPeriod: "BOSY",
-            assessmentDate: new Date(),
-            weightKg: 50.5,
-            heightCm: 150.0,
-            recordedById: user.id
-        }
+      data: {
+        applicantId: testApplicant.id,
+        schoolYearId: activeYear.id,
+        assessmentPeriod: "BOSY",
+        assessmentDate: new Date(),
+        weightKg: 50.5,
+        heightCm: 150.0,
+        recordedById: user.id,
+      },
     });
     console.log("Health Record created successfully.");
 
     // Test unique constraint (duplicate BOSY)
     try {
-        await prisma.healthRecord.create({
-            data: {
-                applicantId: testApplicant.id,
-                schoolYearId: activeYear.id,
-                assessmentPeriod: "BOSY",
-                assessmentDate: new Date(),
-                weightKg: 51.5,
-                heightCm: 151.0,
-                recordedById: user.id
-            }
-        });
-        throw new Error("Duplicate BoSY record should have failed!");
+      await prisma.healthRecord.create({
+        data: {
+          applicantId: testApplicant.id,
+          schoolYearId: activeYear.id,
+          assessmentPeriod: "BOSY",
+          assessmentDate: new Date(),
+          weightKg: 51.5,
+          heightCm: 151.0,
+          recordedById: user.id,
+        },
+      });
+      throw new Error("Duplicate BoSY record should have failed!");
     } catch (err: any) {
-        if (err.code === 'P2002') {
-            console.log("Duplicate BoSY check passed (P2002 thrown).");
-        } else {
-            throw err;
-        }
+      if (err.code === "P2002") {
+        console.log("Duplicate BoSY check passed (P2002 thrown).");
+      } else {
+        throw err;
+      }
     }
 
     // Clean up
-    await prisma.healthRecord.deleteMany({ where: { applicantId: testApplicant.id } });
+    await prisma.healthRecord.deleteMany({
+      where: { applicantId: testApplicant.id },
+    });
     await prisma.applicant.delete({ where: { id: testApplicant.id } });
     console.log("Cleaned up test data.");
 

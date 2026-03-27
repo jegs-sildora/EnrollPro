@@ -16,6 +16,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@enrollpro/shared": "workspace:*",
     "@prisma/adapter-pg": "^6",
     "@prisma/client": "^6",
     "@types/pg": "^8.18.0",
