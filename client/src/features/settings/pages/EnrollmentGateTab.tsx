@@ -363,6 +363,7 @@ export default function EnrollmentGateTab() {
 										setDate={setEnrollCloseDate}
 										minDate={minDate}
 										maxDate={maxDate}
+										className='font-bold'
 									/>
 								</div>
 							</div>
@@ -392,11 +393,13 @@ export default function EnrollmentGateTab() {
 						<div className='flex justify-end gap-2 pt-2'>
 							<Button
 								variant='outline'
+								className='font-bold'
 								onClick={() => setIsEditing(false)}
 							>
 								Cancel
 							</Button>
 							<Button
+								className='font-bold'
 								onClick={handleSaveDates}
 								disabled={saving}
 							>
