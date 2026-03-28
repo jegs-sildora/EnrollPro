@@ -32,9 +32,6 @@ import {
 } from "@/shared/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 
-import { Skeleton } from "@/shared/ui/skeleton";
-import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
-
 interface Teacher {
   id: number;
   firstName: string;
@@ -80,9 +77,6 @@ export default function SectionsTab() {
   const [groups, setGroups] = useState<GradeLevelGroup[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // Rule A & B: Delayed loading
-  const showSkeleton = useDelayedLoading(loading);
 
   // Inline add section state
   const [addGlId, setAddGlId] = useState<number | null>(null);
@@ -127,6 +121,8 @@ export default function SectionsTab() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  if (loading) return null;
 
   const toggleAddMode = (glId: number) => {
     if (addGlId === glId) {
@@ -245,244 +241,210 @@ export default function SectionsTab() {
         </TabsList>
       </Tabs>
 
-      {showSkeleton ? (
-        <div className='space-y-6'>
-          <Card>
+      {/* Capacity Heatmap overview */}
+      <Card>
+        <CardHeader>
+          <CardTitle className='flex items-center gap-2 text-xl'>
+            <Grid3X3 className='h-5 w-5' />
+            Capacity Heatmap
+          </CardTitle>
+          <CardDescription>
+            Visual overview of section fill rates. 🟢 &lt;50% · 🟡 50-74% ·
+            🟠 75-89% · 🔴 90%+
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {groups.length === 0 ? (
+            <p className='text-sm text-muted-foreground text-center py-4'>
+              No grade levels with sections found.
+            </p>
+          ) : (
+            <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+              {groups.flatMap((g) =>
+                g.sections.map((s) => (
+                  <div
+                    key={s.id}
+                    className='flex items-center gap-3 rounded-lg border border-border p-3'>
+                    <span className='text-lg'>
+                      {fillEmoji(s.fillPercent)}
+                    </span>
+                    <div className='flex-1 min-w-0'>
+                      <p className='text-sm font-medium truncate'>
+                        {g.gradeLevelName} — {s.name}
+                      </p>
+                      <div className='mt-1 h-2 w-full rounded-full bg-muted'>
+                        <div
+                          className={`h-2 rounded-full transition-all ${fillColor(s.fillPercent)}`}
+                          style={{
+                            width: `${Math.min(s.fillPercent, 100)}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <span className='text-xs  text-muted-foreground whitespace-nowrap'>
+                      {s.enrolledCount}/{s.maxCapacity}
+                    </span>
+                  </div>
+                ))
+              )}
+              {groups.every((g) => g.sections.length === 0) && (
+                <p className='col-span-full text-sm text-muted-foreground text-center py-4'>
+                  No sections created yet. Add sections to grade levels
+                  below.
+                </p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Sections grouped by grade level */}
+      <div className='grid gap-6 md:grid-cols-2'>
+        {groups.map((g) => (
+          <Card key={g.gradeLevelId}>
             <CardHeader>
-              <Skeleton className='h-8 w-48 mb-2' />
-              <Skeleton className='h-4 w-80' />
-            </CardHeader>
-            <CardContent>
-              <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <Skeleton key={i} className='h-16 w-full rounded-lg' />
-                ))}
+              <div className='flex items-center justify-between'>
+                <CardTitle className='text-lg'>
+                  {g.gradeLevelName}
+                </CardTitle>
+                <Button
+                  size='sm'
+                  variant={addGlId === g.gradeLevelId ? "ghost" : "outline"}
+                  onClick={() => toggleAddMode(g.gradeLevelId)}>
+                  {addGlId === g.gradeLevelId ? (
+                    <>
+                      <X className='mr-1 h-3 w-3' /> Cancel
+                    </>
+                  ) : (
+                    <>
+                      <Plus className='mr-1 h-3 w-3' /> Add Section
+                    </>
+                  )}
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-          <div className='grid gap-6 md:grid-cols-2'>
-            {[1, 2].map((i) => (
-              <Card key={i}>
-                <CardHeader>
-                  <Skeleton className='h-6 w-32' />
-                </CardHeader>
-                <CardContent className='space-y-2'>
-                  {[1, 2, 3].map((j) => (
-                    <Skeleton key={j} className='h-12 w-full rounded-lg' />
-                  ))}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* Capacity Heatmap overview */}
-          <Card>
-            <CardHeader>
-              <CardTitle className='flex items-center gap-2 text-xl'>
-                <Grid3X3 className='h-5 w-5' />
-                Capacity Heatmap
-              </CardTitle>
-              <CardDescription>
-                Visual overview of section fill rates. 🟢 &lt;50% · 🟡 50-74% ·
-                🟠 75-89% · 🔴 90%+
-              </CardDescription>
             </CardHeader>
-            <CardContent>
-              {groups.length === 0 ? (
-                <p className='text-sm text-muted-foreground text-center py-4'>
-                  No grade levels with sections found.
+            <CardContent className='space-y-4'>
+              {addGlId === g.gradeLevelId && (
+                <div className='space-y-4 animate-in fade-in slide-in-from-top-2 duration-300'>
+                  <div className='grid grid-cols-2 gap-4'>
+                    <div className='space-y-2'>
+                      <Label className='text-xs'>Section Name</Label>
+                      <Input
+                        placeholder='e.g. Section A'
+                        value={sectionName}
+                        onChange={(e) => setSectionName(e.target.value)}
+                        className='h-9 text-sm'
+                        autoFocus
+                      />
+                    </div>
+                    <div className='space-y-2'>
+                      <Label className='text-xs'>Max Capacity</Label>
+                      <Input
+                        type='number'
+                        min='1'
+                        value={sectionCap}
+                        onChange={(e) => setSectionCap(e.target.value)}
+                        className='h-9 text-sm'
+                      />
+                    </div>
+                    <div className='space-y-2 col-span-2'>
+                      <Label className='text-xs'>
+                        Advising Teacher (Optional)
+                      </Label>
+                      <Select
+                        value={advisingTeacherId}
+                        onValueChange={setAdvisingTeacherId}>
+                        <SelectTrigger className='h-9 text-sm'>
+                          <SelectValue placeholder='Select teacher' />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value='none'>
+                            No Advising Teacher
+                          </SelectItem>
+                          {teachers.map((t) => (
+                            <SelectItem key={t.id} value={t.id.toString()}>
+                              {t.firstName} {t.lastName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <Button
+                    size='sm'
+                    className='w-full'
+                    onClick={handleAdd}
+                    disabled={adding || !sectionName.trim()}>
+                    {adding ? (
+                      "Adding..."
+                    ) : (
+                      <>
+                        <Check className='mr-1 h-3 w-3' /> Save Section
+                      </>
+                    )}
+                  </Button>
+                  <Separator />
+                </div>
+              )}
+
+              {g.sections.length === 0 ? (
+                <p className='text-sm text-muted-foreground text-center py-2'>
+                  No sections
                 </p>
               ) : (
-                <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-                  {groups.flatMap((g) =>
-                    g.sections.map((s) => (
-                      <div
-                        key={s.id}
-                        className='flex items-center gap-3 rounded-lg border border-border p-3'>
-                        <span className='text-lg'>
-                          {fillEmoji(s.fillPercent)}
+                <div className='space-y-2'>
+                  {g.sections.map((s) => (
+                    <div
+                      key={s.id}
+                      className='flex items-center gap-3 rounded-lg border border-border px-3 py-2'>
+                      <span className='text-sm'>
+                        {fillEmoji(s.fillPercent)}
+                      </span>
+                      <span className='flex-1 text-sm font-medium'>
+                        {s.name}
+                      </span>
+                      {s.advisingTeacher && (
+                        <span
+                          className='text-xs text-muted-foreground truncate max-w-25'
+                          title={`${s.advisingTeacher.firstName} ${s.advisingTeacher.lastName}`}>
+                          {s.advisingTeacher.firstName} {s.advisingTeacher.lastName}
                         </span>
-                        <div className='flex-1 min-w-0'>
-                          <p className='text-sm font-medium truncate'>
-                            {g.gradeLevelName} — {s.name}
-                          </p>
-                          <div className='mt-1 h-2 w-full rounded-full bg-muted'>
-                            <div
-                              className={`h-2 rounded-full transition-all ${fillColor(s.fillPercent)}`}
-                              style={{
-                                width: `${Math.min(s.fillPercent, 100)}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                        <span className='text-xs  text-muted-foreground whitespace-nowrap'>
-                          {s.enrolledCount}/{s.maxCapacity}
-                        </span>
-                      </div>
-                    )),
-                  )}
-                  {groups.every((g) => g.sections.length === 0) && (
-                    <p className='col-span-full text-sm text-muted-foreground text-center py-4'>
-                      No sections created yet. Add sections to grade levels
-                      below.
-                    </p>
-                  )}
+                      )}
+                      <span className='text-xs  text-muted-foreground'>
+                        {s.enrolledCount}/{s.maxCapacity} ({s.fillPercent}%)
+                      </span>
+                      <Button
+                        size='sm'
+                        variant='ghost'
+                        className='h-7 w-7 p-0'
+                        onClick={() => openEdit(s)}
+                        title='Edit section'>
+                        <Edit2 className='h-3.5 w-3.5' />
+                      </Button>
+                      <Button
+                        size='sm'
+                        variant='ghost'
+                        className='h-7 w-7 p-0 text-destructive'
+                        onClick={() => {
+                          setDeleteId(s.id);
+                          setDeleteName(s.name);
+                        }}
+                        disabled={s.enrolledCount > 0}
+                        title={
+                          s.enrolledCount > 0
+                            ? "Cannot delete — has enrolled students"
+                            : "Delete section"
+                        }>
+                        <Trash2 className='h-3.5 w-3.5' />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               )}
             </CardContent>
           </Card>
-
-          {/* Sections grouped by grade level */}
-          <div className='grid gap-6 md:grid-cols-2'>
-            {groups.map((g) => (
-              <Card key={g.gradeLevelId}>
-                <CardHeader>
-                  <div className='flex items-center justify-between'>
-                    <CardTitle className='text-lg'>
-                      {g.gradeLevelName}
-                    </CardTitle>
-                    <Button
-                      size='sm'
-                      variant={addGlId === g.gradeLevelId ? "ghost" : "outline"}
-                      onClick={() => toggleAddMode(g.gradeLevelId)}>
-                      {addGlId === g.gradeLevelId ? (
-                        <>
-                          <X className='mr-1 h-3 w-3' /> Cancel
-                        </>
-                      ) : (
-                        <>
-                          <Plus className='mr-1 h-3 w-3' /> Add Section
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className='space-y-4'>
-                  {addGlId === g.gradeLevelId && (
-                    <div className='space-y-4 animate-in fade-in slide-in-from-top-2 duration-300'>
-                      <div className='grid grid-cols-2 gap-4'>
-                        <div className='space-y-2'>
-                          <Label className='text-xs'>Section Name</Label>
-                          <Input
-                            placeholder='e.g. Section A'
-                            value={sectionName}
-                            onChange={(e) => setSectionName(e.target.value)}
-                            className='h-9 text-sm'
-                            autoFocus
-                          />
-                        </div>
-                        <div className='space-y-2'>
-                          <Label className='text-xs'>Max Capacity</Label>
-                          <Input
-                            type='number'
-                            min='1'
-                            value={sectionCap}
-                            onChange={(e) => setSectionCap(e.target.value)}
-                            className='h-9 text-sm'
-                          />
-                        </div>
-                        <div className='space-y-2 col-span-2'>
-                          <Label className='text-xs'>
-                            Advising Teacher (Optional)
-                          </Label>
-                          <Select
-                            value={advisingTeacherId}
-                            onValueChange={setAdvisingTeacherId}>
-                            <SelectTrigger className='h-9 text-sm'>
-                              <SelectValue placeholder='Select teacher' />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value='none'>
-                                No Advising Teacher
-                              </SelectItem>
-                              {teachers.map((t) => (
-                                <SelectItem key={t.id} value={t.id.toString()}>
-                                  {t.firstName} {t.lastName}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <Button
-                        size='sm'
-                        className='w-full'
-                        onClick={handleAdd}
-                        disabled={adding || !sectionName.trim()}>
-                        {adding ? (
-                          "Adding..."
-                        ) : (
-                          <>
-                            <Check className='mr-1 h-3 w-3' /> Save Section
-                          </>
-                        )}
-                      </Button>
-                      <Separator />
-                    </div>
-                  )}
-
-                  {g.sections.length === 0 ? (
-                    <p className='text-sm text-muted-foreground text-center py-2'>
-                      No sections
-                    </p>
-                  ) : (
-                    <div className='space-y-2'>
-                      {g.sections.map((s) => (
-                        <div
-                          key={s.id}
-                          className='flex items-center gap-3 rounded-lg border border-border px-3 py-2'>
-                          <span className='text-sm'>
-                            {fillEmoji(s.fillPercent)}
-                          </span>
-                          <span className='flex-1 text-sm font-medium'>
-                            {s.name}
-                          </span>
-                          {s.advisingTeacher && (
-                            <span
-                              className='text-xs text-muted-foreground truncate max-w-25'
-                              title={`${s.advisingTeacher.firstName} ${s.advisingTeacher.lastName}`}>
-                              {s.advisingTeacher.firstName} {s.advisingTeacher.lastName}
-                            </span>
-                          )}
-                          <span className='text-xs  text-muted-foreground'>
-                            {s.enrolledCount}/{s.maxCapacity} ({s.fillPercent}%)
-                          </span>
-                          <Button
-                            size='sm'
-                            variant='ghost'
-                            className='h-7 w-7 p-0'
-                            onClick={() => openEdit(s)}
-                            title='Edit section'>
-                            <Edit2 className='h-3.5 w-3.5' />
-                          </Button>
-                          <Button
-                            size='sm'
-                            variant='ghost'
-                            className='h-7 w-7 p-0 text-destructive'
-                            onClick={() => {
-                              setDeleteId(s.id);
-                              setDeleteName(s.name);
-                            }}
-                            disabled={s.enrolledCount > 0}
-                            title={
-                              s.enrolledCount > 0
-                                ? "Cannot delete — has enrolled students"
-                                : "Delete section"
-                            }>
-                            <Trash2 className='h-3.5 w-3.5' />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </>
-      )}
+        ))}
+      </div>
 
       {/* Edit Section Dialog */}
       <Dialog

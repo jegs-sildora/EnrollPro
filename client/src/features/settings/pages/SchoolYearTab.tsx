@@ -18,9 +18,6 @@ import { Badge } from '@/shared/ui/badge';
 import { ConfirmationModal } from '@/shared/ui/confirmation-modal';
 import { DatePicker } from '@/shared/ui/date-picker';
 
-import { Skeleton } from '@/shared/ui/skeleton';
-import { useDelayedLoading } from '@/shared/hooks/useDelayedLoading';
-
 const MANILA_TIME_ZONE = 'Asia/Manila';
 
 function getDatePartsInTimeZone(date: Date, timeZone = MANILA_TIME_ZONE) {
@@ -159,9 +156,6 @@ export default function SchoolYearTab() {
 	const [years, setYears] = useState<SYItem[]>([]);
 	const [defaults, setDefaults] = useState<Defaults | null>(null);
 	const [loading, setLoading] = useState(true);
-
-	// Rule A & B: Delayed loading
-	const showSkeleton = useDelayedLoading(loading);
 
 	// Create state
 	const [creating, setCreating] = useState(false);
@@ -343,36 +337,7 @@ export default function SchoolYearTab() {
 		}
 	};
 
-	if (showSkeleton) {
-		return (
-			<div className='space-y-6'>
-				<Card>
-					<CardContent className='p-6'>
-						<div className='flex flex-col sm:flex-row justify-between gap-4'>
-							<div className='space-y-2'>
-								<Skeleton className='h-8 w-48' />
-								<Skeleton className='h-4 w-64' />
-								<Skeleton className='h-4 w-32' />
-							</div>
-							<div className='flex gap-2'>
-								<Skeleton className='h-10 w-10' />
-								<Skeleton className='h-10 w-48' />
-							</div>
-						</div>
-					</CardContent>
-				</Card>
-				<div className='mt-8 space-y-3'>
-					<Skeleton className='h-4 w-20' />
-					{[1, 2, 3].map((i) => (
-						<Skeleton
-							key={i}
-							className='h-14 w-full rounded-lg'
-						/>
-					))}
-				</div>
-			</div>
-		);
-	}
+	if (loading) return null;
 
 	return (
 		<div className='space-y-6'>

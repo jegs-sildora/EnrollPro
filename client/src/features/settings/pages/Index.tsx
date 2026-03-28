@@ -69,9 +69,9 @@ export default function Settings() {
           {activeTab === "profile" && (
             <motion.div
               key="profile"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, x: 5 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -5 }}
               transition={{ duration: 0.2 }}
               className="w-full"
             >
@@ -88,9 +88,9 @@ export default function Settings() {
           {activeTab === "school-year" && (
             <motion.div
               key="school-year"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, x: 5 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -5 }}
               transition={{ duration: 0.2 }}
               className="w-full"
             >
@@ -107,9 +107,9 @@ export default function Settings() {
           {activeTab === "curriculum" && (
             <motion.div
               key="curriculum"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, x: 5 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -5 }}
               transition={{ duration: 0.2 }}
               className="w-full"
             >
@@ -126,9 +126,9 @@ export default function Settings() {
           {activeTab === "sections" && (
             <motion.div
               key="sections"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, x: 5 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -5 }}
               transition={{ duration: 0.2 }}
               className="w-full"
             >
@@ -145,9 +145,9 @@ export default function Settings() {
           {activeTab === "enrollment" && (
             <motion.div
               key="enrollment"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, x: 5 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -5 }}
               transition={{ duration: 0.2 }}
               className="w-full"
             >

@@ -17,9 +17,7 @@ import { Badge } from '@/shared/ui/badge';
 import { Switch } from '@/shared/ui/switch';
 import { DatePicker } from '@/shared/ui/date-picker';
 
-import { Skeleton } from '@/shared/ui/skeleton';
 import { formatManilaDate } from '@/shared/lib/utils';
-import { useDelayedLoading } from '@/shared/hooks/useDelayedLoading';
 
 const MANILA_TIME_ZONE = 'Asia/Manila';
 
@@ -92,9 +90,6 @@ export default function EnrollmentGateTab() {
 		useSettingsStore();
 	const [ay, setAy] = useState<AYDates | null>(null);
 	const [loading, setLoading] = useState(true);
-
-	// Rule A & B: Delayed loading
-	const showSkeleton = useDelayedLoading(loading);
 
 	const [saving, setSaving] = useState(false);
 
@@ -227,28 +222,7 @@ export default function EnrollmentGateTab() {
 		);
 	}
 
-	if (showSkeleton || !ay) {
-		return (
-			<div className='space-y-6'>
-				<Card>
-					<CardHeader>
-						<Skeleton className='h-8 w-64 mb-2' />
-						<Skeleton className='h-4 w-96' />
-					</CardHeader>
-					<CardContent className='space-y-8 pt-4'>
-						<div className='space-y-4'>
-							<Skeleton className='h-6 w-48' />
-							<Skeleton className='h-16 w-full rounded-lg' />
-						</div>
-						<div className='space-y-4'>
-							<Skeleton className='h-6 w-48' />
-							<Skeleton className='h-16 w-full rounded-lg' />
-						</div>
-					</CardContent>
-				</Card>
-			</div>
-		);
-	}
+	if (loading || !ay) return null;
 
 	const phase1Status = getPhaseStatus(
 		ay.earlyRegOpenDate,
@@ -314,6 +288,7 @@ export default function EnrollmentGateTab() {
 										setDate={setEarlyRegOpenDate}
 										minDate={minDate}
 										maxDate={maxDate}
+										className='font-bold'
 									/>
 								</div>
 								<div className='space-y-1'>
@@ -323,6 +298,7 @@ export default function EnrollmentGateTab() {
 										setDate={setEarlyRegCloseDate}
 										minDate={minDate}
 										maxDate={maxDate}
+										className='font-bold'
 									/>
 								</div>
 							</div>
@@ -377,6 +353,7 @@ export default function EnrollmentGateTab() {
 										setDate={setEnrollOpenDate}
 										minDate={minDate}
 										maxDate={maxDate}
+										className='font-bold'
 									/>
 								</div>
 								<div className='space-y-1'>

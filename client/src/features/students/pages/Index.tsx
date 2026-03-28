@@ -45,8 +45,6 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
-import { Skeleton } from "@/shared/ui/skeleton";
-import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 
 interface Student {
   id: number;
@@ -122,9 +120,6 @@ export default function Students() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [initialLoad, setInitialLoad] = useState(true);
-  
-  // Rule A & B: Delayed loading to prevent flicker
-  const showSkeleton = useDelayedLoading(loading);
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -146,9 +141,6 @@ export default function Students() {
   );
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
-  
-  // Rule A & B: Delayed loading for details
-  const showDetailSkeleton = useDelayedLoading(detailLoading);
 
   // Debounce search input
   useEffect(() => {
@@ -543,36 +535,7 @@ export default function Students() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {showSkeleton ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell>
-                        <Skeleton className='h-4 w-24' />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className='h-4 w-32' />
-                      </TableCell>
-                      <TableCell className='hidden md:table-cell'>
-                        <Skeleton className='h-4 w-20' />
-                      </TableCell>
-                      <TableCell className='hidden lg:table-cell'>
-                        <Skeleton className='h-4 w-20' />
-                      </TableCell>
-                      <TableCell className='hidden lg:table-cell'>
-                        <Skeleton className='h-4 w-16' />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className='h-6 w-16' />
-                      </TableCell>
-                      <TableCell className='hidden md:table-cell'>
-                        <Skeleton className='h-4 w-20' />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className='h-8 w-16' />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : students.length === 0 ? (
+                {loading ? null : students.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={8}
@@ -652,13 +615,7 @@ export default function Students() {
             </DialogDescription>
           </DialogHeader>
 
-          {showDetailSkeleton ? (
-            <div className='space-y-4'>
-              {Array.from({ length: 8 }).map((_, i) => (
-                <Skeleton key={i} className='h-12 w-full' />
-              ))}
-            </div>
-          ) : selectedStudent ? (
+          {detailLoading ? null : selectedStudent ? (
             <div className='space-y-6'>
               {/* Status Badge */}
               <div className='flex items-center justify-between'>
