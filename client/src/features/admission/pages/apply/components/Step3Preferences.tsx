@@ -186,36 +186,34 @@ export default function Step3Preferences() {
                   </Label>
                   <Select
                     value={scpType}
-                    onValueChange={(
-                      val: "STE" | "SPA" | "SPS" | "SPJ" | "SPFL" | "SPTVE",
-                    ) => setValue("scpType", val)}>
+                    onValueChange={(val: any) => setValue("scpType", val)}>
                     <SelectTrigger className='font-bold'>
                       <SelectValue placeholder='Select SCP' />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value='STE'>
+                      <SelectItem value='SCIENCE_TECHNOLOGY_AND_ENGINEERING'>
                         Science, Technology & Engineering (STE)
                       </SelectItem>
-                      <SelectItem value='SPA'>
+                      <SelectItem value='SPECIAL_PROGRAM_IN_THE_ARTS'>
                         Special Program in the Arts (SPA)
                       </SelectItem>
-                      <SelectItem value='SPS'>
+                      <SelectItem value='SPECIAL_PROGRAM_IN_SPORTS'>
                         Special Program in Sports (SPS)
                       </SelectItem>
-                      <SelectItem value='SPJ'>
+                      <SelectItem value='SPECIAL_PROGRAM_IN_JOURNALISM'>
                         Special Program in Journalism (SPJ)
                       </SelectItem>
-                      <SelectItem value='SPFL'>
+                      <SelectItem value='SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE'>
                         Special Program in Foreign Language (SPFL)
                       </SelectItem>
-                      <SelectItem value='SPTVE'>
+                      <SelectItem value='SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION'>
                         Special Program in Tech-Voc Education (SPTVE)
                       </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                {scpType === "SPA" && (
+                {scpType === "SPECIAL_PROGRAM_IN_THE_ARTS" && (
                   <div className='space-y-2'>
                     <Label>
                       SPA Art Field <span className='text-destructive'>*</span>
@@ -236,7 +234,7 @@ export default function Step3Preferences() {
                   </div>
                 )}
 
-                {scpType === "SPS" && (
+                {scpType === "SPECIAL_PROGRAM_IN_SPORTS" && (
                   <div className='space-y-2'>
                     <Label>Sports (Select all that apply)</Label>
                     <div className='grid grid-cols-2 lg:grid-cols-3 gap-2'>
@@ -266,7 +264,7 @@ export default function Step3Preferences() {
                   </div>
                 )}
 
-                {scpType === "SPFL" && (
+                {scpType === "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE" && (
                   <div className='space-y-2'>
                     <Label>
                       Preferred Foreign Language{" "}

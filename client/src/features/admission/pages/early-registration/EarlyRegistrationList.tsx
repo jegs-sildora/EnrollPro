@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Search, Eye } from "lucide-react";
 import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
@@ -37,6 +37,9 @@ import { format } from "date-fns";
 import { ApplicationDetailPanel } from "@/features/enrollment/components/ApplicationDetailPanel";
 import { ScheduleExamDialog } from "@/features/enrollment/components/ScheduleExamDialog";
 import { StatusBadge } from "@/features/enrollment/components/StatusBadge";
+import { Skeleton } from "@/shared/ui/skeleton";
+import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
+import { formatScpType } from "@/shared/lib/utils";
 import type { ApplicantDetail } from "@/features/enrollment/hooks/useApplicationDetail";
 
 interface Application {
@@ -58,13 +61,31 @@ interface Application {
 const APPLICANT_TYPES = [
   { value: "ALL", label: "All Types" },
   { value: "REGULAR", label: "Regular" },
-  { value: "STE", label: "STE" },
-  { value: "SPA", label: "SPA" },
-  { value: "SPS", label: "SPS" },
-  { value: "SPJ", label: "SPJ" },
-  { value: "SPFL", label: "SPFL" },
-  { value: "SPTVE", label: "SPTVE" },
-  { value: "STEM_GRADE11", label: "Grade 11 STEM" },
+  {
+    value: "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+    label: "Science, Technology & Engineering (STE)",
+  },
+  {
+    value: "SPECIAL_PROGRAM_IN_THE_ARTS",
+    label: "Special Program in the Arts (SPA)",
+  },
+  {
+    value: "SPECIAL_PROGRAM_IN_SPORTS",
+    label: "Special Program in Sports (SPS)",
+  },
+  {
+    value: "SPECIAL_PROGRAM_IN_JOURNALISM",
+    label: "Special Program in Journalism (SPJ)",
+  },
+  {
+    value: "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
+    label: "Special Program in Foreign Language (SPFL)",
+  },
+  {
+    value: "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
+    label: "Special Program in Tech-Voc Education (SPTVE)",
+  },
+  { value: "STEM_GRADE_11", label: "Grade 11 STEM" },
 ];
 
 export default function EarlyRegistration() {
@@ -74,6 +95,9 @@ export default function EarlyRegistration() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  
+  // Rule A & B: Delayed loading
+  const showSkeleton = useDelayedLoading(loading);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -82,7 +106,9 @@ export default function EarlyRegistration() {
   const [page, setPage] = useState(1);
 
   // Detail/Action state
-  const [selectedApp, setSelectedApp] = useState<Application | ApplicantDetail | null>(null);
+  const [selectedApp, setSelectedApp] = useState<
+    Application | ApplicantDetail | null
+  >(null);
   const [actionType, setActionType] = useState<
     "APPROVE" | "REJECT" | "RESULT" | "ELIGIBLE" | null
   >(null);
@@ -101,6 +127,37 @@ export default function EarlyRegistration() {
   const [selectedSectionId, setSelectedSectionId] = useState<string>("");
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
+
+  // --- Resizable Panel Logic (Fluid Percentage) ---
+  const [panelPercentage, setPanelPercentage] = useState(45); // Default 45vw
+  const isResizing = useRef(false);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isResizing.current) return;
+    const newWidthPercent = ((window.innerWidth - e.clientX) / window.innerWidth) * 100;
+    
+    // Constraints: Between 20% and 95%
+    if (newWidthPercent > 20 && newWidthPercent < 95) {
+      setPanelPercentage(newWidthPercent);
+    }
+  }, []);
+
+  const stopResizing = useCallback(() => {
+    isResizing.current = false;
+    document.removeEventListener("mousemove", handleMouseMove);
+    document.removeEventListener("mouseup", stopResizing);
+    document.body.style.cursor = "default";
+    document.body.style.userSelect = "auto";
+  }, [handleMouseMove]);
+
+  const startResizing = useCallback(() => {
+    isResizing.current = true;
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", stopResizing);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  }, [handleMouseMove, stopResizing]);
+  // ------------------------------------------------
 
   const fetchData = useCallback(async () => {
     if (!ayId) {
@@ -200,8 +257,6 @@ export default function EarlyRegistration() {
         title: "Rejected",
         description: "Application has been rejected.",
       });
-      setActionType(null);
-      setSelectedId(null);
       fetchData();
     } catch (err) {
       toastApiError(err as never);
@@ -235,135 +290,171 @@ export default function EarlyRegistration() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-2rem)] overflow-hidden space-x-4">
-      <div className="flex-1 flex flex-col space-y-6 overflow-auto">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className='flex h-[calc(100vh-2rem)] overflow-hidden'>
+      <div className='flex-1 flex flex-col space-y-4 sm:space-y-6 overflow-auto px-2 sm:px-0'>
+        <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">
+            <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight'>
               Early Registration Monitoring Dashboard
             </h1>
-            <p className="text-sm text-[hsl(var(--muted-foreground))]">
+            <p className='text-sm text-[hsl(var(--muted-foreground))]'>
               Applicant screening and assessment workflow
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="bg-blue-50 text-blue-700">
-              Early Registration Queue: {total}
+          <div className='flex items-center gap-2'>
+            <Badge variant='outline' className='bg-blue-50 text-blue-700'>
+              <span className='hidden sm:inline'>Early Registration </span>Queue: {total}
             </Badge>
           </div>
         </div>
 
-        <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
-          <CardHeader className="pb-3">
-            <div className="flex flex-col md:flex-row gap-4 items-end">
-              <div className="flex-1 space-y-2 w-full">
-                <Label className="text-xs uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]">
+        <Card className='border-none shadow-sm bg-[hsl(var(--card))]'>
+          <CardHeader className='px-3 sm:px-6 pb-3'>
+            <div className='flex flex-col md:flex-row gap-3 md:gap-4 items-end'>
+              <div className='flex-1 space-y-2 w-full'>
+                <Label className='text-xs uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]'>
                   Search Applicant
                 </Label>
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-[hsl(var(--muted-foreground))]" />
+                <div className='relative'>
+                  <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-[hsl(var(--muted-foreground))]' />
                   <Input
-                    placeholder="LRN, First Name, Last Name..."
-                    className="pl-9 h-10"
+                    placeholder='LRN, First Name, Last Name...'
+                    className='pl-9 h-10'
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                   />
                 </div>
               </div>
-              <div className="space-y-2 w-full md:w-48">
-                <Label className="text-xs uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]">
-                  Intake Status
-                </Label>
-                <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger className="h-10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ALL">All Active Intake</SelectItem>
-                    <SelectItem value="SUBMITTED">Submitted</SelectItem>
-                    <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
-                    <SelectItem value="FOR_REVISION">For Revision</SelectItem>
-                    <SelectItem value="ELIGIBLE">Eligible</SelectItem>
-                    <SelectItem value="ASSESSMENT_SCHEDULED">
-                      Exam Scheduled
-                    </SelectItem>
-                    <SelectItem value="ASSESSMENT_TAKEN">
-                      Exam Taken
-                    </SelectItem>
-
-                    <SelectItem value="NOT_QUALIFIED">Not Qualified</SelectItem>
-                    <SelectItem value="REJECTED">Rejected</SelectItem>
-                    <SelectItem value="WITHDRAWN">Withdrawn</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2 w-full md:w-48">
-                <Label className="text-xs uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]">
-                  Type
-                </Label>
-                <Select value={type} onValueChange={setType}>
-                  <SelectTrigger className="h-10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {APPLICANT_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        {t.label}
+              <div className='grid grid-cols-2 md:flex gap-3 md:gap-4 w-full md:w-auto'>
+                <div className='space-y-2'>
+                  <Label className='text-xs uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]'>
+                    Intake Status
+                  </Label>
+                  <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger className='h-10 md:w-48'>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='ALL'>All Active Intake</SelectItem>
+                      <SelectItem value='SUBMITTED'>Submitted</SelectItem>
+                      <SelectItem value='UNDER_REVIEW'>Under Review</SelectItem>
+                      <SelectItem value='FOR_REVISION'>For Revision</SelectItem>
+                      <SelectItem value='ELIGIBLE'>Eligible</SelectItem>
+                      <SelectItem value='ASSESSMENT_SCHEDULED'>
+                        Exam Scheduled
                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      <SelectItem value='ASSESSMENT_TAKEN'>Exam Taken</SelectItem>
+
+                      <SelectItem value='NOT_QUALIFIED'>Not Qualified</SelectItem>
+                      <SelectItem value='REJECTED'>Rejected</SelectItem>
+                      <SelectItem value='WITHDRAWN'>Withdrawn</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className='space-y-2'>
+                  <Label className='text-xs uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]'>
+                    Type
+                  </Label>
+                  <Select value={type} onValueChange={setType}>
+                    <SelectTrigger className='h-10 md:w-48'>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {APPLICANT_TYPES.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <Button
-                variant="outline"
-                className="h-10 px-3"
+                variant='outline'
+                className='h-10 px-3 w-full md:w-auto'
                 onClick={() => {
                   setSearch("");
                   setStatus("ALL");
                   setType("ALL");
-                }}
-              >
+                }}>
                 Reset
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="rounded-xl border border-black overflow-hidden">
-              <Table className="border-collapse border border-black">
-                <TableHeader className="bg-[hsl(var(--primary))]">
+          <CardContent className='px-3 sm:px-6'>
+            <div className='rounded-xl border overflow-hidden'>
+              <Table className='border-collapse'>
+                <TableHeader className='bg-[hsl(var(--primary))]'>
                   <TableRow>
-                    <TableHead className="border border-black text-center font-bold text-primary-foreground">
+                    <TableHead className='text-center font-bold text-primary-foreground'>
                       Applicant
                     </TableHead>
-                    <TableHead className="border border-black text-center font-bold text-primary-foreground hidden md:table-cell">
+                    <TableHead className='text-center font-bold text-primary-foreground hidden md:table-cell'>
                       LRN
                     </TableHead>
-                    <TableHead className="border border-black text-center font-bold text-primary-foreground">
+                    <TableHead className='text-center font-bold text-primary-foreground'>
                       Grade
                     </TableHead>
-                    <TableHead className="border border-black text-center font-bold text-primary-foreground hidden lg:table-cell">
+                    <TableHead className='text-center font-bold text-primary-foreground hidden lg:table-cell'>
                       Type
                     </TableHead>
-                    <TableHead className="border border-black text-center font-bold text-primary-foreground">
+                    <TableHead className='text-center font-bold text-primary-foreground'>
                       Status
                     </TableHead>
-                    <TableHead className="border border-black text-center font-bold text-primary-foreground hidden xl:table-cell">
+                    <TableHead className='text-center font-bold text-primary-foreground hidden xl:table-cell'>
                       Date
                     </TableHead>
-                    <TableHead className="border border-black text-center font-bold text-primary-foreground">
+                    <TableHead className='text-center font-bold text-primary-foreground'>
                       Actions
                     </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {loading ? (
-                    <TableRow></TableRow>
+                  {showSkeleton ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell>
+                          <div className='space-y-2'>
+                            <Skeleton className='h-4 w-32' />
+                            <Skeleton className='h-3 w-24' />
+                          </div>
+                        </TableCell>
+                        <TableCell className='hidden md:table-cell'>
+                          <Skeleton className='h-4 w-24' />
+                        </TableCell>
+                        <TableCell>
+                          <div className='space-y-2 text-center flex flex-col items-center'>
+                            <Skeleton className='h-4 w-16' />
+                            <Skeleton className='h-3 w-20' />
+                          </div>
+                        </TableCell>
+                        <TableCell className='hidden lg:table-cell'>
+                          <div className='flex justify-center'>
+                            <Skeleton className='h-4 w-16' />
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className='flex justify-center'>
+                            <Skeleton className='h-6 w-20 rounded-full' />
+                          </div>
+                        </TableCell>
+                        <TableCell className='hidden xl:table-cell'>
+                          <div className='flex justify-center'>
+                            <Skeleton className='h-4 w-24' />
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className='flex justify-center'>
+                            <Skeleton className='h-8 w-16' />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
                   ) : applications.length === 0 ? (
                     <TableRow>
                       <TableCell
                         colSpan={7}
-                        className="h-24 text-center text-sm text-[hsl(var(--muted-foreground))]"
-                      >
+                        className='h-24 text-center text-sm text-[hsl(var(--muted-foreground))]'>
                         No applicants found.
                       </TableCell>
                     </TableRow>
@@ -372,58 +463,55 @@ export default function EarlyRegistration() {
                       <TableRow
                         key={app.id}
                         className={`hover:bg-[hsl(var(--muted))] transition-colors text-center cursor-pointer ${selectedId === app.id ? "bg-[hsl(var(--muted))] shadow-inner" : ""}`}
-                        onClick={() => setSelectedId(app.id)}
-                      >
-                        <TableCell className="border border-black">
-                          <div className="flex flex-col text-left">
-                            <span className="font-bold text-sm uppercase">
+                        onClick={() => setSelectedId(app.id)}>
+                        <TableCell>
+                          <div className='flex flex-col text-left'>
+                            <span className='font-bold text-sm uppercase'>
                               {app.lastName}, {app.firstName}
                             </span>
-                            <span className="text-[hsl(var(--muted-foreground))]">
+                            <span className='text-[hsl(var(--muted-foreground))]'>
                               #{app.trackingNumber}
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell className="border border-black hidden md:table-cell">
+                        <TableCell className='hidden md:table-cell'>
                           {app.lrn}
                         </TableCell>
-                        <TableCell className="border border-black">
-                          <div className="flex flex-col">
-                            <span className="font-medium">
+                        <TableCell>
+                          <div className='flex flex-col'>
+                            <span className='font-medium'>
                               {app.gradeLevel.name}
                             </span>
                             {app.strand && (
-                              <span className="text-[hsl(var(--muted-foreground))]">
+                              <span className='text-[hsl(var(--muted-foreground))]'>
                                 {app.strand.name}
                               </span>
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="border border-black hidden lg:table-cell">
+                        <TableCell className='hidden lg:table-cell'>
                           <Badge
-                            variant="outline"
-                            className="font-bold px-1.5 py-0 h-4 border-slate-300 text-slate-600"
-                          >
-                            {app.applicantType}
+                            variant='outline'
+                            className='font-bold px-1.5 py-0 h-4 border-slate-300 text-slate-600'>
+                            {formatScpType(app.applicantType)}
                           </Badge>
                         </TableCell>
-                        <TableCell className="border border-black">
+                        <TableCell>
                           <StatusBadge status={app.status} />
                         </TableCell>
-                        <TableCell className="border border-black text-[hsl(var(--muted-foreground))] hidden xl:table-cell">
+                        <TableCell className='text-[hsl(var(--muted-foreground))] hidden xl:table-cell'>
                           {format(new Date(app.createdAt), "MMM dd, yyyy")}
                         </TableCell>
-                        <TableCell className="border border-black text-center">
+                        <TableCell className='text-center'>
                           <Button
-                            variant="secondary"
-                            size="sm"
-                            className="h-8 text-xs font-medium bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
+                            variant='secondary'
+                            size='sm'
+                            className='h-8 text-xs font-medium bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground'
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedId(app.id);
-                            }}
-                          >
-                            <Eye className="h-3 w-3 mr-1" /> View
+                            }}>
+                            <Eye className='h-3 w-3 mr-1' /> View
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -433,28 +521,28 @@ export default function EarlyRegistration() {
               </Table>
             </div>
 
-            <div className="flex items-center justify-between mt-4">
-              <span className="text-xs text-[hsl(var(--muted-foreground))]">
+            <div className='flex flex-col sm:flex-row items-center justify-between gap-2 mt-4'>
+              <span className='text-xs text-[hsl(var(--muted-foreground))]'>
                 Showing {applications.length} applicants
               </span>
-              <div className="flex items-center gap-2">
+              <div className='flex items-center gap-2'>
                 <Button
-                  variant="outline"
-                  size="sm"
+                  variant='outline'
+                  size='sm'
+                  className='h-9 sm:h-8'
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                >
+                  disabled={page === 1}>
                   Previous
                 </Button>
-                <Badge variant="secondary" className="px-3 h-8">
+                <Badge variant='secondary' className='px-3 h-8'>
                   Page {page}
                 </Badge>
                 <Button
-                  variant="outline"
-                  size="sm"
+                  variant='outline'
+                  size='sm'
+                  className='h-9 sm:h-8'
                   onClick={() => setPage((p) => p + 1)}
-                  disabled={page * 15 >= total}
-                >
+                  disabled={page * 15 >= total}>
                   Next
                 </Button>
               </div>
@@ -468,110 +556,118 @@ export default function EarlyRegistration() {
         open={selectedId !== null}
         onOpenChange={(open) => {
           if (!open) setSelectedId(null);
-        }}
-      >
+        }}>
         <SheetContent
-          side="right"
-          className="w-[90%] md:w-[45%] min-w-[480px] max-w-[640px] p-0 flex flex-col border-l"
-        >
+          side='right'
+          className='p-0 flex flex-row border-l overflow-visible w-screen sm:w-auto sm:max-w-none'
+          style={typeof window !== 'undefined' && window.innerWidth >= 640 ? { width: `${panelPercentage}vw` } : undefined}>
+          
+          {/* Resize Handle — hidden on mobile */}
+          <div
+            onMouseDown={startResizing}
+            className='absolute left-[-4px] top-0 bottom-0 w-[8px] cursor-col-resize z-50 hover:bg-primary/30 transition-colors hidden sm:flex items-center justify-center group'
+          >
+            <div className='h-8 w-1.5 rounded-full bg-muted-foreground/20 group-hover:bg-primary/50' />
+          </div>
+
           {selectedId && (
-            <ApplicationDetailPanel
-              id={selectedId}
-              onClose={() => setSelectedId(null)}
-              onApprove={() => {
-                const app = applications.find((a) => a.id === selectedId);
-                if (app) {
-                  setSelectedApp(app);
-                  setActionType("APPROVE");
-                  fetchSections(app.gradeLevelId);
-                }
-              }}
-              onReject={() => {
-                const app = applications.find((a) => a.id === selectedId);
-                if (app) {
-                  setSelectedApp(app);
-                  setActionType("REJECT");
-                }
-              }}
-              onScheduleExam={async () => {
-                const app = applications.find((a) => a.id === selectedId);
-                if (app) {
-                  setLoading(true);
-                  try {
-                    const fullRes = await api.get(
-                      `/applications/${selectedId}`,
-                    );
-                    setSelectedApp(fullRes.data);
-                    setIsScheduleDialogOpen(true);
-                  } catch (err) {
-                    toastApiError(err as never);
-                  } finally {
-                    setLoading(false);
+            <div className='flex-1 flex flex-col h-full overflow-hidden'>
+              <ApplicationDetailPanel
+                id={selectedId}
+                onClose={() => setSelectedId(null)}
+                onApprove={() => {
+                  const app = applications.find((a) => a.id === selectedId);
+                  if (app) {
+                    setSelectedApp(app);
+                    setActionType("APPROVE");
+                    fetchSections(app.gradeLevelId);
                   }
-                }
-              }}
-              onRecordResult={() => {
-                const app = applications.find((a) => a.id === selectedId);
-                if (app) {
-                  setSelectedApp(app);
-                  setActionType("RESULT");
-                }
-              }}
-              onPass={async () => {
-                try {
-                  await api.patch(`/applications/${selectedId}/pass`);
-                  sileo.success({
-                    title: "Passed",
-                    description: "Applicant marked as PASSED.",
-                  });
-                  fetchData();
-                  // Re-fetch detail panel content implicitly by state updates or let the user close/re-open.
-                  // But usually useApplicationDetail will refetch or we can just trigger a list refetch which is fine.
-                } catch (e) {
-                  toastApiError(e as never);
-                }
-              }}
-              onFail={async () => {
-                try {
-                  await api.patch(`/applications/${selectedId}/fail`);
-                  sileo.success({
-                    title: "Failed",
-                    description: "Applicant marked as FAILED.",
-                  });
-                  fetchData();
-                } catch (e) {
-                  toastApiError(e as never);
-                }
-              }}
-              onOfferRegular={() => {
-                const app = applications.find((a) => a.id === selectedId);
-                if (app) {
-                  setSelectedApp(app);
-                  setActionType("APPROVE"); // reuse APPROVE dialog for section selection
-                  fetchSections(app.gradeLevelId);
-                }
-              }}
-              onTemporarilyEnroll={async () => {
-                if (
-                  !confirm(
-                    "Mark this applicant as temporarily enrolled? This means they can attend classes while documents are pending.",
+                }}
+                onReject={() => {
+                  const app = applications.find((a) => a.id === selectedId);
+                  if (app) {
+                    setSelectedApp(app);
+                    setActionType("REJECT");
+                  }
+                }}
+                onScheduleExam={async () => {
+                  const app = applications.find((a) => a.id === selectedId);
+                  if (app) {
+                    setLoading(true);
+                    try {
+                      const fullRes = await api.get(
+                        `/applications/${selectedId}`,
+                      );
+                      setSelectedApp(fullRes.data);
+                      setIsScheduleDialogOpen(true);
+                    } catch (err) {
+                      toastApiError(err as never);
+                    } finally {
+                      setLoading(false);
+                    }
+                  }
+                }}
+                onRecordResult={() => {
+                  const app = applications.find((a) => a.id === selectedId);
+                  if (app) {
+                    setSelectedApp(app);
+                    setActionType("RESULT");
+                  }
+                }}
+                onPass={async () => {
+                  try {
+                    await api.patch(`/applications/${selectedId}/pass`);
+                    sileo.success({
+                      title: "Passed",
+                      description: "Applicant marked as PASSED.",
+                    });
+                    fetchData();
+                  } catch (e) {
+                    toastApiError(e as never);
+                  }
+                }}
+                onFail={async () => {
+                  try {
+                    await api.patch(`/applications/${selectedId}/fail`);
+                    sileo.success({
+                      title: "Failed",
+                      description: "Applicant marked as FAILED.",
+                    });
+                    fetchData();
+                  } catch (e) {
+                    toastApiError(e as never);
+                  }
+                }}
+                onOfferRegular={() => {
+                  const app = applications.find((a) => a.id === selectedId);
+                  if (app) {
+                    setSelectedApp(app);
+                    setActionType("APPROVE");
+                    fetchSections(app.gradeLevelId);
+                  }
+                }}
+                onTemporarilyEnroll={async () => {
+                  if (
+                    !confirm(
+                      "Mark this applicant as temporarily enrolled? This means they can attend classes while documents are pending.",
+                    )
                   )
-                )
-                  return;
-                try {
-                  await api.patch(
-                    `/applications/${selectedId}/temporarily-enroll`,
-                  );
-                  sileo.success({
-                    title: "Updated",
-                    description: "Applicant is now temporarily enrolled.",
-                  });
-                  fetchData();
-                } catch (e) {
-                  toastApiError(e as never);
-                }
-              }}
-            />
+                    return;
+                  try {
+                    await api.patch(
+                      `/applications/${selectedId}/temporarily-enroll`,
+                    );
+                    sileo.success({
+                      title: "Updated",
+                      description: "Applicant is now temporarily enrolled.",
+                    });
+                    fetchData();
+                  } catch (e) {
+                    toastApiError(e as never);
+                  }
+                }}
+              />
+            </div>
           )}
         </SheetContent>
       </Sheet>
@@ -579,9 +675,8 @@ export default function EarlyRegistration() {
       {/* Action Dialogs */}
       <Dialog
         open={actionType !== null}
-        onOpenChange={(open) => !open && setActionType(null)}
-      >
-        <DialogContent className="sm:max-w-md">
+        onOpenChange={(open) => !open && setActionType(null)}>
+        <DialogContent className='sm:max-w-md'>
           <DialogHeader>
             <DialogTitle>
               {actionType === "APPROVE" && "Approve & Pre-register"}
@@ -595,10 +690,10 @@ export default function EarlyRegistration() {
           </DialogHeader>
 
           {actionType === "ELIGIBLE" && (
-            <div className="py-4">
-              <p className="text-sm">
+            <div className='py-4'>
+              <p className='text-sm'>
                 Marking this applicant as{" "}
-                <span className="font-bold text-cyan-700">ELIGIBLE</span> means
+                <span className='font-bold text-cyan-700'>ELIGIBLE</span> means
                 their documents are verified and they are cleared for assessment
                 or direct pre-registration.
               </p>
@@ -606,27 +701,25 @@ export default function EarlyRegistration() {
           )}
 
           {actionType === "APPROVE" && (
-            <div className="space-y-4 py-4">
-              <p className="text-xs text-emerald-700 font-medium">
+            <div className='space-y-4 py-4'>
+              <p className='text-xs text-emerald-700 font-medium'>
                 This candidate will be moved to the Enrollment phase and
                 assigned to a section.
               </p>
-              <div className="space-y-2">
+              <div className='space-y-2'>
                 <Label>Select Section for {selectedApp?.gradeLevel.name}</Label>
                 <Select
                   value={selectedSectionId}
-                  onValueChange={setSelectedSectionId}
-                >
+                  onValueChange={setSelectedSectionId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Choose a section..." />
+                    <SelectValue placeholder='Choose a section...' />
                   </SelectTrigger>
                   <SelectContent>
                     {sections.map((s) => (
                       <SelectItem
                         key={s.id}
                         value={String(s.id)}
-                        disabled={s._count.enrollments >= s.maxCapacity}
-                      >
+                        disabled={s._count.enrollments >= s.maxCapacity}>
                         {s.name} ({s._count.enrollments}/{s.maxCapacity})
                       </SelectItem>
                     ))}
@@ -637,12 +730,12 @@ export default function EarlyRegistration() {
           )}
 
           {actionType === "REJECT" && (
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
+            <div className='space-y-4 py-4'>
+              <div className='space-y-2'>
                 <Label>Reason for Rejection</Label>
                 <textarea
-                  className="w-full min-h-[100px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  placeholder="Explain why this application is being rejected..."
+                  className='w-full min-h-[100px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
+                  placeholder='Explain why this application is being rejected...'
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
                 />
@@ -651,28 +744,28 @@ export default function EarlyRegistration() {
           )}
 
           {actionType === "RESULT" && (
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
+            <div className='space-y-4 py-4'>
+              <div className='space-y-2'>
                 <Label>Score / Rating</Label>
                 <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="e.g. 85.5"
+                  type='number'
+                  step='0.01'
+                  placeholder='e.g. 85.5'
                   value={examScore}
                   onChange={(e) => setExamScore(e.target.value)}
                 />
               </div>
-              <div className="space-y-2">
+              <div className='space-y-2'>
                 <Label>Final Verdict</Label>
                 <Select value={examResult} onValueChange={setExamResult}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="PASSED">
+                    <SelectItem value='PASSED'>
                       PASSED - Qualifies for Program
                     </SelectItem>
-                    <SelectItem value="FAILED">
+                    <SelectItem value='FAILED'>
                       FAILED - Did not meet criteria
                     </SelectItem>
                   </SelectContent>
@@ -682,32 +775,29 @@ export default function EarlyRegistration() {
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setActionType(null)}>
+            <Button variant='outline' onClick={() => setActionType(null)}>
               Cancel
             </Button>
             {actionType === "ELIGIBLE" && (
               <Button
-                className="bg-cyan-600 hover:bg-cyan-700"
-                onClick={handleMarkEligible}
-              >
+                className='bg-cyan-600 hover:bg-cyan-700'
+                onClick={handleMarkEligible}>
                 Confirm Eligibility
               </Button>
             )}
             {actionType === "APPROVE" && (
               <Button
-                className="bg-emerald-600 hover:bg-emerald-700"
+                className='bg-emerald-600 hover:bg-emerald-700'
                 onClick={handleApprove}
-                disabled={!selectedSectionId}
-              >
+                disabled={!selectedSectionId}>
                 Confirm Pre-registration
               </Button>
             )}
             {actionType === "REJECT" && (
               <Button
-                variant="destructive"
+                variant='destructive'
                 onClick={handleReject}
-                disabled={!rejectionReason}
-              >
+                disabled={!rejectionReason}>
                 Reject Application
               </Button>
             )}

@@ -412,6 +412,7 @@ enum ApplicationStatus {
   UNDER_REVIEW
   FOR_REVISION
   ELIGIBLE
+  EXAM_SCHEDULED
   ASSESSMENT_SCHEDULED
   ASSESSMENT_TAKEN
   PASSED
@@ -451,16 +452,16 @@ enum SHSTrack {
   @@map("shs_track")
 }
 
-/// Enrollment classification: REGULAR standard admission, STE/SPA/SPS/SPJ/SPFL/SPTVE are Special Curricular Programs
+/// Enrollment classification: REGULAR standard admission, Special Curricular Programs
 enum ApplicantType {
   REGULAR
-  STE
-  SPA
-  SPS
-  SPJ
-  SPFL
-  SPTVE
-  STEM_GRADE11
+  SCIENCE_TECHNOLOGY_AND_ENGINEERING
+  SPECIAL_PROGRAM_IN_THE_ARTS
+  SPECIAL_PROGRAM_IN_SPORTS
+  SPECIAL_PROGRAM_IN_JOURNALISM
+  SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE
+  SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION
+  STEM_GRADE_11
 
   @@map("applicant_type")
 }

@@ -8,7 +8,10 @@ import {
   Stethoscope,
   ShieldCheck,
   Table as TableIcon,
-  HelpCircle
+  HelpCircle,
+  Clock,
+  ClipboardCheck,
+  Info
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
@@ -28,11 +31,11 @@ export default function DocumentaryRequirements() {
   usePageTitle();
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-10">
+    <div className="space-y-6 w-full max-w-[1600px] mx-auto pb-10 px-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Documentary Requirements</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Documentary Requirements Guide</h1>
         <p className="text-muted-foreground">
-          Reference guide for enrollment documents based on DepEd Order No. 017, s. 2025.
+          Official reference for enrollment documents based on DepEd Order No. 017, s. 2025.
         </p>
       </div>
 
@@ -44,8 +47,8 @@ export default function DocumentaryRequirements() {
         </AlertDescription>
       </Alert>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-primary" />
@@ -97,50 +100,90 @@ export default function DocumentaryRequirements() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-amber-500" />
+            <CardTitle className="flex items-center gap-2 text-amber-600">
+              <AlertCircle className="h-5 w-5" />
               Prohibited Items
             </CardTitle>
             <CardDescription>Never require these for enrollment</CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2 text-xs">
-              <li className="flex items-start gap-2 text-destructive">
-                <span className="mt-1 font-bold">✕</span>
+            <ul className="space-y-2.5 text-sm">
+              <li className="flex items-start gap-2 text-destructive font-bold">
+                <span className="mt-0.5">✕</span>
                 <span>Enrollment or Processing Fees</span>
               </li>
-              <li className="flex items-start gap-2">
-                <span className="mt-1 font-bold">✕</span>
-                <span>Good Moral Certificate</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="mt-1 font-bold">✕</span>
-                <span>Barangay Clearance</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="mt-1 font-bold">✕</span>
-                <span>Clearance from previous school</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="mt-1 font-bold">✕</span>
-                <span>Proof of payment from private school</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="mt-1 font-bold">✕</span>
-                <span>Medical certificate (standard enrollees)</span>
-              </li>
+              {[
+                "Good Moral Character Certificate",
+                "Barangay Clearance",
+                "Clearance from previous school",
+                "Proof of payment (private school)",
+                "Medical certificate (standard)"
+              ].map(item => (
+                <li key={item} className="flex items-start gap-2 text-muted-foreground">
+                  <span className="mt-0.5 font-bold">✕</span>
+                  <span>{item}</span>
+                </li>
+              ))}
             </ul>
           </CardContent>
         </Card>
       </div>
 
+      {/* Comparison of Phases */}
+      <Card className="border-primary/20 shadow-sm overflow-hidden">
+        <div className="bg-primary/5 p-4 border-b border-primary/10">
+          <CardTitle className="text-lg flex items-center gap-2 text-primary">
+            <Clock className="h-5 w-5" />
+            The Two Enrollment Phases
+          </CardTitle>
+        </div>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-1/4"></TableHead>
+                <TableHead className="bg-blue-50/50 text-blue-700 font-bold">Phase 1 — Early Registration</TableHead>
+                <TableHead className="bg-emerald-50/50 text-emerald-700 font-bold">Phase 2 — Actual Enrollment</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell className="font-bold text-sm bg-muted/20">Schedule</TableCell>
+                <TableCell className="text-sm">Last Sat of Jan to Last Fri of Feb</TableCell>
+                <TableCell className="text-sm">~1 week before class opening (June)</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-bold text-sm bg-muted/20">Target Learners</TableCell>
+                <TableCell className="text-sm">Grade 7, Grade 11, Transferees, Balik-Aral</TableCell>
+                <TableCell className="text-sm">All Learners (Grade 7 to 12)</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-bold text-sm bg-muted/20">Forms Required</TableCell>
+                <TableCell className="text-sm italic">Basic Education Enrollment Form (BEEF)</TableCell>
+                <TableCell className="text-sm">BEEF + Confirmation Slip (for pre-reg)</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-bold text-sm bg-muted/20">Document Handling</TableCell>
+                <TableCell className="text-sm font-medium text-blue-600">Presented for verification only (not collected)</TableCell>
+                <TableCell className="text-sm font-medium text-emerald-600">Original documents submitted and filed</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-bold text-sm bg-muted/20">System Status</TableCell>
+                <TableCell className="text-sm"><Badge variant="outline">PRE-REGISTERED</Badge></TableCell>
+                <TableCell className="text-sm"><Badge>OFFICIALLY ENROLLED</Badge></TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TableIcon className="h-5 w-5 text-primary" />
-            Requirements Master Table
+            Comprehensive Requirements Master Table
           </CardTitle>
-          <CardDescription>Minimum requirements by grade level and learner type</CardDescription>
+          <CardDescription>Minimum requirements categorized by enrollment phase</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="jhs" className="w-full">
@@ -155,29 +198,29 @@ export default function DocumentaryRequirements() {
                 <Table>
                   <TableHeader className="bg-muted/50">
                     <TableRow>
-                      <TableHead className="w-[120px]">Grade</TableHead>
-                      <TableHead className="w-[150px]">Learner Type</TableHead>
-                      <TableHead>Primary Requirements</TableHead>
-                      <TableHead>Notes</TableHead>
+                      <TableHead className="w-[100px]">Grade</TableHead>
+                      <TableHead className="w-[140px]">Learner Type</TableHead>
+                      <TableHead className="bg-blue-50/30">Phase 1: Early Registration</TableHead>
+                      <TableHead className="bg-emerald-50/30">Phase 2: Actual Enrollment</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     <TableRow>
-                      <TableCell className="font-bold">Grade 7</TableCell>
+                      <TableCell className="font-bold text-center">7</TableCell>
                       <TableCell><Badge variant="outline">New Enrollee</Badge></TableCell>
-                      <TableCell className="text-xs">SF9 (Grade 6 Card) + PSA BC</TableCell>
-                      <TableCell className="text-[10px] text-muted-foreground italic">Verification in Phase 1, Collection in Phase 2</TableCell>
+                      <TableCell className="text-xs">SF9 Grade 6 (verify) + PSA BC (verify)</TableCell>
+                      <TableCell className="text-xs font-medium">BEEF + SF9 Grade 6 + PSA BC + Privacy Consent</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell className="font-bold" rowSpan={2}>Grades 8-10</TableCell>
+                      <TableCell className="font-bold text-center" rowSpan={2}>8-10</TableCell>
                       <TableCell><Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Continuing</Badge></TableCell>
-                      <TableCell className="text-xs">Confirmation Slip (Annex C)</TableCell>
-                      <TableCell className="text-[10px] text-muted-foreground italic">Auto-pre-registered in LIS</TableCell>
+                      <TableCell className="text-xs text-muted-foreground italic">Not Required (Auto-pre-registered)</TableCell>
+                      <TableCell className="text-xs font-medium">Confirmation Slip (Annex C) only</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell><Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Transferee</Badge></TableCell>
-                      <TableCell className="text-xs">SF9 (Recent Card) + PSA BC</TableCell>
-                      <TableCell className="text-[10px] text-muted-foreground italic">Must undergo Phase 1 Early Reg</TableCell>
+                      <TableCell className="text-xs">SF9 most recent (verify) + PSA BC (verify)</TableCell>
+                      <TableCell className="text-xs font-medium">BEEF + SF9 original + PSA BC + Privacy Consent</TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
@@ -189,33 +232,39 @@ export default function DocumentaryRequirements() {
                 <Table>
                   <TableHeader className="bg-muted/50">
                     <TableRow>
-                      <TableHead className="w-[120px]">Grade</TableHead>
-                      <TableHead className="w-[150px]">Learner Type</TableHead>
-                      <TableHead>Primary Requirements</TableHead>
-                      <TableHead>Notes</TableHead>
+                      <TableHead className="w-[100px]">Grade</TableHead>
+                      <TableHead className="w-[140px]">Learner Type</TableHead>
+                      <TableHead className="bg-blue-50/30">Phase 1: Early Registration</TableHead>
+                      <TableHead className="bg-emerald-50/30">Phase 2: Actual Enrollment</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     <TableRow>
-                      <TableCell className="font-bold">Grade 11</TableCell>
+                      <TableCell className="font-bold text-center">11</TableCell>
                       <TableCell><Badge variant="outline">New Enrollee</Badge></TableCell>
-                      <TableCell className="text-xs">SF9 (Grade 10 Card) + PSA BC + BEEF (w/ Track/Cluster)</TableCell>
-                      <TableCell className="text-[10px] text-muted-foreground italic">STEM: Sci/Math grades â‰¥ 85 required</TableCell>
+                      <TableCell className="text-xs">SF9 Grade 10 (verify) + PSA BC (verify)</TableCell>
+                      <TableCell className="text-xs font-medium">BEEF (w/ Track) + SF9 original + PSA BC + Consent</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell className="font-bold">Grade 12</TableCell>
+                      <TableCell className="font-bold text-center">12</TableCell>
                       <TableCell><Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Continuing</Badge></TableCell>
-                      <TableCell className="text-xs">Confirmation Slip (Annex C)</TableCell>
-                      <TableCell className="text-[10px] text-muted-foreground italic">On file from Grade 11</TableCell>
+                      <TableCell className="text-xs text-muted-foreground italic">Not Required (Auto-pre-registered)</TableCell>
+                      <TableCell className="text-xs font-medium">Confirmation Slip (Annex C) only</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell className="font-bold">Any SHS</TableCell>
+                      <TableCell className="font-bold text-center">Any</TableCell>
                       <TableCell><Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Transferee</Badge></TableCell>
-                      <TableCell className="text-xs">SF9 (Recent Card) + PSA BC</TableCell>
-                      <TableCell className="text-[10px] text-muted-foreground italic">Registrar verifies strand compatibility</TableCell>
+                      <TableCell className="text-xs">SF9 most recent (verify) + PSA BC (verify)</TableCell>
+                      <TableCell className="text-xs font-medium">BEEF + SF9 original + PSA BC + Consent</TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
+              </div>
+              <div className="p-3 bg-amber-50 rounded-md border border-amber-200 flex items-start gap-3">
+                <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
+                <p className="text-[11px] text-amber-800 leading-normal">
+                  <strong>STEM Applicants:</strong> During SCP Early Registration, Science and Math grades on the SF9 must be â‰¥ 85. Registrar must verify these specific grades before marking as Eligible.
+                </p>
               </div>
             </TabsContent>
 
@@ -225,9 +274,8 @@ export default function DocumentaryRequirements() {
                   <TableHeader className="bg-muted/50">
                     <TableRow>
                       <TableHead className="w-[150px]">Category</TableHead>
-                      <TableHead>Primary Requirements</TableHead>
-                      <TableHead>Secondary/Flexible Docs</TableHead>
-                      <TableHead>Deadline</TableHead>
+                      <TableHead className="bg-blue-50/30">Phase 1: Early Registration</TableHead>
+                      <TableHead className="bg-emerald-50/30">Phase 2: Actual Enrollment</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -236,27 +284,24 @@ export default function DocumentaryRequirements() {
                         <RefreshCw className="h-3 w-3 text-primary" />
                         Balik-Aral
                       </TableCell>
-                      <TableCell className="text-xs">Any previous school record + PSA BC</TableCell>
-                      <TableCell className="text-[10px] text-muted-foreground">School Cert or Brgy Cert for last grade attended</TableCell>
-                      <TableCell className="text-xs">Flexible</TableCell>
+                      <TableCell className="text-xs">Any academic record (verify) + PSA BC (verify)</TableCell>
+                      <TableCell className="text-xs font-medium">BEEF + Available academic records + PSA BC</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell className="font-bold flex items-center gap-1.5">
                         <Stethoscope className="h-3 w-3 text-primary" />
                         LWD / SPED
                       </TableCell>
-                      <TableCell className="text-xs">Standard docs for grade level</TableCell>
-                      <TableCell className="text-[10px] text-muted-foreground">PWD ID or Medical Evaluation (if available)</TableCell>
-                      <TableCell className="text-xs">Non-blocking</TableCell>
+                      <TableCell className="text-xs">Standard docs + Medical diagnosis (if avail)</TableCell>
+                      <TableCell className="text-xs font-medium">Standard docs + PWD ID/Medical Eval (optional)</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell className="font-bold flex items-center gap-1.5">
                         <UserPlus className="h-3 w-3 text-primary" />
                         PEPT / A&E
                       </TableCell>
-                      <TableCell className="text-xs">Cert. of Rating / PPA Certificate + PSA BC</TableCell>
-                      <TableCell className="text-[10px] text-muted-foreground">Secondary ID if PSA BC is missing</TableCell>
-                      <TableCell className="text-xs">Oct 31 (BC)</TableCell>
+                      <TableCell className="text-xs">Cert. of Rating / PPA Cert + PSA BC (verify)</TableCell>
+                      <TableCell className="text-xs font-medium">BEEF + Cert. of Rating + PSA BC</TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
@@ -266,57 +311,64 @@ export default function DocumentaryRequirements() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <HelpCircle className="h-5 w-5 text-primary" />
               Secondary Identity Documents
             </CardTitle>
-            <CardDescription>If PSA Birth Certificate is not available</CardDescription>
+            <CardDescription>Acceptable if PSA Birth Certificate is not available</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <p className="text-xs text-muted-foreground">Accepted proof of identity for temporary enrollment (Deadline: Oct 31):</p>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="space-y-4">
+              <Alert className="bg-amber-50 border-amber-200">
+                <Info className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-xs text-amber-800">
+                  Learners using secondary documents are <strong>temporarily enrolled</strong>. The original PSA Birth Certificate must be submitted by <strong>October 31</strong>.
+                </AlertDescription>
+              </Alert>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {[
                   "Birth Cert (Late Registration)",
                   "Barangay Certification",
                   "Baptismal Certificate",
                   "Valid Passport",
                   "Certificate of Foundling",
-                  "Government-issued ID",
-                  "Affidavit of 2 Persons"
+                  "Any Government-issued ID",
+                  "Affidavit of 2 Disinterested Persons"
                 ].map((doc) => (
-                  <li key={doc} className="flex items-center gap-2 text-xs p-2 rounded border bg-muted/30">
-                    <CheckCircle2 className="h-3 w-3 text-green-600 shrink-0" />
-                    {doc}
-                  </li>
+                  <div key={doc} className="flex items-center gap-2 text-xs p-2.5 rounded border bg-muted/20">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                    <span className="font-medium">{doc}</span>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
+              <ClipboardCheck className="h-5 w-5 text-primary" />
               School Forms Reference
             </CardTitle>
-            <CardDescription>Official DepEd forms glossary</CardDescription>
+            <CardDescription>Official DepEd terminology and usage</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {[
-                { name: "SF9", desc: "Report Card (Formerly Form 138). Proof of promotion." },
-                { name: "SF10", desc: "Permanent Record (Formerly Form 137). School-to-school." },
-                { name: "BEEF", desc: "Basic Education Enrollment Form. The main data source." },
-                { name: "Confirmation Slip", desc: "Annex C. For continuing learners' intent to enroll." },
+                { name: "SF9", desc: "Learner's Progress Report Card (Formerly Form 138). Issued per school year." },
+                { name: "SF10", desc: "Permanent Academic Record (Formerly Form 137). Cumulative history." },
+                { name: "BEEF", desc: "Basic Education Enrollment Form (Annex A). The primary data source." },
+                { name: "Annex C", desc: "Enrollment Confirmation Slip. Used by continuing learners to confirm intent." },
               ].map((form) => (
-                <div key={form.name} className="flex justify-between items-start border-b pb-2 last:border-0 last:pb-0">
-                  <span className="text-xs font-bold bg-muted px-1.5 py-0.5 rounded">{form.name}</span>
-                  <span className="text-[11px] text-muted-foreground text-right max-w-[200px]">{form.desc}</span>
+                <div key={form.name} className="flex flex-col gap-1 p-3 rounded-lg border bg-card hover:bg-muted/10 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">{form.name}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{form.desc}</p>
                 </div>
               ))}
             </div>
@@ -324,9 +376,33 @@ export default function DocumentaryRequirements() {
         </Card>
       </div>
 
+      {/* Temporary Enrollment Section */}
+      <Card className="border-blue-200 bg-blue-50/30">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2 text-blue-700">
+            <UserPlus className="h-5 w-5" />
+            Temporary Enrollment (DepEd Order No. 3, s. 2018)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm space-y-3 text-blue-900/80">
+          <p>
+            Learners with incomplete documentary requirements are <strong>not refused entry</strong>. They are marked as "Temporarily Enrolled" and may attend classes normally.
+          </p>
+          <ul className="list-disc pl-5 space-y-1 font-medium">
+            <li>Cannot be promoted to the next grade level until requirements are complete.</li>
+            <li>Cannot receive official certificates (SF9, SF10, Diploma) while temporary.</li>
+            <li>Deadline for SF9 (Transferees): <strong>August 31</strong>.</li>
+            <li>Deadline for PSA Birth Certificate: <strong>October 31</strong>.</li>
+          </ul>
+        </CardContent>
+      </Card>
+
       <div className="flex justify-between items-center text-[10px] text-muted-foreground pt-4 border-t">
-        <p>Source: DepEd Order No. 017, s. 2025</p>
-        <p>Last Updated: March 2026</p>
+        <div className="flex gap-4">
+          <p>Policy: DepEd Order No. 017, s. 2025</p>
+          <p>Basis: RA 11909 (Once-Only PSA)</p>
+        </div>
+        <p>System Version 4.0 · March 2026</p>
       </div>
     </div>
   );

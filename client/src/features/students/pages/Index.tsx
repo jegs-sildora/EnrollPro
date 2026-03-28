@@ -6,6 +6,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  CalendarDays,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -45,6 +46,7 @@ import {
 } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 
 interface Student {
   id: number;
@@ -120,6 +122,10 @@ export default function Students() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [initialLoad, setInitialLoad] = useState(true);
+  
+  // Rule A & B: Delayed loading to prevent flicker
+  const showSkeleton = useDelayedLoading(loading);
+
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [gradeLevelFilter, setGradeLevelFilter] = useState<string>("all");
@@ -140,6 +146,9 @@ export default function Students() {
   );
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  
+  // Rule A & B: Delayed loading for details
+  const showDetailSkeleton = useDelayedLoading(detailLoading);
 
   // Debounce search input
   useEffect(() => {
@@ -327,12 +336,21 @@ export default function Students() {
 
   if (!ayId) {
     return (
-      <Card>
-        <CardContent className='py-8 text-center text-sm text-[hsl(var(--muted-foreground))]'>
-          No school year selected. Set an active year or choose one from the
-          header switcher.
-        </CardContent>
-      </Card>
+      <div className="flex h-[calc(100vh-12rem)] w-full items-center justify-center">
+        <Card className="max-w-md w-full border-dashed shadow-none bg-muted/20">
+          <CardContent className="pt-10 pb-10 text-center space-y-3">
+            <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+              <CalendarDays className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <div className="space-y-1">
+              <p className="font-bold text-foreground">No School Year Selected</p>
+              <p className="text-sm text-muted-foreground leading-relaxed px-4">
+                Please set an active year or choose one from the header switcher to manage records for this period.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -525,7 +543,7 @@ export default function Students() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading ? (
+                {showSkeleton ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
                       <TableCell>
@@ -634,7 +652,7 @@ export default function Students() {
             </DialogDescription>
           </DialogHeader>
 
-          {detailLoading ? (
+          {showDetailSkeleton ? (
             <div className='space-y-4'>
               {Array.from({ length: 8 }).map((_, i) => (
                 <Skeleton key={i} className='h-12 w-full' />

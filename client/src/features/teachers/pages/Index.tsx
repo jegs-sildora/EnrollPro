@@ -24,6 +24,8 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
+import { Skeleton } from "@/shared/ui/skeleton";
+import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 
 interface Teacher {
   id: number;
@@ -41,6 +43,10 @@ interface Teacher {
 export default function Teachers() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Rule A & B: Delayed loading
+  const showSkeleton = useDelayedLoading(loading);
+
   const [createOpen, setCreateOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [deactivateId, setDeactivateId] = useState<number | null>(null);
@@ -243,12 +249,15 @@ export default function Teachers() {
                     </tr>
                   </thead>
                   <tbody className='divide-y'>
-                    {loading ? (
+                    {showSkeleton ? (
                       Array.from({ length: 5 }).map((_, i) => (
-                        <tr key={i} className='animate-pulse'>
-                          <td colSpan={6} className='px-4 py-6'>
-                            <div className='h-4 bg-muted rounded w-3/4 mx-auto'></div>
-                          </td>
+                        <tr key={i}>
+                          <td className='px-4 py-4'><Skeleton className='h-4 w-16 mx-auto' /></td>
+                          <td className='px-4 py-4'><Skeleton className='h-4 w-32 mx-auto' /></td>
+                          <td className='px-4 py-4'><Skeleton className='h-4 w-24 mx-auto' /></td>
+                          <td className='px-4 py-4'><Skeleton className='h-4 w-20 mx-auto' /></td>
+                          <td className='px-4 py-4'><Skeleton className='h-6 w-16 mx-auto rounded-full' /></td>
+                          <td className='px-4 py-4'><Skeleton className='h-8 w-24 mx-auto' /></td>
                         </tr>
                       ))
                     ) : teachers.length === 0 ? (

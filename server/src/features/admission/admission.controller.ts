@@ -41,19 +41,19 @@ export async function getRequirements(req: Request, res: Response) {
 
 // â"€â"€ Valid status transitions â"€â"€
 const VALID_TRANSITIONS: Record<string, ApplicationStatus[]> = {
-  SUBMITTED: ["UNDER_REVIEW", "ASSESSMENT_SCHEDULED", "REJECTED", "WITHDRAWN"],
+  SUBMITTED: ["UNDER_REVIEW", "EXAM_SCHEDULED", "REJECTED", "WITHDRAWN"],
   UNDER_REVIEW: [
     "FOR_REVISION",
     "ELIGIBLE",
-    "ASSESSMENT_SCHEDULED",
+    "EXAM_SCHEDULED",
     "PRE_REGISTERED",
     "TEMPORARILY_ENROLLED",
     "REJECTED",
     "WITHDRAWN",
   ],
   FOR_REVISION: ["UNDER_REVIEW", "WITHDRAWN"],
-  ELIGIBLE: ["ASSESSMENT_SCHEDULED", "PRE_REGISTERED", "WITHDRAWN"],
-  ASSESSMENT_SCHEDULED: ["ASSESSMENT_TAKEN", "WITHDRAWN"],
+  ELIGIBLE: ["EXAM_SCHEDULED", "PRE_REGISTERED", "WITHDRAWN"],
+  EXAM_SCHEDULED: ["ASSESSMENT_TAKEN", "WITHDRAWN"],
   ASSESSMENT_TAKEN: ["PASSED", "NOT_QUALIFIED", "WITHDRAWN"],
   PASSED: ["PRE_REGISTERED", "WITHDRAWN"],
   PRE_REGISTERED: ["ENROLLED", "TEMPORARILY_ENROLLED", "WITHDRAWN"],
@@ -402,9 +402,9 @@ export async function store(req: Request, res: Response) {
         electiveCluster: body.electiveCluster || null,
         isScpApplication: body.isScpApplication ?? false,
         scpType: body.isScpApplication ? body.scpType : null,
-        artField: body.scpType === "SPA" ? body.artField : null,
-        sportsList: body.scpType === "SPS" ? body.sportsList || [] : [],
-        foreignLanguage: body.scpType === "SPFL" ? body.foreignLanguage : null,
+        artField: body.scpType === "SPECIAL_PROGRAM_IN_THE_ARTS" ? body.artField : null,
+        sportsList: body.scpType === "SPECIAL_PROGRAM_IN_SPORTS" ? body.sportsList || [] : [],
+        foreignLanguage: body.scpType === "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE" ? body.foreignLanguage : null,
 
         // Grades (STEM G11)
         grade10ScienceGrade: body.g10ScienceGrade ?? null,
@@ -649,9 +649,9 @@ export async function storeF2F(req: Request, res: Response) {
         electiveCluster: body.electiveCluster || null,
         isScpApplication: body.isScpApplication ?? false,
         scpType: body.isScpApplication ? body.scpType : null,
-        artField: body.scpType === "SPA" ? body.artField : null,
-        sportsList: body.scpType === "SPS" ? body.sportsList || [] : [],
-        foreignLanguage: body.scpType === "SPFL" ? body.foreignLanguage : null,
+        artField: body.scpType === "SPECIAL_PROGRAM_IN_THE_ARTS" ? body.artField : null,
+        sportsList: body.scpType === "SPECIAL_PROGRAM_IN_SPORTS" ? body.sportsList || [] : [],
+        foreignLanguage: body.scpType === "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE" ? body.foreignLanguage : null,
 
         // Grades (STEM G11)
         grade10ScienceGrade: body.g10ScienceGrade ?? null,
@@ -1273,7 +1273,7 @@ export async function scheduleExam(req: Request, res: Response) {
       return res.status(404).json({ message: "Applicant not found" });
     }
 
-    if (!canTransition(applicant.status, "ASSESSMENT_SCHEDULED")) {
+    if (!canTransition(applicant.status, "EXAM_SCHEDULED")) {
       return res.status(422).json({
         message: `Cannot schedule assessment for application with status "${applicant.status}".`,
       });
@@ -1289,12 +1289,12 @@ export async function scheduleExam(req: Request, res: Response) {
       },
     });
 
-    const assessmentType = scpConfig?.assessmentType || "EXAM_ONLY";
+    const assessmentType = scpConfig?.assessmentType || "EXAM ONLY";
 
     const updated = await prisma.applicant.update({
       where: { id: applicantId },
       data: {
-        status: "ASSESSMENT_SCHEDULED",
+        status: "EXAM_SCHEDULED",
         examDate: normalizeDateToUtcNoon(new Date(examDate)),
         examTime: examTime || null,
         assessmentType,
@@ -1363,7 +1363,7 @@ export async function recordResult(req: Request, res: Response) {
 
     if (!canTransition(applicant.status, "ASSESSMENT_TAKEN")) {
       return res.status(422).json({
-        message: `Cannot record result for application with status "${applicant.status}". Only ASSESSMENT_SCHEDULED applications can record results.`,
+        message: `Cannot record result for application with status "${applicant.status}". Only EXAM_SCHEDULED applications can record results.`,
       });
     }
 
@@ -1898,7 +1898,7 @@ export async function rescheduleExam(req: Request, res: Response) {
       data: {
         examDate: normalizeDateToUtcNoon(new Date(examDate)),
         examVenue: examVenue || null,
-        status: "ASSESSMENT_SCHEDULED",
+        status: "EXAM_SCHEDULED",
       },
     });
 

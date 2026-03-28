@@ -19,7 +19,10 @@ async function main() {
   // Create first SYSTEM_ADMIN account
   const email = process.env.ADMIN_EMAIL ?? 'admin@deped.edu.ph';
   const password = process.env.ADMIN_PASSWORD ?? 'Admin2026!';
-  const name = process.env.ADMIN_NAME ?? 'System Administrator';
+  
+  // Refactored to granular names
+  const firstName = process.env.ADMIN_FIRST_NAME ?? 'System';
+  const lastName = process.env.ADMIN_LAST_NAME ?? 'Administrator';
 
   const existingAdmin = await prisma.user.findUnique({ where: { email } });
   if (existingAdmin) {
@@ -31,7 +34,8 @@ async function main() {
 
   await prisma.user.create({
     data: {
-      name,
+      firstName,
+      lastName,
       email,
       password: hashed,
       role: 'SYSTEM_ADMIN',

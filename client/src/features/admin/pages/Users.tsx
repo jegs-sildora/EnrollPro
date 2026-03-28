@@ -42,6 +42,8 @@ import {
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
 import { motion, AnimatePresence } from "motion/react";
+import { Skeleton } from "@/shared/ui/skeleton";
+import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 
 interface User {
   id: number;
@@ -95,6 +97,10 @@ export default function AdminUsers() {
   const { user: currentUser } = useAuthStore();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Rule A & B: Delayed loading
+  const showSkeleton = useDelayedLoading(loading);
+
   const [page] = useState(1);
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -383,16 +389,26 @@ export default function AdminUsers() {
                     </tr>
                   </thead>
                   <tbody className='divide-y'>
-                    {users.length === 0 ? (
-                      !loading && (
-                        <tr>
-                          <td
-                            colSpan={7}
-                            className='px-4 py-12 text-center text-muted-foreground italic'>
-                            No users found matching the criteria.
-                          </td>
+                    {showSkeleton ? (
+                      Array.from({ length: 5 }).map((_, i) => (
+                        <tr key={i}>
+                          <td className='px-4 py-4'><Skeleton className='h-4 w-32 mx-auto' /></td>
+                          <td className='px-4 py-4'><Skeleton className='h-4 w-40 mx-auto' /></td>
+                          <td className='px-4 py-4'><Skeleton className='h-4 w-40 mx-auto' /></td>
+                          <td className='px-4 py-4'><Skeleton className='h-6 w-16 mx-auto rounded-full' /></td>
+                          <td className='px-4 py-4'><Skeleton className='h-6 w-16 mx-auto rounded-full' /></td>
+                          <td className='px-4 py-4 hidden xl:table-cell'><Skeleton className='h-4 w-24 mx-auto' /></td>
+                          <td className='px-4 py-4'><Skeleton className='h-8 w-32 mx-auto' /></td>
                         </tr>
-                      )
+                      ))
+                    ) : users.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={7}
+                          className='px-4 py-12 text-center text-muted-foreground italic'>
+                          No users found matching the criteria.
+                        </td>
+                      </tr>
                     ) : (
                       users.map((user) => (
                         <tr

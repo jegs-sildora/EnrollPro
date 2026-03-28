@@ -8,6 +8,7 @@ import {
   Info,
   CheckCircle2,
   Circle,
+  CalendarDays,
 } from "lucide-react";
 import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
@@ -31,6 +32,7 @@ import { TimePicker } from "@/shared/ui/time-picker";
 import { ACADEMIC_CLUSTERS, TECHPRO_CLUSTERS } from "@/features/admission/pages/apply/types";
 
 import { Skeleton } from "@/shared/ui/skeleton";
+import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 
 interface GradeLevel {
   id: number;
@@ -62,13 +64,31 @@ interface ScpConfig {
 }
 
 const SCP_TYPES = [
-  { value: "STE", label: "Science, Technology, and Engineering (STE)" },
-  { value: "SPA", label: "Special Program in the Arts (SPA)" },
-  { value: "SPS", label: "Special Program in Sports (SPS)" },
-  { value: "SPJ", label: "Special Program in Journalism (SPJ)" },
-  { value: "SPFL", label: "Special Program in Foreign Language (SPFL)" },
-  { value: "SPTVE", label: "Special Program in Tech-Voc Education (SPTVE)" },
-  { value: "STEM_GRADE11", label: "Grade 11 STEM (Placement Exam)" },
+  {
+    value: "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+    label: "Science, Technology, and Engineering (STE)",
+  },
+  {
+    value: "SPECIAL_PROGRAM_IN_THE_ARTS",
+    label: "Special Program in the Arts (SPA)",
+  },
+  {
+    value: "SPECIAL_PROGRAM_IN_SPORTS",
+    label: "Special Program in Sports (SPS)",
+  },
+  {
+    value: "SPECIAL_PROGRAM_IN_JOURNALISM",
+    label: "Special Program in Journalism (SPJ)",
+  },
+  {
+    value: "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
+    label: "Special Program in Foreign Language (SPFL)",
+  },
+  {
+    value: "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
+    label: "Special Program in Tech-Voc Education (SPTVE)",
+  },
+  { value: "STEM_GRADE_11", label: "Grade 11 STEM (Placement Exam)" },
 ];
 
 export default function CurriculumTab() {
@@ -79,6 +99,9 @@ export default function CurriculumTab() {
   const [strands, setStrands] = useState<Strand[]>([]);
   const [scpConfigs, setScpConfigs] = useState<ScpConfig[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Rule A & B: Delayed loading
+  const showSkeleton = useDelayedLoading(loading);
 
   const [curriculumDirty, setCurriculumDirty] = useState(false);
   const [savingCurriculum, setSavingCurriculum] = useState(false);
@@ -130,7 +153,7 @@ export default function CurriculumTab() {
     fetchData();
   }, [fetchData]);
 
-  // â”€â”€â”€ Strand Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ——— Strand Actions —————————————————————————————————————————————————————
 
   const toggleStrandPresence = (
     name: string,
@@ -183,7 +206,7 @@ export default function CurriculumTab() {
     }
   };
 
-  // â”€â”€â”€ SCP Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ——— SCP Actions ————————————————————————————————————————————————————————
 
   const handleUpdateScpField = (
     index: number,
@@ -214,16 +237,25 @@ export default function CurriculumTab() {
 
   if (!ayId) {
     return (
-      <Card>
-        <CardContent className='py-8 text-center text-sm text-muted-foreground'>
-          No school year selected. Set an active year or choose one from the
-          header switcher.
-        </CardContent>
-      </Card>
+      <div className="flex h-[calc(100vh-20rem)] w-full items-center justify-center">
+        <Card className="max-w-md w-full border-dashed shadow-none bg-muted/20">
+          <CardContent className="pt-10 pb-10 text-center space-y-3">
+            <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+              <CalendarDays className="h-6 w-6 text-primary" />
+            </div>
+            <div className="space-y-1">
+              <p className="font-bold text-foreground">No School Year Selected</p>
+              <p className="text-sm text-muted-foreground leading-relaxed px-4">
+                Please set an active year or choose one from the header switcher to manage records for this period.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
-  if (loading) {
+  if (showSkeleton) {
     return (
       <div className='space-y-6'>
         <Card>
@@ -432,7 +464,7 @@ export default function CurriculumTab() {
                       </div>
                     </div>
 
-                    {["SPA"].includes(scp.scpType) && (
+                    {["SPECIAL_PROGRAM_IN_THE_ARTS"].includes(scp.scpType) && (
                       <div className='space-y-2'>
                         <Label className='text-xs'>
                           Art Fields (Comma separated)
@@ -451,7 +483,7 @@ export default function CurriculumTab() {
                         />
                       </div>
                     )}
-                    {["SPS"].includes(scp.scpType) && (
+                    {["SPECIAL_PROGRAM_IN_SPORTS"].includes(scp.scpType) && (
                       <div className='space-y-2'>
                         <Label className='text-xs'>
                           Sports List (Comma separated)
@@ -470,7 +502,9 @@ export default function CurriculumTab() {
                         />
                       </div>
                     )}
-                    {["SPFL"].includes(scp.scpType) && (
+                    {["SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE"].includes(
+                      scp.scpType,
+                    ) && (
                       <div className='space-y-2'>
                         <Label className='text-xs'>
                           Languages Offered (Comma separated)
@@ -512,7 +546,7 @@ export default function CurriculumTab() {
             </div>
             <div className='flex items-center gap-2'>
               <Badge variant='outline' className=' text-[10px]'>
-                DEPED DM 012, S. 2026
+                <span className='hidden sm:inline'>DEPED</span> DM 012, S. 2026
               </Badge>
             </div>
           </div>

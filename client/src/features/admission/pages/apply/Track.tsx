@@ -157,12 +157,14 @@ const statusConfig: Record<
 };
 
 const SCP_LABELS: Record<string, string> = {
-  STE: "Science, Tech & Eng.",
-  SPA: "Arts (SPA)",
-  SPS: "Sports (SPS)",
-  SPJ: "Journalism (SPJ)",
-  SPFL: "Foreign Lang. (SPFL)",
-  SPTVE: "Tech-Voc (SPTVE)",
+  SCIENCE_TECHNOLOGY_AND_ENGINEERING: "Science, Technology & Engineering",
+  SPECIAL_PROGRAM_IN_THE_ARTS: "Special Program in the Arts",
+  SPECIAL_PROGRAM_IN_SPORTS: "Special Program in Sports",
+  SPECIAL_PROGRAM_IN_JOURNALISM: "Special Program in Journalism",
+  SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: "Special Program in Foreign Language",
+  SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION:
+    "Special Program in Tech-Voc Education",
+  STEM_GRADE_11: "STEM (Grade 11)",
 };
 
 interface TrackApplicationProps {
@@ -774,4 +776,3 @@ export default function TrackApplication({
     </div>
   );
 }
-

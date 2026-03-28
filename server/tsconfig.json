@@ -9,6 +9,7 @@
     "rootDir": "src",
     "resolveJsonModule": true,
     "declaration": true,
+    "composite": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "paths": {

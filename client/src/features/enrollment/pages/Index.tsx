@@ -32,6 +32,8 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
+import { Skeleton } from "@/shared/ui/skeleton";
+import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 
 interface Application {
   id: number;
@@ -59,6 +61,9 @@ export default function Enrollment() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  
+  // Rule A & B: Delayed loading
+  const showSkeleton = useDelayedLoading(loading);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -79,12 +84,8 @@ export default function Enrollment() {
       const params = new URLSearchParams();
       if (search) params.append("search", search);
 
-      // If status is ALL, we want both PRE_REGISTERED and ENROLLED
       if (status !== "ALL") {
         params.append("status", status);
-      } else {
-        // The backend might not have a way to filter for multiple statuses at once easily without a custom query
-        // For now we'll fetch and filter client-side if status is ALL, or just use /applications and filter
       }
 
       params.append("page", String(page));
@@ -215,14 +216,38 @@ export default function Enrollment() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className='h-24 text-center text-sm text-[hsl(var(--muted-foreground))]'>
-                      Loading enrollment list...
-                    </TableCell>
-                  </TableRow>
+                {showSkeleton ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <div className='space-y-2'>
+                          <Skeleton className='h-4 w-32' />
+                          <Skeleton className='h-3 w-24' />
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-24' />
+                      </TableCell>
+                      <TableCell>
+                        <div className='space-y-2'>
+                          <Skeleton className='h-4 w-20' />
+                          <Skeleton className='h-3 w-24' />
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-6 w-24' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-6 w-20' />
+                      </TableCell>
+                      <TableCell className='text-right'>
+                        <div className='flex justify-end gap-2'>
+                          <Skeleton className='h-8 w-8 rounded-md' />
+                          <Skeleton className='h-8 w-8 rounded-md' />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
                 ) : applications.length === 0 ? (
                   <TableRow>
                     <TableCell

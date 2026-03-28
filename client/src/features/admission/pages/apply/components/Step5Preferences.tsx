@@ -181,33 +181,33 @@ export default function Step5Enrollment() {
                         <div className='grid grid-cols-1 gap-3'>
                           {[
                             {
-                              id: "STE",
+                              id: "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
                               label: "Science, Technology & Engineering (STE)",
                               desc: "Written entrance exam + Interview.",
                             },
                             {
-                              id: "SPA",
+                              id: "SPECIAL_PROGRAM_IN_THE_ARTS",
                               label: "Special Program in the Arts (SPA)",
                               desc: "Written exam + Audition + Interview.",
                             },
                             {
-                              id: "SPS",
+                              id: "SPECIAL_PROGRAM_IN_SPORTS",
                               label: "Special Program in Sports (SPS)",
                               desc: "Physical tryout • Sports background required.",
                             },
                             {
-                              id: "SPJ",
+                              id: "SPECIAL_PROGRAM_IN_JOURNALISM",
                               label: "Special Program in Journalism (SPJ)",
                               desc: "Written exam (SPJQE) + Interview.",
                             },
                             {
-                              id: "SPFL",
+                              id: "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
                               label:
                                 "Special Program in Foreign Language (SPFL)",
                               desc: "Based on NAT English score.",
                             },
                             {
-                              id: "SPTVE",
+                              id: "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
                               label:
                                 "Special Program in Tech-Voc Education (SPTVE)",
                               desc: "Aptitude assessment.",
@@ -225,13 +225,7 @@ export default function Step5Enrollment() {
                                 onClick={() =>
                                   setValue(
                                     "scpType",
-                                    p.id as
-                                      | "STE"
-                                      | "SPA"
-                                      | "SPS"
-                                      | "SPJ"
-                                      | "SPFL"
-                                      | "SPTVE",
+                                    p.id as any,
                                   )
                                 }>
                                 <div className='flex items-center gap-3 mb-1'>
@@ -267,8 +261,8 @@ export default function Step5Enrollment() {
                                     animate={{ height: "auto", opacity: 1 }}
                                     exit={{ height: 0, opacity: 0 }}
                                     className='overflow-hidden'>
-                                    <div className='pl-8'>
-                                      {p.id === "SPA" && (
+                                    <div className='pl-8 pt-4'>
+                                      {p.id === "SPECIAL_PROGRAM_IN_THE_ARTS" && (
                                         <div className='space-y-2'>
                                           <Label className='text-[10px] font-bold uppercase text-primary'>
                                             Preferred Art Field *
@@ -292,7 +286,7 @@ export default function Step5Enrollment() {
                                         </div>
                                       )}
 
-                                      {p.id === "SPS" && (
+                                      {p.id === "SPECIAL_PROGRAM_IN_SPORTS" && (
                                         <div className='space-y-2'>
                                           <Label className='text-[10px] font-bold uppercase text-primary'>
                                             Primary Sport *
@@ -338,7 +332,7 @@ export default function Step5Enrollment() {
                                         </div>
                                       )}
 
-                                      {p.id === "SPFL" && (
+                                      {p.id === "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE" && (
                                         <div className='space-y-2'>
                                           <Label className='text-[10px] font-bold uppercase text-primary'>
                                             Preferred Language *

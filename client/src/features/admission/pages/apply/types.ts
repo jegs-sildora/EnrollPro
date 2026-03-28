@@ -20,7 +20,16 @@ export const EarlyRegistrationSchema = z.object({
   shsTrack: z.enum(["Academic", "TechPro"]).optional(),
   electiveCluster: z.string().optional(),
   isScpApplication: z.boolean().default(false),
-  scpType: z.enum(["STE", "SPA", "SPS", "SPJ", "SPFL", "SPTVE"]).optional(),
+  scpType: z
+    .enum([
+      "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+      "SPECIAL_PROGRAM_IN_THE_ARTS",
+      "SPECIAL_PROGRAM_IN_SPORTS",
+      "SPECIAL_PROGRAM_IN_JOURNALISM",
+      "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
+      "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
+    ])
+    .optional(),
 
   // Section 3: Personal Information
   studentPhoto: z.string().optional(),

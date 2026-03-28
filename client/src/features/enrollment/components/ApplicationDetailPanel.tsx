@@ -13,9 +13,13 @@ import {
   PreviousSchool,
   Classifications,
 } from "./BeefSections";
+import { RequirementChecklist } from "./RequirementChecklist";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Button } from "@/shared/ui/button";
 import { SheetTitle, SheetDescription } from "@/shared/ui/sheet";
+import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
+import { ImageEnlarger } from "@/shared/components/ImageEnlarger";
+import { formatScpType } from "@/shared/lib/utils";
 
 interface Props {
   id: number;
@@ -42,8 +46,13 @@ export function ApplicationDetailPanel({
   onOfferRegular,
   onTemporarilyEnroll,
 }: Props) {
-  const { data: applicant, loading, error } = useApplicationDetail(id);
+  const { data: applicant, loading, error, refetch } = useApplicationDetail(id);
+  
+  // Rule A & B: Delayed loading
+  const showSkeleton = useDelayedLoading(loading);
+
   const [photoError, setPhotoError] = useState(false);
+  const [isPhotoEnlarged, setIsPhotoEnlarged] = useState(false);
 
   const getImageUrl = (photo: string | null) => {
     if (!photo) return null;
@@ -53,7 +62,7 @@ export function ApplicationDetailPanel({
     return `${baseUrl}${photo}`;
   };
 
-  if (loading) {
+  if (showSkeleton) {
     return (
       <div className='flex flex-col h-full overflow-hidden bg-background'>
         <div className='flex items-center justify-between p-4 border-b shrink-0'>
@@ -105,19 +114,19 @@ export function ApplicationDetailPanel({
   return (
     <div className='flex flex-col h-full overflow-hidden bg-background'>
       {/* Header */}
-      <div className='flex items-center justify-between p-4 border-b shrink-0 bg-primary'>
+      <div className='flex items-center justify-between p-4 border-b shrink-0 bg-primary font-black'>
         <div>
-          <SheetTitle className='text-lg text-primary-foreground font-bold tracking-tight uppercase'>
+          <SheetTitle className='text-lg text-primary-foreground font-black tracking-tight uppercase'>
             Application Detail
           </SheetTitle>
           <SheetDescription className='text-xs text-primary-foreground flex items-center gap-1.5'>
             <span>#{applicant.trackingNumber}</span>
-            <span>·</span>
+            <span>|</span>
             <span>
-              {applicant.admissionChannel === "F2F" ? "F2F" : "Online"}
+              {applicant.admissionChannel === "F2F Applicant" ? "F2F Applicant" : "Online Applicant"}
             </span>
-            <span>·</span>
-            <span>{format(new Date(applicant.createdAt), "MMM d, yyyy")}</span>
+            <span>|</span>
+            <span>{format(new Date(applicant.createdAt), "MMMM d, yyyy")}</span>
           </SheetDescription>
         </div>
       </div>
@@ -127,7 +136,10 @@ export function ApplicationDetailPanel({
         {/* Summary Block */}
         <div className='bg-[hsl(var(--muted))] p-4 rounded-md border'>
           <div className='flex flex-col items-center mb-6 pt-2'>
-            <div className='w-32 h-32 rounded-xl border-2 border-primary shadow-md overflow-hidden bg-background flex items-center justify-center mb-4'>
+            <div 
+              className={`w-32 h-32 rounded-xl border-2 border-primary border-dashed shadow-md overflow-hidden bg-background flex items-center justify-center mb-4 ${applicant.studentPhoto && !photoError ? 'cursor-zoom-in hover:border-solid transition-all' : ''}`}
+              onClick={() => applicant.studentPhoto && !photoError && setIsPhotoEnlarged(true)}
+            >
               {applicant.studentPhoto && !photoError ? (
                 <img
                   src={getImageUrl(applicant.studentPhoto) || ""}
@@ -139,17 +151,17 @@ export function ApplicationDetailPanel({
                 <div className='w-full h-full flex flex-col items-center justify-center text-muted-foreground bg-muted/30'>
                   <User className='w-10 h-10 mb-1 opacity-20' />
                   <span className='text-[8px] font-black uppercase tracking-tighter opacity-40'>
-                    {photoError ? "Invalid Photo" : "No Photo"}
+                    {photoError ? "No Photo" : ""}
                   </span>
                 </div>
               )}
             </div>
             <div className='text-center'>
-              <h3 className='font-bold text-xl uppercase tracking-tight text-foreground'>
+              <h3 className='font-black text-xl uppercase tracking-tight text-foreground'>
                 {applicant.lastName}, {applicant.firstName}{" "}
                 {applicant.middleName}
               </h3>
-              <div className='flex items-center justify-center gap-2 mt-1'>
+              <div className='flex items-center justify-center gap-2 mt-1 font-black'>
                 <StatusBadge status={applicant.status} />
               </div>
             </div>
@@ -157,22 +169,20 @@ export function ApplicationDetailPanel({
 
           <div className='grid grid-cols-2 gap-4 border-t pt-4'>
             <div>
-              <p className='text-[10px] text-muted-foreground uppercase tracking-widest'>
-                Program / Level
+              <p className='text-[10px] text-foreground uppercase tracking-widest'>
+                Grade Level | Applicant Type
               </p>
               <p className='text-sm text-foreground'>
-                {applicant.gradeLevel.name} ·{" "}
-                {applicant.applicantType === "REGULAR"
-                  ? "Regular"
-                  : applicant.applicantType}
+                {applicant.gradeLevel.name} | {" "}
+                {formatScpType(applicant.applicantType)}
               </p>
             </div>
             <div className='text-right'>
               <p className='text-[10px] text-muted-foreground uppercase tracking-widest'>
-                Reference
+                Learner Reference Number
               </p>
               <p className='text-sm text-foreground'>
-                LRN: {applicant.lrn || "N/A"}
+                {applicant.lrn || "N/A"}
               </p>
             </div>
           </div>
@@ -180,6 +190,14 @@ export function ApplicationDetailPanel({
 
         {/* SCP Assessment Block (Only if not regular) */}
         <SCPAssessmentBlock applicant={applicant} />
+
+        {/* Documentary Checklist */}
+        <RequirementChecklist
+          applicantId={applicant.id}
+          learnerType={applicant.learnerType}
+          checklist={applicant.checklist}
+          onRefresh={refetch}
+        />
 
         {/* Collapsible BEEF Sections */}
         <div className='space-y-2'>
@@ -215,6 +233,15 @@ export function ApplicationDetailPanel({
         onOfferRegular={onOfferRegular}
         onTemporarilyEnroll={onTemporarilyEnroll}
       />
+
+      {applicant.studentPhoto && (
+        <ImageEnlarger
+          src={getImageUrl(applicant.studentPhoto) || ""}
+          isOpen={isPhotoEnlarged}
+          onClose={() => setIsPhotoEnlarged(false)}
+          alt={`${applicant.lastName} profile photo`}
+        />
+      )}
     </div>
   );
 }

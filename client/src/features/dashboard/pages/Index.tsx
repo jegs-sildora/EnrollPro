@@ -14,6 +14,7 @@ import { useAuthStore } from '@/store/auth.slice';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/ui/card';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { Badge } from '@/shared/ui/badge';
+import { useDelayedLoading } from '@/shared/hooks/useDelayedLoading';
 
 interface Stats {
   totalPending: number;
@@ -36,6 +37,9 @@ export default function Dashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Rule A & B: Delayed loading
+  const showSkeleton = useDelayedLoading(loading);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -153,7 +157,7 @@ export default function Dashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {loading ? (
+                  {showSkeleton ? (
                     <Skeleton className="h-8 w-24" />
                   ) : (
                     <>
@@ -186,7 +190,7 @@ export default function Dashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                {loading ? (
+                {showSkeleton ? (
                   <Skeleton className="h-8 w-20" />
                 ) : (
                   <div className="text-2xl font-black">{stat.value}</div>

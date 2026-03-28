@@ -1,5 +1,6 @@
 import { format } from 'date-fns';
 import type { ApplicantDetail } from '@/features/enrollment/hooks/useApplicationDetail';
+import { formatScpType } from '@/shared/lib/utils';
 
 interface Props {
   applicant: ApplicantDetail;
@@ -12,7 +13,7 @@ export function SCPAssessmentBlock({ applicant }: Props) {
     <div className="border border-primary/50 bg-primary/8 rounded-md p-3 mb-4 space-y-2">
       <div className="flex items-center gap-2 font-bold border-b border-primary/50 pb-2 mb-2">
         <span>⚡</span>
-        <span>{applicant.scpType} ASSESSMENT</span>
+        <span>{formatScpType(applicant.scpType)} ASSESSMENT</span>
       </div>
 
       <div className="text-sm grid grid-cols-[110px_1fr] gap-1 font-bold">

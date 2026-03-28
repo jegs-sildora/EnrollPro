@@ -16,7 +16,7 @@ import {
   Check,
   Loader2,
 } from "lucide-react";
-import { cn } from "@/shared/lib/utils";
+import { cn, formatScpType } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 
 interface Step6ReviewProps {
@@ -205,7 +205,7 @@ export default function Step6Review({
           <DataItem
             label='Program'
             value={
-              data.isScpApplication ? `SCP (${data.scpType})` : "Regular Section"
+              data.isScpApplication ? `SCP (${formatScpType(data.scpType)})` : "Regular Section"
             }
           />
           <DataItem label='Learner Type' value={data.learnerType} />

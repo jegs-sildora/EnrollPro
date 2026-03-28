@@ -35,13 +35,13 @@ export const LearnerTypeEnum = z.enum([
 ]);
 export const ApplicantTypeEnum = z.enum([
   "REGULAR",
-  "STE",
-  "SPA",
-  "SPS",
-  "SPJ",
-  "SPFL",
-  "SPTVE",
-  "STEM_GRADE11",
+  "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+  "SPECIAL_PROGRAM_IN_THE_ARTS",
+  "SPECIAL_PROGRAM_IN_SPORTS",
+  "SPECIAL_PROGRAM_IN_JOURNALISM",
+  "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
+  "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
+  "STEM_GRADE_11",
 ]);
 export const CurriculumTypeEnum = z.enum(["OLD_STRAND", "ELECTIVE_CLUSTER"]);
 export const SHSTrackEnum = z.enum(["ACADEMIC", "TECHPRO"]);
@@ -86,10 +86,10 @@ export const LastSchoolTypeEnum = z.enum([
 ]);
 export const GradeLevelEnum = z.enum(["7", "11"]);
 export const ScpTypeEnum = z.enum([
-  "STE",
-  "SPA",
-  "SPS",
-  "SPJ",
-  "SPFL",
-  "SPTVE",
+  "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+  "SPECIAL_PROGRAM_IN_THE_ARTS",
+  "SPECIAL_PROGRAM_IN_SPORTS",
+  "SPECIAL_PROGRAM_IN_JOURNALISM",
+  "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
+  "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
 ]);

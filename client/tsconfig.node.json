@@ -4,6 +4,8 @@
     "target": "ES2023",
     "lib": ["ES2023"],
     "module": "ESNext",
+    "composite": true,
+    "declaration": true,
     "types": ["node"],
     "skipLibCheck": true,
 

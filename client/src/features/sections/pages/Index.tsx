@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { sileo } from "sileo";
-import { Plus, Trash2, Grid3X3, X, Check, Edit2 } from "lucide-react";
+import { Plus, Trash2, Grid3X3, X, Check, Edit2, CalendarDays } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -31,6 +31,8 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { Skeleton } from "@/shared/ui/skeleton";
+import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 
 interface Teacher {
   id: number;
@@ -77,6 +79,9 @@ export default function Sections() {
   const [groups, setGroups] = useState<GradeLevelGroup[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Rule A & B: Delayed loading
+  const showSkeleton = useDelayedLoading(loading);
 
   // Inline add section state
   const [addGlId, setAddGlId] = useState<number | null>(null);
@@ -205,12 +210,21 @@ export default function Sections() {
 
   if (!ayId) {
     return (
-      <Card>
-        <CardContent className='py-8 text-center text-sm text-[hsl(var(--muted-foreground))]'>
-          No school year selected. Set an active year or choose one from the
-          header switcher.
-        </CardContent>
-      </Card>
+      <div className="flex h-[calc(100vh-12rem)] w-full items-center justify-center">
+        <Card className="max-w-md w-full border-dashed shadow-none bg-muted/20">
+          <CardContent className="pt-10 pb-10 text-center space-y-3">
+            <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+              <CalendarDays className="h-6 w-6 text-primary" />
+            </div>
+            <div className="space-y-1">
+              <p className="font-bold text-foreground">No School Year Selected</p>
+              <p className="text-sm text-muted-foreground leading-relaxed px-4">
+                Please set an active year or choose one from the header switcher to manage records for this period.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -239,9 +253,38 @@ export default function Sections() {
         </TabsList>
       </Tabs>
 
-      {loading ? (
-        <div className='text-center py-12 text-sm text-[hsl(var(--muted-foreground))]'>
-          Loading sections…
+      {showSkeleton ? (
+        <div className='space-y-6'>
+          <Card>
+            <CardHeader>
+              <Skeleton className='h-8 w-48 mb-2' />
+              <Skeleton className='h-4 w-80' />
+            </CardHeader>
+            <CardContent>
+              <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className='h-16 w-full rounded-lg' />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          <div className='grid gap-6 md:grid-cols-2'>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <div className='flex items-center justify-between'>
+                    <Skeleton className='h-6 w-32' />
+                    <Skeleton className='h-8 w-24' />
+                  </div>
+                </CardHeader>
+                <CardContent className='space-y-2'>
+                  {Array.from({ length: 3 }).map((_, j) => (
+                    <Skeleton key={j} className='h-12 w-full rounded-lg' />
+                  ))}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       ) : (
         <>

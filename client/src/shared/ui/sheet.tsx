@@ -85,7 +85,7 @@ const SheetContent = React.forwardRef<
                   x: isRight ? "100%" : isLeft ? "-100%" : 0,
                   y: isTop ? "-100%" : isBottom ? "100%" : 0,
                 }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                transition={{ type: "spring", damping: 25, stiffness: 180 }}
                 className={cn(sheetVariants({ side }), className)}>
                 {children}
                 <DialogPrimitive.Close className='absolute right-6 top-6 rounded-sm opacity-90 ring-offset-[hsl(var(--background))] transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-foreground))] focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-[hsl(var(--primary-foreground))] bg-primary-foreground text-primary'>
