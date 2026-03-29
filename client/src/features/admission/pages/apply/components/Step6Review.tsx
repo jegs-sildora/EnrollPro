@@ -1,108 +1,109 @@
-import React from "react";
-import { useFormContext, Controller } from "react-hook-form";
-import type { EarlyRegistrationFormData } from "../types";
-import { Button } from "@/shared/ui/button";
-import { Checkbox } from "@/shared/ui/checkbox";
-import { Label } from "@/shared/ui/label";
-import { Input } from "@/shared/ui/input";
-import { format } from "date-fns";
+import React from 'react';
+import { useFormContext, Controller } from 'react-hook-form';
+import type { EarlyRegistrationFormData } from '../types';
+import { Button } from '@/shared/ui/button';
+import { Checkbox } from '@/shared/ui/checkbox';
+import { Label } from '@/shared/ui/label';
+import { Input } from '@/shared/ui/input';
+import { format } from 'date-fns';
 import {
-  Edit2,
-  ShieldCheck,
-  User,
-  Users,
-  School,
-  ClipboardList,
-  Check,
-  Loader2,
-} from "lucide-react";
-import { cn, formatScpType } from "@/shared/lib/utils";
-import { useSettingsStore } from "@/store/settings.slice";
+	Edit2,
+	ShieldCheck,
+	User,
+	Users,
+	School,
+	ClipboardList,
+	Check,
+	Loader2,
+} from 'lucide-react';
+import { cn, formatScpType } from '@/shared/lib/utils';
+import { useSettingsStore } from '@/store/settings.slice';
 
 interface Step6ReviewProps {
-  onEdit: (stepId: number) => void;
-  onSubmitClick?: () => void;
-  isSubmitting?: boolean;
+	onEdit: (stepId: number) => void;
+	onSubmitClick?: () => void;
+	isSubmitting?: boolean;
 }
 
 const SummaryCard = ({
-  title,
-  icon: Icon,
-  stepId,
-  onEdit,
-  children,
+	title,
+	icon: Icon,
+	stepId,
+	onEdit,
+	children,
 }: {
-  title: string;
-  icon: React.ComponentType<{ className?: string }>;
-  stepId: number;
-  onEdit: (id: number) => void;
-  children: React.ReactNode;
+	title: string;
+	icon: React.ComponentType<{ className?: string }>;
+	stepId: number;
+	onEdit: (id: number) => void;
+	children: React.ReactNode;
 }) => (
-  <div className='border border-border/60 rounded-2xl overflow-hidden bg-white shadow-sm'>
-    <div className='px-5 py-3 bg-muted/30 border-b border-border/40 flex items-center justify-between'>
-      <div className='flex items-center gap-2'>
-        <Icon className='w-4 h-4 text-primary' />
-        <h4 className='text-xs font-bold uppercase tracking-wider text-foreground/70'>
-          {title}
-        </h4>
-      </div>
-      <Button
-        type='button'
-        variant='ghost'
-        size='sm'
-        onClick={() => onEdit(stepId)}
-        className='h-7 text-[10px] font-bold uppercase text-primary hover:text-primary hover:bg-primary/5 gap-1'>
-        <Edit2 className='w-3 h-3' /> Edit
-      </Button>
-    </div>
-    <div className='p-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-sm'>
-      {children}
-    </div>
-  </div>
+	<div className='border border-border/60 rounded-2xl overflow-hidden bg-white shadow-sm'>
+		<div className='px-5 py-3 bg-muted/30 border-b border-border/40 flex items-center justify-between'>
+			<div className='flex items-center gap-2'>
+				<Icon className='w-4 h-4 text-primary' />
+				<h4 className='text-xs font-bold uppercase tracking-wider text-foreground/70'>
+					{title}
+				</h4>
+			</div>
+			<Button
+				type='button'
+				variant='ghost'
+				size='sm'
+				onClick={() => onEdit(stepId)}
+				className='h-7 text-[10px] font-bold uppercase text-primary hover:text-primary hover:bg-primary/5 gap-1'
+			>
+				<Edit2 className='w-3 h-3' /> Edit
+			</Button>
+		</div>
+		<div className='p-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-sm'>
+			{children}
+		</div>
+	</div>
 );
 
 const DataItem = ({
-  label,
-  value,
-  noUppercase,
+	label,
+	value,
+	noUppercase,
 }: {
-  label: string;
-  value: string | number | undefined | null;
-  noUppercase?: boolean;
+	label: string;
+	value: string | number | undefined | null;
+	noUppercase?: boolean;
 }) => (
-  <div className='space-y-0.5'>
-    <p className='text-[10px] font-bold uppercase text-muted-foreground tracking-tight'>
-      {label}
-    </p>
-    <p className='font-bold text-foreground truncate'>
-      {value
-        ? noUppercase
-          ? value
-          : typeof value === "string"
-            ? value.toUpperCase()
-            : value
-        : "----"}
-    </p>
-  </div>
+	<div className='space-y-0.5'>
+		<p className='text-[10px] font-bold uppercase text-muted-foreground tracking-tight'>
+			{label}
+		</p>
+		<p className='font-bold text-foreground truncate'>
+			{value
+				? noUppercase
+					? value
+					: typeof value === 'string'
+						? value.toUpperCase()
+						: value
+				: '----'}
+		</p>
+	</div>
 );
 
 export default function Step6Review({
-  onEdit,
-  isSubmitting,
-  onSubmitClick,
+	onEdit,
+	isSubmitting,
+	onSubmitClick,
 }: Step6ReviewProps) {
-  const {
-    register,
-    watch,
-    control,
-    formState: { errors },
-  } = useFormContext<EarlyRegistrationFormData>();
+	const {
+		register,
+		watch,
+		control,
+		formState: { errors },
+	} = useFormContext<EarlyRegistrationFormData>();
 
-  const { schoolName } = useSettingsStore();
-  const data = watch();
-  const yearLabel = data.schoolYear;
+	const { schoolName } = useSettingsStore();
+	const data = watch();
+	const yearLabel = data.schoolYear;
 
-  return (
+	return (
 		<div className='space-y-8'>
 			<div className='space-y-6'>
 				<SummaryCard

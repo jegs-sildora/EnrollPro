@@ -1,50 +1,50 @@
 {
-  "name": "server",
-  "version": "1.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js",
-    "db:migrate": "npx prisma migrate dev",
-    "db:generate": "npx prisma generate",
-    "db:seed": "tsx prisma/seed.ts",
-    "db:seed-students": "tsx prisma/seed-students.ts",
-    "db:wipe": "tsx prisma/wipe.ts"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
-  },
-  "dependencies": {
-    "@enrollpro/shared": "workspace:*",
-    "@prisma/adapter-pg": "^6",
-    "@prisma/client": "^6",
-    "@types/pg": "^8.18.0",
-    "bcryptjs": "^3.0.3",
-    "color-thief-node": "^1.0.4",
-    "cors": "^2.8.6",
-    "dotenv": "^17.3.1",
-    "express": "^5.2.1",
-    "express-rate-limit": "^8.3.1",
-    "helmet": "^8.1.0",
-    "jsonwebtoken": "^9.0.3",
-    "multer": "^2.1.1",
-    "nodemailer": "^8.0.2",
-    "pg": "^8.20.0",
-    "sharp": "^0.34.5",
-    "zod": "^4.3.6"
-  },
-  "devDependencies": {
-    "@types/bcryptjs": "^3.0.0",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/multer": "^2.1.0",
-    "@types/node": "^25.4.0",
-    "@types/nodemailer": "^7.0.11",
-    "@types/sharp": "^0.32.0",
-    "prisma": "^6",
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
-  }
+	"name": "server",
+	"version": "1.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "tsx watch src/server.ts",
+		"build": "tsc",
+		"start": "node dist/server.js",
+		"db:migrate": "npx prisma migrate dev",
+		"db:generate": "npx prisma generate",
+		"db:seed": "tsx prisma/seed.ts",
+		"db:seed-students": "tsx prisma/seed-students.ts",
+		"db:wipe": "tsx prisma/wipe.ts"
+	},
+	"prisma": {
+		"seed": "tsx prisma/seed.ts"
+	},
+	"dependencies": {
+		"@enrollpro/shared": "workspace:*",
+		"@prisma/adapter-pg": "^6",
+		"@prisma/client": "^6",
+		"@types/pg": "^8.18.0",
+		"bcryptjs": "^3.0.3",
+		"color-thief-node": "^1.0.4",
+		"cors": "^2.8.6",
+		"dotenv": "^17.3.1",
+		"express": "^5.2.1",
+		"express-rate-limit": "^8.3.1",
+		"helmet": "^8.1.0",
+		"jsonwebtoken": "^9.0.3",
+		"multer": "^2.1.1",
+		"nodemailer": "^8.0.2",
+		"pg": "^8.20.0",
+		"sharp": "^0.34.5",
+		"zod": "^4.3.6"
+	},
+	"devDependencies": {
+		"@types/bcryptjs": "^3.0.0",
+		"@types/cors": "^2.8.19",
+		"@types/express": "^5.0.6",
+		"@types/jsonwebtoken": "^9.0.10",
+		"@types/multer": "^2.1.0",
+		"@types/node": "^25.4.0",
+		"@types/nodemailer": "^7.0.11",
+		"@types/sharp": "^0.32.0",
+		"prisma": "^6",
+		"tsx": "^4.21.0",
+		"typescript": "^5.9.3"
+	}
 }

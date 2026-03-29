@@ -417,11 +417,9 @@ export async function transitionSchoolYear(
 
 	const validStatuses = ['DRAFT', 'UPCOMING', 'ACTIVE', 'ARCHIVED'];
 	if (!validStatuses.includes(status)) {
-		res
-			.status(400)
-			.json({
-				message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
-			});
+		res.status(400).json({
+			message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
+		});
 		return;
 	}
 

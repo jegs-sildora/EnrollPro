@@ -17,13 +17,15 @@ export function ImageEnlarger({
 	return (
 		<Dialog
 			open={isOpen}
-			onOpenChange={(open) => !open && onClose()}>
+			onOpenChange={(open) => !open && onClose()}
+		>
 			<DialogContent className='max-w-[95vw] max-h-[95vh] p-0 border-none bg-transparent shadow-none flex items-center justify-center overflow-hidden outline-none ring-0'>
 				<DialogTitle className='sr-only'>{alt}</DialogTitle>
 
 				<button
 					onClick={onClose}
-					className='absolute right-4 top-4 z-50 rounded-full bg-black/50 p-2 text-white transition-opacity hover:bg-black/70 focus:outline-none'>
+					className='absolute right-4 top-4 z-50 rounded-full bg-black/50 p-2 text-white transition-opacity hover:bg-black/70 focus:outline-none'
+				>
 					<X className='h-6 w-6' />
 					<span className='sr-only'>Close</span>
 				</button>

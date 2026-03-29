@@ -1,9 +1,9 @@
 {
-  "name": "enrollpro",
-  "private": true,
-  "scripts": {
-    "dev:server": "pnpm --filter server dev",
-    "dev:client": "pnpm --filter client dev --host",
-    "dev": "pnpm run --parallel --filter server --filter client dev"
-  }
+	"name": "enrollpro",
+	"private": true,
+	"scripts": {
+		"dev:server": "pnpm --filter server dev",
+		"dev:client": "pnpm --filter client dev --host",
+		"dev": "pnpm run --parallel --filter server --filter client dev"
+	}
 }

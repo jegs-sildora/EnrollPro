@@ -1,270 +1,270 @@
-import type { Request, Response } from "express";
-import path from "path";
-import fs from "fs";
-import { Prisma } from "@prisma/client";
-import { prisma } from "../../lib/prisma.js";
+import type { Request, Response } from 'express';
+import path from 'path';
+import fs from 'fs';
+import { Prisma } from '@prisma/client';
+import { prisma } from '../../lib/prisma.js';
 import {
-  extractPalette,
-  extractAccentColor,
-  contrastForeground,
-} from "./logo-color.service.js";
-import { auditLog } from "../audit-logs/audit-logs.service.js";
-import { getEnrollmentPhase } from "./enrollment-gate.service.js";
+	extractPalette,
+	extractAccentColor,
+	contrastForeground,
+} from './logo-color.service.js';
+import { auditLog } from '../audit-logs/audit-logs.service.js';
+import { getEnrollmentPhase } from './enrollment-gate.service.js';
 
 async function getOrCreateSettings() {
-  let settings = await prisma.schoolSettings.findFirst({
-    include: { activeSchoolYear: true },
-  });
-  if (!settings) {
-    settings = await prisma.schoolSettings.create({
-      data: { schoolName: "My School" },
-      include: { activeSchoolYear: true },
-    });
-  }
-  return settings;
+	let settings = await prisma.schoolSettings.findFirst({
+		include: { activeSchoolYear: true },
+	});
+	if (!settings) {
+		settings = await prisma.schoolSettings.create({
+			data: { schoolName: 'My School' },
+			include: { activeSchoolYear: true },
+		});
+	}
+	return settings;
 }
 
 export async function getPublicSettings(
-  req: Request,
-  res: Response,
+	req: Request,
+	res: Response,
 ): Promise<void> {
-  const settings = await getOrCreateSettings();
+	const settings = await getOrCreateSettings();
 
-  const enrollmentPhase = settings.activeSchoolYear
-    ? getEnrollmentPhase(settings.activeSchoolYear)
-    : "CLOSED";
+	const enrollmentPhase = settings.activeSchoolYear
+		? getEnrollmentPhase(settings.activeSchoolYear)
+		: 'CLOSED';
 
-  res.json({
-    schoolName: settings.schoolName,
-    logoUrl: settings.logoUrl,
-    colorScheme: settings.colorScheme,
-    selectedAccentHsl: settings.selectedAccentHsl,
-    activeSchoolYearId: settings.activeSchoolYearId,
-    enrollmentPhase,
-  });
+	res.json({
+		schoolName: settings.schoolName,
+		logoUrl: settings.logoUrl,
+		colorScheme: settings.colorScheme,
+		selectedAccentHsl: settings.selectedAccentHsl,
+		activeSchoolYearId: settings.activeSchoolYearId,
+		enrollmentPhase,
+	});
 }
 
 export async function updateIdentity(
-  req: Request,
-  res: Response,
+	req: Request,
+	res: Response,
 ): Promise<void> {
-  const { schoolName } = req.body;
-  const settings = await getOrCreateSettings();
+	const { schoolName } = req.body;
+	const settings = await getOrCreateSettings();
 
-  const updated = await prisma.schoolSettings.update({
-    where: { id: settings.id },
-    data: { schoolName },
-  });
+	const updated = await prisma.schoolSettings.update({
+		where: { id: settings.id },
+		data: { schoolName },
+	});
 
-  await auditLog({
-    userId: req.user!.userId,
-    actionType: "SETTINGS_UPDATED",
-    description: `Admin updated school name to "${schoolName}"`,
-    req,
-  });
+	await auditLog({
+		userId: req.user!.userId,
+		actionType: 'SETTINGS_UPDATED',
+		description: `Admin updated school name to "${schoolName}"`,
+		req,
+	});
 
-  res.json(updated);
+	res.json(updated);
 }
 
 export async function uploadLogo(req: Request, res: Response): Promise<void> {
-  if (!req.file) {
-    res.status(400).json({ message: "No file uploaded" });
-    return;
-  }
+	if (!req.file) {
+		res.status(400).json({ message: 'No file uploaded' });
+		return;
+	}
 
-  const settings = await getOrCreateSettings();
+	const settings = await getOrCreateSettings();
 
-  // Remove old logo file if it exists
-  if (settings.logoPath) {
-    try {
-      fs.unlinkSync(settings.logoPath);
-    } catch {
-      // ignore if file doesn't exist
-    }
-  }
+	// Remove old logo file if it exists
+	if (settings.logoPath) {
+		try {
+			fs.unlinkSync(settings.logoPath);
+		} catch {
+			// ignore if file doesn't exist
+		}
+	}
 
-  const absolutePath = path.resolve(req.file.path);
-  const logoUrl = `/uploads/${req.file.filename}`;
+	const absolutePath = path.resolve(req.file.path);
+	const logoUrl = `/uploads/${req.file.filename}`;
 
-  // Extract full palette
-  const palette = await extractPalette(absolutePath);
-  const accentHsl =
-    palette.find((c) => {
-      const parts = c.hsl.split(" ");
-      const s = parseInt(parts[1]);
-      const l = parseInt(parts[2]);
-      return s >= 20 && l >= 15 && l <= 85;
-    })?.hsl ?? "221 83% 53%";
+	// Extract full palette
+	const palette = await extractPalette(absolutePath);
+	const accentHsl =
+		palette.find((c) => {
+			const parts = c.hsl.split(' ');
+			const s = parseInt(parts[1]);
+			const l = parseInt(parts[2]);
+			return s >= 20 && l >= 15 && l <= 85;
+		})?.hsl ?? '221 83% 53%';
 
-  const colorScheme = {
-    accent_hsl: accentHsl,
-    palette,
-    extracted_at: new Date().toISOString(),
-  } as unknown as Prisma.InputJsonValue;
+	const colorScheme = {
+		accent_hsl: accentHsl,
+		palette,
+		extracted_at: new Date().toISOString(),
+	} as unknown as Prisma.InputJsonValue;
 
-  const updated = await prisma.schoolSettings.update({
-    where: { id: settings.id },
-    data: {
-      logoPath: absolutePath,
-      logoUrl,
-      colorScheme,
-      selectedAccentHsl: accentHsl,
-    },
-  });
+	const updated = await prisma.schoolSettings.update({
+		where: { id: settings.id },
+		data: {
+			logoPath: absolutePath,
+			logoUrl,
+			colorScheme,
+			selectedAccentHsl: accentHsl,
+		},
+	});
 
-  await auditLog({
-    userId: req.user!.userId,
-    actionType: "SETTINGS_UPDATED",
-    description: "Admin uploaded school logo and accent color extracted",
-    req,
-  });
+	await auditLog({
+		userId: req.user!.userId,
+		actionType: 'SETTINGS_UPDATED',
+		description: 'Admin uploaded school logo and accent color extracted',
+		req,
+	});
 
-  res.json({
-    logoUrl: updated.logoUrl,
-    colorScheme: updated.colorScheme,
-    selectedAccentHsl: updated.selectedAccentHsl,
-  });
+	res.json({
+		logoUrl: updated.logoUrl,
+		colorScheme: updated.colorScheme,
+		selectedAccentHsl: updated.selectedAccentHsl,
+	});
 }
 
 export async function selectAccentColor(
-  req: Request,
-  res: Response,
+	req: Request,
+	res: Response,
 ): Promise<void> {
-  const { hsl } = req.body;
-  if (!hsl || typeof hsl !== "string") {
-    res.status(400).json({ message: "hsl is required" });
-    return;
-  }
-  const accentHsl = hsl;
+	const { hsl } = req.body;
+	if (!hsl || typeof hsl !== 'string') {
+		res.status(400).json({ message: 'hsl is required' });
+		return;
+	}
+	const accentHsl = hsl;
 
-  const settings = await getOrCreateSettings();
+	const settings = await getOrCreateSettings();
 
-  // Validate: must be from the palette
-  const palette = (
-    settings.colorScheme as { palette?: { hsl: string }[] } | null
-  )?.palette;
-  if (palette && !palette.some((c: { hsl: string }) => c.hsl === accentHsl)) {
-    res
-      .status(400)
-      .json({ message: "Selected color is not in the extracted palette" });
-    return;
-  }
+	// Validate: must be from the palette
+	const palette = (
+		settings.colorScheme as { palette?: { hsl: string }[] } | null
+	)?.palette;
+	if (palette && !palette.some((c: { hsl: string }) => c.hsl === accentHsl)) {
+		res
+			.status(400)
+			.json({ message: 'Selected color is not in the extracted palette' });
+		return;
+	}
 
-  // Compute contrast foreground
-  const parts = accentHsl.split(/\s+/);
-  const h = parseInt(parts[0]);
-  const s = parseInt(parts[1]);
-  const l = parseInt(parts[2]);
-  const foreground = contrastForeground(h, s, l);
+	// Compute contrast foreground
+	const parts = accentHsl.split(/\s+/);
+	const h = parseInt(parts[0]);
+	const s = parseInt(parts[1]);
+	const l = parseInt(parts[2]);
+	const foreground = contrastForeground(h, s, l);
 
-  // Update colorScheme.accent_hsl too
-  const colorSchemeData =
-    (settings.colorScheme as Record<string, unknown>) ?? {};
-  const updatedColorScheme = {
-    ...colorSchemeData,
-    accent_hsl: accentHsl,
-    accent_foreground: foreground,
-  };
+	// Update colorScheme.accent_hsl too
+	const colorSchemeData =
+		(settings.colorScheme as Record<string, unknown>) ?? {};
+	const updatedColorScheme = {
+		...colorSchemeData,
+		accent_hsl: accentHsl,
+		accent_foreground: foreground,
+	};
 
-  const updated = await prisma.schoolSettings.update({
-    where: { id: settings.id },
-    data: {
-      selectedAccentHsl: accentHsl,
-      colorScheme: updatedColorScheme,
-    },
-  });
+	const updated = await prisma.schoolSettings.update({
+		where: { id: settings.id },
+		data: {
+			selectedAccentHsl: accentHsl,
+			colorScheme: updatedColorScheme,
+		},
+	});
 
-  await auditLog({
-    userId: req.user!.userId,
-    actionType: "SETTINGS_UPDATED",
-    description: `Admin selected accent color: ${accentHsl}`,
-    req,
-  });
+	await auditLog({
+		userId: req.user!.userId,
+		actionType: 'SETTINGS_UPDATED',
+		description: `Admin selected accent color: ${accentHsl}`,
+		req,
+	});
 
-  res.json({
-    selectedAccentHsl: updated.selectedAccentHsl,
-    colorScheme: updated.colorScheme,
-  });
+	res.json({
+		selectedAccentHsl: updated.selectedAccentHsl,
+		colorScheme: updated.colorScheme,
+	});
 }
 
 export async function removeLogo(req: Request, res: Response): Promise<void> {
-  const settings = await getOrCreateSettings();
+	const settings = await getOrCreateSettings();
 
-  if (settings.logoPath) {
-    try {
-      fs.unlinkSync(settings.logoPath);
-    } catch {
-      // ignore
-    }
-  }
+	if (settings.logoPath) {
+		try {
+			fs.unlinkSync(settings.logoPath);
+		} catch {
+			// ignore
+		}
+	}
 
-  const updated = await prisma.schoolSettings.update({
-    where: { id: settings.id },
-    data: {
-      logoPath: null,
-      logoUrl: null,
-      colorScheme: Prisma.JsonNull,
-      selectedAccentHsl: null,
-    },
-  });
+	const updated = await prisma.schoolSettings.update({
+		where: { id: settings.id },
+		data: {
+			logoPath: null,
+			logoUrl: null,
+			colorScheme: Prisma.JsonNull,
+			selectedAccentHsl: null,
+		},
+	});
 
-  await auditLog({
-    userId: req.user!.userId,
-    actionType: "SETTINGS_UPDATED",
-    description:
-      "Admin removed school logo — accent color reset to default blue",
-    req,
-  });
+	await auditLog({
+		userId: req.user!.userId,
+		actionType: 'SETTINGS_UPDATED',
+		description:
+			'Admin removed school logo — accent color reset to default blue',
+		req,
+	});
 
-  res.json({
-    logoUrl: updated.logoUrl,
-    colorScheme: updated.colorScheme,
-    selectedAccentHsl: updated.selectedAccentHsl,
-  });
+	res.json({
+		logoUrl: updated.logoUrl,
+		colorScheme: updated.colorScheme,
+		selectedAccentHsl: updated.selectedAccentHsl,
+	});
 }
 
 export async function getScpConfig(req: Request, res: Response): Promise<void> {
-  const settings = await prisma.schoolSettings.findFirst({
-    select: { activeSchoolYearId: true },
-  });
+	const settings = await prisma.schoolSettings.findFirst({
+		select: { activeSchoolYearId: true },
+	});
 
-  if (!settings?.activeSchoolYearId) {
-    res.json({ scpConfigs: [] });
-    return;
-  }
+	if (!settings?.activeSchoolYearId) {
+		res.json({ scpConfigs: [] });
+		return;
+	}
 
-  const scpConfigs = await prisma.scpConfig.findMany({
-    where: { schoolYearId: settings.activeSchoolYearId, isOffered: true },
-  });
+	const scpConfigs = await prisma.scpConfig.findMany({
+		where: { schoolYearId: settings.activeSchoolYearId, isOffered: true },
+	});
 
-  res.json({ scpConfigs });
+	res.json({ scpConfigs });
 }
 
 export async function getShsConfig(req: Request, res: Response): Promise<void> {
-  const settings = await prisma.schoolSettings.findFirst({
-    select: { activeSchoolYearId: true },
-  });
+	const settings = await prisma.schoolSettings.findFirst({
+		select: { activeSchoolYearId: true },
+	});
 
-  if (!settings?.activeSchoolYearId) {
-    res.json({
-      grade11Mode: "STRENGTHENED",
-      grade12Mode: "OLD_STRAND",
-      strands: [],
-    });
-    return;
-  }
+	if (!settings?.activeSchoolYearId) {
+		res.json({
+			grade11Mode: 'STRENGTHENED',
+			grade12Mode: 'OLD_STRAND',
+			strands: [],
+		});
+		return;
+	}
 
-  // Get all strands/clusters for the active school year
-  const strands = await prisma.strand.findMany({
-    where: { schoolYearId: settings.activeSchoolYearId },
-    include: {
-      _count: false,
-    },
-  });
+	// Get all strands/clusters for the active school year
+	const strands = await prisma.strand.findMany({
+		where: { schoolYearId: settings.activeSchoolYearId },
+		include: {
+			_count: false,
+		},
+	});
 
-  res.json({
-    grade11Mode: "STRENGTHENED",
-    grade12Mode: "OLD_STRAND",
-    strands,
-  });
+	res.json({
+		grade11Mode: 'STRENGTHENED',
+		grade12Mode: 'OLD_STRAND',
+		strands,
+	});
 }

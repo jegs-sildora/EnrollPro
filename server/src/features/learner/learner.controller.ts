@@ -131,10 +131,8 @@ export const lookupLearner = async (req: Request, res: Response) => {
 		res.json({ learner });
 	} catch (error) {
 		console.error('Error in learner portal lookup:', error);
-		res
-			.status(500)
-			.json({
-				message: 'An unexpected error occurred. Please try again later.',
-			});
+		res.status(500).json({
+			message: 'An unexpected error occurred. Please try again later.',
+		});
 	}
 };
