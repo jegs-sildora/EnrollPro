@@ -4,7 +4,6 @@ import { format } from 'date-fns';
 import api from '@/shared/api/axiosInstance';
 import { toastApiError } from '@/shared/hooks/useApiToast';
 import { Button } from '@/shared/ui/button';
-import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import {
 	Dialog,
@@ -36,8 +35,6 @@ export function ScheduleExamDialog({
 }: Props) {
 	const [examDate, setExamDate] = useState('');
 	const [examTime, setExamTime] = useState('');
-	const [examVenue, setExamVenue] = useState('');
-	const [examNotes, setExamNotes] = useState('');
 	const [scpConfig, setScpConfig] = useState<{
 		scpType: string;
 		examRequired: boolean;
@@ -45,6 +42,7 @@ export function ScheduleExamDialog({
 		assessmentType?: string;
 		examDate?: string;
 		examTime?: string;
+		venue?: string;
 		notes?: string;
 	} | null>(null);
 	const [loading, setLoading] = useState(false);
@@ -71,14 +69,6 @@ export function ScheduleExamDialog({
 					} else {
 						setExamTime('');
 					}
-
-					if (config?.notes) {
-						setExamNotes(config.notes);
-					} else {
-						setExamNotes('');
-					}
-
-					setExamVenue('');
 				} catch (err) {
 					toastApiError(err as never);
 				} finally {
@@ -97,8 +87,6 @@ export function ScheduleExamDialog({
 			await api.patch(`/applications/${applicant.id}/schedule-exam`, {
 				examDate,
 				examTime,
-				examVenue,
-				examNotes,
 			});
 			sileo.success({
 				title: 'Scheduled',
@@ -142,9 +130,7 @@ export function ScheduleExamDialog({
 					</div>
 
 					<div className='space-y-1.5'>
-						<Label className='font-semibold'>
-							Assessment Type
-						</Label>
+						<Label className='font-semibold'>Assessment Type</Label>
 						<div className='p-2 rounded border bg-muted/30 text-sm font-bold uppercase'>
 							{scpConfig?.assessmentType || 'Written Entrance Exam'}
 						</div>
@@ -156,7 +142,7 @@ export function ScheduleExamDialog({
 							<div className='p-2 rounded border bg-muted/30 text-sm font-bold uppercase'>
 								{examDate
 									? format(new Date(examDate), 'MMMM d, yyyy')
-									: 'NOT SET BY ADMIN'}
+									: '-----'}
 							</div>
 						</div>
 						<div className='space-y-2'>
@@ -171,7 +157,7 @@ export function ScheduleExamDialog({
 												hour12: true,
 											},
 										)
-									: 'NOT SET BY ADMIN'}
+									: '-----'}
 							</div>
 						</div>
 					</div>
@@ -179,21 +165,15 @@ export function ScheduleExamDialog({
 					<div className='grid grid-cols-2 gap-4'>
 						<div className='space-y-2'>
 							<Label className='font-semibold'>Venue</Label>
-							<Input
-								className='uppercase font-bold'
-								placeholder='e.g. Science Lab'
-								value={examVenue}
-								onChange={(e) => setExamVenue(e.target.value)}
-							/>
+							<div className='p-2 rounded border bg-muted/30 text-sm font-bold uppercase'>
+								{scpConfig?.venue || '-----'}
+							</div>
 						</div>
 						<div className='space-y-2'>
 							<Label className='font-semibold'>Notes</Label>
-							<Input
-								className='uppercase font-bold'
-								placeholder='e.g. Bring pencils'
-								value={examNotes}
-								onChange={(e) => setExamNotes(e.target.value)}
-							/>
+							<div className='p-2 rounded border bg-muted/30 text-sm font-bold uppercase'>
+								{scpConfig?.notes || '-----'}
+							</div>
 						</div>
 					</div>
 

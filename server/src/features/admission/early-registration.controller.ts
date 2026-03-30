@@ -1113,7 +1113,7 @@ export async function scheduleExam(
 	next: NextFunction,
 ) {
 	try {
-		const { examDate, examTime, examVenue, examNotes } = req.body;
+		const { examDate, examTime } = req.body;
 		const applicantId = parseInt(String(req.params.id));
 		const applicant = await findApplicantOrThrow(applicantId);
 
@@ -1149,8 +1149,8 @@ export async function scheduleExam(
 					type: assessmentKind as any,
 					scheduledDate: normalizeDateToUtcNoon(new Date(examDate)),
 					scheduledTime: examTime || null,
-					venue: examVenue || null,
-					notes: examNotes || null,
+					venue: scpConfig?.venue || null,
+					notes: scpConfig?.notes || null,
 				},
 			});
 
@@ -1163,7 +1163,7 @@ export async function scheduleExam(
 		await auditLog({
 			userId: req.user!.userId,
 			actionType: 'EXAM_SCHEDULED',
-			description: `Scheduled ${assessmentType} for ${applicant.firstName} ${applicant.lastName} (#${applicantId}) on ${examDate}${examVenue ? ` at ${examVenue}` : ''}`,
+			description: `Scheduled ${assessmentType} for ${applicant.firstName} ${applicant.lastName} (#${applicantId}) on ${examDate}${scpConfig?.venue ? ` at ${scpConfig.venue}` : ''}`,
 			subjectType: 'Applicant',
 			recordId: applicantId,
 			req,
@@ -1971,9 +1971,19 @@ export async function rescheduleExam(
 	next: NextFunction,
 ) {
 	try {
-		const { examDate, examVenue } = req.body;
+		const { examDate } = req.body;
 		const applicantId = parseInt(String(req.params.id));
 		const applicant = await findApplicantOrThrow(applicantId);
+
+		// Fetch venue from ScpConfig
+		const scpConfig = await prisma.scpConfig.findUnique({
+			where: {
+				uq_scp_configs_school_year_scp_type: {
+					schoolYearId: applicant.schoolYearId,
+					scpType: applicant.applicantType as any,
+				},
+			},
+		});
 
 		// Create a new assessment record for the reschedule and update status
 		const updated = await prisma.$transaction(async (tx) => {
@@ -1982,7 +1992,7 @@ export async function rescheduleExam(
 					applicantId,
 					type: 'WRITTEN_EXAM',
 					scheduledDate: normalizeDateToUtcNoon(new Date(examDate)),
-					venue: examVenue || null,
+					venue: scpConfig?.venue || null,
 					notes: 'Rescheduled',
 				},
 			});
@@ -1996,7 +2006,7 @@ export async function rescheduleExam(
 		await auditLog({
 			userId: req.user!.userId,
 			actionType: 'EXAM_RESCHEDULED',
-			description: `Rescheduled assessment for ${applicant.firstName} ${applicant.lastName} (#${applicantId}) to ${examDate}${examVenue ? ` at ${examVenue}` : ''}`,
+			description: `Rescheduled assessment for ${applicant.firstName} ${applicant.lastName} (#${applicantId}) to ${examDate}${scpConfig?.venue ? ` at ${scpConfig.venue}` : ''}`,
 			subjectType: 'Applicant',
 			recordId: applicantId,
 			req,

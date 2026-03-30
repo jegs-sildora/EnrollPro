@@ -3,9 +3,6 @@ import {
 	BookOpen,
 	Layers,
 	ShieldCheck,
-	Calendar,
-	Clock,
-	Info,
 	CheckCircle2,
 	Circle,
 	CalendarDays,
@@ -58,6 +55,7 @@ interface ScpConfig {
 	examDate: string | null;
 	examTime: string | null;
 	interviewRequired: boolean;
+	venue: string | null;
 	artFields: string[];
 	languages: string[];
 	sportsList: string[];
@@ -125,20 +123,28 @@ export default function CurriculumTab() {
 			const fetched = scpRes.data.scpConfigs as ScpConfig[];
 			const merged = SCP_TYPES.map((type) => {
 				const found = fetched.find((f) => f.scpType === type.value);
-				return (
-					found || {
-						scpType: type.value,
-						isOffered: false,
-						cutoffScore: null,
-						examDate: null,
-						examTime: null,
-						interviewRequired: false,
-						artFields: [],
-						languages: [],
-						sportsList: [],
-						notes: null,
-					}
-				);
+				if (found) {
+					return {
+						...found,
+						// If the record exists but interviewRequired is not set, default to true
+						interviewRequired: found.interviewRequired ?? true,
+						isOffered: found.isOffered ?? false,
+					};
+				}
+				// Default configuration for new programs
+				return {
+					scpType: type.value,
+					isOffered: false,
+					cutoffScore: null,
+					examDate: null,
+					examTime: null,
+					interviewRequired: true,
+					venue: null,
+					artFields: [],
+					languages: [],
+					sportsList: [],
+					notes: null,
+				};
 			});
 			setScpConfigs(merged);
 		} catch (err) {
@@ -246,7 +252,7 @@ export default function CurriculumTab() {
 							<p className='font-bold text-foreground'>
 								No School Year Selected
 							</p>
-							<p className='text-sm text-muted-foreground leading-relaxed px-4'>
+							<p className='text-sm leading-relaxed px-4'>
 								Please set an active year or choose one from the header switcher
 								to manage records for this period.
 							</p>
@@ -277,7 +283,7 @@ export default function CurriculumTab() {
 						<CardContent>
 							<div className='grid grid-cols-1 md:grid-cols-2 gap-8'>
 								<div className='space-y-3'>
-									<p className='text-xs font-semibold uppercase tracking-wide text-muted-foreground border-b pb-1'>
+									<p className='text-xs font-semibold uppercase tracking-wide border-b pb-1'>
 										Junior High School
 									</p>
 									{[...gradeLevels]
@@ -300,7 +306,7 @@ export default function CurriculumTab() {
 										))}
 								</div>
 								<div className='space-y-3'>
-									<p className='text-xs font-semibold uppercase tracking-wide text-muted-foreground border-b pb-1'>
+									<p className='text-xs font-semibold uppercase tracking-wide border-b pb-1'>
 										Senior High School
 									</p>
 									{[...gradeLevels]
@@ -354,7 +360,7 @@ export default function CurriculumTab() {
 										<div className='flex items-center justify-between px-4 py-3 bg-muted border-b'>
 											<div className='flex items-center gap-3'>
 												<Switch
-													checked={scp.isOffered}
+													checked={scp.isOffered ?? false}
 													onCheckedChange={(checked) =>
 														handleUpdateScpField(idx, 'isOffered', checked)
 													}
@@ -379,8 +385,8 @@ export default function CurriculumTab() {
 												{/* Row 1: Scheduling & Criteria — 12-col grid (4+3+2+3 = 12) */}
 												<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-x-4 gap-y-5'>
 													<div className='space-y-1.5 lg:col-span-4'>
-														<Label className='text-xs font-semibold text-muted-foreground flex items-center gap-1.5'>
-															<Calendar className='h-3.5 w-3.5' /> Exam Date
+														<Label className='text-xs font-semibold flex items-center gap-1.5'>
+															Exam Date
 														</Label>
 														<DatePicker
 															date={
@@ -395,12 +401,12 @@ export default function CurriculumTab() {
 																	d ? d.toISOString() : null,
 																)
 															}
-															className='h-9 text-xs font-medium'
+															className='h-9 text-xs font-bold'
 														/>
 													</div>
 													<div className='space-y-1.5 lg:col-span-3'>
-														<Label className='text-xs font-semibold text-muted-foreground flex items-center gap-1.5'>
-															<Clock className='h-3.5 w-3.5' /> Exam Time
+														<Label className='text-xs font-semibold flex items-center gap-1.5'>
+															Exam Time
 														</Label>
 														<TimePicker
 															value={scp.examTime}
@@ -409,29 +415,9 @@ export default function CurriculumTab() {
 															}
 														/>
 													</div>
-													<div className='space-y-1.5 lg:col-span-2'>
-														<Label className='text-xs font-semibold text-muted-foreground flex items-center gap-1.5'>
-															<ShieldCheck className='h-3.5 w-3.5' /> Interview
-														</Label>
-														<div className='flex items-center gap-2 h-9'>
-															<Switch
-																checked={scp.interviewRequired}
-																onCheckedChange={(v) =>
-																	handleUpdateScpField(
-																		idx,
-																		'interviewRequired',
-																		v,
-																	)
-																}
-															/>
-															<span className='text-[0.625rem] text-muted-foreground'>
-																{scp.interviewRequired ? 'Required' : 'Off'}
-															</span>
-														</div>
-													</div>
 													<div className='space-y-1.5 lg:col-span-3'>
-														<Label className='text-xs font-semibold text-muted-foreground flex items-center gap-1.5'>
-															<Info className='h-3.5 w-3.5' /> Cut-off Score
+														<Label className='text-xs font-semibold flex items-center gap-1.5'>
+															Cut-off Score
 														</Label>
 														<Input
 															type='number'
@@ -450,8 +436,48 @@ export default function CurriculumTab() {
 														/>
 													</div>
 
-													{/* Row 2: Notes — full width at all breakpoints */}
-													<div className='space-y-1.5 sm:col-span-2 lg:col-span-12'>
+													<div className='space-y-1.5 lg:col-span-2'>
+														<Label className='text-xs font-semibold flex items-center gap-1.5'>
+															Interview
+														</Label>
+														<div className='flex items-center gap-2 h-9'>
+															<Switch
+																checked={scp.interviewRequired !== false}
+																onCheckedChange={(v) =>
+																	handleUpdateScpField(
+																		idx,
+																		'interviewRequired',
+																		v,
+																	)
+																}
+															/>
+															<span className='text-[0.625rem] text-muted-foreground'>
+																{scp.interviewRequired !== false
+																	? 'Required'
+																	: 'Off'}
+															</span>
+														</div>
+													</div>
+
+													{/* Row 2: Venue & Notes */}
+													<div className='space-y-1.5 sm:col-span-1 lg:col-span-6'>
+														<Label className='text-xs font-semibold text-muted-foreground'>
+															Exam Venue
+														</Label>
+														<Input
+															placeholder='e.g. Science Lab, Room 201'
+															className='h-9 text-xs'
+															value={scp.venue || ''}
+															onChange={(e) =>
+																handleUpdateScpField(
+																	idx,
+																	'venue',
+																	e.target.value,
+																)
+															}
+														/>
+													</div>
+													<div className='space-y-1.5 sm:col-span-1 lg:col-span-6'>
 														<Label className='text-xs font-semibold text-muted-foreground'>
 															Program Notes
 														</Label>
@@ -591,7 +617,7 @@ export default function CurriculumTab() {
 								<div className='space-y-6'>
 									{/* Academic Track */}
 									<div className='space-y-3'>
-										<p className='text-xs font-semibold text-muted-foreground flex items-center gap-2'>
+										<p className='text-xs font-semibold flex items-center gap-2'>
 											<span className='h-1 w-1 rounded-full bg-primary' />{' '}
 											ACADEMIC TRACK
 										</p>
@@ -621,7 +647,7 @@ export default function CurriculumTab() {
 														{isOffered ? (
 															<CheckCircle2 className='h-5 w-5 text-primary-foreground shrink-0' />
 														) : (
-															<Circle className='h-5 w-5 text-muted-foreground shrink-0' />
+															<Circle className='h-5 w-5 shrink-0' />
 														)}
 														<span
 															className={`text-sm font-medium ${isOffered ? 'text-primary-foreground' : 'text-foreground'}`}
@@ -636,7 +662,7 @@ export default function CurriculumTab() {
 
 									{/* TechPro Track */}
 									<div className='space-y-3'>
-										<p className='text-xs font-semibold text-muted-foreground flex items-center gap-2'>
+										<p className='text-xs font-semibold flex items-center gap-2'>
 											<span className='h-1 w-1 rounded-full bg-primary' />{' '}
 											TECHNICAL-PROFESSIONAL (TECHPRO) TRACK
 										</p>
@@ -666,7 +692,7 @@ export default function CurriculumTab() {
 														{isOffered ? (
 															<CheckCircle2 className='h-5 w-5 text-primary-foreground shrink-0' />
 														) : (
-															<Circle className='h-5 w-5 text-muted-foreground shrink-0' />
+															<Circle className='h-5 w-5 shrink-0' />
 														)}
 														<span
 															className={`text-sm font-medium ${isOffered ? 'text-primary-foreground' : 'text-foreground'}`}

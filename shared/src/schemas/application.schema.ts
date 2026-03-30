@@ -152,7 +152,6 @@ export const scheduleExamSchema = z.object({
 	examDate: z.string().or(z.date()),
 	examTime: z.string().optional().nullable(),
 	assessmentType: z.string().optional(),
-	examVenue: z.string().optional().nullable(),
 });
 
 export const recordResultSchema = z.object({
@@ -173,7 +172,6 @@ export const recordResultSchema = z.object({
 
 export const rescheduleExamSchema = z.object({
 	examDate: z.string().or(z.date()),
-	examVenue: z.string().optional().nullable(),
 });
 
 export const updateChecklistSchema = z.object({

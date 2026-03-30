@@ -443,7 +443,8 @@ model ScpConfig {
   assessmentType     String?         @map("assessment_type")
   examDate           DateTime?       @db.Date @map("exam_date")
   examTime           String?         @map("exam_time")
-  interviewRequired  Boolean         @default(false) @map("interview_required")
+  interviewRequired  Boolean         @default(true) @map("interview_required")
+  venue              String?
   notes              String?
   schoolYear         SchoolYear      @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
   options        ScpConfigOption[]
