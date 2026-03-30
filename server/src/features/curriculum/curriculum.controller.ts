@@ -443,6 +443,7 @@ export async function updateScpConfigs(
 					assessmentType,
 					examDate,
 					examTime,
+					interviewRequired,
 					artFields,
 					languages,
 					sportsList,
@@ -457,6 +458,7 @@ export async function updateScpConfigs(
 						? normalizeDateToUtcNoon(new Date(examDate))
 						: null,
 					examTime: examTime ?? null,
+					interviewRequired: interviewRequired ?? false,
 					notes: notes ?? null,
 				};
 

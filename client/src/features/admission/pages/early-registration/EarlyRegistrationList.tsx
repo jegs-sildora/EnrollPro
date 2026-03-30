@@ -302,7 +302,7 @@ export default function EarlyRegistration() {
 							<div className='grid grid-cols-2 md:flex gap-3 md:gap-4 w-full md:w-auto'>
 								<div className='space-y-2'>
 									<Label className='text-sm uppercase tracking-wider font-bold'>
-										Intake Status
+										Application Status
 									</Label>
 									<Select
 										value={status}
@@ -316,7 +316,7 @@ export default function EarlyRegistration() {
 												value='ALL'
 												className='text-sm font-bold'
 											>
-												All Active Intake
+												All Active Application
 											</SelectItem>
 											<SelectItem
 												value='SUBMITTED'

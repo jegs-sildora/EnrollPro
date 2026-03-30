@@ -14,7 +14,7 @@ import {
 	scheduleInterviewSchema,
 	recordInterviewResultSchema,
 } from '@enrollpro/shared';
-import * as ctrl from './admission.controller.js';
+import * as ctrl from './early-registration.controller.js';
 import * as docCtrl from './document.controller.js';
 import rateLimit from 'express-rate-limit';
 import multer from 'multer';

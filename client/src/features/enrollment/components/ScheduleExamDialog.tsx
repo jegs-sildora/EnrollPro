@@ -187,7 +187,7 @@ export function ScheduleExamDialog({
 							/>
 						</div>
 						<div className='space-y-2'>
-							<Label className='font-semibold'>Notes (Optional)</Label>
+							<Label className='font-semibold'>Notes</Label>
 							<Input
 								className='uppercase font-bold'
 								placeholder='e.g. Bring pencils'

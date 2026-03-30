@@ -52,6 +52,7 @@ type TrackFormData = z.infer<typeof trackSchema>;
 interface ApplicationStatus {
 	trackingNumber: string;
 	firstName: string;
+	middleName?: string;
 	lastName: string;
 	status: string;
 	applicantType: string;
@@ -59,13 +60,15 @@ interface ApplicationStatus {
 	gradeLevel: { name: string };
 	strand?: { name: string };
 	enrollment?: { section: { name: string }; enrolledAt: string };
-	examDate?: string;
-	examTime?: string;
-	examVenue?: string;
-	examNotes?: string;
+	assessments?: {
+		type: string;
+		scheduledDate?: string;
+		scheduledTime?: string;
+		venue?: string;
+		notes?: string;
+	}[];
 	rejectionReason?: string;
-	isScpApplication?: boolean;
-	scpType?: string;
+	scpDetail?: { scpType: string };
 }
 
 const statusConfig: Record<
@@ -101,11 +104,17 @@ const statusConfig: Record<
 		color: 'text-cyan-600 bg-cyan-50 border-cyan-200',
 		desc: 'Basic screening is complete. You are cleared for the next step.',
 	},
-	ASSESSMENT_SCHEDULED: {
+	EXAM_SCHEDULED: {
 		label: 'Exam Scheduled',
 		icon: Calendar,
 		color: 'text-amber-600 bg-amber-50 border-amber-200',
 		desc: 'An entrance exam has been scheduled for you. Please check the details below.',
+	},
+	ASSESSMENT_SCHEDULED: {
+		label: 'Interview Scheduled',
+		icon: Calendar,
+		color: 'text-amber-600 bg-amber-50 border-amber-200',
+		desc: 'A follow-up interview has been scheduled for you. Please check the details below.',
 	},
 	ASSESSMENT_TAKEN: {
 		label: 'Assessment Taken',
@@ -270,6 +279,16 @@ export default function TrackApplication({
 		: null;
 	const Icon = config?.icon;
 
+	const isScpApplication = status
+		? status.applicantType !== 'REGULAR' || !!status.scpDetail
+		: false;
+	const scpType = status?.scpDetail?.scpType ?? status?.applicantType;
+	const latestAssessment = status?.assessments?.[0] ?? null;
+	const examDate = latestAssessment?.scheduledDate ?? null;
+	const examTime = latestAssessment?.scheduledTime ?? null;
+	const examVenue = latestAssessment?.venue ?? null;
+	const examNotes = latestAssessment?.notes ?? null;
+
 	return (
 		<div
 			className={cn('max-w-4xl mx-auto p-4 md:p-8 transition-all duration-500')}
@@ -392,7 +411,7 @@ export default function TrackApplication({
 								<div
 									className={cn(
 										'grid gap-4 text-center',
-										status.isScpApplication
+										isScpApplication
 											? 'grid-cols-1 md:grid-cols-3'
 											: 'grid-cols-1 md:grid-cols-2',
 									)}
@@ -402,7 +421,8 @@ export default function TrackApplication({
 											<User className='w-3 h-3' /> Applicant Name
 										</p>
 										<p className='font-black text-primary uppercase'>
-											{status.lastName}, {status.firstName}
+											{status.lastName}, {status.firstName}{' '}
+											{status.middleName || ''}
 										</p>
 									</div>
 									<div className='p-5 bg-primary/5 border border-primary/10 rounded-2xl space-y-1'>
@@ -414,39 +434,40 @@ export default function TrackApplication({
 										</p>
 									</div>
 
-									{status.isScpApplication && (
+									{isScpApplication && (
 										<div className='p-5 bg-primary/5 border border-primary/10 rounded-2xl space-y-1'>
 											<p className='text-[0.625rem] font-black uppercase text-primary/60 tracking-widest flex items-center justify-center gap-1.5'>
 												<BookOpen className='w-3 h-3' /> SCP Program
 											</p>
 											<p className='font-black text-primary uppercase'>
-												{status.scpType
-													? SCP_LABELS[status.scpType] || status.scpType
+												{scpType
+													? SCP_LABELS[scpType] || scpType
 													: 'Special Program'}
 											</p>
 										</div>
 									)}
 
-									{status.status === 'ASSESSMENT_SCHEDULED' &&
-										status.examDate && (
+									{(status.status === 'EXAM_SCHEDULED' ||
+										status.status === 'ASSESSMENT_SCHEDULED') &&
+										examDate && (
 											<>
 												<div className='p-5 bg-purple-50 border border-purple-200 rounded-2xl space-y-1'>
 													<p className='text-[0.625rem] font-black uppercase text-purple-600 tracking-widest flex items-center justify-center gap-1.5'>
 														<Calendar className='w-3 h-3' /> Scheduled Date
 													</p>
 													<p className='font-black text-purple-900 uppercase'>
-														{format(new Date(status.examDate), 'MMMM dd, yyyy')}
+														{format(new Date(examDate), 'MMMM dd, yyyy')}
 													</p>
 													<p className='text-[0.625rem] font-bold text-purple-700/70 uppercase'>
-														{status.examTime
+														{examTime
 															? new Date(
-																	`2000-01-01T${status.examTime}`,
+																	`2000-01-01T${examTime}`,
 																).toLocaleTimeString('en-US', {
 																	hour: 'numeric',
 																	minute: '2-digit',
 																	hour12: true,
 																})
-															: format(new Date(status.examDate), 'hh:mm a')}
+															: format(new Date(examDate), 'hh:mm a')}
 													</p>
 												</div>
 												<div className='p-5 bg-purple-50 border border-purple-200 rounded-2xl space-y-1'>
@@ -454,7 +475,7 @@ export default function TrackApplication({
 														<MapPin className='w-3 h-3' /> Exam Location
 													</p>
 													<p className='font-black text-purple-900 uppercase'>
-														{status.examVenue || 'TO BE ANNOUNCED'}
+														{examVenue || 'TO BE ANNOUNCED'}
 													</p>
 												</div>
 												<div className='p-5 bg-purple-50 border border-purple-200 rounded-2xl space-y-1'>
@@ -463,7 +484,7 @@ export default function TrackApplication({
 														Notes
 													</p>
 													<p className='font-bold text-purple-900/80 text-[0.625rem] uppercase italic leading-tight line-clamp-2'>
-														{status.examNotes || 'No special instructions'}
+														{examNotes || 'No special instructions'}
 													</p>
 												</div>
 											</>
@@ -474,9 +495,7 @@ export default function TrackApplication({
 											<div
 												className={cn(
 													'p-5 bg-primary/5 border border-primary/20 rounded-2xl space-y-1',
-													status.isScpApplication
-														? 'md:col-span-3'
-														: 'md:col-span-2',
+													isScpApplication ? 'md:col-span-3' : 'md:col-span-2',
 												)}
 											>
 												<p className='text-[0.625rem] font-black uppercase text-primary tracking-widest flex items-center justify-center gap-1.5'>
@@ -491,9 +510,7 @@ export default function TrackApplication({
 									<div
 										className={cn(
 											'p-5 bg-white border border-border rounded-2xl space-y-1 text-center',
-											status.isScpApplication
-												? 'md:col-span-3'
-												: 'md:col-span-2',
+											isScpApplication ? 'md:col-span-3' : 'md:col-span-2',
 										)}
 									>
 										<p className='text-[0.625rem] font-black uppercase text-muted-foreground tracking-widest'>
