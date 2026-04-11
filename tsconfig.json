@@ -1,12 +1,11 @@
 {
-	"compilerOptions": {
-		"baseUrl": ".",
-		"skipLibCheck": true
-	},
-	"exclude": ["node_modules", "**/node_modules", "dist", "**/dist"],
-	"references": [
-		{ "path": "./shared" },
-		{ "path": "./server" },
-		{ "path": "./client" }
-	]
+  "compilerOptions": {
+    "skipLibCheck": true
+  },
+  "exclude": ["node_modules", "**/node_modules", "dist", "**/dist"],
+  "references": [
+    { "path": "./shared" },
+    { "path": "./server" },
+    { "path": "./client" }
+  ]
 }
