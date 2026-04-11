@@ -17,6 +17,7 @@ server/uploads/
 .vscode/
 .agents/
 .gemini/
+.github/
 docs/
 
 
