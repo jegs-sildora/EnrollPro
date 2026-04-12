@@ -262,12 +262,6 @@ export default function Sections() {
 					>
 						Junior High School
 					</TabsTrigger>
-					<TabsTrigger
-						value='SHS'
-						className='flex-1 min-w-25'
-					>
-						Senior High School
-					</TabsTrigger>
 				</TabsList>
 			</Tabs>
 

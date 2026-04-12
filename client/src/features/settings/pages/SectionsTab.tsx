@@ -257,19 +257,6 @@ export default function SectionsTab() {
 						)}
 						<span className='relative z-20'>Junior High School</span>
 					</TabsTrigger>
-					<TabsTrigger
-						value='SHS'
-						className='flex-1 min-w-25 relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-colors'
-					>
-						{activeLevel === 'SHS' && (
-							<motion.div
-								layoutId='active-pill'
-								className='absolute inset-0 bg-primary rounded-md'
-								transition={{ type: 'spring', bounce: 0.15, duration: 0.3 }}
-							/>
-						)}
-						<span className='relative z-20'>Senior High School</span>
-					</TabsTrigger>
 				</TabsList>
 			</Tabs>
 

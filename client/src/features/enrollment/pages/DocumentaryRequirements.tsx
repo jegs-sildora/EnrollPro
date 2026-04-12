@@ -254,9 +254,8 @@ export default function DocumentaryRequirements() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="jhs" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-4">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="jhs">Junior High (7-10)</TabsTrigger>
-              <TabsTrigger value="shs">Senior High (11-12)</TabsTrigger>
               <TabsTrigger value="special">Special Categories</TabsTrigger>
             </TabsList>
 
@@ -323,86 +322,6 @@ export default function DocumentaryRequirements() {
                     </TableRow>
                   </TableBody>
                 </Table>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="shs" className="space-y-4">
-              <div className="rounded-md border overflow-hidden">
-                <Table>
-                  <TableHeader className="bg-muted/50">
-                    <TableRow>
-                      <TableHead className="w-[100px]">Grade</TableHead>
-                      <TableHead className="w-[140px]">Learner Type</TableHead>
-                      <TableHead className="bg-blue-50/30">
-                        Phase 1: Early Registration
-                      </TableHead>
-                      <TableHead className="bg-emerald-50/30">
-                        Phase 2: Actual Enrollment
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell className="font-bold text-center">
-                        11
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">New Enrollee</Badge>
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        SF9 Grade 10 (verify) + PSA BC (verify)
-                      </TableCell>
-                      <TableCell className="text-xs font-medium">
-                        BEEF (w/ Track) + SF9 original + PSA BC + Consent
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-bold text-center">
-                        12
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className="bg-green-50 text-green-700 border-green-200">
-                          Continuing
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground italic">
-                        Not Required (Auto-pre-registered)
-                      </TableCell>
-                      <TableCell className="text-xs font-medium">
-                        Confirmation Slip (Annex C) only
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-bold text-center">
-                        Any
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className="bg-blue-50 text-blue-700 border-blue-200">
-                          Transferee
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        SF9 most recent (verify) + PSA BC (verify)
-                      </TableCell>
-                      <TableCell className="text-xs font-medium">
-                        BEEF + SF9 original + PSA BC + Consent
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-              <div className="p-3 bg-amber-50 rounded-md border border-amber-200 flex items-start gap-3">
-                <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
-                <p className="text-[0.6875rem] text-amber-800 leading-normal">
-                  <strong>STEM Applicants:</strong> During SCP Early
-                  Registration, Science and Math grades on the SF9 must be â‰¥
-                  85. Registrar must verify these specific grades before marking
-                  as Eligible.
-                </p>
               </div>
             </TabsContent>
 
