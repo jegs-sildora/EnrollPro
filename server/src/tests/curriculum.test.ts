@@ -8,7 +8,6 @@ describe('Curriculum API', () => {
 	let authToken: string;
 	let schoolYearId: number;
 	let gradeLevelId: number;
-	let strandId: number;
 
 	beforeAll(async () => {
 		// Create test user
@@ -37,7 +36,7 @@ describe('Curriculum API', () => {
 			data: {
 				yearLabel: '2026-2027',
 				status: 'ACTIVE',
-				isActive: true,
+				isManualOverrideOpen: true,
 			},
 		});
 		schoolYearId = ay.id;
@@ -45,27 +44,16 @@ describe('Curriculum API', () => {
 		// Create grade level
 		const gl = await prisma.gradeLevel.create({
 			data: {
-				name: 'Grade 11',
-				displayOrder: 11,
+				name: 'Grade 7',
+				displayOrder: 7,
 				schoolYearId,
 			},
 		});
 		gradeLevelId = gl.id;
-
-		// Create strand
-		const strand = await prisma.strand.create({
-			data: {
-				name: 'STEM',
-				applicableGradeLevelIds: [],
-				schoolYearId,
-			},
-		});
-		strandId = strand.id;
 	});
 
 	afterAll(async () => {
 		// Cleanup
-		await prisma.strand.deleteMany({ where: { schoolYearId } });
 		await prisma.gradeLevel.deleteMany({ where: { schoolYearId } });
 		await prisma.schoolYear.delete({ where: { id: schoolYearId } });
 		await prisma.user.deleteMany({
@@ -83,50 +71,6 @@ describe('Curriculum API', () => {
 		expect(res.body.gradeLevels).toBeDefined();
 		expect(Array.isArray(res.body.gradeLevels)).toBe(true);
 		expect(res.body.gradeLevels.length).toBeGreaterThan(0);
-	});
-
-	it('should list strands', async () => {
-		const res = await request(app)
-			.get(`/api/curriculum/${schoolYearId}/strands`)
-			.set('Authorization', `Bearer ${authToken}`);
-
-		expect(res.status).toBe(200);
-		expect(res.body.strands).toBeDefined();
-		expect(Array.isArray(res.body.strands)).toBe(true);
-		expect(res.body.strands.length).toBeGreaterThan(0);
-	});
-
-	it('should update strand-to-grade matrix', async () => {
-		const matrix = [
-			{
-				strandId,
-				gradeLevelIds: [gradeLevelId],
-			},
-		];
-
-		const res = await request(app)
-			.put(`/api/curriculum/${schoolYearId}/strand-matrix`)
-			.set('Authorization', `Bearer ${authToken}`)
-			.send({ matrix });
-
-		expect(res.status).toBe(200);
-		expect(res.body.strands).toBeDefined();
-		expect(Array.isArray(res.body.strands)).toBe(true);
-
-		// Verify the strand was updated
-		const updatedStrand = res.body.strands.find((s: any) => s.id === strandId);
-		expect(updatedStrand).toBeDefined();
-		expect(updatedStrand.applicableGradeLevelIds).toContain(gradeLevelId);
-	});
-
-	it('should return 400 if matrix is not an array', async () => {
-		const res = await request(app)
-			.put(`/api/curriculum/${schoolYearId}/strand-matrix`)
-			.set('Authorization', `Bearer ${authToken}`)
-			.send({ matrix: 'invalid' });
-
-		expect(res.status).toBe(400);
-		expect(res.body.message).toBe('Matrix must be an array');
 	});
 
 	it('should require authentication', async () => {

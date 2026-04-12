@@ -99,13 +99,12 @@ model SchoolYear {
   gradeLevels        GradeLevel[]
   schoolSettings     SchoolSetting[]
   scpProgramConfigs  ScpProgramConfig[]
-  strands            Strand[]
   healthRecords      HealthRecord[]
 
   @@map("school_years")
 }
 
-/// K-12 grade levels (e.g. Grade 7, Grade 11) cloned per school year
+/// JHS grade levels (e.g. Grade 7, Grade 10) cloned per school year
 model GradeLevel {
   id             Int          @id @default(autoincrement())
   name           String
@@ -116,25 +115,8 @@ model GradeLevel {
   applicants     Applicant[]
   schoolYear     SchoolYear   @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
   sections       Section[]
-  strands        StrandGradeLevel[]
 
   @@map("grade_levels")
-}
-
-/// SHS academic tracks/strands and elective clusters, cloned per school year
-model Strand {
-  id                      Int              @id @default(autoincrement())
-  name                    String
-  schoolYearId            Int              @map("school_year_id")
-  curriculumType          CurriculumType   @default(OLD_STRAND) @map("curriculum_type")
-  track                   SHSTrack?
-  createdAt               DateTime         @default(now()) @db.Timestamptz @map("created_at")
-  
-  applicants              Applicant[]
-  schoolYear              SchoolYear       @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
-  gradeLevels             StrandGradeLevel[]
-
-  @@map("strands")
 }
 
 /// Class section with capacity, grade level, and optional advising teacher
@@ -179,15 +161,12 @@ model Applicant {
   isLearnerWithDisability Boolean           @default(false) @map("is_learner_with_disability")
   disabilityTypes         String[]          @map("disability_types")
   learnerType             LearnerType       @default(NEW_ENROLLEE) @map("learner_type")
-  electiveCluster         String?           @map("elective_cluster")
   trackingNumber          String            @unique(map: "uq_applicants_tracking_number") @map("tracking_number")
   status                  ApplicationStatus @default(SUBMITTED)
   rejectionReason         String?           @map("rejection_reason")
   gradeLevelId            Int               @map("grade_level_id")
-  strandId                Int?              @map("strand_id")
   schoolYearId            Int               @map("school_year_id")
   applicantType           ApplicantType     @default(REGULAR) @map("applicant_type")
-  shsTrack                SHSTrack?         @map("shs_track")
   isPrivacyConsentGiven   Boolean           @default(false) @map("is_privacy_consent_given")
   createdAt               DateTime          @default(now()) @db.Timestamptz @map("created_at")
   updatedAt               DateTime          @updatedAt @db.Timestamptz @map("updated_at")
@@ -203,7 +182,6 @@ model Applicant {
   schoolYear              SchoolYear        @relation(fields: [schoolYearId], references: [id])
   encodedBy               User?             @relation("ApplicantEncodedBy", fields: [encodedById], references: [id])
   gradeLevel              GradeLevel        @relation(fields: [gradeLevelId], references: [id])
-  strand                  Strand?           @relation(fields: [strandId], references: [id])
   addresses               ApplicantAddress[]
   familyMembers           ApplicantFamilyMember[]
   previousSchool          ApplicantPreviousSchool?
@@ -511,18 +489,6 @@ model ScpProgramOption {
   @@map("scp_program_options")
 }
 
-/// Junction table linking strands to applicable grade levels
-model StrandGradeLevel {
-  strandId     Int        @map("strand_id")
-  gradeLevelId Int        @map("grade_level_id")
-  
-  strand       Strand     @relation(fields: [strandId], references: [id], onDelete: Cascade)
-  gradeLevel   GradeLevel @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
-
-  @@id([strandId, gradeLevelId])
-  @@map("strand_grade_levels")
-}
-
 /// Teacher subject specializations
 model TeacherSubject {
   id        Int     @id @default(autoincrement())
@@ -582,22 +548,6 @@ enum SchoolYearStatus {
   @@map("school_year_status")
 }
 
-/// SHS curriculum types per MATATAG/K-12 reforms
-enum CurriculumType {
-  OLD_STRAND
-  ELECTIVE_CLUSTER
-
-  @@map("curriculum_type")
-}
-
-/// SHS tracks: Academic or Technical-Professional
-enum SHSTrack {
-  ACADEMIC
-  TECHPRO
-
-  @@map("shs_track")
-}
-
 /// Enrollment classification: REGULAR standard admission, Special Curricular Programs
 enum ApplicantType {
   REGULAR
@@ -607,7 +557,6 @@ enum ApplicantType {
   SPECIAL_PROGRAM_IN_JOURNALISM
   SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE
   SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION
-  STEM_GRADE_11
 
   @@map("applicant_type")
 }

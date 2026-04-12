@@ -568,14 +568,6 @@ export default function StudentProfile() {
                             </div>
                           </div>
                         )}
-                        <div className="space-y-2">
-                          <Label className="text-muted-foreground">
-                            Elective Cluster
-                          </Label>
-                          <p className="font-bold text-lg">
-                            {student.electiveCluster || "None"}
-                          </p>
-                        </div>
                       </div>
                     </div>
                   </CardContent>

@@ -56,7 +56,6 @@ interface ApplicationStatus {
   applicantType: string;
   createdAt: string;
   gradeLevel: { name: string };
-  strand?: { name: string };
   enrollment?: { section: { name: string }; enrolledAt: string };
   assessments?: {
     type: string;
@@ -172,7 +171,6 @@ const SCP_LABELS: Record<string, string> = {
   SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: "Special Program in Foreign Language",
   SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION:
     "Special Program in Tech-Voc Education",
-  STEM_GRADE_11: "STEM (Grade 11)",
 };
 
 interface TrackApplicationProps {
