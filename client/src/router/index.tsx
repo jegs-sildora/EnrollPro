@@ -42,11 +42,11 @@ export const router = createBrowserRouter([
     children: [
       // Public routes
       {
-        path: "/apply",
+        path: "/enrollment",
         element: <Apply />,
       },
       {
-        path: "/register",
+        path: "/early-registration",
         element: <EarlyRegistrationApply />,
       },
       {
@@ -86,7 +86,7 @@ export const router = createBrowserRouter([
             ),
           },
           {
-            path: "/f2f-early-registration",
+            path: "/monitoring/f2f-early-registration",
             element: (
               <AppLayout>
                 <F2FEarlyRegistration />
@@ -95,22 +95,22 @@ export const router = createBrowserRouter([
           },
           {
             path: "/applications",
-            element: <Navigate to="/early-registration" replace />,
+            element: <Navigate to="/monitoring/early-registration" replace />,
           },
           {
             path: "/applications/early-registration",
-            element: <Navigate to="/early-registration" replace />,
+            element: <Navigate to="/monitoring/early-registration" replace />,
           },
           {
             path: "/applications/enrollment",
-            element: <Navigate to="/enrollment" replace />,
+            element: <Navigate to="/monitoring/enrollment" replace />,
           },
           {
             path: "/applications/admission/:id",
-            element: <Navigate to="/early-registration" replace />,
+            element: <Navigate to="/monitoring/early-registration" replace />,
           },
           {
-            path: "/early-registration",
+            path: "/monitoring/early-registration",
             element: (
               <AppLayout>
                 <EarlyRegistration />
@@ -118,7 +118,7 @@ export const router = createBrowserRouter([
             ),
           },
           {
-            path: "/early-registration/pipelines",
+            path: "/monitoring/early-registration/pipelines",
             element: (
               <AppLayout>
                 <RegistrationPipelines />
@@ -126,7 +126,7 @@ export const router = createBrowserRouter([
             ),
           },
           {
-            path: "/early-registration/:id",
+            path: "/monitoring/early-registration/:id",
             element: (
               <AppLayout>
                 <EarlyRegistrationDetail />
@@ -134,7 +134,7 @@ export const router = createBrowserRouter([
             ),
           },
           {
-            path: "/enrollment",
+            path: "/monitoring/enrollment",
             element: (
               <AppLayout>
                 <Enrollment />
@@ -166,7 +166,7 @@ export const router = createBrowserRouter([
             ),
           },
           {
-            path: "/enrollment/requirements",
+            path: "/monitoring/enrollment/requirements",
             element: (
               <AppLayout>
                 <DocumentaryRequirements />

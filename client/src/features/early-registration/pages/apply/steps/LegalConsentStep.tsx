@@ -1,107 +1,158 @@
-import { useFormContext } from "react-hook-form";
+import { useFormContext, Controller } from "react-hook-form";
 import type { EarlyRegFormData } from "../types";
 import { Label } from "@/shared/ui/label";
 import { Switch } from "@/shared/ui/switch";
 import { Button } from "@/shared/ui/button";
-import { AlertCircle, ShieldCheck, Loader2 } from "lucide-react";
-import { Controller } from "react-hook-form";
+import { ShieldCheck, Loader2, User, Home, Users, Info } from "lucide-react";
+import { format } from "date-fns";
 
 interface LegalConsentStepProps {
   isSubmitting: boolean;
 }
+
+const SummaryCard = ({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+}) => (
+  <div className="border border-border/60 rounded-2xl overflow-hidden bg-white shadow-sm">
+    <div className="px-5 py-3 bg-muted/30 border-b border-border/40 flex items-center gap-2">
+      <Icon className="w-4 h-4 text-primary" />
+      <h4 className="text-xs font-bold uppercase tracking-wider text-foreground/70">
+        {title}
+      </h4>
+    </div>
+    <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+      {children}
+    </div>
+  </div>
+);
+
+const DataItem = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number | undefined | null;
+}) => (
+  <div className="space-y-0.5">
+    <p className="text-[0.625rem] font-bold uppercase text-muted-foreground tracking-tight">
+      {label}
+    </p>
+    <p className="font-bold text-foreground truncate uppercase">
+      {value || "----"}
+    </p>
+  </div>
+);
 
 export default function LegalConsentStep({
   isSubmitting,
 }: LegalConsentStepProps) {
   const {
     control,
+    watch,
     formState: { errors },
   } = useFormContext<EarlyRegFormData>();
 
+  const data = watch();
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-bold flex items-center gap-2">
-          <ShieldCheck className="w-5 h-5 text-primary" />
-          Data Privacy Consent
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          As required by Republic Act No. 10173 (Data Privacy Act of 2012)
-        </p>
+    <div className="space-y-8">
+      <div className="space-y-6">
+        <SummaryCard title="Learner Information" icon={User}>
+          <DataItem label="Full Name" value={`${data.lastName}, ${data.firstName} ${data.middleName || ""} ${data.extensionName || ""}`} />
+          <DataItem label="LRN" value={data.lrn} />
+          <DataItem label="Grade Level" value={`Grade ${data.gradeLevel}`} />
+          <DataItem label="Sex" value={data.sex} />
+          <DataItem label="Birthdate" value={data.birthdate ? format(new Date(data.birthdate), "MMMM dd, yyyy") : ""} />
+          <DataItem label="Learner Type" value={data.learnerType?.replace("_", " ")} />
+        </SummaryCard>
+
+        <SummaryCard title="Address & Contact" icon={Home}>
+          <DataItem label="Barangay" value={data.barangay} />
+          <DataItem label="City/Municipality" value={data.cityMunicipality} />
+          <DataItem label="Contact Number" value={data.contactNumber} />
+          <DataItem label="Email" value={data.email} />
+        </SummaryCard>
+
+        <SummaryCard title="Parent/Guardian" icon={Users}>
+          <DataItem label="Mother" value={`${data.mother?.firstName} ${data.mother?.lastName}`} />
+          <DataItem label="Father" value={`${data.father?.firstName} ${data.father?.lastName}`} />
+          {data.guardianRelationship && (
+            <DataItem label="Guardian" value={`${data.guardian?.firstName} ${data.guardian?.lastName} (${data.guardianRelationship})`} />
+          )}
+        </SummaryCard>
       </div>
 
-      <div className="rounded-lg border bg-muted/30 p-4 max-h-60 overflow-y-auto text-sm leading-relaxed space-y-3">
-        <p>
-          I hereby authorize the Department of Education (DepEd) and its partner
-          institutions to collect, process, and store the personal information
-          provided in this form for the following purposes:
-        </p>
-        <ul className="list-disc list-inside space-y-1 pl-2">
-          <li>
-            Early registration and enrollment processing for the school year
-          </li>
-          <li>Generation of the Learner Information System (LIS) records</li>
-          <li>Statistical reporting and planning for educational services</li>
-          <li>
-            Provision of social services, scholarship referrals, and learning
-            support programs
-          </li>
-        </ul>
-        <p>
-          I understand that my child&apos;s/ward&apos;s personal information
-          will be handled in accordance with the Data Privacy Act of 2012 (RA
-          10173) and its Implementing Rules and Regulations, and that I may
-          exercise my rights as a data subject at any time.
-        </p>
-        <p>
-          I certify that all information provided in this form is true and
-          correct to the best of my knowledge.
-        </p>
-      </div>
-
-      <Controller
-        control={control}
-        name="isPrivacyConsentGiven"
-        render={({ field }) => (
-          <div className="space-y-2">
-            <div className="flex items-center gap-3 rounded-lg border p-4">
-              <Switch
-                id="isPrivacyConsentGiven"
-                checked={field.value}
-                onCheckedChange={field.onChange}
-              />
-              <Label
-                htmlFor="isPrivacyConsentGiven"
-                className="cursor-pointer text-sm font-medium leading-snug">
-                I have read and agree to the Data Privacy Notice above, and I
-                certify that all information provided is true and correct.{" "}
-                <span className="text-destructive">*</span>
-              </Label>
-            </div>
-            {errors.isPrivacyConsentGiven?.message && (
-              <p className="text-xs text-destructive flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" />
-                {errors.isPrivacyConsentGiven.message}
-              </p>
-            )}
+      <div className="pt-8 border-t border-border/60 space-y-6">
+        <div className="p-6 bg-primary/5 border border-primary/10 rounded-2xl space-y-6">
+          <div className="flex items-center gap-2 mb-2">
+            <ShieldCheck className="w-5 h-5 text-primary" />
+            <h3 className="text-sm font-bold uppercase tracking-widest text-primary">
+              Accuracy Certification
+            </h3>
           </div>
-        )}
-      />
 
-      <Button
-        type="submit"
-        className="w-full"
-        size="lg"
-        disabled={isSubmitting}>
-        {isSubmitting ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Submitting…
-          </>
-        ) : (
-          "Submit Early Registration"
-        )}
-      </Button>
+          <div className="flex items-start space-x-3">
+            <Controller
+              control={control}
+              name="isPrivacyConsentGiven"
+              render={({ field }) => (
+                <div className="flex flex-col gap-2 w-full">
+                  <div className="flex items-start gap-3">
+                    <Switch
+                      id="certify-check"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      className="mt-1"
+                    />
+                    <Label
+                      htmlFor="certify-check"
+                      className="text-sm font-medium leading-relaxed cursor-pointer select-none space-y-3 block"
+                    >
+                      <p>
+                        I certify that all information I have provided on this form is true, correct, and complete to the best of my knowledge and belief. I understand that any false information may be grounds for disqualification.
+                      </p>
+                      <p className="italic text-muted-foreground border-l-2 border-primary/30 pl-3 py-1">
+                        Nagapamatuod ako nga ang tanan nga impormasyon nga akon ginhatag sa sini nga porma matuod, husto, kag kompleto sa akon nahibaluan.
+                      </p>
+                    </Label>
+                  </div>
+                  {errors.isPrivacyConsentGiven?.message && (
+                    <p className="text-[0.6875rem] text-destructive font-bold pl-14">
+                      {errors.isPrivacyConsentGiven.message}
+                    </p>
+                  )}
+                </div>
+              )}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center gap-4">
+          <Button
+            type="submit"
+            className="w-full h-14 text-lg font-bold transition-all bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+            disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Submitting Registration…
+              </>
+            ) : (
+              "Confirm & Submit Registration"
+            )}
+          </Button>
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5 font-medium">
+            <Info className="w-3.5 h-3.5" />
+            Data Privacy consent recorded at initial login.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

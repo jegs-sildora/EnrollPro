@@ -22,6 +22,20 @@ export const earlyRegGuardianSchema = z.object({
     .or(z.literal("")),
 });
 
+/** Mother maiden name schema */
+const motherSchema = z.object({
+  maidenName: z.string().min(1, "Maiden last name is required").max(100),
+  firstName: z.string().min(1, "First name is required").max(100),
+  middleName: z.string().max(100).optional().nullable(),
+  contactNumber: z.string().max(20).optional().nullable(),
+  email: z
+    .string()
+    .email("Invalid email")
+    .optional()
+    .nullable()
+    .or(z.literal("")),
+});
+
 /** Optional guardian — all fields optional */
 const optionalGuardianSchema = z.object({
   lastName: z.string().max(100).optional().nullable(),
@@ -59,7 +73,10 @@ export const earlyRegistrationSubmitSchema = z
     firstName: z.string().min(1, "First name is required").max(100),
     middleName: z.string().max(100).optional().nullable(),
     extensionName: z.string().max(20).optional().nullable(),
-    birthdate: z.string().or(z.date()),
+    birthdate: z.union(
+      [z.string().min(1, "Date of birth is required"), z.date()],
+      { errorMap: () => ({ message: "Date of birth is required" }) }
+    ),
     sex: SexEnum,
     religion: z.string().max(100).optional().nullable(),
 
@@ -81,15 +98,18 @@ export const earlyRegistrationSubmitSchema = z
 
     // ── Guardians ─────────────────────────────────────────
     father: optionalGuardianSchema.optional().nullable(),
-    mother: optionalGuardianSchema.optional().nullable(),
+    mother: motherSchema.optional().nullable(),
     guardian: optionalGuardianSchema.optional().nullable(),
+    hasNoMother: z.boolean().default(false),
+    hasNoFather: z.boolean().default(false),
     guardianRelationship: z.string().max(50).optional().nullable(),
+    primaryContact: z.enum(["FATHER", "MOTHER", "GUARDIAN"]).optional().nullable(),
     contactNumber: z
       .string()
       .min(1, "Contact number is required")
       .regex(
-        /^(09\d{9}|(\+63)\d{10})$/,
-        "Enter a valid PH mobile number (e.g. 09171234567)",
+        /^09\d{2}-\d{3}-\d{4}$/,
+        "Format: 09XX-XXX-YYYY",
       ),
     email: z
       .string()
@@ -118,9 +138,10 @@ export const earlyRegistrationSubmitSchema = z
     }
 
     // At least one parent/guardian must be provided
-    const hasFather = data.father?.lastName && data.father?.firstName;
-    const hasMother = data.mother?.lastName && data.mother?.firstName;
+    const hasFather = !data.hasNoFather && data.father?.lastName && data.father?.firstName;
+    const hasMother = !data.hasNoMother && data.mother?.maidenName && data.mother?.firstName;
     const hasGuardian = data.guardian?.lastName && data.guardian?.firstName;
+    
     if (!hasFather && !hasMother && !hasGuardian) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -129,7 +150,68 @@ export const earlyRegistrationSubmitSchema = z
       });
     }
 
-    // Guardian relationship required when guardian is provided
+    // Guardian validation: If both parents are absent, guardian becomes strictly required
+    if (data.hasNoFather && data.hasNoMother) {
+      if (!data.guardian?.lastName?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Guardian last name is required",
+          path: ["guardian", "lastName"],
+        });
+      }
+      if (!data.guardian?.firstName?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Guardian first name is required",
+          path: ["guardian", "firstName"],
+        });
+      }
+      if (!data.guardianRelationship?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Guardian relationship is required",
+          path: ["guardianRelationship"],
+        });
+      }
+    }
+
+    // If mother is present (not skipped), maiden name and first name are required
+    if (!data.hasNoMother) {
+      if (!data.mother?.maidenName?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Maiden last name is required",
+          path: ["mother", "maidenName"],
+        });
+      }
+      if (!data.mother?.firstName?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "First name is required",
+          path: ["mother", "firstName"],
+        });
+      }
+    }
+
+    // If father is present (not skipped), last name and first name are required
+    if (!data.hasNoFather) {
+      if (!data.father?.lastName?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Last name is required",
+          path: ["father", "lastName"],
+        });
+      }
+      if (!data.father?.firstName?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "First name is required",
+          path: ["father", "firstName"],
+        });
+      }
+    }
+
+    // Guardian relationship required when guardian is provided (even if parents are present)
     if (hasGuardian && !data.guardianRelationship?.trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

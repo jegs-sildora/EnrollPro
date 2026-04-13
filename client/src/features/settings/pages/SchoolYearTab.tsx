@@ -302,7 +302,10 @@ export default function SchoolYearTab() {
       };
 
       const res = await api.post("/school-years/activate", payload);
-      setSettings({ activeSchoolYearId: res.data.year.id });
+      setSettings({
+        activeSchoolYearId: res.data.year.id,
+        activeSchoolYearLabel: res.data.year.yearLabel,
+      });
       sileo.success({
         title: "School Year Activated",
         description: `School Year ${derivedSchedule.yearLabel} is now active.`,

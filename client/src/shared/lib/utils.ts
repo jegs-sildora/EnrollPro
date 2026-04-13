@@ -71,7 +71,7 @@ export function formatScpType(scpType: string | null | undefined): string {
  * Skips specific keys that should remain case-sensitive (e.g., base64 strings, emails).
  */
 export function toUpperCaseRecursive<T>(obj: T): T {
-  const skipKeys = ["studentPhoto", "email", "emailAddress", "password"];
+  const skipKeys = ["studentPhoto", "contactNumber", "password", "email", "emailAddress"];
 
   if (Array.isArray(obj)) {
     return obj.map((v) => toUpperCaseRecursive(v)) as unknown as T;

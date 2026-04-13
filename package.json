@@ -1,12 +1,18 @@
 {
-	"name": "enrollpro",
-	"private": true,
-	"scripts": {
-		"dev:server": "pnpm --filter server dev",
-		"dev:client": "pnpm --filter client dev --host",
-		"dev": "pnpm run --parallel --filter server --filter client dev"
-	},
-	"engines": {
-		"node": "20"
-	}
+  "name": "enrollpro",
+  "private": true,
+  "engines": {
+    "node": ">=20.20.2 <21.0.0"
+  },
+  "pnpm": {
+    "engine-strict": true,
+    "overrides": {
+      "vite": "^8.0.0"
+    }
+  },
+  "scripts": {
+    "dev:server": "pnpm --filter server dev",
+    "dev:client": "pnpm --filter client dev --host",
+    "dev": "pnpm run --parallel --filter server --filter client dev"
+  }
 }

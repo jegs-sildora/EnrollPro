@@ -40,6 +40,7 @@ export async function getPublicSettings(
     colorScheme: settings.colorScheme,
     selectedAccentHsl: settings.selectedAccentHsl,
     activeSchoolYearId: settings.activeSchoolYearId,
+    activeSchoolYearLabel: settings.activeSchoolYear?.yearLabel ?? null,
     enrollmentPhase,
   });
 }

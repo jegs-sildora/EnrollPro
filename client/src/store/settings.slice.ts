@@ -20,6 +20,7 @@ export interface SettingsState {
 	colorScheme: ColorScheme | null;
 	selectedAccentHsl: string | null;
 	activeSchoolYearId: number | null;
+	activeSchoolYearLabel: string | null;
 	enrollmentPhase:
 		| 'EARLY_REGISTRATION'
 		| 'REGULAR_ENROLLMENT'
@@ -43,6 +44,7 @@ export const useSettingsStore = create<SettingsState>()(
 			colorScheme: null,
 			selectedAccentHsl: null,
 			activeSchoolYearId: null,
+			activeSchoolYearLabel: null,
 			enrollmentPhase: 'CLOSED',
 			viewingSchoolYearId: null,
 			accentForeground: null,

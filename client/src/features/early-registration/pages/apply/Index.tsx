@@ -1,13 +1,17 @@
 import { useState } from "react";
 import GuestLayout from "@/shared/layouts/GuestLayout";
+import AdmissionHeader from "@/features/admission/components/AdmissionHeader";
+import PrivacyNotice from "@/features/admission/pages/apply/PrivacyNotice";
 import EarlyRegistrationForm from "./EarlyRegistrationForm";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/shared/ui/button";
-import { CheckCircle2, ArrowLeft, ShieldCheck } from "lucide-react";
+import { CheckCircle2, ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/shared/ui/card";
+import { cn } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 
 const CONSENT_KEY = "enrollpro_earlyreg_consent";
+const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
 export default function EarlyRegistrationApply() {
   const [hasConsented, setHasConsented] = useState(
@@ -18,7 +22,7 @@ export default function EarlyRegistrationApply() {
     learnerName: string;
   } | null>(null);
 
-  const { schoolName, enrollmentPhase } = useSettingsStore();
+  const { schoolName, logoUrl, enrollmentPhase } = useSettingsStore();
   const isClosed =
     enrollmentPhase !== "EARLY_REGISTRATION" && enrollmentPhase !== "OVERRIDE";
 
@@ -36,48 +40,151 @@ export default function EarlyRegistrationApply() {
   return (
     <GuestLayout>
       <div className="relative min-h-screen flex flex-col">
-        {/* Header */}
-        <header className="py-6 px-4 text-center border-b bg-background/80 backdrop-blur">
-          <h1 className="text-lg sm:text-xl font-bold tracking-tight">
-            {schoolName || "School"} — DO 017 s.2025
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Basic Education Early Registration Form (Grades 7–10 JHS)
-          </p>
-        </header>
+        <div
+          className="fixed inset-0 -z-10"
+          style={{
+            background: "hsl(var(--sidebar-background)/0.5)",
+          }}>
+          {/* Pixel grid */}
+          <svg
+            className="absolute inset-0 w-full h-full opacity-[0.08]"
+            xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern
+                id="pixel-grid"
+                x="0"
+                y="0"
+                width="80"
+                height="80"
+                patternUnits="userSpaceOnUse">
+                <rect
+                  x="2"
+                  y="2"
+                  width="36"
+                  height="36"
+                  rx="2"
+                  fill="none"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth="1.5"
+                />
+                <rect
+                  x="42"
+                  y="2"
+                  width="36"
+                  height="36"
+                  rx="2"
+                  fill="none"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth="1.5"
+                />
+                <rect
+                  x="2"
+                  y="42"
+                  width="36"
+                  height="36"
+                  rx="2"
+                  fill="none"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth="1.5"
+                />
+                <rect
+                  x="42"
+                  y="42"
+                  width="36"
+                  height="36"
+                  rx="2"
+                  fill="none"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth="1.5"
+                />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#pixel-grid)" />
+          </svg>
+          {/* Radial glow */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(circle at center, hsl(var(--primary)/0.05) 0%, transparent 70%)",
+            }}
+          />
+        </div>
 
-        <main className="px-4 sm:px-6 lg:px-8 py-8 flex flex-col flex-1">
-          <div className="w-full mx-auto max-w-3xl">
+        <AdmissionHeader
+          isClosed={isClosed}
+          logoUrl={logoUrl}
+          schoolName={schoolName}
+          title="Basic Education Early Registration Form (Grades 7–10 JHS)"
+        />
+
+        <main
+          className={cn(
+            "px-4 sm:px-6 lg:px-8 flex flex-col flex-1",
+            isClosed ? "justify-center items-center" : "py-8",
+          )}>
+          <div
+            className={cn(
+              "w-full mx-auto flex flex-col",
+              isClosed ? "max-w-3xl" : "max-w-6xl flex-1",
+            )}>
             {isClosed ? (
-              <Card className="text-center py-12">
-                <CardContent className="space-y-4">
-                  <h2 className="text-xl font-bold">
-                    Hindi pa bukas ang early registration. / Early registration
-                    is not yet open.
-                  </h2>
-                  <p className="text-muted-foreground text-sm">
-                    Mangyaring bumalik kapag nagsimula na ang panahon ng early
-                    registration. / Please come back when the early registration
-                    period begins.
-                  </p>
-                </CardContent>
-              </Card>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center space-y-8 py-16 px-6 sm:px-16 bg-white/60 backdrop-blur-md rounded-3xl border border-white/20 shadow-2xl relative overflow-hidden w-full">
+                <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-destructive/50 to-transparent" />
+                <div className="space-y-6 relative z-10">
+                  {logoUrl ? (
+                    <img
+                      src={`${API_BASE}${logoUrl}`}
+                      className="h-32 w-32 mx-auto object-contain drop-shadow-md"
+                      alt={schoolName}
+                    />
+                  ) : (
+                    <div className="h-24 w-24 mx-auto rounded-3xl bg-primary/10 flex items-center justify-center text-4xl font-black text-primary">
+                      {schoolName?.charAt(0)}
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-black">
+                      {schoolName}
+                    </h2>
+                    <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-destructive/10 text-destructive text-xs font-bold tracking-widest uppercase border border-destructive/20">
+                      Early Registration Inactive
+                    </div>
+                  </div>
+                  <div className="space-y-4 max-w-lg mx-auto">
+                    <h3 className="text-xl sm:text-2xl font-bold text-black">
+                      Early Registration is Currently Closed
+                    </h3>
+                    <p className="text-sm sm:text-base text-black leading-relaxed">
+                      Hindi pa bukas ang early registration. Mangyaring bumalik kapag nagsimula na ang panahon ng early registration.
+                    </p>
+                    <p className="text-sm text-black font-medium pt-4 border-t border-border/50">
+                      Please stay tuned to our official school social media pages or visit the school campus for announcements regarding the next registration schedule.
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
             ) : (
               <AnimatePresence mode="wait">
                 {successData ? (
                   <motion.div
                     key="success"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}>
-                    <Card className="text-center py-12">
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.4 }}>
+                    <Card className="text-center py-12 shadow-xl border-2 border-primary/10 rounded-3xl">
                       <CardContent className="space-y-4">
-                        <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto" />
-                        <h2 className="text-xl font-bold">
-                          Matagumpay ang Pag-register! / Registration
-                          Successful!
+                        <div className="flex justify-center mb-4">
+                          <CheckCircle2 className="w-16 h-16 text-primary" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-primary">
+                          Matagumpay ang Pag-register! / Registration Successful!
                         </h2>
-                        <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                        <p className="text-muted-foreground text-lg max-w-md mx-auto">
                           Nai-submit na ang early registration ni{" "}
                           <span className="font-semibold text-foreground">
                             {successData.learnerName}
@@ -88,71 +195,34 @@ export default function EarlyRegistrationApply() {
                           </span>
                           .
                         </p>
-                        <Button
-                          onClick={handleReset}
-                          variant="outline"
-                          className="mt-4">
-                          <ArrowLeft className="w-4 h-4 mr-2" />
-                          Register Another Learner
-                        </Button>
+                        <div className="pt-6 border-t border-border/60">
+                          <Button
+                            onClick={handleReset}
+                            variant="outline"
+                            className="h-12 px-8 font-bold gap-2">
+                            <ArrowLeft className="w-4 h-4" />
+                            Register Another Learner
+                          </Button>
+                        </div>
                       </CardContent>
                     </Card>
                   </motion.div>
                 ) : !hasConsented ? (
                   <motion.div
-                    key="consent"
+                    key="privacy"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}>
-                    <Card>
-                      <CardContent className="p-6 md:p-10 space-y-6">
-                        <div className="flex items-center gap-3">
-                          <ShieldCheck className="w-8 h-8 text-primary shrink-0" />
-                          <div>
-                            <h2 className="text-lg font-bold">
-                              Abiso sa Privacy / Privacy Notice
-                            </h2>
-                            <p className="text-sm text-muted-foreground">
-                              Republic Act No. 10173 (Data Privacy Act of 2012)
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="text-sm leading-relaxed space-y-3 text-muted-foreground">
-                          <p>
-                            This form collects personal information for the
-                            purpose of early registration as mandated by DepEd
-                            Order No. 017, s. 2025. All data collected will be
-                            handled in accordance with the Data Privacy Act of
-                            2012 (RA 10173).
-                          </p>
-                          <p>
-                            Information gathered will be used exclusively for:
-                            enrollment processing, Learner Information System
-                            (LIS) records, statistical reporting, and provision
-                            of educational support services.
-                          </p>
-                          <p>
-                            By proceeding, you consent to the collection and
-                            processing of the information provided in this form.
-                          </p>
-                        </div>
-
-                        <Button
-                          onClick={handleAccept}
-                          className="w-full"
-                          size="lg">
-                          I Understand and Agree — Proceed to Registration
-                        </Button>
-                      </CardContent>
-                    </Card>
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    transition={{ duration: 0.3 }}>
+                    <PrivacyNotice onAccept={handleAccept} />
                   </motion.div>
                 ) : (
                   <motion.div
                     key="form"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}>
+                    initial={{ opacity: 0, scale: 1.02, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 1.02 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}>
                     <EarlyRegistrationForm
                       onSuccess={(data) => setSuccessData(data)}
                     />

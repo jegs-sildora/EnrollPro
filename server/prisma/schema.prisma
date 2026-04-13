@@ -570,6 +570,9 @@ model EarlyRegistration {
   channel              String    @default("ONLINE") /// ONLINE | F2F
   contactNumber        String    @map("contact_number")
   email                String?
+  primaryContact       String?   @map("primary_contact") /// FATHER | MOTHER | GUARDIAN
+  hasNoMother          Boolean   @default(false) @map("has_no_mother")
+  hasNoFather          Boolean   @default(false) @map("has_no_father")
   isPrivacyConsentGiven Boolean  @map("is_privacy_consent_given")
   applicantId          Int?      @map("applicant_id") /// set when linked to enrollment
   encodedById          Int?      @map("encoded_by_id") /// null for public submissions

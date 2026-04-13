@@ -6,8 +6,6 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 
-const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
-
 export default function Monitor() {
   const [monitorHasResults, setMonitorHasResults] = useState(false);
   const { schoolName, logoUrl } = useSettingsStore();

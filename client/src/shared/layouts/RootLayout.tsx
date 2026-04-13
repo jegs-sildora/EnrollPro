@@ -59,6 +59,7 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
           colorScheme: res.data.colorScheme,
           selectedAccentHsl: res.data.selectedAccentHsl,
           activeSchoolYearId: res.data.activeSchoolYearId,
+          activeSchoolYearLabel: res.data.activeSchoolYearLabel,
           enrollmentPhase: res.data.enrollmentPhase,
         });
       })

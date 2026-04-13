@@ -236,19 +236,19 @@ function NavItemChild({
 }) {
   let isActive = pathname === to || pathname.startsWith(to + "/");
 
-  // Monitoring (/early-registration) should NOT highlight when Pipelines is active
+  // Monitoring (/monitoring/early-registration) should NOT highlight when Pipelines is active
   if (
-    to === "/early-registration" &&
-    pathname.startsWith("/early-registration/pipelines")
+    to === "/monitoring/early-registration" &&
+    pathname.startsWith("/monitoring/early-registration/pipelines")
   ) {
     isActive = false;
   }
 
-  // BASIC EDUCATION EARLY REGISTRATION FORM detail pages (/early-registration/:id) should highlight Monitoring
+  // BASIC EDUCATION EARLY REGISTRATION FORM detail pages (/monitoring/early-registration/:id) should highlight Monitoring
   if (
-    to === "/early-registration" &&
-    pathname.startsWith("/early-registration/") &&
-    !pathname.startsWith("/early-registration/pipelines")
+    to === "/monitoring/early-registration" &&
+    pathname.startsWith("/monitoring/early-registration/") &&
+    !pathname.startsWith("/monitoring/early-registration/pipelines")
   ) {
     isActive = true;
   }
@@ -386,20 +386,20 @@ function AppSidebar() {
                       label="BASIC EDUCATION EARLY REGISTRATION FORM"
                       isActive={false}>
                       <NavItemChild
-                        to="/early-registration"
+                        to="/monitoring/early-registration"
                         icon={FileText}
                         label="Application Monitoring"
                         pathname={pathname}
                         badgeCount={pendingCount}
                       />
                       <NavItemChild
-                        to="/early-registration/pipelines"
+                        to="/monitoring/early-registration/pipelines"
                         icon={ClipboardList}
                         label="Registration Pipelines"
                         pathname={pathname}
                       />
                       <NavItemChild
-                        to="/f2f-early-registration"
+                        to="/monitoring/f2f-early-registration"
                         icon={UserPlus}
                         label="Walk-In Registration"
                         pathname={pathname}
@@ -407,7 +407,7 @@ function AppSidebar() {
                     </NavItemParent>
 
                     <NavItem
-                      to="/enrollment"
+                      to="/monitoring/enrollment"
                       icon={CheckCircle}
                       label="Enrollment"
                       pathname={pathname}
@@ -421,7 +421,7 @@ function AppSidebar() {
                       pathname={pathname}
                     />
                     <NavItem
-                      to="/enrollment/requirements"
+                      to="/monitoring/enrollment/requirements"
                       icon={FileText}
                       label="Enrollment Requirements"
                       pathname={pathname}

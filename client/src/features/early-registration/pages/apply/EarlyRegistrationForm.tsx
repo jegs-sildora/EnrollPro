@@ -13,6 +13,7 @@ import LearnerProfileStep from "./steps/LearnerProfileStep";
 import AddressGuardianStep from "./steps/AddressGuardianStep";
 import LegalConsentStep from "./steps/LegalConsentStep";
 
+import StepProgressBar from "@/features/admission/pages/apply/components/StepProgressBar";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { motion, AnimatePresence } from "motion/react";
@@ -23,6 +24,7 @@ import { sileo } from "sileo";
 
 const DRAFT_KEY = "enrollpro_earlyreg_draft";
 const STEP_KEY = "enrollpro_earlyreg_step";
+const MAX_STEP_KEY = "enrollpro_earlyreg_max_step";
 
 interface EarlyRegFormProps {
   onSuccess?: (data: { id: number; learnerName: string }) => void;
@@ -54,13 +56,14 @@ export default function EarlyRegistrationForm({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [maxStepReached, setMaxStepReached] = useState(1);
 
   const methods = useForm<EarlyRegFormData, unknown, EarlyRegFormData>({
     resolver: zodResolver(
       EarlyRegFormSchema,
     ) as import("react-hook-form").Resolver<EarlyRegFormData>,
-    defaultValues: initialDraft ?? { ...DEFAULT_VALUES },
-    mode: "onBlur",
+    defaultValues: initialDraft ?? { ...DEFAULT_VALUES, isPrivacyConsentGiven: true },
+    mode: "onChange",
   });
 
   const { handleSubmit, trigger, reset, watch } = methods;
@@ -71,6 +74,22 @@ export default function EarlyRegistrationForm({
   const scrollToTop = () => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   };
+
+  // Track furthest step
+  useEffect(() => {
+    if (currentIndex > maxStepReached) {
+      setMaxStepReached(currentIndex);
+      sessionStorage.setItem(MAX_STEP_KEY, currentIndex.toString());
+    }
+  }, [currentIndex, maxStepReached]);
+
+  // Initial load of max step
+  useEffect(() => {
+    const savedMax = sessionStorage.getItem(MAX_STEP_KEY);
+    if (savedMax) {
+      setMaxStepReached(parseInt(savedMax, 10));
+    }
+  }, []);
 
   // Auto-save draft every 1s
   const allValues = watch();
@@ -88,7 +107,7 @@ export default function EarlyRegistrationForm({
     if (stepper.state.current.data.id) {
       sessionStorage.setItem(STEP_KEY, stepper.state.current.data.id);
     }
-  }, [stepper.state.current.data.id, stepper.state]);
+  }, [stepper.state.current.data.id]);
 
   // Scroll to top on step change
   useEffect(() => {
@@ -151,9 +170,11 @@ export default function EarlyRegistrationForm({
 
       // Clear draft & reset
       reset({ ...DEFAULT_VALUES });
+      setMaxStepReached(1);
       stepper.navigation.goTo("basic-info");
       sessionStorage.removeItem(DRAFT_KEY);
       sessionStorage.removeItem(STEP_KEY);
+      sessionStorage.removeItem(MAX_STEP_KEY);
       sessionStorage.removeItem("enrollpro_earlyreg_consent");
     } catch (error: unknown) {
       const message =
@@ -170,29 +191,14 @@ export default function EarlyRegistrationForm({
   const isLastStep = stepper.state.isLast;
 
   return (
-    <div className="max-w-3xl mx-auto p-4 md:p-0">
-      {/* ─── Step Progress ─── */}
-      <div className="flex items-center justify-center gap-2 mb-6">
-        {steps.map((s, i) => (
-          <div key={s.id} className="flex items-center gap-2">
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                i + 1 <= currentIndex
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground"
-              }`}>
-              {i + 1}
-            </div>
-            {i < steps.length - 1 && (
-              <div
-                className={`h-0.5 w-6 sm:w-10 ${
-                  i + 1 < currentIndex ? "bg-primary" : "bg-muted"
-                }`}
-              />
-            )}
-          </div>
-        ))}
-      </div>
+    <div className="max-w-6xl mx-auto p-4 md:p-0">
+      <StepProgressBar
+        currentStep={currentIndex}
+        totalSteps={steps.length}
+        steps={steps.map((s, i) => ({ id: i + 1, title: s.title }))}
+        description={stepper.state.current.data.description}
+        completedUpTo={maxStepReached}
+      />
 
       <Card className="shadow-sm border-border rounded-2xl overflow-hidden mb-12">
         <CardContent className="p-6 md:p-10">
@@ -214,7 +220,8 @@ export default function EarlyRegistrationForm({
           </div>
 
           {submitError && (
-            <div className="p-4 mb-6 bg-destructive/10 border border-destructive/30 rounded-xl text-destructive text-sm font-medium">
+            <div className="p-4 mb-6 bg-destructive/10 border border-destructive/30 rounded-xl text-destructive text-sm font-medium flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
               {submitError}
             </div>
           )}
@@ -254,13 +261,11 @@ export default function EarlyRegistrationForm({
                     {Array.from(
                       new Set(
                         Object.values(methods.formState.errors).flatMap(
-                          (err: Record<string, unknown>) =>
-                            (err as { message?: string })?.message
-                              ? [(err as { message?: string }).message!]
+                          (err: any) =>
+                            err?.message
+                              ? [err.message]
                               : Object.values(err || {})
-                                  .map(
-                                    (e) => (e as { message?: string })?.message,
-                                  )
+                                  .map((e: any) => e?.message)
                                   .filter(Boolean),
                         ),
                       ),
@@ -289,7 +294,7 @@ export default function EarlyRegistrationForm({
                     type="button"
                     size="lg"
                     onClick={nextStep}
-                    className="h-12 px-8 font-semibold sm:w-auto w-full">
+                    className="h-12 px-8 font-semibold sm:w-auto w-full bg-primary text-primary-foreground hover:bg-primary/90">
                     Next Step
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>

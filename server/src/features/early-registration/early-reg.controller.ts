@@ -7,7 +7,7 @@ import { AppError } from "../../lib/AppError.js";
 
 /** Recursively converts all string values to uppercase and trims them. */
 function toUpperCaseRecursive(obj: unknown): unknown {
-  const skipKeys = ["email", "contactNumber"];
+  const skipKeys = ["contactNumber", "email", "emailAddress"];
 
   if (Array.isArray(obj)) {
     return obj.map((v) => toUpperCaseRecursive(v));
@@ -137,10 +137,10 @@ async function createRegistration(
         email: body.father.email || null,
       });
     }
-    if (body.mother?.lastName && body.mother?.firstName) {
+    if (body.mother?.maidenName && body.mother?.firstName) {
       guardianData.push({
         relationship: "MOTHER",
-        lastName: body.mother.lastName,
+        lastName: body.mother.maidenName,
         firstName: body.mother.firstName,
         middleName: body.mother.middleName || null,
         contactNumber: body.mother.contactNumber || null,
@@ -198,6 +198,9 @@ async function createRegistration(
           channel: options.channel,
           contactNumber: body.contactNumber,
           email: body.email || null,
+          primaryContact: body.primaryContact || null,
+          hasNoMother: body.hasNoMother ?? false,
+          hasNoFather: body.hasNoFather ?? false,
           isPrivacyConsentGiven: body.isPrivacyConsentGiven ?? false,
           encodedById: options.encodedById ?? null,
         },

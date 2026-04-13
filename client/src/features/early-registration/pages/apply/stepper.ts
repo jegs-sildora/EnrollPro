@@ -18,8 +18,8 @@ const stepper = defineStepper(
   },
   {
     id: "legal-consent",
-    title: "Data Privacy Consent",
-    description: "RA 10173 compliance and submission",
+    title: "Review & Submit",
+    description: "Final check and submission",
   },
 );
 
