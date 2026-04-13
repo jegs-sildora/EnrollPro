@@ -383,7 +383,7 @@ function AppSidebar() {
 
                     <NavItemParent
                       icon={ClipboardList}
-                      label="BASIC EDUCATION EARLY REGISTRATION FORM"
+                      label="Early Registration"
                       isActive={false}>
                       <NavItemChild
                         to="/monitoring/early-registration"

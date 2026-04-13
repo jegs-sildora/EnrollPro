@@ -139,11 +139,11 @@ model Section {
   @@map("sections")
 }
 
-/// Central entity: a student application through the admission pipeline
+/// Core entity: Unified Learner profile handling both Early Registration and Admission lifecycles
 model Applicant {
   id                      Int               @id @default(autoincrement())
   studentPhoto            String?           @map("student_photo")
-  lrn                     String?           @db.VarChar(12)
+  lrn                     String?           @unique(map: "uq_applicants_lrn") @db.VarChar(12)
   psaBirthCertNumber      String?           @map("psa_birth_cert_number")
   lastName                String            @map("last_name")
   firstName               String            @map("first_name")
@@ -171,16 +171,19 @@ model Applicant {
   schoolYearId            Int               @map("school_year_id")
   applicantType           ApplicantType     @default(REGULAR) @map("applicant_type")
   isPrivacyConsentGiven   Boolean           @default(false) @map("is_privacy_consent_given")
-  createdAt               DateTime          @default(now()) @db.Timestamptz @map("created_at")
-  updatedAt               DateTime          @updatedAt @db.Timestamptz @map("updated_at")
   admissionChannel        AdmissionChannel  @default(ONLINE) @map("admission_channel")
   encodedById             Int?              @map("encoded_by_id")
+  primaryContact          FamilyRelationship? @map("primary_contact")
+  hasNoMother             Boolean           @default(false) @map("has_no_mother")
+  hasNoFather             Boolean           @default(false) @map("has_no_father")
   specialNeedsCategory    String?           @map("special_needs_category")
   hasPwdId                Boolean           @default(false) @map("has_pwd_id")
   learningModalities      String[]          @map("learning_modalities")
   isTemporarilyEnrolled   Boolean           @default(false) @map("is_temporarily_enrolled")
   portalPin               String?           @map("portal_pin")
   portalPinChangedAt      DateTime?         @db.Timestamptz @map("portal_pin_changed_at")
+  createdAt               DateTime          @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt               DateTime          @updatedAt @db.Timestamptz @map("updated_at")
   
   schoolYear              SchoolYear        @relation(fields: [schoolYearId], references: [id])
   encodedBy               User?             @relation("ApplicantEncodedBy", fields: [encodedById], references: [id])
@@ -364,16 +367,30 @@ model Enrollment {
   @@map("enrollments")
 }
 
-/// Academic department (future use)
-model Department {
-  id          Int      @id @default(autoincrement())
-  name        String
-  code        String   @unique(map: "uq_departments_code")
-  description String?
-  createdAt   DateTime @default(now()) @db.Timestamptz @map("created_at")
-  updatedAt   DateTime @updatedAt @db.Timestamptz @map("updated_at")
+/// One early registration record per applicant per school year (Phase 1: Jan–May)
+model EarlyRegistration {
+  id                   Int       @id @default(autoincrement())
+  applicantId          Int       @map("applicant_id")
+  schoolYearId         Int       @map("school_year_id")
+  gradeLevel           String    @map("grade_level") /// 7 | 8 | 9 | 10
+  learnerType          String    @map("learner_type")
+  status               String    @default("SUBMITTED") /// DRAFT | SUBMITTED | VERIFIED | LINKED
+  channel              String    @default("ONLINE")
+  encodedById          Int?      @map("encoded_by_id")
+  verifiedAt           DateTime? @db.Timestamptz @map("verified_at")
+  verifiedById         Int?      @map("verified_by_id")
+  submittedAt          DateTime  @default(now()) @db.Timestamptz @map("submitted_at")
+  createdAt            DateTime  @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt            DateTime  @updatedAt @db.Timestamptz @map("updated_at")
 
-  @@map("departments")
+  applicant            Applicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  schoolYear           SchoolYear @relation(fields: [schoolYearId], references: [id])
+  encodedBy            User?     @relation("EarlyRegEncodedBy", fields: [encodedById], references: [id])
+  verifiedBy           User?     @relation("EarlyRegVerifiedBy", fields: [verifiedById], references: [id])
+
+  @@unique([applicantId, schoolYearId], name: "uq_early_registrations_per_sy")
+  @@index([schoolYearId, status], name: "idx_early_registrations_sy_status")
+  @@map("early_registrations")
 }
 
 /// Immutable audit trail of all system actions with actor, IP, and user-agent
@@ -507,92 +524,19 @@ model TeacherSubject {
   @@map("teacher_subjects")
 }
 
-// ═══════════════════════════════════════════════════════════
-// DO 017 s.2025 — Basic Education Early Registration Module
-// ═══════════════════════════════════════════════════════════
+/// Academic department (future use)
+model Department {
+  id          Int      @id @default(autoincrement())
+  name        String
+  code        String   @unique(map: "uq_departments_code")
+  description String?
+  createdAt   DateTime @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt   DateTime @updatedAt @db.Timestamptz @map("updated_at")
 
-/// Learner demographics captured during early registration (Phase 1: Jan–May)
-model EarlyRegistrant {
-  id                      Int       @id @default(autoincrement())
-  lrn                     String?   @db.VarChar(12)
-  firstName               String    @map("first_name")
-  lastName                String    @map("last_name")
-  middleName              String?   @map("middle_name")
-  extensionName           String?   @map("extension_name")
-  birthdate               DateTime  @db.Date
-  sex                     Sex
-  religion                String?
-  isIpCommunity           Boolean   @default(false) @map("is_ip_community")
-  ipGroupName             String?   @map("ip_group_name")
-  isLearnerWithDisability Boolean   @default(false) @map("is_learner_with_disability")
-  disabilityTypes         String[]  @map("disability_types")
-  houseNoStreet           String?   @map("house_no_street")
-  sitio                   String?
-  barangay                String
-  cityMunicipality        String    @map("city_municipality")
-  province                String
-  createdAt               DateTime  @default(now()) @db.Timestamptz @map("created_at")
-  updatedAt               DateTime  @updatedAt @db.Timestamptz @map("updated_at")
-
-  guardians               EarlyRegistrantGuardian[]
-  registrations           EarlyRegistration[]
-
-  @@unique([lrn], map: "uq_early_registrants_lrn")
-  @@index([lastName, firstName, birthdate], name: "idx_early_registrants_dedup")
-  @@map("early_registrants")
+  @@map("departments")
 }
 
-/// Parent or guardian info attached to an early registrant
-model EarlyRegistrantGuardian {
-  id            Int    @id @default(autoincrement())
-  registrantId  Int    @map("registrant_id")
-  relationship  String /// FATHER | MOTHER | GUARDIAN
-  lastName      String @map("last_name")
-  firstName     String @map("first_name")
-  middleName    String? @map("middle_name")
-  contactNumber String? @map("contact_number")
-  email         String?
-
-  registrant    EarlyRegistrant @relation(fields: [registrantId], references: [id], onDelete: Cascade)
-
-  @@index([registrantId], name: "idx_early_registrant_guardians_registrant_id")
-  @@map("early_registrant_guardians")
-}
-
-/// One registration record per learner per school year (Phase 1 early reg)
-model EarlyRegistration {
-  id                   Int       @id @default(autoincrement())
-  registrantId         Int       @map("registrant_id")
-  schoolYearId         Int       @map("school_year_id")
-  gradeLevel           String    @map("grade_level") /// 7 | 8 | 9 | 10
-  learnerType          String    @map("learner_type") /// NEW_ENROLLEE | TRANSFEREE | etc.
-  status               String    @default("SUBMITTED") /// DRAFT | SUBMITTED | VERIFIED | LINKED
-  channel              String    @default("ONLINE") /// ONLINE | F2F
-  contactNumber        String    @map("contact_number")
-  email                String?
-  primaryContact       String?   @map("primary_contact") /// FATHER | MOTHER | GUARDIAN
-  hasNoMother          Boolean   @default(false) @map("has_no_mother")
-  hasNoFather          Boolean   @default(false) @map("has_no_father")
-  isPrivacyConsentGiven Boolean  @map("is_privacy_consent_given")
-  applicantId          Int?      @map("applicant_id") /// set when linked to enrollment
-  encodedById          Int?      @map("encoded_by_id") /// null for public submissions
-  verifiedAt           DateTime? @db.Timestamptz @map("verified_at")
-  verifiedById         Int?      @map("verified_by_id")
-  submittedAt          DateTime  @default(now()) @db.Timestamptz @map("submitted_at")
-  createdAt            DateTime  @default(now()) @db.Timestamptz @map("created_at")
-  updatedAt            DateTime  @updatedAt @db.Timestamptz @map("updated_at")
-
-  registrant           EarlyRegistrant @relation(fields: [registrantId], references: [id], onDelete: Cascade)
-  schoolYear           SchoolYear      @relation(fields: [schoolYearId], references: [id])
-  applicant            Applicant?      @relation(fields: [applicantId], references: [id])
-  encodedBy            User?           @relation("EarlyRegEncodedBy", fields: [encodedById], references: [id])
-  verifiedBy           User?           @relation("EarlyRegVerifiedBy", fields: [verifiedById], references: [id])
-
-  @@unique([registrantId, schoolYearId], name: "uq_early_registrations_per_sy")
-  @@index([schoolYearId, status], name: "idx_early_registrations_sy_status")
-  @@index([applicantId], name: "idx_early_registrations_applicant_id")
-  @@map("early_registrations")
-}
+// ── Enums ──
 
 /// User role: REGISTRAR handles enrollment; SYSTEM_ADMIN has full access
 enum Role {
