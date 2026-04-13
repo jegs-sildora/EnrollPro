@@ -3,10 +3,8 @@ import GuestLayout from "@/shared/layouts/GuestLayout";
 import AdmissionHeader from "@/features/admission/components/AdmissionHeader";
 import PrivacyNotice from "@/features/admission/pages/apply/PrivacyNotice";
 import EarlyRegistrationForm from "./EarlyRegistrationForm";
+import EarlyRegSuccessView from "./components/EarlyRegSuccessView";
 import { motion, AnimatePresence } from "motion/react";
-import { Button } from "@/shared/ui/button";
-import { CheckCircle2, ArrowLeft } from "lucide-react";
-import { Card, CardContent } from "@/shared/ui/card";
 import { cn } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 
@@ -176,36 +174,11 @@ export default function EarlyRegistrationApply() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.4 }}>
-                    <Card className="text-center py-12 shadow-xl border-2 border-primary/10 rounded-3xl">
-                      <CardContent className="space-y-4">
-                        <div className="flex justify-center mb-4">
-                          <CheckCircle2 className="w-16 h-16 text-primary" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-primary">
-                          Matagumpay ang Pag-register! / Registration Successful!
-                        </h2>
-                        <p className="text-muted-foreground text-lg max-w-md mx-auto">
-                          Nai-submit na ang early registration ni{" "}
-                          <span className="font-semibold text-foreground">
-                            {successData.learnerName}
-                          </span>
-                          . Ang registration ID ay{" "}
-                          <span className="font-mono font-bold text-foreground">
-                            #{successData.id}
-                          </span>
-                          .
-                        </p>
-                        <div className="pt-6 border-t border-border/60">
-                          <Button
-                            onClick={handleReset}
-                            variant="outline"
-                            className="h-12 px-8 font-bold gap-2">
-                            <ArrowLeft className="w-4 h-4" />
-                            Register Another Learner
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <EarlyRegSuccessView 
+                      registrationId={successData.id}
+                      learnerName={successData.learnerName}
+                      onRegisterAnother={handleReset}
+                    />
                   </motion.div>
                 ) : !hasConsented ? (
                   <motion.div

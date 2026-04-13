@@ -181,9 +181,9 @@ export default function AddressGuardianStep() {
                   const val = e.target.checked;
                   setValue("hasNoMother", val);
                   if (val) {
-                    setValue("mother.maidenName", "N/A");
-                    setValue("mother.firstName", "N/A");
-                    setValue("mother.middleName", "N/A");
+                    setValue("mother.maidenName", "Information not available");
+                    setValue("mother.firstName", "Information not available");
+                    setValue("mother.middleName", "Information not available");
                     clearErrors(["mother.maidenName", "mother.firstName"]);
                   } else {
                     setValue("mother.maidenName", "");
@@ -279,7 +279,7 @@ export default function AddressGuardianStep() {
                 {...register("mother.middleName")}
                 disabled={hasNoMother}
                 className="h-11 uppercase font-bold"
-                placeholder="N/A"
+                placeholder="e.g. Aquilla or N/A"
                 onInput={(e) => {
                   (e.target as HTMLInputElement).value = (
                     e.target as HTMLInputElement
@@ -305,9 +305,9 @@ export default function AddressGuardianStep() {
                   const val = e.target.checked;
                   setValue("hasNoFather", val);
                   if (val) {
-                    setValue("father.lastName", "N/A");
-                    setValue("father.firstName", "N/A");
-                    setValue("father.middleName", "N/A");
+                    setValue("father.lastName", "Information not available");
+                    setValue("father.firstName", "Information not available");
+                    setValue("father.middleName", "Information not available");
                     clearErrors(["father.lastName", "father.firstName"]);
                   } else {
                     setValue("father.lastName", "");
@@ -403,7 +403,7 @@ export default function AddressGuardianStep() {
                 {...register("father.middleName")}
                 disabled={hasNoFather}
                 className="h-11 uppercase font-bold"
-                placeholder="N/A"
+                placeholder="e.g. Bautista or N/A"
                 onInput={(e) => {
                   (e.target as HTMLInputElement).value = (
                     e.target as HTMLInputElement
@@ -588,56 +588,73 @@ export default function AddressGuardianStep() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {(
               [
-                { value: "MOTHER", label: "Mother", icon: Venus },
-                { value: "FATHER", label: "Father", icon: Mars },
-                { value: "GUARDIAN", label: "Guardian", icon: User },
+                { 
+                  value: "MOTHER", 
+                  label: "Mother", 
+                  icon: Venus, 
+                  hide: hasNoMother || !data.mother?.firstName?.trim() || !data.mother?.maidenName?.trim()
+                },
+                { 
+                  value: "FATHER", 
+                  label: "Father", 
+                  icon: Mars, 
+                  hide: hasNoFather || !data.father?.firstName?.trim() || !data.father?.lastName?.trim()
+                },
+                { 
+                  value: "GUARDIAN", 
+                  label: "Guardian", 
+                  icon: User, 
+                  hide: !data.guardian?.firstName?.trim() || !data.guardian?.lastName?.trim()
+                },
               ] as const
-            ).map((opt) => {
-              const firstName = opt.value === "MOTHER" 
-                ? data.mother?.firstName 
-                : opt.value === "FATHER" 
-                  ? data.father?.firstName 
-                  : data.guardian?.firstName;
-              const displayLabel = firstName && firstName !== "N/A" 
-                ? `${opt.label} (${firstName})` 
-                : opt.label;
+            )
+              .filter((opt) => !opt.hide)
+              .map((opt) => {
+                const firstName = opt.value === "MOTHER" 
+                  ? data.mother?.firstName 
+                  : opt.value === "FATHER" 
+                    ? data.father?.firstName 
+                    : data.guardian?.firstName;
+                const displayLabel = firstName && firstName !== "N/A" && firstName !== "Information not available"
+                  ? `${opt.label} (${firstName})` 
+                  : opt.label;
 
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() =>
-                    setValue("primaryContact", opt.value as any, {
-                      shouldValidate: true,
-                    })
-                  }
-                  className={cn(
-                    "flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 transition-all group",
-                    watch("primaryContact") === opt.value
-                      ? "border-primary bg-primary/5 shadow-md"
-                      : "border-border bg-white hover:bg-muted/50",
-                  )}>
-                  <div
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() =>
+                      setValue("primaryContact", opt.value as any, {
+                        shouldValidate: true,
+                      })
+                    }
                     className={cn(
-                      "w-12 h-12 rounded-full flex items-center justify-center transition-colors",
+                      "flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 transition-all group",
                       watch("primaryContact") === opt.value
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary",
+                        ? "border-primary bg-primary/5 shadow-md"
+                        : "border-border bg-white hover:bg-muted/50",
                     )}>
-                    <opt.icon className="w-6 h-6" />
-                  </div>
-                  <span
-                    className={cn(
-                      "font-bold text-sm uppercase tracking-wider text-center",
-                      watch("primaryContact") === opt.value
-                        ? "text-primary"
-                        : "text-muted-foreground",
-                    )}>
-                    {displayLabel}
-                  </span>
-                </button>
-              );
-            })}
+                    <div
+                      className={cn(
+                        "w-12 h-12 rounded-full flex items-center justify-center transition-colors",
+                        watch("primaryContact") === opt.value
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary",
+                      )}>
+                      <opt.icon className="w-6 h-6" />
+                    </div>
+                    <span
+                      className={cn(
+                        "font-bold text-sm uppercase tracking-wider text-center",
+                        watch("primaryContact") === opt.value
+                          ? "text-primary"
+                          : "text-muted-foreground",
+                      )}>
+                      {displayLabel}
+                    </span>
+                  </button>
+                );
+              })}
           </div>
           {errors.primaryContact && (
             <p className="text-[0.6875rem] text-destructive font-medium flex items-center gap-1">

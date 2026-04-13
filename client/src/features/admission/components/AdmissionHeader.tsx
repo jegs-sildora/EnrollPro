@@ -69,12 +69,12 @@ export default function AdmissionHeader({
           <img
             src={depedLogo}
             alt="DepEd logo"
-            className="hidden sm:block h-10 w-10 sm:h-16 sm:w-16 max-w-full object-contain"
+            className="hidden sm:block h-10 w-10 sm:h-16 sm:w-30 max-w-full object-contain"
           />
           <img
             src={bagongPilipinasLogo}
             alt="Bagong Pilipinas logo"
-            className="hidden sm:block h-10 w-10 sm:h-16 sm:w-16 max-w-full object-contain"
+            className="hidden sm:block h-10 w-10 sm:h-20 sm:w-20 max-w-full object-contain"
           />
         </div>
       </div>

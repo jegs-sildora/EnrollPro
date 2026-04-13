@@ -25,6 +25,7 @@ import { sileo } from "sileo";
 const DRAFT_KEY = "enrollpro_earlyreg_draft";
 const STEP_KEY = "enrollpro_earlyreg_step";
 const MAX_STEP_KEY = "enrollpro_earlyreg_max_step";
+const EDITING_KEY = "enrollpro_earlyreg_editing";
 
 interface EarlyRegFormProps {
   onSuccess?: (data: { id: number; learnerName: string }) => void;
@@ -57,6 +58,7 @@ export default function EarlyRegistrationForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [maxStepReached, setMaxStepReached] = useState(1);
+  const [isEditing, setIsEditing] = useState(false);
 
   const methods = useForm<EarlyRegFormData, unknown, EarlyRegFormData>({
     resolver: zodResolver(
@@ -83,11 +85,24 @@ export default function EarlyRegistrationForm({
     }
   }, [currentIndex, maxStepReached]);
 
+  // Clear editing mode when reaching review step
+  useEffect(() => {
+    if (stepper.state.current.data.id === "legal-consent") {
+      setIsEditing(false);
+      sessionStorage.removeItem(EDITING_KEY);
+    }
+  }, [stepper.state.current.data.id]);
+
   // Initial load of max step
   useEffect(() => {
     const savedMax = sessionStorage.getItem(MAX_STEP_KEY);
     if (savedMax) {
       setMaxStepReached(parseInt(savedMax, 10));
+    }
+
+    const savedEditing = sessionStorage.getItem(EDITING_KEY);
+    if (savedEditing === "true") {
+      setIsEditing(true);
     }
   }, []);
 
@@ -132,13 +147,24 @@ export default function EarlyRegistrationForm({
     const fields = STEP_FIELDS[stepId] ?? [];
     const isValid = fields.length > 0 ? await trigger(fields) : true;
     if (isValid) {
-      stepper.navigation.next();
+      if (isEditing) {
+        stepper.navigation.goTo("legal-consent");
+      } else {
+        stepper.navigation.next();
+      }
       scrollToTop();
     }
   };
 
   const prevStep = () => {
     stepper.navigation.prev();
+    scrollToTop();
+  };
+
+  const goToStep = (stepId: number) => {
+    setIsEditing(true);
+    sessionStorage.setItem(EDITING_KEY, "true");
+    stepper.navigation.goTo(steps[stepId - 1].id);
     scrollToTop();
   };
 
@@ -171,10 +197,12 @@ export default function EarlyRegistrationForm({
       // Clear draft & reset
       reset({ ...DEFAULT_VALUES });
       setMaxStepReached(1);
+      setIsEditing(false);
       stepper.navigation.goTo("basic-info");
       sessionStorage.removeItem(DRAFT_KEY);
       sessionStorage.removeItem(STEP_KEY);
       sessionStorage.removeItem(MAX_STEP_KEY);
+      sessionStorage.removeItem(EDITING_KEY);
       sessionStorage.removeItem("enrollpro_earlyreg_consent");
     } catch (error: unknown) {
       const message =
@@ -240,7 +268,10 @@ export default function EarlyRegistrationForm({
                     "learner-profile": () => <LearnerProfileStep />,
                     "address-guardian": () => <AddressGuardianStep />,
                     "legal-consent": () => (
-                      <LegalConsentStep isSubmitting={isSubmitting} />
+                      <LegalConsentStep 
+                        isSubmitting={isSubmitting} 
+                        onEdit={goToStep}
+                      />
                     ),
                   })}
                 </motion.div>
@@ -295,7 +326,7 @@ export default function EarlyRegistrationForm({
                     size="lg"
                     onClick={nextStep}
                     className="h-12 px-8 font-semibold sm:w-auto w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                    Next Step
+                    {isEditing ? "Update & Review" : "Next Step"}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 )}

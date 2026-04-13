@@ -3,28 +3,52 @@ import type { EarlyRegFormData } from "../types";
 import { Label } from "@/shared/ui/label";
 import { Switch } from "@/shared/ui/switch";
 import { Button } from "@/shared/ui/button";
-import { ShieldCheck, Loader2, User, Home, Users, Info } from "lucide-react";
+import {
+  ShieldCheck,
+  Loader2,
+  User,
+  Home,
+  Users,
+  Info,
+  Edit2,
+  ClipboardList,
+} from "lucide-react";
 import { format } from "date-fns";
 
 interface LegalConsentStepProps {
   isSubmitting: boolean;
+  onEdit: (stepId: number) => void;
 }
 
 const SummaryCard = ({
   title,
   icon: Icon,
+  stepId,
+  onEdit,
   children,
 }: {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
+  stepId: number;
+  onEdit: (id: number) => void;
   children: React.ReactNode;
 }) => (
   <div className="border border-border/60 rounded-2xl overflow-hidden bg-white shadow-sm">
-    <div className="px-5 py-3 bg-muted/30 border-b border-border/40 flex items-center gap-2">
-      <Icon className="w-4 h-4 text-primary" />
-      <h4 className="text-xs font-bold uppercase tracking-wider text-foreground/70">
-        {title}
-      </h4>
+    <div className="px-5 py-3 bg-muted/30 border-b border-border/40 flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <Icon className="w-4 h-4 text-primary" />
+        <h4 className="text-xs font-bold uppercase tracking-wider text-foreground/70">
+          {title}
+        </h4>
+      </div>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={() => onEdit(stepId)}
+        className="h-7 text-[0.625rem] font-bold uppercase text-primary hover:text-primary hover:bg-primary/5 gap-1">
+        <Edit2 className="w-3 h-3" /> Edit
+      </Button>
     </div>
     <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
       {children}
@@ -35,22 +59,31 @@ const SummaryCard = ({
 const DataItem = ({
   label,
   value,
+  noUppercase,
 }: {
   label: string;
   value: string | number | undefined | null;
+  noUppercase?: boolean;
 }) => (
   <div className="space-y-0.5">
-    <p className="text-[0.625rem] font-bold uppercase text-muted-foreground tracking-tight">
+    <p className="text-xs font-bold uppercase text-muted-foreground tracking-tight">
       {label}
     </p>
     <p className="font-bold text-foreground truncate uppercase">
-      {value || "----"}
+      {value
+        ? noUppercase
+          ? value
+          : typeof value === "string"
+            ? value.toUpperCase()
+            : value
+        : "----"}
     </p>
   </div>
 );
 
 export default function LegalConsentStep({
   isSubmitting,
+  onEdit,
 }: LegalConsentStepProps) {
   const {
     control,
@@ -63,27 +96,93 @@ export default function LegalConsentStep({
   return (
     <div className="space-y-8">
       <div className="space-y-6">
-        <SummaryCard title="Learner Information" icon={User}>
-          <DataItem label="Full Name" value={`${data.lastName}, ${data.firstName} ${data.middleName || ""} ${data.extensionName || ""}`} />
-          <DataItem label="LRN" value={data.lrn} />
+        <SummaryCard
+          title="Basic Information"
+          icon={ClipboardList}
+          stepId={1}
+          onEdit={onEdit}>
+          <DataItem label="School Year" value={data.schoolYear} />
           <DataItem label="Grade Level" value={`Grade ${data.gradeLevel}`} />
-          <DataItem label="Sex" value={data.sex} />
-          <DataItem label="Birthdate" value={data.birthdate ? format(new Date(data.birthdate), "MMMM dd, yyyy") : ""} />
-          <DataItem label="Learner Type" value={data.learnerType?.replace("_", " ")} />
+          <DataItem
+            label="Learner Type"
+            value={data.learnerType?.replace("_", " ")}
+          />
+          <DataItem label="LRN" value={data.lrn} />
         </SummaryCard>
 
-        <SummaryCard title="Address & Contact" icon={Home}>
+        <SummaryCard
+          title="Learner Profile"
+          icon={User}
+          stepId={2}
+          onEdit={onEdit}>
+          <DataItem
+            label="Full Name"
+            value={`${data.lastName}, ${data.firstName} ${data.middleName || ""} ${data.extensionName || ""}`}
+          />
+          <DataItem label="Sex" value={data.sex} />
+          <DataItem
+            label="Birthdate"
+            value={
+              data.birthdate
+                ? format(new Date(data.birthdate), "MMMM dd, yyyy")
+                : ""
+            }
+          />
+          <DataItem
+            label="IP Community"
+            value={data.isIpCommunity ? `YES (${data.ipGroupName})` : "NO"}
+          />
+          <DataItem
+            label="Disability"
+            value={
+              data.isLearnerWithDisability
+                ? data.disabilityTypes?.join(", ")
+                : "NONE"
+            }
+          />
+        </SummaryCard>
+
+        <SummaryCard
+          title="Address & Contact"
+          icon={Home}
+          stepId={3}
+          onEdit={onEdit}>
           <DataItem label="Barangay" value={data.barangay} />
           <DataItem label="City/Municipality" value={data.cityMunicipality} />
+          <DataItem label="Province" value={data.province} />
           <DataItem label="Contact Number" value={data.contactNumber} />
-          <DataItem label="Email" value={data.email} />
+          <DataItem label="Email" value={data.email} noUppercase />
         </SummaryCard>
 
-        <SummaryCard title="Parent/Guardian" icon={Users}>
-          <DataItem label="Mother" value={`${data.mother?.firstName} ${data.mother?.lastName}`} />
-          <DataItem label="Father" value={`${data.father?.firstName} ${data.father?.lastName}`} />
-          {data.guardianRelationship && (
-            <DataItem label="Guardian" value={`${data.guardian?.firstName} ${data.guardian?.lastName} (${data.guardianRelationship})`} />
+        <SummaryCard
+          title="Parent/Guardian"
+          icon={Users}
+          stepId={3}
+          onEdit={onEdit}>
+          <DataItem
+            label="Mother's Maiden Name"
+            value={
+              data.hasNoMother
+                ? "Information not available"
+                : `${data.mother?.firstName} ${data.mother?.maidenName}`
+            }
+          />
+          <DataItem
+            label="Father's Name"
+            value={
+              data.hasNoFather
+                ? "Information not available"
+                : `${data.father?.firstName} ${data.father?.lastName}`
+            }
+          />
+          {data.guardian?.firstName && (
+            <DataItem
+              label="Guardian"
+              value={`${data.guardian?.firstName} ${data.guardian?.lastName} (${data.guardianRelationship})`}
+            />
+          )}
+          {data.primaryContact && (
+            <DataItem label="Primary Contact" value={data.primaryContact} />
           )}
         </SummaryCard>
       </div>
@@ -112,13 +211,17 @@ export default function LegalConsentStep({
                     />
                     <Label
                       htmlFor="certify-check"
-                      className="text-sm font-medium leading-relaxed cursor-pointer select-none space-y-3 block"
-                    >
+                      className="text-sm font-medium leading-relaxed cursor-pointer select-none space-y-3 block">
                       <p>
-                        I certify that all information I have provided on this form is true, correct, and complete to the best of my knowledge and belief. I understand that any false information may be grounds for disqualification.
+                        I certify that all information I have provided on this
+                        form is true, correct, and complete to the best of my
+                        knowledge and belief. I understand that any false
+                        information may be grounds for disqualification.
                       </p>
                       <p className="italic text-muted-foreground border-l-2 border-primary/30 pl-3 py-1">
-                        Nagapamatuod ako nga ang tanan nga impormasyon nga akon ginhatag sa sini nga porma matuod, husto, kag kompleto sa akon nahibaluan.
+                        Nagapamatuod ako nga ang tanan nga impormasyon nga akon
+                        ginhatag sa sini nga porma matuod, husto, kag kompleto
+                        sa akon nahibaluan.
                       </p>
                     </Label>
                   </div>
