@@ -3,9 +3,10 @@ import { useFormContext } from "react-hook-form";
 import type { EarlyRegFormData } from "../types";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { AlertCircle, Info, School } from "lucide-react";
-import { cn } from "@/shared/lib/utils";
+import { AlertCircle, BookOpen, Info, School } from "lucide-react";
+import { cn, SCP_LABELS } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
+import api from "@/shared/api/axiosInstance";
 
 const LEARNER_TYPES = [
   { value: "NEW_ENROLLEE", label: "NEW ENROLLEE" },
@@ -19,17 +20,52 @@ const GRADE_OPTIONS = [
   { value: "10", label: "GRADE 10" },
 ] as const;
 
+type ScpTypeValue = NonNullable<EarlyRegFormData["scpType"]>;
+
+const SCP_PROGRAMS: Array<{ id: ScpTypeValue; description: string }> = [
+  {
+    id: "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+    description: "Written entrance exam and interview.",
+  },
+  {
+    id: "SPECIAL_PROGRAM_IN_THE_ARTS",
+    description: "Written exam, audition, and interview.",
+  },
+  {
+    id: "SPECIAL_PROGRAM_IN_SPORTS",
+    description: "Sports tryout and screening.",
+  },
+  {
+    id: "SPECIAL_PROGRAM_IN_JOURNALISM",
+    description: "Journalism screening exam and interview.",
+  },
+  {
+    id: "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
+    description: "Language aptitude and screening.",
+  },
+  {
+    id: "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
+    description: "Technical-vocational aptitude assessment.",
+  },
+];
+
 export default function BasicInfoStep() {
   const {
     register,
     watch,
     setValue,
+    setError,
+    clearErrors,
     formState: { errors },
   } = useFormContext<EarlyRegFormData>();
 
   const { activeSchoolYearLabel } = useSettingsStore();
   const learnerType = watch("learnerType");
   const gradeLevel = watch("gradeLevel");
+  const lrn = watch("lrn");
+  const isScpApplication = watch("isScpApplication");
+  const scpType = watch("scpType");
+  const isScpEligible = learnerType === "NEW_ENROLLEE" && gradeLevel === "7";
 
   // 1. Auto-set School Year
   useEffect(() => {
@@ -46,12 +82,63 @@ export default function BasicInfoStep() {
     }
   }, [learnerType, setValue]);
 
+  useEffect(() => {
+    if (!isScpEligible && (isScpApplication || scpType)) {
+      setValue("isScpApplication", false, { shouldValidate: true });
+      setValue("scpType", null, { shouldValidate: true });
+      clearErrors("scpType");
+    }
+  }, [isScpEligible, isScpApplication, scpType, setValue, clearErrors]);
+
+  // 3. LRN existence check (Debounced)
+  useEffect(() => {
+    if (!lrn || lrn.length !== 12) {
+      // Clear manual duplicate error if LRN is not 12 digits
+      if (errors.lrn?.type === "manual") {
+        clearErrors("lrn");
+      }
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const response = await api.get(`/early-registrations/check-lrn/${lrn}`);
+        if (response.data.exists) {
+          setError("lrn", {
+            type: "manual",
+            message: response.data.message,
+          });
+        } else {
+          // If was manual error, clear it
+          if (errors.lrn?.type === "manual") {
+            clearErrors("lrn");
+          }
+        }
+      } catch (error) {
+        console.error("Failed to check LRN existence:", error);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [lrn, setError, clearErrors, errors.lrn?.type]);
+
   const lrnRequired = gradeLevel && parseInt(gradeLevel, 10) >= 8;
 
   // Filter grade options based on learner type
   const visibleGradeOptions = GRADE_OPTIONS.filter((opt) =>
     learnerType === "NEW_ENROLLEE" ? opt.value === "7" : true,
   );
+
+  const selectRegularTrack = () => {
+    setValue("isScpApplication", false, { shouldValidate: true });
+    setValue("scpType", null, { shouldValidate: true });
+    clearErrors("scpType");
+  };
+
+  const selectScpTrack = () => {
+    if (!isScpEligible) return;
+    setValue("isScpApplication", true, { shouldValidate: true });
+  };
 
   return (
     <div className="space-y-10">
@@ -155,8 +242,7 @@ export default function BasicInfoStep() {
         <div className="space-y-4">
           <div className="flex justify-between items-end">
             <Label className="text-sm font-bold uppercase tracking-widest text-primary">
-                Grade Level to Enroll{" "}
-              <span className="text-destructive">*</span>
+              Grade Level to Enroll <span className="text-destructive">*</span>
             </Label>
           </div>
 
@@ -192,6 +278,165 @@ export default function BasicInfoStep() {
               {errors.gradeLevel.message}
             </p>
           )}
+        </div>
+
+        {/* ROW 4: Application Track */}
+        <div className="space-y-4">
+          <div className="p-6 border bg-primary/5 border-primary/20 rounded-2xl space-y-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
+                <BookOpen className="w-5 h-5 text-primary" />
+              </div>
+              <Label className="text-base font-bold text-primary">
+                Application Track <span className="text-destructive">*</span>
+              </Label>
+            </div>
+
+            <div
+              className={cn(
+                "grid gap-3",
+                isScpEligible ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1",
+              )}>
+              <button
+                type="button"
+                className={cn(
+                  "flex flex-col p-4 rounded-xl border-2 transition-all text-left",
+                  !isScpApplication
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-white hover:bg-primary/5",
+                )}
+                onClick={selectRegularTrack}>
+                <div className="flex items-center gap-3 mb-1">
+                  <div
+                    className={cn(
+                      "w-5 h-5 rounded-full border-2 flex items-center justify-center",
+                      !isScpApplication
+                        ? "border-white"
+                        : "border-muted-foreground",
+                    )}>
+                    {!isScpApplication && (
+                      <div className="w-2.5 h-2.5 rounded-full bg-white" />
+                    )}
+                  </div>
+                  <span className="font-bold">Regular Section</span>
+                </div>
+                <p
+                  className={cn(
+                    "text-[0.6875rem] pl-8",
+                    !isScpApplication
+                      ? "text-primary-foreground/80"
+                      : "text-muted-foreground",
+                  )}>
+                  Standard admission track without SCP specialization.
+                </p>
+              </button>
+
+              {isScpEligible && (
+                <button
+                  type="button"
+                  className={cn(
+                    "flex flex-col p-4 rounded-xl border-2 transition-all text-left",
+                    isScpApplication
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-white hover:bg-primary/5",
+                  )}
+                  onClick={selectScpTrack}>
+                  <div className="flex items-center gap-3 mb-1">
+                    <div
+                      className={cn(
+                        "w-5 h-5 rounded-full border-2 flex items-center justify-center",
+                        isScpApplication
+                          ? "border-white"
+                          : "border-muted-foreground",
+                      )}>
+                      {isScpApplication && (
+                        <div className="w-2.5 h-2.5 rounded-full bg-white" />
+                      )}
+                    </div>
+                    <span className="font-bold">
+                      Special Curricular Program
+                    </span>
+                  </div>
+                  <p
+                    className={cn(
+                      "text-[0.6875rem] pl-8",
+                      isScpApplication
+                        ? "text-primary-foreground/80"
+                        : "text-muted-foreground",
+                    )}>
+                    Select this if applying for an SCP track.
+                  </p>
+                </button>
+              )}
+            </div>
+
+            {!isScpEligible && (
+              <p className="font-bold text-xs italic flex items-center gap-1 mt-2 text-muted-foreground">
+                <Info className="w-4 h-4" />
+                SCP option is available only for NEW ENROLLEE in GRADE 7.
+              </p>
+            )}
+
+            {isScpEligible && isScpApplication && (
+              <div className="space-y-3 pt-2">
+                <Label className="text-sm font-bold uppercase tracking-widest text-primary">
+                  Select SCP Program <span className="text-destructive">*</span>
+                </Label>
+
+                <div className="grid grid-cols-1 gap-3">
+                  {SCP_PROGRAMS.map((program) => (
+                    <button
+                      key={program.id}
+                      type="button"
+                      className={cn(
+                        "w-full flex flex-col p-4 rounded-xl border-2 transition-all text-left",
+                        scpType === program.id
+                          ? "border-primary bg-primary text-primary-foreground shadow-md"
+                          : "border-border bg-white text-foreground hover:bg-primary/5",
+                      )}
+                      onClick={() =>
+                        setValue("scpType", program.id, {
+                          shouldValidate: true,
+                        })
+                      }>
+                      <div className="flex items-center gap-3 mb-1">
+                        <div
+                          className={cn(
+                            "w-5 h-5 rounded-full border-2 flex items-center justify-center",
+                            scpType === program.id
+                              ? "border-white"
+                              : "border-muted-foreground",
+                          )}>
+                          {scpType === program.id && (
+                            <div className="w-2.5 h-2.5 rounded-full bg-white" />
+                          )}
+                        </div>
+                        <span className="font-bold">
+                          {SCP_LABELS[program.id]}
+                        </span>
+                      </div>
+                      <p
+                        className={cn(
+                          "text-[0.6875rem] pl-8 italic",
+                          scpType === program.id
+                            ? "text-primary-foreground/80"
+                            : "text-muted-foreground",
+                        )}>
+                        {program.description}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+
+                {errors.scpType?.message && (
+                  <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.scpType.message}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

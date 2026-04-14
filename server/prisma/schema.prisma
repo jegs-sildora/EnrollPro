@@ -36,6 +36,7 @@ model User {
   createdBy          User?        @relation("UserCreatedBy", fields: [createdById], references: [id])
   createdUsers       User[]       @relation("UserCreatedBy")
   uploadedDocuments  ApplicantDocument[]   @relation("DocumentUploadedBy")
+  verifiedDocuments  ApplicantDocument[]   @relation("DocumentVerifiedBy")
   updatedChecklists  ApplicantChecklist[]
   recordedHealthRecords HealthRecord[] @relation("HealthRecordRecordedBy")
   encodedEarlyRegs      EarlyRegistration[] @relation("EarlyRegEncodedBy")
@@ -118,7 +119,9 @@ model GradeLevel {
   applicants     Applicant[]
   schoolYear     SchoolYear   @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
   sections       Section[]
+  earlyRegistrationsV2 EarlyRegistration[]
 
+  @@index([schoolYearId], name: "idx_grade_levels_school_year_id")
   @@map("grade_levels")
 }
 
@@ -136,6 +139,7 @@ model Section {
   advisingTeacher   Teacher?     @relation(fields: [advisingTeacherId], references: [id])
   gradeLevel        GradeLevel   @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
 
+  @@index([gradeLevelId], name: "idx_sections_grade_level_id")
   @@map("sections")
 }
 
@@ -179,6 +183,8 @@ model Applicant {
   hasPwdId                Boolean           @default(false) @map("has_pwd_id")
   learningModalities      String[]          @map("learning_modalities")
   isTemporarilyEnrolled   Boolean           @default(false) @map("is_temporarily_enrolled")
+  documentaryDeadlineAt   DateTime?         @db.Date @map("documentary_deadline_at")
+  complianceStatus        ComplianceStatus? @map("compliance_status")
   portalPin               String?           @map("portal_pin")
   portalPinChangedAt      DateTime?         @db.Timestamptz @map("portal_pin_changed_at")
   
@@ -198,8 +204,10 @@ model Applicant {
   earlyRegistrations      EarlyRegistration[]
 
   @@index([status, schoolYearId], name: "idx_applicants_status_sy")
+  @@index([status, documentaryDeadlineAt], name: "idx_applicants_status_deadline")
   @@index([lrn], name: "idx_applicants_lrn")
   @@index([applicantType, status], name: "idx_applicants_type_status")
+  @@index([applicantType, status, schoolYearId], name: "idx_applicants_type_status_sy")
   @@index([trackingNumber], name: "idx_applicants_tracking_no")
   @@index([encodedById], name: "idx_applicants_encoded_by")
   @@map("applicants")
@@ -319,9 +327,11 @@ model ApplicantDocument {
   
   applicant        Applicant      @relation(fields: [applicantId], references: [id], onDelete: Cascade)
   uploadedBy       User?          @relation("DocumentUploadedBy", fields: [uploadedById], references: [id])
+  verifiedBy       User?          @relation("DocumentVerifiedBy", fields: [verifiedById], references: [id])
 
   @@index([applicantId], name: "idx_documents_applicant_id")
   @@index([applicantId, documentType], name: "idx_documents_applicant_type")
+  @@index([applicantId, status, documentType], name: "idx_documents_applicant_status_type")
   @@map("applicant_documents")
 }
 
@@ -361,6 +371,9 @@ model Enrollment {
   enrolledBy     User         @relation(fields: [enrolledById], references: [id])
   section        Section      @relation(fields: [sectionId], references: [id])
 
+  @@index([sectionId], name: "idx_enrollments_section_id")
+  @@index([schoolYearId], name: "idx_enrollments_school_year_id")
+  @@index([enrolledById], name: "idx_enrollments_enrolled_by_id")
   @@map("enrollments")
 }
 
@@ -393,6 +406,7 @@ model AuditLog {
   @@index([actionType], name: "idx_audit_logs_action_type")
   @@index([createdAt], name: "idx_audit_logs_created_at")
   @@index([userId], name: "idx_audit_logs_user_id")
+  @@index([userId, createdAt], name: "idx_audit_logs_user_created")
   @@map("audit_logs")
 }
 
@@ -566,11 +580,17 @@ model EarlyRegistration {
   schoolYearId         Int       @map("school_year_id")
   gradeLevel           String    @map("grade_level") /// 7 | 8 | 9 | 10
   learnerType          String    @map("learner_type") /// NEW_ENROLLEE | TRANSFEREE | etc.
+  applicantType        ApplicantType @default(REGULAR) @map("applicant_type")
   status               String    @default("SUBMITTED") /// DRAFT | SUBMITTED | VERIFIED | LINKED
   channel              String    @default("ONLINE") /// ONLINE | F2F
+  gradeLevelIdV2       Int?      @map("grade_level_id_v2")
+  learnerTypeV2        LearnerType? @map("learner_type_v2")
+  statusV2             EarlyRegistrationLifecycleStatus? @map("status_v2")
+  channelV2            AdmissionChannel? @map("channel_v2")
   contactNumber        String    @map("contact_number")
   email                String?
   primaryContact       String?   @map("primary_contact") /// FATHER | MOTHER | GUARDIAN
+  primaryContactV2     PrimaryContactType? @map("primary_contact_v2")
   hasNoMother          Boolean   @default(false) @map("has_no_mother")
   hasNoFather          Boolean   @default(false) @map("has_no_father")
   isPrivacyConsentGiven Boolean  @map("is_privacy_consent_given")
@@ -584,13 +604,17 @@ model EarlyRegistration {
 
   registrant           EarlyRegistrant @relation(fields: [registrantId], references: [id], onDelete: Cascade)
   schoolYear           SchoolYear      @relation(fields: [schoolYearId], references: [id])
+  gradeLevelV2         GradeLevel?     @relation(fields: [gradeLevelIdV2], references: [id])
   applicant            Applicant?      @relation(fields: [applicantId], references: [id])
   encodedBy            User?           @relation("EarlyRegEncodedBy", fields: [encodedById], references: [id])
   verifiedBy           User?           @relation("EarlyRegVerifiedBy", fields: [verifiedById], references: [id])
 
   @@unique([registrantId, schoolYearId], name: "uq_early_registrations_per_sy")
   @@index([schoolYearId, status], name: "idx_early_registrations_sy_status")
+  @@index([schoolYearId, applicantType, status], name: "idx_early_registrations_sy_type_status")
+  @@index([schoolYearId, statusV2], name: "idx_early_registrations_sy_status_v2")
   @@index([applicantId], name: "idx_early_registrations_applicant_id")
+  @@index([gradeLevelIdV2], name: "idx_early_registrations_grade_level_v2")
   @@map("early_registrations")
 }
 
@@ -598,8 +622,37 @@ model EarlyRegistration {
 enum Role {
   REGISTRAR
   SYSTEM_ADMIN
+  TEACHER
 
   @@map("user_role")
+}
+
+/// Documentary compliance status for temporarily enrolled learners
+enum ComplianceStatus {
+  PENDING
+  COMPLIED
+  OVERDUE
+
+  @@map("compliance_status")
+}
+
+/// Typed lifecycle for staged EarlyRegistration migration
+enum EarlyRegistrationLifecycleStatus {
+  DRAFT
+  SUBMITTED
+  VERIFIED
+  LINKED
+
+  @@map("early_registration_lifecycle_status")
+}
+
+/// Primary contact selector for guardian communications
+enum PrimaryContactType {
+  FATHER
+  MOTHER
+  GUARDIAN
+
+  @@map("primary_contact_type")
 }
 
 /// Biological sex per DepEd SF1

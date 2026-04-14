@@ -56,6 +56,7 @@ export default function EarlyRegistrationForm({
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCheckingLrn, setIsCheckingLrn] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [maxStepReached, setMaxStepReached] = useState(1);
   const [isEditing, setIsEditing] = useState(false);
@@ -64,11 +65,23 @@ export default function EarlyRegistrationForm({
     resolver: zodResolver(
       EarlyRegFormSchema,
     ) as import("react-hook-form").Resolver<EarlyRegFormData>,
-    defaultValues: initialDraft ?? { ...DEFAULT_VALUES, isPrivacyConsentGiven: true },
+    defaultValues: initialDraft ?? {
+      ...DEFAULT_VALUES,
+      isPrivacyConsentGiven: true,
+    },
     mode: "onChange",
   });
 
-  const { handleSubmit, trigger, reset, watch } = methods;
+  const {
+    handleSubmit,
+    trigger,
+    reset,
+    watch,
+    getFieldState,
+    getValues,
+    setError,
+    clearErrors,
+  } = methods;
 
   const currentIndex =
     steps.findIndex((s) => s.id === stepper.state.current.data.id) + 1;
@@ -131,29 +144,97 @@ export default function EarlyRegistrationForm({
 
   // Field groups per step for partial validation
   const STEP_FIELDS: Record<string, FieldPath<EarlyRegFormData>[]> = {
-    "basic-info": ["gradeLevel", "learnerType"],
+    "basic-info": [
+      "gradeLevel",
+      "learnerType",
+      "lrn",
+      "isScpApplication",
+      "scpType",
+    ],
     "learner-profile": ["lastName", "firstName", "birthdate", "sex"],
     "address-guardian": [
       "barangay",
       "cityMunicipality",
       "province",
       "contactNumber",
+      "mother.maidenName",
+      "mother.firstName",
+      "father.lastName",
+      "father.firstName",
+      "guardian.lastName",
+      "guardian.firstName",
+      "guardianRelationship",
+      "email",
     ],
     "legal-consent": ["isPrivacyConsentGiven"],
+  };
+
+  const hasBlockingErrors = Object.keys(methods.formState.errors).length > 0;
+
+  const checkLrnAvailability = async (): Promise<boolean> => {
+    const rawLrn = String(getValues("lrn") ?? "").trim();
+    if (!rawLrn || rawLrn.length !== 12) {
+      const lrnState = getFieldState("lrn", methods.formState);
+      if (lrnState.error?.type === "manual") {
+        clearErrors("lrn");
+      }
+      return true;
+    }
+
+    setIsCheckingLrn(true);
+    try {
+      const response = await api.get(
+        `/early-registrations/check-lrn/${rawLrn}`,
+      );
+      if (response.data?.exists) {
+        setError("lrn", {
+          type: "manual",
+          message:
+            response.data?.message ||
+            "Mayroon nang learner na may kaparehong LRN. / A learner with this LRN already exists.",
+        });
+        return false;
+      }
+
+      const lrnState = getFieldState("lrn", methods.formState);
+      if (lrnState.error?.type === "manual") {
+        clearErrors("lrn");
+      }
+      return true;
+    } catch {
+      setError("lrn", {
+        type: "manual",
+        message:
+          "Hindi ma-verify ang LRN ngayon. Pakisubukan muli. / Unable to verify LRN right now. Please try again.",
+      });
+      return false;
+    } finally {
+      setIsCheckingLrn(false);
+    }
   };
 
   const nextStep = async () => {
     const stepId = stepper.state.current.data.id;
     const fields = STEP_FIELDS[stepId] ?? [];
     const isValid = fields.length > 0 ? await trigger(fields) : true;
-    if (isValid) {
-      if (isEditing) {
-        stepper.navigation.goTo("legal-consent");
-      } else {
-        stepper.navigation.next();
-      }
-      scrollToTop();
+
+    if (!isValid) {
+      return;
     }
+
+    if (stepId === "basic-info") {
+      const isLrnAvailable = await checkLrnAvailability();
+      if (!isLrnAvailable) {
+        return;
+      }
+    }
+
+    if (isEditing) {
+      stepper.navigation.goTo("legal-consent");
+    } else {
+      stepper.navigation.next();
+    }
+    scrollToTop();
   };
 
   const prevStep = () => {
@@ -268,8 +349,8 @@ export default function EarlyRegistrationForm({
                     "learner-profile": () => <LearnerProfileStep />,
                     "address-guardian": () => <AddressGuardianStep />,
                     "legal-consent": () => (
-                      <LegalConsentStep 
-                        isSubmitting={isSubmitting} 
+                      <LegalConsentStep
+                        isSubmitting={isSubmitting}
                         onEdit={goToStep}
                       />
                     ),
@@ -325,6 +406,9 @@ export default function EarlyRegistrationForm({
                     type="button"
                     size="lg"
                     onClick={nextStep}
+                    disabled={
+                      isSubmitting || hasBlockingErrors || isCheckingLrn
+                    }
                     className="h-12 px-8 font-semibold sm:w-auto w-full bg-primary text-primary-foreground hover:bg-primary/90">
                     {isEditing ? "Update & Review" : "Next Step"}
                     <ArrowRight className="ml-2 h-4 w-4" />

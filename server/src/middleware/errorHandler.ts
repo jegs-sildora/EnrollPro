@@ -6,7 +6,7 @@ export function errorHandler(
 	res: Response,
 	_next: NextFunction,
 ): void {
-	console.error('[Error]', err.message);
+	console.error('[Error Details]', err);
 	const status = err.statusCode ?? 500;
 	res.status(status).json({ message: err.message || 'Internal Server Error' });
 }

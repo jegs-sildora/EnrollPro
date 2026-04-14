@@ -9,6 +9,8 @@ export const DEFAULT_VALUES: Partial<EarlyRegFormData> = {
   gradeLevel: "7",
   lrn: "",
   learnerType: "NEW_ENROLLEE",
+  isScpApplication: false,
+  scpType: null,
   lastName: "",
   firstName: "",
   middleName: "",

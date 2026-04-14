@@ -1,8 +1,10 @@
 import { z } from "zod";
 
 // ─── Enums ──────────────────────────────────────────────
-export const RoleEnum = z.enum(["REGISTRAR", "SYSTEM_ADMIN"]);
+export const RoleEnum = z.enum(["REGISTRAR", "SYSTEM_ADMIN", "TEACHER"]);
 export const SexEnum = z.enum(["MALE", "FEMALE"]);
+
+export const ComplianceStatusEnum = z.enum(["PENDING", "COMPLIED", "OVERDUE"]);
 
 export const ApplicationStatusEnum = z.enum([
   "SUBMITTED",

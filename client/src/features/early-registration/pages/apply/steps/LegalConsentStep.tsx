@@ -14,6 +14,7 @@ import {
   ClipboardList,
 } from "lucide-react";
 import { format } from "date-fns";
+import { formatScpType } from "@/shared/lib/utils";
 
 interface LegalConsentStepProps {
   isSubmitting: boolean;
@@ -102,12 +103,33 @@ export default function LegalConsentStep({
           stepId={1}
           onEdit={onEdit}>
           <DataItem label="School Year" value={data.schoolYear} />
-          <DataItem label="Grade Level To Enroll" value={`Grade ${data.gradeLevel}`} />
+          <DataItem
+            label="Grade Level To Enroll"
+            value={`Grade ${data.gradeLevel}`}
+          />
           <DataItem
             label="Learner Type"
             value={data.learnerType?.replace("_", " ")}
           />
           <DataItem label="LEARNER REFERENCE NUMBER" value={data.lrn} />
+          <DataItem
+            label="Application Track"
+            value={
+              data.isScpApplication
+                ? "Special Curricular Program (SCP)"
+                : "Regular Section"
+            }
+            noUppercase
+          />
+          <DataItem
+            label="Selected Program"
+            value={
+              data.isScpApplication && data.scpType
+                ? formatScpType(data.scpType)
+                : "Regular"
+            }
+            noUppercase
+          />
         </SummaryCard>
 
         <SummaryCard
@@ -150,39 +172,57 @@ export default function LegalConsentStep({
           <DataItem label="Barangay" value={data.barangay} />
           <DataItem label="City/Municipality" value={data.cityMunicipality} />
           <DataItem label="Province" value={data.province} />
-          
+
           <div className="sm:col-span-2 mt-2 pt-2 border-t border-border/40 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <DataItem 
-                label={`Primary Contact (${data.primaryContact?.toLowerCase()})`} 
-                value={data.contactNumber} 
+              <DataItem
+                label={`Primary Contact (${data.primaryContact?.toLowerCase()})`}
+                value={data.contactNumber}
               />
-              <DataItem 
-                label="Primary Email" 
-                value={data.email} 
-                noUppercase 
-              />
+              <DataItem label="Primary Email" value={data.email} noUppercase />
             </div>
 
             {/* Secondary Contacts */}
             {data.mother?.contactNumber && data.primaryContact !== "MOTHER" && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 opacity-70">
-                <DataItem label="Mother's Contact #" value={data.mother.contactNumber} />
-                <DataItem label="Mother's Email" value={data.mother.email} noUppercase />
+                <DataItem
+                  label="Mother's Contact #"
+                  value={data.mother.contactNumber}
+                />
+                <DataItem
+                  label="Mother's Email"
+                  value={data.mother.email}
+                  noUppercase
+                />
               </div>
             )}
             {data.father?.contactNumber && data.primaryContact !== "FATHER" && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 opacity-70">
-                <DataItem label="Father's Contact #" value={data.father.contactNumber} />
-                <DataItem label="Father's Email" value={data.father.email} noUppercase />
+                <DataItem
+                  label="Father's Contact #"
+                  value={data.father.contactNumber}
+                />
+                <DataItem
+                  label="Father's Email"
+                  value={data.father.email}
+                  noUppercase
+                />
               </div>
             )}
-            {data.guardian?.contactNumber && data.primaryContact !== "GUARDIAN" && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 opacity-70">
-                <DataItem label="Guardian's Contact #" value={data.guardian.contactNumber} />
-                <DataItem label="Guardian's Email" value={data.guardian.email} noUppercase />
-              </div>
-            )}
+            {data.guardian?.contactNumber &&
+              data.primaryContact !== "GUARDIAN" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 opacity-70">
+                  <DataItem
+                    label="Guardian's Contact #"
+                    value={data.guardian.contactNumber}
+                  />
+                  <DataItem
+                    label="Guardian's Email"
+                    value={data.guardian.email}
+                    noUppercase
+                  />
+                </div>
+              )}
           </div>
         </SummaryCard>
 
@@ -214,9 +254,9 @@ export default function LegalConsentStep({
             />
           )}
           {data.primaryContact && (
-            <DataItem 
-              label="Primary Contact Person" 
-              value={data.primaryContact} 
+            <DataItem
+              label="Primary Contact Person"
+              value={data.primaryContact}
             />
           )}
         </SummaryCard>

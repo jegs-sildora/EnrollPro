@@ -4,6 +4,7 @@ import {
   EarlyRegGradeLevelEnum,
   LearnerTypeEnum,
   DisabilityTypeEnum,
+  ScpTypeEnum,
 } from "../constants/index.js";
 
 // ─── DO 017 s.2025 — Basic Education Early Registration ─
@@ -72,6 +73,8 @@ export const earlyRegistrationSubmitSchema = z
       .nullable()
       .or(z.literal("")),
     learnerType: LearnerTypeEnum,
+    isScpApplication: z.boolean().default(false),
+    scpType: ScpTypeEnum.optional().nullable(),
 
     // ── Personal ──────────────────────────────────────────
     lastName: z.string().min(1, "Last name is required").max(100),
@@ -126,6 +129,14 @@ export const earlyRegistrationSubmitSchema = z
     }),
   })
   .superRefine((data, ctx) => {
+    if (data.isScpApplication && !data.scpType) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "SCP type is required when SCP application is selected",
+        path: ["scpType"],
+      });
+    }
+
     // LRN required for returning learners (Grades 8-10)
     const grade = parseInt(data.gradeLevel, 10);
     if (grade >= 8) {

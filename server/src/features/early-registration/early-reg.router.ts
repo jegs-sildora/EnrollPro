@@ -18,6 +18,8 @@ const submitLimiter = rateLimit({
 });
 
 // ── Public ──
+router.get("/check-lrn/:lrn", ctrl.checkLrn);
+
 router.post(
   "/",
   submitLimiter,

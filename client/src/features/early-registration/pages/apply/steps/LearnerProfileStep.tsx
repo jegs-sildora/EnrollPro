@@ -194,7 +194,7 @@ export default function LearnerProfileStep() {
       </div>
 
       {/* Birthdate + Age + Sex */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
         <div className="space-y-1.5">
           <Label className="text-sm font-semibold">
             Date of Birth <span className="text-destructive">*</span>
@@ -271,7 +271,7 @@ export default function LearnerProfileStep() {
         <div className="space-y-1.5">
           <Label className="text-sm font-semibold">Age</Label>
           <div className="h-11 flex items-center px-3 rounded-md border bg-muted text-sm font-bold">
-            {age !== null ? `${age} YEARS OLD` : "—"}
+            {age !== null ? `${age}` : "—"}
           </div>
           <p className="text-[0.625rem] text-muted-foreground italic">
             Auto-calculated
