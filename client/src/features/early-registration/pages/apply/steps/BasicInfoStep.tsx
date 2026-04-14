@@ -56,94 +56,14 @@ export default function BasicInfoStep() {
   return (
     <div className="space-y-10">
       <div className="space-y-8">
-        {/* ROW 1: Learner Type (Moved to top for Progressive Disclosure) */}
-        <div className="space-y-4">
-          <Label className="text-sm font-bold uppercase tracking-widest text-primary">
-            1. Learner Category <span className="text-destructive">*</span>
-          </Label>
-          <div className="grid grid-cols-2 gap-3">
-            {LEARNER_TYPES.map((lt) => (
-              <button
-                key={lt.value}
-                type="button"
-                onClick={() =>
-                  setValue("learnerType", lt.value, { shouldValidate: true })
-                }
-                className={cn(
-                  "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase focus:outline-none focus:ring-2 focus:ring-primary/50",
-                  learnerType === lt.value
-                    ? "border-primary bg-primary text-primary-foreground shadow-md"
-                    : "border-border bg-white hover:bg-primary/5 text-muted-foreground hover:text-foreground",
-                )}
-              >
-                <span className="font-bold text-sm leading-tight tracking-wide">
-                  {lt.label}
-                </span>
-              </button>
-            ))}
-          </div>
-          {errors.learnerType && (
-            <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-2">
-              <AlertCircle className="w-3 h-3" />
-              {errors.learnerType.message}
-            </p>
-          )}
-        </div>
-
-        {/* ROW 2: Grade Level (Dynamically locked based on Row 1) */}
-        <div className="space-y-4">
-          <div className="flex justify-between items-end">
-            <Label className="text-sm font-bold uppercase tracking-widest text-primary">
-              2. Grade Level to Enroll{" "}
-              <span className="text-destructive">*</span>
-            </Label>
-          </div>
-
-          <div
-            className={cn(
-              "grid gap-3",
-              learnerType === "NEW_ENROLLEE"
-                ? "grid-cols-1"
-                : "grid-cols-2 sm:grid-cols-4",
-            )}
-          >
-            {visibleGradeOptions.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() =>
-                  setValue("gradeLevel", opt.value, { shouldValidate: true })
-                }
-                className={cn(
-                  "relative flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all h-14 uppercase",
-                  gradeLevel === opt.value
-                    ? "border-primary bg-primary/10 text-primary shadow-sm ring-1 ring-primary"
-                    : "border-border bg-white hover:border-primary/50 hover:bg-primary/5 cursor-pointer",
-                )}
-              >
-                <span className="text-sm font-bold leading-tight text-primary">
-                  {opt.label}
-                </span>
-              </button>
-            ))}
-          </div>
-          {errors.gradeLevel && (
-            <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-2">
-              <AlertCircle className="w-3 h-3" />
-              {errors.gradeLevel.message}
-            </p>
-          )}
-        </div>
-
-        {/* ROW 3: LRN & School Year */}
+        {/* ROW 1: Learner Reference Number & School Year */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start p-5 bg-muted/30 rounded-2xl border border-border/50">
           {/* LRN Input */}
           <div className="space-y-2">
             <Label
               htmlFor="lrn"
-              className="text-sm font-bold uppercase tracking-widest text-primary"
-            >
-              3. Learner Reference Number (LRN)
+              className="text-sm font-bold uppercase tracking-widest text-primary">
+              Learner Reference Number (LRN)
               {lrnRequired && <span className="text-destructive"> *</span>}
             </Label>
             <div className="relative">
@@ -183,8 +103,7 @@ export default function BasicInfoStep() {
           <div className="space-y-2">
             <Label
               htmlFor="schoolYear"
-              className="text-sm font-bold uppercase tracking-widest text-primary opacity-70"
-            >
+              className="text-sm font-bold uppercase tracking-widest text-primary opacity-70">
               School Year
             </Label>
             <div className="relative">
@@ -197,6 +116,82 @@ export default function BasicInfoStep() {
               <School className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70" />
             </div>
           </div>
+        </div>
+
+        {/* ROW 2: Learner Category */}
+        <div className="space-y-4">
+          <Label className="text-sm font-bold uppercase tracking-widest text-primary">
+            Learner Category <span className="text-destructive">*</span>
+          </Label>
+          <div className="grid grid-cols-2 gap-3">
+            {LEARNER_TYPES.map((lt) => (
+              <button
+                key={lt.value}
+                type="button"
+                onClick={() =>
+                  setValue("learnerType", lt.value, { shouldValidate: true })
+                }
+                className={cn(
+                  "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase focus:outline-none focus:ring-2 focus:ring-primary/50",
+                  learnerType === lt.value
+                    ? "border-primary bg-primary text-primary-foreground shadow-md"
+                    : "border-border bg-white hover:bg-primary/5 text-muted-foreground hover:text-foreground",
+                )}>
+                <span className="font-bold text-sm leading-tight tracking-wide">
+                  {lt.label}
+                </span>
+              </button>
+            ))}
+          </div>
+          {errors.learnerType && (
+            <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-2">
+              <AlertCircle className="w-3 h-3" />
+              {errors.learnerType.message}
+            </p>
+          )}
+        </div>
+
+        {/* ROW 3: Grade Level to Enroll */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-end">
+            <Label className="text-sm font-bold uppercase tracking-widest text-primary">
+                Grade Level to Enroll{" "}
+              <span className="text-destructive">*</span>
+            </Label>
+          </div>
+
+          <div
+            className={cn(
+              "grid gap-3",
+              learnerType === "NEW_ENROLLEE"
+                ? "grid-cols-1"
+                : "grid-cols-2 sm:grid-cols-4",
+            )}>
+            {visibleGradeOptions.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() =>
+                  setValue("gradeLevel", opt.value, { shouldValidate: true })
+                }
+                className={cn(
+                  "relative flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all h-14 uppercase",
+                  gradeLevel === opt.value
+                    ? "border-primary bg-primary/10 text-primary shadow-sm ring-1 ring-primary"
+                    : "border-border bg-white hover:border-primary/50 hover:bg-primary/5 cursor-pointer",
+                )}>
+                <span className="text-sm font-bold leading-tight text-primary">
+                  {opt.label}
+                </span>
+              </button>
+            ))}
+          </div>
+          {errors.gradeLevel && (
+            <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-2">
+              <AlertCircle className="w-3 h-3" />
+              {errors.gradeLevel.message}
+            </p>
+          )}
         </div>
       </div>
     </div>
