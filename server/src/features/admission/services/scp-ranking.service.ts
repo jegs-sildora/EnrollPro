@@ -29,10 +29,10 @@ export async function computeRanking(
     where: { id: applicationId },
     include: {
       earlyRegistration: {
-        include: { assessments: true }
+        include: { assessments: true },
       },
-      previousSchool: true
-    }
+      previousSchool: true,
+    },
   });
 
   if (!application) {
@@ -55,7 +55,8 @@ export async function computeRanking(
     } else {
       // Match assessment type to weight key
       const assessment = assessments.find(
-        (a) => a.type === key || a.type.replace(/_/g, "") === key.replace(/_/g, ""),
+        (a) =>
+          a.type === key || a.type.replace(/_/g, "") === key.replace(/_/g, ""),
       );
       const score = assessment?.score ?? 0;
       const weighted = score * weight;
