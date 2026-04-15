@@ -7,7 +7,20 @@ import type {
 import type { AdmissionControllerDeps } from "./admission-controller.deps.js";
 
 export const VALID_TRANSITIONS: Record<string, ApplicationStatus[]> = {
-  SUBMITTED: ["UNDER_REVIEW", "ASSESSMENT_SCHEDULED", "REJECTED", "WITHDRAWN"],
+  SUBMITTED: [
+    "VERIFIED",
+    "UNDER_REVIEW",
+    "ASSESSMENT_SCHEDULED",
+    "REJECTED",
+    "WITHDRAWN",
+  ],
+  VERIFIED: [
+    "UNDER_REVIEW",
+    "ELIGIBLE",
+    "ASSESSMENT_SCHEDULED",
+    "REJECTED",
+    "WITHDRAWN",
+  ],
   UNDER_REVIEW: [
     "FOR_REVISION",
     "ELIGIBLE",
@@ -49,22 +62,25 @@ export const VALID_TRANSITIONS: Record<string, ApplicationStatus[]> = {
 export function createEarlyRegistrationSharedService(
   deps: AdmissionControllerDeps,
 ) {
-  async function findApplicantOrThrow(
-    id: number,
-  ): Promise<
-    EnrollmentApplication & { learner: any; earlyRegistration?: any }
-  > {
+  async function findApplicantOrThrow(id: number): Promise<any> {
     const applicant = await deps.prisma.enrollmentApplication.findUnique({
       where: { id },
-      include: { learner: true, earlyRegistration: true },
+      include: { learner: true, earlyRegistration: true, gradeLevel: true },
     });
-    if (!applicant) throw new AppError(404, "Enrollment application not found");
-    return applicant;
+
+    if (applicant) return applicant;
+
+    // Fallback to early registration table
+    const earlyReg = await deps.prisma.earlyRegistrationApplication.findUnique({
+      where: { id },
+      include: { learner: true, gradeLevel: true },
+    });
+
+    if (!earlyReg) throw new AppError(404, "Application not found");
+    return earlyReg;
   }
 
-  async function findEarlyRegOrThrow(
-    id: number,
-  ): Promise<
+  async function findEarlyRegOrThrow(id: number): Promise<
     EarlyRegistrationApplication & {
       learner: { firstName: string; lastName: string; lrn: string | null };
     }
@@ -262,6 +278,38 @@ export function createEarlyRegistrationSharedService(
     return obj;
   }
 
+  async function updateApplicationStatus(
+    id: number,
+    status: ApplicationStatus,
+    extraData: any = {},
+  ) {
+    const enrollment = await deps.prisma.enrollmentApplication.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (enrollment) {
+      return deps.prisma.enrollmentApplication.update({
+        where: { id },
+        data: { status, ...extraData },
+      });
+    }
+
+    const earlyReg = await deps.prisma.earlyRegistrationApplication.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (earlyReg) {
+      return deps.prisma.earlyRegistrationApplication.update({
+        where: { id },
+        data: { status, ...extraData },
+      });
+    }
+
+    throw new AppError(404, "Application not found");
+  }
+
   return {
     findApplicantOrThrow,
     findEarlyRegOrThrow,
@@ -269,5 +317,6 @@ export function createEarlyRegistrationSharedService(
     queueEmail,
     flattenAssessmentData,
     toUpperCaseRecursive,
+    updateApplicationStatus,
   };
 }

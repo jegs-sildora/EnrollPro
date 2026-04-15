@@ -68,6 +68,7 @@ const TARGET_STATUS_OPTIONS = [
 const STAGE_QUICK_FILTERS = [
   { value: "ALL", label: "All Active" },
   { value: "SUBMITTED", label: "Submitted" },
+  { value: "VERIFIED", label: "Verified" },
   { value: "UNDER_REVIEW", label: "Under Review" },
   { value: "ELIGIBLE", label: "Eligible" },
   { value: "ASSESSMENT_SCHEDULED", label: "Exam Scheduled" },
@@ -75,7 +76,20 @@ const STAGE_QUICK_FILTERS = [
 ];
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  SUBMITTED: ["UNDER_REVIEW", "ASSESSMENT_SCHEDULED", "REJECTED", "WITHDRAWN"],
+  SUBMITTED: [
+    "VERIFIED",
+    "UNDER_REVIEW",
+    "ASSESSMENT_SCHEDULED",
+    "REJECTED",
+    "WITHDRAWN",
+  ],
+  VERIFIED: [
+    "UNDER_REVIEW",
+    "ELIGIBLE",
+    "ASSESSMENT_SCHEDULED",
+    "REJECTED",
+    "WITHDRAWN",
+  ],
   UNDER_REVIEW: [
     "FOR_REVISION",
     "ELIGIBLE",
@@ -174,19 +188,28 @@ export default function PipelineBatchView({
       params.append("page", String(page));
       params.append("limit", String(limit));
 
-      const res = await api.get(`/applications?${params.toString()}`);
+      const res = await api.get(`/early-registrations?${params.toString()}`);
 
-      let filteredApps = res.data.applications;
+      let filteredApps = res.data.data.map((app: any) => ({
+        ...app,
+        firstName: app.learner?.firstName || app.firstName,
+        lastName: app.learner?.lastName || app.lastName,
+        middleName: app.learner?.middleName || app.middleName,
+        suffix: app.learner?.extensionName || app.suffix,
+        lrn: app.learner?.lrn || app.lrn,
+      }));
       if (status === "ALL") {
         filteredApps = filteredApps.filter(
           (app: Application) =>
-            !["ENROLLED", "PRE_REGISTERED"].includes(app.status),
+            !["ENROLLED", "PRE_REGISTERED", "TEMPORARILY_ENROLLED"].includes(
+              app.status,
+            ),
         );
       }
 
       setApplications(filteredApps);
-      const removedCount = res.data.applications.length - filteredApps.length;
-      setTotal(Math.max(0, res.data.total - removedCount));
+      const removedCount = res.data.data.length - filteredApps.length;
+      setTotal(Math.max(0, res.data.pagination.total - removedCount));
     } catch (err) {
       toastApiError(err as never);
     } finally {
@@ -346,7 +369,7 @@ export default function PipelineBatchView({
 
     setIsBatchProcessing(true);
     try {
-      const res = await api.patch("/applications/batch-process", {
+      const res = await api.patch("/early-registrations/batch-process", {
         ids: eligibleIds,
         targetStatus,
       });
@@ -379,18 +402,21 @@ export default function PipelineBatchView({
     const score = Number(raw);
     setSavingId(appId);
     try {
-      const res = await api.patch(`/applications/${appId}/record-step-result`, {
-        stepOrder: 1,
-        kind: "EXAM",
-        score,
-        notes: "Recorded from Registration Pipelines",
-      });
+      const res = await api.patch(
+        `/early-registrations/${appId}/record-step-result`,
+        {
+          stepOrder: 1,
+          kind: "EXAM",
+          score,
+          notes: "Recorded from Registration Pipelines",
+        },
+      );
 
       if (res.data?.status === "ASSESSMENT_TAKEN" && cutoffScore != null) {
         if (score >= cutoffScore) {
-          await api.patch(`/applications/${appId}/pass`);
+          await api.patch(`/early-registrations/${appId}/pass`);
         } else {
-          await api.patch(`/applications/${appId}/fail`);
+          await api.patch(`/early-registrations/${appId}/fail`);
         }
       }
 

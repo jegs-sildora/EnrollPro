@@ -655,6 +655,7 @@ enum Sex {
 
 enum ApplicationStatus {
   SUBMITTED
+  VERIFIED
   UNDER_REVIEW
   FOR_REVISION
   ELIGIBLE

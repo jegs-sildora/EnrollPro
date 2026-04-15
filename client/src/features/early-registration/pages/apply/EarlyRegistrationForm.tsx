@@ -288,6 +288,7 @@ export default function EarlyRegistrationForm({
         id: response.data.id,
         trackingNumber: response.data.trackingNumber,
         learnerName: response.data.learnerName,
+        applicantType: response.data.applicantType ?? "REGULAR",
       });
 
       // Clear draft & reset

@@ -64,6 +64,7 @@ export function createEarlyRegistrationBaseController(
         gradeLevelId,
         status,
         applicantType,
+        schoolYearId,
         page = "1",
         limit = "15",
       } = req.query;
@@ -71,12 +72,16 @@ export function createEarlyRegistrationBaseController(
 
       const where: Prisma.EnrollmentApplicationWhereInput = {};
 
-      // Scope to active School Year by default
-      const settings = await prisma.schoolSetting.findFirst({
-        select: { activeSchoolYearId: true },
-      });
-      if (settings?.activeSchoolYearId) {
-        where.schoolYearId = settings.activeSchoolYearId;
+      // Scope to specified or active School Year
+      if (schoolYearId) {
+        where.schoolYearId = parseInt(String(schoolYearId));
+      } else {
+        const settings = await prisma.schoolSetting.findFirst({
+          select: { activeSchoolYearId: true },
+        });
+        if (settings?.activeSchoolYearId) {
+          where.schoolYearId = settings.activeSchoolYearId;
+        }
       }
 
       if (search) {
@@ -189,8 +194,28 @@ export function createEarlyRegistrationBaseController(
         },
       });
 
-      if (!application)
-        throw new AppError(404, "Enrollment application not found");
+      if (!application) {
+        // Fallback: check early registration table
+        const earlyReg = await prisma.earlyRegistrationApplication.findUnique({
+          where: { id: parseInt(String(req.params.id)) },
+          include: {
+            learner: true,
+            gradeLevel: true,
+            schoolYear: true,
+            guardians: true,
+            assessments: { orderBy: { createdAt: "desc" } },
+            encodedBy: {
+              select: { id: true, firstName: true, lastName: true, role: true },
+            },
+            verifiedBy: {
+              select: { id: true, firstName: true, lastName: true, role: true },
+            },
+          },
+        });
+
+        if (!earlyReg) throw new AppError(404, "Application not found");
+        return res.json(await flattenAssessmentData(earlyReg));
+      }
 
       // Automatically transition to UNDER_REVIEW when opened by registrar
       if (

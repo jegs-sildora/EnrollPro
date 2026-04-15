@@ -2,12 +2,14 @@ import { Request, Response, NextFunction } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { AppError } from "../../lib/AppError.js";
+import { normalizeDateToUtcNoon } from "../school-year/school-year.service.js";
 import {
   LearnerType,
   FamilyRelationship,
   ApplicationStatus,
   AdmissionChannel,
   PrimaryContactType,
+  Prisma,
 } from "../../generated/prisma/index.js";
 
 // ── Helpers ──
@@ -52,13 +54,6 @@ function calculateAge(birthdate: Date): number {
     age--;
   }
   return age;
-}
-
-/** Normalize a date to noon UTC for consistent date-only storage. */
-function normalizeDateToUtcNoon(date: Date): Date {
-  const d = new Date(date);
-  d.setUTCHours(12, 0, 0, 0);
-  return d;
 }
 
 const LEARNER_TYPE_VALUES = new Set([
@@ -419,7 +414,9 @@ async function createRegistration(
         prefix = "SPA";
       } else if (application.applicantType === "SPECIAL_PROGRAM_IN_SPORTS") {
         prefix = "SPS";
-      } else if (application.applicantType === "SPECIAL_PROGRAM_IN_JOURNALISM") {
+      } else if (
+        application.applicantType === "SPECIAL_PROGRAM_IN_JOURNALISM"
+      ) {
         prefix = "SPJ";
       } else if (
         application.applicantType === "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE"
@@ -649,6 +646,7 @@ export async function index(req: Request, res: Response, next: NextFunction) {
           schoolYear: { select: { yearLabel: true } },
           encodedBy: { select: { firstName: true, lastName: true } },
           verifiedBy: { select: { firstName: true, lastName: true } },
+          assessments: { orderBy: { createdAt: "desc" } },
         },
         orderBy: { submittedAt: "desc" },
         skip: (page - 1) * limit,
@@ -684,6 +682,7 @@ export async function show(req: Request, res: Response, next: NextFunction) {
         schoolYear: { select: { yearLabel: true } },
         encodedBy: { select: { firstName: true, lastName: true } },
         verifiedBy: { select: { firstName: true, lastName: true } },
+        assessments: { orderBy: { createdAt: "desc" } },
       },
     });
 
@@ -719,7 +718,7 @@ export async function verify(req: Request, res: Response, next: NextFunction) {
     const updated = await prisma.earlyRegistrationApplication.update({
       where: { id },
       data: {
-        status: "VERIFIED" as ApplicationStatus,
+        status: "VERIFIED",
         verifiedAt: new Date(),
         verifiedById: req.user!.userId,
       },
@@ -733,6 +732,813 @@ export async function verify(req: Request, res: Response, next: NextFunction) {
       recordId: id,
       req,
     }).catch(() => {});
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// EARLY REGISTRATION LIFECYCLE (Admin status transitions)
+// ═══════════════════════════════════════════════════════════
+
+const EARLY_REG_TRANSITIONS: Record<string, ApplicationStatus[]> = {
+  SUBMITTED: ["VERIFIED", "UNDER_REVIEW", "REJECTED", "WITHDRAWN"],
+  VERIFIED: [
+    "UNDER_REVIEW",
+    "ELIGIBLE",
+    "ASSESSMENT_SCHEDULED",
+    "REJECTED",
+    "WITHDRAWN",
+  ],
+  UNDER_REVIEW: [
+    "FOR_REVISION",
+    "ELIGIBLE",
+    "ASSESSMENT_SCHEDULED",
+    "REJECTED",
+    "WITHDRAWN",
+  ],
+  FOR_REVISION: ["UNDER_REVIEW", "WITHDRAWN"],
+  ELIGIBLE: ["ASSESSMENT_SCHEDULED", "PASSED", "WITHDRAWN"],
+  ASSESSMENT_SCHEDULED: [
+    "ASSESSMENT_TAKEN",
+    "ASSESSMENT_SCHEDULED",
+    "INTERVIEW_SCHEDULED",
+    "WITHDRAWN",
+  ],
+  ASSESSMENT_TAKEN: [
+    "PASSED",
+    "NOT_QUALIFIED",
+    "ASSESSMENT_SCHEDULED",
+    "WITHDRAWN",
+  ],
+  PASSED: [
+    "PRE_REGISTERED",
+    "INTERVIEW_SCHEDULED",
+    "ASSESSMENT_SCHEDULED",
+    "WITHDRAWN",
+  ],
+  INTERVIEW_SCHEDULED: [
+    "PASSED",
+    "PRE_REGISTERED",
+    "NOT_QUALIFIED",
+    "WITHDRAWN",
+  ],
+  PRE_REGISTERED: ["ENROLLED", "TEMPORARILY_ENROLLED", "WITHDRAWN"],
+  TEMPORARILY_ENROLLED: ["ENROLLED", "WITHDRAWN"],
+  ENROLLED: ["WITHDRAWN"],
+  NOT_QUALIFIED: ["UNDER_REVIEW", "WITHDRAWN", "REJECTED"],
+  REJECTED: ["UNDER_REVIEW", "WITHDRAWN"],
+  WITHDRAWN: [],
+};
+
+function assertEarlyRegTransition(
+  current: ApplicationStatus,
+  target: ApplicationStatus,
+  contextMessage?: string,
+): void {
+  if (!(EARLY_REG_TRANSITIONS[current]?.includes(target) ?? false)) {
+    throw new AppError(
+      422,
+      contextMessage ?? `Cannot transition from "${current}" to "${target}".`,
+    );
+  }
+}
+
+async function findEarlyRegOrThrow(id: number) {
+  const reg = await prisma.earlyRegistrationApplication.findUnique({
+    where: { id },
+    include: {
+      learner: true,
+      gradeLevel: true,
+      assessments: { orderBy: { createdAt: "desc" } },
+    },
+  });
+  if (!reg) throw new AppError(404, "Early registration application not found");
+  return reg;
+}
+
+/** PATCH /:id/reject — Reject an early registration */
+export async function reject(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = parseInt(String(req.params.id));
+    const reg = await findEarlyRegOrThrow(id);
+    const { reason } = req.body;
+
+    assertEarlyRegTransition(
+      reg.status,
+      "REJECTED",
+      `Cannot reject. Current status: "${reg.status}".`,
+    );
+
+    const updated = await prisma.earlyRegistrationApplication.update({
+      where: { id },
+      data: { status: "REJECTED" },
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "EARLY_REGISTRATION_REJECTED",
+      description: `Early registration #${id} rejected. Reason: ${reason || "N/A"}`,
+      subjectType: "EarlyRegistrationApplication",
+      recordId: id,
+      req,
+    }).catch(() => {});
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** PATCH /:id/withdraw — Withdraw an early registration */
+export async function withdraw(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const id = parseInt(String(req.params.id));
+    const reg = await findEarlyRegOrThrow(id);
+
+    assertEarlyRegTransition(
+      reg.status,
+      "WITHDRAWN",
+      `Cannot withdraw. Current status: "${reg.status}".`,
+    );
+
+    const updated = await prisma.earlyRegistrationApplication.update({
+      where: { id },
+      data: { status: "WITHDRAWN" },
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "EARLY_REGISTRATION_WITHDRAWN",
+      description: `Early registration #${id} withdrawn.`,
+      subjectType: "EarlyRegistrationApplication",
+      recordId: id,
+      req,
+    }).catch(() => {});
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** PATCH /:id/mark-eligible — Mark early registration as eligible for assessment */
+export async function markEligible(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const id = parseInt(String(req.params.id));
+    const reg = await findEarlyRegOrThrow(id);
+
+    assertEarlyRegTransition(
+      reg.status,
+      "ELIGIBLE",
+      `Cannot mark as eligible. Current status: "${reg.status}".`,
+    );
+
+    const updated = await prisma.earlyRegistrationApplication.update({
+      where: { id },
+      data: { status: "ELIGIBLE" },
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "EARLY_REGISTRATION_ELIGIBLE",
+      description: `Early registration #${id} marked as ELIGIBLE.`,
+      subjectType: "EarlyRegistrationApplication",
+      recordId: id,
+      req,
+    }).catch(() => {});
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** PATCH /:id/schedule-assessment — Schedule an assessment step */
+export async function scheduleAssessment(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { stepOrder, kind, scheduledDate, scheduledTime, venue, notes } =
+      req.body;
+    const id = parseInt(String(req.params.id));
+    const reg = await findEarlyRegOrThrow(id);
+
+    const targetStatus: ApplicationStatus =
+      kind === "INTERVIEW" ? "INTERVIEW_SCHEDULED" : "ASSESSMENT_SCHEDULED";
+
+    assertEarlyRegTransition(
+      reg.status,
+      targetStatus,
+      `Cannot schedule assessment. Current status: "${reg.status}".`,
+    );
+
+    // Fetch pipeline step config for defaults
+    const scpConfig = await prisma.scpProgramConfig.findUnique({
+      where: {
+        uq_scp_program_configs_type: {
+          schoolYearId: reg.schoolYearId,
+          scpType: reg.applicantType as any,
+        },
+      },
+      include: { steps: { orderBy: { stepOrder: "asc" } } },
+    });
+
+    const stepConfig = scpConfig?.steps.find((s) => s.stepOrder === stepOrder);
+
+    // Prerequisite gating
+    if (scpConfig && stepOrder > 1) {
+      const previousRequired = scpConfig.steps.filter(
+        (s) => s.stepOrder < stepOrder && s.isRequired,
+      );
+      if (previousRequired.length > 0) {
+        const existing = await prisma.earlyRegistrationAssessment.findMany({
+          where: { applicationId: id },
+        });
+        const unmet = previousRequired.filter(
+          (prev) =>
+            !existing.some(
+              (a) => a.type === prev.kind && a.result === "PASSED",
+            ),
+        );
+        if (unmet.length > 0) {
+          throw new AppError(
+            400,
+            `Cannot schedule step ${stepOrder}: prerequisite step(s) not passed — ${unmet.map((s) => s.label).join(", ")}.`,
+          );
+        }
+      }
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.earlyRegistrationAssessment.create({
+        data: {
+          applicationId: id,
+          type: kind as any,
+          scheduledDate: normalizeDateToUtcNoon(new Date(scheduledDate)),
+          scheduledTime: scheduledTime || stepConfig?.scheduledTime || null,
+          venue: venue || stepConfig?.venue || null,
+          notes: notes || stepConfig?.notes || null,
+        },
+      });
+
+      return tx.earlyRegistrationApplication.update({
+        where: { id },
+        data: { status: targetStatus },
+      });
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType:
+        kind === "INTERVIEW"
+          ? "INTERVIEW_SCHEDULED"
+          : "ASSESSMENT_STEP_SCHEDULED",
+      description: `Scheduled ${stepConfig?.label || kind} for early reg #${id} on ${scheduledDate}`,
+      subjectType: "EarlyRegistrationApplication",
+      recordId: id,
+      req,
+    }).catch(() => {});
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** PATCH /:id/record-step-result — Record assessment result */
+export async function recordStepResult(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { stepOrder, kind, score, result, notes } = req.body;
+    const id = parseInt(String(req.params.id));
+    const reg = await findEarlyRegOrThrow(id);
+
+    assertEarlyRegTransition(
+      reg.status,
+      "ASSESSMENT_TAKEN",
+      `Cannot record result. Current status: "${reg.status}".`,
+    );
+
+    const assessment = await prisma.earlyRegistrationAssessment.findFirst({
+      where: { applicationId: id, type: kind as any },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (!assessment) {
+      throw new AppError(
+        404,
+        `No scheduled assessment found for step ${stepOrder} (${kind}). Schedule it first.`,
+      );
+    }
+
+    // Load pipeline config
+    const scpConfig = await prisma.scpProgramConfig.findUnique({
+      where: {
+        uq_scp_program_configs_type: {
+          schoolYearId: reg.schoolYearId,
+          scpType: reg.applicantType as any,
+        },
+      },
+      include: {
+        steps: { where: { isRequired: true }, orderBy: { stepOrder: "asc" } },
+      },
+    });
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const stepConfig = scpConfig?.steps.find(
+        (s) => s.stepOrder === stepOrder,
+      );
+      let finalResult = result ?? null;
+      if (stepConfig?.cutoffScore != null && score != null) {
+        finalResult = score >= stepConfig.cutoffScore ? "PASSED" : "FAILED";
+      }
+
+      await tx.earlyRegistrationAssessment.update({
+        where: { id: assessment.id },
+        data: {
+          score: score ?? null,
+          result: finalResult,
+          notes: notes ?? null,
+          conductedAt: new Date(),
+        },
+      });
+
+      // Check if all required non-interview steps have results
+      const allAssessments = await tx.earlyRegistrationAssessment.findMany({
+        where: { applicationId: id },
+      });
+
+      const requiredSteps = scpConfig?.steps ?? [];
+      const requiredNonInterview = requiredSteps.filter(
+        (step) => step.kind !== "INTERVIEW",
+      );
+      const allDone = requiredNonInterview.every((step) =>
+        allAssessments.some(
+          (a) =>
+            a.type === step.kind &&
+            (a.conductedAt != null || a.result != null || a.score != null),
+        ),
+      );
+
+      const newStatus: ApplicationStatus = allDone
+        ? "ASSESSMENT_TAKEN"
+        : reg.status;
+
+      return tx.earlyRegistrationApplication.update({
+        where: { id },
+        data: { status: newStatus },
+      });
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "ASSESSMENT_RESULT_RECORDED",
+      description: `Recorded result for early reg #${id} step ${stepOrder}: score=${score ?? "N/A"}, result=${result ?? "auto"}`,
+      subjectType: "EarlyRegistrationApplication",
+      recordId: id,
+      req,
+    }).catch(() => {});
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** PATCH /:id/pass — Mark early registration as passed */
+export async function pass(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = parseInt(String(req.params.id));
+    const reg = await findEarlyRegOrThrow(id);
+
+    assertEarlyRegTransition(
+      reg.status,
+      "PASSED",
+      `Cannot mark as passed. Current status: "${reg.status}".`,
+    );
+
+    const updated = await prisma.earlyRegistrationApplication.update({
+      where: { id },
+      data: { status: "PASSED" },
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "EARLY_REGISTRATION_PASSED",
+      description: `Early registration #${id} marked PASSED.`,
+      subjectType: "EarlyRegistrationApplication",
+      recordId: id,
+      req,
+    }).catch(() => {});
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** PATCH /:id/fail — Mark early registration as not qualified */
+export async function fail(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = parseInt(String(req.params.id));
+    const { examNotes } = req.body;
+    const reg = await findEarlyRegOrThrow(id);
+
+    assertEarlyRegTransition(
+      reg.status,
+      "NOT_QUALIFIED",
+      `Cannot mark as not qualified. Current status: "${reg.status}".`,
+    );
+
+    const updated = await prisma.$transaction(async (tx) => {
+      if (examNotes) {
+        const latestAssessment = await tx.earlyRegistrationAssessment.findFirst(
+          {
+            where: { applicationId: id },
+            orderBy: { createdAt: "desc" },
+          },
+        );
+        if (latestAssessment) {
+          await tx.earlyRegistrationAssessment.update({
+            where: { id: latestAssessment.id },
+            data: { notes: examNotes },
+          });
+        }
+      }
+      return tx.earlyRegistrationApplication.update({
+        where: { id },
+        data: { status: "NOT_QUALIFIED" },
+      });
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "EARLY_REGISTRATION_FAILED",
+      description: `Early registration #${id} marked NOT_QUALIFIED. Notes: ${examNotes || "N/A"}`,
+      subjectType: "EarlyRegistrationApplication",
+      recordId: id,
+      req,
+    }).catch(() => {});
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** PATCH /batch-process — Batch status transitions for early registrations */
+export async function batchProcess(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { ids, targetStatus } = req.body as {
+      ids: number[];
+      targetStatus: ApplicationStatus;
+    };
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      throw new AppError(400, "No application IDs provided.");
+    }
+
+    const applications = await prisma.earlyRegistrationApplication.findMany({
+      where: { id: { in: ids } },
+      include: { learner: true },
+    });
+
+    const succeeded: { id: number; name: string; trackingNumber: string }[] =
+      [];
+    const failed: {
+      id: number;
+      name: string;
+      trackingNumber: string;
+      reason: string;
+    }[] = [];
+
+    for (const app of applications) {
+      const name = `${app.learner.lastName}, ${app.learner.firstName}`;
+      const allowed = EARLY_REG_TRANSITIONS[app.status] ?? [];
+      if (!allowed.includes(targetStatus)) {
+        failed.push({
+          id: app.id,
+          name,
+          trackingNumber: app.trackingNumber,
+          reason: `Cannot move from "${app.status}" to "${targetStatus}".`,
+        });
+        continue;
+      }
+
+      try {
+        await prisma.earlyRegistrationApplication.update({
+          where: { id: app.id },
+          data: { status: targetStatus },
+        });
+        succeeded.push({
+          id: app.id,
+          name,
+          trackingNumber: app.trackingNumber,
+        });
+      } catch {
+        failed.push({
+          id: app.id,
+          name,
+          trackingNumber: app.trackingNumber,
+          reason: "Database update error.",
+        });
+      }
+    }
+
+    // Mark IDs not found as failed
+    const foundIds = new Set(applications.map((a) => a.id));
+    for (const id of ids) {
+      if (!foundIds.has(id)) {
+        failed.push({
+          id,
+          name: "Unknown",
+          trackingNumber: "N/A",
+          reason: "Application not found.",
+        });
+      }
+    }
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "EARLY_REG_BATCH_PROCESS",
+      description: `Batch processed ${succeeded.length} early registrations to ${targetStatus}. ${failed.length} failed.`,
+      subjectType: "EarlyRegistrationApplication",
+      recordId: null,
+      req,
+    }).catch(() => {});
+
+    res.json({ succeeded, failed });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** GET /:id/detailed — Get early registration with full assessment/pipeline data */
+export async function showDetailed(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const id = parseInt(String(req.params.id));
+    const reg = await prisma.earlyRegistrationApplication.findUnique({
+      where: { id },
+      include: {
+        learner: true,
+        guardians: true,
+        gradeLevel: { select: { id: true, name: true } },
+        schoolYear: { select: { id: true, yearLabel: true } },
+        encodedBy: { select: { firstName: true, lastName: true } },
+        verifiedBy: { select: { firstName: true, lastName: true } },
+        assessments: { orderBy: { createdAt: "desc" } },
+        documents: true,
+      },
+    });
+
+    if (!reg) throw new AppError(404, "Early registration not found.");
+
+    // Flatten assessment data like the enrollment controller does
+    const assessments = reg.assessments ?? [];
+    let pipelineSteps: Array<{
+      stepOrder: number;
+      kind: string;
+      label: string;
+      description: string | null;
+      isRequired: boolean;
+      cutoffScore: number | null;
+    }> = [];
+
+    if (reg.applicantType !== "REGULAR") {
+      const scpConfig = await prisma.scpProgramConfig.findUnique({
+        where: {
+          uq_scp_program_configs_type: {
+            schoolYearId: reg.schoolYearId,
+            scpType: reg.applicantType as any,
+          },
+        },
+        include: { steps: { orderBy: { stepOrder: "asc" } } },
+      });
+
+      if (scpConfig) {
+        pipelineSteps = scpConfig.steps.map((s) => ({
+          stepOrder: s.stepOrder,
+          kind: s.kind,
+          label: s.label,
+          description: s.description,
+          isRequired: s.isRequired,
+          cutoffScore: s.cutoffScore ?? null,
+        }));
+      }
+    }
+
+    const steps = pipelineSteps.map((step) => {
+      const match = assessments.find((a) => a.type === step.kind);
+      let stepStatus: "PENDING" | "SCHEDULED" | "COMPLETED" = "PENDING";
+      if (match?.conductedAt || match?.result != null || match?.score != null) {
+        stepStatus = "COMPLETED";
+      } else if (match?.scheduledDate) {
+        stepStatus = "SCHEDULED";
+      }
+      return {
+        ...step,
+        assessmentId: match?.id ?? null,
+        scheduledDate: match?.scheduledDate?.toISOString() ?? null,
+        scheduledTime: match?.scheduledTime ?? null,
+        venue: match?.venue ?? null,
+        score: match?.score ?? null,
+        result: match?.result ?? null,
+        notes: match?.notes ?? null,
+        conductedAt: match?.conductedAt?.toISOString() ?? null,
+        status: stepStatus,
+      };
+    });
+
+    const primary = assessments[0] ?? null;
+
+    res.json({
+      ...reg,
+      firstName: reg.learner.firstName,
+      lastName: reg.learner.lastName,
+      middleName: reg.learner.middleName,
+      lrn: reg.learner.lrn,
+      isScpApplication: reg.applicantType !== "REGULAR",
+      assessmentSteps: steps,
+      examDate: primary?.scheduledDate?.toISOString() ?? null,
+      examVenue: primary?.venue ?? null,
+      examScore: primary?.score ?? null,
+      examResult: primary?.result ?? null,
+      examNotes: primary?.notes ?? null,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// APPROVE (Pre-register) – promotes early-reg to enrollment
+// ═══════════════════════════════════════════════════════════
+
+export async function approve(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = parseInt(String(req.params.id));
+    const { sectionId } = req.body;
+    const reg = await findEarlyRegOrThrow(id);
+
+    assertEarlyRegTransition(
+      reg.status,
+      ApplicationStatus.PRE_REGISTERED,
+      `Cannot approve an early registration with status "${reg.status}". Only PASSED or INTERVIEW_SCHEDULED applications can be approved.`,
+    );
+
+    const result = await prisma.$transaction(async (tx) => {
+      // Check section capacity
+      const [section] = await tx.$queryRaw<
+        { id: number; maxCapacity: number }[]
+      >`SELECT id, "max_capacity" as "maxCapacity" FROM "sections" WHERE id = ${sectionId} FOR UPDATE`;
+
+      if (!section) throw new AppError(404, "Section not found");
+
+      const enrolledCount = await tx.enrollmentRecord.count({
+        where: { sectionId },
+      });
+      if (enrolledCount >= section.maxCapacity) {
+        throw new AppError(422, "This section has reached maximum capacity");
+      }
+
+      // Create EnrollmentApplication linked to early-reg
+      const enrollmentApp = await tx.enrollmentApplication.create({
+        data: {
+          learnerId: reg.learnerId,
+          earlyRegistrationId: reg.id,
+          schoolYearId: reg.schoolYearId,
+          gradeLevelId: reg.gradeLevelId,
+          applicantType: reg.applicantType,
+          learnerType: reg.learnerType,
+          status: "PRE_REGISTERED",
+          admissionChannel: reg.channel,
+          isPrivacyConsentGiven: reg.isPrivacyConsentGiven,
+          encodedById: req.user!.userId,
+        },
+      });
+
+      // Create enrollment record
+      const enrollment = await tx.enrollmentRecord.create({
+        data: {
+          enrollmentApplicationId: enrollmentApp.id,
+          sectionId,
+          schoolYearId: reg.schoolYearId,
+          enrolledById: req.user!.userId,
+        },
+      });
+
+      // Update early-reg status
+      await tx.earlyRegistrationApplication.update({
+        where: { id },
+        data: { status: "PRE_REGISTERED" },
+      });
+
+      return enrollment;
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "APPLICATION_APPROVED",
+      description: `Approved early registration #${id} for ${reg.learner.firstName} ${reg.learner.lastName} and pre-registered to section ${sectionId}`,
+      subjectType: "EarlyRegistrationApplication",
+      recordId: id,
+      req,
+    });
+
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** PATCH /:id/temporarily-enroll */
+export async function temporarilyEnroll(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const id = parseInt(String(req.params.id));
+    const reg = await findEarlyRegOrThrow(id);
+
+    assertEarlyRegTransition(
+      reg.status,
+      ApplicationStatus.TEMPORARILY_ENROLLED,
+    );
+
+    const updated = await prisma.earlyRegistrationApplication.update({
+      where: { id },
+      data: { status: "TEMPORARILY_ENROLLED" },
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "STATUS_CHANGE",
+      description: `Early registration #${id} marked as temporarily enrolled`,
+      subjectType: "EarlyRegistrationApplication",
+      recordId: id,
+      req,
+    });
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** PATCH /:id/mark-interview-passed */
+export async function markInterviewPassed(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const id = parseInt(String(req.params.id));
+    const reg = await findEarlyRegOrThrow(id);
+
+    assertEarlyRegTransition(
+      reg.status,
+      ApplicationStatus.PASSED,
+      `Cannot mark interview passed. Current status: "${reg.status}".`,
+    );
+
+    const updated = await prisma.earlyRegistrationApplication.update({
+      where: { id },
+      data: { status: "PASSED" },
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "STATUS_CHANGE",
+      description: `Early registration #${id} interview passed`,
+      subjectType: "EarlyRegistrationApplication",
+      recordId: id,
+      req,
+    });
 
     res.json(updated);
   } catch (err) {

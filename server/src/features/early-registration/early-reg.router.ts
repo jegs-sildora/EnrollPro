@@ -60,4 +60,89 @@ router.patch(
   ctrl.verify,
 );
 
+// ── Lifecycle (admin) ──
+router.patch(
+  "/batch-process",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.batchProcess,
+);
+
+router.get(
+  "/:id/detailed",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
+  ctrl.showDetailed,
+);
+
+router.patch(
+  "/:id/reject",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.reject,
+);
+
+router.patch(
+  "/:id/withdraw",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.withdraw,
+);
+
+router.patch(
+  "/:id/mark-eligible",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.markEligible,
+);
+
+router.patch(
+  "/:id/schedule-assessment",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.scheduleAssessment,
+);
+
+router.patch(
+  "/:id/record-step-result",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.recordStepResult,
+);
+
+router.patch(
+  "/:id/pass",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.pass,
+);
+
+router.patch(
+  "/:id/fail",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.fail,
+);
+
+router.patch(
+  "/:id/approve",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.approve,
+);
+
+router.patch(
+  "/:id/temporarily-enroll",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.temporarilyEnroll,
+);
+
+router.patch(
+  "/:id/mark-interview-passed",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.markInterviewPassed,
+);
+
 export default router;

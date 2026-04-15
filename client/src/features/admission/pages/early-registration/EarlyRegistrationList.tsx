@@ -71,6 +71,7 @@ const APPLICANT_TYPES = [
 const STAGE_QUICK_FILTERS = [
   { value: "ALL", label: "All Active" },
   { value: "SUBMITTED", label: "Submitted" },
+  { value: "VERIFIED", label: "Verified" },
   { value: "UNDER_REVIEW", label: "Under Review" },
   { value: "ELIGIBLE", label: "Eligible" },
   { value: "ASSESSMENT_SCHEDULED", label: "Exam Scheduled" },
@@ -78,7 +79,8 @@ const STAGE_QUICK_FILTERS = [
 ];
 
 const NEXT_ACTION_BY_STATUS: Record<string, string> = {
-  SUBMITTED: "Review Documents",
+  SUBMITTED: "Verify Submission",
+  VERIFIED: "Review Documents",
   UNDER_REVIEW: "Continue Review",
   FOR_REVISION: "Wait for Revision",
   ELIGIBLE: "Schedule Assessment",
@@ -195,6 +197,7 @@ export default function EarlyRegistration() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
+      params.append("schoolYearId", String(ayId));
       if (search) params.append("search", search);
 
       if (status !== "ALL") {
@@ -205,19 +208,33 @@ export default function EarlyRegistration() {
       params.append("page", String(page));
       params.append("limit", "50");
 
-      const res = await api.get(`/applications?${params.toString()}`);
+      const res = await api.get(`/early-registrations?${params.toString()}`);
 
-      let filteredApps = res.data.applications;
+      let filteredApps = res.data.data.map((app: any) => ({
+        ...app,
+        firstName: app.learner?.firstName || app.firstName,
+        lastName: app.learner?.lastName || app.lastName,
+        middleName: app.learner?.middleName || app.middleName,
+        suffix: app.learner?.extensionName || app.suffix,
+        lrn: app.learner?.lrn || app.lrn,
+      }));
+
       if (status === "ALL") {
         filteredApps = filteredApps.filter(
           (app: Application) =>
-            !["ENROLLED", "PRE_REGISTERED"].includes(app.status),
+            !["ENROLLED", "PRE_REGISTERED", "TEMPORARILY_ENROLLED"].includes(
+              app.status,
+            ),
         );
       }
 
       setApplications(filteredApps);
-      const removedCount = res.data.applications.length - filteredApps.length;
-      setTotal(Math.max(0, res.data.total - removedCount));
+      setTotal(
+        status === "ALL"
+          ? res.data.pagination.total -
+              (res.data.data.length - filteredApps.length)
+          : res.data.pagination.total,
+      );
     } catch (err) {
       toastApiError(err as never);
     } finally {
@@ -241,7 +258,7 @@ export default function EarlyRegistration() {
   const handleApprove = async () => {
     if (!selectedApp || !selectedSectionId) return;
     try {
-      await api.patch(`/applications/${selectedApp.id}/approve`, {
+      await api.patch(`/early-registrations/${selectedApp.id}/approve`, {
         sectionId: parseInt(selectedSectionId),
       });
       sileo.success({
@@ -259,7 +276,7 @@ export default function EarlyRegistration() {
   const handleMarkEligible = async () => {
     if (!selectedApp) return;
     try {
-      await api.patch(`/applications/${selectedApp.id}/mark-eligible`);
+      await api.patch(`/early-registrations/${selectedApp.id}/mark-eligible`);
       sileo.success({
         title: "Eligible",
         description: "Marked as eligible for assessment.",
@@ -274,7 +291,7 @@ export default function EarlyRegistration() {
   const handleReject = async () => {
     if (!selectedApp) return;
     try {
-      await api.patch(`/applications/${selectedApp.id}/reject`, {
+      await api.patch(`/early-registrations/${selectedApp.id}/reject`, {
         rejectionReason,
       });
       sileo.success({
@@ -296,7 +313,7 @@ export default function EarlyRegistration() {
     if (!selectedId) return;
     try {
       const res = await api.patch(
-        `/applications/${selectedId}/record-step-result`,
+        `/early-registrations/${selectedId}/record-step-result`,
         {
           stepOrder,
           kind,
@@ -308,9 +325,9 @@ export default function EarlyRegistration() {
       // Only auto-pass/fail if all required steps are done (status moved to ASSESSMENT_TAKEN)
       if (res.data?.status === "ASSESSMENT_TAKEN" && cutoffScore != null) {
         if (score >= cutoffScore) {
-          await api.patch(`/applications/${selectedId}/pass`);
+          await api.patch(`/early-registrations/${selectedId}/pass`);
         } else {
-          await api.patch(`/applications/${selectedId}/fail`);
+          await api.patch(`/early-registrations/${selectedId}/fail`);
         }
       }
 
@@ -344,7 +361,7 @@ export default function EarlyRegistration() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              BASIC EDUCATION EARLY REGISTRATION FORM Monitoring Dashboard
+              Early Registration Monitoring Dashboard
             </h1>
             <p className="text-sm sm:text-base font-bold text-muted-foreground">
               Applicant screening and assessment workflow
@@ -744,7 +761,7 @@ export default function EarlyRegistration() {
                     setLoading(true);
                     try {
                       const fullRes = await api.get(
-                        `/applications/${selectedId}`,
+                        `/early-registrations/${selectedId}/detailed`,
                       );
                       setSelectedApp(fullRes.data);
                       setScheduleStep(null);
@@ -760,7 +777,7 @@ export default function EarlyRegistration() {
                   setLoading(true);
                   try {
                     const fullRes = await api.get(
-                      `/applications/${selectedId}`,
+                      `/early-registrations/${selectedId}/detailed`,
                     );
                     setSelectedApp(fullRes.data);
                     setScheduleStep(step);
@@ -775,7 +792,7 @@ export default function EarlyRegistration() {
                 onRecordResult={() => {}}
                 onPass={async () => {
                   try {
-                    await api.patch(`/applications/${selectedId}/pass`);
+                    await api.patch(`/early-registrations/${selectedId}/pass`);
                     sileo.success({
                       title: "Passed",
                       description: "Applicant marked as PASSED.",
@@ -787,7 +804,7 @@ export default function EarlyRegistration() {
                 }}
                 onFail={async () => {
                   try {
-                    await api.patch(`/applications/${selectedId}/fail`);
+                    await api.patch(`/early-registrations/${selectedId}/fail`);
                     sileo.success({
                       title: "Failed",
                       description: "Applicant marked as FAILED.",
@@ -814,7 +831,7 @@ export default function EarlyRegistration() {
                     return;
                   try {
                     await api.patch(
-                      `/applications/${selectedId}/temporarily-enroll`,
+                      `/early-registrations/${selectedId}/temporarily-enroll`,
                     );
                     sileo.success({
                       title: "Updated",
@@ -829,7 +846,7 @@ export default function EarlyRegistration() {
                   setLoading(true);
                   try {
                     const fullRes = await api.get(
-                      `/applications/${selectedId}`,
+                      `/early-registrations/${selectedId}/detailed`,
                     );
                     const fullApp = fullRes.data as ApplicantDetail;
                     setSelectedApp(fullApp);
@@ -848,7 +865,7 @@ export default function EarlyRegistration() {
                 onMarkInterviewPassed={async () => {
                   try {
                     await api.patch(
-                      `/applications/${selectedId}/mark-interview-passed`,
+                      `/early-registrations/${selectedId}/mark-interview-passed`,
                     );
                     sileo.success({
                       title: "Interview Passed",
