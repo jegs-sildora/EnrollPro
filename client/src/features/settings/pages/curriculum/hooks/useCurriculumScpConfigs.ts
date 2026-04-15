@@ -223,7 +223,9 @@ export function useCurriculumScpConfigs() {
         ...scp,
         isTwoPhase: scp.isTwoPhase ?? false,
         artFields: scp.artFields.map((field) => field.trim().toUpperCase()),
-        languages: scp.languages.map((language) => language.trim().toUpperCase()),
+        languages: scp.languages.map((language) =>
+          language.trim().toUpperCase(),
+        ),
         sportsList: scp.sportsList.map((sport) => sport.trim().toUpperCase()),
         notes: scp.notes ?? null,
         gradeRequirements: scp.gradeRequirements ?? null,

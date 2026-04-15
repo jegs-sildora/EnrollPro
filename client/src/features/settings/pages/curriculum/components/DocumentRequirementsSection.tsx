@@ -26,7 +26,10 @@ interface DocumentRequirementsSectionProps {
   scp: ScpConfig;
   scpIndex: number;
   onAddDocumentRequirement: (scpIndex: number) => void;
-  onRemoveDocumentRequirement: (scpIndex: number, requirementIndex: number) => void;
+  onRemoveDocumentRequirement: (
+    scpIndex: number,
+    requirementIndex: number,
+  ) => void;
   onPatchDocumentRequirement: (
     scpIndex: number,
     requirementIndex: number,
@@ -79,7 +82,9 @@ export function DocumentRequirementsSection({
             className="rounded-lg border border-border bg-muted/20 p-3 space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
               <div className="md:col-span-4 space-y-1">
-                <Label className="text-sm font-bold uppercase">Document ID</Label>
+                <Label className="text-sm font-bold uppercase">
+                  Document ID
+                </Label>
                 <Input
                   list={`scp-doc-options-${scpIndex}`}
                   placeholder="e.g. MEDICAL_CERTIFICATE"

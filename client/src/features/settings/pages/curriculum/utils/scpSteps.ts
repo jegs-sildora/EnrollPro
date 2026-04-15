@@ -46,7 +46,9 @@ export function getDefaultProgramSteps(
 }
 
 export function getSteProgramSteps(isTwoPhase: boolean): ScpStepConfig[] {
-  return getSteSteps(isTwoPhase).map((step) => mapPipelineStepToEditableStep(step));
+  return getSteSteps(isTwoPhase).map((step) =>
+    mapPipelineStepToEditableStep(step),
+  );
 }
 
 export function isExamStepKind(kind: string): boolean {

@@ -109,7 +109,11 @@ export function AdmissionStepsSection({
 
               <div className="px-3 py-2.5 grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <DatePicker
-                  date={step.scheduledDate ? new Date(step.scheduledDate) : undefined}
+                  date={
+                    step.scheduledDate
+                      ? new Date(step.scheduledDate)
+                      : undefined
+                  }
                   setDate={(date) =>
                     onUpdateStep(
                       scpIndex,
@@ -148,7 +152,9 @@ export function AdmissionStepsSection({
                           scpIndex,
                           stepIdx,
                           "cutoffScore",
-                          event.target.value ? parseFloat(event.target.value) : null,
+                          event.target.value
+                            ? parseFloat(event.target.value)
+                            : null,
                         )
                       }
                     />
@@ -198,7 +204,12 @@ export function AdmissionStepsSection({
                     className="h-8 text-sm font-bold uppercase"
                     value={step.notes || ""}
                     onChange={(event) =>
-                      onUpdateStep(scpIndex, stepIdx, "notes", event.target.value)
+                      onUpdateStep(
+                        scpIndex,
+                        stepIdx,
+                        "notes",
+                        event.target.value,
+                      )
                     }
                   />
                 </div>

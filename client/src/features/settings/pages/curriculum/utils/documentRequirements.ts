@@ -79,7 +79,8 @@ export function normalizeDocumentRequirements(
 export function getSuggestedDocumentRequirements(
   scpType: string,
 ): ScpDocumentRequirementDraft[] {
-  const suggested = SCP_DOCUMENT_REQUIREMENT_TEMPLATES[scpType as ScpType] ?? [];
+  const suggested =
+    SCP_DOCUMENT_REQUIREMENT_TEMPLATES[scpType as ScpType] ?? [];
   return suggested.map((requirement) => ({ ...requirement }));
 }
 

@@ -32,7 +32,10 @@ interface ScpProgramCardProps {
     patch: Partial<ScpDocumentRequirementDraft>,
   ) => void;
   onAddDocumentRequirement: (scpIndex: number) => void;
-  onRemoveDocumentRequirement: (scpIndex: number, requirementIndex: number) => void;
+  onRemoveDocumentRequirement: (
+    scpIndex: number,
+    requirementIndex: number,
+  ) => void;
 }
 
 export function ScpProgramCard({

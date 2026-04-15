@@ -56,10 +56,7 @@ export default function CurriculumTabPage() {
                   STE, SPA, SPS, etc.
                 </CardDescription>
               </div>
-              <Button
-                size="sm"
-                onClick={handleSaveScp}
-                disabled={savingScp}>
+              <Button size="sm" onClick={handleSaveScp} disabled={savingScp}>
                 {savingScp ? "Saving..." : "Save Configuration"}
               </Button>
             </CardHeader>
@@ -76,7 +73,9 @@ export default function CurriculumTabPage() {
                     onUpdateStep={handleUpdateStep}
                     onPatchDocumentRequirement={patchDocumentRequirement}
                     onAddDocumentRequirement={handleAddDocumentRequirement}
-                    onRemoveDocumentRequirement={handleRemoveDocumentRequirement}
+                    onRemoveDocumentRequirement={
+                      handleRemoveDocumentRequirement
+                    }
                   />
                 ))}
               </div>
