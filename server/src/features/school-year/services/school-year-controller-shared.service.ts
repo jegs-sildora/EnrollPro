@@ -125,7 +125,21 @@ export async function cloneSchoolYearStructure(
         schoolYearId: targetSchoolYearId,
         scpType: scpProgram.scpType,
         isOffered: scpProgram.isOffered,
+        isTwoPhase: scpProgram.isTwoPhase,
         cutoffScore: scpProgram.cutoffScore,
+        gradeRequirements:
+          scpProgram.gradeRequirements === null
+            ? undefined
+            : scpProgram.gradeRequirements,
+        documentRequirements:
+          scpProgram.documentRequirements === null
+            ? undefined
+            : scpProgram.documentRequirements,
+        rankingFormula:
+          scpProgram.rankingFormula === null
+            ? undefined
+            : scpProgram.rankingFormula,
+        notes: scpProgram.notes,
       },
     });
 

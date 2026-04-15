@@ -462,6 +462,9 @@ model ScpProgramConfig {
   isOffered      Boolean         @default(false) @map("is_offered")
   isTwoPhase     Boolean         @default(false) @map("is_two_phase")
   cutoffScore    Float?          @map("cutoff_score")
+  gradeRequirements    Json?      @map("grade_requirements")
+  documentRequirements Json?      @map("document_requirements")
+  rankingFormula       Json?      @map("ranking_formula")
   notes          String?
   
   schoolYear     SchoolYear      @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)

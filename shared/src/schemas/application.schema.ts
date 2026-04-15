@@ -227,6 +227,107 @@ export const recordInterviewResultSchema = z.object({
   interviewNotes: z.string().optional().nullable(),
 });
 
+// ─── Metadata-Driven SCP Rule Schemas ─────────────────
+export const scpGradeSubjectEnum = z.enum([
+  "ENGLISH",
+  "SCIENCE",
+  "MATHEMATICS",
+  "FILIPINO",
+  "GENERAL_AVERAGE",
+]);
+
+export const scpGradeRuleTypeEnum = z.enum([
+  "GENERAL_AVERAGE_MIN",
+  "SUBJECT_AVERAGE_MIN",
+  "SUBJECT_MINIMUMS",
+]);
+
+export const scpSubjectThresholdSchema = z.object({
+  subject: scpGradeSubjectEnum,
+  min: z.number().min(0).max(100),
+});
+
+export const scpGradeRequirementSchema = z
+  .object({
+    ruleType: scpGradeRuleTypeEnum,
+    minAverage: z.number().min(0).max(100).optional().nullable(),
+    subjects: z.array(scpGradeSubjectEnum).optional().default([]),
+    subjectThresholds: z
+      .array(scpSubjectThresholdSchema)
+      .optional()
+      .default([]),
+  })
+  .superRefine((data, ctx) => {
+    if (data.ruleType === "GENERAL_AVERAGE_MIN" && data.minAverage == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "minAverage is required for GENERAL_AVERAGE_MIN",
+        path: ["minAverage"],
+      });
+    }
+
+    if (data.ruleType === "SUBJECT_AVERAGE_MIN") {
+      if (data.minAverage == null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "minAverage is required for SUBJECT_AVERAGE_MIN",
+          path: ["minAverage"],
+        });
+      }
+      if (data.subjects.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "subjects are required for SUBJECT_AVERAGE_MIN",
+          path: ["subjects"],
+        });
+      }
+    }
+
+    if (
+      data.ruleType === "SUBJECT_MINIMUMS" &&
+      data.subjectThresholds.length === 0
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "subjectThresholds are required for SUBJECT_MINIMUMS",
+        path: ["subjectThresholds"],
+      });
+    }
+  });
+
+export const scpDocumentPolicyEnum = z.enum(["REQUIRED", "OPTIONAL", "HIDDEN"]);
+
+export const scpDocumentRequirementSchema = z.object({
+  docId: z.string().min(1).max(80),
+  policy: scpDocumentPolicyEnum,
+  phase: z.enum(["EARLY_REGISTRATION", "ENROLLMENT"]).optional().nullable(),
+  notes: z.string().optional().nullable(),
+});
+
+export const scpRankingComponentSchema = z.object({
+  key: z.enum(["EXAM", "INTERVIEW", "GRADE", "AUDITION", "TRYOUT", "OTHER"]),
+  label: z.string().min(1),
+  weight: z.number().gt(0).max(100),
+});
+
+export const scpRankingFormulaSchema = z
+  .object({
+    components: z.array(scpRankingComponentSchema).min(1),
+  })
+  .superRefine((data, ctx) => {
+    const total = data.components.reduce((sum, item) => sum + item.weight, 0);
+    const isFractional = total <= 1.0001;
+    const expected = isFractional ? 1 : 100;
+    if (Math.abs(total - expected) > 0.01) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Ranking component weights must total either 1.0 (fractional) or 100 (percentage)",
+        path: ["components"],
+      });
+    }
+  });
+
 // ─── SCP Assessment Step Config Schema (for CurriculumTab) ───
 export const scpProgramStepConfigSchema = z.object({
   id: z.number().optional(),
@@ -239,6 +340,30 @@ export const scpProgramStepConfigSchema = z.object({
   scheduledTime: z.string().optional().nullable(),
   venue: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+  cutoffScore: z.number().min(0).max(100).optional().nullable(),
+});
+
+export const scpProgramConfigUpdateSchema = z.object({
+  id: z.number().optional(),
+  scpType: ScpTypeEnum,
+  isOffered: z.boolean().default(false),
+  isTwoPhase: z.boolean().optional().default(false),
+  cutoffScore: z.number().min(0).max(100).optional().nullable(),
+  notes: z.string().optional().nullable(),
+  gradeRequirements: z.array(scpGradeRequirementSchema).optional().nullable(),
+  documentRequirements: z
+    .array(scpDocumentRequirementSchema)
+    .optional()
+    .nullable(),
+  rankingFormula: scpRankingFormulaSchema.optional().nullable(),
+  artFields: z.array(z.string()).optional().default([]),
+  languages: z.array(z.string()).optional().default([]),
+  sportsList: z.array(z.string()).optional().default([]),
+  steps: z.array(scpProgramStepConfigSchema).optional().default([]),
+});
+
+export const updateScpProgramConfigsSchema = z.object({
+  scpProgramConfigs: z.array(scpProgramConfigUpdateSchema),
 });
 
 // ─── Batch Processing Schema ───────────────────────────

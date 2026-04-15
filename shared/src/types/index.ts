@@ -20,6 +20,11 @@ import type {
   requestRevisionSchema,
   scheduleInterviewSchema,
   recordInterviewResultSchema,
+  scpGradeRequirementSchema,
+  scpDocumentRequirementSchema,
+  scpRankingFormulaSchema,
+  scpProgramConfigUpdateSchema,
+  updateScpProgramConfigsSchema,
 } from "../schemas/application.schema.js";
 import type {
   teacherSchema,
@@ -77,6 +82,19 @@ export type RequestRevisionInput = z.infer<typeof requestRevisionSchema>;
 export type ScheduleInterviewInput = z.infer<typeof scheduleInterviewSchema>;
 export type RecordInterviewResultInput = z.infer<
   typeof recordInterviewResultSchema
+>;
+export type ScpGradeRequirementInput = z.infer<
+  typeof scpGradeRequirementSchema
+>;
+export type ScpDocumentRequirementInput = z.infer<
+  typeof scpDocumentRequirementSchema
+>;
+export type ScpRankingFormulaInput = z.infer<typeof scpRankingFormulaSchema>;
+export type ScpProgramConfigUpdateInput = z.infer<
+  typeof scpProgramConfigUpdateSchema
+>;
+export type UpdateScpProgramConfigsInput = z.infer<
+  typeof updateScpProgramConfigsSchema
 >;
 
 // ─── Teacher Types ─────────────────────────────────────

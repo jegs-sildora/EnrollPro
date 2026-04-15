@@ -9,6 +9,8 @@ import {
 } from "./curriculum.controller.js";
 import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
+import { validate } from "../../middleware/validate.js";
+import { updateScpProgramConfigsSchema } from "@enrollpro/shared";
 
 const router: Router = Router();
 
@@ -49,6 +51,7 @@ router.put(
   "/:ayId/scp-config",
   authenticate,
   authorize("SYSTEM_ADMIN"),
+  validate(updateScpProgramConfigsSchema),
   updateScpConfigs,
 );
 

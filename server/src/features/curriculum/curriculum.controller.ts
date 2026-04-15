@@ -143,6 +143,9 @@ export async function listScpConfigs(
   const transformed = scpProgramConfigs.map((cfg) => ({
     ...cfg,
     isTwoPhase: cfg.isTwoPhase ?? false,
+    gradeRequirements: cfg.gradeRequirements ?? null,
+    documentRequirements: cfg.documentRequirements ?? null,
+    rankingFormula: cfg.rankingFormula ?? null,
     artFields: cfg.options
       .filter((o) => o.optionType === "ART_FIELD")
       .map((o) => o.value),
@@ -181,17 +184,36 @@ export async function updateScpConfigs(
           isOffered,
           isTwoPhase,
           cutoffScore,
+          notes,
+          gradeRequirements,
+          documentRequirements,
+          rankingFormula,
           artFields,
           languages,
           sportsList,
           steps,
         } = config;
 
-        const scpData = {
+        const scpData: Record<string, unknown> = {
           isOffered: isOffered ?? false,
           isTwoPhase: isTwoPhase ?? false,
           cutoffScore: cutoffScore ?? null,
         };
+
+        if (Object.prototype.hasOwnProperty.call(config, "notes")) {
+          scpData.notes = notes ?? null;
+        }
+        if (Object.prototype.hasOwnProperty.call(config, "gradeRequirements")) {
+          scpData.gradeRequirements = gradeRequirements ?? null;
+        }
+        if (
+          Object.prototype.hasOwnProperty.call(config, "documentRequirements")
+        ) {
+          scpData.documentRequirements = documentRequirements ?? null;
+        }
+        if (Object.prototype.hasOwnProperty.call(config, "rankingFormula")) {
+          scpData.rankingFormula = rankingFormula ?? null;
+        }
 
         let scpProgramConfig;
         if (id) {
