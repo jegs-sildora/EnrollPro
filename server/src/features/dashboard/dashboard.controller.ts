@@ -34,10 +34,28 @@ export async function getStats(req: Request, res: Response): Promise<void> {
       },
     }),
     // Count sections at capacity
-    prisma.$queryRaw<{ count: bigint }[]>`
-      SELECT COUNT(*)::bigint as count FROM "sections" s
-      WHERE (SELECT COUNT(*) FROM "enrollment_records" e WHERE e."section_id" = s.id) >= s."max_capacity"
-    `,
+    schoolYearId
+      ? prisma.$queryRaw<{ count: bigint }[]>`
+          SELECT COUNT(*)::bigint AS count
+          FROM "sections" s
+          JOIN "grade_levels" gl ON gl.id = s."grade_level_id"
+          WHERE gl."school_year_id" = ${schoolYearId}
+            AND (
+              SELECT COUNT(*)
+              FROM "enrollment_records" e
+              WHERE e."section_id" = s.id
+                AND e."school_year_id" = ${schoolYearId}
+            ) >= s."max_capacity"
+        `
+      : prisma.$queryRaw<{ count: bigint }[]>`
+          SELECT COUNT(*)::bigint AS count
+          FROM "sections" s
+          WHERE (
+            SELECT COUNT(*)
+            FROM "enrollment_records" e
+            WHERE e."section_id" = s.id
+          ) >= s."max_capacity"
+        `,
     // ── Early Registration counts ──
     prisma.earlyRegistrationApplication.count({
       where: {

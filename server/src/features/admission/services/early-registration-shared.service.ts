@@ -62,22 +62,26 @@ export const VALID_TRANSITIONS: Record<string, ApplicationStatus[]> = {
 export function createEarlyRegistrationSharedService(
   deps: AdmissionControllerDeps,
 ) {
-  async function findApplicantOrThrow(id: number): Promise<any> {
-    const applicant = await deps.prisma.enrollmentApplication.findUnique({
+  async function findApplicantOrThrow(
+    id: number,
+    tx?: any,
+  ): Promise<{ data: any; type: "ENROLLMENT" | "EARLY_REGISTRATION" }> {
+    const p = tx || deps.prisma;
+    const applicant = await p.enrollmentApplication.findUnique({
       where: { id },
       include: { learner: true, earlyRegistration: true, gradeLevel: true },
     });
 
-    if (applicant) return applicant;
+    if (applicant) return { data: applicant, type: "ENROLLMENT" };
 
     // Fallback to early registration table
-    const earlyReg = await deps.prisma.earlyRegistrationApplication.findUnique({
+    const earlyReg = await p.earlyRegistrationApplication.findUnique({
       where: { id },
       include: { learner: true, gradeLevel: true },
     });
 
     if (!earlyReg) throw new AppError(404, "Application not found");
-    return earlyReg;
+    return { data: earlyReg, type: "EARLY_REGISTRATION" };
   }
 
   async function findEarlyRegOrThrow(id: number): Promise<
@@ -222,12 +226,130 @@ export function createEarlyRegistrationSharedService(
     // Normalize name fields if it's joined from learner table
     const learner = application.learner || application;
 
+    // Map family members (Early Registration and Enrollment use 'familyMembers' relation)
+    const familyMembers = (application.familyMembers || []) as any[];
+    const mother = familyMembers.find((m) => m.relationship === "MOTHER");
+    const father = familyMembers.find((m) => m.relationship === "FATHER");
+    const guardian = familyMembers.find((m) => m.relationship === "GUARDIAN");
+
+    const prevSchool = application.previousSchool || null;
+
+    // Map addresses (Enrollment uses 'addresses' relation)
+    const addresses = (application.addresses || []) as any[];
+    const currentAddr = addresses.find((a) => a.addressType === "CURRENT");
+    const permanentAddr = addresses.find((a) => a.addressType === "PERMANENT");
+
+    const primaryContact =
+      application.primaryContact ?? application.earlyRegistration?.primaryContact ?? null;
+
+    const motherEmail = mother?.email ?? application.motherName?.email ?? null;
+    const fatherEmail = father?.email ?? application.fatherName?.email ?? null;
+    const guardianEmail = guardian?.email ?? application.guardianInfo?.email ?? null;
+
+    const primaryContactEmail =
+      primaryContact === "MOTHER"
+        ? motherEmail
+        : primaryContact === "FATHER"
+          ? fatherEmail
+          : primaryContact === "GUARDIAN"
+            ? guardianEmail
+            : null;
+
     return {
       ...application,
-      firstName: learner.firstName,
-      lastName: learner.lastName,
-      middleName: learner.middleName,
-      lrn: learner.lrn,
+      firstName: learner.firstName || application.firstName,
+      lastName: learner.lastName || application.lastName,
+      middleName: learner.middleName || application.middleName,
+      suffix: learner.extensionName || application.extensionName || application.suffix,
+      lrn: learner.lrn || application.lrn,
+      birthDate: learner.birthdate || application.birthdate || application.birthDate,
+      sex: learner.sex || application.sex,
+      placeOfBirth: learner.placeOfBirth || application.placeOfBirth,
+      religion: learner.religion || application.religion,
+      motherTongue: learner.motherTongue || application.motherTongue,
+      isIpCommunity: learner.isIpCommunity ?? application.isIpCommunity ?? false,
+      ipGroupName: learner.ipGroupName || application.ipGroupName,
+      is4PsBeneficiary:
+        learner.is4PsBeneficiary ?? application.is4PsBeneficiary ?? false,
+      householdId4Ps: learner.householdId4Ps || application.householdId4Ps,
+      isLearnerWithDisability:
+        learner.isLearnerWithDisability ??
+        application.isLearnerWithDisability ??
+        false,
+      disabilityTypes: learner.disabilityTypes || application.disabilityTypes || [],
+
+      // Standardize address format for frontend
+      currentAddress: currentAddr
+        ? {
+            houseNo: currentAddr.houseNo,
+            street: currentAddr.street,
+            sitio: currentAddr.sitio,
+            barangay: currentAddr.barangay,
+            cityMunicipality: currentAddr.cityMunicipality,
+            province: currentAddr.province,
+            country: currentAddr.country,
+            zipCode: currentAddr.zipCode,
+          }
+        : null,
+      permanentAddress: permanentAddr
+        ? {
+            houseNo: permanentAddr.houseNo,
+            street: permanentAddr.street,
+            sitio: permanentAddr.sitio,
+            barangay: permanentAddr.barangay,
+            cityMunicipality: permanentAddr.cityMunicipality,
+            province: permanentAddr.province,
+            country: permanentAddr.country,
+            zipCode: permanentAddr.zipCode,
+          }
+        : null,
+
+      motherName: mother
+        ? {
+            firstName: mother.firstName,
+            lastName: mother.lastName,
+            middleName: mother.middleName,
+            contactNumber: mother.contactNumber,
+            email: motherEmail,
+          }
+        : application.motherName || null,
+      fatherName: father
+        ? {
+            firstName: father.firstName,
+            lastName: father.lastName,
+            middleName: father.middleName,
+            contactNumber: father.contactNumber,
+            email: fatherEmail,
+          }
+        : application.fatherName || null,
+      guardianInfo: guardian
+        ? {
+            firstName: guardian.firstName,
+            lastName: guardian.lastName,
+            middleName: guardian.middleName,
+            contactNumber: guardian.contactNumber,
+            email: guardianEmail,
+            relationship: "GUARDIAN",
+          }
+        : application.guardianInfo || null,
+      primaryContact,
+      emailAddress:
+        primaryContactEmail ||
+        application.earlyRegistration?.email ||
+        application.emailAddress ||
+        application.email ||
+        guardianEmail ||
+        motherEmail ||
+        fatherEmail ||
+        null,
+
+      lastSchoolName: prevSchool?.schoolName || application.lastSchoolName,
+      lastSchoolId: prevSchool?.schoolDepedId || application.lastSchoolId,
+      lastGradeCompleted: prevSchool?.gradeCompleted || application.lastGradeCompleted,
+      schoolYearLastAttended: prevSchool?.schoolYearAttended || application.schoolYearLastAttended,
+      lastSchoolAddress: prevSchool?.schoolAddress || application.lastSchoolAddress,
+      lastSchoolType: prevSchool?.schoolType || application.lastSchoolType,
+
       isScpApplication: application.applicantType !== "REGULAR",
       scpType:
         scpDetail?.scpType ??
@@ -248,6 +370,133 @@ export function createEarlyRegistrationSharedService(
       interviewResult: interview?.result ?? null,
       interviewNotes: interview?.notes ?? null,
     };
+  }
+
+  async function getDetailedApplicationOrThrow(
+    id: number,
+    options: {
+      includeAuditLogs?: boolean;
+      allowEnrollmentFallback?: boolean;
+    } = {},
+  ) {
+    const { includeAuditLogs = false, allowEnrollmentFallback = true } =
+      options;
+
+    let application: Record<string, any> | null = null;
+
+    if (allowEnrollmentFallback) {
+      application = await deps.prisma.enrollmentApplication.findUnique({
+        where: { id },
+        include: {
+          learner: true,
+          gradeLevel: true,
+          schoolYear: true,
+          addresses: true,
+          familyMembers: true,
+          previousSchool: true,
+          earlyRegistration: {
+            include: {
+              assessments: { orderBy: { createdAt: "desc" } },
+            },
+          },
+          programDetail: true,
+          checklist: {
+            include: {
+              updatedBy: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  role: true,
+                },
+              },
+            },
+          },
+          encodedBy: {
+            select: { id: true, firstName: true, lastName: true, role: true },
+          },
+          enrollmentRecord: {
+            include: {
+              section: {
+                include: {
+                  advisingTeacher: {
+                    select: { id: true, firstName: true, lastName: true },
+                  },
+                },
+              },
+              enrolledBy: {
+                select: { id: true, firstName: true, lastName: true },
+              },
+            },
+          },
+          emailLogs: {
+            orderBy: { attemptedAt: "desc" },
+            take: 10,
+          },
+        },
+      });
+    }
+
+    if (!application) {
+      application = await deps.prisma.earlyRegistrationApplication.findUnique({
+        where: { id },
+        include: {
+          learner: true,
+          gradeLevel: true,
+          schoolYear: true,
+          familyMembers: true,
+          addresses: true,
+          assessments: { orderBy: { createdAt: "desc" } },
+          checklist: {
+            include: {
+              updatedBy: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  role: true,
+                },
+              },
+            },
+          },
+          encodedBy: {
+            select: { id: true, firstName: true, lastName: true, role: true },
+          },
+          verifiedBy: {
+            select: { id: true, firstName: true, lastName: true, role: true },
+          },
+        },
+      });
+    }
+
+    if (!application) {
+      throw new AppError(404, "Application not found");
+    }
+
+    if (includeAuditLogs) {
+      const auditLogs = await deps.prisma.auditLog.findMany({
+        where: {
+          subjectType: {
+            in: [
+              "Applicant",
+              "EnrollmentApplication",
+              "EarlyRegistrationApplication",
+            ],
+          },
+          recordId: id,
+        },
+        include: {
+          user: {
+            select: { id: true, firstName: true, lastName: true, role: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return flattenAssessmentData({ ...application, auditLogs });
+    }
+
+    return flattenAssessmentData(application);
   }
 
   function toUpperCaseRecursive(obj: unknown): unknown {
@@ -282,26 +531,28 @@ export function createEarlyRegistrationSharedService(
     id: number,
     status: ApplicationStatus,
     extraData: any = {},
+    tx?: any,
   ) {
-    const enrollment = await deps.prisma.enrollmentApplication.findUnique({
+    const p = tx || deps.prisma;
+    const enrollment = await p.enrollmentApplication.findUnique({
       where: { id },
       select: { id: true },
     });
 
     if (enrollment) {
-      return deps.prisma.enrollmentApplication.update({
+      return p.enrollmentApplication.update({
         where: { id },
         data: { status, ...extraData },
       });
     }
 
-    const earlyReg = await deps.prisma.earlyRegistrationApplication.findUnique({
+    const earlyReg = await p.earlyRegistrationApplication.findUnique({
       where: { id },
       select: { id: true },
     });
 
     if (earlyReg) {
-      return deps.prisma.earlyRegistrationApplication.update({
+      return p.earlyRegistrationApplication.update({
         where: { id },
         data: { status, ...extraData },
       });
@@ -316,6 +567,7 @@ export function createEarlyRegistrationSharedService(
     assertTransition,
     queueEmail,
     flattenAssessmentData,
+    getDetailedApplicationOrThrow,
     toUpperCaseRecursive,
     updateApplicationStatus,
   };

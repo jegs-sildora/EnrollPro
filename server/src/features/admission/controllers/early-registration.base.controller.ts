@@ -7,7 +7,7 @@ import type {
   LearnerType,
   FamilyRelationship,
   AdmissionChannel,
-} from "../../../generated/prisma";
+} from "../../../generated/prisma/index.js";
 import type { AdmissionControllerDeps } from "../services/admission-controller.deps.js";
 import { createAdmissionControllerDeps } from "../services/admission-controller.deps.js";
 import { createEarlyRegistrationSharedService } from "../services/early-registration-shared.service.js";
@@ -24,8 +24,12 @@ export function createEarlyRegistrationBaseController(
     normalizeDateToUtcNoon,
     getRequiredDocuments,
   } = deps;
-  const { flattenAssessmentData, queueEmail, toUpperCaseRecursive } =
-    createEarlyRegistrationSharedService(deps);
+  const {
+    flattenAssessmentData,
+    queueEmail,
+    toUpperCaseRecursive,
+    findApplicantOrThrow,
+  } = createEarlyRegistrationSharedService(deps);
 
   async function getRequirements(
     req: Request,
@@ -34,19 +38,13 @@ export function createEarlyRegistrationBaseController(
   ) {
     try {
       const applicantId = parseInt(String(req.params.id));
-
-      const applicant = await prisma.enrollmentApplication.findUnique({
-        where: { id: applicantId },
-        include: { gradeLevel: true },
-      });
-      if (!applicant)
-        throw new AppError(404, "Enrollment application not found");
+      const { data: applicant } = await findApplicantOrThrow(applicantId);
 
       const requirements = getRequiredDocuments({
         learnerType: applicant.learnerType,
         gradeLevel: applicant.gradeLevel.name,
         applicantType: applicant.applicantType,
-        isLwd: false, // Need to verify if learner has disability from learner table
+        isLwd: applicant.learner?.isLearnerWithDisability ?? false,
         isPeptAePasser: false,
       });
 
@@ -147,19 +145,6 @@ export function createEarlyRegistrationBaseController(
           earlyRegistration: {
             include: {
               assessments: { orderBy: { createdAt: "desc" } },
-              documents: true,
-            },
-          },
-          documents: {
-            include: {
-              uploadedBy: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  role: true,
-                },
-              },
             },
           },
           checklist: {
@@ -202,8 +187,21 @@ export function createEarlyRegistrationBaseController(
             learner: true,
             gradeLevel: true,
             schoolYear: true,
-            guardians: true,
+            familyMembers: true,
+            addresses: true,
             assessments: { orderBy: { createdAt: "desc" } },
+            checklist: {
+              include: {
+                updatedBy: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    role: true,
+                  },
+                },
+              },
+            },
             encodedBy: {
               select: { id: true, firstName: true, lastName: true, role: true },
             },
@@ -392,7 +390,7 @@ export function createEarlyRegistrationBaseController(
     const tempTracking = `${options.trackingPrefix}-${year}-TEMP-${Date.now()}`;
 
     // Build nested address data
-    const addressData: Prisma.EnrollmentAddressCreateManyApplicationInput[] =
+    const addressData: Prisma.ApplicationAddressCreateManyInput[] =
       [];
     if (body.currentAddress) {
       addressData.push({ addressType: "CURRENT", ...body.currentAddress });
@@ -402,7 +400,7 @@ export function createEarlyRegistrationBaseController(
     }
 
     // Build nested family member data
-    const familyData: Prisma.EnrollmentFamilyMemberCreateManyApplicationInput[] =
+    const familyData: Prisma.ApplicationFamilyMemberCreateManyInput[] =
       [];
     if (body.mother)
       familyData.push({ relationship: "MOTHER", ...body.mother });
@@ -414,6 +412,7 @@ export function createEarlyRegistrationBaseController(
     // Ensure learner exists or update
     const learnerPayload = {
       lrn: body.lrn || null,
+      psaBirthCertNumber: body.psaBirthCertNumber || null,
       firstName: body.firstName,
       lastName: body.lastName,
       middleName: body.middleName || null,
@@ -423,6 +422,15 @@ export function createEarlyRegistrationBaseController(
       religion: body.religion || null,
       isIpCommunity: body.isIpCommunity ?? false,
       ipGroupName: body.isIpCommunity ? body.ipGroupName : null,
+      isLearnerWithDisability: body.isLearnerWithDisability ?? false,
+      disabilityTypes: body.isLearnerWithDisability
+        ? body.disabilityTypes || []
+        : [],
+      specialNeedsCategory: body.specialNeedsCategory || null,
+      hasPwdId: body.hasPwdId ?? false,
+      isBalikAral: body.isBalikAral ?? false,
+      lastYearEnrolled: body.lastYearEnrolled || null,
+      lastGradeLevel: body.lastGradeLevel || null,
       is4PsBeneficiary: body.is4PsBeneficiary ?? false,
       householdId4Ps: body.is4PsBeneficiary ? body.householdId4Ps : null,
     };
@@ -443,24 +451,19 @@ export function createEarlyRegistrationBaseController(
         });
       }
 
-      return await tx.enrollmentApplication.create({
+      const createdApplication = await tx.enrollmentApplication.create({
         data: {
           learnerId: learner.id,
           earlyRegistrationId: body.earlyRegistrationId || null,
           studentPhoto: studentPhotoUrl,
-          isBalikAral: body.isBalikAral ?? false,
-          lastYearEnrolled: body.isBalikAral ? body.lastYearEnrolled : null,
-          specialNeedsCategory: body.isLearnerWithDisability
-            ? body.specialNeedsCategory || null
-            : null,
-          hasPwdId: body.isLearnerWithDisability
-            ? (body.hasPwdId ?? false)
-            : false,
           learningModalities: body.learningModalities || [],
 
           // Enrollment preferences
           learnerType: lType,
           isPrivacyConsentGiven: body.isPrivacyConsentGiven ?? false,
+          guardianRelationship: body.guardian?.relationship || null,
+          hasNoMother: body.hasNoMother ?? false,
+          hasNoFather: body.hasNoFather ?? false,
 
           // Relations
           gradeLevelId: gradeLevel.id,
@@ -515,10 +518,35 @@ export function createEarlyRegistrationBaseController(
                   },
                 }
               : undefined,
-          checklist: { create: {} },
+          // Reuse existing checklist if earlyRegistrationId is provided
+          ...(body.earlyRegistrationId ? {} : { checklist: { create: {} } }),
         },
         include: { learner: true },
       });
+
+      if (body.earlyRegistrationId) {
+        // Link existing checklist to the new enrollment application
+        const existingChecklist = await tx.applicationChecklist.findUnique({
+          where: { earlyRegistrationId: body.earlyRegistrationId },
+        });
+
+        if (existingChecklist) {
+          await tx.applicationChecklist.update({
+            where: { id: existingChecklist.id },
+            data: { enrollmentId: createdApplication.id },
+          });
+        } else {
+          // Create new checklist linked to both
+          await tx.applicationChecklist.create({
+            data: {
+              enrollmentId: createdApplication.id,
+              earlyRegistrationId: body.earlyRegistrationId,
+            },
+          });
+        }
+      }
+
+      return createdApplication;
     });
 
     // Generate proper tracking number from ID
@@ -650,39 +678,21 @@ export function createEarlyRegistrationBaseController(
       const trackingNumber = String(req.params.trackingNumber);
       let application = await prisma.enrollmentApplication.findUnique({
         where: { trackingNumber },
-        select: {
-          trackingNumber: true,
-          status: true,
-          applicantType: true,
-          schoolYearId: true,
-          createdAt: true,
-          learner: {
-            select: {
-              firstName: true,
-              middleName: true,
-              lastName: true,
-            },
-          },
-          gradeLevel: { select: { name: true } },
-          enrollmentRecord: {
-            select: { section: { select: { name: true } }, enrolledAt: true },
-          },
-          rejectionReason: true,
-          programDetail: { select: { scpType: true } },
+        include: {
+          learner: true,
+          gradeLevel: true,
+          schoolYear: true,
+          addresses: true,
+          familyMembers: true,
+          previousSchool: true,
+          programDetail: true,
           earlyRegistration: {
-            select: {
-              assessments: {
-                select: {
-                  type: true,
-                  scheduledDate: true,
-                  scheduledTime: true,
-                  venue: true,
-                  notes: true,
-                },
-                orderBy: { createdAt: "desc" },
-                take: 1,
-              },
+            include: {
+              assessments: { orderBy: { createdAt: "desc" } },
             },
+          },
+          enrollmentRecord: {
+            include: { section: true },
           },
         },
       });
@@ -691,28 +701,13 @@ export function createEarlyRegistrationBaseController(
         // Fallback: Check early registration applications
         const earlyReg = await prisma.earlyRegistrationApplication.findUnique({
           where: { trackingNumber },
-          select: {
-            trackingNumber: true,
-            status: true,
-            applicantType: true,
-            schoolYearId: true,
-            createdAt: true,
-            learner: {
-              select: {
-                firstName: true,
-                middleName: true,
-                lastName: true,
-              },
-            },
-            gradeLevel: { select: { name: true } },
+          include: {
+            learner: true,
+            gradeLevel: true,
+            schoolYear: true,
+            familyMembers: true,
+            addresses: true,
             assessments: {
-              select: {
-                type: true,
-                scheduledDate: true,
-                scheduledTime: true,
-                venue: true,
-                notes: true,
-              },
               orderBy: { createdAt: "desc" },
               take: 1,
             },
@@ -759,7 +754,7 @@ export function createEarlyRegistrationBaseController(
               status: { in: ["PASSED"] }, // Usually only allowed if passed screening
             },
             include: {
-              guardians: true,
+              familyMembers: true,
             },
             orderBy: { createdAt: "desc" },
             take: 1,
@@ -776,14 +771,15 @@ export function createEarlyRegistrationBaseController(
 
       const reg = learner.earlyRegistrationApplications[0];
 
-      // Map guardians to father/mother/guardian fields
-      const father = reg.guardians.find((g) => g.relationship === "FATHER");
-      const mother = reg.guardians.find((g) => g.relationship === "MOTHER");
-      const guardian = reg.guardians.find((g) => g.relationship === "GUARDIAN");
+      // Map family members to father/mother/guardian fields
+      const father = reg.familyMembers.find((g) => g.relationship === "FATHER");
+      const mother = reg.familyMembers.find((g) => g.relationship === "MOTHER");
+      const guardian = reg.familyMembers.find((g) => g.relationship === "GUARDIAN");
 
       res.json({
         earlyRegistrationId: reg.id,
         lrn: learner.lrn,
+        psaBirthCertNumber: learner.psaBirthCertNumber,
         firstName: learner.firstName,
         lastName: learner.lastName,
         middleName: learner.middleName,
@@ -795,6 +791,13 @@ export function createEarlyRegistrationBaseController(
         ipGroupName: learner.ipGroupName,
         isLearnerWithDisability: learner.isLearnerWithDisability,
         disabilityTypes: learner.disabilityTypes,
+        specialNeedsCategory: learner.specialNeedsCategory,
+        hasPwdId: learner.hasPwdId,
+        isBalikAral: learner.isBalikAral,
+        lastYearEnrolled: learner.lastYearEnrolled,
+        lastGradeLevel: learner.lastGradeLevel,
+        is4PsBeneficiary: learner.is4PsBeneficiary,
+        householdId4Ps: learner.householdId4Ps,
         // Demographic fields from learner table
         gradeLevel: reg.gradeLevelId, // Send ID or Name? Usually form needs something it can resolve
         learnerType: reg.learnerType,

@@ -38,7 +38,7 @@ export default function Step1Personal() {
       if (lrn && lrn.length === 12 && !lookupSuccess && !isLookingUp) {
         setIsLookingUp(true);
         try {
-          const response = await api.get(`/applications/lookup-by-lrn/${lrn}`);
+          const response = await api.get(`/applications/lookup-lrn/${lrn}`);
           const data = response.data;
 
           if (data) {

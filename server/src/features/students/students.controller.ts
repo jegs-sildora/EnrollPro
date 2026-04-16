@@ -138,7 +138,7 @@ export async function getStudentById(
     where: { id },
     include: {
       learner: true,
-      guardians: true,
+      familyMembers: true,
       gradeLevel: true,
       schoolYear: true,
     },
@@ -149,10 +149,10 @@ export async function getStudentById(
     return;
   }
 
-  const guardians = row.guardians;
-  const mother = guardians.find((g) => g.relationship === "MOTHER");
-  const father = guardians.find((g) => g.relationship === "FATHER");
-  const guardian = guardians.find((g) => g.relationship === "GUARDIAN");
+  const familyMembers = row.familyMembers;
+  const mother = familyMembers.find((g) => g.relationship === "MOTHER");
+  const father = familyMembers.find((g) => g.relationship === "FATHER");
+  const guardian = familyMembers.find((g) => g.relationship === "GUARDIAN");
 
   res.json({
     student: {

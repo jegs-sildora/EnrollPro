@@ -22,6 +22,7 @@ interface Props {
 	/** New: record result for a specific pipeline step */
 	onRecordStepResult?: (step: AssessmentStep) => void;
 	interviewPassChecked?: boolean;
+	isMandatoryDocumentsMet?: boolean;
 }
 
 function getNextPendingStep(
@@ -45,7 +46,12 @@ function getStepLabel(step: AssessmentStep): string {
 	);
 }
 
-export function ActionButtons({ applicant, interviewPassChecked, ...handlers }: Props) {
+export function ActionButtons({
+	applicant,
+	interviewPassChecked,
+	isMandatoryDocumentsMet = false,
+	...handlers
+}: Props) {
 	const { status, applicantType } = applicant;
 	const isRegular = applicantType === 'REGULAR';
 	const isSCP = !isRegular;
@@ -63,6 +69,7 @@ export function ActionButtons({ applicant, interviewPassChecked, ...handlers }: 
 						<Button
 							className='w-full bg-emerald-600 text-white hover:bg-emerald-700'
 							onClick={handlers.onApprove}
+							disabled={!isMandatoryDocumentsMet}
 						>
 							Approve &amp; Pre-register
 						</Button>
@@ -96,6 +103,7 @@ export function ActionButtons({ applicant, interviewPassChecked, ...handlers }: 
 						<Button
 							className='w-full bg-[hsl(var(--primary))] text-primary-foreground hover:opacity-90 font-bold'
 							onClick={() => handlers.onScheduleStep!(nextPending)}
+							disabled={!isMandatoryDocumentsMet}
 						>
 							Verify &amp; Schedule: {getStepLabel(nextPending)}
 						</Button>
@@ -103,6 +111,7 @@ export function ActionButtons({ applicant, interviewPassChecked, ...handlers }: 
 						<Button
 							className='w-full bg-[hsl(var(--primary))] text-primary-foreground hover:opacity-90 font-bold'
 							onClick={handlers.onScheduleExam}
+							disabled={!isMandatoryDocumentsMet}
 						>
 							Verify &amp; Schedule Exam
 						</Button>
@@ -117,6 +126,7 @@ export function ActionButtons({ applicant, interviewPassChecked, ...handlers }: 
 				</>
 			)}
 
+
 			{/* SCP: Assessment Scheduled — schedule next step */}
 			{isSCP && status === 'ASSESSMENT_SCHEDULED' && (
 				<>
@@ -126,6 +136,7 @@ export function ActionButtons({ applicant, interviewPassChecked, ...handlers }: 
 							variant='outline'
 							className='w-full bg-primary text-primary-foreground font-bold'
 							onClick={() => handlers.onScheduleStep!(nextPending)}
+							disabled={!isMandatoryDocumentsMet}
 						>
 							Schedule Next: {getStepLabel(nextPending)}
 						</Button>

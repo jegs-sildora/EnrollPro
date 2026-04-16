@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import path from "path";
 import fs from "fs";
-import { Prisma } from "../../generated/prisma";
+import { Prisma } from "../../generated/prisma/index.js";
 import { prisma } from "../../lib/prisma.js";
 import {
   extractPalette,

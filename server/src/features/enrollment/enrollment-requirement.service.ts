@@ -1,4 +1,4 @@
-import { LearnerType, ApplicantType } from "../../generated/prisma";
+import { LearnerType, ApplicantType } from "../../generated/prisma/index.js";
 
 export interface EnrollmentRequirement {
   type: string;

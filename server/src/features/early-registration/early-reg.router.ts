@@ -2,11 +2,36 @@ import { Router } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
 import { validate } from "../../middleware/validate.js";
-import { earlyRegistrationSubmitSchema } from "@enrollpro/shared";
+import {
+  earlyRegistrationSubmitSchema,
+  rejectSchema,
+  scheduleAssessmentStepSchema,
+  updateChecklistSchema,
+} from "@enrollpro/shared";
 import * as ctrl from "./early-reg.controller.js";
 import rateLimit from "express-rate-limit";
+import multer from "multer";
+import path from "path";
 
 const router: Router = Router();
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.resolve("uploads"));
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(
+      null,
+      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname),
+    );
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
 
 // Rate-limit public submission (15 per 15-min window per IP)
 const submitLimiter = rateLimit({
@@ -60,6 +85,29 @@ router.patch(
   ctrl.verify,
 );
 
+router.post(
+  "/:id/documents",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  upload.single("document"),
+  ctrl.uploadDocument,
+);
+
+router.delete(
+  "/:id/documents",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.removeDocument,
+);
+
+router.patch(
+  "/:id/checklist",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  validate(updateChecklistSchema),
+  ctrl.updateChecklist,
+);
+
 // ── Lifecycle (admin) ──
 router.patch(
   "/batch-process",
@@ -79,6 +127,7 @@ router.patch(
   "/:id/reject",
   authenticate,
   authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  validate(rejectSchema),
   ctrl.reject,
 );
 
@@ -100,6 +149,7 @@ router.patch(
   "/:id/schedule-assessment",
   authenticate,
   authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  validate(scheduleAssessmentStepSchema),
   ctrl.scheduleAssessment,
 );
 

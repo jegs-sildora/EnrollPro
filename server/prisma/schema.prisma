@@ -38,11 +38,11 @@ model User {
   encodedEarlyRegs   EarlyRegistrationApplication[] @relation("EarlyRegEncodedBy")
   verifiedEarlyRegs  EarlyRegistrationApplication[] @relation("EarlyRegVerifiedBy")
   
+  // Unified Application Relations
+  updatedChecklists  ApplicationChecklist[] @relation("ChecklistUpdatedBy")
+
   // Relations to Enrollment
   encodedEnrollmentApps EnrollmentApplication[] @relation("EnrollmentAppEncodedBy")
-  uploadedEnrollmentDocs EnrollmentDocument[]   @relation("EnrollmentDocUploadedBy")
-  verifiedEnrollmentDocs EnrollmentDocument[]   @relation("EnrollmentDocVerifiedBy")
-  updatedChecklists      EnrollmentChecklist[]
   enrollmentRecords      EnrollmentRecord[]
   
   recordedHealthRecords HealthRecord[] @relation("HealthRecordRecordedBy")
@@ -158,6 +158,7 @@ model Section {
 model Learner {
   id                      Int       @id @default(autoincrement())
   lrn                     String?   @unique(map: "uq_learners_lrn") @db.VarChar(12)
+  psaBirthCertNumber      String?   @map("psa_birth_cert_number")
   firstName               String    @map("first_name")
   lastName                String    @map("last_name")
   middleName              String?   @map("middle_name")
@@ -171,8 +172,13 @@ model Learner {
   ipGroupName             String?   @map("ip_group_name")
   isLearnerWithDisability Boolean   @default(false) @map("is_learner_with_disability")
   disabilityTypes         String[]  @map("disability_types")
+  specialNeedsCategory    String?   @map("special_needs_category")
+  hasPwdId                Boolean   @default(false) @map("has_pwd_id")
   is4PsBeneficiary        Boolean   @default(false) @map("is_4ps_beneficiary")
   householdId4Ps          String?   @map("household_id_4ps")
+  isBalikAral             Boolean   @default(false) @map("is_balik_aral")
+  lastYearEnrolled        String?   @map("last_year_enrolled")
+  lastGradeLevel          String?   @map("last_grade_level")
   createdAt               DateTime  @default(now()) @db.Timestamptz @map("created_at")
   updatedAt               DateTime  @updatedAt @db.Timestamptz @map("updated_at")
 
@@ -202,6 +208,9 @@ model EarlyRegistrationApplication {
   contactNumber         String    @map("contact_number")
   email                 String?
   primaryContact        PrimaryContactType? @map("primary_contact")
+  guardianRelationship  String?   @map("guardian_relationship")
+  hasNoMother           Boolean   @default(false) @map("has_no_mother")
+  hasNoFather           Boolean   @default(false) @map("has_no_father")
   isPrivacyConsentGiven Boolean   @map("is_privacy_consent_given")
   encodedById           Int?      @map("encoded_by_id")
   verifiedAt            DateTime? @db.Timestamptz @map("verified_at")
@@ -216,52 +225,16 @@ model EarlyRegistrationApplication {
   encodedBy             User?      @relation("EarlyRegEncodedBy", fields: [encodedById], references: [id])
   verifiedBy            User?      @relation("EarlyRegVerifiedBy", fields: [verifiedById], references: [id])
   
-  guardians             EarlyRegistrationGuardian[]
-  documents             EarlyRegistrationDocument[]
+  familyMembers         ApplicationFamilyMember[]
   assessments           EarlyRegistrationAssessment[]
+  addresses             ApplicationAddress[]
+  checklist             ApplicationChecklist?
   enrollmentApplications EnrollmentApplication[]
 
   @@unique([learnerId, schoolYearId], name: "uq_early_reg_per_sy")
   @@index([schoolYearId, status], name: "idx_early_reg_sy_status")
   @@index([trackingNumber], name: "idx_early_reg_tracking_no")
   @@map("early_registration_applications")
-}
-
-/// Parent or guardian info attached to an early registration application
-model EarlyRegistrationGuardian {
-  id               Int    @id @default(autoincrement())
-  applicationId    Int    @map("application_id")
-  relationship     FamilyRelationship
-  lastName         String @map("last_name")
-  firstName        String @map("first_name")
-  middleName       String? @map("middle_name")
-  contactNumber    String? @map("contact_number")
-  email            String?
-  occupation       String?
-
-  application      EarlyRegistrationApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-
-  @@index([applicationId], name: "idx_early_reg_guardians_app_id")
-  @@map("early_registration_guardians")
-}
-
-/// Screening documents submitted during early registration (e.g., for STE)
-model EarlyRegistrationDocument {
-  id               Int            @id @default(autoincrement())
-  applicationId    Int            @map("application_id")
-  documentType     DocumentType   @map("document_type")
-  status           DocumentStatus @default(SUBMITTED)
-  fileName         String?        @map("file_name")
-  originalName     String?        @map("original_name")
-  mimeType         String?        @map("mime_type")
-  size             Int?
-  verificationNote String?        @map("verification_note")
-  uploadedAt       DateTime       @default(now()) @db.Timestamptz @map("uploaded_at")
-
-  application      EarlyRegistrationApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-
-  @@index([applicationId], name: "idx_early_reg_docs_app_id")
-  @@map("early_registration_documents")
 }
 
 /// Screening assessments taken during early registration (e.g., STE Qualifying Exam)
@@ -301,16 +274,15 @@ model EnrollmentApplication {
   admissionChannel        AdmissionChannel  @default(ONLINE) @map("admission_channel")
   trackingNumber          String?           @unique(map: "uq_enrollment_tracking_number") @map("tracking_number")
   studentPhoto            String?           @map("student_photo")
-  isBalikAral             Boolean           @default(false) @map("is_balik_aral")
-  lastYearEnrolled        String?           @map("last_year_enrolled")
-  specialNeedsCategory    String?           @map("special_needs_category")
-  hasPwdId                Boolean           @default(false) @map("has_pwd_id")
   learningModalities      String[]          @map("learning_modalities")
   isTemporarilyEnrolled   Boolean           @default(false) @map("is_temporarily_enrolled")
   documentaryDeadlineAt   DateTime?         @db.Date @map("documentary_deadline_at")
   complianceStatus        ComplianceStatus? @map("compliance_status")
   rejectionReason         String?           @map("rejection_reason")
   isPrivacyConsentGiven   Boolean           @default(false) @map("is_privacy_consent_given")
+  guardianRelationship    String?           @map("guardian_relationship")
+  hasNoMother             Boolean           @default(false) @map("has_no_mother")
+  hasNoFather             Boolean           @default(false) @map("has_no_father")
   portalPin               String?           @map("portal_pin")
   portalPinChangedAt      DateTime?         @db.Timestamptz @map("portal_pin_changed_at")
   encodedById             Int?              @map("encoded_by_id")
@@ -323,55 +295,16 @@ model EnrollmentApplication {
   gradeLevel              GradeLevel        @relation(fields: [gradeLevelId], references: [id])
   encodedBy               User?             @relation("EnrollmentAppEncodedBy", fields: [encodedById], references: [id])
   
-  addresses               EnrollmentAddress[]
-  familyMembers           EnrollmentFamilyMember[]
+  addresses               ApplicationAddress[]
+  familyMembers           ApplicationFamilyMember[]
   previousSchool          EnrollmentPreviousSchool?
   programDetail           EnrollmentProgramDetail?
-  documents               EnrollmentDocument[]
-  checklist               EnrollmentChecklist?
+  checklist               ApplicationChecklist?
   emailLogs               EmailLog[]
   enrollmentRecord        EnrollmentRecord?
 
   @@index([status, schoolYearId], name: "idx_enrollment_apps_status_sy")
   @@map("enrollment_applications")
-}
-
-/// Address: current or permanent, linked to enrollment application
-model EnrollmentAddress {
-  id               Int         @id @default(autoincrement())
-  applicationId    Int         @map("application_id")
-  addressType      AddressType @map("address_type")
-  houseNo          String?     @map("house_no")
-  street           String?
-  sitio            String?
-  barangay         String?
-  cityMunicipality String?     @map("city_municipality")
-  province         String?
-  country          String?     @default("PHILIPPINES")
-  zipCode          String?     @map("zip_code")
-  
-  application      EnrollmentApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-
-  @@unique([applicationId, addressType], name: "uq_enrollment_addresses_type")
-  @@map("enrollment_addresses")
-}
-
-/// Parent/guardian info linked to enrollment application
-model EnrollmentFamilyMember {
-  id               Int                @id @default(autoincrement())
-  applicationId    Int                @map("application_id")
-  relationship     FamilyRelationship
-  firstName        String             @map("first_name")
-  lastName         String             @map("last_name")
-  middleName       String?            @map("middle_name")
-  contactNumber    String?            @map("contact_number")
-  email            String?
-  occupation       String?
-  
-  application      EnrollmentApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-
-  @@unique([applicationId, relationship], name: "uq_enrollment_family_members_rel")
-  @@map("enrollment_family_members")
 }
 
 /// Previous school record linked to enrollment application
@@ -406,35 +339,55 @@ model EnrollmentProgramDetail {
   @@map("enrollment_program_details")
 }
 
-/// Official documentary requirements submitted during enrollment period
-model EnrollmentDocument {
-  id               Int            @id @default(autoincrement())
-  applicationId    Int            @map("application_id")
-  documentType     DocumentType   @map("document_type")
-  status           DocumentStatus @default(SUBMITTED)
-  fileName         String?        @map("file_name")
-  originalName     String?        @map("original_name")
-  mimeType         String?        @map("mime_type")
-  size             Int?
-  verificationNote String?        @map("verification_note")
-  isPresentedOnly  Boolean        @default(false) @map("is_presented_only")
-  uploadedAt       DateTime       @default(now()) @db.Timestamptz @map("uploaded_at")
-  uploadedById     Int?           @map("uploaded_by_id")
-  verifiedAt       DateTime?      @db.Timestamptz @map("verified_at")
-  verifiedById     Int?           @map("verified_by_id")
+/// Address linked to an application (Early Reg or Enrollment)
+model ApplicationAddress {
+  id               Int         @id @default(autoincrement())
+  earlyRegistrationId Int?      @map("early_registration_id")
+  enrollmentId     Int?        @map("enrollment_id")
+  addressType      AddressType @map("address_type")
+  houseNoStreet    String?     @map("house_no")
+  street           String?
+  sitio            String?
+  barangay         String?
+  cityMunicipality String?     @map("city_municipality")
+  province         String?
+  country          String?     @default("PHILIPPINES")
+  zipCode          String?     @map("zip_code")
   
-  application      EnrollmentApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  uploadedBy       User?          @relation("EnrollmentDocUploadedBy", fields: [uploadedById], references: [id])
-  verifiedBy       User?          @relation("EnrollmentDocVerifiedBy", fields: [verifiedById], references: [id])
+  earlyRegistration EarlyRegistrationApplication? @relation(fields: [earlyRegistrationId], references: [id], onDelete: Cascade)
+  enrollment        EnrollmentApplication?        @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
 
-  @@index([applicationId], name: "idx_enrollment_docs_app_id")
-  @@map("enrollment_documents")
+  @@unique([earlyRegistrationId, addressType], name: "uq_early_reg_addresses_type")
+  @@unique([enrollmentId, addressType], name: "uq_enrollment_addresses_type")
+  @@map("application_addresses")
 }
 
-/// DepEd documentary requirement checklist per enrollment application
-model EnrollmentChecklist {
+/// Parent or guardian info linked to an application
+model ApplicationFamilyMember {
+  id               Int                @id @default(autoincrement())
+  earlyRegistrationId Int?            @map("early_registration_id")
+  enrollmentId     Int?               @map("enrollment_id")
+  relationship     FamilyRelationship
+  firstName        String             @map("first_name")
+  lastName         String             @map("last_name")
+  middleName       String?            @map("middle_name")
+  contactNumber    String?            @map("contact_number")
+  email            String?
+  occupation       String?
+  
+  earlyRegistration EarlyRegistrationApplication? @relation(fields: [earlyRegistrationId], references: [id], onDelete: Cascade)
+  enrollment        EnrollmentApplication?        @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, relationship], name: "uq_enrollment_family_members_rel")
+  @@index([earlyRegistrationId], name: "idx_early_reg_guardians_app_id")
+  @@map("application_family_members")
+}
+
+/// Requirement checklist per application
+model ApplicationChecklist {
   id                                 Int       @id @default(autoincrement())
-  applicationId                      Int       @unique(map: "uq_enrollment_checklist_app_id") @map("application_id")
+  earlyRegistrationId                Int?      @unique(map: "uq_early_reg_checklist_id") @map("early_registration_id")
+  enrollmentId                       Int?      @unique(map: "uq_enrollment_checklist_id") @map("enrollment_id")
   isPsaBirthCertPresented            Boolean   @default(false) @map("is_psa_birth_cert_presented")
   isOriginalPsaBcCollected           Boolean   @default(false) @map("is_original_psa_bc_collected")
   isSf9Submitted                     Boolean   @default(false) @map("is_sf9_submitted")
@@ -447,10 +400,11 @@ model EnrollmentChecklist {
   updatedAt                          DateTime  @updatedAt @db.Timestamptz @map("updated_at")
   updatedById                        Int?      @map("updated_by_id")
   
-  application                        EnrollmentApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  updatedBy                          User?     @relation(fields: [updatedById], references: [id])
+  earlyRegistration                  EarlyRegistrationApplication? @relation(fields: [earlyRegistrationId], references: [id], onDelete: Cascade)
+  enrollment                         EnrollmentApplication?        @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  updatedBy                          User?     @relation("ChecklistUpdatedBy", fields: [updatedById], references: [id])
 
-  @@map("enrollment_checklists")
+  @@map("application_checklists")
 }
 
 /// Final enrollment record linking an approved enrollment application to a section
@@ -720,15 +674,6 @@ enum AdmissionChannel {
   @@map("admission_channel")
 }
 
-enum DocumentStatus {
-  SUBMITTED
-  VERIFIED
-  REJECTED
-  MISSING
-
-  @@map("document_status")
-}
-
 enum DocumentType {
   PSA_BIRTH_CERTIFICATE
   SECONDARY_BIRTH_PROOF
@@ -744,6 +689,7 @@ enum DocumentType {
   UNDERTAKING
   AFFIDAVIT_OF_UNDERTAKING
   CONFIRMATION_SLIP
+  WRITING_PORTFOLIO
   OTHERS
 
   @@map("document_type")

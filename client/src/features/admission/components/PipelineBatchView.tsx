@@ -55,6 +55,16 @@ interface Application {
   createdAt: string;
 }
 
+interface EarlyRegistrationApiRow extends Application {
+  learner?: {
+    firstName?: string | null;
+    lastName?: string | null;
+    middleName?: string | null;
+    extensionName?: string | null;
+    lrn?: string | null;
+  } | null;
+}
+
 const TARGET_STATUS_OPTIONS = [
   { value: "UNDER_REVIEW", label: "Under Review" },
   { value: "ELIGIBLE", label: "Eligible" },
@@ -182,6 +192,7 @@ export default function PipelineBatchView({
       const params = new URLSearchParams();
       if (search) params.append("search", search);
       if (status !== "ALL") params.append("status", status);
+      params.append("schoolYearId", String(ayId));
 
       if (applicantType !== "ALL")
         params.append("applicantType", applicantType);
@@ -190,14 +201,16 @@ export default function PipelineBatchView({
 
       const res = await api.get(`/early-registrations?${params.toString()}`);
 
-      let filteredApps = res.data.data.map((app: any) => ({
-        ...app,
-        firstName: app.learner?.firstName || app.firstName,
-        lastName: app.learner?.lastName || app.lastName,
-        middleName: app.learner?.middleName || app.middleName,
-        suffix: app.learner?.extensionName || app.suffix,
-        lrn: app.learner?.lrn || app.lrn,
-      }));
+      let filteredApps = (res.data.data as EarlyRegistrationApiRow[]).map(
+        (app) => ({
+          ...app,
+          firstName: app.learner?.firstName || app.firstName,
+          lastName: app.learner?.lastName || app.lastName,
+          middleName: app.learner?.middleName || app.middleName,
+          suffix: app.learner?.extensionName || app.suffix,
+          lrn: app.learner?.lrn || app.lrn,
+        }),
+      );
       if (status === "ALL") {
         filteredApps = filteredApps.filter(
           (app: Application) =>
@@ -406,7 +419,6 @@ export default function PipelineBatchView({
         `/early-registrations/${appId}/record-step-result`,
         {
           stepOrder: 1,
-          kind: "EXAM",
           score,
           notes: "Recorded from Registration Pipelines",
         },

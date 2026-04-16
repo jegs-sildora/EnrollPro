@@ -8,6 +8,7 @@ import { useScpConfigs } from "@/features/admission/hooks/useScpConfigs";
 import api from "@/shared/api/axiosInstance";
 import { SCP_ACRONYMS, SCP_LABELS } from "@/shared/lib/utils";
 import PipelineBatchView from "@/features/admission/components/PipelineBatchView";
+import { useSettingsStore } from "@/store/settings.slice";
 
 const EXCLUDED_ACTIVE_STATUSES = [
   "ENROLLED",
@@ -17,6 +18,8 @@ const EXCLUDED_ACTIVE_STATUSES = [
 
 export default function RegistrationPipelines() {
   const { configs, loading, error } = useScpConfigs();
+  const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
+  const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "REGULAR";
   const [tabCounts, setTabCounts] = useState<Record<string, number>>({});
@@ -46,16 +49,18 @@ export default function RegistrationPipelines() {
 
   const fetchCount = useCallback(
     async (applicantType: string, status: string) => {
+      if (!ayId) return 0;
       const params = new URLSearchParams();
-      params.append("status", status);
+      if (status !== "ALL") params.append("status", status);
       params.append("page", "1");
       params.append("limit", "1");
       params.append("applicantType", applicantType);
+      params.append("schoolYearId", String(ayId));
 
       const res = await api.get(`/early-registrations?${params.toString()}`);
       return Number(res.data?.pagination?.total ?? 0);
     },
-    [],
+    [ayId],
   );
 
   const refreshTabCounts = useCallback(async () => {

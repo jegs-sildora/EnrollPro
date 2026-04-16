@@ -76,6 +76,7 @@ export const DocumentTypeEnum = z.enum([
   "UNDERTAKING",
   "AFFIDAVIT_OF_UNDERTAKING",
   "CONFIRMATION_SLIP",
+  "WRITING_PORTFOLIO",
   "OTHERS",
 ]);
 export const AssessmentPeriodEnum = z.enum(["BOSY", "EOSY"]);

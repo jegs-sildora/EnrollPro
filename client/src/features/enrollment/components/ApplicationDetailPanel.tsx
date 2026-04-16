@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Link } from "react-router";
 import { ExternalLink, User } from "lucide-react";
@@ -10,6 +10,7 @@ import { SCPAssessmentBlock } from "./SCPAssessmentBlock";
 import { StatusTimeline } from "./StatusTimeline";
 import {
   PersonalInfo,
+  AddressInfo,
   GuardianContact,
   PreviousSchool,
   Classifications,
@@ -20,10 +21,11 @@ import { Button } from "@/shared/ui/button";
 import { SheetTitle, SheetDescription } from "@/shared/ui/sheet";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { ImageEnlarger } from "@/shared/components/ImageEnlarger";
-import { formatScpType } from "@/shared/lib/utils";
+import { formatScpType, isMandatoryDocumentsMet } from "@/shared/lib/utils";
 
 interface Props {
   id: number;
+  endpointBase?: string;
   onClose: () => void;
   onApprove: () => void;
   onReject: () => void;
@@ -47,6 +49,7 @@ interface Props {
 
 export function ApplicationDetailPanel({
   id,
+  endpointBase = "/applications",
   onClose,
   onApprove,
   onReject,
@@ -62,7 +65,12 @@ export function ApplicationDetailPanel({
   onSaveStepResult,
   onMarkInterviewPassed,
 }: Props) {
-  const { data: applicant, loading, error, refetch } = useApplicationDetail(id);
+  const {
+    data: applicant,
+    loading,
+    error,
+    refetch,
+  } = useApplicationDetail(id, false, endpointBase);
 
   // Rule A & B: Delayed loading
   const showSkeleton = useDelayedLoading(loading);
@@ -81,6 +89,16 @@ export function ApplicationDetailPanel({
     );
     return `${baseUrl}${photo}`;
   };
+
+  const persistedMandatoryMet = applicant
+    ? isMandatoryDocumentsMet(applicant.learnerType, applicant.checklist)
+    : false;
+
+  const [mandatoryMet, setMandatoryMet] = useState(false);
+
+  useEffect(() => {
+    setMandatoryMet(persistedMandatoryMet);
+  }, [persistedMandatoryMet]);
 
   if (showSkeleton) {
     return (
@@ -148,7 +166,11 @@ export function ApplicationDetailPanel({
                 : "Online Applicant"}
             </span>
             <span className="hidden sm:inline">|</span>
-            <span>{format(new Date(applicant.createdAt), "MMMM d, yyyy")}</span>
+            <span>
+              {applicant.createdAt
+                ? format(new Date(applicant.createdAt), "MMMM d, yyyy")
+                : "N/A"}
+            </span>
           </SheetDescription>
         </div>
       </div>
@@ -198,7 +220,7 @@ export function ApplicationDetailPanel({
                 Grade Level (Applicant Type)
               </p>
               <p className="text-xs sm:text-sm">
-                Grade {applicant.gradeLevel.name} <br />(
+                {applicant.gradeLevel.name} <br />(
                 {formatScpType(applicant.applicantType)})
               </p>
             </div>
@@ -239,12 +261,15 @@ export function ApplicationDetailPanel({
           applicantId={applicant.id}
           learnerType={applicant.learnerType}
           checklist={applicant.checklist}
+          endpointBase={endpointBase}
           onRefresh={refetch}
+          onMandatoryStatusChange={setMandatoryMet}
         />
 
         {/* Collapsible BEEF Sections */}
         <div className="space-y-2">
           <PersonalInfo applicant={applicant} />
+          <AddressInfo applicant={applicant} />
           <GuardianContact applicant={applicant} />
           <PreviousSchool applicant={applicant} />
           <Classifications applicant={applicant} />
@@ -279,6 +304,7 @@ export function ApplicationDetailPanel({
         onScheduleStep={onScheduleStep}
         onRecordStepResult={onRecordStepResult}
         interviewPassChecked={interviewPassChecked}
+        isMandatoryDocumentsMet={mandatoryMet}
       />
 
       {applicant.studentPhoto && (

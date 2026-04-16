@@ -10,7 +10,7 @@ export function StatusBadge({ status, className: extraClassName }: { status: str
 	return (
 		<Badge
 			variant='outline'
-			className={cn('h-auto py-1 px-3 whitespace-normal text-center leading-tight', className, extraClassName)}
+			className={cn('h-auto py-1 px-3 whitespace-normal text-center leading-tight bg-white', className, extraClassName)}
 			aria-label={`Status: ${label}`}
 		>
 			{label}

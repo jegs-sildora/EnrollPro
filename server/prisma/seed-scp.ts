@@ -3,7 +3,7 @@ import {
 	PrismaClient,
 	ApplicantType,
 	AssessmentKind,
-} from '../src/generated/prisma';
+} from '../src/generated/prisma/index.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import * as pg from 'pg';
 

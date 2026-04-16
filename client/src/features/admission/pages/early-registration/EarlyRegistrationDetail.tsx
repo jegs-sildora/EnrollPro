@@ -40,7 +40,7 @@ export default function EarlyRegistrationDetail() {
     loading,
     error,
     refetch,
-  } = useApplicationDetail(Number(id), true);
+  } = useApplicationDetail(Number(id), true, "/early-registrations");
 
   // Rule A & B: Delayed loading
   const showSkeleton = useDelayedLoading(loading);
@@ -110,7 +110,7 @@ export default function EarlyRegistrationDetail() {
     )
       return;
     try {
-      await api.patch(`/applications/${id}/temporarily-enroll`);
+      await api.patch(`/early-registrations/${id}/temporarily-enroll`);
       sileo.success({
         title: "Updated",
         description: "Applicant is now temporarily enrolled.",
@@ -132,7 +132,7 @@ export default function EarlyRegistrationDetail() {
     const reason = prompt("Please enter the reason for rejection:");
     if (reason === null) return;
     try {
-      await api.patch(`/applications/${id}/reject`, {
+      await api.patch(`/early-registrations/${id}/reject`, {
         rejectionReason: reason,
       });
       sileo.success({
@@ -173,7 +173,7 @@ export default function EarlyRegistrationDetail() {
 
   const handlePass = async () => {
     try {
-      await api.patch(`/applications/${id}/pass`);
+      await api.patch(`/early-registrations/${id}/pass`);
       sileo.success({
         title: "Passed",
         description: "Applicant passed the assessment.",
@@ -186,7 +186,7 @@ export default function EarlyRegistrationDetail() {
 
   const handleFail = async () => {
     try {
-      await api.patch(`/applications/${id}/fail`);
+      await api.patch(`/early-registrations/${id}/fail`);
       sileo.success({
         title: "Failed",
         description: "Applicant failed the assessment.",
@@ -350,6 +350,7 @@ export default function EarlyRegistrationDetail() {
                         applicantId={applicant.id}
                         learnerType={applicant.learnerType}
                         checklist={applicant.checklist}
+                        endpointBase="/early-registrations"
                         onRefresh={refetch}
                       />
                       <DocumentManagement
@@ -358,6 +359,7 @@ export default function EarlyRegistrationDetail() {
                         checklist={applicant.checklist}
                         encodedBy={applicant.encodedBy}
                         auditLogs={applicant.auditLogs}
+                        endpointBase="/early-registrations"
                         onRefresh={refetch}
                         hideUpload
                       />
@@ -496,6 +498,7 @@ export default function EarlyRegistrationDetail() {
         onOpenChange={setIsScheduleDialogOpen}
         applicant={applicant}
         step={scheduleStep}
+        endpointBase="/early-registrations"
         onSuccess={refetch}
       />
 

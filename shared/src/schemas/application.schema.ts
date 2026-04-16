@@ -11,24 +11,20 @@ import {
 
 // ─── Shared sub-schemas ────────────────────────────────
 export const addressSchema = z.object({
-  houseNo: z.string().optional(),
-  street: z.string().optional(),
+  houseNoStreet: z.string().optional(),
+  sitio: z.string().optional(),
   barangay: z.string().min(1, "Barangay is required"),
   cityMunicipality: z.string().min(1, "City/Municipality is required"),
   province: z.string().min(1, "Province is required"),
-  country: z.string().default("Philippines"),
-  zipCode: z.string().optional(),
 });
 
 export const optionalAddressSchema = z
   .object({
-    houseNo: z.string().optional(),
-    street: z.string().optional(),
+    houseNoStreet: z.string().optional(),
+    sitio: z.string().optional(),
     barangay: z.string().optional(),
     cityMunicipality: z.string().optional(),
     province: z.string().optional(),
-    country: z.string().default("Philippines"),
-    zipCode: z.string().optional(),
   })
   .optional()
   .nullable();

@@ -226,7 +226,6 @@ function NavItemChild({
   icon: Icon,
   label,
   pathname,
-  badgeCount,
 }: {
   to: string;
   icon: React.ElementType;
@@ -263,11 +262,6 @@ function NavItemChild({
         <Link to={to}>
           <Icon className="size-3.5" />
           <span>{label}</span>
-          {badgeCount != null && badgeCount > 0 && (
-            <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-[0.625rem] font-semibold text-primary-foreground">
-              {badgeCount}
-            </span>
-          )}
         </Link>
       </SidebarMenuButton>
     </SidebarMenuItem>
@@ -290,7 +284,9 @@ function AppSidebar() {
   useEffect(() => {
     api
       .get("/dashboard/stats")
-      .then((r) => setPendingCount(r.data.earlyRegistrationPending ?? 0))
+      .then((r) =>
+        setPendingCount(r.data?.stats?.earlyRegistration?.submitted ?? 0),
+      )
       .catch(() => {});
     api
       .get("/school-years")

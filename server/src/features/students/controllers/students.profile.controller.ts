@@ -45,16 +45,16 @@ export const createStudentsProfileController = (
 
       const updated = await deps.prisma.$transaction(async (tx) => {
         if (currentAddress) {
-          await tx.enrollmentAddress.upsert({
+          await tx.applicationAddress.upsert({
             where: {
               uq_enrollment_addresses_type: {
-                applicationId: parsedId,
+                enrollmentId: parsedId,
                 addressType: "CURRENT",
               },
             },
             update: currentAddress,
             create: {
-              applicationId: parsedId,
+              enrollmentId: parsedId,
               addressType: "CURRENT",
               ...currentAddress,
             },
@@ -62,16 +62,16 @@ export const createStudentsProfileController = (
         }
 
         if (permanentAddress) {
-          await tx.enrollmentAddress.upsert({
+          await tx.applicationAddress.upsert({
             where: {
               uq_enrollment_addresses_type: {
-                applicationId: parsedId,
+                enrollmentId: parsedId,
                 addressType: "PERMANENT",
               },
             },
             update: permanentAddress,
             create: {
-              applicationId: parsedId,
+              enrollmentId: parsedId,
               addressType: "PERMANENT",
               ...permanentAddress,
             },
@@ -79,16 +79,16 @@ export const createStudentsProfileController = (
         }
 
         if (motherName) {
-          await tx.enrollmentFamilyMember.upsert({
+          await tx.applicationFamilyMember.upsert({
             where: {
               uq_enrollment_family_members_rel: {
-                applicationId: parsedId,
+                enrollmentId: parsedId,
                 relationship: "MOTHER",
               },
             },
             update: motherName,
             create: {
-              applicationId: parsedId,
+              enrollmentId: parsedId,
               relationship: "MOTHER",
               ...motherName,
             },
@@ -96,16 +96,16 @@ export const createStudentsProfileController = (
         }
 
         if (fatherName) {
-          await tx.enrollmentFamilyMember.upsert({
+          await tx.applicationFamilyMember.upsert({
             where: {
               uq_enrollment_family_members_rel: {
-                applicationId: parsedId,
+                enrollmentId: parsedId,
                 relationship: "FATHER",
               },
             },
             update: fatherName,
             create: {
-              applicationId: parsedId,
+              enrollmentId: parsedId,
               relationship: "FATHER",
               ...fatherName,
             },
@@ -113,16 +113,16 @@ export const createStudentsProfileController = (
         }
 
         if (guardianInfo) {
-          await tx.enrollmentFamilyMember.upsert({
+          await tx.applicationFamilyMember.upsert({
             where: {
               uq_enrollment_family_members_rel: {
-                applicationId: parsedId,
+                enrollmentId: parsedId,
                 relationship: "GUARDIAN",
               },
             },
             update: guardianInfo,
             create: {
-              applicationId: parsedId,
+              enrollmentId: parsedId,
               relationship: "GUARDIAN",
               ...guardianInfo,
             },

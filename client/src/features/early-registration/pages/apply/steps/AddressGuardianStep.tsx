@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
 import type { EarlyRegFormData } from "../types";
 import { Input } from "@/shared/ui/input";
@@ -20,6 +21,20 @@ export default function AddressGuardianStep() {
   const hasNoMother = data.hasNoMother;
   const hasNoFather = data.hasNoFather;
   const isGuardianRequired = hasNoMother && hasNoFather;
+
+  // Sync primary contact's info to the corresponding guardian object
+  useEffect(() => {
+    if (data.primaryContact === "MOTHER") {
+      setValue("mother.contactNumber", data.contactNumber);
+      setValue("mother.email", data.email);
+    } else if (data.primaryContact === "FATHER") {
+      setValue("father.contactNumber", data.contactNumber);
+      setValue("father.email", data.email);
+    } else if (data.primaryContact === "GUARDIAN") {
+      setValue("guardian.contactNumber", data.contactNumber);
+      setValue("guardian.email", data.email);
+    }
+  }, [data.primaryContact, data.contactNumber, data.email, setValue]);
 
   const motherInfoFilled =
     !hasNoMother &&

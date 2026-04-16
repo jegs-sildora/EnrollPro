@@ -11,7 +11,7 @@ export function StatusTimeline({ applicant }: Props) {
 	// or build from applicant timestamps
 	const timeline = [];
 
-	if (applicant.createdAt) {
+	if (applicant.createdAt && !isNaN(new Date(applicant.createdAt).getTime())) {
 		timeline.push({
 			date: new Date(applicant.createdAt),
 			label: `Submitted (${applicant.admissionChannel === 'F2F' ? 'F2F' : 'Online'})`,
@@ -31,7 +31,9 @@ export function StatusTimeline({ applicant }: Props) {
 			'PRE_REGISTERED',
 			'ENROLLED',
 			'REJECTED',
-		].includes(applicant.status)
+		].includes(applicant.status) &&
+		applicant.updatedAt &&
+		!isNaN(new Date(applicant.updatedAt).getTime())
 	) {
 		const statusLabel =
 			STATUS_CONFIG[applicant.status]?.label ||

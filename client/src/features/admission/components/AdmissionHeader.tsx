@@ -1,9 +1,6 @@
 import depedLogo from "@/assets/DepEd-logo.png";
 import bagongPilipinasLogo from "@/assets/bagong-pilipinas.png";
 import educationSvg from "@/assets/Department_of_Education.svg";
-import { Search } from "lucide-react";
-import { Link, useLocation } from "react-router";
-import { cn } from "@/shared/lib/utils";
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
@@ -20,8 +17,6 @@ export default function AdmissionHeader({
   schoolName,
   title,
 }: AdmissionHeaderProps) {
-  const location = useLocation();
-  const isMonitorPage = location.pathname === "/monitor";
 
   if (isClosed) return null;
 
@@ -84,19 +79,6 @@ export default function AdmissionHeader({
           />
         </div>
 
-        {/* Monitor Floating Link for Applicants */}
-        {!isMonitorPage && (
-          <Link
-            to="/monitor"
-            className={cn(
-              "absolute right-4 top-1/2 -translate-y-1/2 hidden xl:flex items-center gap-2 px-4 py-2 rounded-full",
-              "bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-lg shadow-primary/20",
-              "text-[0.625rem] font-black uppercase tracking-widest",
-            )}>
-            <Search className="w-3.5 h-3.5" />
-            Monitor Application
-          </Link>
-        )}
       </div>
     </header>
   );

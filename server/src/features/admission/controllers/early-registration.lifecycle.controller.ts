@@ -13,12 +13,13 @@ export function createEarlyRegistrationLifecycleController(
     assertTransition,
     queueEmail,
     toUpperCaseRecursive,
+    updateApplicationStatus,
   } = createEarlyRegistrationSharedService(deps);
   async function approve(req: Request, res: Response, next: NextFunction) {
     try {
       const { sectionId } = req.body;
       const applicantId = parseInt(String(req.params.id));
-      const applicant = await findApplicantOrThrow(applicantId);
+      const { data: applicant, type: appType } = await findApplicantOrThrow(applicantId);
 
       assertTransition(
         applicant,
@@ -51,10 +52,7 @@ export function createEarlyRegistrationLifecycleController(
           },
         });
 
-        await tx.enrollmentApplication.update({
-          where: { id: applicantId },
-          data: { status: "PRE_REGISTERED" },
-        });
+        await updateApplicationStatus(applicantId, "PRE_REGISTERED");
 
         return enrollment;
       });
@@ -63,7 +61,7 @@ export function createEarlyRegistrationLifecycleController(
         userId: req.user!.userId,
         actionType: "APPLICATION_APPROVED",
         description: `Approved application #${applicantId} for ${applicant.learner.firstName} ${applicant.learner.lastName} and pre-registered to section ${sectionId}`,
-        subjectType: "EnrollmentApplication",
+        subjectType: appType === "ENROLLMENT" ? "EnrollmentApplication" : "EarlyRegistrationApplication",
         recordId: applicantId,
         req,
       });
@@ -86,7 +84,10 @@ export function createEarlyRegistrationLifecycleController(
     try {
       const applicantId = parseInt(String(req.params.id));
 
-      const applicant = await prisma.enrollmentApplication.findUnique({
+      const { data: applicant } = await findApplicantOrThrow(applicantId);
+      
+      // We need extra fields for enroll check
+      const fullApplicant = await prisma.enrollmentApplication.findUnique({
         where: { id: applicantId },
         include: {
           gradeLevel: true,
@@ -94,25 +95,26 @@ export function createEarlyRegistrationLifecycleController(
           learner: true,
         },
       });
-      if (!applicant)
-        throw new AppError(404, "Enrollment application not found");
+
+      if (!fullApplicant)
+        throw new AppError(422, "Official enrollment can only be finalized for enrollment applications.");
 
       assertTransition(
-        applicant,
+        fullApplicant,
         "ENROLLED",
-        `Cannot finalize enrollment. Current status: "${applicant.status}". Only PRE_REGISTERED or TEMPORARILY_ENROLLED applications can be enrolled.`,
+        `Cannot finalize enrollment. Current status: "${fullApplicant.status}". Only PRE_REGISTERED or TEMPORARILY_ENROLLED applications can be enrolled.`,
       );
 
       // Validate mandatory requirements for official enrollment
       const requirements = getRequiredDocuments({
-        learnerType: applicant.learnerType,
-        gradeLevel: applicant.gradeLevel.name,
-        applicantType: applicant.applicantType,
-        isLwd: applicant.learner.isLearnerWithDisability,
+        learnerType: fullApplicant.learnerType,
+        gradeLevel: fullApplicant.gradeLevel.name,
+        applicantType: fullApplicant.applicantType,
+        isLwd: fullApplicant.learner.isLearnerWithDisability,
         isPeptAePasser: false, // Default
       });
 
-      const checklist = applicant.checklist;
+      const checklist = fullApplicant.checklist;
       if (!checklist) {
         throw new AppError(
           422,
@@ -195,7 +197,7 @@ export function createEarlyRegistrationLifecycleController(
     }
   }
 
-  // ── Mark as Temporarily Enrolled (Phase 2 - Missing Docs) ──
+  // Mark as Temporarily Enrolled (Phase 2 - Missing Docs)
   async function markTemporarilyEnrolled(
     req: Request,
     res: Response,
@@ -203,7 +205,7 @@ export function createEarlyRegistrationLifecycleController(
   ) {
     try {
       const applicantId = parseInt(String(req.params.id));
-      const applicant = await findApplicantOrThrow(applicantId);
+      const { data: applicant, type: appType } = await findApplicantOrThrow(applicantId);
 
       assertTransition(
         applicant,
@@ -211,19 +213,15 @@ export function createEarlyRegistrationLifecycleController(
         `Cannot mark as temporarily enrolled. Current status: "${applicant.status}".`,
       );
 
-      const updated = await prisma.enrollmentApplication.update({
-        where: { id: applicantId },
-        data: {
-          status: "TEMPORARILY_ENROLLED",
-          isTemporarilyEnrolled: true,
-        },
+      const updated = await updateApplicationStatus(applicantId, "TEMPORARILY_ENROLLED", {
+        isTemporarilyEnrolled: true,
       });
 
       await auditLog({
         userId: req.user!.userId,
         actionType: "APPLICATION_TEMPORARILY_ENROLLED",
         description: `Marked ${applicant.learner.firstName} ${applicant.learner.lastName} (#${applicantId}) as TEMPORARILY ENROLLED (awaiting docs)`,
-        subjectType: "EnrollmentApplication",
+        subjectType: appType === "ENROLLMENT" ? "EnrollmentApplication" : "EarlyRegistrationApplication",
         recordId: applicantId,
         req,
       });
@@ -266,17 +264,25 @@ export function createEarlyRegistrationLifecycleController(
         }
       }
 
+      // Determine if it's Early Registration or Enrollment
+      const { data: applicant, type: appType } = await findApplicantOrThrow(applicantId);
+      const idField = appType === "ENROLLMENT" ? "enrollmentId" : "earlyRegistrationId";
+
       // Get current state for auditing
-      const currentChecklist = await prisma.enrollmentChecklist.findUnique({
-        where: { applicationId: applicantId },
+      const currentChecklist = await prisma.applicationChecklist.findUnique({
+        where: idField === "enrollmentId" 
+          ? { enrollmentId: applicantId } 
+          : { earlyRegistrationId: applicantId },
       });
 
-      const updated = await prisma.enrollmentChecklist.upsert({
-        where: { applicationId: applicantId },
+      const updated = await prisma.applicationChecklist.upsert({
+        where: idField === "enrollmentId" 
+          ? { enrollmentId: applicantId } 
+          : { earlyRegistrationId: applicantId },
         update: { ...filteredData, updatedById: req.user!.userId },
         create: {
           ...filteredData,
-          applicationId: applicantId,
+          [idField]: applicantId,
           updatedById: req.user!.userId,
         },
       });
@@ -305,7 +311,7 @@ export function createEarlyRegistrationLifecycleController(
             userId: req.user!.userId,
             actionType: newValue ? "DOCUMENT_ADDED" : "DOCUMENT_REMOVED",
             description: `${newValue ? "Added" : "Removed"} requirement: ${label} for applicant #${applicantId}`,
-            subjectType: "EnrollmentApplication",
+            subjectType: appType === "ENROLLMENT" ? "EnrollmentApplication" : "EarlyRegistrationApplication",
             recordId: applicantId,
             req,
           });
@@ -316,7 +322,7 @@ export function createEarlyRegistrationLifecycleController(
         userId: req.user!.userId,
         actionType: "CHECKLIST_UPDATED",
         description: `Updated requirement checklist for applicant #${applicantId}`,
-        subjectType: "EnrollmentApplication",
+        subjectType: appType === "ENROLLMENT" ? "EnrollmentApplication" : "EarlyRegistrationApplication",
         recordId: applicantId,
         req,
       });
@@ -339,7 +345,7 @@ export function createEarlyRegistrationLifecycleController(
         unknown
       >;
       const applicantId = parseInt(String(req.params.id));
-      const applicant = await findApplicantOrThrow(applicantId);
+      const { data: applicant, type: appType } = await findApplicantOrThrow(applicantId);
 
       assertTransition(
         applicant,
@@ -347,16 +353,13 @@ export function createEarlyRegistrationLifecycleController(
         `Cannot request revision for status "${applicant.status}"`,
       );
 
-      const updated = await prisma.enrollmentApplication.update({
-        where: { id: applicantId },
-        data: { status: "FOR_REVISION" },
-      });
+      const updated = await updateApplicationStatus(applicantId, "FOR_REVISION");
 
       await auditLog({
         userId: req.user!.userId,
         actionType: "REVISION_REQUESTED",
         description: `Requested revision for #${applicantId}. Message: ${message || "N/A"}`,
-        subjectType: "EnrollmentApplication",
+        subjectType: appType === "ENROLLMENT" ? "EnrollmentApplication" : "EarlyRegistrationApplication",
         recordId: applicantId,
         req,
       });
@@ -371,7 +374,7 @@ export function createEarlyRegistrationLifecycleController(
   async function withdraw(req: Request, res: Response, next: NextFunction) {
     try {
       const applicantId = parseInt(String(req.params.id));
-      const applicant = await findApplicantOrThrow(applicantId);
+      const { data: applicant, type: appType } = await findApplicantOrThrow(applicantId);
 
       assertTransition(
         applicant,
@@ -379,16 +382,13 @@ export function createEarlyRegistrationLifecycleController(
         `Cannot withdraw application with status "${applicant.status}"`,
       );
 
-      const updated = await prisma.enrollmentApplication.update({
-        where: { id: applicantId },
-        data: { status: "WITHDRAWN" },
-      });
+      const updated = await updateApplicationStatus(applicantId, "WITHDRAWN");
 
       await auditLog({
         userId: req.user?.userId || null,
         actionType: "APPLICATION_WITHDRAWN",
         description: `Application #${applicantId} withdrawn`,
-        subjectType: "EnrollmentApplication",
+        subjectType: appType === "ENROLLMENT" ? "EnrollmentApplication" : "EarlyRegistrationApplication",
         recordId: applicantId,
         req,
       });
@@ -404,7 +404,7 @@ export function createEarlyRegistrationLifecycleController(
     try {
       const rejectionReason = req.body.rejectionReason?.trim();
       const applicantId = parseInt(String(req.params.id));
-      const applicant = await findApplicantOrThrow(applicantId);
+      const { data: applicant, type: appType } = await findApplicantOrThrow(applicantId);
 
       assertTransition(
         applicant,
@@ -420,16 +420,15 @@ export function createEarlyRegistrationLifecycleController(
         );
       }
 
-      const updated = await prisma.enrollmentApplication.update({
-        where: { id: applicantId },
-        data: { status: "REJECTED", rejectionReason: rejectionReason || null },
+      const updated = await updateApplicationStatus(applicantId, "REJECTED", {
+        rejectionReason: rejectionReason || null
       });
 
       await auditLog({
         userId: req.user!.userId,
         actionType: "APPLICATION_REJECTED",
         description: `Rejected application #${applicantId} for ${applicant.learner.firstName} ${applicant.learner.lastName}. Reason: ${rejectionReason || "N/A"}`,
-        subjectType: "EnrollmentApplication",
+        subjectType: appType === "ENROLLMENT" ? "EnrollmentApplication" : "EarlyRegistrationApplication",
         recordId: applicantId,
         req,
       });

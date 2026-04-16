@@ -1,4 +1,4 @@
-import type { SchoolYear } from '../../generated/prisma';
+import type { SchoolYear } from '../../generated/prisma/index.js';
 
 /**
  * Normalizes a Date object to a YYYY-MM-DD string in Manila timezone

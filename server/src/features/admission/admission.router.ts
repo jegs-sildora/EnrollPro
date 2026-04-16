@@ -58,6 +58,8 @@ const submitLimiter = rateLimit({
 router.post("/", submitLimiter, validate(applicationSubmitSchema), ctrl.store);
 router.get("/track/:trackingNumber", ctrl.track);
 router.get("/lookup-lrn/:lrn", submitLimiter, ctrl.lookupByLrn);
+// Backward-compatible alias used by existing client callers
+router.get("/lookup-by-lrn/:lrn", submitLimiter, ctrl.lookupByLrn);
 
 // F2F Walk-in EARLY REGISTRATION - REGISTRAR + SYSTEM_ADMIN (authenticated)
 router.post(
@@ -138,7 +140,7 @@ router.post(
   docCtrl.upload,
 );
 router.delete(
-  "/documents/:docId",
+  "/:id/documents",
   authenticate,
   authorize("REGISTRAR", "SYSTEM_ADMIN"),
   docCtrl.remove,

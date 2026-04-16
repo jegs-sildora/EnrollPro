@@ -96,3 +96,36 @@ export function toUpperCaseRecursive<T>(obj: T): T {
   }
   return obj;
 }
+
+/**
+ * Checks if all mandatory documents for a specific learner type are met based on the checklist.
+ */
+export function isMandatoryDocumentsMet(
+  learnerType: string | null | undefined,
+  checklist: any,
+): boolean {
+  if (!checklist || !learnerType) return false;
+
+  const requirements = [
+    {
+      key: "isPsaBirthCertPresented",
+      isMandatory: learnerType !== "CONTINUING",
+    },
+    {
+      key: "isSf9Submitted",
+      isMandatory: learnerType !== "CONTINUING",
+    },
+    {
+      key: "isConfirmationSlipReceived",
+      isMandatory: learnerType === "CONTINUING",
+    },
+    {
+      key: "isUndertakingSigned",
+      isMandatory: learnerType === "TRANSFEREE",
+    },
+  ];
+
+  return requirements
+    .filter((r) => r.isMandatory)
+    .every((r) => !!checklist[r.key]);
+}

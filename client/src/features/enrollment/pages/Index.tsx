@@ -124,6 +124,7 @@ export default function Enrollment() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
+      params.append("schoolYearId", String(ayId));
       if (search) params.append("search", search);
 
       if (status !== "ALL") {

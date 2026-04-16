@@ -33,7 +33,9 @@ interface Props {
   applicantId: number;
   learnerType: LearnerType;
   checklist?: ChecklistData;
+  endpointBase?: string;
   onRefresh: () => void;
+  onMandatoryStatusChange?: (isMet: boolean) => void;
 }
 
 interface RequirementItem {
@@ -47,7 +49,9 @@ export function RequirementChecklist({
   applicantId,
   learnerType,
   checklist,
+  endpointBase = "/applications",
   onRefresh,
+  onMandatoryStatusChange,
 }: Props) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [localChecklist, setLocalChecklist] = useState<Partial<ChecklistData>>(
@@ -128,7 +132,7 @@ export function RequirementChecklist({
       delete payload.applicantId;
       delete payload.updatedAt;
 
-      await api.patch(`/applications/${applicantId}/checklist`, payload);
+      await api.patch(`${endpointBase}/${applicantId}/checklist`, payload);
       sileo.success({
         title: "Checklist Updated",
         description: "Documentary Checklist has been updated.",
@@ -163,6 +167,10 @@ export function RequirementChecklist({
   const mandatoryMet = requirements
     .filter((r) => r.isMandatory)
     .every((r) => localChecklist[r.key]);
+
+  useEffect(() => {
+    onMandatoryStatusChange?.(mandatoryMet);
+  }, [mandatoryMet, onMandatoryStatusChange]);
 
   return (
     <Card>

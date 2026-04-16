@@ -3,6 +3,7 @@ import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { AppError } from "../../lib/AppError.js";
 import { normalizeDateToUtcNoon } from "../school-year/school-year.service.js";
+import fs from "fs";
 import {
   LearnerType,
   FamilyRelationship,
@@ -11,6 +12,12 @@ import {
   PrimaryContactType,
   Prisma,
 } from "../../generated/prisma/index.js";
+import { createEarlyRegistrationSharedService } from "../admission/services/early-registration-shared.service.js";
+import { createAdmissionControllerDeps } from "../admission/services/admission-controller.deps.js";
+
+const sharedService = createEarlyRegistrationSharedService(
+  createAdmissionControllerDeps(),
+);
 
 // ── Helpers ──
 
@@ -76,6 +83,20 @@ const APPLICANT_TYPE_VALUES = new Set([
   "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
   "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
 ]);
+
+const DOCUMENT_CHECKLIST_MAPPING: Record<string, string> = {
+  PSA_BIRTH_CERTIFICATE: "isPsaBirthCertPresented",
+  SECONDARY_BIRTH_PROOF: "isPsaBirthCertPresented",
+  SF9_REPORT_CARD: "isSf9Submitted",
+  SF10_PERMANENT_RECORD: "isSf10Requested",
+  GOOD_MORAL_CERTIFICATE: "isGoodMoralPresented",
+  MEDICAL_CERTIFICATE: "isMedicalEvalSubmitted",
+  MEDICAL_EVALUATION: "isMedicalEvalSubmitted",
+  CERTIFICATE_OF_RECOGNITION: "isCertOfRecognitionPresented",
+  UNDERTAKING: "isUndertakingSigned",
+  AFFIDAVIT_OF_UNDERTAKING: "isUndertakingSigned",
+  CONFIRMATION_SLIP: "isConfirmationSlipReceived",
+};
 
 type ApplicantTypeValue =
   | "REGULAR"
@@ -307,8 +328,12 @@ async function createRegistration(
         lastName: body.father.lastName,
         firstName: body.father.firstName,
         middleName: body.father.middleName || null,
-        contactNumber: body.father.contactNumber || null,
-        email: body.father.email || null,
+        contactNumber:
+          body.father.contactNumber ||
+          (primaryContactV2 === "FATHER" ? body.contactNumber : null),
+        email:
+          body.father.email ||
+          (primaryContactV2 === "FATHER" ? body.email : null),
         occupation: body.father.occupation || null,
       });
     }
@@ -318,8 +343,12 @@ async function createRegistration(
         lastName: body.mother.maidenName,
         firstName: body.mother.firstName,
         middleName: body.mother.middleName || null,
-        contactNumber: body.mother.contactNumber || null,
-        email: body.mother.email || null,
+        contactNumber:
+          body.mother.contactNumber ||
+          (primaryContactV2 === "MOTHER" ? body.contactNumber : null),
+        email:
+          body.mother.email ||
+          (primaryContactV2 === "MOTHER" ? body.email : null),
         occupation: body.mother.occupation || null,
       });
     }
@@ -329,15 +358,33 @@ async function createRegistration(
         lastName: body.guardian.lastName,
         firstName: body.guardian.firstName,
         middleName: body.guardian.middleName || null,
-        contactNumber: body.guardian.contactNumber || null,
-        email: body.guardian.email || null,
+        contactNumber:
+          body.guardian.contactNumber ||
+          (primaryContactV2 === "GUARDIAN" ? body.contactNumber : null),
+        email:
+          body.guardian.email ||
+          (primaryContactV2 === "GUARDIAN" ? body.email : null),
         occupation: body.guardian.occupation || null,
+      });
+    }
+
+    // 4.5 Build address data
+    const addressData: Prisma.ApplicationAddressCreateManyInput[] = [];
+    if (body.barangay || body.cityMunicipality) {
+      addressData.push({
+        addressType: "CURRENT",
+        houseNoStreet: body.houseNoStreet || null,
+        sitio: body.sitio || null,
+        barangay: body.barangay || null,
+        cityMunicipality: body.cityMunicipality || null,
+        province: body.province || null,
       });
     }
 
     // 5. Create/reuse learner + guardians + registration in a transaction
     const learnerPayload = {
       lrn,
+      psaBirthCertNumber: body.psaBirthCertNumber || null,
       firstName: body.firstName,
       lastName: body.lastName,
       middleName: body.middleName || null,
@@ -351,6 +398,11 @@ async function createRegistration(
       disabilityTypes: body.isLearnerWithDisability
         ? body.disabilityTypes || []
         : [],
+      specialNeedsCategory: body.specialNeedsCategory || null,
+      hasPwdId: body.hasPwdId ?? false,
+      isBalikAral: body.isBalikAral ?? false,
+      lastYearEnrolled: body.lastYearEnrolled || null,
+      lastGradeLevel: body.lastGradeLevel || null,
     };
 
     const result = await prisma.$transaction(async (tx) => {
@@ -396,12 +448,22 @@ async function createRegistration(
           contactNumber: body.contactNumber,
           email: body.email || null,
           primaryContact: primaryContactV2,
+          guardianRelationship: body.guardianRelationship || null,
+          hasNoMother: body.hasNoMother ?? false,
+          hasNoFather: body.hasNoFather ?? false,
           isPrivacyConsentGiven: body.isPrivacyConsentGiven ?? false,
           encodedById: options.encodedById ?? null,
           trackingNumber: tempTracking,
-          guardians: {
+          familyMembers: {
             createMany: { data: guardianData },
           },
+          addresses:
+            addressData.length > 0
+              ? {
+                  createMany: { data: addressData },
+                }
+              : undefined,
+          checklist: { create: {} },
         },
         select: { id: true, applicantType: true },
       });
@@ -581,7 +643,13 @@ export async function index(req: Request, res: Response, next: NextFunction) {
     const andFilters: any[] = [];
 
     if (status) {
-      andFilters.push({ status });
+      const normalizedStatus = status.trim().toUpperCase();
+      if (normalizedStatus !== "ALL") {
+        if (!(normalizedStatus in EARLY_REG_TRANSITIONS)) {
+          throw new AppError(400, "Invalid status filter.");
+        }
+        andFilters.push({ status: normalizedStatus });
+      }
     }
 
     if (applicantType) {
@@ -641,7 +709,8 @@ export async function index(req: Request, res: Response, next: NextFunction) {
         where: where,
         include: {
           learner: true,
-          guardians: true,
+          familyMembers: true,
+          addresses: true,
           gradeLevel: { select: { id: true, name: true } },
           schoolYear: { select: { yearLabel: true } },
           encodedBy: { select: { firstName: true, lastName: true } },
@@ -669,28 +738,218 @@ export async function index(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+/** PATCH /:id/checklist — Update requirement checklist for an early registration */
+export async function updateChecklist(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const id = parseInt(String(req.params.id));
+    await findEarlyRegOrThrow(id);
+
+    const allowedFields = [
+      "isPsaBirthCertPresented",
+      "isOriginalPsaBcCollected",
+      "isSf9Submitted",
+      "isSf10Requested",
+      "isGoodMoralPresented",
+      "isMedicalEvalSubmitted",
+      "isCertOfRecognitionPresented",
+      "isUndertakingSigned",
+      "isConfirmationSlipReceived",
+    ] as const;
+
+    const payload = req.body as Record<string, unknown>;
+    const filteredData: Partial<
+      Record<(typeof allowedFields)[number], boolean>
+    > = {};
+    for (const key of allowedFields) {
+      if (payload[key] !== undefined) {
+        filteredData[key] = Boolean(payload[key]);
+      }
+    }
+
+    const currentChecklist = await prisma.applicationChecklist.findUnique({
+      where: { earlyRegistrationId: id },
+    });
+
+    const updated = await prisma.applicationChecklist.upsert({
+      where: { earlyRegistrationId: id },
+      update: { ...filteredData, updatedById: req.user!.userId },
+      create: {
+        ...filteredData,
+        earlyRegistrationId: id,
+        updatedById: req.user!.userId,
+      },
+    });
+
+    const fieldsToLabel: Partial<
+      Record<(typeof allowedFields)[number], string>
+    > = {
+      isPsaBirthCertPresented: "PSA Birth Certificate",
+      isSf9Submitted: "SF9 / Report Card",
+      isConfirmationSlipReceived: "Confirmation Slip",
+      isSf10Requested: "SF10 (Permanent Record)",
+      isGoodMoralPresented: "Good Moral Certificate",
+      isMedicalEvalSubmitted: "Medical Evaluation",
+      isCertOfRecognitionPresented: "Certificate of Recognition",
+      isUndertakingSigned: "Affidavit of Undertaking",
+    };
+
+    for (const [key, label] of Object.entries(fieldsToLabel)) {
+      const typedKey = key as (typeof allowedFields)[number];
+      const newValue = filteredData[typedKey];
+      const oldValue = currentChecklist ? currentChecklist[typedKey] : false;
+      if (newValue !== undefined && newValue !== oldValue) {
+        await auditLog({
+          userId: req.user!.userId,
+          actionType: newValue ? "DOCUMENT_ADDED" : "DOCUMENT_REMOVED",
+          description: `${newValue ? "Added" : "Removed"} requirement: ${label} for early registration #${id}`,
+          subjectType: "EarlyRegistrationApplication",
+          recordId: id,
+          req,
+        }).catch(() => {});
+      }
+    }
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "CHECKLIST_UPDATED",
+      description: `Updated requirement checklist for early registration #${id}`,
+      subjectType: "EarlyRegistrationApplication",
+      recordId: id,
+      req,
+    }).catch(() => {});
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** POST /:id/documents — Mark a document as presented for an early registration */
+export async function uploadDocument(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const id = parseInt(String(req.params.id));
+    const documentType = String(req.body?.documentType ?? "")
+      .trim()
+      .toUpperCase();
+
+    if (!documentType) {
+      throw new AppError(400, "documentType is required");
+    }
+
+    if (!req.file) {
+      throw new AppError(400, "No file uploaded");
+    }
+
+    const checklistField = DOCUMENT_CHECKLIST_MAPPING[documentType];
+    if (!checklistField) {
+      throw new AppError(400, "Invalid document type for checklist");
+    }
+
+    const registration = await findEarlyRegOrThrow(id);
+
+    await prisma.applicationChecklist.upsert({
+      where: { earlyRegistrationId: id },
+      update: {
+        [checklistField]: true,
+        updatedById: req.user!.userId,
+      },
+      create: {
+        earlyRegistrationId: id,
+        [checklistField]: true,
+        updatedById: req.user!.userId,
+      },
+    });
+
+    try {
+      fs.unlinkSync(req.file.path);
+    } catch {
+      // Non-fatal cleanup best-effort
+    }
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "CHECKLIST_UPDATED",
+      description: `Marked ${documentType} as presented for ${registration.learner.firstName} ${registration.learner.lastName} (#${id})`,
+      subjectType: "EarlyRegistrationApplication",
+      recordId: id,
+      req,
+    }).catch(() => {});
+
+    res.status(200).json({ message: "Checklist updated successfully" });
+  } catch (err) {
+    if (req.file?.path) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch {
+        // ignore cleanup failures
+      }
+    }
+    next(err);
+  }
+}
+
+/** DELETE /:id/documents — Unmark a document for an early registration */
+export async function removeDocument(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const id = parseInt(String(req.params.id));
+    const documentType = String(req.body?.documentType ?? "")
+      .trim()
+      .toUpperCase();
+
+    if (!documentType) {
+      throw new AppError(400, "documentType is required");
+    }
+
+    const checklistField = DOCUMENT_CHECKLIST_MAPPING[documentType];
+    if (!checklistField) {
+      throw new AppError(400, "Invalid document type for checklist");
+    }
+
+    const registration = await findEarlyRegOrThrow(id);
+
+    await prisma.applicationChecklist.updateMany({
+      where: { earlyRegistrationId: id },
+      data: {
+        [checklistField]: false,
+        updatedById: req.user!.userId,
+      },
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "CHECKLIST_REMOVED",
+      description: `Unmarked ${documentType} for ${registration.learner.firstName} ${registration.learner.lastName} (#${id})`,
+      subjectType: "EarlyRegistrationApplication",
+      recordId: id,
+      req,
+    }).catch(() => {});
+
+    res.json({ message: "Checklist updated successfully" });
+  } catch (err) {
+    next(err);
+  }
+}
+
 /** GET /:id — Get a single early registration detail */
 export async function show(req: Request, res: Response, next: NextFunction) {
   try {
     const id = parseInt(String(req.params.id));
-    const registration = await prisma.earlyRegistrationApplication.findUnique({
-      where: { id },
-      include: {
-        learner: true,
-        guardians: true,
-        gradeLevel: { select: { id: true, name: true } },
-        schoolYear: { select: { yearLabel: true } },
-        encodedBy: { select: { firstName: true, lastName: true } },
-        verifiedBy: { select: { firstName: true, lastName: true } },
-        assessments: { orderBy: { createdAt: "desc" } },
-      },
+    const detailed = await sharedService.getDetailedApplicationOrThrow(id, {
+      allowEnrollmentFallback: false,
     });
-
-    if (!registration) {
-      throw new AppError(404, "Early registration not found.");
-    }
-
-    res.json(registration);
+    res.json(detailed);
   } catch (err) {
     next(err);
   }
@@ -1029,23 +1288,16 @@ export async function recordStepResult(
     const id = parseInt(String(req.params.id));
     const reg = await findEarlyRegOrThrow(id);
 
+    const normalizedStepOrder = Number(stepOrder);
+    if (!Number.isInteger(normalizedStepOrder) || normalizedStepOrder <= 0) {
+      throw new AppError(400, "stepOrder must be a positive integer.");
+    }
+
     assertEarlyRegTransition(
       reg.status,
       "ASSESSMENT_TAKEN",
       `Cannot record result. Current status: "${reg.status}".`,
     );
-
-    const assessment = await prisma.earlyRegistrationAssessment.findFirst({
-      where: { applicationId: id, type: kind as any },
-      orderBy: { createdAt: "desc" },
-    });
-
-    if (!assessment) {
-      throw new AppError(
-        404,
-        `No scheduled assessment found for step ${stepOrder} (${kind}). Schedule it first.`,
-      );
-    }
 
     // Load pipeline config
     const scpConfig = await prisma.scpProgramConfig.findUnique({
@@ -1060,10 +1312,44 @@ export async function recordStepResult(
       },
     });
 
-    const updated = await prisma.$transaction(async (tx) => {
-      const stepConfig = scpConfig?.steps.find(
-        (s) => s.stepOrder === stepOrder,
+    const normalizedKind =
+      typeof kind === "string" && kind.trim().length > 0
+        ? kind.trim().toUpperCase()
+        : null;
+    const stepConfig = scpConfig?.steps.find(
+      (s) => s.stepOrder === normalizedStepOrder,
+    );
+
+    const fallbackAssessment = !normalizedKind
+      ? await prisma.earlyRegistrationAssessment.findFirst({
+          where: { applicationId: id },
+          orderBy: { createdAt: "desc" },
+        })
+      : null;
+
+    const resolvedKind =
+      normalizedKind ?? stepConfig?.kind ?? fallbackAssessment?.type ?? null;
+
+    if (!resolvedKind) {
+      throw new AppError(
+        400,
+        `Unable to determine assessment kind for step ${normalizedStepOrder}.`,
       );
+    }
+
+    const assessment = await prisma.earlyRegistrationAssessment.findFirst({
+      where: { applicationId: id, type: resolvedKind as any },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (!assessment) {
+      throw new AppError(
+        404,
+        `No scheduled assessment found for step ${normalizedStepOrder} (${resolvedKind}). Schedule it first.`,
+      );
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
       let finalResult = result ?? null;
       if (stepConfig?.cutoffScore != null && score != null) {
         finalResult = score >= stepConfig.cutoffScore ? "PASSED" : "FAILED";
@@ -1109,7 +1395,7 @@ export async function recordStepResult(
     await auditLog({
       userId: req.user!.userId,
       actionType: "ASSESSMENT_RESULT_RECORDED",
-      description: `Recorded result for early reg #${id} step ${stepOrder}: score=${score ?? "N/A"}, result=${result ?? "auto"}`,
+      description: `Recorded result for early reg #${id} step ${normalizedStepOrder}: score=${score ?? "N/A"}, result=${result ?? "auto"}`,
       subjectType: "EarlyRegistrationApplication",
       recordId: id,
       req,
@@ -1301,94 +1587,11 @@ export async function showDetailed(
 ) {
   try {
     const id = parseInt(String(req.params.id));
-    const reg = await prisma.earlyRegistrationApplication.findUnique({
-      where: { id },
-      include: {
-        learner: true,
-        guardians: true,
-        gradeLevel: { select: { id: true, name: true } },
-        schoolYear: { select: { id: true, yearLabel: true } },
-        encodedBy: { select: { firstName: true, lastName: true } },
-        verifiedBy: { select: { firstName: true, lastName: true } },
-        assessments: { orderBy: { createdAt: "desc" } },
-        documents: true,
-      },
+    const detailed = await sharedService.getDetailedApplicationOrThrow(id, {
+      includeAuditLogs: true,
+      allowEnrollmentFallback: false,
     });
-
-    if (!reg) throw new AppError(404, "Early registration not found.");
-
-    // Flatten assessment data like the enrollment controller does
-    const assessments = reg.assessments ?? [];
-    let pipelineSteps: Array<{
-      stepOrder: number;
-      kind: string;
-      label: string;
-      description: string | null;
-      isRequired: boolean;
-      cutoffScore: number | null;
-    }> = [];
-
-    if (reg.applicantType !== "REGULAR") {
-      const scpConfig = await prisma.scpProgramConfig.findUnique({
-        where: {
-          uq_scp_program_configs_type: {
-            schoolYearId: reg.schoolYearId,
-            scpType: reg.applicantType as any,
-          },
-        },
-        include: { steps: { orderBy: { stepOrder: "asc" } } },
-      });
-
-      if (scpConfig) {
-        pipelineSteps = scpConfig.steps.map((s) => ({
-          stepOrder: s.stepOrder,
-          kind: s.kind,
-          label: s.label,
-          description: s.description,
-          isRequired: s.isRequired,
-          cutoffScore: s.cutoffScore ?? null,
-        }));
-      }
-    }
-
-    const steps = pipelineSteps.map((step) => {
-      const match = assessments.find((a) => a.type === step.kind);
-      let stepStatus: "PENDING" | "SCHEDULED" | "COMPLETED" = "PENDING";
-      if (match?.conductedAt || match?.result != null || match?.score != null) {
-        stepStatus = "COMPLETED";
-      } else if (match?.scheduledDate) {
-        stepStatus = "SCHEDULED";
-      }
-      return {
-        ...step,
-        assessmentId: match?.id ?? null,
-        scheduledDate: match?.scheduledDate?.toISOString() ?? null,
-        scheduledTime: match?.scheduledTime ?? null,
-        venue: match?.venue ?? null,
-        score: match?.score ?? null,
-        result: match?.result ?? null,
-        notes: match?.notes ?? null,
-        conductedAt: match?.conductedAt?.toISOString() ?? null,
-        status: stepStatus,
-      };
-    });
-
-    const primary = assessments[0] ?? null;
-
-    res.json({
-      ...reg,
-      firstName: reg.learner.firstName,
-      lastName: reg.learner.lastName,
-      middleName: reg.learner.middleName,
-      lrn: reg.learner.lrn,
-      isScpApplication: reg.applicantType !== "REGULAR",
-      assessmentSteps: steps,
-      examDate: primary?.scheduledDate?.toISOString() ?? null,
-      examVenue: primary?.venue ?? null,
-      examScore: primary?.score ?? null,
-      examResult: primary?.result ?? null,
-      examNotes: primary?.notes ?? null,
-    });
+    res.json(detailed);
   } catch (err) {
     next(err);
   }
@@ -1440,6 +1643,26 @@ export async function approve(req: Request, res: Response, next: NextFunction) {
           encodedById: req.user!.userId,
         },
       });
+
+      // Link existing checklist to the new enrollment application
+      const existingChecklist = await tx.applicationChecklist.findUnique({
+        where: { earlyRegistrationId: reg.id },
+      });
+
+      if (existingChecklist) {
+        await tx.applicationChecklist.update({
+          where: { id: existingChecklist.id },
+          data: { enrollmentId: enrollmentApp.id },
+        });
+      } else {
+        // Create new checklist linked to both
+        await tx.applicationChecklist.create({
+          data: {
+            enrollmentId: enrollmentApp.id,
+            earlyRegistrationId: reg.id,
+          },
+        });
+      }
 
       // Create enrollment record
       const enrollment = await tx.enrollmentRecord.create({

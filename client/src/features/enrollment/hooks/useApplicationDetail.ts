@@ -5,6 +5,7 @@ import api from "@/shared/api/axiosInstance";
 export interface Address {
   houseNo?: string;
   street?: string;
+  sitio?: string;
   barangay: string;
   cityMunicipality: string;
   province: string;
@@ -13,11 +14,12 @@ export interface Address {
 }
 
 export interface ParentInfo {
-  lastName: string;
-  firstName: string;
+  lastName?: string | null;
+  firstName?: string | null;
   middleName?: string | null;
   contactNumber?: string | null;
   maidenName?: string | null;
+  email?: string | null;
 }
 
 export interface GuardianInfo {
@@ -25,6 +27,7 @@ export interface GuardianInfo {
   firstName?: string | null;
   middleName?: string | null;
   contactNumber?: string | null;
+  email?: string | null;
   relationship?: string | null;
 }
 
@@ -171,6 +174,7 @@ export interface ApplicantDetail {
   motherName: ParentInfo;
   fatherName: ParentInfo;
   guardianInfo: GuardianInfo | null;
+  primaryContact?: "MOTHER" | "FATHER" | "GUARDIAN" | null;
   emailAddress: string | null;
   isIpCommunity: boolean;
   ipGroupName: string | null;
@@ -258,6 +262,7 @@ export interface ApplicantDetail {
 export function useApplicationDetail(
   id: number | null,
   isDetailed: boolean = false,
+  endpointBase: string = "/applications",
 ) {
   const [data, setData] = useState<ApplicantDetail | null>(null);
   const [loading, setLoading] = useState(false);
@@ -272,8 +277,8 @@ export function useApplicationDetail(
     setError(null);
     try {
       const endpoint = isDetailed
-        ? `/applications/${id}/detailed`
-        : `/applications/${id}`;
+        ? `${endpointBase}/${id}/detailed`
+        : `${endpointBase}/${id}`;
       const res = await api.get(endpoint);
       setData(res.data);
     } catch (err: unknown) {
@@ -291,7 +296,7 @@ export function useApplicationDetail(
     } finally {
       setLoading(false);
     }
-  }, [id, isDetailed]);
+  }, [id, isDetailed, endpointBase]);
 
   useEffect(() => {
     fetchDetail();
