@@ -47,6 +47,7 @@ import type {
 interface Application {
   id: number;
   lrn: string;
+  isPendingLrnCreation: boolean;
   lastName: string;
   firstName: string;
   middleName: string | null;
@@ -127,7 +128,9 @@ export default function Enrollment() {
       params.append("schoolYearId", String(ayId));
       if (search) params.append("search", search);
 
-      if (status !== "ALL") {
+      if (status === "WITHOUT_LRN") {
+        params.append("withoutLrn", "true");
+      } else if (status !== "ALL") {
         params.append("status", status);
       }
 
@@ -136,11 +139,24 @@ export default function Enrollment() {
 
       const res = await api.get(`/applications?${params.toString()}`);
 
-      let filteredApps = res.data.applications;
+      let filteredApps = (res.data.applications as Application[]).map(
+        (app) => ({
+          ...app,
+          lrn: app.lrn || "",
+          isPendingLrnCreation: Boolean(
+            (app as unknown as { isPendingLrnCreation?: boolean })
+              .isPendingLrnCreation,
+          ),
+        }),
+      );
       if (status === "ALL") {
         filteredApps = filteredApps.filter((app: Application) =>
-          ["PRE_REGISTERED", "ENROLLED"].includes(app.status),
+          ["PRE_REGISTERED", "TEMPORARILY_ENROLLED", "ENROLLED"].includes(
+            app.status,
+          ),
         );
+      } else if (status === "WITHOUT_LRN") {
+        filteredApps = filteredApps.filter((app) => app.isPendingLrnCreation);
       }
 
       setApplications(filteredApps);
@@ -232,6 +248,16 @@ export default function Enrollment() {
                         value="PRE_REGISTERED"
                         className="text-sm font-bold">
                         Ready for Enrollment
+                      </SelectItem>
+                      <SelectItem
+                        value="TEMPORARILY_ENROLLED"
+                        className="text-sm font-bold">
+                        Temporarily Enrolled
+                      </SelectItem>
+                      <SelectItem
+                        value="WITHOUT_LRN"
+                        className="text-sm font-bold">
+                        Applicants Without LRN
                       </SelectItem>
                       <SelectItem
                         value="ENROLLED"
@@ -347,7 +373,8 @@ export default function Enrollment() {
                           </div>
                         </TableCell>
                         <TableCell className="hidden md:table-cell text-sm font-bold">
-                          {app.lrn}
+                          {app.lrn ||
+                            (app.isPendingLrnCreation ? "PENDING" : "N/A")}
                         </TableCell>
                         <TableCell>
                           <span className="font-bold text-sm">
@@ -554,6 +581,41 @@ export default function Enrollment() {
                     fetchData();
                   } catch (e) {
                     toastApiError(e as never);
+                  }
+                }}
+                onAssignLrn={async () => {
+                  const raw = window.prompt(
+                    "Enter the learner's 12-digit LRN:",
+                  );
+                  if (!raw) return;
+                  const lrn = raw.trim();
+
+                  if (!/^\d{12}$/.test(lrn)) {
+                    sileo.error({
+                      title: "Invalid LRN",
+                      description: "LRN must be exactly 12 digits.",
+                    });
+                    return;
+                  }
+
+                  try {
+                    await api.patch(`/applications/${selectedId}/assign-lrn`, {
+                      lrn,
+                    });
+                    sileo.success({
+                      title: "LRN Assigned",
+                      description: "Learner record updated successfully.",
+                    });
+                    fetchData();
+                  } catch (e) {
+                    toastApiError(e as never);
+                  }
+                }}
+                onEnroll={() => {
+                  const app = applications.find((a) => a.id === selectedId);
+                  if (app) {
+                    setSelectedApp(app);
+                    setIsEnrollModalOpen(true);
                   }
                 }}
                 onScheduleInterview={async () => {

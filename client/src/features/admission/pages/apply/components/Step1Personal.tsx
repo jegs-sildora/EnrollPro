@@ -2,6 +2,7 @@ import { useFormContext } from "react-hook-form";
 import type { EnrollmentFormData } from "../types";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
+import { Checkbox } from "@/shared/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
 import { DatePicker } from "@/shared/ui/date-picker";
 import {
@@ -30,18 +31,44 @@ export default function Step1Personal() {
     register,
     watch,
     setValue,
+    clearErrors,
     formState: { errors },
   } = useFormContext<EnrollmentFormData>();
   const birthdate = watch("birthdate");
   const studentPhoto = watch("studentPhoto");
   const lrn = watch("lrn");
+  const learnerType = watch("learnerType");
+  const gradeLevel = watch("gradeLevel");
+  const hasNoLrn = watch("hasNoLrn");
+  const canDeclareNoLrn =
+    learnerType === "TRANSFEREE" ||
+    (learnerType === "NEW_ENROLLEE" && gradeLevel === "7");
 
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [lookupSuccess, setLookupSuccess] = useState(false);
 
+  useEffect(() => {
+    if (!canDeclareNoLrn && hasNoLrn) {
+      setValue("hasNoLrn", false, { shouldValidate: true, shouldDirty: true });
+    }
+  }, [canDeclareNoLrn, hasNoLrn, setValue]);
+
+  useEffect(() => {
+    if (!hasNoLrn) return;
+    if (lrn) {
+      setValue("lrn", "", { shouldValidate: true, shouldDirty: true });
+    }
+    clearErrors("lrn");
+    setLookupSuccess(false);
+  }, [hasNoLrn, lrn, setValue, clearErrors]);
+
   // Auto-lookup when LRN reaches 12 digits
   useEffect(() => {
     const fetchEarlyRegData = async () => {
+      if (hasNoLrn) {
+        return;
+      }
+
       if (lrn && lrn.length === 12 && !lookupSuccess && !isLookingUp) {
         setIsLookingUp(true);
         try {
@@ -148,7 +175,7 @@ export default function Step1Personal() {
 
     const timer = setTimeout(fetchEarlyRegData, 500);
     return () => clearTimeout(timer);
-  }, [lrn, lookupSuccess, isLookingUp, setValue]);
+  }, [hasNoLrn, lrn, lookupSuccess, isLookingUp, setValue]);
 
   const onBirthdateChange = (date: Date | undefined) => {
     if (date) {
@@ -211,8 +238,10 @@ export default function Step1Personal() {
             autoComplete="off"
             placeholder="ENTER 12-DIGIT LRN"
             maxLength={12}
+            disabled={hasNoLrn}
             className={cn(
               "h-14 text-lg tracking-[0.25em] font-black text-center border-2",
+              hasNoLrn && "bg-muted cursor-not-allowed tracking-normal text-sm",
               errors.lrn
                 ? "border-destructive"
                 : "border-primary/30 focus:border-primary",
@@ -234,6 +263,44 @@ export default function Step1Personal() {
             )}
           </div>
         </div>
+
+        <p className="text-xs font-semibold text-muted-foreground">
+          {hasNoLrn
+            ? "No LRN declared. Registrar will process this learner under pending LRN creation."
+            : canDeclareNoLrn
+              ? "Provide LRN, or declare no LRN below if the learner is incoming Grade 7 or transferee."
+              : "LRN is required for this learner category."}
+        </p>
+
+        {canDeclareNoLrn && (
+          <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-white p-3">
+            <Checkbox
+              id="hasNoLrn"
+              checked={hasNoLrn}
+              onCheckedChange={(checked) => {
+                const nextChecked = checked === true;
+                setValue("hasNoLrn", nextChecked, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                });
+                if (nextChecked) {
+                  setValue("lrn", "", {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  });
+                  clearErrors("lrn");
+                  setLookupSuccess(false);
+                }
+              }}
+            />
+            <Label
+              htmlFor="hasNoLrn"
+              className="text-xs font-semibold leading-relaxed cursor-pointer">
+              I confirm the learner currently has no LRN.
+            </Label>
+          </div>
+        )}
+
         {errors.lrn && (
           <p className="text-xs text-destructive font-bold flex items-center gap-1 mt-1">
             <AlertCircle className="w-3 h-3" /> {errors.lrn.message}

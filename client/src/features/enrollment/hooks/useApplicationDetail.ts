@@ -158,6 +158,7 @@ export interface AssessmentStep {
 export interface ApplicantDetail {
   id: number;
   lrn: string | null;
+  isPendingLrnCreation?: boolean;
   studentPhoto: string | null;
   psaBirthCertNumber: string | null;
   lastName: string;

@@ -275,6 +275,11 @@ export function createEarlyRegistrationSharedService(
         application.extensionName ||
         application.suffix,
       lrn: learner.lrn || application.lrn,
+      isPendingLrnCreation: Boolean(
+        learner.isPendingLrnCreation ??
+        application.learner?.isPendingLrnCreation ??
+        false,
+      ),
       birthDate:
         learner.birthdate || application.birthdate || application.birthDate,
       sex: learner.sex || application.sex,

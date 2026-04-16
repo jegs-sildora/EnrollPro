@@ -172,6 +172,12 @@ router.patch(
   ctrl.markTemporarilyEnrolled,
 );
 router.patch(
+  "/:id/assign-lrn",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.assignLrn,
+);
+router.patch(
   "/:id/checklist",
   authenticate,
   authorize("REGISTRAR", "SYSTEM_ADMIN"),

@@ -70,6 +70,11 @@ export function EarlyRegistrationCards({
                 <p className="text-[11px] text-muted-foreground truncate">
                   {formatScpType(app.applicantType)}
                 </p>
+                {app.isPendingLrnCreation && (
+                  <p className="text-[11px] font-bold text-amber-700">
+                    Pending LRN Creation
+                  </p>
+                )}
               </div>
               <p className="text-[10px] font-bold shrink-0 text-right">
                 {getNextAction(app.status)}

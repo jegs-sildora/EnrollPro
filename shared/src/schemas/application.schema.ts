@@ -53,87 +53,131 @@ export const previousSchoolSchema = z.object({
 });
 
 // ─── Application Submit ────────────────────────────────
-export const applicationSubmitSchema = z.object({
-  studentPhoto: z.string().optional().nullable(),
-  lrn: z
-    .string()
-    .regex(/^\d{12}$/, "LRN must be exactly 12 numeric digits")
-    .optional()
-    .nullable(),
-  psaBirthCertNumber: z.string().optional().nullable(),
+export const applicationSubmitSchema = z
+  .object({
+    studentPhoto: z.string().optional().nullable(),
+    hasNoLrn: z.boolean().default(false),
+    lrn: z
+      .string()
+      .regex(/^\d{12}$/, "LRN must be exactly 12 numeric digits")
+      .optional()
+      .nullable(),
+    psaBirthCertNumber: z.string().optional().nullable(),
 
-  earlyRegistrationId: z.number().int().positive().optional(),
+    earlyRegistrationId: z.number().int().positive().optional(),
 
-  gradeLevel: GradeLevelEnum,
-  isScpApplication: z.boolean().default(false),
-  scpType: ScpTypeEnum.optional().nullable(),
+    gradeLevel: GradeLevelEnum,
+    isScpApplication: z.boolean().default(false),
+    scpType: ScpTypeEnum.optional().nullable(),
 
-  lastName: z.string().min(1, "Last name is required").max(100),
-  firstName: z.string().min(1, "First name is required").max(100),
-  middleName: z.string().optional().nullable(),
-  extensionName: z.string().optional().nullable(),
-  birthdate: z.string().or(z.date()),
-  sex: SexEnum,
-  placeOfBirth: z.string().min(1, "Place of birth is required"),
-  religion: z.string().optional().nullable(),
+    lastName: z.string().min(1, "Last name is required").max(100),
+    firstName: z.string().min(1, "First name is required").max(100),
+    middleName: z.string().optional().nullable(),
+    extensionName: z.string().optional().nullable(),
+    birthdate: z.string().or(z.date()),
+    sex: SexEnum,
+    placeOfBirth: z.string().min(1, "Place of birth is required"),
+    religion: z.string().optional().nullable(),
 
-  isIpCommunity: z.boolean().default(false),
-  ipGroupName: z.string().optional().nullable(),
-  is4PsBeneficiary: z.boolean().default(false),
-  householdId4Ps: z.string().optional().nullable(),
-  isBalikAral: z.boolean().default(false),
-  lastYearEnrolled: z.string().optional().nullable(),
-  isLearnerWithDisability: z.boolean().default(false),
-  specialNeedsCategory: z.enum(["a1", "a2"]).optional().nullable(),
-  hasPwdId: z.boolean().default(false),
-  disabilityTypes: z.array(z.string()).default([]),
+    isIpCommunity: z.boolean().default(false),
+    ipGroupName: z.string().optional().nullable(),
+    is4PsBeneficiary: z.boolean().default(false),
+    householdId4Ps: z.string().optional().nullable(),
+    isBalikAral: z.boolean().default(false),
+    lastYearEnrolled: z.string().optional().nullable(),
+    isLearnerWithDisability: z.boolean().default(false),
+    specialNeedsCategory: z.enum(["a1", "a2"]).optional().nullable(),
+    hasPwdId: z.boolean().default(false),
+    disabilityTypes: z.array(z.string()).default([]),
 
-  currentAddress: addressSchema,
-  permanentAddress: optionalAddressSchema,
+    currentAddress: addressSchema,
+    permanentAddress: optionalAddressSchema,
 
-  mother: familyMemberSchema,
-  father: familyMemberSchema,
-  guardian: z
-    .object({
-      lastName: z.string().optional().nullable(),
-      firstName: z.string().optional().nullable(),
-      middleName: z.string().optional().nullable(),
-      contactNumber: z.string().optional().nullable(),
-      relationship: z.string().optional().nullable(),
-      email: z.string().optional().nullable(),
-      occupation: z.string().optional().nullable(),
-    })
-    .optional()
-    .nullable(),
-  email: z
-    .string()
-    .email("Invalid email address")
-    .min(1, "Email address is required"),
+    mother: familyMemberSchema,
+    father: familyMemberSchema,
+    guardian: z
+      .object({
+        lastName: z.string().optional().nullable(),
+        firstName: z.string().optional().nullable(),
+        middleName: z.string().optional().nullable(),
+        contactNumber: z.string().optional().nullable(),
+        relationship: z.string().optional().nullable(),
+        email: z.string().optional().nullable(),
+        occupation: z.string().optional().nullable(),
+      })
+      .optional()
+      .nullable(),
+    email: z
+      .string()
+      .email("Invalid email address")
+      .min(1, "Email address is required"),
 
-  // Previous school (now maps to PreviousSchool model)
-  lastSchoolName: z.string().min(1, "Last school name is required"),
-  lastSchoolId: z.string().optional().nullable(),
-  lastGradeCompleted: z.string().min(1, "Last grade completed is required"),
-  schoolYearLastAttended: z
-    .string()
-    .min(1, "School year last attended is required"),
-  lastSchoolAddress: z.string().optional().nullable(),
-  lastSchoolType: LastSchoolTypeEnum,
+    // Previous school (now maps to PreviousSchool model)
+    lastSchoolName: z.string().min(1, "Last school name is required"),
+    lastSchoolId: z.string().optional().nullable(),
+    lastGradeCompleted: z.string().min(1, "Last grade completed is required"),
+    schoolYearLastAttended: z
+      .string()
+      .min(1, "School year last attended is required"),
+    lastSchoolAddress: z.string().optional().nullable(),
+    lastSchoolType: LastSchoolTypeEnum,
 
-  g10ScienceGrade: z.number().optional().nullable(),
-  grade10MathGrade: z.number().optional().nullable(),
-  generalAverage: z.number().optional().nullable(),
+    g10ScienceGrade: z.number().optional().nullable(),
+    grade10MathGrade: z.number().optional().nullable(),
+    generalAverage: z.number().optional().nullable(),
 
-  artField: z.string().optional().nullable(),
-  sportsList: z.array(z.string()).default([]),
-  foreignLanguage: z.string().optional().nullable(),
+    artField: z.string().optional().nullable(),
+    sportsList: z.array(z.string()).default([]),
+    foreignLanguage: z.string().optional().nullable(),
 
-  isPrivacyConsentGiven: z.boolean().refine((val) => val === true, {
-    message: "Consent is required",
-  }),
-  learnerType: LearnerTypeEnum,
-  learningModalities: z.array(z.string()).default([]),
-});
+    isPrivacyConsentGiven: z.boolean().refine((val) => val === true, {
+      message: "Consent is required",
+    }),
+    learnerType: LearnerTypeEnum,
+    learningModalities: z.array(z.string()).default([]),
+  })
+  .superRefine((data, ctx) => {
+    const lrn = data.lrn?.trim() ?? "";
+    const isIncomingGrade7 =
+      data.learnerType === "NEW_ENROLLEE" && data.gradeLevel === "7";
+    const isTransferee = data.learnerType === "TRANSFEREE";
+    const canDeclareNoLrn = isIncomingGrade7 || isTransferee;
+
+    if (data.hasNoLrn) {
+      if (!canDeclareNoLrn) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["hasNoLrn"],
+          message:
+            "Only incoming Grade 7 and transferee learners can submit without an LRN.",
+        });
+      }
+
+      if (lrn) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["lrn"],
+          message:
+            "Clear the LRN field when declaring that the learner has no LRN.",
+        });
+      }
+    } else if (!lrn) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["lrn"],
+        message:
+          "LRN is required unless you declare that the learner has no LRN.",
+      });
+    }
+
+    if (data.isScpApplication && !data.scpType) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["scpType"],
+        message: "Select an SCP track to continue.",
+      });
+    }
+  });
 
 // ─── Application Action Schemas ────────────────────────
 export const approveSchema = z.object({

@@ -35,6 +35,7 @@ interface Props {
   onFail: () => void;
   onOfferRegular: () => void;
   onTemporarilyEnroll: () => void;
+  onAssignLrn?: () => Promise<void> | void;
   onEnroll?: () => Promise<void> | void;
   onScheduleInterview?: () => void;
   onScheduleStep?: (step: AssessmentStep) => void;
@@ -60,6 +61,7 @@ export function ApplicationDetailPanel({
   onFail,
   onOfferRegular,
   onTemporarilyEnroll,
+  onAssignLrn,
   onEnroll,
   onScheduleInterview,
   onScheduleStep,
@@ -235,6 +237,11 @@ export function ApplicationDetailPanel({
                 Learner Reference Number
               </p>
               <p className="text-xs sm:text-sm ">{applicant.lrn || "N/A"}</p>
+              {applicant.isPendingLrnCreation && (
+                <p className="text-[10px] sm:text-xs font-bold text-amber-700">
+                  Pending LRN Creation
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -313,6 +320,14 @@ export function ApplicationDetailPanel({
         }}
         onOfferRegular={onOfferRegular}
         onTemporarilyEnroll={onTemporarilyEnroll}
+        onAssignLrn={
+          onAssignLrn
+            ? async () => {
+                await onAssignLrn();
+                await refetch();
+              }
+            : undefined
+        }
         onEnroll={
           onEnroll
             ? async () => {

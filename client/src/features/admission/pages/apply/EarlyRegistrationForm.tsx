@@ -2,10 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm, FormProvider, type FieldPath } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useStepper, steps } from "./stepper";
-import {
-  EnrollmentFormSchema,
-  type EnrollmentFormData,
-} from "./types";
+import { EnrollmentFormSchema, type EnrollmentFormData } from "./types";
 
 import Step1Personal from "./components/Step1Personal";
 import Step2Family from "./components/Step2Family";
@@ -33,6 +30,7 @@ const DEFAULT_VALUES = {
   isPrivacyConsentGiven: true,
   studentPhoto: undefined,
   gradeLevel: "7",
+  hasNoLrn: false,
   isIpCommunity: false,
   is4PsBeneficiary: false,
   isBalikAral: false,
@@ -80,11 +78,7 @@ export default function EnrollmentForm({
   const [isEditing, setIsEditing] = useState(false);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
-  const methods = useForm<
-    EnrollmentFormData,
-    unknown,
-    EnrollmentFormData
-  >({
+  const methods = useForm<EnrollmentFormData, unknown, EnrollmentFormData>({
     resolver: zodResolver(
       EnrollmentFormSchema,
     ) as import("react-hook-form").Resolver<EnrollmentFormData>,

@@ -2,10 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm, FormProvider, type FieldPath } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useStepper, steps } from "../apply/stepper";
-import {
-  EnrollmentFormSchema,
-  type EnrollmentFormData,
-} from "../apply/types";
+import { EnrollmentFormSchema, type EnrollmentFormData } from "../apply/types";
 
 import Step1Personal from "../apply/components/Step1Personal";
 import Step2Family from "../apply/components/Step2Family";
@@ -99,11 +96,7 @@ export default function F2FEarlyRegistration() {
 
   const applyOverride = isFefe01 || isLightColor;
 
-  const methods = useForm<
-    EnrollmentFormData,
-    unknown,
-    EnrollmentFormData
-  >({
+  const methods = useForm<EnrollmentFormData, unknown, EnrollmentFormData>({
     resolver: zodResolver(
       EnrollmentFormSchema,
     ) as import("react-hook-form").Resolver<EnrollmentFormData>,
@@ -112,6 +105,7 @@ export default function F2FEarlyRegistration() {
       isPrivacyConsentGiven: true,
       studentPhoto: undefined,
       gradeLevel: "7",
+      hasNoLrn: false,
       isIpCommunity: false,
       is4PsBeneficiary: false,
       isBalikAral: false,
@@ -147,6 +141,7 @@ export default function F2FEarlyRegistration() {
       isPrivacyConsentGiven: true,
       studentPhoto: undefined,
       gradeLevel: "7",
+      hasNoLrn: false,
       isIpCommunity: false,
       is4PsBeneficiary: false,
       isBalikAral: false,
@@ -309,7 +304,9 @@ export default function F2FEarlyRegistration() {
 
       const response = await api.post("/applications/f2f", payload);
       setTrackingNumber(response.data.trackingNumber);
-      setSubmittedApplicantType(data.isScpApplication ? (data.scpType || null) : null);
+      setSubmittedApplicantType(
+        data.isScpApplication ? data.scpType || null : null,
+      );
 
       sileo.success({
         title: "F2F Application Submitted!",
@@ -375,7 +372,8 @@ export default function F2FEarlyRegistration() {
                   WALK-IN BASIC EDUCATION EARLY REGISTRATION FORM
                 </CardTitle>
                 <CardDescription className="text-sm">
-                  Encode face-to-face BASIC EDUCATION EARLY REGISTRATION FORM application
+                  Encode face-to-face BASIC EDUCATION EARLY REGISTRATION FORM
+                  application
                 </CardDescription>
               </div>
             </div>

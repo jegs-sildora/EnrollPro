@@ -1,4 +1,5 @@
 import { useFormContext } from "react-hook-form";
+import { useEffect } from "react";
 import type { EnrollmentFormData } from "../types";
 import {
   SPA_ART_FIELDS,
@@ -21,11 +22,22 @@ import { cn, SCP_LABELS } from "@/shared/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 
 export default function Step5Enrollment() {
-  const { register, watch, setValue } =
+  const { register, watch, setValue, clearErrors } =
     useFormContext<EnrollmentFormData>();
 
   const isScpApplication = watch("isScpApplication");
   const scpType = watch("scpType");
+  const learnerType = watch("learnerType");
+  const hasNoLrn = watch("hasNoLrn");
+
+  useEffect(() => {
+    const canDeclareNoLrn =
+      learnerType === "TRANSFEREE" || learnerType === "NEW_ENROLLEE";
+    if (!canDeclareNoLrn && hasNoLrn) {
+      setValue("hasNoLrn", false, { shouldValidate: true, shouldDirty: true });
+      clearErrors("hasNoLrn");
+    }
+  }, [learnerType, hasNoLrn, setValue, clearErrors]);
 
   return (
     <div className="space-y-12">

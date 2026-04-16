@@ -3,6 +3,7 @@ import { useFormContext } from "react-hook-form";
 import type { EarlyRegFormData } from "../types";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
+import { Checkbox } from "@/shared/ui/checkbox";
 import { AlertCircle, BookOpen, Info, School } from "lucide-react";
 import { cn, SCP_LABELS } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -10,6 +11,7 @@ import api from "@/shared/api/axiosInstance";
 
 const LEARNER_TYPES = [
   { value: "NEW_ENROLLEE", label: "NEW ENROLLEE" },
+  { value: "TRANSFEREE", label: "TRANSFEREE" },
   { value: "RETURNING", label: "RETURNING" },
 ] as const;
 
@@ -353,9 +355,13 @@ export default function BasicInfoStep() {
   const learnerType = watch("learnerType");
   const gradeLevel = watch("gradeLevel");
   const lrn = watch("lrn");
+  const hasNoLrn = watch("hasNoLrn");
   const isScpApplication = watch("isScpApplication");
   const scpType = watch("scpType");
   const isScpEligible = learnerType === "NEW_ENROLLEE" && gradeLevel === "7";
+  const canDeclareNoLrn =
+    learnerType === "TRANSFEREE" ||
+    (learnerType === "NEW_ENROLLEE" && gradeLevel === "7");
   const [isLoadingScpConfig, setIsLoadingScpConfig] = useState(true);
   const [scpConfigError, setScpConfigError] = useState<string | null>(null);
   const [offeredScpConfigs, setOfferedScpConfigs] = useState<
@@ -492,6 +498,20 @@ export default function BasicInfoStep() {
   ]);
 
   useEffect(() => {
+    if (!canDeclareNoLrn && hasNoLrn) {
+      setValue("hasNoLrn", false, { shouldValidate: true, shouldDirty: true });
+    }
+  }, [canDeclareNoLrn, hasNoLrn, setValue]);
+
+  useEffect(() => {
+    if (!hasNoLrn) return;
+    if (lrn) {
+      setValue("lrn", "", { shouldValidate: true, shouldDirty: true });
+    }
+    clearErrors("lrn");
+  }, [hasNoLrn, lrn, setValue, clearErrors]);
+
+  useEffect(() => {
     if (isLoadingScpConfig || !scpType) return;
 
     const isStillAvailable = availableScpPrograms.some(
@@ -513,6 +533,13 @@ export default function BasicInfoStep() {
 
   // 3. LRN existence check (Debounced)
   useEffect(() => {
+    if (hasNoLrn) {
+      if (errors.lrn?.type === "manual") {
+        clearErrors("lrn");
+      }
+      return;
+    }
+
     if (!lrn || lrn.length !== 12) {
       // Clear manual duplicate error if LRN is not 12 digits
       if (errors.lrn?.type === "manual") {
@@ -541,9 +568,9 @@ export default function BasicInfoStep() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [lrn, setError, clearErrors, errors.lrn?.type]);
+  }, [hasNoLrn, lrn, setError, clearErrors, errors.lrn?.type]);
 
-  const lrnRequired = gradeLevel && parseInt(gradeLevel, 10) >= 8;
+  const lrnRequired = !canDeclareNoLrn || !hasNoLrn;
 
   // Filter grade options based on learner type
   const visibleGradeOptions = GRADE_OPTIONS.filter((opt) =>
@@ -581,8 +608,10 @@ export default function BasicInfoStep() {
                 placeholder="12-digit LRN (from SF9 Report Card)"
                 maxLength={12}
                 inputMode="numeric"
+                disabled={hasNoLrn}
                 className={cn(
                   "h-12 font-bold tracking-widest uppercase bg-white pl-4",
+                  hasNoLrn && "bg-muted/50 cursor-not-allowed",
                   errors.lrn && "border-destructive",
                 )}
                 onInput={(e) => {
@@ -595,10 +624,42 @@ export default function BasicInfoStep() {
             </div>
             <p className="font-bold text-xs italic flex items-center gap-1 mt-2 text-muted-foreground">
               <Info className="w-4 h-4" />
-              {lrnRequired
-                ? "LRN is required for Grades 8 to 10."
-                : "You can find the LRN on the upper-left part of SF9 (Report Card)."}
+              {hasNoLrn
+                ? "No LRN declared. Registrar will process this learner under pending LRN creation."
+                : canDeclareNoLrn
+                  ? "Provide the learner LRN, or declare no LRN below if applicable."
+                  : "LRN is required for this learner category."}
             </p>
+
+            {canDeclareNoLrn && (
+              <div className="flex items-start gap-3 rounded-xl border border-border/60 bg-muted/30 p-3 mt-2">
+                <Checkbox
+                  id="hasNoLrn"
+                  checked={hasNoLrn}
+                  onCheckedChange={(checked) => {
+                    const nextChecked = checked === true;
+                    setValue("hasNoLrn", nextChecked, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+                    if (nextChecked) {
+                      setValue("lrn", "", {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      });
+                      clearErrors("lrn");
+                    }
+                  }}
+                />
+                <Label
+                  htmlFor="hasNoLrn"
+                  className="text-xs leading-relaxed font-semibold cursor-pointer text-foreground">
+                  I confirm the learner currently has no LRN. This is allowed
+                  for incoming Grade 7 and transferees.
+                </Label>
+              </div>
+            )}
+
             {errors.lrn && (
               <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-1">
                 <AlertCircle className="w-3 h-3" />
@@ -631,7 +692,7 @@ export default function BasicInfoStep() {
           <Label className="text-sm font-bold uppercase tracking-widest text-primary">
             Learner Category <span className="text-destructive">*</span>
           </Label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             {LEARNER_TYPES.map((lt) => (
               <button
                 key={lt.value}

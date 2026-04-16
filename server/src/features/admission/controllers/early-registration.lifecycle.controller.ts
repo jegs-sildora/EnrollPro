@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { AppError } from "../../../lib/AppError.js";
+import { Prisma } from "../../../generated/prisma/index.js";
 import type { AdmissionControllerDeps } from "../services/admission-controller.deps.js";
 import { createAdmissionControllerDeps } from "../services/admission-controller.deps.js";
 import { createEarlyRegistrationSharedService } from "../services/early-registration-shared.service.js";
@@ -15,11 +16,15 @@ export function createEarlyRegistrationLifecycleController(
     toUpperCaseRecursive,
     updateApplicationStatus,
   } = createEarlyRegistrationSharedService(deps);
+
+  const LRN_REGEX = /^\d{12}$/;
+
   async function approve(req: Request, res: Response, next: NextFunction) {
     try {
       const { sectionId } = req.body;
       const applicantId = parseInt(String(req.params.id));
-      const { data: applicant, type: appType } = await findApplicantOrThrow(applicantId);
+      const { data: applicant, type: appType } =
+        await findApplicantOrThrow(applicantId);
 
       assertTransition(
         applicant,
@@ -61,7 +66,10 @@ export function createEarlyRegistrationLifecycleController(
         userId: req.user!.userId,
         actionType: "APPLICATION_APPROVED",
         description: `Approved application #${applicantId} for ${applicant.learner.firstName} ${applicant.learner.lastName} and pre-registered to section ${sectionId}`,
-        subjectType: appType === "ENROLLMENT" ? "EnrollmentApplication" : "EarlyRegistrationApplication",
+        subjectType:
+          appType === "ENROLLMENT"
+            ? "EnrollmentApplication"
+            : "EarlyRegistrationApplication",
         recordId: applicantId,
         req,
       });
@@ -85,7 +93,7 @@ export function createEarlyRegistrationLifecycleController(
       const applicantId = parseInt(String(req.params.id));
 
       const { data: applicant } = await findApplicantOrThrow(applicantId);
-      
+
       // We need extra fields for enroll check
       const fullApplicant = await prisma.enrollmentApplication.findUnique({
         where: { id: applicantId },
@@ -97,7 +105,24 @@ export function createEarlyRegistrationLifecycleController(
       });
 
       if (!fullApplicant)
-        throw new AppError(422, "Official enrollment can only be finalized for enrollment applications.");
+        throw new AppError(
+          422,
+          "Official enrollment can only be finalized for enrollment applications.",
+        );
+
+      const learnerPendingLrn =
+        (
+          fullApplicant.learner as {
+            isPendingLrnCreation?: boolean;
+          }
+        ).isPendingLrnCreation === true;
+
+      if (learnerPendingLrn) {
+        throw new AppError(
+          422,
+          "Cannot finalize official enrollment while learner is tagged as pending LRN creation.",
+        );
+      }
 
       assertTransition(
         fullApplicant,
@@ -172,14 +197,23 @@ export function createEarlyRegistrationLifecycleController(
         await import("../../learner/portal-pin.service.js");
       const { raw: rawPin, hash: pinHash } = generatePortalPin();
 
-      const updated = await prisma.enrollmentApplication.update({
-        where: { id: applicantId },
-        data: {
-          status: "ENROLLED",
-          isTemporarilyEnrolled: false,
-          portalPin: pinHash,
-          portalPinChangedAt: new Date(),
-        },
+      const updated = await prisma.$transaction(async (tx) => {
+        const enrollment = await tx.enrollmentApplication.update({
+          where: { id: applicantId },
+          data: {
+            status: "ENROLLED",
+            isTemporarilyEnrolled: false,
+            portalPin: pinHash,
+            portalPinChangedAt: new Date(),
+          },
+        });
+
+        await tx.learner.update({
+          where: { id: fullApplicant.learnerId },
+          data: { isPendingLrnCreation: false },
+        });
+
+        return enrollment;
       });
 
       await auditLog({
@@ -205,7 +239,8 @@ export function createEarlyRegistrationLifecycleController(
   ) {
     try {
       const applicantId = parseInt(String(req.params.id));
-      const { data: applicant, type: appType } = await findApplicantOrThrow(applicantId);
+      const { data: applicant, type: appType } =
+        await findApplicantOrThrow(applicantId);
 
       assertTransition(
         applicant,
@@ -213,20 +248,99 @@ export function createEarlyRegistrationLifecycleController(
         `Cannot mark as temporarily enrolled. Current status: "${applicant.status}".`,
       );
 
-      const updated = await updateApplicationStatus(applicantId, "TEMPORARILY_ENROLLED", {
-        isTemporarilyEnrolled: true,
-      });
+      const checklist =
+        appType === "ENROLLMENT"
+          ? await prisma.applicationChecklist.findUnique({
+              where: { enrollmentId: applicantId },
+              select: { isPsaBirthCertPresented: true },
+            })
+          : await prisma.applicationChecklist.findUnique({
+              where: { earlyRegistrationId: applicantId },
+              select: { isPsaBirthCertPresented: true },
+            });
+
+      if (
+        applicant.learner.isPendingLrnCreation &&
+        !checklist?.isPsaBirthCertPresented
+      ) {
+        throw new AppError(
+          422,
+          "PSA Birth Certificate is required before temporary enrollment for learners without LRN.",
+        );
+      }
+
+      const updated = await updateApplicationStatus(
+        applicantId,
+        "TEMPORARILY_ENROLLED",
+        {
+          isTemporarilyEnrolled: true,
+        },
+      );
 
       await auditLog({
         userId: req.user!.userId,
         actionType: "APPLICATION_TEMPORARILY_ENROLLED",
         description: `Marked ${applicant.learner.firstName} ${applicant.learner.lastName} (#${applicantId}) as TEMPORARILY ENROLLED (awaiting docs)`,
-        subjectType: appType === "ENROLLMENT" ? "EnrollmentApplication" : "EarlyRegistrationApplication",
+        subjectType:
+          appType === "ENROLLMENT"
+            ? "EnrollmentApplication"
+            : "EarlyRegistrationApplication",
         recordId: applicantId,
         req,
       });
 
       res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async function assignLrn(req: Request, res: Response, next: NextFunction) {
+    try {
+      const applicantId = parseInt(String(req.params.id));
+      const lrn = String(req.body?.lrn ?? "").trim();
+      const { data: applicant, type: appType } =
+        await findApplicantOrThrow(applicantId);
+
+      if (!LRN_REGEX.test(lrn)) {
+        throw new AppError(422, "LRN must be exactly 12 digits.");
+      }
+
+      try {
+        await prisma.learner.update({
+          where: { id: applicant.learnerId },
+          data: {
+            lrn,
+            isPendingLrnCreation: false,
+          },
+        });
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2002"
+        ) {
+          throw new AppError(409, "LRN already exists.");
+        }
+        throw error;
+      }
+
+      await auditLog({
+        userId: req.user!.userId,
+        actionType: "LEARNER_LRN_ASSIGNED",
+        description: `Assigned LRN ${lrn} to learner #${applicant.learnerId} from application #${applicantId}`,
+        subjectType:
+          appType === "ENROLLMENT"
+            ? "EnrollmentApplication"
+            : "EarlyRegistrationApplication",
+        recordId: applicantId,
+        req,
+      });
+
+      res.json({
+        message: "LRN assigned successfully.",
+        learnerId: applicant.learnerId,
+        lrn,
+      });
     } catch (error) {
       next(error);
     }
@@ -265,20 +379,24 @@ export function createEarlyRegistrationLifecycleController(
       }
 
       // Determine if it's Early Registration or Enrollment
-      const { data: applicant, type: appType } = await findApplicantOrThrow(applicantId);
-      const idField = appType === "ENROLLMENT" ? "enrollmentId" : "earlyRegistrationId";
+      const { data: applicant, type: appType } =
+        await findApplicantOrThrow(applicantId);
+      const idField =
+        appType === "ENROLLMENT" ? "enrollmentId" : "earlyRegistrationId";
 
       // Get current state for auditing
       const currentChecklist = await prisma.applicationChecklist.findUnique({
-        where: idField === "enrollmentId" 
-          ? { enrollmentId: applicantId } 
-          : { earlyRegistrationId: applicantId },
+        where:
+          idField === "enrollmentId"
+            ? { enrollmentId: applicantId }
+            : { earlyRegistrationId: applicantId },
       });
 
       const updated = await prisma.applicationChecklist.upsert({
-        where: idField === "enrollmentId" 
-          ? { enrollmentId: applicantId } 
-          : { earlyRegistrationId: applicantId },
+        where:
+          idField === "enrollmentId"
+            ? { enrollmentId: applicantId }
+            : { earlyRegistrationId: applicantId },
         update: { ...filteredData, updatedById: req.user!.userId },
         create: {
           ...filteredData,
@@ -311,7 +429,10 @@ export function createEarlyRegistrationLifecycleController(
             userId: req.user!.userId,
             actionType: newValue ? "DOCUMENT_ADDED" : "DOCUMENT_REMOVED",
             description: `${newValue ? "Added" : "Removed"} requirement: ${label} for applicant #${applicantId}`,
-            subjectType: appType === "ENROLLMENT" ? "EnrollmentApplication" : "EarlyRegistrationApplication",
+            subjectType:
+              appType === "ENROLLMENT"
+                ? "EnrollmentApplication"
+                : "EarlyRegistrationApplication",
             recordId: applicantId,
             req,
           });
@@ -322,7 +443,10 @@ export function createEarlyRegistrationLifecycleController(
         userId: req.user!.userId,
         actionType: "CHECKLIST_UPDATED",
         description: `Updated requirement checklist for applicant #${applicantId}`,
-        subjectType: appType === "ENROLLMENT" ? "EnrollmentApplication" : "EarlyRegistrationApplication",
+        subjectType:
+          appType === "ENROLLMENT"
+            ? "EnrollmentApplication"
+            : "EarlyRegistrationApplication",
         recordId: applicantId,
         req,
       });
@@ -345,7 +469,8 @@ export function createEarlyRegistrationLifecycleController(
         unknown
       >;
       const applicantId = parseInt(String(req.params.id));
-      const { data: applicant, type: appType } = await findApplicantOrThrow(applicantId);
+      const { data: applicant, type: appType } =
+        await findApplicantOrThrow(applicantId);
 
       assertTransition(
         applicant,
@@ -353,13 +478,19 @@ export function createEarlyRegistrationLifecycleController(
         `Cannot request revision for status "${applicant.status}"`,
       );
 
-      const updated = await updateApplicationStatus(applicantId, "FOR_REVISION");
+      const updated = await updateApplicationStatus(
+        applicantId,
+        "FOR_REVISION",
+      );
 
       await auditLog({
         userId: req.user!.userId,
         actionType: "REVISION_REQUESTED",
         description: `Requested revision for #${applicantId}. Message: ${message || "N/A"}`,
-        subjectType: appType === "ENROLLMENT" ? "EnrollmentApplication" : "EarlyRegistrationApplication",
+        subjectType:
+          appType === "ENROLLMENT"
+            ? "EnrollmentApplication"
+            : "EarlyRegistrationApplication",
         recordId: applicantId,
         req,
       });
@@ -374,7 +505,8 @@ export function createEarlyRegistrationLifecycleController(
   async function withdraw(req: Request, res: Response, next: NextFunction) {
     try {
       const applicantId = parseInt(String(req.params.id));
-      const { data: applicant, type: appType } = await findApplicantOrThrow(applicantId);
+      const { data: applicant, type: appType } =
+        await findApplicantOrThrow(applicantId);
 
       assertTransition(
         applicant,
@@ -388,7 +520,10 @@ export function createEarlyRegistrationLifecycleController(
         userId: req.user?.userId || null,
         actionType: "APPLICATION_WITHDRAWN",
         description: `Application #${applicantId} withdrawn`,
-        subjectType: appType === "ENROLLMENT" ? "EnrollmentApplication" : "EarlyRegistrationApplication",
+        subjectType:
+          appType === "ENROLLMENT"
+            ? "EnrollmentApplication"
+            : "EarlyRegistrationApplication",
         recordId: applicantId,
         req,
       });
@@ -404,7 +539,8 @@ export function createEarlyRegistrationLifecycleController(
     try {
       const rejectionReason = req.body.rejectionReason?.trim();
       const applicantId = parseInt(String(req.params.id));
-      const { data: applicant, type: appType } = await findApplicantOrThrow(applicantId);
+      const { data: applicant, type: appType } =
+        await findApplicantOrThrow(applicantId);
 
       assertTransition(
         applicant,
@@ -421,14 +557,17 @@ export function createEarlyRegistrationLifecycleController(
       }
 
       const updated = await updateApplicationStatus(applicantId, "REJECTED", {
-        rejectionReason: rejectionReason || null
+        rejectionReason: rejectionReason || null,
       });
 
       await auditLog({
         userId: req.user!.userId,
         actionType: "APPLICATION_REJECTED",
         description: `Rejected application #${applicantId} for ${applicant.learner.firstName} ${applicant.learner.lastName}. Reason: ${rejectionReason || "N/A"}`,
-        subjectType: appType === "ENROLLMENT" ? "EnrollmentApplication" : "EarlyRegistrationApplication",
+        subjectType:
+          appType === "ENROLLMENT"
+            ? "EnrollmentApplication"
+            : "EarlyRegistrationApplication",
         recordId: applicantId,
         req,
       });
@@ -451,6 +590,7 @@ export function createEarlyRegistrationLifecycleController(
     approve,
     enroll,
     markTemporarilyEnrolled,
+    assignLrn,
     updateChecklist,
     requestRevision,
     withdraw,
@@ -464,6 +604,7 @@ export const approve = lifecycleController.approve;
 export const enroll = lifecycleController.enroll;
 export const markTemporarilyEnrolled =
   lifecycleController.markTemporarilyEnrolled;
+export const assignLrn = lifecycleController.assignLrn;
 export const updateChecklist = lifecycleController.updateChecklist;
 export const requestRevision = lifecycleController.requestRevision;
 export const withdraw = lifecycleController.withdraw;

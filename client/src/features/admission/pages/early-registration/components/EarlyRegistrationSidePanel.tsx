@@ -171,6 +171,33 @@ export function EarlyRegistrationSidePanel({
                   toastApiError(e as never);
                 }
               }}
+              onAssignLrn={async () => {
+                const raw = window.prompt("Enter the learner's 12-digit LRN:");
+                if (!raw) return;
+                const lrn = raw.trim();
+
+                if (!/^\d{12}$/.test(lrn)) {
+                  sileo.error({
+                    title: "Invalid LRN",
+                    description: "LRN must be exactly 12 digits.",
+                  });
+                  return;
+                }
+
+                try {
+                  await api.patch(
+                    `/early-registrations/${selectedId}/assign-lrn`,
+                    { lrn },
+                  );
+                  sileo.success({
+                    title: "LRN Assigned",
+                    description: "Learner record updated successfully.",
+                  });
+                  fetchData();
+                } catch (e) {
+                  toastApiError(e as never);
+                }
+              }}
               onEnroll={async () => {
                 if (
                   !confirm(

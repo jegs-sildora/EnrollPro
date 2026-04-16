@@ -3,6 +3,7 @@ import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { AppError } from "../../lib/AppError.js";
 import { normalizeDateToUtcNoon } from "../school-year/school-year.service.js";
+import { getRequiredDocuments } from "../enrollment/enrollment-requirement.service.js";
 import fs from "fs";
 import {
   LearnerType,
@@ -98,6 +99,8 @@ const DOCUMENT_CHECKLIST_MAPPING: Record<string, string> = {
   CONFIRMATION_SLIP: "isConfirmationSlipReceived",
 };
 
+const LRN_REGEX = /^\d{12}$/;
+
 type ApplicantTypeValue =
   | "REGULAR"
   | "SCIENCE_TECHNOLOGY_AND_ENGINEERING"
@@ -119,6 +122,26 @@ function toLearnerTypeV2(value: unknown): LearnerType | null {
     .toUpperCase();
   if (!LEARNER_TYPE_VALUES.has(raw)) return null;
   return raw as LearnerType;
+}
+
+function canDeclareNoLrn(
+  learnerType: LearnerType | null,
+  normalizedGradeLevel: string,
+): boolean {
+  if (!learnerType) return false;
+  return (
+    learnerType === "TRANSFEREE" ||
+    (learnerType === "NEW_ENROLLEE" && normalizedGradeLevel === "7")
+  );
+}
+
+function isTruthyQuery(value: unknown): boolean {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return normalized === "true" || normalized === "1" || normalized === "yes";
+  }
+  return false;
 }
 
 function toPrimaryContactV2(value: unknown): PrimaryContactType | null {
@@ -247,11 +270,46 @@ async function createRegistration(
     }
 
     const learnerTypeV2 = toLearnerTypeV2(body.learnerType);
+    if (!learnerTypeV2) {
+      throw new AppError(400, "Invalid learner type.");
+    }
+
     const primaryContactV2 = toPrimaryContactV2(body.primaryContact);
     const applicantType = resolveApplicantType(
       body.isScpApplication,
       body.scpType,
     );
+
+    const rawLrn = String(body.lrn ?? "").trim();
+    const hasNoLrnDeclared = body.hasNoLrn === true;
+    const canSubmitWithoutLrn = canDeclareNoLrn(
+      learnerTypeV2,
+      normalizedGradeLevel,
+    );
+
+    if (hasNoLrnDeclared && !canSubmitWithoutLrn) {
+      throw new AppError(
+        422,
+        "Only incoming Grade 7 and transferee learners can submit without an LRN.",
+      );
+    }
+
+    if (hasNoLrnDeclared && rawLrn) {
+      throw new AppError(
+        422,
+        "Clear the LRN field when declaring that the learner has no LRN.",
+      );
+    }
+
+    const lrn: string | null = hasNoLrnDeclared ? null : rawLrn || null;
+    if (!hasNoLrnDeclared && !lrn) {
+      throw new AppError(
+        422,
+        "LRN is required unless you declare that the learner has no LRN.",
+      );
+    }
+
+    const isPendingLrnCreation = hasNoLrnDeclared && !lrn;
 
     if (applicantType !== "REGULAR") {
       const offeredScpConfig = await prisma.scpProgramConfig.findFirst({
@@ -280,7 +338,6 @@ async function createRegistration(
     const age = calculateAge(rawBirthDate);
 
     // 3. Check duplicate LRN in same School Year (both early reg + enrollment app tables)
-    const lrn: string | null = body.lrn?.trim() || null;
     if (lrn) {
       const existingEarlyReg = await prisma.learner.findFirst({
         where: {
@@ -384,6 +441,7 @@ async function createRegistration(
     // 5. Create/reuse learner + guardians + registration in a transaction
     const learnerPayload = {
       lrn,
+      isPendingLrnCreation,
       psaBirthCertNumber: body.psaBirthCertNumber || null,
       firstName: body.firstName,
       lastName: body.lastName,
@@ -442,7 +500,7 @@ async function createRegistration(
           schoolYearId: activeYear.id,
           gradeLevelId: gradeLevelV2.id,
           applicantType,
-          learnerType: (body.learnerType as LearnerType) || "NEW_ENROLLEE",
+          learnerType: learnerTypeV2,
           status: "SUBMITTED",
           channel: options.channel,
           contactNumber: body.contactNumber,
@@ -504,7 +562,7 @@ async function createRegistration(
     auditLog({
       userId: options.encodedById ?? null,
       actionType: "EARLY_REGISTRATION_SUBMITTED",
-      description: `Early registration submitted for ${body.lastName}, ${body.firstName} — Grade ${body.gradeLevel} (${options.channel}). Tracking: ${result.trackingNumber}.`,
+      description: `Early registration submitted for ${body.lastName}, ${body.firstName} — Grade ${body.gradeLevel} (${options.channel}). Tracking: ${result.trackingNumber}.${lrn ? ` LRN: ${lrn}.` : isPendingLrnCreation ? " Tagged as PENDING LRN CREATION." : ""}`,
       subjectType: "EarlyRegistrationApplication",
       recordId: result.application.id,
       req,
@@ -622,6 +680,7 @@ export async function index(req: Request, res: Response, next: NextFunction) {
     const status = (req.query.status as string) || "";
     const gradeLevel = (req.query.gradeLevel as string) || "";
     const applicantType = (req.query.applicantType as string) || "";
+    const withoutLrn = isTruthyQuery(req.query.withoutLrn);
 
     // Resolve school year
     let schoolYearId: number | undefined;
@@ -688,6 +747,10 @@ export async function index(req: Request, res: Response, next: NextFunction) {
           gradeLevelId: { in: matchingGradeLevels.map((g) => g.id) },
         });
       }
+    }
+
+    if (withoutLrn) {
+      andFilters.push({ learner: { isPendingLrnCreation: true } });
     }
 
     if (andFilters.length > 0) {
@@ -1743,15 +1806,49 @@ export async function temporarilyEnroll(
   try {
     const id = parseInt(String(req.params.id));
     const reg = await findEarlyRegOrThrow(id);
+    const learnerPendingLrn =
+      (reg.learner as { isPendingLrnCreation?: boolean })
+        .isPendingLrnCreation === true;
+
+    const checklist = await prisma.applicationChecklist.findUnique({
+      where: { earlyRegistrationId: id },
+      select: { isPsaBirthCertPresented: true },
+    });
+
+    if (learnerPendingLrn && !checklist?.isPsaBirthCertPresented) {
+      throw new AppError(
+        422,
+        "PSA Birth Certificate is required before temporary enrollment for learners without LRN.",
+      );
+    }
 
     assertEarlyRegTransition(
       reg.status,
       ApplicationStatus.TEMPORARILY_ENROLLED,
     );
 
-    const updated = await prisma.earlyRegistrationApplication.update({
-      where: { id },
-      data: { status: "TEMPORARILY_ENROLLED" },
+    const updated = await prisma.$transaction(async (tx) => {
+      const earlyRegUpdated = await tx.earlyRegistrationApplication.update({
+        where: { id },
+        data: { status: "TEMPORARILY_ENROLLED" },
+      });
+
+      const enrollmentApp = await tx.enrollmentApplication.findFirst({
+        where: { earlyRegistrationId: id },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (enrollmentApp) {
+        await tx.enrollmentApplication.update({
+          where: { id: enrollmentApp.id },
+          data: {
+            status: "TEMPORARILY_ENROLLED",
+            isTemporarilyEnrolled: true,
+          },
+        });
+      }
+
+      return earlyRegUpdated;
     });
 
     await auditLog({
@@ -1764,6 +1861,187 @@ export async function temporarilyEnroll(
     });
 
     res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** PATCH /:id/enroll */
+export async function enroll(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = parseInt(String(req.params.id));
+    const reg = await findEarlyRegOrThrow(id);
+    const learnerPendingLrn =
+      (reg.learner as { isPendingLrnCreation?: boolean })
+        .isPendingLrnCreation === true;
+
+    assertEarlyRegTransition(reg.status, ApplicationStatus.ENROLLED);
+
+    if (learnerPendingLrn) {
+      throw new AppError(
+        422,
+        "Cannot finalize enrollment while learner is tagged as pending LRN creation.",
+      );
+    }
+
+    const checklist = await prisma.applicationChecklist.findUnique({
+      where: { earlyRegistrationId: id },
+    });
+
+    if (!checklist) {
+      throw new AppError(
+        422,
+        "Requirement checklist not found for this applicant.",
+      );
+    }
+
+    const requirements = getRequiredDocuments({
+      learnerType: reg.learnerType,
+      gradeLevel: reg.gradeLevel.name,
+      applicantType: reg.applicantType,
+      isLwd: reg.learner.isLearnerWithDisability,
+      isPeptAePasser: false,
+    });
+
+    const missingMandatory: string[] = [];
+    for (const requirement of requirements) {
+      if (!requirement.isRequired) continue;
+
+      let isMet = false;
+      switch (requirement.type) {
+        case "BEEF":
+          isMet = true;
+          break;
+        case "CONFIRMATION_SLIP":
+          isMet = checklist.isConfirmationSlipReceived;
+          break;
+        case "PSA_BIRTH_CERTIFICATE":
+          isMet = checklist.isPsaBirthCertPresented;
+          break;
+        case "SF9_REPORT_CARD":
+        case "ACADEMIC_RECORD":
+          isMet = checklist.isSf9Submitted;
+          break;
+        case "GOOD_MORAL_CERTIFICATE":
+          isMet = checklist.isGoodMoralPresented;
+          break;
+        case "MEDICAL_CERTIFICATE":
+        case "MEDICAL_EVALUATION":
+          isMet = checklist.isMedicalEvalSubmitted;
+          break;
+        case "CERTIFICATE_OF_RECOGNITION":
+          isMet = checklist.isCertOfRecognitionPresented;
+          break;
+        case "AFFIDAVIT_OF_UNDERTAKING":
+          isMet = checklist.isUndertakingSigned;
+          break;
+        default:
+          isMet = true;
+      }
+
+      if (!isMet) {
+        missingMandatory.push(requirement.label);
+      }
+    }
+
+    if (missingMandatory.length > 0) {
+      throw new AppError(
+        422,
+        `Cannot finalize enrollment; missing requirements: ${missingMandatory.join(", ")}`,
+      );
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const earlyRegUpdated = await tx.earlyRegistrationApplication.update({
+        where: { id },
+        data: { status: "ENROLLED" },
+      });
+
+      const enrollmentApp = await tx.enrollmentApplication.findFirst({
+        where: { earlyRegistrationId: id },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (enrollmentApp) {
+        await tx.enrollmentApplication.update({
+          where: { id: enrollmentApp.id },
+          data: {
+            status: "ENROLLED",
+            isTemporarilyEnrolled: false,
+          },
+        });
+      }
+
+      await tx.learner.update({
+        where: { id: reg.learnerId },
+        data: { isPendingLrnCreation: false },
+      });
+
+      return earlyRegUpdated;
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "STATUS_CHANGE",
+      description: `Early registration #${id} finalized as ENROLLED`,
+      subjectType: "EarlyRegistrationApplication",
+      recordId: id,
+      req,
+    });
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** PATCH /:id/assign-lrn */
+export async function assignLrn(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const id = parseInt(String(req.params.id));
+    const reg = await findEarlyRegOrThrow(id);
+    const lrn = String(req.body?.lrn ?? "").trim();
+
+    if (!LRN_REGEX.test(lrn)) {
+      throw new AppError(422, "LRN must be exactly 12 digits.");
+    }
+
+    try {
+      await prisma.learner.update({
+        where: { id: reg.learnerId },
+        data: {
+          lrn,
+          isPendingLrnCreation: false,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        throw new AppError(409, "LRN already exists.");
+      }
+      throw error;
+    }
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "LEARNER_LRN_ASSIGNED",
+      description: `Assigned LRN ${lrn} to learner #${reg.learnerId} from early registration #${id}`,
+      subjectType: "Learner",
+      recordId: reg.learnerId,
+      req,
+    }).catch(() => {});
+
+    res.json({
+      message: "LRN assigned successfully.",
+      learnerId: reg.learnerId,
+      lrn,
+    });
   } catch (err) {
     next(err);
   }

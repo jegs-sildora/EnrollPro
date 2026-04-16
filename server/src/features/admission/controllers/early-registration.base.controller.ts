@@ -31,6 +31,23 @@ export function createEarlyRegistrationBaseController(
     findApplicantOrThrow,
   } = createEarlyRegistrationSharedService(deps);
 
+  const LRN_REGEX = /^\d{12}$/;
+
+  function isTruthyQuery(value: unknown): boolean {
+    if (typeof value === "boolean") return value;
+    if (typeof value === "string") {
+      const normalized = value.trim().toLowerCase();
+      return normalized === "true" || normalized === "1" || normalized === "yes";
+    }
+    return false;
+  }
+
+  function normalizeGradeLevelToken(value: unknown): string {
+    const raw = String(value ?? "").trim();
+    const digitMatch = raw.match(/\d+/);
+    return digitMatch?.[0] ?? raw;
+  }
+
   async function getRequirements(
     req: Request,
     res: Response,
@@ -63,6 +80,7 @@ export function createEarlyRegistrationBaseController(
         status,
         applicantType,
         schoolYearId,
+        withoutLrn,
         page = "1",
         limit = "15",
       } = req.query;
@@ -96,6 +114,17 @@ export function createEarlyRegistrationBaseController(
         where.status = status as ApplicationStatus;
       if (applicantType && applicantType !== "ALL")
         where.applicantType = applicantType as Prisma.EnumApplicantTypeFilter;
+
+      if (isTruthyQuery(withoutLrn)) {
+        where.AND = [
+          ...(Array.isArray(where.AND)
+            ? where.AND
+            : where.AND
+              ? [where.AND]
+              : []),
+          { learner: { isPendingLrnCreation: true } },
+        ];
+      }
 
       const [applications, total] = await Promise.all([
         prisma.enrollmentApplication.findMany({
@@ -317,15 +346,69 @@ export function createEarlyRegistrationBaseController(
     }
 
     // 4. Check duplicate LRN in same School Year
-    if (body.lrn) {
-      const existingByLrn = await prisma.enrollmentApplication.findFirst({
-        where: { learner: { lrn: body.lrn }, schoolYearId: activeYear.id },
-      });
+    const bodyLType = String(body.learnerType).toUpperCase();
+    let lType: LearnerType = "NEW_ENROLLEE";
+    if (bodyLType === "TRANSFEREE") lType = "TRANSFEREE";
+    else if (bodyLType === "RETURNING" || bodyLType === "BALIK_ARAL")
+      lType = "RETURNING";
+    else if (bodyLType === "CONTINUING") lType = "CONTINUING";
+    else if (bodyLType === "OSCYA") lType = "OSCYA";
+    else if (bodyLType === "ALS") lType = "ALS";
+
+    const rawLrn = String(body.lrn ?? "").trim();
+    const hasNoLrnDeclared = body.hasNoLrn === true;
+    const normalizedGradeLevel = normalizeGradeLevelToken(body.gradeLevel);
+    const canSubmitWithoutLrn =
+      lType === "TRANSFEREE" ||
+      (lType === "NEW_ENROLLEE" && normalizedGradeLevel === "7");
+
+    if (hasNoLrnDeclared && !canSubmitWithoutLrn) {
+      throw new AppError(
+        422,
+        "Only incoming Grade 7 and transferee learners can submit without an LRN.",
+      );
+    }
+
+    if (hasNoLrnDeclared && rawLrn) {
+      throw new AppError(
+        422,
+        "Clear the LRN field when declaring that the learner has no LRN.",
+      );
+    }
+
+    const lrn = hasNoLrnDeclared ? null : rawLrn || null;
+    if (!hasNoLrnDeclared && !lrn) {
+      throw new AppError(
+        422,
+        "LRN is required unless you declare that the learner has no LRN.",
+      );
+    }
+
+    if (lrn && !LRN_REGEX.test(lrn)) {
+      throw new AppError(422, "LRN must be exactly 12 numeric digits.");
+    }
+
+    if (lrn) {
+      const [existingByLrn, existingEarlyRegByLrn] = await Promise.all([
+        prisma.enrollmentApplication.findFirst({
+          where: { learner: { lrn }, schoolYearId: activeYear.id },
+        }),
+        prisma.earlyRegistrationApplication.findFirst({
+          where: { learner: { lrn }, schoolYearId: activeYear.id },
+        }),
+      ]);
 
       if (existingByLrn) {
         throw new AppError(
           409,
-          `An enrollment application with LRN ${body.lrn} already exists for this School Year. Tracking number: ${existingByLrn.trackingNumber}.`,
+          `An enrollment application with LRN ${lrn} already exists for this School Year. Tracking number: ${existingByLrn.trackingNumber}.`,
+        );
+      }
+
+      if (existingEarlyRegByLrn) {
+        throw new AppError(
+          409,
+          `An early registration with LRN ${lrn} already exists for this School Year. Tracking number: ${existingEarlyRegByLrn.trackingNumber}.`,
         );
       }
     }
@@ -389,16 +472,6 @@ export function createEarlyRegistrationBaseController(
       }
     }
 
-    // 6. Map Learner Type
-    let lType: LearnerType = "NEW_ENROLLEE";
-    const bodyLType = String(body.learnerType).toUpperCase();
-    if (bodyLType === "TRANSFEREE") lType = "TRANSFEREE";
-    else if (bodyLType === "RETURNING" || bodyLType === "BALIK_ARAL")
-      lType = "RETURNING";
-    else if (bodyLType === "CONTINUING") lType = "CONTINUING";
-    else if (bodyLType === "OSCYA") lType = "OSCYA";
-    else if (bodyLType === "ALS") lType = "ALS";
-
     // Parse birthdate
     const rawBirthDate = new Date(body.birthdate);
     if (isNaN(rawBirthDate.getTime())) {
@@ -432,7 +505,8 @@ export function createEarlyRegistrationBaseController(
 
     // Ensure learner exists or update
     const learnerPayload = {
-      lrn: body.lrn || null,
+      lrn,
+      isPendingLrnCreation: hasNoLrnDeclared && !lrn,
       psaBirthCertNumber: body.psaBirthCertNumber || null,
       firstName: body.firstName,
       lastName: body.lastName,
@@ -458,9 +532,9 @@ export function createEarlyRegistrationBaseController(
 
     const application = await prisma.$transaction(async (tx) => {
       let learner: { id: number };
-      if (body.lrn) {
+      if (lrn) {
         learner = await tx.learner.upsert({
-          where: { lrn: body.lrn },
+          where: { lrn },
           update: learnerPayload,
           create: learnerPayload,
           select: { id: true },
@@ -608,7 +682,7 @@ export function createEarlyRegistrationBaseController(
         options.channel === "F2F"
           ? "F2F_APPLICATION_SUBMITTED"
           : "APPLICATION_SUBMITTED",
-      description: `${logPrefix} ${application.learner.firstName} ${application.learner.lastName}${body.lrn ? ` (LRN: ${body.lrn})` : ""}. Tracking: ${trackingNumber}`,
+      description: `${logPrefix} ${application.learner.firstName} ${application.learner.lastName}${lrn ? ` (LRN: ${lrn})` : hasNoLrnDeclared ? " (PENDING LRN CREATION)" : ""}. Tracking: ${trackingNumber}`,
       subjectType: "EnrollmentApplication",
       recordId: application.id,
       req,
@@ -623,10 +697,14 @@ export function createEarlyRegistrationBaseController(
 
     // Link early registration if provided
     if (body.earlyRegistrationId) {
+      const nextEarlyRegStatus: ApplicationStatus = hasNoLrnDeclared
+        ? "TEMPORARILY_ENROLLED"
+        : "ENROLLED";
+
       await prisma.earlyRegistrationApplication.update({
         where: { id: body.earlyRegistrationId },
         data: {
-          status: "ENROLLED" as ApplicationStatus, // Or a status indicating it moved to enrollment
+          status: nextEarlyRegStatus,
         },
       });
     }

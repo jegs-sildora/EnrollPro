@@ -69,6 +69,7 @@ export const earlyRegistrationSubmitSchema = z
         message: "Select the Grade Level.",
       },
     ),
+    hasNoLrn: z.boolean().default(false),
     lrn: z
       .string()
       .regex(/^\d{12}$/, "Enter a valid 12-digit LRN.")
@@ -143,17 +144,37 @@ export const earlyRegistrationSubmitSchema = z
       });
     }
 
-    // LRN required for returning learners (Grades 8-10)
-    const grade = parseInt(data.gradeLevel, 10);
-    if (grade >= 8) {
-      const lrn = data.lrn?.trim();
-      if (!lrn) {
+    const lrn = data.lrn?.trim() ?? "";
+    const isIncomingGrade7 =
+      data.learnerType === "NEW_ENROLLEE" && data.gradeLevel === "7";
+    const isTransferee = data.learnerType === "TRANSFEREE";
+    const canDeclareNoLrn = isIncomingGrade7 || isTransferee;
+
+    if (data.hasNoLrn) {
+      if (!canDeclareNoLrn) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "LRN is required for Grades 8 to 10.",
+          message:
+            "Only incoming Grade 7 and transferee learners can submit without an LRN.",
+          path: ["hasNoLrn"],
+        });
+      }
+
+      if (lrn) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            "Clear the LRN field when declaring that the learner has no LRN.",
           path: ["lrn"],
         });
       }
+    } else if (!lrn) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "LRN is required unless you declare that the learner has no LRN.",
+        path: ["lrn"],
+      });
     }
 
     // At least one parent/guardian must be provided

@@ -16,6 +16,7 @@ interface Props {
   onFail: () => void;
   onOfferRegular: () => void;
   onTemporarilyEnroll: () => void;
+  onAssignLrn?: () => void | Promise<void>;
   onEnroll?: () => void | Promise<void>;
   onScheduleInterview?: () => void;
   onMarkInterviewPassed?: () => void | Promise<void>;
@@ -81,6 +82,7 @@ export function ActionButtons({
   ...handlers
 }: Props) {
   const { status, applicantType } = applicant;
+  const isPendingLrnCreation = applicant.isPendingLrnCreation === true;
   const isRegular = applicantType === "REGULAR";
   const isSCP = !isRegular;
 
@@ -228,11 +230,29 @@ export function ActionButtons({
 
       {(status === "PRE_REGISTERED" || status === "TEMPORARILY_ENROLLED") &&
         handlers.onEnroll && (
+          <>
+            {isPendingLrnCreation && handlers.onAssignLrn && (
+              <Button
+                variant="outline"
+                className="w-full border-amber-500 text-amber-700 hover:bg-amber-50 font-bold"
+                onClick={handlers.onAssignLrn}>
+                Assign LRN
+              </Button>
+            )}
           <Button
             className="w-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold"
-            onClick={handlers.onEnroll}>
-            Finalize Enrollment
+            onClick={handlers.onEnroll}
+            disabled={isPendingLrnCreation}
+            title={
+              isPendingLrnCreation
+                ? "Assign an LRN first before finalizing enrollment."
+                : undefined
+            }>
+            {isPendingLrnCreation
+              ? "Assign LRN Before Final Enrollment"
+              : "Finalize Enrollment"}
           </Button>
+          </>
         )}
 
       {isSCP && status === "NOT_QUALIFIED" && (

@@ -164,6 +164,7 @@ export default function EarlyRegistrationForm({
       "gradeLevel",
       "learnerType",
       "lrn",
+      "hasNoLrn",
       "isScpApplication",
       "scpType",
     ],
@@ -188,6 +189,11 @@ export default function EarlyRegistrationForm({
   const hasBlockingErrors = Object.keys(methods.formState.errors).length > 0;
 
   const checkLrnAvailability = async (): Promise<boolean> => {
+    if (getValues("hasNoLrn") === true) {
+      clearErrors("lrn");
+      return true;
+    }
+
     const rawLrn = String(getValues("lrn") ?? "").trim();
     if (!rawLrn || rawLrn.length !== 12) {
       const lrnState = getFieldState("lrn", methods.formState);

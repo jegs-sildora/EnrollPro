@@ -189,6 +189,20 @@ router.patch(
 );
 
 router.patch(
+  "/:id/enroll",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.enroll,
+);
+
+router.patch(
+  "/:id/assign-lrn",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.assignLrn,
+);
+
+router.patch(
   "/:id/mark-interview-passed",
   authenticate,
   authorize("REGISTRAR", "SYSTEM_ADMIN"),

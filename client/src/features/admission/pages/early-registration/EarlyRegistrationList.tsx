@@ -17,7 +17,6 @@ import { EarlyRegistrationTable } from "./components/EarlyRegistrationTable";
 import { EarlyRegistrationCards } from "./components/EarlyRegistrationCards";
 import { EarlyRegistrationSidePanel } from "./components/EarlyRegistrationSidePanel";
 import { EarlyRegistrationActionDialogs } from "./components/EarlyRegistrationActionDialogs";
-import { REGISTRATION_STAGE_QUICK_FILTERS } from "@/features/admission/constants/registrationWorkflow";
 
 import type { Application } from "./hooks/useEarlyRegistrations";
 import type {
@@ -60,6 +59,7 @@ export default function EarlyRegistration() {
     setType,
     page,
     setPage,
+    stageCounts,
     fetchData,
   } = useEarlyRegistrations(ayId);
 
@@ -91,19 +91,6 @@ export default function EarlyRegistration() {
 
   // Derived State
   const showSkeleton = useDelayedLoading(loading);
-
-  const stageCounts = REGISTRATION_STAGE_QUICK_FILTERS.reduce<
-    Record<string, number>
-  >(
-    (acc, stage) => {
-      acc[stage.value] =
-        stage.value === "ALL"
-          ? applications.length
-          : applications.filter((app) => app.status === stage.value).length;
-      return acc;
-    },
-    {},
-  );
 
   const getNextAction = (currentStatus: string) =>
     NEXT_ACTION_BY_STATUS[currentStatus] ?? "Review Applicant";

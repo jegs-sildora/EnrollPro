@@ -131,7 +131,7 @@ export function EarlyRegistrationTable({
                   </div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell text-sm font-bold">
-                  {app.lrn}
+                  {app.isPendingLrnCreation ? "PENDING" : app.lrn || "N/A"}
                 </TableCell>
                 <TableCell>
                   <span className="font-bold text-sm">

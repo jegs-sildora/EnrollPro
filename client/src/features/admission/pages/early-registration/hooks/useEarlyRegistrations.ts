@@ -1,11 +1,15 @@
 import { useState, useCallback, useEffect } from "react";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
-import { ACTIVE_REGISTRATION_EXCLUDED_STATUSES } from "@/features/admission/constants/registrationWorkflow";
+import {
+  ACTIVE_REGISTRATION_EXCLUDED_STATUSES,
+  REGISTRATION_STAGE_QUICK_FILTERS,
+} from "@/features/admission/constants/registrationWorkflow";
 
 export interface Application {
   id: number;
   lrn: string;
+  isPendingLrnCreation: boolean;
   lastName: string;
   firstName: string;
   middleName: string | null;
@@ -37,19 +41,110 @@ interface EarlyRegistrationApiRow {
     middleName?: string | null;
     extensionName?: string | null;
     lrn?: string;
+    isPendingLrnCreation?: boolean;
   };
+}
+
+const createEmptyStageCounts = () =>
+  REGISTRATION_STAGE_QUICK_FILTERS.reduce<Record<string, number>>(
+    (acc, stage) => {
+      acc[stage.value] = 0;
+      return acc;
+    },
+    {},
+  );
+
+function normalizeLrnValue(value: string | undefined): string {
+  const normalized = String(value ?? "").trim();
+  if (!normalized) return "";
+
+  const upper = normalized.toUpperCase();
+  if (
+    upper === "N/A" ||
+    upper === "NA" ||
+    upper === "NONE" ||
+    upper === "NULL" ||
+    upper === "-"
+  ) {
+    return "";
+  }
+
+  return normalized;
 }
 
 export function useEarlyRegistrations(ayId: number | null) {
   const [applications, setApplications] = useState<Application[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [stageCounts, setStageCounts] = useState<Record<string, number>>(
+    () => createEmptyStageCounts(),
+  );
 
   // Filters
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("ALL");
   const [type, setType] = useState("ALL");
   const [page, setPage] = useState(1);
+
+  const buildBaseCountParams = useCallback(() => {
+    const params = new URLSearchParams();
+    params.append("schoolYearId", String(ayId));
+    if (search) params.append("search", search);
+    if (type !== "ALL") params.append("applicantType", type);
+    params.append("page", "1");
+    params.append("limit", "1");
+    return params;
+  }, [ayId, search, type]);
+
+  const fetchStageCounts = useCallback(async () => {
+    if (!ayId) {
+      setStageCounts(createEmptyStageCounts());
+      return;
+    }
+
+    try {
+      const baseParams = buildBaseCountParams();
+
+      const stageCountPromises = REGISTRATION_STAGE_QUICK_FILTERS.filter(
+        (stage) => stage.value !== "ALL",
+      ).map(async (stage) => {
+        const params = new URLSearchParams(baseParams.toString());
+
+        if (stage.value === "WITHOUT_LRN") {
+          params.append("withoutLrn", "true");
+        } else {
+          params.append("status", stage.value);
+        }
+
+        const response = await api.get(`/early-registrations?${params.toString()}`);
+        return {
+          key: stage.value,
+          total: Number(response?.data?.pagination?.total ?? 0),
+        };
+      });
+
+      const [allResponse, ...stageResponses] = await Promise.all([
+        api.get(`/early-registrations?${baseParams.toString()}`),
+        ...stageCountPromises,
+      ]);
+
+      const nextCounts = createEmptyStageCounts();
+      for (const entry of stageResponses) {
+        nextCounts[entry.key] = entry.total;
+      }
+
+      const allTotal = Number(allResponse?.data?.pagination?.total ?? 0);
+      const excludedTotal = ACTIVE_REGISTRATION_EXCLUDED_STATUSES.reduce(
+        (sum, excludedStatus) => sum + (nextCounts[excludedStatus] ?? 0),
+        0,
+      );
+      nextCounts.ALL = Math.max(0, allTotal - excludedTotal);
+
+      setStageCounts(nextCounts);
+    } catch (err) {
+      toastApiError(err as never);
+    }
+  }, [ayId, buildBaseCountParams]);
 
   const fetchData = useCallback(async () => {
     if (!ayId) {
@@ -62,7 +157,9 @@ export function useEarlyRegistrations(ayId: number | null) {
       params.append("schoolYearId", String(ayId));
       if (search) params.append("search", search);
 
-      if (status !== "ALL") {
+      if (status === "WITHOUT_LRN") {
+        params.append("withoutLrn", "true");
+      } else if (status !== "ALL") {
         params.append("status", status);
       }
 
@@ -93,14 +190,23 @@ export function useEarlyRegistrations(ayId: number | null) {
       ]);
 
       let filteredApps = (res.data.data as EarlyRegistrationApiRow[]).map(
-        (app): Application => ({
-          ...app,
-          firstName: app.learner?.firstName || app.firstName || "",
-          lastName: app.learner?.lastName || app.lastName || "",
-          middleName: app.learner?.middleName || app.middleName || null,
-          suffix: app.learner?.extensionName || app.suffix || null,
-          lrn: app.learner?.lrn || app.lrn || "",
-        }),
+        (app): Application => {
+          const learnerLrn = normalizeLrnValue(app.learner?.lrn);
+          const fallbackLrn = normalizeLrnValue(app.lrn);
+          const normalizedLrn = learnerLrn || fallbackLrn;
+          const pendingFromRecord = Boolean(app.learner?.isPendingLrnCreation);
+
+          return {
+            ...app,
+            firstName: app.learner?.firstName || app.firstName || "",
+            lastName: app.learner?.lastName || app.lastName || "",
+            middleName: app.learner?.middleName || app.middleName || null,
+            suffix: app.learner?.extensionName || app.suffix || null,
+            lrn: normalizedLrn,
+            isPendingLrnCreation:
+              pendingFromRecord || (status === "WITHOUT_LRN" && !normalizedLrn),
+          };
+        },
       );
 
       if (status === "ALL") {
@@ -138,6 +244,10 @@ export function useEarlyRegistrations(ayId: number | null) {
     fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    fetchStageCounts();
+  }, [fetchStageCounts]);
+
   return {
     applications,
     total,
@@ -150,6 +260,7 @@ export function useEarlyRegistrations(ayId: number | null) {
     setType,
     page,
     setPage,
+    stageCounts,
     fetchData,
   };
 }

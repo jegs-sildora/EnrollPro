@@ -2,6 +2,7 @@ export const ACTIVE_REGISTRATION_EXCLUDED_STATUSES = ["ENROLLED"] as const;
 
 export const REGISTRATION_STAGE_QUICK_FILTERS = [
   { value: "ALL", label: "All Active" },
+  { value: "WITHOUT_LRN", label: "Applicants Without LRN" },
   { value: "SUBMITTED", label: "Submitted" },
   { value: "VERIFIED", label: "Verified" },
   { value: "UNDER_REVIEW", label: "Under Review" },
