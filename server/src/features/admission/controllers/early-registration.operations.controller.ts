@@ -22,6 +22,13 @@ export function createEarlyRegistrationOperationsController(
     getDetailedApplicationOrThrow,
     updateApplicationStatus,
   } = createEarlyRegistrationSharedService(deps);
+  const resolveExpectedSectionProgramType = (applicantType: string): string =>
+    applicantType === "REGULAR" ? "REGULAR" : applicantType;
+  const csvEscape = (value: unknown): string =>
+    `"${String(value ?? "").replace(/"/g, '""')}"`;
+  const toDateOnly = (value?: Date | null): string =>
+    value ? value.toISOString().slice(0, 10) : "";
+
   async function pass(req: Request, res: Response, next: NextFunction) {
     try {
       const applicantId = parseInt(String(req.params.id));
@@ -200,12 +207,38 @@ export function createEarlyRegistrationOperationsController(
       const result = await prisma.$transaction(async (tx) => {
         // Lock section for capacity check
         const [section] = await tx.$queryRaw<
-          { id: number; maxCapacity: number }[]
+          {
+            id: number;
+            maxCapacity: number;
+            gradeLevelId: number;
+            programType: string;
+          }[]
         >`
-        SELECT id, "max_capacity" as "maxCapacity" FROM "sections" WHERE id = ${sectionId} FOR UPDATE
+        SELECT
+          id,
+          "max_capacity" as "maxCapacity",
+          "grade_level_id" as "gradeLevelId",
+          "program_type" as "programType"
+        FROM "sections"
+        WHERE id = ${sectionId}
+        FOR UPDATE
       `;
 
         if (!section) throw new AppError(404, "Section not found");
+
+        if (section.gradeLevelId !== applicant.gradeLevelId) {
+          throw new AppError(
+            422,
+            "Selected section does not belong to the applicant's grade level.",
+          );
+        }
+
+        if (section.programType !== "REGULAR") {
+          throw new AppError(
+            422,
+            `Only REGULAR-tagged sections can be used for regular placement. Selected section is ${section.programType}.`,
+          );
+        }
 
         const enrolledCount = await tx.enrollmentRecord.count({
           where: { sectionId },
@@ -425,9 +458,15 @@ export function createEarlyRegistrationOperationsController(
     try {
       const applicantId = parseInt(String(req.params.id));
       const { data: applicant } = await findApplicantOrThrow(applicantId);
+      const requiredSectionProgramType = resolveExpectedSectionProgramType(
+        applicant.applicantType,
+      );
 
       const sections = await prisma.section.findMany({
-        where: { gradeLevelId: applicant.gradeLevelId },
+        where: {
+          gradeLevelId: applicant.gradeLevelId,
+          programType: requiredSectionProgramType as any,
+        },
         include: {
           advisingTeacher: {
             select: {
@@ -445,6 +484,7 @@ export function createEarlyRegistrationOperationsController(
       const formatted = sections.map((s) => ({
         id: s.id,
         name: s.name,
+        programType: s.programType,
         maxCapacity: s.maxCapacity,
         enrolledCount: s._count.enrollmentRecords,
         availableSlots: s.maxCapacity - s._count.enrollmentRecords,
@@ -469,6 +509,8 @@ export function createEarlyRegistrationOperationsController(
           lastName: applicant.learner.lastName,
           gradeLevelId: applicant.gradeLevelId,
           gradeLevelName: applicant.gradeLevel.name,
+          applicantType: applicant.applicantType,
+          requiredSectionProgramType,
         },
         sections: formatted,
       });
@@ -483,6 +525,13 @@ export function createEarlyRegistrationOperationsController(
       const applicantId = parseInt(String(req.params.id));
       const { data: applicant, type: appType } =
         await findApplicantOrThrow(applicantId);
+
+      if (appType === "ENROLLMENT" && applicant.isProfileLocked) {
+        throw new AppError(
+          423,
+          "Enrollment profile is locked after official enrollment. A SYSTEM_ADMIN must run explicit profile-lock override before editing.",
+        );
+      }
 
       // Whitelist editable fields to prevent status/tracking/schoolYear tampering
       const {
@@ -571,6 +620,193 @@ export function createEarlyRegistrationOperationsController(
       });
 
       res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async function setProfileLock(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const applicantId = parseInt(String(req.params.id));
+      const { lock, reason } = (req.body ?? {}) as {
+        lock?: boolean;
+        reason?: string;
+      };
+
+      if (typeof lock !== "boolean") {
+        throw new AppError(422, 'Field "lock" must be a boolean value.');
+      }
+
+      const { data: applicant, type: appType } =
+        await findApplicantOrThrow(applicantId);
+
+      if (appType !== "ENROLLMENT") {
+        throw new AppError(
+          422,
+          "Profile lock can only be applied to enrollment applications.",
+        );
+      }
+
+      if (applicant.status !== "ENROLLED") {
+        throw new AppError(
+          422,
+          "Profile lock override is available only for officially enrolled learners.",
+        );
+      }
+
+      const updated = await prisma.enrollmentApplication.update({
+        where: { id: applicantId },
+        data: {
+          isProfileLocked: lock,
+          profileLockedAt: lock ? new Date() : null,
+          profileLockedById: lock ? req.user!.userId : null,
+        },
+        select: {
+          id: true,
+          isProfileLocked: true,
+          profileLockedAt: true,
+          profileLockedById: true,
+        },
+      });
+
+      const actionType = lock
+        ? "APPLICATION_PROFILE_LOCKED"
+        : "APPLICATION_PROFILE_UNLOCKED";
+      const reasonSuffix =
+        typeof reason === "string" && reason.trim().length > 0
+          ? ` Reason: ${reason.trim()}`
+          : "";
+
+      await auditLog({
+        userId: req.user!.userId,
+        actionType,
+        description: `${lock ? "Locked" : "Unlocked"} enrollment profile for ${applicant.learner.firstName} ${applicant.learner.lastName} (#${applicantId}).${reasonSuffix}`,
+        subjectType: "EnrollmentApplication",
+        recordId: applicantId,
+        req,
+      });
+
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async function exportLisMasterCsv(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const schoolYearIdRaw = req.query.schoolYearId
+        ? Number(req.query.schoolYearId)
+        : null;
+
+      if (schoolYearIdRaw !== null && !Number.isInteger(schoolYearIdRaw)) {
+        throw new AppError(400, "schoolYearId must be a valid integer.");
+      }
+
+      let targetSchoolYearId = schoolYearIdRaw;
+      if (targetSchoolYearId === null) {
+        const settings = await prisma.schoolSetting.findFirst({
+          select: { activeSchoolYearId: true },
+        });
+
+        if (!settings?.activeSchoolYearId) {
+          throw new AppError(400, "No active School Year configured.");
+        }
+
+        targetSchoolYearId = settings.activeSchoolYearId;
+      }
+
+      const records = await prisma.enrollmentApplication.findMany({
+        where: {
+          schoolYearId: targetSchoolYearId,
+          status: "ENROLLED",
+          enrollmentRecord: { isNot: null },
+        },
+        include: {
+          learner: true,
+          schoolYear: { select: { yearLabel: true } },
+          gradeLevel: { select: { name: true, displayOrder: true } },
+          enrollmentRecord: {
+            include: {
+              section: { select: { name: true } },
+            },
+          },
+        },
+      });
+
+      const sortedRecords = records.sort((a, b) => {
+        const gradeA = a.gradeLevel?.displayOrder ?? 999;
+        const gradeB = b.gradeLevel?.displayOrder ?? 999;
+        if (gradeA !== gradeB) return gradeA - gradeB;
+
+        const lastNameCompare = a.learner.lastName.localeCompare(
+          b.learner.lastName,
+          "en",
+          { sensitivity: "base" },
+        );
+        if (lastNameCompare !== 0) return lastNameCompare;
+
+        return a.learner.firstName.localeCompare(b.learner.firstName, "en", {
+          sensitivity: "base",
+        });
+      });
+
+      const headers = [
+        "LRN",
+        "LAST_NAME",
+        "FIRST_NAME",
+        "MIDDLE_NAME",
+        "EXTENSION_NAME",
+        "SEX",
+        "BIRTHDATE",
+        "GRADE_LEVEL",
+        "SECTION",
+        "PROGRAM_TYPE",
+        "LEARNER_TYPE",
+        "SCHOOL_YEAR",
+        "ENROLLED_AT",
+        "STATUS",
+      ];
+
+      const rows = sortedRecords.map((record) => [
+        record.learner.lrn,
+        record.learner.lastName,
+        record.learner.firstName,
+        record.learner.middleName,
+        record.learner.extensionName,
+        record.learner.sex,
+        toDateOnly(record.learner.birthdate),
+        record.gradeLevel?.name ?? "",
+        record.enrollmentRecord?.section?.name ?? "",
+        record.applicantType,
+        record.learnerType,
+        record.schoolYear?.yearLabel ?? "",
+        toDateOnly(record.enrollmentRecord?.enrolledAt),
+        record.status,
+      ]);
+
+      const csvBody = [headers, ...rows]
+        .map((row) => row.map(csvEscape).join(","))
+        .join("\r\n");
+
+      const schoolYearLabel =
+        sortedRecords[0]?.schoolYear?.yearLabel ?? String(targetSchoolYearId);
+      const safeLabel = schoolYearLabel.replace(/[^a-zA-Z0-9_-]+/g, "-");
+
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="lis-master-${safeLabel}.csv"`,
+      );
+
+      res.status(200).send(`\uFEFF${csvBody}`);
     } catch (error) {
       next(error);
     }
@@ -720,6 +956,13 @@ export function createEarlyRegistrationOperationsController(
         targetStatus: ApplicationStatus;
       };
 
+      if (targetStatus === "ENROLLED") {
+        throw new AppError(
+          422,
+          "Batch transition to ENROLLED is not allowed. Use the official enrollment endpoint per applicant after section assignment and document validation.",
+        );
+      }
+
       // Fetch from both tables and combine
       const [enrollmentApps, earlyRegApps] = await Promise.all([
         prisma.enrollmentApplication.findMany({
@@ -862,11 +1105,13 @@ export function createEarlyRegistrationOperationsController(
   return {
     pass,
     fail,
+    exportLisMasterCsv,
     getTimeline,
     offerRegular,
     navigate,
     getSectionsForAssignment,
     update,
+    setProfileLock,
     showDetailed,
     rescheduleAssessmentStep,
     rescheduleExam,
@@ -878,12 +1123,14 @@ const operationsController = createEarlyRegistrationOperationsController();
 
 export const pass = operationsController.pass;
 export const fail = operationsController.fail;
+export const exportLisMasterCsv = operationsController.exportLisMasterCsv;
 export const getTimeline = operationsController.getTimeline;
 export const offerRegular = operationsController.offerRegular;
 export const navigate = operationsController.navigate;
 export const getSectionsForAssignment =
   operationsController.getSectionsForAssignment;
 export const update = operationsController.update;
+export const setProfileLock = operationsController.setProfileLock;
 export const showDetailed = operationsController.showDetailed;
 export const rescheduleAssessmentStep =
   operationsController.rescheduleAssessmentStep;

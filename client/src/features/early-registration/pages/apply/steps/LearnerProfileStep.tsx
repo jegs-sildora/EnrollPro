@@ -13,6 +13,8 @@ import {
   Lock,
   Mars,
   Venus,
+  Camera,
+  X,
   Calendar as CalendarIcon,
 } from "lucide-react";
 import {
@@ -52,6 +54,7 @@ export default function LearnerProfileStep() {
   } = useFormContext<EarlyRegFormData>();
 
   const birthdate = watch("birthdate");
+  const studentPhoto = watch("studentPhoto");
   const isIp = watch("isIpCommunity");
   const isPwd = watch("isLearnerWithDisability");
   const selectedDisabilities =
@@ -128,92 +131,172 @@ export default function LearnerProfileStep() {
     }
   };
 
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File size must be less than 5MB");
+      return;
+    }
+
+    if (!["image/jpeg", "image/png", "image/jpg"].includes(file.type)) {
+      alert("Only JPG and PNG files are accepted");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setValue("studentPhoto", reader.result as string, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearPhoto = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setValue("studentPhoto", undefined, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Name Fields */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-        <div className="space-y-1.5">
-          <Label htmlFor="lastName" className="text-sm font-semibold">
-            Last Name <span className="text-destructive">*</span>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
+        <div className="md:col-span-1 flex flex-col items-center justify-center space-y-3">
+          <Label className="text-sm font-semibold self-start md:self-center">
+            Student Photo
           </Label>
-          <Input
-            id="lastName"
-            {...register("lastName")}
-            placeholder="e.g. DELA CRUZ"
-            autoComplete="off"
-            className={cn(
-              "h-11 uppercase font-bold",
-              errors.lastName &&
-                "border-destructive focus-visible:ring-destructive",
+          <div className="relative group">
+            <div
+              className={cn(
+                "w-32 h-32 rounded-lg border-2 border-dashed flex flex-col items-center justify-center overflow-hidden transition-all duration-200",
+                studentPhoto
+                  ? "border-primary/50 bg-background"
+                  : "border-muted-foreground/30 bg-muted/50 hover:border-primary/50 hover:bg-muted/80",
+              )}>
+              {studentPhoto ? (
+                <div className="relative w-full h-full">
+                  <img
+                    src={studentPhoto}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    onClick={clearPhoto}
+                    type="button"
+                    className="absolute top-1 right-1 p-1 bg-primary text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-20">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center text-muted-foreground group-hover:text-primary transition-colors">
+                  <Camera className="w-8 h-8 mb-1" />
+                  <span className="text-[0.625rem] uppercase font-bold tracking-tight">
+                    Upload 2x2
+                  </span>
+                </div>
+              )}
+            </div>
+            <input
+              type="file"
+              className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed z-10"
+              accept="image/jpeg,image/png,image/jpg"
+              onChange={handlePhotoChange}
+              title="Upload student photo"
+            />
+          </div>
+        </div>
+
+        <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="lastName" className="text-sm font-semibold">
+              Last Name <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="lastName"
+              {...register("lastName")}
+              placeholder="e.g. DELA CRUZ"
+              autoComplete="off"
+              className={cn(
+                "h-11 uppercase font-bold",
+                errors.lastName &&
+                  "border-destructive focus-visible:ring-destructive",
+              )}
+              onInput={(e) => {
+                e.currentTarget.value = e.currentTarget.value.toUpperCase();
+              }}
+            />
+            {errors.lastName && (
+              <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                {errors.lastName.message}
+              </p>
             )}
-            onInput={(e) => {
-              e.currentTarget.value = e.currentTarget.value.toUpperCase();
-            }}
-          />
-          {errors.lastName && (
-            <p className="text-xs text-destructive font-medium flex items-center gap-1">
-              <AlertCircle className="w-3 h-3" />
-              {errors.lastName.message}
-            </p>
-          )}
-        </div>
+          </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="firstName" className="text-sm font-semibold">
-            First Name <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="firstName"
-            {...register("firstName")}
-            placeholder="e.g. JUAN"
-            autoComplete="off"
-            className={cn(
-              "h-11 uppercase font-bold",
-              errors.firstName &&
-                "border-destructive focus-visible:ring-destructive",
+          <div className="space-y-1.5">
+            <Label htmlFor="firstName" className="text-sm font-semibold">
+              First Name <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="firstName"
+              {...register("firstName")}
+              placeholder="e.g. JUAN"
+              autoComplete="off"
+              className={cn(
+                "h-11 uppercase font-bold",
+                errors.firstName &&
+                  "border-destructive focus-visible:ring-destructive",
+              )}
+              onInput={(e) => {
+                e.currentTarget.value = e.currentTarget.value.toUpperCase();
+              }}
+            />
+            {errors.firstName && (
+              <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                {errors.firstName.message}
+              </p>
             )}
-            onInput={(e) => {
-              e.currentTarget.value = e.currentTarget.value.toUpperCase();
-            }}
-          />
-          {errors.firstName && (
-            <p className="text-xs text-destructive font-medium flex items-center gap-1">
-              <AlertCircle className="w-3 h-3" />
-              {errors.firstName.message}
-            </p>
-          )}
-        </div>
+          </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="middleName" className="text-sm font-semibold">
-            Middle Name
-          </Label>
-          <Input
-            id="middleName"
-            {...register("middleName")}
-            placeholder="Type N/A if none"
-            autoComplete="off"
-            className="h-11 uppercase font-bold"
-            onInput={(e) => {
-              e.currentTarget.value = e.currentTarget.value.toUpperCase();
-            }}
-          />
-        </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="middleName" className="text-sm font-semibold">
+              Middle Name
+            </Label>
+            <Input
+              id="middleName"
+              {...register("middleName")}
+              placeholder="Type N/A if none"
+              autoComplete="off"
+              className="h-11 uppercase font-bold"
+              onInput={(e) => {
+                e.currentTarget.value = e.currentTarget.value.toUpperCase();
+              }}
+            />
+          </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="extensionName" className="text-sm font-semibold">
-            Suffix (Extension)
-          </Label>
-          <Input
-            id="extensionName"
-            {...register("extensionName")}
-            placeholder="e.g. JR., III"
-            autoComplete="off"
-            className="h-11 uppercase font-bold"
-            onInput={(e) => {
-              e.currentTarget.value = e.currentTarget.value.toUpperCase();
-            }}
-          />
+          <div className="space-y-1.5">
+            <Label htmlFor="extensionName" className="text-sm font-semibold">
+              Suffix (Extension)
+            </Label>
+            <Input
+              id="extensionName"
+              {...register("extensionName")}
+              placeholder="e.g. JR., III"
+              autoComplete="off"
+              className="h-11 uppercase font-bold"
+              onInput={(e) => {
+                e.currentTarget.value = e.currentTarget.value.toUpperCase();
+              }}
+            />
+          </div>
         </div>
       </div>
 

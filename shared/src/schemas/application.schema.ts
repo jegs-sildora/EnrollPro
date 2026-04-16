@@ -6,7 +6,6 @@ import {
   LastSchoolTypeEnum,
   LearnerTypeEnum,
   AssessmentKindEnum,
-  ApplicationStatusEnum,
 } from "../constants/index.js";
 
 // ─── Shared sub-schemas ────────────────────────────────
@@ -247,6 +246,7 @@ export const updateChecklistSchema = z.object({
   isSf10Requested: z.boolean().optional(),
   isGoodMoralPresented: z.boolean().optional(),
   isMedicalEvalSubmitted: z.boolean().optional(),
+  isCertOfRecognitionPresented: z.boolean().optional(),
   isUndertakingSigned: z.boolean().optional(),
   isConfirmationSlipReceived: z.boolean().optional(),
 });
@@ -396,10 +396,26 @@ export const updateScpProgramConfigsSchema = z.object({
 });
 
 // ─── Batch Processing Schema ───────────────────────────
+const BATCH_TARGET_STATUSES = [
+  "VERIFIED",
+  "UNDER_REVIEW",
+  "ELIGIBLE",
+  "ASSESSMENT_SCHEDULED",
+  "ASSESSMENT_TAKEN",
+  "PASSED",
+  "INTERVIEW_SCHEDULED",
+  "PRE_REGISTERED",
+  "NOT_QUALIFIED",
+  "REJECTED",
+  "WITHDRAWN",
+] as const;
+
+export const batchTargetStatusSchema = z.enum(BATCH_TARGET_STATUSES);
+
 export const batchProcessSchema = z.object({
   ids: z
     .array(z.number().int().positive())
     .min(1, "At least one applicant ID is required")
     .max(500, "Cannot process more than 500 applicants at once"),
-  targetStatus: ApplicationStatusEnum,
+  targetStatus: batchTargetStatusSchema,
 });

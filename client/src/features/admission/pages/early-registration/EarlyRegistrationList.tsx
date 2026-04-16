@@ -34,7 +34,7 @@ const NEXT_ACTION_BY_STATUS: Record<string, string> = {
   ASSESSMENT_TAKEN: "Pass or Fail",
   PASSED: "Schedule Interview",
   INTERVIEW_SCHEDULED: "Ready for Enrollment",
-  PRE_REGISTERED: "Finalize Enrollment",
+  PRE_REGISTERED: "View in Enrollment",
   TEMPORARILY_ENROLLED: "Complete Enrollment",
   ENROLLED: "No Action",
   NOT_QUALIFIED: "Resolve Decision",
@@ -103,7 +103,7 @@ export default function EarlyRegistration() {
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
               Early Registration Monitoring Dashboard
             </h1>
-            <p className="text-sm sm:text-base font-bold text-foreground">
+            <p className="text-sm font-bold text-foreground">
               Applicant screening and assessment workflow
             </p>
           </div>

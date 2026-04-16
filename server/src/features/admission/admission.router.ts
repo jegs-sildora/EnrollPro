@@ -87,6 +87,13 @@ router.get(
   ctrl.getRankings,
 );
 
+router.get(
+  "/exports/lis-master",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.exportLisMasterCsv,
+);
+
 // Protected routes - REGISTRAR + SYSTEM_ADMIN
 router.get(
   "/",
@@ -153,11 +160,23 @@ router.put(
   ctrl.update,
 );
 router.patch(
+  "/:id/profile-lock",
+  authenticate,
+  authorize("SYSTEM_ADMIN"),
+  ctrl.setProfileLock,
+);
+router.patch(
   "/:id/approve",
   authenticate,
   authorize("REGISTRAR", "SYSTEM_ADMIN"),
   validate(approveSchema),
   ctrl.approve,
+);
+router.patch(
+  "/:id/verify",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.verify,
 );
 router.patch(
   "/:id/enroll",

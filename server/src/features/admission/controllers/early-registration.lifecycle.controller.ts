@@ -18,6 +18,142 @@ export function createEarlyRegistrationLifecycleController(
   } = createEarlyRegistrationSharedService(deps);
 
   const LRN_REGEX = /^\d{12}$/;
+  const FINALIZE_ALLOWED_STATUSES = new Set([
+    "PRE_REGISTERED",
+    "TEMPORARILY_ENROLLED",
+  ]);
+  const resolveExpectedSectionProgramType = (applicantType: string): string =>
+    applicantType === "REGULAR" ? "REGULAR" : applicantType;
+
+  interface DynamicDocumentRequirementRule {
+    docId: string;
+    policy: "REQUIRED" | "OPTIONAL" | "HIDDEN";
+    phase?: "EARLY_REGISTRATION" | "ENROLLMENT" | null;
+    notes?: string | null;
+  }
+
+  async function resolveDynamicDocumentRequirements(
+    schoolYearId: number,
+    applicantType: string,
+  ): Promise<DynamicDocumentRequirementRule[] | null> {
+    if (applicantType === "REGULAR") {
+      return null;
+    }
+
+    const scpConfig = await prisma.scpProgramConfig.findUnique({
+      where: {
+        uq_scp_program_configs_type: {
+          schoolYearId,
+          scpType: applicantType as any,
+        },
+      },
+      select: { gradeRequirements: true },
+    });
+
+    if (!scpConfig?.gradeRequirements) {
+      return null;
+    }
+
+    const payload = scpConfig.gradeRequirements as {
+      documentRequirements?: DynamicDocumentRequirementRule[];
+    };
+
+    if (!Array.isArray(payload.documentRequirements)) {
+      return null;
+    }
+
+    return payload.documentRequirements;
+  }
+
+  function isRequirementSatisfied(
+    requirementType: string,
+    checklist: {
+      isPsaBirthCertPresented: boolean;
+      isSf9Submitted: boolean;
+      isConfirmationSlipReceived: boolean;
+      isUndertakingSigned: boolean;
+      isGoodMoralPresented: boolean;
+      isMedicalEvalSubmitted: boolean;
+      isCertOfRecognitionPresented: boolean;
+    },
+  ): boolean {
+    switch (requirementType) {
+      case "BEEF":
+        return true;
+      case "CONFIRMATION_SLIP":
+        return checklist.isConfirmationSlipReceived;
+      case "PSA_BIRTH_CERTIFICATE":
+        return checklist.isPsaBirthCertPresented;
+      case "SF9_REPORT_CARD":
+      case "ACADEMIC_RECORD":
+        return checklist.isSf9Submitted;
+      case "AFFIDAVIT_OF_UNDERTAKING":
+        return checklist.isUndertakingSigned;
+      case "GOOD_MORAL_CERTIFICATE":
+        return checklist.isGoodMoralPresented;
+      case "MEDICAL_CERTIFICATE":
+      case "MEDICAL_EVALUATION":
+        return checklist.isMedicalEvalSubmitted;
+      case "CERTIFICATE_OF_RECOGNITION":
+        return checklist.isCertOfRecognitionPresented;
+      default:
+        return true;
+    }
+  }
+
+  async function collectMissingMandatoryRequirements(fullApplicant: {
+    schoolYearId: number;
+    applicantType: string;
+    learnerType: any;
+    gradeLevel: { name: string };
+    learner: { isLearnerWithDisability: boolean };
+    checklist: {
+      isPsaBirthCertPresented: boolean;
+      isSf9Submitted: boolean;
+      isConfirmationSlipReceived: boolean;
+      isUndertakingSigned: boolean;
+      isGoodMoralPresented: boolean;
+      isMedicalEvalSubmitted: boolean;
+      isCertOfRecognitionPresented: boolean;
+    } | null;
+  }): Promise<string[]> {
+    if (!fullApplicant.checklist) {
+      return ["Requirement checklist not found"];
+    }
+
+    const documentRequirements = await resolveDynamicDocumentRequirements(
+      fullApplicant.schoolYearId,
+      fullApplicant.applicantType,
+    );
+
+    const requirements = getRequiredDocuments({
+      learnerType: fullApplicant.learnerType,
+      gradeLevel: fullApplicant.gradeLevel.name,
+      applicantType: fullApplicant.applicantType as any,
+      isLwd: fullApplicant.learner.isLearnerWithDisability,
+      isPeptAePasser: false,
+      documentRequirements,
+    });
+
+    const missingMandatory: string[] = [];
+
+    for (const requirement of requirements) {
+      if (!requirement.isRequired) {
+        continue;
+      }
+
+      const isMet = isRequirementSatisfied(
+        requirement.type,
+        fullApplicant.checklist,
+      );
+
+      if (!isMet) {
+        missingMandatory.push(requirement.label);
+      }
+    }
+
+    return missingMandatory;
+  }
 
   async function approve(req: Request, res: Response, next: NextFunction) {
     try {
@@ -29,17 +165,46 @@ export function createEarlyRegistrationLifecycleController(
       assertTransition(
         applicant,
         "PRE_REGISTERED",
-        `Cannot approve an application with status "${applicant.status}". Only UNDER_REVIEW, ELIGIBLE, or PASSED applications can be approved (moved to PRE_REGISTERED).`,
+        `Cannot approve an application with status "${applicant.status}". Only VERIFIED, ELIGIBLE, or PASSED applications can be approved (moved to PRE_REGISTERED).`,
       );
 
       const result = await prisma.$transaction(async (tx) => {
         const [section] = await tx.$queryRaw<
-          { id: number; maxCapacity: number }[]
+          {
+            id: number;
+            maxCapacity: number;
+            gradeLevelId: number;
+            programType: string;
+          }[]
         >`
-        SELECT id, "max_capacity" as "maxCapacity" FROM "sections" WHERE id = ${sectionId} FOR UPDATE
+        SELECT
+          id,
+          "max_capacity" as "maxCapacity",
+          "grade_level_id" as "gradeLevelId",
+          "program_type" as "programType"
+        FROM "sections"
+        WHERE id = ${sectionId}
+        FOR UPDATE
       `;
 
         if (!section) throw new AppError(404, "Section not found");
+
+        if (section.gradeLevelId !== applicant.gradeLevelId) {
+          throw new AppError(
+            422,
+            "Selected section does not belong to the applicant's grade level.",
+          );
+        }
+
+        const expectedProgramType = resolveExpectedSectionProgramType(
+          applicant.applicantType,
+        );
+        if (section.programType !== expectedProgramType) {
+          throw new AppError(
+            422,
+            `Selected section is tagged for ${section.programType} but applicant requires ${expectedProgramType}.`,
+          );
+        }
 
         const enrolledCount = await tx.enrollmentRecord.count({
           where: { sectionId },
@@ -87,6 +252,109 @@ export function createEarlyRegistrationLifecycleController(
     }
   }
 
+  async function verify(req: Request, res: Response, next: NextFunction) {
+    try {
+      const applicantId = parseInt(String(req.params.id));
+      const { data: applicant, type: appType } =
+        await findApplicantOrThrow(applicantId);
+
+      if (appType !== "ENROLLMENT") {
+        throw new AppError(
+          422,
+          "Verification is only available for enrollment applications.",
+        );
+      }
+
+      if (applicant.status !== "UNDER_REVIEW") {
+        throw new AppError(
+          422,
+          `Cannot verify application with status "${applicant.status}". Only UNDER_REVIEW applications can be verified.`,
+        );
+      }
+
+      const fullApplicant = await prisma.enrollmentApplication.findUnique({
+        where: { id: applicantId },
+        include: {
+          gradeLevel: true,
+          checklist: true,
+          learner: true,
+        },
+      });
+
+      if (!fullApplicant) {
+        throw new AppError(404, "Enrollment application not found.");
+      }
+
+      const missingMandatory = await collectMissingMandatoryRequirements({
+        schoolYearId: fullApplicant.schoolYearId,
+        applicantType: fullApplicant.applicantType,
+        learnerType: fullApplicant.learnerType,
+        gradeLevel: fullApplicant.gradeLevel,
+        learner: {
+          isLearnerWithDisability:
+            fullApplicant.learner.isLearnerWithDisability,
+        },
+        checklist: fullApplicant.checklist
+          ? {
+              isPsaBirthCertPresented:
+                fullApplicant.checklist.isPsaBirthCertPresented,
+              isSf9Submitted: fullApplicant.checklist.isSf9Submitted,
+              isConfirmationSlipReceived:
+                fullApplicant.checklist.isConfirmationSlipReceived,
+              isUndertakingSigned: fullApplicant.checklist.isUndertakingSigned,
+              isGoodMoralPresented:
+                fullApplicant.checklist.isGoodMoralPresented,
+              isMedicalEvalSubmitted:
+                fullApplicant.checklist.isMedicalEvalSubmitted,
+              isCertOfRecognitionPresented:
+                fullApplicant.checklist.isCertOfRecognitionPresented,
+            }
+          : null,
+      });
+
+      if (
+        missingMandatory.length === 1 &&
+        missingMandatory[0] === "Requirement checklist not found"
+      ) {
+        throw new AppError(
+          422,
+          "Requirement checklist not found for this applicant.",
+        );
+      }
+
+      if (missingMandatory.length > 0) {
+        throw Object.assign(
+          new AppError(
+            422,
+            "Cannot mark as verified due to missing mandatory physical documents.",
+          ),
+          { missingRequirements: missingMandatory },
+        );
+      }
+
+      assertTransition(
+        applicant,
+        "VERIFIED",
+        `Cannot verify an application with status "${applicant.status}".`,
+      );
+
+      const updated = await updateApplicationStatus(applicantId, "VERIFIED");
+
+      await auditLog({
+        userId: req.user!.userId,
+        actionType: "APPLICATION_VERIFIED",
+        description: `Verified physical documents for ${applicant.learner.firstName} ${applicant.learner.lastName} (#${applicantId})`,
+        subjectType: "EnrollmentApplication",
+        recordId: applicantId,
+        req,
+      });
+
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // Finalize Enrollment (Phase 2 complete)
   async function enroll(req: Request, res: Response, next: NextFunction) {
     try {
@@ -101,6 +369,7 @@ export function createEarlyRegistrationLifecycleController(
           gradeLevel: true,
           checklist: true,
           learner: true,
+          enrollmentRecord: true,
         },
       });
 
@@ -124,64 +393,55 @@ export function createEarlyRegistrationLifecycleController(
         );
       }
 
-      assertTransition(
-        fullApplicant,
-        "ENROLLED",
-        `Cannot finalize enrollment. Current status: "${fullApplicant.status}". Only PRE_REGISTERED or TEMPORARILY_ENROLLED applications can be enrolled.`,
-      );
+      if (!FINALIZE_ALLOWED_STATUSES.has(fullApplicant.status)) {
+        throw new AppError(
+          422,
+          `Cannot finalize enrollment. Current status: "${fullApplicant.status}". Only PRE_REGISTERED or TEMPORARILY_ENROLLED applications can be enrolled.`,
+        );
+      }
 
-      // Validate mandatory requirements for official enrollment
-      const requirements = getRequiredDocuments({
-        learnerType: fullApplicant.learnerType,
-        gradeLevel: fullApplicant.gradeLevel.name,
+      if (!fullApplicant.enrollmentRecord) {
+        throw new AppError(
+          422,
+          "Cannot finalize official enrollment without a section assignment.",
+        );
+      }
+
+      const missingMandatory = await collectMissingMandatoryRequirements({
+        schoolYearId: fullApplicant.schoolYearId,
         applicantType: fullApplicant.applicantType,
-        isLwd: fullApplicant.learner.isLearnerWithDisability,
-        isPeptAePasser: false, // Default
+        learnerType: fullApplicant.learnerType,
+        gradeLevel: fullApplicant.gradeLevel,
+        learner: {
+          isLearnerWithDisability: fullApplicant.learner.isLearnerWithDisability,
+        },
+        checklist: fullApplicant.checklist
+          ? {
+              isPsaBirthCertPresented:
+                fullApplicant.checklist.isPsaBirthCertPresented,
+              isSf9Submitted: fullApplicant.checklist.isSf9Submitted,
+              isConfirmationSlipReceived:
+                fullApplicant.checklist.isConfirmationSlipReceived,
+              isUndertakingSigned: fullApplicant.checklist.isUndertakingSigned,
+              isGoodMoralPresented:
+                fullApplicant.checklist.isGoodMoralPresented,
+              isMedicalEvalSubmitted:
+                fullApplicant.checklist.isMedicalEvalSubmitted,
+              isCertOfRecognitionPresented:
+                fullApplicant.checklist.isCertOfRecognitionPresented,
+            }
+          : null,
       });
 
-      const checklist = fullApplicant.checklist;
-      if (!checklist) {
+      if (
+        missingMandatory.length === 1 &&
+        missingMandatory[0] === "Requirement checklist not found"
+      ) {
         throw new AppError(
           422,
           "Requirement checklist not found for this applicant.",
         );
       }
-
-      const missingMandatory: string[] = [];
-
-      requirements.forEach((req) => {
-        if (req.isRequired) {
-          let isMet = false;
-          switch (req.type) {
-            case "BEEF":
-              // BEEF is the form itself, we assume it's met if they applied
-              isMet = true;
-              break;
-            case "CONFIRMATION_SLIP":
-              isMet = checklist.isConfirmationSlipReceived;
-              break;
-            case "PSA_BIRTH_CERTIFICATE":
-              // Official enrollment REQUIRES PSA BC (presented now or already on file).
-              // Secondary proof only allows TEMPORARY enrollment.
-              isMet = checklist.isPsaBirthCertPresented;
-              break;
-            case "SF9_REPORT_CARD":
-            case "ACADEMIC_RECORD":
-              isMet = checklist.isSf9Submitted;
-              break;
-            case "PEPT_AE_CERTIFICATE":
-              // PEPT/A&E requirement is met if it was ever marked as presented
-              // (Note: column isPeptAeSubmitted was dropped in favor of simplified checklist)
-              isMet = false; // We don't have a direct field for this anymore in the simplified checklist
-              break;
-            // PWD_ID and MEDICAL_EVALUATION are marked as isRequired: false in our service for now
-          }
-
-          if (!isMet) {
-            missingMandatory.push(req.label);
-          }
-        }
-      });
 
       if (missingMandatory.length > 0) {
         throw Object.assign(
@@ -205,6 +465,9 @@ export function createEarlyRegistrationLifecycleController(
             isTemporarilyEnrolled: false,
             portalPin: pinHash,
             portalPinChangedAt: new Date(),
+            isProfileLocked: true,
+            profileLockedAt: new Date(),
+            profileLockedById: req.user!.userId,
           },
         });
 
@@ -588,6 +851,7 @@ export function createEarlyRegistrationLifecycleController(
   // â"€â"€ Mark as eligible (cleared for assessment or regular approval) â"€â"€
   return {
     approve,
+    verify,
     enroll,
     markTemporarilyEnrolled,
     assignLrn,
@@ -601,6 +865,7 @@ export function createEarlyRegistrationLifecycleController(
 const lifecycleController = createEarlyRegistrationLifecycleController();
 
 export const approve = lifecycleController.approve;
+export const verify = lifecycleController.verify;
 export const enroll = lifecycleController.enroll;
 export const markTemporarilyEnrolled =
   lifecycleController.markTemporarilyEnrolled;

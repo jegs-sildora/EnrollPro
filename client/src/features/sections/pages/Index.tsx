@@ -43,18 +43,18 @@ import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 
 interface Teacher {
   id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
+  name: string;
+  employeeId: string | null;
 }
 
 interface SectionItem {
   id: number;
   name: string;
+  programType: string;
   maxCapacity: number;
   enrolledCount: number;
   fillPercent: number;
-  advisingTeacher: { id: number; firstName: string; lastName: string } | null;
+  advisingTeacher: { id: number; name: string } | null;
 }
 
 interface GradeLevelGroup {
@@ -62,6 +62,26 @@ interface GradeLevelGroup {
   gradeLevelName: string;
   displayOrder: number;
   sections: SectionItem[];
+}
+
+const PROGRAM_TYPE_OPTIONS = [
+  { value: "REGULAR", label: "Regular" },
+  { value: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "STE" },
+  { value: "SPECIAL_PROGRAM_IN_THE_ARTS", label: "SPA" },
+  { value: "SPECIAL_PROGRAM_IN_SPORTS", label: "SPS" },
+  { value: "SPECIAL_PROGRAM_IN_JOURNALISM", label: "SPJ" },
+  { value: "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE", label: "SPFL" },
+  {
+    value: "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
+    label: "SPTVE",
+  },
+];
+
+function formatProgramType(programType: string): string {
+  return (
+    PROGRAM_TYPE_OPTIONS.find((option) => option.value === programType)
+      ?.label ?? programType
+  );
 }
 
 function fillColor(pct: number): string {
@@ -93,6 +113,8 @@ export default function Sections() {
   const [addGlId, setAddGlId] = useState<number | null>(null);
   const [sectionName, setSectionName] = useState("");
   const [sectionCap, setSectionCap] = useState("40");
+  const [sectionProgramType, setSectionProgramType] =
+    useState<string>("REGULAR");
   const [advisingTeacherId, setAdvisingTeacherId] = useState<string>("none");
   const [adding, setAdding] = useState(false);
 
@@ -100,6 +122,7 @@ export default function Sections() {
   const [editSection, setEditSection] = useState<SectionItem | null>(null);
   const [editName, setEditName] = useState("");
   const [editCap, setEditCap] = useState("40");
+  const [editProgramType, setEditProgramType] = useState<string>("REGULAR");
   const [editAdvisingTeacherId, setEditAdvisingTeacherId] =
     useState<string>("none");
   const [editing, setEditing] = useState(false);
@@ -140,6 +163,7 @@ export default function Sections() {
       setAddGlId(glId);
       setSectionName("");
       setSectionCap("40");
+      setSectionProgramType("REGULAR");
       setAdvisingTeacherId("none");
     }
   };
@@ -152,6 +176,7 @@ export default function Sections() {
         name: sectionName.trim(),
         maxCapacity: parseInt(sectionCap) || 40,
         gradeLevelId: addGlId,
+        programType: sectionProgramType,
         advisingTeacherId:
           advisingTeacherId === "none" ? null : parseInt(advisingTeacherId),
       });
@@ -172,6 +197,7 @@ export default function Sections() {
     setEditSection(section);
     setEditName(section.name);
     setEditCap(section.maxCapacity.toString());
+    setEditProgramType(section.programType ?? "REGULAR");
     setEditAdvisingTeacherId(
       section.advisingTeacher ? section.advisingTeacher.id.toString() : "none",
     );
@@ -184,6 +210,7 @@ export default function Sections() {
       await api.put(`/sections/${editSection.id}`, {
         name: editName.trim(),
         maxCapacity: parseInt(editCap) || 40,
+        programType: editProgramType,
         advisingTeacherId:
           editAdvisingTeacherId === "none"
             ? null
@@ -312,7 +339,8 @@ export default function Sections() {
                         </span>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">
-                            {g.gradeLevelName} — {s.name}
+                            {g.gradeLevelName} — {s.name} (
+                            {formatProgramType(s.programType)})
                           </p>
                           <div className="mt-1 h-2 w-full rounded-full bg-[hsl(var(--muted))]">
                             <div
@@ -390,6 +418,25 @@ export default function Sections() {
                           />
                         </div>
                         <div className="space-y-2 col-span-2">
+                          <Label className="text-xs">Program Type</Label>
+                          <Select
+                            value={sectionProgramType}
+                            onValueChange={setSectionProgramType}>
+                            <SelectTrigger className="h-9 text-sm">
+                              <SelectValue placeholder="Select program" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PROGRAM_TYPE_OPTIONS.map((option) => (
+                                <SelectItem
+                                  key={option.value}
+                                  value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2 col-span-2">
                           <Label className="text-xs">
                             Advising Teacher (Optional)
                           </Label>
@@ -405,7 +452,7 @@ export default function Sections() {
                               </SelectItem>
                               {teachers.map((t) => (
                                 <SelectItem key={t.id} value={t.id.toString()}>
-                                  {t.firstName} {t.lastName}
+                                  {t.name}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -442,15 +489,19 @@ export default function Sections() {
                           <span className="text-sm">
                             {fillEmoji(s.fillPercent)}
                           </span>
-                          <span className="flex-1 text-sm font-medium">
-                            {s.name}
-                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {s.name}
+                            </p>
+                            <p className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
+                              {formatProgramType(s.programType)}
+                            </p>
+                          </div>
                           {s.advisingTeacher && (
                             <span
                               className="text-xs text-[hsl(var(--muted-foreground))] truncate max-w-25"
-                              title={`${s.advisingTeacher.firstName} ${s.advisingTeacher.lastName}`}>
-                              {s.advisingTeacher.firstName}{" "}
-                              {s.advisingTeacher.lastName}
+                              title={s.advisingTeacher.name}>
+                              {s.advisingTeacher.name}
                             </span>
                           )}
                           <span className="text-xs  text-[hsl(var(--muted-foreground))]">
@@ -518,6 +569,23 @@ export default function Sections() {
               />
             </div>
             <div className="space-y-2">
+              <Label>Program Type</Label>
+              <Select
+                value={editProgramType}
+                onValueChange={setEditProgramType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select program" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PROGRAM_TYPE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label>Advising Teacher</Label>
               <Select
                 value={editAdvisingTeacherId}
@@ -529,7 +597,7 @@ export default function Sections() {
                   <SelectItem value="none">No Advising Teacher</SelectItem>
                   {teachers.map((t) => (
                     <SelectItem key={t.id} value={t.id.toString()}>
-                      {t.firstName} {t.lastName}
+                      {t.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

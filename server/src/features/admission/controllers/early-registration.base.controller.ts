@@ -37,7 +37,9 @@ export function createEarlyRegistrationBaseController(
     if (typeof value === "boolean") return value;
     if (typeof value === "string") {
       const normalized = value.trim().toLowerCase();
-      return normalized === "true" || normalized === "1" || normalized === "yes";
+      return (
+        normalized === "true" || normalized === "1" || normalized === "yes"
+      );
     }
     return false;
   }
@@ -57,12 +59,49 @@ export function createEarlyRegistrationBaseController(
       const applicantId = parseInt(String(req.params.id));
       const { data: applicant } = await findApplicantOrThrow(applicantId);
 
+      let documentRequirements:
+        | Array<{
+            docId: string;
+            policy: "REQUIRED" | "OPTIONAL" | "HIDDEN";
+            phase?: "EARLY_REGISTRATION" | "ENROLLMENT" | null;
+            notes?: string | null;
+          }>
+        | null = null;
+
+      if (applicant.applicantType !== "REGULAR") {
+        const scpConfig = await prisma.scpProgramConfig.findUnique({
+          where: {
+            uq_scp_program_configs_type: {
+              schoolYearId: applicant.schoolYearId,
+              scpType: applicant.applicantType,
+            },
+          },
+          select: { gradeRequirements: true },
+        });
+
+        if (scpConfig?.gradeRequirements) {
+          const payload = scpConfig.gradeRequirements as {
+            documentRequirements?: Array<{
+              docId: string;
+              policy: "REQUIRED" | "OPTIONAL" | "HIDDEN";
+              phase?: "EARLY_REGISTRATION" | "ENROLLMENT" | null;
+              notes?: string | null;
+            }>;
+          };
+
+          if (Array.isArray(payload.documentRequirements)) {
+            documentRequirements = payload.documentRequirements;
+          }
+        }
+      }
+
       const requirements = getRequiredDocuments({
         learnerType: applicant.learnerType,
         gradeLevel: applicant.gradeLevel.name,
         applicantType: applicant.applicantType,
         isLwd: applicant.learner?.isLearnerWithDisability ?? false,
         isPeptAePasser: false,
+        documentRequirements,
       });
 
       res.json({ requirements });
@@ -81,6 +120,8 @@ export function createEarlyRegistrationBaseController(
         applicantType,
         schoolYearId,
         withoutLrn,
+        withoutSection,
+        withSection,
         page = "1",
         limit = "15",
       } = req.query;
@@ -112,6 +153,13 @@ export function createEarlyRegistrationBaseController(
       if (gradeLevelId) where.gradeLevelId = parseInt(String(gradeLevelId));
       if (status && status !== "ALL")
         where.status = status as ApplicationStatus;
+
+      if (isTruthyQuery(withoutSection)) {
+        where.enrollmentRecord = { is: null };
+      } else if (isTruthyQuery(withSection) || status === "ENROLLED") {
+        where.enrollmentRecord = { isNot: null };
+      }
+
       if (applicantType && applicantType !== "ALL")
         where.applicantType = applicantType as Prisma.EnumApplicantTypeFilter;
 
@@ -268,10 +316,7 @@ export function createEarlyRegistrationBaseController(
       // Automatically transition to UNDER_REVIEW when opened by registrar/admin
       const canStartReview =
         req.user?.role === "REGISTRAR" || req.user?.role === "SYSTEM_ADMIN";
-      if (
-        application.status === "SUBMITTED" &&
-        canStartReview
-      ) {
+      if (application.status === "SUBMITTED" && canStartReview) {
         await prisma.enrollmentApplication.update({
           where: { id: application.id },
           data: { status: "UNDER_REVIEW" },
@@ -850,7 +895,7 @@ export function createEarlyRegistrationBaseController(
           earlyRegistrationApplications: {
             where: {
               schoolYearId: settings.activeSchoolYearId,
-              status: { in: ["PASSED"] }, // Usually only allowed if passed screening
+              status: { in: ["PASSED", "PRE_REGISTERED"] },
             },
             include: {
               familyMembers: true,

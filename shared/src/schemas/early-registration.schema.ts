@@ -79,6 +79,7 @@ export const earlyRegistrationSubmitSchema = z
     learnerType: LearnerTypeEnum,
     isScpApplication: z.boolean().default(false),
     scpType: ScpTypeEnum.optional().nullable(),
+    studentPhoto: z.string().optional().nullable(),
 
     // ── Personal ──────────────────────────────────────────
     lastName: z.string().min(1, "Enter the last name.").max(100),

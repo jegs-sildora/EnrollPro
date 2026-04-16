@@ -1,4 +1,5 @@
 import { useFormContext } from "react-hook-form";
+import { isAxiosError } from "axios";
 import type { EnrollmentFormData } from "../types";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -31,6 +32,7 @@ export default function Step1Personal() {
     register,
     watch,
     setValue,
+    setError,
     clearErrors,
     formState: { errors },
   } = useFormContext<EnrollmentFormData>();
@@ -46,6 +48,9 @@ export default function Step1Personal() {
 
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [lookupSuccess, setLookupSuccess] = useState(false);
+  const [lastLookedUpLrn, setLastLookedUpLrn] = useState<string | null>(null);
+  const [hasFilledEarlyRegistrationForm, setHasFilledEarlyRegistrationForm] =
+    useState(false);
 
   useEffect(() => {
     if (!canDeclareNoLrn && hasNoLrn) {
@@ -60,122 +65,164 @@ export default function Step1Personal() {
     }
     clearErrors("lrn");
     setLookupSuccess(false);
+    setLastLookedUpLrn(null);
   }, [hasNoLrn, lrn, setValue, clearErrors]);
 
-  // Auto-lookup when LRN reaches 12 digits
+  // Auto-lookup only when LRN is exactly 12 digits (debounced by 1 second).
   useEffect(() => {
-    const fetchEarlyRegData = async () => {
-      if (hasNoLrn) {
-        return;
-      }
+    if (!hasFilledEarlyRegistrationForm) {
+      setIsLookingUp(false);
+      setLookupSuccess(false);
+      setLastLookedUpLrn(null);
+      return;
+    }
 
-      if (lrn && lrn.length === 12 && !lookupSuccess && !isLookingUp) {
-        setIsLookingUp(true);
-        try {
-          const response = await api.get(`/applications/lookup-lrn/${lrn}`);
-          const data = response.data;
+    const normalizedLrn = String(lrn ?? "").trim();
 
-          if (data) {
-            // Map fetched data to form fields
-            // The backend returns a structured object matching most form fields
-            sileo.info({
-              title: "Early Registration Found",
-              description: `Fetched data for ${data.firstName} ${data.lastName}.`,
-            });
+    if (hasNoLrn) {
+      setLookupSuccess(false);
+      setLastLookedUpLrn(null);
+      setIsLookingUp(false);
+      clearErrors("lrn");
+      return;
+    }
 
-            // Update form values
-            setValue("earlyRegistrationId", data.earlyRegistrationId);
-            setValue("firstName", data.firstName);
-            setValue("lastName", data.lastName);
-            setValue("middleName", data.middleName || "");
-            setValue("extensionName", data.extensionName || "N/A");
-            if (data.birthdate) {
-              const bday = new Date(data.birthdate);
-              setValue("birthdate", bday);
-              setValue("age", differenceInYears(new Date(), bday));
-            }
-            setValue("sex", data.sex === "MALE" ? "Male" : "Female");
-            setValue("religion", data.religion || "");
-            setValue("isIpCommunity", data.isIpCommunity);
-            setValue("ipGroupName", data.ipGroupName || "");
-            setValue("isLearnerWithDisability", data.isLearnerWithDisability);
-            setValue("disabilityTypes", data.disabilityTypes || []);
+    if (!normalizedLrn) {
+      setLookupSuccess(false);
+      setLastLookedUpLrn(null);
+      clearErrors("lrn");
+      return;
+    }
 
-            if (data.currentAddress) {
-              setValue(
-                "currentAddress.houseNo",
-                data.currentAddress.houseNo || "",
-              );
-              setValue(
-                "currentAddress.barangay",
-                data.currentAddress.barangay || "",
-              );
-              setValue(
-                "currentAddress.cityMunicipality",
-                data.currentAddress.cityMunicipality || "",
-              );
-              setValue(
-                "currentAddress.province",
-                data.currentAddress.province || "",
-              );
-            }
+    if (normalizedLrn.length !== 12) {
+      setLookupSuccess(false);
+      setLastLookedUpLrn(null);
+      setIsLookingUp(false);
+      setError("lrn", {
+        type: "manual",
+        message: "Please enter a 12-digit LRN.",
+      });
+      return;
+    }
 
-            if (data.father) {
-              setValue("father.firstName", data.father.firstName);
-              setValue("father.lastName", data.father.lastName);
-              setValue("father.middleName", data.father.middleName || "");
-              setValue("father.contactNumber", data.father.contactNumber || "");
-            }
+    clearErrors("lrn");
 
-            if (data.mother) {
-              setValue("mother.firstName", data.mother.firstName);
-              setValue("mother.lastName", data.mother.lastName);
-              setValue("mother.middleName", data.mother.middleName || "");
-              setValue("mother.contactNumber", data.mother.contactNumber || "");
-            }
+    if (normalizedLrn === lastLookedUpLrn || isLookingUp) {
+      return;
+    }
 
-            if (data.guardian) {
-              setValue("guardian.firstName", data.guardian.firstName);
-              setValue("guardian.lastName", data.guardian.lastName);
-              setValue("guardian.middleName", data.guardian.middleName || "");
-              setValue(
-                "guardian.contactNumber",
-                data.guardian.contactNumber || "",
-              );
-            }
+    setLookupSuccess(false);
 
-            setValue("email", data.email || "");
-            setValue("learnerType", data.learnerType);
+    const timer = window.setTimeout(async () => {
+      setLastLookedUpLrn(normalizedLrn);
+      setIsLookingUp(true);
+      try {
+        const response = await api.get(`/applications/lookup-lrn/${normalizedLrn}`);
+        const data = response.data;
 
-            if (data.applicantType && data.applicantType !== "REGULAR") {
-              setValue("isScpApplication", true);
-              setValue("scpType", data.applicantType);
-            } else {
-              setValue("isScpApplication", false);
-            }
-
-            setLookupSuccess(true);
-          }
-        } catch (error: any) {
-          if (error.response?.status === 404) {
-            // Silently fail or show minor info if not found
-          } else {
-            sileo.error({
-              title: "Lookup Failed",
-              description: "Could not fetch early registration data.",
-            });
-          }
-        } finally {
-          setIsLookingUp(false);
+        // Avoid applying stale response when user has already changed the input.
+        if (String(watch("lrn") ?? "").trim() !== normalizedLrn) {
+          return;
         }
-      } else if (!lrn || lrn.length < 12) {
-        setLookupSuccess(false);
-      }
-    };
 
-    const timer = setTimeout(fetchEarlyRegData, 500);
-    return () => clearTimeout(timer);
-  }, [hasNoLrn, lrn, lookupSuccess, isLookingUp, setValue]);
+        if (data) {
+          sileo.info({
+            title: "Early Registration Found",
+            description: `Fetched data for ${data.firstName} ${data.lastName}.`,
+          });
+
+          setValue("earlyRegistrationId", data.earlyRegistrationId);
+          setValue("firstName", data.firstName);
+          setValue("lastName", data.lastName);
+          setValue("middleName", data.middleName || "");
+          setValue("extensionName", data.extensionName || "N/A");
+          if (data.birthdate) {
+            const bday = new Date(data.birthdate);
+            setValue("birthdate", bday);
+            setValue("age", differenceInYears(new Date(), bday));
+          }
+          setValue("sex", data.sex === "MALE" ? "Male" : "Female");
+          setValue("religion", data.religion || "");
+          setValue("isIpCommunity", data.isIpCommunity);
+          setValue("ipGroupName", data.ipGroupName || "");
+          setValue("isLearnerWithDisability", data.isLearnerWithDisability);
+          setValue("disabilityTypes", data.disabilityTypes || []);
+
+          if (data.currentAddress) {
+            setValue("currentAddress.houseNo", data.currentAddress.houseNo || "");
+            setValue("currentAddress.barangay", data.currentAddress.barangay || "");
+            setValue(
+              "currentAddress.cityMunicipality",
+              data.currentAddress.cityMunicipality || "",
+            );
+            setValue("currentAddress.province", data.currentAddress.province || "");
+          }
+
+          if (data.father) {
+            setValue("father.firstName", data.father.firstName);
+            setValue("father.lastName", data.father.lastName);
+            setValue("father.middleName", data.father.middleName || "");
+            setValue("father.contactNumber", data.father.contactNumber || "");
+          }
+
+          if (data.mother) {
+            setValue("mother.firstName", data.mother.firstName);
+            setValue("mother.lastName", data.mother.lastName);
+            setValue("mother.middleName", data.mother.middleName || "");
+            setValue("mother.contactNumber", data.mother.contactNumber || "");
+          }
+
+          if (data.guardian) {
+            setValue("guardian.firstName", data.guardian.firstName);
+            setValue("guardian.lastName", data.guardian.lastName);
+            setValue("guardian.middleName", data.guardian.middleName || "");
+            setValue("guardian.contactNumber", data.guardian.contactNumber || "");
+          }
+
+          setValue("email", data.email || "");
+          setValue("learnerType", data.learnerType);
+
+          if (data.applicantType && data.applicantType !== "REGULAR") {
+            setValue("isScpApplication", true);
+            setValue("scpType", data.applicantType);
+          } else {
+            setValue("isScpApplication", false);
+          }
+
+          setLookupSuccess(true);
+        }
+      } catch (error: unknown) {
+        if (isAxiosError(error) && error.response?.status === 404) {
+          sileo.error({
+            title: "Early Registration Not Found",
+            description:
+              "No eligible early registration found for this LRN in the current School Year.",
+          });
+        } else {
+          sileo.error({
+            title: "Lookup Failed",
+            description: "Could not fetch early registration data.",
+          });
+        }
+      } finally {
+        setIsLookingUp(false);
+      }
+    }, 1000);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [
+    hasNoLrn,
+    lrn,
+    hasFilledEarlyRegistrationForm,
+    lastLookedUpLrn,
+    isLookingUp,
+    setValue,
+    setError,
+    clearErrors,
+    watch,
+  ]);
 
   const onBirthdateChange = (date: Date | undefined) => {
     if (date) {
@@ -214,19 +261,66 @@ export default function Step1Personal() {
 
   return (
     <div className="space-y-8">
-      {/* ─── LRN Lookup Section ─── */}
-      <div className="p-6 bg-primary/5 border border-primary/20 rounded-2xl space-y-4">
+      {/* ─── Early Registration Dynamic Toggle ─── */}
+      <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-white p-4">
+        <Checkbox
+          id="hasFilledEarlyRegistrationForm"
+          checked={hasFilledEarlyRegistrationForm}
+          onCheckedChange={(checked) => {
+            const nextChecked = checked === true;
+            setHasFilledEarlyRegistrationForm(nextChecked);
+
+            if (!nextChecked) {
+              setLookupSuccess(false);
+              setIsLookingUp(false);
+              setLastLookedUpLrn(null);
+              setValue("earlyRegistrationId", null, {
+                shouldDirty: true,
+                shouldValidate: false,
+              });
+              clearErrors("lrn");
+            }
+          }}
+        />
+        <Label
+          htmlFor="hasFilledEarlyRegistrationForm"
+          className="text-xs font-semibold leading-relaxed cursor-pointer">
+          I already filled out the Basic Education Early Registration Form.
+        </Label>
+      </div>
+
+      {/* ─── LRN Section (Dynamic) ─── */}
+      <div
+        className={cn(
+          "p-6 border rounded-2xl space-y-4",
+          hasFilledEarlyRegistrationForm
+            ? "bg-primary/5 border-primary/20"
+            : "bg-muted/20 border-border",
+        )}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+          <div
+            className={cn(
+              "w-10 h-10 rounded-full flex items-center justify-center",
+              hasFilledEarlyRegistrationForm
+                ? "bg-primary/10 text-primary"
+                : "bg-muted text-foreground",
+            )}>
             <Search className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-sm font-bold uppercase tracking-wider text-primary">
-              Quick Fill via LRN
+            <h3
+              className={cn(
+                "text-sm font-bold uppercase tracking-wider",
+                hasFilledEarlyRegistrationForm ? "text-primary" : "text-foreground",
+              )}>
+              {hasFilledEarlyRegistrationForm
+                ? "Quick Fill via LRN"
+                : "Learner Reference Number (LRN)"}
             </h3>
             <p className="text-xs text-muted-foreground font-bold">
-              Type your 12-digit LRN to automatically fetch your Early
-              Registration information.
+              {hasFilledEarlyRegistrationForm
+                ? "Type your 12-digit LRN to automatically fetch your Early Registration information."
+                : "Enter your 12-digit LRN to continue enrollment."}
             </p>
           </div>
         </div>
@@ -245,7 +339,9 @@ export default function Step1Personal() {
               errors.lrn
                 ? "border-destructive"
                 : "border-primary/30 focus:border-primary",
-              lookupSuccess && "border-green-500 bg-green-50/30",
+              hasFilledEarlyRegistrationForm &&
+                lookupSuccess &&
+                "border-green-500 bg-green-50/30",
             )}
             onInput={(e) => {
               e.currentTarget.value = e.currentTarget.value.replace(
@@ -254,14 +350,16 @@ export default function Step1Personal() {
               );
             }}
           />
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-            {isLookingUp && (
-              <Loader2 className="w-5 h-5 animate-spin text-primary" />
-            )}
-            {lookupSuccess && (
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-            )}
-          </div>
+          {hasFilledEarlyRegistrationForm && (
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+              {isLookingUp && (
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+              )}
+              {lookupSuccess && (
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
+              )}
+            </div>
+          )}
         </div>
 
         <p className="text-xs font-semibold text-muted-foreground">

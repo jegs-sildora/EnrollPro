@@ -40,6 +40,8 @@ interface Props {
   onScheduleInterview?: () => void;
   onScheduleStep?: (step: AssessmentStep) => void;
   onRecordStepResult?: (step: AssessmentStep) => void;
+  onSetProfileLock?: (lock: boolean) => Promise<void> | void;
+  onMarkVerified?: () => Promise<void> | void;
   onSaveStepResult?: (
     stepOrder: number,
     kind: string,
@@ -66,6 +68,8 @@ export function ApplicationDetailPanel({
   onScheduleInterview,
   onScheduleStep,
   onRecordStepResult,
+  onSetProfileLock,
+  onMarkVerified,
   onSaveStepResult,
   onMarkInterviewPassed,
 }: Props) {
@@ -339,6 +343,22 @@ export function ApplicationDetailPanel({
         onScheduleInterview={onScheduleInterview}
         onScheduleStep={onScheduleStep}
         onRecordStepResult={onRecordStepResult}
+        onSetProfileLock={
+          onSetProfileLock
+            ? async (lock) => {
+                await onSetProfileLock(lock);
+                await refetch();
+              }
+            : undefined
+        }
+        onMarkVerified={
+          onMarkVerified
+            ? async () => {
+                await onMarkVerified();
+                await refetch();
+              }
+            : undefined
+        }
         interviewPassChecked={interviewPassChecked}
         isMandatoryDocumentsMet={mandatoryMet}
       />

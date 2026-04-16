@@ -1,4 +1,5 @@
 import {
+  Check,
   ClipboardCheck,
   FileText,
   Lock,
@@ -102,7 +103,11 @@ export default function StepProgressBar({
                           : "border-border bg-card text-muted-foreground",
                     )}
                     aria-current={isActive ? "step" : undefined}>
-                    <StepIcon className="h-3.5 w-3.5" />
+                    {isCompleted ? (
+                      <Check className="h-3.5 w-3.5 stroke-[2.5]" />
+                    ) : (
+                      <StepIcon className="h-3.5 w-3.5" />
+                    )}
                   </div>
                 </div>
               );
@@ -110,9 +115,14 @@ export default function StepProgressBar({
           </div>
 
           <div className="mt-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
-            <p className="truncate font-bold text-foreground">
-              {currentStepData?.title}
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="truncate font-bold text-foreground">
+                {currentStepData?.title}
+              </p>
+              <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-wider text-primary">
+                Current
+              </span>
+            </div>
             {description && (
               <p className="text-sm font-bold mt-0.5 leading-snug text-muted-foreground">
                 {description}
@@ -133,6 +143,11 @@ export default function StepProgressBar({
               const isCompleted = step.id < maxCompleted;
               const isLast = index === steps.length - 1;
               const StepIcon = getStepIcon(step.title, index);
+              const statusLabel = isCompleted
+                ? "Done"
+                : isActive
+                  ? "Current"
+                  : "Pending";
 
               return (
                 <div key={step.id} className="relative min-w-0 flex-1">
@@ -159,7 +174,11 @@ export default function StepProgressBar({
                             : "border-border bg-card text-muted-foreground",
                       )}
                       aria-current={isActive ? "step" : undefined}>
-                      <StepIcon className="h-4 w-4" />
+                      {isCompleted ? (
+                        <Check className="h-4 w-4 stroke-[2.5]" />
+                      ) : (
+                        <StepIcon className="h-4 w-4" />
+                      )}
                     </div>
 
                     <span
@@ -173,6 +192,19 @@ export default function StepProgressBar({
                       )}
                       title={step.title}>
                       {step.title}
+                    </span>
+
+                    <span
+                      className={cn(
+                        "mt-1 rounded-full px-2 py-0.5 text-[0.5625rem] font-bold uppercase tracking-wider transition-colors",
+                        isCompleted
+                          ? "bg-primary text-primary-foreground"
+                          : isActive
+                            ? "bg-primary/10 text-primary"
+                            : "bg-muted/70 text-muted-foreground",
+                      )}
+                      aria-label={`Step status: ${statusLabel}`}>
+                      {statusLabel}
                     </span>
                   </div>
                 </div>

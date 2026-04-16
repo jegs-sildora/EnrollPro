@@ -75,6 +75,7 @@ export interface ChecklistData {
   isSf10Requested: boolean;
   isGoodMoralPresented: boolean;
   isMedicalEvalSubmitted: boolean;
+  isCertOfRecognitionPresented: boolean;
   isUndertakingSigned: boolean;
   isConfirmationSlipReceived: boolean;
   updatedAt: string;
@@ -159,6 +160,9 @@ export interface ApplicantDetail {
   id: number;
   lrn: string | null;
   isPendingLrnCreation?: boolean;
+  isProfileLocked?: boolean;
+  profileLockedAt?: string | null;
+  profileLockedById?: number | null;
   studentPhoto: string | null;
   psaBirthCertNumber: string | null;
   lastName: string;

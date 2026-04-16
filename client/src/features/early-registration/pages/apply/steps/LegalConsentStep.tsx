@@ -141,6 +141,17 @@ export default function LegalConsentStep({
           icon={User}
           stepId={2}
           onEdit={onEdit}>
+          {data.studentPhoto && (
+            <div className="sm:col-span-2 flex justify-center pb-2">
+              <div className="w-24 h-24 rounded-lg border-2 border-dashed border-primary/50 bg-background overflow-hidden">
+                <img
+                  src={data.studentPhoto}
+                  alt="Student"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          )}
           <DataItem
             label="Full Name"
             value={`${data.lastName}, ${data.firstName} ${data.middleName || ""} ${data.extensionName || ""}`}

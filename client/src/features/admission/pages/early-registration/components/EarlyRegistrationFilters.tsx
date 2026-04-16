@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Search } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -15,6 +15,12 @@ import {
 import { SCP_LABELS } from "@/shared/lib/utils";
 import { useScpConfigs } from "@/features/admission/hooks/useScpConfigs";
 import { REGISTRATION_STAGE_QUICK_FILTERS } from "@/features/admission/constants/registrationWorkflow";
+
+const REGULAR_TRACK_HIDDEN_STAGE_VALUES = new Set([
+  "ASSESSMENT_SCHEDULED",
+  "ASSESSMENT_TAKEN",
+  "INTERVIEW_SCHEDULED",
+]);
 
 interface FiltersProps {
   status: string;
@@ -59,11 +65,32 @@ export function EarlyRegistrationFilters({
     return types;
   }, [configs]);
 
+  const stageQuickFilters = useMemo(() => {
+    if (type !== "REGULAR") {
+      return REGISTRATION_STAGE_QUICK_FILTERS;
+    }
+
+    return REGISTRATION_STAGE_QUICK_FILTERS.filter(
+      (stage) => !REGULAR_TRACK_HIDDEN_STAGE_VALUES.has(stage.value),
+    );
+  }, [type]);
+
+  useEffect(() => {
+    const isCurrentStatusVisible = stageQuickFilters.some(
+      (stage) => stage.value === status,
+    );
+
+    if (!isCurrentStatusVisible) {
+      setStatus("ALL");
+      setPage(1);
+    }
+  }, [status, stageQuickFilters, setStatus, setPage]);
+
   return (
     <CardHeader className="px-3 sm:px-6 pb-3">
       <div className="space-y-3">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
-          {REGISTRATION_STAGE_QUICK_FILTERS.map((stage) => (
+          {stageQuickFilters.map((stage) => (
             <Button
               key={stage.value}
               type="button"
@@ -112,6 +139,14 @@ export function EarlyRegistrationFilters({
               value={type}
               onValueChange={(value) => {
                 setType(value);
+
+                if (
+                  value === "REGULAR" &&
+                  REGULAR_TRACK_HIDDEN_STAGE_VALUES.has(status)
+                ) {
+                  setStatus("ALL");
+                }
+
                 setPage(1);
               }}>
               <SelectTrigger className="h-10 w-full md:w-72 lg:w-80 text-sm font-bold">
@@ -147,4 +182,3 @@ export function EarlyRegistrationFilters({
     </CardHeader>
   );
 }
-

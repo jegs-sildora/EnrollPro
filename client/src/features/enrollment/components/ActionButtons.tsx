@@ -1,4 +1,5 @@
 import { Button } from "@/shared/ui/button";
+import { useAuthStore } from "@/store/auth.slice";
 import type {
   ApplicantDetail,
   AssessmentStep,
@@ -24,6 +25,8 @@ interface Props {
   onScheduleStep?: (step: AssessmentStep) => void;
   /** New: record result for a specific pipeline step */
   onRecordStepResult?: (step: AssessmentStep) => void;
+  onMarkVerified?: () => void | Promise<void>;
+  onSetProfileLock?: (lock: boolean) => void | Promise<void>;
   interviewPassChecked?: boolean;
   isMandatoryDocumentsMet?: boolean;
 }
@@ -82,9 +85,16 @@ export function ActionButtons({
   ...handlers
 }: Props) {
   const { status, applicantType } = applicant;
+  const userRole = useAuthStore((state) => state.user?.role);
   const isPendingLrnCreation = applicant.isPendingLrnCreation === true;
+  const isProfileLocked = applicant.isProfileLocked === true;
   const isRegular = applicantType === "REGULAR";
   const isSCP = !isRegular;
+  const isEnrollmentVerificationMode = Boolean(handlers.onMarkVerified);
+  const canToggleProfileLock =
+    status === "ENROLLED" &&
+    userRole === "SYSTEM_ADMIN" &&
+    Boolean(handlers.onSetProfileLock);
 
   const steps = applicant.assessmentSteps || [];
   const hasSteps = steps.length > 0;
@@ -92,6 +102,61 @@ export function ActionButtons({
   const assessmentDecisionAction = isSCP
     ? getAssessmentDecisionAction(steps)
     : null;
+
+  if (isEnrollmentVerificationMode) {
+    return (
+      <div className="flex flex-col gap-2 p-4 border-t bg-background mt-auto">
+        {status === "UNDER_REVIEW" ? (
+          <>
+            <Button
+              className="w-full bg-[hsl(var(--primary))] text-primary-foreground hover:opacity-90 font-bold"
+              onClick={handlers.onMarkVerified}
+              disabled={!isMandatoryDocumentsMet}>
+              Mark as Verified
+            </Button>
+            {!isMandatoryDocumentsMet && (
+              <p className="text-xs text-center text-amber-700 font-bold">
+                Complete all mandatory physical document checks before marking as
+                verified.
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground text-center py-2">
+            No verification action available for this application status.
+          </p>
+        )}
+
+        {canToggleProfileLock && (
+          <>
+            <Button
+              variant={isProfileLocked ? "outline" : "destructive"}
+              className={`w-full font-bold ${
+                isProfileLocked
+                  ? "border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+                  : ""
+              }`}
+              onClick={() => handlers.onSetProfileLock?.(!isProfileLocked)}>
+              {isProfileLocked
+                ? "Unlock Profile (Admin Override)"
+                : "Lock Profile (Admin Override)"}
+            </Button>
+            <p className="text-xs text-center text-muted-foreground">
+              Profile is currently {isProfileLocked ? "LOCKED" : "UNLOCKED"}.
+            </p>
+          </>
+        )}
+
+        {((status === "ENROLLED" && !canToggleProfileLock) ||
+          status === "REJECTED" ||
+          status === "WITHDRAWN") && (
+          <p className="text-sm text-muted-foreground text-center py-2">
+            No further actions available for this application.
+          </p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-2 p-4 border-t bg-background mt-auto">
@@ -228,7 +293,7 @@ export function ActionButtons({
         </>
       )}
 
-      {(status === "PRE_REGISTERED" || status === "TEMPORARILY_ENROLLED") &&
+      {(status === "PASSED" || status === "UNDER_REVIEW") &&
         handlers.onEnroll && (
           <>
             {isPendingLrnCreation && handlers.onAssignLrn && (
@@ -239,19 +304,19 @@ export function ActionButtons({
                 Assign LRN
               </Button>
             )}
-          <Button
-            className="w-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold"
-            onClick={handlers.onEnroll}
-            disabled={isPendingLrnCreation}
-            title={
-              isPendingLrnCreation
-                ? "Assign an LRN first before finalizing enrollment."
-                : undefined
-            }>
-            {isPendingLrnCreation
-              ? "Assign LRN Before Final Enrollment"
-              : "Finalize Enrollment"}
-          </Button>
+            <Button
+              className="w-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold"
+              onClick={handlers.onEnroll}
+              disabled={isPendingLrnCreation}
+              title={
+                isPendingLrnCreation
+                  ? "Assign an LRN first before finalizing enrollment."
+                  : undefined
+              }>
+              {isPendingLrnCreation
+                ? "Assign LRN Before Final Enrollment"
+                : "Finalize Enrollment"}
+            </Button>
           </>
         )}
 
@@ -271,7 +336,27 @@ export function ActionButtons({
         </>
       )}
 
-      {(status === "ENROLLED" ||
+      {canToggleProfileLock && (
+        <>
+          <Button
+            variant={isProfileLocked ? "outline" : "destructive"}
+            className={`w-full font-bold ${
+              isProfileLocked
+                ? "border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+                : ""
+            }`}
+            onClick={() => handlers.onSetProfileLock?.(!isProfileLocked)}>
+            {isProfileLocked
+              ? "Unlock Profile (Admin Override)"
+              : "Lock Profile (Admin Override)"}
+          </Button>
+          <p className="text-xs text-center text-muted-foreground">
+            Profile is currently {isProfileLocked ? "LOCKED" : "UNLOCKED"}.
+          </p>
+        </>
+      )}
+
+      {((status === "ENROLLED" && !canToggleProfileLock) ||
         status === "REJECTED" ||
         status === "WITHDRAWN") && (
         <p className="text-sm text-muted-foreground text-center py-2">

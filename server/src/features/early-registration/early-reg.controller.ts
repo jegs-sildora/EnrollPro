@@ -5,6 +5,7 @@ import { AppError } from "../../lib/AppError.js";
 import { normalizeDateToUtcNoon } from "../school-year/school-year.service.js";
 import { getRequiredDocuments } from "../enrollment/enrollment-requirement.service.js";
 import fs from "fs";
+import { saveBase64Image } from "../../lib/fileUploader.js";
 import {
   LearnerType,
   FamilyRelationship,
@@ -24,7 +25,7 @@ const sharedService = createEarlyRegistrationSharedService(
 
 /** Recursively converts all string values to uppercase and trims them. */
 function toUpperCaseRecursive(obj: unknown): unknown {
-  const skipKeys = ["contactNumber", "email", "emailAddress"];
+  const skipKeys = ["contactNumber", "email", "emailAddress", "studentPhoto"];
 
   if (Array.isArray(obj)) {
     return obj.map((v) => toUpperCaseRecursive(v));
@@ -463,6 +464,8 @@ async function createRegistration(
       lastGradeLevel: body.lastGradeLevel || null,
     };
 
+    const studentPhotoUrl = await saveBase64Image(body.studentPhoto, "photo");
+
     const result = await prisma.$transaction(async (tx) => {
       let learner: { id: number };
 
@@ -510,6 +513,7 @@ async function createRegistration(
           hasNoMother: body.hasNoMother ?? false,
           hasNoFather: body.hasNoFather ?? false,
           isPrivacyConsentGiven: body.isPrivacyConsentGiven ?? false,
+          studentPhoto: studentPhotoUrl,
           encodedById: options.encodedById ?? null,
           trackingNumber: tempTracking,
           familyMembers: {

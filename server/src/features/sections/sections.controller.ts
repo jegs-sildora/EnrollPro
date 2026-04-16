@@ -2,13 +2,40 @@ import type { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 
+const VALID_PROGRAM_TYPES = new Set([
+  "REGULAR",
+  "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+  "SPECIAL_PROGRAM_IN_THE_ARTS",
+  "SPECIAL_PROGRAM_IN_SPORTS",
+  "SPECIAL_PROGRAM_IN_JOURNALISM",
+  "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
+  "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
+]);
+
 export async function listSections(req: Request, res: Response): Promise<void> {
   const ayId = req.params.ayId ? parseInt(req.params.ayId as string) : null;
-  const { gradeLevelId } = req.query;
+  const { gradeLevelId, programType } = req.query;
+
+  const normalizedProgramType =
+    typeof programType === "string" ? programType : undefined;
+  if (
+    normalizedProgramType &&
+    !VALID_PROGRAM_TYPES.has(normalizedProgramType)
+  ) {
+    res.status(400).json({ message: "Invalid programType filter" });
+    return;
+  }
 
   if (gradeLevelId) {
+    const where: Record<string, any> = {
+      gradeLevelId: parseInt(gradeLevelId as string),
+    };
+    if (normalizedProgramType) {
+      where.programType = normalizedProgramType;
+    }
+
     const sections = await prisma.section.findMany({
-      where: { gradeLevelId: parseInt(gradeLevelId as string) },
+      where,
       include: {
         advisingTeacher: {
           select: {
@@ -50,6 +77,9 @@ export async function listSections(req: Request, res: Response): Promise<void> {
     orderBy: { displayOrder: "asc" },
     include: {
       sections: {
+        ...(normalizedProgramType
+          ? { where: { programType: normalizedProgramType as any } }
+          : {}),
         orderBy: { name: "asc" },
         include: {
           advisingTeacher: {
@@ -73,6 +103,7 @@ export async function listSections(req: Request, res: Response): Promise<void> {
     sections: gl.sections.map((s) => ({
       id: s.id,
       name: s.name,
+      programType: s.programType,
       maxCapacity: s.maxCapacity,
       enrolledCount: s._count.enrollmentRecords,
       fillPercent:
@@ -116,7 +147,8 @@ export async function createSection(
   req: Request,
   res: Response,
 ): Promise<void> {
-  const { name, maxCapacity, gradeLevelId, advisingTeacherId } = req.body;
+  const { name, maxCapacity, gradeLevelId, programType, advisingTeacherId } =
+    req.body;
 
   if (!name || !gradeLevelId) {
     res.status(400).json({ message: "name and gradeLevelId are required" });
@@ -128,6 +160,7 @@ export async function createSection(
       name,
       maxCapacity: maxCapacity ?? 40,
       gradeLevelId,
+      programType: programType ?? "REGULAR",
       advisingTeacherId: advisingTeacherId ?? null,
     },
   });
@@ -149,7 +182,7 @@ export async function updateSection(
   res: Response,
 ): Promise<void> {
   const id = parseInt(req.params.id as string);
-  const { name, maxCapacity, advisingTeacherId } = req.body;
+  const { name, maxCapacity, programType, advisingTeacherId } = req.body;
 
   const section = await prisma.section.findUnique({ where: { id } });
   if (!section) {
@@ -162,6 +195,7 @@ export async function updateSection(
     data: {
       ...(name ? { name } : {}),
       ...(maxCapacity !== undefined ? { maxCapacity } : {}),
+      ...(programType !== undefined ? { programType } : {}),
       ...(advisingTeacherId !== undefined
         ? { advisingTeacherId: advisingTeacherId || null }
         : {}),

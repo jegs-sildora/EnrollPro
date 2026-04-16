@@ -43,6 +43,7 @@ model User {
 
   // Relations to Enrollment
   encodedEnrollmentApps EnrollmentApplication[] @relation("EnrollmentAppEncodedBy")
+  profileLockedEnrollmentApps EnrollmentApplication[] @relation("EnrollmentProfileLockedBy")
   enrollmentRecords      EnrollmentRecord[]
   
   recordedHealthRecords HealthRecord[] @relation("HealthRecordRecordedBy")
@@ -138,6 +139,7 @@ model Section {
   name              String
   maxCapacity       Int          @default(40) @map("max_capacity")
   gradeLevelId      Int          @map("grade_level_id")
+  programType       ApplicantType @default(REGULAR) @map("program_type")
   advisingTeacherId Int?         @map("advising_teacher_id")
   createdAt         DateTime     @default(now()) @db.Timestamptz @map("created_at")
   updatedAt         DateTime     @updatedAt @db.Timestamptz @map("updated_at")
@@ -147,6 +149,7 @@ model Section {
   enrollmentRecords EnrollmentRecord[]
 
   @@index([gradeLevelId], name: "idx_sections_grade_level_id")
+  @@index([gradeLevelId, programType], name: "idx_sections_grade_level_program_type")
   @@map("sections")
 }
 
@@ -207,6 +210,7 @@ model EarlyRegistrationApplication {
   status                ApplicationStatus @default(SUBMITTED)
   channel               AdmissionChannel  @default(ONLINE)
   contactNumber         String    @map("contact_number")
+  studentPhoto          String?   @map("student_photo")
   email                 String?
   primaryContact        PrimaryContactType? @map("primary_contact")
   guardianRelationship  String?   @map("guardian_relationship")
@@ -286,6 +290,9 @@ model EnrollmentApplication {
   hasNoFather             Boolean           @default(false) @map("has_no_father")
   portalPin               String?           @map("portal_pin")
   portalPinChangedAt      DateTime?         @db.Timestamptz @map("portal_pin_changed_at")
+  isProfileLocked         Boolean           @default(false) @map("is_profile_locked")
+  profileLockedAt         DateTime?         @db.Timestamptz @map("profile_locked_at")
+  profileLockedById       Int?              @map("profile_locked_by_id")
   encodedById             Int?              @map("encoded_by_id")
   createdAt               DateTime          @default(now()) @db.Timestamptz @map("created_at")
   updatedAt               DateTime          @updatedAt @db.Timestamptz @map("updated_at")
@@ -295,6 +302,7 @@ model EnrollmentApplication {
   schoolYear              SchoolYear        @relation(fields: [schoolYearId], references: [id])
   gradeLevel              GradeLevel        @relation(fields: [gradeLevelId], references: [id])
   encodedBy               User?             @relation("EnrollmentAppEncodedBy", fields: [encodedById], references: [id])
+  profileLockedBy         User?             @relation("EnrollmentProfileLockedBy", fields: [profileLockedById], references: [id])
   
   addresses               ApplicationAddress[]
   familyMembers           ApplicationFamilyMember[]

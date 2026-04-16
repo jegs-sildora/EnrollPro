@@ -22,11 +22,6 @@ import api from "@/shared/api/axiosInstance";
 import { toUpperCaseRecursive } from "@/shared/lib/utils";
 import { sileo } from "sileo";
 
-const DRAFT_KEY = "enrollpro_earlyreg_draft";
-const STEP_KEY = "enrollpro_earlyreg_step";
-const MAX_STEP_KEY = "enrollpro_earlyreg_max_step";
-const EDITING_KEY = "enrollpro_earlyreg_editing";
-
 interface EarlyRegFormProps {
   onSuccess?: (data: {
     id: number;
@@ -34,6 +29,9 @@ interface EarlyRegFormProps {
     learnerName: string;
     applicantType: string;
   }) => void;
+  submitEndpoint?: string;
+  storageKeyPrefix?: string;
+  consentStorageKey?: string | null;
 }
 
 const collectErrorMessages = (errorValue: unknown): string[] => {
@@ -49,7 +47,15 @@ const collectErrorMessages = (errorValue: unknown): string[] => {
 
 export default function EarlyRegistrationForm({
   onSuccess,
+  submitEndpoint = "/early-registrations",
+  storageKeyPrefix = "enrollpro_earlyreg",
+  consentStorageKey = "enrollpro_earlyreg_consent",
 }: EarlyRegFormProps) {
+  const DRAFT_KEY = `${storageKeyPrefix}_draft`;
+  const STEP_KEY = `${storageKeyPrefix}_step`;
+  const MAX_STEP_KEY = `${storageKeyPrefix}_max_step`;
+  const EDITING_KEY = `${storageKeyPrefix}_editing`;
+
   // Draft recovery
   const [initialDraft] = useState(() => {
     const draft = sessionStorage.getItem(DRAFT_KEY);
@@ -283,7 +289,7 @@ export default function EarlyRegistrationForm({
             : data.birthdate,
       };
 
-      const response = await api.post("/early-registrations", payload);
+      const response = await api.post(submitEndpoint, payload);
 
       sileo.success({
         title: "Success!",
@@ -306,7 +312,9 @@ export default function EarlyRegistrationForm({
       sessionStorage.removeItem(STEP_KEY);
       sessionStorage.removeItem(MAX_STEP_KEY);
       sessionStorage.removeItem(EDITING_KEY);
-      sessionStorage.removeItem("enrollpro_earlyreg_consent");
+      if (consentStorageKey) {
+        sessionStorage.removeItem(consentStorageKey);
+      }
     } catch (error: unknown) {
       const message =
         (error as { response?: { data?: { message?: string } } })?.response
