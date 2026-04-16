@@ -91,6 +91,7 @@ export const earlyRegistrationSubmitSchema = z
       .min(1, "Enter the learner's date of birth.")
       .or(z.date()),
     sex: SexEnum,
+    placeOfBirth: z.string().min(1, "Enter the place of birth.").max(150),
     religion: z.string().max(100).optional().nullable(),
 
     // ── IP / PWD ──────────────────────────────────────────

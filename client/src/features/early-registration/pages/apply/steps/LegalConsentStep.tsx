@@ -157,6 +157,7 @@ export default function LegalConsentStep({
             value={`${data.lastName}, ${data.firstName} ${data.middleName || ""} ${data.extensionName || ""}`}
           />
           <DataItem label="Sex at Birth" value={data.sex} />
+          <DataItem label="Place of Birth" value={data.placeOfBirth} />
           <DataItem
             label="Birthdate"
             value={

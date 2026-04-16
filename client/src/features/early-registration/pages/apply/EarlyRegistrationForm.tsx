@@ -174,7 +174,13 @@ export default function EarlyRegistrationForm({
       "isScpApplication",
       "scpType",
     ],
-    "learner-profile": ["lastName", "firstName", "birthdate", "sex"],
+    "learner-profile": [
+      "lastName",
+      "firstName",
+      "birthdate",
+      "sex",
+      "placeOfBirth",
+    ],
     "address-guardian": [
       "barangay",
       "cityMunicipality",

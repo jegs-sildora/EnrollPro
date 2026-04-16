@@ -300,8 +300,8 @@ export default function LearnerProfileStep() {
         </div>
       </div>
 
-      {/* Birthdate + Age + Sex */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
+      {/* Birthdate + Age + Sex + Place of Birth */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
         <div className="space-y-1.5">
           <Label className="text-sm font-semibold">
             Date of Birth <span className="text-destructive">*</span>
@@ -439,20 +439,49 @@ export default function LearnerProfileStep() {
             </p>
           )}
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="religion" className="text-sm font-semibold">
-            Religion
-          </Label>
-          <Input
-            id="religion"
-            {...register("religion")}
-            placeholder="e.g. ROMAN CATHOLIC"
-            autoComplete="off"
-            className="h-11 font-bold uppercase"
-            onInput={(e) => {
-              e.currentTarget.value = e.currentTarget.value.toUpperCase();
-            }}
-          />
+        
+        <div className="md:col-span-2 lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
+          <div className="space-y-1.5">
+            <Label htmlFor="placeOfBirth" className="text-sm font-semibold">
+              Place of Birth <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="placeOfBirth"
+              {...register("placeOfBirth")}
+              placeholder="e.g. QUEZON CITY"
+              autoComplete="off"
+              className={cn(
+                "h-11 font-bold uppercase",
+                errors.placeOfBirth &&
+                  "border-destructive focus-visible:ring-destructive",
+              )}
+              onInput={(e) => {
+                e.currentTarget.value = e.currentTarget.value.toUpperCase();
+              }}
+            />
+            {errors.placeOfBirth && (
+              <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                {errors.placeOfBirth.message}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="religion" className="text-sm font-semibold">
+              Religion
+            </Label>
+            <Input
+              id="religion"
+              {...register("religion")}
+              placeholder="e.g. ROMAN CATHOLIC"
+              autoComplete="off"
+              className="h-11 font-bold uppercase"
+              onInput={(e) => {
+                e.currentTarget.value = e.currentTarget.value.toUpperCase();
+              }}
+            />
+          </div>
         </div>
       </div>
 

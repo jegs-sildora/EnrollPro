@@ -19,6 +19,7 @@ export const DEFAULT_VALUES: Partial<EarlyRegFormData> = {
   extensionName: "",
   birthdate: "",
   sex: "MALE",
+  placeOfBirth: "",
   religion: "",
   isIpCommunity: false,
   ipGroupName: "",

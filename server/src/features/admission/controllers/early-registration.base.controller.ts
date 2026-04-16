@@ -557,6 +557,7 @@ export function createEarlyRegistrationBaseController(
       extensionName: body.extensionName || null,
       birthdate: birthDate,
       sex: body.sex === "MALE" ? ("MALE" as const) : ("FEMALE" as const),
+      placeOfBirth: body.placeOfBirth || null,
       religion: body.religion || null,
       isIpCommunity: body.isIpCommunity ?? false,
       ipGroupName: body.isIpCommunity ? body.ipGroupName : null,
