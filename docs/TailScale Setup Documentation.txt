@@ -1,5 +1,5 @@
 =====================================================
-ENROLLPRO TEAM MESH: TAILSCALE BACKEND + DATABASE SETUP
+SCHOOLAUTOMATE TEAM MESH: TAILSCALE BACKEND + DATABASE SETUP
 =====================================================
 Scope: Development only (trusted teammates on Tailscale)
 Default API Port: 5000
