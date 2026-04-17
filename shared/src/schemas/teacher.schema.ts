@@ -1,20 +1,17 @@
 import { z } from "zod";
 
-const optionalUpperText = z.preprocess(
-  (value) => {
-    if (value === undefined || value === null) {
-      return null;
-    }
+const optionalUpperText = z.preprocess((value) => {
+  if (value === undefined || value === null) {
+    return null;
+  }
 
-    if (typeof value !== "string") {
-      return value;
-    }
+  if (typeof value !== "string") {
+    return value;
+  }
 
-    const normalized = value.trim();
-    return normalized.length > 0 ? normalized.toUpperCase() : null;
-  },
-  z.string().nullable(),
-);
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized.toUpperCase() : null;
+}, z.string().nullable());
 
 const optionalContactNumber = z.preprocess(
   (value) => {
@@ -52,7 +49,12 @@ export const teacherSchema = z.object({
   contactNumber: optionalContactNumber.optional(),
   specialization: optionalUpperText.optional(),
   subjects: z
-    .array(z.string().trim().transform((value) => value.toUpperCase()))
+    .array(
+      z
+        .string()
+        .trim()
+        .transform((value) => value.toUpperCase()),
+    )
     .optional()
     .default([]),
   photo: z

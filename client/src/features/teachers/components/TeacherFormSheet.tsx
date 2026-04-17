@@ -133,7 +133,9 @@ export function TeacherFormSheet({
       <SheetContent
         side="right"
         className="p-0 flex flex-row border-l overflow-visible w-screen sm:w-auto sm:max-w-none"
-        style={isDesktopViewport ? { width: `${panelPercentage}vw` } : undefined}>
+        style={
+          isDesktopViewport ? { width: `${panelPercentage}vw` } : undefined
+        }>
         <div
           onMouseDown={startResizing}
           className="absolute left-[-4px] top-0 bottom-0 w-[8px] cursor-col-resize z-50 hover:bg-primary/30 transition-colors hidden sm:flex items-center justify-center group">

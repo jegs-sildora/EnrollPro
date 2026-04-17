@@ -75,7 +75,9 @@ function normalizeOptionalText(value?: string | null): string | null {
 }
 
 function normalizeRequiredUpperText(value: unknown): string {
-  return String(value ?? "").trim().toUpperCase();
+  return String(value ?? "")
+    .trim()
+    .toUpperCase();
 }
 
 function normalizeOptionalUpperText(value?: string | null): string | null {

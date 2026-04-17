@@ -149,7 +149,9 @@ export function TeacherDirectoryCard({
         size="sm"
         className="h-7 px-2 text-[0.625rem] gap-1"
         onClick={() => onForceSyncTeacher(teacher)}
-        disabled={!ayId || forceSyncingAll || forceSyncingTeacherId === teacher.id}>
+        disabled={
+          !ayId || forceSyncingAll || forceSyncingTeacherId === teacher.id
+        }>
         <CloudUpload className="h-3 w-3" />
         {forceSyncingTeacherId === teacher.id ? "Syncing" : "Force Sync"}
       </Button>
@@ -317,19 +319,25 @@ export function TeacherDirectoryCard({
                       <p className="text-muted-foreground uppercase tracking-wide">
                         Employee ID
                       </p>
-                      <p className="font-semibold">{teacher.employeeId || "-"}</p>
+                      <p className="font-semibold">
+                        {teacher.employeeId || "-"}
+                      </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground uppercase tracking-wide">
                         Contact
                       </p>
-                      <p className="font-semibold">{teacher.contactNumber || "-"}</p>
+                      <p className="font-semibold">
+                        {teacher.contactNumber || "-"}
+                      </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground uppercase tracking-wide">
                         Designation
                       </p>
-                      <p className="font-semibold">{formatDesignationSummary(teacher)}</p>
+                      <p className="font-semibold">
+                        {formatDesignationSummary(teacher)}
+                      </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground uppercase tracking-wide">
@@ -442,7 +450,9 @@ export function TeacherDirectoryCard({
                             {formatTeacherName(teacher)}
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            {teacher.email || teacher.contactNumber || "No contact info"}
+                            {teacher.email ||
+                              teacher.contactNumber ||
+                              "No contact info"}
                           </span>
                         </div>
                       </TableCell>

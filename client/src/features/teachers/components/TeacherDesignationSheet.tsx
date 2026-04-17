@@ -94,7 +94,8 @@ export function TeacherDesignationSheet({
   const teacherDisplayName = designationOpenFor
     ? formatTeacherName(designationOpenFor)
     : "Teacher";
-  const designationLastUpdated = designationOpenFor?.designation?.updatedAt ?? null;
+  const designationLastUpdated =
+    designationOpenFor?.designation?.updatedAt ?? null;
 
   return (
     <Sheet
@@ -114,7 +115,9 @@ export function TeacherDesignationSheet({
           <SheetDescription className="text-[11px] sm:text-xs text-primary-foreground flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
             <span>{teacherDisplayName}</span>
             <span className="hidden sm:inline">|</span>
-            <span>{ayId ? `School Year #${ayId}` : "No Active School Year"}</span>
+            <span>
+              {ayId ? `School Year #${ayId}` : "No Active School Year"}
+            </span>
             {designationLastUpdated ? (
               <>
                 <span className="hidden sm:inline">|</span>
@@ -160,7 +163,9 @@ export function TeacherDesignationSheet({
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
                   Last Updated At
                 </p>
-                <p className="text-sm">{formatDateTime(designationLastUpdated)}</p>
+                <p className="text-sm">
+                  {formatDateTime(designationLastUpdated)}
+                </p>
               </div>
             </div>
           </div>
@@ -184,300 +189,312 @@ export function TeacherDesignationSheet({
             </TabsList>
 
             <TabsContent value="role-load" className="mt-0 space-y-4">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-md border bg-card p-3 sm:p-4 space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <Label htmlFor="isClassAdviser" className="text-xs uppercase tracking-wider">
-                    Class Adviser
-                  </Label>
-                  <Switch
-                    id="isClassAdviser"
-                    checked={designationForm.isClassAdviser}
-                    onCheckedChange={(checked) =>
-                      setDesignationForm((prev) => ({
-                        ...prev,
-                        isClassAdviser: checked,
-                        advisorySectionId: checked
-                          ? prev.advisorySectionId
-                          : "",
-                      }))
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                    Advisory Section
-                  </Label>
-                  <Select
-                    value={designationForm.advisorySectionId || "__none__"}
-                    onValueChange={(value) => {
-                      setDesignationForm((prev) => ({
-                        ...prev,
-                        advisorySectionId: value === "__none__" ? "" : value,
-                      }));
-                      setDesignationCollision(null);
-                      setAllowCollisionOverride(false);
-                    }}
-                    disabled={
-                      !designationForm.isClassAdviser || advisorySectionsLoading
-                    }>
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          advisorySectionsLoading
-                            ? "Loading sections..."
-                            : "Select advisory section"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">
-                        No section selected
-                      </SelectItem>
-                      {advisorySections.map((section) => (
-                        <SelectItem
-                          key={section.id}
-                          value={section.id.toString()}>
-                          {section.label}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-md border bg-card p-3 sm:p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <Label
+                      htmlFor="isClassAdviser"
+                      className="text-xs uppercase tracking-wider">
+                      Class Adviser
+                    </Label>
+                    <Switch
+                      id="isClassAdviser"
+                      checked={designationForm.isClassAdviser}
+                      onCheckedChange={(checked) =>
+                        setDesignationForm((prev) => ({
+                          ...prev,
+                          isClassAdviser: checked,
+                          advisorySectionId: checked
+                            ? prev.advisorySectionId
+                            : "",
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                      Advisory Section
+                    </Label>
+                    <Select
+                      value={designationForm.advisorySectionId || "__none__"}
+                      onValueChange={(value) => {
+                        setDesignationForm((prev) => ({
+                          ...prev,
+                          advisorySectionId: value === "__none__" ? "" : value,
+                        }));
+                        setDesignationCollision(null);
+                        setAllowCollisionOverride(false);
+                      }}
+                      disabled={
+                        !designationForm.isClassAdviser ||
+                        advisorySectionsLoading
+                      }>
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            advisorySectionsLoading
+                              ? "Loading sections..."
+                              : "Select advisory section"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">
+                          No section selected
                         </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {selectedAdvisorySection?.currentAdviserName &&
-                  selectedAdvisorySection.currentAdviserId !==
-                    designationOpenFor?.id ? (
-                    <p className="text-[0.6875rem] text-amber-700">
-                      Currently assigned to{" "}
-                      {selectedAdvisorySection.currentAdviserName}
-                    </p>
-                  ) : null}
+                        {advisorySections.map((section) => (
+                          <SelectItem
+                            key={section.id}
+                            value={section.id.toString()}>
+                            {section.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedAdvisorySection?.currentAdviserName &&
+                    selectedAdvisorySection.currentAdviserId !==
+                      designationOpenFor?.id ? (
+                      <p className="text-[0.6875rem] text-amber-700">
+                        Currently assigned to{" "}
+                        {selectedAdvisorySection.currentAdviserName}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                      Advisory Equivalent Hours / Week
+                    </Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={60}
+                      step="0.5"
+                      value={designationForm.advisoryEquivalentHoursPerWeek}
+                      onChange={(event) =>
+                        setDesignationForm((prev) => ({
+                          ...prev,
+                          advisoryEquivalentHoursPerWeek: event.target.value,
+                        }))
+                      }
+                      disabled={!designationForm.isClassAdviser}
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                    Advisory Equivalent Hours / Week
-                  </Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={60}
-                    step="0.5"
-                    value={designationForm.advisoryEquivalentHoursPerWeek}
-                    onChange={(event) =>
-                      setDesignationForm((prev) => ({
-                        ...prev,
-                        advisoryEquivalentHoursPerWeek: event.target.value,
-                      }))
-                    }
-                    disabled={!designationForm.isClassAdviser}
-                  />
-                </div>
-              </div>
 
-              <div className="rounded-md border bg-card p-3 sm:p-4 space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <Label htmlFor="isTic" className="text-xs uppercase tracking-wider">
-                    Teacher In Charge (TIC)
-                  </Label>
-                  <Switch
-                    id="isTic"
-                    checked={designationForm.isTic}
-                    onCheckedChange={(checked) =>
-                      setDesignationForm((prev) => ({
-                        ...prev,
-                        isTic: checked,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <Label
-                    htmlFor="isTeachingExempt"
-                    className="text-xs uppercase tracking-wider">
-                    Teaching Exempt
-                  </Label>
-                  <Switch
-                    id="isTeachingExempt"
-                    checked={designationForm.isTeachingExempt}
-                    onCheckedChange={(checked) =>
-                      setDesignationForm((prev) => ({
-                        ...prev,
-                        isTeachingExempt: checked,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                    Custom Target Teaching Hours / Week
-                  </Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={60}
-                    step="0.5"
-                    value={designationForm.customTargetTeachingHoursPerWeek}
-                    onChange={(event) =>
-                      setDesignationForm((prev) => ({
-                        ...prev,
-                        customTargetTeachingHoursPerWeek: event.target.value,
-                      }))
-                    }
-                    placeholder="Optional"
-                  />
+                <div className="rounded-md border bg-card p-3 sm:p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <Label
+                      htmlFor="isTic"
+                      className="text-xs uppercase tracking-wider">
+                      Teacher In Charge (TIC)
+                    </Label>
+                    <Switch
+                      id="isTic"
+                      checked={designationForm.isTic}
+                      onCheckedChange={(checked) =>
+                        setDesignationForm((prev) => ({
+                          ...prev,
+                          isTic: checked,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <Label
+                      htmlFor="isTeachingExempt"
+                      className="text-xs uppercase tracking-wider">
+                      Teaching Exempt
+                    </Label>
+                    <Switch
+                      id="isTeachingExempt"
+                      checked={designationForm.isTeachingExempt}
+                      onCheckedChange={(checked) =>
+                        setDesignationForm((prev) => ({
+                          ...prev,
+                          isTeachingExempt: checked,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                      Custom Target Teaching Hours / Week
+                    </Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={60}
+                      step="0.5"
+                      value={designationForm.customTargetTeachingHoursPerWeek}
+                      onChange={(event) =>
+                        setDesignationForm((prev) => ({
+                          ...prev,
+                          customTargetTeachingHoursPerWeek: event.target.value,
+                        }))
+                      }
+                      placeholder="Optional"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
             </TabsContent>
 
             <TabsContent value="schedule-notes" className="mt-0 space-y-4">
-            <div className="rounded-md border bg-card p-3 sm:p-4 space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-wider">Effective From</Label>
-                <Input
-                  type="date"
-                  value={designationForm.effectiveFrom}
-                  onChange={(event) =>
-                    setDesignationForm((prev) => ({
-                      ...prev,
-                      effectiveFrom: event.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-wider">Effective To</Label>
-                <Input
-                  type="date"
-                  value={designationForm.effectiveTo}
-                  onChange={(event) =>
-                    setDesignationForm((prev) => ({
-                      ...prev,
-                      effectiveTo: event.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs uppercase tracking-wider">Designation Notes</Label>
-              <Textarea
-                value={designationForm.designationNotes}
-                onChange={(event) =>
-                  setDesignationForm((prev) => ({
-                    ...prev,
-                    designationNotes: event.target.value,
-                  }))
-                }
-                placeholder="Optional notes for load planning and designation context"
-                rows={4}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs uppercase tracking-wider">Reason for Change</Label>
-              <Textarea
-                value={designationForm.reason}
-                onChange={(event) =>
-                  setDesignationForm((prev) => ({
-                    ...prev,
-                    reason: event.target.value,
-                  }))
-                }
-                placeholder="Optional audit reason for this update"
-                rows={3}
-              />
-            </div>
-            </div>
-            </TabsContent>
-
-            <TabsContent value="review" className="mt-0 space-y-4">
-            {designationCollision ? (
-              <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-3 sm:px-4 sm:py-4 text-amber-900 space-y-2">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 mt-0.5" />
-                  <div className="text-sm">
-                    <p className="font-medium">Adviser conflict detected</p>
-                    <p className="text-xs">
-                      {designationCollision.gradeLevelName ?? "Grade"} -{" "}
-                      {designationCollision.sectionName} is currently assigned
-                      to {designationCollision.currentAdviserName}.
-                    </p>
+              <div className="rounded-md border bg-card p-3 sm:p-4 space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase tracking-wider">
+                      Effective From
+                    </Label>
+                    <Input
+                      type="date"
+                      value={designationForm.effectiveFrom}
+                      onChange={(event) =>
+                        setDesignationForm((prev) => ({
+                          ...prev,
+                          effectiveFrom: event.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase tracking-wider">
+                      Effective To
+                    </Label>
+                    <Input
+                      type="date"
+                      value={designationForm.effectiveTo}
+                      onChange={(event) =>
+                        setDesignationForm((prev) => ({
+                          ...prev,
+                          effectiveTo: event.target.value,
+                        }))
+                      }
+                    />
                   </div>
                 </div>
-                <div className="flex items-center justify-between gap-2">
-                  <Label htmlFor="allowCollisionOverride" className="text-xs">
-                    Override existing adviser assignment
+
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider">
+                    Designation Notes
                   </Label>
-                  <Switch
-                    id="allowCollisionOverride"
-                    checked={allowCollisionOverride}
-                    onCheckedChange={setAllowCollisionOverride}
+                  <Textarea
+                    value={designationForm.designationNotes}
+                    onChange={(event) =>
+                      setDesignationForm((prev) => ({
+                        ...prev,
+                        designationNotes: event.target.value,
+                      }))
+                    }
+                    placeholder="Optional notes for load planning and designation context"
+                    rows={4}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider">
+                    Reason for Change
+                  </Label>
+                  <Textarea
+                    value={designationForm.reason}
+                    onChange={(event) =>
+                      setDesignationForm((prev) => ({
+                        ...prev,
+                        reason: event.target.value,
+                      }))
+                    }
+                    placeholder="Optional audit reason for this update"
+                    rows={3}
                   />
                 </div>
               </div>
-            ) : (
-              <div className="rounded-md border bg-muted/30 px-3 py-3 text-xs text-muted-foreground">
-                No adviser collision detected for the selected section.
-              </div>
-            )}
+            </TabsContent>
 
-            <div className="rounded-md border bg-card p-3 sm:p-4 space-y-2 text-sm">
-              <p className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                Sync Diagnostics
-              </p>
-              <div className="flex items-center justify-between gap-2">
-                <span>Current State</span>
-                {designationOpenFor
-                  ? renderAtlasSyncBadge(designationOpenFor)
-                  : null}
-              </div>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                <span>Attempts</span>
-                <span className="text-foreground text-right">
-                  {designationOpenFor?.atlasSync
-                    ? `${designationOpenFor.atlasSync.attemptCount}/${designationOpenFor.atlasSync.maxAttempts}`
-                    : "-"}
-                </span>
-                <span>Next Retry</span>
-                <span className="text-foreground text-right">
-                  {formatDateTime(
-                    designationOpenFor?.atlasSync?.nextRetryAt ?? null,
-                  )}
-                </span>
-                <span>Last Ack</span>
-                <span className="text-foreground text-right">
-                  {formatDateTime(
-                    designationOpenFor?.atlasSync?.acknowledgedAt ?? null,
-                  )}
-                </span>
-              </div>
-              {designationOpenFor?.atlasSync?.errorMessage ? (
-                <p className="text-xs text-destructive">
-                  {designationOpenFor.atlasSync.errorMessage}
+            <TabsContent value="review" className="mt-0 space-y-4">
+              {designationCollision ? (
+                <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-3 sm:px-4 sm:py-4 text-amber-900 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="h-4 w-4 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-medium">Adviser conflict detected</p>
+                      <p className="text-xs">
+                        {designationCollision.gradeLevelName ?? "Grade"} -{" "}
+                        {designationCollision.sectionName} is currently assigned
+                        to {designationCollision.currentAdviserName}.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="allowCollisionOverride" className="text-xs">
+                      Override existing adviser assignment
+                    </Label>
+                    <Switch
+                      id="allowCollisionOverride"
+                      checked={allowCollisionOverride}
+                      onCheckedChange={setAllowCollisionOverride}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-md border bg-muted/30 px-3 py-3 text-xs text-muted-foreground">
+                  No adviser collision detected for the selected section.
+                </div>
+              )}
+
+              <div className="rounded-md border bg-card p-3 sm:p-4 space-y-2 text-sm">
+                <p className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                  Sync Diagnostics
                 </p>
-              ) : null}
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() =>
-                  designationOpenFor && onForceSyncTeacher(designationOpenFor)
-                }
-                disabled={
-                  !ayId ||
-                  !designationOpenFor ||
+                <div className="flex items-center justify-between gap-2">
+                  <span>Current State</span>
+                  {designationOpenFor
+                    ? renderAtlasSyncBadge(designationOpenFor)
+                    : null}
+                </div>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                  <span>Attempts</span>
+                  <span className="text-foreground text-right">
+                    {designationOpenFor?.atlasSync
+                      ? `${designationOpenFor.atlasSync.attemptCount}/${designationOpenFor.atlasSync.maxAttempts}`
+                      : "-"}
+                  </span>
+                  <span>Next Retry</span>
+                  <span className="text-foreground text-right">
+                    {formatDateTime(
+                      designationOpenFor?.atlasSync?.nextRetryAt ?? null,
+                    )}
+                  </span>
+                  <span>Last Ack</span>
+                  <span className="text-foreground text-right">
+                    {formatDateTime(
+                      designationOpenFor?.atlasSync?.acknowledgedAt ?? null,
+                    )}
+                  </span>
+                </div>
+                {designationOpenFor?.atlasSync?.errorMessage ? (
+                  <p className="text-xs text-destructive">
+                    {designationOpenFor.atlasSync.errorMessage}
+                  </p>
+                ) : null}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() =>
+                    designationOpenFor && onForceSyncTeacher(designationOpenFor)
+                  }
+                  disabled={
+                    !ayId ||
+                    !designationOpenFor ||
+                    forceSyncingTeacherId === designationOpenFor.id
+                  }>
+                  <CloudUpload className="mr-2 h-4 w-4" />
+                  {designationOpenFor &&
                   forceSyncingTeacherId === designationOpenFor.id
-                }>
-                <CloudUpload className="mr-2 h-4 w-4" />
-                {designationOpenFor &&
-                forceSyncingTeacherId === designationOpenFor.id
-                  ? "Syncing..."
-                  : "Force Sync Teacher"}
-              </Button>
-            </div>
-
+                    ? "Syncing..."
+                    : "Force Sync Teacher"}
+                </Button>
+              </div>
             </TabsContent>
           </Tabs>
         </div>
