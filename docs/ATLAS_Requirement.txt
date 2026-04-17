@@ -1,0 +1,37 @@
+ATLAS needs DepEd-aligned load computation, so EnrollPro must provide teacher designation metadata as source-of-truth.
+
+Why this is needed
+ATLAS must separate:
+
+Actual teaching hours (classroom hours only),
+Credited hours (actual + approved equivalents),
+Overload hours (actual above 30 baseline).
+DepEd semantics we’re applying:
+
+30h/week = standard baseline target (not strict max),
+30–40h actual = allowed overload range,
+40h actual = over-cap,
+
+some teachers can be below 30 actual due to valid designations (e.g., adviser/TIC).
+What EnrollPro must implement
+For each faculty (per school year), expose:
+
+isClassAdviser (boolean)
+advisoryEquivalentHoursPerWeek (number, default 5 when adviser)
+isTIC (boolean)
+isTeachingExempt (boolean)
+customTargetTeachingHoursPerWeek (nullable number, optional)
+designationNotes (nullable string)
+Also include scope fields:
+
+schoolId, schoolYearId
+optionally effectiveFrom, effectiveTo for date-effective changes.
+API requirement
+Include these fields in the faculty sync payload ATLAS already consumes (or a dedicated faculty-designation endpoint).
+ATLAS will then apply scheduling math and policy warnings using these inputs.
+
+Validation EnrollPro should enforce
+No overlapping active designation records per teacher/school year.
+Numeric fields bounded and non-negative.
+Designation changes auditable (updatedBy, updatedAt, reason optional).
+This keeps EnrollPro as personnel/designation source-of-truth and ATLAS as scheduling-policy engine.
