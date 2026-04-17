@@ -1,32 +1,51 @@
 =====================================================
-SCHOOLAUTOMATE TEAM MESH: TAILSCALE BACKEND + DATABASE SETUP
+SCHOOLAUTOMATE TEAM INSTRUCTION MANUAL
+TAILSCALE BACKEND + DATABASE SHARED DEVELOPMENT SETUP
 =====================================================
+Audience: Entire development team (all roles)
 Scope: Development only (trusted teammates on Tailscale)
 Default API Port: 5000
 Default DB Port: 5432
 =====================================================
 
-MODERN WAY (RECOMMENDED)
-- Use Tailscale as a secure Mesh VPN.
-- Use each teammate's stable Tailscale hostname (for example: buru-degree.ts.net) instead of raw 100.x.x.x IPs.
-- Hostnames remain stable even when teammates change Wi-Fi networks.
+OVERVIEW (READ THIS FIRST)
+- This team uses Tailscale as a secure Mesh VPN.
+- Use stable Tailscale hostnames (for example: teammate-device.ts.net).
+- Do not rely on changing Wi-Fi IPs.
+- At any time, one teammate acts as SERVER HOST (API + DB owner).
+- Everyone else acts as CLIENT TEAMMATE (connects to current host).
 
-0) REPO-SPECIFIC CONTEXT
-- Frontend env key is VITE_API_URL (Vite), not REACT_APP_API_URL.
-- Backend DB env key is DATABASE_URL (Prisma/PostgreSQL).
-- API routes are mounted under /api (health endpoint: /api/health).
-- Backend currently listens on 0.0.0.0 in server/src/server.ts.
+REPO CONTEXT (SOURCE OF TRUTH)
+- Frontend API env key: VITE_API_URL
+- Backend DB env key: DATABASE_URL
+- API base path: /api
+- Health endpoint: /api/health
+- Backend bind host: 0.0.0.0 (server/src/server.ts)
 
-1) ROLE A: SERVER HOST (YOU RUN API + POSTGRES)
+-----------------------------------------------------
+PART A: ONE-TIME SETUP FOR EVERY TEAM MEMBER
+-----------------------------------------------------
 
-Step 1: Join Tailscale
+1) Install and Join Tailscale
 1. Download Tailscale: https://tailscale.com/download
-2. Sign in and confirm status is Connected.
-3. Find your Tailscale hostname (for example: your-device-name.ts.net).
-4. Optionally note your Tailscale IPv4 (usually 100.x.x.x) as fallback.
-5. Share hostname (and fallback IP) with teammates.
+2. Sign in using your team account.
+3. Confirm status is Connected.
+4. Find your Tailscale hostname (example: your-device.ts.net).
+5. Keep your Tailscale IPv4 (100.x.x.x) as fallback reference.
 
-Step 2: Open Windows Firewall (Run PowerShell as Administrator)
+2) Confirm Local Project Basics
+1. Ensure backend default port is 5000 in server/.env.
+2. Ensure frontend uses VITE_API_URL in client env files.
+3. Ensure dependencies are installed from repo root:
+     pnpm install
+
+-----------------------------------------------------
+PART B: SERVER HOST RUNBOOK (API + DB OWNER)
+-----------------------------------------------------
+
+Use this runbook if you are the active team host.
+
+Step B1: Open Windows Firewall (Run PowerShell as Administrator)
 
 # Allow API traffic on port 5000
 New-NetFirewallRule -DisplayName "Tailscale_Node_5000" -Direction Inbound -LocalPort 5000 -Protocol TCP -Action Allow -Profile Any
@@ -34,128 +53,133 @@ New-NetFirewallRule -DisplayName "Tailscale_Node_5000" -Direction Inbound -Local
 # Allow PostgreSQL traffic on port 5432
 New-NetFirewallRule -DisplayName "Tailscale_Postgres_5432" -Direction Inbound -LocalPort 5432 -Protocol TCP -Action Allow -Profile Any
 
-Step 3: Confirm backend bind host and port
-In server/src/server.ts, keep this behavior:
+Step B2: Confirm Backend Listener
+Backend must listen on all interfaces:
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT as number, "0.0.0.0", () => {
     console.log(`[Server] Running on http://localhost:${PORT}`);
 });
 
-Step 4: Configure backend env (server/.env)
-Minimum values:
+Step B3: Configure Host Backend Env (server/.env)
+Minimum host values:
 
 PORT=5000
 CLIENT_URL="http://localhost:5173"
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/enrollpro"
 
-Step 5: Allow PostgreSQL to accept Tailscale clients
-1. Open your PostgreSQL data directory (for example C:\Program Files\PostgreSQL\<version>\data).
+Optional for expanded origins:
+CLIENT_URLS=""
+
+Step B4: Configure PostgreSQL for Tailscale Access
+1. Open PostgreSQL data directory (example: C:\Program Files\PostgreSQL\<version>\data).
 2. In postgresql.conf set:
      listen_addresses = '*'
-3. In pg_hba.conf add this line at the bottom:
+3. In pg_hba.conf add at bottom:
      host    all             all             100.64.0.0/10            md5
-4. Restart PostgreSQL service from Windows Services.
+4. Restart PostgreSQL service in Windows Services.
 
-Step 6: Start your services
-From repository root:
+Step B5: Start Host Services
+From repo root, run either:
 
 pnpm --filter server dev
 
-or run both client and server:
+or full stack:
 
 pnpm run dev
 
+Step B6: Publish Host Connection Card to Team Chat
+Copy and send:
 
-2) ROLE B: CLIENT TEAMMATE (YOU CONNECT TO SOMEONE ELSE)
+ACTIVE HOST: <YOUR_NAME>
+HOSTNAME: <your-device.ts.net>
+API_URL: http://<your-device.ts.net>:5000/api
+DB_HOST: <your-device.ts.net>:5432
+STARTED_AT: <YYYY-MM-DD HH:MM>
 
-Use Case A: Point your frontend to teammate API
-Create/update client/.env.local:
+-----------------------------------------------------
+PART C: CLIENT TEAMMATE RUNBOOK (CONNECT TO HOST)
+-----------------------------------------------------
 
-VITE_API_URL="http://buru-degree.ts.net:5000/api"
+Use this runbook if you are connecting to the active host.
 
-Use Case B: Point your backend to teammate database
-Create/update server/.env:
+Step C1: Frontend to Host API (required)
+Create or update client/.env.local:
 
-DATABASE_URL="postgresql://user:pass@buru-degree.ts.net:5432/enrollpro"
+VITE_API_URL="http://<ACTIVE_HOST>.ts.net:5000/api"
 
-Use Case C: Use Vite proxy target instead of direct VITE_API_URL
-If your frontend should keep using /api proxy, set:
+Step C2: Backend to Host DB (only if needed)
+Create or update server/.env:
 
-VITE_PROXY_TARGET="http://buru-degree.ts.net:5000"
+DATABASE_URL="postgresql://user:pass@<ACTIVE_HOST>.ts.net:5432/enrollpro"
+
+Step C3: Optional proxy mode
+If frontend should use /api proxy:
+
+VITE_PROXY_TARGET="http://<ACTIVE_HOST>.ts.net:5000"
+
+Step C4: Restart local dev processes
+After env updates, restart frontend/backend processes.
 
 Notes:
-- Prefer hostname-based URLs (.ts.net) for stable team connections.
-- If VITE_API_URL is set, frontend requests go directly to that API base.
-- If VITE_API_URL is not set, frontend falls back to /api (proxied by Vite).
-- If DNS resolution fails temporarily, use teammate 100.x.x.x IP as fallback.
+- Prefer hostname (.ts.net) first.
+- Use 100.x.x.x only as fallback if DNS resolution fails.
 
+-----------------------------------------------------
+PART D: DAILY TEAM WORKFLOW
+-----------------------------------------------------
 
-3) TEAM ANNOUNCEMENT TEMPLATE (COPY/PASTE)
+1) Start of day
+1. Assign one active SERVER HOST.
+2. Host sends Host Connection Card.
+3. All CLIENT TEAMMATES sync their env values.
 
-Subject: Backend API & Database Configuration via Tailscale
+2) Host rotation
+1. New host starts services and validates ports.
+2. New host sends updated Host Connection Card.
+3. Team updates env files and restarts dev servers.
 
-Team,
+3) End of day
+1. Host notifies team if services are going offline.
+2. Remove temporary access rules if machine will no longer host.
 
-To enable our shared development environment, please update your TypeScript backend and .env configurations using teammate Tailscale hostnames (.ts.net) as the default target.
+-----------------------------------------------------
+PART E: TEAM VALIDATION CHECKLIST
+-----------------------------------------------------
 
-1) Hosting your backend (Server role)
-- If you are running the API/DB, ensure backend listens on 0.0.0.0 and uses port 5000.
-- Run the firewall commands in this document to open ports 5000 and 5432.
+From client machine (PowerShell):
 
-2) Connecting to a teammate (Client role)
-- To use a teammate API, set in client/.env.local:
-    VITE_API_URL="http://<TAILSCALE_HOSTNAME>.ts.net:5000/api"
+Test-NetConnection <ACTIVE_HOST>.ts.net -Port 5000
+Test-NetConnection <ACTIVE_HOST>.ts.net -Port 5432
+Invoke-RestMethod http://<ACTIVE_HOST>.ts.net:5000/api/health
 
-- To use a teammate database, set in server/.env:
-    DATABASE_URL="postgresql://user:pass@<TAILSCALE_HOSTNAME>.ts.net:5432/db"
-
-- Use hostname first because it stays stable across network changes.
-- Use 100.x.x.x IP only as fallback if needed.
-
-Example configurations:
-
-To connect to [Your Name]:
-VITE_API_URL="http://your-device.ts.net:5000/api"
-DATABASE_URL="postgresql://user:pass@your-device.ts.net:5432/enrollpro"
-
-To connect to [Teammate Name]:
-VITE_API_URL="http://teammate-device.ts.net:5000/api"
-DATABASE_URL="postgresql://user:pass@teammate-device.ts.net:5432/enrollpro"
-
-
-4) QUICK VALIDATION CHECKLIST
-
-From teammate machine (PowerShell):
-
-Test-NetConnection buru-degree.ts.net -Port 5000
-Test-NetConnection buru-degree.ts.net -Port 5432
-Invoke-RestMethod http://buru-degree.ts.net:5000/api/health
-
-Expected API health response:
+Expected API response:
 {"ok":true}
 
-
-5) TROUBLESHOOTING
+-----------------------------------------------------
+PART F: TROUBLESHOOTING
+-----------------------------------------------------
 
 - API unreachable on 5000:
-    Check firewall rule, backend process status, and app.listen host 0.0.0.0.
+    Check host firewall rules and backend process state.
 
 - DB unreachable on 5432:
-    Check PostgreSQL service status, listen_addresses='*', and pg_hba.conf CIDR entry.
+    Check PostgreSQL service, listen_addresses='*', and pg_hba.conf CIDR line.
 
-- Frontend still hitting localhost API:
-    Confirm client/.env.local uses VITE_API_URL and restart Vite dev server.
+- Frontend still using localhost API:
+    Check client/.env.local VITE_API_URL, then restart Vite.
 
-- CORS errors when serving frontend from non-localhost origin:
-    Update CLIENT_URL in server/.env to the actual frontend origin and restart backend.
+- CORS errors:
+    Check CLIENT_URL and optionally CLIENT_URLS in server/.env, then restart backend.
 
 - Hostname does not resolve:
-    Confirm both devices are connected to Tailscale and MagicDNS is enabled in Tailscale settings.
+    Confirm both devices are connected to Tailscale and MagicDNS is enabled.
 
+-----------------------------------------------------
+PART G: SECURITY RULES (MANDATORY)
+-----------------------------------------------------
 
-6) SECURITY NOTE (IMPORTANT)
-
-- These steps are for development on trusted Tailscale peers only.
-- Do not expose PostgreSQL or API ports to the public internet.
-- If temporary access is no longer needed, remove the firewall rules.
+- This setup is for trusted team development only.
+- Never expose API or PostgreSQL to the public internet.
+- Do not post DB credentials in public channels.
+- Remove temporary firewall rules if hosting is no longer required.
