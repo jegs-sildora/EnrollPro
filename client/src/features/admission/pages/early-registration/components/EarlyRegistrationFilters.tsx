@@ -17,9 +17,14 @@ import { useScpConfigs } from "@/features/admission/hooks/useScpConfigs";
 import { REGISTRATION_STAGE_QUICK_FILTERS } from "@/features/admission/constants/registrationWorkflow";
 
 const REGULAR_TRACK_HIDDEN_STAGE_VALUES = new Set([
-  "ASSESSMENT_SCHEDULED",
+  "EXAM_SCHEDULED",
   "ASSESSMENT_TAKEN",
   "INTERVIEW_SCHEDULED",
+]);
+
+const PHASE_TWO_HIDDEN_STAGE_VALUES = new Set([
+  "TEMPORARILY_ENROLLED",
+  "ENROLLED",
 ]);
 
 interface FiltersProps {
@@ -66,14 +71,29 @@ export function EarlyRegistrationFilters({
   }, [configs]);
 
   const stageQuickFilters = useMemo(() => {
+    const phaseOneFilters = REGISTRATION_STAGE_QUICK_FILTERS.filter(
+      (stage) => !PHASE_TWO_HIDDEN_STAGE_VALUES.has(stage.value),
+    );
+
     if (type !== "REGULAR") {
-      return REGISTRATION_STAGE_QUICK_FILTERS;
+      return phaseOneFilters;
     }
 
-    return REGISTRATION_STAGE_QUICK_FILTERS.filter(
+    return phaseOneFilters.filter(
       (stage) => !REGULAR_TRACK_HIDDEN_STAGE_VALUES.has(stage.value),
     );
   }, [type]);
+
+  const visibleStageQuickFilters = useMemo(
+    () =>
+      stageQuickFilters.filter(
+        (stage) =>
+          stage.value === "ALL" ||
+          stage.value === status ||
+          (stageCounts[stage.value] ?? 0) > 0,
+      ),
+    [stageQuickFilters, stageCounts, status],
+  );
 
   useEffect(() => {
     const isCurrentStatusVisible = stageQuickFilters.some(
@@ -89,26 +109,29 @@ export function EarlyRegistrationFilters({
   return (
     <CardHeader className="px-3 sm:px-6 pb-3">
       <div className="space-y-3">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
-          {stageQuickFilters.map((stage) => (
-            <Button
-              key={stage.value}
-              type="button"
-              size="sm"
-              variant={status === stage.value ? "default" : "outline"}
-              className="h-9 sm:h-8 text-xs font-bold whitespace-nowrap shrink-0"
-              onClick={() => {
-                setStatus(stage.value);
-                setPage(1);
-              }}>
-              {stage.label}
-              <Badge
-                variant="secondary"
-                className="ml-2 h-5 px-1.5 text-[10px] shrink-0">
-                {stageCounts[stage.value] ?? 0}
-              </Badge>
-            </Button>
-          ))}
+        <div className="relative -mx-1 px-1">
+          <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 pr-8">
+            {visibleStageQuickFilters.map((stage) => (
+              <Button
+                key={stage.value}
+                type="button"
+                size="sm"
+                variant={status === stage.value ? "default" : "outline"}
+                className="h-9 sm:h-8 text-xs font-bold whitespace-nowrap shrink-0"
+                onClick={() => {
+                  setStatus(stage.value);
+                  setPage(1);
+                }}>
+                {stage.label}
+                <Badge
+                  variant="secondary"
+                  className="ml-2 h-5 px-1.5 text-[10px] shrink-0">
+                  {stageCounts[stage.value] ?? 0}
+                </Badge>
+              </Button>
+            ))}
+          </div>
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[hsl(var(--card))] to-transparent" />
         </div>
       </div>
 

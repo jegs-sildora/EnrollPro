@@ -10,15 +10,15 @@ export const VALID_TRANSITIONS: Record<string, ApplicationStatus[]> = {
   SUBMITTED: [
     "VERIFIED",
     "UNDER_REVIEW",
-    "ASSESSMENT_SCHEDULED",
+    "EXAM_SCHEDULED",
     "REJECTED",
     "WITHDRAWN",
   ],
   VERIFIED: [
     "UNDER_REVIEW",
     "ELIGIBLE",
-    "ASSESSMENT_SCHEDULED",
-    "PRE_REGISTERED",
+    "EXAM_SCHEDULED",
+    "READY_FOR_ENROLLMENT",
     "REJECTED",
     "WITHDRAWN",
   ],
@@ -26,36 +26,42 @@ export const VALID_TRANSITIONS: Record<string, ApplicationStatus[]> = {
     "VERIFIED",
     "FOR_REVISION",
     "ELIGIBLE",
-    "ASSESSMENT_SCHEDULED",
+    "EXAM_SCHEDULED",
     "TEMPORARILY_ENROLLED",
     "REJECTED",
     "WITHDRAWN",
   ],
   FOR_REVISION: ["UNDER_REVIEW", "WITHDRAWN"],
-  ELIGIBLE: ["ASSESSMENT_SCHEDULED", "PRE_REGISTERED", "WITHDRAWN"],
-  ASSESSMENT_SCHEDULED: [
+  ELIGIBLE: ["EXAM_SCHEDULED", "READY_FOR_ENROLLMENT", "WITHDRAWN"],
+  EXAM_SCHEDULED: [
     "ASSESSMENT_TAKEN",
-    "ASSESSMENT_SCHEDULED",
+    "EXAM_SCHEDULED",
     "INTERVIEW_SCHEDULED",
     "WITHDRAWN",
   ],
   ASSESSMENT_TAKEN: [
     "PASSED",
-    "NOT_QUALIFIED",
+    "SUBMITTED",
+    "FAILED_ASSESSMENT",
     "ASSESSMENT_TAKEN",
-    "ASSESSMENT_SCHEDULED",
+    "EXAM_SCHEDULED",
     "WITHDRAWN",
   ],
   PASSED: [
-    "PRE_REGISTERED",
+    "READY_FOR_ENROLLMENT",
     "INTERVIEW_SCHEDULED",
-    "ASSESSMENT_SCHEDULED",
+    "EXAM_SCHEDULED",
     "WITHDRAWN",
   ],
-  INTERVIEW_SCHEDULED: ["PRE_REGISTERED", "WITHDRAWN"],
-  PRE_REGISTERED: ["ENROLLED", "TEMPORARILY_ENROLLED", "WITHDRAWN"],
+  INTERVIEW_SCHEDULED: ["READY_FOR_ENROLLMENT", "SUBMITTED", "WITHDRAWN"],
+  READY_FOR_ENROLLMENT: [
+    "ENROLLED",
+    "TEMPORARILY_ENROLLED",
+    "REJECTED",
+    "WITHDRAWN",
+  ],
   TEMPORARILY_ENROLLED: ["ENROLLED", "WITHDRAWN"],
-  NOT_QUALIFIED: ["UNDER_REVIEW", "WITHDRAWN", "REJECTED"],
+  FAILED_ASSESSMENT: ["UNDER_REVIEW", "WITHDRAWN", "REJECTED"],
   ENROLLED: ["WITHDRAWN"],
   REJECTED: ["UNDER_REVIEW", "WITHDRAWN"],
   WITHDRAWN: [],
@@ -594,6 +600,96 @@ export function createEarlyRegistrationSharedService(
     throw new AppError(404, "Application not found");
   }
 
+  async function migrateEarlyRegToEnrollment(
+    earlyRegId: number,
+    userId: number,
+    tx?: any,
+  ): Promise<EnrollmentApplication> {
+    const p = tx || deps.prisma;
+
+    // 1. Fetch early registration record with all needed relations
+    const earlyReg = await p.earlyRegistrationApplication.findUnique({
+      where: { id: earlyRegId },
+      include: {
+        learner: true,
+        addresses: true,
+        familyMembers: true,
+        gradeLevel: true,
+      },
+    });
+
+    if (!earlyReg) {
+      throw new AppError(404, "Early registration not found for migration.");
+    }
+
+    // 2. Perform Migration Transaction
+    const enrollmentApp = await (tx ? Promise.resolve(tx) : deps.prisma.$transaction(async (ptx) => {
+      const year = new Date().getFullYear();
+
+      // Create Phase 2 Enrollment Application
+      const created = await ptx.enrollmentApplication.create({
+        data: {
+          learnerId: earlyReg.learnerId,
+          earlyRegistrationId: earlyReg.id,
+          schoolYearId: earlyReg.schoolYearId,
+          gradeLevelId: earlyReg.gradeLevelId,
+          applicantType: earlyReg.applicantType,
+          learnerType: earlyReg.learnerType,
+          status: "SUBMITTED",
+          admissionChannel: "F2F", // Registrar-initiated migration
+          encodedById: userId,
+          studentPhoto: earlyReg.studentPhoto,
+          isPrivacyConsentGiven: earlyReg.isPrivacyConsentGiven,
+          guardianRelationship: earlyReg.guardianRelationship,
+          hasNoMother: earlyReg.hasNoMother,
+          hasNoFather: earlyReg.hasNoFather,
+        }
+      });
+
+      // Generate Phase 2 Tracking Number
+      let prefix = "ENR";
+      if (earlyReg.applicantType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") prefix = "STE";
+      else if (earlyReg.applicantType === "SPECIAL_PROGRAM_IN_THE_ARTS") prefix = "SPA";
+      else if (earlyReg.applicantType === "SPECIAL_PROGRAM_IN_SPORTS") prefix = "SPS";
+      else if (earlyReg.applicantType === "SPECIAL_PROGRAM_IN_JOURNALISM") prefix = "SPJ";
+      else if (earlyReg.applicantType === "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE") prefix = "SPFL";
+      else if (earlyReg.applicantType === "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION") prefix = "SPTVE";
+
+      const trackingNumber = `${prefix}-${year}-${String(created.id).padStart(5, "0")}`;
+      
+      const finalApp = await ptx.enrollmentApplication.update({
+        where: { id: created.id },
+        data: { trackingNumber }
+      });
+
+      // Re-link existing Addresses, Family Members, and Checklist to the new Phase 2 app
+      await ptx.applicationAddress.updateMany({
+        where: { earlyRegistrationId: earlyReg.id },
+        data: { enrollmentId: finalApp.id }
+      });
+
+      await ptx.applicationFamilyMember.updateMany({
+        where: { earlyRegistrationId: earlyReg.id },
+        data: { enrollmentId: finalApp.id }
+      });
+
+      await ptx.applicationChecklist.updateMany({
+        where: { earlyRegistrationId: earlyReg.id },
+        data: { enrollmentId: finalApp.id }
+      });
+
+      // Mark original Phase 1 record as "Enrolled" (Migrated)
+      await ptx.earlyRegistrationApplication.update({
+        where: { id: earlyReg.id },
+        data: { status: "ENROLLED" }
+      });
+
+      return finalApp;
+    }));
+
+    return enrollmentApp;
+  }
+
   return {
     findApplicantOrThrow,
     findEarlyRegOrThrow,
@@ -603,5 +699,6 @@ export function createEarlyRegistrationSharedService(
     getDetailedApplicationOrThrow,
     toUpperCaseRecursive,
     updateApplicationStatus,
+    migrateEarlyRegToEnrollment,
   };
 }

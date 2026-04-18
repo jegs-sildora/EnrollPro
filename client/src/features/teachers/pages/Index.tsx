@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { sileo } from "sileo";
-import { GraduationCap, Plus } from "lucide-react";
+import { Link } from "react-router";
+import { CloudUpload, GraduationCap, Plus } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -610,7 +611,13 @@ export default function Teachers() {
             Manage teacher profiles for section adviser assignment
           </p>
         </div>
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2 flex-wrap">
+          <Button asChild variant="outline" className="w-fit shadow-sm">
+            <Link to="/admin/atlas">
+              <CloudUpload className="h-4 w-4 mr-2" />
+              ATLAS Sync Health
+            </Link>
+          </Button>
           <Button
             onClick={() => {
               setFormData(createEmptyTeacherForm());

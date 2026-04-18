@@ -69,6 +69,7 @@ export interface EmailLog {
 export interface ChecklistData {
   id: number;
   applicantId: number;
+  academicStatus: "PROMOTED" | "RETAINED";
   isPsaBirthCertPresented: boolean;
   isOriginalPsaBcCollected: boolean;
   isSf9Submitted: boolean;

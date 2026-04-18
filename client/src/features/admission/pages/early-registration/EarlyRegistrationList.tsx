@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { Link } from "react-router";
+import { RefreshCw, UserPlus } from "lucide-react";
 import { useSettingsStore } from "@/store/settings.slice";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
@@ -31,14 +32,12 @@ const NEXT_ACTION_BY_STATUS: Record<string, string> = {
   UNDER_REVIEW: "Continue Review",
   FOR_REVISION: "Wait for Revision",
   ELIGIBLE: "Schedule Assessment",
-  ASSESSMENT_SCHEDULED: "Record Results",
+  EXAM_SCHEDULED: "Record Results",
   ASSESSMENT_TAKEN: "Pass or Fail",
   PASSED: "Schedule Interview",
   INTERVIEW_SCHEDULED: "Ready for Enrollment",
-  PRE_REGISTERED: "View in Enrollment",
-  TEMPORARILY_ENROLLED: "Complete Enrollment",
-  ENROLLED: "No Action",
-  NOT_QUALIFIED: "Resolve Decision",
+  READY_FOR_ENROLLMENT: "View in Enrollment",
+  FAILED_ASSESSMENT: "Resolve Decision",
   REJECTED: "Review Appeal",
   WITHDRAWN: "No Action",
 };
@@ -76,7 +75,6 @@ export default function EarlyRegistration() {
     handleApprove,
     handleMarkEligible,
     handleReject,
-    handleInlineSaveStepResult,
   } = useRegistrationActions(fetchData);
 
   const { panelPercentage, isDesktopViewport, startResizing } =
@@ -109,18 +107,27 @@ export default function EarlyRegistration() {
             </p>
           </div>
 
-          <Button
-            variant="outline"
-            className="h-10 px-3 w-full md:w-auto text-sm font-bold"
-            onClick={() => {
-              void fetchData();
-            }}
-            disabled={loading}>
-            <RefreshCw
-              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
-            />
-            Refresh
-          </Button>
+          <div className="flex w-full md:w-auto gap-2">
+            <Button
+              asChild
+              className="h-10 px-3 flex-1 md:flex-none text-sm font-bold bg-primary hover:bg-primary/90">
+              <Link to="/monitoring/f2f-early-registration">
+                <UserPlus className="h-4 w-4 mr-2" />+ Walk-In Learner
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-10 px-3 flex-1 md:flex-none text-sm font-bold"
+              onClick={() => {
+                void fetchData();
+              }}
+              disabled={loading}>
+              <RefreshCw
+                className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+              />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
@@ -195,9 +202,6 @@ export default function EarlyRegistration() {
         fetchSections={fetchSections}
         setIsScheduleDialogOpen={setIsScheduleDialogOpen}
         setScheduleStep={setScheduleStep}
-        handleInlineSaveStepResult={(id, step, kind, score, cutoff) =>
-          handleInlineSaveStepResult(id, step, kind, score, cutoff)
-        }
       />
 
       <EarlyRegistrationActionDialogs

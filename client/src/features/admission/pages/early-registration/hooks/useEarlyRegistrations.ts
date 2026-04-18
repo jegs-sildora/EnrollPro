@@ -6,6 +6,15 @@ import {
   REGISTRATION_STAGE_QUICK_FILTERS,
 } from "@/features/admission/constants/registrationWorkflow";
 
+const PHASE_TWO_MONITORING_EXCLUDED_STATUSES = [
+  ...ACTIVE_REGISTRATION_EXCLUDED_STATUSES,
+  "TEMPORARILY_ENROLLED",
+] as const;
+
+const PHASE_TWO_MONITORING_EXCLUDED_STATUS_SET = new Set<string>(
+  PHASE_TWO_MONITORING_EXCLUDED_STATUSES,
+);
+
 export interface Application {
   id: number;
   lrn: string;
@@ -76,8 +85,8 @@ export function useEarlyRegistrations(ayId: number | null) {
   const [applications, setApplications] = useState<Application[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [stageCounts, setStageCounts] = useState<Record<string, number>>(
-    () => createEmptyStageCounts(),
+  const [stageCounts, setStageCounts] = useState<Record<string, number>>(() =>
+    createEmptyStageCounts(),
   );
 
   // Filters
@@ -116,7 +125,9 @@ export function useEarlyRegistrations(ayId: number | null) {
           params.append("status", stage.value);
         }
 
-        const response = await api.get(`/early-registrations?${params.toString()}`);
+        const response = await api.get(
+          `/early-registrations?${params.toString()}`,
+        );
         return {
           key: stage.value,
           total: Number(response?.data?.pagination?.total ?? 0),
@@ -134,7 +145,7 @@ export function useEarlyRegistrations(ayId: number | null) {
       }
 
       const allTotal = Number(allResponse?.data?.pagination?.total ?? 0);
-      const excludedTotal = ACTIVE_REGISTRATION_EXCLUDED_STATUSES.reduce(
+      const excludedTotal = PHASE_TWO_MONITORING_EXCLUDED_STATUSES.reduce(
         (sum, excludedStatus) => sum + (nextCounts[excludedStatus] ?? 0),
         0,
       );
@@ -157,21 +168,29 @@ export function useEarlyRegistrations(ayId: number | null) {
       params.append("schoolYearId", String(ayId));
       if (search) params.append("search", search);
 
-      if (status === "WITHOUT_LRN") {
+      const normalizedStatus = PHASE_TWO_MONITORING_EXCLUDED_STATUS_SET.has(
+        status,
+      )
+        ? "ALL"
+        : status;
+
+      if (normalizedStatus === "WITHOUT_LRN") {
         params.append("withoutLrn", "true");
-      } else if (status !== "ALL") {
-        params.append("status", status);
+      } else if (normalizedStatus !== "ALL") {
+        params.append("status", normalizedStatus);
       }
 
       if (type !== "ALL") params.append("applicantType", type);
       params.append("page", String(page));
       params.append("limit", "50");
 
-      const allStatusPromise = api.get(`/early-registrations?${params.toString()}`);
+      const allStatusPromise = api.get(
+        `/early-registrations?${params.toString()}`,
+      );
 
       const excludedCountPromises =
-        status === "ALL"
-          ? ACTIVE_REGISTRATION_EXCLUDED_STATUSES.map((excludedStatus) => {
+        normalizedStatus === "ALL"
+          ? PHASE_TWO_MONITORING_EXCLUDED_STATUSES.map((excludedStatus) => {
               const excludedParams = new URLSearchParams();
               excludedParams.append("schoolYearId", String(ayId));
               if (search) excludedParams.append("search", search);
@@ -180,7 +199,9 @@ export function useEarlyRegistrations(ayId: number | null) {
               excludedParams.append("page", "1");
               excludedParams.append("limit", "1");
 
-              return api.get(`/early-registrations?${excludedParams.toString()}`);
+              return api.get(
+                `/early-registrations?${excludedParams.toString()}`,
+              );
             })
           : [];
 
@@ -204,22 +225,18 @@ export function useEarlyRegistrations(ayId: number | null) {
             suffix: app.learner?.extensionName || app.suffix || null,
             lrn: normalizedLrn,
             isPendingLrnCreation:
-              pendingFromRecord || (status === "WITHOUT_LRN" && !normalizedLrn),
+              pendingFromRecord ||
+              (normalizedStatus === "WITHOUT_LRN" && !normalizedLrn),
           };
         },
       );
 
-      if (status === "ALL") {
-        filteredApps = filteredApps.filter(
-          (app: Application) =>
-            !ACTIVE_REGISTRATION_EXCLUDED_STATUSES.includes(
-              app.status as (typeof ACTIVE_REGISTRATION_EXCLUDED_STATUSES)[number],
-            ),
-        );
-      }
+      filteredApps = filteredApps.filter(
+        (app) => !PHASE_TWO_MONITORING_EXCLUDED_STATUS_SET.has(app.status),
+      );
 
       const excludedTotals =
-        status === "ALL"
+        normalizedStatus === "ALL"
           ? excludedResponses.reduce(
               (sum, response) =>
                 sum + Number(response?.data?.pagination?.total ?? 0),
@@ -229,8 +246,11 @@ export function useEarlyRegistrations(ayId: number | null) {
 
       setApplications(filteredApps);
       setTotal(
-        status === "ALL"
-          ? Math.max(0, Number(res.data?.pagination?.total ?? 0) - excludedTotals)
+        normalizedStatus === "ALL"
+          ? Math.max(
+              0,
+              Number(res.data?.pagination?.total ?? 0) - excludedTotals,
+            )
           : Number(res.data?.pagination?.total ?? 0),
       );
     } catch (err) {

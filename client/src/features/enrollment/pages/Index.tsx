@@ -1,21 +1,26 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useSearchParams } from "react-router";
-import { Search, Eye, Download, RefreshCw } from "lucide-react";
+import {
+  Search,
+  Eye,
+  Download,
+  RefreshCw,
+  FileCheck2,
+  School,
+  UserPlus,
+  LogOut,
+  ChevronDown,
+  UserCheck,
+  Zap,
+} from "lucide-react";
 import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
+import { formatScpType } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Card, CardContent, CardHeader } from "@/shared/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/ui/table";
 import { Badge } from "@/shared/ui/badge";
 import {
   Select,
@@ -32,15 +37,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu";
+import { Checkbox } from "@/shared/ui/checkbox";
 import { Sheet, SheetContent } from "@/shared/ui/sheet";
 import { Label } from "@/shared/ui/label";
-import { Skeleton } from "@/shared/ui/skeleton";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { format } from "date-fns";
+import type { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/shared/ui/data-table";
 import { ApplicationDetailPanel } from "@/features/enrollment/components/ApplicationDetailPanel";
 import { ScheduleExamDialog } from "@/features/enrollment/components/ScheduleExamDialog";
 import { StatusBadge } from "@/features/enrollment/components/StatusBadge";
 import { EnrollmentWorkflowTabs } from "@/features/enrollment/components/EnrollmentWorkflowTabs";
+import { SpecialEnrollmentDialog } from "@/features/enrollment/components/SpecialEnrollmentDialog";
 import {
   ENROLLMENT_SUB_MENU_DESCRIPTIONS,
   ENROLLMENT_SUB_MENU_OPTIONS,
@@ -176,53 +190,35 @@ export default function Enrollment() {
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [scheduleStep, setScheduleStep] = useState<AssessmentStep | null>(null);
 
+  const [isSpecialEnrollOpen, setIsSpecialEnrollOpen] = useState(false);
+  const [initialEnrollmentType, setInitialEnrollmentType] =
+    useState<string>("TRANSFEREE");
+
+  const openSpecialEnroll = (type: string) => {
+    setInitialEnrollmentType(type);
+    setIsSpecialEnrollOpen(true);
+  };
+
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  // --- Resizable Panel Logic (Fluid Percentage) ---
-  const [panelPercentage, setPanelPercentage] = useState(45);
-  const isResizing = useRef(false);
+  // Batch Selection state
+  const [selectedBatchIds, setSelectedBatchIds] = useState<number[]>([]);
+  const [isBatchAssigning, setIsBatchAssigning] = useState(false);
+  const [batchSectionId, setBatchSectionId] = useState<string>("");
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isResizing.current) return;
-    const newWidthPercent =
-      ((window.innerWidth - e.clientX) / window.innerWidth) * 100;
-    if (newWidthPercent > 20 && newWidthPercent < 95) {
-      setPanelPercentage(newWidthPercent);
+  const toggleBatchSelect = (id: number) => {
+    setSelectedBatchIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+    );
+  };
+
+  const selectAllVisible = () => {
+    if (selectedBatchIds.length === applications.length) {
+      setSelectedBatchIds([]);
+    } else {
+      setSelectedBatchIds(applications.map((app) => app.id));
     }
-  }, []);
-
-  const stopResizing = useCallback(() => {
-    isResizing.current = false;
-    document.removeEventListener("mousemove", handleMouseMove);
-    document.removeEventListener("mouseup", stopResizing);
-    document.body.style.cursor = "default";
-    document.body.style.userSelect = "auto";
-  }, [handleMouseMove]);
-
-  const startResizing = useCallback(() => {
-    isResizing.current = true;
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", stopResizing);
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
-  }, [handleMouseMove, stopResizing]);
-  // ------------------------------------------------
-
-  useEffect(() => {
-    if (!workflowParam && searchParam === null) {
-      return;
-    }
-
-    if (workflowParam) {
-      setWorkflowView(resolveWorkflowFromQuery(workflowParam));
-    }
-
-    if (searchParam !== null) {
-      setSearch(searchParam.trim());
-    }
-
-    setPage(1);
-  }, [workflowParam, searchParam]);
+  };
 
   const fetchData = useCallback(async () => {
     if (!ayId) {
@@ -236,7 +232,11 @@ export default function Enrollment() {
       if (search) params.append("search", search);
 
       if (workflowView === "PENDING_VERIFICATION") {
-        params.append("status", "UNDER_REVIEW");
+        params.append(
+          "status",
+          Array.from(PENDING_VERIFICATION_STATUSES).join(","),
+        );
+        params.append("withoutSection", "true");
       }
 
       if (workflowView === "SECTION_ASSIGNMENT") {
@@ -269,7 +269,7 @@ export default function Enrollment() {
         const hasSection = Boolean(resolveApplicationSectionName(app));
 
         if (workflowView === "PENDING_VERIFICATION") {
-          return PENDING_VERIFICATION_STATUSES.has(app.status);
+          return PENDING_VERIFICATION_STATUSES.has(app.status) && !hasSection;
         }
 
         if (workflowView === "SECTION_ASSIGNMENT") {
@@ -344,12 +344,20 @@ export default function Enrollment() {
       }));
 
       try {
-        await api.patch(`/applications/${application.id}/approve`, {
-          sectionId: Number(selectedSectionId),
-        });
+        const approveResponse = await api.patch(
+          `/applications/${application.id}/approve`,
+          {
+            sectionId: Number(selectedSectionId),
+          },
+        );
+
+        // If the application was auto-migrated from Phase 1, the new ID will be in the response
+        // Note: approve returns an EnrollmentRecord which has enrollmentApplicationId
+        const migratedId =
+          approveResponse.data.enrollmentApplicationId || application.id;
 
         const enrollResponse = await api.patch(
-          `/applications/${application.id}/enroll`,
+          `/applications/${migratedId}/enroll`,
         );
 
         setSectionSelectionByApplicationId((prev) => {
@@ -381,6 +389,383 @@ export default function Enrollment() {
     },
     [sectionSelectionByApplicationId, fetchData],
   );
+
+  const handleUnenroll = useCallback(
+    async (app: Application) => {
+      const confirmed = window.confirm(
+        `Are you sure you want to UN-ENROL ${app.firstName} ${app.lastName}? \n\nThis will remove them from their assigned section and free up seat capacity.`,
+      );
+      if (!confirmed) return;
+
+      try {
+        await api.patch(`/applications/${app.id}/unenroll`);
+        sileo.success({
+          title: "Un-enrolled",
+          description: "Learner has been removed from the official roster.",
+        });
+        fetchData();
+      } catch (err) {
+        toastApiError(err as never);
+      }
+    },
+    [fetchData],
+  );
+
+  const columns = useMemo<ColumnDef<Application>[]>(() => {
+    const cols: ColumnDef<Application>[] = [];
+
+    if (workflowView === "SECTION_ASSIGNMENT") {
+      cols.push({
+        id: "select",
+        header: () => (
+          <Checkbox
+            checked={
+              applications.length > 0 &&
+              selectedBatchIds.length === applications.length
+            }
+            onCheckedChange={selectAllVisible}
+            className="border-primary-foreground data-[state=checked]:bg-white data-[state=checked]:text-primary mx-auto block"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={selectedBatchIds.includes(row.original.id)}
+            onCheckedChange={() => toggleBatchSelect(row.original.id)}
+            onClick={(e) => e.stopPropagation()}
+            className="mx-auto block"
+          />
+        ),
+      });
+    }
+
+    cols.push(
+      {
+        id: "student",
+        header: "STUDENT",
+        cell: ({ row }) => (
+          <div className="flex flex-col gap-1 text-left min-w-[200px]">
+            <span className="font-bold text-sm uppercase">
+              {row.original.lastName}, {row.original.firstName}
+            </span>
+            <span className="text-sm font-bold">
+              {row.original.trackingNumber}
+            </span>
+          </div>
+        ),
+      },
+      {
+        id: "lrn",
+        header: "LRN",
+        cell: ({ row }) => (
+          <span className="font-bold text-sm block">
+            {row.original.lrn ||
+              (row.original.isPendingLrnCreation ? "PENDING" : "N/A")}
+          </span>
+        ),
+      },
+      {
+        id: "gradeLevel",
+        header: "GRADE LEVEL",
+        cell: ({ row }) => (
+          <span className="font-bold text-sm block">
+            {formatGradeLevelLabel(row.original.gradeLevel.name)}
+          </span>
+        ),
+      },
+      {
+        id: "context",
+        header: workflowView === "PENDING_VERIFICATION" ? "PROGRAM" : "SECTION",
+        cell: ({ row }) => {
+          const app = row.original;
+          const sectionName = resolveApplicationSectionName(app);
+          const hasSection = Boolean(sectionName);
+          const isPendingVerification = workflowView === "PENDING_VERIFICATION";
+          const isSectionAssignment = workflowView === "SECTION_ASSIGNMENT";
+          const selectedSectionId =
+            sectionSelectionByApplicationId[app.id] ?? "";
+          const sectionOptions = sectionOptionsByApplicationId[app.id] ?? [];
+          const isLoadingOptions =
+            loadingSectionOptionsByApplicationId[app.id] === true;
+
+          if (isPendingVerification) {
+            return (
+              <div className="flex justify-center">
+                <Badge
+                  variant="outline"
+                  className="font-bold px-2 py-0.5 h-auto border-slate-300 text-sm leading-tight text-center">
+                  {formatScpType(app.applicantType)}
+                </Badge>
+              </div>
+            );
+          }
+
+          if (isSectionAssignment && !hasSection) {
+            return (
+              <div
+                className="flex items-center justify-center gap-2 min-w-[160px]"
+                onClick={(e) => e.stopPropagation()}>
+                <Select
+                  value={selectedSectionId}
+                  onValueChange={(value) =>
+                    setSectionSelectionByApplicationId((prev) => ({
+                      ...prev,
+                      [app.id]: value,
+                    }))
+                  }
+                  onOpenChange={(open) => {
+                    if (open) {
+                      void ensureSectionOptionsLoaded(app.id);
+                    }
+                  }}>
+                  <SelectTrigger className="h-8 w-40 text-xs font-bold">
+                    <SelectValue placeholder="Select section" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingOptions && (
+                      <SelectItem value="LOADING" disabled>
+                        Loading sections...
+                      </SelectItem>
+                    )}
+                    {!isLoadingOptions && sectionOptions.length === 0 && (
+                      <SelectItem value="NO_SECTION_AVAILABLE" disabled>
+                        No sections available
+                      </SelectItem>
+                    )}
+                    {sectionOptions.map((section) => (
+                      <SelectItem
+                        key={section.id}
+                        value={String(section.id)}
+                        disabled={section.isFull}>
+                        {section.name} ({section.enrolledCount}/
+                        {section.maxCapacity})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            );
+          }
+
+          return (
+            <div className="flex justify-center">
+              <Badge
+                variant="outline"
+                className="font-bold px-2 py-0.5 h-auto border-slate-300 text-sm leading-tight text-center">
+                {sectionName ?? "Not Assigned"}
+              </Badge>
+            </div>
+          );
+        },
+      },
+      {
+        id: "status",
+        header: "STATUS",
+        cell: ({ row }) => (
+          <div className="flex justify-center">
+            <StatusBadge
+              status={row.original.status}
+              className="text-sm font-bold"
+            />
+          </div>
+        ),
+      },
+      {
+        id: "date",
+        header: "DATE",
+        cell: ({ row }) => (
+          <span className="text-sm font-bold block text-center min-w-[140px]">
+            {format(new Date(row.original.createdAt), "MMMM dd, yyyy")}
+          </span>
+        ),
+      },
+      {
+        id: "actions",
+        header: "ACTIONS",
+        cell: ({ row }) => {
+          const app = row.original;
+          const isPendingVerification = workflowView === "PENDING_VERIFICATION";
+          const isSectionAssignment = workflowView === "SECTION_ASSIGNMENT";
+          const selectedSectionId =
+            sectionSelectionByApplicationId[app.id] ?? "";
+          const isSavingSection = savingSectionByApplicationId[app.id] === true;
+
+          if (workflowView === "OFFICIAL_ROSTER") {
+            return (
+              <div className="flex items-center justify-center gap-2 min-w-[200px]">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 text-sm font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedId(app.id);
+                  }}>
+                  <Eye className="h-3 w-3 mr-1" /> View
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-sm font-bold border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void handleUnenroll(app);
+                  }}>
+                  <LogOut className="h-3.5 w-3.5 mr-1" />
+                  Un-enrol
+                </Button>
+              </div>
+            );
+          }
+
+          return (
+            <div className="flex justify-center min-w-[150px]">
+              <Button
+                variant={
+                  isPendingVerification || isSectionAssignment
+                    ? "default"
+                    : "secondary"
+                }
+                size="sm"
+                className={
+                  isPendingVerification || isSectionAssignment
+                    ? "h-8 bg-[hsl(var(--primary))] text-sm font-bold text-primary-foreground hover:opacity-90"
+                    : "h-8 text-sm font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
+                }
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (isSectionAssignment) {
+                    void handleAssignAndEnroll(app);
+                    return;
+                  }
+                  setSelectedId(app.id);
+                }}
+                disabled={
+                  isSectionAssignment && (!selectedSectionId || isSavingSection)
+                }>
+                {isPendingVerification ? (
+                  <>
+                    <FileCheck2 className="h-3.5 w-3.5 mr-1" />
+                    Verify Docs
+                  </>
+                ) : isSectionAssignment ? (
+                  isSavingSection ? (
+                    "Assigning..."
+                  ) : (
+                    <>
+                      <School className="h-3.5 w-3.5 mr-1" />
+                      Enroll & Assign
+                    </>
+                  )
+                ) : (
+                  <>
+                    <Eye className="h-3 w-3 mr-1" /> View
+                  </>
+                )}
+              </Button>
+            </div>
+          );
+        },
+      },
+    );
+
+    return cols;
+  }, [
+    workflowView,
+    applications,
+    selectedBatchIds,
+    sectionSelectionByApplicationId,
+    sectionOptionsByApplicationId,
+    loadingSectionOptionsByApplicationId,
+    savingSectionByApplicationId,
+    selectAllVisible,
+    toggleBatchSelect,
+    ensureSectionOptionsLoaded,
+    handleAssignAndEnroll,
+    handleUnenroll,
+    setSelectedId,
+  ]);
+
+  const handleBatchAssign = async () => {
+    if (!batchSectionId) {
+      sileo.error({
+        title: "Section Required",
+        description: "Please select a section for batch assignment.",
+      });
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Are you sure you want to assign ${selectedBatchIds.length} learners to the selected section and enroll them?`,
+    );
+    if (!confirmed) return;
+
+    setIsBatchAssigning(true);
+    try {
+      await api.post("/applications/batch-assign-section", {
+        applicationIds: selectedBatchIds,
+        sectionId: Number(batchSectionId),
+      });
+
+      sileo.success({
+        title: "Batch Assignment Success",
+        description: `${selectedBatchIds.length} learners have been assigned and enrolled.`,
+      });
+
+      setSelectedBatchIds([]);
+      setBatchSectionId("");
+      fetchData();
+    } catch (err) {
+      toastApiError(err as never);
+    } finally {
+      setIsBatchAssigning(false);
+    }
+  };
+
+  // --- Resizable Panel Logic (Fluid Percentage) ---
+  const [panelPercentage, setPanelPercentage] = useState(45);
+  const isResizing = useRef(false);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isResizing.current) return;
+    const newWidthPercent =
+      ((window.innerWidth - e.clientX) / window.innerWidth) * 100;
+    if (newWidthPercent > 20 && newWidthPercent < 95) {
+      setPanelPercentage(newWidthPercent);
+    }
+  }, []);
+
+  const stopResizing = useCallback(() => {
+    isResizing.current = false;
+    document.removeEventListener("mousemove", handleMouseMove);
+    document.removeEventListener("mouseup", stopResizing);
+    document.body.style.cursor = "default";
+    document.body.style.userSelect = "auto";
+  }, [handleMouseMove]);
+
+  const startResizing = useCallback(() => {
+    isResizing.current = true;
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", stopResizing);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  }, [handleMouseMove, stopResizing]);
+  // ------------------------------------------------
+
+  useEffect(() => {
+    if (!workflowParam && searchParam === null) {
+      return;
+    }
+
+    if (workflowParam) {
+      setWorkflowView(resolveWorkflowFromQuery(workflowParam));
+    }
+
+    if (searchParam !== null) {
+      setSearch(searchParam.trim());
+    }
+
+    setPage(1);
+  }, [workflowParam, searchParam]);
 
   const handleExportLis = async () => {
     if (workflowView !== "OFFICIAL_ROSTER") {
@@ -462,10 +847,10 @@ export default function Enrollment() {
 
   return (
     <div className="flex h-[calc(100vh-2rem)] overflow-hidden">
-      <div className="flex-1 flex flex-col space-y-4 sm:space-y-6 overflow-auto px-2 sm:px-0">
+      <div className="flex-1 flex flex-col space-y-4 sm:space-y-6 overflow-auto px-2 sm:px-0 pb-24">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">
+            <h1 className="text-3xl font-bold tracking-tight text-primary">
               Enrollment Management
             </h1>
             <p className="font-bold">
@@ -473,6 +858,31 @@ export default function Enrollment() {
             </p>
           </div>
           <div className="flex w-full md:w-auto gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="default"
+                  className="h-10 px-3 flex-1 md:flex-none text-sm font-bold bg-primary hover:bg-primary/90">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  + Walk-In Learner
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 font-bold">
+                <DropdownMenuItem
+                  onClick={() => openSpecialEnroll("TRANSFEREE")}
+                  className="cursor-pointer">
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Encode Walk-In / Transferee
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => openSpecialEnroll("PEPT_PASSER")}
+                  className="cursor-pointer">
+                  <Zap className="mr-2 h-4 w-4 text-amber-500" />
+                  Encode Accelerated / PEPT Passer
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               variant="outline"
               className="h-10 px-3 flex-1 md:flex-none text-sm font-bold"
@@ -488,7 +898,11 @@ export default function Enrollment() {
 
             <Button
               variant="outline"
-              className="h-10 px-3 flex-1 md:flex-none text-sm font-bold"
+              className={`h-10 px-3 flex-1 md:flex-none text-sm font-bold ${
+                workflowView !== "OFFICIAL_ROSTER"
+                  ? "opacity-60 cursor-not-allowed"
+                  : ""
+              }`}
               onClick={handleExportLis}
               disabled={
                 isExportingLis || !ayId || workflowView !== "OFFICIAL_ROSTER"
@@ -515,11 +929,11 @@ export default function Enrollment() {
           <CardHeader className="px-3 sm:px-6 pb-3">
             <div className="flex flex-col md:flex-row gap-3 md:gap-4 items-end">
               <div className="flex-1 space-y-2 w-full">
-                <Label className="text-sm uppercase tracking-wider font-bold">
-                  Search Student
+                <Label className="text-sm uppercase tracking-wider font-bold text-muted-foreground">
+                  Search Learner
                 </Label>
                 <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4" />
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="LRN, First Name, Last Name..."
                     className="pl-9 h-10 text-sm font-bold"
@@ -545,252 +959,23 @@ export default function Enrollment() {
           </CardHeader>
 
           <CardContent className="px-3 sm:px-6">
-            <div className="rounded-xl border overflow-hidden">
-              <Table className="border-collapse">
-                <TableHeader className="bg-[hsl(var(--primary))]">
-                  <TableRow>
-                    <TableHead className="text-center font-bold text-primary-foreground text-sm">
-                      STUDENT
-                    </TableHead>
-                    <TableHead className="text-center font-bold text-primary-foreground hidden md:table-cell text-sm">
-                      LRN
-                    </TableHead>
-                    <TableHead className="text-center font-bold text-primary-foreground text-sm">
-                      GRADE LEVEL
-                    </TableHead>
-                    <TableHead className="text-center font-bold text-primary-foreground hidden lg:table-cell text-sm">
-                      SECTION
-                    </TableHead>
-                    <TableHead className="text-center font-bold text-primary-foreground text-sm">
-                      STATUS
-                    </TableHead>
-                    <TableHead className="text-center font-bold text-primary-foreground hidden xl:table-cell text-sm">
-                      DATE
-                    </TableHead>
-                    <TableHead className="text-center font-bold text-primary-foreground text-sm">
-                      ACTIONS
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {showSkeleton ? (
-                    Array.from({ length: 5 }).map((_, i) => (
-                      <TableRow key={i}>
-                        <TableCell className="text-sm">
-                          <div className="space-y-2">
-                            <Skeleton className="h-4 w-32" />
-                            <Skeleton className="h-3 w-24" />
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell text-sm">
-                          <Skeleton className="h-4 w-24" />
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          <div className="space-y-2 text-center flex flex-col items-center">
-                            <Skeleton className="h-4 w-16" />
-                            <Skeleton className="h-3 w-20" />
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden lg:table-cell text-sm">
-                          <div className="flex justify-center">
-                            <Skeleton className="h-9 w-36" />
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          <div className="flex justify-center">
-                            <Skeleton className="h-6 w-20 rounded-full" />
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden xl:table-cell text-sm">
-                          <div className="flex justify-center">
-                            <Skeleton className="h-4 w-24" />
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          <div className="flex justify-center">
-                            <Skeleton className="h-8 w-16" />
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : applications.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={7}
-                        className="h-24 text-center text-sm font-bold">
-                        No students found.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    applications.map((app) => {
-                      const sectionName = resolveApplicationSectionName(app);
-                      const hasSection = Boolean(sectionName);
-                      const isPendingVerification =
-                        workflowView === "PENDING_VERIFICATION";
-                      const isSectionAssignment =
-                        workflowView === "SECTION_ASSIGNMENT";
-                      const selectedSectionId =
-                        sectionSelectionByApplicationId[app.id] ?? "";
-                      const sectionOptions =
-                        sectionOptionsByApplicationId[app.id] ?? [];
-                      const isLoadingOptions =
-                        loadingSectionOptionsByApplicationId[app.id] === true;
-                      const isSavingSection =
-                        savingSectionByApplicationId[app.id] === true;
-
-                      return (
-                        <TableRow
-                          key={app.id}
-                          className={`hover:bg-[hsl(var(--muted))] transition-colors text-center cursor-pointer text-sm ${selectedId === app.id ? "bg-[hsl(var(--muted))] shadow-inner" : ""}`}
-                          onClick={() => setSelectedId(app.id)}>
-                          <TableCell>
-                            <div className="flex flex-col gap-1 text-left">
-                              <span className="font-bold text-sm uppercase">
-                                {app.lastName}, {app.firstName}
-                              </span>
-                              <span className="text-sm font-bold">
-                                {app.trackingNumber}
-                              </span>
-                            </div>
-                          </TableCell>
-
-                          <TableCell className="hidden md:table-cell text-sm font-bold">
-                            {app.lrn ||
-                              (app.isPendingLrnCreation ? "PENDING" : "N/A")}
-                          </TableCell>
-
-                          <TableCell>
-                            <span className="font-bold text-sm">
-                              {formatGradeLevelLabel(app.gradeLevel.name)}
-                            </span>
-                          </TableCell>
-
-                          <TableCell className="hidden lg:table-cell">
-                            {isSectionAssignment && !hasSection ? (
-                              <div
-                                className="flex items-center justify-center gap-2"
-                                onClick={(e) => e.stopPropagation()}>
-                                <Select
-                                  value={selectedSectionId}
-                                  onValueChange={(value) =>
-                                    setSectionSelectionByApplicationId(
-                                      (prev) => ({
-                                        ...prev,
-                                        [app.id]: value,
-                                      }),
-                                    )
-                                  }
-                                  onOpenChange={(open) => {
-                                    if (open) {
-                                      void ensureSectionOptionsLoaded(app.id);
-                                    }
-                                  }}>
-                                  <SelectTrigger className="h-8 w-40 text-xs font-bold">
-                                    <SelectValue placeholder="Select section" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {isLoadingOptions && (
-                                      <SelectItem value="LOADING" disabled>
-                                        Loading sections...
-                                      </SelectItem>
-                                    )}
-                                    {!isLoadingOptions &&
-                                      sectionOptions.length === 0 && (
-                                        <SelectItem
-                                          value="NO_SECTION_AVAILABLE"
-                                          disabled>
-                                          No sections available
-                                        </SelectItem>
-                                      )}
-                                    {sectionOptions.map((section) => (
-                                      <SelectItem
-                                        key={section.id}
-                                        value={String(section.id)}
-                                        disabled={section.isFull}>
-                                        {section.name} ({section.enrolledCount}/
-                                        {section.maxCapacity})
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            ) : (
-                              <Badge
-                                variant="outline"
-                                className="font-bold px-2 py-0.5 h-auto border-slate-300 text-sm leading-tight text-center">
-                                {sectionName ?? "Not Assigned"}
-                              </Badge>
-                            )}
-                          </TableCell>
-
-                          <TableCell>
-                            <StatusBadge
-                              status={app.status}
-                              className="text-sm font-bold"
-                            />
-                          </TableCell>
-
-                          <TableCell className="text-sm hidden xl:table-cell font-bold">
-                            {format(new Date(app.createdAt), "MMMM dd, yyyy")}
-                          </TableCell>
-
-                          <TableCell className="text-center">
-                            <Button
-                              variant={
-                                isPendingVerification || isSectionAssignment
-                                  ? "default"
-                                  : "secondary"
-                              }
-                              size="sm"
-                              className={
-                                isPendingVerification || isSectionAssignment
-                                  ? "h-8 bg-[hsl(var(--primary))] text-sm font-bold text-primary-foreground hover:opacity-90"
-                                  : "h-8 text-sm font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
-                              }
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (isSectionAssignment) {
-                                  void handleAssignAndEnroll(app);
-                                  return;
-                                }
-
-                                setSelectedId(app.id);
-                              }}
-                              disabled={
-                                isSectionAssignment &&
-                                (!selectedSectionId || isSavingSection)
-                              }
-                              title={
-                                isSectionAssignment && !selectedSectionId
-                                  ? "Select a section before assigning and enrolling."
-                                  : undefined
-                              }>
-                              {isPendingVerification ? (
-                                "Verify Physical Documents"
-                              ) : isSectionAssignment ? (
-                                isSavingSection ? (
-                                  "Assigning..."
-                                ) : (
-                                  "Assign & Enroll"
-                                )
-                              ) : (
-                                <>
-                                  <Eye className="h-3 w-3 mr-1" /> View
-                                </>
-                              )}
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+            <DataTable
+              columns={columns}
+              data={applications}
+              loading={showSkeleton}
+              onRowClick={(app) => {
+                if (workflowView === "SECTION_ASSIGNMENT") {
+                  toggleBatchSelect(app.id);
+                } else {
+                  setSelectedId(app.id);
+                }
+              }}
+              noResultsMessage="No learners found."
+            />
 
             <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mt-4 font-bold">
-              <span className="text-xs">
-                Showing {applications.length} students in{" "}
+              <span className="text-xs text-muted-foreground">
+                Showing {applications.length} learners in{" "}
                 {
                   ENROLLMENT_SUB_MENU_OPTIONS.find(
                     (option) => option.value === workflowView,
@@ -801,18 +986,20 @@ export default function Enrollment() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-9 sm:h-8 text-xs"
+                  className="h-9 sm:h-8 text-xs font-bold"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}>
                   Previous
                 </Button>
-                <Badge variant="secondary" className="px-3 h-8 text-xs">
+                <Badge
+                  variant="secondary"
+                  className="px-3 h-8 text-xs font-bold">
                   Page {page}
                 </Badge>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-9 sm:h-8 text-xs"
+                  className="h-9 sm:h-8 text-xs font-bold"
                   onClick={() => setPage((p) => p + 1)}
                   disabled={page * 15 >= total}>
                   Next
@@ -1031,7 +1218,15 @@ export default function Enrollment() {
                 }}
                 onMarkVerified={async () => {
                   try {
-                    await api.patch(`/applications/${selectedId}/verify`);
+                    const res = await api.patch(
+                      `/applications/${selectedId}/verify`,
+                    );
+
+                    // Handle ID change if migrated from Early Registration
+                    if (res.data.id && res.data.id !== selectedId) {
+                      setSelectedId(res.data.id);
+                    }
+
                     sileo.success({
                       title: "Verified",
                       description:
@@ -1086,17 +1281,17 @@ export default function Enrollment() {
       <Dialog open={isEnrollModalOpen} onOpenChange={setIsEnrollModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-xs">
+            <DialogTitle className="text-xs font-bold uppercase tracking-wider">
               Official Enrollment Confirmation
             </DialogTitle>
-            <DialogDescription className="text-xs">
+            <DialogDescription className="text-xs font-semibold">
               Confirming enrollment for {selectedApp?.lastName},{" "}
               {selectedApp?.firstName}
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-4">
-            <p className="text-xs">
+            <p className="text-xs font-medium">
               This action confirms the{" "}
               <span className="font-bold text-green-700">
                 OFFICIAL ENROLLMENT
@@ -1105,13 +1300,13 @@ export default function Enrollment() {
             </p>
             <div className="mt-4 p-3 rounded-lg bg-emerald-50 border border-emerald-100 space-y-2">
               <div className="flex justify-between text-xs">
-                <span className="text-emerald-700">Section:</span>
+                <span className="text-emerald-700 font-bold">Section:</span>
                 <span className="font-bold">
                   {selectedAppSectionName ?? "Not Assigned"}
                 </span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-emerald-700">Grade Level:</span>
+                <span className="text-emerald-700 font-bold">Grade Level:</span>
                 <span className="font-bold">
                   {selectedApp?.gradeLevel?.name
                     ? formatGradeLevelLabel(selectedApp.gradeLevel.name)
@@ -1124,7 +1319,7 @@ export default function Enrollment() {
                 Official enrollment is locked until a section is assigned.
               </p>
             )}
-            <p className="text-xs mt-4 italic">
+            <p className="text-xs mt-4 italic text-muted-foreground font-medium">
               Ensure all physical documents (PSA, SF9) have been verified in
               person before proceeding.
             </p>
@@ -1134,11 +1329,11 @@ export default function Enrollment() {
             <Button
               variant="outline"
               onClick={() => setIsEnrollModalOpen(false)}
-              className="text-xs">
+              className="text-xs font-bold">
               Cancel
             </Button>
             <Button
-              className="bg-green-600 hover:bg-green-700 text-xs"
+              className="bg-green-600 hover:bg-green-700 text-xs font-bold"
               disabled={!canConfirmOfficialEnrollment}
               onClick={handleEnroll}>
               Confirm Official Enrollment
@@ -1155,6 +1350,79 @@ export default function Enrollment() {
         onSuccess={fetchData}
         onCloseSheet={() => setSelectedId(null)}
       />
+
+      <SpecialEnrollmentDialog
+        open={isSpecialEnrollOpen}
+        onOpenChange={setIsSpecialEnrollOpen}
+        onSuccess={fetchData}
+        initialType={initialEnrollmentType}
+      />
+
+      {/* Floating Action Bar for Batch Assignment */}
+      {selectedBatchIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <Card className="shadow-2xl border-primary bg-primary text-primary-foreground px-6 py-4 flex items-center gap-6">
+            <div className="flex flex-col">
+              <span className="text-sm font-bold">
+                {selectedBatchIds.length} learners selected
+              </span>
+              <span className="text-[10px] opacity-90 uppercase tracking-wider font-bold">
+                Batch Section Assignment
+              </span>
+            </div>
+
+            <div className="h-8 w-px bg-primary-foreground/20" />
+
+            <div className="flex items-center gap-3">
+              <Select
+                value={batchSectionId}
+                onValueChange={setBatchSectionId}
+                onOpenChange={(open) => {
+                  if (open && selectedBatchIds.length > 0) {
+                    void ensureSectionOptionsLoaded(selectedBatchIds[0]);
+                  }
+                }}>
+                <SelectTrigger className="h-10 w-48 bg-white text-black font-bold border-none">
+                  <SelectValue placeholder="Select Section" />
+                </SelectTrigger>
+                <SelectContent>
+                  {selectedBatchIds.length > 0 &&
+                    (
+                      sectionOptionsByApplicationId[selectedBatchIds[0]] || []
+                    ).map((section) => (
+                      <SelectItem
+                        key={section.id}
+                        value={String(section.id)}
+                        disabled={section.isFull}>
+                        {section.name} ({section.enrolledCount}/
+                        {section.maxCapacity})
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+
+              <Button
+                className="bg-white text-primary hover:bg-white/90 font-bold h-10 px-6"
+                onClick={handleBatchAssign}
+                disabled={isBatchAssigning || !batchSectionId}>
+                {isBatchAssigning ? (
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <UserCheck className="h-4 w-4 mr-2" />
+                )}
+                Batch Assign & Enrol
+              </Button>
+
+              <Button
+                variant="ghost"
+                className="text-primary-foreground hover:bg-white/10 h-10 px-4 font-bold"
+                onClick={() => setSelectedBatchIds([])}>
+                Cancel
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

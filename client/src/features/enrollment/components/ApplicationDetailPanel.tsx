@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Link } from "react-router";
-import { ExternalLink, User } from "lucide-react";
+import { ArrowRight, ExternalLink, User } from "lucide-react";
 import { useApplicationDetail } from "@/features/enrollment/hooks/useApplicationDetail";
 import type { AssessmentStep } from "@/features/enrollment/hooks/useApplicationDetail";
 import { StatusBadge } from "./StatusBadge";
@@ -49,6 +49,9 @@ interface Props {
     cutoffScore: number | null,
   ) => Promise<void>;
   onMarkInterviewPassed?: () => Promise<void>;
+  showActions?: boolean;
+  showRawJson?: boolean;
+  pipelineProcessHref?: string;
 }
 
 export function ApplicationDetailPanel({
@@ -72,6 +75,9 @@ export function ApplicationDetailPanel({
   onMarkVerified,
   onSaveStepResult,
   onMarkInterviewPassed,
+  showActions = true,
+  showRawJson = false,
+  pipelineProcessHref,
 }: Props) {
   const {
     data: applicant,
@@ -269,7 +275,7 @@ export function ApplicationDetailPanel({
         <SCPAssessmentBlock
           applicant={applicant}
           onSaveStepResult={
-            onSaveStepResult
+            showActions && onSaveStepResult
               ? async (stepOrder, kind, score, cutoffScore) => {
                   await onSaveStepResult(stepOrder, kind, score, cutoffScore);
                   refetch();
@@ -277,7 +283,7 @@ export function ApplicationDetailPanel({
               : undefined
           }
           onSubmitInterviewResult={
-            onMarkInterviewPassed
+            showActions && onMarkInterviewPassed
               ? async (passed) => {
                   if (passed) {
                     await runAndClose(onMarkInterviewPassed);
@@ -300,6 +306,7 @@ export function ApplicationDetailPanel({
           endpointBase={endpointBase}
           onRefresh={refetch}
           onMandatoryStatusChange={setMandatoryMet}
+          readOnly={!showActions}
         />
 
         {/* Collapsible BEEF Sections */}
@@ -314,6 +321,39 @@ export function ApplicationDetailPanel({
         {/* Timeline */}
         <StatusTimeline applicant={applicant} />
 
+        {showRawJson && (
+          <div className="rounded-md border bg-muted/20">
+            <details className="group">
+              <summary className="cursor-pointer list-none p-3 text-xs sm:text-sm font-bold uppercase tracking-wide">
+                <span className="group-open:hidden">
+                  Show Raw Application JSON
+                </span>
+                <span className="hidden group-open:inline">
+                  Hide Raw Application JSON
+                </span>
+              </summary>
+              <pre className="max-h-56 overflow-auto border-t bg-background p-3 text-[11px] leading-relaxed whitespace-pre-wrap break-all">
+                {JSON.stringify(applicant, null, 2)}
+              </pre>
+            </details>
+          </div>
+        )}
+
+        {pipelineProcessHref && (
+          <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
+            <p className="text-[11px] sm:text-xs uppercase tracking-wider text-muted-foreground">
+              Processing Needed?
+            </p>
+            <Link
+              to={pipelineProcessHref}
+              className="mt-1 inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline"
+              onClick={onClose}>
+              Go to Registration Pipeline to Process
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        )}
+
         {/* Link to full details */}
         <div className="py-2 border-t mt-4 flex justify-center">
           <Link
@@ -325,44 +365,45 @@ export function ApplicationDetailPanel({
         </div>
       </div>
 
-      {/* Action Buttons Pinned to Bottom */}
-      <ActionButtons
-        applicant={applicant}
-        onApprove={() => runAndClose(onApprove)}
-        onReject={() => runAndClose(onReject)}
-        onScheduleExam={() => runAndClose(onScheduleExam)}
-        onRecordResult={() => runAndClose(onRecordResult)}
-        onPass={() => runAndClose(onPass)}
-        onFail={() => runAndClose(onFail)}
-        onOfferRegular={() => runAndClose(onOfferRegular)}
-        onTemporarilyEnroll={() => runAndClose(onTemporarilyEnroll)}
-        onAssignLrn={onAssignLrn ? () => runAndClose(onAssignLrn) : undefined}
-        onEnroll={onEnroll ? () => runAndClose(onEnroll) : undefined}
-        onScheduleInterview={
-          onScheduleInterview
-            ? () => runAndClose(onScheduleInterview)
-            : undefined
-        }
-        onScheduleStep={
-          onScheduleStep
-            ? (step) => runWithArgAndClose(onScheduleStep, step)
-            : undefined
-        }
-        onRecordStepResult={
-          onRecordStepResult
-            ? (step) => runWithArgAndClose(onRecordStepResult, step)
-            : undefined
-        }
-        onSetProfileLock={
-          onSetProfileLock
-            ? (lock) => runWithArgAndClose(onSetProfileLock, lock)
-            : undefined
-        }
-        onMarkVerified={
-          onMarkVerified ? () => runAndClose(onMarkVerified) : undefined
-        }
-        isMandatoryDocumentsMet={mandatoryMet}
-      />
+      {showActions && (
+        <ActionButtons
+          applicant={applicant}
+          onApprove={() => runAndClose(onApprove)}
+          onReject={() => runAndClose(onReject)}
+          onScheduleExam={() => runAndClose(onScheduleExam)}
+          onRecordResult={() => runAndClose(onRecordResult)}
+          onPass={() => runAndClose(onPass)}
+          onFail={() => runAndClose(onFail)}
+          onOfferRegular={() => runAndClose(onOfferRegular)}
+          onTemporarilyEnroll={() => runAndClose(onTemporarilyEnroll)}
+          onAssignLrn={onAssignLrn ? () => runAndClose(onAssignLrn) : undefined}
+          onEnroll={onEnroll ? () => runAndClose(onEnroll) : undefined}
+          onScheduleInterview={
+            onScheduleInterview
+              ? () => runAndClose(onScheduleInterview)
+              : undefined
+          }
+          onScheduleStep={
+            onScheduleStep
+              ? (step) => runWithArgAndClose(onScheduleStep, step)
+              : undefined
+          }
+          onRecordStepResult={
+            onRecordStepResult
+              ? (step) => runWithArgAndClose(onRecordStepResult, step)
+              : undefined
+          }
+          onSetProfileLock={
+            onSetProfileLock
+              ? (lock) => runWithArgAndClose(onSetProfileLock, lock)
+              : undefined
+          }
+          onMarkVerified={
+            onMarkVerified ? () => runAndClose(onMarkVerified) : undefined
+          }
+          isMandatoryDocumentsMet={mandatoryMet}
+        />
+      )}
 
       {applicant.studentPhoto && (
         <ImageEnlarger

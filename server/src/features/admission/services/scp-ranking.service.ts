@@ -97,7 +97,7 @@ export async function getSCPRankings(
           "ASSESSMENT_TAKEN",
           "PASSED",
           "ELIGIBLE",
-          "PRE_REGISTERED",
+          "READY_FOR_ENROLLMENT",
           "ENROLLED",
           "TEMPORARILY_ENROLLED",
         ],

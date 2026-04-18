@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Activity,
   CloudUpload,
@@ -26,14 +26,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/ui/table";
+import type { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/shared/ui/data-table";
 
 interface AtlasHealthResponse {
   endpoint: {
@@ -146,6 +140,88 @@ export default function AtlasIntegration() {
     useState<(typeof STATUS_OPTIONS)[number]>("all");
 
   const showSkeleton = useDelayedLoading(loading);
+
+  const columns = useMemo<ColumnDef<AtlasEvent>[]>(
+    () => [
+      {
+        accessorKey: "createdAt",
+        header: "Created",
+        cell: ({ row }) => (
+          <span className="text-left text-xs block">
+            {formatDateTime(row.original.createdAt)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "eventType",
+        header: "Event Type",
+        cell: ({ row }) => (
+          <span className="text-left text-xs block font-medium">
+            {row.original.eventType}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "teacher",
+        header: "Teacher",
+        cell: ({ row }) => (
+          <span className="text-left text-xs block">
+            {row.original.teacher?.name ?? "-"}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "schoolYear",
+        header: "School Year",
+        cell: ({ row }) => (
+          <span className="text-left text-xs block">
+            {row.original.schoolYear?.yearLabel ?? "-"}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => (
+          <div className="text-left">
+            <Badge variant={statusBadge(row.original.status)}>
+              {row.original.status}
+            </Badge>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "attemptCount",
+        header: "Attempts",
+        cell: ({ row }) => (
+          <span className="text-left text-xs block font-mono">
+            {row.original.attemptCount} / {row.original.maxAttempts}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "httpStatus",
+        header: "HTTP",
+        cell: ({ row }) => (
+          <span className="text-left text-xs block font-mono">
+            {row.original.httpStatus ?? "-"}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "errorMessage",
+        header: "Error",
+        cell: ({ row }) => (
+          <span
+            className="text-left text-xs max-w-[240px] truncate block"
+            title={row.original.errorMessage ?? ""}>
+            {row.original.errorMessage ?? "-"}
+          </span>
+        ),
+      },
+    ],
+    [],
+  );
 
   const fetchAtlasData = useCallback(async () => {
     setLoading(true);
@@ -294,76 +370,13 @@ export default function AtlasIntegration() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="rounded-lg border overflow-hidden">
-            <Table>
-              <TableHeader className="bg-muted/40">
-                <TableRow>
-                  <TableHead className="text-left">Created</TableHead>
-                  <TableHead className="text-left">Event Type</TableHead>
-                  <TableHead className="text-left">Teacher</TableHead>
-                  <TableHead className="text-left">School Year</TableHead>
-                  <TableHead className="text-left">Status</TableHead>
-                  <TableHead className="text-left">Attempts</TableHead>
-                  <TableHead className="text-left">HTTP</TableHead>
-                  <TableHead className="text-left">Error</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {showSkeleton ? (
-                  Array.from({ length: 6 }).map((_, idx) => (
-                    <TableRow key={`atlas-skeleton-${idx}`}>
-                      <TableCell colSpan={8}>
-                        <Skeleton className="h-4 w-full" />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : events.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={8}
-                      className="text-center text-muted-foreground py-8">
-                      No ATLAS sync events found for current filters.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  events.map((event) => (
-                    <TableRow key={event.id}>
-                      <TableCell className="text-left text-xs">
-                        {formatDateTime(event.createdAt)}
-                      </TableCell>
-                      <TableCell className="text-left text-xs">
-                        {event.eventType}
-                      </TableCell>
-                      <TableCell className="text-left text-xs">
-                        {event.teacher?.name ?? "-"}
-                      </TableCell>
-                      <TableCell className="text-left text-xs">
-                        {event.schoolYear?.yearLabel ?? "-"}
-                      </TableCell>
-                      <TableCell className="text-left text-xs">
-                        <Badge variant={statusBadge(event.status)}>
-                          {event.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-left text-xs">
-                        {event.attemptCount} / {event.maxAttempts}
-                      </TableCell>
-                      <TableCell className="text-left text-xs">
-                        {event.httpStatus ?? "-"}
-                      </TableCell>
-                      <TableCell
-                        className="text-left text-xs max-w-[240px] truncate"
-                        title={event.errorMessage ?? ""}>
-                        {event.errorMessage ?? "-"}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          <DataTable
+            columns={columns}
+            data={events}
+            loading={showSkeleton}
+          />
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between pt-2">
             <div className="text-xs text-muted-foreground flex items-center gap-1">
               <ShieldAlert className="h-3.5 w-3.5" />
               Failed events are automatically retried by the sync worker.
@@ -376,7 +389,7 @@ export default function AtlasIntegration() {
                 disabled={page <= 1 || loading}>
                 Previous
               </Button>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-muted-foreground font-bold">
                 Page {page} of {totalPages}
               </span>
               <Button

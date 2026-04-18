@@ -29,7 +29,7 @@ export async function getStats(req: Request, res: Response): Promise<void> {
     }),
     prisma.enrollmentApplication.count({
       where: {
-        status: "PRE_REGISTERED",
+        status: "READY_FOR_ENROLLMENT",
         ...(schoolYearId ? { schoolYearId } : {}),
       },
     }),
@@ -75,7 +75,7 @@ export async function getStats(req: Request, res: Response): Promise<void> {
           in: [
             "UNDER_REVIEW",
             "ELIGIBLE",
-            "ASSESSMENT_SCHEDULED",
+            "EXAM_SCHEDULED",
             "ASSESSMENT_TAKEN",
           ],
         },

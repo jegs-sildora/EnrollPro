@@ -17,14 +17,6 @@ import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/ui/table";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -33,6 +25,8 @@ import {
 } from "@/shared/ui/select";
 import { Label } from "@/shared/ui/label";
 import { Input } from "@/shared/ui/input";
+import type { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/shared/ui/data-table";
 import type {
   AuditLog,
   ChecklistData,
@@ -284,6 +278,149 @@ export function DocumentManagement({
       return dateB - dateA;
     });
 
+  const columns = useMemo<ColumnDef<AuditRow>[]>(
+    () => [
+      {
+        id: "documentName",
+        header: "Document Name",
+        cell: ({ row }) => {
+          const auditRow = row.original;
+          return (
+            <div className="flex items-center gap-2 text-xs text-left min-w-[200px] h-12">
+              {auditRow.status === "Added" ? (
+                auditRow.document ? (
+                  <Eye className="h-4 w-4 text-blue-500" />
+                ) : (
+                  <FileCheck className="h-4 w-4 text-green-500" />
+                )
+              ) : (
+                <XCircle className="h-4 w-4 text-muted-foreground" />
+              )}
+              <div className="flex flex-col">
+                <span
+                  className={`font-bold ${
+                    auditRow.status === "Removed"
+                      ? "text-muted-foreground line-through decoration-1"
+                      : ""
+                  }`}>
+                  {auditRow.label}
+                </span>
+                {auditRow.document?.originalName && (
+                  <span className="text-sm text-muted-foreground font-normal truncate max-w-[200px]">
+                    {auditRow.document.originalName}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        },
+      },
+      {
+        id: "modifiedBy",
+        header: "Modified By",
+        cell: ({ row }) => {
+          const auditRow = row.original;
+          return (
+            <div className="flex flex-col gap-1 text-center min-w-[150px]">
+              <span className="font-bold text-xs">
+                {auditRow.modifiedBy
+                  ? `${auditRow.modifiedBy.firstName} ${auditRow.modifiedBy.lastName}`
+                  : "N/A"}
+              </span>
+              <div className="flex items-center justify-center">
+                <Badge
+                  variant="outline"
+                  className="text-[0.5rem] h-4 px-1 uppercase tracking-tighter">
+                  {auditRow.modifiedBy?.role || "USER"}
+                </Badge>
+              </div>
+            </div>
+          );
+        },
+      },
+      {
+        id: "lastModified",
+        header: "Last Modified",
+        cell: ({ row }) => (
+          <span className="text-xs font-medium min-w-[150px] block text-center">
+            {row.original.lastModified
+              ? format(new Date(row.original.lastModified), "MMM dd, yyyy - hh:mm a")
+              : "N/A"}
+          </span>
+        ),
+      },
+      {
+        id: "action",
+        header: "Action",
+        cell: ({ row }) => (
+          <div className="flex justify-center min-w-[100px]">
+            {row.original.action === "Added" && (
+              <Badge
+                variant="success"
+                className="text-[0.5625rem] font-bold uppercase">
+                Added
+              </Badge>
+            )}
+            {row.original.action === "Removed" && (
+              <Badge
+                variant="destructive"
+                className="text-[0.5625rem] font-bold uppercase">
+                Removed
+              </Badge>
+            )}
+            {row.original.action === "Pending" && (
+              <Badge
+                variant="outline"
+                className="text-[0.5625rem] font-bold uppercase">
+                Pending
+              </Badge>
+            )}
+          </div>
+        ),
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => {
+          const auditRow = row.original;
+          return (
+            <div className="flex justify-end gap-2 pr-2">
+              {auditRow.document ? (
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-blue-600"
+                    asChild>
+                    <a
+                      href={getDocumentDownloadUrl(auditRow.document.fileName)}
+                      target="_blank"
+                      rel="noreferrer">
+                      <Download className="h-4 w-4" />
+                    </a>
+                  </Button>
+                  {!hideUpload && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-red-600"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(auditRow.type);
+                      }}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          );
+        },
+      },
+    ],
+    [hideUpload, handleDelete, getDocumentDownloadUrl],
+  );
+
   return (
     <div className="space-y-6">
       {!hideUpload && (
@@ -341,139 +478,13 @@ export function DocumentManagement({
             Submitted Documents ({auditRows.length})
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[30%]">Document Name</TableHead>
-                <TableHead className="w-[30%]">Modified By</TableHead>
-                <TableHead className="w-[30%]">Last Modified</TableHead>
-                <TableHead className="w-[10%]">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {auditRows.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={5}
-                    className="text-center py-10 text-muted-foreground">
-                    No activity recorded.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                auditRows.map((row) => (
-                  <TableRow key={row.type}>
-                    <TableCell className="flex justify-center items-center font-bold text-xs h-24">
-                      <div className="flex items-center gap-2 text-xs">
-                        {row.status === "Added" ? (
-                          row.document ? (
-                            <Eye className="h-4 w-4 text-blue-500" />
-                          ) : (
-                            <FileCheck className="h-4 w-4 text-green-500" />
-                          )
-                        ) : (
-                          <XCircle className="h-4 w-4 text-muted-foreground" />
-                        )}
-                        <div className="flex flex-col">
-                          <span
-                            className={
-                              row.status === "Removed"
-                                ? "text-muted-foreground line-through decoration-1"
-                                : ""
-                            }>
-                            {row.label}
-                          </span>
-                          {row.document?.originalName && (
-                            <span className="text-sm text-muted-foreground font-normal truncate max-w-[200px]">
-                              {row.document.originalName}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-xs text-center">
-                      <div className="flex flex-col gap-1">
-                        <span className="font-bold">
-                          {row.modifiedBy
-                            ? `${row.modifiedBy.firstName} ${row.modifiedBy.lastName}`
-                            : "N/A"}
-                        </span>
-                        <div className="flex items-center justify-center">
-                          <Badge
-                            variant="outline"
-                            className="text-[0.5rem] h-4 px-1 uppercase tracking-tighter">
-                            {row.modifiedBy?.role || "USER"}
-                          </Badge>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      {row.lastModified
-                        ? format(
-                            new Date(row.lastModified),
-                            "MMM dd, yyyy - hh:mm a",
-                          )
-                        : "N/A"}
-                    </TableCell>
-                    <TableCell>
-                      {row.action === "Added" && (
-                        <Badge
-                          variant="success"
-                          className="text-[0.5625rem] font-bold uppercase">
-                          Added
-                        </Badge>
-                      )}
-                      {row.action === "Removed" && (
-                        <Badge
-                          variant="destructive"
-                          className="text-[0.5625rem] font-bold uppercase">
-                          Removed
-                        </Badge>
-                      )}
-                      {row.action === "Pending" && (
-                        <Badge
-                          variant="outline"
-                          className="text-[0.5625rem] font-bold uppercase">
-                          Pending
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        {row.document ? (
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-blue-600"
-                              asChild>
-                              <a
-                                href={getDocumentDownloadUrl(
-                                  row.document.fileName,
-                                )}
-                                target="_blank"
-                                rel="noreferrer">
-                                <Download className="h-4 w-4" />
-                              </a>
-                            </Button>
-                            {!hideUpload && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-red-600"
-                                onClick={() => handleDelete(row.type)}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        ) : null}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+        <CardContent className="p-0 overflow-hidden">
+          <DataTable
+            columns={columns}
+            data={auditRows}
+            noResultsMessage="No activity recorded."
+            className="border-none rounded-none"
+          />
         </CardContent>
       </Card>
     </div>

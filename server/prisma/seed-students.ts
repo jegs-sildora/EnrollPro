@@ -70,7 +70,7 @@ const SAMPLE_STUDENTS: SampleStudent[] = [
     sex: "MALE",
     gradeName: "Grade 7",
     applicantType: "SPECIAL_PROGRAM_IN_SPORTS",
-    status: "PRE_REGISTERED",
+    status: "READY_FOR_ENROLLMENT",
   },
   {
     firstName: "Nicole",

@@ -22,18 +22,225 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Badge } from "@/shared/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/ui/table";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
+import type { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/shared/ui/data-table";
+import { useMemo } from "react";
 
 export default function DocumentaryRequirements() {
   usePageTitle();
+
+  const phaseColumns = useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: "feature",
+        header: "",
+        cell: ({ row }) => (
+          <span className="font-bold text-sm bg-muted/20 block p-1">
+            {row.original.feature}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "phase1",
+        header: () => (
+          <div className="bg-blue-50/50 text-blue-700 font-bold p-1">
+            Phase 1 — Basic Education Early Registration Form
+          </div>
+        ),
+        cell: ({ row }) => (
+          <span className={`text-sm ${row.original.phase1Class ?? ""}`}>
+            {row.original.phase1}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "phase2",
+        header: () => (
+          <div className="bg-emerald-50/50 text-emerald-700 font-bold p-1">
+            Phase 2 — Actual Enrollment
+          </div>
+        ),
+        cell: ({ row }) => (
+          <span className={`text-sm ${row.original.phase2Class ?? ""}`}>
+            {row.original.phase2}
+          </span>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const phaseData = [
+    {
+      feature: "Schedule",
+      phase1: "Last Sat of Jan to Last Fri of Feb",
+      phase2: "~1 week before class opening (June)",
+    },
+    {
+      feature: "Target Learners",
+      phase1: "Grade 7, Transferees, Balik-Aral",
+      phase2: "All Learners (Grade 7 to 10)",
+    },
+    {
+      feature: "Forms Required",
+      phase1: "Basic Education Enrollment Form (BEEF)",
+      phase1Class: "italic",
+      phase2: "BEEF + Confirmation Slip (for pre-reg)",
+    },
+    {
+      feature: "Document Handling",
+      phase1: "Presented for verification only (not collected)",
+      phase1Class: "font-medium text-blue-600",
+      phase2: "Original documents submitted and filed",
+      phase2Class: "font-medium text-emerald-600",
+    },
+    {
+      feature: "System Status",
+      phase1: <Badge variant="outline">READY FOR ENROLLMENT</Badge>,
+      phase2: <Badge>OFFICIALLY ENROLLED</Badge>,
+    },
+  ];
+
+  const jhsColumns = useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: "grade",
+        header: "Grade",
+        cell: ({ row }) => (
+          <span className="font-bold text-center block">
+            {row.original.grade}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "type",
+        header: "Learner Type",
+        cell: ({ row }) => row.original.type,
+      },
+      {
+        accessorKey: "phase1",
+        header: () => (
+          <div className="bg-blue-50/30 p-1">
+            Phase 1: Basic Education Early Registration Form
+          </div>
+        ),
+        cell: ({ row }) => (
+          <span className={`text-xs ${row.original.phase1Class ?? ""}`}>
+            {row.original.phase1}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "phase2",
+        header: () => (
+          <div className="bg-emerald-50/30 p-1">Phase 2: Actual Enrollment</div>
+        ),
+        cell: ({ row }) => (
+          <span className="text-xs font-medium">{row.original.phase2}</span>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const jhsData = [
+    {
+      grade: "7",
+      type: <Badge variant="outline">New Enrollee</Badge>,
+      phase1: "SF9 Grade 6 (verify) + PSA BC (verify)",
+      phase2: "BEEF + SF9 Grade 6 + PSA BC + Privacy Consent",
+    },
+    {
+      grade: "8-10",
+      type: (
+        <Badge
+          variant="outline"
+          className="bg-green-50 text-green-700 border-green-200">
+          Continuing
+        </Badge>
+      ),
+      phase1: "Not Required (Automatically ready for enrollment)",
+      phase1Class: "text-muted-foreground italic",
+      phase2: "Confirmation Slip (Annex C) only",
+    },
+    {
+      grade: "8-10",
+      type: (
+        <Badge
+          variant="outline"
+          className="bg-blue-50 text-blue-700 border-blue-200">
+          Transferee
+        </Badge>
+      ),
+      phase1: "SF9 most recent (verify) + PSA BC (verify)",
+      phase2: "BEEF + SF9 original + PSA BC + Privacy Consent",
+    },
+  ];
+
+  const specialColumns = useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: "category",
+        header: "Category",
+        cell: ({ row }) => row.original.category,
+      },
+      {
+        accessorKey: "phase1",
+        header: () => (
+          <div className="bg-blue-50/30 p-1">
+            Phase 1: Basic Education Early Registration Form
+          </div>
+        ),
+        cell: ({ row }) => (
+          <span className="text-xs">{row.original.phase1}</span>
+        ),
+      },
+      {
+        accessorKey: "phase2",
+        header: () => (
+          <div className="bg-emerald-50/30 p-1">Phase 2: Actual Enrollment</div>
+        ),
+        cell: ({ row }) => (
+          <span className="text-xs font-medium">{row.original.phase2}</span>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const specialData = [
+    {
+      category: (
+        <div className="font-bold flex items-center gap-1.5">
+          <RefreshCw className="h-3 w-3 text-primary" />
+          Balik-Aral
+        </div>
+      ),
+      phase1: "Any academic record (verify) + PSA BC (verify)",
+      phase2: "BEEF + Available academic records + PSA BC",
+    },
+    {
+      category: (
+        <div className="font-bold flex items-center gap-1.5">
+          <Stethoscope className="h-3 w-3 text-primary" />
+          LWD / SPED
+        </div>
+      ),
+      phase1: "Standard docs + Medical diagnosis (if avail)",
+      phase2: "Standard docs + PWD ID/Medical Eval (optional)",
+    },
+    {
+      category: (
+        <div className="font-bold flex items-center gap-1.5">
+          <UserPlus className="h-3 w-3 text-primary" />
+          PEPT / A&E
+        </div>
+      ),
+      phase1: "Cert. of Rating / PPA Cert + PSA BC (verify)",
+      phase2: "BEEF + Cert. of Rating + PSA BC",
+    },
+  ];
 
   return (
     <div className="space-y-6 w-full max-w-[1600px] mx-auto pb-10 px-6">
@@ -169,76 +376,12 @@ export default function DocumentaryRequirements() {
           </CardTitle>
         </div>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-1/4"></TableHead>
-                <TableHead className="bg-blue-50/50 text-blue-700 font-bold">
-                  Phase 1 — Basic Education Early Registration Form
-                </TableHead>
-                <TableHead className="bg-emerald-50/50 text-emerald-700 font-bold">
-                  Phase 2 — Actual Enrollment
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow>
-                <TableCell className="font-bold text-sm bg-muted/20">
-                  Schedule
-                </TableCell>
-                <TableCell className="text-sm">
-                  Last Sat of Jan to Last Fri of Feb
-                </TableCell>
-                <TableCell className="text-sm">
-                  ~1 week before class opening (June)
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="font-bold text-sm bg-muted/20">
-                  Target Learners
-                </TableCell>
-                <TableCell className="text-sm">
-                  Grade 7, Transferees, Balik-Aral
-                </TableCell>
-                <TableCell className="text-sm">
-                  All Learners (Grade 7 to 10)
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="font-bold text-sm bg-muted/20">
-                  Forms Required
-                </TableCell>
-                <TableCell className="text-sm italic">
-                  Basic Education Enrollment Form (BEEF)
-                </TableCell>
-                <TableCell className="text-sm">
-                  BEEF + Confirmation Slip (for pre-reg)
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="font-bold text-sm bg-muted/20">
-                  Document Handling
-                </TableCell>
-                <TableCell className="text-sm font-medium text-blue-600">
-                  Presented for verification only (not collected)
-                </TableCell>
-                <TableCell className="text-sm font-medium text-emerald-600">
-                  Original documents submitted and filed
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="font-bold text-sm bg-muted/20">
-                  System Status
-                </TableCell>
-                <TableCell className="text-sm">
-                  <Badge variant="outline">READY FOR ENROLLMENT</Badge>
-                </TableCell>
-                <TableCell className="text-sm">
-                  <Badge>OFFICIALLY ENROLLED</Badge>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+          <DataTable
+            columns={phaseColumns}
+            data={phaseData}
+            className="border-none rounded-none"
+            tableClassName="table-fixed"
+          />
         </CardContent>
       </Card>
 
@@ -260,125 +403,19 @@ export default function DocumentaryRequirements() {
             </TabsList>
 
             <TabsContent value="jhs" className="space-y-4">
-              <div className="rounded-md border overflow-hidden">
-                <Table>
-                  <TableHeader className="bg-muted/50">
-                    <TableRow>
-                      <TableHead className="w-[100px]">Grade</TableHead>
-                      <TableHead className="w-[140px]">Learner Type</TableHead>
-                      <TableHead className="bg-blue-50/30">
-                        Phase 1: Basic Education Early Registration Form
-                      </TableHead>
-                      <TableHead className="bg-emerald-50/30">
-                        Phase 2: Actual Enrollment
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell className="font-bold text-center">7</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">New Enrollee</Badge>
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        SF9 Grade 6 (verify) + PSA BC (verify)
-                      </TableCell>
-                      <TableCell className="text-xs font-medium">
-                        BEEF + SF9 Grade 6 + PSA BC + Privacy Consent
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-bold text-center" rowSpan={2}>
-                        8-10
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className="bg-green-50 text-green-700 border-green-200">
-                          Continuing
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground italic">
-                        Not Required (Automatically ready for enrollment)
-                      </TableCell>
-                      <TableCell className="text-xs font-medium">
-                        Confirmation Slip (Annex C) only
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className="bg-blue-50 text-blue-700 border-blue-200">
-                          Transferee
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        SF9 most recent (verify) + PSA BC (verify)
-                      </TableCell>
-                      <TableCell className="text-xs font-medium">
-                        BEEF + SF9 original + PSA BC + Privacy Consent
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
+              <DataTable
+                columns={jhsColumns}
+                data={jhsData}
+                className="rounded-md border overflow-hidden"
+              />
             </TabsContent>
 
             <TabsContent value="special" className="space-y-4">
-              <div className="rounded-md border overflow-hidden">
-                <Table>
-                  <TableHeader className="bg-muted/50">
-                    <TableRow>
-                      <TableHead className="w-[150px]">Category</TableHead>
-                      <TableHead className="bg-blue-50/30">
-                        Phase 1: Basic Education Early Registration Form
-                      </TableHead>
-                      <TableHead className="bg-emerald-50/30">
-                        Phase 2: Actual Enrollment
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell className="font-bold flex items-center gap-1.5">
-                        <RefreshCw className="h-3 w-3 text-primary" />
-                        Balik-Aral
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        Any academic record (verify) + PSA BC (verify)
-                      </TableCell>
-                      <TableCell className="text-xs font-medium">
-                        BEEF + Available academic records + PSA BC
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-bold flex items-center gap-1.5">
-                        <Stethoscope className="h-3 w-3 text-primary" />
-                        LWD / SPED
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        Standard docs + Medical diagnosis (if avail)
-                      </TableCell>
-                      <TableCell className="text-xs font-medium">
-                        Standard docs + PWD ID/Medical Eval (optional)
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-bold flex items-center gap-1.5">
-                        <UserPlus className="h-3 w-3 text-primary" />
-                        PEPT / A&E
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        Cert. of Rating / PPA Cert + PSA BC (verify)
-                      </TableCell>
-                      <TableCell className="text-xs font-medium">
-                        BEEF + Cert. of Rating + PSA BC
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
+              <DataTable
+                columns={specialColumns}
+                data={specialData}
+                className="rounded-md border overflow-hidden"
+              />
             </TabsContent>
           </Tabs>
         </CardContent>

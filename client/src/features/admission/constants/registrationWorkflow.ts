@@ -7,11 +7,11 @@ export const REGISTRATION_STAGE_QUICK_FILTERS = [
   { value: "VERIFIED", label: "Verified" },
   { value: "UNDER_REVIEW", label: "Under Review" },
   { value: "ELIGIBLE", label: "Eligible" },
-  { value: "ASSESSMENT_SCHEDULED", label: "Exam Scheduled" },
+  { value: "EXAM_SCHEDULED", label: "Exam Scheduled" },
   { value: "ASSESSMENT_TAKEN", label: "Assessment Completed" },
   { value: "PASSED", label: "Passed" },
   { value: "INTERVIEW_SCHEDULED", label: "Interview Scheduled" },
-  { value: "PRE_REGISTERED", label: "Ready for Enrollment" },
+  { value: "READY_FOR_ENROLLMENT", label: "Ready for Enrollment" },
   { value: "TEMPORARILY_ENROLLED", label: "Temporarily Enrolled" },
   { value: "ENROLLED", label: "Enrolled" },
 ] as const;
@@ -20,7 +20,7 @@ export const REGISTRATION_VALID_TRANSITIONS: Record<string, string[]> = {
   SUBMITTED: [
     "VERIFIED",
     "UNDER_REVIEW",
-    "ASSESSMENT_SCHEDULED",
+    "EXAM_SCHEDULED",
     "REJECTED",
     "WITHDRAWN",
   ],
@@ -29,7 +29,7 @@ export const REGISTRATION_VALID_TRANSITIONS: Record<string, string[]> = {
     "ELIGIBLE",
     "ENROLLED",
     "TEMPORARILY_ENROLLED",
-    "ASSESSMENT_SCHEDULED",
+    "EXAM_SCHEDULED",
     "REJECTED",
     "WITHDRAWN",
   ],
@@ -37,65 +37,61 @@ export const REGISTRATION_VALID_TRANSITIONS: Record<string, string[]> = {
     "VERIFIED",
     "FOR_REVISION",
     "ELIGIBLE",
-    "ASSESSMENT_SCHEDULED",
+    "EXAM_SCHEDULED",
     "REJECTED",
     "WITHDRAWN",
   ],
   FOR_REVISION: ["UNDER_REVIEW", "WITHDRAWN"],
-  ELIGIBLE: ["ASSESSMENT_SCHEDULED", "PASSED", "WITHDRAWN"],
-  ASSESSMENT_SCHEDULED: [
-    "PASSED",
-    "NOT_QUALIFIED",
-    "ASSESSMENT_TAKEN",
-    "ASSESSMENT_SCHEDULED",
-    "INTERVIEW_SCHEDULED",
-    "WITHDRAWN",
-  ],
+  ELIGIBLE: ["EXAM_SCHEDULED", "PASSED", "WITHDRAWN"],
   EXAM_SCHEDULED: [
     "PASSED",
-    "NOT_QUALIFIED",
     "ASSESSMENT_TAKEN",
-    "ASSESSMENT_SCHEDULED",
+    "EXAM_SCHEDULED",
     "INTERVIEW_SCHEDULED",
     "WITHDRAWN",
   ],
   ASSESSMENT_TAKEN: [
     "PASSED",
-    "NOT_QUALIFIED",
+    "SUBMITTED",
     "ASSESSMENT_TAKEN",
-    "ASSESSMENT_SCHEDULED",
+    "EXAM_SCHEDULED",
     "WITHDRAWN",
   ],
   PASSED: [
-    "PRE_REGISTERED",
+    "READY_FOR_ENROLLMENT",
     "INTERVIEW_SCHEDULED",
-    "ASSESSMENT_SCHEDULED",
+    "EXAM_SCHEDULED",
     "WITHDRAWN",
   ],
   INTERVIEW_SCHEDULED: [
     "PASSED",
-    "PRE_REGISTERED",
-    "NOT_QUALIFIED",
+    "READY_FOR_ENROLLMENT",
+    "SUBMITTED",
     "WITHDRAWN",
   ],
-  PRE_REGISTERED: ["ENROLLED", "TEMPORARILY_ENROLLED", "WITHDRAWN"],
+  READY_FOR_ENROLLMENT: [
+    "ENROLLED",
+    "TEMPORARILY_ENROLLED",
+    "REJECTED",
+    "WITHDRAWN",
+  ],
   TEMPORARILY_ENROLLED: ["ENROLLED", "WITHDRAWN"],
   ENROLLED: ["WITHDRAWN"],
-  NOT_QUALIFIED: ["UNDER_REVIEW", "WITHDRAWN", "REJECTED"],
+  FAILED_ASSESSMENT: ["UNDER_REVIEW", "WITHDRAWN", "REJECTED"],
   REJECTED: ["UNDER_REVIEW", "WITHDRAWN"],
   WITHDRAWN: [],
 };
 
 export const REGISTRATION_BATCH_TARGET_OPTIONS = [
+  { value: "SUBMITTED", label: "Submitted" },
   { value: "VERIFIED", label: "Verified" },
   { value: "UNDER_REVIEW", label: "Under Review" },
   { value: "ELIGIBLE", label: "Eligible" },
-  { value: "ASSESSMENT_SCHEDULED", label: "Exam Scheduled" },
+  { value: "EXAM_SCHEDULED", label: "Exam Scheduled" },
   { value: "ASSESSMENT_TAKEN", label: "Assessment Completed" },
   { value: "PASSED", label: "Passed" },
   { value: "INTERVIEW_SCHEDULED", label: "Interview Scheduled" },
-  { value: "PRE_REGISTERED", label: "Ready for Enrollment" },
-  { value: "NOT_QUALIFIED", label: "Not Qualified" },
+  { value: "READY_FOR_ENROLLMENT", label: "Ready for Enrollment" },
   { value: "REJECTED", label: "Rejected" },
   { value: "WITHDRAWN", label: "Withdrawn" },
 ] as const;
@@ -105,11 +101,11 @@ export const REGISTRATION_RECOMMENDED_TARGET_BY_STATUS: Record<string, string> =
     SUBMITTED: "VERIFIED",
     VERIFIED: "UNDER_REVIEW",
     UNDER_REVIEW: "ELIGIBLE",
-    ELIGIBLE: "ASSESSMENT_SCHEDULED",
-    ASSESSMENT_SCHEDULED: "ASSESSMENT_TAKEN",
+    ELIGIBLE: "EXAM_SCHEDULED",
+    EXAM_SCHEDULED: "ASSESSMENT_TAKEN",
     ASSESSMENT_TAKEN: "PASSED",
     PASSED: "INTERVIEW_SCHEDULED",
-    INTERVIEW_SCHEDULED: "PRE_REGISTERED",
+    INTERVIEW_SCHEDULED: "READY_FOR_ENROLLMENT",
   };
 
 export type RegistrationBatchActionId =
@@ -148,7 +144,7 @@ export const REGISTRATION_BATCH_ACTIONS_BY_STATUS: Record<
   VERIFIED: {
     id: "SCHEDULE_EXAM",
     triggerStatus: "VERIFIED",
-    targetStatus: "ASSESSMENT_SCHEDULED",
+    targetStatus: "EXAM_SCHEDULED",
     buttonLabel: "Batch Verify & Schedule Exam",
     modalTitle: "Batch Exam Scheduling",
     modalDescription:
@@ -158,16 +154,16 @@ export const REGISTRATION_BATCH_ACTIONS_BY_STATUS: Record<
   ELIGIBLE: {
     id: "SCHEDULE_EXAM",
     triggerStatus: "ELIGIBLE",
-    targetStatus: "ASSESSMENT_SCHEDULED",
+    targetStatus: "EXAM_SCHEDULED",
     buttonLabel: "Batch Verify & Schedule Exam",
     modalTitle: "Batch Exam Scheduling",
     modalDescription:
       "Apply one exam schedule setup to all selected eligible applicants.",
     submitLabel: "Schedule Exam & Queue Emails",
   },
-  ASSESSMENT_SCHEDULED: {
+  EXAM_SCHEDULED: {
     id: "RECORD_ASSESSMENT",
-    triggerStatus: "ASSESSMENT_SCHEDULED",
+    triggerStatus: "EXAM_SCHEDULED",
     targetStatus: "PASSED",
     buttonLabel: "Batch Record Assessment Scores",
     modalTitle: "Batch Assessment Data Entry",
@@ -198,21 +194,21 @@ export const REGISTRATION_BATCH_ACTIONS_BY_STATUS: Record<
   INTERVIEW_SCHEDULED: {
     id: "FINALIZE_PHASE_ONE",
     triggerStatus: "INTERVIEW_SCHEDULED",
-    targetStatus: "PRE_REGISTERED",
+    targetStatus: "READY_FOR_ENROLLMENT",
     buttonLabel: "Batch Faculty Interview Result",
     modalTitle: "Batch Interview Finalization",
     modalDescription:
       "Finalize post-interview outcomes for selected applicants.",
     submitLabel: "Finalize Phase 1 Results",
   },
-  NOT_QUALIFIED: {
+  FAILED_ASSESSMENT: {
     id: "ENDORSE_REGULAR_TRACK",
-    triggerStatus: "NOT_QUALIFIED",
+    triggerStatus: "FAILED_ASSESSMENT",
     targetStatus: "UNDER_REVIEW",
     buttonLabel: "Batch Endorse as Regular",
     modalTitle: "Batch Regular Track Endorsement",
     modalDescription:
-      "Move selected NOT_QUALIFIED applicants to UNDER_REVIEW for regular-track processing.",
+      "Move selected FAILED_ASSESSMENT applicants to UNDER_REVIEW for regular-track processing.",
     submitLabel: "Move to Under Review",
   },
 };
@@ -247,7 +243,7 @@ export function getRegistrationBatchActionByStatus(
   applicantType?: string,
 ) {
   const normalizedStatus =
-    status === "EXAM_SCHEDULED" ? "ASSESSMENT_SCHEDULED" : status;
+    status === "EXAM_SCHEDULED" ? "EXAM_SCHEDULED" : status;
 
   const normalizedProgram = String(applicantType ?? "")
     .trim()

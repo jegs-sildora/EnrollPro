@@ -24,11 +24,11 @@ export function StatusTimeline({ applicant }: Props) {
 		[
 			'UNDER_REVIEW',
 			'ELIGIBLE',
-			'ASSESSMENT_SCHEDULED',
+			'EXAM_SCHEDULED',
 			'ASSESSMENT_TAKEN',
 			'PASSED',
 			'INTERVIEW_SCHEDULED',
-			'PRE_REGISTERED',
+			'READY_FOR_ENROLLMENT',
 			'ENROLLED',
 			'REJECTED',
 		].includes(applicant.status) &&

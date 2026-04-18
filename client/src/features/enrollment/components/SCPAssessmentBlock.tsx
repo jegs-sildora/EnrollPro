@@ -453,7 +453,7 @@ export function SCPAssessmentBlock({
       </div>
 
       {/* Inline Score Recording — separate card below */}
-      {(applicant.status === "ASSESSMENT_SCHEDULED" ||
+      {(applicant.status === "EXAM_SCHEDULED" ||
         applicant.status === "ASSESSMENT_TAKEN") &&
         hasSteps &&
         onSaveStepResult && (

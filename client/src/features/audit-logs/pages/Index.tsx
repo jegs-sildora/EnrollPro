@@ -9,6 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
+import { useAuthStore } from "@/store/auth.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { Button } from "@/shared/ui/button";
@@ -16,15 +17,9 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Badge } from "@/shared/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/ui/table";
-import { Skeleton } from "@/shared/ui/skeleton";
+
+import type { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/shared/ui/data-table";
 
 interface AuditUser {
   id: number;
@@ -63,6 +58,9 @@ function actionLabel(actionType: string) {
 }
 
 export default function AuditLogs() {
+  const { user } = useAuthStore();
+  const isSystemAdmin = user?.role === "SYSTEM_ADMIN";
+
   const [logs, setLogs] = useState<AuditLogRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -79,14 +77,89 @@ export default function AuditLogs() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
+  const columns = useMemo<ColumnDef<AuditLogRow>[]>(
+    () => [
+      {
+        accessorKey: "createdAt",
+        header: "Timestamp",
+        cell: ({ row }) => (
+          <span className="whitespace-nowrap text-xs font-medium">
+            {formatTimestamp(row.original.createdAt)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "user",
+        header: "Actor",
+        cell: ({ row }) => {
+          const log = row.original;
+          return (
+            <div className="space-y-0.5">
+              <p className="text-sm font-semibold">
+                {log.user
+                  ? `${log.user.lastName}, ${log.user.firstName}`
+                  : "System / Guest"}
+              </p>
+              {log.user && (
+                <p className="text-xs text-muted-foreground">
+                  ID {log.user.id} • {log.user.role}
+                </p>
+              )}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "actionType",
+        header: "Action",
+        cell: ({ row }) => (
+          <Badge variant="outline" className="font-semibold">
+            {actionLabel(row.original.actionType)}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "subjectType",
+        header: "Subject",
+        cell: ({ row }) => {
+          const log = row.original;
+          return (
+            <span className="text-xs">
+              {log.subjectType
+                ? `${log.subjectType}${log.recordId ? ` #${log.recordId}` : ""}`
+                : "—"}
+            </span>
+          );
+        },
+      },
+      {
+        accessorKey: "description",
+        header: "Description",
+        cell: ({ row }) => (
+          <span className="text-sm max-w-[480px] break-words block">
+            {row.original.description}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "ipAddress",
+        header: "IP Address",
+        cell: ({ row }) => (
+          <span className="text-xs font-mono">{row.original.ipAddress}</span>
+        ),
+      },
+    ],
+    [],
+  );
+
   const filterParams = useMemo(() => {
     const params: Record<string, string> = {};
     if (actionType.trim()) params.actionType = actionType.trim().toUpperCase();
-    if (userId.trim()) params.userId = userId.trim();
+    if (isSystemAdmin && userId.trim()) params.userId = userId.trim();
     if (dateFrom) params.dateFrom = dateFrom;
     if (dateTo) params.dateTo = dateTo;
     return params;
-  }, [actionType, userId, dateFrom, dateTo]);
+  }, [actionType, userId, dateFrom, dateTo, isSystemAdmin]);
 
   const fetchLogs = useCallback(
     async (targetPage: number) => {
@@ -183,17 +256,21 @@ export default function AuditLogs() {
           <Button
             variant="outline"
             onClick={() => fetchLogs(page)}
-            disabled={loading}
-          >
+            disabled={loading}>
             <RefreshCw
               className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
             />
             Refresh
           </Button>
-          <Button variant="outline" onClick={handleExport} disabled={exporting}>
-            <Download className="h-4 w-4 mr-2" />
-            {exporting ? "Exporting..." : "Export CSV"}
-          </Button>
+          {isSystemAdmin && (
+            <Button
+              variant="outline"
+              onClick={handleExport}
+              disabled={exporting}>
+              <Download className="h-4 w-4 mr-2" />
+              {exporting ? "Exporting..." : "Export CSV"}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -235,17 +312,19 @@ export default function AuditLogs() {
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>User ID</Label>
-                  <Input
-                    value={userId}
-                    onChange={(e) => {
-                      setUserId(e.target.value.replace(/[^0-9]/g, ""));
-                      setPage(1);
-                    }}
-                    placeholder="System admin filter"
-                  />
-                </div>
+                {isSystemAdmin && (
+                  <div className="space-y-2">
+                    <Label>User ID</Label>
+                    <Input
+                      value={userId}
+                      onChange={(e) => {
+                        setUserId(e.target.value.replace(/[^0-9]/g, ""));
+                        setPage(1);
+                      }}
+                      placeholder="System admin filter"
+                    />
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label>Date From</Label>
                   <Input
@@ -278,8 +357,7 @@ export default function AuditLogs() {
                     setDateFrom("");
                     setDateTo("");
                     setPage(1);
-                  }}
-                >
+                  }}>
                   Reset Filters
                 </Button>
               </div>
@@ -325,96 +403,10 @@ export default function AuditLogs() {
               <CardTitle className="text-base">Activity Log</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="rounded-lg border overflow-hidden">
-                <Table>
-                  <TableHeader className="bg-muted/40">
-                    <TableRow>
-                      <TableHead className="text-left">Timestamp</TableHead>
-                      <TableHead className="text-left">Actor</TableHead>
-                      <TableHead className="text-left">Action</TableHead>
-                      <TableHead className="text-left">Subject</TableHead>
-                      <TableHead className="text-left">Description</TableHead>
-                      <TableHead className="text-left">IP Address</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {showSkeleton ? (
-                      Array.from({ length: 6 }).map((_, idx) => (
-                        <TableRow key={`skeleton-${idx}`}>
-                          <TableCell>
-                            <Skeleton className="h-4 w-36" />
-                          </TableCell>
-                          <TableCell>
-                            <Skeleton className="h-4 w-28" />
-                          </TableCell>
-                          <TableCell>
-                            <Skeleton className="h-6 w-28 rounded-full" />
-                          </TableCell>
-                          <TableCell>
-                            <Skeleton className="h-4 w-20" />
-                          </TableCell>
-                          <TableCell>
-                            <Skeleton className="h-4 w-full max-w-[360px]" />
-                          </TableCell>
-                          <TableCell>
-                            <Skeleton className="h-4 w-24" />
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : logs.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={6}
-                          className="h-20 text-center text-sm text-muted-foreground"
-                        >
-                          No audit events found for the current filters.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      logs.map((log) => (
-                        <TableRow key={log.id}>
-                          <TableCell className="whitespace-nowrap text-left text-xs font-medium">
-                            {formatTimestamp(log.createdAt)}
-                          </TableCell>
-                          <TableCell className="text-left">
-                            <div className="space-y-0.5">
-                              <p className="text-sm font-semibold">
-                                {log.user
-                                  ? `${log.user.lastName}, ${log.user.firstName}`
-                                  : "System / Guest"}
-                              </p>
-                              {log.user && (
-                                <p className="text-xs text-muted-foreground">
-                                  ID {log.user.id} • {log.user.role}
-                                </p>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-left">
-                            <Badge variant="outline" className="font-semibold">
-                              {actionLabel(log.actionType)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-left text-xs">
-                            {log.subjectType
-                              ? `${log.subjectType}${log.recordId ? ` #${log.recordId}` : ""}`
-                              : "—"}
-                          </TableCell>
-                          <TableCell className="text-left text-sm max-w-[480px] break-words">
-                            {log.description}
-                          </TableCell>
-                          <TableCell className="text-left text-xs font-mono">
-                            {log.ipAddress}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+              <DataTable columns={columns} data={logs} loading={showSkeleton} />
 
               {totalPages > 1 && (
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between pt-2">
                   <p className="text-sm font-semibold text-muted-foreground">
                     Page {page} of {totalPages}
                   </p>
@@ -423,8 +415,7 @@ export default function AuditLogs() {
                       variant="outline"
                       size="sm"
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page === 1 || loading}
-                    >
+                      disabled={page === 1 || loading}>
                       Previous
                     </Button>
                     <Button
@@ -433,8 +424,7 @@ export default function AuditLogs() {
                       onClick={() =>
                         setPage((p) => Math.min(totalPages, p + 1))
                       }
-                      disabled={page === totalPages || loading}
-                    >
+                      disabled={page === totalPages || loading}>
                       Next
                     </Button>
                   </div>

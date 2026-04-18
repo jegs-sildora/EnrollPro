@@ -20,6 +20,8 @@ import {
   Briefcase,
   IdCard,
   Phone,
+  UserCog as UserCogIcon,
+  Check as CheckIcon,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -28,14 +30,6 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -56,6 +50,8 @@ import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
 import { motion, AnimatePresence } from "motion/react";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
+import type { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/shared/ui/data-table";
 
 interface User {
   id: number;
@@ -515,12 +511,401 @@ export default function AdminUsers() {
     [users],
   );
 
+  const columns = useMemo<ColumnDef<User>[]>(
+    () => [
+      {
+        id: "staff",
+        header: () => (
+          <button
+            onClick={() => handleSort("lastName")}
+            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
+            Staff
+            {getSortIcon("lastName")}
+          </button>
+        ),
+        cell: ({ row }) => {
+          const user = row.original;
+          const isEditing = editingId === user.id;
+
+          if (isEditing) {
+            return (
+              <div className="space-y-1 text-left min-w-[200px]">
+                <Input
+                  placeholder="Last Name"
+                  value={editFormData.lastName}
+                  onChange={(e) =>
+                    setEditFormData({
+                      ...editFormData,
+                      lastName: e.target.value,
+                    })
+                  }
+                  className="h-7 text-sm"
+                />
+                <Input
+                  placeholder="First Name"
+                  value={editFormData.firstName}
+                  onChange={(e) =>
+                    setEditFormData({
+                      ...editFormData,
+                      firstName: e.target.value,
+                    })
+                  }
+                  className="h-7 text-sm"
+                />
+              </div>
+            );
+          }
+
+          return (
+            <div className="flex flex-col text-left min-w-[200px] pl-2">
+              <span className="font-bold text-sm uppercase leading-tight">
+                {user.lastName}, {user.firstName}
+                {user.suffix ? ` ${user.suffix}` : ""}
+              </span>
+              <span className="text-xs font-bold text-muted-foreground">
+                {user.email}
+              </span>
+            </div>
+          );
+        },
+      },
+      {
+        id: "position",
+        header: () => (
+          <button
+            onClick={() => handleSort("designation")}
+            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
+            Position and ID
+            {getSortIcon("designation")}
+          </button>
+        ),
+        cell: ({ row }) => {
+          const user = row.original;
+          const isEditing = editingId === user.id;
+
+          if (isEditing) {
+            return (
+              <div className="space-y-1 text-left min-w-[150px]">
+                <Input
+                  placeholder="Designation"
+                  value={editFormData.designation}
+                  onChange={(e) =>
+                    setEditFormData({
+                      ...editFormData,
+                      designation: e.target.value,
+                    })
+                  }
+                  className="h-7 text-sm"
+                />
+                <Input
+                  placeholder="Employee ID"
+                  value={editFormData.employeeId}
+                  onChange={(e) =>
+                    setEditFormData({
+                      ...editFormData,
+                      employeeId: e.target.value,
+                    })
+                  }
+                  className="h-7 text-sm"
+                />
+              </div>
+            );
+          }
+
+          return (
+            <div className="space-y-0.5 text-center min-w-[150px]">
+              <div className="text-xs font-bold text-primary flex items-center justify-center gap-1">
+                <Briefcase className="h-3 w-3" />
+                {user.designation || "No Position Set"}
+              </div>
+              <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                <IdCard className="h-3 w-3" />
+                {user.employeeId || "No ID Set"}
+              </div>
+            </div>
+          );
+        },
+      },
+      {
+        id: "contact",
+        header: () => (
+          <button
+            onClick={() => handleSort("email")}
+            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
+            Contact
+            {getSortIcon("email")}
+          </button>
+        ),
+        cell: ({ row }) => {
+          const user = row.original;
+          const isEditing = editingId === user.id;
+
+          if (isEditing) {
+            return (
+              <div className="space-y-1 text-left min-w-[200px]">
+                <Input
+                  placeholder="Email"
+                  value={editFormData.email}
+                  onChange={(e) =>
+                    setEditFormData({
+                      ...editFormData,
+                      email: e.target.value,
+                    })
+                  }
+                  className="h-7 text-sm"
+                />
+                <Input
+                  placeholder="Mobile Number"
+                  value={editFormData.mobileNumber}
+                  onChange={(e) =>
+                    setEditFormData({
+                      ...editFormData,
+                      mobileNumber: e.target.value,
+                    })
+                  }
+                  className="h-7 text-sm"
+                />
+              </div>
+            );
+          }
+
+          return (
+            <div className="space-y-0.5 text-center min-w-[200px]">
+              <div className="text-sm font-medium">{user.email}</div>
+              <div className="text-sm text-muted-foreground flex items-center justify-center gap-1">
+                <Phone className="h-2.5 w-2.5" />
+                {user.mobileNumber || "No Mobile Set"}
+              </div>
+            </div>
+          );
+        },
+      },
+      {
+        id: "role",
+        header: () => (
+          <button
+            onClick={() => handleSort("role")}
+            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
+            Role
+            {getSortIcon("role")}
+          </button>
+        ),
+        cell: ({ row }) => {
+          const user = row.original;
+          const isEditing = editingId === user.id;
+
+          if (isEditing) {
+            return (
+              <div className="flex justify-center min-w-[140px]">
+                <Select
+                  value={editFormData.role}
+                  onValueChange={(value: "REGISTRAR" | "SYSTEM_ADMIN") =>
+                    setEditFormData({
+                      ...editFormData,
+                      role: value,
+                    })
+                  }
+                >
+                  <SelectTrigger className="h-8 w-32 text-xs font-bold uppercase">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SYSTEM_ADMIN">ADMIN</SelectItem>
+                    <SelectItem value="REGISTRAR">REGISTRAR</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            );
+          }
+
+          return (
+            <div className="flex justify-center min-w-[140px]">
+              <Badge
+                variant="outline"
+                className={`px-2 py-0.5 text-xs uppercase font-bold tracking-tight ${
+                  user.role === "REGISTRAR"
+                    ? "border-primary/20 bg-primary/10 text-primary"
+                    : "border-purple-200 bg-purple-50 text-purple-700"
+                }`}>
+                {user.role}
+              </Badge>
+            </div>
+          );
+        },
+      },
+      {
+        id: "status",
+        header: () => (
+          <button
+            onClick={() => handleSort("isActive")}
+            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
+            Status
+            {getSortIcon("isActive")}
+          </button>
+        ),
+        cell: ({ row }) => {
+          const user = row.original;
+          return (
+            <div className="flex items-center justify-center gap-1.5 min-w-[100px]">
+              <div
+                className={`h-2 w-2 rounded-full ring-2 ring-offset-1 ${
+                  user.isActive
+                    ? "bg-green-500 ring-green-100"
+                    : "bg-slate-400 ring-slate-100"
+                }`}
+              />
+              <span className="text-xs font-semibold">
+                {user.isActive ? "ACTIVE" : "INACTIVE"}
+              </span>
+            </div>
+          );
+        },
+      },
+      {
+        id: "lastLoginAt",
+        header: () => (
+          <button
+            onClick={() => handleSort("lastLoginAt")}
+            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
+            Last Login
+            {getSortIcon("lastLoginAt")}
+          </button>
+        ),
+        cell: ({ row }) => (
+          <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap block text-center min-w-[120px]">
+            {row.original.lastLoginAt
+              ? new Date(row.original.lastLoginAt).toLocaleString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })
+              : "—"}
+          </span>
+        ),
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => {
+          const user = row.original;
+          const isEditing = editingId === user.id;
+
+          if (isEditing) {
+            return (
+              <div className="flex flex-wrap items-center justify-center gap-1.5 min-w-[200px]">
+                <Button
+                  size="sm"
+                  className="h-8 px-2 text-xs gap-1 font-bold"
+                  onClick={() => handleUpdate(user.id)}
+                  disabled={submitting}
+                >
+                  <CheckIcon className="h-3 w-3" />
+                  Update
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-2 text-xs gap-1 font-bold"
+                  onClick={cancelEditing}
+                  disabled={submitting}
+                >
+                  Cancel
+                </Button>
+              </div>
+            );
+          }
+
+          return (
+            <div className="flex flex-wrap items-center justify-center gap-1.5 min-w-[200px]">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-2 text-xs gap-1 font-bold"
+                onClick={() => startEditing(user)}
+              >
+                <Edit2 className="h-3 w-3" />
+                Quick Edit
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-2 text-xs gap-1 font-bold"
+                onClick={() => openProfileEditor(user)}
+              >
+                <UserCogIcon className="h-3 w-3" />
+                Full Edit
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-2 text-xs gap-1 font-bold"
+                onClick={() => {
+                  setSelectedUser(user);
+                  setFormData({
+                    ...formData,
+                    password: generatePassword(),
+                    mustChangePassword: true,
+                  });
+                  setResetOpen(true);
+                }}
+              >
+                <Key className="h-3 w-3 text-orange-600" />
+                Password
+              </Button>
+              {user.isActive ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentUser?.id === user.id}
+                  className="h-8 px-2 text-xs gap-1 font-bold text-destructive hover:bg-destructive hover:text-destructive-foreground disabled:opacity-30"
+                  onClick={() => setDeactivateId(user.id)}
+                >
+                  <UserMinus className="h-3 w-3" />
+                  Deactivate
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-2 text-xs gap-1 font-bold text-emerald-600 hover:bg-emerald-600 hover:text-white"
+                  onClick={() => setReactivateId(user.id)}
+                >
+                  <UserCheck className="h-3 w-3" />
+                  Reactivate
+                </Button>
+              )}
+            </div>
+          );
+        },
+      },
+    ],
+    [
+      editingId,
+      editFormData,
+      submitting,
+      currentUser,
+      handleSort,
+      getSortIcon,
+      handleUpdate,
+      cancelEditing,
+      startEditing,
+      openProfileEditor,
+      setResetOpen,
+      setSelectedUser,
+      setFormData,
+      formData,
+      setDeactivateId,
+      setReactivateId,
+    ],
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
-            <UserCog className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
+            <UserCogIcon className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
             User Management
           </h1>
           <p className="text-sm font-medium text-muted-foreground">
@@ -854,7 +1239,7 @@ export default function AdminUsers() {
                           className="h-9 text-xs font-bold"
                           onClick={() => openProfileEditor(user)}
                         >
-                          <UserCog className="h-3.5 w-3.5 mr-1.5" />
+                          <UserCogIcon className="h-3.5 w-3.5 mr-1.5" />
                           Full Edit
                         </Button>
                         <Button
@@ -904,387 +1289,17 @@ export default function AdminUsers() {
             )}
           </div>
 
-          <div className="hidden md:block rounded-xl border overflow-hidden">
-            <Table className="border-collapse">
-              <TableHeader className="bg-[hsl(var(--primary))]">
-                <TableRow>
-                  <TableHead className="p-0">
-                    <button
-                      onClick={() => handleSort("lastName")}
-                      className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors"
-                    >
-                      Staff
-                      {getSortIcon("lastName")}
-                    </button>
-                  </TableHead>
-                  <TableHead className="p-0 hidden lg:table-cell">
-                    <button
-                      onClick={() => handleSort("designation")}
-                      className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors"
-                    >
-                      Position and ID
-                      {getSortIcon("designation")}
-                    </button>
-                  </TableHead>
-                  <TableHead className="p-0 hidden xl:table-cell">
-                    <button
-                      onClick={() => handleSort("email")}
-                      className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors"
-                    >
-                      Contact
-                      {getSortIcon("email")}
-                    </button>
-                  </TableHead>
-                  <TableHead className="p-0">
-                    <button
-                      onClick={() => handleSort("role")}
-                      className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors"
-                    >
-                      Role
-                      {getSortIcon("role")}
-                    </button>
-                  </TableHead>
-                  <TableHead className="p-0">
-                    <button
-                      onClick={() => handleSort("isActive")}
-                      className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors"
-                    >
-                      Status
-                      {getSortIcon("isActive")}
-                    </button>
-                  </TableHead>
-                  <TableHead className="p-0 hidden xl:table-cell">
-                    <button
-                      onClick={() => handleSort("lastLoginAt")}
-                      className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors"
-                    >
-                      Last Login
-                      {getSortIcon("lastLoginAt")}
-                    </button>
-                  </TableHead>
-                  <TableHead className="text-center font-bold text-primary-foreground text-xs uppercase tracking-wider">
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {showSkeleton ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell>
-                        <Skeleton className="h-4 w-28 mx-auto" />
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <Skeleton className="h-4 w-36 mx-auto" />
-                      </TableCell>
-                      <TableCell className="hidden xl:table-cell">
-                        <Skeleton className="h-4 w-36 mx-auto" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-6 w-20 mx-auto rounded-full" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-6 w-16 mx-auto rounded-full" />
-                      </TableCell>
-                      <TableCell className="hidden xl:table-cell">
-                        <Skeleton className="h-4 w-28 mx-auto" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-8 w-40 mx-auto" />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : users.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className="h-20 text-center text-sm font-bold text-muted-foreground"
-                    >
-                      No users found matching the selected criteria.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  users.map((user) => (
-                    <TableRow
-                      key={user.id}
-                      className={`hover:bg-[hsl(var(--muted))] transition-colors text-center text-sm ${
-                        !user.isActive ? "opacity-70 bg-muted/20" : ""
-                      }`}
-                    >
-                      <TableCell>
-                        {editingId === user.id ? (
-                          <div className="space-y-1">
-                            <Input
-                              placeholder="Last Name"
-                              value={editFormData.lastName}
-                              onChange={(e) =>
-                                setEditFormData({
-                                  ...editFormData,
-                                  lastName: e.target.value,
-                                })
-                              }
-                              className="h-7 text-sm"
-                            />
-                            <Input
-                              placeholder="First Name"
-                              value={editFormData.firstName}
-                              onChange={(e) =>
-                                setEditFormData({
-                                  ...editFormData,
-                                  firstName: e.target.value,
-                                })
-                              }
-                              className="h-7 text-sm"
-                            />
-                          </div>
-                        ) : (
-                          <div className="flex flex-col text-left">
-                            <span className="font-bold text-sm uppercase leading-tight">
-                              {user.lastName}, {user.firstName}
-                              {user.suffix ? ` ${user.suffix}` : ""}
-                            </span>
-                            <span className="text-xs font-bold text-muted-foreground">
-                              {user.email}
-                            </span>
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        {editingId === user.id ? (
-                          <div className="space-y-1">
-                            <Input
-                              placeholder="Designation"
-                              value={editFormData.designation}
-                              onChange={(e) =>
-                                setEditFormData({
-                                  ...editFormData,
-                                  designation: e.target.value,
-                                })
-                              }
-                              className="h-7 text-sm"
-                            />
-                            <Input
-                              placeholder="Employee ID"
-                              value={editFormData.employeeId}
-                              onChange={(e) =>
-                                setEditFormData({
-                                  ...editFormData,
-                                  employeeId: e.target.value,
-                                })
-                              }
-                              className="h-7 text-sm"
-                            />
-                          </div>
-                        ) : (
-                          <div className="space-y-0.5">
-                            <div className="text-xs font-bold text-primary flex items-center justify-center gap-1">
-                              <Briefcase className="h-3 w-3" />
-                              {user.designation || "No Position Set"}
-                            </div>
-                            <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                              <IdCard className="h-3 w-3" />
-                              {user.employeeId || "No ID Set"}
-                            </div>
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="hidden xl:table-cell">
-                        {editingId === user.id ? (
-                          <div className="space-y-1">
-                            <Input
-                              placeholder="Email"
-                              value={editFormData.email}
-                              onChange={(e) =>
-                                setEditFormData({
-                                  ...editFormData,
-                                  email: e.target.value,
-                                })
-                              }
-                              className="h-7 text-sm"
-                            />
-                            <Input
-                              placeholder="Mobile Number"
-                              value={editFormData.mobileNumber}
-                              onChange={(e) =>
-                                setEditFormData({
-                                  ...editFormData,
-                                  mobileNumber: e.target.value,
-                                })
-                              }
-                              className="h-7 text-sm"
-                            />
-                          </div>
-                        ) : (
-                          <div className="space-y-0.5">
-                            <div className="text-sm font-medium">
-                              {user.email}
-                            </div>
-                            <div className="text-sm text-muted-foreground flex items-center justify-center gap-1">
-                              <Phone className="h-2.5 w-2.5" />
-                              {user.mobileNumber || "No Mobile Set"}
-                            </div>
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex justify-center">
-                          {editingId === user.id ? (
-                            <Select
-                              value={editFormData.role}
-                              onValueChange={(
-                                value: "REGISTRAR" | "SYSTEM_ADMIN",
-                              ) =>
-                                setEditFormData({
-                                  ...editFormData,
-                                  role: value,
-                                })
-                              }
-                            >
-                              <SelectTrigger className="h-8 w-32 text-xs font-bold uppercase">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="SYSTEM_ADMIN">
-                                  ADMIN
-                                </SelectItem>
-                                <SelectItem value="REGISTRAR">
-                                  REGISTRAR
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <Badge
-                              variant="outline"
-                              className={`px-2 py-0.5 text-xs uppercase font-bold tracking-tight ${
-                                user.role === "REGISTRAR"
-                                  ? "border-primary/20 bg-primary/10 text-primary"
-                                  : "border-purple-200 bg-purple-50 text-purple-700"
-                              }`}
-                            >
-                              {user.role}
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-center gap-1.5">
-                          <div
-                            className={`h-2 w-2 rounded-full ring-2 ring-offset-1 ${
-                              user.isActive
-                                ? "bg-green-500 ring-green-100"
-                                : "bg-slate-400 ring-slate-100"
-                            }`}
-                          />
-                          <span className="text-xs font-semibold">
-                            {user.isActive ? "ACTIVE" : "INACTIVE"}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden xl:table-cell text-xs font-semibold text-muted-foreground whitespace-nowrap">
-                        {user.lastLoginAt
-                          ? new Date(user.lastLoginAt).toLocaleString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              hour: "numeric",
-                              minute: "2-digit",
-                            })
-                          : "—"}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap items-center justify-center gap-1.5">
-                          {editingId === user.id ? (
-                            <>
-                              <Button
-                                size="sm"
-                                className="h-8 px-2 text-xs gap-1 font-bold"
-                                onClick={() => handleUpdate(user.id)}
-                                disabled={submitting}
-                              >
-                                <Check className="h-3 w-3" />
-                                Update
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 px-2 text-xs gap-1 font-bold"
-                                onClick={cancelEditing}
-                                disabled={submitting}
-                              >
-                                Cancel
-                              </Button>
-                            </>
-                          ) : (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 px-2 text-xs gap-1 font-bold"
-                                onClick={() => startEditing(user)}
-                              >
-                                <Edit2 className="h-3 w-3" />
-                                Quick Edit
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 px-2 text-xs gap-1 font-bold"
-                                onClick={() => openProfileEditor(user)}
-                              >
-                                <UserCog className="h-3 w-3" />
-                                Full Edit
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 px-2 text-xs gap-1 font-bold"
-                                onClick={() => {
-                                  setSelectedUser(user);
-                                  setFormData({
-                                    ...formData,
-                                    password: generatePassword(),
-                                    mustChangePassword: true,
-                                  });
-                                  setResetOpen(true);
-                                }}
-                              >
-                                <Key className="h-3 w-3 text-orange-600" />
-                                Password
-                              </Button>
-                              {user.isActive ? (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  disabled={currentUser?.id === user.id}
-                                  className="h-8 px-2 text-xs gap-1 font-bold text-destructive hover:bg-destructive hover:text-destructive-foreground disabled:opacity-30"
-                                  onClick={() => setDeactivateId(user.id)}
-                                >
-                                  <UserMinus className="h-3 w-3" />
-                                  Deactivate
-                                </Button>
-                              ) : (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 px-2 text-xs gap-1 font-bold text-emerald-600 hover:bg-emerald-600 hover:text-white"
-                                  onClick={() => setReactivateId(user.id)}
-                                >
-                                  <UserCheck className="h-3 w-3" />
-                                  Reactivate
-                                </Button>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+          <div className="hidden md:block">
+            <DataTable
+              columns={columns}
+              data={users}
+              loading={showSkeleton}
+              noResultsMessage="No users found matching the selected criteria."
+            />
           </div>
 
           {totalPages > 1 && (
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-2">
               <p className="text-sm font-semibold text-muted-foreground">
                 Page {page} of {totalPages}
               </p>
@@ -1604,7 +1619,7 @@ export default function AdminUsers() {
                         exit={{ scale: 0, opacity: 0 }}
                         transition={{ duration: 0.2 }}
                       >
-                        <Check className="h-4 w-4 text-green-600" />
+                        <CheckIcon className="h-4 w-4 text-green-600" />
                       </motion.div>
                     ) : (
                       <motion.div
@@ -2020,7 +2035,7 @@ export default function AdminUsers() {
                         exit={{ scale: 0, opacity: 0 }}
                         transition={{ duration: 0.2 }}
                       >
-                        <Check className="h-4 w-4 text-green-600" />
+                        <CheckIcon className="h-4 w-4 text-green-600" />
                       </motion.div>
                     ) : (
                       <motion.div

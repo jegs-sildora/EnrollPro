@@ -1,6 +1,9 @@
 import { format, differenceInYears } from 'date-fns';
 import { Activity, Info } from 'lucide-react';
 import { computeBmi, computeHfa } from '@/shared/constants/bmi';
+import type { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/shared/ui/data-table";
+import { useMemo } from "react";
 
 import type { LearnerProfile, HealthRecord } from '../types';
 
@@ -27,6 +30,85 @@ export function HealthSection({ learner }: Props) {
 
 	const processedRecords = records.map(getRecordDetails);
 	const latest = processedRecords[0];
+
+  const columns = useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: "schoolYear",
+        header: "Year",
+        cell: ({ row }) => (
+          <span className="text-xs font-semibold text-left block">
+            {row.original.schoolYear}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "assessmentPeriod",
+        header: "Period",
+        cell: ({ row }) => (
+          <span className="text-xs text-left block">
+            {row.original.assessmentPeriod}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "weightKg",
+        header: "Weight",
+        cell: ({ row }) => (
+          <span className="text-xs text-center block">
+            {row.original.weightKg.toFixed(1)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "heightCm",
+        header: "Height",
+        cell: ({ row }) => (
+          <span className="text-xs text-center block">
+            {row.original.heightCm.toFixed(1)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "bmi",
+        header: "BMI",
+        cell: ({ row }) => (
+          <span className="text-xs text-center block font-mono">
+            {row.original.bmi.toFixed(1)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "category",
+        header: "Status",
+        cell: ({ row }) => {
+          const r = row.original;
+          return (
+            <span
+              className={`text-xs font-bold text-left block ${
+                r.color === "red"
+                  ? "text-red-600"
+                  : r.color === "orange"
+                    ? "text-orange-600"
+                    : "text-emerald-600"
+              }`}>
+              ● {r.category}
+            </span>
+          );
+        },
+      },
+      {
+        accessorKey: "hfa",
+        header: "HFA",
+        cell: ({ row }) => (
+          <span className="text-xs font-medium text-right block">
+            {row.original.hfa}
+          </span>
+        ),
+      },
+    ],
+    [],
+  );
 
 	return (
 		<div className='space-y-8'>
@@ -86,59 +168,16 @@ export function HealthSection({ learner }: Props) {
 						</div>
 					</div>
 
-					<div className='space-y-4'>
-						<h3 className='text-xs font-bold text-muted-foreground uppercase tracking-wider'>
+					<div className="space-y-4">
+						<h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
 							All Measurements
 						</h3>
-						<div className='rounded-lg border border-muted/30 overflow-hidden bg-muted/5'>
-							<table className='w-full text-sm'>
-								<thead className='bg-muted/30'>
-									<tr className='text-[0.625rem] uppercase tracking-wider text-muted-foreground font-bold'>
-										<th className='px-4 py-2 text-left'>Year</th>
-										<th className='px-4 py-2 text-left'>Period</th>
-										<th className='px-4 py-2 text-center'>Weight</th>
-										<th className='px-4 py-2 text-center'>Height</th>
-										<th className='px-4 py-2 text-center'>BMI</th>
-										<th className='px-4 py-2 text-left'>Status</th>
-										<th className='px-4 py-2 text-right'>HFA</th>
-									</tr>
-								</thead>
-								<tbody className='divide-y divide-muted/30'>
-									{processedRecords.map((r, i: number) => (
-										<tr
-											key={i}
-											className='hover:bg-muted/10 transition-colors'
-										>
-											<td className='px-4 py-3 text-xs font-semibold'>
-												{r.schoolYear}
-											</td>
-											<td className='px-4 py-3 text-xs'>
-												{r.assessmentPeriod}
-											</td>
-											<td className='px-4 py-3 text-xs text-center'>
-												{r.weightKg.toFixed(1)}
-											</td>
-											<td className='px-4 py-3 text-xs text-center'>
-												{r.heightCm.toFixed(1)}
-											</td>
-											<td className='px-4 py-3 text-xs text-center font-mono'>
-												{r.bmi.toFixed(1)}
-											</td>
-											<td className='px-4 py-3 text-xs'>
-												<span
-													className={`font-bold ${r.color === 'red' ? 'text-red-600' : r.color === 'orange' ? 'text-orange-600' : 'text-emerald-600'}`}
-												>
-													● {r.category}
-												</span>
-											</td>
-											<td className='px-4 py-3 text-right text-xs font-medium'>
-												{r.hfa}
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
+						<DataTable
+              columns={columns}
+              data={processedRecords}
+              className="border-none rounded-none bg-transparent"
+              noResultsMessage="No measurements recorded."
+            />
 					</div>
 				</div>
 			) : (

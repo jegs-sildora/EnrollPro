@@ -112,7 +112,7 @@ export function AdmissionStepsSection({
                   date={
                     step.scheduledDate
                       ? new Date(step.scheduledDate)
-                      : undefined
+                      : new Date()
                   }
                   setDate={(date) =>
                     onUpdateStep(

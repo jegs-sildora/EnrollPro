@@ -15,13 +15,13 @@ import {
   ChevronsUpDown,
   ChevronDown,
   Calendar,
-  UserPlus,
   GraduationCap,
   Shield,
   Activity,
   Mail,
   AlertTriangle,
   CloudUpload,
+  TrendingUp,
 } from "lucide-react";
 
 import {
@@ -167,16 +167,9 @@ function NavItem({
   label: string;
   pathname: string;
 }) {
-  let isActive =
+  const isActive =
     pathname === to || (to !== "/" && pathname.startsWith(to + "/"));
 
-  const isEnrollmentRequirementsRoute =
-    pathname === "/enrollment/requirements" ||
-    pathname.startsWith("/enrollment/requirements/");
-
-  if (isEnrollmentRequirementsRoute && to !== "/enrollment/requirements") {
-    isActive = false;
-  }
   return (
     <SidebarMenuItem>
       <SidebarMenuButton asChild isActive={isActive} tooltip={label}>
@@ -395,48 +388,41 @@ function AppSidebar() {
                         label="Registration Pipelines"
                         pathname={pathname}
                       />
+                    </NavItemParent>
+
+                    <NavItemParent
+                      icon={CheckCircle}
+                      label="Enrollment Operations"
+                      isActive={pathname.startsWith("/monitoring/enrollment")}>
                       <NavItemChild
-                        to="/monitoring/f2f-early-registration"
-                        icon={UserPlus}
-                        label="Walk-In Registration"
+                        to="/monitoring/enrollment"
+                        icon={ClipboardList}
+                        label="BOSY Registration"
+                        pathname={pathname}
+                      />
+                      <NavItemChild
+                        to="/monitoring/enrollment/eosy"
+                        icon={TrendingUp}
+                        label="EOSY Updating"
                         pathname={pathname}
                       />
                     </NavItemParent>
 
-                    <NavItem
-                      to="/monitoring/enrollment"
-                      icon={CheckCircle}
-                      label="Enrollment"
-                      pathname={pathname}
-                    />
-
-                    <NavDivider label="Records" />
+                    <NavDivider label="Management" />
                     <NavItem
                       to="/students"
                       icon={Users}
-                      label="Students"
+                      label="Learner Directory"
                       pathname={pathname}
                     />
-                    <NavItem
-                      to="/monitoring/enrollment/requirements"
-                      icon={FileText}
-                      label="Enrollment Requirements"
-                      pathname={pathname}
-                    />
-                    <NavItem
-                      to="/audit-logs"
-                      icon={ScrollText}
-                      label="Audit Logs"
-                      pathname={pathname}
-                    />
-
-                    <NavDivider label="Management" />
-                    <NavItem
-                      to="/teachers"
-                      icon={GraduationCap}
-                      label="Teachers"
-                      pathname={pathname}
-                    />
+                    {isAdmin && (
+                      <NavItem
+                        to="/teachers"
+                        icon={GraduationCap}
+                        label="Teachers"
+                        pathname={pathname}
+                      />
+                    )}
                     <NavItem
                       to="/sections"
                       icon={School}
@@ -446,34 +432,47 @@ function AppSidebar() {
                   </>
                 )}
 
-                {/* SYSTEM_ADMIN exclusive */}
-                {isAdmin && (
+                {(isRegistrar || isAdmin) && (
                   <>
                     <NavDivider label="System" />
+                    {isAdmin && (
+                      <NavItem
+                        to="/admin/users"
+                        icon={Shield}
+                        label="User Management"
+                        pathname={pathname}
+                      />
+                    )}
+                    {isAdmin && (
+                      <NavItem
+                        to="/admin/email-logs"
+                        icon={Mail}
+                        label="Email Logs"
+                        pathname={pathname}
+                      />
+                    )}
                     <NavItem
-                      to="/admin/users"
-                      icon={Shield}
-                      label="User Management"
+                      to="/audit-logs"
+                      icon={ScrollText}
+                      label="Audit Logs"
                       pathname={pathname}
                     />
-                    <NavItem
-                      to="/admin/email-logs"
-                      icon={Mail}
-                      label="Email Logs"
-                      pathname={pathname}
-                    />
-                    <NavItem
-                      to="/admin/atlas"
-                      icon={CloudUpload}
-                      label="ATLAS Sync"
-                      pathname={pathname}
-                    />
-                    <NavItem
-                      to="/admin/system"
-                      icon={Activity}
-                      label="System Health"
-                      pathname={pathname}
-                    />
+                    {isAdmin && (
+                      <NavItem
+                        to="/admin/atlas"
+                        icon={CloudUpload}
+                        label="ATLAS Sync"
+                        pathname={pathname}
+                      />
+                    )}
+                    {isAdmin && (
+                      <NavItem
+                        to="/admin/system"
+                        icon={Activity}
+                        label="System Health"
+                        pathname={pathname}
+                      />
+                    )}
                     <NavItem
                       to="/settings"
                       icon={Settings}

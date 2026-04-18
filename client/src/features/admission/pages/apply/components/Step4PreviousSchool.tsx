@@ -212,7 +212,7 @@ export default function Step4PreviousSchool() {
 						<Input
 							id='gen-avg'
 							type='number'
-							step='0.01'
+							step='1'
 							{...register('generalAverage', { valueAsNumber: true })}
 							placeholder='e.g. 88.50'
 							className={cn(

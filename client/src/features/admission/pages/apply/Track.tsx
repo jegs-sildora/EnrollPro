@@ -107,7 +107,7 @@ const statusConfig: Record<
     color: "text-cyan-600 bg-cyan-50 border-cyan-200",
     desc: "Great news! You’ve passed the basic screening and are all set for the next step.",
   },
-  ASSESSMENT_SCHEDULED: {
+  EXAM_SCHEDULED: {
     label: "Assessment Scheduled",
     icon: Calendar,
     color: "text-amber-600 bg-amber-50 border-amber-200",
@@ -131,7 +131,7 @@ const statusConfig: Record<
     color: "text-violet-600 bg-violet-50 border-violet-200",
     desc: "We’d love to chat! Your interview is now scheduled—check the details below to prepare.",
   },
-  PRE_REGISTERED: {
+  READY_FOR_ENROLLMENT: {
     label: "Ready for Enrollment",
     icon: CheckCircle2,
     color: "text-emerald-600 bg-emerald-50 border-emerald-200",
@@ -149,7 +149,7 @@ const statusConfig: Record<
     color: "text-green-700 bg-green-100 border-green-300",
     desc: "Welcome to the family! You are now officially enrolled for this school year.",
   },
-  NOT_QUALIFIED: {
+  FAILED_ASSESSMENT: {
     label: "Not Qualified",
     icon: AlertCircle,
     color: "text-amber-600 bg-amber-50 border-amber-200",
@@ -437,7 +437,7 @@ export default function TrackApplication({
                     </p>
                   </div>
 
-                  {status.status === "ASSESSMENT_SCHEDULED" && examDate && (
+                  {status.status === "EXAM_SCHEDULED" && examDate && (
                     <>
                       <div className="p-5 bg-purple-50 border border-purple-200 rounded-2xl space-y-1">
                         <p className="text-[0.625rem] font-black uppercase text-purple-600 tracking-widest flex items-center justify-center gap-1.5">

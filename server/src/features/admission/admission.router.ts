@@ -71,7 +71,14 @@ router.post(
 );
 
 // Batch processing — must be before /:id routes
-router.patch(
+router.post(
+  "/batch-assign-section",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.batchAssignSection,
+);
+
+router.post(
   "/batch-process",
   authenticate,
   authorize("REGISTRAR", "SYSTEM_ADMIN"),
@@ -183,6 +190,18 @@ router.patch(
   authenticate,
   authorize("REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.enroll,
+);
+router.patch(
+  "/:id/unenroll",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.unenroll,
+);
+router.post(
+  "/special-enrollment",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.specialEnrollment,
 );
 router.patch(
   "/:id/temporarily-enroll",

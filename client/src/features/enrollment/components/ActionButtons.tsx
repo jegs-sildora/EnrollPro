@@ -101,9 +101,15 @@ export function ActionButtons({
     : null;
 
   if (isEnrollmentVerificationMode) {
+    const canMarkAsVerified = [
+      "SUBMITTED",
+      "UNDER_REVIEW",
+      "READY_FOR_ENROLLMENT",
+    ].includes(status);
+
     return (
       <div className="flex flex-col gap-2 p-4 border-t bg-background mt-auto">
-        {status === "UNDER_REVIEW" ? (
+        {canMarkAsVerified ? (
           <>
             <Button
               className="w-full bg-[hsl(var(--primary))] text-primary-foreground hover:opacity-90 font-bold"
@@ -179,7 +185,7 @@ export function ActionButtons({
       {/* Temporary Enrollment - Per DepEd Order No. 3, s. 2018 */}
       {(status === "UNDER_REVIEW" ||
         status === "ELIGIBLE" ||
-        status === "PRE_REGISTERED") && (
+        status === "READY_FOR_ENROLLMENT") && (
         <Button
           variant="secondary"
           className="w-full border-blue-300 text-blue-800 bg-blue-50 hover:bg-blue-100 font-bold"
@@ -217,7 +223,7 @@ export function ActionButtons({
 
       {/* SCP: Assessment Scheduled — schedule next step */}
       {isSCP &&
-        status === "ASSESSMENT_SCHEDULED" &&
+        status === "EXAM_SCHEDULED" &&
         !assessmentDecisionAction && (
           <>
             {/* If there are more pending steps, allow scheduling the next one */}
@@ -240,7 +246,7 @@ export function ActionButtons({
         )}
 
       {isSCP &&
-        (status === "ASSESSMENT_SCHEDULED" || status === "ASSESSMENT_TAKEN") &&
+        (status === "EXAM_SCHEDULED" || status === "ASSESSMENT_TAKEN") &&
         assessmentDecisionAction && (
           <Button
             className={`w-full font-bold ${
@@ -282,7 +288,7 @@ export function ActionButtons({
           </Button>
         )}
 
-      {isSCP && status === "NOT_QUALIFIED" && (
+      {isSCP && status === "FAILED_ASSESSMENT" && (
         <>
           <Button
             className="w-full bg-[hsl(var(--primary))] text-primary-foreground hover:opacity-90 font-bold"

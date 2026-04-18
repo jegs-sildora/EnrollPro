@@ -10,14 +10,6 @@ import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { Input } from "@/shared/ui/input";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/ui/table";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -26,6 +18,9 @@ import {
 } from "@/shared/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Skeleton } from "@/shared/ui/skeleton";
+import type { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/shared/ui/data-table";
+import { useMemo } from "react";
 import type {
   Teacher,
   TeacherDesignationFilter,
@@ -175,6 +170,105 @@ export function TeacherDirectoryCard({
         </Button>
       )}
     </div>
+  );
+
+  const columns = useMemo<ColumnDef<Teacher>[]>(
+    () => [
+      {
+        id: "teacher",
+        header: "TEACHER",
+        cell: ({ row }) => (
+          <div className="flex flex-col text-left min-w-[200px] pl-2">
+            <span className="font-bold text-sm uppercase leading-tight">
+              {formatTeacherName(row.original)}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {row.original.email ||
+                row.original.contactNumber ||
+                "No contact info"}
+            </span>
+          </div>
+        ),
+      },
+      {
+        id: "employeeId",
+        header: "EMPLOYEE ID",
+        cell: ({ row }) => (
+          <span className="text-xs font-semibold block text-center min-w-[100px]">
+            {row.original.employeeId || "-"}
+          </span>
+        ),
+      },
+      {
+        id: "specialization",
+        header: "SPECIALIZATION",
+        cell: ({ row }) => (
+          <span className="text-xs font-semibold block text-center min-w-[140px]">
+            {row.original.specialization || "-"}
+          </span>
+        ),
+      },
+      {
+        id: "status",
+        header: "STATUS",
+        cell: ({ row }) => (
+          <div className="min-w-[100px] flex justify-center">
+            {renderTeacherStatus(row.original)}
+          </div>
+        ),
+      },
+      {
+        id: "designation",
+        header: "DESIGNATION",
+        cell: ({ row }) => (
+          <span className="text-xs font-semibold block text-center min-w-[140px]">
+            {formatDesignationSummary(row.original)}
+          </span>
+        ),
+      },
+      {
+        id: "advisory",
+        header: "ADVISORY",
+        cell: ({ row }) => (
+          <span className="text-xs font-semibold block text-center min-w-[140px]">
+            {formatAdvisorySectionSummary(row.original)}
+          </span>
+        ),
+      },
+      {
+        id: "sync",
+        header: "SYNC",
+        cell: ({ row }) => (
+          <div className="flex flex-col items-center gap-1 min-w-[180px]">
+            {renderAtlasSyncBadge(row.original)}
+            <p
+              className={`max-w-[180px] truncate text-[0.625rem] ${getSyncDetailClassName(row.original)}`}
+              title={getSyncDetailText(row.original)}>
+              {getSyncDetailText(row.original)}
+            </p>
+          </div>
+        ),
+      },
+      {
+        id: "actions",
+        header: "ACTIONS",
+        cell: ({ row }) => (
+          <div className="min-w-[200px] flex justify-center">
+            {renderTeacherActions(row.original)}
+          </div>
+        ),
+      },
+    ],
+    [
+      onOpenDesignationEditor,
+      onEditTeacher,
+      onForceSyncTeacher,
+      onDeactivateTeacher,
+      onReactivateTeacher,
+      ayId,
+      forceSyncingAll,
+      forceSyncingTeacherId,
+    ],
   );
 
   return (
@@ -364,127 +458,17 @@ export function TeacherDirectoryCard({
             )}
           </div>
 
-          <div className="hidden md:block rounded-xl border overflow-hidden">
-            <Table className="border-collapse">
-              <TableHeader className="bg-[hsl(var(--primary))]">
-                <TableRow>
-                  <TableHead className="text-center font-bold text-primary-foreground text-sm">
-                    TEACHER
-                  </TableHead>
-                  <TableHead className="hidden lg:table-cell text-center font-bold text-primary-foreground text-sm">
-                    EMPLOYEE ID
-                  </TableHead>
-                  <TableHead className="hidden xl:table-cell text-center font-bold text-primary-foreground text-sm">
-                    SPECIALIZATION
-                  </TableHead>
-                  <TableHead className="text-center font-bold text-primary-foreground text-sm">
-                    STATUS
-                  </TableHead>
-                  <TableHead className="hidden lg:table-cell text-center font-bold text-primary-foreground text-sm">
-                    DESIGNATION
-                  </TableHead>
-                  <TableHead className="hidden xl:table-cell text-center font-bold text-primary-foreground text-sm">
-                    ADVISORY
-                  </TableHead>
-                  <TableHead className="hidden lg:table-cell text-center font-bold text-primary-foreground text-sm">
-                    SYNC
-                  </TableHead>
-                  <TableHead className="text-center font-bold text-primary-foreground text-sm">
-                    ACTIONS
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {showSkeleton ? (
-                  Array.from({ length: 5 }).map((_, index) => (
-                    <TableRow key={index}>
-                      <TableCell>
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-32" />
-                          <Skeleton className="h-3 w-24" />
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <Skeleton className="h-4 w-16 mx-auto" />
-                      </TableCell>
-                      <TableCell className="hidden xl:table-cell">
-                        <Skeleton className="h-4 w-24 mx-auto" />
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex justify-center">
-                          <Skeleton className="h-6 w-16 rounded-full" />
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <Skeleton className="h-4 w-28 mx-auto" />
-                      </TableCell>
-                      <TableCell className="hidden xl:table-cell">
-                        <Skeleton className="h-4 w-36 mx-auto" />
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <Skeleton className="h-6 w-20 mx-auto rounded-full" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-8 w-40 mx-auto" />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : filteredTeachers.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={8}
-                      className="h-24 text-center text-sm text-muted-foreground italic">
-                      {hasActiveFilters
-                        ? "No teachers match the current filter set."
-                        : 'No teachers found. Click "Add Teacher" to create one.'}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredTeachers.map((teacher) => (
-                    <TableRow
-                      key={teacher.id}
-                      className={`transition-colors text-center text-sm hover:bg-[hsl(var(--muted))] ${!teacher.isActive ? "bg-muted/20" : ""}`}>
-                      <TableCell>
-                        <div className="flex flex-col text-left">
-                          <span className="font-bold text-sm uppercase leading-tight">
-                            {formatTeacherName(teacher)}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {teacher.email ||
-                              teacher.contactNumber ||
-                              "No contact info"}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell text-xs font-semibold">
-                        {teacher.employeeId || "-"}
-                      </TableCell>
-                      <TableCell className="hidden xl:table-cell text-xs font-semibold">
-                        {teacher.specialization || "-"}
-                      </TableCell>
-                      <TableCell>{renderTeacherStatus(teacher)}</TableCell>
-                      <TableCell className="hidden lg:table-cell text-xs font-semibold">
-                        {formatDesignationSummary(teacher)}
-                      </TableCell>
-                      <TableCell className="hidden xl:table-cell text-xs font-semibold">
-                        {formatAdvisorySectionSummary(teacher)}
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <div className="flex flex-col items-center gap-1">
-                          {renderAtlasSyncBadge(teacher)}
-                          <p
-                            className={`max-w-[180px] truncate text-[0.625rem] ${getSyncDetailClassName(teacher)}`}
-                            title={getSyncDetailText(teacher)}>
-                            {getSyncDetailText(teacher)}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>{renderTeacherActions(teacher)}</TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+          <div className="hidden md:block">
+            <DataTable
+              columns={columns}
+              data={filteredTeachers}
+              loading={showSkeleton}
+              noResultsMessage={
+                hasActiveFilters
+                  ? "No teachers match the current filter set."
+                  : 'No teachers found. Click "Add Teacher" to create one.'
+              }
+            />
           </div>
         </div>
       </CardContent>

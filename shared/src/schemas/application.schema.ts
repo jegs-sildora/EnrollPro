@@ -249,6 +249,7 @@ export const updateChecklistSchema = z.object({
   isCertOfRecognitionPresented: z.boolean().optional(),
   isUndertakingSigned: z.boolean().optional(),
   isConfirmationSlipReceived: z.boolean().optional(),
+  academicStatus: z.enum(["PROMOTED", "RETAINED"]).optional(),
 });
 
 export const requestRevisionSchema = z.object({
@@ -397,15 +398,15 @@ export const updateScpProgramConfigsSchema = z.object({
 
 // ─── Batch Processing Schema ───────────────────────────
 const BATCH_TARGET_STATUSES = [
+  "SUBMITTED",
   "VERIFIED",
   "UNDER_REVIEW",
   "ELIGIBLE",
-  "ASSESSMENT_SCHEDULED",
+  "EXAM_SCHEDULED",
   "ASSESSMENT_TAKEN",
   "PASSED",
   "INTERVIEW_SCHEDULED",
-  "PRE_REGISTERED",
-  "NOT_QUALIFIED",
+  "READY_FOR_ENROLLMENT",
   "REJECTED",
   "WITHDRAWN",
 ] as const;
@@ -521,7 +522,7 @@ export const batchFinalizeInterviewSchema = z.object({
           decision: z.enum(["PASS", "REJECT"]),
           interviewScore: z.number().min(0).max(100).optional().nullable(),
           remarks: z.string().max(500).optional().nullable(),
-          rejectOutcome: z.enum(["NOT_QUALIFIED", "REJECTED"]).optional(),
+          rejectOutcome: z.enum(["SUBMITTED", "REJECTED"]).optional(),
         })
         .superRefine((value, ctx) => {
           if (value.decision === "REJECT" && !value.rejectOutcome) {

@@ -107,7 +107,7 @@ export interface ScoreRowState {
 export interface FinalizeInterviewRowState {
   interviewScore: string;
   decision: "PASS" | "REJECT";
-  rejectOutcome: "NOT_QUALIFIED" | "REJECTED";
+  rejectOutcome: "SUBMITTED" | "REJECTED";
   remarks: string;
 }
 
@@ -132,14 +132,12 @@ export interface ScpProgramStepTemplate {
 
 export interface ScheduleFormRenderOptions {
   stepTemplate?: ScpProgramStepTemplate | null;
-  defaultsLoading?: boolean;
-  onReloadDefaults?: () => void;
   selectedCount?: number;
 }
 
 export const DEFAULT_FINALIZE_INTERVIEW_ROW: FinalizeInterviewRowState = {
   interviewScore: "",
   decision: "PASS",
-  rejectOutcome: "NOT_QUALIFIED",
+  rejectOutcome: "SUBMITTED",
   remarks: "",
 };

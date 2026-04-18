@@ -21,14 +21,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/ui/table";
 import { Badge } from "@/shared/ui/badge";
 import { formatManilaDate } from "@/shared/lib/utils";
 import {
@@ -46,6 +38,8 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
+import type { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/shared/ui/data-table";
 
 interface Student {
   id: number;
@@ -305,6 +299,112 @@ export default function Students() {
     return unique.size;
   }, [students]);
 
+  const columns = useMemo<ColumnDef<Student>[]>(
+    () => [
+      {
+        id: "student",
+        header: () => (
+          <button
+            onClick={() => handleSort("lastName")}
+            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
+            Student
+            {getSortIcon("lastName")}
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="flex flex-col text-left min-w-[200px] pl-2">
+            <span className="font-bold text-sm uppercase leading-tight">
+              {row.original.fullName}
+            </span>
+            <span className="text-xs font-bold text-muted-foreground">
+              {row.original.trackingNumber}
+            </span>
+          </div>
+        ),
+      },
+      {
+        id: "lrn",
+        header: () => (
+          <button
+            onClick={() => handleSort("lrn")}
+            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
+            LRN
+            {getSortIcon("lrn")}
+          </button>
+        ),
+        cell: ({ row }) => (
+          <span className="font-bold text-sm">{row.original.lrn}</span>
+        ),
+      },
+      {
+        id: "gradeLevel",
+        header: () => (
+          <button
+            onClick={() => handleSort("gradeLevel")}
+            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
+            Grade Level
+            {getSortIcon("gradeLevel")}
+          </button>
+        ),
+        cell: ({ row }) => (
+          <span className="font-bold text-sm">{row.original.gradeLevel}</span>
+        ),
+      },
+      {
+        id: "section",
+        header: () => (
+          <button
+            onClick={() => handleSort("section")}
+            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
+            Section
+            {getSortIcon("section")}
+          </button>
+        ),
+        cell: ({ row }) => (
+          <span className="font-bold text-sm">
+            {row.original.section || "—"}
+          </span>
+        ),
+      },
+      {
+        id: "enrolled",
+        header: () => (
+          <button
+            onClick={() => handleSort("createdAt")}
+            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
+            Enrolled
+            {getSortIcon("createdAt")}
+          </button>
+        ),
+        cell: ({ row }) => (
+          <span className="text-sm font-bold block text-center">
+            {formatDate(row.original.createdAt)}
+          </span>
+        ),
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => (
+          <div className="flex justify-center min-w-[100px]">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="h-8 text-xs font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleViewDetails(row.original.id);
+              }}>
+              <Eye className="h-3.5 w-3.5 mr-1.5" />
+              View
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [handleSort, getSortIcon, handleViewDetails],
+  );
+
   if (!ayId) {
     return (
       <div className="flex h-[calc(100vh-12rem)] w-full items-center justify-center">
@@ -334,7 +434,7 @@ export default function Students() {
       <div className="space-y-1">
         <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
           <Users className="h-8 w-8" />
-          Enrolled Students
+          Learner Directory
         </h1>
         <p className="text-sm font-medium text-[hsl(var(--muted-foreground))]">
           Manage officially enrolled learner records for the selected school
@@ -380,7 +480,7 @@ export default function Students() {
           <div className="flex flex-col md:flex-row gap-3 md:gap-4 items-stretch md:items-end">
             <div className="flex-1 space-y-2 w-full">
               <Label className="text-xs sm:text-sm uppercase tracking-wider font-bold">
-                Search Student
+                Search Learner
               </Label>
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4" />
@@ -489,10 +589,10 @@ export default function Students() {
       <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
         <CardHeader className="px-3 sm:px-6 pb-2">
           <CardTitle className="text-base sm:text-lg font-extrabold">
-            Enrolled Student Records
+            Enrolled Learner Records
           </CardTitle>
           <CardDescription className="text-xs sm:text-sm font-semibold">
-            Showing {students.length} of {total} enrolled students
+            Showing {students.length} of {total} enrolled learners
           </CardDescription>
         </CardHeader>
         <CardContent className="px-3 sm:px-6 pb-4">
@@ -509,7 +609,7 @@ export default function Students() {
               ))
             ) : students.length === 0 ? (
               <div className="rounded-xl border p-6 text-center text-sm font-bold">
-                No enrolled students found for the selected filters.
+                No enrolled learners found for the selected filters.
               </div>
             ) : (
               students.map((student) => (
@@ -559,126 +659,25 @@ export default function Students() {
                     className="mt-3 h-9 w-full text-xs font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
                     onClick={() => handleViewDetails(student.id)}>
                     <Eye className="h-3.5 w-3.5 mr-1.5" />
-                    View Student
+                    View Learner
                   </Button>
                 </div>
               ))
             )}
           </div>
 
-          <div className="hidden md:block rounded-xl border overflow-hidden">
-            <Table className="border-collapse">
-              <TableHeader className="bg-[hsl(var(--primary))]">
-                <TableRow>
-                  <TableHead className="p-0">
-                    <button
-                      onClick={() => handleSort("lastName")}
-                      className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
-                      Student
-                      {getSortIcon("lastName")}
-                    </button>
-                  </TableHead>
-                  <TableHead className="p-0">
-                    <button
-                      onClick={() => handleSort("lrn")}
-                      className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
-                      LRN
-                      {getSortIcon("lrn")}
-                    </button>
-                  </TableHead>
-                  <TableHead className="p-0">
-                    <button
-                      onClick={() => handleSort("gradeLevel")}
-                      className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
-                      Grade Level
-                      {getSortIcon("gradeLevel")}
-                    </button>
-                  </TableHead>
-                  <TableHead className="p-0 hidden lg:table-cell">
-                    <button
-                      onClick={() => handleSort("section")}
-                      className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
-                      Section
-                      {getSortIcon("section")}
-                    </button>
-                  </TableHead>
-                  <TableHead className="p-0 hidden lg:table-cell">
-                    <button
-                      onClick={() => handleSort("createdAt")}
-                      className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
-                      Enrolled
-                      {getSortIcon("createdAt")}
-                    </button>
-                  </TableHead>
-                  <TableHead className="text-center font-bold text-primary-foreground text-xs uppercase tracking-wider">
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className="h-20 text-center text-sm font-bold text-muted-foreground">
-                      Loading enrolled students...
-                    </TableCell>
-                  </TableRow>
-                ) : students.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className="h-20 text-center text-sm font-bold text-muted-foreground">
-                      No enrolled students found for the selected filters.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  students.map((student) => (
-                    <TableRow
-                      key={student.id}
-                      className="hover:bg-[hsl(var(--muted))] transition-colors text-center text-sm">
-                      <TableCell>
-                        <div className="flex flex-col text-left">
-                          <span className="font-bold text-sm uppercase leading-tight">
-                            {student.fullName}
-                          </span>
-                          <span className="text-xs font-bold text-muted-foreground">
-                            {student.trackingNumber}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-bold text-sm">
-                        {student.lrn}
-                      </TableCell>
-                      <TableCell className="font-bold text-sm">
-                        {student.gradeLevel}
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell font-bold text-sm">
-                        {student.section || "—"}
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell text-sm font-bold">
-                        {formatDate(student.createdAt)}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          className="h-8 text-xs font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
-                          onClick={() => handleViewDetails(student.id)}>
-                          <Eye className="h-3.5 w-3.5 mr-1.5" />
-                          View
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+          <div className="hidden md:block">
+            <DataTable
+              columns={columns}
+              data={students}
+              loading={loading}
+              noResultsMessage="No enrolled learners found for the selected filters."
+            />
           </div>
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-2">
               <p className="text-sm font-semibold text-[hsl(var(--muted-foreground))]">
                 Page {page} of {totalPages}
               </p>
@@ -711,7 +710,7 @@ export default function Students() {
           <div className="p-4 sm:p-6 space-y-6">
             <DialogHeader className="space-y-2">
               <DialogTitle className="text-lg sm:text-xl font-extrabold">
-                Enrolled Student Details
+                Enrolled Learner Details
               </DialogTitle>
               <DialogDescription className="text-sm font-medium">
                 Complete profile and enrollment details for{" "}

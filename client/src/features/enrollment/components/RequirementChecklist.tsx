@@ -19,6 +19,13 @@ import { Label } from "@/shared/ui/label";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/select";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -36,11 +43,12 @@ interface Props {
   endpointBase?: string;
   onRefresh: () => void;
   onMandatoryStatusChange?: (isMet: boolean) => void;
+  readOnly?: boolean;
 }
 
 type ChecklistFieldKey = keyof Omit<
   ChecklistData,
-  "id" | "applicantId" | "updatedAt" | "updatedBy"
+  "id" | "applicantId" | "updatedAt" | "updatedBy" | "academicStatus"
 >;
 
 interface RequirementItem {
@@ -184,6 +192,7 @@ export function RequirementChecklist({
   endpointBase = "/applications",
   onRefresh,
   onMandatoryStatusChange,
+  readOnly = false,
 }: Props) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isLoadingRequirements, setIsLoadingRequirements] = useState(true);
@@ -191,6 +200,8 @@ export function RequirementChecklist({
     checklist || {},
   );
   const [requirements, setRequirements] = useState<RequirementItem[]>([]);
+
+  const showAcademicStatusControl = endpointBase.includes("/applications");
 
   useEffect(() => {
     if (checklist) {
@@ -247,16 +258,27 @@ export function RequirementChecklist({
     (req) => !!localChecklist[req.key] !== !!checklist?.[req.key],
   );
 
+  const currentAcademicStatus = (localChecklist.academicStatus ??
+    checklist?.academicStatus ??
+    "PROMOTED") as "PROMOTED" | "RETAINED";
+  const hasAcademicStatusChange =
+    currentAcademicStatus !== (checklist?.academicStatus ?? "PROMOTED");
+  const hasPendingChanges = hasChanges || hasAcademicStatusChange;
+
   const handleSave = async () => {
     setIsUpdating(true);
     try {
-      const payload = requirements.reduce<Record<string, boolean>>(
+      const payload = requirements.reduce<Record<string, boolean | string>>(
         (acc, requirement) => {
           acc[requirement.key] = Boolean(localChecklist[requirement.key]);
           return acc;
         },
         {},
       );
+
+      if (showAcademicStatusControl) {
+        payload.academicStatus = currentAcademicStatus;
+      }
 
       await api.patch(`${endpointBase}/${applicantId}/checklist`, payload);
       sileo.success({
@@ -291,9 +313,9 @@ export function RequirementChecklist({
   };
 
   const mandatoryRequirements = requirements.filter((r) => r.isMandatory);
-  const mandatoryMet = mandatoryRequirements.every(
-    (r) => localChecklist[r.key],
-  );
+  const mandatoryMet =
+    currentAcademicStatus !== "RETAINED" &&
+    mandatoryRequirements.every((r) => localChecklist[r.key]);
 
   useEffect(() => {
     onMandatoryStatusChange?.(mandatoryMet);
@@ -318,14 +340,19 @@ export function RequirementChecklist({
             <Button
               size="sm"
               onClick={handleSave}
-              disabled={isUpdating || isLoadingRequirements || !hasChanges}
+              disabled={
+                readOnly ||
+                isUpdating ||
+                isLoadingRequirements ||
+                !hasPendingChanges
+              }
               className="h-7 text-[0.625rem] font-bold uppercase tracking-tight gap-1.5">
               {isUpdating ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
               ) : (
                 <Save className="h-3 w-3" />
               )}
-              Save Changes
+              {readOnly ? "Read-Only" : "Save Changes"}
             </Button>
           </div>
         </div>
@@ -337,6 +364,38 @@ export function RequirementChecklist({
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
+        {showAcademicStatusControl && (
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+            <p className="text-[0.625rem] font-bold uppercase tracking-wider text-muted-foreground">
+              Academic Status
+            </p>
+            <div className="mt-2 flex items-center gap-3">
+              <Select
+                value={currentAcademicStatus}
+                onValueChange={(value: "PROMOTED" | "RETAINED") => {
+                  setLocalChecklist((prev) => ({
+                    ...prev,
+                    academicStatus: value,
+                  }));
+                }}
+                disabled={readOnly || isUpdating}>
+                <SelectTrigger className="h-8 w-[220px] text-xs font-bold">
+                  <SelectValue placeholder="Select academic status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PROMOTED">Promoted</SelectItem>
+                  <SelectItem value="RETAINED">Retained</SelectItem>
+                </SelectContent>
+              </Select>
+              {currentAcademicStatus === "RETAINED" && (
+                <Badge variant="destructive" className="text-[10px] font-bold">
+                  Retained blocks verification/enrollment
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
+
         {isLoadingRequirements ? (
           <div className="rounded-lg border border-dashed p-4 text-xs text-muted-foreground">
             Loading requirement rules...
@@ -353,7 +412,7 @@ export function RequirementChecklist({
                   onCheckedChange={(checked) =>
                     handleToggle(req.key, !!checked)
                   }
-                  disabled={isUpdating}
+                  disabled={readOnly || isUpdating}
                   className="shrink-0"
                 />
                 <div className="flex-1 space-y-1 overflow-hidden">
@@ -410,7 +469,7 @@ export function RequirementChecklist({
             size="sm"
             className="w-full text-[0.625rem] h-8 font-bold gap-2 uppercase tracking-wider"
             asChild>
-            <Link to="/enrollment/requirements" target="_blank">
+            <Link to="/settings?tab=requirements" target="_blank">
               <BookOpen className="h-3 w-3" />
               View Requirements Guide
               <ExternalLink className="h-2 w-2 ml-auto" />

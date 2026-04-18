@@ -60,7 +60,7 @@ export function createEarlyRegistrationAssessmentController(
         await findApplicantOrThrow(applicantId);
 
       const targetStatus =
-        kind === "INTERVIEW" ? "INTERVIEW_SCHEDULED" : "ASSESSMENT_SCHEDULED";
+        kind === "INTERVIEW" ? "INTERVIEW_SCHEDULED" : "EXAM_SCHEDULED";
 
       assertTransition(
         applicant,
@@ -289,7 +289,7 @@ export function createEarlyRegistrationAssessmentController(
         const newStatus =
           hasFailedRequired || allRequiredDone
             ? "ASSESSMENT_TAKEN"
-            : "ASSESSMENT_SCHEDULED";
+            : "EXAM_SCHEDULED";
 
         return updateApplicationStatus(applicantId, newStatus);
       });
@@ -507,7 +507,7 @@ export function createEarlyRegistrationAssessmentController(
 
         const newStatus = allRequiredDone
           ? "ASSESSMENT_TAKEN"
-          : "ASSESSMENT_SCHEDULED";
+          : "EXAM_SCHEDULED";
 
         return updateApplicationStatus(applicantId, newStatus);
       });
@@ -532,7 +532,7 @@ export function createEarlyRegistrationAssessmentController(
 
   // ── Mark as passed (Clearing for section assignment) ──
 
-  // -- Mark interview as passed -> PRE_REGISTERED --
+  // -- Mark interview as passed -> READY_FOR_ENROLLMENT --
   async function markInterviewPassed(
     req: Request,
     res: Response,
@@ -545,7 +545,7 @@ export function createEarlyRegistrationAssessmentController(
 
       assertTransition(
         applicant,
-        "PRE_REGISTERED",
+        "READY_FOR_ENROLLMENT",
         `Cannot mark interview as passed. Current status: "${applicant.status}". Only INTERVIEW_SCHEDULED applications can proceed.`,
       );
 
@@ -571,13 +571,13 @@ export function createEarlyRegistrationAssessmentController(
           });
         }
 
-        return updateApplicationStatus(applicantId, "PRE_REGISTERED");
+        return updateApplicationStatus(applicantId, "READY_FOR_ENROLLMENT");
       });
 
       await auditLog({
         userId: req.user!.userId,
         actionType: "INTERVIEW_PASSED",
-        description: `Interview passed for ${applicant.learner.firstName} ${applicant.learner.lastName} (#${applicantId}). Status moved to PRE_REGISTERED.`,
+        description: `Interview passed for ${applicant.learner.firstName} ${applicant.learner.lastName} (#${applicantId}). Status moved to READY_FOR_ENROLLMENT.`,
         subjectType:
           appType === "ENROLLMENT"
             ? "EnrollmentApplication"

@@ -47,7 +47,7 @@ export default function F2FEarlyRegistration() {
         </div>
         <Button asChild variant="outline" className="gap-2 font-semibold">
           <Link
-            to="/enrollment/requirements"
+            to="/settings?tab=requirements"
             target="_blank"
             rel="noopener noreferrer">
             <BookOpen className="w-4 h-4" />

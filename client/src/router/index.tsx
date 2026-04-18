@@ -12,13 +12,13 @@ import EarlyRegistration from "@/features/admission/pages/early-registration/Ear
 import EarlyRegistrationDetail from "@/features/admission/pages/early-registration/EarlyRegistrationDetail";
 import RegistrationPipelines from "@/features/admission/pages/pipelines/RegistrationPipelines";
 import Enrollment from "@/features/enrollment/pages/Index";
+import EosyUpdating from "@/features/enrollment/pages/EosyIndex";
 import Students from "@/features/students/pages/Index";
 import Profile from "@/features/students/pages/Profile";
 import LearnerPortal from "@/features/learner/pages/LearnerPortal";
 import Sections from "@/features/sections/pages/Index";
 import AuditLogs from "@/features/audit-logs/pages/Index";
 import Settings from "@/features/settings/pages/Index";
-import DocumentaryRequirements from "@/features/enrollment/pages/DocumentaryRequirements";
 import NotFound from "@/shared/components/NotFound";
 
 // Admin Pages
@@ -143,6 +143,14 @@ export const router = createBrowserRouter([
             ),
           },
           {
+            path: "/monitoring/enrollment/eosy",
+            element: (
+              <AppLayout>
+                <EosyUpdating />
+              </AppLayout>
+            ),
+          },
+          {
             path: "/students",
             element: (
               <AppLayout>
@@ -168,11 +176,11 @@ export const router = createBrowserRouter([
           },
           {
             path: "/monitoring/enrollment/requirements",
-            element: (
-              <AppLayout>
-                <DocumentaryRequirements />
-              </AppLayout>
-            ),
+            element: <Navigate to="/settings?tab=requirements" replace />,
+          },
+          {
+            path: "/enrollment/requirements",
+            element: <Navigate to="/settings?tab=requirements" replace />,
           },
           {
             path: "/audit-logs",

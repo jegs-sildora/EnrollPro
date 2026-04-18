@@ -8,7 +8,14 @@ const APP_NAME = "EnrollPro";
  * Maps a pathname to a human-readable page title.
  * Returns null for paths that should use the bare app name (e.g. root redirect).
  */
-function resolvePageTitle(pathname: string): string | null {
+function resolvePageTitle(pathname: string, search: string): string | null {
+  if (pathname === "/settings") {
+    const tab = new URLSearchParams(search).get("tab");
+    if (tab === "requirements") {
+      return "Enrollment Requirements";
+    }
+  }
+
   // Exact matches first
   const exact: Record<string, string> = {
     "/": "Dashboard",
@@ -27,7 +34,7 @@ function resolvePageTitle(pathname: string): string | null {
       "Basic Education Early Registration Form — Monitoring",
     "/monitoring/early-registration/pipelines": "Registration Pipelines",
     "/monitoring/enrollment": "Enrollment Monitoring",
-    "/students": "Students",
+    "/students": "Learner Directory",
     "/sections": "Sections",
     "/audit-logs": "Audit Logs",
     "/settings": "Settings",
@@ -41,7 +48,7 @@ function resolvePageTitle(pathname: string): string | null {
   if (exact[pathname]) return exact[pathname];
 
   // Prefix matches for dynamic segments
-  if (pathname.startsWith("/students/")) return "Student Profile";
+  if (pathname.startsWith("/students/")) return "Learner Profile";
   if (pathname.startsWith("/teachers/")) return "Teacher Profile";
   if (pathname.startsWith("/applications/")) return "Application Detail";
   if (pathname.startsWith("/settings/")) return "Settings";
@@ -57,11 +64,11 @@ function resolvePageTitle(pathname: string): string | null {
  *         or "EnrollPro" for unknown routes.
  */
 export function usePageTitle() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const schoolName = useSettingsStore((s) => s.schoolName);
 
   useEffect(() => {
-    const page = resolvePageTitle(pathname);
+    const page = resolvePageTitle(pathname, search);
 
     let title: string;
     if (page) {
@@ -73,5 +80,5 @@ export function usePageTitle() {
     }
 
     document.title = title;
-  }, [pathname, schoolName]);
+  }, [pathname, search, schoolName]);
 }

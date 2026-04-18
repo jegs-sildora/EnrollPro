@@ -1,13 +1,7 @@
+import { useMemo } from "react";
 import { Input } from "@/shared/ui/input";
 import { Checkbox } from "@/shared/ui/checkbox";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/ui/table";
+import { DataTable } from "@/shared/ui/data-table";
 import type {
   Application,
   RankingFormulaComponent,
@@ -43,6 +37,157 @@ export default function PipelineBatchAssessmentGrid({
   setAbsentNoShow,
   isScoreValueInvalid,
 }: PipelineBatchAssessmentGridProps) {
+  const columns = useMemo<ColumnDef<Application>[]>(() => {
+    const cols: ColumnDef<Application>[] = [
+      {
+        id: "applicant",
+        header: "Applicant",
+        cell: ({ row }) => {
+          const applicant = row.original;
+          return (
+            <div className="space-y-1 text-left min-w-[220px]">
+              <p className="text-xs font-bold uppercase leading-tight">
+                {applicant.lastName}, {applicant.firstName}
+              </p>
+              <p className="text-[11px] font-bold text-foreground leading-tight">
+                #{applicant.trackingNumber}
+              </p>
+            </div>
+          );
+        },
+      },
+    ];
+
+    scoreComponents.forEach((component) => {
+      cols.push({
+        id: component.key,
+        header: () => (
+          <div className="flex flex-col items-center gap-0.5 mx-auto">
+            <span className="leading-tight">{component.label}</span>
+            <span className="text-[10px] opacity-90">
+              Weight: {component.weight}
+            </span>
+          </div>
+        ),
+        cell: ({ row }) => {
+          const applicant = row.original;
+          const scoreRow = scoreGridRows[applicant.id];
+          const scoreValue = scoreRow?.componentScores?.[component.key] ?? "";
+          const absentNoShow = Boolean(scoreRow?.absentNoShow);
+          const invalid = isScoreValueInvalid(
+            applicant.id,
+            component.key,
+            scoreValue,
+          );
+
+          return (
+            <div className="flex justify-center min-w-[170px]">
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                step="1"
+                value={scoreValue}
+                onChange={(event) =>
+                  updateScoreCell(
+                    applicant.id,
+                    component.key,
+                    event.target.value,
+                  )
+                }
+                disabled={isBatchProcessing || absentNoShow}
+                className={`h-8 w-24 text-center text-sm font-bold ${
+                  invalid
+                    ? "border-destructive focus-visible:ring-destructive"
+                    : ""
+                }`}
+              />
+            </div>
+          );
+        },
+      });
+    });
+
+    cols.push(
+      {
+        id: "absent",
+        header: "Absent / No Show",
+        cell: ({ row }) => {
+          const applicant = row.original;
+          const scoreRow = scoreGridRows[applicant.id];
+          const absentNoShow = Boolean(scoreRow?.absentNoShow);
+
+          return (
+            <div className="flex items-center justify-center gap-2 min-w-[150px]">
+              <Checkbox
+                checked={absentNoShow}
+                onCheckedChange={(checked) =>
+                  setAbsentNoShow(applicant.id, Boolean(checked))
+                }
+                disabled={isBatchProcessing}
+              />
+              <span className="text-xs font-bold text-foreground">Absent</span>
+            </div>
+          );
+        },
+      },
+      {
+        id: "total",
+        header: "Weighted Total",
+        cell: ({ row }) => {
+          const applicant = row.original;
+          const scoreRow = scoreGridRows[applicant.id];
+          const absentNoShow = Boolean(scoreRow?.absentNoShow);
+          const total = computeWeightedTotal(scoreRow);
+
+          return (
+            <div className="flex justify-center min-w-[120px]">
+              <span
+                className={`text-sm font-bold ${
+                  absentNoShow ? "text-destructive" : ""
+                }`}>
+                {total == null ? "--" : total.toFixed(2)}
+              </span>
+            </div>
+          );
+        },
+      },
+      {
+        id: "remarks",
+        header: "Remarks",
+        cell: ({ row }) => {
+          const applicant = row.original;
+          const scoreRow = scoreGridRows[applicant.id];
+
+          return (
+            <div className="flex justify-center min-w-[220px]">
+              <Input
+                value={scoreRow?.remarks ?? ""}
+                onChange={(event) =>
+                  updateScoreRemarks(applicant.id, event.target.value)
+                }
+                placeholder="Optional notes"
+                disabled={isBatchProcessing}
+                className="h-8 text-sm font-bold w-full"
+              />
+            </div>
+          );
+        },
+      },
+    );
+
+    return cols;
+  }, [
+    scoreComponents,
+    scoreGridRows,
+    isBatchProcessing,
+    updateScoreCell,
+    updateScoreRemarks,
+    setAbsentNoShow,
+    isScoreValueInvalid,
+    computeWeightedTotal,
+  ]);
+
   return (
     <div className="space-y-3 min-h-0 flex flex-col">
       <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
@@ -57,129 +202,13 @@ export default function PipelineBatchAssessmentGrid({
           Loading ranking formula...
         </div>
       ) : (
-        <div className="rounded-lg border overflow-auto min-h-0">
-          <Table>
-            <TableHeader className="bg-muted/40">
-              <TableRow>
-                <TableHead className="sticky left-0 bg-muted/40 min-w-[220px] z-10 text-xs font-bold">
-                  Applicant
-                </TableHead>
-                {scoreComponents.map((component) => (
-                  <TableHead
-                    key={component.key}
-                    className="text-center min-w-[170px] text-xs font-bold">
-                    {component.label}
-                    <span className="block text-[10px] text-foreground">
-                      Weight: {component.weight}
-                    </span>
-                  </TableHead>
-                ))}
-                <TableHead className="text-center min-w-[150px] text-xs font-bold">
-                  Absent / No Show
-                </TableHead>
-                <TableHead className="text-center min-w-[120px] text-xs font-bold">
-                  Weighted Total
-                </TableHead>
-                <TableHead className="text-center min-w-[220px] text-xs font-bold">
-                  Remarks
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {selectedApplications.map((applicant) => {
-                const row = scoreGridRows[applicant.id];
-                const absentNoShow = Boolean(row?.absentNoShow);
-                const total = computeWeightedTotal(row);
-
-                return (
-                  <TableRow key={applicant.id}>
-                    <TableCell className="sticky left-0 bg-background z-10 min-w-[220px]">
-                      <div className="space-y-1">
-                        <p className="text-xs font-bold uppercase">
-                          {applicant.lastName}, {applicant.firstName}
-                        </p>
-                        <p className="text-[11px] font-bold text-foreground">
-                          #{applicant.trackingNumber}
-                        </p>
-                      </div>
-                    </TableCell>
-
-                    {scoreComponents.map((component) => {
-                      const scoreValue =
-                        row?.componentScores?.[component.key] ?? "";
-                      const invalid = isScoreValueInvalid(
-                        applicant.id,
-                        component.key,
-                        scoreValue,
-                      );
-
-                      return (
-                        <TableCell key={`${applicant.id}-${component.key}`}>
-                          <Input
-                            type="number"
-                            min={0}
-                            max={100}
-                            step="0.01"
-                            value={scoreValue}
-                            onChange={(event) =>
-                              updateScoreCell(
-                                applicant.id,
-                                component.key,
-                                event.target.value,
-                              )
-                            }
-                            disabled={isBatchProcessing || absentNoShow}
-                            className={`h-8 text-center text-sm font-bold ${
-                              invalid
-                                ? "border-destructive focus-visible:ring-destructive"
-                                : ""
-                            }`}
-                          />
-                        </TableCell>
-                      );
-                    })}
-
-                    <TableCell>
-                      <div className="flex items-center justify-center gap-2">
-                        <Checkbox
-                          checked={absentNoShow}
-                          onCheckedChange={(checked) =>
-                            setAbsentNoShow(applicant.id, Boolean(checked))
-                          }
-                          disabled={isBatchProcessing}
-                        />
-                        <span className="text-xs font-bold text-foreground">
-                          Absent
-                        </span>
-                      </div>
-                    </TableCell>
-
-                    <TableCell className="text-center">
-                      <span
-                        className={`text-sm font-bold ${
-                          absentNoShow ? "text-destructive" : ""
-                        }`}>
-                        {total == null ? "--" : total.toFixed(2)}
-                      </span>
-                    </TableCell>
-
-                    <TableCell>
-                      <Input
-                        value={row?.remarks ?? ""}
-                        onChange={(event) =>
-                          updateScoreRemarks(applicant.id, event.target.value)
-                        }
-                        placeholder="Optional notes"
-                        disabled={isBatchProcessing}
-                        className="h-8 text-sm font-bold"
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+        <DataTable
+          columns={columns}
+          data={selectedApplications}
+          loading={scoreGridLoading}
+          className="rounded-lg border overflow-auto min-h-0"
+          noResultsMessage="No applicants loaded."
+        />
       )}
     </div>
   );

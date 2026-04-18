@@ -17,14 +17,6 @@ import { Label } from "@/shared/ui/label";
 import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/ui/table";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -32,6 +24,8 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
+import type { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/shared/ui/data-table";
 
 interface EmailLogRow {
   id: number;
@@ -162,6 +156,98 @@ export default function EmailLogs() {
   const failedCount = useMemo(
     () => logs.filter((log) => log.status === "FAILED").length,
     [logs],
+  );
+
+  const columns = useMemo<ColumnDef<EmailLogRow>[]>(
+    () => [
+      {
+        accessorKey: "attemptedAt",
+        header: "Attempted",
+        cell: ({ row }) => (
+          <span className="text-left text-xs whitespace-nowrap">
+            {formatTimestamp(row.original.attemptedAt)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "recipient",
+        header: "Recipient",
+        cell: ({ row }) => {
+          const log = row.original;
+          return (
+            <div className="space-y-0.5 text-left">
+              <p className="text-sm font-semibold">{log.recipient}</p>
+              <p className="text-xs text-muted-foreground">
+                Sent at: {formatTimestamp(log.sentAt)}
+              </p>
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "trigger",
+        header: "Trigger",
+        cell: ({ row }) => (
+          <span className="text-left text-xs font-medium block">
+            {triggerLabel(row.original.trigger)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => (
+          <div className="text-left">
+            <Badge variant="outline" className={statusClass(row.original.status)}>
+              {row.original.status}
+            </Badge>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "subject",
+        header: "Subject",
+        cell: ({ row }) => (
+          <span className="text-left max-w-[320px] break-words block">
+            {row.original.subject}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "applicant",
+        header: "Tracking #",
+        cell: ({ row }) => (
+          <span className="text-left text-xs font-mono block">
+            {row.original.applicant?.trackingNumber || "—"}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "errorMessage",
+        header: "Error",
+        cell: ({ row }) => (
+          <span className="text-left text-xs text-red-600 max-w-[260px] break-words block">
+            {row.original.errorMessage || "—"}
+          </span>
+        ),
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => (
+          <div className="text-left">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setResendTarget(row.original)}
+              disabled={resendingId === row.original.id}>
+              Resend
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [resendingId],
   );
 
   const handleExport = async () => {
@@ -395,114 +481,14 @@ export default function EmailLogs() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="rounded-lg border overflow-hidden">
-            <Table>
-              <TableHeader className="bg-muted/40">
-                <TableRow>
-                  <TableHead className="text-left">Attempted</TableHead>
-                  <TableHead className="text-left">Recipient</TableHead>
-                  <TableHead className="text-left">Trigger</TableHead>
-                  <TableHead className="text-left">Status</TableHead>
-                  <TableHead className="text-left">Subject</TableHead>
-                  <TableHead className="text-left">Tracking #</TableHead>
-                  <TableHead className="text-left">Error</TableHead>
-                  <TableHead className="text-left">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {showSkeleton ? (
-                  Array.from({ length: 6 }).map((_, idx) => (
-                    <TableRow key={`skeleton-${idx}`}>
-                      <TableCell>
-                        <Skeleton className="h-4 w-32" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-4 w-40" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-4 w-28" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-6 w-16 rounded-full" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-4 w-56" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-4 w-24" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-4 w-28" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-8 w-20" />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : visibleLogs.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={8}
-                      className="h-20 text-center text-sm text-muted-foreground"
-                    >
-                      No email logs found for current filters.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  visibleLogs.map((log) => (
-                    <TableRow key={log.id}>
-                      <TableCell className="text-left text-xs whitespace-nowrap">
-                        {formatTimestamp(log.attemptedAt)}
-                      </TableCell>
-                      <TableCell className="text-left">
-                        <div className="space-y-0.5">
-                          <p className="text-sm font-semibold">
-                            {log.recipient}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Sent at: {formatTimestamp(log.sentAt)}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-left text-xs font-medium">
-                        {triggerLabel(log.trigger)}
-                      </TableCell>
-                      <TableCell className="text-left">
-                        <Badge
-                          variant="outline"
-                          className={statusClass(log.status)}
-                        >
-                          {log.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-left max-w-[320px] break-words">
-                        {log.subject}
-                      </TableCell>
-                      <TableCell className="text-left text-xs font-mono">
-                        {log.applicant?.trackingNumber || "—"}
-                      </TableCell>
-                      <TableCell className="text-left text-xs text-red-600 max-w-[260px] break-words">
-                        {log.errorMessage || "—"}
-                      </TableCell>
-                      <TableCell className="text-left">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setResendTarget(log)}
-                          disabled={resendingId === log.id}
-                        >
-                          Resend
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          <DataTable
+            columns={columns}
+            data={visibleLogs}
+            loading={showSkeleton}
+          />
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between pt-2">
               <p className="text-sm font-semibold text-muted-foreground">
                 Page {page} of {totalPages}
               </p>

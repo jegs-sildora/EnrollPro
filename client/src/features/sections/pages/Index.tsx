@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { Link } from "react-router";
 import { sileo } from "sileo";
 import {
   Plus,
@@ -8,8 +9,10 @@ import {
   Check,
   Edit2,
   CalendarDays,
+  CloudUpload,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
+import { useAuthStore } from "@/store/auth.slice";
 import { useSettingsStore } from "@/store/settings.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { Button } from "@/shared/ui/button";
@@ -99,8 +102,10 @@ function fillEmoji(pct: number): string {
 }
 
 export default function Sections() {
+  const { user } = useAuthStore();
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
+  const isSystemAdmin = user?.role === "SYSTEM_ADMIN";
 
   const [groups, setGroups] = useState<GradeLevelGroup[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -273,6 +278,18 @@ export default function Sections() {
             Manage grade level sections and advising teachers
           </p>
         </div>
+        {isSystemAdmin ? (
+          <Button asChild variant="outline" className="w-full md:w-auto">
+            <Link to="/admin/atlas">
+              <CloudUpload className="h-4 w-4 mr-2" />
+              ATLAS Sync Health
+            </Link>
+          </Button>
+        ) : (
+          <p className="text-xs text-muted-foreground md:text-right">
+            Need ATLAS diagnostics? Coordinate with a system administrator.
+          </p>
+        )}
       </div>
 
       {showSkeleton ? (

@@ -1500,7 +1500,7 @@ const EARLY_REG_TRANSITIONS: Record<string, ApplicationStatus[]> = {
   SUBMITTED: [
     "VERIFIED",
     "UNDER_REVIEW",
-    "ASSESSMENT_SCHEDULED",
+    "EXAM_SCHEDULED",
     "REJECTED",
     "WITHDRAWN",
   ],
@@ -1509,7 +1509,7 @@ const EARLY_REG_TRANSITIONS: Record<string, ApplicationStatus[]> = {
     "ELIGIBLE",
     "ENROLLED",
     "TEMPORARILY_ENROLLED",
-    "ASSESSMENT_SCHEDULED",
+    "EXAM_SCHEDULED",
     "REJECTED",
     "WITHDRAWN",
   ],
@@ -1517,43 +1517,48 @@ const EARLY_REG_TRANSITIONS: Record<string, ApplicationStatus[]> = {
     "VERIFIED",
     "FOR_REVISION",
     "ELIGIBLE",
-    "ASSESSMENT_SCHEDULED",
+    "EXAM_SCHEDULED",
     "REJECTED",
     "WITHDRAWN",
   ],
   FOR_REVISION: ["UNDER_REVIEW", "WITHDRAWN"],
-  ELIGIBLE: ["ASSESSMENT_SCHEDULED", "PASSED", "WITHDRAWN"],
-  ASSESSMENT_SCHEDULED: [
+  ELIGIBLE: ["EXAM_SCHEDULED", "PASSED", "WITHDRAWN"],
+  EXAM_SCHEDULED: [
     "PASSED",
-    "NOT_QUALIFIED",
     "ASSESSMENT_TAKEN",
-    "ASSESSMENT_SCHEDULED",
+    "EXAM_SCHEDULED",
     "INTERVIEW_SCHEDULED",
     "WITHDRAWN",
   ],
   ASSESSMENT_TAKEN: [
     "PASSED",
-    "NOT_QUALIFIED",
+    "SUBMITTED",
+    "FAILED_ASSESSMENT",
     "ASSESSMENT_TAKEN",
-    "ASSESSMENT_SCHEDULED",
+    "EXAM_SCHEDULED",
     "WITHDRAWN",
   ],
   PASSED: [
-    "PRE_REGISTERED",
+    "READY_FOR_ENROLLMENT",
     "INTERVIEW_SCHEDULED",
-    "ASSESSMENT_SCHEDULED",
+    "EXAM_SCHEDULED",
     "WITHDRAWN",
   ],
   INTERVIEW_SCHEDULED: [
     "PASSED",
-    "PRE_REGISTERED",
-    "NOT_QUALIFIED",
+    "READY_FOR_ENROLLMENT",
+    "SUBMITTED",
     "WITHDRAWN",
   ],
-  PRE_REGISTERED: ["ENROLLED", "TEMPORARILY_ENROLLED", "WITHDRAWN"],
+  READY_FOR_ENROLLMENT: [
+    "ENROLLED",
+    "TEMPORARILY_ENROLLED",
+    "REJECTED",
+    "WITHDRAWN",
+  ],
   TEMPORARILY_ENROLLED: ["ENROLLED", "WITHDRAWN"],
   ENROLLED: ["WITHDRAWN"],
-  NOT_QUALIFIED: ["UNDER_REVIEW", "WITHDRAWN", "REJECTED"],
+  FAILED_ASSESSMENT: ["UNDER_REVIEW", "WITHDRAWN", "REJECTED"],
   REJECTED: ["UNDER_REVIEW", "WITHDRAWN"],
   WITHDRAWN: [],
 };
@@ -1800,7 +1805,7 @@ export async function scheduleAssessment(
     const reg = await findEarlyRegOrThrow(id);
 
     const targetStatus: ApplicationStatus =
-      kind === "INTERVIEW" ? "INTERVIEW_SCHEDULED" : "ASSESSMENT_SCHEDULED";
+      kind === "INTERVIEW" ? "INTERVIEW_SCHEDULED" : "EXAM_SCHEDULED";
 
     assertEarlyRegTransition(
       reg.status,
@@ -2012,9 +2017,7 @@ export async function recordStepResult(
       );
 
       const newStatus: ApplicationStatus =
-        hasFailedRequired || allDone
-          ? "ASSESSMENT_TAKEN"
-          : "ASSESSMENT_SCHEDULED";
+        hasFailedRequired || allDone ? "ASSESSMENT_TAKEN" : "EXAM_SCHEDULED";
 
       return tx.earlyRegistrationApplication.update({
         where: { id },
@@ -2069,7 +2072,7 @@ export async function pass(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-/** PATCH /:id/fail — Mark early registration as not qualified */
+/** PATCH /:id/fail — Record failed assessment and reroute to regular intake */
 export async function fail(req: Request, res: Response, next: NextFunction) {
   try {
     const id = parseInt(String(req.params.id));
@@ -2078,8 +2081,8 @@ export async function fail(req: Request, res: Response, next: NextFunction) {
 
     assertEarlyRegTransition(
       reg.status,
-      "NOT_QUALIFIED",
-      `Cannot mark as not qualified. Current status: "${reg.status}".`,
+      "SUBMITTED",
+      `Cannot reroute failed assessment. Current status: "${reg.status}".`,
     );
 
     const updated = await prisma.$transaction(async (tx) => {
@@ -2100,7 +2103,7 @@ export async function fail(req: Request, res: Response, next: NextFunction) {
       return tx.earlyRegistrationApplication.update({
         where: { id },
         data: {
-          status: "NOT_QUALIFIED",
+          status: "SUBMITTED",
           applicantType: "REGULAR",
         },
       });
@@ -2109,7 +2112,7 @@ export async function fail(req: Request, res: Response, next: NextFunction) {
     await auditLog({
       userId: req.user!.userId,
       actionType: "EARLY_REGISTRATION_FAILED",
-      description: `Early registration #${id} marked NOT_QUALIFIED. Notes: ${examNotes || "N/A"}`,
+      description: `Early registration #${id} failed SCP assessment and rerouted to SUBMITTED as REGULAR. Notes: ${examNotes || "N/A"}`,
       subjectType: "EarlyRegistrationApplication",
       recordId: id,
       req,
@@ -3006,7 +3009,7 @@ export async function batchScheduleStep(
       );
 
       const targetStatus: ApplicationStatus =
-        mode === "INTERVIEW" ? "INTERVIEW_SCHEDULED" : "ASSESSMENT_SCHEDULED";
+        mode === "INTERVIEW" ? "INTERVIEW_SCHEDULED" : "EXAM_SCHEDULED";
 
       try {
         assertEarlyRegTransition(
@@ -3293,14 +3296,14 @@ export async function batchSaveScores(
 
       if (
         registration.status !== "ASSESSMENT_TAKEN" &&
-        registration.status !== "ASSESSMENT_SCHEDULED"
+        registration.status !== "EXAM_SCHEDULED"
       ) {
         failed.push({
           id: registration.id,
           name,
           trackingNumber: registration.trackingNumber,
           reason:
-            'Batch score saving is only supported for "ASSESSMENT_SCHEDULED" or "ASSESSMENT_TAKEN" status.',
+            'Batch score saving is only supported for "EXAM_SCHEDULED" or "ASSESSMENT_TAKEN" status.',
         });
         continue;
       }
@@ -3374,7 +3377,7 @@ export async function batchSaveScores(
             : totalScore >= effectiveCutoff;
         const targetStatus: ApplicationStatus = isPassed
           ? "PASSED"
-          : "NOT_QUALIFIED";
+          : "SUBMITTED";
 
         assertEarlyRegTransition(
           registration.status,
@@ -3408,7 +3411,7 @@ export async function batchSaveScores(
             where: { id: registration.id },
             data: {
               status: targetStatus,
-              ...(targetStatus === "NOT_QUALIFIED"
+              ...(targetStatus === "SUBMITTED"
                 ? { applicantType: "REGULAR" }
                 : {}),
             },
@@ -3460,7 +3463,7 @@ export async function batchFinalizeInterview(
       rows: Array<{
         id: number;
         decision: "PASS" | "REJECT";
-        rejectOutcome?: "NOT_QUALIFIED" | "REJECTED";
+        rejectOutcome?: "SUBMITTED" | "REJECTED";
         interviewScore?: number | null;
         remarks?: string | null;
       }>;
@@ -3523,8 +3526,8 @@ export async function batchFinalizeInterview(
 
       const targetStatus: ApplicationStatus =
         row.decision === "PASS"
-          ? "PRE_REGISTERED"
-          : (row.rejectOutcome ?? "NOT_QUALIFIED");
+          ? "READY_FOR_ENROLLMENT"
+          : (row.rejectOutcome ?? "SUBMITTED");
 
       try {
         assertEarlyRegTransition(
@@ -3571,7 +3574,7 @@ export async function batchFinalizeInterview(
             where: { id: registration.id },
             data: {
               status: targetStatus,
-              ...(targetStatus === "NOT_QUALIFIED"
+              ...(targetStatus === "SUBMITTED"
                 ? { applicantType: "REGULAR" }
                 : {}),
             },
@@ -3660,8 +3663,8 @@ export async function batchProcess(
           where: { id: app.id },
           data: {
             status: targetStatus,
-            ...(targetStatus === "NOT_QUALIFIED" ||
-            app.status === "NOT_QUALIFIED"
+            ...(targetStatus === "SUBMITTED" ||
+            app.status === "FAILED_ASSESSMENT"
               ? { applicantType: "REGULAR" }
               : {}),
           },
@@ -3739,7 +3742,7 @@ export async function approve(req: Request, res: Response, next: NextFunction) {
 
     assertEarlyRegTransition(
       reg.status,
-      ApplicationStatus.PRE_REGISTERED,
+      ApplicationStatus.READY_FOR_ENROLLMENT,
       `Cannot approve an early registration with status "${reg.status}". Only PASSED or INTERVIEW_SCHEDULED applications can be approved.`,
     );
 
@@ -3767,7 +3770,7 @@ export async function approve(req: Request, res: Response, next: NextFunction) {
           gradeLevelId: reg.gradeLevelId,
           applicantType: reg.applicantType,
           learnerType: reg.learnerType,
-          status: "PRE_REGISTERED",
+          status: "READY_FOR_ENROLLMENT",
           admissionChannel: reg.channel,
           isPrivacyConsentGiven: reg.isPrivacyConsentGiven,
           encodedById: req.user!.userId,
@@ -3807,7 +3810,7 @@ export async function approve(req: Request, res: Response, next: NextFunction) {
       // Update early-reg status
       await tx.earlyRegistrationApplication.update({
         where: { id },
-        data: { status: "PRE_REGISTERED" },
+        data: { status: "READY_FOR_ENROLLMENT" },
       });
 
       return enrollment;
@@ -4090,7 +4093,7 @@ export async function markInterviewPassed(
 
     assertEarlyRegTransition(
       reg.status,
-      ApplicationStatus.PRE_REGISTERED,
+      ApplicationStatus.READY_FOR_ENROLLMENT,
       `Cannot mark interview passed. Current status: "${reg.status}".`,
     );
 
@@ -4122,14 +4125,14 @@ export async function markInterviewPassed(
 
       return tx.earlyRegistrationApplication.update({
         where: { id },
-        data: { status: "PRE_REGISTERED" },
+        data: { status: "READY_FOR_ENROLLMENT" },
       });
     });
 
     await auditLog({
       userId: req.user!.userId,
       actionType: "STATUS_CHANGE",
-      description: `Early registration #${id} marked ready for enrollment (PRE_REGISTERED) after interview pass`,
+      description: `Early registration #${id} marked ready for enrollment (READY_FOR_ENROLLMENT) after interview pass`,
       subjectType: "EarlyRegistrationApplication",
       recordId: id,
       req,

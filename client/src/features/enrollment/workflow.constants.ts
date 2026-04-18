@@ -17,13 +17,16 @@ export const ENROLLMENT_SUB_MENU_DESCRIPTIONS: Record<
   string
 > = {
   PENDING_VERIFICATION:
-    "Learners currently under review pending in-person physical document verification.",
+    "Intake queue for learners awaiting in-person physical document verification before section assignment.",
   SECTION_ASSIGNMENT:
     "Verified learners without a section, ready for section assignment and enrollment finalization.",
   OFFICIAL_ROSTER:
     "Finalized enrolled learners with locked sections, ready for LIS Master CSV export.",
 };
 
-export const PENDING_VERIFICATION_STATUSES = new Set(["UNDER_REVIEW"]);
+export const PENDING_VERIFICATION_STATUSES = new Set([
+  "SUBMITTED",
+  "READY_FOR_ENROLLMENT",
+]);
 
 export const SECTION_ASSIGNMENT_STATUSES = new Set(["VERIFIED"]);

@@ -18,6 +18,7 @@ import auditLogRoutes from "./features/audit-logs/audit-logs.router.js";
 import teachersRoutes from "./features/teachers/teachers.router.js";
 import learnerRoutes from "./features/learner/learner.router.js";
 import earlyRegRoutes from "./features/early-registration/early-reg.router.js";
+import eosyRoutes from "./features/enrollment/eosy.router.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -78,6 +79,7 @@ app.use("/api/audit-logs", auditLogRoutes);
 app.use("/api/teachers", teachersRoutes);
 app.use("/api/learner", learnerRoutes);
 app.use("/api/early-registrations", earlyRegRoutes);
+app.use("/api/eosy", eosyRoutes);
 
 // Error handler
 app.use(errorHandler);

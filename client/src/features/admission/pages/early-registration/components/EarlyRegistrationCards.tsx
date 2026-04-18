@@ -17,7 +17,7 @@ interface CardsProps {
   getNextAction: (status: string) => string;
 }
 
-const LOCKED_HANDOFF_STATUS = "PRE_REGISTERED";
+const LOCKED_HANDOFF_STATUS = "READY_FOR_ENROLLMENT";
 
 function resolveHandoffSearchToken(application: Application): string {
   const normalizedLrn = application.lrn?.trim();

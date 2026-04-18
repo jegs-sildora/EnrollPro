@@ -1,5 +1,8 @@
 import { Badge } from '@/shared/ui/badge';
 import { GraduationCap, History } from 'lucide-react';
+import type { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/shared/ui/data-table";
+import { useMemo } from "react";
 
 import type { LearnerProfile } from '../types';
 
@@ -28,6 +31,50 @@ export function EnrollmentSection({ learner }: Props) {
 			status: 'PRIOR SCHOOL',
 		});
 	}
+
+  const columns = useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: "schoolYear",
+        header: "Year",
+        cell: ({ row }) => (
+          <span className="font-semibold text-xs text-left block">
+            {row.original.schoolYear}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "gradeLevel",
+        header: "Grade",
+        cell: ({ row }) => (
+          <span className="text-xs text-left block">
+            {row.original.gradeLevel}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "sectionOrSchool",
+        header: "Section / School",
+        cell: ({ row }) => (
+          <span className="text-xs text-left block">
+            {row.original.sectionOrSchool}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => (
+          <div className="text-right">
+            <span className="text-[0.625rem] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 uppercase">
+              {row.original.status}
+            </span>
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
 
 	return (
 		<div className='space-y-8'>
@@ -101,37 +148,11 @@ export function EnrollmentSection({ learner }: Props) {
 					</h2>
 				</div>
 
-				<div className='rounded-lg border border-muted/30 overflow-hidden bg-muted/5'>
-					<table className='w-full text-sm'>
-						<thead className='bg-muted/30'>
-							<tr className='text-[0.625rem] uppercase tracking-wider text-muted-foreground font-bold'>
-								<th className='px-4 py-2 text-left'>Year</th>
-								<th className='px-4 py-2 text-left'>Grade</th>
-								<th className='px-4 py-2 text-left'>Section / School</th>
-								<th className='px-4 py-2 text-right'>Status</th>
-							</tr>
-						</thead>
-						<tbody className='divide-y divide-muted/30'>
-							{history.map((h, i: number) => (
-								<tr
-									key={i}
-									className='hover:bg-muted/10 transition-colors'
-								>
-									<td className='px-4 py-3 font-semibold text-xs'>
-										{h.schoolYear}
-									</td>
-									<td className='px-4 py-3 text-xs'>{h.gradeLevel}</td>
-									<td className='px-4 py-3 text-xs'>{h.sectionOrSchool}</td>
-									<td className='px-4 py-3 text-right'>
-										<span className='text-[0.625rem] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 uppercase'>
-											{h.status}
-										</span>
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
+				<DataTable
+          columns={columns}
+          data={history}
+          className="border-none rounded-none bg-transparent"
+        />
 			</section>
 		</div>
 	);

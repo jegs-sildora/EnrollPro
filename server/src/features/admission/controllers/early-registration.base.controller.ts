@@ -1,12 +1,12 @@
 import type { Request, Response, NextFunction } from "express";
 import { AppError } from "../../../lib/AppError.js";
-import type {
-  ApplicationStatus,
-  ApplicantType,
+import {
   Prisma,
-  LearnerType,
-  FamilyRelationship,
-  AdmissionChannel,
+  type ApplicationStatus,
+  type ApplicantType,
+  type LearnerType,
+  type FamilyRelationship,
+  type AdmissionChannel,
 } from "../../../generated/prisma/index.js";
 import type { AdmissionControllerDeps } from "../services/admission-controller.deps.js";
 import { createAdmissionControllerDeps } from "../services/admission-controller.deps.js";
@@ -124,80 +124,204 @@ export function createEarlyRegistrationBaseController(
         limit = "15",
       } = req.query;
       const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+      const take = parseInt(limit as string);
 
-      const where: Prisma.EnrollmentApplicationWhereInput = {};
-
-      // Scope to specified or active School Year
+      // 1. Resolve School Year ID
+      let syId: number | undefined;
       if (schoolYearId) {
-        where.schoolYearId = parseInt(String(schoolYearId));
+        syId = parseInt(String(schoolYearId));
       } else {
         const settings = await prisma.schoolSetting.findFirst({
           select: { activeSchoolYearId: true },
         });
-        if (settings?.activeSchoolYearId) {
-          where.schoolYearId = settings.activeSchoolYearId;
-        }
+        syId = settings?.activeSchoolYearId || undefined;
       }
 
-      if (search) {
-        const s = String(search);
-        where.OR = [
-          { learner: { lrn: { contains: s, mode: "insensitive" } } },
-          { learner: { firstName: { contains: s, mode: "insensitive" } } },
-          { learner: { lastName: { contains: s, mode: "insensitive" } } },
-          { trackingNumber: { contains: s, mode: "insensitive" } },
-        ];
-      }
-      if (gradeLevelId) where.gradeLevelId = parseInt(String(gradeLevelId));
-      if (status && status !== "ALL")
-        where.status = status as ApplicationStatus;
+      // 2. Build Status Filters for Raw SQL
+      const statusFilters = (Array.isArray(status) ? status : [status])
+        .flatMap((value) => String(value ?? "").split(","))
+        .map((value) => value.trim())
+        .filter((value) => value.length > 0 && value !== "ALL")
+        .filter((value): value is ApplicationStatus => Boolean(value));
 
-      if (isTruthyQuery(withoutSection)) {
-        where.enrollmentRecord = { is: null };
-      } else if (isTruthyQuery(withSection) || status === "ENROLLED") {
-        where.enrollmentRecord = { isNot: null };
-      }
+      // 3. Execution: Unified Raw Query for ID and Metadata
+      // We use raw SQL to handle UNION ALL + cross-table pagination + complex filters efficiently.
+      // This ensures READY_FOR_ENROLLMENT Phase 1 apps are visible in Phase 2 queue.
 
-      if (applicantType && applicantType !== "ALL")
-        where.applicantType = applicantType as Prisma.EnumApplicantTypeFilter;
+      const searchPattern = search ? `%${String(search)}%` : null;
+      const gradeId = gradeLevelId ? parseInt(String(gradeLevelId)) : null;
 
-      if (isTruthyQuery(withoutLrn)) {
-        where.AND = [
-          ...(Array.isArray(where.AND)
-            ? where.AND
-            : where.AND
-              ? [where.AND]
-              : []),
-          { learner: { isPendingLrnCreation: true } },
-        ];
-      }
+      const results = await prisma.$queryRaw<
+        { id: number; source: "ENROLLMENT" | "EARLY_REGISTRATION" }[]
+      >`
+        WITH base_queue AS (
+          -- Phase 2: Official Enrollment Applications
+          SELECT 
+            id, 
+            created_at, 
+            'ENROLLMENT'::text as source,
+            status,
+            applicant_type,
+            grade_level_id,
+            school_year_id,
+            tracking_number,
+            learner_id
+          FROM enrollment_applications
+          WHERE 1=1
+            ${syId ? Prisma.sql`AND school_year_id = ${syId}` : Prisma.empty}
+            ${gradeId ? Prisma.sql`AND grade_level_id = ${gradeId}` : Prisma.empty}
+            ${statusFilters.length > 0 ? Prisma.sql`AND status::text IN (${Prisma.join(statusFilters)})` : Prisma.empty}
+            ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND applicant_type::text = ${applicantType}` : Prisma.empty}
+            ${isTruthyQuery(withoutSection) ? Prisma.sql`AND NOT EXISTS (SELECT 1 FROM enrollment_records WHERE enrollment_application_id = enrollment_applications.id)` : Prisma.empty}
+            ${isTruthyQuery(withSection) || status === "ENROLLED" ? Prisma.sql`AND EXISTS (SELECT 1 FROM enrollment_records WHERE enrollment_application_id = enrollment_applications.id)` : Prisma.empty}
 
-      const [applications, total] = await Promise.all([
+          UNION ALL
+
+          -- Phase 1: Early Registration Applications (Queued for Phase 2)
+          -- ONLY include if NOT yet migrated to an enrollment_application record.
+          SELECT 
+            id, 
+            created_at, 
+            'EARLY_REGISTRATION'::text as source,
+            status,
+            applicant_type,
+            grade_level_id,
+            school_year_id,
+            tracking_number,
+            learner_id
+          FROM early_registration_applications e
+          WHERE 1=1
+            AND NOT EXISTS (SELECT 1 FROM enrollment_applications WHERE early_registration_id = e.id)
+            ${syId ? Prisma.sql`AND school_year_id = ${syId}` : Prisma.empty}
+            ${gradeId ? Prisma.sql`AND grade_level_id = ${gradeId}` : Prisma.empty}
+            ${statusFilters.length > 0 ? Prisma.sql`AND status::text IN (${Prisma.join(statusFilters)})` : Prisma.empty}
+            ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND applicant_type::text = ${applicantType}` : Prisma.empty}
+            -- Early reg apps NEVER have enrollment records (Phase 2 only)
+            ${isTruthyQuery(withSection) || status === "ENROLLED" ? Prisma.sql`AND 1=0` : Prisma.empty}
+        ),
+        filtered_queue AS (
+          SELECT q.* FROM base_queue q
+          JOIN learners l ON q.learner_id = l.id
+          WHERE 1=1
+            ${
+              searchPattern
+                ? Prisma.sql`AND (
+                l.lrn ILIKE ${searchPattern} OR 
+                l.first_name ILIKE ${searchPattern} OR 
+                l.last_name ILIKE ${searchPattern} OR 
+                q.tracking_number ILIKE ${searchPattern}
+              )`
+                : Prisma.empty
+            }
+            ${
+              isTruthyQuery(withoutLrn)
+                ? Prisma.sql`AND l.is_pending_lrn_creation = true`
+                : Prisma.empty
+            }
+        )
+        SELECT id, source::text as source
+        FROM filtered_queue
+        ORDER BY created_at DESC
+        LIMIT ${take} OFFSET ${skip}
+      `;
+
+      const [{ count: totalCount }] = await prisma.$queryRaw<
+        { count: bigint }[]
+      >`
+        WITH base_queue AS (
+          SELECT id, learner_id, tracking_number FROM enrollment_applications
+          WHERE 1=1
+            ${syId ? Prisma.sql`AND school_year_id = ${syId}` : Prisma.empty}
+            ${gradeId ? Prisma.sql`AND grade_level_id = ${gradeId}` : Prisma.empty}
+            ${statusFilters.length > 0 ? Prisma.sql`AND status::text IN (${Prisma.join(statusFilters)})` : Prisma.empty}
+            ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND applicant_type::text = ${applicantType}` : Prisma.empty}
+            ${isTruthyQuery(withoutSection) ? Prisma.sql`AND NOT EXISTS (SELECT 1 FROM enrollment_records WHERE enrollment_application_id = enrollment_applications.id)` : Prisma.empty}
+            ${isTruthyQuery(withSection) || status === "ENROLLED" ? Prisma.sql`AND EXISTS (SELECT 1 FROM enrollment_records WHERE enrollment_application_id = enrollment_applications.id)` : Prisma.empty}
+
+          UNION ALL
+
+          SELECT id, learner_id, tracking_number FROM early_registration_applications e
+          WHERE 1=1
+            AND NOT EXISTS (SELECT 1 FROM enrollment_applications WHERE early_registration_id = e.id)
+            ${syId ? Prisma.sql`AND school_year_id = ${syId}` : Prisma.empty}
+            ${gradeId ? Prisma.sql`AND grade_level_id = ${gradeId}` : Prisma.empty}
+            ${statusFilters.length > 0 ? Prisma.sql`AND status::text IN (${Prisma.join(statusFilters)})` : Prisma.empty}
+            ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND applicant_type::text = ${applicantType}` : Prisma.empty}
+            ${isTruthyQuery(withSection) || status === "ENROLLED" ? Prisma.sql`AND 1=0` : Prisma.empty}
+        )
+        SELECT COUNT(*) as count FROM base_queue q
+        JOIN learners l ON q.learner_id = l.id
+        WHERE 1=1
+          ${
+            searchPattern
+              ? Prisma.sql`AND (
+              l.lrn ILIKE ${searchPattern} OR 
+              l.first_name ILIKE ${searchPattern} OR 
+              l.last_name ILIKE ${searchPattern} OR 
+              q.tracking_number ILIKE ${searchPattern}
+            )`
+              : Prisma.empty
+          }
+          ${
+            isTruthyQuery(withoutLrn)
+              ? Prisma.sql`AND l.is_pending_lrn_creation = true`
+              : Prisma.empty
+          }
+      `;
+
+      // 4. Hydrate Results with Prisma (to maintain include logic)
+      const enrollmentIds = results
+        .filter((r) => r.source === "ENROLLMENT")
+        .map((r) => r.id);
+      const earlyRegIds = results
+        .filter((r) => r.source === "EARLY_REGISTRATION")
+        .map((r) => r.id);
+
+      const [enrollmentApps, earlyRegApps] = await Promise.all([
         prisma.enrollmentApplication.findMany({
-          where,
+          where: { id: { in: enrollmentIds } },
           include: {
             learner: true,
             gradeLevel: true,
             enrollmentRecord: { include: { section: true } },
             programDetail: true,
-            // Enrollment applications might not have assessments directly anymore,
-            // they might link to early registration assessments.
-            // For now, let's keep it if they exist, but the new schema moved them to early registration.
+            earlyRegistration: {
+              include: { assessments: { orderBy: { createdAt: "desc" } } },
+            },
           },
-          orderBy: { createdAt: "desc" },
-          skip,
-          take: parseInt(limit as string),
         }),
-        prisma.enrollmentApplication.count({ where }),
+        prisma.earlyRegistrationApplication.findMany({
+          where: { id: { in: earlyRegIds } },
+          include: {
+            learner: true,
+            gradeLevel: true,
+            assessments: { orderBy: { createdAt: "desc" } },
+          },
+        }),
       ]);
+
+      // Combine and Restore Original Sort Order
+      const appsMap = new Map<string, any>();
+      enrollmentApps.forEach((a) => appsMap.set(`ENROLLMENT-${a.id}`, a));
+      earlyRegApps.forEach((a) => appsMap.set(`EARLY_REGISTRATION-${a.id}`, a));
+
+      const sortedApps = results
+        .map((r) => {
+          const app = appsMap.get(`${r.source}-${r.id}`);
+          if (app) {
+            app._sourceTable = r.source; // Add metadata for internal identification
+          }
+          return app;
+        })
+        .filter(Boolean);
 
       res.json({
         applications: await Promise.all(
-          applications.map((app) => flattenAssessmentData(app)),
+          sortedApps.map((app) => flattenAssessmentData(app)),
         ),
-        total,
+        total: Number(totalCount),
         page: parseInt(page as string),
-        limit: parseInt(limit as string),
+        limit: take,
       });
     } catch (error) {
       next(error);
@@ -309,26 +433,6 @@ export function createEarlyRegistrationBaseController(
         }
 
         return res.json(await flattenAssessmentData(earlyReg));
-      }
-
-      // Automatically transition to UNDER_REVIEW when opened by registrar/admin
-      const canStartReview =
-        req.user?.role === "REGISTRAR" || req.user?.role === "SYSTEM_ADMIN";
-      if (application.status === "SUBMITTED" && canStartReview) {
-        await prisma.enrollmentApplication.update({
-          where: { id: application.id },
-          data: { status: "UNDER_REVIEW" },
-        });
-        application.status = "UNDER_REVIEW";
-
-        await auditLog({
-          userId: req.user!.userId,
-          actionType: "APPLICATION_REVIEWED",
-          description: `Started reviewing enrollment application for ${application.learner.firstName} ${application.learner.lastName}`,
-          subjectType: "EnrollmentApplication",
-          recordId: application.id,
-          req,
-        });
       }
 
       res.json(await flattenAssessmentData(application!));
@@ -894,7 +998,7 @@ export function createEarlyRegistrationBaseController(
           earlyRegistrationApplications: {
             where: {
               schoolYearId: settings.activeSchoolYearId,
-              status: { in: ["PASSED", "PRE_REGISTERED"] },
+              status: { in: ["PASSED", "READY_FOR_ENROLLMENT"] },
             },
             include: {
               familyMembers: true,

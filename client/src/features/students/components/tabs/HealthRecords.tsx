@@ -9,15 +9,10 @@ import { computeBmi, computeHfa } from "@/shared/constants/bmi";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/ui/table";
 import { AddHealthRecord } from "../dialogs/AddHealthRecord";
+import type { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/shared/ui/data-table";
+import { useMemo } from "react";
 
 interface HealthRecordsProps {
   applicant: ApplicantDetail;
@@ -64,6 +59,119 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
   );
 
   const latestRecord = sortedRecords[0];
+
+  const columns = useMemo<ColumnDef<HealthRecord>[]>(
+    () => [
+      {
+        id: "schoolYear",
+        header: "School Year",
+        cell: ({ row }) => (
+          <span className="font-medium text-left block">
+            {row.original.schoolYear?.yearLabel || "N/A"}
+          </span>
+        ),
+      },
+      {
+        id: "period",
+        header: "Period",
+        cell: ({ row }) => (
+          <div className="flex justify-center">
+            <Badge variant="outline">{row.original.assessmentPeriod}</Badge>
+          </div>
+        ),
+      },
+      {
+        id: "date",
+        header: "Date",
+        cell: ({ row }) => (
+          <span className="text-muted-foreground whitespace-nowrap block text-center">
+            {format(new Date(row.original.assessmentDate), "MMM d, yyyy")}
+          </span>
+        ),
+      },
+      {
+        id: "weight",
+        header: "Weight",
+        cell: ({ row }) => (
+          <span className="text-center block">{row.original.weightKg} kg</span>
+        ),
+      },
+      {
+        id: "height",
+        header: "Height",
+        cell: ({ row }) => (
+          <span className="text-center block">{row.original.heightCm} cm</span>
+        ),
+      },
+      {
+        id: "bmi",
+        header: "BMI",
+        cell: ({ row }) => {
+          const { bmi } = computeBmi(
+            row.original.weightKg,
+            row.original.heightCm,
+            age,
+            sex,
+          );
+          return <span className="text-center block">{bmi}</span>;
+        },
+      },
+      {
+        id: "status",
+        header: "Status",
+        cell: ({ row }) => {
+          const { category, color } = computeBmi(
+            row.original.weightKg,
+            row.original.heightCm,
+            age,
+            sex,
+          );
+          return (
+            <span className="flex items-center justify-center gap-1.5 mx-auto">
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{
+                  backgroundColor:
+                    color === "green"
+                      ? "#22c55e"
+                      : color === "orange"
+                        ? "#f97316"
+                        : "#ef4444",
+                }}
+              />
+              {category}
+            </span>
+          );
+        },
+      },
+      {
+        id: "hfa",
+        header: "HFA",
+        cell: ({ row }) => {
+          const { category } = computeHfa(row.original.heightCm, age, sex);
+          return <span className="text-center block">{category}</span>;
+        },
+      },
+      {
+        id: "actions",
+        header: () => <div className="text-right">Actions</div>,
+        cell: ({ row }) => (
+          <div className="text-right">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSelectedRecord(row.original);
+                setIsAddDialogOpen(true);
+              }}>
+              Edit
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [age, sex],
+  );
 
   return (
     <div className="space-y-6">
@@ -208,79 +316,11 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
       )}
 
       {sortedRecords.length > 0 && (
-        <div className="rounded-md border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>School Year</TableHead>
-                <TableHead>Period</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Weight</TableHead>
-                <TableHead>Height</TableHead>
-                <TableHead>BMI</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>HFA</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedRecords.map((record) => {
-                const bmiResult = computeBmi(
-                  record.weightKg,
-                  record.heightCm,
-                  age,
-                  sex,
-                );
-                const hfaResult = computeHfa(record.heightCm, age, sex);
-
-                return (
-                  <TableRow key={record.id}>
-                    <TableCell className="font-medium">
-                      {record.schoolYear?.yearLabel || "N/A"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{record.assessmentPeriod}</Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground whitespace-nowrap">
-                      {format(new Date(record.assessmentDate), "MMM d, yyyy")}
-                    </TableCell>
-                    <TableCell>{record.weightKg} kg</TableCell>
-                    <TableCell>{record.heightCm} cm</TableCell>
-                    <TableCell>{bmiResult.bmi}</TableCell>
-                    <TableCell>
-                      <span className="flex items-center gap-1.5">
-                        <span
-                          className="h-2 w-2 rounded-full"
-                          style={{
-                            backgroundColor:
-                              bmiResult.color === "green"
-                                ? "#22c55e"
-                                : bmiResult.color === "orange"
-                                  ? "#f97316"
-                                  : "#ef4444",
-                          }}
-                        />
-                        {bmiResult.category}
-                      </span>
-                    </TableCell>
-                    <TableCell>{hfaResult.category}</TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedRecord(record);
-                          setIsAddDialogOpen(true);
-                        }}>
-                        Edit
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+        <DataTable
+          columns={columns}
+          data={sortedRecords}
+          noResultsMessage="No health records found."
+        />
       )}
 
       <AddHealthRecord

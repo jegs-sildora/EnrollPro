@@ -68,7 +68,7 @@ export function createEarlyRegistrationOperationsController(
     }
   }
 
-  // â"€â"€ Mark as not qualified â"€â"€
+  // â"€â"€ Mark as failed and reroute to regular flow â"€â"€
   async function fail(req: Request, res: Response, next: NextFunction) {
     try {
       const { examNotes } = (req.body ?? {}) as { examNotes?: string };
@@ -78,11 +78,11 @@ export function createEarlyRegistrationOperationsController(
 
       assertTransition(
         applicant,
-        "NOT_QUALIFIED",
-        `Cannot mark as not qualified. Current status: "${applicant.status}". Only ASSESSMENT_TAKEN applications can be marked as not qualified.`,
+        "SUBMITTED",
+        `Cannot reroute failed assessment. Current status: "${applicant.status}". Only ASSESSMENT_TAKEN applications can be rerouted to regular intake.`,
       );
 
-      // Store failure notes on the latest assessment and update status
+      // Persist failure notes, then reroute directly to regular intake queue.
       const updated = await prisma.$transaction(async (tx) => {
         if (examNotes) {
           const earlyRegId =
@@ -105,7 +105,7 @@ export function createEarlyRegistrationOperationsController(
 
         const failedUpdate = await updateApplicationStatus(
           applicantId,
-          "NOT_QUALIFIED",
+          "SUBMITTED",
           { applicantType: "REGULAR" },
           tx,
         );
@@ -114,7 +114,7 @@ export function createEarlyRegistrationOperationsController(
           await tx.earlyRegistrationApplication.update({
             where: { id: applicant.earlyRegistrationId },
             data: {
-              status: "NOT_QUALIFIED",
+              status: "SUBMITTED",
               applicantType: "REGULAR",
             },
           });
@@ -126,7 +126,7 @@ export function createEarlyRegistrationOperationsController(
       await auditLog({
         userId: req.user!.userId,
         actionType: "APPLICATION_FAILED",
-        description: `Marked ${applicant.learner.firstName} ${applicant.learner.lastName} (#${applicantId}) as NOT_QUALIFIED and auto-classified to REGULAR. Notes: ${examNotes || "N/A"}`,
+        description: `Assessment failed for ${applicant.learner.firstName} ${applicant.learner.lastName} (#${applicantId}); rerouted to SUBMITTED as REGULAR. Notes: ${examNotes || "N/A"}`,
         subjectType:
           appType === "ENROLLMENT"
             ? "EnrollmentApplication"
@@ -179,7 +179,7 @@ export function createEarlyRegistrationOperationsController(
     }
   }
 
-  // — Offer regular section (for failed SCP applicants) —
+  // — Offer regular section (legacy fallback for FAILED_ASSESSMENT records) —
   async function offerRegular(req: Request, res: Response, next: NextFunction) {
     try {
       const { sectionId } = req.body;
@@ -187,11 +187,11 @@ export function createEarlyRegistrationOperationsController(
       const { data: applicant, type: appType } =
         await findApplicantOrThrow(applicantId);
 
-      // Only allow offering regular section to NOT_QUALIFIED SCP applicants
-      if (applicant.status !== "NOT_QUALIFIED") {
+      // Only allow offering regular section to FAILED_ASSESSMENT SCP applicants
+      if (applicant.status !== "FAILED_ASSESSMENT") {
         throw new AppError(
           422,
-          `Cannot offer regular section. Current status: "${applicant.status}". Only NOT_QUALIFIED applications can be offered a regular section.`,
+          `Cannot offer regular section. Current status: "${applicant.status}". Only FAILED_ASSESSMENT applications can be offered a regular section.`,
         );
       }
 
@@ -260,7 +260,7 @@ export function createEarlyRegistrationOperationsController(
               gradeLevelId: applicant.gradeLevelId,
               applicantType: "REGULAR",
               learnerType: applicant.learnerType,
-              status: "PRE_REGISTERED",
+              status: "READY_FOR_ENROLLMENT",
               admissionChannel: applicant.channel,
               isPrivacyConsentGiven: applicant.isPrivacyConsentGiven,
               encodedById: req.user!.userId,
@@ -270,7 +270,7 @@ export function createEarlyRegistrationOperationsController(
 
           await tx.earlyRegistrationApplication.update({
             where: { id: applicant.id },
-            data: { status: "PRE_REGISTERED" },
+            data: { status: "READY_FOR_ENROLLMENT" },
           });
 
           // Link existing checklist to the new enrollment application
@@ -296,7 +296,7 @@ export function createEarlyRegistrationOperationsController(
             where: { id: applicantId },
             data: {
               applicantType: "REGULAR",
-              status: "PRE_REGISTERED",
+              status: "READY_FOR_ENROLLMENT",
             },
           });
         }
@@ -923,7 +923,7 @@ export function createEarlyRegistrationOperationsController(
           },
         });
 
-        return updateApplicationStatus(applicantId, "ASSESSMENT_SCHEDULED");
+        return updateApplicationStatus(applicantId, "EXAM_SCHEDULED");
       });
 
       await auditLog({

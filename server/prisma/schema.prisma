@@ -95,6 +95,7 @@ model SchoolYear {
   id                 Int              @id @default(autoincrement())
   yearLabel          String           @unique(map: "uq_school_years_year_label") @map("year_label")
   status             SchoolYearStatus @default(DRAFT)
+  isEosyFinalized    Boolean          @default(false) @map("is_eosy_finalized")
   classOpeningDate   DateTime?        @db.Date @map("class_opening_date")
   classEndDate       DateTime?        @db.Date @map("class_end_date")
   earlyRegOpenDate   DateTime?        @db.Date @map("early_reg_open_date")
@@ -147,6 +148,7 @@ model Section {
   gradeLevelId      Int          @map("grade_level_id")
   programType       ApplicantType @default(REGULAR) @map("program_type")
   advisingTeacherId Int?         @map("advising_teacher_id")
+  isEosyFinalized   Boolean      @default(false) @map("is_eosy_finalized")
   createdAt         DateTime     @default(now()) @db.Timestamptz @map("created_at")
   updatedAt         DateTime     @updatedAt @db.Timestamptz @map("updated_at")
   
@@ -432,6 +434,9 @@ model EnrollmentRecord {
   schoolYearId          Int          @map("school_year_id")
   enrolledAt            DateTime     @default(now()) @db.Timestamptz @map("enrolled_at")
   enrolledById          Int          @map("enrolled_by_id")
+  eosyStatus            EosyStatus?  @map("eosy_status")
+  dropOutReason         String?      @map("drop_out_reason")
+  transferOutDate       DateTime?    @db.Date @map("transfer_out_date")
   
   schoolYear            SchoolYear   @relation(fields: [schoolYearId], references: [id])
   enrollmentApplication EnrollmentApplication @relation(fields: [enrollmentApplicationId], references: [id], onDelete: Cascade)
@@ -693,13 +698,13 @@ enum ApplicationStatus {
   UNDER_REVIEW
   FOR_REVISION
   ELIGIBLE
-  ASSESSMENT_SCHEDULED
+  EXAM_SCHEDULED
   ASSESSMENT_TAKEN
   PASSED
   INTERVIEW_SCHEDULED
-  PRE_REGISTERED
+  READY_FOR_ENROLLMENT
   TEMPORARILY_ENROLLED
-  NOT_QUALIFIED
+  FAILED_ASSESSMENT
   ENROLLED
   REJECTED
   WITHDRAWN
@@ -813,6 +818,16 @@ enum AcademicStatus {
   RETAINED
 
   @@map("academic_status")
+}
+
+enum EosyStatus {
+  PROMOTED
+  RETAINED
+  IRREGULAR
+  TRANSFERRED_OUT
+  DROPPED_OUT
+
+  @@map("eosy_status")
 }
 
 enum FamilyRelationship {

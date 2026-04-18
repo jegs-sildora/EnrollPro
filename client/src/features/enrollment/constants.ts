@@ -26,7 +26,7 @@ export const STATUS_CONFIG: Record<
     label: "Pending",
     className: "bg-amber-100 text-amber-800 border-amber-300",
   },
-  ASSESSMENT_SCHEDULED: {
+  EXAM_SCHEDULED: {
     label: "Exam Scheduled",
     className: "bg-amber-100 text-amber-800 border-amber-300",
   },
@@ -46,7 +46,7 @@ export const STATUS_CONFIG: Record<
     label: "Failed",
     className: "bg-red-100 text-red-800 border-red-300",
   },
-  NOT_QUALIFIED: {
+  FAILED_ASSESSMENT: {
     label: "Not Qualified",
     className: "bg-red-100 text-red-800 border-red-300",
   },
@@ -54,7 +54,7 @@ export const STATUS_CONFIG: Record<
     label: "Approved",
     className: "bg-white text-green-700 border-green-500",
   },
-  PRE_REGISTERED: {
+  READY_FOR_ENROLLMENT: {
     label: "Ready for Enrollment",
     className: "bg-green-100 text-green-800 border-green-300",
   },
