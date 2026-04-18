@@ -19,6 +19,7 @@ import teachersRoutes from "./features/teachers/teachers.router.js";
 import learnerRoutes from "./features/learner/learner.router.js";
 import earlyRegRoutes from "./features/early-registration/early-reg.router.js";
 import eosyRoutes from "./features/enrollment/eosy.router.js";
+import integrationRoutes from "./features/integration/integration.router.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -26,7 +27,17 @@ const __dirname = path.dirname(__filename);
 
 const app: express.Express = express();
 
-const defaultClientOrigins = ["http://localhost:5173", "http://localhost:5174"];
+const defaultClientOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175",
+  "http://100.120.169.123:5173",
+  "http://100.120.169.123:5174",
+  "http://100.120.169.123:5175",
+  "http://dev-jegs.buru-degree.ts.net:5173",
+  "http://dev-jegs.buru-degree.ts.net:5174",
+  "http://dev-jegs.buru-degree.ts.net:5175",
+];
 const configuredClientOrigins = [
   process.env.CLIENT_URL,
   ...(process.env.CLIENT_URLS ? process.env.CLIENT_URLS.split(",") : []),
@@ -80,6 +91,7 @@ app.use("/api/teachers", teachersRoutes);
 app.use("/api/learner", learnerRoutes);
 app.use("/api/early-registrations", earlyRegRoutes);
 app.use("/api/eosy", eosyRoutes);
+app.use("/api/integration/v1", integrationRoutes);
 
 // Error handler
 app.use(errorHandler);

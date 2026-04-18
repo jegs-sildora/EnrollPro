@@ -33,6 +33,7 @@ import F2FEarlyRegistration from "@/features/admission/pages/f2f/Index";
 
 import Apply from "@/features/admission/pages/online-enrollment/Index";
 import Monitor from "@/features/admission/pages/online-enrollment/Monitor";
+import SampleIntegrationPage from "@/features/sample-integration/pages/Index";
 
 // DO 017 s.2025 — Standalone Early Registration Module (Grades 7–10)
 import EarlyRegistrationApply from "@/features/early-registration/pages/apply/Index";
@@ -53,6 +54,10 @@ export const router = createBrowserRouter([
       {
         path: "/monitor",
         element: <Monitor />,
+      },
+      {
+        path: "/sample-integration",
+        element: <SampleIntegrationPage />,
       },
       {
         path: "/learner",

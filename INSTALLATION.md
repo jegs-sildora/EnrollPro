@@ -92,10 +92,16 @@ cp .env.example .env.local
 
 Set `VITE_API_URL` as needed:
 
-- Local backend: `VITE_API_URL="http://localhost:5000/api"`
-- Teammate over Tailscale hostname: `VITE_API_URL="http://your-teammate.ts.net:5000/api"`
+- Default shared backend (Tailnet): `VITE_API_URL="http://buru-degree.ts.net:5000/api"`
+- Local backend override: `VITE_API_URL="http://localhost:5000/api"`
 
 If `VITE_API_URL` is not set, the client falls back to `/api` and uses the Vite proxy target.
+
+Default external node references:
+
+- ATLAS: `http://100.88.55.125:5000`
+- AIMS: `http://100.92.245.14:5000`
+- SMART: `http://100.93.66.120:3000`
 
 ## 5. Running the Application
 

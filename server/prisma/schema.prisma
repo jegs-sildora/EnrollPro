@@ -169,6 +169,7 @@ model Section {
 /// Core learner demographics shared between early registration and enrollment
 model Learner {
   id                      Int       @id @default(autoincrement())
+  externalId              String    @unique(map: "uq_learners_external_id") @default(dbgenerated("gen_random_uuid()")) @db.Uuid @map("external_id")
   lrn                     String?   @unique(map: "uq_learners_lrn") @db.VarChar(12)
   isPendingLrnCreation    Boolean   @default(false) @map("is_pending_lrn_creation")
   psaBirthCertNumber      String?   @map("psa_birth_cert_number")

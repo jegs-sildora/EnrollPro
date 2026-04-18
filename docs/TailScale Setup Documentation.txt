@@ -6,11 +6,23 @@ Audience: Entire development team (all roles)
 Scope: Development only (trusted teammates on Tailscale)
 Default API Port: 5000
 Default DB Port: 5432
+Default Tailnet DNS Name: buru-degree.ts.net
+
+DEFAULT SERVICE IPS
+- ATLAS: 100.88.55.125
+- AIMS: 100.92.245.14
+- SMART: 100.93.66.120
+
+DEFAULT SERVICE PORTS
+- ATLAS: 5000
+- AIMS: 5000
+- SMART: 3000
+- ENROLLPRO: 5000
 =====================================================
 
 OVERVIEW (READ THIS FIRST)
 - This team uses Tailscale as a secure Mesh VPN.
-- Use stable Tailscale hostnames (for example: teammate-device.ts.net).
+- Use stable Tailscale hostnames (default: buru-degree.ts.net).
 - Do not rely on changing Wi-Fi IPs.
 - At any time, one teammate acts as SERVER HOST (API + DB owner).
 - Everyone else acts as CLIENT TEAMMATE (connects to current host).
@@ -18,8 +30,11 @@ OVERVIEW (READ THIS FIRST)
 REPO CONTEXT (SOURCE OF TRUTH)
 - Frontend API env key: VITE_API_URL
 - Backend DB env key: DATABASE_URL
+- Integration auth env key: INTEGRATION_API_KEYS
 - API base path: /api
 - Health endpoint: /api/health
+- Integration API base path: /api/integration/v1
+- Integration health endpoint: /api/integration/v1/health
 - Backend bind host: 0.0.0.0 (server/src/server.ts)
 
 -----------------------------------------------------
@@ -30,7 +45,7 @@ PART A: ONE-TIME SETUP FOR EVERY TEAM MEMBER
 1. Download Tailscale: https://tailscale.com/download
 2. Sign in using your team account.
 3. Confirm status is Connected.
-4. Find your Tailscale hostname (example: your-device.ts.net).
+4. Default team hostname is buru-degree.ts.net.
 5. Keep your Tailscale IPv4 (100.x.x.x) as fallback reference.
 
 2) Confirm Local Project Basics
@@ -67,6 +82,7 @@ Minimum host values:
 PORT=5000
 CLIENT_URL="http://localhost:5173"
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/enrollpro"
+INTEGRATION_API_KEYS="<set-a-strong-shared-key-or-comma-separated-keys>"
 
 Optional for expanded origins:
 CLIENT_URLS=""
@@ -91,10 +107,14 @@ pnpm run dev
 Step B6: Publish Host Connection Card to Team Chat
 Copy and send:
 
-ACTIVE HOST: <YOUR_NAME>
-HOSTNAME: <your-device.ts.net>
-API_URL: http://<your-device.ts.net>:5000/api
-DB_HOST: <your-device.ts.net>:5432
+ACTIVE HOST: BURU DEGREE (default)
+HOSTNAME: buru-degree.ts.net
+API_URL: http://buru-degree.ts.net:5000/api
+INTEGRATION_BASE_URL: http://buru-degree.ts.net:5000/api/integration/v1
+ATLAS_URL: http://100.88.55.125:5000
+AIMS_URL: http://100.92.245.14:5000
+SMART_URL: http://100.93.66.120:3000
+DB_HOST: buru-degree.ts.net:5432
 STARTED_AT: <YYYY-MM-DD HH:MM>
 
 -----------------------------------------------------
@@ -106,17 +126,17 @@ Use this runbook if you are connecting to the active host.
 Step C1: Frontend to Host API (required)
 Create or update client/.env.local:
 
-VITE_API_URL="http://<ACTIVE_HOST>.ts.net:5000/api"
+VITE_API_URL="http://buru-degree.ts.net:5000/api"
 
 Step C2: Backend to Host DB (only if needed)
 Create or update server/.env:
 
-DATABASE_URL="postgresql://user:pass@<ACTIVE_HOST>.ts.net:5432/enrollpro"
+DATABASE_URL="postgresql://user:pass@buru-degree.ts.net:5432/enrollpro"
 
 Step C3: Optional proxy mode
 If frontend should use /api proxy:
 
-VITE_PROXY_TARGET="http://<ACTIVE_HOST>.ts.net:5000"
+VITE_PROXY_TARGET="http://buru-degree.ts.net:5000"
 
 Step C4: Restart local dev processes
 After env updates, restart frontend/backend processes.
@@ -149,12 +169,17 @@ PART E: TEAM VALIDATION CHECKLIST
 
 From client machine (PowerShell):
 
-Test-NetConnection <ACTIVE_HOST>.ts.net -Port 5000
-Test-NetConnection <ACTIVE_HOST>.ts.net -Port 5432
-Invoke-RestMethod http://<ACTIVE_HOST>.ts.net:5000/api/health
+Test-NetConnection buru-degree.ts.net -Port 5000
+Test-NetConnection buru-degree.ts.net -Port 5432
+Invoke-RestMethod http://buru-degree.ts.net:5000/api/health
+$headers = @{ "X-Integration-Key" = "<INTEGRATION_KEY>" }
+Invoke-RestMethod http://buru-degree.ts.net:5000/api/integration/v1/health -Headers $headers
 
 Expected API response:
 {"ok":true}
+
+Expected integration response (shape):
+{"data":{"status":"ok","db":"connected",...}}
 
 -----------------------------------------------------
 PART F: TROUBLESHOOTING
@@ -182,4 +207,6 @@ PART G: SECURITY RULES (MANDATORY)
 - This setup is for trusted team development only.
 - Never expose API or PostgreSQL to the public internet.
 - Do not post DB credentials in public channels.
+- Do not post integration API keys in public channels.
+- Rotate INTEGRATION_API_KEYS when host ownership changes or key leakage is suspected.
 - Remove temporary firewall rules if hosting is no longer required.
