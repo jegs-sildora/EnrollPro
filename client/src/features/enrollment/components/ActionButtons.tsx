@@ -20,14 +20,12 @@ interface Props {
   onAssignLrn?: () => void | Promise<void>;
   onEnroll?: () => void | Promise<void>;
   onScheduleInterview?: () => void;
-  onMarkInterviewPassed?: () => void | Promise<void>;
   /** New: schedule a specific pipeline step */
   onScheduleStep?: (step: AssessmentStep) => void;
   /** New: record result for a specific pipeline step */
   onRecordStepResult?: (step: AssessmentStep) => void;
   onMarkVerified?: () => void | Promise<void>;
   onSetProfileLock?: (lock: boolean) => void | Promise<void>;
-  interviewPassChecked?: boolean;
   isMandatoryDocumentsMet?: boolean;
 }
 
@@ -80,7 +78,6 @@ function getAssessmentDecisionAction(
 
 export function ActionButtons({
   applicant,
-  interviewPassChecked,
   isMandatoryDocumentsMet = false,
   ...handlers
 }: Props) {
@@ -274,50 +271,15 @@ export function ActionButtons({
         </>
       )}
 
-      {isSCP && status === "INTERVIEW_SCHEDULED" && (
-        <>
-          {interviewPassChecked && handlers.onMarkInterviewPassed ? (
-            <Button
-              className="w-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold"
-              onClick={handlers.onMarkInterviewPassed}>
-              Ready for Enrollment
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-bold"
-              onClick={handlers.onReject}>
-              Reject Application
-            </Button>
-          )}
-        </>
-      )}
-
       {(status === "PASSED" || status === "UNDER_REVIEW") &&
-        handlers.onEnroll && (
-          <>
-            {isPendingLrnCreation && handlers.onAssignLrn && (
-              <Button
-                variant="outline"
-                className="w-full border-amber-500 text-amber-700 hover:bg-amber-50 font-bold"
-                onClick={handlers.onAssignLrn}>
-                Assign LRN
-              </Button>
-            )}
-            <Button
-              className="w-full bg-emerald-600 text-white hover:bg-emerald-700 font-bold"
-              onClick={handlers.onEnroll}
-              disabled={isPendingLrnCreation}
-              title={
-                isPendingLrnCreation
-                  ? "Assign an LRN first before finalizing enrollment."
-                  : undefined
-              }>
-              {isPendingLrnCreation
-                ? "Assign LRN Before Final Enrollment"
-                : "Finalize Enrollment"}
-            </Button>
-          </>
+        isPendingLrnCreation &&
+        handlers.onAssignLrn && (
+          <Button
+            variant="outline"
+            className="w-full border-amber-500 text-amber-700 hover:bg-amber-50 font-bold"
+            onClick={handlers.onAssignLrn}>
+            Assign LRN
+          </Button>
         )}
 
       {isSCP && status === "NOT_QUALIFIED" && (

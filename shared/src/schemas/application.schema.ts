@@ -419,3 +419,107 @@ export const batchProcessSchema = z.object({
     .max(500, "Cannot process more than 500 applicants at once"),
   targetStatus: batchTargetStatusSchema,
 });
+
+const CHECKLIST_FIELD_KEYS = [
+  "isPsaBirthCertPresented",
+  "isOriginalPsaBcCollected",
+  "isSf9Submitted",
+  "isSf10Requested",
+  "isGoodMoralPresented",
+  "isMedicalEvalSubmitted",
+  "isCertOfRecognitionPresented",
+  "isUndertakingSigned",
+  "isConfirmationSlipReceived",
+] as const;
+
+export const checklistFieldKeySchema = z.enum(CHECKLIST_FIELD_KEYS);
+
+const checklistUpdateInputSchema = z.object({
+  isPsaBirthCertPresented: z.boolean().optional(),
+  isOriginalPsaBcCollected: z.boolean().optional(),
+  isSf9Submitted: z.boolean().optional(),
+  isSf10Requested: z.boolean().optional(),
+  isGoodMoralPresented: z.boolean().optional(),
+  isMedicalEvalSubmitted: z.boolean().optional(),
+  isCertOfRecognitionPresented: z.boolean().optional(),
+  isUndertakingSigned: z.boolean().optional(),
+  isConfirmationSlipReceived: z.boolean().optional(),
+});
+
+export const batchVerifyDocumentsPreviewSchema = z.object({
+  ids: z
+    .array(z.number().int().positive())
+    .min(1, "Select at least one applicant")
+    .max(500, "Cannot preview more than 500 applicants at once"),
+});
+
+export const batchVerifyDocumentsSchema = z.object({
+  applicants: z
+    .array(
+      z.object({
+        id: z.number().int().positive(),
+        checklist: checklistUpdateInputSchema.default({}),
+      }),
+    )
+    .min(1, "Select at least one applicant")
+    .max(500, "Cannot process more than 500 applicants at once"),
+  expectedStatuses: z.record(z.string(), z.string().min(1)).optional(),
+});
+
+export const batchScheduleStepSchema = z.object({
+  ids: z
+    .array(z.number().int().positive())
+    .min(1, "Select at least one applicant")
+    .max(500, "Cannot process more than 500 applicants at once"),
+  expectedStatuses: z.record(z.string(), z.string().min(1)).optional(),
+  mode: z.enum(["EXAM", "INTERVIEW"]),
+  scheduledDate: z.string().or(z.date()),
+  scheduledTime: z.string().min(1, "Scheduled time is required"),
+  venue: z.string().min(1, "Venue is required"),
+  notes: z.string().optional().nullable(),
+  sendEmail: z.boolean().default(true),
+});
+
+export const batchSaveScoresSchema = z.object({
+  rows: z
+    .array(
+      z.object({
+        id: z.number().int().positive(),
+        componentScores: z
+          .record(z.string(), z.number().min(0).max(100))
+          .default({}),
+        totalScore: z.number().min(0).max(100).optional(),
+        absentNoShow: z.boolean().optional().default(false),
+        remarks: z.string().max(500).optional().nullable(),
+      }),
+    )
+    .min(1, "At least one score row is required")
+    .max(500, "Cannot process more than 500 applicants at once"),
+  expectedStatuses: z.record(z.string(), z.string().min(1)).optional(),
+});
+
+export const batchFinalizeInterviewSchema = z.object({
+  rows: z
+    .array(
+      z
+        .object({
+          id: z.number().int().positive(),
+          decision: z.enum(["PASS", "REJECT"]),
+          interviewScore: z.number().min(0).max(100).optional().nullable(),
+          remarks: z.string().max(500).optional().nullable(),
+          rejectOutcome: z.enum(["NOT_QUALIFIED", "REJECTED"]).optional(),
+        })
+        .superRefine((value, ctx) => {
+          if (value.decision === "REJECT" && !value.rejectOutcome) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "rejectOutcome is required when decision is REJECT",
+              path: ["rejectOutcome"],
+            });
+          }
+        }),
+    )
+    .min(1, "At least one interview result is required")
+    .max(500, "Cannot process more than 500 applicants at once"),
+  expectedStatuses: z.record(z.string(), z.string().min(1)).optional(),
+});

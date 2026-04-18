@@ -683,7 +683,7 @@ export default function AddressGuardianStep() {
                   <h4 className="text-sm font-bold uppercase tracking-widest text-primary">
                     Primary Contact
                   </h4>
-                  <Label className="text-[0.625rem] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2">
                     {data.primaryContact === "MOTHER" ? (
                       <Venus className="w-3 h-3" />
                     ) : data.primaryContact === "FATHER" ? (
@@ -740,7 +740,7 @@ export default function AddressGuardianStep() {
                     <Label
                       htmlFor="email"
                       className="text-xs font-bold uppercase flex items-center gap-1">
-                      Email Address (Email Address)
+                      Email Address
                     </Label>
                     <Input
                       id="email"
@@ -813,7 +813,7 @@ export default function AddressGuardianStep() {
                         <h4 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
                           Secondary Contact (Optional)
                         </h4>
-                        <Label className="text-[0.625rem] font-black uppercase text-muted-foreground/60 tracking-widest flex items-center gap-2">
+                        <Label className="text-xs font-black uppercase text-muted-foreground/60 tracking-widest flex items-center gap-2">
                           <s.icon className="w-3 h-3" /> {s.label}'s Contact
                           Information
                         </Label>

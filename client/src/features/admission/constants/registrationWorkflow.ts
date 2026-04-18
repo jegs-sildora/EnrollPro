@@ -46,6 +46,12 @@ export const REGISTRATION_VALID_TRANSITIONS: Record<string, string[]> = {
     "INTERVIEW_SCHEDULED",
     "WITHDRAWN",
   ],
+  EXAM_SCHEDULED: [
+    "ASSESSMENT_TAKEN",
+    "ASSESSMENT_SCHEDULED",
+    "INTERVIEW_SCHEDULED",
+    "WITHDRAWN",
+  ],
   ASSESSMENT_TAKEN: [
     "PASSED",
     "NOT_QUALIFIED",
@@ -98,3 +104,102 @@ export const REGISTRATION_RECOMMENDED_TARGET_BY_STATUS: Record<string, string> =
     PASSED: "INTERVIEW_SCHEDULED",
     INTERVIEW_SCHEDULED: "PRE_REGISTERED",
   };
+
+export type RegistrationBatchActionId =
+  | "VERIFY_DOCUMENTS"
+  | "SCHEDULE_EXAM"
+  | "RECORD_ASSESSMENT"
+  | "SCHEDULE_INTERVIEW"
+  | "FINALIZE_PHASE_ONE";
+
+export interface RegistrationBatchActionConfig {
+  id: RegistrationBatchActionId;
+  triggerStatus: string;
+  targetStatus: string;
+  buttonLabel: string;
+  modalTitle: string;
+  modalDescription: string;
+  submitLabel: string;
+}
+
+export const REGISTRATION_BATCH_ACTIONS_BY_STATUS: Record<
+  string,
+  RegistrationBatchActionConfig
+> = {
+  SUBMITTED: {
+    id: "VERIFY_DOCUMENTS",
+    triggerStatus: "SUBMITTED",
+    targetStatus: "VERIFIED",
+    buttonLabel: "Batch Verify Documents",
+    modalTitle: "Batch Documentary Checklist",
+    modalDescription:
+      "Review selected applicants and verify documentary requirements in one run.",
+    submitLabel: "Verify Applicants",
+  },
+  VERIFIED: {
+    id: "SCHEDULE_EXAM",
+    triggerStatus: "VERIFIED",
+    targetStatus: "ASSESSMENT_SCHEDULED",
+    buttonLabel: "Batch Verify & Schedule Exam",
+    modalTitle: "Batch Exam Scheduling",
+    modalDescription:
+      "Apply one exam schedule setup to all selected eligible applicants.",
+    submitLabel: "Schedule Exam & Queue Emails",
+  },
+  ELIGIBLE: {
+    id: "SCHEDULE_EXAM",
+    triggerStatus: "ELIGIBLE",
+    targetStatus: "ASSESSMENT_SCHEDULED",
+    buttonLabel: "Batch Verify & Schedule Exam",
+    modalTitle: "Batch Exam Scheduling",
+    modalDescription:
+      "Apply one exam schedule setup to all selected eligible applicants.",
+    submitLabel: "Schedule Exam & Queue Emails",
+  },
+  ASSESSMENT_SCHEDULED: {
+    id: "RECORD_ASSESSMENT",
+    triggerStatus: "ASSESSMENT_SCHEDULED",
+    targetStatus: "PASSED",
+    buttonLabel: "Batch Record Assessment Scores",
+    modalTitle: "Batch Assessment Data Entry",
+    modalDescription:
+      "Record assessment outcomes in an encoded batch flow for selected applicants.",
+    submitLabel: "Save Scores",
+  },
+  ASSESSMENT_TAKEN: {
+    id: "RECORD_ASSESSMENT",
+    triggerStatus: "ASSESSMENT_TAKEN",
+    targetStatus: "PASSED",
+    buttonLabel: "Batch Record Assessment Scores",
+    modalTitle: "Batch Assessment Data Entry",
+    modalDescription:
+      "Record assessment outcomes in an encoded batch flow for selected applicants.",
+    submitLabel: "Save Scores",
+  },
+  PASSED: {
+    id: "SCHEDULE_INTERVIEW",
+    triggerStatus: "PASSED",
+    targetStatus: "INTERVIEW_SCHEDULED",
+    buttonLabel: "Batch Schedule Interview",
+    modalTitle: "Batch Interview Scheduling",
+    modalDescription:
+      "Apply one interview schedule setup to all selected passed applicants.",
+    submitLabel: "Schedule Interviews",
+  },
+  INTERVIEW_SCHEDULED: {
+    id: "FINALIZE_PHASE_ONE",
+    triggerStatus: "INTERVIEW_SCHEDULED",
+    targetStatus: "PRE_REGISTERED",
+    buttonLabel: "Batch Faculty Interview Result",
+    modalTitle: "Batch Interview Finalization",
+    modalDescription:
+      "Finalize post-interview outcomes for selected applicants.",
+    submitLabel: "Finalize Phase 1 Results",
+  },
+};
+
+export function getRegistrationBatchActionByStatus(status: string) {
+  const normalizedStatus =
+    status === "EXAM_SCHEDULED" ? "ASSESSMENT_SCHEDULED" : status;
+  return REGISTRATION_BATCH_ACTIONS_BY_STATUS[normalizedStatus] ?? null;
+}

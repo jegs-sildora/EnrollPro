@@ -91,6 +91,21 @@ export function ApplicationDetailPanel({
     setInterviewPassChecked(false);
   }, [id]);
 
+  const runAndClose = async (
+    action?: () => Promise<void> | void,
+  ): Promise<void> => {
+    onClose();
+    await action?.();
+  };
+
+  const runWithArgAndClose = async <T,>(
+    action: ((value: T) => Promise<void> | void) | undefined,
+    value: T,
+  ): Promise<void> => {
+    onClose();
+    await action?.(value);
+  };
+
   const getImageUrl = (photo: string | null) => {
     if (!photo) return null;
     if (photo.startsWith("data:")) return photo;
@@ -261,11 +276,14 @@ export function ApplicationDetailPanel({
                 }
               : undefined
           }
-          onMarkInterviewPassed={
+          onSubmitInterviewResult={
             onMarkInterviewPassed
-              ? async () => {
-                  await onMarkInterviewPassed();
-                  await refetch();
+              ? async (passed) => {
+                  if (passed) {
+                    await runAndClose(onMarkInterviewPassed);
+                  } else {
+                    await runAndClose(onFail);
+                  }
                   setInterviewPassChecked(false);
                 }
               : undefined
@@ -299,7 +317,7 @@ export function ApplicationDetailPanel({
         {/* Link to full details */}
         <div className="py-2 border-t mt-4 flex justify-center">
           <Link
-            to={`/early-registration/${applicant.id}`}
+            to={`/monitoring/early-registration/${applicant.id}`}
             className="text-[hsl(var(--accent-link))] hover:underline flex items-center gap-1.5 text-xs sm:text-sm font-medium"
             onClick={onClose}>
             View Full Details <ExternalLink className="h-3 w-3" />
@@ -310,56 +328,39 @@ export function ApplicationDetailPanel({
       {/* Action Buttons Pinned to Bottom */}
       <ActionButtons
         applicant={applicant}
-        onApprove={onApprove}
-        onReject={onReject}
-        onScheduleExam={onScheduleExam}
-        onRecordResult={onRecordResult}
-        onPass={async () => {
-          await onPass();
-          await refetch();
-        }}
-        onFail={async () => {
-          await onFail();
-          await refetch();
-        }}
-        onOfferRegular={onOfferRegular}
-        onTemporarilyEnroll={onTemporarilyEnroll}
-        onAssignLrn={
-          onAssignLrn
-            ? async () => {
-                await onAssignLrn();
-                await refetch();
-              }
+        onApprove={() => runAndClose(onApprove)}
+        onReject={() => runAndClose(onReject)}
+        onScheduleExam={() => runAndClose(onScheduleExam)}
+        onRecordResult={() => runAndClose(onRecordResult)}
+        onPass={() => runAndClose(onPass)}
+        onFail={() => runAndClose(onFail)}
+        onOfferRegular={() => runAndClose(onOfferRegular)}
+        onTemporarilyEnroll={() => runAndClose(onTemporarilyEnroll)}
+        onAssignLrn={onAssignLrn ? () => runAndClose(onAssignLrn) : undefined}
+        onEnroll={onEnroll ? () => runAndClose(onEnroll) : undefined}
+        onScheduleInterview={
+          onScheduleInterview
+            ? () => runAndClose(onScheduleInterview)
             : undefined
         }
-        onEnroll={
-          onEnroll
-            ? async () => {
-                await onEnroll();
-                await refetch();
-              }
+        onScheduleStep={
+          onScheduleStep
+            ? (step) => runWithArgAndClose(onScheduleStep, step)
             : undefined
         }
-        onScheduleInterview={onScheduleInterview}
-        onScheduleStep={onScheduleStep}
-        onRecordStepResult={onRecordStepResult}
+        onRecordStepResult={
+          onRecordStepResult
+            ? (step) => runWithArgAndClose(onRecordStepResult, step)
+            : undefined
+        }
         onSetProfileLock={
           onSetProfileLock
-            ? async (lock) => {
-                await onSetProfileLock(lock);
-                await refetch();
-              }
+            ? (lock) => runWithArgAndClose(onSetProfileLock, lock)
             : undefined
         }
         onMarkVerified={
-          onMarkVerified
-            ? async () => {
-                await onMarkVerified();
-                await refetch();
-              }
-            : undefined
+          onMarkVerified ? () => runAndClose(onMarkVerified) : undefined
         }
-        interviewPassChecked={interviewPassChecked}
         isMandatoryDocumentsMet={mandatoryMet}
       />
 

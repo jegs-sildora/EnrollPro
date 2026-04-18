@@ -1,4 +1,12 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import {
   Search,
   Loader2,
@@ -6,6 +14,7 @@ import {
   Square,
   Save,
   RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
 import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
@@ -24,13 +33,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Skeleton } from "@/shared/ui/skeleton";
 import {
@@ -41,66 +43,53 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/shared/ui/tooltip";
 import { StatusBadge } from "@/features/enrollment/components/StatusBadge";
+import {
+  SCPAssessmentBlock,
+  type SCPAssessmentApplicant,
+} from "@/features/enrollment/components/SCPAssessmentBlock";
+import type { AssessmentStep } from "@/features/enrollment/hooks/useApplicationDetail";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { format } from "date-fns";
 import BatchResultsModal from "./BatchResultsModal";
 import type { BatchResults } from "./BatchResultsModal";
 import {
   ACTIVE_REGISTRATION_EXCLUDED_STATUSES,
-  REGISTRATION_BATCH_TARGET_OPTIONS,
-  REGISTRATION_RECOMMENDED_TARGET_BY_STATUS,
   REGISTRATION_STAGE_QUICK_FILTERS,
+  getRegistrationBatchActionByStatus,
   REGISTRATION_VALID_TRANSITIONS,
 } from "@/features/admission/constants/registrationWorkflow";
-
-interface Application {
-  id: number;
-  lrn: string;
-  lastName: string;
-  firstName: string;
-  middleName: string | null;
-  suffix: string | null;
-  trackingNumber: string;
-  status: string;
-  applicantType: string;
-  gradeLevelId: number;
-  gradeLevel: { name: string };
-  createdAt: string;
-}
-
-interface EarlyRegistrationApiRow extends Application {
-  learner?: {
-    firstName?: string | null;
-    lastName?: string | null;
-    middleName?: string | null;
-    extensionName?: string | null;
-    lrn?: string | null;
-  } | null;
-}
-
-const SAFE_BATCH_TARGETS = new Set<string>(
-  REGISTRATION_BATCH_TARGET_OPTIONS.map((opt) => opt.value),
-);
-
-const TARGET_STATUS_LABELS = Object.fromEntries(
-  REGISTRATION_BATCH_TARGET_OPTIONS.map((option) => [
-    option.value,
-    option.label,
-  ]),
-);
-
-interface Props {
-  applicantType: string;
-  cutoffScore?: number | null;
-  hasAssessment?: boolean;
-}
+import PipelineBatchScheduleForm from "./pipeline-batch/PipelineBatchScheduleForm";
+import PipelineBatchVerifyGrid from "@/features/admission/components/pipeline-batch/PipelineBatchVerifyGrid";
+import PipelineBatchAssessmentGrid from "./pipeline-batch/PipelineBatchAssessmentGrid";
+import PipelineBatchFinalizeInterviewGrid from "./pipeline-batch/PipelineBatchFinalizeInterviewGrid";
+import {
+  DEFAULT_FINALIZE_INTERVIEW_ROW,
+  type Application,
+  type ChecklistFieldKey,
+  type EarlyRegistrationAssessment,
+  type EarlyRegistrationApiRow,
+  type FinalizeInterviewRowState,
+  type PipelineBatchViewProps,
+  type RankingFormulaComponent,
+  type ScheduleFormState,
+  type ScoreRowState,
+  type ScpProgramStepTemplate,
+  type VerifyGridApplicant,
+  type VerifyGridColumn,
+} from "./pipeline-batch/types";
 
 export default function PipelineBatchView({
   applicantType,
   cutoffScore,
   hasAssessment = false,
-}: Props) {
+}: PipelineBatchViewProps) {
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
 
@@ -121,10 +110,59 @@ export default function PipelineBatchView({
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   // Batch processing
-  const [targetStatus, setTargetStatus] = useState("");
   const [isBatchProcessing, setIsBatchProcessing] = useState(false);
-  const [isPreflightOpen, setIsPreflightOpen] = useState(false);
+  const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [batchResults, setBatchResults] = useState<BatchResults | null>(null);
+  const [actionFormError, setActionFormError] = useState<string | null>(null);
+
+  const [verifyGridLoading, setVerifyGridLoading] = useState(false);
+  const [verifyGridColumns, setVerifyGridColumns] = useState<
+    VerifyGridColumn[]
+  >([]);
+  const [verifyGridApplicants, setVerifyGridApplicants] = useState<
+    VerifyGridApplicant[]
+  >([]);
+  const [verifyGridValues, setVerifyGridValues] = useState<
+    Record<number, Record<ChecklistFieldKey, boolean>>
+  >({});
+  const [verifyRowsMarked, setVerifyRowsMarked] = useState<
+    Record<number, boolean>
+  >({});
+
+  const [examScheduleForm, setExamScheduleForm] = useState<ScheduleFormState>({
+    scheduledDate: "",
+    scheduledTime: "",
+    venue: "",
+    notes: "",
+  });
+  const [interviewScheduleForm, setInterviewScheduleForm] =
+    useState<ScheduleFormState>({
+      scheduledDate: "",
+      scheduledTime: "",
+      venue: "",
+      notes: "",
+    });
+
+  const [scoreComponents, setScoreComponents] = useState<
+    RankingFormulaComponent[]
+  >([]);
+  const [scoreGridLoading, setScoreGridLoading] = useState(false);
+  const [scoreGridRows, setScoreGridRows] = useState<
+    Record<number, ScoreRowState>
+  >({});
+
+  const [finalizeInterviewRows, setFinalizeInterviewRows] = useState<
+    Record<number, FinalizeInterviewRowState>
+  >({});
+
+  const [examScheduleDefaultsLoading, setExamScheduleDefaultsLoading] =
+    useState(false);
+  const [examScheduleStepTemplate, setExamScheduleStepTemplate] =
+    useState<ScpProgramStepTemplate | null>(null);
+
+  const [leftPaneWidthPercent, setLeftPaneWidthPercent] = useState(40);
+  const [isResizingSplitPanes, setIsResizingSplitPanes] = useState(false);
+  const splitPanesRef = useRef<HTMLDivElement | null>(null);
 
   // Assessment scores
   const [scores, setScores] = useState<Record<number, string>>({});
@@ -233,39 +271,67 @@ export default function PipelineBatchView({
     [applications, selectedIds],
   );
 
+  const selectedApplicationsById = useMemo(
+    () =>
+      selectedApplications.reduce<Record<number, Application>>((acc, app) => {
+        acc[app.id] = app;
+        return acc;
+      }, {}),
+    [selectedApplications],
+  );
+
   const selectedStatuses = useMemo(
     () => Array.from(new Set(selectedApplications.map((app) => app.status))),
     [selectedApplications],
   );
 
-  const availableTargetStatuses = useMemo<string[]>(() => {
-    if (selectedStatuses.length === 0) {
-      return REGISTRATION_BATCH_TARGET_OPTIONS.map((opt) => opt.value);
+  const selectedPrograms = useMemo(
+    () =>
+      Array.from(new Set(selectedApplications.map((app) => app.applicantType))),
+    [selectedApplications],
+  );
+
+  const hasMixedSelectedStatuses = selectedStatuses.length > 1;
+  const hasMixedSelectedPrograms = selectedPrograms.length > 1;
+  const hasSelectionConflict =
+    hasMixedSelectedStatuses || hasMixedSelectedPrograms;
+
+  const selectionConflictMessage = useMemo(() => {
+    if (hasMixedSelectedStatuses && hasMixedSelectedPrograms) {
+      return "Batch actions require applicants to share both the same current status and the same program.";
     }
 
-    return REGISTRATION_BATCH_TARGET_OPTIONS.map((opt) => opt.value).filter(
-      (target) =>
-        selectedStatuses.every((currentStatus) =>
-          (REGISTRATION_VALID_TRANSITIONS[currentStatus] ?? []).includes(
-            target,
-          ),
-        ),
-    );
-  }, [selectedStatuses]);
+    if (hasMixedSelectedStatuses) {
+      return "Batch actions require applicants to have the same current status.";
+    }
 
-  const recommendedTargetStatus = useMemo<string | null>(() => {
-    if (selectedStatuses.length !== 1) return null;
+    if (hasMixedSelectedPrograms) {
+      return "Batch actions require applicants to have the same program.";
+    }
 
-    const nextStatus =
-      REGISTRATION_RECOMMENDED_TARGET_BY_STATUS[selectedStatuses[0]];
-    if (!nextStatus) return null;
-    if (!availableTargetStatuses.includes(nextStatus)) return null;
+    return null;
+  }, [hasMixedSelectedPrograms, hasMixedSelectedStatuses]);
 
-    return nextStatus;
-  }, [selectedStatuses, availableTargetStatuses]);
+  const singleSelectedStatus =
+    selectedStatuses.length === 1 ? selectedStatuses[0] : null;
+
+  const normalizedSingleSelectedStatus =
+    singleSelectedStatus === "EXAM_SCHEDULED"
+      ? "ASSESSMENT_SCHEDULED"
+      : singleSelectedStatus;
+
+  const activeBatchAction = useMemo(
+    () =>
+      normalizedSingleSelectedStatus
+        ? getRegistrationBatchActionByStatus(normalizedSingleSelectedStatus)
+        : null,
+    [normalizedSingleSelectedStatus],
+  );
+
+  const derivedTargetStatus = activeBatchAction?.targetStatus ?? "";
 
   const preflightSummary = useMemo(() => {
-    if (!targetStatus || selectedApplications.length === 0) {
+    if (!derivedTargetStatus || selectedApplications.length === 0) {
       return null;
     }
 
@@ -274,18 +340,10 @@ export default function PipelineBatchView({
 
     for (const app of selectedApplications) {
       const allowedTargets = REGISTRATION_VALID_TRANSITIONS[app.status] ?? [];
-      if (!SAFE_BATCH_TARGETS.has(targetStatus)) {
+      if (!allowedTargets.includes(derivedTargetStatus)) {
         ineligible.push({
           app,
-          reason: "Target status is not allowed for bulk processing.",
-        });
-        continue;
-      }
-
-      if (!allowedTargets.includes(targetStatus)) {
-        ineligible.push({
-          app,
-          reason: `${app.status.replaceAll("_", " ")} cannot move to ${targetStatus.replaceAll("_", " ")}.`,
+          reason: `${app.status.replaceAll("_", " ")} cannot move to ${derivedTargetStatus.replaceAll("_", " ")}.`,
         });
         continue;
       }
@@ -306,23 +364,787 @@ export default function PipelineBatchView({
       ineligible,
       reasonGroups,
     };
-  }, [selectedApplications, targetStatus]);
+  }, [selectedApplications, derivedTargetStatus]);
+
+  const scopedEligibleIds = useMemo(
+    () => preflightSummary?.eligible.map((app) => app.id) ?? [],
+    [preflightSummary],
+  );
+
+  const scopedEligibleIdSet = useMemo(
+    () => new Set(scopedEligibleIds),
+    [scopedEligibleIds],
+  );
+
+  const normalizeScoreToTwoDecimals = useCallback((value: number) => {
+    return Number(value.toFixed(2));
+  }, []);
+
+  const parseRankingFormulaComponents = useCallback(
+    (value: unknown): RankingFormulaComponent[] => {
+      if (!value || typeof value !== "object" || Array.isArray(value)) {
+        return [];
+      }
+
+      const maybeComponents = (
+        value as { components?: Array<Record<string, unknown>> }
+      ).components;
+      if (!Array.isArray(maybeComponents)) return [];
+
+      return maybeComponents
+        .map((component) => {
+          const key = String(component.key ?? "")
+            .trim()
+            .toUpperCase();
+          const label = String(component.label ?? key).trim() || key;
+          const weight = Number(component.weight ?? NaN);
+
+          if (!key || !Number.isFinite(weight) || weight <= 0) return null;
+          return { key, label, weight };
+        })
+        .filter((component): component is RankingFormulaComponent =>
+          Boolean(component),
+        );
+    },
+    [],
+  );
+
+  const computeWeightedTotal = useCallback(
+    (row: ScoreRowState | undefined): number | null => {
+      if (!row) return null;
+      if (row.absentNoShow) return 0;
+
+      if (scoreComponents.length === 0) return null;
+      const totalWeight = scoreComponents.reduce(
+        (sum, component) => sum + component.weight,
+        0,
+      );
+      const useFractionalWeights = totalWeight <= 1.0001;
+
+      let total = 0;
+      let hasScore = false;
+
+      for (const component of scoreComponents) {
+        const rawScore = row.componentScores[component.key];
+        const score = Number(rawScore);
+        if (!Number.isFinite(score)) continue;
+
+        hasScore = true;
+        const weight = useFractionalWeights
+          ? component.weight
+          : component.weight / 100;
+        total += score * weight;
+      }
+
+      if (!hasScore) return null;
+      return normalizeScoreToTwoDecimals(total);
+    },
+    [normalizeScoreToTwoDecimals, scoreComponents],
+  );
+
+  const getVerifyRequiredCompletion = useCallback(
+    (applicantId: number) => {
+      const applicant = verifyGridApplicants.find(
+        (item) => item.id === applicantId,
+      );
+      if (!applicant) return { done: 0, total: 0 };
+
+      const total = applicant.requiredChecklistKeys.length;
+      if (total === 0) return { done: 0, total: 0 };
+
+      const values = verifyGridValues[applicantId] ?? applicant.checklist;
+      const done = applicant.requiredChecklistKeys.reduce((count, key) => {
+        return count + (values[key] ? 1 : 0);
+      }, 0);
+
+      return { done, total };
+    },
+    [verifyGridApplicants, verifyGridValues],
+  );
+
+  const isVerifyRowReady = useCallback(
+    (applicantId: number) => {
+      const { done, total } = getVerifyRequiredCompletion(applicantId);
+      return total > 0 ? done === total : true;
+    },
+    [getVerifyRequiredCompletion],
+  );
+
+  const setVerifyRowMarked = useCallback(
+    (applicantId: number, checked: boolean) => {
+      setVerifyRowsMarked((prev) => ({
+        ...prev,
+        [applicantId]: checked,
+      }));
+    },
+    [],
+  );
+
+  const isScoreValueInvalid = useCallback(
+    (applicantId: number, key: string, value: string) => {
+      const row = scoreGridRows[applicantId];
+      if (row?.absentNoShow) return false;
+
+      const normalized = value.trim();
+      if (!normalized) return true;
+
+      const parsed = Number(normalized);
+      if (!Number.isFinite(parsed)) return true;
+      if (parsed < 0 || parsed > 100) return true;
+
+      const rounded = normalizeScoreToTwoDecimals(parsed);
+      if (!Number.isFinite(rounded)) return true;
+
+      return !scoreComponents.some((component) => component.key === key);
+    },
+    [normalizeScoreToTwoDecimals, scoreComponents, scoreGridRows],
+  );
+
+  const loadVerifyGridPreview = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+
+    setVerifyGridLoading(true);
+    setActionFormError(null);
+
+    try {
+      const res = await api.post(
+        "/early-registrations/batch/verify-documents/preview",
+        {
+          ids: Array.from(selectedIds),
+        },
+      );
+
+      const columns = (res.data?.columns ?? []) as VerifyGridColumn[];
+      const applicants = (res.data?.applicants ?? []) as VerifyGridApplicant[];
+
+      setVerifyGridColumns(columns);
+      setVerifyGridApplicants(applicants);
+      setVerifyGridValues(
+        applicants.reduce<Record<number, Record<ChecklistFieldKey, boolean>>>(
+          (acc, applicant) => {
+            acc[applicant.id] = applicant.checklist;
+            return acc;
+          },
+          {},
+        ),
+      );
+      setVerifyRowsMarked(
+        applicants.reduce<Record<number, boolean>>((acc, applicant) => {
+          acc[applicant.id] = false;
+          return acc;
+        }, {}),
+      );
+
+      const missingIds = (res.data?.missingIds ?? []) as number[];
+      if (missingIds.length > 0) {
+        setActionFormError(
+          `${missingIds.length} selected applicant(s) were not found and will be skipped.`,
+        );
+      }
+    } catch (err) {
+      toastApiError(err as never);
+      setVerifyGridColumns([]);
+      setVerifyGridApplicants([]);
+      setVerifyGridValues({});
+      setVerifyRowsMarked({});
+    } finally {
+      setVerifyGridLoading(false);
+    }
+  }, [selectedIds]);
+
+  const initializeScoreGrid = useCallback(async () => {
+    const defaultComponents: RankingFormulaComponent[] = [
+      { key: "EXAM", label: "Exam Score", weight: 100 },
+    ];
+
+    setScoreGridLoading(true);
+    setActionFormError(null);
+
+    try {
+      let resolvedComponents = defaultComponents;
+
+      if (ayId && applicantType !== "REGULAR") {
+        const res = await api.get(`/curriculum/${ayId}/scp-config`);
+        const configs = (res.data?.scpProgramConfigs ?? []) as Array<{
+          scpType: string;
+          rankingFormula?: unknown;
+        }>;
+
+        const config = configs.find((entry) => entry.scpType === applicantType);
+        const parsed = parseRankingFormulaComponents(config?.rankingFormula);
+        if (parsed.length > 0) {
+          resolvedComponents = parsed;
+        }
+      }
+
+      setScoreComponents(resolvedComponents);
+      setScoreGridRows(
+        selectedApplications.reduce<Record<number, ScoreRowState>>(
+          (acc, applicant) => {
+            acc[applicant.id] = {
+              componentScores: resolvedComponents.reduce<
+                Record<string, string>
+              >((scoresAcc, component) => {
+                scoresAcc[component.key] = "";
+                return scoresAcc;
+              }, {}),
+              remarks: "",
+              absentNoShow: false,
+            };
+            return acc;
+          },
+          {},
+        ),
+      );
+    } catch (err) {
+      toastApiError(err as never);
+      setScoreComponents(defaultComponents);
+      setScoreGridRows({});
+    } finally {
+      setScoreGridLoading(false);
+    }
+  }, [
+    ayId,
+    applicantType,
+    parseRankingFormulaComponents,
+    selectedApplications,
+  ]);
+
+  const loadExamScheduleDefaults = useCallback(async () => {
+    if (!ayId || applicantType === "REGULAR") {
+      setExamScheduleStepTemplate(null);
+      return;
+    }
+
+    setExamScheduleDefaultsLoading(true);
+    try {
+      const res = await api.get(`/curriculum/${ayId}/scp-config`);
+      const configs = (res.data?.scpProgramConfigs ?? []) as Array<{
+        scpType: string;
+        steps?: ScpProgramStepTemplate[];
+      }>;
+
+      const matchingConfig = configs.find(
+        (entry) => entry.scpType === applicantType,
+      );
+
+      const examCandidates = [...(matchingConfig?.steps ?? [])]
+        .filter((step) => String(step.kind).toUpperCase() !== "INTERVIEW")
+        .sort((a, b) => Number(a.stepOrder) - Number(b.stepOrder));
+
+      const examStep =
+        examCandidates.find((step) => step.isRequired) ??
+        examCandidates[0] ??
+        null;
+
+      if (!examStep) {
+        setExamScheduleStepTemplate(null);
+        return;
+      }
+
+      setExamScheduleStepTemplate(examStep);
+
+      const normalizedDate = examStep.scheduledDate
+        ? format(new Date(examStep.scheduledDate), "yyyy-MM-dd")
+        : "";
+
+      setExamScheduleForm((prev) => ({
+        scheduledDate: prev.scheduledDate || normalizedDate,
+        scheduledTime: prev.scheduledTime || examStep.scheduledTime || "",
+        venue: prev.venue || examStep.venue || "",
+        notes: prev.notes || examStep.notes || "",
+      }));
+    } catch (err) {
+      toastApiError(err as never);
+      setExamScheduleStepTemplate(null);
+    } finally {
+      setExamScheduleDefaultsLoading(false);
+    }
+  }, [ayId, applicantType]);
+
+  const initializeFinalizeRows = useCallback(() => {
+    setFinalizeInterviewRows(
+      selectedApplications.reduce<Record<number, FinalizeInterviewRowState>>(
+        (acc, applicant) => {
+          acc[applicant.id] = { ...DEFAULT_FINALIZE_INTERVIEW_ROW };
+          return acc;
+        },
+        {},
+      ),
+    );
+  }, [selectedApplications]);
 
   useEffect(() => {
-    if (
-      targetStatus &&
-      selectedIds.size > 0 &&
-      !availableTargetStatuses.includes(targetStatus)
-    ) {
-      setTargetStatus("");
+    if (!isActionModalOpen || !activeBatchAction) return;
+
+    if (activeBatchAction.id === "VERIFY_DOCUMENTS") {
+      void loadVerifyGridPreview();
+      return;
     }
-  }, [targetStatus, selectedIds, availableTargetStatuses]);
+
+    if (activeBatchAction.id === "SCHEDULE_EXAM") {
+      void loadExamScheduleDefaults();
+      return;
+    }
+
+    if (activeBatchAction.id === "RECORD_ASSESSMENT") {
+      void initializeScoreGrid();
+      return;
+    }
+
+    if (activeBatchAction.id === "FINALIZE_PHASE_ONE") {
+      initializeFinalizeRows();
+      return;
+    }
+
+    setActionFormError(null);
+  }, [
+    isActionModalOpen,
+    activeBatchAction,
+    loadVerifyGridPreview,
+    loadExamScheduleDefaults,
+    initializeScoreGrid,
+    initializeFinalizeRows,
+  ]);
+
+  const clampSplitPaneWidth = useCallback(
+    (value: number) => Math.min(75, Math.max(25, value)),
+    [],
+  );
+
+  const magnetizeSplitPaneWidth = useCallback((value: number) => {
+    const snapPoints = [40, 50, 60];
+    const threshold = 1.8;
+    for (const snapPoint of snapPoints) {
+      if (Math.abs(value - snapPoint) <= threshold) {
+        return snapPoint;
+      }
+    }
+    return value;
+  }, []);
+
+  const handleSplitPaneResizeStart = useCallback(
+    (event: ReactMouseEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      setIsResizingSplitPanes(true);
+    },
+    [],
+  );
 
   useEffect(() => {
-    if (selectedIds.size > 0 && !targetStatus && recommendedTargetStatus) {
-      setTargetStatus(recommendedTargetStatus);
+    if (!isResizingSplitPanes) return;
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const container = splitPanesRef.current;
+      if (!container) return;
+
+      const rect = container.getBoundingClientRect();
+      if (rect.width <= 0) return;
+
+      const rawWidthPercent = ((event.clientX - rect.left) / rect.width) * 100;
+      const nextWidthPercent = magnetizeSplitPaneWidth(
+        clampSplitPaneWidth(rawWidthPercent),
+      );
+
+      setLeftPaneWidthPercent(nextWidthPercent);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingSplitPanes(false);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizingSplitPanes, clampSplitPaneWidth, magnetizeSplitPaneWidth]);
+
+  const setVerifyCell = (
+    applicantId: number,
+    key: ChecklistFieldKey,
+    value: boolean,
+  ) => {
+    setVerifyGridValues((prev) => {
+      const next = {
+        ...prev,
+        [applicantId]: {
+          ...(prev[applicantId] ?? {}),
+          [key]: value,
+        },
+      };
+
+      setVerifyRowsMarked((prevMarked) => {
+        const applicant = verifyGridApplicants.find(
+          (entry) => entry.id === applicantId,
+        );
+        if (!applicant) return prevMarked;
+
+        const isReady = applicant.requiredChecklistKeys.every((requiredKey) =>
+          Boolean(next[applicantId]?.[requiredKey]),
+        );
+
+        if (isReady || !prevMarked[applicantId]) {
+          return prevMarked;
+        }
+
+        return {
+          ...prevMarked,
+          [applicantId]: false,
+        };
+      });
+
+      return next;
+    });
+  };
+
+  const setVerifyColumnForAll = (key: ChecklistFieldKey, value: boolean) => {
+    setVerifyGridValues((prev) => {
+      const next = { ...prev };
+      for (const applicant of verifyGridApplicants) {
+        next[applicant.id] = {
+          ...(next[applicant.id] ?? {}),
+          [key]: value,
+        };
+      }
+
+      setVerifyRowsMarked((prevMarked) => {
+        let changed = false;
+        const nextMarked = { ...prevMarked };
+
+        for (const applicant of verifyGridApplicants) {
+          const isReady = applicant.requiredChecklistKeys.every((requiredKey) =>
+            Boolean(next[applicant.id]?.[requiredKey]),
+          );
+
+          if (!isReady && nextMarked[applicant.id]) {
+            nextMarked[applicant.id] = false;
+            changed = true;
+          }
+        }
+
+        return changed ? nextMarked : prevMarked;
+      });
+
+      return next;
+    });
+  };
+
+  const setVerifyAll = (value: boolean) => {
+    setVerifyGridValues((prev) => {
+      const next = { ...prev };
+      for (const applicant of verifyGridApplicants) {
+        next[applicant.id] = verifyGridColumns.reduce<
+          Record<ChecklistFieldKey, boolean>
+        >(
+          (acc, column) => {
+            acc[column.key] = value;
+            return acc;
+          },
+          { ...(next[applicant.id] ?? applicant.checklist) },
+        );
+      }
+
+      setVerifyRowsMarked((prevMarked) => {
+        let changed = false;
+        const nextMarked = { ...prevMarked };
+
+        for (const applicant of verifyGridApplicants) {
+          const isReady = applicant.requiredChecklistKeys.every((requiredKey) =>
+            Boolean(next[applicant.id]?.[requiredKey]),
+          );
+
+          if (!isReady && nextMarked[applicant.id]) {
+            nextMarked[applicant.id] = false;
+            changed = true;
+          }
+        }
+
+        return changed ? nextMarked : prevMarked;
+      });
+
+      return next;
+    });
+  };
+
+  const verifyAllChecked = useMemo(() => {
+    if (verifyGridApplicants.length === 0 || verifyGridColumns.length === 0) {
+      return false;
     }
-  }, [selectedIds, targetStatus, recommendedTargetStatus]);
+
+    return verifyGridApplicants.every((applicant) =>
+      verifyGridColumns.every((column) =>
+        Boolean(verifyGridValues[applicant.id]?.[column.key]),
+      ),
+    );
+  }, [verifyGridApplicants, verifyGridColumns, verifyGridValues]);
+
+  const isVerifyColumnFullyChecked = (key: ChecklistFieldKey) =>
+    verifyGridApplicants.length > 0 &&
+    verifyGridApplicants.every((applicant) =>
+      Boolean(verifyGridValues[applicant.id]?.[key]),
+    );
+
+  const updateScoreCell = (applicantId: number, key: string, value: string) => {
+    setScoreGridRows((prev) => ({
+      ...prev,
+      [applicantId]: {
+        ...(prev[applicantId] ?? {
+          componentScores: {},
+          remarks: "",
+          absentNoShow: false,
+        }),
+        componentScores: {
+          ...(prev[applicantId]?.componentScores ?? {}),
+          [key]: value,
+        },
+      },
+    }));
+  };
+
+  const updateScoreRemarks = (applicantId: number, value: string) => {
+    setScoreGridRows((prev) => ({
+      ...prev,
+      [applicantId]: {
+        ...(prev[applicantId] ?? {
+          componentScores: {},
+          remarks: "",
+          absentNoShow: false,
+        }),
+        remarks: value,
+      },
+    }));
+  };
+
+  const setAbsentNoShow = (applicantId: number, value: boolean) => {
+    setScoreGridRows((prev) => {
+      const existing =
+        prev[applicantId] ??
+        ({
+          componentScores: {},
+          remarks: "",
+          absentNoShow: false,
+        } as ScoreRowState);
+
+      if (value) {
+        const zeroedScores = scoreComponents.reduce<Record<string, string>>(
+          (acc, component) => {
+            acc[component.key] = "0.00";
+            return acc;
+          },
+          { ...existing.componentScores },
+        );
+
+        return {
+          ...prev,
+          [applicantId]: {
+            ...existing,
+            absentNoShow: true,
+            componentScores: zeroedScores,
+            remarks: existing.remarks || "Marked absent / no-show.",
+          },
+        };
+      }
+
+      return {
+        ...prev,
+        [applicantId]: {
+          ...existing,
+          absentNoShow: false,
+        },
+      };
+    });
+  };
+
+  const updateFinalizeRow = (
+    applicantId: number,
+    patch: Partial<FinalizeInterviewRowState>,
+  ) => {
+    setFinalizeInterviewRows((prev) => ({
+      ...prev,
+      [applicantId]: {
+        ...(prev[applicantId] ?? { ...DEFAULT_FINALIZE_INTERVIEW_ROW }),
+        ...patch,
+      },
+    }));
+  };
+
+  const resolveScoreComponentKeyForStep = useCallback(
+    (kind: string): string | null => {
+      if (!kind.trim() || scoreComponents.length === 0) return null;
+
+      const normalizedKind = kind.trim().toUpperCase();
+      const directMatch = scoreComponents.find(
+        (component) => component.key === normalizedKind,
+      );
+      if (directMatch) return directMatch.key;
+
+      if (scoreComponents.length === 1) {
+        return scoreComponents[0].key;
+      }
+
+      const examCandidates = scoreComponents.filter((component) =>
+        component.key.includes("EXAM"),
+      );
+      if (normalizedKind.includes("EXAM") && examCandidates.length === 1) {
+        return examCandidates[0].key;
+      }
+
+      if (normalizedKind === "INTERVIEW") {
+        const interviewMatch = scoreComponents.find(
+          (component) => component.key === "INTERVIEW",
+        );
+        if (interviewMatch) return interviewMatch.key;
+      }
+
+      return null;
+    },
+    [scoreComponents],
+  );
+
+  const stageAssessmentFromScpBlock = useCallback(
+    async (
+      applicantId: number,
+      _stepOrder: number,
+      kind: string,
+      score: number,
+      stepCutoffScore: number | null,
+    ) => {
+      const componentKey = resolveScoreComponentKeyForStep(kind);
+      if (!componentKey) {
+        setActionFormError(
+          `Unable to map ${kind.replaceAll("_", " ")} to a score component. Please encode this applicant in the score grid on the right.`,
+        );
+        return;
+      }
+
+      setActionFormError(null);
+      setScoreGridRows((prev) => {
+        const fallbackComponentScores = scoreComponents.reduce<
+          Record<string, string>
+        >((acc, component) => {
+          acc[component.key] = "";
+          return acc;
+        }, {});
+
+        const existing = prev[applicantId] ?? {
+          componentScores: fallbackComponentScores,
+          remarks: "",
+          absentNoShow: false,
+        };
+
+        const passFailLabel =
+          stepCutoffScore == null
+            ? ""
+            : score >= stepCutoffScore
+              ? "PASSED"
+              : "FAILED";
+
+        return {
+          ...prev,
+          [applicantId]: {
+            ...existing,
+            absentNoShow: false,
+            componentScores: {
+              ...existing.componentScores,
+              [componentKey]: normalizeScoreToTwoDecimals(score).toFixed(2),
+            },
+            remarks:
+              existing.remarks ||
+              `Staged from SCP block (${kind.replaceAll("_", " ")}${
+                passFailLabel ? `: ${passFailLabel}` : ""
+              }).`,
+          },
+        };
+      });
+    },
+    [
+      normalizeScoreToTwoDecimals,
+      resolveScoreComponentKeyForStep,
+      scoreComponents,
+    ],
+  );
+
+  const stageInterviewDecisionFromScpBlock = useCallback(
+    async (applicantId: number, passed: boolean) => {
+      setActionFormError(null);
+      setFinalizeInterviewRows((prev) => {
+        const existing = prev[applicantId] ?? {
+          ...DEFAULT_FINALIZE_INTERVIEW_ROW,
+        };
+
+        return {
+          ...prev,
+          [applicantId]: {
+            ...existing,
+            decision: passed ? "PASS" : "REJECT",
+            rejectOutcome: passed
+              ? "NOT_QUALIFIED"
+              : existing.rejectOutcome || "NOT_QUALIFIED",
+          },
+        };
+      });
+    },
+    [],
+  );
+
+  const isAssessmentRowPrepared = useCallback(
+    (applicantId: number) => {
+      if (scoreComponents.length === 0) return false;
+
+      const row = scoreGridRows[applicantId];
+      if (!row) return false;
+
+      if (row.absentNoShow) return true;
+
+      const hasAllComponentScores = scoreComponents.every((component) => {
+        const rawValue = row.componentScores[component.key] ?? "";
+        if (isScoreValueInvalid(applicantId, component.key, rawValue)) {
+          return false;
+        }
+
+        const parsed = Number(rawValue);
+        return parsed >= 0 && parsed <= 100;
+      });
+      if (!hasAllComponentScores) return false;
+
+      return Number.isFinite(computeWeightedTotal(row) ?? NaN);
+    },
+    [computeWeightedTotal, isScoreValueInvalid, scoreComponents, scoreGridRows],
+  );
+
+  const isFinalizeRowPrepared = useCallback(
+    (applicantId: number) => {
+      const row = finalizeInterviewRows[applicantId];
+      if (!row) return false;
+
+      if (row.decision === "REJECT" && !row.rejectOutcome) return false;
+
+      if (row.interviewScore.trim()) {
+        return Number.isFinite(Number(row.interviewScore));
+      }
+
+      return true;
+    },
+    [finalizeInterviewRows],
+  );
+
+  const getScpPreviewStagedState = useCallback(
+    (applicantId: number) => {
+      if (activeBatchAction?.id === "RECORD_ASSESSMENT") {
+        return isAssessmentRowPrepared(applicantId);
+      }
+
+      if (activeBatchAction?.id === "FINALIZE_PHASE_ONE") {
+        return isFinalizeRowPrepared(applicantId);
+      }
+
+      return false;
+    },
+    [activeBatchAction?.id, isAssessmentRowPrepared, isFinalizeRowPrepared],
+  );
 
   const toggleSelect = (id: number) => {
     setSelectedIds((prev) => {
@@ -364,20 +1186,29 @@ export default function PipelineBatchView({
   };
 
   const handleBatchProcess = () => {
-    if (selectedIds.size === 0 || !targetStatus) return;
-    setIsPreflightOpen(true);
+    if (
+      selectedIds.size === 0 ||
+      !derivedTargetStatus ||
+      hasSelectionConflict ||
+      !activeBatchAction
+    )
+      return;
+    setActionFormError(null);
+    setIsActionModalOpen(true);
   };
 
   const handleConfirmBatchProcess = async () => {
-    if (!preflightSummary || !targetStatus) return;
+    if (!activeBatchAction) return;
 
-    const eligibleIds = preflightSummary.eligible.map((app) => app.id);
-    const skippedAsFailed = preflightSummary.ineligible.map((item) => ({
-      id: item.app.id,
-      name: `${item.app.lastName}, ${item.app.firstName}`,
-      trackingNumber: item.app.trackingNumber,
-      reason: item.reason,
-    }));
+    const eligibleIds = scopedEligibleIds;
+    const skippedAsFailed = (preflightSummary?.ineligible ?? []).map(
+      (item) => ({
+        id: item.app.id,
+        name: `${item.app.lastName}, ${item.app.firstName}`,
+        trackingNumber: item.app.trackingNumber,
+        reason: item.reason,
+      }),
+    );
 
     if (eligibleIds.length === 0) {
       setBatchResults({
@@ -385,28 +1216,304 @@ export default function PipelineBatchView({
         succeeded: [],
         failed: skippedAsFailed,
       });
-      setIsPreflightOpen(false);
+      setIsActionModalOpen(false);
       return;
     }
 
-    setIsBatchProcessing(true);
-    try {
-      const res = await api.patch("/early-registrations/batch-process", {
-        ids: eligibleIds,
-        targetStatus,
-      });
+    if (!isActionFormReady) {
+      setActionFormError(
+        actionReadinessHint ??
+          "Complete all required fields before running this batch action.",
+      );
+      return;
+    }
 
-      const failed = [...skippedAsFailed, ...(res.data.failed ?? [])];
+    setActionFormError(null);
+    setIsBatchProcessing(true);
+
+    try {
+      let responseData: {
+        succeeded?: BatchResults["succeeded"];
+        failed?: BatchResults["failed"];
+      } | null = null;
+      let skippedClientSide: BatchResults["failed"] = [];
+
+      const expectedStatuses = buildExpectedStatuses(eligibleIds);
+
+      if (activeBatchAction.id === "VERIFY_DOCUMENTS") {
+        const eligibleVerifyApplicants = verifyGridApplicants.filter(
+          (applicant) => eligibleIds.includes(applicant.id),
+        );
+
+        const markedReadyApplicants = eligibleVerifyApplicants.filter(
+          (applicant) =>
+            Boolean(verifyRowsMarked[applicant.id]) &&
+            isVerifyRowReady(applicant.id),
+        );
+
+        skippedClientSide = eligibleVerifyApplicants
+          .filter((applicant) => !Boolean(verifyRowsMarked[applicant.id]))
+          .map((applicant) => ({
+            id: applicant.id,
+            name: applicant.name,
+            trackingNumber: applicant.trackingNumber,
+            reason:
+              "Not marked as verified in the checklist table. Skipped by batch submit.",
+          }));
+
+        skippedClientSide = [
+          ...skippedClientSide,
+          ...eligibleVerifyApplicants
+            .filter(
+              (applicant) =>
+                Boolean(verifyRowsMarked[applicant.id]) &&
+                !isVerifyRowReady(applicant.id),
+            )
+            .map((applicant) => ({
+              id: applicant.id,
+              name: applicant.name,
+              trackingNumber: applicant.trackingNumber,
+              reason:
+                "Required checklist items are incomplete. Skipped by batch submit.",
+            })),
+        ];
+
+        const applicantsPayload = markedReadyApplicants.map((applicant) => ({
+          id: applicant.id,
+          checklist: verifyGridValues[applicant.id] ?? applicant.checklist,
+        }));
+
+        if (applicantsPayload.length === 0) {
+          setActionFormError(
+            "Mark at least one fully-complete row as verified before submitting.",
+          );
+          return;
+        }
+
+        const verifyExpectedStatuses = buildExpectedStatuses(
+          applicantsPayload.map((item) => item.id),
+        );
+
+        const res = await api.patch(
+          "/early-registrations/batch/verify-documents",
+          {
+            applicants: applicantsPayload,
+            expectedStatuses: verifyExpectedStatuses,
+          },
+        );
+        responseData = res.data;
+      } else if (activeBatchAction.id === "SCHEDULE_EXAM") {
+        if (
+          !examScheduleForm.scheduledDate ||
+          !examScheduleForm.scheduledTime ||
+          !examScheduleForm.venue.trim()
+        ) {
+          setActionFormError(
+            "Scheduled date, scheduled time, and venue are required for exam scheduling.",
+          );
+          return;
+        }
+
+        const res = await api.patch(
+          "/early-registrations/batch/schedule-step",
+          {
+            ids: eligibleIds,
+            expectedStatuses,
+            mode: "EXAM",
+            scheduledDate: examScheduleForm.scheduledDate,
+            scheduledTime: examScheduleForm.scheduledTime,
+            venue: examScheduleForm.venue,
+            notes: examScheduleForm.notes || null,
+            sendEmail: true,
+          },
+        );
+        responseData = res.data;
+      } else if (activeBatchAction.id === "RECORD_ASSESSMENT") {
+        const rowsPayload = eligibleIds.map((id) => {
+          const rowState = scoreGridRows[id];
+          const app = selectedApplicationsById[id];
+          if (!rowState) {
+            throw new Error(`Missing score row for applicant #${id}.`);
+          }
+
+          if (rowState.absentNoShow) {
+            const absentComponentScores = scoreComponents.reduce<
+              Record<string, number>
+            >((acc, component) => {
+              acc[component.key] = 0;
+              return acc;
+            }, {});
+
+            const absentRemarks = [
+              rowState.remarks?.trim(),
+              "Marked absent / no-show.",
+            ]
+              .filter(Boolean)
+              .join(" ");
+
+            return {
+              id,
+              componentScores: absentComponentScores,
+              totalScore: 0,
+              absentNoShow: true,
+              remarks: absentRemarks || null,
+            };
+          }
+
+          const normalizedScores = scoreComponents.reduce<
+            Record<string, number>
+          >((acc, component) => {
+            const value = rowState.componentScores[component.key];
+            const numericScore = Number(value);
+            if (!Number.isFinite(numericScore)) {
+              throw new Error(
+                `Enter a valid ${component.label} score for ${app?.lastName ?? "the selected applicant"}.`,
+              );
+            }
+
+            if (numericScore < 0 || numericScore > 100) {
+              throw new Error(
+                `${component.label} must be between 0 and 100 for ${app?.lastName ?? "the selected applicant"}.`,
+              );
+            }
+
+            acc[component.key] = normalizeScoreToTwoDecimals(numericScore);
+            return acc;
+          }, {});
+
+          const totalScore = computeWeightedTotal(rowState);
+          if (!Number.isFinite(totalScore ?? NaN)) {
+            throw new Error(
+              `Unable to compute weighted total for ${app?.lastName ?? "the selected applicant"}.`,
+            );
+          }
+
+          return {
+            id,
+            componentScores: normalizedScores,
+            totalScore: normalizeScoreToTwoDecimals(totalScore as number),
+            absentNoShow: false,
+            remarks: rowState.remarks || null,
+          };
+        });
+
+        const res = await api.patch("/early-registrations/batch/save-scores", {
+          rows: rowsPayload,
+          expectedStatuses,
+        });
+        responseData = res.data;
+      } else if (activeBatchAction.id === "SCHEDULE_INTERVIEW") {
+        if (
+          !interviewScheduleForm.scheduledDate ||
+          !interviewScheduleForm.scheduledTime ||
+          !interviewScheduleForm.venue.trim()
+        ) {
+          setActionFormError(
+            "Scheduled date, scheduled time, and venue are required for interview scheduling.",
+          );
+          return;
+        }
+
+        const res = await api.patch(
+          "/early-registrations/batch/schedule-step",
+          {
+            ids: eligibleIds,
+            expectedStatuses,
+            mode: "INTERVIEW",
+            scheduledDate: interviewScheduleForm.scheduledDate,
+            scheduledTime: interviewScheduleForm.scheduledTime,
+            venue: interviewScheduleForm.venue,
+            notes: interviewScheduleForm.notes || null,
+            sendEmail: true,
+          },
+        );
+        responseData = res.data;
+      } else if (activeBatchAction.id === "FINALIZE_PHASE_ONE") {
+        const rowsPayload = eligibleIds.map((id) => {
+          const row = finalizeInterviewRows[id];
+          if (!row) {
+            throw new Error(
+              `Missing interview decision row for applicant #${id}.`,
+            );
+          }
+
+          const interviewScore = row.interviewScore.trim()
+            ? Number(row.interviewScore)
+            : null;
+
+          if (interviewScore != null && !Number.isFinite(interviewScore)) {
+            throw new Error("Interview score must be numeric when provided.");
+          }
+
+          if (row.decision === "REJECT" && !row.rejectOutcome) {
+            throw new Error("Select a reject outcome for rejected applicants.");
+          }
+
+          return {
+            id,
+            decision: row.decision,
+            rejectOutcome:
+              row.decision === "REJECT" ? row.rejectOutcome : undefined,
+            interviewScore,
+            remarks: row.remarks || null,
+          };
+        });
+
+        const res = await api.patch(
+          "/early-registrations/batch/finalize-interview",
+          {
+            rows: rowsPayload,
+            expectedStatuses,
+          },
+        );
+        responseData = res.data;
+      }
+
+      if (!responseData) return;
+
+      const failed = [
+        ...skippedAsFailed,
+        ...skippedClientSide,
+        ...(responseData.failed ?? []),
+      ];
       setBatchResults({
         processed: selectedIds.size,
-        succeeded: res.data.succeeded ?? [],
+        succeeded: responseData.succeeded ?? [],
         failed,
       });
 
       setSelectedIds(new Set(failed.map((item) => item.id)));
-      setIsPreflightOpen(false);
+      setIsActionModalOpen(false);
     } catch (err) {
-      toastApiError(err as never);
+      if (typeof err === "object" && err !== null && "response" in err) {
+        const response = (
+          err as {
+            response?: {
+              status?: number;
+              data?: {
+                message?: string;
+              };
+            };
+          }
+        ).response;
+
+        if (response?.status === 409) {
+          setActionFormError(
+            response.data?.message ??
+              "Some selected applicants changed state while this dialog was open. Reload data and retry.",
+          );
+          return;
+        }
+
+        toastApiError(err as never);
+        return;
+      }
+
+      if (err instanceof Error) {
+        setActionFormError(err.message);
+      } else {
+        toastApiError(err as never);
+      }
     } finally {
       setIsBatchProcessing(false);
     }
@@ -473,6 +1580,470 @@ export default function PipelineBatchView({
         : applications.filter((app) => app.status === stage.value).length;
     return acc;
   }, {});
+
+  const contextualActionLabel = useMemo(() => {
+    if (selectedIds.size === 0) return "Select Applicants";
+    if (hasSelectionConflict) return "Batch Action Unavailable";
+    if (!activeBatchAction && singleSelectedStatus) {
+      return `No Batch Action for ${singleSelectedStatus.replaceAll("_", " ")}`;
+    }
+    if (!activeBatchAction) return "No Batch Action";
+    return `${activeBatchAction.buttonLabel} (${selectedIds.size})`;
+  }, [
+    selectedIds.size,
+    hasSelectionConflict,
+    activeBatchAction,
+    singleSelectedStatus,
+  ]);
+
+  const getContextualActionIcon = () => {
+    if (!activeBatchAction) {
+      return <AlertTriangle className="size-4 mr-1.5" />;
+    }
+
+    switch (activeBatchAction.id) {
+      case "VERIFY_DOCUMENTS":
+        return <CheckSquare className="size-4 mr-1.5" />;
+      case "SCHEDULE_EXAM":
+        return <RefreshCw className="size-4 mr-1.5" />;
+      case "RECORD_ASSESSMENT":
+        return <Save className="size-4 mr-1.5" />;
+      case "SCHEDULE_INTERVIEW":
+        return <RefreshCw className="size-4 mr-1.5" />;
+      case "FINALIZE_PHASE_ONE":
+        return <CheckSquare className="size-4 mr-1.5" />;
+      default:
+        return <AlertTriangle className="size-4 mr-1.5" />;
+    }
+  };
+
+  const isContextualActionDisabled =
+    selectedIds.size === 0 ||
+    hasSelectionConflict ||
+    !activeBatchAction ||
+    isBatchProcessing ||
+    (preflightSummary?.eligible.length ?? 0) === 0;
+
+  const verifyEligibleApplicants = useMemo(
+    () => verifyGridApplicants.filter((app) => scopedEligibleIdSet.has(app.id)),
+    [scopedEligibleIdSet, verifyGridApplicants],
+  );
+
+  const verifyMarkedReadyApplicantIds = useMemo(
+    () =>
+      verifyEligibleApplicants
+        .filter(
+          (applicant) =>
+            Boolean(verifyRowsMarked[applicant.id]) &&
+            isVerifyRowReady(applicant.id),
+        )
+        .map((applicant) => applicant.id),
+    [isVerifyRowReady, verifyEligibleApplicants, verifyRowsMarked],
+  );
+
+  const buildExpectedStatuses = useCallback(
+    (ids: number[]) =>
+      ids.reduce<Record<string, string>>((acc, id) => {
+        const app = selectedApplicationsById[id];
+        if (app) {
+          acc[String(id)] =
+            app.status === "EXAM_SCHEDULED"
+              ? "ASSESSMENT_SCHEDULED"
+              : app.status;
+        }
+        return acc;
+      }, {}),
+    [selectedApplicationsById],
+  );
+
+  const isActionFormReady = useMemo(() => {
+    if (!activeBatchAction) return false;
+
+    switch (activeBatchAction.id) {
+      case "VERIFY_DOCUMENTS":
+        return verifyMarkedReadyApplicantIds.length > 0;
+      case "SCHEDULE_EXAM":
+        return Boolean(
+          examScheduleForm.scheduledDate &&
+          examScheduleForm.scheduledTime &&
+          examScheduleForm.venue.trim(),
+        );
+      case "RECORD_ASSESSMENT":
+        return (
+          scopedEligibleIds.length > 0 &&
+          scopedEligibleIds.every((id) => isAssessmentRowPrepared(id))
+        );
+      case "SCHEDULE_INTERVIEW":
+        return Boolean(
+          interviewScheduleForm.scheduledDate &&
+          interviewScheduleForm.scheduledTime &&
+          interviewScheduleForm.venue.trim(),
+        );
+      case "FINALIZE_PHASE_ONE":
+        return (
+          scopedEligibleIds.length > 0 &&
+          scopedEligibleIds.every((id) => isFinalizeRowPrepared(id))
+        );
+      default:
+        return true;
+    }
+  }, [
+    activeBatchAction,
+    examScheduleForm.scheduledDate,
+    examScheduleForm.scheduledTime,
+    examScheduleForm.venue,
+    interviewScheduleForm.scheduledDate,
+    interviewScheduleForm.scheduledTime,
+    interviewScheduleForm.venue,
+    isAssessmentRowPrepared,
+    isFinalizeRowPrepared,
+    scopedEligibleIds,
+    verifyMarkedReadyApplicantIds,
+  ]);
+
+  const actionSubmitCount = useMemo(() => {
+    if (!activeBatchAction) return 0;
+
+    if (activeBatchAction.id === "VERIFY_DOCUMENTS") {
+      return verifyMarkedReadyApplicantIds.length;
+    }
+
+    return scopedEligibleIds.length;
+  }, [activeBatchAction, scopedEligibleIds, verifyMarkedReadyApplicantIds]);
+
+  const actionReadinessHint = useMemo(() => {
+    if (!activeBatchAction || isActionFormReady) return null;
+
+    switch (activeBatchAction.id) {
+      case "VERIFY_DOCUMENTS":
+        return "Mark at least one row as verified after completing required checklist items.";
+      case "SCHEDULE_EXAM":
+        return "Scheduled date, time, and venue are required.";
+      case "RECORD_ASSESSMENT":
+        return "Each eligible row must either be marked absent/no-show or contain valid scores (0-100).";
+      case "SCHEDULE_INTERVIEW":
+        return "Scheduled date, time, and venue are required.";
+      case "FINALIZE_PHASE_ONE":
+        return "Complete interview decision requirements for all eligible rows.";
+      default:
+        return "Review all required fields before submitting.";
+    }
+  }, [activeBatchAction, isActionFormReady]);
+
+  const shouldShowScpAssessmentPreview =
+    applicantType !== "REGULAR" &&
+    Boolean(
+      activeBatchAction &&
+      (activeBatchAction.id === "RECORD_ASSESSMENT" ||
+        activeBatchAction.id === "SCHEDULE_INTERVIEW" ||
+        activeBatchAction.id === "FINALIZE_PHASE_ONE"),
+    );
+
+  const mapAssessmentsToSteps = useCallback(
+    (assessments: EarlyRegistrationAssessment[]): AssessmentStep[] => {
+      if (!Array.isArray(assessments) || assessments.length === 0) return [];
+
+      const toSortableValue = (value: string | null | undefined) => {
+        if (!value) return Number.POSITIVE_INFINITY;
+        const parsed = Date.parse(value);
+        return Number.isNaN(parsed) ? Number.POSITIVE_INFINITY : parsed;
+      };
+
+      const sortedAssessments = [...assessments].sort((a, b) => {
+        const scheduledDiff =
+          toSortableValue(a.scheduledDate ?? a.createdAt) -
+          toSortableValue(b.scheduledDate ?? b.createdAt);
+        if (scheduledDiff !== 0) return scheduledDiff;
+        return a.id - b.id;
+      });
+
+      return sortedAssessments.map((assessment, index) => {
+        const hasRecordedResult =
+          assessment.result != null ||
+          assessment.score != null ||
+          assessment.conductedAt != null;
+        const hasSchedule =
+          assessment.scheduledDate != null ||
+          assessment.scheduledTime != null ||
+          assessment.venue != null;
+
+        const statusValue: AssessmentStep["status"] = hasRecordedResult
+          ? "COMPLETED"
+          : hasSchedule
+            ? "SCHEDULED"
+            : "PENDING";
+
+        return {
+          stepOrder: index + 1,
+          kind: assessment.type,
+          label: "",
+          description: null,
+          isRequired: true,
+          configDate: null,
+          configTime: null,
+          configVenue: null,
+          configNotes: null,
+          cutoffScore: cutoffScore ?? null,
+          assessmentId: assessment.id,
+          scheduledDate: assessment.scheduledDate,
+          scheduledTime: assessment.scheduledTime,
+          venue: assessment.venue,
+          score: assessment.score,
+          result: assessment.result,
+          notes: assessment.notes,
+          conductedAt: assessment.conductedAt,
+          status: statusValue,
+        };
+      });
+    },
+    [cutoffScore],
+  );
+
+  const buildScpApplicant = useCallback(
+    (app: Application): SCPAssessmentApplicant => ({
+      applicantType: app.applicantType,
+      status: app.status,
+      assessmentType: app.assessmentType,
+      examDate: app.examDate,
+      examVenue: app.examVenue,
+      examScore: app.examScore,
+      examResult: app.examResult,
+      examNotes: app.examNotes,
+      assessmentSteps: mapAssessmentsToSteps(app.assessments ?? []),
+    }),
+    [mapAssessmentsToSteps],
+  );
+
+  const scpBatchPreviewRows = useMemo(() => {
+    if (!shouldShowScpAssessmentPreview) return [];
+
+    return selectedApplications.slice(0, 8).map((app) => {
+      const previewApplicant = buildScpApplicant(app);
+
+      return {
+        id: app.id,
+        name: `${app.lastName}, ${app.firstName}`,
+        trackingNumber: app.trackingNumber,
+        status: app.status,
+        applicant: previewApplicant,
+      };
+    });
+  }, [buildScpApplicant, selectedApplications, shouldShowScpAssessmentPreview]);
+
+  const scpPreviewOverflowCount =
+    shouldShowScpAssessmentPreview &&
+    selectedApplications.length > scpBatchPreviewRows.length
+      ? selectedApplications.length - scpBatchPreviewRows.length
+      : 0;
+
+  const renderScpActionBlocksForm = () => {
+    const isScoreAction = activeBatchAction?.id === "RECORD_ASSESSMENT";
+    const isInterviewAction = activeBatchAction?.id === "FINALIZE_PHASE_ONE";
+
+    const stagedCount = selectedApplications.filter((app) =>
+      isScoreAction
+        ? isAssessmentRowPrepared(app.id)
+        : isInterviewAction
+          ? isFinalizeRowPrepared(app.id)
+          : false,
+    ).length;
+
+    return (
+      <div className="space-y-3 min-h-0 flex flex-col">
+        <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+          <p className="text-xs font-bold text-foreground">
+            Use SCP assessment cards to stage values before final submit.
+          </p>
+          <p className="text-xs font-bold mt-1">
+            Staged rows: {stagedCount}/{selectedApplications.length}
+          </p>
+        </div>
+
+        <div className="min-h-0 overflow-y-auto space-y-3 pr-1">
+          {selectedApplications.map((app) => {
+            const staged = isScoreAction
+              ? isAssessmentRowPrepared(app.id)
+              : isInterviewAction
+                ? isFinalizeRowPrepared(app.id)
+                : false;
+
+            return (
+              <div key={app.id} className="rounded-md border p-3">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold uppercase truncate">
+                      {app.lastName}, {app.firstName}
+                    </p>
+                    <p className="text-[11px] font-bold text-foreground truncate">
+                      #{app.trackingNumber}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {staged && (
+                      <Badge
+                        variant="secondary"
+                        className="h-5 px-2 text-[10px] font-bold border border-emerald-300 bg-emerald-50 text-emerald-700">
+                        Staged
+                      </Badge>
+                    )}
+                    <StatusBadge status={app.status} className="text-[10px]" />
+                  </div>
+                </div>
+
+                <SCPAssessmentBlock
+                  applicant={buildScpApplicant(app)}
+                  onSaveStepResult={
+                    isScoreAction
+                      ? async (stepOrder, kind, score, stepCutoffScore) => {
+                          await stageAssessmentFromScpBlock(
+                            app.id,
+                            stepOrder,
+                            kind,
+                            score,
+                            stepCutoffScore,
+                          );
+                        }
+                      : undefined
+                  }
+                  interviewPassChecked={
+                    (
+                      finalizeInterviewRows[app.id] ?? {
+                        ...DEFAULT_FINALIZE_INTERVIEW_ROW,
+                      }
+                    ).decision === "PASS"
+                  }
+                  onInterviewPassChange={
+                    isInterviewAction
+                      ? (checked) => {
+                          updateFinalizeRow(app.id, {
+                            decision: checked ? "PASS" : "REJECT",
+                            rejectOutcome: checked
+                              ? "NOT_QUALIFIED"
+                              : (finalizeInterviewRows[app.id]?.rejectOutcome ??
+                                "NOT_QUALIFIED"),
+                          });
+                          setActionFormError(null);
+                        }
+                      : undefined
+                  }
+                  onSubmitInterviewResult={
+                    isInterviewAction
+                      ? async (passed) => {
+                          await stageInterviewDecisionFromScpBlock(
+                            app.id,
+                            passed,
+                          );
+                        }
+                      : undefined
+                  }
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderActionForm = () => {
+    if (!activeBatchAction) {
+      return (
+        <div className="rounded-lg border p-4 text-sm font-bold text-foreground">
+          No contextual batch action is available for the current selection.
+        </div>
+      );
+    }
+
+    switch (activeBatchAction.id) {
+      case "VERIFY_DOCUMENTS":
+        return (
+          <PipelineBatchVerifyGrid
+            verifyGridLoading={verifyGridLoading}
+            verifyGridColumns={verifyGridColumns}
+            verifyGridApplicants={verifyGridApplicants}
+            verifyGridValues={verifyGridValues}
+            verifyAllChecked={verifyAllChecked}
+            isBatchProcessing={isBatchProcessing}
+            onReload={() => {
+              void loadVerifyGridPreview();
+            }}
+            isVerifyColumnFullyChecked={isVerifyColumnFullyChecked}
+            setVerifyColumnForAll={setVerifyColumnForAll}
+            setVerifyAll={setVerifyAll}
+            setVerifyCell={setVerifyCell}
+            verifyRowsMarked={verifyRowsMarked}
+            isVerifyRowReady={isVerifyRowReady}
+            setVerifyRowMarked={setVerifyRowMarked}
+          />
+        );
+      case "SCHEDULE_EXAM":
+        return (
+          <PipelineBatchScheduleForm
+            form={examScheduleForm}
+            onChange={(patch) =>
+              setExamScheduleForm((prev) => ({ ...prev, ...patch }))
+            }
+            modeLabel="Exam"
+            isBatchProcessing={isBatchProcessing}
+            options={{
+              stepTemplate: examScheduleStepTemplate,
+              defaultsLoading: examScheduleDefaultsLoading,
+              onReloadDefaults: () => {
+                void loadExamScheduleDefaults();
+              },
+              selectedCount: selectedApplications.length,
+            }}
+          />
+        );
+      case "RECORD_ASSESSMENT":
+        if (applicantType !== "REGULAR") {
+          return renderScpActionBlocksForm();
+        }
+        return (
+          <PipelineBatchAssessmentGrid
+            scoreGridLoading={scoreGridLoading}
+            selectedApplications={selectedApplications}
+            scoreComponents={scoreComponents}
+            scoreGridRows={scoreGridRows}
+            isBatchProcessing={isBatchProcessing}
+            computeWeightedTotal={computeWeightedTotal}
+            updateScoreCell={updateScoreCell}
+            updateScoreRemarks={updateScoreRemarks}
+            setAbsentNoShow={setAbsentNoShow}
+            isScoreValueInvalid={isScoreValueInvalid}
+          />
+        );
+      case "SCHEDULE_INTERVIEW":
+        return (
+          <PipelineBatchScheduleForm
+            form={interviewScheduleForm}
+            onChange={(patch) =>
+              setInterviewScheduleForm((prev) => ({ ...prev, ...patch }))
+            }
+            modeLabel="Interview"
+            isBatchProcessing={isBatchProcessing}
+          />
+        );
+      case "FINALIZE_PHASE_ONE":
+        if (applicantType !== "REGULAR") {
+          return renderScpActionBlocksForm();
+        }
+        return (
+          <PipelineBatchFinalizeInterviewGrid
+            selectedApplications={selectedApplications}
+            finalizeInterviewRows={finalizeInterviewRows}
+            isBatchProcessing={isBatchProcessing}
+            updateFinalizeRow={updateFinalizeRow}
+          />
+        );
+      default:
+        return (
+          <div className="rounded-lg border p-4 text-sm font-bold text-foreground">
+            This batch action is not configured.
+          </div>
+        );
+    }
+  };
 
   return (
     <>
@@ -576,7 +2147,7 @@ export default function PipelineBatchView({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 text-xs font-bold text-muted-foreground"
+                  className="h-8 text-xs font-bold text-foreground"
                   onClick={clearSelection}
                   disabled={selectedIds.size === 0 || isBatchProcessing}>
                   Clear
@@ -584,84 +2155,76 @@ export default function PipelineBatchView({
               </div>
 
               <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-end lg:w-auto">
-                <Select value={targetStatus} onValueChange={setTargetStatus}>
-                  <SelectTrigger className="h-9 sm:w-56 text-sm font-bold">
-                    <SelectValue placeholder="Target status..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {REGISTRATION_BATCH_TARGET_OPTIONS.map((opt) => {
-                      const isAvailableForSelection =
-                        selectedIds.size === 0 ||
-                        availableTargetStatuses.includes(opt.value);
-                      return (
-                        <SelectItem
-                          key={opt.value}
-                          value={opt.value}
-                          disabled={!isAvailableForSelection}
-                          className="text-sm font-bold">
-                          {opt.label}
-                          {!isAvailableForSelection
-                            ? " (not valid for selection)"
-                            : ""}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-
-                {recommendedTargetStatus &&
-                  targetStatus !== recommendedTargetStatus && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-9 text-xs font-bold"
-                      onClick={() => setTargetStatus(recommendedTargetStatus)}>
-                      Suggested: {TARGET_STATUS_LABELS[recommendedTargetStatus]}
-                    </Button>
-                  )}
-
-                <Button
-                  size="sm"
-                  disabled={
-                    selectedIds.size === 0 ||
-                    !targetStatus ||
-                    isBatchProcessing ||
-                    (preflightSummary?.eligible.length ?? 0) === 0
-                  }
-                  onClick={handleBatchProcess}
-                  className="font-bold">
-                  {isBatchProcessing ? (
-                    <>
-                      <Loader2 className="size-4 animate-spin mr-1.5" />
-                      Processing...
-                    </>
-                  ) : (
-                    `Review ${selectedIds.size} Applicant${selectedIds.size > 1 ? "s" : ""}`
-                  )}
-                </Button>
+                {hasSelectionConflict ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="inline-flex w-full sm:w-auto">
+                          <Button
+                            size="sm"
+                            disabled
+                            className="font-bold w-full sm:w-auto">
+                            <AlertTriangle className="size-4 mr-1.5" />
+                            {contextualActionLabel}
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {selectionConflictMessage}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : (
+                  <Button
+                    size="sm"
+                    disabled={isContextualActionDisabled}
+                    onClick={handleBatchProcess}
+                    className="font-bold w-full sm:w-auto">
+                    {isBatchProcessing ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin mr-1.5" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        {getContextualActionIcon()}
+                        {contextualActionLabel}
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
 
-            {selectedIds.size > 0 && availableTargetStatuses.length === 0 && (
+            {selectedIds.size > 0 && hasSelectionConflict && (
               <p className="mt-2 text-xs font-bold text-destructive">
-                No shared safe target is available for this selection. Group
-                applicants by status first.
+                {selectionConflictMessage}
               </p>
             )}
-            {selectedIds.size > 0 && recommendedTargetStatus && (
-              <p className="mt-2 text-xs font-bold text-muted-foreground">
-                Suggested next step:{" "}
-                {TARGET_STATUS_LABELS[recommendedTargetStatus]}
-              </p>
-            )}
-            {selectedIds.size > 0 && targetStatus && preflightSummary && (
-              <p className="mt-2 text-xs font-bold text-muted-foreground">
-                {preflightSummary.eligible.length} ready to process,{" "}
-                {preflightSummary.ineligible.length} blocked by transition
-                rules.
-              </p>
-            )}
+            {selectedIds.size > 0 &&
+              !hasSelectionConflict &&
+              activeBatchAction && (
+                <p className="mt-2 text-xs font-bold text-foreground">
+                  Detected status: {singleSelectedStatus?.replaceAll("_", " ")}.
+                  Available batch task: {activeBatchAction.buttonLabel}.
+                </p>
+              )}
+            {selectedIds.size > 0 &&
+              !hasSelectionConflict &&
+              !activeBatchAction && (
+                <p className="mt-2 text-xs font-bold text-foreground">
+                  No state-aware batch action is available for this status yet.
+                </p>
+              )}
+            {selectedIds.size > 0 &&
+              derivedTargetStatus &&
+              preflightSummary && (
+                <p className="mt-2 text-xs font-bold text-foreground">
+                  {preflightSummary.eligible.length} ready to process,{" "}
+                  {preflightSummary.ineligible.length} blocked by transition
+                  rules.
+                </p>
+              )}
           </div>
 
           {/* Table */}
@@ -849,7 +2412,7 @@ export default function PipelineBatchView({
                                   ? "text-emerald-700"
                                   : getRemarkByScore(app.id) === "FAILED"
                                     ? "text-destructive"
-                                    : "text-muted-foreground"
+                                    : "text-foreground"
                               }`}>
                               {getRemarkByScore(app.id)}
                             </span>
@@ -916,47 +2479,196 @@ export default function PipelineBatchView({
       </Card>
 
       <Dialog
-        open={isPreflightOpen}
+        open={isActionModalOpen}
         onOpenChange={(open) => {
           if (!isBatchProcessing) {
-            setIsPreflightOpen(open);
+            setIsActionModalOpen(open);
+            if (!open) {
+              setActionFormError(null);
+            }
           }
         }}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="w-[90vw] max-w-[90vw] h-[88vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-base font-bold">
-              Confirm Batch Processing
+              {activeBatchAction?.modalTitle ?? "Batch Action"}
             </DialogTitle>
             <DialogDescription className="text-sm font-bold">
-              Selected target status:{" "}
-              {targetStatus.replaceAll("_", " ") || "N/A"}
+              {activeBatchAction?.modalDescription ??
+                "Review selected applicants before batch processing."}
             </DialogDescription>
           </DialogHeader>
 
-          {preflightSummary && (
-            <div className="space-y-3">
+          <div
+            ref={splitPanesRef}
+            className={`grid flex-1 min-h-0 gap-4 lg:grid-cols-[minmax(0,var(--left-pane-width))_12px_minmax(0,var(--right-pane-width))] ${
+              isResizingSplitPanes ? "cursor-col-resize select-none" : ""
+            }`}
+            style={
+              {
+                "--left-pane-width": `${leftPaneWidthPercent}%`,
+                "--right-pane-width": `${100 - leftPaneWidthPercent}%`,
+              } as CSSProperties
+            }>
+            <div className="rounded-lg border overflow-hidden flex flex-col min-h-0 lg:min-w-0">
+              <div className="px-3 py-2 border-b bg-muted/30">
+                <p className="text-sm font-bold">Selected Applicants</p>
+                <p className="text-xs text-foreground font-bold">
+                  {selectedApplications.length} in batch scope
+                </p>
+                {shouldShowScpAssessmentPreview && (
+                  <p className="text-[11px] text-foreground font-bold mt-1">
+                    SCP assessment timeline preview
+                  </p>
+                )}
+              </div>
+              <div
+                className={`flex-1 overflow-y-auto ${
+                  shouldShowScpAssessmentPreview
+                    ? "p-3 space-y-3"
+                    : "p-2 space-y-2"
+                }`}>
+                {selectedApplications.length === 0 ? (
+                  <p className="text-xs font-bold text-foreground px-2 py-3">
+                    No applicants selected.
+                  </p>
+                ) : shouldShowScpAssessmentPreview ? (
+                  <>
+                    {scpBatchPreviewRows.map((row) => {
+                      const rowIsStaged = getScpPreviewStagedState(row.id);
+
+                      return (
+                        <div key={row.id} className="rounded-md border p-2">
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold uppercase truncate">
+                                {row.name}
+                              </p>
+                              <p className="text-[11px] font-bold text-foreground truncate">
+                                #{row.trackingNumber}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {rowIsStaged && (
+                                <Badge
+                                  variant="secondary"
+                                  className="h-5 px-2 text-[10px] font-bold border border-emerald-300 bg-emerald-50 text-emerald-700">
+                                  Staged
+                                </Badge>
+                              )}
+                              <StatusBadge
+                                status={row.status}
+                                className="text-[10px]"
+                              />
+                            </div>
+                          </div>
+
+                          <SCPAssessmentBlock applicant={row.applicant} />
+                        </div>
+                      );
+                    })}
+
+                    {scpPreviewOverflowCount > 0 && (
+                      <p className="text-[11px] font-bold text-foreground px-1">
+                        Showing first {scpBatchPreviewRows.length} previews.{" "}
+                        {scpPreviewOverflowCount} more selected applicant(s) are
+                        hidden.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  selectedApplications.map((app) => (
+                    <div
+                      key={app.id}
+                      className="rounded-md border p-2 flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold uppercase truncate">
+                          {app.lastName}, {app.firstName}
+                        </p>
+                        <p className="text-[11px] font-bold text-foreground truncate">
+                          #{app.trackingNumber}
+                        </p>
+                      </div>
+                      <StatusBadge
+                        status={app.status}
+                        className="text-[10px]"
+                      />
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div
+              className="hidden lg:flex items-center justify-center cursor-col-resize"
+              role="separator"
+              aria-label="Resize panes"
+              aria-orientation="vertical"
+              aria-valuemin={25}
+              aria-valuemax={75}
+              aria-valuenow={Math.round(leftPaneWidthPercent)}
+              onMouseDown={handleSplitPaneResizeStart}>
+              <div
+                className={`h-full w-[2px] rounded-full transition-colors ${
+                  isResizingSplitPanes
+                    ? "bg-primary/60"
+                    : "bg-border hover:bg-primary/40"
+                }`}
+              />
+            </div>
+
+            <div className="rounded-lg border p-4 space-y-4 overflow-y-auto min-h-0 lg:min-w-0">
               <div className="grid grid-cols-3 gap-2">
                 <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
-                  <p className="text-xs text-muted-foreground font-bold">
-                    Selected
-                  </p>
+                  <p className="text-xs text-foreground font-bold">Selected</p>
                   <p className="text-lg font-bold">{selectedIds.size}</p>
                 </div>
                 <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
                   <p className="text-xs text-emerald-700 font-bold">Eligible</p>
                   <p className="text-lg font-bold text-emerald-700">
-                    {preflightSummary.eligible.length}
+                    {preflightSummary?.eligible.length ?? 0}
                   </p>
                 </div>
                 <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2">
                   <p className="text-xs text-red-700 font-bold">Blocked</p>
                   <p className="text-lg font-bold text-red-700">
-                    {preflightSummary.ineligible.length}
+                    {preflightSummary?.ineligible.length ?? 0}
                   </p>
                 </div>
               </div>
 
-              {preflightSummary.ineligible.length > 0 && (
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-1">
+                <p className="text-xs text-foreground font-bold">
+                  Current Batch Action
+                </p>
+                <p className="text-sm font-bold">
+                  {activeBatchAction?.buttonLabel ?? "No action available"}
+                </p>
+                <p className="text-xs font-bold text-foreground">
+                  Target status:{" "}
+                  {derivedTargetStatus.replaceAll("_", " ") || "N/A"}
+                </p>
+              </div>
+
+              {actionFormError && (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2">
+                  <p className="text-xs font-bold text-destructive">
+                    {actionFormError}
+                  </p>
+                </div>
+              )}
+
+              {!actionFormError && actionReadinessHint && (
+                <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2">
+                  <p className="text-xs font-bold text-amber-800">
+                    {actionReadinessHint}
+                  </p>
+                </div>
+              )}
+
+              {renderActionForm()}
+
+              {preflightSummary && preflightSummary.ineligible.length > 0 && (
                 <div className="rounded-lg border border-red-200 bg-red-50/40 p-3 space-y-2">
                   <p className="text-sm font-bold text-red-700">
                     Blocked groups
@@ -975,12 +2687,12 @@ export default function PipelineBatchView({
                 </div>
               )}
             </div>
-          )}
+          </div>
 
           <DialogFooter className="gap-2">
             <Button
               variant="outline"
-              onClick={() => setIsPreflightOpen(false)}
+              onClick={() => setIsActionModalOpen(false)}
               disabled={isBatchProcessing}
               className="font-bold">
               Cancel
@@ -989,16 +2701,18 @@ export default function PipelineBatchView({
               onClick={handleConfirmBatchProcess}
               disabled={
                 isBatchProcessing ||
-                (preflightSummary?.eligible.length ?? 0) === 0
+                !activeBatchAction ||
+                !isActionFormReady ||
+                actionSubmitCount === 0
               }
               className="font-bold">
               {isBatchProcessing ? (
                 <>
                   <Loader2 className="size-4 animate-spin mr-1.5" />
-                  Processing...
+                  {activeBatchAction?.submitLabel ?? "Processing"}...
                 </>
               ) : (
-                `Process ${preflightSummary?.eligible.length ?? 0} Eligible`
+                `${activeBatchAction?.submitLabel ?? "Process"} (${actionSubmitCount})`
               )}
             </Button>
           </DialogFooter>

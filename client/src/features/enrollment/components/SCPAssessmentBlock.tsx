@@ -1,10 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { CheckCircle2, Clock, Circle, Lock } from "lucide-react";
-import type {
-  ApplicantDetail,
-  AssessmentStep,
-} from "@/features/enrollment/hooks/useApplicationDetail";
+import type { AssessmentStep } from "@/features/enrollment/hooks/useApplicationDetail";
 import { formatDisplayTime12Hour, formatScpType } from "@/shared/lib/utils";
 import { ASSESSMENT_KIND_LABELS } from "@enrollpro/shared";
 import type { AssessmentKind } from "@enrollpro/shared";
@@ -13,15 +10,27 @@ import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
 import { Label } from "@/shared/ui/label";
 
+export interface SCPAssessmentApplicant {
+  applicantType: string;
+  status: string;
+  assessmentSteps: AssessmentStep[];
+  assessmentType?: string | null;
+  examDate?: string | null;
+  examVenue?: string | null;
+  examScore?: number | null;
+  examResult?: string | null;
+  examNotes?: string | null;
+}
+
 interface Props {
-  applicant: ApplicantDetail;
+  applicant: SCPAssessmentApplicant;
   onSaveStepResult?: (
     stepOrder: number,
     kind: string,
     score: number,
     cutoffScore: number | null,
   ) => Promise<void>;
-  onMarkInterviewPassed?: () => Promise<void>;
+  onSubmitInterviewResult?: (passed: boolean) => Promise<void>;
   interviewPassChecked?: boolean;
   onInterviewPassChange?: (checked: boolean) => void;
 }
@@ -45,18 +54,18 @@ const STATUS_CONFIG = {
   },
   PENDING: {
     icon: Circle,
-    color: "text-muted-foreground",
-    bg: "bg-muted/30",
+    color: "text-foreground",
+    bg: "bg/30",
     border: "border-border",
-    badge: "bg-muted text-muted-foreground",
+    badge: "bg text-foreground",
     line: "bg-border",
   },
   LOCKED: {
     icon: Lock,
-    color: "text-muted-foreground/50",
-    bg: "bg-muted/20",
+    color: "text-foreground/50",
+    bg: "bg/20",
     border: "border-border",
-    badge: "bg-muted text-muted-foreground/60",
+    badge: "bg text-foreground/60",
     line: "bg-border",
   },
 } as const;
@@ -239,31 +248,20 @@ function InlineScoreCard({
 function InterviewResultCard({
   passed,
   onPassedChange,
-  onMarkInterviewPassed,
+  onSubmitInterviewResult,
 }: {
   passed: boolean;
   onPassedChange: (checked: boolean) => void;
-  onMarkInterviewPassed?: () => Promise<void>;
+  onSubmitInterviewResult?: (passed: boolean) => Promise<void>;
 }) {
   const [submitting, setSubmitting] = useState(false);
 
-  const handleToggle = async (checked: boolean) => {
-    if (!checked) {
-      onPassedChange(false);
-      return;
-    }
-
-    if (!onMarkInterviewPassed) {
-      onPassedChange(true);
-      return;
-    }
+  const handleSubmit = async () => {
+    if (!onSubmitInterviewResult) return;
 
     setSubmitting(true);
     try {
-      await onMarkInterviewPassed();
-      onPassedChange(true);
-    } catch {
-      onPassedChange(false);
+      await onSubmitInterviewResult(passed);
     } finally {
       setSubmitting(false);
     }
@@ -281,16 +279,31 @@ function InterviewResultCard({
           checked={passed}
           disabled={submitting}
           onChange={(e) => {
-            void handleToggle(e.target.checked);
+            onPassedChange(e.target.checked);
           }}
           className="h-4 w-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
         />
         <span className="text-sm font-bold">
-          {submitting
-            ? "Saving interview result..."
-            : "Did the learner pass the interview?"}
+          Did the learner pass the interview?
         </span>
       </label>
+
+      <Button
+        className={`w-full font-bold ${
+          passed
+            ? "bg-emerald-600 text-white hover:bg-emerald-700"
+            : "bg-red-600 text-white hover:bg-red-700"
+        }`}
+        disabled={submitting}
+        onClick={() => {
+          void handleSubmit();
+        }}>
+        {submitting
+          ? "Saving interview result..."
+          : passed
+            ? "Mark as Passed"
+            : "Mark as Failed"}
+      </Button>
     </div>
   );
 }
@@ -298,7 +311,7 @@ function InterviewResultCard({
 export function SCPAssessmentBlock({
   applicant,
   onSaveStepResult,
-  onMarkInterviewPassed,
+  onSubmitInterviewResult,
   interviewPassChecked,
   onInterviewPassChange,
 }: Props) {
@@ -314,7 +327,7 @@ export function SCPAssessmentBlock({
           <span>&#9889;</span>
           <span>{formatScpType(applicant.applicantType)} Assessment</span>
           {hasSteps && (
-            <span className="ml-auto text-xs text-muted-foreground font-bold">
+            <span className="ml-auto text-xs text-foreground font-bold">
               {steps.filter((s) => s.status === "COMPLETED").length}/
               {steps.length} completed
             </span>
@@ -362,14 +375,14 @@ export function SCPAssessmentBlock({
                         {isLocked ? "LOCKED" : step.status}
                       </Badge>
                       {!step.isRequired && (
-                        <span className="text-[0.6rem] text-muted-foreground italic">
+                        <span className="text-[0.6rem] text-foreground italic">
                           Optional
                         </span>
                       )}
                     </div>
 
                     {/* Details row */}
-                    <div className="text-xs text-muted-foreground mt-0.5 space-x-3">
+                    <div className="text-xs text-foreground mt-0.5 space-x-3">
                       {step.scheduledDate && (
                         <span>
                           {format(new Date(step.scheduledDate), "MMM dd, yyyy")}
@@ -391,7 +404,7 @@ export function SCPAssessmentBlock({
                     </div>
 
                     {step.notes && (
-                      <p className="text-xs italic text-muted-foreground mt-0.5">
+                      <p className="text-xs italic text-foreground mt-0.5">
                         {step.notes}
                       </p>
                     )}
@@ -448,13 +461,14 @@ export function SCPAssessmentBlock({
         )}
 
       {/* Interview Result Card — shown when interview is scheduled */}
-      {applicant.status === "INTERVIEW_SCHEDULED" && onMarkInterviewPassed && (
-        <InterviewResultCard
-          passed={interviewPassChecked ?? false}
-          onPassedChange={onInterviewPassChange ?? (() => {})}
-          onMarkInterviewPassed={onMarkInterviewPassed}
-        />
-      )}
+      {applicant.status === "INTERVIEW_SCHEDULED" &&
+        onSubmitInterviewResult && (
+          <InterviewResultCard
+            passed={interviewPassChecked ?? false}
+            onPassedChange={onInterviewPassChange ?? (() => {})}
+            onSubmitInterviewResult={onSubmitInterviewResult}
+          />
+        )}
     </>
   );
 }

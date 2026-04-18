@@ -3,6 +3,11 @@ import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
 import { validate } from "../../middleware/validate.js";
 import {
+  batchFinalizeInterviewSchema,
+  batchSaveScoresSchema,
+  batchScheduleStepSchema,
+  batchVerifyDocumentsPreviewSchema,
+  batchVerifyDocumentsSchema,
   earlyRegistrationSubmitSchema,
   rejectSchema,
   scheduleAssessmentStepSchema,
@@ -114,6 +119,46 @@ router.patch(
   authenticate,
   authorize("REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.batchProcess,
+);
+
+router.post(
+  "/batch/verify-documents/preview",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  validate(batchVerifyDocumentsPreviewSchema),
+  ctrl.batchVerifyDocumentsPreview,
+);
+
+router.patch(
+  "/batch/verify-documents",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  validate(batchVerifyDocumentsSchema),
+  ctrl.batchVerifyDocuments,
+);
+
+router.patch(
+  "/batch/schedule-step",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  validate(batchScheduleStepSchema),
+  ctrl.batchScheduleStep,
+);
+
+router.patch(
+  "/batch/save-scores",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  validate(batchSaveScoresSchema),
+  ctrl.batchSaveScores,
+);
+
+router.patch(
+  "/batch/finalize-interview",
+  authenticate,
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  validate(batchFinalizeInterviewSchema),
+  ctrl.batchFinalizeInterview,
 );
 
 router.get(
