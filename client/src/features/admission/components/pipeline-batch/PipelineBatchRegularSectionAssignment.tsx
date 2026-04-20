@@ -1,64 +1,35 @@
 import { Loader2, RefreshCw } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
-import type { RegularSectionOption } from "./types";
+import type { RegularSectionBatchPreview } from "./types";
 
 interface PipelineBatchRegularSectionAssignmentProps {
-  loading: boolean;
+  previewLoading: boolean;
   isBatchProcessing: boolean;
-  sections: RegularSectionOption[];
-  selectedSectionId: string;
+  preview: RegularSectionBatchPreview | null;
   selectedGradeLevelLabel: string | null;
   hasMixedGradeLevels: boolean;
   requiredSlots: number;
-  onSelectSection: (value: string) => void;
-  onReload: () => void;
+  onReloadPreview: () => void;
 }
 
 export default function PipelineBatchRegularSectionAssignment({
-  loading,
+  previewLoading,
   isBatchProcessing,
-  sections,
-  selectedSectionId,
+  preview,
   selectedGradeLevelLabel,
   hasMixedGradeLevels,
   requiredSlots,
-  onSelectSection,
-  onReload,
+  onReloadPreview,
 }: PipelineBatchRegularSectionAssignmentProps) {
-  const selectedSection = sections.find(
-    (section) => String(section.id) === selectedSectionId,
-  );
-
-  const availableSlots = selectedSection
-    ? Math.max(0, selectedSection.maxCapacity - selectedSection.enrolledCount)
-    : 0;
-
-  const willOverflow =
-    Boolean(selectedSection) &&
-    requiredSlots > 0 &&
-    requiredSlots > availableSlots;
-
-  const normalizedFillPercent = Math.min(
-    100,
-    Math.max(0, Number(selectedSection?.fillPercent ?? 0)),
-  );
-
-  const fillColorClass =
-    normalizedFillPercent >= 90
-      ? "bg-red-500"
-      : normalizedFillPercent >= 75
-        ? "bg-orange-400"
-        : normalizedFillPercent >= 50
-          ? "bg-yellow-400"
-          : "bg-emerald-500";
+  const summary = preview?.summary;
+  const sectionPlans = preview?.sections ?? [];
+  const blockedReasonCounts = (preview?.blocked ?? []).reduce<
+    Record<string, number>
+  >((acc, item) => {
+    acc[item.reason] = (acc[item.reason] ?? 0) + 1;
+    return acc;
+  }, {});
 
   return (
     <div className="space-y-3">
@@ -67,7 +38,8 @@ export default function PipelineBatchRegularSectionAssignment({
           Regular Enrollment Lane
         </p>
         <p className="text-sm font-bold text-foreground">
-          Select one regular section for this verified batch.
+          Hybrid assignment preview: first 5 sections use homogeneous ranking,
+          remaining sections use snake distribution.
         </p>
         <p className="text-xs font-bold text-foreground">
           Selected grade level: {selectedGradeLevelLabel ?? "Not detected"}
@@ -86,89 +58,125 @@ export default function PipelineBatchRegularSectionAssignment({
       <div className="rounded-lg border p-3 space-y-3">
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs font-bold text-foreground">
-            Available Regular Sections
+            Hybrid Assignment Preview
           </p>
           <Button
             variant="outline"
             size="sm"
             className="h-8 text-xs font-bold"
-            onClick={onReload}
-            disabled={loading || isBatchProcessing}>
-            {loading ? (
+            onClick={onReloadPreview}
+            disabled={
+              previewLoading || isBatchProcessing || hasMixedGradeLevels
+            }>
+            {previewLoading ? (
               <Loader2 className="size-3.5 animate-spin mr-1.5" />
             ) : (
               <RefreshCw className="size-3.5 mr-1.5" />
             )}
-            Reload
+            Regenerate Preview
           </Button>
         </div>
 
-        <Select
-          value={selectedSectionId}
-          onValueChange={onSelectSection}
-          disabled={
-            loading ||
-            isBatchProcessing ||
-            hasMixedGradeLevels ||
-            sections.length === 0
-          }>
-          <SelectTrigger className="h-10 text-sm font-bold">
-            <SelectValue placeholder="Select regular section" />
-          </SelectTrigger>
-          <SelectContent>
-            {sections.map((section) => (
-              <SelectItem
-                key={section.id}
-                value={String(section.id)}
-                className="text-sm font-bold">
-                {section.gradeLevelName} - {section.name} (
-                {section.enrolledCount}/{section.maxCapacity})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="rounded border bg-muted/30 px-3 py-2">
+            <p className="text-[10px] font-bold uppercase text-muted-foreground">
+              Requested
+            </p>
+            <p className="text-sm font-bold">{requiredSlots}</p>
+          </div>
+          <div className="rounded border bg-emerald-50 px-3 py-2">
+            <p className="text-[10px] font-bold uppercase text-emerald-700">
+              Assignable
+            </p>
+            <p className="text-sm font-bold text-emerald-700">
+              {summary?.assignedCount ?? 0}
+            </p>
+          </div>
+          <div className="rounded border bg-red-50 px-3 py-2">
+            <p className="text-[10px] font-bold uppercase text-red-700">
+              Blocked
+            </p>
+            <p className="text-sm font-bold text-red-700">
+              {summary?.blockedCount ?? 0}
+            </p>
+          </div>
+          <div className="rounded border bg-amber-50 px-3 py-2">
+            <p className="text-[10px] font-bold uppercase text-amber-700">
+              Unassigned
+            </p>
+            <p className="text-sm font-bold text-amber-700">
+              {summary?.unassignedCount ?? 0}
+            </p>
+          </div>
+        </div>
 
-        {sections.length === 0 && !loading && (
-          <p className="text-xs font-bold text-destructive">
-            No regular sections available for the selected grade level.
+        {previewLoading && (
+          <div className="rounded-lg border border-dashed p-3 flex items-center gap-2 text-xs font-bold text-foreground">
+            <Loader2 className="size-4 animate-spin" />
+            Building deterministic hybrid section plan...
+          </div>
+        )}
+
+        {!previewLoading && !preview && (
+          <p className="text-xs font-bold text-muted-foreground">
+            Generate a preview plan to inspect allocations before commit.
           </p>
         )}
-      </div>
 
-      {selectedSection && (
-        <div className="rounded-lg border p-3 space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-bold text-foreground">
-              {selectedSection.gradeLevelName} - {selectedSection.name}
-            </p>
-            <Badge variant="secondary" className="text-[10px]">
-              {selectedSection.enrolledCount}/{selectedSection.maxCapacity}
-            </Badge>
-          </div>
-
-          <div className="h-2 rounded-full bg-muted overflow-hidden">
-            <div
-              className={`h-full ${fillColorClass}`}
-              style={{ width: `${normalizedFillPercent}%` }}
-            />
-          </div>
-
-          <p className="text-xs font-bold text-foreground">
-            Available slots: {availableSlots} | Requested assignments:{" "}
-            {requiredSlots}
+        {!previewLoading && preview && sectionPlans.length === 0 && (
+          <p className="text-xs font-bold text-destructive">
+            No regular sections are available for this grade level.
           </p>
+        )}
 
-          {willOverflow ? (
-            <p className="text-xs font-bold text-destructive">
-              Capacity exceeded. Select another section before submitting.
-            </p>
-          ) : (
-            <p className="text-xs font-bold text-emerald-700">
-              Capacity check passed for this batch.
-            </p>
+        {!previewLoading && preview && sectionPlans.length > 0 && (
+          <div className="space-y-2">
+            {sectionPlans.map((section) => (
+              <div
+                key={section.sectionId}
+                className="rounded-lg border p-3 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-bold text-foreground">
+                    {section.sectionDisplayName}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-[10px]">
+                      Order {section.sortOrder}
+                    </Badge>
+                    <Badge
+                      variant={
+                        section.lane === "HOMOGENEOUS" ? "secondary" : "outline"
+                      }
+                      className="text-[10px]">
+                      {section.lane === "HOMOGENEOUS" ? "Homogeneous" : "Snake"}
+                    </Badge>
+                  </div>
+                </div>
+                <p className="text-xs font-bold text-muted-foreground">
+                  Capacity {section.enrolledCount}/{section.maxCapacity} | Slots
+                  before plan: {section.availableSlots} | Planned:{" "}
+                  {section.plannedCount} | Remaining: {section.remainingSlots}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!previewLoading &&
+          preview &&
+          Object.keys(blockedReasonCounts).length > 0 && (
+            <div className="rounded-lg border border-red-200 bg-red-50/40 p-3 space-y-1">
+              <p className="text-xs font-bold text-red-700">Blocked Reasons</p>
+              <div className="space-y-1 max-h-24 overflow-y-auto">
+                {Object.entries(blockedReasonCounts).map(([reason, count]) => (
+                  <p key={reason} className="text-xs font-bold text-red-700">
+                    {count}x {reason}
+                  </p>
+                ))}
+              </div>
+            </div>
           )}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

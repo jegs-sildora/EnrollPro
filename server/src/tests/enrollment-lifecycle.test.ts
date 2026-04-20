@@ -316,14 +316,36 @@ async function runTests(): Promise<void> {
     );
 
     const walkInPayload = {
+      hasNoLrn: true,
       firstName: "Walkin",
       lastName: `AutoVerified-${seed}`,
+      middleName: "Encoder",
       birthdate: "2012-07-01",
       sex: "FEMALE",
+      placeOfBirth: "CITY OF SAN FERNANDO",
       learnerType: "NEW_ENROLLEE",
       applicantType: "REGULAR",
       gradeLevelId: fixture.gradeLevelId,
       academicStatus: "PROMOTED",
+      currentAddress: {
+        houseNoStreet: "PUROK 4",
+        sitio: "SITIO MALINIS",
+        barangay: "BARANGAY UNO",
+        cityMunicipality: "SAN FERNANDO",
+        province: "PAMPANGA",
+      },
+      mother: {
+        firstName: "MARIA",
+        lastName: "ENCODER",
+        contactNumber: "09171234567",
+      },
+      checklist: {
+        academicStatus: "PROMOTED",
+        isSf9Submitted: true,
+        isPsaBirthCertPresented: true,
+        isOriginalPsaBcCollected: true,
+        finalGeneralAverage: 91.5,
+      },
     };
 
     const specialEnrollment = await requestJson(
@@ -351,7 +373,34 @@ async function runTests(): Promise<void> {
           select: { id: true, isPendingLrnCreation: true, lrn: true },
         },
         checklist: {
-          select: { academicStatus: true },
+          select: {
+            academicStatus: true,
+            isSf9Submitted: true,
+            isPsaBirthCertPresented: true,
+            isOriginalPsaBcCollected: true,
+          },
+        },
+        addresses: {
+          select: {
+            addressType: true,
+            barangay: true,
+            cityMunicipality: true,
+            province: true,
+          },
+        },
+        familyMembers: {
+          select: {
+            relationship: true,
+            firstName: true,
+            lastName: true,
+            contactNumber: true,
+          },
+        },
+        previousSchool: {
+          select: {
+            schoolName: true,
+            generalAverage: true,
+          },
         },
         enrollmentRecord: {
           select: { id: true },
@@ -366,6 +415,24 @@ async function runTests(): Promise<void> {
     assert.equal(persistedSpecial.learner.isPendingLrnCreation, true);
     assert.equal(persistedSpecial.learner.lrn, null);
     assert.equal(persistedSpecial.checklist?.academicStatus, "PROMOTED");
+    assert.equal(persistedSpecial.checklist?.isSf9Submitted, true);
+    assert.equal(persistedSpecial.checklist?.isPsaBirthCertPresented, true);
+    assert.equal(persistedSpecial.checklist?.isOriginalPsaBcCollected, true);
+    const currentAddress = persistedSpecial.addresses.find(
+      (address) => address.addressType === "CURRENT",
+    );
+    assert.ok(currentAddress, "Current address should be saved");
+    assert.equal(currentAddress?.barangay, "BARANGAY UNO");
+    assert.equal(currentAddress?.cityMunicipality, "SAN FERNANDO");
+    const mother = persistedSpecial.familyMembers.find(
+      (member) => member.relationship === "MOTHER",
+    );
+    assert.ok(mother, "Mother record should be saved");
+    assert.equal(mother?.firstName, "MARIA");
+    assert.equal(mother?.lastName, "ENCODER");
+    assert.equal(mother?.contactNumber, "09171234567");
+    assert.equal(persistedSpecial.previousSchool?.schoolName, null);
+    assert.equal(persistedSpecial.previousSchool?.generalAverage, 91.5);
     assert.equal(persistedSpecial.enrollmentRecord, null);
 
     console.log("Enrollment lifecycle integration tests passed.");

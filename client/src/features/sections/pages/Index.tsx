@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Link } from "react-router";
 import { sileo } from "sileo";
 import {
   Plus,
@@ -9,10 +8,8 @@ import {
   Check,
   Edit2,
   CalendarDays,
-  CloudUpload,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
-import { useAuthStore } from "@/store/auth.slice";
 import { useSettingsStore } from "@/store/settings.slice";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -53,6 +50,8 @@ interface Teacher {
 interface SectionItem {
   id: number;
   name: string;
+  displayName: string | null;
+  sortOrder: number;
   programType: string;
   maxCapacity: number;
   enrolledCount: number;
@@ -205,10 +204,8 @@ function showSectionsErrorToast(
 }
 
 export default function Sections() {
-  const { user } = useAuthStore();
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
-  const isSystemAdmin = user?.role === "SYSTEM_ADMIN";
 
   const [groups, setGroups] = useState<GradeLevelGroup[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -220,6 +217,8 @@ export default function Sections() {
   // Inline add section state
   const [addGlId, setAddGlId] = useState<number | null>(null);
   const [sectionName, setSectionName] = useState("");
+  const [sectionDisplayName, setSectionDisplayName] = useState("");
+  const [sectionSortOrder, setSectionSortOrder] = useState("");
   const [sectionCap, setSectionCap] = useState("40");
   const [sectionProgramType, setSectionProgramType] =
     useState<string>("REGULAR");
@@ -229,6 +228,8 @@ export default function Sections() {
   // Edit section state
   const [editSection, setEditSection] = useState<SectionItem | null>(null);
   const [editName, setEditName] = useState("");
+  const [editDisplayName, setEditDisplayName] = useState("");
+  const [editSortOrder, setEditSortOrder] = useState("");
   const [editCap, setEditCap] = useState("40");
   const [editProgramType, setEditProgramType] = useState<string>("REGULAR");
   const [editAdvisingTeacherId, setEditAdvisingTeacherId] =
@@ -321,6 +322,8 @@ export default function Sections() {
     } else {
       setAddGlId(glId);
       setSectionName("");
+      setSectionDisplayName("");
+      setSectionSortOrder("");
       setSectionCap("40");
       setSectionProgramType("REGULAR");
       setAdvisingTeacherId("none");
@@ -333,6 +336,10 @@ export default function Sections() {
     try {
       await api.post("/sections", {
         name: sectionName.trim(),
+        displayName: sectionDisplayName.trim() || null,
+        sortOrder: sectionSortOrder.trim()
+          ? parseInt(sectionSortOrder, 10)
+          : undefined,
         maxCapacity: parseInt(sectionCap) || 40,
         gradeLevelId: addGlId,
         programType: sectionProgramType,
@@ -355,6 +362,8 @@ export default function Sections() {
   const openEdit = (section: SectionItem) => {
     setEditSection(section);
     setEditName(formatSectionLabel(section.name));
+    setEditDisplayName(section.displayName ?? "");
+    setEditSortOrder(String(section.sortOrder ?? ""));
     setEditCap(section.maxCapacity.toString());
     setEditProgramType(section.programType ?? "REGULAR");
     setEditAdvisingTeacherId(
@@ -368,6 +377,10 @@ export default function Sections() {
     try {
       await api.put(`/sections/${editSection.id}`, {
         name: editName.trim(),
+        displayName: editDisplayName.trim() || null,
+        sortOrder: editSortOrder.trim()
+          ? parseInt(editSortOrder, 10)
+          : undefined,
         maxCapacity: parseInt(editCap) || 40,
         programType: editProgramType,
         advisingTeacherId:
@@ -440,18 +453,6 @@ export default function Sections() {
             Manage grade level sections and advising teachers
           </p>
         </div>
-        {isSystemAdmin ? (
-          <Button asChild variant="outline" className="w-full md:w-auto">
-            <Link to="/admin/atlas">
-              <CloudUpload className="h-4 w-4 mr-2" />
-              ATLAS Sync Health
-            </Link>
-          </Button>
-        ) : (
-          <p className="text-xs text-muted-foreground md:text-right">
-            Need ATLAS diagnostics? Coordinate with a system administrator.
-          </p>
-        )}
       </div>
 
       {showSkeleton ? (
@@ -539,7 +540,7 @@ export default function Sections() {
                         <p className="text-sm font-medium truncate">
                           {formatHeatmapLabel(
                             group.gradeLevelName,
-                            section.name,
+                            section.displayName ?? section.name,
                           )}
                         </p>
                         <div className="mt-1 h-2 w-full rounded-full bg-[hsl(var(--muted))]">
@@ -609,6 +610,30 @@ export default function Sections() {
                             onChange={(e) => setSectionName(e.target.value)}
                             className="h-9 text-sm"
                             autoFocus
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">Display Name</Label>
+                          <Input
+                            placeholder="e.g. STAR SECTION"
+                            value={sectionDisplayName}
+                            onChange={(e) =>
+                              setSectionDisplayName(e.target.value)
+                            }
+                            className="h-9 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">Sort Order</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            placeholder="Auto"
+                            value={sectionSortOrder}
+                            onChange={(e) =>
+                              setSectionSortOrder(e.target.value)
+                            }
+                            className="h-9 text-sm"
                           />
                         </div>
                         <div className="space-y-2">
@@ -687,7 +712,9 @@ export default function Sections() {
                   ) : (
                     <div className="space-y-2">
                       {g.sections.map((s) => {
-                        const displaySectionName = formatSectionLabel(s.name);
+                        const displaySectionName = formatSectionLabel(
+                          s.displayName ?? s.name,
+                        );
                         const deleteLockMessage = `Cannot delete section. Please un-enrol or transfer the ${formatLearnerCountLabel(s.enrolledCount)} first.`;
 
                         return (
@@ -700,6 +727,9 @@ export default function Sections() {
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium truncate">
                                 {displaySectionName}
+                              </p>
+                              <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground/80">
+                                Sort Order: {s.sortOrder}
                               </p>
                               <p className="text-[10px] uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
                                 {formatProgramType(s.programType)}
@@ -771,6 +801,23 @@ export default function Sections() {
                 placeholder="e.g. Section A"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Display Name</Label>
+              <Input
+                placeholder="Shown in batch sectioning and lists"
+                value={editDisplayName}
+                onChange={(e) => setEditDisplayName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Sort Order</Label>
+              <Input
+                type="number"
+                min="1"
+                value={editSortOrder}
+                onChange={(e) => setEditSortOrder(e.target.value)}
               />
             </div>
             <div className="space-y-2">

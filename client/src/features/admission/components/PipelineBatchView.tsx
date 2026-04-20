@@ -49,12 +49,12 @@ import {
   type FinalizeInterviewRowState,
   type PipelineBatchViewProps,
   type RankingFormulaComponent,
+  type RegularSectionBatchPreview,
   type ScheduleFormState,
   type ScoreRowState,
   type ScpProgramStepTemplate,
   type VerifyGridApplicant,
   type VerifyGridColumn,
-  type RegularSectionOption,
 } from "./pipeline-batch/types";
 
 export default function PipelineBatchView({
@@ -115,12 +115,10 @@ export default function PipelineBatchView({
     Record<number, boolean>
   >({});
 
-  const [regularSectionsLoading, setRegularSectionsLoading] = useState(false);
-  const [regularSections, setRegularSections] = useState<
-    RegularSectionOption[]
-  >([]);
-  const [selectedRegularSectionId, setSelectedRegularSectionId] =
-    useState<string>("");
+  const [regularSectionPreviewLoading, setRegularSectionPreviewLoading] =
+    useState(false);
+  const [regularSectionPreview, setRegularSectionPreview] =
+    useState<RegularSectionBatchPreview | null>(null);
 
   const [examScheduleForm, setExamScheduleForm] = useState<ScheduleFormState>({
     scheduledDate: "",
@@ -414,40 +412,8 @@ export default function PipelineBatchView({
     [scopedEligibleIds],
   );
 
-  const availableRegularSections = useMemo(() => {
-    const filteredByProgram = regularSections.filter(
-      (section) => section.programType === "REGULAR",
-    );
-
-    if (selectedGradeLevelId == null) {
-      return filteredByProgram;
-    }
-
-    return filteredByProgram.filter(
-      (section) => section.gradeLevelId === selectedGradeLevelId,
-    );
-  }, [regularSections, selectedGradeLevelId]);
-
-  const selectedRegularSection = useMemo(
-    () =>
-      availableRegularSections.find(
-        (section) => String(section.id) === selectedRegularSectionId,
-      ) ?? null,
-    [availableRegularSections, selectedRegularSectionId],
-  );
-
-  const selectedRegularSectionAvailableSlots = selectedRegularSection
-    ? Math.max(
-        0,
-        selectedRegularSection.maxCapacity -
-          selectedRegularSection.enrolledCount,
-      )
-    : 0;
-
-  const isRegularSectionOverCapacity = Boolean(
-    selectedRegularSection &&
-    scopedEligibleIds.length > selectedRegularSectionAvailableSlots,
-  );
+  const regularSectionAssignableCount =
+    regularSectionPreview?.summary.assignedCount ?? 0;
 
   const normalizeScoreToTwoDecimals = useCallback((value: number) => {
     return Number(value.toFixed(2));
@@ -834,77 +800,48 @@ export default function PipelineBatchView({
     }
   }, [selectedIds]);
 
-  const loadRegularSections = useCallback(async () => {
-    if (!ayId) {
-      setRegularSections([]);
-      setSelectedRegularSectionId("");
+  const loadRegularSectionPreview = useCallback(async () => {
+    if (hasMixedSelectedGradeLevels || scopedEligibleIds.length === 0) {
+      setRegularSectionPreview(null);
       return;
     }
 
-    setRegularSectionsLoading(true);
+    setRegularSectionPreviewLoading(true);
+    setActionFormError(null);
 
     try {
-      const res = await api.get(`/sections/${ayId}`);
-
-      const gradeLevels = Array.isArray(res.data?.gradeLevels)
-        ? (res.data.gradeLevels as Array<{
-            gradeLevelId: number;
-            gradeLevelName: string;
-            sections?: Array<{
-              id: number;
-              name: string;
-              maxCapacity?: number;
-              enrolledCount?: number;
-              fillPercent?: number;
-              programType?: string;
-            }>;
-          }>)
-        : [];
-
-      const flattenedSections = gradeLevels
-        .flatMap((gradeLevel) =>
-          (gradeLevel.sections ?? []).map((section) => ({
-            id: section.id,
-            name: section.name,
-            gradeLevelId: Number(gradeLevel.gradeLevelId),
-            gradeLevelName: gradeLevel.gradeLevelName,
-            programType: String(section.programType ?? "REGULAR"),
-            maxCapacity: Number(section.maxCapacity ?? 0),
-            enrolledCount: Number(section.enrolledCount ?? 0),
-            fillPercent: Number(section.fillPercent ?? 0),
-          })),
-        )
-        .filter((section) => section.programType === "REGULAR");
-
-      setRegularSections(flattenedSections);
-
-      setSelectedRegularSectionId((prev) => {
-        if (
-          prev &&
-          flattenedSections.some((section) => String(section.id) === prev)
-        ) {
-          return prev;
-        }
-
-        if (selectedGradeLevelId != null) {
-          const sameGradeSection = flattenedSections.find(
-            (section) => section.gradeLevelId === selectedGradeLevelId,
-          );
-          if (sameGradeSection) {
-            return String(sameGradeSection.id);
+      const expectedStatuses = scopedEligibleIds.reduce<Record<string, string>>(
+        (acc, id) => {
+          const app = selectedApplicationsById[id];
+          if (app) {
+            acc[String(id)] =
+              app.status === "EXAM_SCHEDULED" ? "EXAM_SCHEDULED" : app.status;
           }
-        }
+          return acc;
+        },
+        {},
+      );
 
-        return flattenedSections[0] ? String(flattenedSections[0].id) : "";
-      });
+      const res = await api.post(
+        "/early-registrations/batch/assign-regular-section/preview",
+        {
+          ids: scopedEligibleIds,
+          expectedStatuses,
+        },
+      );
+
+      setRegularSectionPreview(res.data as RegularSectionBatchPreview);
     } catch (err) {
       toastApiError(err as never);
-      setRegularSections([]);
-      setSelectedRegularSectionId("");
+      setRegularSectionPreview(null);
     } finally {
-      setRegularSectionsLoading(false);
+      setRegularSectionPreviewLoading(false);
     }
-  }, [ayId, selectedGradeLevelId]);
+  }, [
+    hasMixedSelectedGradeLevels,
+    scopedEligibleIds,
+    selectedApplicationsById,
+  ]);
 
   const initializeScoreGrid = useCallback(async () => {
     const defaultComponents: RankingFormulaComponent[] = [
@@ -1102,7 +1039,8 @@ export default function PipelineBatchView({
     }
 
     if (activeBatchAction.id === "ASSIGN_REGULAR_SECTION") {
-      void loadRegularSections();
+      setRegularSectionPreview(null);
+      void loadRegularSectionPreview();
       return;
     }
 
@@ -1131,7 +1069,7 @@ export default function PipelineBatchView({
     isActionModalOpen,
     activeBatchAction,
     loadVerifyGridPreview,
-    loadRegularSections,
+    loadRegularSectionPreview,
     loadScheduleDefaults,
     initializeScoreGrid,
     initializeFinalizeRows,
@@ -1629,8 +1567,8 @@ export default function PipelineBatchView({
           decision,
           rejectOutcome:
             decision === "PASS"
-              ? "SUBMITTED"
-              : (prev[applicantId]?.rejectOutcome ?? "SUBMITTED"),
+              ? "SUBMITTED_BEERF"
+              : (prev[applicantId]?.rejectOutcome ?? "SUBMITTED_BEERF"),
         },
       }));
     },
@@ -1902,23 +1840,25 @@ export default function PipelineBatchView({
           return;
         }
 
-        if (!selectedRegularSectionId) {
-          setActionFormError("Select one regular section before submitting.");
+        if (!regularSectionPreview) {
+          await loadRegularSectionPreview();
+          setActionFormError(
+            "Preview generated. Review the hybrid section plan, then apply.",
+          );
           return;
         }
 
-        if (isRegularSectionOverCapacity) {
+        if (regularSectionPreview.summary.assignedCount <= 0) {
           setActionFormError(
-            "Selected section does not have enough available slots for this batch.",
+            "No applicants can be assigned from the current preview. Resolve blocked requirements or capacity constraints first.",
           );
           return;
         }
 
         const res = await api.patch(
-          "/early-registrations/batch/assign-regular-section",
+          "/early-registrations/batch/assign-regular-section/commit",
           {
             ids: eligibleIds,
-            sectionId: Number(selectedRegularSectionId),
             expectedStatuses,
           },
         );
@@ -2170,7 +2110,7 @@ export default function PipelineBatchView({
           const interviewRow = finalizeInterviewRows[item.id];
           nextStatus =
             interviewRow?.decision === "REJECT"
-              ? (interviewRow.rejectOutcome ?? "SUBMITTED")
+              ? (interviewRow.rejectOutcome ?? "SUBMITTED_BEERF")
               : "READY_FOR_ENROLLMENT";
         } else if (activeBatchAction.targetStatus) {
           nextStatus = activeBatchAction.targetStatus;
@@ -2348,6 +2288,7 @@ export default function PipelineBatchView({
       setIsActionModalOpen(open);
       if (!open) {
         setActionFormError(null);
+        setRegularSectionPreview(null);
         void fetchData();
       }
     },
@@ -2357,6 +2298,7 @@ export default function PipelineBatchView({
   const handleActionModalCancel = useCallback(() => {
     setIsActionModalOpen(false);
     setActionFormError(null);
+    setRegularSectionPreview(null);
     void fetchData();
   }, [fetchData]);
 
@@ -2512,8 +2454,9 @@ export default function PipelineBatchView({
         return (
           scopedEligibleIds.length > 0 &&
           !hasMixedSelectedGradeLevels &&
-          Boolean(selectedRegularSectionId) &&
-          !isRegularSectionOverCapacity
+          !regularSectionPreviewLoading &&
+          Boolean(regularSectionPreview) &&
+          regularSectionAssignableCount > 0
         );
       case "SCHEDULE_EXAM":
         return Boolean(
@@ -2552,10 +2495,11 @@ export default function PipelineBatchView({
     interviewScheduleForm.venue,
     isAssessmentRowPrepared,
     isFinalizeRowPrepared,
-    isRegularSectionOverCapacity,
+    regularSectionAssignableCount,
+    regularSectionPreview,
+    regularSectionPreviewLoading,
     hasMixedSelectedGradeLevels,
     scopedEligibleIds,
-    selectedRegularSectionId,
     verifyMarkedReadyApplicantIds,
   ]);
 
@@ -2566,8 +2510,17 @@ export default function PipelineBatchView({
       return verifyMarkedReadyApplicantIds.length;
     }
 
+    if (activeBatchAction.id === "ASSIGN_REGULAR_SECTION") {
+      return regularSectionAssignableCount;
+    }
+
     return scopedEligibleIds.length;
-  }, [activeBatchAction, scopedEligibleIds, verifyMarkedReadyApplicantIds]);
+  }, [
+    activeBatchAction,
+    regularSectionAssignableCount,
+    scopedEligibleIds,
+    verifyMarkedReadyApplicantIds,
+  ]);
 
   const actionReadinessHint = useMemo(() => {
     if (!activeBatchAction || isActionFormReady) return null;
@@ -2579,13 +2532,16 @@ export default function PipelineBatchView({
         if (hasMixedSelectedGradeLevels) {
           return "Selected applicants must belong to one grade level for section assignment.";
         }
-        if (!selectedRegularSectionId) {
-          return "Select a regular section before submitting this batch action.";
+        if (regularSectionPreviewLoading) {
+          return "Generating hybrid section preview. Please wait for the plan to finish loading.";
         }
-        if (isRegularSectionOverCapacity) {
-          return "Selected section is over capacity for this batch. Choose another section.";
+        if (!regularSectionPreview) {
+          return "Generate a hybrid section preview before applying assignments.";
         }
-        return "Review section capacity and assignment scope before submitting.";
+        if (regularSectionAssignableCount <= 0) {
+          return "No assignable applicants in the current preview. Resolve blocked requirements or available capacity first.";
+        }
+        return "Review the generated plan, then apply section assignments.";
       case "SCHEDULE_EXAM":
         return null;
       case "RECORD_ASSESSMENT":
@@ -2603,8 +2559,9 @@ export default function PipelineBatchView({
     activeBatchAction,
     hasMixedSelectedGradeLevels,
     isActionFormReady,
-    isRegularSectionOverCapacity,
-    selectedRegularSectionId,
+    regularSectionAssignableCount,
+    regularSectionPreview,
+    regularSectionPreviewLoading,
   ]);
 
   const renderActionForm = () => {
@@ -2653,16 +2610,14 @@ export default function PipelineBatchView({
       case "ASSIGN_REGULAR_SECTION":
         return (
           <PipelineBatchRegularSectionAssignment
-            loading={regularSectionsLoading}
+            previewLoading={regularSectionPreviewLoading}
             isBatchProcessing={isBatchProcessing}
-            sections={availableRegularSections}
-            selectedSectionId={selectedRegularSectionId}
+            preview={regularSectionPreview}
             selectedGradeLevelLabel={selectedGradeLevelName}
             hasMixedGradeLevels={hasMixedSelectedGradeLevels}
             requiredSlots={scopedEligibleIds.length}
-            onSelectSection={setSelectedRegularSectionId}
-            onReload={() => {
-              void loadRegularSections();
+            onReloadPreview={() => {
+              void loadRegularSectionPreview();
             }}
           />
         );

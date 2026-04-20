@@ -85,6 +85,10 @@ interface AuditRow {
 
 const DOCUMENT_TYPES = [
   {
+    value: "ACCOMPLISHED_APPLICATION_FORM",
+    label: "Accomplished Application Form",
+  },
+  {
     value: "PSA_BIRTH_CERTIFICATE",
     label: "PSA Birth Certificate",
     checklistKey: "isPsaBirthCertPresented",
@@ -108,12 +112,21 @@ const DOCUMENT_TYPES = [
     label: "Good Moral Certificate",
     checklistKey: "isGoodMoralPresented",
   },
+  {
+    value: "ID_PICTURE_2PCS",
+    label: "1x1 or 2x2 ID Picture (2 pieces)",
+  },
+  {
+    value: "LONG_PLASTIC_ENVELOPE",
+    label: "Long Plastic Envelope (1 piece)",
+  },
   { value: "MEDICAL_CERTIFICATE", label: "Medical Certificate" },
   {
     value: "MEDICAL_EVALUATION",
     label: "Medical Evaluation",
     checklistKey: "isMedicalEvalSubmitted",
   },
+  { value: "WRITING_PORTFOLIO", label: "Portfolio of Published Works" },
   { value: "PWD_ID", label: "PWD ID" },
   {
     value: "AFFIDAVIT_OF_UNDERTAKING",

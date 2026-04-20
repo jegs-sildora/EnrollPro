@@ -2,7 +2,7 @@ import {
   DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS,
   DEPED_TEACHER_SUBJECT_OPTIONS,
 } from "@enrollpro/shared";
-import type { Teacher, TeacherFormState, TeacherSyncFilter } from "./types";
+import type { Teacher, TeacherFormState } from "./types";
 
 export const MAX_TEACHER_PHOTO_BYTES = 5 * 1024 * 1024;
 
@@ -80,18 +80,6 @@ export function formatDateTime(value: string | null): string {
   });
 }
 
-export function getSyncFilterValue(
-  teacher: Teacher,
-): Exclude<TeacherSyncFilter, "all"> {
-  const status = teacher.atlasSync?.status;
-
-  if (!status || status === "SKIPPED") {
-    return "UNSYNCED";
-  }
-
-  return status;
-}
-
 export function formatDesignationSummary(teacher: Teacher): string {
   const designation = teacher.designation;
   if (!designation) {
@@ -113,44 +101,4 @@ export function formatAdvisorySectionSummary(teacher: Teacher): string {
 
   const section = teacher.designation.advisorySection;
   return `${section.gradeLevelName ?? "Grade"} - ${section.name}`;
-}
-
-export function getSyncDetailText(teacher: Teacher): string {
-  const sync = teacher.atlasSync;
-
-  if (!sync || sync.status === "SKIPPED") {
-    return "Waiting for first ATLAS sync";
-  }
-
-  if (sync.status === "SYNCED") {
-    return sync.acknowledgedAt
-      ? `ATLAS confirmed receipt on ${formatDateTime(sync.acknowledgedAt)}`
-      : "Sent to ATLAS successfully";
-  }
-
-  if (sync.status === "PENDING") {
-    return sync.nextRetryAt
-      ? `Retry scheduled ${formatDateTime(sync.nextRetryAt)} (attempt ${sync.attemptCount}/${sync.maxAttempts})`
-      : `Sync in progress (attempt ${sync.attemptCount}/${sync.maxAttempts})`;
-  }
-
-  const httpStatus = sync.httpStatus
-    ? `HTTP ${sync.httpStatus}`
-    : "Sync failed";
-  const errorSnippet = sync.errorMessage
-    ? sync.errorMessage.slice(0, 56)
-    : "Check ATLAS sync health for details";
-
-  return `Action needed: ${httpStatus} · ${errorSnippet}`;
-}
-
-export function getSyncDetailClassName(teacher: Teacher): string {
-  const status = teacher.atlasSync?.status;
-  if (status === "FAILED") {
-    return "text-destructive";
-  }
-  if (status === "PENDING") {
-    return "text-amber-700";
-  }
-  return "text-muted-foreground";
 }

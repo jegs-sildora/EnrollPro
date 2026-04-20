@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
+import type { ApplicantType } from "../../generated/prisma/index.js";
 
 const VALID_PROGRAM_TYPES = new Set([
   "REGULAR",
@@ -60,11 +61,12 @@ export async function listSections(req: Request, res: Response): Promise<void> {
           },
         },
       },
-      orderBy: { name: "asc" },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }, { id: "asc" }],
     });
     // Format teacher names
     const formatted = sections.map((s) => ({
       ...s,
+      displayName: s.displayName ?? s.name,
       advisingTeacher: s.advisingTeacher
         ? {
             id: s.advisingTeacher.id,
@@ -93,7 +95,7 @@ export async function listSections(req: Request, res: Response): Promise<void> {
         ...(normalizedProgramType
           ? { where: { programType: normalizedProgramType as any } }
           : {}),
-        orderBy: { name: "asc" },
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }, { id: "asc" }],
         include: {
           advisingTeacher: {
             select: {
@@ -128,6 +130,8 @@ export async function listSections(req: Request, res: Response): Promise<void> {
     sections: gl.sections.map((s) => ({
       id: s.id,
       name: s.name,
+      displayName: s.displayName ?? s.name,
+      sortOrder: s.sortOrder,
       programType: s.programType,
       maxCapacity: s.maxCapacity,
       enrolledCount: s._count.enrollmentRecords,
@@ -172,20 +176,53 @@ export async function createSection(
   req: Request,
   res: Response,
 ): Promise<void> {
-  const { name, maxCapacity, gradeLevelId, programType, advisingTeacherId } =
-    req.body;
+  const {
+    name,
+    displayName,
+    sortOrder,
+    maxCapacity,
+    gradeLevelId,
+    programType,
+    advisingTeacherId,
+  } = req.body;
 
-  if (!name || !gradeLevelId) {
+  const normalizedName = typeof name === "string" ? name.trim() : "";
+  if (!normalizedName || !gradeLevelId) {
     res.status(400).json({ message: "name and gradeLevelId are required" });
     return;
   }
 
+  const normalizedProgramType =
+    typeof programType === "string" && programType.trim().length > 0
+      ? programType
+      : "REGULAR";
+
+  const normalizedDisplayName =
+    typeof displayName === "string" && displayName.trim().length > 0
+      ? displayName.trim()
+      : normalizedName;
+
+  const resolvedSortOrder =
+    Number.isInteger(sortOrder) && Number(sortOrder) > 0
+      ? Number(sortOrder)
+      : ((
+          await prisma.section.aggregate({
+            where: {
+              gradeLevelId,
+              programType: normalizedProgramType as ApplicantType,
+            },
+            _max: { sortOrder: true },
+          })
+        )._max.sortOrder ?? 0) + 1;
+
   const section = await prisma.section.create({
     data: {
-      name,
+      name: normalizedName,
+      displayName: normalizedDisplayName,
+      sortOrder: resolvedSortOrder,
       maxCapacity: maxCapacity ?? 40,
       gradeLevelId,
-      programType: programType ?? "REGULAR",
+      programType: normalizedProgramType as ApplicantType,
       advisingTeacherId: advisingTeacherId ?? null,
     },
   });
@@ -193,7 +230,7 @@ export async function createSection(
   await auditLog({
     userId: req.user!.userId,
     actionType: "SECTION_CREATED",
-    description: `Created section "${name}"`,
+    description: `Created section "${normalizedDisplayName}"`,
     subjectType: "Section",
     recordId: section.id,
     req,
@@ -207,7 +244,14 @@ export async function updateSection(
   res: Response,
 ): Promise<void> {
   const id = parseInt(req.params.id as string);
-  const { name, maxCapacity, programType, advisingTeacherId } = req.body;
+  const {
+    name,
+    displayName,
+    sortOrder,
+    maxCapacity,
+    programType,
+    advisingTeacherId,
+  } = req.body;
 
   const section = await prisma.section.findUnique({ where: { id } });
   if (!section) {
@@ -215,16 +259,39 @@ export async function updateSection(
     return;
   }
 
+  const normalizedName =
+    typeof name === "string" && name.trim().length > 0 ? name.trim() : null;
+  const normalizedDisplayName =
+    typeof displayName === "string"
+      ? displayName.trim()
+      : displayName === null
+        ? null
+        : undefined;
+
+  const shouldSyncDisplayNameFromName =
+    normalizedName !== null &&
+    normalizedDisplayName === undefined &&
+    (section.displayName == null || section.displayName === section.name);
+
+  const data: Record<string, unknown> = {
+    ...(normalizedName ? { name: normalizedName } : {}),
+    ...(maxCapacity !== undefined ? { maxCapacity } : {}),
+    ...(programType !== undefined ? { programType } : {}),
+    ...(sortOrder !== undefined ? { sortOrder } : {}),
+    ...(advisingTeacherId !== undefined
+      ? { advisingTeacherId: advisingTeacherId || null }
+      : {}),
+  };
+
+  if (normalizedDisplayName !== undefined) {
+    data.displayName = normalizedDisplayName || null;
+  } else if (shouldSyncDisplayNameFromName && normalizedName) {
+    data.displayName = normalizedName;
+  }
+
   const updated = await prisma.section.update({
     where: { id },
-    data: {
-      ...(name ? { name } : {}),
-      ...(maxCapacity !== undefined ? { maxCapacity } : {}),
-      ...(programType !== undefined ? { programType } : {}),
-      ...(advisingTeacherId !== undefined
-        ? { advisingTeacherId: advisingTeacherId || null }
-        : {}),
-    },
+    data,
   });
 
   await auditLog({

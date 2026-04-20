@@ -66,7 +66,7 @@ async function carryOverEligibleLearners(
         where: {
           schoolYearId: sourceSchoolYearId,
           enrollmentApplication: {
-            status: { in: ["OFFICIALLY_ENROLLED", "ENROLLED"] },
+            status: "ENROLLED",
           },
         },
         select: {
@@ -167,7 +167,7 @@ async function carryOverEligibleLearners(
         gradeLevelId: targetGradeLevel.id,
         applicantType: record.enrollmentApplication.applicantType,
         learnerType: "CONTINUING",
-        status: "READY_FOR_SECTIONING",
+        status: "READY_FOR_ENROLLMENT",
         admissionChannel: "F2F",
         isPrivacyConsentGiven:
           record.enrollmentApplication.isPrivacyConsentGiven,

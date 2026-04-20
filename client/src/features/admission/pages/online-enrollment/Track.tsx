@@ -84,6 +84,18 @@ const statusConfig: Record<
     desc: string;
   }
 > = {
+  SUBMITTED_BEERF: {
+    label: "Submitted BEERF",
+    icon: Clock,
+    color: "text-slate-600 bg-slate-50 border-slate-200",
+    desc: "Your Basic Education Early Registration Form has been received and is queued for registrar review.",
+  },
+  SUBMITTED_BEEF: {
+    label: "Submitted BEEF",
+    icon: Clock,
+    color: "text-slate-600 bg-slate-50 border-slate-200",
+    desc: "Your Basic Education Enrollment Form has been received and is queued for registrar review.",
+  },
   SUBMITTED: {
     label: "Submitted",
     icon: Clock,

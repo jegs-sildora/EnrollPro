@@ -20,7 +20,7 @@ export function createEarlyRegistrationLifecycleController(
 
   const LRN_REGEX = /^\d{12}$/;
   const FINALIZE_ALLOWED_STATUSES = new Set([
-    "READY_FOR_SECTIONING",
+    "READY_FOR_ENROLLMENT",
     "TEMPORARILY_ENROLLED",
   ]);
   const resolveExpectedSectionProgramType = (applicantType: string): string =>
@@ -188,16 +188,11 @@ export function createEarlyRegistrationLifecycleController(
         appType = "ENROLLMENT";
       }
 
-      const isAlreadySectioningReady =
-        applicant.status === "READY_FOR_SECTIONING";
-
-      if (!isAlreadySectioningReady) {
-        assertTransition(
-          applicant,
-          "READY_FOR_SECTIONING",
-          `Cannot approve an application with status "${applicant.status}". Only verification-complete applications can move to READY_FOR_SECTIONING.`,
-        );
-      }
+      assertTransition(
+        applicant,
+        "READY_FOR_ENROLLMENT",
+        `Cannot approve an application with status "${applicant.status}". Only VERIFIED, ELIGIBLE, or PASSED applications can be approved (moved to READY_FOR_ENROLLMENT).`,
+      );
 
       assertReadingProfileCompleted(
         applicant,
@@ -249,14 +244,8 @@ export function createEarlyRegistrationLifecycleController(
           throw new AppError(422, "This section has reached maximum capacity");
         }
 
-        const enrollment = await tx.enrollmentRecord.upsert({
-          where: { enrollmentApplicationId: applicantId },
-          update: {
-            sectionId,
-            schoolYearId: applicant.schoolYearId,
-            enrolledById: req.user!.userId,
-          },
-          create: {
+        const enrollment = await tx.enrollmentRecord.create({
+          data: {
             enrollmentApplicationId: applicantId,
             sectionId,
             schoolYearId: applicant.schoolYearId,
@@ -264,9 +253,7 @@ export function createEarlyRegistrationLifecycleController(
           },
         });
 
-        if (!isAlreadySectioningReady) {
-          await updateApplicationStatus(applicantId, "READY_FOR_SECTIONING");
-        }
+        await updateApplicationStatus(applicantId, "READY_FOR_ENROLLMENT");
 
         return enrollment;
       });
@@ -324,11 +311,8 @@ export function createEarlyRegistrationLifecycleController(
       }
 
       const verificationEligibleStatuses = new Set([
-        "EARLY_REG_SUBMITTED",
-        "PRE_REGISTERED",
-        "PENDING_VERIFICATION",
-        "READY_FOR_SECTIONING",
-        "SUBMITTED",
+        "SUBMITTED_BEEF",
+        "SUBMITTED_BEERF",
         "UNDER_REVIEW",
         "READY_FOR_ENROLLMENT",
       ]);
@@ -336,7 +320,7 @@ export function createEarlyRegistrationLifecycleController(
       if (!verificationEligibleStatuses.has(applicant.status)) {
         throw new AppError(
           422,
-          `Cannot verify application with status "${applicant.status}". Only pending verification records can be verified.`,
+          `Cannot verify application with status "${applicant.status}". Only SUBMITTED_BEEF, SUBMITTED_BEERF, UNDER_REVIEW, or READY_FOR_ENROLLMENT applications can be verified.`,
         );
       }
 
@@ -407,10 +391,7 @@ export function createEarlyRegistrationLifecycleController(
         );
       }
 
-      const updated = await updateApplicationStatus(
-        applicantId,
-        "READY_FOR_SECTIONING",
-      );
+      const updated = await updateApplicationStatus(applicantId, "VERIFIED");
 
       await auditLog({
         userId: req.user!.userId,
@@ -548,7 +529,7 @@ export function createEarlyRegistrationLifecycleController(
       if (!FINALIZE_ALLOWED_STATUSES.has(fullApplicant.status)) {
         throw new AppError(
           422,
-          `Cannot finalize enrollment. Current status: "${fullApplicant.status}". Only READY_FOR_SECTIONING or TEMPORARILY_ENROLLED applications can be enrolled.`,
+          `Cannot finalize enrollment. Current status: "${fullApplicant.status}". Only READY_FOR_ENROLLMENT or TEMPORARILY_ENROLLED applications can be enrolled.`,
         );
       }
 
@@ -619,7 +600,7 @@ export function createEarlyRegistrationLifecycleController(
         const enrollment = await tx.enrollmentApplication.update({
           where: { id: applicantId },
           data: {
-            status: "OFFICIALLY_ENROLLED",
+            status: "ENROLLED",
             isTemporarilyEnrolled: false,
             portalPin: pinHash,
             portalPinChangedAt: new Date(),
@@ -662,10 +643,7 @@ export function createEarlyRegistrationLifecycleController(
 
       const { data: applicant } = await findApplicantOrThrow(applicantId);
 
-      if (
-        applicant.status !== "OFFICIALLY_ENROLLED" &&
-        applicant.status !== "ENROLLED"
-      ) {
+      if (applicant.status !== "ENROLLED") {
         throw new AppError(
           422,
           "Only enrolled applications can be unenrolled.",
@@ -678,11 +656,11 @@ export function createEarlyRegistrationLifecycleController(
           where: { enrollmentApplicationId: applicantId },
         });
 
-        // 2. Revert status to sectioning-ready queue
+        // 2. Revert status to VERIFIED
         return await tx.enrollmentApplication.update({
           where: { id: applicantId },
           data: {
-            status: "READY_FOR_SECTIONING",
+            status: "VERIFIED",
             isProfileLocked: false,
             profileLockedAt: null,
             profileLockedById: null,
@@ -715,7 +693,6 @@ export function createEarlyRegistrationLifecycleController(
     try {
       const data = req.body;
       const {
-        lrn,
         firstName,
         lastName,
         learnerType,
@@ -723,24 +700,153 @@ export function createEarlyRegistrationLifecycleController(
         gradeLevelId,
       } = data;
 
+      const normalizedLrn =
+        typeof data.lrn === "string" && data.lrn.trim().length > 0
+          ? data.lrn.trim()
+          : null;
+      const hasNoLrn = data.hasNoLrn === true;
+
+      if (!hasNoLrn && (!normalizedLrn || !LRN_REGEX.test(normalizedLrn))) {
+        throw new AppError(400, "LRN must be exactly 12 digits.");
+      }
+
+      if (hasNoLrn && normalizedLrn) {
+        throw new AppError(
+          422,
+          "Clear the LRN field when enrolling a learner without LRN.",
+        );
+      }
+
+      const parsedGradeLevelId = Number.parseInt(String(gradeLevelId), 10);
+      if (!Number.isInteger(parsedGradeLevelId) || parsedGradeLevelId <= 0) {
+        throw new AppError(400, "Grade level is required.");
+      }
+
+      const gradeLevel = await prisma.gradeLevel.findUnique({
+        where: { id: parsedGradeLevelId },
+        select: { id: true, name: true },
+      });
+      if (!gradeLevel) {
+        throw new AppError(404, "Grade level not found.");
+      }
+
+      if (hasNoLrn) {
+        const gradeMatch = gradeLevel.name.match(/\d+/);
+        const gradeNumber = gradeMatch
+          ? Number.parseInt(gradeMatch[0], 10)
+          : null;
+        const isIncomingGrade7 =
+          learnerType === "NEW_ENROLLEE" && gradeNumber === 7;
+        const isTransferee = learnerType === "TRANSFEREE";
+
+        if (!isIncomingGrade7 && !isTransferee) {
+          throw new AppError(
+            422,
+            "Only incoming Grade 7 and transferee learners can enroll without LRN.",
+          );
+        }
+      }
+
+      const parsedBirthdate = new Date(data.birthdate);
+      if (Number.isNaN(parsedBirthdate.getTime())) {
+        throw new AppError(400, "Invalid birthdate format.");
+      }
+
+      const normalizeOptional = (value: unknown): string | null => {
+        if (typeof value !== "string") {
+          return null;
+        }
+
+        const trimmed = value.trim();
+        return trimmed.length > 0 ? trimmed : null;
+      };
+
+      const motherData = data.mother
+        ? {
+            relationship: "MOTHER" as const,
+            firstName: data.mother.firstName.trim(),
+            lastName: data.mother.lastName.trim(),
+            middleName: normalizeOptional(data.mother.middleName),
+            contactNumber: normalizeOptional(data.mother.contactNumber),
+          }
+        : null;
+      const fatherData = data.father
+        ? {
+            relationship: "FATHER" as const,
+            firstName: data.father.firstName.trim(),
+            lastName: data.father.lastName.trim(),
+            middleName: normalizeOptional(data.father.middleName),
+            contactNumber: normalizeOptional(data.father.contactNumber),
+          }
+        : null;
+      const guardianData = data.guardian
+        ? {
+            relationship: "GUARDIAN" as const,
+            firstName: data.guardian.firstName.trim(),
+            lastName: data.guardian.lastName.trim(),
+            middleName: normalizeOptional(data.guardian.middleName),
+            contactNumber: normalizeOptional(data.guardian.contactNumber),
+          }
+        : null;
+
+      if (!motherData && !fatherData && !guardianData) {
+        throw new AppError(
+          422,
+          "Provide at least one complete mother, father, or guardian identity.",
+        );
+      }
+
+      const addressData: Prisma.ApplicationAddressCreateManyInput[] = [];
+      if (data.currentAddress) {
+        addressData.push({
+          addressType: "CURRENT",
+          houseNoStreet: normalizeOptional(data.currentAddress.houseNoStreet),
+          sitio: normalizeOptional(data.currentAddress.sitio),
+          barangay: data.currentAddress.barangay,
+          cityMunicipality: data.currentAddress.cityMunicipality,
+          province: data.currentAddress.province,
+        });
+      }
+
+      const familyData: Prisma.ApplicationFamilyMemberCreateManyInput[] = [];
+      if (motherData) familyData.push(motherData);
+      if (fatherData) familyData.push(fatherData);
+      if (guardianData) familyData.push(guardianData);
+
       // 1. Create or Find Learner
       let learner = await prisma.learner.findFirst({
-        where: lrn
-          ? { lrn }
-          : { firstName, lastName, birthdate: new Date(data.birthdate) },
+        where: normalizedLrn
+          ? { lrn: normalizedLrn }
+          : { firstName, lastName, birthdate: parsedBirthdate },
       });
 
       if (!learner) {
         learner = await prisma.learner.create({
           data: {
-            lrn,
+            lrn: normalizedLrn,
             firstName,
             lastName,
             middleName: data.middleName,
             extensionName: data.extensionName,
-            birthdate: new Date(data.birthdate),
+            birthdate: parsedBirthdate,
             sex: data.sex,
-            isPendingLrnCreation: !lrn,
+            placeOfBirth: normalizeOptional(data.placeOfBirth),
+            isPendingLrnCreation: hasNoLrn || !normalizedLrn,
+          },
+        });
+      } else {
+        learner = await prisma.learner.update({
+          where: { id: learner.id },
+          data: {
+            lrn: normalizedLrn ?? learner.lrn,
+            firstName,
+            lastName,
+            middleName: data.middleName,
+            extensionName: data.extensionName,
+            birthdate: parsedBirthdate,
+            sex: data.sex,
+            placeOfBirth: normalizeOptional(data.placeOfBirth),
+            isPendingLrnCreation: hasNoLrn || !normalizedLrn,
           },
         });
       }
@@ -778,13 +884,37 @@ export function createEarlyRegistrationLifecycleController(
         data: {
           learnerId: learner.id,
           schoolYearId: settings.activeSchoolYearId,
-          gradeLevelId: parseInt(String(gradeLevelId)),
+          gradeLevelId: gradeLevel.id,
           applicantType: applicantType as any,
           learnerType: learnerType as any,
-          status: "READY_FOR_SECTIONING",
+          status: "VERIFIED",
           admissionChannel: "F2F",
+          guardianRelationship: normalizeOptional(data.guardianRelationship),
+          hasNoMother: !motherData,
+          hasNoFather: !fatherData,
           encodedById: req.user!.userId,
           isPrivacyConsentGiven: true,
+          addresses:
+            addressData.length > 0
+              ? { createMany: { data: addressData } }
+              : undefined,
+          familyMembers:
+            familyData.length > 0
+              ? { createMany: { data: familyData } }
+              : undefined,
+          previousSchool:
+            data.originSchoolName ||
+            typeof data.checklist?.finalGeneralAverage === "number"
+              ? {
+                  create: {
+                    schoolName: normalizeOptional(data.originSchoolName),
+                    generalAverage:
+                      typeof data.checklist?.finalGeneralAverage === "number"
+                        ? data.checklist.finalGeneralAverage
+                        : null,
+                  },
+                }
+              : undefined,
         },
         include: { learner: true },
       });
@@ -803,7 +933,15 @@ export function createEarlyRegistrationLifecycleController(
       await prisma.applicationChecklist.create({
         data: {
           enrollmentId: updated.id,
-          academicStatus: data.academicStatus || "PROMOTED",
+          academicStatus:
+            data.checklist?.academicStatus || data.academicStatus || "PROMOTED",
+          isSf9Submitted: data.checklist?.isSf9Submitted ?? false,
+          isPsaBirthCertPresented:
+            data.checklist?.isPsaBirthCertPresented ?? false,
+          isOriginalPsaBcCollected:
+            data.checklist?.isOriginalPsaBcCollected ??
+            data.checklist?.isPsaBirthCertPresented ??
+            false,
         },
       });
 
@@ -1022,9 +1160,7 @@ export function createEarlyRegistrationLifecycleController(
       if (
         appType === "ENROLLMENT" &&
         filteredData.academicStatus === "RETAINED" &&
-        (applicant.status === "OFFICIALLY_ENROLLED" ||
-          applicant.status === "ENROLLED") &&
-        applicant.status !== "WITHDRAWN"
+        (applicant.status === "ENROLLED" || applicant.status === "WITHDRAWN")
       ) {
         throw new AppError(
           422,
@@ -1306,7 +1442,7 @@ export function createEarlyRegistrationLifecycleController(
         where: { id: applicantId },
         data: {
           applicantType: "REGULAR",
-          status: "EARLY_REG_SUBMITTED",
+          status: "SUBMITTED_BEERF",
         },
       });
 
@@ -1388,13 +1524,8 @@ export function createEarlyRegistrationLifecycleController(
 
           if (!applicant) continue;
 
-          // Simple validation: applicant must be sectioning-ready.
-          if (
-            applicant.status !== "READY_FOR_SECTIONING" &&
-            applicant.status !== "VERIFIED"
-          ) {
-            continue;
-          }
+          // Simple validation: must be VERIFIED
+          if (applicant.status !== "VERIFIED") continue;
 
           assertReadingProfileCompleted(
             applicant,
@@ -1420,7 +1551,7 @@ export function createEarlyRegistrationLifecycleController(
           await tx.enrollmentApplication.update({
             where: { id: applicantId },
             data: {
-              status: "OFFICIALLY_ENROLLED",
+              status: "ENROLLED",
               portalPin: pinHash,
               portalPinChangedAt: new Date(),
               isProfileLocked: true,

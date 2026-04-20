@@ -91,6 +91,98 @@ const APPLICANT_TYPE_VALUES = new Set([
   "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
 ]);
 
+const EARLY_REG_STATUS_FILTER_ALIASES: Record<string, ApplicationStatus> = {
+  EARLY_REG_SUBMITTED: "SUBMITTED_BEERF",
+  SUBMITTED: "SUBMITTED_BEERF",
+  SUBMITTED_BEEF: "SUBMITTED_BEERF",
+  PENDING_VERIFICATION: "UNDER_REVIEW",
+  PRE_REGISTERED: "READY_FOR_ENROLLMENT",
+  READY_FOR_SECTIONING: "READY_FOR_ENROLLMENT",
+  OFFICIALLY_ENROLLED: "ENROLLED",
+};
+
+function normalizeEarlyRegStatusFilterToken(
+  value: string,
+): ApplicationStatus | null {
+  const normalized = value.trim().toUpperCase();
+  if (!normalized || normalized === "ALL") {
+    return null;
+  }
+
+  const mapped = EARLY_REG_STATUS_FILTER_ALIASES[normalized] ?? normalized;
+
+  if (!Object.prototype.hasOwnProperty.call(EARLY_REG_TRANSITIONS, mapped)) {
+    return null;
+  }
+
+  return mapped as ApplicationStatus;
+}
+
+const LEGACY_APPLICATION_STATUS_UPDATES = [
+  `
+    UPDATE early_registration_applications
+    SET status = CASE status::text
+      WHEN 'EARLY_REG_SUBMITTED' THEN 'SUBMITTED_BEERF'::application_status
+      WHEN 'SUBMITTED' THEN 'SUBMITTED_BEERF'::application_status
+      WHEN 'PENDING_VERIFICATION' THEN 'UNDER_REVIEW'::application_status
+      WHEN 'PRE_REGISTERED' THEN 'READY_FOR_ENROLLMENT'::application_status
+      WHEN 'READY_FOR_SECTIONING' THEN 'READY_FOR_ENROLLMENT'::application_status
+      WHEN 'OFFICIALLY_ENROLLED' THEN 'ENROLLED'::application_status
+    END
+    WHERE status::text IN (
+      'EARLY_REG_SUBMITTED',
+      'SUBMITTED',
+      'PENDING_VERIFICATION',
+      'PRE_REGISTERED',
+      'READY_FOR_SECTIONING',
+      'OFFICIALLY_ENROLLED'
+    )
+  `,
+  `
+    UPDATE enrollment_applications
+    SET status = CASE status::text
+      WHEN 'EARLY_REG_SUBMITTED' THEN 'SUBMITTED_BEEF'::application_status
+      WHEN 'SUBMITTED' THEN 'SUBMITTED_BEEF'::application_status
+      WHEN 'PENDING_VERIFICATION' THEN 'UNDER_REVIEW'::application_status
+      WHEN 'PRE_REGISTERED' THEN 'READY_FOR_ENROLLMENT'::application_status
+      WHEN 'READY_FOR_SECTIONING' THEN 'READY_FOR_ENROLLMENT'::application_status
+      WHEN 'OFFICIALLY_ENROLLED' THEN 'ENROLLED'::application_status
+    END
+    WHERE status::text IN (
+      'EARLY_REG_SUBMITTED',
+      'SUBMITTED',
+      'PENDING_VERIFICATION',
+      'PRE_REGISTERED',
+      'READY_FOR_SECTIONING',
+      'OFFICIALLY_ENROLLED'
+    )
+  `,
+] as const;
+
+let normalizeLegacyStatusPromise: Promise<void> | null = null;
+
+async function ensureLegacyApplicationStatusesNormalized(): Promise<void> {
+  if (normalizeLegacyStatusPromise) {
+    await normalizeLegacyStatusPromise;
+    return;
+  }
+
+  // Convert legacy status values once per process so Prisma can read rows safely.
+  normalizeLegacyStatusPromise = prisma
+    .$transaction(
+      LEGACY_APPLICATION_STATUS_UPDATES.map((statement) =>
+        prisma.$executeRawUnsafe(statement),
+      ),
+    )
+    .then(() => undefined)
+    .catch((error) => {
+      normalizeLegacyStatusPromise = null;
+      throw error;
+    });
+
+  await normalizeLegacyStatusPromise;
+}
+
 const DOCUMENT_CHECKLIST_MAPPING: Record<string, string> = {
   PSA_BIRTH_CERTIFICATE: "isPsaBirthCertPresented",
   SECONDARY_BIRTH_PROOF: "isPsaBirthCertPresented",
@@ -273,11 +365,11 @@ function resolveBatchVerifyTarget(
 ): ApplicationStatus | null {
   if (applicantType === "REGULAR") {
     if (status === "UNDER_REVIEW") return "VERIFIED";
-    if (status === "SUBMITTED") return "VERIFIED";
+    if (status === "SUBMITTED_BEERF") return "VERIFIED";
     return null;
   }
 
-  if (status === "SUBMITTED") return "VERIFIED";
+  if (status === "SUBMITTED_BEERF") return "VERIFIED";
   if (status === "VERIFIED" || status === "UNDER_REVIEW") return "ELIGIBLE";
   return null;
 }
@@ -477,6 +569,28 @@ function summarizeComponentScores(
     .join("; ");
 }
 
+function resolveAssessmentFailureReason(input: {
+  isNoShow: boolean;
+  totalScore: number;
+  effectiveCutoff: number | null | undefined;
+}): string {
+  if (input.isNoShow) {
+    return "Marked absent during the qualifying assessment.";
+  }
+
+  const resolvedScore = Number(input.totalScore).toFixed(2);
+  if (
+    typeof input.effectiveCutoff === "number" &&
+    Number.isFinite(input.effectiveCutoff)
+  ) {
+    return `Score ${resolvedScore} did not meet the cut-off score ${Number(
+      input.effectiveCutoff,
+    ).toFixed(2)}.`;
+  }
+
+  return `Did not pass the qualifying assessment with score ${resolvedScore}.`;
+}
+
 function normalizeBatchScheduledDate(value: string | Date): Date {
   const dateValue = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(dateValue.getTime())) {
@@ -659,6 +773,8 @@ async function createRegistration(
   options: StoreOptions,
 ) {
   try {
+    await ensureLegacyApplicationStatusesNormalized();
+
     // 1. Get active school year
     const settings = await prisma.schoolSetting.findFirst({
       include: { activeSchoolYear: true },
@@ -872,7 +988,7 @@ async function createRegistration(
     const learnerPayload = {
       lrn,
       isPendingLrnCreation,
-      status: "SUBMITTED" as ApplicationStatus,
+      status: "SUBMITTED_BEERF" as ApplicationStatus,
       psaBirthCertNumber: body.psaBirthCertNumber?.trim().toUpperCase() || null,
       firstName: body.firstName,
       lastName: body.lastName,
@@ -935,7 +1051,7 @@ async function createRegistration(
           gradeLevelId: gradeLevelV2.id,
           applicantType,
           learnerType: learnerTypeV2,
-          status: "SUBMITTED",
+          status: "SUBMITTED_BEERF",
           channel: options.channel,
           contactNumber: body.contactNumber,
           email: body.email || null,
@@ -1009,7 +1125,7 @@ async function createRegistration(
       learnerId: result.learner.id,
       gradeLevel: body.gradeLevel,
       applicantType,
-      ...createInitialTrackingPayload(applicantType),
+      ...createInitialTrackingPayload(applicantType, "SUBMITTED_BEERF"),
       learnerName: `${body.lastName}, ${body.firstName}`,
       age,
       message: "Your early registration has been submitted successfully.",
@@ -1107,6 +1223,8 @@ export async function storeF2F(
 /** GET / — List early registrations for active/specified school year */
 export async function index(req: Request, res: Response, next: NextFunction) {
   try {
+    await ensureLegacyApplicationStatusesNormalized();
+
     const page = Math.max(1, parseInt(String(req.query.page)) || 1);
     const limit = Math.min(
       100,
@@ -1138,9 +1256,10 @@ export async function index(req: Request, res: Response, next: NextFunction) {
     const andFilters: any[] = [];
 
     if (status) {
-      const normalizedStatus = status.trim().toUpperCase();
-      if (normalizedStatus !== "ALL") {
-        if (!(normalizedStatus in EARLY_REG_TRANSITIONS)) {
+      const rawStatusToken = status.trim().toUpperCase();
+      if (rawStatusToken !== "ALL") {
+        const normalizedStatus = normalizeEarlyRegStatusFilterToken(status);
+        if (!normalizedStatus) {
           throw new AppError(400, "Invalid status filter.");
         }
         andFilters.push({ status: normalizedStatus });
@@ -1504,6 +1623,8 @@ export async function removeDocument(
 export async function show(req: Request, res: Response, next: NextFunction) {
   try {
     const id = parseInt(String(req.params.id));
+    await ensureLegacyApplicationStatusesNormalized();
+
     const detailed = await sharedService.getDetailedApplicationOrThrow(id, {
       allowEnrollmentFallback: false,
     });
@@ -1517,6 +1638,8 @@ export async function show(req: Request, res: Response, next: NextFunction) {
 export async function verify(req: Request, res: Response, next: NextFunction) {
   try {
     const id = parseInt(String(req.params.id));
+    await ensureLegacyApplicationStatusesNormalized();
+
     const registration = await prisma.earlyRegistrationApplication.findUnique({
       where: { id },
     });
@@ -1525,7 +1648,7 @@ export async function verify(req: Request, res: Response, next: NextFunction) {
       throw new AppError(404, "Early registration not found.");
     }
 
-    if (registration.status !== "SUBMITTED") {
+    if (registration.status !== "SUBMITTED_BEERF") {
       throw new AppError(
         422,
         `Cannot verify a registration with status "${registration.status}".`,
@@ -1561,7 +1684,7 @@ export async function verify(req: Request, res: Response, next: NextFunction) {
 // ═══════════════════════════════════════════════════════════
 
 const EARLY_REG_TRANSITIONS: Record<string, ApplicationStatus[]> = {
-  SUBMITTED: [
+  SUBMITTED_BEERF: [
     "VERIFIED",
     "UNDER_REVIEW",
     "EXAM_SCHEDULED",
@@ -1589,6 +1712,7 @@ const EARLY_REG_TRANSITIONS: Record<string, ApplicationStatus[]> = {
   ELIGIBLE: ["EXAM_SCHEDULED", "PASSED", "WITHDRAWN"],
   EXAM_SCHEDULED: [
     "PASSED",
+    "SUBMITTED_BEERF",
     "ASSESSMENT_TAKEN",
     "EXAM_SCHEDULED",
     "INTERVIEW_SCHEDULED",
@@ -1596,7 +1720,7 @@ const EARLY_REG_TRANSITIONS: Record<string, ApplicationStatus[]> = {
   ],
   ASSESSMENT_TAKEN: [
     "PASSED",
-    "SUBMITTED",
+    "SUBMITTED_BEERF",
     "FAILED_ASSESSMENT",
     "ASSESSMENT_TAKEN",
     "EXAM_SCHEDULED",
@@ -1611,7 +1735,7 @@ const EARLY_REG_TRANSITIONS: Record<string, ApplicationStatus[]> = {
   INTERVIEW_SCHEDULED: [
     "PASSED",
     "READY_FOR_ENROLLMENT",
-    "SUBMITTED",
+    "SUBMITTED_BEERF",
     "WITHDRAWN",
   ],
   READY_FOR_ENROLLMENT: [
@@ -1657,19 +1781,12 @@ function parseExpectedStatusMap(
       continue;
     }
 
-    const normalizedStatus = rawStatus.trim().toUpperCase();
-    if (!normalizedStatus) continue;
-
-    if (
-      !Object.prototype.hasOwnProperty.call(
-        EARLY_REG_TRANSITIONS,
-        normalizedStatus,
-      )
-    ) {
+    const normalizedStatus = normalizeEarlyRegStatusFilterToken(rawStatus);
+    if (!normalizedStatus) {
       continue;
     }
 
-    map.set(id, normalizedStatus as ApplicationStatus);
+    map.set(id, normalizedStatus);
   }
 
   return map;
@@ -1739,6 +1856,8 @@ function assertSingleProgramSelection(
 }
 
 async function findEarlyRegOrThrow(id: number) {
+  await ensureLegacyApplicationStatusesNormalized();
+
   const reg = await prisma.earlyRegistrationApplication.findUnique({
     where: { id },
     include: {
@@ -2145,7 +2264,7 @@ export async function fail(req: Request, res: Response, next: NextFunction) {
 
     assertEarlyRegTransition(
       reg.status,
-      "SUBMITTED",
+      "SUBMITTED_BEERF",
       `Cannot reroute failed assessment. Current status: "${reg.status}".`,
     );
 
@@ -2167,7 +2286,7 @@ export async function fail(req: Request, res: Response, next: NextFunction) {
       return tx.earlyRegistrationApplication.update({
         where: { id },
         data: {
-          status: "SUBMITTED",
+          status: "SUBMITTED_BEERF",
           applicantType: "REGULAR",
         },
       });
@@ -2176,7 +2295,7 @@ export async function fail(req: Request, res: Response, next: NextFunction) {
     await auditLog({
       userId: req.user!.userId,
       actionType: "EARLY_REGISTRATION_FAILED",
-      description: `Early registration #${id} failed SCP assessment and rerouted to SUBMITTED as REGULAR. Notes: ${examNotes || "N/A"}`,
+      description: `Early registration #${id} failed SCP assessment and rerouted to SUBMITTED_BEERF as REGULAR. Notes: ${examNotes || "N/A"}`,
       subjectType: "EarlyRegistrationApplication",
       recordId: id,
       req,
@@ -2607,6 +2726,845 @@ export async function batchVerifyDocuments(
       processed: applicants.length,
       succeeded,
       failed,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+const REGULAR_HOMOGENEOUS_SECTION_LIMIT = 5;
+
+type RegularSectionLane = "HOMOGENEOUS" | "SNAKE";
+
+const REGULAR_SECTION_BATCH_REGISTRATION_SELECT = {
+  id: true,
+  trackingNumber: true,
+  status: true,
+  applicantType: true,
+  learnerType: true,
+  learnerId: true,
+  schoolYearId: true,
+  gradeLevelId: true,
+  channel: true,
+  isPrivacyConsentGiven: true,
+  learner: {
+    select: {
+      firstName: true,
+      lastName: true,
+      lrn: true,
+      isPendingLrnCreation: true,
+      isLearnerWithDisability: true,
+    },
+  },
+  gradeLevel: { select: { name: true } },
+  checklist: true,
+  enrollmentApplications: {
+    orderBy: { createdAt: "desc" as const },
+    take: 1,
+    select: {
+      id: true,
+      previousSchool: {
+        select: {
+          generalAverage: true,
+        },
+      },
+      enrollmentRecord: {
+        select: {
+          id: true,
+          sectionId: true,
+        },
+      },
+    },
+  },
+} satisfies Prisma.EarlyRegistrationApplicationSelect;
+
+type RegularSectionBatchRegistration =
+  Prisma.EarlyRegistrationApplicationGetPayload<{
+    select: typeof REGULAR_SECTION_BATCH_REGISTRATION_SELECT;
+  }>;
+
+interface RegularSectionInventory {
+  id: number;
+  name: string;
+  displayName: string | null;
+  sortOrder: number;
+  maxCapacity: number;
+  gradeLevelId: number;
+  programType: ApplicantType;
+  enrolledCount: number;
+  availableSlots: number;
+}
+
+interface RegularSectionPlanSection {
+  sectionId: number;
+  sectionName: string;
+  sectionDisplayName: string;
+  sortOrder: number;
+  lane: RegularSectionLane;
+  maxCapacity: number;
+  enrolledCount: number;
+  availableSlots: number;
+  plannedCount: number;
+  remainingSlots: number;
+}
+
+interface RegularSectionPlannedAssignment {
+  registration: RegularSectionBatchRegistration;
+  id: number;
+  name: string;
+  trackingNumber: string;
+  targetStatus: ApplicationStatus;
+  generalAverage: number | null;
+  sectionId: number;
+  sectionName: string;
+  sectionDisplayName: string;
+  lane: RegularSectionLane;
+}
+
+interface RegularSectionUnassignedItem extends BatchFailureItem {
+  generalAverage: number | null;
+}
+
+interface RegularSectionAssignmentPlan {
+  requestedIds: number[];
+  gradeLevelId: number | null;
+  gradeLevelName: string | null;
+  summary: {
+    eligibleCount: number;
+    assignedCount: number;
+    blockedCount: number;
+    unassignedCount: number;
+    homogeneousSectionCount: number;
+    snakeSectionCount: number;
+  };
+  sections: RegularSectionPlanSection[];
+  assignments: RegularSectionPlannedAssignment[];
+  blocked: BatchFailureItem[];
+  unassigned: RegularSectionUnassignedItem[];
+}
+
+function resolveSectionDisplayName(section: {
+  name: string;
+  displayName: string | null;
+}): string {
+  const trimmed = section.displayName?.trim();
+  return trimmed && trimmed.length > 0 ? trimmed : section.name;
+}
+
+function resolveGeneralAverageFromRegistration(
+  registration: RegularSectionBatchRegistration,
+): number | null {
+  const raw =
+    registration.enrollmentApplications[0]?.previousSchool?.generalAverage;
+  if (typeof raw !== "number" || !Number.isFinite(raw)) {
+    return null;
+  }
+
+  return Number(raw.toFixed(2));
+}
+
+function compareRegularSectionCandidates(
+  left: {
+    registration: {
+      id: number;
+      trackingNumber: string;
+    };
+    generalAverage: number | null;
+  },
+  right: {
+    registration: {
+      id: number;
+      trackingNumber: string;
+    };
+    generalAverage: number | null;
+  },
+): number {
+  const leftScore = left.generalAverage;
+  const rightScore = right.generalAverage;
+
+  if (leftScore == null && rightScore != null) return 1;
+  if (leftScore != null && rightScore == null) return -1;
+
+  if (leftScore != null && rightScore != null && leftScore !== rightScore) {
+    return rightScore - leftScore;
+  }
+
+  const trackingComparison = left.registration.trackingNumber.localeCompare(
+    right.registration.trackingNumber,
+    undefined,
+    { numeric: true, sensitivity: "base" },
+  );
+  if (trackingComparison !== 0) return trackingComparison;
+
+  return left.registration.id - right.registration.id;
+}
+
+function assertSingleGradeLevelSelection(
+  registrations: RegularSectionBatchRegistration[],
+): { gradeLevelId: number | null; gradeLevelName: string | null } {
+  const gradeLevelIds = Array.from(
+    new Set(registrations.map((registration) => registration.gradeLevelId)),
+  );
+
+  if (gradeLevelIds.length > 1) {
+    throw new AppError(
+      422,
+      "Batch section assignment requires applicants from a single grade level.",
+    );
+  }
+
+  const gradeLevelId = gradeLevelIds[0] ?? null;
+  const gradeLevelName =
+    registrations[0]?.gradeLevel?.name != null
+      ? String(registrations[0].gradeLevel.name)
+      : null;
+
+  return {
+    gradeLevelId,
+    gradeLevelName,
+  };
+}
+
+async function fetchRegularSectionInventory(
+  gradeLevelId: number,
+  options?: { tx?: Prisma.TransactionClient; lock?: boolean },
+): Promise<RegularSectionInventory[]> {
+  const tx = options?.tx;
+  const lock = options?.lock === true;
+
+  const sectionRows: Array<{
+    id: number;
+    name: string;
+    displayName: string | null;
+    sortOrder: number;
+    maxCapacity: number;
+    gradeLevelId: number;
+    programType: ApplicantType;
+  }> = lock
+    ? await (() => {
+        if (!tx) {
+          throw new AppError(
+            500,
+            "Transaction client is required when locking sections.",
+          );
+        }
+
+        return tx.$queryRaw<
+          {
+            id: number;
+            name: string;
+            displayName: string | null;
+            sortOrder: number;
+            maxCapacity: number;
+            gradeLevelId: number;
+            programType: ApplicantType;
+          }[]
+        >`
+          SELECT
+            id,
+            name,
+            "display_name" as "displayName",
+            "sort_order" as "sortOrder",
+            "max_capacity" as "maxCapacity",
+            "grade_level_id" as "gradeLevelId",
+            "program_type" as "programType"
+          FROM "sections"
+          WHERE "grade_level_id" = ${gradeLevelId}
+            AND "program_type" = ${"REGULAR" as ApplicantType}
+          ORDER BY "sort_order" ASC, name ASC, id ASC
+          FOR UPDATE
+        `;
+      })()
+    : await (tx ?? prisma).section.findMany({
+        where: {
+          gradeLevelId,
+          programType: "REGULAR",
+        },
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }, { id: "asc" }],
+        select: {
+          id: true,
+          name: true,
+          displayName: true,
+          sortOrder: true,
+          maxCapacity: true,
+          gradeLevelId: true,
+          programType: true,
+        },
+      });
+
+  if (sectionRows.length === 0) {
+    return [];
+  }
+
+  const counts = await (tx ?? prisma).enrollmentRecord.groupBy({
+    by: ["sectionId"],
+    where: {
+      sectionId: { in: sectionRows.map((section) => section.id) },
+    },
+    _count: {
+      _all: true,
+    },
+  });
+
+  const countBySectionId = new Map<number, number>(
+    counts.map((countRow) => [countRow.sectionId, countRow._count._all]),
+  );
+
+  return sectionRows.map((section) => {
+    const enrolledCount = countBySectionId.get(section.id) ?? 0;
+    const availableSlots = Math.max(0, section.maxCapacity - enrolledCount);
+
+    return {
+      ...section,
+      enrolledCount,
+      availableSlots,
+    };
+  });
+}
+
+function buildRegularSectionAssignmentPlan(params: {
+  requestedIds: number[];
+  registrations: RegularSectionBatchRegistration[];
+  sections: RegularSectionInventory[];
+  expectedStatuses: Map<number, ApplicationStatus>;
+}): RegularSectionAssignmentPlan {
+  const { requestedIds, registrations, sections, expectedStatuses } = params;
+
+  assertNoStatusSnapshotConflicts(
+    expectedStatuses,
+    registrations.map((registration) => ({
+      id: registration.id,
+      status: registration.status,
+      trackingNumber: registration.trackingNumber,
+    })),
+  );
+
+  const { gradeLevelId, gradeLevelName } =
+    assertSingleGradeLevelSelection(registrations);
+
+  if (gradeLevelId != null && sections.length === 0) {
+    throw new AppError(
+      422,
+      "No regular sections are configured for the selected grade level.",
+    );
+  }
+
+  const registrationById = new Map(
+    registrations.map((registration) => [registration.id, registration]),
+  );
+
+  const blocked: BatchFailureItem[] = [];
+  const candidates: Array<{
+    registration: RegularSectionBatchRegistration;
+    name: string;
+    targetStatus: ApplicationStatus;
+    generalAverage: number | null;
+  }> = [];
+
+  for (const id of requestedIds) {
+    const registration = registrationById.get(id);
+    if (!registration) {
+      blocked.push({
+        id,
+        name: "Unknown",
+        trackingNumber: "N/A",
+        reason: "Application not found.",
+      });
+      continue;
+    }
+
+    const name = formatBatchName(
+      registration.learner.firstName,
+      registration.learner.lastName,
+    );
+
+    if (registration.applicantType !== "REGULAR") {
+      blocked.push({
+        id: registration.id,
+        name,
+        trackingNumber: registration.trackingNumber,
+        reason:
+          "Only Regular (BEC) applicants can be processed in this batch action.",
+      });
+      continue;
+    }
+
+    if (registration.status !== "VERIFIED") {
+      blocked.push({
+        id: registration.id,
+        name,
+        trackingNumber: registration.trackingNumber,
+        reason:
+          'Only applicants in "VERIFIED" status can be assigned to regular sections.',
+      });
+      continue;
+    }
+
+    const latestEnrollmentApp = registration.enrollmentApplications[0];
+    if (latestEnrollmentApp?.enrollmentRecord) {
+      blocked.push({
+        id: registration.id,
+        name,
+        trackingNumber: registration.trackingNumber,
+        reason:
+          "Applicant is already assigned to a section and cannot be re-assigned in this batch.",
+      });
+      continue;
+    }
+
+    const academicStatus = extractChecklistAcademicStatus(
+      registration.checklist,
+    );
+    if (academicStatus === "RETAINED") {
+      blocked.push({
+        id: registration.id,
+        name,
+        trackingNumber: registration.trackingNumber,
+        reason:
+          "Retained learners cannot proceed to section assignment and must be advised separately.",
+      });
+      continue;
+    }
+
+    const requirements = getRequiredDocuments({
+      learnerType: registration.learnerType,
+      gradeLevel: registration.gradeLevel.name,
+      applicantType: registration.applicantType,
+      isLwd: Boolean(registration.learner.isLearnerWithDisability),
+      isPeptAePasser: false,
+      documentRequirements: null,
+    });
+
+    const missingMandatory = computeMissingMandatoryRequirements(
+      requirements,
+      extractChecklistState(registration.checklist),
+    );
+
+    if (missingMandatory.length > 0) {
+      blocked.push({
+        id: registration.id,
+        name,
+        trackingNumber: registration.trackingNumber,
+        reason: `Missing required documents: ${missingMandatory.join(", ")}.`,
+      });
+      continue;
+    }
+
+    const requiresTemporaryEnrollment =
+      registration.learner.isPendingLrnCreation === true ||
+      !registration.learner.lrn;
+    const targetStatus: ApplicationStatus = requiresTemporaryEnrollment
+      ? "TEMPORARILY_ENROLLED"
+      : "ENROLLED";
+
+    try {
+      assertEarlyRegTransition(
+        registration.status,
+        targetStatus,
+        `Cannot transition application #${registration.id} from "${registration.status}" to "${targetStatus}".`,
+      );
+    } catch (error) {
+      blocked.push({
+        id: registration.id,
+        name,
+        trackingNumber: registration.trackingNumber,
+        reason: toBatchReason(error, "Transition not allowed."),
+      });
+      continue;
+    }
+
+    candidates.push({
+      registration,
+      name,
+      targetStatus,
+      generalAverage: resolveGeneralAverageFromRegistration(registration),
+    });
+  }
+
+  candidates.sort(compareRegularSectionCandidates);
+
+  const sectionStates = sections.map((section, index) => ({
+    ...section,
+    lane:
+      index < REGULAR_HOMOGENEOUS_SECTION_LIMIT
+        ? ("HOMOGENEOUS" as RegularSectionLane)
+        : ("SNAKE" as RegularSectionLane),
+    plannedCount: 0,
+    remainingSlots: section.availableSlots,
+  }));
+
+  const assignments: RegularSectionPlannedAssignment[] = [];
+  let candidateIndex = 0;
+
+  const assignCandidateToSection = (
+    sectionState: (typeof sectionStates)[number],
+  ) => {
+    if (
+      sectionState.remainingSlots <= 0 ||
+      candidateIndex >= candidates.length
+    ) {
+      return false;
+    }
+
+    const candidate = candidates[candidateIndex];
+    candidateIndex += 1;
+    sectionState.remainingSlots -= 1;
+    sectionState.plannedCount += 1;
+
+    assignments.push({
+      registration: candidate.registration,
+      id: candidate.registration.id,
+      name: candidate.name,
+      trackingNumber: candidate.registration.trackingNumber,
+      targetStatus: candidate.targetStatus,
+      generalAverage: candidate.generalAverage,
+      sectionId: sectionState.id,
+      sectionName: sectionState.name,
+      sectionDisplayName: resolveSectionDisplayName(sectionState),
+      lane: sectionState.lane,
+    });
+
+    return true;
+  };
+
+  const homogeneousSections = sectionStates.slice(
+    0,
+    REGULAR_HOMOGENEOUS_SECTION_LIMIT,
+  );
+  for (const sectionState of homogeneousSections) {
+    while (assignCandidateToSection(sectionState)) {
+      // Keep filling this homogeneous section before moving to the next.
+    }
+  }
+
+  const snakeSections = sectionStates.slice(REGULAR_HOMOGENEOUS_SECTION_LIMIT);
+  let snakeForward = true;
+
+  while (candidateIndex < candidates.length && snakeSections.length > 0) {
+    const pass = snakeForward ? snakeSections : [...snakeSections].reverse();
+    let assignedInPass = false;
+
+    for (const sectionState of pass) {
+      if (assignCandidateToSection(sectionState)) {
+        assignedInPass = true;
+      }
+      if (candidateIndex >= candidates.length) {
+        break;
+      }
+    }
+
+    if (!assignedInPass) {
+      break;
+    }
+
+    snakeForward = !snakeForward;
+  }
+
+  const unassigned: RegularSectionUnassignedItem[] = candidates
+    .slice(candidateIndex)
+    .map((candidate) => ({
+      id: candidate.registration.id,
+      name: candidate.name,
+      trackingNumber: candidate.registration.trackingNumber,
+      reason:
+        "No remaining section capacity across the configured regular sections.",
+      generalAverage: candidate.generalAverage,
+    }));
+
+  const planSections: RegularSectionPlanSection[] = sectionStates.map(
+    (sectionState) => ({
+      sectionId: sectionState.id,
+      sectionName: sectionState.name,
+      sectionDisplayName: resolveSectionDisplayName(sectionState),
+      sortOrder: sectionState.sortOrder,
+      lane: sectionState.lane,
+      maxCapacity: sectionState.maxCapacity,
+      enrolledCount: sectionState.enrolledCount,
+      availableSlots: sectionState.availableSlots,
+      plannedCount: sectionState.plannedCount,
+      remainingSlots: sectionState.remainingSlots,
+    }),
+  );
+
+  return {
+    requestedIds,
+    gradeLevelId,
+    gradeLevelName,
+    summary: {
+      eligibleCount: candidates.length,
+      assignedCount: assignments.length,
+      blockedCount: blocked.length,
+      unassignedCount: unassigned.length,
+      homogeneousSectionCount: Math.min(
+        sectionStates.length,
+        REGULAR_HOMOGENEOUS_SECTION_LIMIT,
+      ),
+      snakeSectionCount: Math.max(
+        sectionStates.length - REGULAR_HOMOGENEOUS_SECTION_LIMIT,
+        0,
+      ),
+    },
+    sections: planSections,
+    assignments,
+    blocked,
+    unassigned,
+  };
+}
+
+/** POST /batch/assign-regular-section/preview — Preview deterministic hybrid section plan for verified regular applicants. */
+export async function batchAssignRegularSectionsPreview(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { ids, expectedStatuses } = req.body as {
+      ids: number[];
+      expectedStatuses?: Record<string, string>;
+    };
+
+    const requestedIds = Array.from(new Set(ids));
+    if (requestedIds.length === 0) {
+      throw new AppError(400, "No application IDs provided.");
+    }
+
+    const expectedStatusMap = parseExpectedStatusMap(expectedStatuses);
+
+    const registrations = await prisma.earlyRegistrationApplication.findMany({
+      where: { id: { in: requestedIds } },
+      select: REGULAR_SECTION_BATCH_REGISTRATION_SELECT,
+    });
+
+    const { gradeLevelId } = assertSingleGradeLevelSelection(registrations);
+
+    const sections =
+      gradeLevelId == null
+        ? []
+        : await fetchRegularSectionInventory(gradeLevelId);
+
+    const plan = buildRegularSectionAssignmentPlan({
+      requestedIds,
+      registrations,
+      sections,
+      expectedStatuses: expectedStatusMap,
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "EARLY_REG_BATCH_ASSIGN_REGULAR_SECTION_PREVIEW",
+      description:
+        `Previewed regular section assignment: ${plan.summary.assignedCount} assignable, ` +
+        `${plan.summary.blockedCount} blocked, ${plan.summary.unassignedCount} unassigned.`,
+      subjectType: "EarlyRegistrationApplication",
+      recordId: null,
+      req,
+    }).catch(() => {});
+
+    res.json({
+      processed: requestedIds.length,
+      gradeLevelId: plan.gradeLevelId,
+      gradeLevelName: plan.gradeLevelName,
+      summary: plan.summary,
+      sections: plan.sections,
+      assignments: plan.assignments.map((assignment) => ({
+        id: assignment.id,
+        name: assignment.name,
+        trackingNumber: assignment.trackingNumber,
+        targetStatus: assignment.targetStatus,
+        generalAverage: assignment.generalAverage,
+        sectionId: assignment.sectionId,
+        sectionName: assignment.sectionName,
+        sectionDisplayName: assignment.sectionDisplayName,
+        lane: assignment.lane,
+      })),
+      blocked: plan.blocked,
+      unassigned: plan.unassigned,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** PATCH /batch/assign-regular-section/commit — Apply deterministic hybrid section plan in a locked transaction. */
+export async function batchAssignRegularSectionsCommit(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { ids, expectedStatuses } = req.body as {
+      ids: number[];
+      expectedStatuses?: Record<string, string>;
+    };
+
+    const requestedIds = Array.from(new Set(ids));
+    if (requestedIds.length === 0) {
+      throw new AppError(400, "No application IDs provided.");
+    }
+
+    const expectedStatusMap = parseExpectedStatusMap(expectedStatuses);
+
+    const outcome = await prisma.$transaction(async (tx) => {
+      if (requestedIds.length > 0) {
+        await tx.$queryRaw`
+          SELECT id
+          FROM "early_registration_applications"
+          WHERE id IN (${Prisma.join(requestedIds)})
+          FOR UPDATE
+        `;
+      }
+
+      const registrations = await tx.earlyRegistrationApplication.findMany({
+        where: { id: { in: requestedIds } },
+        select: REGULAR_SECTION_BATCH_REGISTRATION_SELECT,
+      });
+
+      const { gradeLevelId } = assertSingleGradeLevelSelection(registrations);
+
+      const sections =
+        gradeLevelId == null
+          ? []
+          : await fetchRegularSectionInventory(gradeLevelId, {
+              tx,
+              lock: true,
+            });
+
+      const plan = buildRegularSectionAssignmentPlan({
+        requestedIds,
+        registrations,
+        sections,
+        expectedStatuses: expectedStatusMap,
+      });
+
+      const succeeded: Array<
+        BatchSuccessItem & {
+          status: ApplicationStatus;
+          sectionId: number;
+          sectionDisplayName: string;
+          lane: RegularSectionLane;
+        }
+      > = [];
+
+      for (const assignment of plan.assignments) {
+        const registration = assignment.registration;
+
+        const existingEnrollmentApp = registration.enrollmentApplications[0];
+
+        const enrollmentApplication = existingEnrollmentApp
+          ? await tx.enrollmentApplication.update({
+              where: { id: existingEnrollmentApp.id },
+              data: {
+                status: assignment.targetStatus,
+                isTemporarilyEnrolled:
+                  assignment.targetStatus === "TEMPORARILY_ENROLLED",
+              },
+            })
+          : await tx.enrollmentApplication.create({
+              data: {
+                learnerId: registration.learnerId,
+                earlyRegistrationId: registration.id,
+                schoolYearId: registration.schoolYearId,
+                gradeLevelId: registration.gradeLevelId,
+                applicantType: registration.applicantType,
+                learnerType: registration.learnerType,
+                status: assignment.targetStatus,
+                admissionChannel: registration.channel,
+                isPrivacyConsentGiven: registration.isPrivacyConsentGiven,
+                encodedById: req.user!.userId,
+                isTemporarilyEnrolled:
+                  assignment.targetStatus === "TEMPORARILY_ENROLLED",
+              },
+            });
+
+        const checklistState = extractChecklistState(registration.checklist);
+        const checklistAcademicStatus = extractChecklistAcademicStatus(
+          registration.checklist,
+        );
+
+        await tx.applicationChecklist.upsert({
+          where: { earlyRegistrationId: registration.id },
+          create: {
+            earlyRegistrationId: registration.id,
+            enrollmentId: enrollmentApplication.id,
+            updatedById: req.user!.userId,
+            academicStatus: checklistAcademicStatus,
+            ...checklistState,
+          },
+          update: {
+            enrollmentId: enrollmentApplication.id,
+            updatedById: req.user!.userId,
+            academicStatus: checklistAcademicStatus,
+          },
+        });
+
+        await tx.enrollmentRecord.upsert({
+          where: {
+            enrollmentApplicationId: enrollmentApplication.id,
+          },
+          create: {
+            enrollmentApplicationId: enrollmentApplication.id,
+            sectionId: assignment.sectionId,
+            schoolYearId: registration.schoolYearId,
+            enrolledById: req.user!.userId,
+          },
+          update: {
+            sectionId: assignment.sectionId,
+            schoolYearId: registration.schoolYearId,
+            enrolledById: req.user!.userId,
+          },
+        });
+
+        await tx.earlyRegistrationApplication.update({
+          where: { id: registration.id },
+          data: { status: assignment.targetStatus },
+        });
+
+        if (assignment.targetStatus === "ENROLLED") {
+          await tx.learner.update({
+            where: { id: registration.learnerId },
+            data: { isPendingLrnCreation: false },
+          });
+        }
+
+        succeeded.push({
+          id: assignment.id,
+          name: assignment.name,
+          trackingNumber: assignment.trackingNumber,
+          status: assignment.targetStatus,
+          sectionId: assignment.sectionId,
+          sectionDisplayName: assignment.sectionDisplayName,
+          lane: assignment.lane,
+        });
+      }
+
+      return {
+        succeeded,
+        failed: [
+          ...plan.blocked,
+          ...plan.unassigned.map(
+            ({ generalAverage: _generalAverage, ...item }) => item,
+          ),
+        ],
+        summary: plan.summary,
+      };
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "EARLY_REG_BATCH_ASSIGN_REGULAR_SECTION_COMMIT",
+      description:
+        `Committed regular section assignment: ${outcome.succeeded.length} succeeded, ` +
+        `${outcome.failed.length} failed.`,
+      subjectType: "EarlyRegistrationApplication",
+      recordId: null,
+      req,
+    }).catch(() => {});
+
+    res.json({
+      processed: requestedIds.length,
+      succeeded: outcome.succeeded,
+      failed: outcome.failed,
+      summary: outcome.summary,
     });
   } catch (err) {
     next(err);
@@ -3441,7 +4399,14 @@ export async function batchSaveScores(
             : totalScore >= effectiveCutoff;
         const targetStatus: ApplicationStatus = isPassed
           ? "PASSED"
-          : "SUBMITTED";
+          : "SUBMITTED_BEERF";
+        const failureReason = isPassed
+          ? null
+          : resolveAssessmentFailureReason({
+              isNoShow,
+              totalScore,
+              effectiveCutoff,
+            });
 
         assertEarlyRegTransition(
           registration.status,
@@ -3454,7 +4419,9 @@ export async function batchSaveScores(
         );
         const notes = [
           row.remarks?.trim(),
-          isNoShow ? "Marked absent / no-show." : null,
+          failureReason
+            ? `Assessment result: FAILED. ${failureReason} Automatically rerouted to REGULAR enrollment track.`
+            : null,
           componentSummary,
         ]
           .filter((segment): segment is string => Boolean(segment))
@@ -3475,12 +4442,21 @@ export async function batchSaveScores(
             where: { id: registration.id },
             data: {
               status: targetStatus,
-              ...(targetStatus === "SUBMITTED"
+              ...(targetStatus === "SUBMITTED_BEERF"
                 ? { applicantType: "REGULAR" }
                 : {}),
             },
           });
         });
+
+        if (!isPassed && failureReason) {
+          await sharedService.queueEmail(
+            registration.id,
+            registration.email ?? null,
+            `Assessment Result - ${registration.trackingNumber}: ${failureReason} Automatically rerouted to REGULAR enrollment track.`,
+            "ASSESSMENT_FAILED",
+          );
+        }
 
         succeeded.push({
           id: registration.id,
@@ -3527,7 +4503,7 @@ export async function batchFinalizeInterview(
       rows: Array<{
         id: number;
         decision: "PASS" | "REJECT";
-        rejectOutcome?: "SUBMITTED" | "REJECTED";
+        rejectOutcome?: "SUBMITTED_BEERF" | "REJECTED";
         interviewScore?: number | null;
         remarks?: string | null;
       }>;
@@ -3591,7 +4567,7 @@ export async function batchFinalizeInterview(
       const targetStatus: ApplicationStatus =
         row.decision === "PASS"
           ? "READY_FOR_ENROLLMENT"
-          : (row.rejectOutcome ?? "SUBMITTED");
+          : (row.rejectOutcome ?? "SUBMITTED_BEERF");
 
       try {
         assertEarlyRegTransition(
@@ -3638,7 +4614,7 @@ export async function batchFinalizeInterview(
             where: { id: registration.id },
             data: {
               status: targetStatus,
-              ...(targetStatus === "SUBMITTED"
+              ...(targetStatus === "SUBMITTED_BEERF"
                 ? { applicantType: "REGULAR" }
                 : {}),
             },
@@ -3727,7 +4703,7 @@ export async function batchProcess(
           where: { id: app.id },
           data: {
             status: targetStatus,
-            ...(targetStatus === "SUBMITTED" ||
+            ...(targetStatus === "SUBMITTED_BEERF" ||
             app.status === "FAILED_ASSESSMENT"
               ? { applicantType: "REGULAR" }
               : {}),

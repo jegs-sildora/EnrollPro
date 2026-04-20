@@ -19,7 +19,6 @@ import {
   Activity,
   Mail,
   AlertTriangle,
-  CloudUpload,
   TrendingUp,
 } from "lucide-react";
 
@@ -455,14 +454,6 @@ function AppSidebar() {
                       label="Audit Logs"
                       pathname={pathname}
                     />
-                    {isAdmin && (
-                      <NavItem
-                        to="/admin/atlas"
-                        icon={CloudUpload}
-                        label="ATLAS Sync"
-                        pathname={pathname}
-                      />
-                    )}
                     {isAdmin && (
                       <NavItem
                         to="/admin/system"

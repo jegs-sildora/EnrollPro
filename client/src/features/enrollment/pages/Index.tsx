@@ -9,9 +9,6 @@ import {
   School,
   UserPlus,
   LogOut,
-  ChevronDown,
-  UserCheck,
-  Zap,
 } from "lucide-react";
 import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
@@ -37,12 +34,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/shared/ui/dropdown-menu";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Sheet, SheetContent } from "@/shared/ui/sheet";
 import { Label } from "@/shared/ui/label";
@@ -55,7 +46,6 @@ import { ApplicationDetailPanel } from "@/features/enrollment/components/Applica
 import { ScheduleExamDialog } from "@/features/enrollment/components/ScheduleExamDialog";
 import { StatusBadge } from "@/features/enrollment/components/StatusBadge";
 import { EnrollmentWorkflowTabs } from "@/features/enrollment/components/EnrollmentWorkflowTabs";
-import { OneTimePinSuccessDialog } from "@/features/enrollment/components/OneTimePinSuccessDialog";
 import {
   ENROLLMENT_SUB_MENU_DESCRIPTIONS,
   ENROLLMENT_SUB_MENU_OPTIONS,
@@ -103,16 +93,7 @@ interface SectionOption {
   isFull: boolean;
 }
 
-interface PortalPinDialogData {
-  learnerName: string;
-  trackingNumber: string;
-  sectionName: string;
-  gradeLevelLabel: string;
-  portalPin: string;
-}
-
 type PendingQueueFilter = "ALL" | "INCOMING_G7" | "CONTINUING_JHS";
-type WalkInRouteType = "new-learner" | "transferee" | "pept" | "balik-aral";
 type ReadingProfileLevel =
   | "INDEPENDENT"
   | "INSTRUCTIONAL"
@@ -179,10 +160,6 @@ function formatGradeLevelLabel(gradeLevelName: string): string {
     return gradeLevelName;
   }
   return `Grade ${gradeLevelName}`;
-}
-
-function formatLearnerDisplayName(lastName: string, firstName: string): string {
-  return `${lastName}, ${firstName}`;
 }
 
 function resolveApplicationSectionName(
@@ -265,8 +242,6 @@ export default function Enrollment() {
   ] = useState<Record<number, boolean>>({});
   const [savingSectionByApplicationId, setSavingSectionByApplicationId] =
     useState<Record<number, boolean>>({});
-  const [portalPinDialogData, setPortalPinDialogData] =
-    useState<PortalPinDialogData | null>(null);
 
   // Detail/Action state
   const [selectedApp, setSelectedApp] = useState<
@@ -314,6 +289,10 @@ export default function Enrollment() {
   >([]);
   const [batchSectionOptionsLoading, setBatchSectionOptionsLoading] =
     useState(false);
+  const [isWalkInGateOpen, setIsWalkInGateOpen] = useState(false);
+  const [walkInLrn, setWalkInLrn] = useState("");
+  const [walkInNoLrn, setWalkInNoLrn] = useState(false);
+  const [isWalkInGateChecking, setIsWalkInGateChecking] = useState(false);
 
   const visibleApplications = useMemo(() => {
     if (workflowView !== "PENDING_VERIFICATION") {
@@ -370,21 +349,66 @@ export default function Enrollment() {
     );
   }, [isAllVisibleSelected, visibleApplicationIds]);
 
-  const openWalkInEncoder = useCallback(
-    (type: WalkInRouteType) => {
-      navigate(`/monitoring/enrollment/walk-in?type=${type}`);
-    },
-    [navigate],
-  );
+  const resetWalkInGate = useCallback(() => {
+    setWalkInLrn("");
+    setWalkInNoLrn(false);
+    setIsWalkInGateChecking(false);
+  }, []);
 
-  const handlePortalPinAcknowledge = useCallback(() => {
-    setPortalPinDialogData(null);
-    setSelectedId(null);
-    setWorkflowView("PENDING_VERIFICATION");
-    setPendingQueueFilter("ALL");
-    setPage(1);
-    navigate("/monitoring/enrollment?workflow=PENDING_VERIFICATION");
-  }, [navigate]);
+  const openWalkInGate = useCallback(() => {
+    resetWalkInGate();
+    setIsWalkInGateOpen(true);
+  }, [resetWalkInGate]);
+
+  const handleProceedWalkInGate = useCallback(async () => {
+    if (walkInNoLrn) {
+      setIsWalkInGateOpen(false);
+      navigate("/monitoring/enrollment/walk-in?noLrn=true");
+      return;
+    }
+
+    const normalizedLrn = walkInLrn.trim();
+    if (!/^\d{12}$/.test(normalizedLrn)) {
+      sileo.error({
+        title: "LRN Required",
+        description: "Enter a valid 12-digit LRN or enable the no-LRN path.",
+      });
+      return;
+    }
+
+    setIsWalkInGateChecking(true);
+    try {
+      const response = await api.get(
+        `/early-registrations/check-lrn/${normalizedLrn}`,
+      );
+      const existingRecord = Boolean(response.data?.exists);
+
+      if (existingRecord) {
+        sileo.info({
+          title: "Existing Learner Found",
+          description:
+            response.data?.type === "EARLY_REGISTRATION"
+              ? "This learner pre-registered in February. Redirecting to Enrollment queue for Delta updates."
+              : "This learner already exists in the active enrollment queue. Redirecting now.",
+        });
+
+        setIsWalkInGateOpen(false);
+        navigate(
+          `/monitoring/enrollment?workflow=PENDING_VERIFICATION&search=${encodeURIComponent(normalizedLrn)}`,
+        );
+        return;
+      }
+
+      setIsWalkInGateOpen(false);
+      navigate(
+        `/monitoring/enrollment/walk-in?lrn=${encodeURIComponent(normalizedLrn)}`,
+      );
+    } catch (err) {
+      toastApiError(err as never);
+    } finally {
+      setIsWalkInGateChecking(false);
+    }
+  }, [navigate, walkInLrn, walkInNoLrn]);
 
   const openBatchAssignModal = useCallback(async () => {
     if (selectedBatchIds.length === 0) {
@@ -524,15 +548,12 @@ export default function Enrollment() {
       }
 
       if (workflowView === "SECTION_ASSIGNMENT") {
-        params.append(
-          "status",
-          Array.from(SECTION_ASSIGNMENT_STATUSES).join(","),
-        );
+        params.append("status", "VERIFIED");
         params.append("withoutSection", "true");
       }
 
       if (workflowView === "OFFICIAL_ROSTER") {
-        params.append("status", "OFFICIALLY_ENROLLED,ENROLLED");
+        params.append("status", "ENROLLED");
         params.append("withSection", "true");
       }
 
@@ -563,10 +584,7 @@ export default function Enrollment() {
           return SECTION_ASSIGNMENT_STATUSES.has(app.status) && !hasSection;
         }
 
-        return (
-          (app.status === "OFFICIALLY_ENROLLED" || app.status === "ENROLLED") &&
-          hasSection
-        );
+        return app.status === "ENROLLED" && hasSection;
       });
 
       setApplications(filteredApps);
@@ -666,31 +684,15 @@ export default function Enrollment() {
           return next;
         });
 
-        const generatedPortalPin = enrollResponse.data?.rawPortalPin;
+        sileo.success({
+          title: "Assigned & Enrolled",
+          description: `${application.lastName}, ${application.firstName} is now officially enrolled.`,
+        });
 
-        if (generatedPortalPin) {
-          const selectedSectionName =
-            sectionOptionsByApplicationId[application.id]?.find(
-              (section) => section.id === Number(selectedSectionId),
-            )?.name ??
-            resolveApplicationSectionName(application) ??
-            "Not Assigned";
-
-          setPortalPinDialogData({
-            learnerName: formatLearnerDisplayName(
-              application.lastName,
-              application.firstName,
-            ),
-            trackingNumber: application.trackingNumber,
-            sectionName: selectedSectionName,
-            gradeLevelLabel: formatGradeLevelLabel(application.gradeLevel.name),
-            portalPin: String(generatedPortalPin),
-          });
-        } else {
-          sileo.success({
-            title: "Assigned & Enrolled",
-            description: `${application.lastName}, ${application.firstName} is now officially enrolled.`,
-          });
+        if (enrollResponse.data?.rawPortalPin) {
+          alert(
+            `SUCCESS: Official enrollment confirmed.\n\nIMPORTANT: The Learner Portal PIN is ${enrollResponse.data.rawPortalPin}\n\nPlease write this down on the enrollment slip. This PIN will only be shown once.`,
+          );
         }
 
         await fetchData();
@@ -703,12 +705,7 @@ export default function Enrollment() {
         }));
       }
     },
-    [
-      sectionSelectionByApplicationId,
-      sectionOptionsByApplicationId,
-      fetchData,
-      openReadingProfileDialog,
-    ],
+    [sectionSelectionByApplicationId, fetchData, openReadingProfileDialog],
   );
 
   const openUnenrollDialog = useCallback((app: Application) => {
@@ -1238,31 +1235,16 @@ export default function Enrollment() {
 
   const handleEnroll = async () => {
     if (!selectedApp) return;
-
-    const learnerName = formatLearnerDisplayName(
-      selectedApp.lastName,
-      selectedApp.firstName,
-    );
-    const sectionName =
-      resolveSelectedApplicationSectionName(selectedApp) ?? "Not Assigned";
-    const gradeLevelLabel = selectedApp.gradeLevel?.name
-      ? formatGradeLevelLabel(selectedApp.gradeLevel.name)
-      : "N/A";
-
     try {
       const res = await api.patch(`/applications/${selectedApp.id}/enroll`);
 
       setIsEnrollModalOpen(false);
-      await fetchData();
+      fetchData();
 
       if (res.data.rawPortalPin) {
-        setPortalPinDialogData({
-          learnerName,
-          trackingNumber: selectedApp.trackingNumber,
-          sectionName,
-          gradeLevelLabel,
-          portalPin: String(res.data.rawPortalPin),
-        });
+        alert(
+          `SUCCESS: Official enrollment confirmed.\n\nIMPORTANT: The Learner Portal PIN is ${res.data.rawPortalPin}\n\nPlease write this down on the enrollment slip. This PIN will only be shown once.`,
+        );
       } else {
         sileo.success({
           title: "Enrolled",
@@ -1291,43 +1273,12 @@ export default function Enrollment() {
             </p>
           </div>
           <div className="flex w-full md:w-auto gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="default"
-                  className="h-10 px-3 flex-1 md:flex-none text-sm font-bold bg-primary hover:bg-primary/90">
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  + Walk-In Learner
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 font-bold">
-                <DropdownMenuItem
-                  onClick={() => openWalkInEncoder("new-learner")}
-                  className="cursor-pointer">
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Enroll New Learner (No existing LRN)
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => openWalkInEncoder("transferee")}
-                  className="cursor-pointer">
-                  <School className="mr-2 h-4 w-4" />
-                  Enroll Transferee (From another school)
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => openWalkInEncoder("pept")}
-                  className="cursor-pointer">
-                  <Zap className="mr-2 h-4 w-4 text-amber-500" />
-                  Enroll Accelerated / PEPT Passer
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => openWalkInEncoder("balik-aral")}
-                  className="cursor-pointer">
-                  <UserCheck className="mr-2 h-4 w-4" />
-                  Enroll Balik-Aral
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              variant="default"
+              className="h-10 px-3 flex-1 md:flex-none text-sm font-bold bg-primary hover:bg-primary/90"
+              onClick={openWalkInGate}>
+              <UserPlus className="h-4 w-4 mr-2" />+ Encode Walk-In BEEF
+            </Button>
             <Button
               variant="outline"
               className="h-10 px-3 flex-1 md:flex-none text-sm font-bold"
@@ -1701,9 +1652,9 @@ export default function Enrollment() {
                       `/applications/${selectedId}/mark-interview-passed`,
                     );
                     sileo.success({
-                      title: "Pre-Registered",
+                      title: "Ready for Enrollment",
                       description:
-                        "Learner moved to Pre-Registered / Ready for Sectioning.",
+                        "Learner moved to Ready for Enrollment status.",
                     });
                     fetchData();
                   } catch (e) {
@@ -1722,9 +1673,9 @@ export default function Enrollment() {
                     }
 
                     sileo.success({
-                      title: "Ready for Sectioning",
+                      title: "Verified",
                       description:
-                        "Physical documents verified. Learner is now in the Ready for Sectioning queue.",
+                        "Physical documents verified. Learner is now ready for section assignment.",
                     });
                     fetchData();
                   } catch (e) {
@@ -1836,17 +1787,6 @@ export default function Enrollment() {
         </DialogContent>
       </Dialog>
 
-      {portalPinDialogData && (
-        <OneTimePinSuccessDialog
-          learnerName={portalPinDialogData.learnerName}
-          trackingNumber={portalPinDialogData.trackingNumber}
-          sectionName={portalPinDialogData.sectionName}
-          gradeLevelLabel={portalPinDialogData.gradeLevelLabel}
-          portalPin={portalPinDialogData.portalPin}
-          onAcknowledge={handlePortalPinAcknowledge}
-        />
-      )}
-
       <ScheduleExamDialog
         open={isScheduleDialogOpen}
         onOpenChange={isScheduleDialogOpen ? setIsScheduleDialogOpen : () => {}}
@@ -1855,6 +1795,94 @@ export default function Enrollment() {
         onSuccess={fetchData}
         onCloseSheet={() => setSelectedId(null)}
       />
+
+      <Dialog
+        open={isWalkInGateOpen}
+        onOpenChange={(open) => {
+          setIsWalkInGateOpen(open);
+          if (!open) {
+            resetWalkInGate();
+          }
+        }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xs font-bold uppercase tracking-wider">
+              Verify LRN / Existing Record
+            </DialogTitle>
+            <DialogDescription className="text-xs font-semibold">
+              Check the learner first before opening Direct Intake to avoid
+              duplicate BOSY records.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label
+                htmlFor="walkInLrn"
+                className="text-xs font-bold uppercase tracking-wider">
+                Enter 12-Digit LRN
+              </Label>
+              <Input
+                id="walkInLrn"
+                value={walkInLrn}
+                maxLength={12}
+                disabled={walkInNoLrn || isWalkInGateChecking}
+                placeholder="109988776655"
+                className="h-10 text-xs font-bold"
+                onChange={(event) => {
+                  const normalized = event.target.value
+                    .replace(/[^\d]/g, "")
+                    .slice(0, 12);
+                  setWalkInLrn(normalized);
+                }}
+              />
+            </div>
+
+            <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+              <Checkbox
+                id="walkInNoLrn"
+                checked={walkInNoLrn}
+                disabled={isWalkInGateChecking}
+                onCheckedChange={(checked) => {
+                  const enabled = checked === true;
+                  setWalkInNoLrn(enabled);
+                  if (enabled) {
+                    setWalkInLrn("");
+                  }
+                }}
+              />
+              <div className="space-y-1">
+                <Label
+                  htmlFor="walkInNoLrn"
+                  className="text-xs font-bold tracking-wide">
+                  Learner has no LRN yet
+                </Label>
+                <p className="text-[11px] font-semibold text-muted-foreground">
+                  Use only for incoming Grade 7 or transferee walk-ins.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="text-xs font-bold"
+              disabled={isWalkInGateChecking}
+              onClick={() => setIsWalkInGateOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="text-xs font-bold"
+              disabled={isWalkInGateChecking}
+              onClick={() => {
+                void handleProceedWalkInGate();
+              }}>
+              {isWalkInGateChecking ? "Checking..." : "Proceed"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={readingProfileDialog.open}

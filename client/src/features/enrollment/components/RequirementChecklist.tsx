@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Check,
   AlertCircle,
@@ -40,6 +40,10 @@ interface Props {
   applicantId: number;
   learnerType: LearnerType;
   checklist?: ChecklistData;
+  documents?: Array<{
+    documentType: string;
+    status: "SUBMITTED" | "VERIFIED" | "REJECTED" | "MISSING";
+  }>;
   endpointBase?: string;
   onRefresh: () => void;
   onMandatoryStatusChange?: (isMet: boolean) => void;
@@ -52,7 +56,8 @@ type ChecklistFieldKey = keyof Omit<
 >;
 
 interface RequirementItem {
-  key: ChecklistFieldKey;
+  type: string;
+  checklistKey?: ChecklistFieldKey;
   label: string;
   description: string;
   isMandatory: boolean;
@@ -114,49 +119,57 @@ function buildFallbackRequirements(
 ): RequirementItem[] {
   return [
     {
-      key: "isPsaBirthCertPresented",
+      type: "PSA_BIRTH_CERTIFICATE",
+      checklistKey: "isPsaBirthCertPresented",
       label: CHECKLIST_FIELD_LABELS.isPsaBirthCertPresented,
       description: CHECKLIST_FIELD_DESCRIPTIONS.isPsaBirthCertPresented,
       isMandatory: learnerType !== "CONTINUING",
     },
     {
-      key: "isSf9Submitted",
+      type: "SF9_REPORT_CARD",
+      checklistKey: "isSf9Submitted",
       label: CHECKLIST_FIELD_LABELS.isSf9Submitted,
       description: CHECKLIST_FIELD_DESCRIPTIONS.isSf9Submitted,
       isMandatory: learnerType !== "CONTINUING",
     },
     {
-      key: "isConfirmationSlipReceived",
+      type: "CONFIRMATION_SLIP",
+      checklistKey: "isConfirmationSlipReceived",
       label: CHECKLIST_FIELD_LABELS.isConfirmationSlipReceived,
       description: CHECKLIST_FIELD_DESCRIPTIONS.isConfirmationSlipReceived,
       isMandatory: learnerType === "CONTINUING",
     },
     {
-      key: "isSf10Requested",
+      type: "SF10_PERMANENT_RECORD",
+      checklistKey: "isSf10Requested",
       label: CHECKLIST_FIELD_LABELS.isSf10Requested,
       description: CHECKLIST_FIELD_DESCRIPTIONS.isSf10Requested,
       isMandatory: false,
     },
     {
-      key: "isGoodMoralPresented",
+      type: "GOOD_MORAL_CERTIFICATE",
+      checklistKey: "isGoodMoralPresented",
       label: CHECKLIST_FIELD_LABELS.isGoodMoralPresented,
       description: CHECKLIST_FIELD_DESCRIPTIONS.isGoodMoralPresented,
       isMandatory: false,
     },
     {
-      key: "isMedicalEvalSubmitted",
+      type: "MEDICAL_EVALUATION",
+      checklistKey: "isMedicalEvalSubmitted",
       label: CHECKLIST_FIELD_LABELS.isMedicalEvalSubmitted,
       description: CHECKLIST_FIELD_DESCRIPTIONS.isMedicalEvalSubmitted,
       isMandatory: false,
     },
     {
-      key: "isUndertakingSigned",
+      type: "AFFIDAVIT_OF_UNDERTAKING",
+      checklistKey: "isUndertakingSigned",
       label: CHECKLIST_FIELD_LABELS.isUndertakingSigned,
       description: CHECKLIST_FIELD_DESCRIPTIONS.isUndertakingSigned,
       isMandatory: learnerType === "TRANSFEREE",
     },
     {
-      key: "isCertOfRecognitionPresented",
+      type: "CERTIFICATE_OF_RECOGNITION",
+      checklistKey: "isCertOfRecognitionPresented",
       label: CHECKLIST_FIELD_LABELS.isCertOfRecognitionPresented,
       description: CHECKLIST_FIELD_DESCRIPTIONS.isCertOfRecognitionPresented,
       isMandatory: false,
@@ -164,20 +177,43 @@ function buildFallbackRequirements(
   ];
 }
 
+function prettifyRequirementType(type: string) {
+  return type
+    .split("_")
+    .filter(Boolean)
+    .map((part) => `${part.charAt(0)}${part.slice(1).toLowerCase()}`)
+    .join(" ");
+}
+
 function mapApiRequirementsToChecklist(
   requirements: ApiRequirement[],
 ): RequirementItem[] {
-  const mapped = new Map<ChecklistFieldKey, RequirementItem>();
+  const mapped = new Map<string, RequirementItem>();
 
   for (const requirement of requirements) {
-    const key = REQUIREMENT_TYPE_TO_CHECKLIST_KEY[requirement.type];
-    if (!key) continue;
+    const type = String(requirement.type ?? "")
+      .trim()
+      .toUpperCase();
+    if (!type) continue;
 
-    const existing = mapped.get(key);
-    mapped.set(key, {
-      key,
-      label: requirement.label || CHECKLIST_FIELD_LABELS[key],
-      description: requirement.description || CHECKLIST_FIELD_DESCRIPTIONS[key],
+    const checklistKey = REQUIREMENT_TYPE_TO_CHECKLIST_KEY[type];
+    const dedupeKey = checklistKey ?? type;
+    const existing = mapped.get(dedupeKey);
+    mapped.set(dedupeKey, {
+      type,
+      checklistKey,
+      label:
+        requirement.label ||
+        existing?.label ||
+        (checklistKey
+          ? CHECKLIST_FIELD_LABELS[checklistKey]
+          : prettifyRequirementType(type)),
+      description:
+        requirement.description ||
+        existing?.description ||
+        (checklistKey
+          ? CHECKLIST_FIELD_DESCRIPTIONS[checklistKey]
+          : "Configured documentary requirement for this applicant."),
       isMandatory: Boolean(existing?.isMandatory || requirement.isRequired),
     });
   }
@@ -189,6 +225,7 @@ export function RequirementChecklist({
   applicantId,
   learnerType,
   checklist,
+  documents,
   endpointBase = "/applications",
   onRefresh,
   onMandatoryStatusChange,
@@ -254,8 +291,52 @@ export function RequirementChecklist({
     setLocalChecklist((prev) => ({ ...prev, [key]: value }));
   };
 
-  const hasChanges = requirements.some(
-    (req) => !!localChecklist[req.key] !== !!checklist?.[req.key],
+  const checklistRequirements = useMemo(
+    () =>
+      requirements.filter(
+        (
+          requirement,
+        ): requirement is RequirementItem & {
+          checklistKey: ChecklistFieldKey;
+        } => Boolean(requirement.checklistKey),
+      ),
+    [requirements],
+  );
+
+  const hasDocumentContext = documents !== undefined;
+  const satisfiedDocumentTypes = useMemo(() => {
+    const typeSet = new Set<string>();
+
+    for (const document of documents ?? []) {
+      if (document.status === "SUBMITTED" || document.status === "VERIFIED") {
+        const normalizedType = String(document.documentType ?? "")
+          .trim()
+          .toUpperCase();
+        if (normalizedType) {
+          typeSet.add(normalizedType);
+        }
+      }
+    }
+
+    return typeSet;
+  }, [documents]);
+
+  const getRequirementStatus = (requirement: RequirementItem) => {
+    if (requirement.checklistKey) {
+      return localChecklist[requirement.checklistKey] ? "met" : "missing";
+    }
+
+    if (!hasDocumentContext) {
+      return "unknown";
+    }
+
+    return satisfiedDocumentTypes.has(requirement.type) ? "met" : "missing";
+  };
+
+  const hasChanges = checklistRequirements.some(
+    (requirement) =>
+      !!localChecklist[requirement.checklistKey] !==
+      !!checklist?.[requirement.checklistKey],
   );
 
   const currentAcademicStatus = (localChecklist.academicStatus ??
@@ -268,13 +349,14 @@ export function RequirementChecklist({
   const handleSave = async () => {
     setIsUpdating(true);
     try {
-      const payload = requirements.reduce<Record<string, boolean | string>>(
-        (acc, requirement) => {
-          acc[requirement.key] = Boolean(localChecklist[requirement.key]);
-          return acc;
-        },
-        {},
-      );
+      const payload = checklistRequirements.reduce<
+        Record<string, boolean | string>
+      >((acc, requirement) => {
+        acc[requirement.checklistKey] = Boolean(
+          localChecklist[requirement.checklistKey],
+        );
+        return acc;
+      }, {});
 
       if (showAcademicStatusControl) {
         payload.academicStatus = currentAcademicStatus;
@@ -312,10 +394,14 @@ export function RequirementChecklist({
     }
   };
 
-  const mandatoryRequirements = requirements.filter((r) => r.isMandatory);
+  const mandatoryRequirements = checklistRequirements.filter(
+    (requirement) => requirement.isMandatory,
+  );
   const mandatoryMet =
     currentAcademicStatus !== "RETAINED" &&
-    mandatoryRequirements.every((r) => localChecklist[r.key]);
+    mandatoryRequirements.every(
+      (requirement) => !!localChecklist[requirement.checklistKey],
+    );
 
   useEffect(() => {
     onMandatoryStatusChange?.(mandatoryMet);
@@ -402,57 +488,79 @@ export function RequirementChecklist({
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
-            {requirements.map((req) => (
-              <div
-                key={req.key}
-                className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border/50">
-                <Checkbox
-                  id={req.key}
-                  checked={!!localChecklist[req.key]}
-                  onCheckedChange={(checked) =>
-                    handleToggle(req.key, !!checked)
-                  }
-                  disabled={readOnly || isUpdating}
-                  className="shrink-0"
-                />
-                <div className="flex-1 space-y-1 overflow-hidden">
-                  <div className="flex items-center gap-2">
-                    <Label
-                      htmlFor={req.key}
-                      className="text-xs font-bold leading-tight cursor-pointer truncate"
-                      title={req.label}>
-                      {req.label}
-                    </Label>
-                    {req.isMandatory && (
-                      <Badge
-                        variant="outline"
-                        className="text-[0.5rem] h-3.5 px-1 text-red-600 border-red-200 bg-red-50 shrink-0">
-                        M
-                      </Badge>
+            {requirements.map((req) => {
+              const rowStatus = getRequirementStatus(req);
+
+              return (
+                <div
+                  key={req.type}
+                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border/50">
+                  <Checkbox
+                    id={req.type}
+                    checked={rowStatus === "met"}
+                    onCheckedChange={(checked) => {
+                      if (!req.checklistKey) return;
+                      handleToggle(req.checklistKey, !!checked);
+                    }}
+                    disabled={readOnly || isUpdating || !req.checklistKey}
+                    className="shrink-0"
+                  />
+                  <div className="flex-1 space-y-1 overflow-hidden">
+                    <div className="flex items-center gap-2">
+                      <Label
+                        htmlFor={req.type}
+                        className={`text-xs font-bold leading-tight truncate ${
+                          req.checklistKey ? "cursor-pointer" : "cursor-default"
+                        }`}
+                        title={req.label}>
+                        {req.label}
+                      </Label>
+                      {req.isMandatory ? (
+                        <Badge
+                          variant="destructive"
+                          className="text-[0.5rem] h-3.5 px-1 shrink-0">
+                          Required
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="secondary"
+                          className="text-[0.5rem] h-3.5 px-1 shrink-0">
+                          Optional
+                        </Badge>
+                      )}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3 w-3 text-muted-foreground cursor-help shrink-0" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs text-xs">
+                              {req.description}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    {!req.checklistKey && (
+                      <p className="text-[10px] text-muted-foreground">
+                        Tracked through uploaded documents.
+                      </p>
                     )}
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-3 w-3 text-muted-foreground cursor-help shrink-0" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs text-xs">{req.description}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                  </div>
+                  <div className="shrink-0">
+                    {rowStatus === "met" ? (
+                      <Check className="h-3.5 w-3.5 text-green-600" />
+                    ) : rowStatus === "unknown" ? (
+                      <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                    ) : (
+                      req.isMandatory && (
+                        <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+                      )
+                    )}
                   </div>
                 </div>
-                <div className="shrink-0">
-                  {localChecklist[req.key] ? (
-                    <Check className="h-3.5 w-3.5 text-green-600" />
-                  ) : (
-                    req.isMandatory && (
-                      <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
-                    )
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

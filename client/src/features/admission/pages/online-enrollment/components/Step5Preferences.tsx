@@ -119,6 +119,7 @@ export default function Step5Enrollment() {
   const isScpEligible = learnerType === "NEW_ENROLLEE" && gradeLevel === "7";
   const hasQuickLrnLookupSuccess =
     typeof quickLrnLookupId === "number" && Number.isFinite(quickLrnLookupId);
+  const isProgramSelectionLocked = hasQuickLrnLookupSuccess;
   const shouldShowScpCard = isScpEligible && hasQuickLrnLookupSuccess;
 
   const availableScpPrograms = useMemo(
@@ -293,6 +294,7 @@ export default function Step5Enrollment() {
   }, [canDeclareNoLrn, hasNoLrn, setValue, clearErrors]);
 
   const selectRegularTrack = () => {
+    if (isProgramSelectionLocked) return;
     setValue("isScpApplication", false, {
       shouldValidate: true,
       shouldDirty: true,
@@ -302,7 +304,7 @@ export default function Step5Enrollment() {
   };
 
   const selectScpTrack = () => {
-    if (!canSelectScpTrack) return;
+    if (!canSelectScpTrack || isProgramSelectionLocked) return;
     setValue("isScpApplication", true, {
       shouldValidate: true,
       shouldDirty: true,
@@ -403,6 +405,7 @@ export default function Step5Enrollment() {
             )}>
             <button
               type="button"
+              disabled={isProgramSelectionLocked}
               className={cn(
                 "flex flex-col p-4 rounded-xl border-2 transition-all text-left",
                 !isScpApplication
@@ -438,7 +441,7 @@ export default function Step5Enrollment() {
             {shouldShowScpCard && (
               <button
                 type="button"
-                disabled={!canSelectScpTrack}
+                disabled={!canSelectScpTrack || isProgramSelectionLocked}
                 className={cn(
                   "flex flex-col p-4 rounded-xl border-2 transition-all text-left",
                   isScpApplication
@@ -480,6 +483,14 @@ export default function Step5Enrollment() {
               </button>
             )}
           </div>
+
+          {isProgramSelectionLocked && (
+            <p className="font-bold text-xs italic flex items-center gap-1 text-muted-foreground">
+              <Info className="w-4 h-4" />
+              Learning Program and SCP selection are locked because this form is
+              linked to an existing Early Registration.
+            </p>
+          )}
 
           {!isScpEligible && (
             <p className="font-bold text-xs italic flex items-center gap-1 text-muted-foreground">
@@ -529,6 +540,7 @@ export default function Step5Enrollment() {
                       <div key={program.id} className="space-y-0">
                         <button
                           type="button"
+                          disabled={isProgramSelectionLocked}
                           className={cn(
                             "w-full flex flex-col p-4 rounded-xl border-2 transition-all text-left",
                             scpType === program.id
@@ -581,6 +593,7 @@ export default function Step5Enrollment() {
                                       Preferred Art Field *
                                     </Label>
                                     <Select
+                                      disabled={isProgramSelectionLocked}
                                       onValueChange={(value) =>
                                         setValue("artField", value, {
                                           shouldValidate: true,
@@ -614,6 +627,7 @@ export default function Step5Enrollment() {
                                           className="flex items-center space-x-2">
                                           <Checkbox
                                             id={`sport-${sport}`}
+                                            disabled={isProgramSelectionLocked}
                                             checked={selectedSportsList.includes(
                                               sport,
                                             )}
@@ -652,6 +666,7 @@ export default function Step5Enrollment() {
                                       Preferred Language *
                                     </Label>
                                     <Select
+                                      disabled={isProgramSelectionLocked}
                                       onValueChange={(value) =>
                                         setValue("foreignLanguage", value, {
                                           shouldValidate: true,

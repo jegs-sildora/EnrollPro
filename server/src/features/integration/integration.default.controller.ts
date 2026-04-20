@@ -33,7 +33,7 @@ async function fetchDefaultLearnerRows(schoolYearId: number) {
   return prisma.enrollmentApplication.findMany({
     where: {
       schoolYearId,
-      status: { in: ["OFFICIALLY_ENROLLED", "ENROLLED"] },
+      status: "ENROLLED",
       enrollmentRecord: {
         isNot: null,
       },
@@ -137,7 +137,7 @@ export async function listIntegrationStaff(
   });
 }
 
-export async function listDefaultAtlasFaculty(
+export async function listDefaultFaculty(
   req: Request,
   res: Response,
 ): Promise<void> {
@@ -220,7 +220,7 @@ export async function listDefaultAtlasFaculty(
   res.json({
     data: rows,
     meta: {
-      sourceSystem: "ATLAS",
+      sourceSystem: "ENROLLPRO",
       generatedAt: new Date().toISOString(),
       scopeSchoolYearId: scope.schoolYearId,
       scopeSchoolYearLabel: scope.schoolYearLabel,

@@ -122,6 +122,8 @@ function resolveCurrentStepFromRawStatus(
 
   switch (normalizedRaw) {
     case "SUBMITTED":
+    case "SUBMITTED_BEERF":
+    case "SUBMITTED_BEEF":
       return "APPLICATION_SUBMITTED";
     case "IN_REVIEW":
     case "UNDER_REVIEW":

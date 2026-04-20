@@ -1,5 +1,4 @@
 import {
-  CloudUpload,
   Edit2,
   FilterX,
   MoreHorizontal,
@@ -31,14 +30,11 @@ import type {
   Teacher,
   TeacherDesignationFilter,
   TeacherStatusFilter,
-  TeacherSyncFilter,
 } from "../types";
 import {
   formatAdvisorySectionSummary,
   formatDesignationSummary,
   formatTeacherName,
-  getSyncDetailClassName,
-  getSyncDetailText,
 } from "../utils";
 
 interface TeacherDirectoryCardProps {
@@ -49,41 +45,17 @@ interface TeacherDirectoryCardProps {
   searchQuery: string;
   statusFilter: TeacherStatusFilter;
   designationFilter: TeacherDesignationFilter;
-  syncFilter: TeacherSyncFilter;
   hasActiveFilters: boolean;
   ayId: number | null;
-  forceSyncingAll: boolean;
-  forceSyncingTeacherId: number | null;
   onSearchQueryChange: (value: string) => void;
   onStatusFilterChange: (value: TeacherStatusFilter) => void;
   onDesignationFilterChange: (value: TeacherDesignationFilter) => void;
-  onSyncFilterChange: (value: TeacherSyncFilter) => void;
   onClearFilters: () => void;
   onRefresh: () => void;
-  onForceSyncAll: () => void;
   onOpenDesignationEditor: (teacher: Teacher) => void;
   onEditTeacher: (teacher: Teacher) => void;
-  onForceSyncTeacher: (teacher: Teacher) => void;
   onDeactivateTeacher: (id: number) => void;
   onReactivateTeacher: (id: number) => void;
-}
-
-function renderAtlasSyncBadge(teacher: Teacher) {
-  const status = teacher.atlasSync?.status;
-
-  if (!status || status === "SKIPPED") {
-    return <Badge variant="outline">Not Sent</Badge>;
-  }
-
-  if (status === "SYNCED") {
-    return <Badge variant="success">Delivered</Badge>;
-  }
-
-  if (status === "FAILED") {
-    return <Badge variant="danger">Action Needed</Badge>;
-  }
-
-  return <Badge variant="warning">Queued</Badge>;
 }
 
 export function TeacherDirectoryCard({
@@ -94,21 +66,15 @@ export function TeacherDirectoryCard({
   searchQuery,
   statusFilter,
   designationFilter,
-  syncFilter,
   hasActiveFilters,
   ayId,
-  forceSyncingAll,
-  forceSyncingTeacherId,
   onSearchQueryChange,
   onStatusFilterChange,
   onDesignationFilterChange,
-  onSyncFilterChange,
   onClearFilters,
   onRefresh,
-  onForceSyncAll,
   onOpenDesignationEditor,
   onEditTeacher,
-  onForceSyncTeacher,
   onDeactivateTeacher,
   onReactivateTeacher,
 }: TeacherDirectoryCardProps) {
@@ -180,17 +146,6 @@ export function TeacherDirectoryCard({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align={compact ? "start" : "end"} className="w-48">
-          <DropdownMenuItem
-            onClick={() => onForceSyncTeacher(teacher)}
-            disabled={
-              !ayId || forceSyncingAll || forceSyncingTeacherId === teacher.id
-            }
-            className="cursor-pointer">
-            <CloudUpload className="mr-2 h-4 w-4" />
-            {forceSyncingTeacherId === teacher.id
-              ? "Syncing to ATLAS..."
-              : "Force ATLAS Sync"}
-          </DropdownMenuItem>
           {teacher.isActive ? (
             <DropdownMenuItem
               onClick={() => onDeactivateTeacher(teacher.id)}
@@ -274,20 +229,6 @@ export function TeacherDirectoryCard({
       ),
     },
     {
-      id: "sync",
-      header: "SYNC",
-      cell: ({ row }) => (
-        <div className="flex flex-col items-center gap-1">
-          {renderAtlasSyncBadge(row.original)}
-          <p
-            className={`max-w-[180px] truncate text-[0.625rem] ${getSyncDetailClassName(row.original)}`}
-            title={getSyncDetailText(row.original)}>
-            {getSyncDetailText(row.original)}
-          </p>
-        </div>
-      ),
-    },
-    {
       id: "actions",
       header: "ACTIONS",
       cell: ({ row }) => (
@@ -309,21 +250,6 @@ export function TeacherDirectoryCard({
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
-                size="sm"
-                className="h-9"
-                onClick={onForceSyncAll}
-                disabled={
-                  !ayId || forceSyncingAll || filteredTeachers.length === 0
-                }>
-                <CloudUpload className="h-4 w-4 mr-2" />
-                {forceSyncingAll
-                  ? "Syncing..."
-                  : hasActiveFilters
-                    ? "Force Sync Listed"
-                    : "Force Sync All"}
-              </Button>
-              <Button
-                variant="outline"
                 size="icon"
                 className="h-9 w-9 shrink-0"
                 onClick={onRefresh}>
@@ -333,7 +259,7 @@ export function TeacherDirectoryCard({
               </Button>
             </div>
           </div>
-          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-6">
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-5">
             <Input
               value={searchQuery}
               onChange={(event) => onSearchQueryChange(event.target.value)}
@@ -368,22 +294,6 @@ export function TeacherDirectoryCard({
                 <SelectItem value="tic">TIC</SelectItem>
                 <SelectItem value="exempt">Teaching Exempt</SelectItem>
                 <SelectItem value="none">No Designation</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select
-              value={syncFilter}
-              onValueChange={(value) =>
-                onSyncFilterChange(value as TeacherSyncFilter)
-              }>
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Sync" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Sync States</SelectItem>
-                <SelectItem value="SYNCED">Synced</SelectItem>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="FAILED">Failed</SelectItem>
-                <SelectItem value="UNSYNCED">Not Synced</SelectItem>
               </SelectContent>
             </Select>
             <Button
@@ -474,15 +384,6 @@ export function TeacherDirectoryCard({
                       </p>
                       {renderAdvisoryStatus(teacher)}
                     </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div>{renderAtlasSyncBadge(teacher)}</div>
-                    <p
-                      className={`text-[0.65rem] leading-tight ${getSyncDetailClassName(teacher)}`}
-                      title={getSyncDetailText(teacher)}>
-                      {getSyncDetailText(teacher)}
-                    </p>
                   </div>
 
                   {renderTeacherActions(teacher, true)}

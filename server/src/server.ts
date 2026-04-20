@@ -4,11 +4,9 @@ import "dotenv/config";
 process.env.TZ = "Asia/Manila";
 
 import app from "./app.js";
-import { startAtlasSyncRetryWorker } from "./features/teachers/atlas-sync.worker.js";
 
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT as number, "0.0.0.0", () => {
-  startAtlasSyncRetryWorker();
   console.log(`[Server] Running on http://localhost:${PORT}`);
 });

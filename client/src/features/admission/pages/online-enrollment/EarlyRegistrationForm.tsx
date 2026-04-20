@@ -62,6 +62,7 @@ const PREVIOUS_SCHOOL_FIELDS = new Set([
   "schoolYearLastAttended",
   "lastSchoolAddress",
   "lastSchoolType",
+  "generalAverage",
 ]);
 
 const PREFERENCES_FIELDS = new Set([
@@ -125,6 +126,7 @@ const FIELD_LABEL_OVERRIDES: Record<string, string> = {
   schoolYearLastAttended: "School Year Last Attended",
   lastSchoolType: "Type of Last School",
   lastSchoolAddress: "School Address / Division",
+  generalAverage: "Final General Average (SF9)",
   scpType: "SCP Track",
   sportsList: "Preferred Sports",
   artField: "Art Field",
@@ -392,6 +394,7 @@ export default function EnrollmentForm({
         "lastGradeCompleted",
         "schoolYearLastAttended",
         "lastSchoolType",
+        "generalAverage",
       ];
     } else if (stepper.state.current.data.id === "preferences") {
       fieldsToValidate = ["gradeLevel", "learnerType"];

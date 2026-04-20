@@ -43,6 +43,39 @@ export const familyMemberSchema = z.object({
   occupation: z.string().optional().nullable(),
 });
 
+const optionalGeneralAverageSchema = z.preprocess(
+  (value) => {
+    if (value == null || value === "") {
+      return undefined;
+    }
+
+    if (typeof value === "number") {
+      return Number.isFinite(value) ? value : Number.NaN;
+    }
+
+    if (typeof value === "string") {
+      const parsed = Number(value.trim().replace(",", "."));
+      return Number.isFinite(parsed) ? parsed : Number.NaN;
+    }
+
+    return value;
+  },
+  z
+    .number()
+    .refine(
+      (value) => Number.isFinite(value),
+      "Final General Average must be a number",
+    )
+    .min(0, "Final General Average must be between 0 and 100")
+    .max(100, "Final General Average must be between 0 and 100")
+    .refine(
+      (value) => Number.isInteger(value * 100),
+      "Final General Average must have up to 2 decimal places",
+    )
+    .optional()
+    .nullable(),
+);
+
 export const previousSchoolSchema = z.object({
   lastSchoolName: z.string().min(1, "Last school name is required"),
   lastSchoolId: z.string().optional().nullable(),
@@ -54,7 +87,7 @@ export const previousSchoolSchema = z.object({
   lastSchoolType: LastSchoolTypeEnum,
   g10ScienceGrade: z.number().optional().nullable(),
   grade10MathGrade: z.number().optional().nullable(),
-  generalAverage: z.number().optional().nullable(),
+  generalAverage: optionalGeneralAverageSchema,
 });
 
 // ─── Application Submit ────────────────────────────────
@@ -69,7 +102,7 @@ export const applicationSubmitSchema = z
       .nullable(),
     psaBirthCertNumber: z.string().trim().toUpperCase().optional().nullable(),
 
-    earlyRegistrationId: z.number().int().positive().optional().nullable(),
+    earlyRegistrationId: z.number().int().positive().optional(),
 
     gradeLevel: GradeLevelEnum,
     isScpApplication: z.boolean().default(false),
@@ -129,7 +162,7 @@ export const applicationSubmitSchema = z
 
     g10ScienceGrade: z.number().optional().nullable(),
     grade10MathGrade: z.number().optional().nullable(),
-    generalAverage: z.number().optional().nullable(),
+    generalAverage: optionalGeneralAverageSchema,
 
     artField: z.string().optional().nullable(),
     sportsList: z.array(z.string()).default([]),
@@ -180,15 +213,6 @@ export const applicationSubmitSchema = z
         code: z.ZodIssueCode.custom,
         path: ["scpType"],
         message: "Select an SCP track to continue.",
-      });
-    }
-
-    if (data.isScpApplication && !data.earlyRegistrationId) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["earlyRegistrationId"],
-        message:
-          "SCP applicants must complete Early Registration and run LRN lookup before final enrollment.",
       });
     }
   });
@@ -282,6 +306,7 @@ export const readingProfileUpdateSchema = z.object({
 
 export const specialEnrollmentSchema = z
   .object({
+    hasNoLrn: z.boolean().default(false),
     lrn: z
       .string()
       .trim()
@@ -294,6 +319,7 @@ export const specialEnrollmentSchema = z
     extensionName: z.string().trim().optional().nullable(),
     birthdate: z.string().or(z.date()),
     sex: SexEnum,
+    placeOfBirth: z.string().trim().optional().nullable(),
     learnerType: z.enum(["NEW_ENROLLEE", "TRANSFEREE", "RETURNING", "ALS"]),
     applicantType: ApplicantTypeEnum.default("REGULAR"),
     gradeLevelId: z.number().int().positive("Grade level is required"),
@@ -301,8 +327,81 @@ export const specialEnrollmentSchema = z
     originSchoolName: z.string().trim().optional().nullable(),
     peptCertificateNumber: z.string().trim().optional().nullable(),
     peptPassingDate: z.string().or(z.date()).optional().nullable(),
+    currentAddress: addressSchema.optional(),
+    mother: familyMemberSchema
+      .pick({
+        firstName: true,
+        lastName: true,
+        middleName: true,
+        contactNumber: true,
+      })
+      .optional(),
+    father: familyMemberSchema
+      .pick({
+        firstName: true,
+        lastName: true,
+        middleName: true,
+        contactNumber: true,
+      })
+      .optional(),
+    guardian: familyMemberSchema
+      .pick({
+        firstName: true,
+        lastName: true,
+        middleName: true,
+        contactNumber: true,
+      })
+      .optional(),
+    guardianRelationship: z.string().trim().optional().nullable(),
+    contactNumber: z.string().trim().optional().nullable(),
+    email: z
+      .string()
+      .trim()
+      .email("Invalid email address")
+      .optional()
+      .nullable(),
+    checklist: z
+      .object({
+        academicStatus: z.enum(["PROMOTED", "RETAINED"]).optional(),
+        isPsaBirthCertPresented: z.boolean().optional(),
+        isOriginalPsaBcCollected: z.boolean().optional(),
+        isSf9Submitted: z.boolean().optional(),
+        finalGeneralAverage: z.number().min(0).max(100).optional(),
+      })
+      .optional(),
   })
   .superRefine((data, ctx) => {
+    const lrn = data.lrn?.trim() ?? "";
+
+    if (data.hasNoLrn) {
+      if (
+        data.learnerType !== "NEW_ENROLLEE" &&
+        data.learnerType !== "TRANSFEREE"
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["hasNoLrn"],
+          message:
+            "Only incoming Grade 7 and transferee learners can submit without an LRN.",
+        });
+      }
+
+      if (lrn.length > 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["lrn"],
+          message: "Clear the LRN field when 'hasNoLrn' is selected.",
+        });
+      }
+    } else if (!lrn) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["lrn"],
+        message:
+          "LRN is required unless you declare that the learner has no LRN.",
+      });
+    }
+
     if (
       data.learnerType === "TRANSFEREE" &&
       (!data.originSchoolName || data.originSchoolName.trim().length === 0)
@@ -531,7 +630,6 @@ export const scpProgramConfigUpdateSchema = z.object({
   scpType: ScpTypeEnum,
   isOffered: z.boolean().default(false),
   isTwoPhase: z.boolean().optional().default(false),
-  maxSlots: z.number().int().positive().optional().nullable(),
   cutoffScore: z.number().min(0).max(100).optional().nullable(),
   notes: z.string().optional().nullable(),
   gradeRequirements: z.array(scpGradeRequirementSchema).optional().nullable(),
@@ -548,12 +646,8 @@ export const updateScpProgramConfigsSchema = z.object({
 
 // ─── Batch Processing Schema ───────────────────────────
 const BATCH_TARGET_STATUSES = [
-  "EARLY_REG_SUBMITTED",
-  "PRE_REGISTERED",
-  "PENDING_VERIFICATION",
-  "READY_FOR_SECTIONING",
-  "OFFICIALLY_ENROLLED",
-  "SUBMITTED",
+  "SUBMITTED_BEERF",
+  "SUBMITTED_BEEF",
   "VERIFIED",
   "UNDER_REVIEW",
   "ELIGIBLE",
@@ -627,13 +721,29 @@ export const batchVerifyDocumentsSchema = z.object({
   expectedStatuses: z.record(z.string(), z.string().min(1)).optional(),
 });
 
+const batchRegularSectionIdsSchema = z
+  .array(z.number().int().positive())
+  .min(1, "Select at least one applicant")
+  .max(500, "Cannot process more than 500 applicants at once");
+
+const batchExpectedStatusesSchema = z
+  .record(z.string(), z.string().min(1))
+  .optional();
+
+export const batchAssignRegularSectionPreviewSchema = z.object({
+  ids: batchRegularSectionIdsSchema,
+  expectedStatuses: batchExpectedStatusesSchema,
+});
+
+export const batchAssignRegularSectionCommitSchema = z.object({
+  ids: batchRegularSectionIdsSchema,
+  expectedStatuses: batchExpectedStatusesSchema,
+});
+
 export const batchAssignRegularSectionSchema = z.object({
-  ids: z
-    .array(z.number().int().positive())
-    .min(1, "Select at least one applicant")
-    .max(500, "Cannot process more than 500 applicants at once"),
+  ids: batchRegularSectionIdsSchema,
   sectionId: z.number().int().positive("Target section is required"),
-  expectedStatuses: z.record(z.string(), z.string().min(1)).optional(),
+  expectedStatuses: batchExpectedStatusesSchema,
 });
 
 export const batchScheduleStepSchema = z.object({
@@ -677,9 +787,7 @@ export const batchFinalizeInterviewSchema = z.object({
           decision: z.enum(["PASS", "REJECT"]),
           interviewScore: z.number().min(0).max(100).optional().nullable(),
           remarks: z.string().max(500).optional().nullable(),
-          rejectOutcome: z
-            .enum(["EARLY_REG_SUBMITTED", "PENDING_VERIFICATION", "REJECTED"])
-            .optional(),
+          rejectOutcome: z.enum(["SUBMITTED_BEERF", "REJECTED"]).optional(),
         })
         .superRefine((value, ctx) => {
           if (value.decision === "REJECT" && !value.rejectOutcome) {

@@ -15,9 +15,6 @@ const router: Router = Router();
 router.use(authenticate, authorize("SYSTEM_ADMIN"));
 
 router.get("/", teachersCtrl.index);
-router.get("/atlas/faculty-sync", teachersCtrl.atlasFacultySync);
-router.post("/atlas/push", teachersCtrl.forceAtlasSyncBatch);
-router.post("/:id/atlas/push", teachersCtrl.forceAtlasSync);
 router.get("/:id/designation", teachersCtrl.showDesignation);
 router.post(
   "/:id/designation/validate",

@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
-import { AlertTriangle, CloudUpload, User } from "lucide-react";
+import { AlertTriangle, User } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -46,28 +46,8 @@ interface TeacherDesignationSheetProps {
   setDesignationCollision: (value: DesignationCollision | null) => void;
   allowCollisionOverride: boolean;
   setAllowCollisionOverride: (value: boolean) => void;
-  forceSyncingTeacherId: number | null;
   onClose: () => void;
   onSave: () => void;
-  onForceSyncTeacher: (teacher: Teacher) => void;
-}
-
-function renderAtlasSyncBadge(teacher: Teacher) {
-  const status = teacher.atlasSync?.status;
-
-  if (!status || status === "SKIPPED") {
-    return <Badge variant="outline">Not Synced</Badge>;
-  }
-
-  if (status === "SYNCED") {
-    return <Badge variant="success">Synced</Badge>;
-  }
-
-  if (status === "FAILED") {
-    return <Badge variant="danger">Failed</Badge>;
-  }
-
-  return <Badge variant="warning">Pending</Badge>;
 }
 
 export function TeacherDesignationSheet({
@@ -86,10 +66,8 @@ export function TeacherDesignationSheet({
   setDesignationCollision,
   allowCollisionOverride,
   setAllowCollisionOverride,
-  forceSyncingTeacherId,
   onClose,
   onSave,
-  onForceSyncTeacher,
 }: TeacherDesignationSheetProps) {
   const teacherDisplayName = designationOpenFor
     ? formatTeacherName(designationOpenFor)
@@ -110,7 +88,7 @@ export function TeacherDesignationSheet({
         className="w-full p-0 sm:max-w-3xl flex flex-col overflow-hidden bg-background">
         <SheetHeader className="space-y-1 border-b p-3 sm:p-4 pr-14 shrink-0 bg-primary font-black">
           <SheetTitle className="text-base sm:text-lg text-primary-foreground font-black tracking-tight uppercase">
-            ATLAS Teacher Designation
+            Teacher Designation
           </SheetTitle>
           <SheetDescription className="text-[11px] sm:text-xs text-primary-foreground flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
             <span>{teacherDisplayName}</span>
@@ -143,11 +121,9 @@ export function TeacherDesignationSheet({
                   </h3>
                 </div>
               </div>
-              {designationOpenFor ? (
-                renderAtlasSyncBadge(designationOpenFor)
-              ) : (
-                <Badge variant="outline">No Teacher Selected</Badge>
-              )}
+              <Badge variant="outline">
+                {designationOpenFor ? "Selected" : "No Teacher Selected"}
+              </Badge>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-0 border-t pt-3 mt-3 text-xs">
@@ -184,7 +160,7 @@ export function TeacherDesignationSheet({
                 Schedule & Notes
               </TabsTrigger>
               <TabsTrigger value="review" className="py-2 text-xs">
-                Review & Sync
+                Review
               </TabsTrigger>
             </TabsList>
 
@@ -440,61 +416,6 @@ export function TeacherDesignationSheet({
                   No adviser collision detected for the selected section.
                 </div>
               )}
-
-              <div className="rounded-md border bg-card p-3 sm:p-4 space-y-2 text-sm">
-                <p className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-                  Sync Diagnostics
-                </p>
-                <div className="flex items-center justify-between gap-2">
-                  <span>Current State</span>
-                  {designationOpenFor
-                    ? renderAtlasSyncBadge(designationOpenFor)
-                    : null}
-                </div>
-                <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                  <span>Attempts</span>
-                  <span className="text-foreground text-right">
-                    {designationOpenFor?.atlasSync
-                      ? `${designationOpenFor.atlasSync.attemptCount}/${designationOpenFor.atlasSync.maxAttempts}`
-                      : "-"}
-                  </span>
-                  <span>Next Retry</span>
-                  <span className="text-foreground text-right">
-                    {formatDateTime(
-                      designationOpenFor?.atlasSync?.nextRetryAt ?? null,
-                    )}
-                  </span>
-                  <span>Last Ack</span>
-                  <span className="text-foreground text-right">
-                    {formatDateTime(
-                      designationOpenFor?.atlasSync?.acknowledgedAt ?? null,
-                    )}
-                  </span>
-                </div>
-                {designationOpenFor?.atlasSync?.errorMessage ? (
-                  <p className="text-xs text-destructive">
-                    {designationOpenFor.atlasSync.errorMessage}
-                  </p>
-                ) : null}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() =>
-                    designationOpenFor && onForceSyncTeacher(designationOpenFor)
-                  }
-                  disabled={
-                    !ayId ||
-                    !designationOpenFor ||
-                    forceSyncingTeacherId === designationOpenFor.id
-                  }>
-                  <CloudUpload className="mr-2 h-4 w-4" />
-                  {designationOpenFor &&
-                  forceSyncingTeacherId === designationOpenFor.id
-                    ? "Syncing..."
-                    : "Force Sync Teacher"}
-                </Button>
-              </div>
             </TabsContent>
           </Tabs>
         </div>

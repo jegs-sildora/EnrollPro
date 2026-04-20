@@ -23,18 +23,6 @@ export interface TeacherDesignation {
   updatedAt: string | null;
 }
 
-export interface AtlasSyncStatus {
-  status: "PENDING" | "SYNCED" | "FAILED" | "SKIPPED";
-  eventRecordId: number | null;
-  eventId: string | null;
-  attemptCount: number;
-  maxAttempts: number;
-  httpStatus: number | null;
-  errorMessage: string | null;
-  nextRetryAt: string | null;
-  acknowledgedAt: string | null;
-}
-
 export interface AdvisorySectionOption {
   id: number;
   label: string;
@@ -81,7 +69,6 @@ export interface Teacher {
   subjects: string[];
   sectionCount: number;
   designation: TeacherDesignation | null;
-  atlasSync: AtlasSyncStatus | null;
   isActive: boolean;
   createdAt: string;
 }
@@ -120,9 +107,3 @@ export type TeacherDesignationFilter =
   | "tic"
   | "exempt"
   | "none";
-export type TeacherSyncFilter =
-  | "all"
-  | "PENDING"
-  | "SYNCED"
-  | "FAILED"
-  | "UNSYNCED";

@@ -22,6 +22,14 @@ export const STATUS_CONFIG: Record<
     label: "Officially Enrolled",
     className: "bg-green-600 text-white border-transparent",
   },
+  SUBMITTED_BEERF: {
+    label: "Submitted BEERF",
+    className: "bg-slate-100 text-slate-700 border-slate-300",
+  },
+  SUBMITTED_BEEF: {
+    label: "Submitted BEEF",
+    className: "bg-slate-100 text-slate-700 border-slate-300",
+  },
   SUBMITTED: {
     label: "Submitted",
     className: "bg-slate-100 text-slate-700 border-slate-300",

@@ -98,6 +98,42 @@ const PH_LAST_NAMES = [
   "Villanueva",
 ];
 
+const PH_PLACE_OF_BIRTHS = [
+  "Tandag City, Surigao del Sur",
+  "Bislig City, Surigao del Sur",
+  "Butuan City, Agusan del Norte",
+  "Davao City, Davao del Sur",
+  "Cebu City, Cebu",
+  "Iligan City, Lanao del Norte",
+];
+
+const PH_RELIGIONS = [
+  "ROMAN CATHOLIC",
+  "IGLESIA NI CRISTO",
+  "SEVENTH-DAY ADVENTIST",
+  "ISLAM",
+  "BORN AGAIN CHRISTIAN",
+  "UNITED CHURCH OF CHRIST IN THE PHILIPPINES",
+];
+
+const PH_MOTHER_TONGUES = [
+  "CEBUANO",
+  "TAGALOG",
+  "SURIGAONON",
+  "MANDAYA",
+  "BISAYA",
+  "ENGLISH",
+];
+
+const SCP_DEFAULT_CUTOFFS: Partial<Record<ApplicantType, number>> = {
+  SCIENCE_TECHNOLOGY_AND_ENGINEERING: 85,
+  SPECIAL_PROGRAM_IN_THE_ARTS: 80,
+  SPECIAL_PROGRAM_IN_SPORTS: 82,
+  SPECIAL_PROGRAM_IN_JOURNALISM: 80,
+  SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: 78,
+  SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION: 79,
+};
+
 function getPipelineForScpType(scpType: ApplicantType, isTwoPhase: boolean) {
   if (scpType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") {
     return getSteSteps(isTwoPhase);
@@ -124,8 +160,78 @@ function buildEmail(firstName: string, lastName: string, sequence: number) {
   return `${safeFirst}.${safeLast}${sequence}@example.com`;
 }
 
+function buildPsaBirthCertNumber(sequence: number) {
+  return `PSA-${new Date().getUTCFullYear()}-${String(sequence).padStart(8, "0")}`;
+}
+
+function buildScpCutoffScore(scpType: ApplicantType) {
+  return SCP_DEFAULT_CUTOFFS[scpType] ?? 75;
+}
+
+function buildScpGradeRequirements(scpType: ApplicantType) {
+  return {
+    qualifyingTrack: scpType,
+    minimumGeneralAverage: 85,
+    documentRequirements: [
+      {
+        docId: "SF9_REPORT_CARD",
+        policy: "REQUIRED",
+        phase: "EARLY_REGISTRATION",
+        notes: "Latest SF9 with complete grades from previous school year.",
+      },
+      {
+        docId: "GOOD_MORAL_CERTIFICATE",
+        policy: "REQUIRED",
+        phase: "ENROLLMENT",
+        notes: "Issued by school head or guidance office.",
+      },
+      {
+        docId: "MEDICAL_CERTIFICATE",
+        policy: "OPTIONAL",
+        phase: "ENROLLMENT",
+        notes: "Required only when medical accommodations are needed.",
+      },
+    ],
+  };
+}
+
+function buildScpRankingFormula(scpType: ApplicantType) {
+  if (scpType === "SPECIAL_PROGRAM_IN_SPORTS") {
+    return {
+      components: [
+        { metric: "sports_skills_tryout", weight: 0.7 },
+        { metric: "interview", weight: 0.2 },
+        { metric: "general_average", weight: 0.1 },
+      ],
+      tieBreaker: ["sports_skills_tryout", "general_average", "lrn"],
+    };
+  }
+
+  return {
+    components: [
+      { metric: "qualifying_exam", weight: 0.6 },
+      { metric: "interview", weight: 0.25 },
+      { metric: "general_average", weight: 0.15 },
+    ],
+    tieBreaker: ["qualifying_exam", "general_average", "lrn"],
+  };
+}
+
+function buildStepCutoffScore(kind: string, defaultCutoff: number) {
+  return kind === "INTERVIEW" ? null : defaultCutoff;
+}
+
+function buildProgramStepDate(stepOrder: number) {
+  const baseYear = new Date().getUTCFullYear();
+  return new Date(Date.UTC(baseYear, 0, 10 + stepOrder * 4));
+}
+
 async function seedScpConfigurations(schoolYearId: number) {
   for (const scpType of SCP_TYPES) {
+    const cutoffScore = buildScpCutoffScore(scpType);
+    const gradeRequirements = buildScpGradeRequirements(scpType);
+    const rankingFormula = buildScpRankingFormula(scpType);
+
     const config = await prisma.scpProgramConfig.upsert({
       where: {
         uq_scp_program_configs_type: {
@@ -135,12 +241,20 @@ async function seedScpConfigurations(schoolYearId: number) {
       },
       update: {
         isOffered: true,
+        cutoffScore,
+        gradeRequirements,
+        rankingFormula,
+        notes: `Default seeded configuration for ${scpType}.`,
       },
       create: {
         schoolYearId,
         scpType,
         isOffered: true,
         isTwoPhase: false,
+        cutoffScore,
+        gradeRequirements,
+        rankingFormula,
+        notes: `Default seeded configuration for ${scpType}.`,
       },
     });
 
@@ -159,6 +273,11 @@ async function seedScpConfigurations(schoolYearId: number) {
           label: step.label,
           description: step.description,
           isRequired: step.isRequired,
+          scheduledDate: buildProgramStepDate(step.stepOrder),
+          scheduledTime: "08:00",
+          venue: `${PROGRAM_PREFIX[scpType]} Assessment Center`,
+          notes: `Default schedule for ${scpType} pipeline step ${step.stepOrder}.`,
+          cutoffScore: buildStepCutoffScore(step.kind, cutoffScore),
         })),
       });
     }
@@ -192,21 +311,6 @@ async function seedScpApplications(
   let globalCounter = 1;
 
   for (const scpType of SCP_TYPES) {
-    const config = await prisma.scpProgramConfig.findUnique({
-      where: {
-        uq_scp_program_configs_type: {
-          schoolYearId,
-          scpType,
-        },
-      },
-      select: { isTwoPhase: true },
-    });
-
-    const pipeline = getPipelineForScpType(
-      scpType,
-      config?.isTwoPhase ?? false,
-    );
-
     for (let i = 1; i <= 3; i++) {
       const seedNumber = globalCounter;
       const firstName =
@@ -216,6 +320,29 @@ async function seedScpApplications(
       const lastName = PH_LAST_NAMES[(seedNumber - 1) % PH_LAST_NAMES.length];
       const lrn = `190000${String(seedNumber).padStart(6, "0")}`;
       const sex = seedNumber % 2 === 0 ? "FEMALE" : "MALE";
+      const extensionName = seedNumber % 6 === 0 ? "JR" : null;
+      const placeOfBirth =
+        PH_PLACE_OF_BIRTHS[(seedNumber - 1) % PH_PLACE_OF_BIRTHS.length];
+      const religion = PH_RELIGIONS[(seedNumber - 1) % PH_RELIGIONS.length];
+      const motherTongue =
+        PH_MOTHER_TONGUES[(seedNumber - 1) % PH_MOTHER_TONGUES.length];
+      const isIpCommunity = seedNumber % 7 === 0;
+      const isLearnerWithDisability = seedNumber % 5 === 0;
+      const is4PsBeneficiary = seedNumber % 4 === 0;
+      const isBalikAral = seedNumber % 11 === 0;
+
+      const disabilityTypes = isLearnerWithDisability
+        ? ["HEARING IMPAIRMENT"]
+        : [];
+      const ipGroupName = isIpCommunity ? "MANOBO" : null;
+      const specialNeedsCategory = isLearnerWithDisability
+        ? "HEARING IMPAIRMENT"
+        : null;
+      const householdId4Ps = is4PsBeneficiary
+        ? `4PS-${String(seedNumber).padStart(6, "0")}`
+        : null;
+      const lastYearEnrolled = isBalikAral ? String(year - 2) : null;
+      const lastGradeLevel = isBalikAral ? "Grade 6" : null;
 
       const birthMonth = (seedNumber % 12) + 1;
       const birthDay = ((seedNumber * 3) % 28) + 1;
@@ -223,30 +350,73 @@ async function seedScpApplications(
         `2014-${String(birthMonth).padStart(2, "0")}-${String(birthDay).padStart(2, "0")}`,
       );
 
+      const psaBirthCertNumber = buildPsaBirthCertNumber(seedNumber);
+
       const learner = await prisma.learner.upsert({
         where: { lrn },
         update: {
+          isPendingLrnCreation: false,
+          psaBirthCertNumber,
           firstName,
           middleName,
           lastName,
+          extensionName,
           birthdate,
           sex,
-          disabilityTypes: [],
+          placeOfBirth,
+          religion,
+          motherTongue,
+          isIpCommunity,
+          ipGroupName,
+          isLearnerWithDisability,
+          disabilityTypes,
+          specialNeedsCategory,
+          hasPwdId: isLearnerWithDisability,
+          is4PsBeneficiary,
+          householdId4Ps,
+          isBalikAral,
+          lastYearEnrolled,
+          lastGradeLevel,
         },
         create: {
           lrn,
+          isPendingLrnCreation: false,
+          psaBirthCertNumber,
           firstName,
           middleName,
           lastName,
+          extensionName,
           birthdate,
           sex,
-          disabilityTypes: [],
+          placeOfBirth,
+          religion,
+          motherTongue,
+          isIpCommunity,
+          ipGroupName,
+          isLearnerWithDisability,
+          disabilityTypes,
+          specialNeedsCategory,
+          hasPwdId: isLearnerWithDisability,
+          is4PsBeneficiary,
+          householdId4Ps,
+          isBalikAral,
+          lastYearEnrolled,
+          lastGradeLevel,
         },
       });
 
       const trackingNumber = buildTrackingNumber(scpType, year, seedNumber);
       const contactNumber = buildContactNumber(seedNumber);
       const email = buildEmail(firstName, lastName, seedNumber);
+      const submittedAt = new Date(Date.UTC(year, 0, 5 + seedNumber));
+      const primaryContact =
+        seedNumber % 3 === 0
+          ? "GUARDIAN"
+          : seedNumber % 2 === 0
+            ? "MOTHER"
+            : "FATHER";
+      const guardianRelationship =
+        primaryContact === "GUARDIAN" ? "AUNT" : primaryContact;
 
       const application = await prisma.earlyRegistrationApplication.upsert({
         where: { trackingNumber },
@@ -256,15 +426,20 @@ async function seedScpApplications(
           gradeLevelId,
           applicantType: scpType,
           learnerType: "NEW_ENROLLEE",
-          status: "SUBMITTED",
+          status: "SUBMITTED_BEERF",
           channel: "F2F",
           contactNumber,
+          studentPhoto: `/uploads/students/${trackingNumber.toLowerCase()}.jpg`,
           email,
-          guardianRelationship: "PARENT",
+          primaryContact,
+          guardianRelationship,
           hasNoMother: false,
           hasNoFather: false,
           isPrivacyConsentGiven: true,
           encodedById,
+          verifiedAt: null,
+          verifiedById: null,
+          submittedAt,
         },
         create: {
           learnerId: learner.id,
@@ -273,100 +448,38 @@ async function seedScpApplications(
           trackingNumber,
           applicantType: scpType,
           learnerType: "NEW_ENROLLEE",
-          status: "SUBMITTED",
+          status: "SUBMITTED_BEERF",
           channel: "F2F",
           contactNumber,
+          studentPhoto: `/uploads/students/${trackingNumber.toLowerCase()}.jpg`,
           email,
-          guardianRelationship: "PARENT",
+          primaryContact,
+          guardianRelationship,
           hasNoMother: false,
           hasNoFather: false,
           isPrivacyConsentGiven: true,
           encodedById,
+          verifiedAt: null,
+          verifiedById: null,
+          submittedAt,
         },
       });
 
-      await prisma.applicationChecklist.upsert({
-        where: { earlyRegistrationId: application.id },
-        update: {},
-        create: { earlyRegistrationId: application.id },
-      });
-
-      await prisma.applicationFamilyMember.deleteMany({
-        where: { earlyRegistrationId: application.id },
-      });
-
-      await prisma.applicationFamilyMember.createMany({
-        data: [
-          {
-            earlyRegistrationId: application.id,
-            relationship: "MOTHER",
-            firstName: "Maria",
-            lastName,
-            middleName: null,
-            contactNumber,
-            email,
-            occupation: "Teacher",
-          },
-          {
-            earlyRegistrationId: application.id,
-            relationship: "FATHER",
-            firstName: "Jose",
-            lastName,
-            middleName: null,
-            contactNumber,
-            email: null,
-            occupation: "Engineer",
-          },
-        ],
-      });
-
-      await prisma.applicationAddress.deleteMany({
-        where: { earlyRegistrationId: application.id },
-      });
-
-      await prisma.applicationAddress.createMany({
-        data: [
-          {
-            earlyRegistrationId: application.id,
-            addressType: "CURRENT",
-            houseNoStreet: `${100 + seedNumber}`,
-            street: "Rizal Street",
-            barangay: "Poblacion",
-            cityMunicipality: "Tandag City",
-            province: "Surigao del Sur",
-            country: "PHILIPPINES",
-            zipCode: "8300",
-          },
-          {
-            earlyRegistrationId: application.id,
-            addressType: "PERMANENT",
-            houseNoStreet: `${100 + seedNumber}`,
-            street: "Rizal Street",
-            barangay: "Poblacion",
-            cityMunicipality: "Tandag City",
-            province: "Surigao del Sur",
-            country: "PHILIPPINES",
-            zipCode: "8300",
-          },
-        ],
-      });
-
-      await prisma.earlyRegistrationAssessment.deleteMany({
-        where: { applicationId: application.id },
-      });
-
-      if (pipeline.length > 0) {
-        await prisma.earlyRegistrationAssessment.createMany({
-          data: pipeline.map((step) => ({
-            applicationId: application.id,
-            type: step.kind,
-            scheduledDate: null,
-            scheduledTime: null,
-            venue: null,
-            notes: `Seeded from default ${scpType} pipeline`,
-          })),
-        });
-      }
+      // Keep SCP seeding focused on learner + core application data only.
+      await Promise.all([
+        prisma.applicationChecklist.deleteMany({
+          where: { earlyRegistrationId: application.id },
+        }),
+        prisma.applicationFamilyMember.deleteMany({
+          where: { earlyRegistrationId: application.id },
+        }),
+        prisma.applicationAddress.deleteMany({
+          where: { earlyRegistrationId: application.id },
+        }),
+        prisma.earlyRegistrationAssessment.deleteMany({
+          where: { applicationId: application.id },
+        }),
+      ]);
 
       console.log(`Seeded SCP application ${trackingNumber} (${scpType}).`);
       globalCounter++;

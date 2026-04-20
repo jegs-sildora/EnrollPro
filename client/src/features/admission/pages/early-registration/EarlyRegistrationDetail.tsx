@@ -369,6 +369,7 @@ export default function EarlyRegistrationDetail() {
                         applicantId={applicant.id}
                         learnerType={applicant.learnerType}
                         checklist={applicant.checklist}
+                        documents={applicant.documents}
                         endpointBase="/early-registrations"
                         onRefresh={refetch}
                       />

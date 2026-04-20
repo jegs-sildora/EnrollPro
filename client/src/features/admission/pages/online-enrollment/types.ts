@@ -16,6 +16,44 @@ const optionalSecondaryEmail = z.preprocess((value) => {
   return value;
 }, z.string().email("Invalid email address").optional().nullable());
 
+const optionalSf9GeneralAverage = z.preprocess(
+  (value) => {
+    if (value == null) {
+      return undefined;
+    }
+
+    if (typeof value === "number") {
+      return Number.isFinite(value) ? value : Number.NaN;
+    }
+
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed === "") {
+        return undefined;
+      }
+
+      const parsed = Number(trimmed.replace(",", "."));
+      return Number.isFinite(parsed) ? parsed : Number.NaN;
+    }
+
+    return value;
+  },
+  z
+    .number()
+    .refine(
+      (value) => Number.isFinite(value),
+      "Final General Average must be a number",
+    )
+    .min(0, "Final General Average must be between 0 and 100")
+    .max(100, "Final General Average must be between 0 and 100")
+    .refine(
+      (value) => Number.isInteger(value * 100),
+      "Final General Average must have up to 2 decimal places",
+    )
+    .optional()
+    .nullable(),
+);
+
 export const EnrollmentFormSchema = z
   .object({
     // Phase 0: Data Privacy
@@ -150,6 +188,7 @@ export const EnrollmentFormSchema = z
       .min(1, "School year last attended is required"),
     lastSchoolAddress: z.string().optional(),
     lastSchoolType: z.enum(["Public", "Private", "International", "ALS"]),
+    generalAverage: optionalSf9GeneralAverage,
 
     // Section 8: SCP Specifics
     artField: z.string().optional(),

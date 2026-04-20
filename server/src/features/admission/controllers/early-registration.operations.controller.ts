@@ -75,10 +75,12 @@ export function createEarlyRegistrationOperationsController(
       const applicantId = parseInt(String(req.params.id));
       const { data: applicant, type: appType } =
         await findApplicantOrThrow(applicantId);
+      const reroutedStatus: ApplicationStatus =
+        appType === "ENROLLMENT" ? "SUBMITTED_BEEF" : "SUBMITTED_BEERF";
 
       assertTransition(
         applicant,
-        "PENDING_VERIFICATION",
+        reroutedStatus,
         `Cannot reroute failed assessment. Current status: "${applicant.status}". Only ASSESSMENT_TAKEN applications can be rerouted to regular intake.`,
       );
 
@@ -105,7 +107,7 @@ export function createEarlyRegistrationOperationsController(
 
         const failedUpdate = await updateApplicationStatus(
           applicantId,
-          "PENDING_VERIFICATION",
+          reroutedStatus,
           { applicantType: "REGULAR" },
           tx,
         );
@@ -114,7 +116,7 @@ export function createEarlyRegistrationOperationsController(
           await tx.earlyRegistrationApplication.update({
             where: { id: applicant.earlyRegistrationId },
             data: {
-              status: "EARLY_REG_SUBMITTED",
+              status: "SUBMITTED_BEERF",
               applicantType: "REGULAR",
             },
           });
@@ -126,7 +128,7 @@ export function createEarlyRegistrationOperationsController(
       await auditLog({
         userId: req.user!.userId,
         actionType: "APPLICATION_FAILED",
-        description: `Assessment failed for ${applicant.learner.firstName} ${applicant.learner.lastName} (#${applicantId}); rerouted to PENDING_VERIFICATION as REGULAR. Notes: ${examNotes || "N/A"}`,
+        description: `Assessment failed for ${applicant.learner.firstName} ${applicant.learner.lastName} (#${applicantId}); rerouted to ${reroutedStatus} as REGULAR. Notes: ${examNotes || "N/A"}`,
         subjectType:
           appType === "ENROLLMENT"
             ? "EnrollmentApplication"
@@ -260,7 +262,7 @@ export function createEarlyRegistrationOperationsController(
               gradeLevelId: applicant.gradeLevelId,
               applicantType: "REGULAR",
               learnerType: applicant.learnerType,
-              status: "READY_FOR_SECTIONING",
+              status: "READY_FOR_ENROLLMENT",
               admissionChannel: applicant.channel,
               isPrivacyConsentGiven: applicant.isPrivacyConsentGiven,
               encodedById: req.user!.userId,
@@ -270,7 +272,7 @@ export function createEarlyRegistrationOperationsController(
 
           await tx.earlyRegistrationApplication.update({
             where: { id: applicant.id },
-            data: { status: "PRE_REGISTERED" },
+            data: { status: "READY_FOR_ENROLLMENT" },
           });
 
           // Link existing checklist to the new enrollment application
@@ -296,7 +298,7 @@ export function createEarlyRegistrationOperationsController(
             where: { id: applicantId },
             data: {
               applicantType: "REGULAR",
-              status: "READY_FOR_SECTIONING",
+              status: "READY_FOR_ENROLLMENT",
             },
           });
         }
@@ -651,13 +653,10 @@ export function createEarlyRegistrationOperationsController(
         );
       }
 
-      if (
-        applicant.status !== "OFFICIALLY_ENROLLED" &&
-        applicant.status !== "ENROLLED"
-      ) {
+      if (applicant.status !== "ENROLLED") {
         throw new AppError(
           422,
-          "Profile lock override is available only for officially enrolled learners.",
+          "Profile lock override is available only for enrolled learners.",
         );
       }
 
@@ -729,7 +728,7 @@ export function createEarlyRegistrationOperationsController(
       const records = await prisma.enrollmentApplication.findMany({
         where: {
           schoolYearId: targetSchoolYearId,
-          status: { in: ["OFFICIALLY_ENROLLED", "ENROLLED"] },
+          status: "ENROLLED",
           enrollmentRecord: { isNot: null },
         },
         include: {
@@ -826,12 +825,11 @@ export function createEarlyRegistrationOperationsController(
       const canStartReview =
         req.user?.role === "REGISTRAR" || req.user?.role === "SYSTEM_ADMIN";
 
-      if (
-        (applicant.status === "PENDING_VERIFICATION" ||
-          applicant.status === "EARLY_REG_SUBMITTED" ||
-          applicant.status === "SUBMITTED") &&
-        canStartReview
-      ) {
+      const isSubmittedStatus =
+        applicant.status === "SUBMITTED_BEERF" ||
+        applicant.status === "SUBMITTED_BEEF";
+
+      if (isSubmittedStatus && canStartReview) {
         if (appType === "ENROLLMENT") {
           await prisma.enrollmentApplication.update({
             where: { id: applicant.id },
@@ -964,10 +962,7 @@ export function createEarlyRegistrationOperationsController(
         targetStatus: ApplicationStatus;
       };
 
-      if (
-        targetStatus === "ENROLLED" ||
-        targetStatus === "OFFICIALLY_ENROLLED"
-      ) {
+      if (targetStatus === "ENROLLED") {
         throw new AppError(
           422,
           "Batch transition to ENROLLED is not allowed. Use the official enrollment endpoint per applicant after section assignment and document validation.",

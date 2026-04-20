@@ -190,14 +190,18 @@ export default function RegistrationPipelines() {
         value={activeTab}
         onValueChange={handleTabChange}
         className="w-full">
-        <div className="mb-6 overflow-x-auto pb-1">
-          <TabsList className="inline-flex min-w-max h-auto gap-1 p-1 bg-white border border-border relative">
+        <div className="mb-6 w-full pb-1">
+          <TabsList
+            className="grid w-full h-auto gap-1 p-1 bg-white border border-border relative"
+            style={{
+              gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))`,
+            }}>
             {tabs.map((tab) => (
               <TabsTrigger
                 key={tab.key}
                 value={tab.key}
                 title={tab.fullLabel}
-                className="shrink-0 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+                className="w-full min-w-0 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
                 {activeTab === tab.key && (
                   <motion.div
                     layoutId="pipeline-active-pill"
@@ -209,7 +213,7 @@ export default function RegistrationPipelines() {
                     }}
                   />
                 )}
-                <span className="relative z-20 inline-flex items-center gap-2">
+                <span className="relative z-20 inline-flex w-full items-center justify-center gap-2">
                   {tab.label}
                   <Badge
                     variant={activeTab === tab.key ? "secondary" : "outline"}

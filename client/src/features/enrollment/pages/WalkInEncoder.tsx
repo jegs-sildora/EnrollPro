@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { ArrowLeft, RefreshCw, Search } from "lucide-react";
+import { ArrowLeft, RefreshCw } from "lucide-react";
 import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -16,115 +16,150 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { Badge } from "@/shared/ui/badge";
+import { Checkbox } from "@/shared/ui/checkbox";
 
-type WalkInMode = "new-learner" | "transferee" | "pept" | "balik-aral";
+type LearnerType = "NEW_ENROLLEE" | "TRANSFEREE" | "RETURNING" | "ALS";
+type AcademicStatus = "PROMOTED" | "RETAINED";
+type Sex = "MALE" | "FEMALE";
 
 interface GradeLevelOption {
   id: number;
   name: string;
 }
 
+interface ContactPersonState {
+  firstName: string;
+  lastName: string;
+  middleName: string;
+  contactNumber: string;
+}
+
 interface WalkInFormState {
+  hasNoLrn: boolean;
   lrn: string;
+  learnerType: LearnerType;
+  gradeLevelId: string;
+  academicStatus: AcademicStatus;
   firstName: string;
   lastName: string;
   middleName: string;
   extensionName: string;
   birthdate: string;
-  sex: string;
-  gradeLevelId: string;
+  sex: Sex | "";
+  placeOfBirth: string;
+  currentAddressHouseNoStreet: string;
+  currentAddressSitio: string;
+  currentAddressBarangay: string;
+  currentAddressCityMunicipality: string;
+  currentAddressProvince: string;
+  mother: ContactPersonState;
+  father: ContactPersonState;
+  guardian: ContactPersonState;
+  guardianRelationship: string;
+  contactNumber: string;
+  email: string;
   originSchoolName: string;
   peptCertificateNumber: string;
   peptPassingDate: string;
+  finalGeneralAverage: string;
+  isSf9Submitted: boolean;
+  isPsaBirthCertPresented: boolean;
 }
 
-const WALK_IN_MODE_CONFIG: Record<
-  WalkInMode,
-  {
-    title: string;
-    description: string;
-    learnerType: "NEW_ENROLLEE" | "TRANSFEREE" | "ALS" | "RETURNING";
-  }
-> = {
-  "new-learner": {
-    title: "Enroll New Learner (No existing LRN)",
-    description:
-      "Encode incoming learners with no existing LRN and route to section assignment after verification.",
-    learnerType: "NEW_ENROLLEE",
-  },
-  transferee: {
-    title: "Enroll Transferee (From another school)",
-    description:
-      "Input LRN first and run local lookup to prevent duplicate records before encoding.",
-    learnerType: "TRANSFEREE",
-  },
-  pept: {
-    title: "Enroll Accelerated / PEPT Passer",
-    description:
-      "Encode accelerated PEPT passers using certificate and assessment details.",
-    learnerType: "ALS",
-  },
-  "balik-aral": {
-    title: "Enroll Balik-Aral",
-    description:
-      "Encode returning learners and route them directly into enrollment processing.",
-    learnerType: "RETURNING",
-  },
+const EMPTY_CONTACT: ContactPersonState = {
+  firstName: "",
+  lastName: "",
+  middleName: "",
+  contactNumber: "",
 };
 
-function resolveWalkInMode(rawType: string | null): WalkInMode {
-  if (
-    rawType === "new-learner" ||
-    rawType === "transferee" ||
-    rawType === "pept" ||
-    rawType === "balik-aral"
-  ) {
-    return rawType;
-  }
-
-  return "transferee";
-}
-
-const EMPTY_FORM_STATE: WalkInFormState = {
+const INITIAL_FORM_STATE: WalkInFormState = {
+  hasNoLrn: false,
   lrn: "",
+  learnerType: "NEW_ENROLLEE",
+  gradeLevelId: "",
+  academicStatus: "PROMOTED",
   firstName: "",
   lastName: "",
   middleName: "",
   extensionName: "",
   birthdate: "",
   sex: "",
-  gradeLevelId: "",
+  placeOfBirth: "",
+  currentAddressHouseNoStreet: "",
+  currentAddressSitio: "",
+  currentAddressBarangay: "",
+  currentAddressCityMunicipality: "",
+  currentAddressProvince: "",
+  mother: { ...EMPTY_CONTACT },
+  father: { ...EMPTY_CONTACT },
+  guardian: { ...EMPTY_CONTACT },
+  guardianRelationship: "",
+  contactNumber: "",
+  email: "",
   originSchoolName: "",
   peptCertificateNumber: "",
   peptPassingDate: "",
+  finalGeneralAverage: "",
+  isSf9Submitted: false,
+  isPsaBirthCertPresented: false,
 };
+
+const LEARNER_TYPE_OPTIONS: Array<{ value: LearnerType; label: string }> = [
+  { value: "NEW_ENROLLEE", label: "New Enrollee" },
+  { value: "TRANSFEREE", label: "Transferee" },
+  { value: "RETURNING", label: "Balik-Aral" },
+  { value: "ALS", label: "ALS / PEPT Passer" },
+];
+
+function normalizeLrn(value: string): string {
+  return value.replace(/[^\d]/g, "").slice(0, 12);
+}
+
+function parseGradeLevelNumber(label: string): number | null {
+  const match = label.match(/\d+/);
+  if (!match) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(match[0], 10);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function toOptionalTrimmed(value: string): string | undefined {
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function hasContactIdentity(person: ContactPersonState): boolean {
+  return Boolean(person.firstName.trim() && person.lastName.trim());
+}
 
 export default function WalkInEncoder() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const mode = useMemo(
-    () => resolveWalkInMode(searchParams.get("type")),
+
+  const initialLrn = useMemo(
+    () => normalizeLrn(searchParams.get("lrn") ?? ""),
     [searchParams],
   );
-  const modeConfig = WALK_IN_MODE_CONFIG[mode];
+  const initialNoLrn = useMemo(
+    () => searchParams.get("noLrn") === "true",
+    [searchParams],
+  );
 
-  const [formData, setFormData] = useState<WalkInFormState>(EMPTY_FORM_STATE);
+  const [formData, setFormData] = useState<WalkInFormState>(() => ({
+    ...INITIAL_FORM_STATE,
+    lrn: initialLrn,
+    hasNoLrn: initialNoLrn && initialLrn.length === 0,
+  }));
   const [gradeLevels, setGradeLevels] = useState<GradeLevelOption[]>([]);
   const [loadingGradeLevels, setLoadingGradeLevels] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [lookupLoading, setLookupLoading] = useState(false);
-  const [lookupMessage, setLookupMessage] = useState<string>("");
-  const [existingLearnerFound, setExistingLearnerFound] = useState(false);
 
   useEffect(() => {
     void fetchGradeLevels();
   }, []);
-
-  useEffect(() => {
-    setFormData(EMPTY_FORM_STATE);
-    setLookupMessage("");
-    setExistingLearnerFound(false);
-  }, [mode]);
 
   const fetchGradeLevels = async () => {
     setLoadingGradeLevels(true);
@@ -138,122 +173,155 @@ export default function WalkInEncoder() {
     }
   };
 
-  const updateFormField = (field: keyof WalkInFormState, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const selectedGradeLevel = useMemo(
+    () =>
+      gradeLevels.find(
+        (gradeLevel) => String(gradeLevel.id) === formData.gradeLevelId,
+      ) ?? null,
+    [formData.gradeLevelId, gradeLevels],
+  );
+
+  const isNoLrnAllowed = useMemo(() => {
+    if (formData.learnerType === "TRANSFEREE") {
+      return true;
+    }
+
+    if (formData.learnerType !== "NEW_ENROLLEE") {
+      return false;
+    }
+
+    if (!selectedGradeLevel) {
+      return false;
+    }
+
+    return parseGradeLevelNumber(selectedGradeLevel.name) === 7;
+  }, [formData.learnerType, selectedGradeLevel]);
+
+  const setField = <T extends keyof WalkInFormState>(
+    key: T,
+    value: WalkInFormState[T],
+  ) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
-  const updateUppercaseField = (
-    field: keyof WalkInFormState,
+  const setUpperField = <T extends keyof WalkInFormState>(
+    key: T,
     value: string,
   ) => {
-    updateFormField(field, value.toUpperCase());
+    setField(key, value.toUpperCase() as WalkInFormState[T]);
   };
 
-  const handleLrnLookup = async () => {
-    if (!/^\d{12}$/.test(formData.lrn.trim())) {
-      sileo.error({
-        title: "Invalid LRN",
-        description: "Transferee lookup requires a 12-digit LRN.",
-      });
-      return;
-    }
-
-    setLookupLoading(true);
-    setLookupMessage("");
-    setExistingLearnerFound(false);
-
-    try {
-      const response = await api.get(
-        `/applications/lookup-lrn/${formData.lrn.trim()}`,
-      );
-      const matched = response.data;
-
-      setFormData((prev) => ({
-        ...prev,
-        lrn: String(matched.lrn ?? prev.lrn),
-        firstName: String(matched.firstName ?? prev.firstName).toUpperCase(),
-        lastName: String(matched.lastName ?? prev.lastName).toUpperCase(),
-        middleName: String(matched.middleName ?? prev.middleName).toUpperCase(),
-        extensionName: String(
-          matched.extensionName ?? prev.extensionName,
-        ).toUpperCase(),
-        birthdate: matched.birthdate
-          ? new Date(String(matched.birthdate)).toISOString().slice(0, 10)
-          : prev.birthdate,
-        sex: String(matched.sex ?? prev.sex),
-        gradeLevelId:
-          matched.gradeLevel != null
-            ? String(matched.gradeLevel)
-            : prev.gradeLevelId,
-      }));
-
-      setExistingLearnerFound(true);
-      setLookupMessage(
-        "Existing learner record found in the active school year. Use the existing record to avoid duplicates.",
-      );
-    } catch {
-      setLookupMessage(
-        "No existing eligible local record found for this LRN. Continue manual encoding.",
-      );
-      setExistingLearnerFound(false);
-    } finally {
-      setLookupLoading(false);
-    }
+  const setContactField = (
+    bucket: "mother" | "father" | "guardian",
+    key: keyof ContactPersonState,
+    value: string,
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [bucket]: {
+        ...prev[bucket],
+        [key]: key === "contactNumber" ? value : value.toUpperCase(),
+      },
+    }));
   };
 
-  const validateForm = () => {
-    if (!formData.firstName || !formData.lastName) {
+  const validateForm = (): boolean => {
+    if (!formData.lastName.trim() || !formData.firstName.trim()) {
       sileo.error({
-        title: "Missing Name",
-        description: "First name and last name are required.",
+        title: "Missing Learner Name",
+        description: "Last name and first name are required.",
       });
       return false;
     }
 
     if (!formData.birthdate || !formData.sex || !formData.gradeLevelId) {
       sileo.error({
-        title: "Missing Required Fields",
+        title: "Missing Required Learner Details",
         description: "Birthdate, sex, and grade level are required.",
       });
       return false;
     }
 
-    if (mode === "transferee") {
-      if (!/^\d{12}$/.test(formData.lrn.trim())) {
-        sileo.error({
-          title: "LRN Required",
-          description: "Transferee encoding requires a 12-digit LRN.",
-        });
-        return false;
-      }
+    if (
+      !formData.currentAddressBarangay.trim() ||
+      !formData.currentAddressCityMunicipality.trim() ||
+      !formData.currentAddressProvince.trim()
+    ) {
+      sileo.error({
+        title: "Missing Address Fields",
+        description: "Barangay, city/municipality, and province are required.",
+      });
+      return false;
+    }
 
-      if (!formData.originSchoolName.trim()) {
+    if (formData.hasNoLrn) {
+      if (!isNoLrnAllowed) {
         sileo.error({
-          title: "Origin School Required",
-          description: "Provide origin school name for transferees.",
-        });
-        return false;
-      }
-
-      if (existingLearnerFound) {
-        sileo.error({
-          title: "Duplicate Prevention Triggered",
+          title: "No-LRN Path Not Allowed",
           description:
-            "Existing learner detected. Open Enrollment queue instead of creating a duplicate.",
+            "Only incoming Grade 7 or transferee learners can proceed without LRN.",
+        });
+        return false;
+      }
+    } else if (!/^\d{12}$/.test(formData.lrn.trim())) {
+      sileo.error({
+        title: "Invalid LRN",
+        description: "LRN must be exactly 12 digits.",
+      });
+      return false;
+    }
+
+    if (
+      formData.learnerType === "TRANSFEREE" &&
+      !formData.originSchoolName.trim()
+    ) {
+      sileo.error({
+        title: "Origin School Required",
+        description: "Provide origin school name for transferees.",
+      });
+      return false;
+    }
+
+    if (formData.learnerType === "ALS") {
+      if (!formData.peptCertificateNumber.trim() || !formData.peptPassingDate) {
+        sileo.error({
+          title: "PEPT Details Required",
+          description:
+            "Certificate number and passing date are required for ALS / PEPT passers.",
         });
         return false;
       }
     }
 
-    if (mode === "pept") {
-      if (!formData.peptCertificateNumber.trim() || !formData.peptPassingDate) {
-        sileo.error({
-          title: "PEPT Details Required",
-          description:
-            "Certificate number and date of assessment are required for PEPT passers.",
-        });
-        return false;
-      }
+    if (
+      !hasContactIdentity(formData.mother) &&
+      !hasContactIdentity(formData.father) &&
+      !hasContactIdentity(formData.guardian)
+    ) {
+      sileo.error({
+        title: "Parents/Guardian Required",
+        description:
+          "Provide at least one complete parent or guardian identity (first and last name).",
+      });
+      return false;
+    }
+
+    if (!formData.isSf9Submitted || !formData.isPsaBirthCertPresented) {
+      sileo.error({
+        title: "Physical Requirements Required",
+        description:
+          "Confirm both SF9 and PSA Birth Certificate before routing to sectioning.",
+      });
+      return false;
+    }
+
+    const finalAverage = Number.parseFloat(formData.finalGeneralAverage);
+    if (Number.isNaN(finalAverage) || finalAverage < 0 || finalAverage > 100) {
+      sileo.error({
+        title: "Invalid Final General Average",
+        description: "Enter a valid SF9 final average between 0 and 100.",
+      });
+      return false;
     }
 
     return true;
@@ -262,39 +330,82 @@ export default function WalkInEncoder() {
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
+    const finalGeneralAverage = Number.parseFloat(formData.finalGeneralAverage);
+
+    const payload = {
+      lrn: formData.hasNoLrn ? null : formData.lrn.trim(),
+      hasNoLrn: formData.hasNoLrn,
+      firstName: formData.firstName.trim(),
+      lastName: formData.lastName.trim(),
+      middleName: toOptionalTrimmed(formData.middleName),
+      extensionName: toOptionalTrimmed(formData.extensionName),
+      birthdate: formData.birthdate,
+      sex: formData.sex,
+      placeOfBirth: toOptionalTrimmed(formData.placeOfBirth),
+      learnerType: formData.learnerType,
+      applicantType: "REGULAR",
+      gradeLevelId: Number(formData.gradeLevelId),
+      academicStatus: formData.academicStatus,
+      originSchoolName: toOptionalTrimmed(formData.originSchoolName),
+      peptCertificateNumber: toOptionalTrimmed(formData.peptCertificateNumber),
+      peptPassingDate: formData.peptPassingDate || undefined,
+      contactNumber: toOptionalTrimmed(formData.contactNumber),
+      email: toOptionalTrimmed(formData.email),
+      currentAddress: {
+        houseNoStreet: toOptionalTrimmed(formData.currentAddressHouseNoStreet),
+        sitio: toOptionalTrimmed(formData.currentAddressSitio),
+        barangay: formData.currentAddressBarangay.trim(),
+        cityMunicipality: formData.currentAddressCityMunicipality.trim(),
+        province: formData.currentAddressProvince.trim(),
+      },
+      mother: hasContactIdentity(formData.mother)
+        ? {
+            firstName: formData.mother.firstName.trim(),
+            lastName: formData.mother.lastName.trim(),
+            middleName: toOptionalTrimmed(formData.mother.middleName),
+            contactNumber: toOptionalTrimmed(formData.mother.contactNumber),
+          }
+        : undefined,
+      father: hasContactIdentity(formData.father)
+        ? {
+            firstName: formData.father.firstName.trim(),
+            lastName: formData.father.lastName.trim(),
+            middleName: toOptionalTrimmed(formData.father.middleName),
+            contactNumber: toOptionalTrimmed(formData.father.contactNumber),
+          }
+        : undefined,
+      guardian: hasContactIdentity(formData.guardian)
+        ? {
+            firstName: formData.guardian.firstName.trim(),
+            lastName: formData.guardian.lastName.trim(),
+            middleName: toOptionalTrimmed(formData.guardian.middleName),
+            contactNumber: toOptionalTrimmed(formData.guardian.contactNumber),
+          }
+        : undefined,
+      guardianRelationship: toOptionalTrimmed(formData.guardianRelationship),
+      checklist: {
+        isSf9Submitted: formData.isSf9Submitted,
+        isPsaBirthCertPresented: formData.isPsaBirthCertPresented,
+        isOriginalPsaBcCollected: formData.isPsaBirthCertPresented,
+        academicStatus: formData.academicStatus,
+        finalGeneralAverage,
+      },
+    };
+
     setSubmitting(true);
     try {
-      const payload = {
-        lrn: formData.lrn.trim() || undefined,
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
-        middleName: formData.middleName.trim() || undefined,
-        extensionName: formData.extensionName.trim() || undefined,
-        birthdate: formData.birthdate,
-        sex: formData.sex,
-        learnerType: modeConfig.learnerType,
-        applicantType: "REGULAR",
-        gradeLevelId: Number(formData.gradeLevelId),
-        academicStatus: "PROMOTED",
-        originSchoolName: formData.originSchoolName.trim() || undefined,
-        peptCertificateNumber:
-          formData.peptCertificateNumber.trim() || undefined,
-        peptPassingDate: formData.peptPassingDate || undefined,
-      };
-
       const response = await api.post(
         "/applications/special-enrollment",
         payload,
       );
       const trackingHint = String(
         response.data?.trackingNumber ||
-          `${formData.lastName} ${formData.firstName}`,
+          `${formData.lastName.trim()} ${formData.firstName.trim()}`,
       ).trim();
 
       sileo.success({
-        title: "Walk-in Saved",
-        description:
-          "Learner routed to Section Assignment queue as verified walk-in enrollment.",
+        title: "Walk-In Saved",
+        description: "Learner routed to Section Assignment queue.",
       });
 
       navigate(
@@ -308,8 +419,8 @@ export default function WalkInEncoder() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-2 py-6 sm:px-4 md:px-6">
-      <div className="mb-4 flex items-center justify-between gap-2">
+    <div className="mx-auto w-full max-w-6xl px-2 py-6 sm:px-4 md:px-6">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <Button
           variant="outline"
           className="h-9 text-xs font-bold"
@@ -318,307 +429,661 @@ export default function WalkInEncoder() {
           Back to Enrollment
         </Button>
         <Badge variant="secondary" className="text-[11px] font-bold">
-          Admin Walk-In Encoder
+          Direct Intake: BOSY Walk-In
         </Badge>
       </div>
 
       <Card className="border-none shadow-sm">
         <CardHeader className="space-y-2">
           <CardTitle className="text-xl font-bold">
-            {modeConfig.title}
+            Direct Intake: Basic Education Enrollment Form
           </CardTitle>
           <p className="text-xs font-semibold text-muted-foreground">
-            {modeConfig.description}
-          </p>
-          <p className="text-xs font-semibold text-primary">
-            Save and Submit routes directly to Section Assignment for immediate
-            section tagging.
+            Encode paper BEEF in one pass. This lane skips pending verification
+            and routes directly to sectioning after document confirmation.
           </p>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {mode === "transferee" && (
-            <Card className="border border-primary/20 bg-primary/5">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-bold">
-                  Transferee LRN Lookup
-                </CardTitle>
-                <p className="text-xs font-semibold text-muted-foreground">
-                  Enter LRN first and check local records before creating a new
-                  walk-in entry.
+
+        <CardContent className="space-y-5">
+          <section className="space-y-3 rounded-lg border border-border p-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-primary">
+              1. Learner Information
+            </p>
+
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  LRN {formData.hasNoLrn ? "(No LRN)" : "*"}
+                </Label>
+                <Input
+                  value={formData.lrn}
+                  maxLength={12}
+                  disabled={formData.hasNoLrn}
+                  placeholder="109988776655"
+                  className="h-10 font-bold"
+                  onChange={(event) => {
+                    setField("lrn", normalizeLrn(event.target.value));
+                  }}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Learner Type *
+                </Label>
+                <Select
+                  value={formData.learnerType}
+                  onValueChange={(value) => {
+                    setField("learnerType", value as LearnerType);
+                  }}>
+                  <SelectTrigger className="h-10 font-bold">
+                    <SelectValue placeholder="Select learner type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LEARNER_TYPE_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Grade Level *
+                </Label>
+                <Select
+                  value={formData.gradeLevelId}
+                  onValueChange={(value) => {
+                    setField("gradeLevelId", value);
+                  }}
+                  disabled={loadingGradeLevels}>
+                  <SelectTrigger className="h-10 font-bold">
+                    <SelectValue
+                      placeholder={
+                        loadingGradeLevels
+                          ? "Loading grade levels..."
+                          : "Select grade"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {gradeLevels.map((gradeLevel) => (
+                      <SelectItem
+                        key={gradeLevel.id}
+                        value={String(gradeLevel.id)}>
+                        {gradeLevel.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Academic Status *
+                </Label>
+                <Select
+                  value={formData.academicStatus}
+                  onValueChange={(value) => {
+                    setField("academicStatus", value as AcademicStatus);
+                  }}>
+                  <SelectTrigger className="h-10 font-bold">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PROMOTED">Promoted</SelectItem>
+                    <SelectItem value="RETAINED">Retained</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+              <Checkbox
+                id="walkInNoLrn"
+                checked={formData.hasNoLrn}
+                onCheckedChange={(checked) => {
+                  const nextValue = checked === true;
+                  setField("hasNoLrn", nextValue);
+                  if (nextValue) {
+                    setField("lrn", "");
+                  }
+                }}
+              />
+              <div className="space-y-1">
+                <Label htmlFor="walkInNoLrn" className="text-xs font-bold">
+                  Learner has no LRN yet
+                </Label>
+                <p className="text-[11px] font-semibold text-muted-foreground">
+                  Allowed only for incoming Grade 7 or transferee learners.
                 </p>
-              </CardHeader>
-              <CardContent className="grid gap-3 sm:grid-cols-[1fr_auto]">
+              </div>
+            </div>
+
+            {formData.hasNoLrn && !isNoLrnAllowed && (
+              <p className="text-xs font-bold text-destructive">
+                No-LRN path currently not allowed for selected learner type and
+                grade level.
+              </p>
+            )}
+
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Last Name *
+                </Label>
+                <Input
+                  value={formData.lastName}
+                  placeholder="LAST NAME"
+                  className="h-10 font-bold uppercase"
+                  onChange={(event) => {
+                    setUpperField("lastName", event.target.value);
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  First Name *
+                </Label>
+                <Input
+                  value={formData.firstName}
+                  placeholder="FIRST NAME"
+                  className="h-10 font-bold uppercase"
+                  onChange={(event) => {
+                    setUpperField("firstName", event.target.value);
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Middle Name
+                </Label>
+                <Input
+                  value={formData.middleName}
+                  placeholder="MIDDLE NAME"
+                  className="h-10 font-bold uppercase"
+                  onChange={(event) => {
+                    setUpperField("middleName", event.target.value);
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Extension Name
+                </Label>
+                <Input
+                  value={formData.extensionName}
+                  placeholder="JR / SR / III"
+                  className="h-10 font-bold uppercase"
+                  onChange={(event) => {
+                    setUpperField("extensionName", event.target.value);
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Birthdate *
+                </Label>
+                <Input
+                  type="date"
+                  value={formData.birthdate}
+                  className="h-10 font-bold"
+                  onChange={(event) => {
+                    setField("birthdate", event.target.value);
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Sex *
+                </Label>
+                <Select
+                  value={formData.sex}
+                  onValueChange={(value) => {
+                    setField("sex", value as Sex);
+                  }}>
+                  <SelectTrigger className="h-10 font-bold">
+                    <SelectValue placeholder="Select sex" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MALE">Male</SelectItem>
+                    <SelectItem value="FEMALE">Female</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Place of Birth
+                </Label>
+                <Input
+                  value={formData.placeOfBirth}
+                  placeholder="CITY / MUNICIPALITY"
+                  className="h-10 font-bold uppercase"
+                  onChange={(event) => {
+                    setUpperField("placeOfBirth", event.target.value);
+                  }}
+                />
+              </div>
+            </div>
+
+            {formData.learnerType === "TRANSFEREE" && (
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Origin School Name *
+                </Label>
+                <Input
+                  value={formData.originSchoolName}
+                  placeholder="ENTER ORIGIN SCHOOL"
+                  className="h-10 font-bold uppercase"
+                  onChange={(event) => {
+                    setUpperField("originSchoolName", event.target.value);
+                  }}
+                />
+              </div>
+            )}
+
+            {formData.learnerType === "ALS" && (
+              <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label
-                    htmlFor="lookupLrn"
-                    className="text-[11px] font-bold uppercase tracking-wider">
-                    LRN
+                  <Label className="text-[11px] font-bold uppercase tracking-wider">
+                    PEPT Certificate Number *
                   </Label>
                   <Input
-                    id="lookupLrn"
-                    value={formData.lrn}
-                    maxLength={12}
-                    placeholder="Enter 12-digit LRN"
-                    className="h-10 font-bold"
+                    value={formData.peptCertificateNumber}
+                    placeholder="CERTIFICATE NUMBER"
+                    className="h-10 font-bold uppercase"
                     onChange={(event) => {
-                      const nextValue = event.target.value
-                        .replace(/[^\d]/g, "")
-                        .slice(0, 12);
-                      updateFormField("lrn", nextValue);
-                      setExistingLearnerFound(false);
-                      setLookupMessage("");
+                      setUpperField(
+                        "peptCertificateNumber",
+                        event.target.value,
+                      );
                     }}
                   />
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-10 self-end text-xs font-bold"
-                  disabled={lookupLoading}
-                  onClick={() => {
-                    void handleLrnLookup();
-                  }}>
-                  {lookupLoading ? (
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Search className="mr-2 h-4 w-4" />
-                  )}
-                  Lookup LRN
-                </Button>
-                {lookupMessage && (
-                  <p className="sm:col-span-2 text-xs font-semibold text-muted-foreground">
-                    {lookupMessage}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label
-                htmlFor="lastName"
-                className="text-[11px] font-bold uppercase tracking-wider">
-                Last Name *
-              </Label>
-              <Input
-                id="lastName"
-                value={formData.lastName}
-                onChange={(event) => {
-                  updateUppercaseField("lastName", event.target.value);
-                }}
-                placeholder="LAST NAME"
-                className="h-10 font-bold uppercase"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label
-                htmlFor="firstName"
-                className="text-[11px] font-bold uppercase tracking-wider">
-                First Name *
-              </Label>
-              <Input
-                id="firstName"
-                value={formData.firstName}
-                onChange={(event) => {
-                  updateUppercaseField("firstName", event.target.value);
-                }}
-                placeholder="FIRST NAME"
-                className="h-10 font-bold uppercase"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label
-                htmlFor="middleName"
-                className="text-[11px] font-bold uppercase tracking-wider">
-                Middle Name
-              </Label>
-              <Input
-                id="middleName"
-                value={formData.middleName}
-                onChange={(event) => {
-                  updateUppercaseField("middleName", event.target.value);
-                }}
-                placeholder="MIDDLE NAME"
-                className="h-10 font-bold uppercase"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label
-                htmlFor="extensionName"
-                className="text-[11px] font-bold uppercase tracking-wider">
-                Extension Name
-              </Label>
-              <Input
-                id="extensionName"
-                value={formData.extensionName}
-                onChange={(event) => {
-                  updateUppercaseField("extensionName", event.target.value);
-                }}
-                placeholder="JR / SR / III"
-                className="h-10 font-bold uppercase"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label
-                htmlFor="birthdate"
-                className="text-[11px] font-bold uppercase tracking-wider">
-                Birthdate *
-              </Label>
-              <Input
-                id="birthdate"
-                type="date"
-                value={formData.birthdate}
-                onChange={(event) => {
-                  updateFormField("birthdate", event.target.value);
-                }}
-                className="h-10 font-bold"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label
-                htmlFor="sex"
-                className="text-[11px] font-bold uppercase tracking-wider">
-                Sex *
-              </Label>
-              <Select
-                value={formData.sex}
-                onValueChange={(value) => {
-                  updateFormField("sex", value);
-                }}>
-                <SelectTrigger id="sex" className="h-10 font-bold">
-                  <SelectValue placeholder="Select sex" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="MALE">Male</SelectItem>
-                  <SelectItem value="FEMALE">Female</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label
-                htmlFor="gradeLevelId"
-                className="text-[11px] font-bold uppercase tracking-wider">
-                Grade to Enroll *
-              </Label>
-              <Select
-                value={formData.gradeLevelId}
-                onValueChange={(value) => {
-                  updateFormField("gradeLevelId", value);
-                }}
-                disabled={loadingGradeLevels}>
-                <SelectTrigger id="gradeLevelId" className="h-10 font-bold">
-                  <SelectValue
-                    placeholder={
-                      loadingGradeLevels
-                        ? "Loading grade levels..."
-                        : "Select grade"
-                    }
+                <div className="space-y-2">
+                  <Label className="text-[11px] font-bold uppercase tracking-wider">
+                    PEPT Passing Date *
+                  </Label>
+                  <Input
+                    type="date"
+                    value={formData.peptPassingDate}
+                    className="h-10 font-bold"
+                    onChange={(event) => {
+                      setField("peptPassingDate", event.target.value);
+                    }}
                   />
-                </SelectTrigger>
-                <SelectContent>
-                  {gradeLevels.map((gradeLevel) => (
-                    <SelectItem
-                      key={gradeLevel.id}
-                      value={String(gradeLevel.id)}>
-                      {gradeLevel.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label
-                htmlFor="lrn"
-                className="text-[11px] font-bold uppercase tracking-wider">
-                LRN {mode === "transferee" ? "*" : "(Optional)"}
-              </Label>
-              <Input
-                id="lrn"
-                value={formData.lrn}
-                maxLength={12}
-                placeholder={
-                  mode === "new-learner"
-                    ? "Leave blank if no LRN"
-                    : "12-digit LRN"
-                }
-                disabled={mode === "transferee"}
-                className="h-10 font-bold"
-                onChange={(event) => {
-                  const nextValue = event.target.value
-                    .replace(/[^\d]/g, "")
-                    .slice(0, 12);
-                  updateFormField("lrn", nextValue);
-                }}
-              />
-            </div>
-          </div>
+                </div>
+              </div>
+            )}
+          </section>
 
-          {mode === "transferee" && (
-            <div className="space-y-2">
-              <Label
-                htmlFor="originSchoolName"
-                className="text-[11px] font-bold uppercase tracking-wider">
-                Origin School Name *
-              </Label>
-              <Input
-                id="originSchoolName"
-                value={formData.originSchoolName}
-                onChange={(event) => {
-                  updateUppercaseField("originSchoolName", event.target.value);
-                }}
-                placeholder="ENTER ORIGIN SCHOOL"
-                className="h-10 font-bold uppercase"
-              />
-            </div>
-          )}
-
-          {mode === "pept" && (
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label
-                  htmlFor="peptCertificateNumber"
-                  className="text-[11px] font-bold uppercase tracking-wider">
-                  PEPT Certificate Number *
+          <section className="space-y-3 rounded-lg border border-border p-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-primary">
+              2. Address
+            </p>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2 md:col-span-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  House No. / Street
                 </Label>
                 <Input
-                  id="peptCertificateNumber"
-                  value={formData.peptCertificateNumber}
+                  value={formData.currentAddressHouseNoStreet}
+                  placeholder="HOUSE / STREET"
+                  className="h-10 font-bold uppercase"
                   onChange={(event) => {
-                    updateUppercaseField(
-                      "peptCertificateNumber",
+                    setUpperField(
+                      "currentAddressHouseNoStreet",
                       event.target.value,
                     );
                   }}
-                  placeholder="CERTIFICATE NUMBER"
-                  className="h-10 font-bold uppercase"
                 />
               </div>
               <div className="space-y-2">
-                <Label
-                  htmlFor="peptPassingDate"
-                  className="text-[11px] font-bold uppercase tracking-wider">
-                  Date of Assessment *
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Sitio / Purok
                 </Label>
                 <Input
-                  id="peptPassingDate"
-                  type="date"
-                  value={formData.peptPassingDate}
+                  value={formData.currentAddressSitio}
+                  placeholder="SITIO / PUROK"
+                  className="h-10 font-bold uppercase"
                   onChange={(event) => {
-                    updateFormField("peptPassingDate", event.target.value);
+                    setUpperField("currentAddressSitio", event.target.value);
                   }}
-                  className="h-10 font-bold"
                 />
               </div>
             </div>
-          )}
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Barangay *
+                </Label>
+                <Input
+                  value={formData.currentAddressBarangay}
+                  placeholder="BARANGAY"
+                  className="h-10 font-bold uppercase"
+                  onChange={(event) => {
+                    setUpperField("currentAddressBarangay", event.target.value);
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  City / Municipality *
+                </Label>
+                <Input
+                  value={formData.currentAddressCityMunicipality}
+                  placeholder="CITY / MUNICIPALITY"
+                  className="h-10 font-bold uppercase"
+                  onChange={(event) => {
+                    setUpperField(
+                      "currentAddressCityMunicipality",
+                      event.target.value,
+                    );
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Province *
+                </Label>
+                <Input
+                  value={formData.currentAddressProvince}
+                  placeholder="PROVINCE"
+                  className="h-10 font-bold uppercase"
+                  onChange={(event) => {
+                    setUpperField("currentAddressProvince", event.target.value);
+                  }}
+                />
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-3 rounded-lg border border-border p-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-primary">
+              3. Parents / Guardian Information
+            </p>
+
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Mother - First Name
+                </Label>
+                <Input
+                  value={formData.mother.firstName}
+                  placeholder="FIRST NAME"
+                  className="h-10 font-bold uppercase"
+                  onChange={(event) => {
+                    setContactField("mother", "firstName", event.target.value);
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Mother - Last Name
+                </Label>
+                <Input
+                  value={formData.mother.lastName}
+                  placeholder="LAST NAME"
+                  className="h-10 font-bold uppercase"
+                  onChange={(event) => {
+                    setContactField("mother", "lastName", event.target.value);
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Mother - Middle Name
+                </Label>
+                <Input
+                  value={formData.mother.middleName}
+                  placeholder="MIDDLE NAME"
+                  className="h-10 font-bold uppercase"
+                  onChange={(event) => {
+                    setContactField("mother", "middleName", event.target.value);
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Mother - Contact No.
+                </Label>
+                <Input
+                  value={formData.mother.contactNumber}
+                  placeholder="09XXXXXXXXX"
+                  className="h-10 font-bold"
+                  onChange={(event) => {
+                    setContactField(
+                      "mother",
+                      "contactNumber",
+                      event.target.value,
+                    );
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Father - First Name
+                </Label>
+                <Input
+                  value={formData.father.firstName}
+                  placeholder="FIRST NAME"
+                  className="h-10 font-bold uppercase"
+                  onChange={(event) => {
+                    setContactField("father", "firstName", event.target.value);
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Father - Last Name
+                </Label>
+                <Input
+                  value={formData.father.lastName}
+                  placeholder="LAST NAME"
+                  className="h-10 font-bold uppercase"
+                  onChange={(event) => {
+                    setContactField("father", "lastName", event.target.value);
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Father - Middle Name
+                </Label>
+                <Input
+                  value={formData.father.middleName}
+                  placeholder="MIDDLE NAME"
+                  className="h-10 font-bold uppercase"
+                  onChange={(event) => {
+                    setContactField("father", "middleName", event.target.value);
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Father - Contact No.
+                </Label>
+                <Input
+                  value={formData.father.contactNumber}
+                  placeholder="09XXXXXXXXX"
+                  className="h-10 font-bold"
+                  onChange={(event) => {
+                    setContactField(
+                      "father",
+                      "contactNumber",
+                      event.target.value,
+                    );
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Guardian - First Name
+                </Label>
+                <Input
+                  value={formData.guardian.firstName}
+                  placeholder="FIRST NAME"
+                  className="h-10 font-bold uppercase"
+                  onChange={(event) => {
+                    setContactField(
+                      "guardian",
+                      "firstName",
+                      event.target.value,
+                    );
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Guardian - Last Name
+                </Label>
+                <Input
+                  value={formData.guardian.lastName}
+                  placeholder="LAST NAME"
+                  className="h-10 font-bold uppercase"
+                  onChange={(event) => {
+                    setContactField("guardian", "lastName", event.target.value);
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Guardian - Contact No.
+                </Label>
+                <Input
+                  value={formData.guardian.contactNumber}
+                  placeholder="09XXXXXXXXX"
+                  className="h-10 font-bold"
+                  onChange={(event) => {
+                    setContactField(
+                      "guardian",
+                      "contactNumber",
+                      event.target.value,
+                    );
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Guardian Relationship
+                </Label>
+                <Input
+                  value={formData.guardianRelationship}
+                  placeholder="AUNT / UNCLE / SIBLING"
+                  className="h-10 font-bold uppercase"
+                  onChange={(event) => {
+                    setUpperField("guardianRelationship", event.target.value);
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Primary Contact Number
+                </Label>
+                <Input
+                  value={formData.contactNumber}
+                  placeholder="09XXXXXXXXX"
+                  className="h-10 font-bold"
+                  onChange={(event) => {
+                    setField("contactNumber", event.target.value);
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Email Address
+                </Label>
+                <Input
+                  value={formData.email}
+                  placeholder="guardian@email.com"
+                  className="h-10 font-bold"
+                  onChange={(event) => {
+                    setField("email", event.target.value);
+                  }}
+                />
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-3 rounded-lg border border-border p-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-primary">
+              4. Physical Requirements Submitted
+            </p>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Final General Average (SF9) *
+                </Label>
+                <Input
+                  value={formData.finalGeneralAverage}
+                  placeholder="88.5"
+                  className="h-10 font-bold"
+                  onChange={(event) => {
+                    const normalized = event.target.value
+                      .replace(/[^\d.]/g, "")
+                      .replace(/(\..*)\./g, "$1");
+                    setField("finalGeneralAverage", normalized);
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-3">
+              <div className="flex items-center gap-3 rounded-md border border-primary/20 bg-primary/5 px-3 py-2">
+                <Checkbox
+                  id="isSf9Submitted"
+                  checked={formData.isSf9Submitted}
+                  onCheckedChange={(checked) => {
+                    setField("isSf9Submitted", checked === true);
+                  }}
+                />
+                <Label
+                  htmlFor="isSf9Submitted"
+                  className="text-xs font-bold tracking-wide">
+                  Original SF9 (Report Card)
+                </Label>
+              </div>
+
+              <div className="flex items-center gap-3 rounded-md border border-primary/20 bg-primary/5 px-3 py-2">
+                <Checkbox
+                  id="isPsaBirthCertPresented"
+                  checked={formData.isPsaBirthCertPresented}
+                  onCheckedChange={(checked) => {
+                    setField("isPsaBirthCertPresented", checked === true);
+                  }}
+                />
+                <Label
+                  htmlFor="isPsaBirthCertPresented"
+                  className="text-xs font-bold tracking-wide">
+                  PSA Birth Certificate
+                </Label>
+              </div>
+            </div>
+          </section>
 
           <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
             <Button
               type="button"
               variant="outline"
               className="h-10 text-xs font-bold"
-              onClick={() => navigate("/monitoring/enrollment")}>
+              onClick={() => navigate("/monitoring/enrollment")}
+              disabled={submitting}>
               Cancel
             </Button>
             <Button
@@ -628,7 +1093,14 @@ export default function WalkInEncoder() {
               onClick={() => {
                 void handleSubmit();
               }}>
-              {submitting ? "Saving..." : "Save & Submit"}
+              {submitting ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save & Route to Sectioning"
+              )}
             </Button>
           </div>
         </CardContent>

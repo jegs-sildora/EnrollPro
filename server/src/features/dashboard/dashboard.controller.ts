@@ -20,7 +20,7 @@ export async function getStats(req: Request, res: Response): Promise<void> {
     prisma.enrollmentApplication.count({
       where: {
         status: {
-          in: ["PENDING_VERIFICATION", "READY_FOR_SECTIONING", "SUBMITTED"],
+          in: ["UNDER_REVIEW", "READY_FOR_ENROLLMENT", "SUBMITTED_BEEF"],
         },
         enrollmentRecord: { is: null },
         ...(schoolYearId ? { schoolYearId } : {}),
@@ -28,13 +28,13 @@ export async function getStats(req: Request, res: Response): Promise<void> {
     }),
     prisma.enrollmentApplication.count({
       where: {
-        status: { in: ["OFFICIALLY_ENROLLED", "ENROLLED"] },
+        status: "ENROLLED",
         ...(schoolYearId ? { schoolYearId } : {}),
       },
     }),
     prisma.enrollmentApplication.count({
       where: {
-        status: { in: ["READY_FOR_SECTIONING", "READY_FOR_ENROLLMENT"] },
+        status: "READY_FOR_ENROLLMENT",
         ...(schoolYearId ? { schoolYearId } : {}),
       },
     }),
@@ -64,13 +64,13 @@ export async function getStats(req: Request, res: Response): Promise<void> {
     // ── Early Registration counts ──
     prisma.earlyRegistrationApplication.count({
       where: {
-        status: { in: ["EARLY_REG_SUBMITTED", "SUBMITTED"] },
+        status: "SUBMITTED_BEERF",
         ...(schoolYearId ? { schoolYearId } : {}),
       },
     }),
     prisma.earlyRegistrationApplication.count({
       where: {
-        status: { in: ["PRE_REGISTERED", "VERIFIED"] },
+        status: { in: ["READY_FOR_ENROLLMENT", "VERIFIED"] },
         ...(schoolYearId ? { schoolYearId } : {}),
       },
     }),
@@ -82,7 +82,7 @@ export async function getStats(req: Request, res: Response): Promise<void> {
     }),
     prisma.earlyRegistrationApplication.count({
       where: {
-        status: { in: ["PRE_REGISTERED", "READY_FOR_ENROLLMENT"] },
+        status: "READY_FOR_ENROLLMENT",
         ...(schoolYearId ? { schoolYearId } : {}),
       },
     }),

@@ -73,7 +73,7 @@ export default function PipelineBatchFinalizeInterviewGrid({
           const rowData = finalizeInterviewRows[applicant.id] ?? {
             interviewScore: "",
             decision: "PASS",
-            rejectOutcome: "SUBMITTED",
+            rejectOutcome: "SUBMITTED_BEERF",
             remarks: "",
           };
           return (
@@ -105,7 +105,7 @@ export default function PipelineBatchFinalizeInterviewGrid({
           const rowData = finalizeInterviewRows[applicant.id] ?? {
             interviewScore: "",
             decision: "PASS",
-            rejectOutcome: "SUBMITTED",
+            rejectOutcome: "SUBMITTED_BEERF",
             remarks: "",
           };
           return (
@@ -116,7 +116,9 @@ export default function PipelineBatchFinalizeInterviewGrid({
                   updateFinalizeRow(applicant.id, {
                     decision: value,
                     rejectOutcome:
-                      value === "REJECT" ? rowData.rejectOutcome : "SUBMITTED",
+                      value === "REJECT"
+                        ? rowData.rejectOutcome
+                        : "SUBMITTED_BEERF",
                   })
                 }
                 disabled={isBatchProcessing}>
@@ -140,14 +142,14 @@ export default function PipelineBatchFinalizeInterviewGrid({
           const rowData = finalizeInterviewRows[applicant.id] ?? {
             interviewScore: "",
             decision: "PASS",
-            rejectOutcome: "SUBMITTED",
+            rejectOutcome: "SUBMITTED_BEERF",
             remarks: "",
           };
           return (
             <div className="flex justify-center min-w-[190px]">
               <Select
                 value={rowData.rejectOutcome}
-                onValueChange={(value: "SUBMITTED" | "REJECTED") =>
+                onValueChange={(value: "SUBMITTED_BEERF" | "REJECTED") =>
                   updateFinalizeRow(applicant.id, {
                     rejectOutcome: value,
                   })
@@ -157,8 +159,8 @@ export default function PipelineBatchFinalizeInterviewGrid({
                   <SelectValue placeholder="Reject outcome" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="SUBMITTED">
-                    Submitted (Regular Intake)
+                  <SelectItem value="SUBMITTED_BEERF">
+                    Submitted BEERF (Regular Intake)
                   </SelectItem>
                   <SelectItem value="REJECTED">Rejected</SelectItem>
                 </SelectContent>
@@ -175,7 +177,7 @@ export default function PipelineBatchFinalizeInterviewGrid({
           const rowData = finalizeInterviewRows[applicant.id] ?? {
             interviewScore: "",
             decision: "PASS",
-            rejectOutcome: "SUBMITTED",
+            rejectOutcome: "SUBMITTED_BEERF",
             remarks: "",
           };
           return (
@@ -208,7 +210,7 @@ export default function PipelineBatchFinalizeInterviewGrid({
       <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
         <p className="text-xs font-bold text-foreground">
           Encode interview decision per applicant. Rejected applicants can be
-          rerouted to Submitted (regular intake) or fully Rejected.
+          rerouted to Submitted BEERF (regular intake) or fully Rejected.
         </p>
       </div>
 

@@ -176,6 +176,7 @@ function buildAssessmentData(
 
 export function createInitialTrackingPayload(
   applicantType: string | null | undefined,
+  submittedRawStatus: ApplicationStatus = "SUBMITTED_BEEF",
 ): {
   programType: PublicProgramType;
   status: PublicTrackingStatus;
@@ -184,8 +185,8 @@ export function createInitialTrackingPayload(
   assessmentData: PublicAssessmentData | null;
 } {
   const programType = deriveProgramType(applicantType);
-  const status: PublicTrackingStatus = "IN_REVIEW";
-  const rawStatus: ApplicationStatus = "PENDING_VERIFICATION";
+  const status: PublicTrackingStatus = "SUBMITTED";
+  const rawStatus: ApplicationStatus = submittedRawStatus;
 
   return {
     programType,
@@ -205,11 +206,7 @@ export function createEarlyRegistrationSharedService(
   deps: AdmissionControllerDeps,
 ) {
   const LINKABLE_EARLY_REG_STATUSES = new Set<ApplicationStatus>([
-    "EARLY_REG_SUBMITTED",
-    "PRE_REGISTERED",
-    "PENDING_VERIFICATION",
-    "READY_FOR_SECTIONING",
-    "SUBMITTED",
+    "SUBMITTED_BEERF",
     "VERIFIED",
     "UNDER_REVIEW",
     "FOR_REVISION",
@@ -745,40 +742,6 @@ export function createEarlyRegistrationSharedService(
     return obj;
   }
 
-  async function updateApplicationStatus(
-    id: number,
-    status: ApplicationStatus,
-    extraData: any = {},
-    tx?: any,
-  ) {
-    const p = tx || deps.prisma;
-    const enrollment = await p.enrollmentApplication.findUnique({
-      where: { id },
-      select: { id: true },
-    });
-
-    if (enrollment) {
-      return p.enrollmentApplication.update({
-        where: { id },
-        data: { status, ...extraData },
-      });
-    }
-
-    const earlyReg = await p.earlyRegistrationApplication.findUnique({
-      where: { id },
-      select: { id: true },
-    });
-
-    if (earlyReg) {
-      return p.earlyRegistrationApplication.update({
-        where: { id },
-        data: { status, ...extraData },
-      });
-    }
-
-    throw new AppError(404, "Application not found");
-  }
-
   async function resolveLinkedEarlyRegistration(
     params: {
       requestedEarlyRegistrationId: unknown;
@@ -877,6 +840,40 @@ export function createEarlyRegistrationSharedService(
     };
   }
 
+  async function updateApplicationStatus(
+    id: number,
+    status: ApplicationStatus,
+    extraData: any = {},
+    tx?: any,
+  ) {
+    const p = tx || deps.prisma;
+    const enrollment = await p.enrollmentApplication.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (enrollment) {
+      return p.enrollmentApplication.update({
+        where: { id },
+        data: { status, ...extraData },
+      });
+    }
+
+    const earlyReg = await p.earlyRegistrationApplication.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (earlyReg) {
+      return p.earlyRegistrationApplication.update({
+        where: { id },
+        data: { status, ...extraData },
+      });
+    }
+
+    throw new AppError(404, "Application not found");
+  }
+
   async function migrateEarlyRegToEnrollment(
     earlyRegId: number,
     userId: number,
@@ -899,106 +896,83 @@ export function createEarlyRegistrationSharedService(
       throw new AppError(404, "Early registration not found for migration.");
     }
 
-    const runMigration = async (ptx: any): Promise<EnrollmentApplication> => {
-      const existingEnrollment = await ptx.enrollmentApplication.findFirst({
-        where: { earlyRegistrationId: earlyReg.id },
-        include: {
-          learner: true,
-          earlyRegistration: true,
-          gradeLevel: true,
-        },
-      });
+    // 2. Perform Migration Transaction
+    const enrollmentApp = await (tx
+      ? Promise.resolve(tx)
+      : deps.prisma.$transaction(async (ptx) => {
+          const year = new Date().getFullYear();
 
-      // Idempotency guard: re-use existing phase 2 record instead of creating duplicates.
-      if (existingEnrollment) {
-        await ptx.earlyRegistrationApplication.update({
-          where: { id: earlyReg.id },
-          data: { status: "PRE_REGISTERED" },
-        });
+          // Create Phase 2 Enrollment Application
+          const created = await ptx.enrollmentApplication.create({
+            data: {
+              learnerId: earlyReg.learnerId,
+              earlyRegistrationId: earlyReg.id,
+              schoolYearId: earlyReg.schoolYearId,
+              gradeLevelId: earlyReg.gradeLevelId,
+              applicantType: earlyReg.applicantType,
+              learnerType: earlyReg.learnerType,
+              status: "SUBMITTED_BEEF",
+              admissionChannel: "F2F", // Registrar-initiated migration
+              encodedById: userId,
+              studentPhoto: earlyReg.studentPhoto,
+              isPrivacyConsentGiven: earlyReg.isPrivacyConsentGiven,
+              guardianRelationship: earlyReg.guardianRelationship,
+              hasNoMother: earlyReg.hasNoMother,
+              hasNoFather: earlyReg.hasNoFather,
+            },
+          });
 
-        return existingEnrollment;
-      }
+          // Generate Phase 2 Tracking Number
+          let prefix = "ENR";
+          if (earlyReg.applicantType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING")
+            prefix = "STE";
+          else if (earlyReg.applicantType === "SPECIAL_PROGRAM_IN_THE_ARTS")
+            prefix = "SPA";
+          else if (earlyReg.applicantType === "SPECIAL_PROGRAM_IN_SPORTS")
+            prefix = "SPS";
+          else if (earlyReg.applicantType === "SPECIAL_PROGRAM_IN_JOURNALISM")
+            prefix = "SPJ";
+          else if (
+            earlyReg.applicantType === "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE"
+          )
+            prefix = "SPFL";
+          else if (
+            earlyReg.applicantType ===
+            "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION"
+          )
+            prefix = "SPTVE";
 
-      const year = new Date().getFullYear();
+          const trackingNumber = `${prefix}-${year}-${String(created.id).padStart(5, "0")}`;
 
-      // Create Phase 2 Enrollment Application
-      const created = await ptx.enrollmentApplication.create({
-        data: {
-          learnerId: earlyReg.learnerId,
-          earlyRegistrationId: earlyReg.id,
-          schoolYearId: earlyReg.schoolYearId,
-          gradeLevelId: earlyReg.gradeLevelId,
-          applicantType: earlyReg.applicantType,
-          learnerType: earlyReg.learnerType,
-          status: "PENDING_VERIFICATION",
-          admissionChannel: "F2F", // Registrar-initiated migration
-          encodedById: userId,
-          studentPhoto: earlyReg.studentPhoto,
-          isPrivacyConsentGiven: earlyReg.isPrivacyConsentGiven,
-          guardianRelationship: earlyReg.guardianRelationship,
-          hasNoMother: earlyReg.hasNoMother,
-          hasNoFather: earlyReg.hasNoFather,
-        },
-      });
+          const finalApp = await ptx.enrollmentApplication.update({
+            where: { id: created.id },
+            data: { trackingNumber },
+          });
 
-      // Generate Phase 2 Tracking Number
-      let prefix = "ENR";
-      if (earlyReg.applicantType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING")
-        prefix = "STE";
-      else if (earlyReg.applicantType === "SPECIAL_PROGRAM_IN_THE_ARTS")
-        prefix = "SPA";
-      else if (earlyReg.applicantType === "SPECIAL_PROGRAM_IN_SPORTS")
-        prefix = "SPS";
-      else if (earlyReg.applicantType === "SPECIAL_PROGRAM_IN_JOURNALISM")
-        prefix = "SPJ";
-      else if (earlyReg.applicantType === "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE")
-        prefix = "SPFL";
-      else if (
-        earlyReg.applicantType ===
-        "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION"
-      )
-        prefix = "SPTVE";
+          // Re-link existing Addresses, Family Members, and Checklist to the new Phase 2 app
+          await ptx.applicationAddress.updateMany({
+            where: { earlyRegistrationId: earlyReg.id },
+            data: { enrollmentId: finalApp.id },
+          });
 
-      const trackingNumber = `${prefix}-${year}-${String(created.id).padStart(5, "0")}`;
+          await ptx.applicationFamilyMember.updateMany({
+            where: { earlyRegistrationId: earlyReg.id },
+            data: { enrollmentId: finalApp.id },
+          });
 
-      const finalApp = await ptx.enrollmentApplication.update({
-        where: { id: created.id },
-        data: { trackingNumber },
-        include: {
-          learner: true,
-          earlyRegistration: true,
-          gradeLevel: true,
-        },
-      });
+          await ptx.applicationChecklist.updateMany({
+            where: { earlyRegistrationId: earlyReg.id },
+            data: { enrollmentId: finalApp.id },
+          });
 
-      // Re-link existing Addresses, Family Members, and Checklist to the new Phase 2 app
-      await ptx.applicationAddress.updateMany({
-        where: { earlyRegistrationId: earlyReg.id },
-        data: { enrollmentId: finalApp.id },
-      });
+          // Mark original Phase 1 record as "Enrolled" (Migrated)
+          await ptx.earlyRegistrationApplication.update({
+            where: { id: earlyReg.id },
+            data: { status: "ENROLLED" },
+          });
 
-      await ptx.applicationFamilyMember.updateMany({
-        where: { earlyRegistrationId: earlyReg.id },
-        data: { enrollmentId: finalApp.id },
-      });
-
-      await ptx.applicationChecklist.updateMany({
-        where: { earlyRegistrationId: earlyReg.id },
-        data: { enrollmentId: finalApp.id },
-      });
-
-      // Keep the phase 1 record as pre-registered after migration to phase 2.
-      await ptx.earlyRegistrationApplication.update({
-        where: { id: earlyReg.id },
-        data: { status: "PRE_REGISTERED" },
-      });
-
-      return finalApp;
-    };
-
-    const enrollmentApp = tx
-      ? await runMigration(tx)
-      : await deps.prisma.$transaction(async (ptx) => runMigration(ptx));
+          return finalApp;
+        }));
 
     return enrollmentApp;
   }

@@ -110,25 +110,16 @@ async function findStudentOrThrow(
 
 function assertSectionShiftWindowOpen(
   deps: StudentsControllerDeps,
-  schoolYear: {
-    classOpeningDate: Date | null;
-    sectionShiftWindowDays: number | null;
-  },
+  schoolYear: { classOpeningDate: Date | null; sectionShiftWindowDays: number | null },
 ) {
   const { classOpeningDate, sectionShiftWindowDays } = schoolYear;
-  if (
-    !classOpeningDate ||
-    !sectionShiftWindowDays ||
-    sectionShiftWindowDays <= 0
-  ) {
+  if (!classOpeningDate || !sectionShiftWindowDays || sectionShiftWindowDays <= 0) {
     return;
   }
 
   const classOpening = deps.normalizeDateToUtcNoon(classOpeningDate);
   const shiftWindowCutoff = new Date(classOpening.getTime());
-  shiftWindowCutoff.setUTCDate(
-    shiftWindowCutoff.getUTCDate() + sectionShiftWindowDays,
-  );
+  shiftWindowCutoff.setUTCDate(shiftWindowCutoff.getUTCDate() + sectionShiftWindowDays);
 
   const today = deps.normalizeDateToUtcNoon(new Date());
   if (today.getTime() > shiftWindowCutoff.getTime()) {
@@ -302,72 +293,66 @@ export const createStudentsLifecycleController = (
         });
 
         if (activeLearnerCount >= targetSection.maxCapacity) {
-          throw new AppError(
-            422,
-            "Target section has reached maximum capacity.",
-          );
+          throw new AppError(422, "Target section has reached maximum capacity.");
         }
       }
 
       const previousSectionName = application.enrollmentRecord.section.name;
-      const previousProgramType =
-        application.enrollmentRecord.section.programType;
+      const previousProgramType = application.enrollmentRecord.section.programType;
       const targetProgramType = targetSection.programType;
 
-      const updatedEnrollmentRecord = await deps.prisma.$transaction(
-        async (tx) => {
-          const updatedRecord = await tx.enrollmentRecord.update({
-            where: { id: application.enrollmentRecord.id },
-            data: {
-              sectionId: targetSection.id,
-              eosyStatus: null,
-              transferOutDate: null,
-              transferOutSchoolName: null,
-              transferOutReason: null,
-              dropOutDate: null,
-              dropOutReason: null,
-            },
-            include: {
-              section: {
-                select: {
-                  id: true,
-                  name: true,
-                  programType: true,
-                },
+      const updatedEnrollmentRecord = await deps.prisma.$transaction(async (tx) => {
+        const updatedRecord = await tx.enrollmentRecord.update({
+          where: { id: application.enrollmentRecord.id },
+          data: {
+            sectionId: targetSection.id,
+            eosyStatus: null,
+            transferOutDate: null,
+            transferOutSchoolName: null,
+            transferOutReason: null,
+            dropOutDate: null,
+            dropOutReason: null,
+          },
+          include: {
+            section: {
+              select: {
+                id: true,
+                name: true,
+                programType: true,
               },
+            },
+          },
+        });
+
+        if (previousProgramType !== targetProgramType) {
+          await tx.enrollmentApplication.update({
+            where: { id: studentId },
+            data: {
+              applicantType: targetProgramType,
             },
           });
 
-          if (previousProgramType !== targetProgramType) {
-            await tx.enrollmentApplication.update({
-              where: { id: studentId },
-              data: {
-                applicantType: targetProgramType,
+          if (targetProgramType === "REGULAR") {
+            await tx.enrollmentProgramDetail.deleteMany({
+              where: { applicationId: studentId },
+            });
+          } else {
+            await tx.enrollmentProgramDetail.upsert({
+              where: { applicationId: studentId },
+              update: {
+                scpType: targetProgramType,
+              },
+              create: {
+                applicationId: studentId,
+                scpType: targetProgramType,
+                sportsList: [],
               },
             });
-
-            if (targetProgramType === "REGULAR") {
-              await tx.enrollmentProgramDetail.deleteMany({
-                where: { applicationId: studentId },
-              });
-            } else {
-              await tx.enrollmentProgramDetail.upsert({
-                where: { applicationId: studentId },
-                update: {
-                  scpType: targetProgramType,
-                },
-                create: {
-                  applicationId: studentId,
-                  scpType: targetProgramType,
-                  sportsList: [],
-                },
-              });
-            }
           }
+        }
 
-          return updatedRecord;
-        },
-      );
+        return updatedRecord;
+      });
 
       await auditLog({
         userId: req.user?.userId ?? null,

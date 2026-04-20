@@ -532,7 +532,7 @@ export function createEarlyRegistrationAssessmentController(
 
   // ── Mark as passed (Clearing for section assignment) ──
 
-  // -- Mark interview as passed -> PRE_REGISTERED (phase 1) / READY_FOR_SECTIONING (phase 2) --
+  // -- Mark interview as passed -> READY_FOR_ENROLLMENT --
   async function markInterviewPassed(
     req: Request,
     res: Response,
@@ -543,8 +543,7 @@ export function createEarlyRegistrationAssessmentController(
       const { data: applicant, type: appType } =
         await findApplicantOrThrow(applicantId);
 
-      const targetStatus =
-        appType === "ENROLLMENT" ? "READY_FOR_SECTIONING" : "PRE_REGISTERED";
+      const targetStatus = "READY_FOR_ENROLLMENT";
 
       assertTransition(
         applicant,

@@ -172,6 +172,8 @@ model GradeLevel {
 model Section {
   id                Int          @id @default(autoincrement())
   name              String
+  displayName       String?      @map("display_name")
+  sortOrder         Int          @default(9999) @map("sort_order")
   maxCapacity       Int          @default(40) @map("max_capacity")
   gradeLevelId      Int          @map("grade_level_id")
   programType       ApplicantType @default(REGULAR) @map("program_type")
@@ -200,7 +202,7 @@ model Learner {
   externalId              String    @unique(map: "uq_learners_external_id") @default(dbgenerated("gen_random_uuid()")) @db.Uuid @map("external_id")
   lrn                     String?   @unique(map: "uq_learners_lrn") @db.VarChar(12)
   isPendingLrnCreation    Boolean   @default(false) @map("is_pending_lrn_creation")
-  status                  ApplicationStatus @default(EARLY_REG_SUBMITTED)
+  status                  ApplicationStatus @default(SUBMITTED_BEERF)
   psaBirthCertNumber      String?   @map("psa_birth_cert_number")
   firstName               String    @map("first_name")
   lastName                String    @map("last_name")
@@ -246,7 +248,7 @@ model EarlyRegistrationApplication {
   trackingNumber        String    @unique(map: "uq_early_reg_tracking_number") @map("tracking_number")
   applicantType         ApplicantType @default(REGULAR) @map("applicant_type")
   learnerType           LearnerType   @default(NEW_ENROLLEE) @map("learner_type")
-  status                ApplicationStatus @default(EARLY_REG_SUBMITTED)
+  status                ApplicationStatus @default(SUBMITTED_BEERF)
   channel               AdmissionChannel  @default(ONLINE)
   contactNumber         String    @map("contact_number")
   studentPhoto          String?   @map("student_photo")
@@ -314,7 +316,7 @@ model EnrollmentApplication {
   gradeLevelId            Int               @map("grade_level_id")
   applicantType           ApplicantType     @default(REGULAR) @map("applicant_type")
   learnerType             LearnerType       @default(NEW_ENROLLEE) @map("learner_type")
-  status                  ApplicationStatus @default(PENDING_VERIFICATION)
+  status                  ApplicationStatus @default(SUBMITTED_BEEF)
   admissionChannel        AdmissionChannel  @default(ONLINE) @map("admission_channel")
   trackingNumber          String?           @unique(map: "uq_enrollment_tracking_number") @map("tracking_number")
   studentPhoto            String?           @map("student_photo")
@@ -736,7 +738,8 @@ enum ApplicationStatus {
   PENDING_VERIFICATION
   READY_FOR_SECTIONING
   OFFICIALLY_ENROLLED
-  SUBMITTED
+  SUBMITTED_BEERF
+  SUBMITTED_BEEF
   VERIFIED
   UNDER_REVIEW
   FOR_REVISION

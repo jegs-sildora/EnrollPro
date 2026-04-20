@@ -7,12 +7,8 @@ export const SexEnum = z.enum(["MALE", "FEMALE"]);
 export const ComplianceStatusEnum = z.enum(["PENDING", "COMPLIED", "OVERDUE"]);
 
 export const APPLICATION_STATUS_VALUES = [
-  "EARLY_REG_SUBMITTED",
-  "PRE_REGISTERED",
-  "PENDING_VERIFICATION",
-  "READY_FOR_SECTIONING",
-  "OFFICIALLY_ENROLLED",
-  "SUBMITTED",
+  "SUBMITTED_BEERF",
+  "SUBMITTED_BEEF",
   "VERIFIED",
   "UNDER_REVIEW",
   "FOR_REVISION",
@@ -63,12 +59,8 @@ export const APPLICATION_STATUS_TO_TRACKING_STATUS: Record<
   z.infer<typeof ApplicationStatusEnum>,
   z.infer<typeof TrackingStatusEnum>
 > = {
-  EARLY_REG_SUBMITTED: "SUBMITTED",
-  PRE_REGISTERED: "QUALIFIED_FOR_ENROLLMENT",
-  PENDING_VERIFICATION: "IN_REVIEW",
-  READY_FOR_SECTIONING: "QUALIFIED_FOR_ENROLLMENT",
-  OFFICIALLY_ENROLLED: "ENROLLED",
-  SUBMITTED: "SUBMITTED",
+  SUBMITTED_BEERF: "SUBMITTED",
+  SUBMITTED_BEEF: "SUBMITTED",
   VERIFIED: "IN_REVIEW",
   UNDER_REVIEW: "IN_REVIEW",
   FOR_REVISION: "IN_REVIEW",
@@ -89,41 +81,17 @@ export const APPLICATION_VALID_TRANSITIONS: Record<
   z.infer<typeof ApplicationStatusEnum>,
   z.infer<typeof ApplicationStatusEnum>[]
 > = {
-  EARLY_REG_SUBMITTED: [
-    "UNDER_REVIEW",
-    "PRE_REGISTERED",
-    "PENDING_VERIFICATION",
-    "REJECTED",
-    "WITHDRAWN",
-  ],
-  PRE_REGISTERED: [
-    "PENDING_VERIFICATION",
-    "READY_FOR_SECTIONING",
-    "TEMPORARILY_ENROLLED",
-    "REJECTED",
-    "WITHDRAWN",
-  ],
-  PENDING_VERIFICATION: [
-    "UNDER_REVIEW",
-    "READY_FOR_SECTIONING",
-    "TEMPORARILY_ENROLLED",
-    "REJECTED",
-    "WITHDRAWN",
-  ],
-  READY_FOR_SECTIONING: [
-    "OFFICIALLY_ENROLLED",
-    "TEMPORARILY_ENROLLED",
-    "PENDING_VERIFICATION",
-    "REJECTED",
-    "WITHDRAWN",
-  ],
-  OFFICIALLY_ENROLLED: ["READY_FOR_SECTIONING", "WITHDRAWN"],
-  SUBMITTED: [
+  SUBMITTED_BEERF: [
     "VERIFIED",
     "UNDER_REVIEW",
     "EXAM_SCHEDULED",
-    "PENDING_VERIFICATION",
-    "EARLY_REG_SUBMITTED",
+    "REJECTED",
+    "WITHDRAWN",
+  ],
+  SUBMITTED_BEEF: [
+    "VERIFIED",
+    "UNDER_REVIEW",
+    "EXAM_SCHEDULED",
     "REJECTED",
     "WITHDRAWN",
   ],
@@ -132,8 +100,6 @@ export const APPLICATION_VALID_TRANSITIONS: Record<
     "ELIGIBLE",
     "EXAM_SCHEDULED",
     "READY_FOR_ENROLLMENT",
-    "PRE_REGISTERED",
-    "READY_FOR_SECTIONING",
     "REJECTED",
     "WITHDRAWN",
   ],
@@ -143,19 +109,11 @@ export const APPLICATION_VALID_TRANSITIONS: Record<
     "ELIGIBLE",
     "EXAM_SCHEDULED",
     "TEMPORARILY_ENROLLED",
-    "PRE_REGISTERED",
-    "READY_FOR_SECTIONING",
     "REJECTED",
     "WITHDRAWN",
   ],
   FOR_REVISION: ["UNDER_REVIEW", "WITHDRAWN"],
-  ELIGIBLE: [
-    "EXAM_SCHEDULED",
-    "READY_FOR_ENROLLMENT",
-    "PRE_REGISTERED",
-    "READY_FOR_SECTIONING",
-    "WITHDRAWN",
-  ],
+  ELIGIBLE: ["EXAM_SCHEDULED", "READY_FOR_ENROLLMENT", "WITHDRAWN"],
   EXAM_SCHEDULED: [
     "ASSESSMENT_TAKEN",
     "EXAM_SCHEDULED",
@@ -164,9 +122,8 @@ export const APPLICATION_VALID_TRANSITIONS: Record<
   ],
   ASSESSMENT_TAKEN: [
     "PASSED",
-    "SUBMITTED",
-    "EARLY_REG_SUBMITTED",
-    "PENDING_VERIFICATION",
+    "SUBMITTED_BEERF",
+    "SUBMITTED_BEEF",
     "FAILED_ASSESSMENT",
     "ASSESSMENT_TAKEN",
     "EXAM_SCHEDULED",
@@ -174,49 +131,26 @@ export const APPLICATION_VALID_TRANSITIONS: Record<
   ],
   PASSED: [
     "READY_FOR_ENROLLMENT",
-    "PRE_REGISTERED",
-    "READY_FOR_SECTIONING",
     "INTERVIEW_SCHEDULED",
     "EXAM_SCHEDULED",
     "WITHDRAWN",
   ],
   INTERVIEW_SCHEDULED: [
     "READY_FOR_ENROLLMENT",
-    "PRE_REGISTERED",
-    "READY_FOR_SECTIONING",
-    "SUBMITTED",
-    "EARLY_REG_SUBMITTED",
-    "PENDING_VERIFICATION",
+    "SUBMITTED_BEERF",
+    "SUBMITTED_BEEF",
     "WITHDRAWN",
   ],
   READY_FOR_ENROLLMENT: [
     "ENROLLED",
-    "OFFICIALLY_ENROLLED",
     "TEMPORARILY_ENROLLED",
-    "READY_FOR_SECTIONING",
     "REJECTED",
     "WITHDRAWN",
   ],
-  TEMPORARILY_ENROLLED: [
-    "ENROLLED",
-    "OFFICIALLY_ENROLLED",
-    "READY_FOR_SECTIONING",
-    "WITHDRAWN",
-  ],
-  FAILED_ASSESSMENT: [
-    "UNDER_REVIEW",
-    "EARLY_REG_SUBMITTED",
-    "PENDING_VERIFICATION",
-    "WITHDRAWN",
-    "REJECTED",
-  ],
-  ENROLLED: ["OFFICIALLY_ENROLLED", "READY_FOR_SECTIONING", "WITHDRAWN"],
-  REJECTED: [
-    "UNDER_REVIEW",
-    "PENDING_VERIFICATION",
-    "EARLY_REG_SUBMITTED",
-    "WITHDRAWN",
-  ],
+  TEMPORARILY_ENROLLED: ["ENROLLED", "WITHDRAWN"],
+  FAILED_ASSESSMENT: ["UNDER_REVIEW", "WITHDRAWN", "REJECTED"],
+  ENROLLED: ["WITHDRAWN"],
+  REJECTED: ["UNDER_REVIEW", "WITHDRAWN"],
   WITHDRAWN: [],
 };
 
@@ -302,45 +236,36 @@ export const LastSchoolTypeEnum = z.enum([
 ]);
 export const GradeLevelEnum = z.enum(["7", "8", "9", "10"]);
 
-// ─── Teacher Reference Catalogs ─────────────────────────
+// ─── DepEd Teacher Catalog ─────────────────────────────
 export const DEPED_TEACHER_SUBJECT_VALUES = [
   "ENGLISH",
   "FILIPINO",
   "MATHEMATICS",
   "SCIENCE",
   "ARALING PANLIPUNAN",
-  "ESP",
-  "VALUES EDUCATION",
   "MAPEH",
   "TLE",
+  "ESP",
+  "VALUES EDUCATION",
   "ICT",
-  "FOREIGN LANGUAGE",
-  "JOURNALISM",
-  "ARTS",
-  "SPORTS",
+  "EPP",
+  "MOTHER TONGUE",
 ] as const;
 
-export type DepedTeacherSubject = (typeof DEPED_TEACHER_SUBJECT_VALUES)[number];
-
-export const DEPED_TEACHER_SUBJECT_OPTIONS: ReadonlyArray<{
-  value: DepedTeacherSubject;
-  label: string;
-}> = [
+export const DEPED_TEACHER_SUBJECT_OPTIONS = [
   { value: "ENGLISH", label: "English" },
   { value: "FILIPINO", label: "Filipino" },
   { value: "MATHEMATICS", label: "Mathematics" },
   { value: "SCIENCE", label: "Science" },
   { value: "ARALING PANLIPUNAN", label: "Araling Panlipunan" },
-  { value: "ESP", label: "Edukasyon sa Pagpapakatao (ESP)" },
-  { value: "VALUES EDUCATION", label: "Values Education" },
   { value: "MAPEH", label: "MAPEH" },
-  { value: "TLE", label: "Technology and Livelihood Education (TLE)" },
-  { value: "ICT", label: "Information and Communications Technology (ICT)" },
-  { value: "FOREIGN LANGUAGE", label: "Foreign Language" },
-  { value: "JOURNALISM", label: "Journalism" },
-  { value: "ARTS", label: "Arts" },
-  { value: "SPORTS", label: "Sports" },
-];
+  { value: "TLE", label: "TLE" },
+  { value: "ESP", label: "ESP" },
+  { value: "VALUES EDUCATION", label: "Values Education" },
+  { value: "ICT", label: "ICT" },
+  { value: "EPP", label: "EPP" },
+  { value: "MOTHER TONGUE", label: "Mother Tongue" },
+] as const;
 
 export const DEPED_TEACHER_PLANTILLA_POSITION_VALUES = [
   "TEACHER I",
@@ -354,20 +279,29 @@ export const DEPED_TEACHER_PLANTILLA_POSITION_VALUES = [
   "HEAD TEACHER II",
   "HEAD TEACHER III",
   "HEAD TEACHER IV",
-  "HEAD TEACHER V",
-  "HEAD TEACHER VI",
+  "SCHOOL PRINCIPAL I",
+  "SCHOOL PRINCIPAL II",
+  "SCHOOL PRINCIPAL III",
+  "SCHOOL PRINCIPAL IV",
 ] as const;
 
-export type DepedTeacherPlantillaPosition =
-  (typeof DEPED_TEACHER_PLANTILLA_POSITION_VALUES)[number];
-
-export const DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS: ReadonlyArray<{
-  value: DepedTeacherPlantillaPosition;
-  label: string;
-}> = DEPED_TEACHER_PLANTILLA_POSITION_VALUES.map((value) => ({
-  value,
-  label: value,
-}));
+export const DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS = [
+  { value: "TEACHER I", label: "Teacher I" },
+  { value: "TEACHER II", label: "Teacher II" },
+  { value: "TEACHER III", label: "Teacher III" },
+  { value: "MASTER TEACHER I", label: "Master Teacher I" },
+  { value: "MASTER TEACHER II", label: "Master Teacher II" },
+  { value: "MASTER TEACHER III", label: "Master Teacher III" },
+  { value: "MASTER TEACHER IV", label: "Master Teacher IV" },
+  { value: "HEAD TEACHER I", label: "Head Teacher I" },
+  { value: "HEAD TEACHER II", label: "Head Teacher II" },
+  { value: "HEAD TEACHER III", label: "Head Teacher III" },
+  { value: "HEAD TEACHER IV", label: "Head Teacher IV" },
+  { value: "SCHOOL PRINCIPAL I", label: "School Principal I" },
+  { value: "SCHOOL PRINCIPAL II", label: "School Principal II" },
+  { value: "SCHOOL PRINCIPAL III", label: "School Principal III" },
+  { value: "SCHOOL PRINCIPAL IV", label: "School Principal IV" },
+] as const;
 
 // ─── DO 017 s.2025 Early Registration Enums ─────────────
 export const EarlyRegGradeLevelEnum = z.enum(["7", "8", "9", "10"]);

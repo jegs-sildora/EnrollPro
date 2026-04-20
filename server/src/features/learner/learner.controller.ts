@@ -26,7 +26,7 @@ export const lookupLearner = async (req: Request, res: Response) => {
 
     const application = await prisma.enrollmentApplication.findFirst({
       where: {
-        status: { in: ["OFFICIALLY_ENROLLED", "ENROLLED"] },
+        status: "ENROLLED",
         portalPin: { not: null },
         learner: { lrn },
       },

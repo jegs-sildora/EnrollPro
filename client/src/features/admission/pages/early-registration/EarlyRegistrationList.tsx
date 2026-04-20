@@ -27,7 +27,8 @@ import type {
 } from "@/features/enrollment/hooks/useApplicationDetail";
 
 const NEXT_ACTION_BY_STATUS: Record<string, string> = {
-  SUBMITTED: "Verify Submission",
+  SUBMITTED_BEERF: "Verify Submission",
+  SUBMITTED_BEEF: "Verify Submission",
   VERIFIED: "Review Documents",
   UNDER_REVIEW: "Continue Review",
   FOR_REVISION: "Wait for Revision",

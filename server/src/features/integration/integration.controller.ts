@@ -84,7 +84,7 @@ export async function listIntegrationLearners(
 
   const where: Record<string, unknown> = {
     schoolYearId,
-    status: { in: ["OFFICIALLY_ENROLLED", "ENROLLED"] },
+    status: "ENROLLED",
     enrollmentRecord: sectionId
       ? {
           is: { sectionId },

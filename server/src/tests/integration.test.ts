@@ -363,13 +363,13 @@ async function runTests(): Promise<void> {
     assert.equal(staff.status, 200);
     assert.ok(Array.isArray(staff.body?.data));
 
-    const defaultAtlas = await requestJson(
+    const defaultFaculty = await requestJson(
       baseUrl,
-      `/api/integration/v1/default/atlas/faculty?schoolYearId=${fixtureData.schoolYearId}`,
+      `/api/integration/v1/default/faculty?schoolYearId=${fixtureData.schoolYearId}`,
     );
-    assert.equal(defaultAtlas.status, 200);
-    assert.equal(defaultAtlas.body?.meta?.sourceSystem, "ATLAS");
-    assert.ok(Array.isArray(defaultAtlas.body?.data));
+    assert.equal(defaultFaculty.status, 200);
+    assert.equal(defaultFaculty.body?.meta?.sourceSystem, "ENROLLPRO");
+    assert.ok(Array.isArray(defaultFaculty.body?.data));
 
     const defaultSmart = await requestJson(
       baseUrl,

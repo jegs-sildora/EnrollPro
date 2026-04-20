@@ -100,6 +100,10 @@ export default function Step6Review({
 
   const data = watch();
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const generalAverageDisplay =
+    typeof data.generalAverage === "number"
+      ? Number(data.generalAverage).toFixed(2)
+      : undefined;
 
   const fullName =
     `${data.lastName || ""}, ${data.firstName || ""}${data.middleName && data.middleName !== "N/A" ? ` ${data.middleName}` : ""}${data.extensionName && data.extensionName !== "N/A" ? ` ${data.extensionName}` : ""}`.trim();
@@ -225,6 +229,11 @@ export default function Step6Review({
             value={data.schoolYearLastAttended}
           />
           <DataItem label="School Type" value={data.lastSchoolType} />
+          <DataItem
+            label="Final General Average (SF9)"
+            value={generalAverageDisplay}
+            noUppercase
+          />
         </SummaryCard>
 
         <SummaryCard

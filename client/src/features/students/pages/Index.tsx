@@ -545,27 +545,21 @@ export default function Students() {
     [detailDialogOpen, selectedStudent?.id],
   );
 
-  const openTransferOutDialog = useCallback(
-    (student: Student) => {
-      setActionStudent(student);
-      setTransferOutDate(toDateInputValue());
-      setTransferOutSchoolName("");
-      setTransferOutReason("");
-      setShowTransferOutDialog(true);
-    },
-    [toDateInputValue],
-  );
+  const openTransferOutDialog = useCallback((student: Student) => {
+    setActionStudent(student);
+    setTransferOutDate(toDateInputValue());
+    setTransferOutSchoolName("");
+    setTransferOutReason("");
+    setShowTransferOutDialog(true);
+  }, [toDateInputValue]);
 
-  const openDropoutDialog = useCallback(
-    (student: Student) => {
-      setActionStudent(student);
-      setDropoutDate(toDateInputValue());
-      setDropoutReasonCode("LACK_OF_INTEREST");
-      setDropoutReasonDetails("");
-      setShowDropoutDialog(true);
-    },
-    [toDateInputValue],
-  );
+  const openDropoutDialog = useCallback((student: Student) => {
+    setActionStudent(student);
+    setDropoutDate(toDateInputValue());
+    setDropoutReasonCode("LACK_OF_INTEREST");
+    setDropoutReasonDetails("");
+    setShowDropoutDialog(true);
+  }, [toDateInputValue]);
 
   const openShiftDialog = useCallback((student: Student) => {
     setActionStudent(student);
@@ -601,9 +595,7 @@ export default function Students() {
             detail.currentAddress?.province,
           ]
             .filter(Boolean)
-            .join(", ") ||
-          student.address ||
-          "",
+            .join(", ") || student.address || "",
       });
     } catch {
       setProfileForm({
@@ -626,17 +618,14 @@ export default function Students() {
     setShowLrnDialog(true);
   }, []);
 
-  const openGoodMoralPreview = useCallback(
-    (studentId: number) => {
-      navigate(`/students/${studentId}?tab=application`);
-      sileo.info({
-        title: "Good Moral Workflow",
-        description:
-          "Open the Application tab to review documentary status and process the request.",
-      });
-    },
-    [navigate],
-  );
+  const openGoodMoralPreview = useCallback((studentId: number) => {
+    navigate(`/students/${studentId}?tab=application`);
+    sileo.info({
+      title: "Good Moral Workflow",
+      description:
+        "Open the Application tab to review documentary status and process the request.",
+    });
+  }, [navigate]);
 
   const submitTransferOut = useCallback(async () => {
     if (!actionStudent) return;
@@ -751,7 +740,12 @@ export default function Students() {
     } finally {
       setActionSubmitting(false);
     }
-  }, [actionStudent, shiftTargetSectionId, refreshTables, refreshDetailIfOpen]);
+  }, [
+    actionStudent,
+    shiftTargetSectionId,
+    refreshTables,
+    refreshDetailIfOpen,
+  ]);
 
   const submitQuickProfileUpdate = useCallback(async () => {
     if (!actionStudent) return;
@@ -1450,9 +1444,7 @@ export default function Students() {
                           Open Good Moral Workflow
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() =>
-                            void openProfileQuickEditDialog(student)
-                          }
+                          onClick={() => void openProfileQuickEditDialog(student)}
                           className="cursor-pointer">
                           <UserRoundPen className="mr-2 h-4 w-4" />
                           Quick Update Demographics
@@ -1709,40 +1701,27 @@ export default function Students() {
                             </p>
                             {selectedStudent.enrollment.transferOutDate && (
                               <p className="text-xs font-medium text-muted-foreground">
-                                Transfer Date:{" "}
-                                {formatDate(
-                                  selectedStudent.enrollment.transferOutDate,
-                                )}
+                                Transfer Date: {formatDate(selectedStudent.enrollment.transferOutDate)}
                               </p>
                             )}
-                            {selectedStudent.enrollment
-                              .transferOutSchoolName && (
+                            {selectedStudent.enrollment.transferOutSchoolName && (
                               <p className="text-xs font-medium text-muted-foreground">
-                                Destination School:{" "}
-                                {
-                                  selectedStudent.enrollment
-                                    .transferOutSchoolName
-                                }
+                                Destination School: {selectedStudent.enrollment.transferOutSchoolName}
                               </p>
                             )}
                             {selectedStudent.enrollment.transferOutReason && (
                               <p className="text-xs font-medium text-muted-foreground">
-                                Transfer Reason:{" "}
-                                {selectedStudent.enrollment.transferOutReason}
+                                Transfer Reason: {selectedStudent.enrollment.transferOutReason}
                               </p>
                             )}
                             {selectedStudent.enrollment.dropOutDate && (
                               <p className="text-xs font-medium text-muted-foreground">
-                                Dropout Date:{" "}
-                                {formatDate(
-                                  selectedStudent.enrollment.dropOutDate,
-                                )}
+                                Dropout Date: {formatDate(selectedStudent.enrollment.dropOutDate)}
                               </p>
                             )}
                             {selectedStudent.enrollment.dropOutReason && (
                               <p className="text-xs font-medium text-muted-foreground">
-                                Dropout Reason:{" "}
-                                {selectedStudent.enrollment.dropOutReason}
+                                Dropout Reason: {selectedStudent.enrollment.dropOutReason}
                               </p>
                             )}
                           </div>
@@ -1824,9 +1803,7 @@ export default function Students() {
               disabled={actionSubmitting}>
               Cancel
             </Button>
-            <Button
-              onClick={() => void submitTransferOut()}
-              disabled={actionSubmitting}>
+            <Button onClick={() => void submitTransferOut()} disabled={actionSubmitting}>
               {actionSubmitting ? "Saving..." : "Confirm Transfer Out"}
             </Button>
           </DialogFooter>
@@ -1896,9 +1873,7 @@ export default function Students() {
               disabled={actionSubmitting}>
               Cancel
             </Button>
-            <Button
-              onClick={() => void submitDropout()}
-              disabled={actionSubmitting}>
+            <Button onClick={() => void submitDropout()} disabled={actionSubmitting}>
               {actionSubmitting ? "Saving..." : "Confirm Dropout"}
             </Button>
           </DialogFooter>
@@ -1910,8 +1885,8 @@ export default function Students() {
           <DialogHeader>
             <DialogTitle>Shift Section or Program</DialogTitle>
             <DialogDescription>
-              Reassign section for {actionStudent?.fullName}. Program changes
-              are inferred from the selected target section.
+              Reassign section for {actionStudent?.fullName}. Program changes are
+              inferred from the selected target section.
             </DialogDescription>
           </DialogHeader>
 
@@ -1934,8 +1909,7 @@ export default function Students() {
                 <SelectContent>
                   {availableShiftSections.map((section) => (
                     <SelectItem key={section.id} value={String(section.id)}>
-                      {formatSectionLabel(section.name)} (
-                      {formatScpType(section.programType)})
+                      {formatSectionLabel(section.name)} ({formatScpType(section.programType)})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1959,9 +1933,7 @@ export default function Students() {
             </Button>
             <Button
               onClick={() => void submitShiftSection()}
-              disabled={
-                actionSubmitting || availableShiftSections.length === 0
-              }>
+              disabled={actionSubmitting || availableShiftSections.length === 0}>
               {actionSubmitting ? "Saving..." : "Confirm Shift"}
             </Button>
           </DialogFooter>
@@ -2036,9 +2008,7 @@ export default function Students() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="profileAddress">
-                Current Address (Quick Entry)
-              </Label>
+              <Label htmlFor="profileAddress">Current Address (Quick Entry)</Label>
               <Textarea
                 id="profileAddress"
                 value={profileForm.currentAddress}
@@ -2102,9 +2072,7 @@ export default function Students() {
               disabled={actionSubmitting}>
               Cancel
             </Button>
-            <Button
-              onClick={() => void submitAssignLrn()}
-              disabled={actionSubmitting}>
+            <Button onClick={() => void submitAssignLrn()} disabled={actionSubmitting}>
               {actionSubmitting ? "Saving..." : "Save LRN"}
             </Button>
           </DialogFooter>

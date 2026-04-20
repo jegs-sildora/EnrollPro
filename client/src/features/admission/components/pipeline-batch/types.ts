@@ -92,6 +92,64 @@ export interface RegularSectionOption {
   fillPercent: number;
 }
 
+export type RegularSectionLane = "HOMOGENEOUS" | "SNAKE";
+
+export interface RegularSectionPreviewSection {
+  sectionId: number;
+  sectionName: string;
+  sectionDisplayName: string;
+  sortOrder: number;
+  lane: RegularSectionLane;
+  maxCapacity: number;
+  enrolledCount: number;
+  availableSlots: number;
+  plannedCount: number;
+  remainingSlots: number;
+}
+
+export interface RegularSectionPreviewAssignment {
+  id: number;
+  name: string;
+  trackingNumber: string;
+  targetStatus: string;
+  generalAverage: number | null;
+  sectionId: number;
+  sectionName: string;
+  sectionDisplayName: string;
+  lane: RegularSectionLane;
+}
+
+export interface RegularSectionPreviewSummary {
+  eligibleCount: number;
+  assignedCount: number;
+  blockedCount: number;
+  unassignedCount: number;
+  homogeneousSectionCount: number;
+  snakeSectionCount: number;
+}
+
+export interface RegularSectionBatchPreview {
+  processed: number;
+  gradeLevelId: number | null;
+  gradeLevelName: string | null;
+  summary: RegularSectionPreviewSummary;
+  sections: RegularSectionPreviewSection[];
+  assignments: RegularSectionPreviewAssignment[];
+  blocked: Array<{
+    id: number;
+    name: string;
+    trackingNumber: string;
+    reason: string;
+  }>;
+  unassigned: Array<{
+    id: number;
+    name: string;
+    trackingNumber: string;
+    reason: string;
+    generalAverage: number | null;
+  }>;
+}
+
 export interface RankingFormulaComponent {
   key: string;
   label: string;
@@ -107,7 +165,7 @@ export interface ScoreRowState {
 export interface FinalizeInterviewRowState {
   interviewScore: string;
   decision: "PASS" | "REJECT";
-  rejectOutcome: "SUBMITTED" | "REJECTED";
+  rejectOutcome: "SUBMITTED_BEERF" | "REJECTED";
   remarks: string;
 }
 
@@ -138,6 +196,6 @@ export interface ScheduleFormRenderOptions {
 export const DEFAULT_FINALIZE_INTERVIEW_ROW: FinalizeInterviewRowState = {
   interviewScore: "",
   decision: "PASS",
-  rejectOutcome: "SUBMITTED",
+  rejectOutcome: "SUBMITTED_BEERF",
   remarks: "",
 };

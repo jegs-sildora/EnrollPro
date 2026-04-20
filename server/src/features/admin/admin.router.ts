@@ -10,7 +10,6 @@ import {
 import * as userCtrl from "./admin-user.controller.js";
 import * as emailCtrl from "./admin-email-log.controller.js";
 import * as sysCtrl from "./admin-system.controller.js";
-import * as atlasCtrl from "./admin-atlas.controller.js";
 
 const router: Router = Router();
 
@@ -38,10 +37,5 @@ router.patch("/email-logs/:id/resend", emailCtrl.resend);
 // System Health
 router.get("/system/health", sysCtrl.health);
 router.get("/dashboard/stats", sysCtrl.dashboardStats);
-
-// ATLAS Integration Observability
-router.get("/atlas/health", atlasCtrl.atlasHealth);
-router.get("/atlas/events", atlasCtrl.atlasEvents);
-router.get("/atlas/events/:id", atlasCtrl.atlasEventDetail);
 
 export default router;

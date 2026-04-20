@@ -23,98 +23,99 @@ interface PublicSettingsResponse {
   activeSchoolYearLabel: string | null;
 }
 
-interface IntegrationEnvelope<T, TMeta = Record<string, unknown>> {
-  data: T;
-  meta?: TMeta;
+interface TeachersScope {
+  schoolId: number | null;
+  schoolYearId: number | null;
+  schoolYearLabel: string | null;
 }
 
-interface IntegrationTeacher {
-  teacherId: number;
-  employeeId: string | null;
-  firstName: string;
-  lastName: string;
-  middleName: string | null;
-  fullName: string;
-  email: string | null;
-  contactNumber: string | null;
-  specialization: string | null;
-  isActive: boolean;
-  sectionCount: number;
-  schoolId: number | null;
-  schoolName: string | null;
-  schoolYearId: number;
-  schoolYearLabel: string;
+interface TeacherDesignationPayload {
   isClassAdviser: boolean;
   advisorySectionId: number | null;
-  advisorySectionName: string | null;
-  advisorySectionGradeLevelId: number | null;
-  advisorySectionGradeLevelName: string | null;
+  advisorySection: {
+    id: number;
+    name: string;
+    gradeLevelId: number;
+    gradeLevelName: string | null;
+  } | null;
   advisoryEquivalentHoursPerWeek: number;
   isTic: boolean;
   isTeachingExempt: boolean;
-  customTargetTeachingHoursPerWeek: number | null;
-  designationNotes: string | null;
-  effectiveFrom: string | null;
-  effectiveTo: string | null;
-  updateReason: string | null;
-  updatedById: number | null;
-  updatedByName: string | null;
-  updatedAt: string | null;
 }
 
-interface IntegrationStaff {
+interface TeacherRecord {
   id: number;
   employeeId: string | null;
   firstName: string;
   lastName: string;
   middleName: string | null;
-  suffix: string | null;
-  fullName: string;
-  role: "SYSTEM_ADMIN" | "REGISTRAR";
-  email: string;
-  designation: string | null;
-  mobileNumber: string | null;
+  email: string | null;
+  contactNumber: string | null;
+  specialization: string | null;
+  plantillaPosition: string | null;
+  photoPath: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  subjects: string[];
+  sectionCount: number;
+  designation: TeacherDesignationPayload | null;
+}
+
+interface TeachersResponse {
+  scope: TeachersScope;
+  teachers: TeacherRecord[];
+}
+
+interface AdminUserRecord {
+  id: number;
+  firstName: string;
+  lastName: string;
+  middleName: string | null;
+  suffix: string | null;
+  employeeId: string | null;
+  designation: string | null;
+  mobileNumber: string | null;
+  email: string;
+  role: string;
+  isActive: boolean;
+  createdAt: string;
   lastLoginAt: string | null;
 }
 
-interface IntegrationLearner {
-  enrollmentApplicationId: number;
-  status: string;
-  learnerType: string;
-  applicantType: string;
-  learner: {
-    id: number;
-    externalId: string;
-    lrn: string | null;
-    firstName: string;
-    lastName: string;
-    middleName: string | null;
-    extensionName: string | null;
-    fullName: string;
-    birthdate: string | null;
-    sex: string | null;
-  };
-  gradeLevel: {
-    id: number;
-    name: string;
-    displayOrder: number;
-  };
-  schoolYear: {
-    id: number;
-    yearLabel: string;
-  };
-  section: {
-    id: number;
-    name: string;
-    programType: string;
-  } | null;
-  enrolledAt: string | null;
+interface AdminUsersResponse {
+  users: AdminUserRecord[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
-interface IntegrationLearnersMeta {
+interface StudentRecord {
+  id: number;
+  lrn: string | null;
+  fullName: string;
+  trackingNumber: string;
+  status: string;
+  gradeLevel: string;
+  section: string | null;
+  learningProgram: string;
+  dateEnrolled: string | null;
+}
+
+interface StudentsPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+interface StudentsResponse {
+  students: StudentRecord[];
+  pagination: StudentsPagination;
+}
+
+interface StudentsMeta {
   schoolYearId: number;
   total: number;
   page: number;
@@ -122,26 +123,27 @@ interface IntegrationLearnersMeta {
   totalPages: number;
 }
 
-const INTEGRATION_FEED_ENDPOINTS = [
+const CORE_API_FEED_ENDPOINTS = [
   {
     system: "Teachers",
-    purpose: "Teacher directory and designation metadata",
-    endpoint: "/api/integration/v1/faculty?schoolYearId=<activeSchoolYearId>",
+    purpose: "Teacher directory and school-year designation metadata",
+    endpoint: "/api/teachers?schoolYearId=<activeSchoolYearId>",
   },
   {
     system: "Users",
-    purpose: "System admin and registrar user feed",
-    endpoint: "/api/integration/v1/staff?includeInactive=true",
+    purpose: "System users feed (admin, registrar, teacher)",
+    endpoint: "/api/admin/users?page=1&limit=100",
   },
   {
     system: "Learners",
-    purpose: "Enrolled learner roster with school-year scoping",
+    purpose: "Student roster with school-year scoping",
     endpoint:
-      "/api/integration/v1/learners?schoolYearId=<activeSchoolYearId>&page=1&limit=200",
+      "/api/students?schoolYearId=<activeSchoolYearId>&page=1&limit=100",
   },
 ];
 
-const LEARNERS_PAGE_LIMIT = 200;
+const USERS_PAGE_LIMIT = 100;
+const STUDENTS_PAGE_LIMIT = 100;
 
 function formatDate(value: string | null): string {
   if (!value) {
@@ -149,6 +151,14 @@ function formatDate(value: string | null): string {
   }
 
   return new Date(value).toLocaleString();
+}
+
+function formatTeacherName(teacher: TeacherRecord): string {
+  return `${teacher.lastName}, ${teacher.firstName}${teacher.middleName ? ` ${teacher.middleName.charAt(0)}.` : ""}`;
+}
+
+function formatUserName(user: AdminUserRecord): string {
+  return `${user.lastName}, ${user.firstName}${user.middleName ? ` ${user.middleName.charAt(0)}.` : ""}`;
 }
 
 export default function SampleIntegrationPage() {
@@ -160,11 +170,10 @@ export default function SampleIntegrationPage() {
   const [activeSchoolYearLabel, setActiveSchoolYearLabel] = useState<
     string | null
   >(null);
-  const [teachers, setTeachers] = useState<IntegrationTeacher[]>([]);
-  const [staffUsers, setStaffUsers] = useState<IntegrationStaff[]>([]);
-  const [learners, setLearners] = useState<IntegrationLearner[]>([]);
-  const [learnersMeta, setLearnersMeta] =
-    useState<IntegrationLearnersMeta | null>(null);
+  const [teachers, setTeachers] = useState<TeacherRecord[]>([]);
+  const [staffUsers, setStaffUsers] = useState<AdminUserRecord[]>([]);
+  const [learners, setLearners] = useState<StudentRecord[]>([]);
+  const [learnersMeta, setLearnersMeta] = useState<StudentsMeta | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -180,77 +189,91 @@ export default function SampleIntegrationPage() {
 
       if (!schoolYearId) {
         throw new Error(
-          "No active school year is configured. Configure an active school year, then refresh integration feeds.",
+          "No active school year is configured. Configure an active school year, then refresh API feeds.",
         );
       }
 
-      const fetchLearnersPage = (page: number) =>
-        api.get<
-          IntegrationEnvelope<IntegrationLearner[], IntegrationLearnersMeta>
-        >("/integration/v1/learners", {
+      const fetchStudentsPage = (page: number) =>
+        api.get<StudentsResponse>("/students", {
           params: {
             schoolYearId,
             page,
-            limit: LEARNERS_PAGE_LIMIT,
+            limit: STUDENTS_PAGE_LIMIT,
           },
         });
 
-      const [teachersRes, staffRes, firstLearnersRes] = await Promise.all([
-        api.get<IntegrationEnvelope<IntegrationTeacher[]>>(
-          "/integration/v1/faculty",
-          {
-            params: { schoolYearId },
+      const fetchUsersPage = (page: number) =>
+        api.get<AdminUsersResponse>("/admin/users", {
+          params: {
+            page,
+            limit: USERS_PAGE_LIMIT,
           },
-        ),
-        api.get<IntegrationEnvelope<IntegrationStaff[]>>(
-          "/integration/v1/staff",
-          {
-            params: { includeInactive: true },
-          },
-        ),
-        fetchLearnersPage(1),
+        });
+
+      const [teachersRes, firstUsersRes, firstStudentsRes] = await Promise.all([
+        api.get<TeachersResponse>("/teachers", {
+          params: { schoolYearId },
+        }),
+        fetchUsersPage(1),
+        fetchStudentsPage(1),
       ]);
 
-      const firstPageLearners = firstLearnersRes.data.data ?? [];
-      const baseMeta = firstLearnersRes.data.meta;
-      const totalPages = Math.max(1, baseMeta?.totalPages ?? 1);
-
-      let mergedLearners = [...firstPageLearners];
-      if (totalPages > 1) {
+      const firstUsers = firstUsersRes.data.users ?? [];
+      const usersTotalPages = Math.max(1, firstUsersRes.data.totalPages ?? 1);
+      let mergedUsers = [...firstUsers];
+      if (usersTotalPages > 1) {
         const remainingPages = Array.from(
-          { length: totalPages - 1 },
+          { length: usersTotalPages - 1 },
           (_, idx) => idx + 2,
         );
         const remainingResponses = await Promise.all(
-          remainingPages.map((page) => fetchLearnersPage(page)),
+          remainingPages.map((page) => fetchUsersPage(page)),
         );
-        mergedLearners = mergedLearners.concat(
-          ...remainingResponses.map((response) => response.data.data ?? []),
+        mergedUsers = mergedUsers.concat(
+          ...remainingResponses.map((response) => response.data.users ?? []),
         );
       }
 
-      setTeachers(teachersRes.data.data ?? []);
-      setStaffUsers(staffRes.data.data ?? []);
-      setLearners(mergedLearners);
+      const firstPageStudents = firstStudentsRes.data.students ?? [];
+      const studentsMeta = firstStudentsRes.data.pagination;
+      const studentsTotalPages = Math.max(1, studentsMeta?.totalPages ?? 1);
+      let mergedStudents = [...firstPageStudents];
+      if (studentsTotalPages > 1) {
+        const remainingPages = Array.from(
+          { length: studentsTotalPages - 1 },
+          (_, idx) => idx + 2,
+        );
+        const remainingResponses = await Promise.all(
+          remainingPages.map((page) => fetchStudentsPage(page)),
+        );
+        mergedStudents = mergedStudents.concat(
+          ...remainingResponses.map((response) => response.data.students ?? []),
+        );
+      }
+
+      setTeachers(teachersRes.data.teachers ?? []);
+      setStaffUsers(mergedUsers);
+      setLearners(mergedStudents);
       setLearnersMeta(
-        baseMeta
+        studentsMeta
           ? {
-              ...baseMeta,
-              totalPages,
+              schoolYearId,
+              total: studentsMeta.total,
+              page: studentsMeta.page,
+              limit: studentsMeta.limit,
+              totalPages: studentsTotalPages,
             }
           : {
               schoolYearId,
-              total: mergedLearners.length,
+              total: mergedStudents.length,
               page: 1,
-              limit: LEARNERS_PAGE_LIMIT,
-              totalPages,
+              limit: STUDENTS_PAGE_LIMIT,
+              totalPages: studentsTotalPages,
             },
       );
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load integration feeds.",
+        err instanceof Error ? err.message : "Failed to load API feeds.",
       );
     } finally {
       setLoading(false);
@@ -267,11 +290,11 @@ export default function SampleIntegrationPage() {
         <div>
           <h1 className="flex items-center gap-2 text-3xl font-bold tracking-tight">
             <Database className="h-7 w-7 text-primary" />
-            Integration API Feed Console
+            Core API Feed Console
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Live, API-backed view for teacher, user, and learner integration
-            data.
+            Live, API-backed view for teacher, user, and learner data from
+            mounted codebase endpoints.
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
             <Badge variant="outline">Read-only</Badge>
@@ -308,12 +331,12 @@ export default function SampleIntegrationPage() {
             Active Feed Contracts
           </CardTitle>
           <CardDescription>
-            This page fetches only from integration APIs and renders full
-            payload fields per record.
+            This page fetches only from core app APIs and renders full payload
+            fields per record.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {INTEGRATION_FEED_ENDPOINTS.map((feed) => (
+          {CORE_API_FEED_ENDPOINTS.map((feed) => (
             <div
               key={feed.system}
               className="rounded-md border bg-card p-3 text-sm">
@@ -334,7 +357,9 @@ export default function SampleIntegrationPage() {
               <GraduationCap className="h-5 w-5 text-primary" />
               Teachers
             </CardTitle>
-            <CardDescription>Source: /integration/v1/faculty</CardDescription>
+            <CardDescription>
+              Source: /teachers?schoolYearId=&lt;activeSchoolYearId&gt;
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -346,25 +371,30 @@ export default function SampleIntegrationPage() {
                 </p>
                 {teachers.length === 0 ? (
                   <p className="text-muted-foreground">
-                    No teacher records returned by /integration/v1/faculty.
+                    No teacher records returned by /teachers.
                   </p>
                 ) : (
                   teachers.map((teacher) => (
-                    <div key={teacher.teacherId} className="rounded border p-2">
-                      <p className="font-semibold">{teacher.fullName}</p>
+                    <div key={teacher.id} className="rounded border p-2">
+                      <p className="font-semibold">
+                        {formatTeacherName(teacher)}
+                      </p>
                       <p className="text-xs text-muted-foreground">
-                        Teacher ID: {teacher.teacherId} | Employee ID:{" "}
+                        Teacher ID: {teacher.id} | Employee ID:{" "}
                         {teacher.employeeId ?? "N/A"}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {teacher.specialization ?? "No specialization"} |
-                        Sections: {teacher.sectionCount} | Active:{" "}
+                        Subjects: {teacher.subjects.length} | Sections:{" "}
+                        {teacher.sectionCount} | Active:{" "}
                         {teacher.isActive ? "Yes" : "No"}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Adviser: {teacher.isClassAdviser ? "Yes" : "No"} | TIC:{" "}
-                        {teacher.isTic ? "Yes" : "No"} | Teaching Exempt:{" "}
-                        {teacher.isTeachingExempt ? "Yes" : "No"}
+                        Adviser:{" "}
+                        {teacher.designation?.isClassAdviser ? "Yes" : "No"} |
+                        TIC: {teacher.designation?.isTic ? "Yes" : "No"} |
+                        Teaching Exempt:{" "}
+                        {teacher.designation?.isTeachingExempt ? "Yes" : "No"}
                       </p>
                       <details className="mt-2">
                         <summary className="cursor-pointer text-xs text-primary">
@@ -389,7 +419,7 @@ export default function SampleIntegrationPage() {
               Users
             </CardTitle>
             <CardDescription>
-              Source: /integration/v1/staff?includeInactive=true
+              Source: /admin/users (auto-paginated)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -402,18 +432,21 @@ export default function SampleIntegrationPage() {
                 </p>
                 {staffUsers.length === 0 ? (
                   <p className="text-muted-foreground">
-                    No user records returned by /integration/v1/staff.
+                    No user records returned by /admin/users.
                   </p>
                 ) : (
                   staffUsers.map((member) => (
                     <div key={member.id} className="rounded border p-2">
-                      <p className="font-semibold">{member.fullName}</p>
+                      <p className="font-semibold">{formatUserName(member)}</p>
                       <p className="text-xs text-muted-foreground">
                         User ID: {member.id} | Role: {member.role}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {member.email} | Active:{" "}
                         {member.isActive ? "Yes" : "No"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Last Login: {formatDate(member.lastLoginAt)}
                       </p>
                       <details className="mt-2">
                         <summary className="cursor-pointer text-xs text-primary">
@@ -438,7 +471,7 @@ export default function SampleIntegrationPage() {
               Enrolled Learners
             </CardTitle>
             <CardDescription>
-              Source: /integration/v1/learners (auto-paginated)
+              Source: /students (auto-paginated)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -452,28 +485,26 @@ export default function SampleIntegrationPage() {
                 </p>
                 {learners.length === 0 ? (
                   <p className="text-muted-foreground">
-                    No learner records returned by /integration/v1/learners.
+                    No learner records returned by /students.
                   </p>
                 ) : (
                   learners.map((learnerRow) => (
-                    <div
-                      key={learnerRow.enrollmentApplicationId}
-                      className="rounded border p-2">
-                      <p className="font-semibold">
-                        {learnerRow.learner.fullName}
+                    <div key={learnerRow.id} className="rounded border p-2">
+                      <p className="font-semibold">{learnerRow.fullName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Application ID: {learnerRow.id} | Tracking:{" "}
+                        {learnerRow.trackingNumber}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Application ID: {learnerRow.enrollmentApplicationId} |
-                        External ID: {learnerRow.learner.externalId}
+                        LRN: {learnerRow.lrn ?? "N/A"} | {learnerRow.gradeLevel}{" "}
+                        | {learnerRow.section ?? "Unsectioned"}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        LRN: {learnerRow.learner.lrn ?? "N/A"} |{" "}
-                        {learnerRow.gradeLevel.name} |{" "}
-                        {learnerRow.section?.name ?? "Unsectioned"}
+                        Program: {learnerRow.learningProgram} | Enrolled At:{" "}
+                        {formatDate(learnerRow.dateEnrolled)}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Program: {learnerRow.section?.programType ?? "N/A"} |
-                        Enrolled At: {formatDate(learnerRow.enrolledAt)}
+                        Status: {learnerRow.status}
                       </p>
                       <details className="mt-2">
                         <summary className="cursor-pointer text-xs text-primary">

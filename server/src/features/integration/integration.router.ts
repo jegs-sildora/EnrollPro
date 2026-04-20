@@ -8,7 +8,7 @@ import {
 } from "./integration.controller.js";
 import {
   listDefaultAimsContext,
-  listDefaultAtlasFaculty,
+  listDefaultFaculty,
   listDefaultSmartStudents,
   listIntegrationStaff,
 } from "./integration.default.controller.js";
@@ -33,7 +33,7 @@ router.get("/teachers", listIntegrationFaculty);
 router.get("/staff", listIntegrationStaff);
 router.get("/sections", listIntegrationSections);
 router.get("/sections/:sectionId/learners", listSectionLearners);
-router.get("/default/atlas/faculty", listDefaultAtlasFaculty);
+router.get("/default/faculty", listDefaultFaculty);
 router.get("/default/smart/students", listDefaultSmartStudents);
 router.get("/default/aims/context", listDefaultAimsContext);
 

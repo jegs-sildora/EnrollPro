@@ -104,7 +104,8 @@ export function ActionButtons({
     const canMarkAsVerified = [
       "EARLY_REG_SUBMITTED",
       "PENDING_VERIFICATION",
-      "SUBMITTED",
+      "SUBMITTED_BEERF",
+      "SUBMITTED_BEEF",
       "UNDER_REVIEW",
       "READY_FOR_ENROLLMENT",
     ].includes(status);
@@ -171,7 +172,8 @@ export function ActionButtons({
         [
           "EARLY_REG_SUBMITTED",
           "PENDING_VERIFICATION",
-          "SUBMITTED",
+          "SUBMITTED_BEERF",
+          "SUBMITTED_BEEF",
           "UNDER_REVIEW",
           "ELIGIBLE",
         ].includes(status) && (
@@ -210,7 +212,8 @@ export function ActionButtons({
         [
           "EARLY_REG_SUBMITTED",
           "PENDING_VERIFICATION",
-          "SUBMITTED",
+          "SUBMITTED_BEERF",
+          "SUBMITTED_BEEF",
           "UNDER_REVIEW",
           "ELIGIBLE",
         ].includes(status) && (

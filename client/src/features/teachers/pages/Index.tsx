@@ -1,13 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { sileo } from "sileo";
-import { Link } from "react-router";
-import {
-  ChevronDown,
-  CloudUpload,
-  GraduationCap,
-  Plus,
-  Upload,
-} from "lucide-react";
+import { ChevronDown, GraduationCap, Plus, Upload } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -32,7 +25,6 @@ import type {
   TeacherDesignationFilter,
   TeacherFormState,
   TeacherStatusFilter,
-  TeacherSyncFilter,
 } from "../types";
 import {
   MAX_TEACHER_PHOTO_BYTES,
@@ -40,7 +32,6 @@ import {
   createEmptyTeacherForm,
   formatTeacherName,
   getImageUrl,
-  getSyncFilterValue,
   normalizeOptionalInput,
 } from "../utils";
 
@@ -100,10 +91,6 @@ export default function Teachers() {
     null,
   );
   const [submitting, setSubmitting] = useState(false);
-  const [forceSyncingTeacherId, setForceSyncingTeacherId] = useState<
-    number | null
-  >(null);
-  const [forceSyncingAll, setForceSyncingAll] = useState(false);
   const [advisorySections, setAdvisorySections] = useState<
     AdvisorySectionOption[]
   >([]);
@@ -119,7 +106,6 @@ export default function Teachers() {
   const [statusFilter, setStatusFilter] = useState<TeacherStatusFilter>("all");
   const [designationFilter, setDesignationFilter] =
     useState<TeacherDesignationFilter>("all");
-  const [syncFilter, setSyncFilter] = useState<TeacherSyncFilter>("all");
 
   const [formData, setFormData] = useState<TeacherFormState>(
     createEmptyTeacherForm,
@@ -245,6 +231,7 @@ export default function Teachers() {
       employeeId: normalizeOptionalInput(formData.employeeId),
       contactNumber: normalizeOptionalInput(formData.contactNumber),
       specialization: normalizeOptionalInput(formData.specialization),
+      plantillaPosition: normalizeOptionalInput(formData.plantillaPosition),
       subjects,
       photo: formData.photo,
     };
@@ -293,6 +280,7 @@ export default function Teachers() {
       employeeId: teacher.employeeId || "",
       contactNumber: teacher.contactNumber || "",
       specialization: teacher.specialization || "",
+      plantillaPosition: teacher.plantillaPosition || "",
       subjects: teacher.subjects,
       photo: teacher.photoPath,
     });
@@ -327,6 +315,7 @@ export default function Teachers() {
       employeeId: normalizeOptionalInput(editFormData.employeeId),
       contactNumber: normalizeOptionalInput(editFormData.contactNumber),
       specialization: normalizeOptionalInput(editFormData.specialization),
+      plantillaPosition: normalizeOptionalInput(editFormData.plantillaPosition),
       subjects,
     };
 
@@ -425,20 +414,14 @@ export default function Teachers() {
                   !teacher.designation.isTic &&
                   !teacher.designation.isTeachingExempt));
 
-      const matchesSync =
-        syncFilter === "all" || getSyncFilterValue(teacher) === syncFilter;
-
-      return (
-        matchesSearch && matchesStatus && matchesDesignation && matchesSync
-      );
+      return matchesSearch && matchesStatus && matchesDesignation;
     });
-  }, [teachers, searchQuery, statusFilter, designationFilter, syncFilter]);
+  }, [teachers, searchQuery, statusFilter, designationFilter]);
 
   const hasActiveFilters =
     searchQuery.trim().length > 0 ||
     statusFilter !== "all" ||
-    designationFilter !== "all" ||
-    syncFilter !== "all";
+    designationFilter !== "all";
 
   const openDesignationEditor = (teacher: Teacher) => {
     setDesignationOpenFor(teacher);
@@ -467,70 +450,6 @@ export default function Teachers() {
     setDesignationOpenFor(null);
     setDesignationCollision(null);
     setAllowCollisionOverride(false);
-  };
-
-  const handleForceSyncTeacher = async (teacher: Teacher) => {
-    setForceSyncingTeacherId(teacher.id);
-    try {
-      const res = await api.post(`/teachers/${teacher.id}/atlas/push`, {
-        schoolYearId: ayId,
-      });
-
-      const status = res.data?.atlasSync?.status;
-      const statusDescription =
-        status === "SYNCED"
-          ? "Delivery was successful."
-          : status === "FAILED"
-            ? "Sync was attempted but failed."
-            : "Sync was queued for retry.";
-
-      sileo.success({
-        title: "ATLAS Sync Triggered",
-        description: `${formatTeacherName(teacher)}: ${statusDescription}`,
-      });
-      fetchTeachers();
-    } catch (err) {
-      toastApiError(err as never);
-    } finally {
-      setForceSyncingTeacherId(null);
-    }
-  };
-
-  const handleForceSyncAll = async () => {
-    const targetTeacherIds = filteredTeachers.map((teacher) => teacher.id);
-
-    if (targetTeacherIds.length === 0) {
-      sileo.warning({
-        title: "No Teachers To Sync",
-        description:
-          "Adjust your filters or add teachers before triggering a batch sync.",
-      });
-      return;
-    }
-
-    setForceSyncingAll(true);
-    try {
-      const res = await api.post("/teachers/atlas/push", {
-        schoolYearId: ayId,
-        teacherIds: targetTeacherIds,
-      });
-      const summary = res.data?.summary;
-      const total = summary?.total ?? targetTeacherIds.length;
-      const queued = summary?.queued ?? 0;
-      const synced = summary?.synced ?? 0;
-      const failed = summary?.failed ?? 0;
-      const skipped = summary?.skipped ?? 0;
-
-      sileo.success({
-        title: "Bulk Sync Requested",
-        description: `${total} teacher records processed (${queued} queued, ${synced} synced, ${failed} failed, ${skipped} skipped).`,
-      });
-      fetchTeachers();
-    } catch (err) {
-      toastApiError(err as never);
-    } finally {
-      setForceSyncingAll(false);
-    }
   };
 
   const handleSaveDesignation = async () => {
@@ -652,12 +571,6 @@ export default function Teachers() {
           </p>
         </div>
         <div className="flex justify-end gap-2 flex-wrap">
-          <Button asChild variant="outline" className="w-fit shadow-sm">
-            <Link to="/admin/atlas">
-              <CloudUpload className="h-4 w-4 mr-2" />
-              ATLAS Sync Health
-            </Link>
-          </Button>
           <div className="inline-flex shadow-sm rounded-lg overflow-hidden">
             <Button onClick={openCreateTeacherSheet} className="rounded-r-none">
               <Plus className="h-4 w-4 mr-2" />
@@ -693,7 +606,7 @@ export default function Teachers() {
 
       {!ayId ? (
         <div className="rounded-md border border-dashed bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-          Set an active school year to edit ATLAS designation metadata.
+          Set an active school year to edit designation metadata.
         </div>
       ) : null}
 
@@ -705,26 +618,19 @@ export default function Teachers() {
         searchQuery={searchQuery}
         statusFilter={statusFilter}
         designationFilter={designationFilter}
-        syncFilter={syncFilter}
         hasActiveFilters={hasActiveFilters}
         ayId={ayId}
-        forceSyncingAll={forceSyncingAll}
-        forceSyncingTeacherId={forceSyncingTeacherId}
         onSearchQueryChange={setSearchQuery}
         onStatusFilterChange={setStatusFilter}
         onDesignationFilterChange={setDesignationFilter}
-        onSyncFilterChange={setSyncFilter}
         onClearFilters={() => {
           setSearchQuery("");
           setStatusFilter("all");
           setDesignationFilter("all");
-          setSyncFilter("all");
         }}
         onRefresh={fetchTeachers}
-        onForceSyncAll={handleForceSyncAll}
         onOpenDesignationEditor={openDesignationEditor}
         onEditTeacher={startEditing}
-        onForceSyncTeacher={handleForceSyncTeacher}
         onDeactivateTeacher={setDeactivateId}
         onReactivateTeacher={setReactivateId}
       />
@@ -820,10 +726,8 @@ export default function Teachers() {
         setDesignationCollision={setDesignationCollision}
         allowCollisionOverride={allowCollisionOverride}
         setAllowCollisionOverride={setAllowCollisionOverride}
-        forceSyncingTeacherId={forceSyncingTeacherId}
         onClose={closeDesignationEditor}
         onSave={handleSaveDesignation}
-        onForceSyncTeacher={handleForceSyncTeacher}
       />
 
       <ConfirmationModal

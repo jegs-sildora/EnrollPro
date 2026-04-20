@@ -9,11 +9,6 @@ import {
   saveBase64Image,
 } from "../../lib/fileUploader.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
-import {
-  getTeacherLatestAtlasSync,
-  queueBulkTeacherAtlasSync,
-  queueTeacherAtlasSync,
-} from "./atlas-sync.service.js";
 
 const DEFAULT_ADVISORY_EQUIVALENT_HOURS = 5;
 const AUTO_EMPLOYEE_ID_PREFIX = "TCH-";
@@ -183,36 +178,6 @@ function toIsoString(value: Date | null): string | null {
   return value ? value.toISOString() : null;
 }
 
-function mapAtlasSync(
-  sync: {
-    status: "PENDING" | "SYNCED" | "FAILED" | "SKIPPED";
-    eventRecordId: number | null;
-    eventId: string | null;
-    attemptCount: number;
-    maxAttempts: number;
-    httpStatus: number | null;
-    errorMessage: string | null;
-    nextRetryAt: string | null;
-    acknowledgedAt: string | null;
-  } | null,
-) {
-  if (!sync) {
-    return null;
-  }
-
-  return {
-    status: sync.status,
-    eventRecordId: sync.eventRecordId,
-    eventId: sync.eventId,
-    attemptCount: sync.attemptCount,
-    maxAttempts: sync.maxAttempts,
-    httpStatus: sync.httpStatus,
-    errorMessage: sync.errorMessage,
-    nextRetryAt: sync.nextRetryAt,
-    acknowledgedAt: sync.acknowledgedAt,
-  };
-}
-
 function formatTeacherName(teacher: {
   firstName: string;
   lastName: string;
@@ -260,39 +225,6 @@ function parseDateOnly(value?: string | null): Date | null {
     return null;
   }
   return new Date(`${value}T00:00:00.000Z`);
-}
-
-function parseSchoolYearIdFromRequest(req: Request): ParsedSchoolYearId {
-  const querySchoolYearId = parseSchoolYearIdFromQuery(req.query.schoolYearId);
-  if (querySchoolYearId === "invalid") {
-    return "invalid";
-  }
-
-  const bodySchoolYearId = parseSchoolYearIdFromQuery(
-    (req.body as { schoolYearId?: unknown } | undefined)?.schoolYearId,
-  );
-
-  if (bodySchoolYearId === "invalid") {
-    return "invalid";
-  }
-
-  return bodySchoolYearId ?? querySchoolYearId;
-}
-
-function parseTeacherIdsFromBody(value: unknown): number[] | null {
-  if (value === undefined || value === null) {
-    return null;
-  }
-
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  const parsed = value
-    .map((entry) => parsePositiveInt(entry))
-    .filter((entry): entry is number => entry !== null);
-
-  return Array.from(new Set(parsed));
 }
 
 async function findAdvisorySectionForSchoolYear(
@@ -449,19 +381,11 @@ export async function index(req: Request, res: Response) {
           },
           take: 1,
         },
-        atlasSyncEvents: {
-          where: schoolContext.schoolYearId
-            ? { schoolYearId: schoolContext.schoolYearId }
-            : undefined,
-          orderBy: { createdAt: "desc" },
-          take: 1,
-        },
       },
     });
 
     const formatted = teachers.map((teacher) => {
       const designation = teacher.teacherDesignations[0] ?? null;
-      const atlasSync = teacher.atlasSyncEvents[0] ?? null;
 
       return {
         id: teacher.id,
@@ -481,19 +405,6 @@ export async function index(req: Request, res: Response) {
         sectionCount: teacher._count.sections,
         designation: designation
           ? mapDesignation(designation, schoolContext.schoolId)
-          : null,
-        atlasSync: atlasSync
-          ? mapAtlasSync({
-              status: atlasSync.status,
-              eventRecordId: atlasSync.id,
-              eventId: atlasSync.eventId,
-              attemptCount: atlasSync.attemptCount,
-              maxAttempts: atlasSync.maxAttempts,
-              httpStatus: atlasSync.httpStatus,
-              errorMessage: atlasSync.errorMessage,
-              nextRetryAt: toIsoString(atlasSync.nextRetryAt),
-              acknowledgedAt: toIsoString(atlasSync.acknowledgedAt),
-            })
           : null,
       };
     });
@@ -649,14 +560,7 @@ export async function store(req: Request, res: Response) {
       req,
     });
 
-    const atlasSync = await queueTeacherAtlasSync({
-      teacherId: teacher.id,
-      eventType: "teacher.created",
-      triggerUserId: req.user?.userId ?? null,
-      triggerSource: "teacher.store",
-    });
-
-    res.status(201).json({ teacher, atlasSync: mapAtlasSync(atlasSync) });
+    res.status(201).json({ teacher });
   } catch (error: any) {
     if (isEmployeeIdUniqueViolation(error)) {
       return res.status(400).json({ message: "Employee ID already exists" });
@@ -803,14 +707,7 @@ export async function update(req: Request, res: Response) {
       req,
     });
 
-    const atlasSync = await queueTeacherAtlasSync({
-      teacherId: id,
-      eventType: "teacher.updated",
-      triggerUserId: req.user?.userId ?? null,
-      triggerSource: "teacher.update",
-    });
-
-    res.json({ teacher, atlasSync: mapAtlasSync(atlasSync) });
+    res.json({ teacher });
   } catch (error: any) {
     if (isEmployeeIdUniqueViolation(error)) {
       return res.status(400).json({ message: "Employee ID already exists" });
@@ -845,14 +742,7 @@ export async function deactivate(req: Request, res: Response) {
       req,
     });
 
-    const atlasSync = await queueTeacherAtlasSync({
-      teacherId: id,
-      eventType: "teacher.deactivated",
-      triggerUserId: req.user?.userId ?? null,
-      triggerSource: "teacher.deactivate",
-    });
-
-    res.json({ teacher, atlasSync: mapAtlasSync(atlasSync) });
+    res.json({ teacher });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
@@ -879,14 +769,7 @@ export async function reactivate(req: Request, res: Response) {
       req,
     });
 
-    const atlasSync = await queueTeacherAtlasSync({
-      teacherId: id,
-      eventType: "teacher.reactivated",
-      triggerUserId: req.user?.userId ?? null,
-      triggerSource: "teacher.reactivate",
-    });
-
-    res.json({ teacher, atlasSync: mapAtlasSync(atlasSync) });
+    res.json({ teacher });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
@@ -967,11 +850,6 @@ export async function showDesignation(req: Request, res: Response) {
       },
     });
 
-    const latestSync = await getTeacherLatestAtlasSync(
-      id,
-      schoolContext.schoolYearId,
-    );
-
     res.json({
       scope: {
         schoolId: schoolContext.schoolId,
@@ -1003,7 +881,6 @@ export async function showDesignation(req: Request, res: Response) {
             updatedByName: null,
             updatedAt: null,
           },
-      atlasSync: mapAtlasSync(latestSync),
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -1277,282 +1154,11 @@ export async function upsertDesignation(req: Request, res: Response) {
       req,
     });
 
-    const atlasSync = await queueTeacherAtlasSync({
-      teacherId: teacher.id,
-      schoolYearId: payload.schoolYearId,
-      eventType: "teacher.designation.updated",
-      triggerUserId: req.user?.userId ?? null,
-      triggerSource: "teacher.upsertDesignation",
-      force: Boolean(payload.allowAdviserOverride),
-      reason: normalizeOptionalText(payload.reason),
-    });
-
     res.json({
       designation: mapDesignation(designation, schoolSetting?.id ?? null),
       collisionOverrideApplied: Boolean(
         collision && payload.allowAdviserOverride,
       ),
-      atlasSync: mapAtlasSync(atlasSync),
-    });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-}
-
-export async function atlasFacultySync(req: Request, res: Response) {
-  try {
-    const schoolYearIdQuery = parseSchoolYearIdFromQuery(
-      req.query.schoolYearId,
-    );
-    if (schoolYearIdQuery === "invalid") {
-      return res
-        .status(400)
-        .json({ message: "schoolYearId must be a positive integer" });
-    }
-
-    const schoolContext = await resolveSchoolContext(schoolYearIdQuery);
-    if (isSchoolContextError(schoolContext)) {
-      return res
-        .status(schoolContext.error.status)
-        .json({ message: schoolContext.error.message });
-    }
-
-    if (!schoolContext.schoolYearId) {
-      return res.status(400).json({
-        message:
-          "No schoolYearId provided and no active school year configured",
-      });
-    }
-
-    const teachers = await prisma.teacher.findMany({
-      orderBy: { lastName: "asc" },
-      include: {
-        _count: { select: { sections: true } },
-        teacherDesignations: {
-          where: { schoolYearId: schoolContext.schoolYearId },
-          include: {
-            updatedBy: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-              },
-            },
-            advisorySection: {
-              select: {
-                id: true,
-                name: true,
-                gradeLevelId: true,
-                gradeLevel: {
-                  select: {
-                    name: true,
-                  },
-                },
-              },
-            },
-          },
-          take: 1,
-        },
-        atlasSyncEvents: {
-          where: { schoolYearId: schoolContext.schoolYearId },
-          orderBy: { createdAt: "desc" },
-          take: 1,
-        },
-      },
-    });
-
-    const rows = teachers.map((teacher) => {
-      const designation = teacher.teacherDesignations[0] ?? null;
-      const latestSync = teacher.atlasSyncEvents[0] ?? null;
-
-      return {
-        schoolId: schoolContext.schoolId,
-        schoolName: schoolContext.schoolName,
-        schoolYearId: schoolContext.schoolYearId,
-        schoolYearLabel: schoolContext.schoolYearLabel,
-        teacherId: teacher.id,
-        employeeId: teacher.employeeId,
-        firstName: teacher.firstName,
-        lastName: teacher.lastName,
-        middleName: teacher.middleName,
-        fullName: formatTeacherName(teacher),
-        isActive: teacher.isActive,
-        sectionCount: teacher._count.sections,
-        isClassAdviser: designation?.isClassAdviser ?? false,
-        advisorySectionId: designation?.advisorySectionId ?? null,
-        advisorySectionName: designation?.advisorySection?.name ?? null,
-        advisorySectionGradeLevelId:
-          designation?.advisorySection?.gradeLevelId ?? null,
-        advisorySectionGradeLevelName:
-          designation?.advisorySection?.gradeLevel?.name ?? null,
-        advisoryEquivalentHoursPerWeek:
-          designation?.advisoryEquivalentHoursPerWeek ?? 0,
-        isTic: designation?.isTic ?? false,
-        isTIC: designation?.isTic ?? false,
-        isTeachingExempt: designation?.isTeachingExempt ?? false,
-        customTargetTeachingHoursPerWeek:
-          designation?.customTargetTeachingHoursPerWeek ?? null,
-        designationNotes: designation?.designationNotes ?? null,
-        effectiveFrom: toDateOnlyString(designation?.effectiveFrom ?? null),
-        effectiveTo: toDateOnlyString(designation?.effectiveTo ?? null),
-        updateReason: designation?.updateReason ?? null,
-        updatedById: designation?.updatedById ?? null,
-        updatedByName: designation?.updatedBy
-          ? `${designation.updatedBy.lastName}, ${designation.updatedBy.firstName}`
-          : null,
-        updatedAt: toIsoString(designation?.updatedAt ?? null),
-        atlasSync: latestSync
-          ? mapAtlasSync({
-              status: latestSync.status,
-              eventRecordId: latestSync.id,
-              eventId: latestSync.eventId,
-              attemptCount: latestSync.attemptCount,
-              maxAttempts: latestSync.maxAttempts,
-              httpStatus: latestSync.httpStatus,
-              errorMessage: latestSync.errorMessage,
-              nextRetryAt: toIsoString(latestSync.nextRetryAt),
-              acknowledgedAt: toIsoString(latestSync.acknowledgedAt),
-            })
-          : null,
-      };
-    });
-
-    res.json({
-      scope: {
-        schoolId: schoolContext.schoolId,
-        schoolName: schoolContext.schoolName,
-        schoolYearId: schoolContext.schoolYearId,
-        schoolYearLabel: schoolContext.schoolYearLabel,
-      },
-      generatedAt: new Date().toISOString(),
-      teachers: rows,
-    });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-}
-
-export async function forceAtlasSync(req: Request, res: Response) {
-  try {
-    const id = parsePositiveInt(req.params.id);
-    if (!id) {
-      return res.status(400).json({ message: "Invalid teacher ID" });
-    }
-
-    const schoolYearIdQuery = parseSchoolYearIdFromRequest(req);
-    if (schoolYearIdQuery === "invalid") {
-      return res
-        .status(400)
-        .json({ message: "schoolYearId must be a positive integer" });
-    }
-
-    const teacher = await prisma.teacher.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-      },
-    });
-
-    if (!teacher) {
-      return res.status(404).json({ message: "Teacher not found" });
-    }
-
-    const sync = await queueTeacherAtlasSync({
-      teacherId: id,
-      schoolYearId: schoolYearIdQuery,
-      eventType: "teacher.force_sync",
-      triggerUserId: req.user?.userId ?? null,
-      triggerSource: "teacher.forceAtlasSync",
-      force: true,
-      reason: normalizeOptionalText(
-        (req.body as { reason?: string | null } | undefined)?.reason,
-      ),
-    });
-
-    await auditLog({
-      userId: req.user!.userId,
-      actionType: "TEACHER_ATLAS_SYNC_FORCED",
-      description: `Forced ATLAS sync for teacher: ${teacher.lastName}, ${teacher.firstName}`,
-      subjectType: "Teacher",
-      recordId: teacher.id,
-      req,
-    });
-
-    return res.json({
-      teacherId: id,
-      atlasSync: mapAtlasSync(sync),
-    });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-}
-
-export async function forceAtlasSyncBatch(req: Request, res: Response) {
-  try {
-    const schoolYearIdQuery = parseSchoolYearIdFromRequest(req);
-    if (schoolYearIdQuery === "invalid") {
-      return res
-        .status(400)
-        .json({ message: "schoolYearId must be a positive integer" });
-    }
-
-    const teacherIdsFromBody = parseTeacherIdsFromBody(
-      (req.body as { teacherIds?: unknown } | undefined)?.teacherIds,
-    );
-
-    if (teacherIdsFromBody && teacherIdsFromBody.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "teacherIds must contain positive integers" });
-    }
-
-    const targetTeacherIds =
-      teacherIdsFromBody ??
-      (
-        await prisma.teacher.findMany({
-          where: { isActive: true },
-          select: { id: true },
-          orderBy: { id: "asc" },
-        })
-      ).map((teacher) => teacher.id);
-
-    if (targetTeacherIds.length === 0) {
-      return res.status(404).json({ message: "No teachers found for sync" });
-    }
-
-    const batchResult = await queueBulkTeacherAtlasSync({
-      teacherIds: targetTeacherIds,
-      schoolYearId: schoolYearIdQuery,
-      eventType: "teacher.force_sync.bulk",
-      triggerUserId: req.user?.userId ?? null,
-      triggerSource: "teacher.forceAtlasSyncBatch",
-      force: true,
-    });
-
-    await auditLog({
-      userId: req.user!.userId,
-      actionType: "TEACHER_ATLAS_SYNC_BULK_FORCED",
-      description: `Forced ATLAS sync for ${batchResult.total} teacher records`,
-      subjectType: "Teacher",
-      recordId: null,
-      req,
-    });
-
-    return res.json({
-      schoolYearId: schoolYearIdQuery,
-      summary: {
-        total: batchResult.total,
-        queued: batchResult.queued,
-        synced: batchResult.synced,
-        failed: batchResult.failed,
-        skipped: batchResult.skipped,
-      },
-      results: batchResult.results.map((entry) => ({
-        teacherId: entry.teacherId,
-        atlasSync: mapAtlasSync(entry.sync),
-      })),
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });

@@ -14,6 +14,7 @@ import {
   createEarlyRegistrationSharedService,
   createInitialTrackingPayload,
   normalizeTrackingStatus,
+  resolveCurrentStep,
 } from "../services/early-registration-shared.service.js";
 import { getSCPRankings } from "../services/scp-ranking.service.js";
 
@@ -37,6 +38,27 @@ export function createEarlyRegistrationBaseController(
   } = createEarlyRegistrationSharedService(deps);
 
   const LRN_REGEX = /^\d{12}$/;
+  const LEGACY_APPLICATION_STATUS_ALIASES: Record<string, ApplicationStatus> = {
+    EARLY_REG_SUBMITTED: "SUBMITTED_BEERF",
+    PENDING_VERIFICATION: "UNDER_REVIEW",
+    PRE_REGISTERED: "READY_FOR_ENROLLMENT",
+    READY_FOR_SECTIONING: "READY_FOR_ENROLLMENT",
+    OFFICIALLY_ENROLLED: "ENROLLED",
+  };
+
+  function normalizeApplicationStatusToken(
+    value: unknown,
+  ): ApplicationStatus | null {
+    const normalized = String(value ?? "")
+      .trim()
+      .toUpperCase();
+    if (!normalized || normalized === "ALL") {
+      return null;
+    }
+
+    const mapped = LEGACY_APPLICATION_STATUS_ALIASES[normalized] ?? normalized;
+    return mapped as ApplicationStatus;
+  }
 
   function isTruthyQuery(value: unknown): boolean {
     if (typeof value === "boolean") return value;
@@ -145,9 +167,20 @@ export function createEarlyRegistrationBaseController(
       // 2. Build Status Filters for Raw SQL
       const statusFilters = (Array.isArray(status) ? status : [status])
         .flatMap((value) => String(value ?? "").split(","))
-        .map((value) => value.trim())
-        .filter((value) => value.length > 0 && value !== "ALL")
+        .flatMap((value) => {
+          const normalizedToken = String(value ?? "")
+            .trim()
+            .toUpperCase();
+
+          if (normalizedToken === "SUBMITTED") {
+            return ["SUBMITTED_BEERF", "SUBMITTED_BEEF"] as ApplicationStatus[];
+          }
+
+          const mapped = normalizeApplicationStatusToken(normalizedToken);
+          return mapped ? [mapped] : [];
+        })
         .filter((value): value is ApplicationStatus => Boolean(value));
+      const requiresSectionAssignment = statusFilters.includes("ENROLLED");
 
       // 3. Execution: Unified Raw Query for ID and Metadata
       // We use raw SQL to handle UNION ALL + cross-table pagination + complex filters efficiently.
@@ -178,7 +211,7 @@ export function createEarlyRegistrationBaseController(
             ${statusFilters.length > 0 ? Prisma.sql`AND status::text IN (${Prisma.join(statusFilters)})` : Prisma.empty}
             ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND applicant_type::text = ${applicantType}` : Prisma.empty}
             ${isTruthyQuery(withoutSection) ? Prisma.sql`AND NOT EXISTS (SELECT 1 FROM enrollment_records WHERE enrollment_application_id = enrollment_applications.id)` : Prisma.empty}
-            ${isTruthyQuery(withSection) || status === "ENROLLED" || status === "OFFICIALLY_ENROLLED" ? Prisma.sql`AND EXISTS (SELECT 1 FROM enrollment_records WHERE enrollment_application_id = enrollment_applications.id)` : Prisma.empty}
+            ${isTruthyQuery(withSection) || requiresSectionAssignment ? Prisma.sql`AND EXISTS (SELECT 1 FROM enrollment_records WHERE enrollment_application_id = enrollment_applications.id)` : Prisma.empty}
 
           UNION ALL
 
@@ -202,7 +235,7 @@ export function createEarlyRegistrationBaseController(
             ${statusFilters.length > 0 ? Prisma.sql`AND status::text IN (${Prisma.join(statusFilters)})` : Prisma.empty}
             ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND applicant_type::text = ${applicantType}` : Prisma.empty}
             -- Early reg apps NEVER have enrollment records (Phase 2 only)
-            ${isTruthyQuery(withSection) || status === "ENROLLED" || status === "OFFICIALLY_ENROLLED" ? Prisma.sql`AND 1=0` : Prisma.empty}
+            ${isTruthyQuery(withSection) || requiresSectionAssignment ? Prisma.sql`AND 1=0` : Prisma.empty}
         ),
         filtered_queue AS (
           SELECT q.* FROM base_queue q
@@ -241,7 +274,7 @@ export function createEarlyRegistrationBaseController(
             ${statusFilters.length > 0 ? Prisma.sql`AND status::text IN (${Prisma.join(statusFilters)})` : Prisma.empty}
             ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND applicant_type::text = ${applicantType}` : Prisma.empty}
             ${isTruthyQuery(withoutSection) ? Prisma.sql`AND NOT EXISTS (SELECT 1 FROM enrollment_records WHERE enrollment_application_id = enrollment_applications.id)` : Prisma.empty}
-            ${isTruthyQuery(withSection) || status === "ENROLLED" || status === "OFFICIALLY_ENROLLED" ? Prisma.sql`AND EXISTS (SELECT 1 FROM enrollment_records WHERE enrollment_application_id = enrollment_applications.id)` : Prisma.empty}
+            ${isTruthyQuery(withSection) || requiresSectionAssignment ? Prisma.sql`AND EXISTS (SELECT 1 FROM enrollment_records WHERE enrollment_application_id = enrollment_applications.id)` : Prisma.empty}
 
           UNION ALL
 
@@ -252,7 +285,7 @@ export function createEarlyRegistrationBaseController(
             ${gradeId ? Prisma.sql`AND grade_level_id = ${gradeId}` : Prisma.empty}
             ${statusFilters.length > 0 ? Prisma.sql`AND status::text IN (${Prisma.join(statusFilters)})` : Prisma.empty}
             ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND applicant_type::text = ${applicantType}` : Prisma.empty}
-            ${isTruthyQuery(withSection) || status === "ENROLLED" || status === "OFFICIALLY_ENROLLED" ? Prisma.sql`AND 1=0` : Prisma.empty}
+            ${isTruthyQuery(withSection) || requiresSectionAssignment ? Prisma.sql`AND 1=0` : Prisma.empty}
         )
         SELECT COUNT(*) as count FROM base_queue q
         JOIN learners l ON q.learner_id = l.id
@@ -420,11 +453,7 @@ export function createEarlyRegistrationBaseController(
         const canStartReview =
           req.user?.role === "REGISTRAR" || req.user?.role === "SYSTEM_ADMIN";
 
-        if (
-          (earlyReg.status === "SUBMITTED" ||
-            earlyReg.status === "EARLY_REG_SUBMITTED") &&
-          canStartReview
-        ) {
+        if (earlyReg.status === "SUBMITTED_BEERF" && canStartReview) {
           await prisma.earlyRegistrationApplication.update({
             where: { id: earlyReg.id },
             data: { status: "UNDER_REVIEW" },
@@ -569,10 +598,84 @@ export function createEarlyRegistrationBaseController(
       );
     }
 
+    const buildExistingTrackingResponse = (existingApplication: {
+      trackingNumber: string;
+      applicantType: ApplicantType;
+      status: ApplicationStatus;
+    }) => {
+      const existingTracking = createInitialTrackingPayload(
+        existingApplication.applicantType,
+      );
+      const normalizedStatus = normalizeTrackingStatus(
+        existingApplication.status,
+      );
+
+      return {
+        trackingNumber: existingApplication.trackingNumber,
+        applicantType: existingApplication.applicantType,
+        programType: existingTracking.programType,
+        status: normalizedStatus,
+        rawStatus: existingApplication.status,
+        currentStep: resolveCurrentStep(
+          normalizedStatus,
+          existingTracking.programType,
+        ),
+        assessmentData: existingTracking.assessmentData,
+      };
+    };
+
+    let linkedEarlyRegistrationTrackingNumber: string | null = null;
+
+    if (linkedEarlyRegistrationId) {
+      const [linkedEarlyRegistration, existingByLinkedEarlyRegistration] =
+        await Promise.all([
+          prisma.earlyRegistrationApplication.findUnique({
+            where: { id: linkedEarlyRegistrationId },
+            select: { trackingNumber: true },
+          }),
+          prisma.enrollmentApplication.findFirst({
+            where: {
+              earlyRegistrationId: linkedEarlyRegistrationId,
+              schoolYearId: activeYear.id,
+            },
+            select: {
+              applicantType: true,
+              status: true,
+              trackingNumber: true,
+            },
+            orderBy: { createdAt: "desc" },
+          }),
+        ]);
+
+      linkedEarlyRegistrationTrackingNumber =
+        linkedEarlyRegistration?.trackingNumber ?? null;
+
+      if (existingByLinkedEarlyRegistration?.trackingNumber) {
+        return buildExistingTrackingResponse({
+          trackingNumber: existingByLinkedEarlyRegistration.trackingNumber,
+          applicantType: existingByLinkedEarlyRegistration.applicantType,
+          status: existingByLinkedEarlyRegistration.status,
+        });
+      }
+
+      if (existingByLinkedEarlyRegistration) {
+        throw new AppError(
+          409,
+          "An enrollment application linked to this early registration already exists for this School Year.",
+        );
+      }
+    }
+
     if (lrn) {
       const [existingByLrn, existingEarlyRegByLrn] = await Promise.all([
         prisma.enrollmentApplication.findFirst({
           where: { learner: { lrn }, schoolYearId: activeYear.id },
+          select: {
+            applicantType: true,
+            status: true,
+            trackingNumber: true,
+          },
+          orderBy: { createdAt: "desc" },
         }),
         prisma.earlyRegistrationApplication.findFirst({
           where: { learner: { lrn }, schoolYearId: activeYear.id },
@@ -580,10 +683,18 @@ export function createEarlyRegistrationBaseController(
         }),
       ]);
 
-      if (existingByLrn) {
+      if (existingByLrn?.trackingNumber) {
+        return buildExistingTrackingResponse({
+          trackingNumber: existingByLrn.trackingNumber,
+          applicantType: existingByLrn.applicantType,
+          status: existingByLrn.status,
+        });
+      }
+
+      if (existingByLrn && !existingByLrn.trackingNumber) {
         throw new AppError(
           409,
-          `An enrollment application with LRN ${lrn} already exists for this School Year. Tracking number: ${existingByLrn.trackingNumber}.`,
+          `An enrollment application with LRN ${lrn} already exists for this School Year.`,
         );
       }
 
@@ -676,6 +787,8 @@ export function createEarlyRegistrationBaseController(
 
     const year = new Date().getFullYear();
     const tempTracking = `${options.trackingPrefix}-${year}-TEMP-${Date.now()}`;
+    const initialTrackingNumber =
+      linkedEarlyRegistrationTrackingNumber ?? tempTracking;
 
     // Build nested address data
     const addressData: Prisma.ApplicationAddressCreateManyInput[] = [];
@@ -768,7 +881,7 @@ export function createEarlyRegistrationBaseController(
           gradeLevelId: gradeLevel.id,
           schoolYearId: activeYear.id,
           applicantType,
-          trackingNumber: tempTracking,
+          trackingNumber: initialTrackingNumber,
 
           // Channel-specific fields
           admissionChannel: options.channel,
@@ -869,11 +982,25 @@ export function createEarlyRegistrationBaseController(
       prefix = "SPTVE";
     }
 
-    const trackingNumber = `${prefix}-${year}-${String(application.id).padStart(5, "0")}`;
-    await prisma.enrollmentApplication.update({
-      where: { id: application.id },
-      data: { trackingNumber },
-    });
+    const shouldReuseLinkedTracking =
+      Boolean(linkedEarlyRegistrationId) &&
+      Boolean(linkedEarlyRegistrationTrackingNumber);
+    const generatedTrackingNumber = `${prefix}-${year}-${String(application.id).padStart(5, "0")}`;
+    const trackingNumber = shouldReuseLinkedTracking
+      ? (application.trackingNumber ??
+        linkedEarlyRegistrationTrackingNumber ??
+        generatedTrackingNumber)
+      : generatedTrackingNumber;
+
+    if (
+      !shouldReuseLinkedTracking ||
+      application.trackingNumber !== trackingNumber
+    ) {
+      await prisma.enrollmentApplication.update({
+        where: { id: application.id },
+        data: { trackingNumber },
+      });
+    }
 
     // Audit log
     const logPrefix =
@@ -901,7 +1028,7 @@ export function createEarlyRegistrationBaseController(
 
     // Link early registration if provided
     if (linkedEarlyRegistrationId) {
-      const nextEarlyRegStatus: ApplicationStatus = "PRE_REGISTERED";
+      const nextEarlyRegStatus: ApplicationStatus = "READY_FOR_ENROLLMENT";
 
       await prisma.earlyRegistrationApplication.update({
         where: { id: linkedEarlyRegistrationId },
@@ -1056,7 +1183,7 @@ export function createEarlyRegistrationBaseController(
         any
       >;
       const rawStatus = String(
-        flattened.status ?? "PENDING_VERIFICATION",
+        flattened.status ?? "SUBMITTED_BEEF",
       ).toUpperCase();
       const status = normalizeTrackingStatus(
         flattened.trackingStatus ?? rawStatus,
@@ -1096,11 +1223,7 @@ export function createEarlyRegistrationBaseController(
               schoolYearId: settings.activeSchoolYearId,
               status: {
                 in: [
-                  "EARLY_REG_SUBMITTED",
-                  "PRE_REGISTERED",
-                  "PENDING_VERIFICATION",
-                  "READY_FOR_SECTIONING",
-                  "SUBMITTED",
+                  "SUBMITTED_BEERF",
                   "VERIFIED",
                   "UNDER_REVIEW",
                   "FOR_REVISION",

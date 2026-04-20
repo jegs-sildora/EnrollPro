@@ -303,6 +303,7 @@ export function ApplicationDetailPanel({
           applicantId={applicant.id}
           learnerType={applicant.learnerType}
           checklist={applicant.checklist}
+          documents={applicant.documents}
           endpointBase={endpointBase}
           onRefresh={refetch}
           onMandatoryStatusChange={setMandatoryMet}

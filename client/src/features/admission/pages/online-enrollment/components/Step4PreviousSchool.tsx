@@ -118,6 +118,37 @@ export default function Step4PreviousSchool() {
               </SelectContent>
             </Select>
           </div>
+
+          <div className="space-y-2">
+            <Label
+              htmlFor="final-general-average"
+              className="text-sm font-bold">
+              Final General Average (SF9)
+            </Label>
+            <Input
+              autoComplete="off"
+              id="final-general-average"
+              type="number"
+              inputMode="decimal"
+              step="0.01"
+              min={0}
+              max={100}
+              placeholder="e.g. 89.75"
+              {...register("generalAverage")}
+              className={cn(
+                "h-11 font-bold",
+                errors.generalAverage && "border-destructive",
+              )}
+            />
+            {errors.generalAverage && (
+              <p className="text-[0.6875rem] text-destructive font-medium">
+                {errors.generalAverage.message}
+              </p>
+            )}
+            <p className="text-[0.6875rem] text-muted-foreground font-medium">
+              Optional. Enter a value from 0 to 100 with up to 2 decimal places.
+            </p>
+          </div>
         </div>
 
         <div className="space-y-4">
