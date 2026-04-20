@@ -85,6 +85,16 @@ export const REGISTRATION_BATCH_ACTIONS_BY_STATUS: Record<
       "Review selected applicants and verify documentary requirements in one run.",
     submitLabel: "Verify Applicants",
   },
+  UNDER_REVIEW: {
+    id: "VERIFY_DOCUMENTS",
+    triggerStatus: "UNDER_REVIEW",
+    targetStatus: "VERIFIED",
+    buttonLabel: "Batch Verify Documents",
+    modalTitle: "Batch Documentary Checklist",
+    modalDescription:
+      "Continue documentary validation for selected under-review applicants.",
+    submitLabel: "Verify Applicants",
+  },
   VERIFIED: {
     id: "SCHEDULE_EXAM",
     triggerStatus: "VERIFIED",

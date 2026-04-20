@@ -524,12 +524,15 @@ export default function Enrollment() {
       }
 
       if (workflowView === "SECTION_ASSIGNMENT") {
-        params.append("status", "VERIFIED");
+        params.append(
+          "status",
+          Array.from(SECTION_ASSIGNMENT_STATUSES).join(","),
+        );
         params.append("withoutSection", "true");
       }
 
       if (workflowView === "OFFICIAL_ROSTER") {
-        params.append("status", "ENROLLED");
+        params.append("status", "OFFICIALLY_ENROLLED,ENROLLED");
         params.append("withSection", "true");
       }
 
@@ -560,7 +563,10 @@ export default function Enrollment() {
           return SECTION_ASSIGNMENT_STATUSES.has(app.status) && !hasSection;
         }
 
-        return app.status === "ENROLLED" && hasSection;
+        return (
+          (app.status === "OFFICIALLY_ENROLLED" || app.status === "ENROLLED") &&
+          hasSection
+        );
       });
 
       setApplications(filteredApps);
@@ -1695,9 +1701,9 @@ export default function Enrollment() {
                       `/applications/${selectedId}/mark-interview-passed`,
                     );
                     sileo.success({
-                      title: "Ready for Enrollment",
+                      title: "Pre-Registered",
                       description:
-                        "Learner moved to Ready for Enrollment status.",
+                        "Learner moved to Pre-Registered / Ready for Sectioning.",
                     });
                     fetchData();
                   } catch (e) {
@@ -1716,9 +1722,9 @@ export default function Enrollment() {
                     }
 
                     sileo.success({
-                      title: "Verified",
+                      title: "Ready for Sectioning",
                       description:
-                        "Physical documents verified. Learner is now ready for section assignment.",
+                        "Physical documents verified. Learner is now in the Ready for Sectioning queue.",
                     });
                     fetchData();
                   } catch (e) {

@@ -2,6 +2,26 @@ export const STATUS_CONFIG: Record<
   string,
   { label: string; className: string }
 > = {
+  EARLY_REG_SUBMITTED: {
+    label: "Early Reg Submitted",
+    className: "bg-slate-100 text-slate-700 border-slate-300",
+  },
+  PRE_REGISTERED: {
+    label: "Pre-Registered",
+    className: "bg-cyan-100 text-cyan-800 border-cyan-300",
+  },
+  PENDING_VERIFICATION: {
+    label: "Pending Verification",
+    className: "bg-amber-100 text-amber-800 border-amber-300",
+  },
+  READY_FOR_SECTIONING: {
+    label: "Ready for Sectioning",
+    className: "bg-green-100 text-green-800 border-green-300",
+  },
+  OFFICIALLY_ENROLLED: {
+    label: "Officially Enrolled",
+    className: "bg-green-600 text-white border-transparent",
+  },
   SUBMITTED: {
     label: "Submitted",
     className: "bg-slate-100 text-slate-700 border-slate-300",

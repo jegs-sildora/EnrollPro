@@ -184,8 +184,8 @@ export function createInitialTrackingPayload(
   assessmentData: PublicAssessmentData | null;
 } {
   const programType = deriveProgramType(applicantType);
-  const status: PublicTrackingStatus = "SUBMITTED";
-  const rawStatus: ApplicationStatus = "SUBMITTED";
+  const status: PublicTrackingStatus = "IN_REVIEW";
+  const rawStatus: ApplicationStatus = "PENDING_VERIFICATION";
 
   return {
     programType,
@@ -205,6 +205,10 @@ export function createEarlyRegistrationSharedService(
   deps: AdmissionControllerDeps,
 ) {
   const LINKABLE_EARLY_REG_STATUSES = new Set<ApplicationStatus>([
+    "EARLY_REG_SUBMITTED",
+    "PRE_REGISTERED",
+    "PENDING_VERIFICATION",
+    "READY_FOR_SECTIONING",
     "SUBMITTED",
     "VERIFIED",
     "UNDER_REVIEW",
@@ -896,6 +900,25 @@ export function createEarlyRegistrationSharedService(
     }
 
     const runMigration = async (ptx: any): Promise<EnrollmentApplication> => {
+      const existingEnrollment = await ptx.enrollmentApplication.findFirst({
+        where: { earlyRegistrationId: earlyReg.id },
+        include: {
+          learner: true,
+          earlyRegistration: true,
+          gradeLevel: true,
+        },
+      });
+
+      // Idempotency guard: re-use existing phase 2 record instead of creating duplicates.
+      if (existingEnrollment) {
+        await ptx.earlyRegistrationApplication.update({
+          where: { id: earlyReg.id },
+          data: { status: "PRE_REGISTERED" },
+        });
+
+        return existingEnrollment;
+      }
+
       const year = new Date().getFullYear();
 
       // Create Phase 2 Enrollment Application
@@ -907,7 +930,7 @@ export function createEarlyRegistrationSharedService(
           gradeLevelId: earlyReg.gradeLevelId,
           applicantType: earlyReg.applicantType,
           learnerType: earlyReg.learnerType,
-          status: "SUBMITTED",
+          status: "PENDING_VERIFICATION",
           admissionChannel: "F2F", // Registrar-initiated migration
           encodedById: userId,
           studentPhoto: earlyReg.studentPhoto,
@@ -964,10 +987,10 @@ export function createEarlyRegistrationSharedService(
         data: { enrollmentId: finalApp.id },
       });
 
-      // Mark original Phase 1 record as "Enrolled" (Migrated)
+      // Keep the phase 1 record as pre-registered after migration to phase 2.
       await ptx.earlyRegistrationApplication.update({
         where: { id: earlyReg.id },
-        data: { status: "ENROLLED" },
+        data: { status: "PRE_REGISTERED" },
       });
 
       return finalApp;

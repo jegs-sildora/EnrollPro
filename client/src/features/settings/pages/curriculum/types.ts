@@ -17,6 +17,7 @@ export interface ScpConfig {
   scpType: string;
   isOffered: boolean;
   isTwoPhase: boolean;
+  maxSlots: number | null;
   cutoffScore: number | null;
   notes?: string | null;
   gradeRequirements?: unknown;

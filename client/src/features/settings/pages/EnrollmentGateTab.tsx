@@ -45,6 +45,7 @@ function utcNoonDate(year: number, monthIndex: number, day: number) {
 interface AYDates {
   id: number;
   yearLabel: string;
+  classOpeningDate: string | null;
   earlyRegOpenDate: string | null;
   earlyRegCloseDate: string | null;
   enrollOpenDate: string | null;
@@ -115,6 +116,16 @@ export default function EnrollmentGateTab() {
     () => utcNoonDate(currentManilaYear + 1, 11, 31),
     [currentManilaYear],
   );
+  const enrollmentPhaseMaxDate = useMemo(() => {
+    if (!ay?.classOpeningDate) {
+      return maxDate;
+    }
+
+    const classOpeningDate = new Date(ay.classOpeningDate);
+    return classOpeningDate.getTime() < maxDate.getTime()
+      ? classOpeningDate
+      : maxDate;
+  }, [ay?.classOpeningDate, maxDate]);
 
   const fetchAy = useCallback(async () => {
     if (!activeSchoolYearId) {
@@ -179,6 +190,34 @@ export default function EnrollmentGateTab() {
 
   const handleSaveDates = async () => {
     if (!ay) return;
+
+    if (ay.classOpeningDate) {
+      const classOpeningDate = new Date(ay.classOpeningDate);
+
+      if (
+        enrollOpenDate &&
+        enrollOpenDate.getTime() > classOpeningDate.getTime()
+      ) {
+        sileo.error({
+          title: "Invalid Regular Enrollment window",
+          description: "Regular enrollment cannot open after Start of Classes.",
+        });
+        return;
+      }
+
+      if (
+        enrollCloseDate &&
+        enrollCloseDate.getTime() > classOpeningDate.getTime()
+      ) {
+        sileo.error({
+          title: "Invalid Regular Enrollment window",
+          description:
+            "Regular enrollment cannot extend past Start of Classes.",
+        });
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       await api.patch(`/school-years/${ay.id}/dates`, {
@@ -213,7 +252,7 @@ export default function EnrollmentGateTab() {
             </div>
             <div className="space-y-1">
               <p className="font-bold text-foreground">No Active School Year</p>
-              <p className="text-sm text-muted-foreground leading-relaxed px-4">
+              <p className="text-sm text-foreground leading-relaxed px-4 font-semibold">
                 Activate a school year to configure the enrollment schedule.
               </p>
             </div>
@@ -343,28 +382,34 @@ export default function EnrollmentGateTab() {
             </div>
 
             {isEditing ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border p-3 rounded-lg">
-                <div className="space-y-1">
-                  <Label className="text-xs">Opens On</Label>
-                  <DatePicker
-                    date={enrollOpenDate}
-                    setDate={setEnrollOpenDate}
-                    minDate={minDate}
-                    maxDate={maxDate}
-                    className="font-bold"
-                  />
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border p-3 rounded-lg">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Opens On</Label>
+                    <DatePicker
+                      date={enrollOpenDate}
+                      setDate={setEnrollOpenDate}
+                      minDate={minDate}
+                      maxDate={enrollmentPhaseMaxDate}
+                      className="font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Closes On</Label>
+                    <DatePicker
+                      date={enrollCloseDate}
+                      setDate={setEnrollCloseDate}
+                      minDate={minDate}
+                      maxDate={enrollmentPhaseMaxDate}
+                      className="font-bold"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Closes On</Label>
-                  <DatePicker
-                    date={enrollCloseDate}
-                    setDate={setEnrollCloseDate}
-                    minDate={minDate}
-                    maxDate={maxDate}
-                    className="font-bold"
-                  />
-                </div>
-              </div>
+                <p className="text-xs text-muted-foreground">
+                  Regular enrollment must close on or before Start of Classes
+                  from the School Year tab.
+                </p>
+              </>
             ) : (
               <div className="flex items-center gap-4 text-sm bg-muted p-3 rounded-lg border border-border">
                 <div className="flex-1 text-center border-r border-border">

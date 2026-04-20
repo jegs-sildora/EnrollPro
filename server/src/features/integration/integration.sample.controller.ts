@@ -245,7 +245,7 @@ export async function listSampleStudents(
   const applications = await prisma.enrollmentApplication.findMany({
     where: {
       schoolYearId: scope.schoolYearId,
-      status: "ENROLLED",
+      status: { in: ["OFFICIALLY_ENROLLED", "ENROLLED"] },
       learner: {
         lrn: {
           startsWith: SAMPLE_LEARNER_LRN_PREFIX,

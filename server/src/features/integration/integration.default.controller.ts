@@ -33,7 +33,7 @@ async function fetchDefaultLearnerRows(schoolYearId: number) {
   return prisma.enrollmentApplication.findMany({
     where: {
       schoolYearId,
-      status: "ENROLLED",
+      status: { in: ["OFFICIALLY_ENROLLED", "ENROLLED"] },
       enrollmentRecord: {
         isNot: null,
       },

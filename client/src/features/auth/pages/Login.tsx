@@ -117,10 +117,14 @@ export default function Login() {
     useAuthStore();
 
   const settings = useSettingsStore() as SchoolMetaSettings;
-  const schoolName = settings.schoolName || "EnrollPro";
+  const schoolName = "EnrollPro";
   const schoolAddress = normalizeOptionalText(settings.schoolAddress);
   const schoolDivision = normalizeOptionalText(settings.schoolDivision);
   const schoolRegion = normalizeOptionalText(settings.schoolRegion);
+  const projectTagline =
+    "Digital Platform for Optimized Early Registration and Enrollment";
+  const projectFullName = `EnrollPro: ${projectTagline}`;
+  const jhsScopeLabel = "Junior High School (Grades 7-10)";
 
   const acronym = useMemo(() => getAcronym(schoolName), [schoolName]);
 
@@ -438,28 +442,10 @@ export default function Login() {
 
         <div className="relative z-10 flex flex-col justify-center px-12 xl:px-20 text-white w-full">
           <div className="flex items-center gap-4 mb-12">
-            <div
-              className="w-16 h-16 rounded-full flex items-center justify-center shadow-2xl overflow-hidden flex-shrink-0"
-              style={{
-                backgroundColor: fullLogoUrl
-                  ? "white"
-                  : "rgba(255,255,255,0.15)",
-                border: "2px solid rgba(255,255,255,0.3)",
-              }}>
-              {fullLogoUrl ? (
-                <img
-                  src={fullLogoUrl}
-                  alt={schoolName}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <GraduationCap className="w-9 h-9 text-white" />
-              )}
-            </div>
             <div>
               <h1 className="text-4xl font-bold tracking-tight">{acronym}</h1>
-              <p className="text-white/80 text-sm font-medium tracking-wide">
-                Academic Records Management
+              <p className="text-white text-sm font-bold max-w-md">
+                {projectTagline}
               </p>
             </div>
           </div>
@@ -468,28 +454,29 @@ export default function Login() {
             <h2 className="text-3xl xl:text-4xl font-bold leading-tight tracking-tight">
               {schoolName}
             </h2>
+            <p className="text-white text-sm font-bold">{jhsScopeLabel}</p>
             <div className="flex flex-col gap-1.5 mt-3">
               {schoolAddress && (
-                <div className="flex items-center gap-2 text-white/70 text-sm">
+                <div className="flex items-center gap-2 text-white text-sm font-bold">
                   <MapPin className="w-4 h-4 flex-shrink-0" />
                   <span>{schoolAddress}</span>
                 </div>
               )}
               {schoolDivision && (
-                <div className="flex items-center gap-2 text-white/70 text-sm">
+                <div className="flex items-center gap-2 text-white text-sm font-bold">
                   <Building2 className="w-4 h-4 flex-shrink-0" />
                   <span>Division of {schoolDivision}</span>
                 </div>
               )}
               {schoolRegion && (
-                <div className="flex items-center gap-2 text-white/70 text-sm">
+                <div className="flex items-center gap-2 text-white text-sm font-bold">
                   <Globe className="w-4 h-4 flex-shrink-0" />
                   <span>{schoolRegion}</span>
                 </div>
               )}
               {!schoolAddress && !schoolDivision && !schoolRegion && (
-                <p className="text-white/60 text-sm">
-                  Department of Education - Philippines
+                <p className="text-white text-sm font-bold">
+                  DepEd Public School Early Registration and Enrollment Portal
                 </p>
               )}
             </div>
@@ -499,18 +486,18 @@ export default function Login() {
             {[
               {
                 icon: BookOpen,
-                title: "DepEd-Compliant",
-                desc: "K-12 curriculum aligned",
+                title: "Phase 1 Automation",
+                desc: "Early registration intake with dynamic SCP screening",
               },
               {
                 icon: BarChart3,
-                title: "Real-time Analytics",
-                desc: "Instant grade computations",
+                title: "Phase 2 Validation",
+                desc: "BEEF, SF9 checks, and enrollment finalization",
               },
               {
                 icon: Shield,
-                title: "Secure Platform",
-                desc: "Role-based access control",
+                title: "Priority Sectioning Engine",
+                desc: "SCP hard caps with BEC star and heterogeneous sorting",
               },
             ].map((feature) => (
               <div
@@ -520,8 +507,8 @@ export default function Login() {
                   <feature.icon className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-white">{feature.title}</h3>
-                  <p className="text-white/60 text-sm">{feature.desc}</p>
+                  <h3 className="font-bold text-white">{feature.title}</h3>
+                  <p className="text-white text-sm font-semibold">{feature.desc}</p>
                 </div>
               </div>
             ))}
@@ -532,9 +519,7 @@ export default function Login() {
           <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
             <Shield className="w-4 h-4" />
           </div>
-          <span>
-            K-12 Academic Records Management System - DepEd Philippines
-          </span>
+          <span>{projectFullName}</span>
         </div>
       </div>
 
@@ -640,7 +625,7 @@ export default function Login() {
             </div>
           </div>
 
-          <Card className="border-0 shadow-2xl shadow-gray-200/60 bg-white/90 backdrop-blur-xl rounded-3xl overflow-hidden">
+          <Card className="border-0 shadow-2xl shadow-gray-200 bg-white/90 backdrop-blur-xl rounded-3xl overflow-hidden">
             <CardHeader className="space-y-1 text-center pt-5 pb-0 px-6">
               <div
                 className="w-14 h-14 mx-auto rounded-full flex items-center justify-center shadow-lg overflow-hidden"
@@ -657,7 +642,7 @@ export default function Login() {
                   <img
                     src={fullLogoUrl}
                     alt={schoolName}
-                    className="w-full h-full object-cover"
+                    className="w-10 h-10 object-cover"
                   />
                 ) : (
                   <Sparkles className="w-5 h-5 text-white" />
@@ -668,7 +653,9 @@ export default function Login() {
               </CardTitle>
               <CardDescription className="text-gray-600 text-sm">
                 Sign in to continue to{" "}
-                <span className="font-semibold text-primary">{acronym}</span>
+                <span className="font-semibold text-primary">
+                  EnrollPro
+                </span>
               </CardDescription>
             </CardHeader>
 
@@ -678,7 +665,7 @@ export default function Login() {
                   <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
                     <AlertCircle className="w-4 h-4 text-red-600" />
                   </div>
-                  <span className="text-sm font-medium text-red-700">
+                  <span className="text-sm font-bold text-red-700">
                     {error}
                   </span>
                 </div>
@@ -721,7 +708,7 @@ export default function Login() {
                           setError(null);
                         }
                       }}
-                      className="pl-12 h-11 bg-gray-50/80 border-gray-200 hover:border-gray-300 focus:ring-4 focus:ring-primary/15 rounded-xl transition-all duration-200 placeholder:text-gray-400 text-gray-900 font-medium"
+                      className="pl-12 h-11 bg-gray-50 border-gray-200 hover:border-gray-300 focus:ring-4 focus:ring-primary/15 rounded-xl transition-all duration-200 placeholder:text-gray-400 text-gray-900 font-bold"
                       autoComplete="email"
                       required
                     />
@@ -751,7 +738,7 @@ export default function Login() {
                           setError(null);
                         }
                       }}
-                      className="pl-12 pr-11 h-11 bg-gray-50/80 border-gray-200 hover:border-gray-300 focus:ring-4 focus:ring-primary/15 rounded-xl transition-all duration-200 placeholder:text-gray-400 text-gray-900 font-medium"
+                      className="pl-12 pr-11 h-11 bg-gray-50 border-gray-200 hover:border-gray-300 focus:ring-4 focus:ring-primary/15 rounded-xl transition-all duration-200 placeholder:text-gray-400 text-gray-900 font-bold"
                       autoComplete="current-password"
                       required
                     />
@@ -777,7 +764,7 @@ export default function Login() {
                       type="checkbox"
                       className="rounded border-gray-300 text-primary focus:ring-primary/25"
                     />
-                    <span className="text-gray-600 group-hover:text-gray-900 transition-colors font-medium text-sm">
+                    <span className="text-gray-600 group-hover:text-gray-900 transition-colors font-bold text-sm">
                       Remember me
                     </span>
                   </label>
@@ -825,7 +812,7 @@ export default function Login() {
 
                   {googleLoading && (
                     <div
-                      className="text-center text-sm font-medium text-slate-500"
+                      className="text-center text-sm font-bold text-slate-500"
                       role="status"
                       aria-live="polite">
                       Processing Google sign-in...
@@ -834,7 +821,7 @@ export default function Login() {
 
                   {googleUiError && (
                     <div
-                      className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800"
+                      className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-800"
                       role="status"
                       aria-live="polite">
                       {googleUiError}

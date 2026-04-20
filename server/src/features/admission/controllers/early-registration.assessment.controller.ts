@@ -532,7 +532,7 @@ export function createEarlyRegistrationAssessmentController(
 
   // ── Mark as passed (Clearing for section assignment) ──
 
-  // -- Mark interview as passed -> READY_FOR_ENROLLMENT --
+  // -- Mark interview as passed -> PRE_REGISTERED (phase 1) / READY_FOR_SECTIONING (phase 2) --
   async function markInterviewPassed(
     req: Request,
     res: Response,
@@ -543,9 +543,12 @@ export function createEarlyRegistrationAssessmentController(
       const { data: applicant, type: appType } =
         await findApplicantOrThrow(applicantId);
 
+      const targetStatus =
+        appType === "ENROLLMENT" ? "READY_FOR_SECTIONING" : "PRE_REGISTERED";
+
       assertTransition(
         applicant,
-        "READY_FOR_ENROLLMENT",
+        targetStatus,
         `Cannot mark interview as passed. Current status: "${applicant.status}". Only INTERVIEW_SCHEDULED applications can proceed.`,
       );
 
@@ -571,13 +574,13 @@ export function createEarlyRegistrationAssessmentController(
           });
         }
 
-        return updateApplicationStatus(applicantId, "READY_FOR_ENROLLMENT");
+        return updateApplicationStatus(applicantId, targetStatus);
       });
 
       await auditLog({
         userId: req.user!.userId,
         actionType: "INTERVIEW_PASSED",
-        description: `Interview passed for ${applicant.learner.firstName} ${applicant.learner.lastName} (#${applicantId}). Status moved to READY_FOR_ENROLLMENT.`,
+        description: `Interview passed for ${applicant.learner.firstName} ${applicant.learner.lastName} (#${applicantId}). Status moved to ${targetStatus}.`,
         subjectType:
           appType === "ENROLLMENT"
             ? "EnrollmentApplication"

@@ -20,7 +20,7 @@ export function createEarlyRegistrationLifecycleController(
 
   const LRN_REGEX = /^\d{12}$/;
   const FINALIZE_ALLOWED_STATUSES = new Set([
-    "READY_FOR_ENROLLMENT",
+    "READY_FOR_SECTIONING",
     "TEMPORARILY_ENROLLED",
   ]);
   const resolveExpectedSectionProgramType = (applicantType: string): string =>
@@ -188,11 +188,16 @@ export function createEarlyRegistrationLifecycleController(
         appType = "ENROLLMENT";
       }
 
-      assertTransition(
-        applicant,
-        "READY_FOR_ENROLLMENT",
-        `Cannot approve an application with status "${applicant.status}". Only VERIFIED, ELIGIBLE, or PASSED applications can be approved (moved to READY_FOR_ENROLLMENT).`,
-      );
+      const isAlreadySectioningReady =
+        applicant.status === "READY_FOR_SECTIONING";
+
+      if (!isAlreadySectioningReady) {
+        assertTransition(
+          applicant,
+          "READY_FOR_SECTIONING",
+          `Cannot approve an application with status "${applicant.status}". Only verification-complete applications can move to READY_FOR_SECTIONING.`,
+        );
+      }
 
       assertReadingProfileCompleted(
         applicant,
@@ -244,8 +249,14 @@ export function createEarlyRegistrationLifecycleController(
           throw new AppError(422, "This section has reached maximum capacity");
         }
 
-        const enrollment = await tx.enrollmentRecord.create({
-          data: {
+        const enrollment = await tx.enrollmentRecord.upsert({
+          where: { enrollmentApplicationId: applicantId },
+          update: {
+            sectionId,
+            schoolYearId: applicant.schoolYearId,
+            enrolledById: req.user!.userId,
+          },
+          create: {
             enrollmentApplicationId: applicantId,
             sectionId,
             schoolYearId: applicant.schoolYearId,
@@ -253,7 +264,9 @@ export function createEarlyRegistrationLifecycleController(
           },
         });
 
-        await updateApplicationStatus(applicantId, "READY_FOR_ENROLLMENT");
+        if (!isAlreadySectioningReady) {
+          await updateApplicationStatus(applicantId, "READY_FOR_SECTIONING");
+        }
 
         return enrollment;
       });
@@ -311,6 +324,10 @@ export function createEarlyRegistrationLifecycleController(
       }
 
       const verificationEligibleStatuses = new Set([
+        "EARLY_REG_SUBMITTED",
+        "PRE_REGISTERED",
+        "PENDING_VERIFICATION",
+        "READY_FOR_SECTIONING",
         "SUBMITTED",
         "UNDER_REVIEW",
         "READY_FOR_ENROLLMENT",
@@ -319,7 +336,7 @@ export function createEarlyRegistrationLifecycleController(
       if (!verificationEligibleStatuses.has(applicant.status)) {
         throw new AppError(
           422,
-          `Cannot verify application with status "${applicant.status}". Only SUBMITTED, UNDER_REVIEW, or READY_FOR_ENROLLMENT applications can be verified.`,
+          `Cannot verify application with status "${applicant.status}". Only pending verification records can be verified.`,
         );
       }
 
@@ -390,7 +407,10 @@ export function createEarlyRegistrationLifecycleController(
         );
       }
 
-      const updated = await updateApplicationStatus(applicantId, "VERIFIED");
+      const updated = await updateApplicationStatus(
+        applicantId,
+        "READY_FOR_SECTIONING",
+      );
 
       await auditLog({
         userId: req.user!.userId,
@@ -528,7 +548,7 @@ export function createEarlyRegistrationLifecycleController(
       if (!FINALIZE_ALLOWED_STATUSES.has(fullApplicant.status)) {
         throw new AppError(
           422,
-          `Cannot finalize enrollment. Current status: "${fullApplicant.status}". Only READY_FOR_ENROLLMENT or TEMPORARILY_ENROLLED applications can be enrolled.`,
+          `Cannot finalize enrollment. Current status: "${fullApplicant.status}". Only READY_FOR_SECTIONING or TEMPORARILY_ENROLLED applications can be enrolled.`,
         );
       }
 
@@ -599,7 +619,7 @@ export function createEarlyRegistrationLifecycleController(
         const enrollment = await tx.enrollmentApplication.update({
           where: { id: applicantId },
           data: {
-            status: "ENROLLED",
+            status: "OFFICIALLY_ENROLLED",
             isTemporarilyEnrolled: false,
             portalPin: pinHash,
             portalPinChangedAt: new Date(),
@@ -642,7 +662,10 @@ export function createEarlyRegistrationLifecycleController(
 
       const { data: applicant } = await findApplicantOrThrow(applicantId);
 
-      if (applicant.status !== "ENROLLED") {
+      if (
+        applicant.status !== "OFFICIALLY_ENROLLED" &&
+        applicant.status !== "ENROLLED"
+      ) {
         throw new AppError(
           422,
           "Only enrolled applications can be unenrolled.",
@@ -655,11 +678,11 @@ export function createEarlyRegistrationLifecycleController(
           where: { enrollmentApplicationId: applicantId },
         });
 
-        // 2. Revert status to VERIFIED
+        // 2. Revert status to sectioning-ready queue
         return await tx.enrollmentApplication.update({
           where: { id: applicantId },
           data: {
-            status: "VERIFIED",
+            status: "READY_FOR_SECTIONING",
             isProfileLocked: false,
             profileLockedAt: null,
             profileLockedById: null,
@@ -758,7 +781,7 @@ export function createEarlyRegistrationLifecycleController(
           gradeLevelId: parseInt(String(gradeLevelId)),
           applicantType: applicantType as any,
           learnerType: learnerType as any,
-          status: "VERIFIED",
+          status: "READY_FOR_SECTIONING",
           admissionChannel: "F2F",
           encodedById: req.user!.userId,
           isPrivacyConsentGiven: true,
@@ -999,7 +1022,9 @@ export function createEarlyRegistrationLifecycleController(
       if (
         appType === "ENROLLMENT" &&
         filteredData.academicStatus === "RETAINED" &&
-        (applicant.status === "ENROLLED" || applicant.status === "WITHDRAWN")
+        (applicant.status === "OFFICIALLY_ENROLLED" ||
+          applicant.status === "ENROLLED") &&
+        applicant.status !== "WITHDRAWN"
       ) {
         throw new AppError(
           422,
@@ -1281,7 +1306,7 @@ export function createEarlyRegistrationLifecycleController(
         where: { id: applicantId },
         data: {
           applicantType: "REGULAR",
-          status: "SUBMITTED",
+          status: "EARLY_REG_SUBMITTED",
         },
       });
 
@@ -1363,8 +1388,13 @@ export function createEarlyRegistrationLifecycleController(
 
           if (!applicant) continue;
 
-          // Simple validation: must be VERIFIED
-          if (applicant.status !== "VERIFIED") continue;
+          // Simple validation: applicant must be sectioning-ready.
+          if (
+            applicant.status !== "READY_FOR_SECTIONING" &&
+            applicant.status !== "VERIFIED"
+          ) {
+            continue;
+          }
 
           assertReadingProfileCompleted(
             applicant,
@@ -1390,7 +1420,7 @@ export function createEarlyRegistrationLifecycleController(
           await tx.enrollmentApplication.update({
             where: { id: applicantId },
             data: {
-              status: "ENROLLED",
+              status: "OFFICIALLY_ENROLLED",
               portalPin: pinHash,
               portalPinChangedAt: new Date(),
               isProfileLocked: true,

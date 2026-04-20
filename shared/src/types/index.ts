@@ -48,6 +48,7 @@ import type {
 import type {
   createSchoolYearSchema,
   updateSchoolYearSchema,
+  updateRolloverDraftSchema,
   transitionSchoolYearSchema,
   toggleOverrideSchema,
 } from "../schemas/school-year.schema.js";
@@ -133,6 +134,9 @@ export type UpdateSectionInput = z.infer<typeof updateSectionSchema>;
 // ─── School Year Types ─────────────────────────────────
 export type CreateSchoolYearInput = z.infer<typeof createSchoolYearSchema>;
 export type UpdateSchoolYearInput = z.infer<typeof updateSchoolYearSchema>;
+export type UpdateRolloverDraftInput = z.infer<
+  typeof updateRolloverDraftSchema
+>;
 export type TransitionSchoolYearInput = z.infer<
   typeof transitionSchoolYearSchema
 >;

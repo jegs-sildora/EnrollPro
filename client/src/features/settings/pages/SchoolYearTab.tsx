@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router";
 import { sileo } from "sileo";
-import { Calendar as CalendarIcon, Trash2, ChevronDown } from "lucide-react";
+import {
+  Calendar as CalendarIcon,
+  ArrowRight,
+  Pencil,
+  AlertTriangle,
+  Lock,
+} from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -15,10 +22,27 @@ import {
   CardTitle,
 } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
-import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { DatePicker } from "@/shared/ui/date-picker";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/shared/ui/table";
 
 const MANILA_TIME_ZONE = "Asia/Manila";
+const MIN_ACTIVE_CALENDAR_SPAN_DAYS = 240;
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 function getDatePartsInTimeZone(date: Date, timeZone = MANILA_TIME_ZONE) {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -130,6 +154,7 @@ interface SYItem {
   id: number;
   yearLabel: string;
   status: string;
+  isEosyFinalized: boolean;
   classOpeningDate: string | null;
   classEndDate: string | null;
   _count: {
@@ -159,6 +184,35 @@ interface RolloverSummary {
   skippedDuplicateRecords: number;
 }
 
+interface RolloverDraftSnapshot {
+  yearLabel: string;
+  classOpeningDate: string;
+  classEndDate: string;
+}
+
+function parseStartYearFromLabel(label: string): number | null {
+  const parsed = Number.parseInt(label.split("-")[0] ?? "", 10);
+  return Number.isInteger(parsed) ? parsed : null;
+}
+
+function deriveNextSchoolYearLabel(activeYear: SYItem, fallbackLabel: string) {
+  if (activeYear.classOpeningDate) {
+    const startYear = normalizeDateToManila(
+      new Date(activeYear.classOpeningDate),
+    ).getUTCFullYear();
+    const nextStartYear = startYear + 1;
+    return `${nextStartYear}-${nextStartYear + 1}`;
+  }
+
+  const parsedStartYear = parseStartYearFromLabel(activeYear.yearLabel);
+  if (parsedStartYear) {
+    const nextStartYear = parsedStartYear + 1;
+    return `${nextStartYear}-${nextStartYear + 1}`;
+  }
+
+  return fallbackLabel;
+}
+
 export default function SchoolYearTab() {
   const { setSettings } = useSettingsStore();
   const [years, setYears] = useState<SYItem[]>([]);
@@ -167,7 +221,11 @@ export default function SchoolYearTab() {
 
   // Create state
   const [creating, setCreating] = useState(false);
+  const [updatingDraft, setUpdatingDraft] = useState(false);
   const [showNextForm, setShowNextForm] = useState(false);
+  const [isRolloverDateEditMode, setIsRolloverDateEditMode] = useState(false);
+  const [rolloverDraftBaseline, setRolloverDraftBaseline] =
+    useState<RolloverDraftSnapshot | null>(null);
 
   // Editable fields for setup
   const [editYearLabel, setYearLabel] = useState("");
@@ -180,9 +238,17 @@ export default function SchoolYearTab() {
   });
 
   // Delete state
-  const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [deleteLabel, setDeleteLabel] = useState("");
-  const [deleting, setDeleting] = useState(false);
+  const [showActivationConfirm, setShowActivationConfirm] = useState(false);
+  const [activationPhraseInput, setActivationPhraseInput] = useState("");
+  const [showEditCalendarModal, setShowEditCalendarModal] = useState(false);
+  const [savingActiveCalendarDates, setSavingActiveCalendarDates] =
+    useState(false);
+  const [editActiveClassOpening, setEditActiveClassOpening] = useState<
+    Date | undefined
+  >();
+  const [editActiveClassEnd, setEditActiveClassEnd] = useState<
+    Date | undefined
+  >();
 
   const currentManilaYear = useMemo(
     () => getDatePartsInTimeZone(new Date()).year,
@@ -258,6 +324,97 @@ export default function SchoolYearTab() {
   }, [editClassEnd, editClassOpening]);
 
   const activeYear = years.find((y) => y.status === "ACTIVE");
+  const isRolloverReady = Boolean(activeYear?.isEosyFinalized);
+  const nextRolloverYearLabel = useMemo(() => {
+    if (!activeYear) {
+      return defaults?.yearLabel ?? editYearLabel;
+    }
+
+    return deriveNextSchoolYearLabel(
+      activeYear,
+      defaults?.yearLabel ?? editYearLabel,
+    );
+  }, [activeYear, defaults?.yearLabel, editYearLabel]);
+  const archivedYears = useMemo(
+    () => years.filter((year) => year.status === "ARCHIVED"),
+    [years],
+  );
+
+  const activeCalendarMinEosyDate = useMemo(() => {
+    return editActiveClassOpening
+      ? addUtcDays(editActiveClassOpening, 1)
+      : undefined;
+  }, [editActiveClassOpening]);
+
+  const activeCalendarSpanDays = useMemo(() => {
+    if (!editActiveClassOpening || !editActiveClassEnd) {
+      return 0;
+    }
+
+    return Math.floor(
+      (editActiveClassEnd.getTime() - editActiveClassOpening.getTime()) /
+        DAY_IN_MS,
+    );
+  }, [editActiveClassEnd, editActiveClassOpening]);
+
+  const isActiveCalendarRangeValid = useMemo(() => {
+    if (!editActiveClassOpening || !editActiveClassEnd) {
+      return false;
+    }
+
+    if (editActiveClassEnd.getTime() <= editActiveClassOpening.getTime()) {
+      return false;
+    }
+
+    return activeCalendarSpanDays >= MIN_ACTIVE_CALENDAR_SPAN_DAYS;
+  }, [activeCalendarSpanDays, editActiveClassEnd, editActiveClassOpening]);
+
+  const selectedStartYear = useMemo(() => {
+    const parsedFromLabel = Number.parseInt(
+      editYearLabel.split("-")[0] ?? "",
+      10,
+    );
+    if (Number.isInteger(parsedFromLabel)) {
+      return parsedFromLabel;
+    }
+    if (editClassOpening) {
+      return editClassOpening.getUTCFullYear();
+    }
+    return currentManilaYear;
+  }, [currentManilaYear, editClassOpening, editYearLabel]);
+
+  const currentRolloverDraft = useMemo<RolloverDraftSnapshot | null>(() => {
+    if (!editClassOpening || !editClassEnd) {
+      return null;
+    }
+
+    return {
+      yearLabel: editYearLabel.trim(),
+      classOpeningDate: editClassOpening.toISOString(),
+      classEndDate: editClassEnd.toISOString(),
+    };
+  }, [editClassEnd, editClassOpening, editYearLabel]);
+
+  const isRolloverDraftChanged = useMemo(() => {
+    if (!rolloverDraftBaseline || !currentRolloverDraft) {
+      return false;
+    }
+
+    return (
+      currentRolloverDraft.yearLabel !== rolloverDraftBaseline.yearLabel ||
+      currentRolloverDraft.classOpeningDate !==
+        rolloverDraftBaseline.classOpeningDate ||
+      currentRolloverDraft.classEndDate !== rolloverDraftBaseline.classEndDate
+    );
+  }, [currentRolloverDraft, rolloverDraftBaseline]);
+
+  const activationActionToken = activeYear ? "ROLLOVER" : "INITIALIZE";
+  const activationConfirmPhrase = `${activationActionToken} ${selectedStartYear}`;
+  const activationButtonLabel = activeYear
+    ? "Execute School Year Rollover"
+    : editYearLabel
+      ? `Initialize S.Y. ${editYearLabel}`
+      : "Initialize School Year";
 
   const handleClassOpeningChange = (date?: Date) => {
     setClassOpening(date ? normalizeDateToManila(date) : undefined);
@@ -282,11 +439,109 @@ export default function SchoolYearTab() {
     );
   };
 
-  const handleActivateNext = async () => {
+  const handleOpenActivationConfirm = () => {
+    if (activeYear && !isRolloverReady) {
+      return;
+    }
+
     if (!editClassOpening || !editClassEnd) {
       sileo.error({
         title: "Missing dates",
-        description: "Select both class opening and class end dates.",
+        description:
+          "Select both Start of Classes (BOSY) and End of School Year (EOSY).",
+      });
+      return;
+    }
+
+    if (!editYearLabel.trim()) {
+      sileo.error({
+        title: "Missing school year label",
+        description: "School Year Label is required before executing rollover.",
+      });
+      return;
+    }
+
+    setActivationPhraseInput("");
+    setShowActivationConfirm(true);
+  };
+
+  const handleUpdateRolloverDraft = () => {
+    if (!activeYear) {
+      return;
+    }
+
+    if (!editClassOpening || !editClassEnd) {
+      sileo.error({
+        title: "Missing dates",
+        description:
+          "Select both Start of Classes (BOSY) and End of School Year (EOSY).",
+      });
+      return;
+    }
+
+    if (!isRolloverDraftChanged) {
+      sileo.info({
+        title: "No draft changes",
+        description: "Update any rollover field before saving.",
+      });
+      return;
+    }
+
+    const submit = async () => {
+      setUpdatingDraft(true);
+      try {
+        const response = await api.post("/school-years/rollover-draft", {
+          yearLabel: editYearLabel.trim(),
+          classOpeningDate: editClassOpening.toISOString(),
+          classEndDate: editClassEnd.toISOString(),
+        });
+
+        const rolloverDraft = response.data.rolloverDraft as {
+          yearLabel: string;
+          classOpeningDate: string;
+          classEndDate: string;
+        };
+
+        const normalizedOpeningDate = normalizeDateToManila(
+          new Date(rolloverDraft.classOpeningDate),
+        );
+        const normalizedClassEndDate = normalizeDateToManila(
+          new Date(rolloverDraft.classEndDate),
+        );
+
+        setYearLabel(rolloverDraft.yearLabel);
+        setClassOpening(normalizedOpeningDate);
+        setClassEnd(normalizedClassEndDate);
+        setRolloverDraftBaseline({
+          yearLabel: rolloverDraft.yearLabel,
+          classOpeningDate: normalizedOpeningDate.toISOString(),
+          classEndDate: normalizedClassEndDate.toISOString(),
+        });
+
+        sileo.success({
+          title: "Rollover draft updated",
+          description: "School year label and BOSY/EOSY dates were saved.",
+        });
+      } catch (err) {
+        toastApiError(err as never);
+      } finally {
+        setUpdatingDraft(false);
+      }
+    };
+
+    void submit();
+  };
+
+  const handleActivateNext = async () => {
+    if (activeYear && !isRolloverReady) {
+      return;
+    }
+
+    if (!editClassOpening || !editClassEnd) {
+      sileo.error({
+        title: "Missing dates",
+        description:
+          "Select both Start of Classes (BOSY) and End of School Year (EOSY).",
       });
       return;
     }
@@ -298,9 +553,11 @@ export default function SchoolYearTab() {
         editClassOpening,
         editClassEnd,
       );
+      const resolvedYearLabel =
+        editYearLabel.trim() || derivedSchedule.yearLabel;
 
       const activationPayload = {
-        yearLabel: derivedSchedule.yearLabel,
+        yearLabel: resolvedYearLabel,
         classOpeningDate: derivedSchedule.classOpeningDate.toISOString(),
         classEndDate: derivedSchedule.classEndDate.toISOString(),
         earlyRegOpenDate: derivedSchedule.earlyRegOpenDate.toISOString(),
@@ -314,6 +571,7 @@ export default function SchoolYearTab() {
         : "/school-years/activate";
       const requestPayload = activeYear
         ? {
+            yearLabel: activationPayload.yearLabel,
             classOpeningDate: activationPayload.classOpeningDate,
             classEndDate: activationPayload.classEndDate,
             cloneStructure: rolloverOptions.cloneStructure,
@@ -336,9 +594,9 @@ export default function SchoolYearTab() {
 
       const successDescription = activeYear
         ? rolloverSummary
-          ? `School Year ${derivedSchedule.yearLabel} is now active. ${rolloverSummary.createdApplications} learner application(s) were carried over.`
-          : `School Year ${derivedSchedule.yearLabel} is now active.`
-        : `School Year ${derivedSchedule.yearLabel} is now active.`;
+          ? `School Year ${res.data.year.yearLabel} is now active. ${rolloverSummary.createdApplications} learner application(s) were carried over.`
+          : `School Year ${res.data.year.yearLabel} is now active.`
+        : `School Year ${res.data.year.yearLabel} is now active.`;
 
       sileo.success({
         title: activeYear ? "Rollover Completed" : "School Year Activated",
@@ -346,6 +604,8 @@ export default function SchoolYearTab() {
       });
 
       setShowNextForm(false);
+      setIsRolloverDateEditMode(false);
+      setRolloverDraftBaseline(null);
       fetchData();
     } catch (err) {
       toastApiError(err as never);
@@ -354,21 +614,106 @@ export default function SchoolYearTab() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    setDeleting(true);
-    try {
-      await api.delete(`/school-years/${deleteId}`);
-      sileo.success({
-        title: "Deleted",
-        description: `School Year ${deleteLabel} has been removed.`,
+  const handlePrepareRollover = () => {
+    if (!activeYear) {
+      return;
+    }
+
+    const activeOpeningDate = activeYear.classOpeningDate
+      ? normalizeDateToManila(new Date(activeYear.classOpeningDate))
+      : undefined;
+    const parsedStartYear = parseStartYearFromLabel(activeYear.yearLabel);
+
+    const nextStartYear = activeOpeningDate
+      ? activeOpeningDate.getUTCFullYear() + 1
+      : parsedStartYear
+        ? parsedStartYear + 1
+        : null;
+
+    if (activeOpeningDate && nextStartYear) {
+      const classEndTemplate = activeYear.classEndDate
+        ? normalizeDateToManila(new Date(activeYear.classEndDate))
+        : undefined;
+
+      const nextOpeningDate = utcNoonDate(
+        nextStartYear,
+        activeOpeningDate.getUTCMonth(),
+        activeOpeningDate.getUTCDate(),
+      );
+
+      const nextSchedule = buildSchoolYearSchedule(
+        nextOpeningDate,
+        classEndTemplate,
+      );
+      setYearLabel(nextSchedule.yearLabel);
+      setClassOpening(nextSchedule.classOpeningDate);
+      setClassEnd(nextSchedule.classEndDate);
+      setRolloverDraftBaseline({
+        yearLabel: nextSchedule.yearLabel,
+        classOpeningDate: nextSchedule.classOpeningDate.toISOString(),
+        classEndDate: nextSchedule.classEndDate.toISOString(),
       });
-      setDeleteId(null);
-      fetchData();
+    } else if (editClassOpening && editClassEnd) {
+      setRolloverDraftBaseline({
+        yearLabel: editYearLabel.trim(),
+        classOpeningDate: editClassOpening.toISOString(),
+        classEndDate: editClassEnd.toISOString(),
+      });
+    }
+
+    setIsRolloverDateEditMode(true);
+    setShowNextForm(true);
+  };
+
+  const handleOpenEditCalendarModal = () => {
+    if (!activeYear) {
+      return;
+    }
+
+    setEditActiveClassOpening(
+      activeYear.classOpeningDate
+        ? normalizeDateToManila(new Date(activeYear.classOpeningDate))
+        : undefined,
+    );
+    setEditActiveClassEnd(
+      activeYear.classEndDate
+        ? normalizeDateToManila(new Date(activeYear.classEndDate))
+        : undefined,
+    );
+    setShowEditCalendarModal(true);
+  };
+
+  const handleSaveActiveCalendarDates = async () => {
+    if (!activeYear || !editActiveClassOpening || !editActiveClassEnd) {
+      return;
+    }
+
+    if (!isActiveCalendarRangeValid) {
+      sileo.error({
+        title: "Invalid calendar range",
+        description:
+          "EOSY must be later than BOSY and at least 240 days after BOSY.",
+      });
+      return;
+    }
+
+    setSavingActiveCalendarDates(true);
+    try {
+      await api.patch(`/school-years/${activeYear.id}/dates`, {
+        classOpeningDate: editActiveClassOpening.toISOString(),
+        classEndDate: editActiveClassEnd.toISOString(),
+      });
+
+      sileo.success({
+        title: "Active calendar updated",
+        description: "BOSY and EOSY dates were saved successfully.",
+      });
+      setShowEditCalendarModal(false);
+      await fetchData();
     } catch (err) {
       toastApiError(err as never);
     } finally {
-      setDeleting(false);
+      setSavingActiveCalendarDates(false);
     }
   };
 
@@ -397,17 +742,18 @@ export default function SchoolYearTab() {
                 <Label htmlFor="yearLabel">School Year Label</Label>
                 <Input
                   id="yearLabel"
-                  value={`S.Y. ${editYearLabel}`}
-                  readOnly
+                  value={editYearLabel}
+                  onChange={(event) =>
+                    setYearLabel(
+                      event.target.value.replace(/^S\.Y\.\s*/i, "").trimStart(),
+                    )
+                  }
                   placeholder="e.g. 2026-2027"
                   className="font-bold"
                 />
-                <p className="text-sm font-bold">
-                  Updated based on your start date.
-                </p>
               </div>
               <div className="space-y-2">
-                <Label>Class Opening</Label>
+                <Label>Start of Classes (BOSY)</Label>
                 <DatePicker
                   date={editClassOpening}
                   setDate={handleClassOpeningChange}
@@ -416,12 +762,9 @@ export default function SchoolYearTab() {
                   maxDate={openingMaxDate}
                   className="font-bold"
                 />
-                <p className="text-sm font-bold">
-                  Select a date through late {currentManilaYear + 1}.
-                </p>
               </div>
               <div className="space-y-2">
-                <Label>Class End</Label>
+                <Label>End of School Year (EOSY)</Label>
                 <DatePicker
                   date={editClassEnd}
                   setDate={handleClassEndChange}
@@ -430,10 +773,14 @@ export default function SchoolYearTab() {
                   maxDate={classEndMaxDate}
                   className="font-bold"
                 />
-                <p className="text-sm font-bold">
-                  Ends in the next calendar year.
-                </p>
               </div>
+            </div>
+
+            <div className="text-sm text-muted-foreground">
+              Need to set Early Registration dates?{" "}
+              <Button variant="link" className="h-auto p-0" asChild>
+                <Link to="/settings?tab=enrollment">Go to Enrollment Gate</Link>
+              </Button>
             </div>
 
             {activeYear && (
@@ -459,7 +806,8 @@ export default function SchoolYearTab() {
                       }
                     />
                     <label htmlFor="c1" className="text-sm">
-                      Clone grade levels, sections, and SCP configuration
+                      Clone grade levels, sections, and SCPs (Adviser
+                      assignments will be wiped clean)
                     </label>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -476,8 +824,7 @@ export default function SchoolYearTab() {
                       }
                     />
                     <label htmlFor="c3" className="text-sm">
-                      Carry over eligible enrolled learners as continuing
-                      applications
+                      Carry over eligible enrolled learners as continuing status
                     </label>
                   </div>
                 </div>
@@ -487,38 +834,56 @@ export default function SchoolYearTab() {
             <div className="flex items-center justify-end gap-2">
               {activeYear && (
                 <Button
-                  variant="ghost"
-                  className="text-destructive mr-auto"
-                  onClick={() => {
-                    setDeleteId(activeYear.id);
-                    setDeleteLabel(activeYear.yearLabel);
-                  }}
-                  disabled={activeYear._count.enrollmentRecords > 0}>
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete Active Year
-                </Button>
-              )}
-              {activeYear && (
-                <Button
                   variant="outline"
                   className="font-bold"
-                  onClick={() => setShowNextForm(false)}>
+                  onClick={() => {
+                    setShowNextForm(false);
+                    setIsRolloverDateEditMode(false);
+                    setRolloverDraftBaseline(null);
+                  }}>
                   Cancel
                 </Button>
               )}
+              {activeYear && isRolloverDateEditMode && (
+                <Button
+                  variant="secondary"
+                  className="font-bold"
+                  onClick={handleUpdateRolloverDraft}
+                  disabled={
+                    creating ||
+                    updatingDraft ||
+                    !editYearLabel.trim() ||
+                    !editClassOpening ||
+                    !editClassEnd ||
+                    !isRolloverDraftChanged
+                  }>
+                  {updatingDraft ? "Updating..." : "Update Button"}
+                </Button>
+              )}
               <Button
-                onClick={handleActivateNext}
+                onClick={handleOpenActivationConfirm}
                 className="font-bold"
-                disabled={creating || !editYearLabel.trim()}>
+                disabled={
+                  creating ||
+                  updatingDraft ||
+                  !editYearLabel.trim() ||
+                  !editClassOpening ||
+                  !editClassEnd ||
+                  (activeYear ? !isRolloverReady : false)
+                }>
                 {creating
                   ? activeYear
                     ? "Running rollover..."
                     : "Activating..."
-                  : activeYear
-                    ? "Run Rollover"
-                    : "Activate This School Year"}
+                  : activationButtonLabel}
               </Button>
             </div>
+            {activeYear && !isRolloverReady && (
+              <div className="flex items-center justify-end gap-1 text-xs font-semibold text-amber-700">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                <span>Waiting for EOSY Finalization.</span>
+              </div>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -534,88 +899,260 @@ export default function SchoolYearTab() {
                 </Badge>
               </div>
               <p className="text-sm font-bold">
-                Classes: {formatManilaDate(activeYear.classOpeningDate)} →{" "}
+                Start of Classes (BOSY):{" "}
+                {formatManilaDate(activeYear.classOpeningDate)}
+              </p>
+              <p className="text-sm font-bold">
+                End of School Year (EOSY):{" "}
                 {formatManilaDate(activeYear.classEndDate)}
               </p>
               <p className="text-sm font-bold">
-                Enrolled: {activeYear._count.enrollmentRecords} students
+                Enrolled: {activeYear._count.enrollmentRecords} learners
               </p>
             </div>
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                className="text-destructive"
-                onClick={() => {
-                  setDeleteId(activeYear.id);
-                  setDeleteLabel(activeYear.yearLabel);
-                }}
-                disabled={activeYear._count.enrollmentRecords > 0}>
-                <Trash2 className="h-4 w-4" />
+                className="font-bold"
+                onClick={handleOpenEditCalendarModal}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit Dates
               </Button>
-              <Button onClick={() => setShowNextForm(true)}>
-                Prepare Rollover to S.Y. {defaults?.yearLabel}{" "}
-                <ChevronDown className="ml-2 h-4 w-4" />
+              <Button className="font-bold" onClick={handlePrepareRollover}>
+                Prepare Rollover to S.Y. {nextRolloverYearLabel}{" "}
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* History */}
-      {years.length > 0 && (
-        <div className="mt-8 space-y-3">
-          <h3 className="text-sm font-bold ">History</h3>
-          {years.map((y) => (
-            <div
-              key={y.id}
-              className="flex items-center justify-between p-3 rounded-lg border border-border text-sm">
-              <div className="flex items-center gap-3">
-                <span className="font-bold">S.Y. {y.yearLabel}</span>
-                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
-                  {y.status}
-                </span>
-                {y.status === "ACTIVE" && (
-                  <Badge className="uppercase" variant="success">
-                    Current
-                  </Badge>
-                )}
+      <Dialog
+        open={showEditCalendarModal}
+        onOpenChange={(open) => {
+          setShowEditCalendarModal(open);
+          if (!open) {
+            setSavingActiveCalendarDates(false);
+          }
+        }}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Update Active Calendar</DialogTitle>
+            <DialogDescription>
+              Adjust BOSY and EOSY for the currently active school year.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Start of Classes (BOSY)</Label>
+                <DatePicker
+                  date={editActiveClassOpening}
+                  setDate={(date) =>
+                    setEditActiveClassOpening(
+                      date ? normalizeDateToManila(date) : undefined,
+                    )
+                  }
+                  timeZone={MANILA_TIME_ZONE}
+                  className="font-bold"
+                />
               </div>
-              <div className="flex items-center gap-4">
-                <span className=" hidden sm:inline">
-                  {y._count.enrollmentRecords} Enrolled
-                </span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 w-8 p-0 text-destructive"
-                  onClick={() => {
-                    setDeleteId(y.id);
-                    setDeleteLabel(y.yearLabel);
-                  }}
-                  disabled={y._count.enrollmentRecords > 0}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+              <div className="space-y-2">
+                <Label>End of School Year (EOSY)</Label>
+                <DatePicker
+                  date={editActiveClassEnd}
+                  setDate={(date) =>
+                    setEditActiveClassEnd(
+                      date ? normalizeDateToManila(date) : undefined,
+                    )
+                  }
+                  timeZone={MANILA_TIME_ZONE}
+                  minDate={activeCalendarMinEosyDate}
+                  className="font-bold"
+                />
               </div>
             </div>
-          ))}
-        </div>
-      )}
 
-      <ConfirmationModal
-        open={!!deleteId}
-        onOpenChange={(open: boolean) => !open && setDeleteId(null)}
-        title="Delete School Year"
-        description={
-          <span>
-            Are you sure you want to delete{" "}
-            <span className="font-bold">School Year "{deleteLabel}"</span>?
-          </span>
-        }
-        confirmText="Delete"
-        loading={deleting}
-        onConfirm={handleDelete}
-        variant="primary"
-      />
+            <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              <p className="font-semibold">
+                Adjusting these dates does not automatically change your
+                Enrollment Gate deadlines.
+              </p>
+            </div>
+
+            {editActiveClassOpening &&
+              editActiveClassEnd &&
+              !isActiveCalendarRangeValid && (
+                <p className="text-xs font-semibold text-destructive">
+                  EOSY must be later than BOSY and at least 240 days after BOSY.
+                </p>
+              )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={savingActiveCalendarDates}
+              onClick={() => setShowEditCalendarModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={
+                savingActiveCalendarDates ||
+                !editActiveClassOpening ||
+                !editActiveClassEnd ||
+                !isActiveCalendarRangeValid
+              }
+              onClick={handleSaveActiveCalendarDates}>
+              {savingActiveCalendarDates ? "Saving..." : "Save Dates"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl">School Year Archive</CardTitle>
+          <CardDescription>
+            Historical years are kept for audit and reporting.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {archivedYears.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-left">School Year</TableHead>
+                  <TableHead className="text-left">
+                    Start of Classes (BOSY)
+                  </TableHead>
+                  <TableHead className="text-left">
+                    End of School Year (EOSY)
+                  </TableHead>
+                  <TableHead className="text-left">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {archivedYears.map((year) => (
+                  <TableRow key={year.id}>
+                    <TableCell className="font-semibold text-left">
+                      S.Y. {year.yearLabel}
+                    </TableCell>
+                    <TableCell className="text-left">
+                      {formatManilaDate(year.classOpeningDate)}
+                    </TableCell>
+                    <TableCell className="text-left">
+                      {formatManilaDate(year.classEndDate)}
+                    </TableCell>
+                    <TableCell className="text-left">
+                      <Badge
+                        variant="outline"
+                        className="gap-1 border-slate-300 text-slate-700 bg-slate-100">
+                        <Lock className="h-3 w-3" />
+                        Archived
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No archived school years yet.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog
+        open={showActivationConfirm}
+        onOpenChange={(open) => {
+          setShowActivationConfirm(open);
+          if (!open) {
+            setActivationPhraseInput("");
+          }
+        }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              {activeYear
+                ? "Confirm School Year Rollover"
+                : "Confirm School Year Initialization"}
+            </DialogTitle>
+            <DialogDescription>
+              This action changes system-wide school year state and affects
+              enrollment lifecycle data.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
+              <p className="font-bold text-destructive">
+                Proceed only if you intend to{" "}
+                {activeYear ? "roll over" : "initialize"} School Year{" "}
+                {editYearLabel}.
+              </p>
+              <p className="mt-1 text-foreground font-semibold">
+                {activeYear
+                  ? "Rollover archives the current active year and initializes the next cycle."
+                  : "Initialization sets the first active school year for this installation."}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="activation-phrase" className="font-semibold">
+                Type{" "}
+                <span className="font-mono uppercase">
+                  {" "}
+                  "{activationConfirmPhrase}"{" "}
+                </span>{" "}
+                to confirm
+              </Label>
+              <Input
+                id="activation-phrase"
+                value={activationPhraseInput}
+                onChange={(event) =>
+                  setActivationPhraseInput(event.target.value)
+                }
+                placeholder={activationConfirmPhrase}
+                autoComplete="off"
+                className="font-mono uppercase font-bold"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="mt-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowActivationConfirm(false)}
+              disabled={creating}>
+              Cancel
+            </Button>
+            <Button
+              variant="default"
+              disabled={
+                creating ||
+                activationPhraseInput.trim().toUpperCase() !==
+                  activationConfirmPhrase
+              }
+              onClick={async () => {
+                await handleActivateNext();
+                setShowActivationConfirm(false);
+                setActivationPhraseInput("");
+              }}>
+              {creating
+                ? activeYear
+                  ? "Running rollover..."
+                  : "Initializing..."
+                : activeYear
+                  ? "Execute School Year Rollover"
+                  : `Initialize SY ${editYearLabel}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

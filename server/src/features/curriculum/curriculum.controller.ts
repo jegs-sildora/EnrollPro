@@ -8,6 +8,52 @@ import {
   type ScpType,
 } from "@enrollpro/shared";
 
+function normalizePositiveInteger(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return null;
+  }
+
+  const normalized = Math.trunc(value);
+  return normalized > 0 ? normalized : null;
+}
+
+function extractMaxSlotsFromRankingFormula(
+  rankingFormula: unknown,
+): number | null {
+  if (
+    !rankingFormula ||
+    typeof rankingFormula !== "object" ||
+    Array.isArray(rankingFormula)
+  ) {
+    return null;
+  }
+
+  return normalizePositiveInteger(
+    (rankingFormula as Record<string, unknown>).maxSlots,
+  );
+}
+
+function mergeMaxSlotsIntoRankingFormula(
+  rankingFormula: unknown,
+  maxSlots: unknown,
+): Record<string, unknown> | null {
+  const baseRankingFormula =
+    rankingFormula &&
+    typeof rankingFormula === "object" &&
+    !Array.isArray(rankingFormula)
+      ? { ...(rankingFormula as Record<string, unknown>) }
+      : {};
+
+  const normalizedMaxSlots = normalizePositiveInteger(maxSlots);
+  if (normalizedMaxSlots == null) {
+    delete baseRankingFormula.maxSlots;
+  } else {
+    baseRankingFormula.maxSlots = normalizedMaxSlots;
+  }
+
+  return Object.keys(baseRankingFormula).length > 0 ? baseRankingFormula : null;
+}
+
 // ─── Grade Levels ─────────────────────────────────────────
 
 export async function listGradeLevels(
@@ -145,6 +191,7 @@ export async function listScpConfigs(
   const transformed = scpProgramConfigs.map((cfg) => ({
     ...cfg,
     isTwoPhase: cfg.isTwoPhase ?? false,
+    maxSlots: extractMaxSlotsFromRankingFormula(cfg.rankingFormula),
     gradeRequirements: cfg.gradeRequirements ?? null,
     rankingFormula: cfg.rankingFormula ?? null,
     artFields: cfg.options
@@ -184,6 +231,7 @@ export async function updateScpConfigs(
           scpType,
           isOffered,
           isTwoPhase,
+          maxSlots,
           cutoffScore,
           notes,
           gradeRequirements,
@@ -206,8 +254,14 @@ export async function updateScpConfigs(
         if (Object.prototype.hasOwnProperty.call(config, "gradeRequirements")) {
           scpData.gradeRequirements = gradeRequirements ?? null;
         }
-        if (Object.prototype.hasOwnProperty.call(config, "rankingFormula")) {
-          scpData.rankingFormula = rankingFormula ?? null;
+        if (
+          Object.prototype.hasOwnProperty.call(config, "rankingFormula") ||
+          Object.prototype.hasOwnProperty.call(config, "maxSlots")
+        ) {
+          scpData.rankingFormula = mergeMaxSlotsIntoRankingFormula(
+            rankingFormula,
+            maxSlots,
+          );
         }
 
         let scpProgramConfig;

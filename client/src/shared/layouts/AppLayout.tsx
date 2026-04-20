@@ -59,6 +59,7 @@ import {
 } from "@/shared/ui/tooltip";
 import { AccessibilityMenu } from "@/shared/components/AccessibilityMenu";
 import { useAccessibility } from "@/shared/hooks/useAccessibility";
+import { NoSchoolYearState } from "@/features/settings/pages/curriculum/components/NoSchoolYearState";
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
@@ -567,6 +568,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     activeSchoolYearId !== null &&
     viewingSchoolYearId !== activeSchoolYearId;
 
+  const selectedSchoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
+  const isSchoolYearBypassRoute =
+    location.pathname === "/dashboard" ||
+    location.pathname.startsWith("/admin/users") ||
+    location.pathname.startsWith("/admin/system") ||
+    location.pathname.startsWith("/settings");
+  const shouldShowNoSchoolYearState =
+    !isSchoolYearBypassRoute && !selectedSchoolYearId;
+
   const toastTheme = accentForeground === "0 0% 100%" ? "light" : "dark";
   const toastPosition = width < 768 ? "top-center" : "top-right";
 
@@ -672,7 +682,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
             className="flex-1 overflow-auto py-3 px-6 scrollbar-thin">
-            {children}
+            {shouldShowNoSchoolYearState ? <NoSchoolYearState /> : children}
           </motion.main>
         </AnimatePresence>
       </SidebarInset>

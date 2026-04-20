@@ -15,8 +15,21 @@ import {
   addHealthRecord as createStudentHealthRecord,
   updateHealthRecord as updateStudentHealthRecord,
 } from "./controllers/students.health.controller.js";
+import {
+  transferOutStudent,
+  dropOutStudent,
+  shiftStudentSection,
+  assignStudentLrn,
+} from "./controllers/students.lifecycle.controller.js";
 import { validate } from "../../middleware/validate.js";
-import { updateStudentSchema, healthRecordSchema } from "@enrollpro/shared";
+import {
+  updateStudentSchema,
+  healthRecordSchema,
+  transferOutStudentSchema,
+  dropOutStudentSchema,
+  shiftStudentSectionSchema,
+  assignStudentLrnSchema,
+} from "@enrollpro/shared";
 
 const router: Router = Router();
 
@@ -31,6 +44,32 @@ router.get(
   "/summary",
   authorize("REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
   getStudentsSummary,
+);
+
+// Learner lifecycle actions
+router.post(
+  "/:id/lifecycle/transfer-out",
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  validate(transferOutStudentSchema),
+  transferOutStudent,
+);
+router.post(
+  "/:id/lifecycle/dropout",
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  validate(dropOutStudentSchema),
+  dropOutStudent,
+);
+router.post(
+  "/:id/lifecycle/shift-section",
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  validate(shiftStudentSectionSchema),
+  shiftStudentSection,
+);
+router.post(
+  "/:id/lrn",
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  validate(assignStudentLrnSchema),
+  assignStudentLrn,
 );
 
 // Get single student by ID

@@ -89,7 +89,7 @@ export function ActionButtons({
   const isSCP = !isRegular;
   const isEnrollmentVerificationMode = Boolean(handlers.onMarkVerified);
   const canToggleProfileLock =
-    status === "ENROLLED" &&
+    (status === "OFFICIALLY_ENROLLED" || status === "ENROLLED") &&
     userRole === "SYSTEM_ADMIN" &&
     Boolean(handlers.onSetProfileLock);
 
@@ -102,6 +102,8 @@ export function ActionButtons({
 
   if (isEnrollmentVerificationMode) {
     const canMarkAsVerified = [
+      "EARLY_REG_SUBMITTED",
+      "PENDING_VERIFICATION",
       "SUBMITTED",
       "UNDER_REVIEW",
       "READY_FOR_ENROLLMENT",
@@ -150,7 +152,8 @@ export function ActionButtons({
           </>
         )}
 
-        {((status === "ENROLLED" && !canToggleProfileLock) ||
+        {(((status === "OFFICIALLY_ENROLLED" || status === "ENROLLED") &&
+          !canToggleProfileLock) ||
           status === "REJECTED" ||
           status === "WITHDRAWN") && (
           <p className="text-sm text-muted-foreground text-center py-2">
@@ -165,7 +168,13 @@ export function ActionButtons({
     <div className="flex flex-col gap-2 p-4 border-t bg-background mt-auto">
       {/* Existing action for regular applicants */}
       {isRegular &&
-        ["SUBMITTED", "UNDER_REVIEW", "ELIGIBLE"].includes(status) && (
+        [
+          "EARLY_REG_SUBMITTED",
+          "PENDING_VERIFICATION",
+          "SUBMITTED",
+          "UNDER_REVIEW",
+          "ELIGIBLE",
+        ].includes(status) && (
           <>
             <Button
               className="w-full bg-emerald-600 text-white hover:bg-emerald-700"
@@ -184,6 +193,8 @@ export function ActionButtons({
 
       {/* Temporary Enrollment - Per DepEd Order No. 3, s. 2018 */}
       {(status === "UNDER_REVIEW" ||
+        status === "PENDING_VERIFICATION" ||
+        status === "READY_FOR_SECTIONING" ||
         status === "ELIGIBLE" ||
         status === "READY_FOR_ENROLLMENT") && (
         <Button
@@ -195,45 +206,28 @@ export function ActionButtons({
       )}
 
       {/* SCP: Verify & Schedule first step (pipeline-aware) */}
-      {isSCP && ["SUBMITTED", "UNDER_REVIEW", "ELIGIBLE"].includes(status) && (
-        <>
-          {hasSteps && nextPending && handlers.onScheduleStep ? (
-            <Button
-              className="w-full bg-[hsl(var(--primary))] text-primary-foreground hover:opacity-90 font-bold"
-              onClick={() => handlers.onScheduleStep!(nextPending)}
-              disabled={!isMandatoryDocumentsMet}>
-              Verify &amp; Schedule: {getStepLabel(nextPending)}
-            </Button>
-          ) : (
-            <Button
-              className="w-full bg-[hsl(var(--primary))] text-primary-foreground hover:opacity-90 font-bold"
-              onClick={handlers.onScheduleExam}
-              disabled={!isMandatoryDocumentsMet}>
-              Verify &amp; Schedule Exam
-            </Button>
-          )}
-          <Button
-            variant="outline"
-            className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-bold"
-            onClick={handlers.onReject}>
-            Reject Application
-          </Button>
-        </>
-      )}
-
-      {/* SCP: Assessment Scheduled — schedule next step */}
       {isSCP &&
-        status === "EXAM_SCHEDULED" &&
-        !assessmentDecisionAction && (
+        [
+          "EARLY_REG_SUBMITTED",
+          "PENDING_VERIFICATION",
+          "SUBMITTED",
+          "UNDER_REVIEW",
+          "ELIGIBLE",
+        ].includes(status) && (
           <>
-            {/* If there are more pending steps, allow scheduling the next one */}
-            {hasSteps && nextPending && handlers.onScheduleStep && (
+            {hasSteps && nextPending && handlers.onScheduleStep ? (
               <Button
-                variant="outline"
-                className="w-full bg-primary text-primary-foreground font-bold"
+                className="w-full bg-[hsl(var(--primary))] text-primary-foreground hover:opacity-90 font-bold"
                 onClick={() => handlers.onScheduleStep!(nextPending)}
                 disabled={!isMandatoryDocumentsMet}>
-                Schedule Next: {getStepLabel(nextPending)}
+                Verify &amp; Schedule: {getStepLabel(nextPending)}
+              </Button>
+            ) : (
+              <Button
+                className="w-full bg-[hsl(var(--primary))] text-primary-foreground hover:opacity-90 font-bold"
+                onClick={handlers.onScheduleExam}
+                disabled={!isMandatoryDocumentsMet}>
+                Verify &amp; Schedule Exam
               </Button>
             )}
             <Button
@@ -244,6 +238,28 @@ export function ActionButtons({
             </Button>
           </>
         )}
+
+      {/* SCP: Assessment Scheduled — schedule next step */}
+      {isSCP && status === "EXAM_SCHEDULED" && !assessmentDecisionAction && (
+        <>
+          {/* If there are more pending steps, allow scheduling the next one */}
+          {hasSteps && nextPending && handlers.onScheduleStep && (
+            <Button
+              variant="outline"
+              className="w-full bg-primary text-primary-foreground font-bold"
+              onClick={() => handlers.onScheduleStep!(nextPending)}
+              disabled={!isMandatoryDocumentsMet}>
+              Schedule Next: {getStepLabel(nextPending)}
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-bold"
+            onClick={handlers.onReject}>
+            Reject Application
+          </Button>
+        </>
+      )}
 
       {isSCP &&
         (status === "EXAM_SCHEDULED" || status === "ASSESSMENT_TAKEN") &&
@@ -324,7 +340,8 @@ export function ActionButtons({
         </>
       )}
 
-      {((status === "ENROLLED" && !canToggleProfileLock) ||
+      {(((status === "OFFICIALLY_ENROLLED" || status === "ENROLLED") &&
+        !canToggleProfileLock) ||
         status === "REJECTED" ||
         status === "WITHDRAWN") && (
         <p className="text-sm text-muted-foreground text-center py-2">

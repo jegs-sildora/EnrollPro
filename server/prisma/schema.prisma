@@ -123,6 +123,7 @@ model SchoolYear {
   yearLabel          String           @unique(map: "uq_school_years_year_label") @map("year_label")
   status             SchoolYearStatus @default(DRAFT)
   isEosyFinalized    Boolean          @default(false) @map("is_eosy_finalized")
+  sectionShiftWindowDays Int?         @map("section_shift_window_days")
   classOpeningDate   DateTime?        @db.Date @map("class_opening_date")
   classEndDate       DateTime?        @db.Date @map("class_end_date")
   earlyRegOpenDate   DateTime?        @db.Date @map("early_reg_open_date")
@@ -199,7 +200,7 @@ model Learner {
   externalId              String    @unique(map: "uq_learners_external_id") @default(dbgenerated("gen_random_uuid()")) @db.Uuid @map("external_id")
   lrn                     String?   @unique(map: "uq_learners_lrn") @db.VarChar(12)
   isPendingLrnCreation    Boolean   @default(false) @map("is_pending_lrn_creation")
-  status                  ApplicationStatus @default(SUBMITTED)
+  status                  ApplicationStatus @default(EARLY_REG_SUBMITTED)
   psaBirthCertNumber      String?   @map("psa_birth_cert_number")
   firstName               String    @map("first_name")
   lastName                String    @map("last_name")
@@ -245,7 +246,7 @@ model EarlyRegistrationApplication {
   trackingNumber        String    @unique(map: "uq_early_reg_tracking_number") @map("tracking_number")
   applicantType         ApplicantType @default(REGULAR) @map("applicant_type")
   learnerType           LearnerType   @default(NEW_ENROLLEE) @map("learner_type")
-  status                ApplicationStatus @default(SUBMITTED)
+  status                ApplicationStatus @default(EARLY_REG_SUBMITTED)
   channel               AdmissionChannel  @default(ONLINE)
   contactNumber         String    @map("contact_number")
   studentPhoto          String?   @map("student_photo")
@@ -313,7 +314,7 @@ model EnrollmentApplication {
   gradeLevelId            Int               @map("grade_level_id")
   applicantType           ApplicantType     @default(REGULAR) @map("applicant_type")
   learnerType             LearnerType       @default(NEW_ENROLLEE) @map("learner_type")
-  status                  ApplicationStatus @default(SUBMITTED)
+  status                  ApplicationStatus @default(PENDING_VERIFICATION)
   admissionChannel        AdmissionChannel  @default(ONLINE) @map("admission_channel")
   trackingNumber          String?           @unique(map: "uq_enrollment_tracking_number") @map("tracking_number")
   studentPhoto            String?           @map("student_photo")
@@ -470,7 +471,10 @@ model EnrollmentRecord {
   enrolledById          Int          @map("enrolled_by_id")
   eosyStatus            EosyStatus?  @map("eosy_status")
   dropOutReason         String?      @map("drop_out_reason")
+  dropOutDate           DateTime?    @db.Date @map("drop_out_date")
   transferOutDate       DateTime?    @db.Date @map("transfer_out_date")
+  transferOutSchoolName String?      @map("transfer_out_school_name")
+  transferOutReason     String?      @map("transfer_out_reason")
   
   schoolYear            SchoolYear   @relation(fields: [schoolYearId], references: [id])
   enrollmentApplication EnrollmentApplication @relation(fields: [enrollmentApplicationId], references: [id], onDelete: Cascade)
@@ -727,6 +731,11 @@ enum Sex {
 }
 
 enum ApplicationStatus {
+  EARLY_REG_SUBMITTED
+  PRE_REGISTERED
+  PENDING_VERIFICATION
+  READY_FOR_SECTIONING
+  OFFICIALLY_ENROLLED
   SUBMITTED
   VERIFIED
   UNDER_REVIEW

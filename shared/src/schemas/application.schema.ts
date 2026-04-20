@@ -531,6 +531,7 @@ export const scpProgramConfigUpdateSchema = z.object({
   scpType: ScpTypeEnum,
   isOffered: z.boolean().default(false),
   isTwoPhase: z.boolean().optional().default(false),
+  maxSlots: z.number().int().positive().optional().nullable(),
   cutoffScore: z.number().min(0).max(100).optional().nullable(),
   notes: z.string().optional().nullable(),
   gradeRequirements: z.array(scpGradeRequirementSchema).optional().nullable(),
@@ -547,6 +548,11 @@ export const updateScpProgramConfigsSchema = z.object({
 
 // ─── Batch Processing Schema ───────────────────────────
 const BATCH_TARGET_STATUSES = [
+  "EARLY_REG_SUBMITTED",
+  "PRE_REGISTERED",
+  "PENDING_VERIFICATION",
+  "READY_FOR_SECTIONING",
+  "OFFICIALLY_ENROLLED",
   "SUBMITTED",
   "VERIFIED",
   "UNDER_REVIEW",
@@ -671,7 +677,9 @@ export const batchFinalizeInterviewSchema = z.object({
           decision: z.enum(["PASS", "REJECT"]),
           interviewScore: z.number().min(0).max(100).optional().nullable(),
           remarks: z.string().max(500).optional().nullable(),
-          rejectOutcome: z.enum(["SUBMITTED", "REJECTED"]).optional(),
+          rejectOutcome: z
+            .enum(["EARLY_REG_SUBMITTED", "PENDING_VERIFICATION", "REJECTED"])
+            .optional(),
         })
         .superRefine((value, ctx) => {
           if (value.decision === "REJECT" && !value.rejectOutcome) {

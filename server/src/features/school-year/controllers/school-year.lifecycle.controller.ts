@@ -95,6 +95,14 @@ export function createSchoolYearLifecycleController(
       return;
     }
 
+    if (year.status === "ACTIVE") {
+      res.status(400).json({
+        message:
+          "Active school year cannot be deleted. Complete EOSY and use rollover instead.",
+      });
+      return;
+    }
+
     if (
       year._count.earlyRegistrationApplications > 0 ||
       year._count.enrollmentApplications > 0 ||
@@ -106,13 +114,7 @@ export function createSchoolYearLifecycleController(
       return;
     }
 
-    const wasActive = year.status === "ACTIVE";
-
     await deps.prisma.schoolYear.delete({ where: { id } });
-
-    if (wasActive) {
-      await clearActiveSchoolYearIfMatches(deps, id);
-    }
 
     await deps.auditLog({
       userId: req.user!.userId,

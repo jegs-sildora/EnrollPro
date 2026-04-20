@@ -5,6 +5,7 @@ import {
   getSchoolYear,
   createSchoolYear,
   rolloverSchoolYear,
+  updateRolloverDraft,
   updateSchoolYear,
   transitionSchoolYear,
   deleteSchoolYear,
@@ -18,6 +19,7 @@ import { validate } from "../../middleware/validate.js";
 import {
   createSchoolYearSchema,
   rolloverSchoolYearSchema,
+  updateRolloverDraftSchema,
   updateSchoolYearSchema,
   transitionSchoolYearSchema,
   toggleOverrideSchema,
@@ -51,6 +53,13 @@ router.post(
   authorize("SYSTEM_ADMIN"),
   validate(createSchoolYearSchema),
   createSchoolYear,
+);
+router.post(
+  "/rollover-draft",
+  authenticate,
+  authorize("SYSTEM_ADMIN"),
+  validate(updateRolloverDraftSchema),
+  updateRolloverDraft,
 );
 router.post(
   "/rollover",

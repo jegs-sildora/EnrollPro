@@ -14,7 +14,6 @@ import {
 import api from "@/shared/api/axiosInstance";
 import { useAuthStore } from "@/store/auth.slice";
 import { useSettingsStore } from "@/store/settings.slice";
-import { toastApiError } from "@/shared/hooks/useApiToast";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -158,6 +157,53 @@ function fillEmoji(pct: number): string {
   return "🟢";
 }
 
+function resolveApiErrorMessage(error: unknown): string | null {
+  const apiError = error as {
+    response?: {
+      data?: {
+        message?: string;
+        errors?: Record<string, string[]>;
+      };
+    };
+  };
+
+  const data = apiError.response?.data;
+  if (data?.errors) {
+    const firstValidationMessage = Object.values(data.errors).flat()[0];
+    if (firstValidationMessage) {
+      return firstValidationMessage;
+    }
+  }
+
+  return data?.message ?? null;
+}
+
+function showSectionsErrorToast(
+  action: "load" | "create" | "update" | "delete",
+  error: unknown,
+) {
+  const messageFromApi = resolveApiErrorMessage(error);
+
+  const titleByAction = {
+    load: "Unable to load sections",
+    create: "Section creation failed",
+    update: "Section update failed",
+    delete: "Section deletion failed",
+  } as const;
+
+  const fallbackDescriptionByAction = {
+    load: "Refresh the page and try again.",
+    create: "Review the section details and try again.",
+    update: "Your changes were not saved. Please try again.",
+    delete: "The section was not removed. Please try again.",
+  } as const;
+
+  sileo.error({
+    title: titleByAction[action],
+    description: messageFromApi ?? fallbackDescriptionByAction[action],
+  });
+}
+
 export default function Sections() {
   const { user } = useAuthStore();
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
@@ -211,7 +257,7 @@ export default function Sections() {
       setGroups(res.data.gradeLevels);
       setTeachers(teachersRes.data.teachers);
     } catch (err) {
-      toastApiError(err as never);
+      showSectionsErrorToast("load", err);
     } finally {
       setLoading(false);
     }
@@ -294,13 +340,13 @@ export default function Sections() {
           advisingTeacherId === "none" ? null : parseInt(advisingTeacherId),
       });
       sileo.success({
-        title: "Section Added",
-        description: sectionName.trim(),
+        title: "Section created",
+        description: `${sectionName.trim()} is now available in this grade level.`,
       });
       setAddGlId(null);
       fetchData();
     } catch (err) {
-      toastApiError(err as never);
+      showSectionsErrorToast("create", err);
     } finally {
       setAdding(false);
     }
@@ -329,11 +375,14 @@ export default function Sections() {
             ? null
             : parseInt(editAdvisingTeacherId),
       });
-      sileo.success({ title: "Section Updated", description: editName.trim() });
+      sileo.success({
+        title: "Section details updated",
+        description: `Saved changes for ${editName.trim()}.`,
+      });
       setEditSection(null);
       fetchData();
     } catch (err) {
-      toastApiError(err as never);
+      showSectionsErrorToast("update", err);
     } finally {
       setEditing(false);
     }
@@ -344,11 +393,16 @@ export default function Sections() {
     setDeleting(true);
     try {
       await api.delete(`/sections/${deleteId}`);
-      sileo.success({ title: "Deleted", description: deleteName });
+      sileo.success({
+        title: "Section removed",
+        description: deleteName
+          ? `${deleteName} was removed successfully.`
+          : "The section was removed successfully.",
+      });
       setDeleteId(null);
       fetchData();
     } catch (err) {
-      toastApiError(err as never);
+      showSectionsErrorToast("delete", err);
     } finally {
       setDeleting(false);
     }

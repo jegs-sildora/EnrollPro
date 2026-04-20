@@ -5,6 +5,12 @@ import {
   Eye,
   FileText,
   MoreHorizontal,
+  ArrowRightLeft,
+  BadgeAlert,
+  FileBadge2,
+  FileCheck2,
+  UserRoundPen,
+  Fingerprint,
   Mars,
   Venus,
   Users,
@@ -17,8 +23,10 @@ import {
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
+import { sileo } from "sileo";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
+import { Textarea } from "@/shared/ui/textarea";
 import {
   Card,
   CardContent,
@@ -43,6 +51,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
@@ -74,6 +83,12 @@ interface Student {
   emailAddress: string;
   trackingNumber: string;
   status: string;
+  lifecycleOutcome: "TRANSFERRED_OUT" | "DROPPED_OUT" | null;
+  dropOutReason: string | null;
+  dropOutDate: string | null;
+  transferOutDate: string | null;
+  transferOutSchoolName: string | null;
+  transferOutReason: string | null;
   gradeLevel: string;
   gradeLevelId: number;
   section: string | null;
@@ -90,6 +105,12 @@ interface StudentDetail extends Student {
     id: number;
     section: string;
     sectionId: number;
+    eosyStatus: "TRANSFERRED_OUT" | "DROPPED_OUT" | null;
+    dropOutReason: string | null;
+    dropOutDate: string | null;
+    transferOutDate: string | null;
+    transferOutSchoolName: string | null;
+    transferOutReason: string | null;
     advisingTeacher: string | null;
     enrolledAt: string;
     enrolledBy: string;
@@ -149,6 +170,18 @@ const PROGRAM_FILTER_OPTIONS = [
 ];
 
 const SECTION_ACRONYMS = new Set(["STE", "SPA", "SPS", "SPJ", "SPFL", "SPTVE"]);
+
+const DROPOUT_REASON_OPTIONS = [
+  { value: "ARMED_CONFLICT", label: "Armed Conflict" },
+  { value: "ILLNESS", label: "Illness" },
+  { value: "FINANCIAL_DIFFICULTY", label: "Financial Difficulty" },
+  { value: "FAMILY_PROBLEM", label: "Family Problem" },
+  { value: "LACK_OF_INTEREST", label: "Lack of Interest" },
+  { value: "EMPLOYMENT", label: "Employment / Working" },
+  { value: "OTHER", label: "Other (Specify)" },
+] as const;
+
+type DropoutReasonCode = (typeof DROPOUT_REASON_OPTIONS)[number]["value"];
 
 const formatSectionLabel = (rawSection: string | null | undefined): string => {
   if (!rawSection) return "—";
@@ -236,6 +269,38 @@ export default function Students() {
   );
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [actionSubmitting, setActionSubmitting] = useState(false);
+
+  const [showTransferOutDialog, setShowTransferOutDialog] = useState(false);
+  const [showDropoutDialog, setShowDropoutDialog] = useState(false);
+  const [showShiftDialog, setShowShiftDialog] = useState(false);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [showLrnDialog, setShowLrnDialog] = useState(false);
+
+  const [actionStudent, setActionStudent] = useState<Student | null>(null);
+
+  const [transferOutDate, setTransferOutDate] = useState("");
+  const [transferOutSchoolName, setTransferOutSchoolName] = useState("");
+  const [transferOutReason, setTransferOutReason] = useState("");
+
+  const [dropoutReasonCode, setDropoutReasonCode] =
+    useState<DropoutReasonCode>("LACK_OF_INTEREST");
+  const [dropoutReasonDetails, setDropoutReasonDetails] = useState("");
+  const [dropoutDate, setDropoutDate] = useState("");
+
+  const [shiftTargetSectionId, setShiftTargetSectionId] = useState("");
+
+  const [profileForm, setProfileForm] = useState({
+    emailAddress: "",
+    contactNumber: "",
+    religion: "",
+    motherTongue: "",
+    currentAddress: "",
+  });
+
+  const [lrnForm, setLrnForm] = useState({
+    lrn: "",
+  });
 
   const [summary, setSummary] = useState<StudentsSummary | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(true);
@@ -333,7 +398,6 @@ export default function Students() {
     try {
       const params: Record<string, string | number> = {
         schoolYearId: ayId,
-        status: "ENROLLED",
         page,
         limit: 15,
         sortBy,
@@ -374,7 +438,6 @@ export default function Students() {
       const res = await api.get<StudentsSummary>("/students/summary", {
         params: {
           schoolYearId: ayId,
-          status: "ENROLLED",
         },
       });
       setSummary(res.data);
@@ -449,6 +512,320 @@ export default function Students() {
     },
     [navigate],
   );
+
+  const toDateInputValue = useCallback((value?: string | null): string => {
+    const sourceDate = value ? new Date(value) : new Date();
+    if (Number.isNaN(sourceDate.getTime())) {
+      return "";
+    }
+
+    const tzAdjusted = new Date(
+      sourceDate.getTime() - sourceDate.getTimezoneOffset() * 60_000,
+    );
+    return tzAdjusted.toISOString().slice(0, 10);
+  }, []);
+
+  const refreshTables = useCallback(async () => {
+    await Promise.all([fetchStudents(), fetchSummary()]);
+  }, [fetchStudents, fetchSummary]);
+
+  const refreshDetailIfOpen = useCallback(
+    async (studentId: number) => {
+      if (!detailDialogOpen || selectedStudent?.id !== studentId) {
+        return;
+      }
+
+      try {
+        const res = await api.get(`/students/${studentId}`);
+        setSelectedStudent(res.data.student);
+      } catch (err) {
+        toastApiError(err as never);
+      }
+    },
+    [detailDialogOpen, selectedStudent?.id],
+  );
+
+  const openTransferOutDialog = useCallback(
+    (student: Student) => {
+      setActionStudent(student);
+      setTransferOutDate(toDateInputValue());
+      setTransferOutSchoolName("");
+      setTransferOutReason("");
+      setShowTransferOutDialog(true);
+    },
+    [toDateInputValue],
+  );
+
+  const openDropoutDialog = useCallback(
+    (student: Student) => {
+      setActionStudent(student);
+      setDropoutDate(toDateInputValue());
+      setDropoutReasonCode("LACK_OF_INTEREST");
+      setDropoutReasonDetails("");
+      setShowDropoutDialog(true);
+    },
+    [toDateInputValue],
+  );
+
+  const openShiftDialog = useCallback((student: Student) => {
+    setActionStudent(student);
+    setShiftTargetSectionId("");
+    setShowShiftDialog(true);
+  }, []);
+
+  const openProfileQuickEditDialog = useCallback(async (student: Student) => {
+    setActionStudent(student);
+
+    try {
+      const res = await api.get(`/students/${student.id}`);
+      const detail = res.data.student as StudentDetail & {
+        religion?: string | null;
+        motherTongue?: string | null;
+        currentAddress?: {
+          barangay?: string | null;
+          cityMunicipality?: string | null;
+          province?: string | null;
+        } | null;
+      };
+
+      setProfileForm({
+        emailAddress: detail.emailAddress ?? student.emailAddress ?? "",
+        contactNumber:
+          detail.parentGuardianContact ?? student.parentGuardianContact ?? "",
+        religion: detail.religion ?? "",
+        motherTongue: detail.motherTongue ?? "",
+        currentAddress:
+          [
+            detail.currentAddress?.barangay,
+            detail.currentAddress?.cityMunicipality,
+            detail.currentAddress?.province,
+          ]
+            .filter(Boolean)
+            .join(", ") ||
+          student.address ||
+          "",
+      });
+    } catch {
+      setProfileForm({
+        emailAddress: student.emailAddress ?? "",
+        contactNumber: student.parentGuardianContact ?? "",
+        religion: "",
+        motherTongue: "",
+        currentAddress: student.address || "",
+      });
+    }
+
+    setShowProfileDialog(true);
+  }, []);
+
+  const openAssignLrnDialog = useCallback((student: Student) => {
+    setActionStudent(student);
+    setLrnForm({
+      lrn: /^\d{12}$/.test(student.lrn || "") ? student.lrn : "",
+    });
+    setShowLrnDialog(true);
+  }, []);
+
+  const openGoodMoralPreview = useCallback(
+    (studentId: number) => {
+      navigate(`/students/${studentId}?tab=application`);
+      sileo.info({
+        title: "Good Moral Workflow",
+        description:
+          "Open the Application tab to review documentary status and process the request.",
+      });
+    },
+    [navigate],
+  );
+
+  const submitTransferOut = useCallback(async () => {
+    if (!actionStudent) return;
+    if (!transferOutDate || !transferOutSchoolName.trim()) {
+      sileo.warning({
+        title: "Missing transfer details",
+        description: "Transfer date and destination school are required.",
+      });
+      return;
+    }
+
+    setActionSubmitting(true);
+    try {
+      await api.post(`/students/${actionStudent.id}/lifecycle/transfer-out`, {
+        transferOutDate,
+        destinationSchool: transferOutSchoolName.trim(),
+        reason: transferOutReason.trim() || undefined,
+      });
+
+      sileo.success({
+        title: "Transferred out",
+        description: "Learner lifecycle was updated successfully.",
+      });
+      setShowTransferOutDialog(false);
+      await refreshTables();
+      await refreshDetailIfOpen(actionStudent.id);
+    } catch (err) {
+      toastApiError(err as never);
+    } finally {
+      setActionSubmitting(false);
+    }
+  }, [
+    actionStudent,
+    transferOutDate,
+    transferOutSchoolName,
+    transferOutReason,
+    refreshTables,
+    refreshDetailIfOpen,
+  ]);
+
+  const submitDropout = useCallback(async () => {
+    if (!actionStudent) return;
+    if (!dropoutDate) {
+      sileo.warning({
+        title: "Missing dropout date",
+        description: "Dropout date is required.",
+      });
+      return;
+    }
+    if (dropoutReasonCode === "OTHER" && !dropoutReasonDetails.trim()) {
+      sileo.warning({
+        title: "Missing reason details",
+        description: "Provide details when reason code is OTHER.",
+      });
+      return;
+    }
+
+    setActionSubmitting(true);
+    try {
+      await api.post(`/students/${actionStudent.id}/lifecycle/dropout`, {
+        dropOutDate: dropoutDate,
+        reasonCode: dropoutReasonCode,
+        reasonNote: dropoutReasonDetails.trim() || undefined,
+      });
+
+      sileo.success({
+        title: "Dropped out",
+        description: "Learner lifecycle was updated successfully.",
+      });
+      setShowDropoutDialog(false);
+      await refreshTables();
+      await refreshDetailIfOpen(actionStudent.id);
+    } catch (err) {
+      toastApiError(err as never);
+    } finally {
+      setActionSubmitting(false);
+    }
+  }, [
+    actionStudent,
+    dropoutDate,
+    dropoutReasonCode,
+    dropoutReasonDetails,
+    refreshTables,
+    refreshDetailIfOpen,
+  ]);
+
+  const submitShiftSection = useCallback(async () => {
+    if (!actionStudent) return;
+    if (!shiftTargetSectionId) {
+      sileo.warning({
+        title: "Target section required",
+        description: "Please select a target section.",
+      });
+      return;
+    }
+
+    setActionSubmitting(true);
+    try {
+      await api.post(`/students/${actionStudent.id}/lifecycle/shift-section`, {
+        sectionId: Number(shiftTargetSectionId),
+      });
+
+      sileo.success({
+        title: "Section assignment updated",
+        description: "Learner was moved to the selected section.",
+      });
+      setShowShiftDialog(false);
+      await refreshTables();
+      await refreshDetailIfOpen(actionStudent.id);
+    } catch (err) {
+      toastApiError(err as never);
+    } finally {
+      setActionSubmitting(false);
+    }
+  }, [actionStudent, shiftTargetSectionId, refreshTables, refreshDetailIfOpen]);
+
+  const submitQuickProfileUpdate = useCallback(async () => {
+    if (!actionStudent) return;
+
+    setActionSubmitting(true);
+    try {
+      const payload: Record<string, unknown> = {
+        emailAddress: profileForm.emailAddress.trim() || null,
+        contactNumber: profileForm.contactNumber.trim() || null,
+        religion: profileForm.religion.trim() || null,
+        motherTongue: profileForm.motherTongue.trim() || null,
+      };
+
+      if (profileForm.currentAddress.trim()) {
+        payload.currentAddress = {
+          barangay: profileForm.currentAddress.trim(),
+        };
+      }
+
+      await api.put(`/students/${actionStudent.id}`, payload);
+
+      sileo.success({
+        title: "Profile updated",
+        description: "Learner demographic details were saved.",
+      });
+      setShowProfileDialog(false);
+      await refreshTables();
+      await refreshDetailIfOpen(actionStudent.id);
+    } catch (err) {
+      toastApiError(err as never);
+    } finally {
+      setActionSubmitting(false);
+    }
+  }, [actionStudent, profileForm, refreshTables, refreshDetailIfOpen]);
+
+  const submitAssignLrn = useCallback(async () => {
+    if (!actionStudent) return;
+    const normalizedLrn = lrnForm.lrn.trim();
+    if (!/^\d{12}$/.test(normalizedLrn)) {
+      sileo.warning({
+        title: "Invalid LRN",
+        description: "LRN must be exactly 12 digits.",
+      });
+      return;
+    }
+
+    setActionSubmitting(true);
+    try {
+      await api.post(`/students/${actionStudent.id}/lrn`, {
+        lrn: normalizedLrn,
+      });
+
+      sileo.success({
+        title: "LRN saved",
+        description: "Learner reference number was assigned successfully.",
+      });
+      setShowLrnDialog(false);
+      await refreshTables();
+      await refreshDetailIfOpen(actionStudent.id);
+    } catch (err) {
+      toastApiError(err as never);
+    } finally {
+      setActionSubmitting(false);
+    }
+  }, [actionStudent, lrnForm.lrn, refreshTables, refreshDetailIfOpen]);
+
+  const availableShiftSections = useMemo(() => {
+    if (!actionStudent) return [];
+
+    return sections
+      .filter((section) => section.gradeLevelId === actionStudent.gradeLevelId)
+      .filter((section) => section.id !== actionStudent.sectionId)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [actionStudent, sections]);
 
   const programBreakdownItems = useMemo(() => {
     if (!summary) return [];
@@ -613,6 +990,42 @@ export default function Students() {
                   <FileText className="mr-2 h-4 w-4" />
                   Generate SF10 / Permanent Record
                 </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => openGoodMoralPreview(row.original.id)}
+                  className="cursor-pointer">
+                  <FileCheck2 className="mr-2 h-4 w-4" />
+                  Open Good Moral Workflow
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => void openProfileQuickEditDialog(row.original)}
+                  className="cursor-pointer">
+                  <UserRoundPen className="mr-2 h-4 w-4" />
+                  Quick Update Demographics
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => openAssignLrnDialog(row.original)}
+                  className="cursor-pointer">
+                  <Fingerprint className="mr-2 h-4 w-4" />
+                  Assign or Correct LRN
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => openShiftDialog(row.original)}
+                  className="cursor-pointer">
+                  <ArrowRightLeft className="mr-2 h-4 w-4" />
+                  Shift Section or Program
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => openTransferOutDialog(row.original)}
+                  className="cursor-pointer text-amber-700 focus:text-amber-700">
+                  <FileBadge2 className="mr-2 h-4 w-4" />
+                  Mark as Transferred Out
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => openDropoutDialog(row.original)}
+                  className="cursor-pointer text-rose-700 focus:text-rose-700">
+                  <BadgeAlert className="mr-2 h-4 w-4" />
+                  Mark as Dropped Out
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -625,6 +1038,12 @@ export default function Students() {
       handleViewDetails,
       handleOpenProfilePage,
       handleOpenPermanentRecord,
+      openGoodMoralPreview,
+      openProfileQuickEditDialog,
+      openAssignLrnDialog,
+      openShiftDialog,
+      openTransferOutDialog,
+      openDropoutDialog,
     ],
   );
 
@@ -1024,6 +1443,44 @@ export default function Students() {
                           <FileText className="mr-2 h-4 w-4" />
                           Generate SF10 / Permanent Record
                         </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => openGoodMoralPreview(student.id)}
+                          className="cursor-pointer">
+                          <FileCheck2 className="mr-2 h-4 w-4" />
+                          Open Good Moral Workflow
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            void openProfileQuickEditDialog(student)
+                          }
+                          className="cursor-pointer">
+                          <UserRoundPen className="mr-2 h-4 w-4" />
+                          Quick Update Demographics
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => openAssignLrnDialog(student)}
+                          className="cursor-pointer">
+                          <Fingerprint className="mr-2 h-4 w-4" />
+                          Assign or Correct LRN
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => openShiftDialog(student)}
+                          className="cursor-pointer">
+                          <ArrowRightLeft className="mr-2 h-4 w-4" />
+                          Shift Section or Program
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => openTransferOutDialog(student)}
+                          className="cursor-pointer text-amber-700 focus:text-amber-700">
+                          <FileBadge2 className="mr-2 h-4 w-4" />
+                          Mark as Transferred Out
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => openDropoutDialog(student)}
+                          className="cursor-pointer text-rose-700 focus:text-rose-700">
+                          <BadgeAlert className="mr-2 h-4 w-4" />
+                          Mark as Dropped Out
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -1237,6 +1694,59 @@ export default function Students() {
                             {selectedStudent.enrollment.enrolledBy}
                           </p>
                         </div>
+                        {selectedStudent.enrollment.eosyStatus && (
+                          <div className="sm:col-span-2 rounded-lg border border-dashed p-3 space-y-1">
+                            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                              Lifecycle Outcome
+                            </p>
+                            <p className="text-sm font-semibold">
+                              {selectedStudent.enrollment.eosyStatus
+                                .replaceAll("_", " ")
+                                .toLowerCase()
+                                .replace(/\b\w/g, (letter) =>
+                                  letter.toUpperCase(),
+                                )}
+                            </p>
+                            {selectedStudent.enrollment.transferOutDate && (
+                              <p className="text-xs font-medium text-muted-foreground">
+                                Transfer Date:{" "}
+                                {formatDate(
+                                  selectedStudent.enrollment.transferOutDate,
+                                )}
+                              </p>
+                            )}
+                            {selectedStudent.enrollment
+                              .transferOutSchoolName && (
+                              <p className="text-xs font-medium text-muted-foreground">
+                                Destination School:{" "}
+                                {
+                                  selectedStudent.enrollment
+                                    .transferOutSchoolName
+                                }
+                              </p>
+                            )}
+                            {selectedStudent.enrollment.transferOutReason && (
+                              <p className="text-xs font-medium text-muted-foreground">
+                                Transfer Reason:{" "}
+                                {selectedStudent.enrollment.transferOutReason}
+                              </p>
+                            )}
+                            {selectedStudent.enrollment.dropOutDate && (
+                              <p className="text-xs font-medium text-muted-foreground">
+                                Dropout Date:{" "}
+                                {formatDate(
+                                  selectedStudent.enrollment.dropOutDate,
+                                )}
+                              </p>
+                            )}
+                            {selectedStudent.enrollment.dropOutReason && (
+                              <p className="text-xs font-medium text-muted-foreground">
+                                Dropout Reason:{" "}
+                                {selectedStudent.enrollment.dropOutReason}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </>
                     ) : (
                       <div className="sm:col-span-2 rounded-lg border border-dashed p-3">
@@ -1260,6 +1770,344 @@ export default function Students() {
               </div>
             ) : null}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={showTransferOutDialog}
+        onOpenChange={setShowTransferOutDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Mark Learner as Transferred Out</DialogTitle>
+            <DialogDescription>
+              Update transfer-out details for {actionStudent?.fullName}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="transferOutDate">Transfer Date</Label>
+              <Input
+                id="transferOutDate"
+                type="date"
+                value={transferOutDate}
+                onChange={(event) => setTransferOutDate(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="transferOutSchool">Destination School</Label>
+              <Input
+                id="transferOutSchool"
+                value={transferOutSchoolName}
+                onChange={(event) =>
+                  setTransferOutSchoolName(event.target.value)
+                }
+                placeholder="Enter receiving school"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="transferOutReason">Reason (Optional)</Label>
+              <Textarea
+                id="transferOutReason"
+                value={transferOutReason}
+                onChange={(event) => setTransferOutReason(event.target.value)}
+                placeholder="State reason for transfer"
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowTransferOutDialog(false)}
+              disabled={actionSubmitting}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => void submitTransferOut()}
+              disabled={actionSubmitting}>
+              {actionSubmitting ? "Saving..." : "Confirm Transfer Out"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDropoutDialog} onOpenChange={setShowDropoutDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Mark Learner as Dropped Out</DialogTitle>
+            <DialogDescription>
+              Update dropout details for {actionStudent?.fullName}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="dropOutDate">Dropout Date</Label>
+              <Input
+                id="dropOutDate"
+                type="date"
+                value={dropoutDate}
+                onChange={(event) => setDropoutDate(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Dropout Reason</Label>
+              <Select
+                value={dropoutReasonCode}
+                onValueChange={(value) =>
+                  setDropoutReasonCode(value as DropoutReasonCode)
+                }>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select reason" />
+                </SelectTrigger>
+                <SelectContent>
+                  {DROPOUT_REASON_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="dropOutNote">Reason Details</Label>
+              <Textarea
+                id="dropOutNote"
+                value={dropoutReasonDetails}
+                onChange={(event) =>
+                  setDropoutReasonDetails(event.target.value)
+                }
+                placeholder={
+                  dropoutReasonCode === "OTHER"
+                    ? "Required for OTHER reason"
+                    : "Additional context (optional)"
+                }
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDropoutDialog(false)}
+              disabled={actionSubmitting}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => void submitDropout()}
+              disabled={actionSubmitting}>
+              {actionSubmitting ? "Saving..." : "Confirm Dropout"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showShiftDialog} onOpenChange={setShowShiftDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Shift Section or Program</DialogTitle>
+            <DialogDescription>
+              Reassign section for {actionStudent?.fullName}. Program changes
+              are inferred from the selected target section.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Target Section</Label>
+              <Select
+                value={shiftTargetSectionId}
+                onValueChange={setShiftTargetSectionId}
+                disabled={availableShiftSections.length === 0}>
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      availableShiftSections.length === 0
+                        ? "No other eligible sections"
+                        : "Select target section"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableShiftSections.map((section) => (
+                    <SelectItem key={section.id} value={String(section.id)}>
+                      {formatSectionLabel(section.name)} (
+                      {formatScpType(section.programType)})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {availableShiftSections.length === 0 && (
+              <p className="text-xs text-muted-foreground font-medium">
+                No alternate section is currently available for this learner's
+                grade level.
+              </p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowShiftDialog(false)}
+              disabled={actionSubmitting}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => void submitShiftSection()}
+              disabled={
+                actionSubmitting || availableShiftSections.length === 0
+              }>
+              {actionSubmitting ? "Saving..." : "Confirm Shift"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Quick Update Demographics</DialogTitle>
+            <DialogDescription>
+              Apply quick demographic updates for {actionStudent?.fullName}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="profileEmail">Email Address</Label>
+              <Input
+                id="profileEmail"
+                type="email"
+                value={profileForm.emailAddress}
+                onChange={(event) =>
+                  setProfileForm((prev) => ({
+                    ...prev,
+                    emailAddress: event.target.value,
+                  }))
+                }
+                placeholder="learner@email.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="profileContact">Guardian Contact Number</Label>
+              <Input
+                id="profileContact"
+                value={profileForm.contactNumber}
+                onChange={(event) =>
+                  setProfileForm((prev) => ({
+                    ...prev,
+                    contactNumber: event.target.value,
+                  }))
+                }
+                placeholder="09XXXXXXXXX"
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="profileReligion">Religion</Label>
+                <Input
+                  id="profileReligion"
+                  value={profileForm.religion}
+                  onChange={(event) =>
+                    setProfileForm((prev) => ({
+                      ...prev,
+                      religion: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="profileMotherTongue">Mother Tongue</Label>
+                <Input
+                  id="profileMotherTongue"
+                  value={profileForm.motherTongue}
+                  onChange={(event) =>
+                    setProfileForm((prev) => ({
+                      ...prev,
+                      motherTongue: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="profileAddress">
+                Current Address (Quick Entry)
+              </Label>
+              <Textarea
+                id="profileAddress"
+                value={profileForm.currentAddress}
+                onChange={(event) =>
+                  setProfileForm((prev) => ({
+                    ...prev,
+                    currentAddress: event.target.value,
+                  }))
+                }
+                placeholder="Barangay or location note"
+                rows={2}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowProfileDialog(false)}
+              disabled={actionSubmitting}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => void submitQuickProfileUpdate()}
+              disabled={actionSubmitting}>
+              {actionSubmitting ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showLrnDialog} onOpenChange={setShowLrnDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Assign or Correct LRN</DialogTitle>
+            <DialogDescription>
+              Enter a valid 12-digit LRN for {actionStudent?.fullName}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <Label htmlFor="assignLrn">Learner Reference Number</Label>
+            <Input
+              id="assignLrn"
+              value={lrnForm.lrn}
+              onChange={(event) =>
+                setLrnForm({
+                  lrn: event.target.value.replace(/[^0-9]/g, "").slice(0, 12),
+                })
+              }
+              placeholder="12-digit LRN"
+              inputMode="numeric"
+              maxLength={12}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowLrnDialog(false)}
+              disabled={actionSubmitting}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => void submitAssignLrn()}
+              disabled={actionSubmitting}>
+              {actionSubmitting ? "Saving..." : "Save LRN"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

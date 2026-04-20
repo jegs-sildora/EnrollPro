@@ -139,10 +139,10 @@ export function ConfirmationModal({
 
         {/* ── Header — centred ───────────────────────────────────────── */}
         <DialogHeader className="space-y-2 text-center items-center">
-          <DialogTitle className="text-xl font-bold tracking-tight text-gray-900">
+          <DialogTitle className="text-xl font-bold tracking-tight">
             {title}
           </DialogTitle>
-          <DialogDescription className="text-sm leading-relaxed text-gray-500 text-center">
+          <DialogDescription className="text-sm leading-relaxed text-center">
             {description}
           </DialogDescription>
         </DialogHeader>
@@ -155,7 +155,7 @@ export function ConfirmationModal({
             onClick={() => onOpenChange(false)}
             disabled={loading}
             className={cn(
-              "flex-1 h-12 rounded-2xl font-semibold text-sm",
+              "flex-1 h-12 rounded-lg font-bold text-sm",
               "border border-gray-200 bg-white text-gray-700",
               "hover:bg-gray-50 active:bg-gray-100",
               "transition-all duration-150 active:scale-[0.97]",
@@ -172,7 +172,7 @@ export function ConfirmationModal({
             }}
             disabled={loading}
             className={cn(
-              "flex-1 h-12 rounded-2xl font-semibold text-sm",
+              "flex-1 h-12 rounded-lg font-bold text-sm",
               "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]",
               "hover:bg-[hsl(var(--primary)/0.9)]",
               "shadow-md",

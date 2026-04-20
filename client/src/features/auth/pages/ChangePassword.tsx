@@ -9,8 +9,8 @@ import {
 	Lock,
 	Eye,
 	EyeOff,
-	CheckCircle2,
-	Circle,
+	CheckSquare,
+	Square,
 	AlertCircle,
 } from 'lucide-react';
 import { sileo } from 'sileo';
@@ -223,7 +223,7 @@ export default function ChangePassword() {
 										id='newPassword'
 										type={showPw ? 'text' : 'password'}
 										placeholder='••••••••••••'
-										className={`h-12 pl-10 pr-10 bg-muted/30 border-muted-foreground/20 focus-visible:ring-primary ${newPasswordInvalid ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+										className={`font-bold h-12 pl-10 pr-10 bg-muted/30 border-muted-foreground/20 focus-visible:ring-primary ${newPasswordInvalid ? 'border-destructive focus-visible:ring-destructive' : ''}`}
 										{...register('newPassword')}
 									/>
 									<button
@@ -253,7 +253,7 @@ export default function ChangePassword() {
 										id='confirmPassword'
 										type={showPw ? 'text' : 'password'}
 										placeholder='••••••••••••'
-										className={`h-12 pl-10 bg-muted/30 border-muted-foreground/20 focus-visible:ring-primary ${confirmPasswordInvalid ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+										className={`font-bold h-12 pl-10 bg-muted/30 border-muted-foreground/20 focus-visible:ring-primary ${confirmPasswordInvalid ? 'border-destructive focus-visible:ring-destructive' : ''}`}
 										{...register('confirmPassword')}
 									/>
 								</div>
@@ -270,9 +270,9 @@ export default function ChangePassword() {
 											className={`flex items-center gap-2 text-sm font-medium transition-colors ${r.pass ? 'text-emerald-600' : 'text-muted-foreground'}`}
 										>
 											{r.pass ? (
-												<CheckCircle2 className='h-3.5 w-3.5 shrink-0' />
+												<CheckSquare className='h-3.5 w-3.5 shrink-0 text-emerald-600' />
 											) : (
-												<Circle className='h-3.5 w-3.5 shrink-0 opacity-40' />
+												<Square className='h-3.5 w-3.5 shrink-0 opacity-50' />
 											)}
 											{r.label}
 										</li>
@@ -320,7 +320,7 @@ export default function ChangePassword() {
 									navigate('/login');
 								}}
 							>
-								Sign out and try later
+								Cancel and Return to Login
 							</Button>
 						</CardFooter>
 					</form>

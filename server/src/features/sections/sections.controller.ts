@@ -11,6 +11,7 @@ const VALID_PROGRAM_TYPES = new Set([
   "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
   "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
 ]);
+const INACTIVE_EOSY_STATUSES = ["TRANSFERRED_OUT", "DROPPED_OUT"] as const;
 
 export async function listSections(req: Request, res: Response): Promise<void> {
   const ayId = req.params.ayId ? parseInt(req.params.ayId as string) : null;
@@ -45,7 +46,19 @@ export async function listSections(req: Request, res: Response): Promise<void> {
             middleName: true,
           },
         },
-        _count: { select: { enrollmentRecords: true } },
+        _count: {
+          select: {
+            enrollmentRecords: {
+              where: {
+                NOT: {
+                  eosyStatus: {
+                    in: [...INACTIVE_EOSY_STATUSES],
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: { name: "asc" },
     });
@@ -90,7 +103,19 @@ export async function listSections(req: Request, res: Response): Promise<void> {
               middleName: true,
             },
           },
-          _count: { select: { enrollmentRecords: true } },
+          _count: {
+            select: {
+              enrollmentRecords: {
+                where: {
+                  NOT: {
+                    eosyStatus: {
+                      in: [...INACTIVE_EOSY_STATUSES],
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       },
     },

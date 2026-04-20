@@ -178,7 +178,7 @@ export function createEarlyRegistrationBaseController(
             ${statusFilters.length > 0 ? Prisma.sql`AND status::text IN (${Prisma.join(statusFilters)})` : Prisma.empty}
             ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND applicant_type::text = ${applicantType}` : Prisma.empty}
             ${isTruthyQuery(withoutSection) ? Prisma.sql`AND NOT EXISTS (SELECT 1 FROM enrollment_records WHERE enrollment_application_id = enrollment_applications.id)` : Prisma.empty}
-            ${isTruthyQuery(withSection) || status === "ENROLLED" ? Prisma.sql`AND EXISTS (SELECT 1 FROM enrollment_records WHERE enrollment_application_id = enrollment_applications.id)` : Prisma.empty}
+            ${isTruthyQuery(withSection) || status === "ENROLLED" || status === "OFFICIALLY_ENROLLED" ? Prisma.sql`AND EXISTS (SELECT 1 FROM enrollment_records WHERE enrollment_application_id = enrollment_applications.id)` : Prisma.empty}
 
           UNION ALL
 
@@ -202,7 +202,7 @@ export function createEarlyRegistrationBaseController(
             ${statusFilters.length > 0 ? Prisma.sql`AND status::text IN (${Prisma.join(statusFilters)})` : Prisma.empty}
             ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND applicant_type::text = ${applicantType}` : Prisma.empty}
             -- Early reg apps NEVER have enrollment records (Phase 2 only)
-            ${isTruthyQuery(withSection) || status === "ENROLLED" ? Prisma.sql`AND 1=0` : Prisma.empty}
+            ${isTruthyQuery(withSection) || status === "ENROLLED" || status === "OFFICIALLY_ENROLLED" ? Prisma.sql`AND 1=0` : Prisma.empty}
         ),
         filtered_queue AS (
           SELECT q.* FROM base_queue q
@@ -241,7 +241,7 @@ export function createEarlyRegistrationBaseController(
             ${statusFilters.length > 0 ? Prisma.sql`AND status::text IN (${Prisma.join(statusFilters)})` : Prisma.empty}
             ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND applicant_type::text = ${applicantType}` : Prisma.empty}
             ${isTruthyQuery(withoutSection) ? Prisma.sql`AND NOT EXISTS (SELECT 1 FROM enrollment_records WHERE enrollment_application_id = enrollment_applications.id)` : Prisma.empty}
-            ${isTruthyQuery(withSection) || status === "ENROLLED" ? Prisma.sql`AND EXISTS (SELECT 1 FROM enrollment_records WHERE enrollment_application_id = enrollment_applications.id)` : Prisma.empty}
+            ${isTruthyQuery(withSection) || status === "ENROLLED" || status === "OFFICIALLY_ENROLLED" ? Prisma.sql`AND EXISTS (SELECT 1 FROM enrollment_records WHERE enrollment_application_id = enrollment_applications.id)` : Prisma.empty}
 
           UNION ALL
 
@@ -252,7 +252,7 @@ export function createEarlyRegistrationBaseController(
             ${gradeId ? Prisma.sql`AND grade_level_id = ${gradeId}` : Prisma.empty}
             ${statusFilters.length > 0 ? Prisma.sql`AND status::text IN (${Prisma.join(statusFilters)})` : Prisma.empty}
             ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND applicant_type::text = ${applicantType}` : Prisma.empty}
-            ${isTruthyQuery(withSection) || status === "ENROLLED" ? Prisma.sql`AND 1=0` : Prisma.empty}
+            ${isTruthyQuery(withSection) || status === "ENROLLED" || status === "OFFICIALLY_ENROLLED" ? Prisma.sql`AND 1=0` : Prisma.empty}
         )
         SELECT COUNT(*) as count FROM base_queue q
         JOIN learners l ON q.learner_id = l.id
@@ -420,7 +420,11 @@ export function createEarlyRegistrationBaseController(
         const canStartReview =
           req.user?.role === "REGISTRAR" || req.user?.role === "SYSTEM_ADMIN";
 
-        if (earlyReg.status === "SUBMITTED" && canStartReview) {
+        if (
+          (earlyReg.status === "SUBMITTED" ||
+            earlyReg.status === "EARLY_REG_SUBMITTED") &&
+          canStartReview
+        ) {
           await prisma.earlyRegistrationApplication.update({
             where: { id: earlyReg.id },
             data: { status: "UNDER_REVIEW" },
@@ -897,9 +901,7 @@ export function createEarlyRegistrationBaseController(
 
     // Link early registration if provided
     if (linkedEarlyRegistrationId) {
-      const nextEarlyRegStatus: ApplicationStatus = hasNoLrnDeclared
-        ? "TEMPORARILY_ENROLLED"
-        : "ENROLLED";
+      const nextEarlyRegStatus: ApplicationStatus = "PRE_REGISTERED";
 
       await prisma.earlyRegistrationApplication.update({
         where: { id: linkedEarlyRegistrationId },
@@ -1053,7 +1055,9 @@ export function createEarlyRegistrationBaseController(
         string,
         any
       >;
-      const rawStatus = String(flattened.status ?? "SUBMITTED").toUpperCase();
+      const rawStatus = String(
+        flattened.status ?? "PENDING_VERIFICATION",
+      ).toUpperCase();
       const status = normalizeTrackingStatus(
         flattened.trackingStatus ?? rawStatus,
       );
@@ -1092,6 +1096,10 @@ export function createEarlyRegistrationBaseController(
               schoolYearId: settings.activeSchoolYearId,
               status: {
                 in: [
+                  "EARLY_REG_SUBMITTED",
+                  "PRE_REGISTERED",
+                  "PENDING_VERIFICATION",
+                  "READY_FOR_SECTIONING",
                   "SUBMITTED",
                   "VERIFIED",
                   "UNDER_REVIEW",

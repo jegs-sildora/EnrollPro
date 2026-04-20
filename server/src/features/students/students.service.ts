@@ -17,7 +17,35 @@ const PROGRAM_TYPES: ApplicantType[] = [
   "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
 ];
 
-const DEFAULT_STATUS: ApplicationStatus = "ENROLLED";
+const ACTIVE_STATUS_DEFAULTS: ApplicationStatus[] = [
+  "OFFICIALLY_ENROLLED",
+  "ENROLLED",
+];
+const INACTIVE_OUTCOMES = ["TRANSFERRED_OUT", "DROPPED_OUT"] as const;
+const INACTIVE_OUTCOME_SET = new Set<string>(INACTIVE_OUTCOMES);
+const APPLICATION_STATUS_VALUES: ApplicationStatus[] = [
+  "EARLY_REG_SUBMITTED",
+  "PRE_REGISTERED",
+  "PENDING_VERIFICATION",
+  "READY_FOR_SECTIONING",
+  "OFFICIALLY_ENROLLED",
+  "SUBMITTED",
+  "VERIFIED",
+  "UNDER_REVIEW",
+  "FOR_REVISION",
+  "ELIGIBLE",
+  "EXAM_SCHEDULED",
+  "ASSESSMENT_TAKEN",
+  "PASSED",
+  "INTERVIEW_SCHEDULED",
+  "READY_FOR_ENROLLMENT",
+  "TEMPORARILY_ENROLLED",
+  "FAILED_ASSESSMENT",
+  "ENROLLED",
+  "REJECTED",
+  "WITHDRAWN",
+];
+const APPLICATION_STATUS_SET = new Set<string>(APPLICATION_STATUS_VALUES);
 
 const parsePositiveInt = (value: unknown): number | undefined => {
   const parsed = Number.parseInt(String(value ?? ""), 10);
@@ -28,6 +56,23 @@ const normalizeProgramType = (value: unknown): ApplicantType | undefined => {
   if (typeof value !== "string") return undefined;
   const upper = value.trim().toUpperCase() as ApplicantType;
   return PROGRAM_TYPES.includes(upper) ? upper : undefined;
+};
+
+const normalizeStatuses = (value: unknown): ApplicationStatus[] | undefined => {
+  if (typeof value !== "string" && !Array.isArray(value)) {
+    return undefined;
+  }
+
+  const rawStatuses = Array.isArray(value) ? value : String(value).split(",");
+
+  const statuses = rawStatuses
+    .map((status) => String(status).trim().toUpperCase())
+    .filter((status) => status.length > 0 && status !== "ALL")
+    .filter((status): status is ApplicationStatus =>
+      APPLICATION_STATUS_SET.has(status),
+    );
+
+  return statuses.length > 0 ? statuses : undefined;
 };
 
 const normalizeSortOrder = (value: unknown): Prisma.SortOrder =>
@@ -69,7 +114,7 @@ export async function findStudents(query: {
   gradeLevelId?: number | string;
   sectionId?: number | string;
   programType?: ApplicantType | string;
-  status?: ApplicationStatus;
+  status?: ApplicationStatus | string | string[];
   page?: number | string;
   limit?: number | string;
   sortBy?: string;
@@ -97,6 +142,7 @@ export async function findStudents(query: {
   const resolvedGradeLevelId = parsePositiveInt(gradeLevelId);
   const resolvedSectionId = parsePositiveInt(sectionId);
   const resolvedProgramType = normalizeProgramType(programType);
+  const resolvedStatuses = normalizeStatuses(status) ?? ACTIVE_STATUS_DEFAULTS;
   const resolvedSortOrder = normalizeSortOrder(sortOrder);
   const orderBy = resolveStudentOrderBy(sortBy, resolvedSortOrder);
 
@@ -104,8 +150,29 @@ export async function findStudents(query: {
 
   const where: Prisma.EnrollmentApplicationWhereInput = {
     schoolYearId: resolvedSchoolYearId,
-    status: status || DEFAULT_STATUS,
+    status:
+      resolvedStatuses.length === 1
+        ? resolvedStatuses[0]
+        : { in: resolvedStatuses },
   };
+
+  const enrollmentRecordFilters: Prisma.EnrollmentRecordWhereInput = {};
+  const shouldExcludeInactiveOutcomes = resolvedStatuses.every(
+    (applicationStatus) => ACTIVE_STATUS_DEFAULTS.includes(applicationStatus),
+  );
+
+  if (shouldExcludeInactiveOutcomes) {
+    enrollmentRecordFilters.OR = [
+      {
+        eosyStatus: null,
+      },
+      {
+        eosyStatus: {
+          notIn: [...INACTIVE_OUTCOMES],
+        },
+      },
+    ];
+  }
 
   if (search) {
     const s = String(search);
@@ -119,13 +186,16 @@ export async function findStudents(query: {
 
   if (resolvedGradeLevelId) where.gradeLevelId = resolvedGradeLevelId;
 
-  if (resolvedSectionId || resolvedProgramType) {
-    where.enrollmentRecord = {
-      ...(resolvedSectionId ? { sectionId: resolvedSectionId } : {}),
-      ...(resolvedProgramType
-        ? { section: { programType: resolvedProgramType } }
-        : {}),
-    };
+  if (resolvedSectionId) {
+    enrollmentRecordFilters.sectionId = resolvedSectionId;
+  }
+
+  if (resolvedProgramType) {
+    enrollmentRecordFilters.section = { programType: resolvedProgramType };
+  }
+
+  if (Object.keys(enrollmentRecordFilters).length > 0) {
+    where.enrollmentRecord = enrollmentRecordFilters;
   }
 
   const total = await prisma.enrollmentApplication.count({ where });
@@ -168,17 +238,23 @@ export async function findStudents(query: {
 
 export async function getStudentsSummary(query: {
   schoolYearId?: number | string;
-  status?: ApplicationStatus;
+  status?: ApplicationStatus | string | string[];
 }) {
   const resolvedSchoolYearId = parsePositiveInt(query.schoolYearId);
   if (!resolvedSchoolYearId) {
     throw new Error("schoolYearId is required");
   }
 
+  const resolvedStatuses =
+    normalizeStatuses(query.status) ?? ACTIVE_STATUS_DEFAULTS;
+
   const applications = await prisma.enrollmentApplication.findMany({
     where: {
       schoolYearId: resolvedSchoolYearId,
-      status: query.status || DEFAULT_STATUS,
+      status:
+        resolvedStatuses.length === 1
+          ? resolvedStatuses[0]
+          : { in: resolvedStatuses },
     },
     select: {
       learner: {
@@ -193,6 +269,7 @@ export async function getStudentsSummary(query: {
       },
       enrollmentRecord: {
         select: {
+          eosyStatus: true,
           section: {
             select: {
               programType: true,
@@ -218,6 +295,11 @@ export async function getStudentsSummary(query: {
   );
 
   for (const application of applications) {
+    const lifecycleOutcome = application.enrollmentRecord?.eosyStatus;
+    if (lifecycleOutcome && INACTIVE_OUTCOME_SET.has(lifecycleOutcome)) {
+      continue;
+    }
+
     const normalizedSex = String(application.learner?.sex ?? "")
       .trim()
       .toUpperCase();
@@ -238,8 +320,11 @@ export async function getStudentsSummary(query: {
     programBreakdown[programType] += 1;
   }
 
+  const totalEnrolled =
+    genderBreakdown.male + genderBreakdown.female + genderBreakdown.other;
+
   return {
-    totalEnrolled: applications.length,
+    totalEnrolled,
     genderBreakdown,
     programBreakdown,
   };

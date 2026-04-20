@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/shared/ui/card";
 
 export function NoSchoolYearState() {
   return (
-    <div className="flex h-[calc(100vh-20rem)] w-full items-center justify-center">
+    <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
       <Card className="max-w-md w-full border-dashed shadow-none bg-muted/20">
         <CardContent className="pt-10 pb-10 text-center space-y-3">
           <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center">

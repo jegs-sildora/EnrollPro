@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import { type ApplicationStatus } from "../../../generated/prisma/index.js";
 import {
   createStudentsControllerDeps,
   StudentsControllerDeps,
@@ -68,13 +67,6 @@ const parsePositiveInt = (value: unknown): number | null => {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 };
 
-const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
-  if (typeof value !== "string") return undefined;
-  const status = value.trim().toUpperCase();
-  if (!status || status === "ALL") return undefined;
-  return status as ApplicationStatus;
-};
-
 export const createStudentsQueryController = (
   deps: StudentsControllerDeps = createStudentsControllerDeps(),
 ) => {
@@ -119,6 +111,14 @@ export const createStudentsQueryController = (
           emailAddress: applicant.earlyRegistration?.email ?? null,
           trackingNumber: applicant.trackingNumber,
           status: applicant.status,
+          lifecycleOutcome: applicant.enrollmentRecord?.eosyStatus || null,
+          dropOutReason: applicant.enrollmentRecord?.dropOutReason || null,
+          dropOutDate: applicant.enrollmentRecord?.dropOutDate || null,
+          transferOutDate: applicant.enrollmentRecord?.transferOutDate || null,
+          transferOutSchoolName:
+            applicant.enrollmentRecord?.transferOutSchoolName || null,
+          transferOutReason:
+            applicant.enrollmentRecord?.transferOutReason || null,
           gradeLevel: applicant.gradeLevel.name,
           gradeLevelId: applicant.gradeLevelId,
           section: applicant.enrollmentRecord?.section.name || null,
@@ -152,7 +152,7 @@ export const createStudentsQueryController = (
 
       const summary = await deps.fetchStudentsSummary({
         schoolYearId,
-        status: normalizeStatus(req.query.status),
+        status: req.query.status as string | undefined,
       });
 
       res.json(summary);
@@ -252,6 +252,13 @@ export const createStudentsQueryController = (
               id: applicant.enrollmentRecord.id,
               section: applicant.enrollmentRecord.section.name,
               sectionId: applicant.enrollmentRecord.sectionId,
+              eosyStatus: applicant.enrollmentRecord.eosyStatus,
+              dropOutReason: applicant.enrollmentRecord.dropOutReason,
+              dropOutDate: applicant.enrollmentRecord.dropOutDate,
+              transferOutDate: applicant.enrollmentRecord.transferOutDate,
+              transferOutSchoolName:
+                applicant.enrollmentRecord.transferOutSchoolName,
+              transferOutReason: applicant.enrollmentRecord.transferOutReason,
               advisingTeacher: applicant.enrollmentRecord.section
                 .advisingTeacher
                 ? buildFullName(
