@@ -163,18 +163,16 @@ export default function SampleIntegrationPage() {
   const [teachers, setTeachers] = useState<IntegrationTeacher[]>([]);
   const [staffUsers, setStaffUsers] = useState<IntegrationStaff[]>([]);
   const [learners, setLearners] = useState<IntegrationLearner[]>([]);
-  const [learnersMeta, setLearnersMeta] = useState<IntegrationLearnersMeta | null>(
-    null,
-  );
+  const [learnersMeta, setLearnersMeta] =
+    useState<IntegrationLearnersMeta | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const settingsRes = await api.get<PublicSettingsResponse>(
-        "/settings/public",
-      );
+      const settingsRes =
+        await api.get<PublicSettingsResponse>("/settings/public");
       const schoolYearId = settingsRes.data.activeSchoolYearId;
 
       setActiveSchoolYearId(schoolYearId);
@@ -310,8 +308,8 @@ export default function SampleIntegrationPage() {
             Active Feed Contracts
           </CardTitle>
           <CardDescription>
-            This page fetches only from integration APIs and renders full payload
-            fields per record.
+            This page fetches only from integration APIs and renders full
+            payload fields per record.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -336,9 +334,7 @@ export default function SampleIntegrationPage() {
               <GraduationCap className="h-5 w-5 text-primary" />
               Teachers
             </CardTitle>
-            <CardDescription>
-              Source: /integration/v1/faculty
-            </CardDescription>
+            <CardDescription>Source: /integration/v1/faculty</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -357,16 +353,17 @@ export default function SampleIntegrationPage() {
                     <div key={teacher.teacherId} className="rounded border p-2">
                       <p className="font-semibold">{teacher.fullName}</p>
                       <p className="text-xs text-muted-foreground">
-                        Teacher ID: {teacher.teacherId} | Employee ID: {" "}
+                        Teacher ID: {teacher.teacherId} | Employee ID:{" "}
                         {teacher.employeeId ?? "N/A"}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {teacher.specialization ?? "No specialization"} | Sections: {" "}
-                        {teacher.sectionCount} | Active: {teacher.isActive ? "Yes" : "No"}
+                        {teacher.specialization ?? "No specialization"} |
+                        Sections: {teacher.sectionCount} | Active:{" "}
+                        {teacher.isActive ? "Yes" : "No"}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Adviser: {teacher.isClassAdviser ? "Yes" : "No"} | TIC: {" "}
-                        {teacher.isTic ? "Yes" : "No"} | Teaching Exempt: {" "}
+                        Adviser: {teacher.isClassAdviser ? "Yes" : "No"} | TIC:{" "}
+                        {teacher.isTic ? "Yes" : "No"} | Teaching Exempt:{" "}
                         {teacher.isTeachingExempt ? "Yes" : "No"}
                       </p>
                       <details className="mt-2">
@@ -415,7 +412,8 @@ export default function SampleIntegrationPage() {
                         User ID: {member.id} | Role: {member.role}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {member.email} | Active: {member.isActive ? "Yes" : "No"}
+                        {member.email} | Active:{" "}
+                        {member.isActive ? "Yes" : "No"}
                       </p>
                       <details className="mt-2">
                         <summary className="cursor-pointer text-xs text-primary">
@@ -461,18 +459,21 @@ export default function SampleIntegrationPage() {
                     <div
                       key={learnerRow.enrollmentApplicationId}
                       className="rounded border p-2">
-                      <p className="font-semibold">{learnerRow.learner.fullName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Application ID: {learnerRow.enrollmentApplicationId} | External ID: {" "}
-                        {learnerRow.learner.externalId}
+                      <p className="font-semibold">
+                        {learnerRow.learner.fullName}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        LRN: {learnerRow.learner.lrn ?? "N/A"} | {learnerRow.gradeLevel.name} | {" "}
+                        Application ID: {learnerRow.enrollmentApplicationId} |
+                        External ID: {learnerRow.learner.externalId}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        LRN: {learnerRow.learner.lrn ?? "N/A"} |{" "}
+                        {learnerRow.gradeLevel.name} |{" "}
                         {learnerRow.section?.name ?? "Unsectioned"}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Program: {learnerRow.section?.programType ?? "N/A"} | Enrolled At: {" "}
-                        {formatDate(learnerRow.enrolledAt)}
+                        Program: {learnerRow.section?.programType ?? "N/A"} |
+                        Enrolled At: {formatDate(learnerRow.enrolledAt)}
                       </p>
                       <details className="mt-2">
                         <summary className="cursor-pointer text-xs text-primary">
