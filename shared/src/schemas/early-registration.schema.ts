@@ -92,6 +92,7 @@ export const earlyRegistrationSubmitSchema = z
       .or(z.date()),
     sex: SexEnum,
     placeOfBirth: z.string().min(1, "Enter the place of birth.").max(150),
+    motherTongue: z.string().max(100).optional().nullable(),
     religion: z.string().max(100).optional().nullable(),
 
     // ── IP / PWD ──────────────────────────────────────────
@@ -99,6 +100,14 @@ export const earlyRegistrationSubmitSchema = z
     ipGroupName: z.string().max(100).optional().nullable(),
     isLearnerWithDisability: z.boolean().default(false),
     disabilityTypes: z.array(DisabilityTypeEnum).optional().nullable(),
+    hasPwdId: z.boolean().default(false),
+
+    // ── 4Ps / Balik-Aral ──────────────────────────────────
+    is4PsBeneficiary: z.boolean().default(false),
+    householdId4Ps: z.string().max(50).optional().nullable(),
+    isBalikAral: z.boolean().default(false),
+    lastYearEnrolled: z.string().max(50).optional().nullable(),
+    lastGradeLevel: z.string().max(50).optional().nullable(),
 
     // ── Address ───────────────────────────────────────────
     houseNoStreet: z.string().max(200).optional().nullable(),

@@ -188,11 +188,23 @@ export default function Step1Personal() {
             setValue("age", differenceInYears(new Date(), bday));
           }
           setValue("sex", data.sex === "MALE" ? "Male" : "Female");
+          setValue("placeOfBirth", data.placeOfBirth || "");
           setValue("religion", data.religion || "");
+          setValue("motherTongue", data.motherTongue || "");
           setValue("isIpCommunity", data.isIpCommunity);
           setValue("ipGroupName", data.ipGroupName || "");
           setValue("isLearnerWithDisability", data.isLearnerWithDisability);
           setValue("disabilityTypes", data.disabilityTypes || []);
+          setValue("psaBirthCertNumber", data.psaBirthCertNumber || "");
+          setValue("hasPwdId", data.hasPwdId ?? false);
+          setValue("is4PsBeneficiary", data.is4PsBeneficiary ?? false);
+          setValue("householdId4Ps", data.householdId4Ps || "");
+          setValue("isBalikAral", data.isBalikAral ?? false);
+          setValue("lastYearEnrolled", data.lastYearEnrolled || "");
+          setValue("lastGradeLevel", data.lastGradeLevel || "");
+          if (data.studentPhoto) {
+            setValue("studentPhoto", data.studentPhoto);
+          }
 
           if (data.currentAddress) {
             setValue(
@@ -782,6 +794,19 @@ export default function Step1Personal() {
               <AlertCircle className="w-3 h-3" /> {errors.placeOfBirth.message}
             </p>
           )}
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="motherTongue" className="text-sm font-semibold">
+            Mother Tongue
+          </Label>
+          <Input
+            id="motherTongue"
+            {...register("motherTongue")}
+            autoComplete="off"
+            placeholder="e.g. Tagalog, Bisaya, Ilocano"
+            className="h-11 font-bold uppercase"
+          />
         </div>
 
         <div className="space-y-1.5">

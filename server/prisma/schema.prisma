@@ -202,7 +202,6 @@ model Learner {
   externalId              String    @unique(map: "uq_learners_external_id") @default(dbgenerated("gen_random_uuid()")) @db.Uuid @map("external_id")
   lrn                     String?   @unique(map: "uq_learners_lrn") @db.VarChar(12)
   isPendingLrnCreation    Boolean   @default(false) @map("is_pending_lrn_creation")
-  status                  ApplicationStatus @default(SUBMITTED_BEERF)
   psaBirthCertNumber      String?   @map("psa_birth_cert_number")
   firstName               String    @map("first_name")
   lastName                String    @map("last_name")
@@ -210,6 +209,7 @@ model Learner {
   extensionName           String?   @map("extension_name")
   birthdate               DateTime  @db.Date
   sex                     Sex
+  studentPhoto            String?   @map("student_photo")
   placeOfBirth            String?   @map("place_of_birth")
   religion                String?
   motherTongue            String?   @map("mother_tongue")
@@ -251,7 +251,6 @@ model EarlyRegistrationApplication {
   status                ApplicationStatus @default(SUBMITTED_BEERF)
   channel               AdmissionChannel  @default(ONLINE)
   contactNumber         String    @map("contact_number")
-  studentPhoto          String?   @map("student_photo")
   email                 String?
   primaryContact        PrimaryContactType? @map("primary_contact")
   guardianRelationship  String?   @map("guardian_relationship")
@@ -319,7 +318,6 @@ model EnrollmentApplication {
   status                  ApplicationStatus @default(SUBMITTED_BEEF)
   admissionChannel        AdmissionChannel  @default(ONLINE) @map("admission_channel")
   trackingNumber          String?           @unique(map: "uq_enrollment_tracking_number") @map("tracking_number")
-  studentPhoto            String?           @map("student_photo")
   learningModalities      String[]          @map("learning_modalities")
   isTemporarilyEnrolled   Boolean           @default(false) @map("is_temporarily_enrolled")
   documentaryDeadlineAt   DateTime?         @db.Date @map("documentary_deadline_at")

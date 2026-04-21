@@ -176,7 +176,7 @@ function buildAssessmentData(
 
 export function createInitialTrackingPayload(
   applicantType: string | null | undefined,
-  submittedRawStatus: ApplicationStatus = "SUBMITTED_BEEF",
+  submittedRawStatus: ApplicationStatus = "SUBMITTED_BEERF",
 ): {
   programType: PublicProgramType;
   status: PublicTrackingStatus;
@@ -483,6 +483,7 @@ export function createEarlyRegistrationSharedService(
         false,
       disabilityTypes:
         learner.disabilityTypes || application.disabilityTypes || [],
+      studentPhoto: learner.studentPhoto || application.studentPhoto,
 
       // Standardize address format for frontend
       currentAddress: currentAddr
@@ -914,7 +915,6 @@ export function createEarlyRegistrationSharedService(
               status: "SUBMITTED_BEEF",
               admissionChannel: "F2F", // Registrar-initiated migration
               encodedById: userId,
-              studentPhoto: earlyReg.studentPhoto,
               isPrivacyConsentGiven: earlyReg.isPrivacyConsentGiven,
               guardianRelationship: earlyReg.guardianRelationship,
               hasNoMother: earlyReg.hasNoMother,

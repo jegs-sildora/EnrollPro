@@ -94,7 +94,6 @@ const APPLICANT_TYPE_VALUES = new Set([
 const EARLY_REG_STATUS_FILTER_ALIASES: Record<string, ApplicationStatus> = {
   EARLY_REG_SUBMITTED: "SUBMITTED_BEERF",
   SUBMITTED: "SUBMITTED_BEERF",
-  SUBMITTED_BEEF: "SUBMITTED_BEERF",
   PENDING_VERIFICATION: "UNDER_REVIEW",
   PRE_REGISTERED: "READY_FOR_ENROLLMENT",
   READY_FOR_SECTIONING: "READY_FOR_ENROLLMENT",
@@ -984,11 +983,12 @@ async function createRegistration(
       });
     }
 
+    const studentPhotoUrl = await saveBase64Image(body.studentPhoto, "photo");
+
     // 5. Create/reuse learner + guardians + registration in a transaction
     const learnerPayload = {
       lrn,
       isPendingLrnCreation,
-      status: "SUBMITTED_BEERF" as ApplicationStatus,
       psaBirthCertNumber: body.psaBirthCertNumber?.trim().toUpperCase() || null,
       firstName: body.firstName,
       lastName: body.lastName,
@@ -1009,9 +1009,8 @@ async function createRegistration(
       isBalikAral: body.isBalikAral ?? false,
       lastYearEnrolled: body.lastYearEnrolled || null,
       lastGradeLevel: body.lastGradeLevel || null,
+      studentPhoto: studentPhotoUrl,
     };
-
-    const studentPhotoUrl = await saveBase64Image(body.studentPhoto, "photo");
 
     const result = await prisma.$transaction(async (tx) => {
       let learner: { id: number };
@@ -1060,7 +1059,6 @@ async function createRegistration(
           hasNoMother: body.hasNoMother ?? false,
           hasNoFather: body.hasNoFather ?? false,
           isPrivacyConsentGiven: body.isPrivacyConsentGiven ?? false,
-          studentPhoto: studentPhotoUrl,
           encodedById: options.encodedById ?? null,
           trackingNumber: tempTracking,
           familyMembers: {
@@ -1259,10 +1257,14 @@ export async function index(req: Request, res: Response, next: NextFunction) {
       const rawStatusToken = status.trim().toUpperCase();
       if (rawStatusToken !== "ALL") {
         const normalizedStatus = normalizeEarlyRegStatusFilterToken(status);
-        if (!normalizedStatus) {
-          throw new AppError(400, "Invalid status filter.");
+        if (normalizedStatus) {
+          andFilters.push({ status: normalizedStatus });
+        } else {
+          // If status is valid enum but not for this table, or invalid, 
+          // we force an impossible match to return 0 results instead of throwing 400.
+          // This allows frontend to fetch counts for all stages without crashing.
+          andFilters.push({ id: -1 });
         }
-        andFilters.push({ status: normalizedStatus });
       }
     }
 
@@ -1749,6 +1751,7 @@ const EARLY_REG_TRANSITIONS: Record<string, ApplicationStatus[]> = {
   FAILED_ASSESSMENT: ["UNDER_REVIEW", "WITHDRAWN", "REJECTED"],
   REJECTED: ["UNDER_REVIEW", "WITHDRAWN"],
   WITHDRAWN: [],
+  SUBMITTED_BEEF: [],
 };
 
 function assertEarlyRegTransition(

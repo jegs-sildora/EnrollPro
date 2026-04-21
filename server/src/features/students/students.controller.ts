@@ -157,7 +157,7 @@ export async function getStudentById(
   res.json({
     student: {
       id: row.id,
-      studentPhoto: null,
+      studentPhoto: row.learner.studentPhoto,
       lrn: row.learner.lrn,
       lastName: row.learner.lastName,
       firstName: row.learner.firstName,

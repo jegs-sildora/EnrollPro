@@ -98,6 +98,7 @@ export const EnrollmentFormSchema = z
     age: z.number().min(0),
     sex: z.enum(["Male", "Female"]),
     placeOfBirth: z.string().min(1, "Place of birth is required"),
+    motherTongue: z.string().optional(),
     religion: z.string().optional(),
 
     // Section 4: Special Classifications
@@ -112,6 +113,7 @@ export const EnrollmentFormSchema = z
     specialNeedsCategory: z.enum(["a1", "a2"]).optional(),
     disabilityTypes: z.array(z.string()).default([]),
     hasPwdId: z.boolean().default(false),
+
     snedPlacement: z
       .enum(["Inclusive Education", "Special Education Center"])
       .optional(),

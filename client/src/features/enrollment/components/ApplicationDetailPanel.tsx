@@ -115,12 +115,17 @@ export function ApplicationDetailPanel({
   const getImageUrl = (photo: string | null) => {
     if (!photo) return null;
     if (photo.startsWith("data:")) return photo;
-    // Assuming /uploads/filename.ext - need to prefix with backend origin
-    const baseUrl = (import.meta.env.VITE_API_URL || "/api").replace(
-      /\/api$/,
-      "",
-    );
-    return `${baseUrl}${photo}`;
+
+    // Standardize backend origin detection
+    let baseUrl = import.meta.env.VITE_API_URL || "";
+
+    if (!baseUrl || baseUrl === "/api") {
+      // Fallback for relative proxy or missing env
+      baseUrl = window.location.origin.replace(/:\d+$/, ":5000") + "/api";
+    }
+
+    const origin = baseUrl.replace(/\/api$/, "");
+    return `${origin}${photo}`;
   };
 
   const persistedMandatoryMet = applicant

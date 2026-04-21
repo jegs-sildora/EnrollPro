@@ -165,22 +165,33 @@ export function createEarlyRegistrationBaseController(
       }
 
       // 2. Build Status Filters for Raw SQL
-      const statusFilters = (Array.isArray(status) ? status : [status])
+      const rawStatus = (Array.isArray(status) ? status : [status])
         .flatMap((value) => String(value ?? "").split(","))
+        .map((v) => v.trim())
+        .filter(Boolean);
+
+      const statusFilters = rawStatus
         .flatMap((value) => {
-          const normalizedToken = String(value ?? "")
-            .trim()
-            .toUpperCase();
+          const normalizedToken = value.toUpperCase();
 
           if (normalizedToken === "SUBMITTED") {
-            return ["SUBMITTED_BEERF", "SUBMITTED_BEEF"] as ApplicationStatus[];
+            // "SUBMITTED" is ambiguous, but for Enrollment Management we prefer BEEF
+            return ["SUBMITTED_BEEF"] as ApplicationStatus[];
           }
 
           const mapped = normalizeApplicationStatusToken(normalizedToken);
           return mapped ? [mapped] : [];
         })
         .filter((value): value is ApplicationStatus => Boolean(value));
+
+      // NEW REQUIREMENT: Enrollment Management should only start process learners with "SUBMITTED_BEEF" status.
+      // If no status filter is provided, we default to SUBMITTED_BEEF.
+      if (statusFilters.length === 0 && !search) {
+        statusFilters.push("SUBMITTED_BEEF");
+      }
+
       const requiresSectionAssignment = statusFilters.includes("ENROLLED");
+      const includePhase1 = statusFilters.some(s => s === "SUBMITTED_BEERF" || s === "READY_FOR_ENROLLMENT" || s === "UNDER_REVIEW");
 
       // 3. Execution: Unified Raw Query for ID and Metadata
       // We use raw SQL to handle UNION ALL + cross-table pagination + complex filters efficiently.
@@ -845,6 +856,7 @@ export function createEarlyRegistrationBaseController(
       lastGradeLevel: body.lastGradeLevel || null,
       is4PsBeneficiary: body.is4PsBeneficiary ?? false,
       householdId4Ps: body.is4PsBeneficiary ? body.householdId4Ps : null,
+      studentPhoto: studentPhotoUrl,
     };
 
     const application = await prisma.$transaction(async (tx) => {
@@ -867,11 +879,11 @@ export function createEarlyRegistrationBaseController(
         data: {
           learnerId: learner.id,
           earlyRegistrationId: linkedEarlyRegistrationId,
-          studentPhoto: studentPhotoUrl,
           learningModalities: body.learningModalities || [],
 
           // Enrollment preferences
           learnerType: lType,
+          status: "SUBMITTED_BEEF",
           isPrivacyConsentGiven: body.isPrivacyConsentGiven ?? false,
           guardianRelationship: body.guardian?.relationship || null,
           hasNoMother: body.hasNoMother ?? false,
@@ -1182,9 +1194,7 @@ export function createEarlyRegistrationBaseController(
         string,
         any
       >;
-      const rawStatus = String(
-        flattened.status ?? "SUBMITTED_BEEF",
-      ).toUpperCase();
+      const rawStatus = String(flattened.status).toUpperCase();
       const status = normalizeTrackingStatus(
         flattened.trackingStatus ?? rawStatus,
       );
@@ -1284,7 +1294,9 @@ export function createEarlyRegistrationBaseController(
         extensionName: learner.extensionName,
         birthdate: learner.birthdate,
         sex: learner.sex,
+        placeOfBirth: learner.placeOfBirth,
         religion: learner.religion,
+        motherTongue: learner.motherTongue,
         isIpCommunity: learner.isIpCommunity,
         ipGroupName: learner.ipGroupName,
         isLearnerWithDisability: learner.isLearnerWithDisability,
@@ -1296,6 +1308,7 @@ export function createEarlyRegistrationBaseController(
         lastGradeLevel: learner.lastGradeLevel,
         is4PsBeneficiary: learner.is4PsBeneficiary,
         householdId4Ps: learner.householdId4Ps,
+        studentPhoto: learner.studentPhoto,
         // Demographic fields from learner table
         gradeLevel: normalizedGradeLevel,
         learnerType: reg.learnerType,

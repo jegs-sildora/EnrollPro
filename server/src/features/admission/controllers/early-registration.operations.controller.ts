@@ -577,6 +577,7 @@ export function createEarlyRegistrationOperationsController(
         learnerData.is4PsBeneficiary = is4PsBeneficiary;
       if (householdId4Ps !== undefined)
         learnerData.householdId4Ps = householdId4Ps;
+      if (studentPhoto !== undefined) learnerData.studentPhoto = studentPhoto;
 
       // Fields that belong to application models
       const appData: Record<string, any> = {};
@@ -594,7 +595,6 @@ export function createEarlyRegistrationOperationsController(
         }
 
         if (appType === "ENROLLMENT") {
-          if (studentPhoto !== undefined) appData.studentPhoto = studentPhoto;
           return tx.enrollmentApplication.update({
             where: { id: applicantId },
             data: appData,
