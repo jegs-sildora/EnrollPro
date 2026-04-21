@@ -487,8 +487,7 @@ export default function Step5Enrollment() {
           {isProgramSelectionLocked && (
             <p className="font-bold text-xs italic flex items-center gap-1 text-muted-foreground">
               <Info className="w-4 h-4" />
-              Learning Program and SCP selection are locked because this form is
-              linked to an existing Early Registration.
+              Learning Program and SCP selection are locked because this form is linked to an existing Early Registration.
             </p>
           )}
 

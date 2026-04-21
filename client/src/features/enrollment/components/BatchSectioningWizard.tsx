@@ -8,7 +8,10 @@ import {
   ArrowLeft,
   X,
   Check,
-  Filter
+  Filter,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown
 } from "lucide-react";
 import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
@@ -67,6 +70,13 @@ interface SectioningPreview {
   proposedAssignments: ProposedAssignment[];
 }
 
+type SortField = "learnerName" | "genAve" | "sectionName" | "gender";
+
+interface SortConfig {
+  field: SortField;
+  direction: "asc" | "desc";
+}
+
 export function BatchSectioningWizard({ 
   isOpen, 
   onClose, 
@@ -84,6 +94,11 @@ export function BatchSectioningWizard({
   const [error, setError] = useState<string | null>(null);
   const [sectionFilter, setSectionFilter] = useState<string>("all");
 
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    field: "sectionName",
+    direction: "asc"
+  });
+
   useEffect(() => {
     if (isOpen) {
       void runPreview();
@@ -95,8 +110,21 @@ export function BatchSectioningWizard({
       setModifiedAssignments([]);
       setError(null);
       setSectionFilter("all");
+      setSortConfig({ field: "sectionName", direction: "asc" });
     }
   }, [isOpen]);
+
+  const toggleSort = (field: SortField) => {
+    setSortConfig((prev) => ({
+      field,
+      direction: prev.field === field && prev.direction === "asc" ? "desc" : "asc"
+    }));
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortConfig.field !== field) return <ArrowUpDown className="ml-2 h-3.5 w-3.5 opacity-50" />;
+    return sortConfig.direction === "asc" ? <ArrowUp className="ml-2 h-3.5 w-3.5" /> : <ArrowDown className="ml-2 h-3.5 w-3.5" />;
+  };
 
   const runPreview = async () => {
     setIsLoading(true);
@@ -164,19 +192,37 @@ export function BatchSectioningWizard({
   const filteredAssignments = useMemo(() => {
     let list = [...modifiedAssignments];
     
-    // SF1 Standard Sorting: Section -> Gender (M first) -> Name
+    // Sort logic
     list.sort((a, b) => {
-      // 1. Section
+      const field = sortConfig.field;
+      const direction = sortConfig.direction === "asc" ? 1 : -1;
+
+      // Special case for Gender - MALE (M) should be first by default in SF1
+      if (field === "gender") {
+        if (a.gender === b.gender) return a.learnerName.localeCompare(b.learnerName);
+        return (a.gender === "MALE" ? -1 : 1) * direction;
+      }
+
+      const valA = a[field] ?? "";
+      const valB = b[field] ?? "";
+
+      if (typeof valA === "number" && typeof valB === "number") {
+        if (valA !== valB) return (valA - valB) * direction;
+      } else {
+        const strA = String(valA);
+        const strB = String(valB);
+        if (strA !== strB) return strA.localeCompare(strB) * direction;
+      }
+
+      // Tie-breakers for consistent SF1 order if main field is same
       if (a.sectionName !== b.sectionName) return a.sectionName.localeCompare(b.sectionName);
-      // 2. Gender (Male 'MALE' vs Female 'FEMALE')
       if (a.gender !== b.gender) return a.gender === "MALE" ? -1 : 1;
-      // 3. Name
       return a.learnerName.localeCompare(b.learnerName);
     });
 
     if (sectionFilter === "all") return list;
     return list.filter(a => a.sectionName === sectionFilter);
-  }, [modifiedAssignments, sectionFilter]);
+  }, [modifiedAssignments, sectionFilter, sortConfig]);
 
   const uniqueSections = useMemo(() => {
     if (!previewData) return [];
@@ -361,12 +407,40 @@ export function BatchSectioningWizard({
                     <Table>
                       <TableHeader className="bg-primary hover:bg-primary sticky top-0 z-20 shadow-sm">
                         <TableRow className="hover:bg-transparent border-none">
-                          <TableHead className="text-primary-foreground font-black text-[10px] uppercase tracking-wider h-12 px-4 text-left">Learner</TableHead>
-                          <TableHead className="text-primary-foreground font-black text-[10px] uppercase tracking-wider h-12 px-4 text-center">Gender</TableHead>
+                          <TableHead className="text-primary-foreground h-12 px-4 text-left">
+                            <button 
+                              onClick={() => toggleSort("learnerName")}
+                              className="flex items-center font-black text-[10px] uppercase tracking-wider hover:opacity-80 transition-opacity"
+                            >
+                              Learner {getSortIcon("learnerName")}
+                            </button>
+                          </TableHead>
+                          <TableHead className="text-primary-foreground h-12 px-4 text-center">
+                            <button 
+                              onClick={() => toggleSort("gender")}
+                              className="flex items-center justify-center w-full font-black text-[10px] uppercase tracking-wider hover:opacity-80 transition-opacity"
+                            >
+                              Gender {getSortIcon("gender")}
+                            </button>
+                          </TableHead>
                           <TableHead className="text-primary-foreground font-black text-[10px] uppercase tracking-wider h-12 px-4 text-center">Program</TableHead>
-                          <TableHead className="text-primary-foreground font-black text-[10px] uppercase tracking-wider h-12 px-4 text-center">Gen Ave</TableHead>
+                          <TableHead className="text-primary-foreground h-12 px-4 text-center">
+                            <button 
+                              onClick={() => toggleSort("genAve")}
+                              className="flex items-center justify-center w-full font-black text-[10px] uppercase tracking-wider hover:opacity-80 transition-opacity"
+                            >
+                              Gen Ave {getSortIcon("genAve")}
+                            </button>
+                          </TableHead>
                           <TableHead className="text-primary-foreground font-black text-[10px] uppercase tracking-wider h-12 px-4 text-center">Reading</TableHead>
-                          <TableHead className="text-primary-foreground font-black text-[10px] uppercase tracking-wider h-12 px-4 text-center">Assigned Section</TableHead>
+                          <TableHead className="text-primary-foreground h-12 px-4 text-center">
+                            <button 
+                              onClick={() => toggleSort("sectionName")}
+                              className="flex items-center justify-center w-full font-black text-[10px] uppercase tracking-wider hover:opacity-80 transition-opacity"
+                            >
+                              Assigned Section {getSortIcon("sectionName")}
+                            </button>
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>

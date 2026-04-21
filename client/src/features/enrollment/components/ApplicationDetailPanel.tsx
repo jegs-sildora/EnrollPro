@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Link } from "react-router";
-import { ArrowRight, ExternalLink, User } from "lucide-react";
+import { ArrowRight, ExternalLink} from "lucide-react";
 import { useApplicationDetail } from "@/features/enrollment/hooks/useApplicationDetail";
 import type { AssessmentStep } from "@/features/enrollment/hooks/useApplicationDetail";
 import { StatusBadge } from "./StatusBadge";

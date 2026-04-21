@@ -17,7 +17,7 @@ export async function getBatchPrerequisites(req: Request, res: Response) {
 	}
 
 	const prerequisites = await sectioningEngine.getPrerequisites(
-		parseInt(gradeLevelId),
+		parseInt(String(gradeLevelId)),
 		schoolYearId,
 	);
 

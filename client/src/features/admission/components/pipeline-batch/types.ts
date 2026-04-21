@@ -17,6 +17,7 @@ export interface Application {
   examResult: string | null;
   examNotes: string | null;
   assessments: EarlyRegistrationAssessment[];
+  generalAverage: number | null;
   createdAt: string;
 }
 

@@ -5,8 +5,7 @@ export const ACTIVE_REGISTRATION_EXCLUDED_STATUSES = ["ENROLLED"] as const;
 export const REGISTRATION_STAGE_QUICK_FILTERS = [
   { value: "ALL", label: "All Active" },
   { value: "WITHOUT_LRN", label: "Applicants Without LRN" },
-  { value: "SUBMITTED_BEERF", label: "Submitted BEERF" },
-  { value: "SUBMITTED_BEEF", label: "Submitted BEEF" },
+  { value: "SUBMITTED_BEERF", label: "Submitted" },
   { value: "VERIFIED", label: "Verified" },
   { value: "UNDER_REVIEW", label: "Under Review" },
   { value: "ELIGIBLE", label: "Eligible" },
@@ -28,8 +27,7 @@ export const REGISTRATION_VALID_TRANSITIONS: Record<string, string[]> =
   );
 
 export const REGISTRATION_BATCH_TARGET_OPTIONS = [
-  { value: "SUBMITTED_BEERF", label: "Submitted BEERF" },
-  { value: "SUBMITTED_BEEF", label: "Submitted BEEF" },
+  { value: "SUBMITTED_BEERF", label: "Submitted" },
   { value: "VERIFIED", label: "Verified" },
   { value: "UNDER_REVIEW", label: "Under Review" },
   { value: "ELIGIBLE", label: "Eligible" },
@@ -45,7 +43,6 @@ export const REGISTRATION_BATCH_TARGET_OPTIONS = [
 export const REGISTRATION_RECOMMENDED_TARGET_BY_STATUS: Record<string, string> =
   {
     SUBMITTED_BEERF: "VERIFIED",
-    SUBMITTED_BEEF: "VERIFIED",
     VERIFIED: "UNDER_REVIEW",
     UNDER_REVIEW: "ELIGIBLE",
     ELIGIBLE: "EXAM_SCHEDULED",
@@ -81,16 +78,6 @@ export const REGISTRATION_BATCH_ACTIONS_BY_STATUS: Record<
   SUBMITTED_BEERF: {
     id: "VERIFY_DOCUMENTS",
     triggerStatus: "SUBMITTED_BEERF",
-    targetStatus: "VERIFIED",
-    buttonLabel: "Batch Verify Documents",
-    modalTitle: "Batch Documentary Checklist",
-    modalDescription:
-      "Review selected applicants and verify documentary requirements in one run.",
-    submitLabel: "Verify Applicants",
-  },
-  SUBMITTED_BEEF: {
-    id: "VERIFY_DOCUMENTS",
-    triggerStatus: "SUBMITTED_BEEF",
     targetStatus: "VERIFIED",
     buttonLabel: "Batch Verify Documents",
     modalTitle: "Batch Documentary Checklist",
@@ -197,11 +184,11 @@ const REGULAR_BATCH_ACTION_OVERRIDES_BY_STATUS: Partial<
     id: "ASSIGN_REGULAR_SECTION",
     triggerStatus: "VERIFIED",
     targetStatus: "ENROLLED",
-    buttonLabel: "Batch Hybrid Sectioning",
-    modalTitle: "Batch Hybrid Section Assignment",
+    buttonLabel: "Batch Assign Section",
+    modalTitle: "Batch Section Assignment",
     modalDescription:
-      "Generate a deterministic hybrid section plan, review allocations, then commit enrollment assignment.",
-    submitLabel: "Apply Section Plan",
+      "Assign selected regular applicants to one section and finalize enrollment status.",
+    submitLabel: "Assign Section",
   },
 };
 

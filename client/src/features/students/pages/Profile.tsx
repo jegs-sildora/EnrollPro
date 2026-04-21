@@ -1,7 +1,6 @@
 import { useParams, useNavigate, useSearchParams } from "react-router";
 import {
   ArrowLeft,
-  User,
   Phone,
   Mail,
   MapPin,

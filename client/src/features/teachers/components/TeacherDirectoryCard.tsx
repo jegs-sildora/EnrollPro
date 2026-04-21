@@ -27,6 +27,7 @@ import { Skeleton } from "@/shared/ui/skeleton";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
+import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import type {
   Teacher,
   TeacherDesignationFilter,
@@ -184,7 +185,10 @@ export function TeacherDirectoryCard({
     },
     {
       id: "teacher",
-      header: "TEACHER",
+      accessorKey: "lastName",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="TEACHER" />
+      ),
       cell: ({ row }) => (
         <div className="flex flex-col text-left max-w-[220px]">
           <span className="font-bold text-sm uppercase leading-tight">
@@ -200,7 +204,10 @@ export function TeacherDirectoryCard({
     },
     {
       id: "employeeId",
-      header: "EMPLOYEE ID",
+      accessorKey: "employeeId",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="EMPLOYEE ID" />
+      ),
       cell: ({ row }) => (
         <span className="text-xs font-semibold block text-center">
           {row.original.employeeId || "-"}
@@ -209,7 +216,13 @@ export function TeacherDirectoryCard({
     },
     {
       id: "specialization",
-      header: "LEARNING AREA / DEPARTMENT",
+      accessorKey: "specialization",
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title="LEARNING AREA / DEPARTMENT"
+        />
+      ),
       cell: ({ row }) => (
         <span className="text-xs font-semibold block text-center break-words">
           {row.original.specialization || "Not set"}
@@ -218,7 +231,10 @@ export function TeacherDirectoryCard({
     },
     {
       id: "status",
-      header: "STATUS",
+      accessorKey: "isActive",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="STATUS" />
+      ),
       cell: ({ row }) => (
         <div className="flex justify-center">
           {renderTeacherStatus(row.original)}

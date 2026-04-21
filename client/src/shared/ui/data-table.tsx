@@ -1,9 +1,11 @@
 import {
   flexRender,
   getCoreRowModel,
+  getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, SortingState, OnChangeFn } from "@tanstack/react-table";
+import { useState } from "react";
 
 import {
   Table,
@@ -23,6 +25,8 @@ interface DataTableProps<TData, TValue> {
   className?: string;
   tableClassName?: string;
   noResultsMessage?: string;
+  sorting?: SortingState;
+  onSortingChange?: OnChangeFn<SortingState>;
 }
 
 export function DataTable<TData, TValue>({
@@ -33,11 +37,20 @@ export function DataTable<TData, TValue>({
   className,
   tableClassName,
   noResultsMessage = "No results.",
+  sorting: externalSorting,
+  onSortingChange: externalOnSortingChange,
 }: DataTableProps<TData, TValue>) {
+  const [internalSorting, setInternalSorting] = useState<SortingState>([]);
+
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: externalOnSortingChange ?? setInternalSorting,
+    state: {
+      sorting: externalSorting ?? internalSorting,
+    },
   });
 
   return (

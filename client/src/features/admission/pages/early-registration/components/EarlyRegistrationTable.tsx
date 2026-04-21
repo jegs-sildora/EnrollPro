@@ -8,6 +8,7 @@ import { StatusBadge } from "@/features/enrollment/components/StatusBadge";
 import { formatScpType } from "@/shared/lib/utils";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
+import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import type { Application } from "../hooks/useEarlyRegistrations";
 
 interface TableProps {
@@ -65,7 +66,10 @@ export function EarlyRegistrationTable({
     return [
       {
         id: "applicant",
-        header: "APPLICANT",
+        accessorKey: "lastName",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="APPLICANT" />
+        ),
         cell: ({ row: tableRow }) => {
           const app = tableRow.original;
           return (
@@ -83,8 +87,11 @@ export function EarlyRegistrationTable({
         },
       },
       {
+        id: "lrn",
         accessorKey: "lrn",
-        header: "LRN",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="LRN" />
+        ),
         cell: ({ row: tableRow }) => (
           <span className="font-bold text-sm">
             {tableRow.original.isPendingLrnCreation
@@ -95,7 +102,10 @@ export function EarlyRegistrationTable({
       },
       {
         id: "gradeLevel",
-        header: "GRADE LEVEL",
+        accessorKey: "gradeLevel.name",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="GRADE LEVEL" />
+        ),
         cell: ({ row: tableRow }) => (
           <span className="font-bold text-sm">
             {tableRow.original.gradeLevel.name}
@@ -103,17 +113,23 @@ export function EarlyRegistrationTable({
         ),
       },
       {
+        id: "applicantType",
         accessorKey: "applicantType",
-        header: "CURRICULUM PROGRAM",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="CURRICULUM PROGRAM" />
+        ),
         cell: ({ row: tableRow }) => (
-          <p className="font-bold text-xs leading-tight">
+          <p className="font-bold text-xs leading-tight text-center">
             {formatScpType(tableRow.original.applicantType)}
           </p>
         ),
       },
       {
+        id: "status",
         accessorKey: "status",
-        header: "STATUS",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="STATUS" />
+        ),
         cell: ({ row: tableRow }) => {
           const app = tableRow.original;
           const isLockedHandoff = app.status === LOCKED_HANDOFF_STATUS;
@@ -140,16 +156,19 @@ export function EarlyRegistrationTable({
         id: "nextAction",
         header: "NEXT ACTION",
         cell: ({ row: tableRow }) => (
-          <p className="text-xs font-bold">
+          <p className="text-xs font-bold text-center">
             {getNextAction(tableRow.original.status)}
           </p>
         ),
       },
       {
+        id: "date",
         accessorKey: "createdAt",
-        header: "DATE",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="DATE" />
+        ),
         cell: ({ row: tableRow }) => (
-          <span className="text-sm font-bold">
+          <span className="text-sm font-bold block text-center">
             {tableRow.original.createdAt
               ? format(new Date(tableRow.original.createdAt), "MMMM dd, yyyy")
               : "N/A"}
@@ -166,14 +185,14 @@ export function EarlyRegistrationTable({
             <div className="flex justify-center">
               {isLockedHandoff ? (
                 <Button
-                  variant="outline"
+                  asChild
+                  variant="link"
                   size="sm"
-                  className="h-8 border-primary/40 text-sm font-bold text-primary hover:bg-primary/10"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleNavigateToEnrollment(app);
-                  }}>
-                  View in Enrollment <ArrowRight className="ml-1 h-3 w-3" />
+                  className="h-8 px-0 text-xs font-bold text-primary">
+                  <a href="/monitoring/enrollment">
+                    <ArrowRight className="h-3.5 w-3.5 mr-1" />
+                    View in Enrollment
+                  </a>
                 </Button>
               ) : (
                 <Button

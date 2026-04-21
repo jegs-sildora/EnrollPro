@@ -91,30 +91,94 @@ const APPLICANT_TYPE_VALUES = new Set([
   "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
 ]);
 
-const EARLY_REG_STATUS_FILTER_ALIASES: Record<string, ApplicationStatus> = {
-  EARLY_REG_SUBMITTED: "SUBMITTED_BEERF",
-  SUBMITTED: "SUBMITTED_BEERF",
-  PENDING_VERIFICATION: "UNDER_REVIEW",
-  PRE_REGISTERED: "READY_FOR_ENROLLMENT",
-  READY_FOR_SECTIONING: "READY_FOR_ENROLLMENT",
-  OFFICIALLY_ENROLLED: "ENROLLED",
+// ── Lifecycle Transitions ────────────────────────────────────
+
+const EARLY_REG_TRANSITIONS: Record<string, ApplicationStatus[]> = {
+  SUBMITTED: [
+    "VERIFIED",
+    "UNDER_REVIEW",
+    "EXAM_SCHEDULED",
+    "REJECTED",
+    "WITHDRAWN",
+  ],
+  SUBMITTED_BEERF: [
+    "VERIFIED",
+    "UNDER_REVIEW",
+    "EXAM_SCHEDULED",
+    "REJECTED",
+    "WITHDRAWN",
+  ],
+  VERIFIED: [
+    "UNDER_REVIEW",
+    "ELIGIBLE",
+    "ENROLLED",
+    "TEMPORARILY_ENROLLED",
+    "EXAM_SCHEDULED",
+    "REJECTED",
+    "WITHDRAWN",
+  ],
+  UNDER_REVIEW: [
+    "VERIFIED",
+    "FOR_REVISION",
+    "ELIGIBLE",
+    "EXAM_SCHEDULED",
+    "REJECTED",
+    "WITHDRAWN",
+  ],
+  FOR_REVISION: ["UNDER_REVIEW", "WITHDRAWN"],
+  ELIGIBLE: ["EXAM_SCHEDULED", "PASSED", "WITHDRAWN"],
+  EXAM_SCHEDULED: [
+    "PASSED",
+    "SUBMITTED_BEERF",
+    "ASSESSMENT_TAKEN",
+    "EXAM_SCHEDULED",
+    "INTERVIEW_SCHEDULED",
+    "WITHDRAWN",
+  ],
+  ASSESSMENT_TAKEN: [
+    "PASSED",
+    "SUBMITTED_BEERF",
+    "FAILED_ASSESSMENT",
+    "ASSESSMENT_TAKEN",
+    "EXAM_SCHEDULED",
+    "WITHDRAWN",
+  ],
+  PASSED: [
+    "READY_FOR_ENROLLMENT",
+    "INTERVIEW_SCHEDULED",
+    "EXAM_SCHEDULED",
+    "WITHDRAWN",
+  ],
+  INTERVIEW_SCHEDULED: [
+    "PASSED",
+    "READY_FOR_ENROLLMENT",
+    "SUBMITTED_BEERF",
+    "WITHDRAWN",
+  ],
+  READY_FOR_ENROLLMENT: [
+    "ENROLLED",
+    "TEMPORARILY_ENROLLED",
+    "REJECTED",
+    "WITHDRAWN",
+  ],
+  TEMPORARILY_ENROLLED: ["ENROLLED", "WITHDRAWN"],
+  ENROLLED: ["WITHDRAWN"],
+  FAILED_ASSESSMENT: ["UNDER_REVIEW", "WITHDRAWN", "REJECTED"],
+  REJECTED: ["UNDER_REVIEW", "WITHDRAWN"],
+  WITHDRAWN: [],
 };
 
-function normalizeEarlyRegStatusFilterToken(
-  value: string,
-): ApplicationStatus | null {
-  const normalized = value.trim().toUpperCase();
-  if (!normalized || normalized === "ALL") {
-    return null;
+function assertEarlyRegTransition(
+  current: ApplicationStatus,
+  target: ApplicationStatus,
+  contextMessage?: string,
+): void {
+  if (!(EARLY_REG_TRANSITIONS[current]?.includes(target) ?? false)) {
+    throw new AppError(
+      422,
+      contextMessage ?? `Cannot transition from "${current}" to "${target}".`,
+    );
   }
-
-  const mapped = EARLY_REG_STATUS_FILTER_ALIASES[normalized] ?? normalized;
-
-  if (!Object.prototype.hasOwnProperty.call(EARLY_REG_TRANSITIONS, mapped)) {
-    return null;
-  }
-
-  return mapped as ApplicationStatus;
 }
 
 const LEGACY_APPLICATION_STATUS_UPDATES = [
@@ -180,6 +244,232 @@ async function ensureLegacyApplicationStatusesNormalized(): Promise<void> {
     });
 
   await normalizeLegacyStatusPromise;
+}
+
+function isPreviousSchoolIncludeCompatibilityError(error: unknown): boolean {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error.code === "P2021" || error.code === "P2022") {
+      const target = String(error.meta?.table ?? error.meta?.column ?? "");
+      if (
+        /enrollment_previous_schools|enrollment_applications|previousSchool/i.test(
+          target,
+        )
+      ) {
+        return true;
+      }
+    }
+  }
+
+  const message =
+    error instanceof Error ? error.message : String(error ?? "unknown error");
+  return /enrollment_previous_schools|previousSchool|EnrollmentPreviousSchool/i.test(
+    message,
+  );
+}
+
+function isEarlyRegistrationListCompatibilityError(error: unknown): boolean {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (["P2021", "P2022", "P2023"].includes(error.code)) {
+      return true;
+    }
+  }
+
+  const message =
+    error instanceof Error ? error.message : String(error ?? "unknown error");
+  return /application_status|ApplicationStatus|invalid input value for enum|Error converting field|column.*does not exist|relation.*does not exist/i.test(
+    message,
+  );
+}
+
+type EarlyRegistrationListRawRow = {
+  id: number;
+  trackingNumber: string;
+  status: string;
+  applicantType: string;
+  gradeLevelId: number;
+  createdAt: Date | string;
+  lrn: string | null;
+  firstName: string;
+  lastName: string;
+  middleName: string | null;
+  suffix: string | null;
+  isPendingLrnCreation: boolean;
+  gradeLevelName: string;
+};
+
+function toIsoStringSafe(value: Date | string): string {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? String(value) : parsed.toISOString();
+}
+
+async function fetchEarlyRegistrationListRawFallback(params: {
+  schoolYearId: number;
+  search: string;
+  status: string;
+  applicantType: string;
+  withoutLrn: boolean;
+  page: number;
+  limit: number;
+  gradeLevelIds: number[];
+}): Promise<{ data: Array<Record<string, unknown>>; total: number }> {
+  const {
+    schoolYearId,
+    search,
+    status,
+    applicantType,
+    withoutLrn,
+    page,
+    limit,
+    gradeLevelIds,
+  } = params;
+
+  const whereClauses: Prisma.Sql[] = [
+    Prisma.sql`e.school_year_id = ${schoolYearId}`,
+  ];
+
+  const normalizedStatus = status.trim().toUpperCase();
+  if (normalizedStatus && normalizedStatus !== "ALL") {
+    if (normalizedStatus === "SUBMITTED") {
+      whereClauses.push(
+        Prisma.sql`e.status::text IN (${Prisma.join([
+          "SUBMITTED_BEERF",
+          "SUBMITTED_BEEF",
+          "SUBMITTED",
+          "EARLY_REG_SUBMITTED",
+        ])})`,
+      );
+    } else {
+      whereClauses.push(Prisma.sql`e.status::text = ${normalizedStatus}`);
+    }
+  }
+
+  const normalizedApplicantType = applicantType.trim().toUpperCase();
+  if (normalizedApplicantType && normalizedApplicantType !== "ALL") {
+    whereClauses.push(
+      Prisma.sql`e.applicant_type::text = ${normalizedApplicantType}`,
+    );
+  }
+
+  if (gradeLevelIds.length > 0) {
+    whereClauses.push(
+      Prisma.sql`e.grade_level_id IN (${Prisma.join(gradeLevelIds)})`,
+    );
+  }
+
+  if (withoutLrn) {
+    whereClauses.push(Prisma.sql`l.is_pending_lrn_creation = TRUE`);
+  }
+
+  if (search.trim()) {
+    const searchPattern = `%${search.trim()}%`;
+    whereClauses.push(
+      Prisma.sql`(
+        l.last_name ILIKE ${searchPattern}
+        OR l.first_name ILIKE ${searchPattern}
+        OR COALESCE(l.lrn, '') ILIKE ${searchPattern}
+      )`,
+    );
+  }
+
+  const whereSql = Prisma.sql`WHERE ${Prisma.join(whereClauses, " AND ")}`;
+
+  const rows = await prisma.$queryRaw<EarlyRegistrationListRawRow[]>(Prisma.sql`
+    SELECT
+      e.id,
+      e.tracking_number AS "trackingNumber",
+      e.status::text AS status,
+      e.applicant_type::text AS "applicantType",
+      e.grade_level_id AS "gradeLevelId",
+      e.created_at AS "createdAt",
+      l.lrn,
+      l.first_name AS "firstName",
+      l.last_name AS "lastName",
+      l.middle_name AS "middleName",
+      l.extension_name AS suffix,
+      l.is_pending_lrn_creation AS "isPendingLrnCreation",
+      g.name AS "gradeLevelName"
+    FROM early_registration_applications e
+    INNER JOIN learners l ON l.id = e.learner_id
+    INNER JOIN grade_levels g ON g.id = e.grade_level_id
+    ${whereSql}
+    ORDER BY e.created_at DESC
+    OFFSET ${(page - 1) * limit}
+    LIMIT ${limit}
+  `);
+
+  const countRows = await prisma.$queryRaw<Array<{ total: bigint | number }>>(
+    Prisma.sql`
+      SELECT COUNT(*) AS total
+      FROM early_registration_applications e
+      INNER JOIN learners l ON l.id = e.learner_id
+      INNER JOIN grade_levels g ON g.id = e.grade_level_id
+      ${whereSql}
+    `,
+  );
+
+  const totalRaw = countRows[0]?.total ?? 0;
+  const total =
+    typeof totalRaw === "bigint" ? Number(totalRaw) : Number(totalRaw || 0);
+
+  const data = rows.map((row) => {
+    const normalizedLrn = String(row.lrn ?? "").trim();
+
+    return {
+      id: row.id,
+      lrn: normalizedLrn,
+      firstName: row.firstName,
+      lastName: row.lastName,
+      middleName: row.middleName,
+      suffix: row.suffix,
+      trackingNumber: row.trackingNumber,
+      status: row.status,
+      applicantType: row.applicantType,
+      gradeLevelId: row.gradeLevelId,
+      gradeLevel: { name: row.gradeLevelName },
+      createdAt: toIsoStringSafe(row.createdAt),
+      isPendingLrnCreation: row.isPendingLrnCreation,
+      learner: {
+        firstName: row.firstName,
+        lastName: row.lastName,
+        middleName: row.middleName,
+        extensionName: row.suffix,
+        lrn: normalizedLrn,
+        isPendingLrnCreation: row.isPendingLrnCreation,
+      },
+      assessments: [],
+      generalAverage: null,
+    };
+  });
+
+  return {
+    data,
+    total,
+  };
+}
+
+let earlyRegListSupportsPreviousSchoolInclude: boolean | null = null;
+let earlyRegListPrismaCompatible: boolean | null = null;
+let earlyRegListFallbackModeLogged = false;
+
+function logEarlyRegListFallbackModeWarning(
+  message: string,
+  error?: unknown,
+): void {
+  if (earlyRegListFallbackModeLogged) {
+    return;
+  }
+
+  earlyRegListFallbackModeLogged = true;
+  if (error) {
+    console.warn(`[index Warning] ${message}`, error);
+    return;
+  }
+
+  console.warn(`[index Warning] ${message}`);
 }
 
 const DOCUMENT_CHECKLIST_MAPPING: Record<string, string> = {
@@ -989,16 +1279,17 @@ async function createRegistration(
     const learnerPayload = {
       lrn,
       isPendingLrnCreation,
+      status: "SUBMITTED_BEERF" as ApplicationStatus,
       psaBirthCertNumber: body.psaBirthCertNumber?.trim().toUpperCase() || null,
       firstName: body.firstName,
       lastName: body.lastName,
       middleName: body.middleName || null,
       extensionName: body.extensionName || null,
       birthdate: birthDate,
+      studentPhoto: studentPhotoUrl,
       sex: body.sex === "MALE" ? ("MALE" as const) : ("FEMALE" as const),
       placeOfBirth: body.placeOfBirth || null,
       religion: body.religion || null,
-      motherTongue: body.motherTongue || null,
       isIpCommunity: body.isIpCommunity ?? false,
       ipGroupName: body.isIpCommunity ? body.ipGroupName : null,
       isLearnerWithDisability: body.isLearnerWithDisability ?? false,
@@ -1006,12 +1297,10 @@ async function createRegistration(
         ? body.disabilityTypes || []
         : [],
       specialNeedsCategory: body.specialNeedsCategory || null,
-      snedPlacement: body.snedPlacement || null,
       hasPwdId: body.hasPwdId ?? false,
       isBalikAral: body.isBalikAral ?? false,
       lastYearEnrolled: body.lastYearEnrolled || null,
       lastGradeLevel: body.lastGradeLevel || null,
-      studentPhoto: studentPhotoUrl,
     };
 
     const result = await prisma.$transaction(async (tx) => {
@@ -1125,7 +1414,7 @@ async function createRegistration(
       learnerId: result.learner.id,
       gradeLevel: body.gradeLevel,
       applicantType,
-      ...createInitialTrackingPayload(applicantType, "SUBMITTED_BEERF"),
+      ...createInitialTrackingPayload(applicantType),
       learnerName: `${body.lastName}, ${body.firstName}`,
       age,
       message: "Your early registration has been submitted successfully.",
@@ -1239,8 +1528,13 @@ export async function index(req: Request, res: Response, next: NextFunction) {
     // Resolve school year
     let schoolYearId: number | undefined;
     if (req.query.schoolYearId) {
-      schoolYearId = parseInt(String(req.query.schoolYearId));
-    } else {
+      const parsedId = parseInt(String(req.query.schoolYearId));
+      if (!Number.isNaN(parsedId) && parsedId > 0) {
+        schoolYearId = parsedId;
+      }
+    }
+
+    if (!schoolYearId) {
       const settings = await prisma.schoolSetting.findFirst();
       schoolYearId = settings?.activeSchoolYearId ?? undefined;
     }
@@ -1256,16 +1550,20 @@ export async function index(req: Request, res: Response, next: NextFunction) {
     const andFilters: any[] = [];
 
     if (status) {
-      const rawStatusToken = status.trim().toUpperCase();
-      if (rawStatusToken !== "ALL") {
-        const normalizedStatus = normalizeEarlyRegStatusFilterToken(status);
-        if (normalizedStatus) {
-          andFilters.push({ status: normalizedStatus });
+      const normalizedStatus = status.trim().toUpperCase();
+      if (normalizedStatus !== "ALL") {
+        if (normalizedStatus === "SUBMITTED") {
+          andFilters.push({
+            status: { in: ["SUBMITTED_BEERF", "SUBMITTED_BEEF"] },
+          });
         } else {
-          // If status is valid enum but not for this table, or invalid, 
-          // we force an impossible match to return 0 results instead of throwing 400.
-          // This allows frontend to fetch counts for all stages without crashing.
-          andFilters.push({ id: -1 });
+          if (!(normalizedStatus in EARLY_REG_TRANSITIONS)) {
+            throw new AppError(
+              400,
+              `Invalid status filter: ${normalizedStatus}`,
+            );
+          }
+          andFilters.push({ status: normalizedStatus });
         }
       }
     }
@@ -1274,7 +1572,10 @@ export async function index(req: Request, res: Response, next: NextFunction) {
       const normalizedApplicantType = applicantType.trim().toUpperCase();
       if (normalizedApplicantType !== "ALL") {
         if (!APPLICANT_TYPE_VALUES.has(normalizedApplicantType)) {
-          throw new AppError(400, "Invalid applicant type filter.");
+          throw new AppError(
+            400,
+            `Invalid applicant type filter: ${normalizedApplicantType}`,
+          );
         }
         andFilters.push({ applicantType: normalizedApplicantType });
       }
@@ -1326,28 +1627,162 @@ export async function index(req: Request, res: Response, next: NextFunction) {
       };
     }
 
-    const [registrations, total] = await Promise.all([
-      prisma.earlyRegistrationApplication.findMany({
-        where: where,
-        include: {
-          learner: true,
-          familyMembers: true,
-          addresses: true,
-          gradeLevel: { select: { id: true, name: true } },
-          schoolYear: { select: { yearLabel: true } },
-          encodedBy: { select: { firstName: true, lastName: true } },
-          verifiedBy: { select: { firstName: true, lastName: true } },
-          assessments: { orderBy: { createdAt: "desc" } },
+    const matchingGradeLevelIds =
+      gradeLevel && gradeLevel !== "ALL"
+        ? (andFilters.find((item) => item?.gradeLevelId?.in?.length)
+            ?.gradeLevelId?.in ?? [])
+        : [];
+
+    const findManyArgsBase = {
+      where: where,
+      include: {
+        learner: true,
+        familyMembers: true,
+        addresses: true,
+        gradeLevel: { select: { id: true, name: true } },
+        schoolYear: { select: { yearLabel: true } },
+        encodedBy: { select: { firstName: true, lastName: true } },
+        verifiedBy: { select: { firstName: true, lastName: true } },
+        assessments: { orderBy: { createdAt: "desc" as const } },
+      },
+      orderBy: { submittedAt: "desc" as const },
+      skip: (page - 1) * limit,
+      take: limit,
+    };
+
+    let registrations: Awaited<
+      ReturnType<typeof prisma.earlyRegistrationApplication.findMany>
+    >;
+    let total: number;
+
+    const sendRawFallbackResponse = async () => {
+      const fallback = await fetchEarlyRegistrationListRawFallback({
+        schoolYearId: resolvedSchoolYearId,
+        search,
+        status,
+        applicantType,
+        withoutLrn,
+        page,
+        limit,
+        gradeLevelIds: matchingGradeLevelIds,
+      });
+
+      res.json({
+        data: fallback.data,
+        pagination: {
+          page,
+          limit,
+          total: fallback.total,
+          totalPages: Math.ceil(fallback.total / limit),
         },
-        orderBy: { submittedAt: "desc" },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      prisma.earlyRegistrationApplication.count({ where: where }),
-    ]);
+      });
+    };
+
+    if (earlyRegListPrismaCompatible === false) {
+      await sendRawFallbackResponse();
+      return;
+    }
+
+    try {
+      if (earlyRegListSupportsPreviousSchoolInclude === false) {
+        [registrations, total] = await Promise.all([
+          prisma.earlyRegistrationApplication.findMany({
+            ...findManyArgsBase,
+            include: {
+              ...findManyArgsBase.include,
+              enrollmentApplications: {
+                take: 1,
+                orderBy: { createdAt: "desc" },
+              },
+            },
+          }),
+          prisma.earlyRegistrationApplication.count({ where: where }),
+        ]);
+      } else {
+        [registrations, total] = await Promise.all([
+          prisma.earlyRegistrationApplication.findMany({
+            ...findManyArgsBase,
+            include: {
+              ...findManyArgsBase.include,
+              enrollmentApplications: {
+                include: { previousSchool: true },
+                take: 1,
+                orderBy: { createdAt: "desc" },
+              },
+            },
+          }),
+          prisma.earlyRegistrationApplication.count({ where: where }),
+        ]);
+      }
+
+      earlyRegListPrismaCompatible = true;
+      if (earlyRegListSupportsPreviousSchoolInclude == null) {
+        earlyRegListSupportsPreviousSchoolInclude = true;
+      }
+    } catch (error) {
+      if (!isPreviousSchoolIncludeCompatibilityError(error)) {
+        if (!isEarlyRegistrationListCompatibilityError(error)) {
+          throw error;
+        }
+
+        earlyRegListPrismaCompatible = false;
+        logEarlyRegListFallbackModeWarning(
+          "Prisma list query is incompatible with the current database schema. Using raw fallback mode for this process.",
+          error,
+        );
+
+        await sendRawFallbackResponse();
+        return;
+      }
+
+      earlyRegListSupportsPreviousSchoolInclude = false;
+      console.warn(
+        "[index Warning] previousSchool include unavailable, falling back to list without previousSchool relation.",
+      );
+
+      try {
+        [registrations, total] = await Promise.all([
+          prisma.earlyRegistrationApplication.findMany({
+            ...findManyArgsBase,
+            include: {
+              ...findManyArgsBase.include,
+              enrollmentApplications: {
+                take: 1,
+                orderBy: { createdAt: "desc" },
+              },
+            },
+          }),
+          prisma.earlyRegistrationApplication.count({ where: where }),
+        ]);
+
+        earlyRegListPrismaCompatible = true;
+      } catch (secondaryError) {
+        if (!isEarlyRegistrationListCompatibilityError(secondaryError)) {
+          throw secondaryError;
+        }
+
+        earlyRegListPrismaCompatible = false;
+        logEarlyRegListFallbackModeWarning(
+          "Prisma list query remains incompatible after previousSchool fallback. Using raw fallback mode for this process.",
+          secondaryError,
+        );
+
+        await sendRawFallbackResponse();
+        return;
+      }
+    }
+
+    const mappedData = registrations.map((reg) => {
+      const latestEnrollment = (reg as any).enrollmentApplications?.[0];
+      return {
+        ...reg,
+        generalAverage:
+          latestEnrollment?.previousSchool?.generalAverage ?? null,
+      };
+    });
 
     res.json({
-      data: registrations,
+      data: mappedData,
       pagination: {
         page,
         limit,
@@ -1356,6 +1791,7 @@ export async function index(req: Request, res: Response, next: NextFunction) {
       },
     });
   } catch (err) {
+    console.error("[index Error]", err);
     next(err);
   }
 }
@@ -1683,92 +2119,6 @@ export async function verify(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// EARLY REGISTRATION LIFECYCLE (Admin status transitions)
-// ═══════════════════════════════════════════════════════════
-
-const EARLY_REG_TRANSITIONS: Record<string, ApplicationStatus[]> = {
-  SUBMITTED_BEERF: [
-    "VERIFIED",
-    "UNDER_REVIEW",
-    "EXAM_SCHEDULED",
-    "REJECTED",
-    "WITHDRAWN",
-  ],
-  VERIFIED: [
-    "UNDER_REVIEW",
-    "ELIGIBLE",
-    "ENROLLED",
-    "TEMPORARILY_ENROLLED",
-    "EXAM_SCHEDULED",
-    "REJECTED",
-    "WITHDRAWN",
-  ],
-  UNDER_REVIEW: [
-    "VERIFIED",
-    "FOR_REVISION",
-    "ELIGIBLE",
-    "EXAM_SCHEDULED",
-    "REJECTED",
-    "WITHDRAWN",
-  ],
-  FOR_REVISION: ["UNDER_REVIEW", "WITHDRAWN"],
-  ELIGIBLE: ["EXAM_SCHEDULED", "PASSED", "WITHDRAWN"],
-  EXAM_SCHEDULED: [
-    "PASSED",
-    "SUBMITTED_BEERF",
-    "ASSESSMENT_TAKEN",
-    "EXAM_SCHEDULED",
-    "INTERVIEW_SCHEDULED",
-    "WITHDRAWN",
-  ],
-  ASSESSMENT_TAKEN: [
-    "PASSED",
-    "SUBMITTED_BEERF",
-    "FAILED_ASSESSMENT",
-    "ASSESSMENT_TAKEN",
-    "EXAM_SCHEDULED",
-    "WITHDRAWN",
-  ],
-  PASSED: [
-    "READY_FOR_ENROLLMENT",
-    "INTERVIEW_SCHEDULED",
-    "EXAM_SCHEDULED",
-    "WITHDRAWN",
-  ],
-  INTERVIEW_SCHEDULED: [
-    "PASSED",
-    "READY_FOR_ENROLLMENT",
-    "SUBMITTED_BEERF",
-    "WITHDRAWN",
-  ],
-  READY_FOR_ENROLLMENT: [
-    "ENROLLED",
-    "TEMPORARILY_ENROLLED",
-    "REJECTED",
-    "WITHDRAWN",
-  ],
-  TEMPORARILY_ENROLLED: ["ENROLLED", "WITHDRAWN"],
-  ENROLLED: ["WITHDRAWN"],
-  FAILED_ASSESSMENT: ["UNDER_REVIEW", "WITHDRAWN", "REJECTED"],
-  REJECTED: ["UNDER_REVIEW", "WITHDRAWN"],
-  WITHDRAWN: [],
-  SUBMITTED_BEEF: [],
-};
-
-function assertEarlyRegTransition(
-  current: ApplicationStatus,
-  target: ApplicationStatus,
-  contextMessage?: string,
-): void {
-  if (!(EARLY_REG_TRANSITIONS[current]?.includes(target) ?? false)) {
-    throw new AppError(
-      422,
-      contextMessage ?? `Cannot transition from "${current}" to "${target}".`,
-    );
-  }
-}
-
 function parseExpectedStatusMap(
   input: unknown,
 ): Map<number, ApplicationStatus> {
@@ -1786,12 +2136,19 @@ function parseExpectedStatusMap(
       continue;
     }
 
-    const normalizedStatus = normalizeEarlyRegStatusFilterToken(rawStatus);
-    if (!normalizedStatus) {
+    const normalizedStatus = rawStatus.trim().toUpperCase();
+    if (!normalizedStatus) continue;
+
+    if (
+      !Object.prototype.hasOwnProperty.call(
+        EARLY_REG_TRANSITIONS,
+        normalizedStatus,
+      )
+    ) {
       continue;
     }
 
-    map.set(id, normalizedStatus);
+    map.set(id, normalizedStatus as ApplicationStatus);
   }
 
   return map;
@@ -2300,7 +2657,7 @@ export async function fail(req: Request, res: Response, next: NextFunction) {
     await auditLog({
       userId: req.user!.userId,
       actionType: "EARLY_REGISTRATION_FAILED",
-      description: `Early registration #${id} failed SCP assessment and rerouted to SUBMITTED_BEERF as REGULAR. Notes: ${examNotes || "N/A"}`,
+      description: `Early registration #${id} failed SCP assessment and rerouted to SUBMITTED as REGULAR. Notes: ${examNotes || "N/A"}`,
       subjectType: "EarlyRegistrationApplication",
       recordId: id,
       req,
@@ -2341,6 +2698,11 @@ export async function batchVerifyDocumentsPreview(
         },
         gradeLevel: { select: { name: true } },
         checklist: true,
+        enrollmentApplications: {
+          include: { previousSchool: true },
+          take: 1,
+          orderBy: { createdAt: "desc" },
+        },
       },
     });
 
@@ -2364,6 +2726,7 @@ export async function batchVerifyDocumentsPreview(
       academicStatus: AcademicStatusValue;
       checklist: Record<ChecklistBooleanKey, boolean>;
       requiredChecklistKeys: ChecklistBooleanKey[];
+      generalAverage: number | null;
     }> = [];
 
     for (const id of requestedIds) {
@@ -2413,6 +2776,9 @@ export async function batchVerifyDocumentsPreview(
         requiredChecklistKeys: effectiveColumns
           .filter((column) => column.isMandatory)
           .map((column) => column.key),
+        generalAverage:
+          registration.enrollmentApplications[0]?.previousSchool
+            ?.generalAverage ?? null,
       });
     }
 
@@ -2731,845 +3097,6 @@ export async function batchVerifyDocuments(
       processed: applicants.length,
       succeeded,
       failed,
-    });
-  } catch (err) {
-    next(err);
-  }
-}
-
-const REGULAR_HOMOGENEOUS_SECTION_LIMIT = 5;
-
-type RegularSectionLane = "HOMOGENEOUS" | "SNAKE";
-
-const REGULAR_SECTION_BATCH_REGISTRATION_SELECT = {
-  id: true,
-  trackingNumber: true,
-  status: true,
-  applicantType: true,
-  learnerType: true,
-  learnerId: true,
-  schoolYearId: true,
-  gradeLevelId: true,
-  channel: true,
-  isPrivacyConsentGiven: true,
-  learner: {
-    select: {
-      firstName: true,
-      lastName: true,
-      lrn: true,
-      isPendingLrnCreation: true,
-      isLearnerWithDisability: true,
-    },
-  },
-  gradeLevel: { select: { name: true } },
-  checklist: true,
-  enrollmentApplications: {
-    orderBy: { createdAt: "desc" as const },
-    take: 1,
-    select: {
-      id: true,
-      previousSchool: {
-        select: {
-          generalAverage: true,
-        },
-      },
-      enrollmentRecord: {
-        select: {
-          id: true,
-          sectionId: true,
-        },
-      },
-    },
-  },
-} satisfies Prisma.EarlyRegistrationApplicationSelect;
-
-type RegularSectionBatchRegistration =
-  Prisma.EarlyRegistrationApplicationGetPayload<{
-    select: typeof REGULAR_SECTION_BATCH_REGISTRATION_SELECT;
-  }>;
-
-interface RegularSectionInventory {
-  id: number;
-  name: string;
-  displayName: string | null;
-  sortOrder: number;
-  maxCapacity: number;
-  gradeLevelId: number;
-  programType: ApplicantType;
-  enrolledCount: number;
-  availableSlots: number;
-}
-
-interface RegularSectionPlanSection {
-  sectionId: number;
-  sectionName: string;
-  sectionDisplayName: string;
-  sortOrder: number;
-  lane: RegularSectionLane;
-  maxCapacity: number;
-  enrolledCount: number;
-  availableSlots: number;
-  plannedCount: number;
-  remainingSlots: number;
-}
-
-interface RegularSectionPlannedAssignment {
-  registration: RegularSectionBatchRegistration;
-  id: number;
-  name: string;
-  trackingNumber: string;
-  targetStatus: ApplicationStatus;
-  generalAverage: number | null;
-  sectionId: number;
-  sectionName: string;
-  sectionDisplayName: string;
-  lane: RegularSectionLane;
-}
-
-interface RegularSectionUnassignedItem extends BatchFailureItem {
-  generalAverage: number | null;
-}
-
-interface RegularSectionAssignmentPlan {
-  requestedIds: number[];
-  gradeLevelId: number | null;
-  gradeLevelName: string | null;
-  summary: {
-    eligibleCount: number;
-    assignedCount: number;
-    blockedCount: number;
-    unassignedCount: number;
-    homogeneousSectionCount: number;
-    snakeSectionCount: number;
-  };
-  sections: RegularSectionPlanSection[];
-  assignments: RegularSectionPlannedAssignment[];
-  blocked: BatchFailureItem[];
-  unassigned: RegularSectionUnassignedItem[];
-}
-
-function resolveSectionDisplayName(section: {
-  name: string;
-  displayName: string | null;
-}): string {
-  const trimmed = section.displayName?.trim();
-  return trimmed && trimmed.length > 0 ? trimmed : section.name;
-}
-
-function resolveGeneralAverageFromRegistration(
-  registration: RegularSectionBatchRegistration,
-): number | null {
-  const raw =
-    registration.enrollmentApplications[0]?.previousSchool?.generalAverage;
-  if (typeof raw !== "number" || !Number.isFinite(raw)) {
-    return null;
-  }
-
-  return Number(raw.toFixed(2));
-}
-
-function compareRegularSectionCandidates(
-  left: {
-    registration: {
-      id: number;
-      trackingNumber: string;
-    };
-    generalAverage: number | null;
-  },
-  right: {
-    registration: {
-      id: number;
-      trackingNumber: string;
-    };
-    generalAverage: number | null;
-  },
-): number {
-  const leftScore = left.generalAverage;
-  const rightScore = right.generalAverage;
-
-  if (leftScore == null && rightScore != null) return 1;
-  if (leftScore != null && rightScore == null) return -1;
-
-  if (leftScore != null && rightScore != null && leftScore !== rightScore) {
-    return rightScore - leftScore;
-  }
-
-  const trackingComparison = left.registration.trackingNumber.localeCompare(
-    right.registration.trackingNumber,
-    undefined,
-    { numeric: true, sensitivity: "base" },
-  );
-  if (trackingComparison !== 0) return trackingComparison;
-
-  return left.registration.id - right.registration.id;
-}
-
-function assertSingleGradeLevelSelection(
-  registrations: RegularSectionBatchRegistration[],
-): { gradeLevelId: number | null; gradeLevelName: string | null } {
-  const gradeLevelIds = Array.from(
-    new Set(registrations.map((registration) => registration.gradeLevelId)),
-  );
-
-  if (gradeLevelIds.length > 1) {
-    throw new AppError(
-      422,
-      "Batch section assignment requires applicants from a single grade level.",
-    );
-  }
-
-  const gradeLevelId = gradeLevelIds[0] ?? null;
-  const gradeLevelName =
-    registrations[0]?.gradeLevel?.name != null
-      ? String(registrations[0].gradeLevel.name)
-      : null;
-
-  return {
-    gradeLevelId,
-    gradeLevelName,
-  };
-}
-
-async function fetchRegularSectionInventory(
-  gradeLevelId: number,
-  options?: { tx?: Prisma.TransactionClient; lock?: boolean },
-): Promise<RegularSectionInventory[]> {
-  const tx = options?.tx;
-  const lock = options?.lock === true;
-
-  const sectionRows: Array<{
-    id: number;
-    name: string;
-    displayName: string | null;
-    sortOrder: number;
-    maxCapacity: number;
-    gradeLevelId: number;
-    programType: ApplicantType;
-  }> = lock
-    ? await (() => {
-        if (!tx) {
-          throw new AppError(
-            500,
-            "Transaction client is required when locking sections.",
-          );
-        }
-
-        return tx.$queryRaw<
-          {
-            id: number;
-            name: string;
-            displayName: string | null;
-            sortOrder: number;
-            maxCapacity: number;
-            gradeLevelId: number;
-            programType: ApplicantType;
-          }[]
-        >`
-          SELECT
-            id,
-            name,
-            "display_name" as "displayName",
-            "sort_order" as "sortOrder",
-            "max_capacity" as "maxCapacity",
-            "grade_level_id" as "gradeLevelId",
-            "program_type" as "programType"
-          FROM "sections"
-          WHERE "grade_level_id" = ${gradeLevelId}
-            AND "program_type" = ${"REGULAR" as ApplicantType}
-          ORDER BY "sort_order" ASC, name ASC, id ASC
-          FOR UPDATE
-        `;
-      })()
-    : await (tx ?? prisma).section.findMany({
-        where: {
-          gradeLevelId,
-          programType: "REGULAR",
-        },
-        orderBy: [{ sortOrder: "asc" }, { name: "asc" }, { id: "asc" }],
-        select: {
-          id: true,
-          name: true,
-          displayName: true,
-          sortOrder: true,
-          maxCapacity: true,
-          gradeLevelId: true,
-          programType: true,
-        },
-      });
-
-  if (sectionRows.length === 0) {
-    return [];
-  }
-
-  const counts = await (tx ?? prisma).enrollmentRecord.groupBy({
-    by: ["sectionId"],
-    where: {
-      sectionId: { in: sectionRows.map((section) => section.id) },
-    },
-    _count: {
-      _all: true,
-    },
-  });
-
-  const countBySectionId = new Map<number, number>(
-    counts.map((countRow) => [countRow.sectionId, countRow._count._all]),
-  );
-
-  return sectionRows.map((section) => {
-    const enrolledCount = countBySectionId.get(section.id) ?? 0;
-    const availableSlots = Math.max(0, section.maxCapacity - enrolledCount);
-
-    return {
-      ...section,
-      enrolledCount,
-      availableSlots,
-    };
-  });
-}
-
-function buildRegularSectionAssignmentPlan(params: {
-  requestedIds: number[];
-  registrations: RegularSectionBatchRegistration[];
-  sections: RegularSectionInventory[];
-  expectedStatuses: Map<number, ApplicationStatus>;
-}): RegularSectionAssignmentPlan {
-  const { requestedIds, registrations, sections, expectedStatuses } = params;
-
-  assertNoStatusSnapshotConflicts(
-    expectedStatuses,
-    registrations.map((registration) => ({
-      id: registration.id,
-      status: registration.status,
-      trackingNumber: registration.trackingNumber,
-    })),
-  );
-
-  const { gradeLevelId, gradeLevelName } =
-    assertSingleGradeLevelSelection(registrations);
-
-  if (gradeLevelId != null && sections.length === 0) {
-    throw new AppError(
-      422,
-      "No regular sections are configured for the selected grade level.",
-    );
-  }
-
-  const registrationById = new Map(
-    registrations.map((registration) => [registration.id, registration]),
-  );
-
-  const blocked: BatchFailureItem[] = [];
-  const candidates: Array<{
-    registration: RegularSectionBatchRegistration;
-    name: string;
-    targetStatus: ApplicationStatus;
-    generalAverage: number | null;
-  }> = [];
-
-  for (const id of requestedIds) {
-    const registration = registrationById.get(id);
-    if (!registration) {
-      blocked.push({
-        id,
-        name: "Unknown",
-        trackingNumber: "N/A",
-        reason: "Application not found.",
-      });
-      continue;
-    }
-
-    const name = formatBatchName(
-      registration.learner.firstName,
-      registration.learner.lastName,
-    );
-
-    if (registration.applicantType !== "REGULAR") {
-      blocked.push({
-        id: registration.id,
-        name,
-        trackingNumber: registration.trackingNumber,
-        reason:
-          "Only Regular (BEC) applicants can be processed in this batch action.",
-      });
-      continue;
-    }
-
-    if (registration.status !== "VERIFIED") {
-      blocked.push({
-        id: registration.id,
-        name,
-        trackingNumber: registration.trackingNumber,
-        reason:
-          'Only applicants in "VERIFIED" status can be assigned to regular sections.',
-      });
-      continue;
-    }
-
-    const latestEnrollmentApp = registration.enrollmentApplications[0];
-    if (latestEnrollmentApp?.enrollmentRecord) {
-      blocked.push({
-        id: registration.id,
-        name,
-        trackingNumber: registration.trackingNumber,
-        reason:
-          "Applicant is already assigned to a section and cannot be re-assigned in this batch.",
-      });
-      continue;
-    }
-
-    const academicStatus = extractChecklistAcademicStatus(
-      registration.checklist,
-    );
-    if (academicStatus === "RETAINED") {
-      blocked.push({
-        id: registration.id,
-        name,
-        trackingNumber: registration.trackingNumber,
-        reason:
-          "Retained learners cannot proceed to section assignment and must be advised separately.",
-      });
-      continue;
-    }
-
-    const requirements = getRequiredDocuments({
-      learnerType: registration.learnerType,
-      gradeLevel: registration.gradeLevel.name,
-      applicantType: registration.applicantType,
-      isLwd: Boolean(registration.learner.isLearnerWithDisability),
-      isPeptAePasser: false,
-      documentRequirements: null,
-    });
-
-    const missingMandatory = computeMissingMandatoryRequirements(
-      requirements,
-      extractChecklistState(registration.checklist),
-    );
-
-    if (missingMandatory.length > 0) {
-      blocked.push({
-        id: registration.id,
-        name,
-        trackingNumber: registration.trackingNumber,
-        reason: `Missing required documents: ${missingMandatory.join(", ")}.`,
-      });
-      continue;
-    }
-
-    const requiresTemporaryEnrollment =
-      registration.learner.isPendingLrnCreation === true ||
-      !registration.learner.lrn;
-    const targetStatus: ApplicationStatus = requiresTemporaryEnrollment
-      ? "TEMPORARILY_ENROLLED"
-      : "ENROLLED";
-
-    try {
-      assertEarlyRegTransition(
-        registration.status,
-        targetStatus,
-        `Cannot transition application #${registration.id} from "${registration.status}" to "${targetStatus}".`,
-      );
-    } catch (error) {
-      blocked.push({
-        id: registration.id,
-        name,
-        trackingNumber: registration.trackingNumber,
-        reason: toBatchReason(error, "Transition not allowed."),
-      });
-      continue;
-    }
-
-    candidates.push({
-      registration,
-      name,
-      targetStatus,
-      generalAverage: resolveGeneralAverageFromRegistration(registration),
-    });
-  }
-
-  candidates.sort(compareRegularSectionCandidates);
-
-  const sectionStates = sections.map((section, index) => ({
-    ...section,
-    lane:
-      index < REGULAR_HOMOGENEOUS_SECTION_LIMIT
-        ? ("HOMOGENEOUS" as RegularSectionLane)
-        : ("SNAKE" as RegularSectionLane),
-    plannedCount: 0,
-    remainingSlots: section.availableSlots,
-  }));
-
-  const assignments: RegularSectionPlannedAssignment[] = [];
-  let candidateIndex = 0;
-
-  const assignCandidateToSection = (
-    sectionState: (typeof sectionStates)[number],
-  ) => {
-    if (
-      sectionState.remainingSlots <= 0 ||
-      candidateIndex >= candidates.length
-    ) {
-      return false;
-    }
-
-    const candidate = candidates[candidateIndex];
-    candidateIndex += 1;
-    sectionState.remainingSlots -= 1;
-    sectionState.plannedCount += 1;
-
-    assignments.push({
-      registration: candidate.registration,
-      id: candidate.registration.id,
-      name: candidate.name,
-      trackingNumber: candidate.registration.trackingNumber,
-      targetStatus: candidate.targetStatus,
-      generalAverage: candidate.generalAverage,
-      sectionId: sectionState.id,
-      sectionName: sectionState.name,
-      sectionDisplayName: resolveSectionDisplayName(sectionState),
-      lane: sectionState.lane,
-    });
-
-    return true;
-  };
-
-  const homogeneousSections = sectionStates.slice(
-    0,
-    REGULAR_HOMOGENEOUS_SECTION_LIMIT,
-  );
-  for (const sectionState of homogeneousSections) {
-    while (assignCandidateToSection(sectionState)) {
-      // Keep filling this homogeneous section before moving to the next.
-    }
-  }
-
-  const snakeSections = sectionStates.slice(REGULAR_HOMOGENEOUS_SECTION_LIMIT);
-  let snakeForward = true;
-
-  while (candidateIndex < candidates.length && snakeSections.length > 0) {
-    const pass = snakeForward ? snakeSections : [...snakeSections].reverse();
-    let assignedInPass = false;
-
-    for (const sectionState of pass) {
-      if (assignCandidateToSection(sectionState)) {
-        assignedInPass = true;
-      }
-      if (candidateIndex >= candidates.length) {
-        break;
-      }
-    }
-
-    if (!assignedInPass) {
-      break;
-    }
-
-    snakeForward = !snakeForward;
-  }
-
-  const unassigned: RegularSectionUnassignedItem[] = candidates
-    .slice(candidateIndex)
-    .map((candidate) => ({
-      id: candidate.registration.id,
-      name: candidate.name,
-      trackingNumber: candidate.registration.trackingNumber,
-      reason:
-        "No remaining section capacity across the configured regular sections.",
-      generalAverage: candidate.generalAverage,
-    }));
-
-  const planSections: RegularSectionPlanSection[] = sectionStates.map(
-    (sectionState) => ({
-      sectionId: sectionState.id,
-      sectionName: sectionState.name,
-      sectionDisplayName: resolveSectionDisplayName(sectionState),
-      sortOrder: sectionState.sortOrder,
-      lane: sectionState.lane,
-      maxCapacity: sectionState.maxCapacity,
-      enrolledCount: sectionState.enrolledCount,
-      availableSlots: sectionState.availableSlots,
-      plannedCount: sectionState.plannedCount,
-      remainingSlots: sectionState.remainingSlots,
-    }),
-  );
-
-  return {
-    requestedIds,
-    gradeLevelId,
-    gradeLevelName,
-    summary: {
-      eligibleCount: candidates.length,
-      assignedCount: assignments.length,
-      blockedCount: blocked.length,
-      unassignedCount: unassigned.length,
-      homogeneousSectionCount: Math.min(
-        sectionStates.length,
-        REGULAR_HOMOGENEOUS_SECTION_LIMIT,
-      ),
-      snakeSectionCount: Math.max(
-        sectionStates.length - REGULAR_HOMOGENEOUS_SECTION_LIMIT,
-        0,
-      ),
-    },
-    sections: planSections,
-    assignments,
-    blocked,
-    unassigned,
-  };
-}
-
-/** POST /batch/assign-regular-section/preview — Preview deterministic hybrid section plan for verified regular applicants. */
-export async function batchAssignRegularSectionsPreview(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
-    const { ids, expectedStatuses } = req.body as {
-      ids: number[];
-      expectedStatuses?: Record<string, string>;
-    };
-
-    const requestedIds = Array.from(new Set(ids));
-    if (requestedIds.length === 0) {
-      throw new AppError(400, "No application IDs provided.");
-    }
-
-    const expectedStatusMap = parseExpectedStatusMap(expectedStatuses);
-
-    const registrations = await prisma.earlyRegistrationApplication.findMany({
-      where: { id: { in: requestedIds } },
-      select: REGULAR_SECTION_BATCH_REGISTRATION_SELECT,
-    });
-
-    const { gradeLevelId } = assertSingleGradeLevelSelection(registrations);
-
-    const sections =
-      gradeLevelId == null
-        ? []
-        : await fetchRegularSectionInventory(gradeLevelId);
-
-    const plan = buildRegularSectionAssignmentPlan({
-      requestedIds,
-      registrations,
-      sections,
-      expectedStatuses: expectedStatusMap,
-    });
-
-    await auditLog({
-      userId: req.user!.userId,
-      actionType: "EARLY_REG_BATCH_ASSIGN_REGULAR_SECTION_PREVIEW",
-      description:
-        `Previewed regular section assignment: ${plan.summary.assignedCount} assignable, ` +
-        `${plan.summary.blockedCount} blocked, ${plan.summary.unassignedCount} unassigned.`,
-      subjectType: "EarlyRegistrationApplication",
-      recordId: null,
-      req,
-    }).catch(() => {});
-
-    res.json({
-      processed: requestedIds.length,
-      gradeLevelId: plan.gradeLevelId,
-      gradeLevelName: plan.gradeLevelName,
-      summary: plan.summary,
-      sections: plan.sections,
-      assignments: plan.assignments.map((assignment) => ({
-        id: assignment.id,
-        name: assignment.name,
-        trackingNumber: assignment.trackingNumber,
-        targetStatus: assignment.targetStatus,
-        generalAverage: assignment.generalAverage,
-        sectionId: assignment.sectionId,
-        sectionName: assignment.sectionName,
-        sectionDisplayName: assignment.sectionDisplayName,
-        lane: assignment.lane,
-      })),
-      blocked: plan.blocked,
-      unassigned: plan.unassigned,
-    });
-  } catch (err) {
-    next(err);
-  }
-}
-
-/** PATCH /batch/assign-regular-section/commit — Apply deterministic hybrid section plan in a locked transaction. */
-export async function batchAssignRegularSectionsCommit(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  try {
-    const { ids, expectedStatuses } = req.body as {
-      ids: number[];
-      expectedStatuses?: Record<string, string>;
-    };
-
-    const requestedIds = Array.from(new Set(ids));
-    if (requestedIds.length === 0) {
-      throw new AppError(400, "No application IDs provided.");
-    }
-
-    const expectedStatusMap = parseExpectedStatusMap(expectedStatuses);
-
-    const outcome = await prisma.$transaction(async (tx) => {
-      if (requestedIds.length > 0) {
-        await tx.$queryRaw`
-          SELECT id
-          FROM "early_registration_applications"
-          WHERE id IN (${Prisma.join(requestedIds)})
-          FOR UPDATE
-        `;
-      }
-
-      const registrations = await tx.earlyRegistrationApplication.findMany({
-        where: { id: { in: requestedIds } },
-        select: REGULAR_SECTION_BATCH_REGISTRATION_SELECT,
-      });
-
-      const { gradeLevelId } = assertSingleGradeLevelSelection(registrations);
-
-      const sections =
-        gradeLevelId == null
-          ? []
-          : await fetchRegularSectionInventory(gradeLevelId, {
-              tx,
-              lock: true,
-            });
-
-      const plan = buildRegularSectionAssignmentPlan({
-        requestedIds,
-        registrations,
-        sections,
-        expectedStatuses: expectedStatusMap,
-      });
-
-      const succeeded: Array<
-        BatchSuccessItem & {
-          status: ApplicationStatus;
-          sectionId: number;
-          sectionDisplayName: string;
-          lane: RegularSectionLane;
-        }
-      > = [];
-
-      for (const assignment of plan.assignments) {
-        const registration = assignment.registration;
-
-        const existingEnrollmentApp = registration.enrollmentApplications[0];
-
-        const enrollmentApplication = existingEnrollmentApp
-          ? await tx.enrollmentApplication.update({
-              where: { id: existingEnrollmentApp.id },
-              data: {
-                status: assignment.targetStatus,
-                isTemporarilyEnrolled:
-                  assignment.targetStatus === "TEMPORARILY_ENROLLED",
-              },
-            })
-          : await tx.enrollmentApplication.create({
-              data: {
-                learnerId: registration.learnerId,
-                earlyRegistrationId: registration.id,
-                schoolYearId: registration.schoolYearId,
-                gradeLevelId: registration.gradeLevelId,
-                applicantType: registration.applicantType,
-                learnerType: registration.learnerType,
-                status: assignment.targetStatus,
-                admissionChannel: registration.channel,
-                isPrivacyConsentGiven: registration.isPrivacyConsentGiven,
-                encodedById: req.user!.userId,
-                isTemporarilyEnrolled:
-                  assignment.targetStatus === "TEMPORARILY_ENROLLED",
-              },
-            });
-
-        const checklistState = extractChecklistState(registration.checklist);
-        const checklistAcademicStatus = extractChecklistAcademicStatus(
-          registration.checklist,
-        );
-
-        await tx.applicationChecklist.upsert({
-          where: { earlyRegistrationId: registration.id },
-          create: {
-            earlyRegistrationId: registration.id,
-            enrollmentId: enrollmentApplication.id,
-            updatedById: req.user!.userId,
-            academicStatus: checklistAcademicStatus,
-            ...checklistState,
-          },
-          update: {
-            enrollmentId: enrollmentApplication.id,
-            updatedById: req.user!.userId,
-            academicStatus: checklistAcademicStatus,
-          },
-        });
-
-        await tx.enrollmentRecord.upsert({
-          where: {
-            enrollmentApplicationId: enrollmentApplication.id,
-          },
-          create: {
-            enrollmentApplicationId: enrollmentApplication.id,
-            sectionId: assignment.sectionId,
-            schoolYearId: registration.schoolYearId,
-            enrolledById: req.user!.userId,
-          },
-          update: {
-            sectionId: assignment.sectionId,
-            schoolYearId: registration.schoolYearId,
-            enrolledById: req.user!.userId,
-          },
-        });
-
-        await tx.earlyRegistrationApplication.update({
-          where: { id: registration.id },
-          data: { status: assignment.targetStatus },
-        });
-
-        if (assignment.targetStatus === "ENROLLED") {
-          await tx.learner.update({
-            where: { id: registration.learnerId },
-            data: { isPendingLrnCreation: false },
-          });
-        }
-
-        succeeded.push({
-          id: assignment.id,
-          name: assignment.name,
-          trackingNumber: assignment.trackingNumber,
-          status: assignment.targetStatus,
-          sectionId: assignment.sectionId,
-          sectionDisplayName: assignment.sectionDisplayName,
-          lane: assignment.lane,
-        });
-      }
-
-      return {
-        succeeded,
-        failed: [
-          ...plan.blocked,
-          ...plan.unassigned.map(
-            ({ generalAverage: _generalAverage, ...item }) => item,
-          ),
-        ],
-        summary: plan.summary,
-      };
-    });
-
-    await auditLog({
-      userId: req.user!.userId,
-      actionType: "EARLY_REG_BATCH_ASSIGN_REGULAR_SECTION_COMMIT",
-      description:
-        `Committed regular section assignment: ${outcome.succeeded.length} succeeded, ` +
-        `${outcome.failed.length} failed.`,
-      subjectType: "EarlyRegistrationApplication",
-      recordId: null,
-      req,
-    }).catch(() => {});
-
-    res.json({
-      processed: requestedIds.length,
-      succeeded: outcome.succeeded,
-      failed: outcome.failed,
-      summary: outcome.summary,
     });
   } catch (err) {
     next(err);
@@ -5184,6 +4711,520 @@ export async function markInterviewPassed(
     });
 
     res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** POST /batch/assign-regular-section/preview — Generate automated sectioning plan for BEC applicants */
+export async function batchAssignRegularSectionsPreview(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { ids, expectedStatuses } = req.body as {
+      ids: number[];
+      expectedStatuses?: Record<string, string>;
+    };
+
+    const requestedIds = Array.from(new Set(ids));
+    if (requestedIds.length === 0) {
+      throw new AppError(400, "No application IDs provided.");
+    }
+
+    const expectedStatusMap = parseExpectedStatusMap(expectedStatuses);
+
+    // 1. Fetch applicants with their data
+    const registrations = await prisma.earlyRegistrationApplication.findMany({
+      where: { id: { in: requestedIds } },
+      include: {
+        learner: {
+          select: {
+            firstName: true,
+            lastName: true,
+            lrn: true,
+            sex: true,
+            isPendingLrnCreation: true,
+            isLearnerWithDisability: true,
+          },
+        },
+        gradeLevel: { select: { id: true, name: true } },
+        checklist: true,
+        enrollmentApplications: {
+          include: { previousSchool: true },
+          take: 1,
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+
+    if (registrations.length === 0) {
+      throw new AppError(404, "No applications found.");
+    }
+
+    assertNoStatusSnapshotConflicts(
+      expectedStatusMap,
+      registrations.map((r) => ({
+        id: r.id,
+        status: r.status,
+        trackingNumber: r.trackingNumber,
+      })),
+    );
+
+    // 2. Validate single grade level
+    const gradeLevelIds = new Set(registrations.map((r) => r.gradeLevelId));
+    if (gradeLevelIds.size > 1) {
+      throw new AppError(
+        422,
+        "Automated sectioning requires applicants from a single grade level.",
+      );
+    }
+    const gradeLevelId = registrations[0].gradeLevelId;
+
+    // 3. Filter eligible vs blocked
+    const eligible: Array<{
+      registration: (typeof registrations)[number];
+      generalAverage: number | null;
+    }> = [];
+    const blocked: Array<{
+      id: number;
+      name: string;
+      trackingNumber: string;
+      reason: string;
+    }> = [];
+
+    for (const reg of registrations) {
+      const name = formatBatchName(reg.learner.firstName, reg.learner.lastName);
+      const generalAverage =
+        reg.enrollmentApplications[0]?.previousSchool?.generalAverage ?? null;
+
+      if (reg.applicantType !== "REGULAR") {
+        blocked.push({
+          id: reg.id,
+          name,
+          trackingNumber: reg.trackingNumber,
+          reason: "Not a Regular (BEC) applicant.",
+        });
+        continue;
+      }
+
+      if (reg.status !== "VERIFIED") {
+        blocked.push({
+          id: reg.id,
+          name,
+          trackingNumber: reg.trackingNumber,
+          reason: `Invalid status: ${reg.status}. Must be VERIFIED.`,
+        });
+        continue;
+      }
+
+      const academicStatus = extractChecklistAcademicStatus(reg.checklist);
+      if (academicStatus === "RETAINED") {
+        blocked.push({
+          id: reg.id,
+          name,
+          trackingNumber: reg.trackingNumber,
+          reason: "Learner flagged as RETAINED.",
+        });
+        continue;
+      }
+
+      const requirements = getRequiredDocuments({
+        learnerType: reg.learnerType,
+        gradeLevel: reg.gradeLevel.name,
+        applicantType: reg.applicantType,
+        isLwd: Boolean(reg.learner.isLearnerWithDisability),
+        isPeptAePasser: false,
+        documentRequirements: null,
+      });
+
+      const missingMandatory = computeMissingMandatoryRequirements(
+        requirements,
+        extractChecklistState(reg.checklist),
+      );
+
+      if (missingMandatory.length > 0) {
+        blocked.push({
+          id: reg.id,
+          name,
+          trackingNumber: reg.trackingNumber,
+          reason: `Missing documents: ${missingMandatory.join(", ")}.`,
+        });
+        continue;
+      }
+
+      eligible.push({ registration: reg, generalAverage });
+    }
+
+    // 4. Sort eligible by General Average (desc)
+    eligible.sort((a, b) => (b.generalAverage ?? 0) - (a.generalAverage ?? 0));
+
+    // 5. Fetch available Regular sections
+    const rawSections = await prisma.section.findMany({
+      where: {
+        gradeLevelId,
+        programType: "REGULAR",
+      },
+      include: {
+        _count: {
+          select: { enrollmentRecords: true },
+        },
+      },
+      orderBy: { sortOrder: "asc" },
+    });
+
+    const homogeneousSections = rawSections.filter(
+      (s) => s.isHomogeneous && !s.isSnake,
+    );
+    const snakeSections = rawSections.filter((s) => s.isSnake);
+
+    const sectionStates: Record<
+      number,
+      {
+        section: (typeof rawSections)[number];
+        available: number;
+        planned: number;
+      }
+    > = {};
+    for (const s of rawSections) {
+      sectionStates[s.id] = {
+        section: s,
+        available: Math.max(0, s.maxCapacity - s._count.enrollmentRecords),
+        planned: 0,
+      };
+    }
+
+    const assignments: any[] = [];
+    const unassigned: any[] = [];
+
+    // 6. Distribution Logic
+    let pool = [...eligible];
+
+    // Phase A: Homogeneous (Top Performers First)
+    for (const hSec of homogeneousSections) {
+      const state = sectionStates[hSec.id];
+      while (state.planned < state.available && pool.length > 0) {
+        const item = pool.shift()!;
+        state.planned++;
+        assignments.push({
+          id: item.registration.id,
+          name: formatBatchName(
+            item.registration.learner.firstName,
+            item.registration.learner.lastName,
+          ),
+          trackingNumber: item.registration.trackingNumber,
+          targetStatus:
+            item.registration.learner.isPendingLrnCreation ||
+            !item.registration.learner.lrn
+              ? "TEMPORARILY_ENROLLED"
+              : "ENROLLED",
+          generalAverage: item.generalAverage,
+          sectionId: hSec.id,
+          sectionName: hSec.name,
+          sectionDisplayName: hSec.displayName || hSec.name,
+          lane: "HOMOGENEOUS",
+        });
+      }
+    }
+
+    // Phase B: Snake Distribution
+    if (snakeSections.length > 0 && pool.length > 0) {
+      let forward = true;
+      while (pool.length > 0) {
+        let assignedInPass = false;
+
+        const range = Array.from({ length: snakeSections.length }, (_, i) =>
+          forward ? i : snakeSections.length - 1 - i,
+        );
+
+        for (const idx of range) {
+          if (pool.length === 0) break;
+          const sec = snakeSections[idx];
+          const state = sectionStates[sec.id];
+
+          if (state.planned < state.available) {
+            const item = pool.shift()!;
+            state.planned++;
+            assignedInPass = true;
+            assignments.push({
+              id: item.registration.id,
+              name: formatBatchName(
+                item.registration.learner.firstName,
+                item.registration.learner.lastName,
+              ),
+              trackingNumber: item.registration.trackingNumber,
+              targetStatus:
+                item.registration.learner.isPendingLrnCreation ||
+                !item.registration.learner.lrn
+                  ? "TEMPORARILY_ENROLLED"
+                  : "ENROLLED",
+              generalAverage: item.generalAverage,
+              sectionId: sec.id,
+              sectionName: sec.name,
+              sectionDisplayName: sec.displayName || sec.name,
+              lane: "SNAKE",
+            });
+          }
+        }
+
+        if (!assignedInPass) break;
+        forward = !forward;
+      }
+    }
+
+    // Phase C: Remaining pool
+    for (const item of pool) {
+      unassigned.push({
+        id: item.registration.id,
+        name: formatBatchName(
+          item.registration.learner.firstName,
+          item.registration.learner.lastName,
+        ),
+        trackingNumber: item.registration.trackingNumber,
+        generalAverage: item.generalAverage,
+        reason: "No available slots in the configured sectioning lanes.",
+      });
+    }
+
+    res.json({
+      processed: requestedIds.length,
+      gradeLevelId,
+      gradeLevelName: registrations[0].gradeLevel.name,
+      summary: {
+        eligibleCount: eligible.length,
+        assignedCount: assignments.length,
+        blockedCount: blocked.length,
+        unassignedCount: unassigned.length,
+        homogeneousSectionCount: homogeneousSections.length,
+        snakeSectionCount: snakeSections.length,
+      },
+      sections: rawSections.map((s) => ({
+        sectionId: s.id,
+        sectionName: s.name,
+        sectionDisplayName: s.displayName || s.name,
+        sortOrder: s.sortOrder,
+        lane: s.isSnake ? "SNAKE" : "HOMOGENEOUS",
+        maxCapacity: s.maxCapacity,
+        enrolledCount: s._count.enrollmentRecords,
+        availableSlots: sectionStates[s.id].available,
+        plannedCount: sectionStates[s.id].planned,
+        remainingSlots:
+          sectionStates[s.id].available - sectionStates[s.id].planned,
+      })),
+      assignments,
+      blocked,
+      unassigned,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** PATCH /batch/assign-regular-section/commit — Apply the automated sectioning plan */
+export async function batchAssignRegularSectionsCommit(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { assignments, expectedStatuses } = req.body as {
+      assignments: Array<{
+        id: number;
+        sectionId: number;
+        targetStatus: ApplicationStatus;
+      }>;
+      expectedStatuses?: Record<string, string>;
+    };
+
+    if (!Array.isArray(assignments) || assignments.length === 0) {
+      throw new AppError(400, "No assignments provided.");
+    }
+
+    const expectedStatusMap = parseExpectedStatusMap(expectedStatuses);
+    const requestedIds = assignments.map((a) => a.id);
+
+    const outcome = await prisma.$transaction(
+      async (tx) => {
+        const sectionIds = Array.from(
+          new Set(assignments.map((a) => a.sectionId)),
+        );
+        if (sectionIds.length > 0) {
+          await tx.$queryRaw`
+            SELECT id FROM "sections" WHERE id IN (${Prisma.join(sectionIds)}) FOR UPDATE
+          `;
+        }
+
+        await tx.$queryRaw`
+          SELECT id FROM "early_registration_applications" WHERE id IN (${Prisma.join(requestedIds)}) FOR UPDATE
+        `;
+
+        const registrations = await tx.earlyRegistrationApplication.findMany({
+          where: { id: { in: requestedIds } },
+          include: {
+            learner: true,
+            gradeLevel: true,
+            checklist: true,
+            enrollmentApplications: {
+              orderBy: { createdAt: "desc" },
+              take: 1,
+            },
+          },
+        });
+
+        assertNoStatusSnapshotConflicts(
+          expectedStatusMap,
+          registrations.map((r) => ({
+            id: r.id,
+            status: r.status,
+            trackingNumber: r.trackingNumber,
+          })),
+        );
+
+        const regById = new Map(registrations.map((r) => [r.id, r]));
+        const succeeded: any[] = [];
+        const failed: any[] = [];
+
+        for (const plan of assignments) {
+          const reg = regById.get(plan.id);
+          if (!reg) continue;
+
+          const name = formatBatchName(
+            reg.learner.firstName,
+            reg.learner.lastName,
+          );
+
+          try {
+            const enrolledCount = await tx.enrollmentRecord.count({
+              where: { sectionId: plan.sectionId },
+            });
+            const section = await tx.section.findUnique({
+              where: { id: plan.sectionId },
+              select: { maxCapacity: true },
+            });
+
+            if (!section || enrolledCount >= section.maxCapacity) {
+              failed.push({
+                id: reg.id,
+                name,
+                trackingNumber: reg.trackingNumber,
+                reason: "Section reached capacity during processing.",
+              });
+              continue;
+            }
+
+            const existingEnrollmentApp = reg.enrollmentApplications[0];
+
+            const enrollmentApplication = existingEnrollmentApp
+              ? await tx.enrollmentApplication.update({
+                  where: { id: existingEnrollmentApp.id },
+                  data: {
+                    status: plan.targetStatus,
+                    isTemporarilyEnrolled:
+                      plan.targetStatus === "TEMPORARILY_ENROLLED",
+                  },
+                })
+              : await tx.enrollmentApplication.create({
+                  data: {
+                    learnerId: reg.learnerId,
+                    earlyRegistrationId: reg.id,
+                    schoolYearId: reg.schoolYearId,
+                    gradeLevelId: reg.gradeLevelId,
+                    applicantType: reg.applicantType,
+                    learnerType: reg.learnerType,
+                    status: plan.targetStatus,
+                    admissionChannel: reg.channel,
+                    isPrivacyConsentGiven: reg.isPrivacyConsentGiven,
+                    encodedById: req.user!.userId,
+                    isTemporarilyEnrolled:
+                      plan.targetStatus === "TEMPORARILY_ENROLLED",
+                  },
+                });
+
+            const checklistState = extractChecklistState(reg.checklist);
+            const checklistAcademicStatus = extractChecklistAcademicStatus(
+              reg.checklist,
+            );
+
+            await tx.applicationChecklist.upsert({
+              where: { earlyRegistrationId: reg.id },
+              create: {
+                earlyRegistrationId: reg.id,
+                enrollmentId: enrollmentApplication.id,
+                updatedById: req.user!.userId,
+                academicStatus: checklistAcademicStatus,
+                ...checklistState,
+              },
+              update: {
+                enrollmentId: enrollmentApplication.id,
+                updatedById: req.user!.userId,
+                academicStatus: checklistAcademicStatus,
+              },
+            });
+
+            await tx.enrollmentRecord.upsert({
+              where: { enrollmentApplicationId: enrollmentApplication.id },
+              create: {
+                enrollmentApplicationId: enrollmentApplication.id,
+                sectionId: plan.sectionId,
+                schoolYearId: reg.schoolYearId,
+                enrolledById: req.user!.userId,
+              },
+              update: {
+                sectionId: plan.sectionId,
+                schoolYearId: reg.schoolYearId,
+                enrolledById: req.user!.userId,
+              },
+            });
+
+            await tx.earlyRegistrationApplication.update({
+              where: { id: reg.id },
+              data: { status: plan.targetStatus },
+            });
+
+            if (plan.targetStatus === "ENROLLED") {
+              await tx.learner.update({
+                where: { id: reg.learnerId },
+                data: { isPendingLrnCreation: false },
+              });
+            }
+
+            succeeded.push({
+              id: reg.id,
+              name,
+              trackingNumber: reg.trackingNumber,
+              status: plan.targetStatus,
+              sectionId: plan.sectionId,
+            });
+          } catch (error) {
+            failed.push({
+              id: reg.id,
+              name,
+              trackingNumber: reg.trackingNumber,
+              reason: toBatchReason(error, "Failed to commit assignment."),
+            });
+          }
+        }
+
+        return { succeeded, failed };
+      },
+      { timeout: 30000 },
+    );
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "EARLY_REG_BATCH_ASSIGN_REGULAR_SECTION_COMMIT",
+      description: `Committed automated sectioning plan: ${outcome.succeeded.length} succeeded, ${outcome.failed.length} failed.`,
+      subjectType: "EarlyRegistrationApplication",
+      recordId: null,
+      req,
+    }).catch(() => {});
+
+    res.json({
+      processed: assignments.length,
+      succeeded: outcome.succeeded,
+      failed: outcome.failed,
+    });
   } catch (err) {
     next(err);
   }

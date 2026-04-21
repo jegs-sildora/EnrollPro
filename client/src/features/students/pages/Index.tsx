@@ -62,8 +62,9 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { Label } from "@/shared/ui/label";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
+import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 
 interface Student {
   id: number;
@@ -259,6 +260,23 @@ export default function Students() {
   const [total, setTotal] = useState(0);
   const [sortBy, setSortBy] = useState<string>("dateEnrolled");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  const sorting = useMemo<SortingState>(
+    () => [{ id: sortBy, desc: sortOrder === "desc" }],
+    [sortBy, sortOrder],
+  );
+
+  const onSortingChange = useCallback((updaterOrValue: SortingState | ((old: SortingState) => SortingState)) => {
+    const newSorting = typeof updaterOrValue === "function" ? updaterOrValue(sorting) : updaterOrValue;
+    if (newSorting.length > 0) {
+      setSortBy(newSorting[0].id);
+      setSortOrder(newSorting[0].desc ? "desc" : "asc");
+    } else {
+      setSortBy("dateEnrolled");
+      setSortOrder("desc");
+    }
+    setPage(1);
+  }, [sorting]);
 
   const [gradeLevels, setGradeLevels] = useState<GradeLevel[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
@@ -855,14 +873,10 @@ export default function Students() {
   const columns = useMemo<ColumnDef<Student>[]>(
     () => [
       {
-        id: "student",
-        header: () => (
-          <button
-            onClick={() => handleSort("lastName")}
-            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
-            Learner
-            {getSortIcon("lastName")}
-          </button>
+        id: "lastName",
+        accessorKey: "lastName",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Learner" />
         ),
         cell: ({ row }) => (
           <div className="flex flex-col text-left min-w-[200px] pl-2">
@@ -877,24 +891,19 @@ export default function Students() {
       },
       {
         id: "lrn",
-        header: () => (
-          <button
-            onClick={() => handleSort("lrn")}
-            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
-            LRN
-            {getSortIcon("lrn")}
-          </button>
+        accessorKey: "lrn",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="LRN" />
         ),
         cell: ({ row }) => (
           <span className="font-bold text-sm">{row.original.lrn}</span>
         ),
       },
       {
-        id: "gender",
-        header: () => (
-          <div className="flex h-11 w-full items-center justify-center px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90">
-            Gender
-          </div>
+        id: "sex",
+        accessorKey: "sex",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Gender" />
         ),
         cell: ({ row }) => {
           const normalized = row.original.sex?.trim().toUpperCase();
@@ -910,13 +919,9 @@ export default function Students() {
       },
       {
         id: "gradeLevel",
-        header: () => (
-          <button
-            onClick={() => handleSort("gradeLevel")}
-            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
-            Grade Level
-            {getSortIcon("gradeLevel")}
-          </button>
+        accessorKey: "gradeLevel",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Grade Level" />
         ),
         cell: ({ row }) => (
           <span className="font-bold text-sm">{row.original.gradeLevel}</span>
@@ -924,13 +929,9 @@ export default function Students() {
       },
       {
         id: "section",
-        header: () => (
-          <button
-            onClick={() => handleSort("section")}
-            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
-            Section
-            {getSortIcon("section")}
-          </button>
+        accessorKey: "section",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Section" />
         ),
         cell: ({ row }) => (
           <span className="font-bold text-sm">
@@ -939,14 +940,10 @@ export default function Students() {
         ),
       },
       {
-        id: "enrolled",
-        header: () => (
-          <button
-            onClick={() => handleSort("dateEnrolled")}
-            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
-            Date Enrolled
-            {getSortIcon("dateEnrolled")}
-          </button>
+        id: "dateEnrolled",
+        accessorKey: "dateEnrolled",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Date Enrolled" />
         ),
         cell: ({ row }) => (
           <span className="text-sm font-bold block text-center">
@@ -1495,6 +1492,8 @@ export default function Students() {
               data={students}
               loading={loading}
               noResultsMessage="No enrolled learners found for the selected filters."
+              sorting={sorting}
+              onSortingChange={onSortingChange}
             />
           </div>
 

@@ -165,33 +165,11 @@ export function createEarlyRegistrationBaseController(
       }
 
       // 2. Build Status Filters for Raw SQL
-      const rawStatus = (Array.isArray(status) ? status : [status])
+      const statusFilters = (Array.isArray(status) ? status : [status])
         .flatMap((value) => String(value ?? "").split(","))
-        .map((v) => v.trim())
-        .filter(Boolean);
-
-      const statusFilters = rawStatus
-        .flatMap((value) => {
-          const normalizedToken = value.toUpperCase();
-
-          if (normalizedToken === "SUBMITTED") {
-            // "SUBMITTED" is ambiguous, but for Enrollment Management we prefer BEEF
-            return ["SUBMITTED_BEEF"] as ApplicationStatus[];
-          }
-
-          const mapped = normalizeApplicationStatusToken(normalizedToken);
-          return mapped ? [mapped] : [];
-        })
+        .map((value) => normalizeApplicationStatusToken(value))
         .filter((value): value is ApplicationStatus => Boolean(value));
-
-      // NEW REQUIREMENT: Enrollment Management should only start process learners with "SUBMITTED_BEEF" status.
-      // If no status filter is provided, we default to SUBMITTED_BEEF.
-      if (statusFilters.length === 0 && !search) {
-        statusFilters.push("SUBMITTED_BEEF");
-      }
-
       const requiresSectionAssignment = statusFilters.includes("ENROLLED");
-      const includePhase1 = statusFilters.some(s => s === "SUBMITTED_BEERF" || s === "READY_FOR_ENROLLMENT" || s === "UNDER_REVIEW");
 
       // 3. Execution: Unified Raw Query for ID and Metadata
       // We use raw SQL to handle UNION ALL + cross-table pagination + complex filters efficiently.
@@ -333,8 +311,9 @@ export function createEarlyRegistrationBaseController(
             learner: true,
             gradeLevel: true,
             enrollmentRecord: { include: { section: true } },
-            previousSchool: true,
             programDetail: true,
+            previousSchool: true,
+            checklist: true,
             earlyRegistration: {
               include: { assessments: { orderBy: { createdAt: "desc" } } },
             },
@@ -815,11 +794,7 @@ export function createEarlyRegistrationBaseController(
     // Build nested family member data
     const familyData: Prisma.ApplicationFamilyMemberCreateManyInput[] = [];
     if (body.mother)
-      familyData.push({
-        relationship: "MOTHER",
-        ...body.mother,
-        maidenName: body.mother.maidenName || null,
-      });
+      familyData.push({ relationship: "MOTHER", ...body.mother });
     if (body.father)
       familyData.push({ relationship: "FATHER", ...body.father });
     const guardianFirstName = body.guardian?.firstName?.trim();
@@ -847,9 +822,9 @@ export function createEarlyRegistrationBaseController(
       extensionName: body.extensionName || null,
       birthdate: birthDate,
       sex: body.sex === "MALE" ? ("MALE" as const) : ("FEMALE" as const),
+      studentPhoto: studentPhotoUrl,
       placeOfBirth: body.placeOfBirth || null,
       religion: body.religion || null,
-      motherTongue: body.motherTongue || null,
       isIpCommunity: body.isIpCommunity ?? false,
       ipGroupName: body.isIpCommunity ? body.ipGroupName : null,
       isLearnerWithDisability: body.isLearnerWithDisability ?? false,
@@ -857,14 +832,12 @@ export function createEarlyRegistrationBaseController(
         ? body.disabilityTypes || []
         : [],
       specialNeedsCategory: body.specialNeedsCategory || null,
-      snedPlacement: body.snedPlacement || null,
       hasPwdId: body.hasPwdId ?? false,
       isBalikAral: body.isBalikAral ?? false,
       lastYearEnrolled: body.lastYearEnrolled || null,
       lastGradeLevel: body.lastGradeLevel || null,
       is4PsBeneficiary: body.is4PsBeneficiary ?? false,
       householdId4Ps: body.is4PsBeneficiary ? body.householdId4Ps : null,
-      studentPhoto: studentPhotoUrl,
     };
 
     const application = await prisma.$transaction(async (tx) => {
@@ -891,7 +864,6 @@ export function createEarlyRegistrationBaseController(
 
           // Enrollment preferences
           learnerType: lType,
-          status: "SUBMITTED_BEEF",
           isPrivacyConsentGiven: body.isPrivacyConsentGiven ?? false,
           guardianRelationship: body.guardian?.relationship || null,
           hasNoMother: body.hasNoMother ?? false,
@@ -925,16 +897,8 @@ export function createEarlyRegistrationBaseController(
                   schoolYearAttended: body.schoolYearLastAttended || null,
                   schoolAddress: body.lastSchoolAddress?.trim() || null,
                   schoolType: body.lastSchoolType || null,
-                  natScore:
-                    body.natScore != null &&
-                    !isNaN(parseFloat(String(body.natScore)))
-                      ? parseFloat(String(body.natScore))
-                      : null,
-                  generalAverage:
-                    body.generalAverage != null &&
-                    !isNaN(parseFloat(String(body.generalAverage)))
-                      ? parseFloat(String(body.generalAverage))
-                      : null,
+                  natScore: body.natScore ?? null,
+                  generalAverage: body.generalAverage ?? null,
                 },
               }
             : undefined,
@@ -1041,7 +1005,7 @@ export function createEarlyRegistrationBaseController(
         options.channel === "F2F"
           ? "F2F_APPLICATION_SUBMITTED"
           : "APPLICATION_SUBMITTED",
-      description: `${logPrefix} ${application.learner.firstName} ${application.learner.lastName}${lrn ? ` (LRN: ${lrn})` : hasNoLrnDeclared ? " (PENDING LRN CREATION)" : ""}. Tracking: ${trackingNumber}`,
+      description: `${logPrefix} ${(application as any).learner.firstName} ${(application as any).learner.lastName}${lrn ? ` (LRN: ${lrn})` : hasNoLrnDeclared ? " (PENDING LRN CREATION)" : ""}. Tracking: ${trackingNumber}`,
       subjectType: "EnrollmentApplication",
       recordId: application.id,
       req,
@@ -1210,7 +1174,9 @@ export function createEarlyRegistrationBaseController(
         string,
         any
       >;
-      const rawStatus = String(flattened.status).toUpperCase();
+      const rawStatus = String(
+        flattened.status ?? "SUBMITTED_BEERF",
+      ).toUpperCase();
       const status = normalizeTrackingStatus(
         flattened.trackingStatus ?? rawStatus,
       );
@@ -1241,7 +1207,7 @@ export function createEarlyRegistrationBaseController(
         throw new AppError(400, "No active School Year configured.");
       }
 
-      const learner = await prisma.learner.findUnique({
+      const learner = (await prisma.learner.findUnique({
         where: { lrn },
         include: {
           earlyRegistrationApplications: {
@@ -1273,7 +1239,7 @@ export function createEarlyRegistrationBaseController(
             take: 1,
           },
         },
-      });
+      })) as any;
 
       if (!learner || learner.earlyRegistrationApplications.length === 0) {
         throw new AppError(
@@ -1285,16 +1251,20 @@ export function createEarlyRegistrationBaseController(
       const reg = learner.earlyRegistrationApplications[0];
 
       // Map family members to father/mother/guardian fields
-      const father = reg.familyMembers.find((g) => g.relationship === "FATHER");
-      const mother = reg.familyMembers.find((g) => g.relationship === "MOTHER");
+      const father = reg.familyMembers.find(
+        (g: any) => g.relationship === "FATHER",
+      );
+      const mother = reg.familyMembers.find(
+        (g: any) => g.relationship === "MOTHER",
+      );
       const guardian = reg.familyMembers.find(
-        (g) => g.relationship === "GUARDIAN",
+        (g: any) => g.relationship === "GUARDIAN",
       );
       const currentAddress = reg.addresses.find(
-        (address) => address.addressType === "CURRENT",
+        (address: any) => address.addressType === "CURRENT",
       );
       const permanentAddress = reg.addresses.find(
-        (address) => address.addressType === "PERMANENT",
+        (address: any) => address.addressType === "PERMANENT",
       );
       const normalizedGradeLevel =
         normalizeGradeLevelToken(reg.gradeLevel?.name) ||
@@ -1310,22 +1280,18 @@ export function createEarlyRegistrationBaseController(
         extensionName: learner.extensionName,
         birthdate: learner.birthdate,
         sex: learner.sex,
-        placeOfBirth: learner.placeOfBirth,
         religion: learner.religion,
-        motherTongue: learner.motherTongue,
         isIpCommunity: learner.isIpCommunity,
         ipGroupName: learner.ipGroupName,
         isLearnerWithDisability: learner.isLearnerWithDisability,
         disabilityTypes: learner.disabilityTypes,
         specialNeedsCategory: learner.specialNeedsCategory,
-        snedPlacement: learner.snedPlacement,
         hasPwdId: learner.hasPwdId,
         isBalikAral: learner.isBalikAral,
         lastYearEnrolled: learner.lastYearEnrolled,
         lastGradeLevel: learner.lastGradeLevel,
         is4PsBeneficiary: learner.is4PsBeneficiary,
         householdId4Ps: learner.householdId4Ps,
-        studentPhoto: learner.studentPhoto,
         // Demographic fields from learner table
         gradeLevel: normalizedGradeLevel,
         learnerType: reg.learnerType,
@@ -1368,7 +1334,6 @@ export function createEarlyRegistrationBaseController(
               lastName: mother.lastName,
               firstName: mother.firstName,
               middleName: mother.middleName,
-              maidenName: mother.maidenName,
               contactNumber: mother.contactNumber,
               email: mother.email,
             }

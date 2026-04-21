@@ -44,6 +44,7 @@ import { useAuthStore } from "@/store/auth.slice";
 import { format } from "date-fns";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
+import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { useMemo } from "react";
 
 type EosyStatus =
@@ -594,7 +595,10 @@ export default function EosyUpdating() {
     () => [
       {
         id: "lrn",
-        header: "LRN",
+        accessorKey: "enrollmentApplication.learner.lrn",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="LRN" />
+        ),
         cell: ({ row }) => (
           <span className="font-bold">
             {row.original.enrollmentApplication.learner.lrn || "N/A"}
@@ -603,7 +607,10 @@ export default function EosyUpdating() {
       },
       {
         id: "name",
-        header: "NAME",
+        accessorKey: "enrollmentApplication.learner.lastName",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="NAME" />
+        ),
         cell: ({ row }) => {
           const sex = row.original.enrollmentApplication.learner.sex;
           const genderLabel =
@@ -626,7 +633,10 @@ export default function EosyUpdating() {
       },
       {
         id: "status",
-        header: "STATUS",
+        accessorKey: "eosyStatus",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="STATUS" />
+        ),
         cell: ({ row }) => {
           const r = row.original;
           const resolvedStatus = r.eosyStatus ?? "PROMOTED";

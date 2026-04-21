@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router";
-import { ArrowLeft, User } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useApplicationDetail } from "@/features/enrollment/hooks/useApplicationDetail";
 import type { AssessmentStep } from "@/features/enrollment/hooks/useApplicationDetail";
 import { StatusBadge } from "@/features/enrollment/components/StatusBadge";

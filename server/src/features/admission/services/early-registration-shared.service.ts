@@ -83,7 +83,7 @@ export function deriveProgramType(
 export function normalizeTrackingStatus(
   status: string | null | undefined,
 ): PublicTrackingStatus {
-  const normalized = String(status ?? "SUBMITTED")
+  const normalized = String(status ?? "SUBMITTED_BEERF")
     .trim()
     .toUpperCase();
 

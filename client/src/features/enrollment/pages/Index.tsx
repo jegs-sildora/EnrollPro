@@ -41,8 +41,9 @@ import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { format } from "date-fns";
-import type { CellContext, ColumnDef } from "@tanstack/react-table";
+import type { CellContext, ColumnDef, SortingState } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
+import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { BatchSectioningWizard } from "@/features/enrollment/components/BatchSectioningWizard";
 import { ApplicationDetailPanel } from "@/features/enrollment/components/ApplicationDetailPanel";
 import { ScheduleExamDialog } from "@/features/enrollment/components/ScheduleExamDialog";
@@ -235,6 +236,32 @@ export default function Enrollment() {
   const [page, setPage] = useState(1);
   const [pendingQueueFilter, setPendingQueueFilter] =
     useState<PendingQueueFilter>("ALL");
+
+  const [sortBy, setSortBy] = useState<string>("createdAt");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  const sorting = useMemo<SortingState>(
+    () => [{ id: sortBy, desc: sortOrder === "desc" }],
+    [sortBy, sortOrder],
+  );
+
+  const onSortingChange = useCallback(
+    (updaterOrValue: SortingState | ((old: SortingState) => SortingState)) => {
+      const newSorting =
+        typeof updaterOrValue === "function"
+          ? updaterOrValue(sorting)
+          : updaterOrValue;
+      if (newSorting.length > 0) {
+        setSortBy(newSorting[0].id);
+        setSortOrder(newSorting[0].desc ? "desc" : "asc");
+      } else {
+        setSortBy("createdAt");
+        setSortOrder("desc");
+      }
+      setPage(1);
+    },
+    [sorting],
+  );
 
   const [sectionOptionsByApplicationId, setSectionOptionsByApplicationId] =
     useState<Record<number, SectionOption[]>>({});
@@ -532,6 +559,8 @@ export default function Enrollment() {
 
       params.append("page", String(page));
       params.append("limit", "15");
+      params.append("sortBy", sortBy);
+      params.append("sortOrder", sortOrder);
 
       const res = await api.get(`/applications?${params.toString()}`);
 
@@ -571,7 +600,7 @@ export default function Enrollment() {
     } finally {
       setLoading(false);
     }
-  }, [ayId, search, page, workflowView]);
+  }, [ayId, search, page, workflowView, sortBy, sortOrder]);
 
   useEffect(() => {
     fetchData();
@@ -751,7 +780,10 @@ export default function Enrollment() {
 
     cols.push({
       id: "student",
-      header: "LEARNER",
+      accessorKey: "lastName",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="LEARNER" />
+      ),
       cell: ({ row }) => (
         <div className="flex flex-col text-left min-w-[200px]">
           <span className="font-bold text-sm uppercase">
@@ -768,7 +800,10 @@ export default function Enrollment() {
     if (workflowView !== "SECTION_ASSIGNMENT") {
       cols.push({
         id: "lrn",
-        header: "LRN",
+        accessorKey: "lrn",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="LRN" />
+        ),
         cell: ({ row }) => (
           <span className="font-bold text-sm block">
             {row.original.lrn ||
@@ -780,7 +815,10 @@ export default function Enrollment() {
 
     cols.push({
       id: "program",
-      header: "PROGRAM",
+      accessorKey: "applicantType",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="PROGRAM" />
+      ),
       cell: ({ row }) => (
         <div className="flex justify-center">
           <Badge
@@ -794,9 +832,12 @@ export default function Enrollment() {
 
     cols.push({
       id: "genAve",
-      header: "GEN AVE",
+      accessorKey: "generalAverage",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="GEN AVE" />
+      ),
       cell: ({ row }) => (
-        <span className="font-mono font-bold text-sm block text-center">
+        <span className="font-bold text-sm block text-center">
           {row.original.generalAverage?.toFixed(2) || "-"}
         </span>
       ),
@@ -805,7 +846,10 @@ export default function Enrollment() {
     if (workflowView !== "SECTION_ASSIGNMENT") {
       cols.push({
         id: "gradeLevel",
-        header: "GRADE LEVEL",
+        accessorKey: "gradeLevelId",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="GRADE LEVEL" />
+        ),
         cell: ({ row }) => (
           <span className="font-bold text-sm block">
             {formatGradeLevelLabel(row.original.gradeLevel.name)}
@@ -817,7 +861,10 @@ export default function Enrollment() {
     if (workflowView === "SECTION_ASSIGNMENT") {
       cols.push({
         id: "readingProfile",
-        header: "READING",
+        accessorKey: "readingProfileLevel",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="READING" />
+        ),
         cell: ({ row }: CellContext<Application, unknown>) => {
           const app = row.original;
 
@@ -970,7 +1017,10 @@ export default function Enrollment() {
     if (workflowView !== "SECTION_ASSIGNMENT") {
       cols.push({
         id: "status",
-        header: "STATUS",
+        accessorKey: "status",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="STATUS" />
+        ),
         cell: ({ row }) => (
           <div className="flex justify-center">
             <StatusBadge
@@ -985,7 +1035,10 @@ export default function Enrollment() {
     if (workflowView !== "SECTION_ASSIGNMENT") {
       cols.push({
         id: "date",
-        header: "DATE",
+        accessorKey: "createdAt",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="DATE" />
+        ),
         cell: ({ row }) => (
           <span className="text-sm font-bold block text-center min-w-[140px]">
             {format(new Date(row.original.createdAt), "MMMM dd, yyyy")}
@@ -1371,6 +1424,8 @@ export default function Enrollment() {
                 setSelectedId(app.id);
               }}
               noResultsMessage="No learners found."
+              sorting={sorting}
+              onSortingChange={onSortingChange}
             />
 
             <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mt-4 font-bold">

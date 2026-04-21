@@ -14,6 +14,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Input } from "@/shared/ui/input";
 import { DataTable } from "@/shared/ui/data-table";
+import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Application } from "./types";
 
@@ -109,8 +110,11 @@ export default function PipelineBatchApplicantsTable({
         },
       },
       {
-        accessorKey: "applicant",
-        header: "APPLICANT",
+        id: "applicant",
+        accessorKey: "lastName",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="APPLICANT" />
+        ),
         cell: ({ row }) => {
           const app = row.original;
           return (
@@ -126,8 +130,11 @@ export default function PipelineBatchApplicantsTable({
         },
       },
       {
+        id: "lrn",
         accessorKey: "lrn",
-        header: "LRN",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="LRN" />
+        ),
         cell: ({ row }) => (
           <span className="font-bold text-sm block">
             {row.original.lrn || "—"}
@@ -135,8 +142,23 @@ export default function PipelineBatchApplicantsTable({
         ),
       },
       {
-        accessorKey: "gradeLevel",
-        header: "GRADE LEVEL",
+        id: "generalAverage",
+        accessorKey: "generalAverage",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="GENERAL AVERAGE" />
+        ),
+        cell: ({ row }) => (
+          <span className="font-bold text-sm block text-center">
+            {row.original.generalAverage?.toFixed(2) ?? "—"}
+          </span>
+        ),
+      },
+      {
+        id: "gradeLevel",
+        accessorKey: "gradeLevel.name",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="GRADE LEVEL" />
+        ),
         cell: ({ row }) => (
           <span className="font-bold text-sm block">
             {row.original.gradeLevel?.name ?? "—"}
@@ -144,8 +166,11 @@ export default function PipelineBatchApplicantsTable({
         ),
       },
       {
+        id: "status",
         accessorKey: "status",
-        header: "STATUS",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="STATUS" />
+        ),
         cell: ({ row }) => {
           const app = row.original;
           return (
@@ -161,8 +186,11 @@ export default function PipelineBatchApplicantsTable({
         },
       },
       {
+        id: "date",
         accessorKey: "createdAt",
-        header: "DATE",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="DATE" />
+        ),
         cell: ({ row }) => (
           <span className="text-sm font-bold block">
             {format(new Date(row.original.createdAt), "MMMM dd, yyyy")}

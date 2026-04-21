@@ -177,6 +177,8 @@ model Section {
   maxCapacity       Int          @default(40) @map("max_capacity")
   gradeLevelId      Int          @map("grade_level_id")
   programType       ApplicantType @default(REGULAR) @map("program_type")
+  isHomogeneous     Boolean      @default(false) @map("is_homogeneous")
+  isSnake           Boolean      @default(false) @map("is_snake")
   advisingTeacherId Int?         @map("advising_teacher_id")
   isEosyFinalized   Boolean      @default(false) @map("is_eosy_finalized")
   createdAt         DateTime     @default(now()) @db.Timestamptz @map("created_at")

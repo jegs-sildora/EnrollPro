@@ -26,26 +26,17 @@ export const createStudentsProfileController = (
         suffix,
         sex,
         birthDate,
-        placeOfBirth,
-        religion,
-        motherTongue,
         currentAddress,
         permanentAddress,
         motherName,
         fatherName,
         guardianInfo,
         emailAddress,
-        email,
-        contactNumber,
       } = req.body;
 
       const applicant = await deps.prisma.enrollmentApplication.findUnique({
         where: { id: parsedId },
-        select: {
-          id: true,
-          learnerId: true,
-          earlyRegistrationId: true,
-        },
+        include: { learner: true },
       });
 
       if (!applicant) {
@@ -53,9 +44,6 @@ export const createStudentsProfileController = (
       }
 
       const updated = await deps.prisma.$transaction(async (tx) => {
-        const normalizedContactNumber =
-          contactNumber !== undefined ? contactNumber || null : undefined;
-
         if (currentAddress) {
           await tx.applicationAddress.upsert({
             where: {
@@ -91,141 +79,70 @@ export const createStudentsProfileController = (
         }
 
         if (motherName) {
-          const hasMotherIdentity = Boolean(
-            motherName.firstName && motherName.lastName,
-          );
-          if (hasMotherIdentity) {
-            await tx.applicationFamilyMember.upsert({
-              where: {
-                uq_enrollment_family_members_rel: {
-                  enrollmentId: parsedId,
-                  relationship: "MOTHER",
-                },
-              },
-              update: motherName,
-              create: {
-                enrollmentId: parsedId,
-                relationship: "MOTHER",
-                ...motherName,
-                ...(normalizedContactNumber !== undefined
-                  ? { contactNumber: normalizedContactNumber }
-                  : {}),
-              },
-            });
-          } else {
-            await tx.applicationFamilyMember.updateMany({
-              where: {
-                enrollmentId: parsedId,
-                relationship: "MOTHER",
-              },
-              data: motherName,
-            });
-          }
-        } else if (normalizedContactNumber !== undefined) {
-          await tx.applicationFamilyMember.updateMany({
+          await tx.applicationFamilyMember.upsert({
             where: {
-              enrollmentId: parsedId,
-              relationship: {
-                in: ["GUARDIAN", "MOTHER", "FATHER"],
+              uq_enrollment_family_members_rel: {
+                enrollmentId: parsedId,
+                relationship: "MOTHER",
               },
             },
-            data: { contactNumber: normalizedContactNumber },
+            update: motherName,
+            create: {
+              enrollmentId: parsedId,
+              relationship: "MOTHER",
+              ...motherName,
+            },
           });
         }
 
         if (fatherName) {
-          const hasFatherIdentity = Boolean(
-            fatherName.firstName && fatherName.lastName,
-          );
-          if (hasFatherIdentity) {
-            await tx.applicationFamilyMember.upsert({
-              where: {
-                uq_enrollment_family_members_rel: {
-                  enrollmentId: parsedId,
-                  relationship: "FATHER",
-                },
-              },
-              update: fatherName,
-              create: {
-                enrollmentId: parsedId,
-                relationship: "FATHER",
-                ...fatherName,
-              },
-            });
-          } else {
-            await tx.applicationFamilyMember.updateMany({
-              where: {
+          await tx.applicationFamilyMember.upsert({
+            where: {
+              uq_enrollment_family_members_rel: {
                 enrollmentId: parsedId,
                 relationship: "FATHER",
               },
-              data: fatherName,
-            });
-          }
+            },
+            update: fatherName,
+            create: {
+              enrollmentId: parsedId,
+              relationship: "FATHER",
+              ...fatherName,
+            },
+          });
         }
 
         if (guardianInfo) {
-          const hasGuardianIdentity = Boolean(
-            guardianInfo.firstName && guardianInfo.lastName,
-          );
-          if (hasGuardianIdentity) {
-            await tx.applicationFamilyMember.upsert({
-              where: {
-                uq_enrollment_family_members_rel: {
-                  enrollmentId: parsedId,
-                  relationship: "GUARDIAN",
-                },
-              },
-              update: guardianInfo,
-              create: {
-                enrollmentId: parsedId,
-                relationship: "GUARDIAN",
-                ...guardianInfo,
-              },
-            });
-          } else {
-            await tx.applicationFamilyMember.updateMany({
-              where: {
+          await tx.applicationFamilyMember.upsert({
+            where: {
+              uq_enrollment_family_members_rel: {
                 enrollmentId: parsedId,
                 relationship: "GUARDIAN",
               },
-              data: guardianInfo,
-            });
-          }
+            },
+            update: guardianInfo,
+            create: {
+              enrollmentId: parsedId,
+              relationship: "GUARDIAN",
+              ...guardianInfo,
+            },
+          });
         }
 
         // Update personal fields on Learner
         await tx.learner.update({
-          where: { id: applicant.learnerId },
+          where: { id: applicant!.learnerId },
           data: {
             firstName,
             lastName,
             middleName,
             extensionName: suffix,
             sex,
-            placeOfBirth,
-            religion,
-            motherTongue,
             birthdate: birthDate
               ? deps.normalizeDateToUtcNoon(new Date(birthDate))
               : undefined,
           },
         });
-
-        const resolvedEmailAddress = emailAddress ?? email;
-        if (
-          applicant.earlyRegistrationId &&
-          resolvedEmailAddress !== undefined
-        ) {
-          await tx.earlyRegistrationApplication.update({
-            where: { id: applicant.earlyRegistrationId },
-            data: {
-              email: resolvedEmailAddress || null,
-              ...(normalizedContactNumber !== undefined
-                ? { contactNumber: normalizedContactNumber }
-                : {}),
-            },
-          });
-        }
 
         return tx.enrollmentApplication.findUnique({
           where: { id: parsedId },
@@ -247,7 +164,7 @@ export const createStudentsProfileController = (
         data: {
           userId: getRequestUserId(req),
           actionType: "STUDENT_UPDATED",
-          description: `Updated student record for ${updated!.learner.firstName} ${updated!.learner.lastName} (LRN: ${updated!.learner.lrn ?? "N/A"})`,
+          description: `Updated student record for ${updated!.learner.firstName} ${updated!.learner.lastName} (LRN: ${updated!.learner.lrn})`,
           subjectType: "EnrollmentApplication",
           recordId: updated!.id,
           ipAddress: req.ip || "unknown",

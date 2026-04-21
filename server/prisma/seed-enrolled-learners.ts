@@ -60,7 +60,7 @@ async function main() {
     });
   }
 
-  // Tier 2: Pilot Sections (Numerical)
+  // Tier 2: Pilot Sections (Numerical) - Homogeneous
   for (let i = 1; i <= 5; i++) {
     const sectionName = `Section ${i}`;
     const pilot = await prisma.section.findFirst({ where: { name: sectionName, gradeLevelId: grade7.id } });
@@ -71,13 +71,15 @@ async function main() {
           programType: "REGULAR", 
           gradeLevelId: grade7.id, 
           maxCapacity: 40,
-          sortOrder: 10 + i
+          sortOrder: 10 + i,
+          isHomogeneous: true,
+          isSnake: false
         }
       });
     }
   }
 
-  // Tier 3: Heterogeneous Sections (National Heroes)
+  // Tier 3: Heterogeneous Sections (National Heroes) - Snake
   const heroes = ["RIZAL", "BONIFACIO", "MABINI", "LUNA", "DEL PILAR", "SILANG"];
   for (let i = 0; i < heroes.length; i++) {
     const hero = await prisma.section.findFirst({ where: { name: heroes[i], gradeLevelId: grade7.id } });
@@ -88,7 +90,9 @@ async function main() {
           programType: "REGULAR", 
           gradeLevelId: grade7.id, 
           maxCapacity: 40,
-          sortOrder: 20 + i
+          sortOrder: 20 + i,
+          isHomogeneous: false,
+          isSnake: true
         }
       });
     }
