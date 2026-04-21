@@ -58,16 +58,17 @@ function normalizeRankingFormulaForPayload(
     return null;
   }
 
-  const components = (rankingFormula as Record<string, unknown>).components;
+  const clonedRankingFormula = cloneUnknown(
+    rankingFormula as Record<string, unknown>,
+  );
+
+  const components = (clonedRankingFormula as Record<string, unknown>)
+    .components;
   if (!Array.isArray(components) || components.length === 0) {
     return null;
   }
 
-  return {
-    components: components.map((component) => ({
-      ...(component as Record<string, unknown>),
-    })),
-  };
+  return clonedRankingFormula;
 }
 
 export function useCurriculumScpConfigs() {

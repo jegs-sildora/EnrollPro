@@ -586,16 +586,47 @@ export const scpGradeRequirementSchema = z
     }
   });
 
-export const scpRankingComponentSchema = z.object({
-  key: z.enum(["EXAM", "INTERVIEW", "GRADE", "AUDITION", "TRYOUT", "OTHER"]),
-  label: z.string().min(1),
-  weight: z.number().gt(0).max(100),
-});
+const scpDocumentRequirementSchema = z
+  .object({
+    docId: z.string().trim().min(1),
+    policy: z.enum(["REQUIRED", "OPTIONAL", "HIDDEN"]),
+    phase: z.enum(["EARLY_REGISTRATION", "ENROLLMENT"]).optional().nullable(),
+    notes: z.string().optional().nullable(),
+  })
+  .passthrough();
+
+const scpGradeRequirementsPayloadSchema = z
+  .object({
+    qualifyingTrack: ApplicantTypeEnum.optional().nullable(),
+    minimumGeneralAverage: z.number().min(0).max(100).optional().nullable(),
+    documentRequirements: z.array(scpDocumentRequirementSchema).optional(),
+  })
+  .passthrough();
+
+export const scpRankingComponentSchema = z
+  .object({
+    // Supports both legacy formulas (`metric`) and newer formulas (`key`).
+    key: z.string().trim().min(1).optional(),
+    metric: z.string().trim().min(1).optional(),
+    label: z.string().trim().min(1).optional(),
+    weight: z.number().gt(0).max(100),
+  })
+  .passthrough()
+  .superRefine((data, ctx) => {
+    if (!data.key && !data.metric) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Ranking component must include either `key` or `metric`",
+        path: ["key"],
+      });
+    }
+  });
 
 export const scpRankingFormulaSchema = z
   .object({
     components: z.array(scpRankingComponentSchema).min(1),
   })
+  .passthrough()
   .superRefine((data, ctx) => {
     const total = data.components.reduce((sum, item) => sum + item.weight, 0);
     const isFractional = total <= 1.0001;
@@ -632,7 +663,14 @@ export const scpProgramConfigUpdateSchema = z.object({
   isTwoPhase: z.boolean().optional().default(false),
   cutoffScore: z.number().min(0).max(100).optional().nullable(),
   notes: z.string().optional().nullable(),
-  gradeRequirements: z.array(scpGradeRequirementSchema).optional().nullable(),
+  // Accept both the legacy rule-array format and the current metadata object shape.
+  gradeRequirements: z
+    .union([
+      z.array(scpGradeRequirementSchema),
+      scpGradeRequirementsPayloadSchema,
+    ])
+    .optional()
+    .nullable(),
   rankingFormula: scpRankingFormulaSchema.optional().nullable(),
   artFields: z.array(z.string()).optional().default([]),
   languages: z.array(z.string()).optional().default([]),

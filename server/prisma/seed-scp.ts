@@ -244,7 +244,6 @@ async function seedScpConfigurations(schoolYearId: number) {
         cutoffScore,
         gradeRequirements,
         rankingFormula,
-        notes: `Default seeded configuration for ${scpType}.`,
       },
       create: {
         schoolYearId,
@@ -254,7 +253,6 @@ async function seedScpConfigurations(schoolYearId: number) {
         cutoffScore,
         gradeRequirements,
         rankingFormula,
-        notes: `Default seeded configuration for ${scpType}.`,
       },
     });
 
