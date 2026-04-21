@@ -69,22 +69,27 @@ const DataItem = ({
   label: string;
   value: string | number | undefined | null;
   noUppercase?: boolean;
-}) => (
-  <div className="space-y-0.5">
-    <p className="text-[0.625rem] font-bold uppercase text-muted-foreground tracking-tight">
-      {label}
-    </p>
-    <p className="font-bold text-foreground truncate">
-      {value
-        ? noUppercase
-          ? value
-          : typeof value === "string"
-            ? value.toUpperCase()
-            : value
-        : "NOT PROVIDED"}
-    </p>
-  </div>
-);
+}) => {
+  const isProvided = value !== undefined && value !== null && value !== "";
+  const displayValue = isProvided ? String(value) : "NOT PROVIDED";
+
+  return (
+    <div className="space-y-0.5">
+      <p className="text-[0.625rem] font-bold uppercase text-muted-foreground tracking-tight">
+        {label}
+      </p>
+      <p className="font-bold text-foreground truncate">
+        {isProvided
+          ? noUppercase
+            ? displayValue
+            : typeof value === "string"
+              ? displayValue.toUpperCase()
+              : displayValue
+          : "NOT PROVIDED"}
+      </p>
+    </div>
+  );
+};
 
 export default function Step6Review({
   onEdit,
@@ -100,9 +105,17 @@ export default function Step6Review({
 
   const data = watch();
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+
+  const rawGenAve = data.generalAverage;
+  const hasGenAve =
+    rawGenAve !== null &&
+    rawGenAve !== undefined &&
+    String(rawGenAve).trim() !== "";
+
+  const parsedGenAve = hasGenAve ? Number(rawGenAve) : Number.NaN;
   const generalAverageDisplay =
-    typeof data.generalAverage === "number"
-      ? Number(data.generalAverage).toFixed(2)
+    hasGenAve && !Number.isNaN(parsedGenAve)
+      ? parsedGenAve.toFixed(2)
       : undefined;
 
   const fullName =

@@ -184,13 +184,14 @@ export const EnrollmentFormSchema = z
     // Section 7: Previous School Information
     lastSchoolName: z.string().min(1, "Last school name is required"),
     lastSchoolId: z.string().optional(),
-    lastGradeCompleted: z.enum(["Grade 6"]),
+    lastGradeCompleted: z.string().min(1, "Last grade completed is required"),
     schoolYearLastAttended: z
       .string()
       .min(1, "School year last attended is required"),
     lastSchoolAddress: z.string().optional(),
     lastSchoolType: z.enum(["Public", "Private", "International", "ALS"]),
     generalAverage: optionalSf9GeneralAverage,
+    natScore: z.number().optional().nullable(),
 
     // Section 8: SCP Specifics
     artField: z.string().optional(),
@@ -288,11 +289,11 @@ export const EnrollmentFormSchema = z
       }
     }
 
-    if (data.earlyRegistrationId && !data.isContactInfoConfirmed) {
+    if (!data.isContactInfoConfirmed) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message:
-          "Please confirm that your contact details are current before submitting enrollment.",
+          "Please confirm that your contact details are current before proceeding.",
         path: ["isContactInfoConfirmed"],
       });
     }

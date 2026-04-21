@@ -27,7 +27,8 @@ import { sileo } from "sileo";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { ImageEnlarger } from "@/shared/components/ImageEnlarger";
-import { formatScpType } from "@/shared/lib/utils";
+import { UserPhoto } from "@/shared/components/UserPhoto";
+import { formatScpType, getImageUrl } from "@/shared/lib/utils";
 
 export default function EarlyRegistrationDetail() {
   const { id } = useParams();
@@ -45,7 +46,6 @@ export default function EarlyRegistrationDetail() {
   // Rule A & B: Delayed loading
   const showSkeleton = useDelayedLoading(loading);
 
-  const [photoError, setPhotoError] = useState(false);
   const [isPhotoEnlarged, setIsPhotoEnlarged] = useState(false);
 
   // --- Resizable Logic (Fluid Percentage) ---
@@ -91,16 +91,6 @@ export default function EarlyRegistrationDetail() {
     };
   }, [handleMouseMove]);
   // ------------------------------------------
-
-  const getImageUrl = (photo: string | null) => {
-    if (!photo) return null;
-    if (photo.startsWith("data:")) return photo;
-    const baseUrl = (import.meta.env.VITE_API_URL || "/api").replace(
-      /\/api$/,
-      "",
-    );
-    return `${baseUrl}${photo}`;
-  };
 
   const handleTemporarilyEnroll = async () => {
     if (
@@ -268,24 +258,12 @@ export default function EarlyRegistrationDetail() {
           </Button>
 
           {/* Student Photo */}
-          <div
-            className={`w-16 h-16 sm:w-24 sm:h-24 rounded-xl border-2 border-primary/10 shadow-sm overflow-hidden bg-background flex items-center justify-center shrink-0 ${applicant.studentPhoto && !photoError ? "cursor-zoom-in hover:border-primary transition-all" : ""}`}
-            onClick={() =>
-              applicant.studentPhoto && !photoError && setIsPhotoEnlarged(true)
-            }>
-            {applicant.studentPhoto && !photoError ? (
-              <img
-                src={getImageUrl(applicant.studentPhoto) || ""}
-                alt="Student"
-                className="w-full h-full object-cover"
-                onError={() => setPhotoError(true)}
-              />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground bg-muted/30">
-                <User className="w-6 h-6 opacity-20" />
-              </div>
-            )}
-          </div>
+          <UserPhoto
+            photo={applicant.studentPhoto}
+            containerClassName="w-16 h-16 sm:w-24 sm:h-24 rounded-xl border-2 border-primary/10 shadow-sm"
+            onEnlarge={() => setIsPhotoEnlarged(true)}
+            alt={`${applicant.lastName} ${applicant.firstName}`}
+          />
 
           <div>
             <h1 className="text-xs font-bold tracking-tight">

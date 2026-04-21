@@ -205,6 +205,7 @@ export interface ApplicantDetail {
   schoolYearLastAttended: string | null;
   lastSchoolAddress: string | null;
   lastSchoolType: string | null;
+  generalAverage: number | null;
   learnerType: LearnerType;
   isScpApplication: boolean;
   scpType: string | null;

@@ -15,7 +15,16 @@ export async function saveBase64Image(
   base64Data: string | null | undefined,
   prefix: string = "photo",
 ): Promise<string | null> {
-  if (!base64Data || !base64Data.startsWith("data:image")) {
+  if (!base64Data) {
+    return null;
+  }
+
+  // If it's already a saved file path, return it as is
+  if (base64Data.startsWith("/uploads/")) {
+    return base64Data;
+  }
+
+  if (!base64Data.startsWith("data:image")) {
     return null;
   }
 

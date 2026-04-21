@@ -914,34 +914,32 @@ export default function Step2Family() {
             </p>
           )}
 
-          {isLinkedFromEarlyRegistration && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
-              <div className="flex items-start gap-2">
-                <Checkbox
-                  id="isContactInfoConfirmed"
-                  checked={!!data.isContactInfoConfirmed}
-                  onCheckedChange={(checked) => {
-                    setValue("isContactInfoConfirmed", checked === true, {
-                      shouldValidate: true,
-                      shouldDirty: true,
-                    });
-                  }}
-                />
-                <Label
-                  htmlFor="isContactInfoConfirmed"
-                  className="text-xs font-semibold leading-relaxed cursor-pointer text-amber-900">
-                  I confirm that the primary contact number and email are still
-                  active and correct for this enrollment.
-                </Label>
-              </div>
-              {errors.isContactInfoConfirmed && (
-                <p className="text-xs text-destructive font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  {errors.isContactInfoConfirmed.message}
-                </p>
-              )}
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 space-y-3">
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="isContactInfoConfirmed"
+                checked={!!data.isContactInfoConfirmed}
+                onCheckedChange={(checked) => {
+                  setValue("isContactInfoConfirmed", checked === true, {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  });
+                }}
+              />
+              <Label
+                htmlFor="isContactInfoConfirmed"
+                className="text-xs font-semibold leading-relaxed cursor-pointer text-blue-900">
+                I confirm that the primary contact number and email are still
+                active and correct for this enrollment.
+              </Label>
             </div>
-          )}
+            {errors.isContactInfoConfirmed && (
+              <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                {errors.isContactInfoConfirmed.message}
+              </p>
+            )}
+          </div>
 
           <div
             className={cn(

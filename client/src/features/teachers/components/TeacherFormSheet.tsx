@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { ImageEnlarger } from "@/shared/components/ImageEnlarger";
+import { UserPhoto } from "@/shared/components/UserPhoto";
 import {
   Sheet,
   SheetContent,
@@ -241,31 +242,15 @@ export function TeacherFormSheet({
           <div className="flex-1 space-y-4 overflow-y-auto p-3 sm:p-4">
             <section className="rounded-md border bg-[hsl(var(--muted))] p-3 sm:p-4">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                <button
-                  type="button"
-                  className={cn(
-                    "h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-dashed border-primary bg-background",
-                    canShowPhoto
-                      ? "cursor-zoom-in transition hover:border-solid"
-                      : "",
+                <UserPhoto
+                  photo={photoPreviewUrl}
+                  containerClassName={cn(
+                    "h-20 w-20 shrink-0 rounded-xl border border-dashed border-primary",
+                    canShowPhoto ? "cursor-zoom-in transition hover:border-solid" : ""
                   )}
-                  onClick={() => {
-                    if (canShowPhoto) {
-                      setIsPhotoEnlarged(true);
-                    }
-                  }}>
-                  {canShowPhoto ? (
-                    <img
-                      src={photoPreviewUrl || ""}
-                      alt="Teacher preview"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-muted/40 text-muted-foreground">
-                      <User className="h-7 w-7 opacity-40" />
-                    </div>
-                  )}
-                </button>
+                  onEnlarge={canShowPhoto ? () => setIsPhotoEnlarged(true) : undefined}
+                  alt="Teacher preview"
+                />
 
                 <div className="min-w-0 flex-1 space-y-2">
                   <p className="text-sm font-semibold text-foreground">

@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { AppError } from "../../../lib/AppError.js";
+import { saveBase64Image } from "../../../lib/fileUploader.js";
 import type {
   ApplicationStatus,
   Prisma,
@@ -542,6 +543,7 @@ export function createEarlyRegistrationOperationsController(
         lastName,
         suffix,
         lrn,
+        psaBirthCertNumber,
         sex,
         birthDate,
         placeOfBirth,
@@ -555,6 +557,22 @@ export function createEarlyRegistrationOperationsController(
         applicantType,
         studentPhoto,
         learnerType,
+        lastSchoolName,
+        lastSchoolId,
+        lastGradeCompleted,
+        schoolYearLastAttended,
+        lastSchoolAddress,
+        lastSchoolType,
+        generalAverage,
+        natScore,
+        learningModalities,
+        isBalikAral,
+        lastYearEnrolled,
+        lastGradeLevel,
+        artField,
+        foreignLanguage,
+        sportsList,
+        motherMaidenName,
       } = req.body;
 
       // Fields that belong to Learner model
@@ -564,6 +582,8 @@ export function createEarlyRegistrationOperationsController(
       if (lastName !== undefined) learnerData.lastName = lastName;
       if (suffix !== undefined) learnerData.extensionName = suffix;
       if (lrn !== undefined) learnerData.lrn = lrn;
+      if (psaBirthCertNumber !== undefined)
+        learnerData.psaBirthCertNumber = psaBirthCertNumber;
       if (sex !== undefined) learnerData.sex = sex;
       if (birthDate !== undefined)
         learnerData.birthdate = normalizeDateToUtcNoon(new Date(birthDate));
@@ -577,7 +597,40 @@ export function createEarlyRegistrationOperationsController(
         learnerData.is4PsBeneficiary = is4PsBeneficiary;
       if (householdId4Ps !== undefined)
         learnerData.householdId4Ps = householdId4Ps;
-      if (studentPhoto !== undefined) learnerData.studentPhoto = studentPhoto;
+      if (isBalikAral !== undefined) learnerData.isBalikAral = isBalikAral;
+      if (lastYearEnrolled !== undefined)
+        learnerData.lastYearEnrolled = lastYearEnrolled;
+      if (lastGradeLevel !== undefined)
+        learnerData.lastGradeLevel = lastGradeLevel;
+
+      if (studentPhoto !== undefined) {
+        learnerData.studentPhoto = await saveBase64Image(studentPhoto, "photo");
+      }
+
+      // Fields that belong to PreviousSchool (Enrollment only)
+      const prevSchoolData: Record<string, any> = {};
+      if (lastSchoolName !== undefined)
+        prevSchoolData.schoolName = lastSchoolName;
+      if (lastSchoolId !== undefined)
+        prevSchoolData.schoolDepedId = lastSchoolId;
+      if (lastGradeCompleted !== undefined)
+        prevSchoolData.gradeCompleted = lastGradeCompleted;
+      if (schoolYearLastAttended !== undefined)
+        prevSchoolData.schoolYearAttended = schoolYearLastAttended;
+      if (lastSchoolAddress !== undefined)
+        prevSchoolData.schoolAddress = lastSchoolAddress;
+      if (lastSchoolType !== undefined)
+        prevSchoolData.schoolType = lastSchoolType;
+      if (generalAverage !== undefined)
+        prevSchoolData.generalAverage =
+          generalAverage != null && !isNaN(parseFloat(String(generalAverage)))
+            ? parseFloat(String(generalAverage))
+            : null;
+      if (natScore !== undefined)
+        prevSchoolData.natScore =
+          natScore != null && !isNaN(parseFloat(String(natScore)))
+            ? parseFloat(String(natScore))
+            : null;
 
       // Fields that belong to application models
       const appData: Record<string, any> = {};
@@ -585,6 +638,28 @@ export function createEarlyRegistrationOperationsController(
       if (learnerType !== undefined) appData.learnerType = learnerType;
       if (gradeLevelId !== undefined)
         appData.gradeLevel = { connect: { id: gradeLevelId } };
+      if (learningModalities !== undefined)
+        appData.learningModalities = learningModalities;
+
+      // Family member updates
+      const familyUpdatePromises: any[] = [];
+      if (motherMaidenName !== undefined && appType === "ENROLLMENT") {
+        familyUpdatePromises.push(
+          prisma.applicationFamilyMember.updateMany({
+            where: { enrollmentId: applicantId, relationship: "MOTHER" },
+            data: { maidenName: motherMaidenName },
+          }),
+        );
+      }
+
+      // SCP Program Details
+      const programDetailData: Record<string, any> = {};
+      if (applicantType !== undefined)
+        programDetailData.scpType = applicantType;
+      if (artField !== undefined) programDetailData.artField = artField;
+      if (foreignLanguage !== undefined)
+        programDetailData.foreignLanguage = foreignLanguage;
+      if (sportsList !== undefined) programDetailData.sportsList = sportsList;
 
       const updated = await prisma.$transaction(async (tx) => {
         if (Object.keys(learnerData).length > 0) {
@@ -594,13 +669,52 @@ export function createEarlyRegistrationOperationsController(
           });
         }
 
+        if (familyUpdatePromises.length > 0) {
+          await Promise.all(familyUpdatePromises);
+        }
+
         if (appType === "ENROLLMENT") {
           return tx.enrollmentApplication.update({
             where: { id: applicantId },
-            data: appData,
+            data: {
+              ...appData,
+              previousSchool:
+                Object.keys(prevSchoolData).length > 0
+                  ? {
+                      upsert: {
+                        create: prevSchoolData,
+                        update: prevSchoolData,
+                      },
+                    }
+                  : undefined,
+              programDetail:
+                Object.keys(programDetailData).length > 0 &&
+                (applicantType !== "REGULAR" ||
+                  applicant.applicantType !== "REGULAR")
+                  ? {
+                      upsert: {
+                        create: {
+                          ...programDetailData,
+                          scpType:
+                            programDetailData.scpType ||
+                            applicant.applicantType,
+                        },
+                        update: programDetailData,
+                      },
+                    }
+                  : undefined,
+            },
             include: { learner: true },
           });
         } else {
+          // Early Registration - limited family update via MaidenName if relationship is Mother
+          if (motherMaidenName !== undefined) {
+            await tx.applicationFamilyMember.updateMany({
+              where: { earlyRegistrationId: applicantId, relationship: "MOTHER" },
+              data: { maidenName: motherMaidenName },
+            });
+          }
+
           return tx.earlyRegistrationApplication.update({
             where: { id: applicantId },
             data: appData,

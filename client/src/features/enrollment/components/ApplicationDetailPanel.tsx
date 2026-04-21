@@ -21,7 +21,8 @@ import { Button } from "@/shared/ui/button";
 import { SheetTitle, SheetDescription } from "@/shared/ui/sheet";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { ImageEnlarger } from "@/shared/components/ImageEnlarger";
-import { formatScpType, isMandatoryDocumentsMet } from "@/shared/lib/utils";
+import { UserPhoto } from "@/shared/components/UserPhoto";
+import { formatScpType, getImageUrl, isMandatoryDocumentsMet } from "@/shared/lib/utils";
 
 interface Props {
   id: number;
@@ -89,7 +90,6 @@ export function ApplicationDetailPanel({
   // Rule A & B: Delayed loading
   const showSkeleton = useDelayedLoading(loading);
 
-  const [photoError, setPhotoError] = useState(false);
   const [isPhotoEnlarged, setIsPhotoEnlarged] = useState(false);
   const [interviewPassChecked, setInterviewPassChecked] = useState(false);
 
@@ -110,22 +110,6 @@ export function ApplicationDetailPanel({
   ): Promise<void> => {
     onClose();
     await action?.(value);
-  };
-
-  const getImageUrl = (photo: string | null) => {
-    if (!photo) return null;
-    if (photo.startsWith("data:")) return photo;
-
-    // Standardize backend origin detection
-    let baseUrl = import.meta.env.VITE_API_URL || "";
-
-    if (!baseUrl || baseUrl === "/api") {
-      // Fallback for relative proxy or missing env
-      baseUrl = window.location.origin.replace(/:\d+$/, ":5000") + "/api";
-    }
-
-    const origin = baseUrl.replace(/\/api$/, "");
-    return `${origin}${photo}`;
   };
 
   const persistedMandatoryMet = applicant
@@ -218,30 +202,13 @@ export function ApplicationDetailPanel({
         {/* Summary Block */}
         <div className="bg-[hsl(var(--muted))] p-3 sm:p-4 rounded-md border">
           <div className="flex flex-col items-center mb-6 pt-2">
-            <div
-              className={`w-24 h-24 sm:w-32 sm:h-32 rounded-xl border-2 border-primary border-dashed shadow-md overflow-hidden bg-background flex items-center justify-center mb-4 ${applicant.studentPhoto && !photoError ? "cursor-zoom-in hover:border-solid transition-all" : ""}`}
-              onClick={() =>
-                applicant.studentPhoto &&
-                !photoError &&
-                setIsPhotoEnlarged(true)
-              }>
-              {applicant.studentPhoto && !photoError ? (
-                <img
-                  src={getImageUrl(applicant.studentPhoto) || ""}
-                  alt="Student"
-                  className="w-full h-full object-cover"
-                  onError={() => setPhotoError(true)}
-                />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground bg-muted/30">
-                  <User className="w-10 h-10 mb-1 opacity-20" />
-                  <span className="text-[0.5rem] font-black uppercase tracking-tighter opacity-40">
-                    {photoError ? "No Photo" : ""}
-                  </span>
-                </div>
-              )}
-            </div>
-            <div className="text-center">
+            <UserPhoto
+              photo={applicant.studentPhoto}
+              containerClassName="w-24 h-24 sm:w-32 sm:h-32 rounded-xl border-2 border-primary border-dashed shadow-md"
+              onEnlarge={() => setIsPhotoEnlarged(true)}
+              alt={`${applicant.lastName} ${applicant.firstName}`}
+            />
+            <div className="text-center mt-4">
               <h3 className="font-black text-lg sm:text-xl uppercase tracking-tight break-words">
                 {applicant.lastName}, {applicant.firstName}{" "}
                 {applicant.middleName}
@@ -315,7 +282,7 @@ export function ApplicationDetailPanel({
           readOnly={!showActions}
         />
 
-        {/* Collapsible BEEF Sections */}
+        {/* Enrollment Form Sections */}
         <div className="space-y-2">
           <PersonalInfo applicant={applicant} />
           <AddressInfo applicant={applicant} />

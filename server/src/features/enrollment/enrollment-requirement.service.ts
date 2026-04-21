@@ -115,17 +115,8 @@ export function getRequiredDocuments(params: {
   } = params;
   const requirements: EnrollmentRequirement[] = [];
 
-  // 1. Basic Education Enrollment Form (BEEF) - Required for all new/transferee/returning in Phase 2
-  if (learnerType !== "CONTINUING") {
-    requirements.push({
-      type: "BEEF",
-      label: "Basic Education Enrollment Form (BEEF)",
-      isRequired: true,
-      isOnceOnly: false,
-      description: "Official DepEd enrollment form",
-      phase: 2,
-    });
-  } else {
+  // 1. Enrollment Forms - Phase 2 requirements
+  if (learnerType === "CONTINUING") {
     // Continuing learners only need Confirmation Slip
     requirements.push({
       type: "CONFIRMATION_SLIP",

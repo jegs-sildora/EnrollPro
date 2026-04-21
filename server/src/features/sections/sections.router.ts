@@ -5,11 +5,14 @@ import {
 	createSection,
 	updateSection,
 	deleteSection,
+	getBatchPrerequisites,
+	runBatchSectioning,
+	commitBatchSectioning,
 } from './sections.controller.js';
 import { authenticate } from '../../middleware/authenticate.js';
 import { authorize } from '../../middleware/authorize.js';
 import { validate } from '../../middleware/validate.js';
-import { createSectionSchema, updateSectionSchema } from '@enrollpro/shared';
+import { createSectionSchema, updateSectionSchema, batchSectioningSchema } from '@enrollpro/shared';
 
 const router: Router = Router();
 
@@ -19,6 +22,30 @@ router.get(
 	authorize('REGISTRAR', 'SYSTEM_ADMIN'),
 	listTeachers,
 );
+
+router.get(
+	'/batch-sectioning/prerequisites/:gradeLevelId',
+	authenticate,
+	authorize('REGISTRAR', 'SYSTEM_ADMIN'),
+	getBatchPrerequisites,
+);
+
+router.post(
+	'/batch-sectioning/run',
+	authenticate,
+	authorize('REGISTRAR', 'SYSTEM_ADMIN'),
+	validate(batchSectioningSchema),
+	runBatchSectioning,
+);
+
+router.post(
+	'/batch-sectioning/commit',
+	authenticate,
+	authorize('REGISTRAR', 'SYSTEM_ADMIN'),
+	validate(batchSectioningSchema),
+	commitBatchSectioning,
+);
+
 router.get(
 	'/',
 	authenticate,

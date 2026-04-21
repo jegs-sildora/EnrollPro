@@ -14,6 +14,7 @@
     "db:seed-sample-integration": "tsx ../sample-integration/server/seed-sample-integration.ts",
     "db:seed-scp": "tsx prisma/seed-scp.ts",
     "db:seed-students": "tsx prisma/seed-students.ts",
+    "db:seed-enrolled": "tsx prisma/seed-enrolled-learners.ts",
     "db:wipe": "tsx prisma/wipe.ts"
   },
   "dependencies": {

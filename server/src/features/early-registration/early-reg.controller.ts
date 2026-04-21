@@ -998,6 +998,7 @@ async function createRegistration(
       sex: body.sex === "MALE" ? ("MALE" as const) : ("FEMALE" as const),
       placeOfBirth: body.placeOfBirth || null,
       religion: body.religion || null,
+      motherTongue: body.motherTongue || null,
       isIpCommunity: body.isIpCommunity ?? false,
       ipGroupName: body.isIpCommunity ? body.ipGroupName : null,
       isLearnerWithDisability: body.isLearnerWithDisability ?? false,
@@ -1005,6 +1006,7 @@ async function createRegistration(
         ? body.disabilityTypes || []
         : [],
       specialNeedsCategory: body.specialNeedsCategory || null,
+      snedPlacement: body.snedPlacement || null,
       hasPwdId: body.hasPwdId ?? false,
       isBalikAral: body.isBalikAral ?? false,
       lastYearEnrolled: body.lastYearEnrolled || null,

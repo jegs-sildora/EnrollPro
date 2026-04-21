@@ -10,6 +10,7 @@ import {
   Key,
 } from "lucide-react";
 import { useApplicationDetail } from "@/features/enrollment/hooks/useApplicationDetail";
+import { UserPhoto } from "@/shared/components/UserPhoto";
 import { Button } from "@/shared/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -56,17 +57,6 @@ export default function StudentProfile() {
     error,
     refetch,
   } = useApplicationDetail(Number(id), true);
-  const [photoError, setPhotoError] = useState(false);
-
-  const getImageUrl = (photo: string | null) => {
-    if (!photo) return null;
-    if (photo.startsWith("data:")) return photo;
-    const baseUrl = (import.meta.env.VITE_API_URL || "/api").replace(
-      /\/api$/,
-      "",
-    );
-    return `${baseUrl}${photo}`;
-  };
 
   if (loading)
     return <div className="p-8 text-center">Loading student profile...</div>;
@@ -90,18 +80,11 @@ export default function StudentProfile() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
 
-          <div className="w-20 h-20 rounded-full border-2 border-primary/10 shadow-sm overflow-hidden bg-background flex items-center justify-center shrink-0">
-            {student.studentPhoto && !photoError ? (
-              <img
-                src={getImageUrl(student.studentPhoto) || ""}
-                alt="Student"
-                className="w-full h-full object-cover"
-                onError={() => setPhotoError(true)}
-              />
-            ) : (
-              <User className="w-8 h-8 text-muted-foreground/30" />
-            )}
-          </div>
+          <UserPhoto
+            photo={student.studentPhoto}
+            containerClassName="w-20 h-20 rounded-full border-2 border-primary/10 shadow-sm"
+            alt={`${student.firstName} ${student.lastName}`}
+          />
 
           <div>
             <div className="flex items-center gap-3">
@@ -448,6 +431,14 @@ export default function StudentProfile() {
                           </Label>
                           <p className="font-medium uppercase">
                             {student.lastSchoolType || "N/A"}
+                          </p>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-muted-foreground">
+                            General Average
+                          </Label>
+                          <p className="font-bold text-lg text-primary">
+                            {student.generalAverage || "N/A"}
                           </p>
                         </div>
                       </div>

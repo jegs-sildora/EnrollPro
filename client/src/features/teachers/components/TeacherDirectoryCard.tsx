@@ -24,6 +24,7 @@ import {
 } from "@/shared/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { UserPhoto } from "@/shared/components/UserPhoto";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import type {
@@ -168,10 +169,24 @@ export function TeacherDirectoryCard({
 
   const columns: ColumnDef<Teacher>[] = [
     {
+      id: "photo",
+      header: "",
+      size: 50,
+      cell: ({ row }) => (
+        <div className="flex justify-center">
+          <UserPhoto
+            photo={row.original.photoPath}
+            containerClassName="h-9 w-9 rounded-full border shadow-sm"
+            alt={formatTeacherName(row.original)}
+          />
+        </div>
+      ),
+    },
+    {
       id: "teacher",
       header: "TEACHER",
       cell: ({ row }) => (
-        <div className="flex flex-col text-left max-w-[220px] pl-2">
+        <div className="flex flex-col text-left max-w-[220px]">
           <span className="font-bold text-sm uppercase leading-tight">
             {formatTeacherName(row.original)}
           </span>
@@ -334,13 +349,20 @@ export function TeacherDirectoryCard({
                   key={teacher.id}
                   className={`rounded-xl border p-3 space-y-3 ${!teacher.isActive ? "bg-muted/20" : "bg-background"}`}>
                   <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-bold text-sm uppercase leading-tight">
-                        {formatTeacherName(teacher)}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {teacher.email || "No email address"}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <UserPhoto
+                        photo={teacher.photoPath}
+                        containerClassName="h-10 w-10 rounded-full border shadow-sm"
+                        alt={formatTeacherName(teacher)}
+                      />
+                      <div>
+                        <p className="font-bold text-sm uppercase leading-tight">
+                          {formatTeacherName(teacher)}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {teacher.email || "No email address"}
+                        </p>
+                      </div>
                     </div>
                     {renderTeacherStatus(teacher)}
                   </div>

@@ -165,6 +165,15 @@ export function createEarlyRegistrationLifecycleController(
     }
   }
 
+  function assertGeneralAverageCompleted(
+    applicant: { previousSchool?: { generalAverage?: number | null } | null },
+    contextMessage: string,
+  ): void {
+    if (!applicant.previousSchool?.generalAverage) {
+      throw new AppError(422, contextMessage);
+    }
+  }
+
   async function approve(req: Request, res: Response, next: NextFunction) {
     try {
       const { sectionId } = req.body;
@@ -197,6 +206,11 @@ export function createEarlyRegistrationLifecycleController(
       assertReadingProfileCompleted(
         applicant,
         "Reading Profile is required before section assignment. Encode a reading profile first.",
+      );
+
+      assertGeneralAverageCompleted(
+        applicant,
+        "SF9 General Average (Grade 6) is required before section assignment. Ensure it is encoded in the previous school details.",
       );
 
       const result = await prisma.$transaction(async (tx) => {

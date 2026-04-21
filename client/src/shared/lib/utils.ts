@@ -174,3 +174,25 @@ export function isMandatoryDocumentsMet(
     .filter((r) => r.isMandatory)
     .every((r) => !!checklist[r.key]);
 }
+
+/**
+ * Standardized utility to get a full image URL from a stored path or base64 string.
+ */
+export function getImageUrl(photo: string | null | undefined): string | null {
+  if (!photo) return null;
+  if (photo.startsWith("data:")) return photo;
+
+  // Standardize backend origin detection
+  let apiUrl = import.meta.env.VITE_API_URL || "";
+
+  if (!apiUrl || apiUrl === "/api") {
+    // Fallback for relative proxy or missing env in development
+    // Assuming backend is on port 5000 if not specified
+    apiUrl = window.location.origin.replace(/:\d+$/, ":5000") + "/api";
+  }
+
+  const origin = apiUrl.replace(/\/api$/, "");
+  // Ensure we don't double slash
+  const cleanPhoto = photo.startsWith("/") ? photo : `/${photo}`;
+  return `${origin}${cleanPhoto}`;
+}

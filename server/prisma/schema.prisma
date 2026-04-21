@@ -189,6 +189,7 @@ model Section {
 
   @@index([gradeLevelId], name: "idx_sections_grade_level_id")
   @@index([gradeLevelId, programType], name: "idx_sections_grade_level_program_type")
+  @@unique([name, gradeLevelId], name: "uq_sections_name_grade")
   @@map("sections")
 }
 
@@ -218,6 +219,7 @@ model Learner {
   isLearnerWithDisability Boolean   @default(false) @map("is_learner_with_disability")
   disabilityTypes         String[]  @map("disability_types")
   specialNeedsCategory    String?   @map("special_needs_category")
+  snedPlacement           String?   @map("sned_placement")
   hasPwdId                Boolean   @default(false) @map("has_pwd_id")
   is4PsBeneficiary        Boolean   @default(false) @map("is_4ps_beneficiary")
   householdId4Ps          String?   @map("household_id_4ps")
@@ -424,6 +426,7 @@ model ApplicationFamilyMember {
   firstName        String             @map("first_name")
   lastName         String             @map("last_name")
   middleName       String?            @map("middle_name")
+  maidenName       String?            @map("maiden_name")
   contactNumber    String?            @map("contact_number")
   email            String?
   occupation       String?

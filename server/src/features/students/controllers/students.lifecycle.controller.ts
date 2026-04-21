@@ -85,7 +85,7 @@ async function findStudentOrThrow(
   if (!ACTIVE_ENROLLMENT_STATUSES.has(application.status)) {
     throw new AppError(
       422,
-      `Lifecycle actions are only allowed for enrolled learners. Current status: \"${application.status}\".`,
+      `Lifecycle actions are only allowed for enrolled learners. Current status: "${application.status}".`,
     );
   }
 

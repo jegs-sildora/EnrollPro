@@ -5,6 +5,7 @@ import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
+import { getImageUrl } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import {
@@ -31,7 +32,6 @@ import {
   convertImageToBase64,
   createEmptyTeacherForm,
   formatTeacherName,
-  getImageUrl,
   normalizeOptionalInput,
 } from "../utils";
 

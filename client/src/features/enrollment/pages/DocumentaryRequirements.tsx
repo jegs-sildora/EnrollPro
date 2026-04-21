@@ -84,9 +84,9 @@ export default function DocumentaryRequirements() {
     },
     {
       feature: "Forms Required",
-      phase1: "Basic Education Enrollment Form (BEEF)",
+      phase1: "Basic Education Early Registration Form",
       phase1Class: "italic",
-      phase2: "BEEF + Confirmation Slip (for pre-reg)",
+      phase2: "Confirmation Slip (for pre-reg)",
     },
     {
       feature: "Document Handling",
@@ -149,7 +149,7 @@ export default function DocumentaryRequirements() {
       grade: "7",
       type: <Badge variant="outline">New Enrollee</Badge>,
       phase1: "SF9 Grade 6 (verify) + PSA BC (verify)",
-      phase2: "BEEF + SF9 Grade 6 + PSA BC + Privacy Consent",
+      phase2: "SF9 Grade 6 + PSA BC + Privacy Consent",
     },
     {
       grade: "8-10",
@@ -174,7 +174,7 @@ export default function DocumentaryRequirements() {
         </Badge>
       ),
       phase1: "SF9 most recent (verify) + PSA BC (verify)",
-      phase2: "BEEF + SF9 original + PSA BC + Privacy Consent",
+      phase2: "SF9 original + PSA BC + Privacy Consent",
     },
   ];
 
@@ -218,7 +218,7 @@ export default function DocumentaryRequirements() {
         </div>
       ),
       phase1: "Any academic record (verify) + PSA BC (verify)",
-      phase2: "BEEF + Available academic records + PSA BC",
+      phase2: "Available academic records + PSA BC",
     },
     {
       category: (
@@ -238,7 +238,7 @@ export default function DocumentaryRequirements() {
         </div>
       ),
       phase1: "Cert. of Rating / PPA Cert + PSA BC (verify)",
-      phase2: "BEEF + Cert. of Rating + PSA BC",
+      phase2: "Cert. of Rating + PSA BC",
     },
   ];
 
@@ -484,10 +484,6 @@ export default function DocumentaryRequirements() {
                 {
                   name: "SF10",
                   desc: "Permanent Academic Record (Formerly Form 137). Cumulative history.",
-                },
-                {
-                  name: "BEEF",
-                  desc: "Basic Education Enrollment Form (Annex A). The primary data source.",
                 },
                 {
                   name: "Annex C",

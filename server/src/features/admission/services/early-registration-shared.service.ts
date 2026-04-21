@@ -227,7 +227,12 @@ export function createEarlyRegistrationSharedService(
     const p = tx || deps.prisma;
     const applicant = await p.enrollmentApplication.findUnique({
       where: { id },
-      include: { learner: true, earlyRegistration: true, gradeLevel: true },
+      include: {
+        learner: true,
+        earlyRegistration: true,
+        gradeLevel: true,
+        previousSchool: true,
+      },
     });
 
     if (applicant) return { data: applicant, type: "ENROLLMENT" };
@@ -559,6 +564,11 @@ export function createEarlyRegistrationSharedService(
       lastSchoolAddress:
         prevSchool?.schoolAddress || application.lastSchoolAddress,
       lastSchoolType: prevSchool?.schoolType || application.lastSchoolType,
+      generalAverage: 
+        prevSchool?.generalAverage || 
+        application.previousSchool?.generalAverage || 
+        application.checklist?.finalGeneralAverage || 
+        null,
 
       learningProgram,
       programType,

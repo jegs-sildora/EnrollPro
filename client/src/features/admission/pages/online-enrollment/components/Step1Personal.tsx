@@ -36,6 +36,7 @@ import {
 } from "@/shared/ui/select";
 import { useState, useEffect, useCallback } from "react";
 import api from "@/shared/api/axiosInstance";
+import { UserPhoto } from "@/shared/components/UserPhoto";
 import { sileo } from "sileo";
 
 export default function Step1Personal() {
@@ -544,36 +545,32 @@ export default function Step1Personal() {
             Student Photo
           </Label>
           <div className="relative group">
-            <div
-              className={cn(
-                "w-32 h-32 rounded-lg border-2 border-dashed flex flex-col items-center justify-center overflow-hidden transition-all duration-200",
+            <UserPhoto
+              photo={studentPhoto}
+              containerClassName={cn(
+                "w-32 h-32 rounded-lg border-2 border-dashed transition-all duration-200",
                 studentPhoto
                   ? "border-primary/50 bg-background"
                   : "border-muted-foreground/30 bg-muted/50 hover:border-primary/50 hover:bg-muted/80",
-              )}>
-              {studentPhoto ? (
-                <div className="relative w-full h-full">
-                  <img
-                    src={studentPhoto}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                  />
-                  <button
-                    onClick={clearPhoto}
-                    type="button"
-                    className="absolute top-1 right-1 p-1 bg-primary text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-20">
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ) : (
+              )}
+              fallbackIcon={
                 <div className="flex flex-col items-center text-muted-foreground group-hover:text-primary transition-colors">
                   <Camera className="w-8 h-8 mb-1" />
                   <span className="text-[0.625rem] uppercase font-bold tracking-tight">
                     Upload 2x2
                   </span>
                 </div>
+              }
+            >
+              {studentPhoto && (
+                <button
+                  onClick={clearPhoto}
+                  type="button"
+                  className="absolute top-1 right-1 p-1 bg-primary text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-20">
+                  <X className="w-3 h-3" />
+                </button>
               )}
-            </div>
+            </UserPhoto>
             <input
               type="file"
               className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed z-10"

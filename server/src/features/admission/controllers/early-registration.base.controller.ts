@@ -333,6 +333,7 @@ export function createEarlyRegistrationBaseController(
             learner: true,
             gradeLevel: true,
             enrollmentRecord: { include: { section: true } },
+            previousSchool: true,
             programDetail: true,
             earlyRegistration: {
               include: { assessments: { orderBy: { createdAt: "desc" } } },
@@ -344,6 +345,7 @@ export function createEarlyRegistrationBaseController(
           include: {
             learner: true,
             gradeLevel: true,
+            checklist: true,
             assessments: { orderBy: { createdAt: "desc" } },
           },
         }),
@@ -813,7 +815,11 @@ export function createEarlyRegistrationBaseController(
     // Build nested family member data
     const familyData: Prisma.ApplicationFamilyMemberCreateManyInput[] = [];
     if (body.mother)
-      familyData.push({ relationship: "MOTHER", ...body.mother });
+      familyData.push({
+        relationship: "MOTHER",
+        ...body.mother,
+        maidenName: body.mother.maidenName || null,
+      });
     if (body.father)
       familyData.push({ relationship: "FATHER", ...body.father });
     const guardianFirstName = body.guardian?.firstName?.trim();
@@ -843,6 +849,7 @@ export function createEarlyRegistrationBaseController(
       sex: body.sex === "MALE" ? ("MALE" as const) : ("FEMALE" as const),
       placeOfBirth: body.placeOfBirth || null,
       religion: body.religion || null,
+      motherTongue: body.motherTongue || null,
       isIpCommunity: body.isIpCommunity ?? false,
       ipGroupName: body.isIpCommunity ? body.ipGroupName : null,
       isLearnerWithDisability: body.isLearnerWithDisability ?? false,
@@ -850,6 +857,7 @@ export function createEarlyRegistrationBaseController(
         ? body.disabilityTypes || []
         : [],
       specialNeedsCategory: body.specialNeedsCategory || null,
+      snedPlacement: body.snedPlacement || null,
       hasPwdId: body.hasPwdId ?? false,
       isBalikAral: body.isBalikAral ?? false,
       lastYearEnrolled: body.lastYearEnrolled || null,
@@ -917,8 +925,16 @@ export function createEarlyRegistrationBaseController(
                   schoolYearAttended: body.schoolYearLastAttended || null,
                   schoolAddress: body.lastSchoolAddress?.trim() || null,
                   schoolType: body.lastSchoolType || null,
-                  natScore: body.natScore ?? null,
-                  generalAverage: body.generalAverage ?? null,
+                  natScore:
+                    body.natScore != null &&
+                    !isNaN(parseFloat(String(body.natScore)))
+                      ? parseFloat(String(body.natScore))
+                      : null,
+                  generalAverage:
+                    body.generalAverage != null &&
+                    !isNaN(parseFloat(String(body.generalAverage)))
+                      ? parseFloat(String(body.generalAverage))
+                      : null,
                 },
               }
             : undefined,
@@ -1302,6 +1318,7 @@ export function createEarlyRegistrationBaseController(
         isLearnerWithDisability: learner.isLearnerWithDisability,
         disabilityTypes: learner.disabilityTypes,
         specialNeedsCategory: learner.specialNeedsCategory,
+        snedPlacement: learner.snedPlacement,
         hasPwdId: learner.hasPwdId,
         isBalikAral: learner.isBalikAral,
         lastYearEnrolled: learner.lastYearEnrolled,
@@ -1351,6 +1368,7 @@ export function createEarlyRegistrationBaseController(
               lastName: mother.lastName,
               firstName: mother.firstName,
               middleName: mother.middleName,
+              maidenName: mother.maidenName,
               contactNumber: mother.contactNumber,
               email: mother.email,
             }

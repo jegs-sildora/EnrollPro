@@ -229,6 +229,7 @@ export function PreviousSchool({ applicant }: { applicant: ApplicantDetail }) {
       />
       <DataItem label="School Address" value={applicant.lastSchoolAddress} />
       <DataItem label="School Type" value={applicant.lastSchoolType} />
+      <DataItem label="General Average" value={applicant.generalAverage} />
     </CollapsibleSection>
   );
 }

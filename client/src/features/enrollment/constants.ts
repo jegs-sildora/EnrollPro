@@ -35,7 +35,7 @@ export const STATUS_CONFIG: Record<
     className: "bg-slate-100 text-slate-700 border-slate-300",
   },
   VERIFIED: {
-    label: "Verified",
+    label: "Ready for Sectioning",
     className: "bg-blue-100 text-blue-800 border-blue-300",
   },
   UNDER_REVIEW: {

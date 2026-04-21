@@ -2,6 +2,86 @@ import type { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import type { ApplicantType } from "../../generated/prisma/index.js";
+import { SectioningEngine } from "../enrollment/services/sectioning-engine.service.js";
+
+const sectioningEngine = new SectioningEngine(prisma);
+
+export async function getBatchPrerequisites(req: Request, res: Response) {
+	const { gradeLevelId } = req.params;
+	const schoolYearId = req.query.schoolYearId
+		? parseInt(String(req.query.schoolYearId))
+		: null;
+
+	if (!schoolYearId) {
+		return res.status(400).json({ message: "School year ID is required" });
+	}
+
+	const prerequisites = await sectioningEngine.getPrerequisites(
+		parseInt(gradeLevelId),
+		schoolYearId,
+	);
+
+	res.json(prerequisites);
+}
+
+export async function runBatchSectioning(req: Request, res: Response) {
+	const { gradeLevelId, schoolYearId } = req.body;
+
+	const preview = await sectioningEngine.runBatchSectioning(
+		gradeLevelId,
+		schoolYearId,
+	);
+
+	res.json(preview);
+}
+
+export async function commitBatchSectioning(req: Request, res: Response) {
+	const { gradeLevelId, schoolYearId, assignments } = req.body;
+
+	if (!assignments || assignments.length === 0) {
+		return res.status(400).json({ message: "No assignments provided to commit" });
+	}
+
+	const results = await prisma.$transaction(async (tx) => {
+		const createdRecords = [];
+
+		for (const assignment of assignments) {
+			// Update application status
+			await tx.enrollmentApplication.update({
+				where: { id: assignment.applicationId },
+				data: { status: "OFFICIALLY_ENROLLED" },
+			});
+
+			// Create enrollment record
+			const record = await tx.enrollmentRecord.create({
+				data: {
+					enrollmentApplicationId: assignment.applicationId,
+					sectionId: assignment.sectionId,
+					schoolYearId,
+					enrolledById: req.user!.userId,
+				},
+			});
+
+			createdRecords.push(record);
+		}
+
+		return createdRecords;
+	});
+
+	await auditLog({
+		userId: req.user!.userId,
+		actionType: "BATCH_SECTIONING_COMMITTED",
+		description: `Committed batch sectioning for ${assignments.length} learners in Grade Level ID ${gradeLevelId}`,
+		subjectType: "Section",
+		recordId: gradeLevelId,
+		req,
+	});
+
+	res.json({
+		message: "Batch sectioning committed successfully",
+		count: results.length,
+	});
+}
 
 const VALID_PROGRAM_TYPES = new Set([
   "REGULAR",

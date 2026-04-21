@@ -12,3 +12,12 @@ export const createSectionSchema = z.object({
 });
 
 export const updateSectionSchema = createSectionSchema.partial();
+
+export const batchSectioningSchema = z.object({
+  gradeLevelId: z.number().int().positive(),
+  schoolYearId: z.number().int().positive(),
+  assignments: z.array(z.object({
+    applicationId: z.number().int().positive(),
+    sectionId: z.number().int().positive(),
+  })).optional(),
+});

@@ -31,20 +31,6 @@ export function normalizeOptionalInput(value: string): string | null {
   return normalized.length > 0 ? normalized : null;
 }
 
-export function getImageUrl(photo: string | null): string | null {
-  if (!photo) {
-    return null;
-  }
-  if (photo.startsWith("data:")) {
-    return photo;
-  }
-  const baseUrl = (import.meta.env.VITE_API_URL || "/api").replace(
-    /\/api$/,
-    "",
-  );
-  return `${baseUrl}${photo}`;
-}
-
 export function convertImageToBase64(file: File): Promise<string> {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
