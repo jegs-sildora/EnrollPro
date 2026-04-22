@@ -138,11 +138,19 @@ export class SectioningEngine {
 
     let steToAssign: any[] = [];
     let steSpillover: any[] = [];
+    let steCutoffScore: number | null = null;
 
     if (isGrade7) {
       // Full run for Grade 7
       steToAssign = sortedSte.slice(0, 70);
       steSpillover = sortedSte.slice(70);
+      
+      // Calculate cutoff score of 70th student
+      if (sortedSte.length >= 70) {
+        steCutoffScore = sortedSte[69].earlyRegistration?.assessments[0]?.score ?? null;
+      } else if (sortedSte.length > 0) {
+        steCutoffScore = sortedSte[sortedSte.length - 1].earlyRegistration?.assessments[0]?.score ?? null;
+      }
 
       steToAssign.forEach((app, index) => {
         const targetSection = index < 35 ? steSections[0] : steSections[1];
@@ -178,6 +186,8 @@ export class SectioningEngine {
       stats: {
         assigned: steToAssign.length,
         spillover: steSpillover.length,
+        steCutoffScore,
+        reclassifiedLearners: steSpillover.map(app => this.mapToProposed(app, { id: 0, name: "RECLASSIFIED" })),
         sections: steSections.slice(0, 2).map(s => s.name)
       }
     });
@@ -197,6 +207,7 @@ export class SectioningEngine {
 
     let pilotToAssign: any[] = [];
     let remainingPool: any[] = [];
+    let pilotCutoffAve: number | null = null;
 
     if (isGrade7) {
       if (pilotSections.length < 5) {
@@ -204,6 +215,13 @@ export class SectioningEngine {
       }
       pilotToAssign = sortedRegular.slice(0, 200);
       remainingPool = sortedRegular.slice(200);
+
+      // Calculate cutoff average of 200th student
+      if (sortedRegular.length >= 200) {
+        pilotCutoffAve = sortedRegular[199].previousSchool?.generalAverage ?? null;
+      } else if (sortedRegular.length > 0) {
+        pilotCutoffAve = sortedRegular[sortedRegular.length - 1].previousSchool?.generalAverage ?? null;
+      }
 
       pilotToAssign.forEach((app, index) => {
         const sectionIndex = Math.floor(index / 40);
@@ -231,6 +249,8 @@ export class SectioningEngine {
         : "Filled available vacancies in BEC Pilot sections based on academic merit.",
       stats: {
         assigned: pilotToAssign.length,
+        pilotCutoffAve,
+        reclassifiedLearners: remainingPool.map(app => this.mapToProposed(app, { id: 0, name: "RECLASSIFIED" })),
         sections: pilotSections.map(s => s.name)
       }
     });

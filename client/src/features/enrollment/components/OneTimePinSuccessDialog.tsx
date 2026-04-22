@@ -148,7 +148,7 @@ export function OneTimePinSuccessDialog({
             <p className="text-[0.65rem] text-emerald-700/90 font-black uppercase tracking-[0.18em]">
               Learner Portal One-Time PIN
             </p>
-            <p className="font-mono text-4xl tracking-[0.35em] text-emerald-900 sm:text-5xl font-black">
+            <p className=" text-4xl tracking-[0.35em] text-emerald-900 sm:text-5xl font-black">
               {portalPin}
             </p>
             <Button

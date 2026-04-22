@@ -219,6 +219,8 @@ export function EarlyRegistrationTable({
         columns={columns}
         data={orderedApplications}
         loading={showSkeleton}
+        virtualize={true}
+        estimatedRowHeight={50}
         onRowClick={(app) => {
           if (app.status !== LOCKED_HANDOFF_STATUS) {
             setSelectedId(app.id);

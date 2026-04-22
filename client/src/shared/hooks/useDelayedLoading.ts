@@ -1,56 +1,60 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from "react";
 
 /**
  * Hook to manage delayed loading states to prevent "flickering" of skeletons.
  *
- * Rule A: The 250ms Threshold. Don't show loading if it's faster than this.
- * Rule B: Minimum Display Time. If shown, stay for at least 450ms.
+ * Defaults to 0ms for immediate feedback.
  */
 export function useDelayedLoading(
-	isLoading: boolean,
-	delay: number = 250,
-	minDisplay: number = 450,
+  isLoading: boolean,
+  delay: number = 0,
+  minDisplay: number = 0,
 ): boolean {
-	const [showLoading, setShowLoading] = useState(false);
-	const showStartTime = useRef<number>(0);
-	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // If no delay or min display is requested, just return the raw loading state.
+  if (delay === 0 && minDisplay === 0) {
+    return isLoading;
+  }
 
-	useEffect(() => {
-		const clearTimer = () => {
-			if (timerRef.current) {
-				clearTimeout(timerRef.current);
-				timerRef.current = null;
-			}
-		};
+  const [showLoading, setShowLoading] = useState(false);
+  const showStartTime = useRef<number>(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-		if (isLoading) {
-			if (showLoading || timerRef.current) return;
+  useEffect(() => {
+    const clearTimer = () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
 
-			timerRef.current = setTimeout(() => {
-				setShowLoading(true);
-				showStartTime.current = Date.now();
-				timerRef.current = null;
-			}, delay);
-		} else {
-			if (timerRef.current) {
-				clearTimer();
-				return;
-			}
+    if (isLoading) {
+      if (showLoading || timerRef.current) return;
 
-			if (showLoading) {
-				const elapsed = Date.now() - showStartTime.current;
-				const remaining = Math.max(0, minDisplay - elapsed);
+      timerRef.current = setTimeout(() => {
+        setShowLoading(true);
+        showStartTime.current = Date.now();
+        timerRef.current = null;
+      }, delay);
+    } else {
+      if (timerRef.current) {
+        clearTimer();
+        return;
+      }
 
-				// Always use a timer to avoid sync state updates in effects (Linter Rule)
-				timerRef.current = setTimeout(() => {
-					setShowLoading(false);
-					timerRef.current = null;
-				}, remaining);
-			}
-		}
+      if (showLoading) {
+        const elapsed = Date.now() - showStartTime.current;
+        const remaining = Math.max(0, minDisplay - elapsed);
 
-		return () => clearTimer();
-	}, [isLoading, delay, minDisplay, showLoading]);
+        // Always use a timer to avoid sync state updates in effects (Linter Rule)
+        timerRef.current = setTimeout(() => {
+          setShowLoading(false);
+          timerRef.current = null;
+        }, remaining);
+      }
+    }
 
-	return showLoading;
+    return () => clearTimer();
+  }, [isLoading, delay, minDisplay, showLoading]);
+
+  return showLoading;
 }

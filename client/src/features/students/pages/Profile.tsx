@@ -118,9 +118,7 @@ export default function StudentProfile() {
           <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
             Tracking Number
           </p>
-          <p className="text-lg font-mono font-bold">
-            {student.trackingNumber}
-          </p>
+          <p className="text-lg  font-bold">{student.trackingNumber}</p>
         </div>
       </div>
 
@@ -472,7 +470,7 @@ export default function StudentProfile() {
                         <span className="text-muted-foreground">
                           Tracking No:
                         </span>
-                        <span className="font-mono font-bold">
+                        <span className=" font-bold">
                           {student.trackingNumber}
                         </span>
                       </div>

@@ -218,7 +218,7 @@ export default function EmailLogs() {
         accessorKey: "applicant",
         header: "Tracking #",
         cell: ({ row }) => (
-          <span className="text-left text-xs font-mono block">
+          <span className="text-left text-xs  block">
             {row.original.applicant?.trackingNumber || "—"}
           </span>
         ),

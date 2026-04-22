@@ -262,7 +262,33 @@ export default function EnrollmentGateTab() {
     );
   }
 
-  if (loading || !ay) return null;
+  if (loading || !ay) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-6 w-6" />
+                <Skeleton className="h-6 w-48" />
+              </div>
+              <Skeleton className="h-4 w-64" />
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6 pt-4">
+            <div className="space-y-3">
+              <Skeleton className="h-5 w-1/2" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+            <div className="space-y-3">
+              <Skeleton className="h-5 w-1/2" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const phase1Status = getPhaseStatus(
     ay.earlyRegOpenDate,

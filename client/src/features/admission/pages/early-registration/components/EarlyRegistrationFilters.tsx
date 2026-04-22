@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, startTransition } from "react";
 import { Search } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -119,8 +119,10 @@ export function EarlyRegistrationFilters({
                 variant={status === stage.value ? "default" : "outline"}
                 className="h-9 sm:h-8 text-xs font-bold whitespace-nowrap shrink-0"
                 onClick={() => {
-                  setStatus(stage.value);
-                  setPage(1);
+                  startTransition(() => {
+                    setStatus(stage.value);
+                    setPage(1);
+                  });
                 }}>
                 {stage.label}
                 <Badge
@@ -147,8 +149,11 @@ export function EarlyRegistrationFilters({
               className="pl-9 h-10 text-sm font-bold"
               value={search}
               onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
+                const val = e.target.value;
+                setSearch(val);
+                startTransition(() => {
+                  setPage(1);
+                });
               }}
             />
           </div>
@@ -161,16 +166,18 @@ export function EarlyRegistrationFilters({
             <Select
               value={type}
               onValueChange={(value) => {
-                setType(value);
+                startTransition(() => {
+                  setType(value);
 
-                if (
-                  value === "REGULAR" &&
-                  REGULAR_TRACK_HIDDEN_STAGE_VALUES.has(status)
-                ) {
-                  setStatus("ALL");
-                }
+                  if (
+                    value === "REGULAR" &&
+                    REGULAR_TRACK_HIDDEN_STAGE_VALUES.has(status)
+                  ) {
+                    setStatus("ALL");
+                  }
 
-                setPage(1);
+                  setPage(1);
+                });
               }}>
               <SelectTrigger className="h-10 w-full md:w-72 lg:w-80 text-sm font-bold">
                 <SelectValue />
@@ -193,10 +200,12 @@ export function EarlyRegistrationFilters({
             variant="outline"
             className="h-10 px-3 text-sm font-bold w-full md:w-auto"
             onClick={() => {
-              setSearch("");
-              setStatus("ALL");
-              setType("ALL");
-              setPage(1);
+              startTransition(() => {
+                setSearch("");
+                setStatus("ALL");
+                setType("ALL");
+                setPage(1);
+              });
             }}>
             Reset
           </Button>

@@ -168,7 +168,7 @@ export default function PrivacyNotice({ onAccept }: PrivacyNoticeProps) {
         <CardFooter className="flex flex-col items-stretch gap-6 bg-muted/30 border-t p-6 md:p-10">
           <div
             className={cn(
-              "flex items-start space-x-3 transition-opacity duration-300",
+              "flex items-start space-x-3 transition-opacity duration-0",
               !hasScrolledNotice && "opacity-50 grayscale pointer-events-none",
             )}>
             <Checkbox

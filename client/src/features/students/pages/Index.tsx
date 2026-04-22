@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, startTransition } from "react";
 import { useNavigate } from "react-router";
 import {
   Search,
@@ -328,7 +328,7 @@ export default function Students() {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
       setPage(1);
-    }, 300);
+    }, 0);
     return () => clearTimeout(timer);
   }, [search]);
 
@@ -412,7 +412,7 @@ export default function Students() {
   // Fetch students
   const fetchStudents = useCallback(async () => {
     if (!ayId) return;
-    if (initialLoad) setLoading(true);
+    setLoading(true);
     try {
       const params: Record<string, string | number> = {
         schoolYearId: ayId,
@@ -1198,8 +1198,11 @@ export default function Students() {
                   className="pl-9 h-10 text-sm font-bold"
                   value={search}
                   onChange={(e) => {
-                    setSearch(e.target.value);
-                    setPage(1);
+                    const val = e.target.value;
+                    setSearch(val);
+                    startTransition(() => {
+                      setPage(1);
+                    });
                   }}
                 />
               </div>
@@ -1212,8 +1215,10 @@ export default function Students() {
                 <Select
                   value={gradeLevelFilter}
                   onValueChange={(value) => {
-                    setGradeLevelFilter(value);
-                    setPage(1);
+                    startTransition(() => {
+                      setGradeLevelFilter(value);
+                      setPage(1);
+                    });
                   }}>
                   <SelectTrigger className="h-10 w-full md:w-52 text-sm font-bold">
                     <SelectValue placeholder="All Grades" />
@@ -1240,8 +1245,10 @@ export default function Students() {
                 <Select
                   value={programFilter}
                   onValueChange={(value) => {
-                    setProgramFilter(value);
-                    setPage(1);
+                    startTransition(() => {
+                      setProgramFilter(value);
+                      setPage(1);
+                    });
                   }}>
                   <SelectTrigger className="h-10 w-full md:w-52 text-sm font-bold">
                     <SelectValue placeholder="All Programs" />
@@ -1268,8 +1275,10 @@ export default function Students() {
                 <Select
                   value={sectionFilter}
                   onValueChange={(value) => {
-                    setSectionFilter(value);
-                    setPage(1);
+                    startTransition(() => {
+                      setSectionFilter(value);
+                      setPage(1);
+                    });
                   }}>
                   <SelectTrigger className="h-10 w-full md:w-52 text-sm font-bold">
                     <SelectValue placeholder="All Sections" />
@@ -1308,13 +1317,15 @@ export default function Students() {
                 variant="outline"
                 className="h-10 px-3 text-sm font-bold w-full md:w-auto"
                 onClick={() => {
-                  setSearch("");
-                  setGradeLevelFilter("all");
-                  setProgramFilter("all");
-                  setSectionFilter("all");
-                  setSortBy("dateEnrolled");
-                  setSortOrder("desc");
-                  setPage(1);
+                  startTransition(() => {
+                    setSearch("");
+                    setGradeLevelFilter("all");
+                    setProgramFilter("all");
+                    setSectionFilter("all");
+                    setSortBy("dateEnrolled");
+                    setSortOrder("desc");
+                    setPage(1);
+                  });
                 }}>
                 Reset
               </Button>
@@ -1491,6 +1502,8 @@ export default function Students() {
               columns={columns}
               data={students}
               loading={loading}
+              virtualize={true}
+              estimatedRowHeight={60}
               noResultsMessage="No enrolled learners found for the selected filters."
               sorting={sorting}
               onSortingChange={onSortingChange}

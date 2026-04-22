@@ -365,7 +365,7 @@ export default function LoginPage() {
                       onClick={() => { setUsername(demo.user); setPassword(demo.pass); }}
                     >
                       <p className="font-bold text-xs" style={{ color: colors.primary }}>{demo.role}</p>
-                      <p className="text-gray-500 text-[10px] mt-0.5 font-mono">{demo.user}</p>
+                      <p className="text-gray-500 text-[10px] mt-0.5 ">{demo.user}</p>
                     </button>
                   ))}
                 </div>

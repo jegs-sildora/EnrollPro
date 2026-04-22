@@ -86,7 +86,7 @@ export default function StepProgressBar({
                       <div className="absolute left-1/2 right-[-50%] top-3.5 h-[2px] rounded-full bg-border/70" />
                       <div
                         className={cn(
-                          "absolute left-1/2 top-3.5 h-[2px] rounded-full bg-primary transition-all duration-300",
+                          "absolute left-1/2 top-3.5 h-[2px] rounded-full bg-primary transition-all duration-0",
                           isCompleted ? "right-[-50%]" : "right-1/2",
                         )}
                       />
@@ -95,7 +95,7 @@ export default function StepProgressBar({
 
                   <div
                     className={cn(
-                      "relative z-10 mx-auto flex h-7 w-7 items-center justify-center rounded-full border-2 transition-all duration-300",
+                      "relative z-10 mx-auto flex h-7 w-7 items-center justify-center rounded-full border-2 transition-all duration-0",
                       isCompleted
                         ? "border-primary bg-primary text-primary-foreground"
                         : isActive
@@ -156,7 +156,7 @@ export default function StepProgressBar({
                       <div className="absolute left-1/2 right-[-50%] top-[1.125rem] h-[3px] rounded-full bg-border/70" />
                       <div
                         className={cn(
-                          "absolute left-1/2 top-[1.125rem] h-[3px] rounded-full bg-primary transition-all duration-300",
+                          "absolute left-1/2 top-[1.125rem] h-[3px] rounded-full bg-primary transition-all duration-0",
                           isCompleted ? "right-[-50%]" : "right-1/2",
                         )}
                       />
@@ -166,7 +166,7 @@ export default function StepProgressBar({
                   <div className="relative z-10 flex flex-col items-center">
                     <div
                       className={cn(
-                        "flex h-9 w-9 items-center justify-center rounded-full border-2 transition-all duration-300",
+                        "flex h-9 w-9 items-center justify-center rounded-full border-2 transition-all duration-0",
                         isCompleted
                           ? "border-primary bg-primary text-primary-foreground"
                           : isActive

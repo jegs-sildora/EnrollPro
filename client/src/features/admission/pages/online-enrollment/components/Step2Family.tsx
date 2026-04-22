@@ -1085,7 +1085,7 @@ export default function Step2Family() {
                 return (
                   <div
                     key={secondary.id}
-                    className="space-y-4 transition-opacity duration-300 opacity-70 hover:opacity-100 focus-within:opacity-100">
+                    className="space-y-4 transition-opacity duration-0 opacity-70 hover:opacity-100 focus-within:opacity-100">
                     <div className="flex flex-col gap-1">
                       <h4 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
                         Secondary Contact (Optional)

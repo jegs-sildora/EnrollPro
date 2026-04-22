@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, startTransition } from "react";
 import { sileo } from "sileo";
 import { ChevronDown, GraduationCap, Plus, Upload } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
@@ -620,11 +620,17 @@ export default function Teachers() {
         designationFilter={designationFilter}
         hasActiveFilters={hasActiveFilters}
         ayId={ayId}
-        onSearchQueryChange={setSearchQuery}
+        onSearchQueryChange={(val) => {
+          startTransition(() => {
+            setSearchQuery(val);
+          });
+        }}
         onStatusFilterChange={setStatusFilter}
         onDesignationFilterChange={setDesignationFilter}
         onClearFilters={() => {
-          setSearchQuery("");
+          startTransition(() => {
+            setSearchQuery("");
+          });
           setStatusFilter("all");
           setDesignationFilter("all");
         }}

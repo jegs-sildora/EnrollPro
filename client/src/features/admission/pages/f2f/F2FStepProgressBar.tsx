@@ -78,7 +78,7 @@ export default function F2FStepProgressBar({
                     {/* Circle indicator */}
                     <Stepper.Indicator
                       className={cn(
-                        "w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 border-2",
+                        "w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-0 border-2",
                         isCompleted
                           ? "bg-primary border-primary text-primary-foreground"
                           : isActive

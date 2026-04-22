@@ -145,7 +145,7 @@ export default function AuditLogs() {
         accessorKey: "ipAddress",
         header: "IP Address",
         cell: ({ row }) => (
-          <span className="text-xs font-mono">{row.original.ipAddress}</span>
+          <span className="text-xs ">{row.original.ipAddress}</span>
         ),
       },
     ],

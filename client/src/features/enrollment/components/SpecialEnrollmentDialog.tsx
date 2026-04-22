@@ -207,7 +207,7 @@ export function SpecialEnrollmentDialog({
           </div>
 
           {formData.learnerType === "TRANSFEREE" && (
-            <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-0">
               <Label
                 htmlFor="originSchoolName"
                 className="text-xs font-bold uppercase">
@@ -230,7 +230,7 @@ export function SpecialEnrollmentDialog({
           )}
 
           {formData.learnerType === "PEPT_PASSER" && (
-            <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-0">
               <div className="space-y-2">
                 <Label
                   htmlFor="peptCertificateNumber"

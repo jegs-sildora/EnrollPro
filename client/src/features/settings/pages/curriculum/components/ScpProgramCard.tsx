@@ -56,7 +56,7 @@ export function ScpProgramCard({
       </div>
 
       {scp.isOffered && (
-        <div className="p-5 space-y-5 animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="p-5 space-y-5 animate-in fade-in slide-in-from-top-2 duration-0">
           <AdmissionStepsSection
             scp={scp}
             scpIndex={scpIndex}

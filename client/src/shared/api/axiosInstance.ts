@@ -3,12 +3,47 @@ import { sileo } from "sileo";
 import { useAuthStore } from "@/store/auth.slice";
 import { useSettingsStore } from "@/store/settings.slice";
 
+const MIN_FETCH_LOADING_MS = 0;
+
+type TimedRequestConfig = {
+  __requestStartedAt?: number;
+  __shouldDelayResponse?: boolean;
+};
+
+function shouldDelayFetchRequest(method?: string): boolean {
+  return (method ?? "get").toLowerCase() === "get";
+}
+
+async function applyMinimumFetchDelay(
+  config?: TimedRequestConfig,
+): Promise<void> {
+  if (!config?.__shouldDelayResponse) {
+    return;
+  }
+
+  const startedAt = config.__requestStartedAt ?? Date.now();
+  const elapsed = Date.now() - startedAt;
+  const remaining = MIN_FETCH_LOADING_MS - elapsed;
+
+  if (remaining <= 0) {
+    return;
+  }
+
+  await new Promise<void>((resolve) => {
+    globalThis.setTimeout(resolve, remaining);
+  });
+}
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "/api",
   withCredentials: true,
 });
 
 api.interceptors.request.use((config) => {
+  const timedConfig = config as typeof config & TimedRequestConfig;
+  timedConfig.__requestStartedAt = Date.now();
+  timedConfig.__shouldDelayResponse = shouldDelayFetchRequest(config.method);
+
   const token = useAuthStore.getState().token;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -30,8 +65,13 @@ let _sessionExpiredHandled = false;
 let _historicalReadOnlyHandled = false;
 
 api.interceptors.response.use(
-  (res) => res,
-  (error) => {
+  async (res) => {
+    await applyMinimumFetchDelay(res.config as TimedRequestConfig);
+    return res;
+  },
+  async (error) => {
+    await applyMinimumFetchDelay(error.config as TimedRequestConfig);
+
     const status = error.response?.status;
     const code: string | undefined = error.response?.data?.code;
     const hadToken = !!useAuthStore.getState().token;

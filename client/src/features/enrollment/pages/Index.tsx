@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo, startTransition } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import {
   Search,
@@ -41,7 +41,11 @@ import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { format } from "date-fns";
-import type { CellContext, ColumnDef, SortingState } from "@tanstack/react-table";
+import type {
+  CellContext,
+  ColumnDef,
+  SortingState,
+} from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { BatchSectioningWizard } from "@/features/enrollment/components/BatchSectioningWizard";
@@ -49,6 +53,7 @@ import { ApplicationDetailPanel } from "@/features/enrollment/components/Applica
 import { ScheduleExamDialog } from "@/features/enrollment/components/ScheduleExamDialog";
 import { StatusBadge } from "@/features/enrollment/components/StatusBadge";
 import { EnrollmentWorkflowTabs } from "@/features/enrollment/components/EnrollmentWorkflowTabs";
+import { useSectioningStore } from "@/store/sectioning.slice";
 import {
   ENROLLMENT_SUB_MENU_DESCRIPTIONS,
   ENROLLMENT_SUB_MENU_OPTIONS,
@@ -113,6 +118,12 @@ const PENDING_QUEUE_FILTER_OPTIONS: Array<{
   { value: "INCOMING_G7", label: "Incoming G7" },
   { value: "CONTINUING_JHS", label: "Continuing JHS" },
 ];
+
+const TABLE_NO_RESULTS_MESSAGES: Record<EnrollmentSubMenu, string> = {
+  PENDING_VERIFICATION: "No learners awaiting verification.",
+  SECTION_ASSIGNMENT: "No learners ready for section assignment.",
+  OFFICIAL_ROSTER: "No enrolled learners in official roster.",
+};
 
 const UNENROLL_REASONS = [
   "Data Entry Error",
@@ -227,6 +238,7 @@ export default function Enrollment() {
   const [workflowView, setWorkflowView] = useState<EnrollmentSubMenu>(() =>
     resolveWorkflowFromQuery(workflowParam),
   );
+  const workflowViewRef = useRef<EnrollmentSubMenu>(workflowView);
 
   // Rule A & B: Delayed loading
   const showSkeleton = useDelayedLoading(loading);
@@ -312,7 +324,9 @@ export default function Enrollment() {
 
   // Batch Selection state
   const [isBatchWizardOpen, setIsBatchWizardOpen] = useState(false);
-  const [batchGradeLevelId, setBatchGradeLevelId] = useState<number | null>(null);
+  const [batchGradeLevelId, setBatchGradeLevelId] = useState<number | null>(
+    null,
+  );
   const [batchGradeLevelName, setBatchGradeLevelName] = useState<string>("");
   const [isGradeSelectDialogOpen, setIsGradeSelectDialogOpen] = useState(false);
   const [gradeLevels, setGradeLevels] = useState<any[]>([]);
@@ -322,6 +336,31 @@ export default function Enrollment() {
   const [walkInLrn, setWalkInLrn] = useState("");
   const [walkInNoLrn, setWalkInNoLrn] = useState(false);
   const [isWalkInGateChecking, setIsWalkInGateChecking] = useState(false);
+  const latestFetchRequestRef = useRef(0);
+
+  useEffect(() => {
+    workflowViewRef.current = workflowView;
+  }, [workflowView]);
+
+  const handleWorkflowViewChange = useCallback(
+    (nextView: EnrollmentSubMenu) => {
+      if (nextView === workflowViewRef.current) {
+        return;
+      }
+
+      workflowViewRef.current = nextView;
+
+      // Invalidate in-flight requests before switching views to prevent stale table flashes.
+      latestFetchRequestRef.current += 1;
+      setWorkflowView(nextView);
+      setApplications([]);
+      setTotal(0);
+      setSelectedId(null);
+      setLoading(true);
+      setPage(1);
+    },
+    [],
+  );
 
   const fetchGradeLevels = useCallback(async () => {
     if (!ayId) return;
@@ -330,9 +369,9 @@ export default function Enrollment() {
       const response = await api.get("/school-years/grade-levels", {
         params: { schoolYearId: ayId },
       });
-      
+
       const allLevels = response.data.gradeLevels || [];
-      
+
       // Map to normalize and filter only JHS (7-10)
       const jhsLevels = allLevels.filter((gl: any) => {
         const num = extractGradeLevelNumber(gl.name);
@@ -362,12 +401,15 @@ export default function Enrollment() {
     setIsGradeSelectDialogOpen(true);
   }, [fetchGradeLevels]);
 
-  const handleStartBatchSectioning = useCallback((gradeLevelId: number, gradeLevelName: string) => {
-    setBatchGradeLevelId(gradeLevelId);
-    setBatchGradeLevelName(gradeLevelName);
-    setIsGradeSelectDialogOpen(false);
-    setIsBatchWizardOpen(true);
-  }, []);
+  const handleStartBatchSectioning = useCallback(
+    (gradeLevelId: number, gradeLevelName: string) => {
+      setBatchGradeLevelId(gradeLevelId);
+      setBatchGradeLevelName(gradeLevelName);
+      setIsGradeSelectDialogOpen(false);
+      setIsBatchWizardOpen(true);
+    },
+    [],
+  );
 
   const visibleApplications = useMemo(() => {
     if (workflowView !== "PENDING_VERIFICATION") {
@@ -529,8 +571,14 @@ export default function Enrollment() {
   }, [closeReadingProfileDialog, readingProfileDialog]);
 
   const fetchData = useCallback(async () => {
+    const requestId = ++latestFetchRequestRef.current;
+
     if (!ayId) {
-      setLoading(false);
+      if (requestId === latestFetchRequestRef.current) {
+        setApplications([]);
+        setTotal(0);
+        setLoading(false);
+      }
       return;
     }
     setLoading(true);
@@ -564,6 +612,10 @@ export default function Enrollment() {
 
       const res = await api.get(`/applications?${params.toString()}`);
 
+      if (requestId !== latestFetchRequestRef.current) {
+        return;
+      }
+
       let filteredApps = (res.data.applications as Application[]).map(
         (app) => ({
           ...app,
@@ -596,9 +648,14 @@ export default function Enrollment() {
       );
       setTotal(apiTotal);
     } catch (err) {
+      if (requestId !== latestFetchRequestRef.current) {
+        return;
+      }
       toastApiError(err as never);
     } finally {
-      setLoading(false);
+      if (requestId === latestFetchRequestRef.current) {
+        setLoading(false);
+      }
     }
   }, [ayId, search, page, workflowView, sortBy, sortOrder]);
 
@@ -658,7 +715,8 @@ export default function Enrollment() {
         return;
       }
 
-      const sectionOptions = sectionOptionsByApplicationId[application.id] || [];
+      const sectionOptions =
+        sectionOptionsByApplicationId[application.id] || [];
       const selectedSection = sectionOptions.find(
         (s) => String(s.id) === selectedSectionId,
       );
@@ -907,8 +965,7 @@ export default function Enrollment() {
         const hasSection = Boolean(sectionName);
         const isPendingVerification = workflowView === "PENDING_VERIFICATION";
         const isSectionAssignment = workflowView === "SECTION_ASSIGNMENT";
-        const selectedSectionId =
-          sectionSelectionByApplicationId[app.id] ?? "";
+        const selectedSectionId = sectionSelectionByApplicationId[app.id] ?? "";
         const sectionOptions = sectionOptionsByApplicationId[app.id] ?? [];
         const isLoadingOptions =
           loadingSectionOptionsByApplicationId[app.id] === true;
@@ -1034,7 +1091,7 @@ export default function Enrollment() {
 
     if (workflowView !== "SECTION_ASSIGNMENT") {
       cols.push({
-        id: "date",
+        id: "createdAt",
         accessorKey: "createdAt",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="DATE" />
@@ -1112,7 +1169,9 @@ export default function Enrollment() {
                 }
                 setSelectedId(app.id);
               }}
-              disabled={isSectionAssignment && (isSavingSection || !selectedSectionId)}>
+              disabled={
+                isSectionAssignment && (isSavingSection || !selectedSectionId)
+              }>
               {isPendingVerification ? (
                 <>
                   <FileCheck2 className="h-3.5 w-3.5 mr-1" />
@@ -1199,7 +1258,7 @@ export default function Enrollment() {
     }
 
     if (workflowParam) {
-      setWorkflowView(resolveWorkflowFromQuery(workflowParam));
+      handleWorkflowViewChange(resolveWorkflowFromQuery(workflowParam));
     }
 
     if (searchParam !== null) {
@@ -1207,7 +1266,7 @@ export default function Enrollment() {
     }
 
     setPage(1);
-  }, [workflowParam, searchParam]);
+  }, [workflowParam, searchParam, handleWorkflowViewChange]);
 
   const handleExportLis = async () => {
     if (workflowView !== "OFFICIAL_ROSTER") {
@@ -1287,8 +1346,19 @@ export default function Enrollment() {
     resolveSelectedApplicationSectionName(selectedApp);
   const canConfirmOfficialEnrollment = Boolean(selectedAppSectionName);
 
+  // Persistence: Check for pending batch on mount
+  const { isBatchPending, gradeLevelId: storedGlId, previewData: storedPreview } = useSectioningStore();
+
+  useEffect(() => {
+    if (isBatchPending && storedGlId && storedPreview) {
+      setBatchGradeLevelId(storedGlId);
+      setBatchGradeLevelName(storedPreview.gradeLevelName);
+      setIsBatchWizardOpen(true);
+    }
+  }, [isBatchPending, storedGlId, storedPreview]);
+
   return (
-    <div className="flex h-[calc(100vh-2rem)] overflow-hidden">
+    <div className="flex h-[calc(100vh-2rem)] overflow-hidden relative">
       <div className="flex-1 flex flex-col space-y-4 sm:space-y-6 overflow-auto px-2 sm:px-0 pb-24">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -1352,8 +1422,7 @@ export default function Enrollment() {
         <EnrollmentWorkflowTabs
           value={workflowView}
           onValueChange={(nextView) => {
-            setWorkflowView(nextView);
-            setPage(1);
+            handleWorkflowViewChange(nextView);
           }}
         />
 
@@ -1371,8 +1440,11 @@ export default function Enrollment() {
                     className="pl-9 h-10 text-sm font-bold"
                     value={search}
                     onChange={(e) => {
-                      setSearch(e.target.value);
-                      setPage(1);
+                      const val = e.target.value;
+                      setSearch(val);
+                      startTransition(() => {
+                        setPage(1);
+                      });
                     }}
                   />
                 </div>
@@ -1420,10 +1492,12 @@ export default function Enrollment() {
               columns={columns}
               data={visibleApplications}
               loading={showSkeleton}
+              virtualize={true}
+              estimatedRowHeight={60}
               onRowClick={(app) => {
                 setSelectedId(app.id);
               }}
-              noResultsMessage="No learners found."
+              noResultsMessage={TABLE_NO_RESULTS_MESSAGES[workflowView]}
               sorting={sorting}
               onSortingChange={onSortingChange}
             />
@@ -2126,7 +2200,9 @@ export default function Enrollment() {
                       key={gl.id}
                       variant="outline"
                       className="h-10 font-bold text-xs"
-                      onClick={() => handleStartBatchSectioning(gl.id, gl.name)}>
+                      onClick={() =>
+                        handleStartBatchSectioning(gl.id, gl.name)
+                      }>
                       {formatGradeLevelLabel(gl.name)}
                     </Button>
                   ))

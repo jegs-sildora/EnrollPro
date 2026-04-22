@@ -717,7 +717,37 @@ export default function SchoolYearTab() {
     }
   };
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Card className="shadow-sm">
+          <CardHeader className="bg-muted border-3 border-border rounded-tl-lg rounded-t-lg">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-6 w-6" />
+              <Skeleton className="h-6 w-48" />
+            </div>
+            <Skeleton className="h-4 w-64 mt-2" />
+          </CardHeader>
+          <CardContent className="pt-6 space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -1104,7 +1134,7 @@ export default function SchoolYearTab() {
             <div className="space-y-2">
               <Label htmlFor="activation-phrase" className="font-semibold">
                 Type{" "}
-                <span className="font-mono uppercase">
+                <span className=" uppercase">
                   {" "}
                   "{activationConfirmPhrase}"{" "}
                 </span>{" "}
@@ -1118,7 +1148,7 @@ export default function SchoolYearTab() {
                 }
                 placeholder={activationConfirmPhrase}
                 autoComplete="off"
-                className="font-mono uppercase font-bold"
+                className=" uppercase font-bold"
               />
             </div>
           </div>

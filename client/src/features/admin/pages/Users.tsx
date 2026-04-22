@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, startTransition } from "react";
 import { useSettingsStore } from "@/store/settings.slice";
 import { sileo } from "sileo";
 import { useAuthStore } from "@/store/auth.slice";
@@ -262,7 +262,7 @@ export default function AdminUsers() {
     const timer = setTimeout(() => {
       setDebouncedSearch(search.trim());
       setPage(1);
-    }, 300);
+    }, 0);
 
     return () => clearTimeout(timer);
   }, [search]);
@@ -971,7 +971,13 @@ export default function AdminUsers() {
                   placeholder="Name, email, employee ID, designation..."
                   className="pl-9 h-10 text-sm font-bold"
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSearch(val);
+                    startTransition(() => {
+                      setPage(1);
+                    });
+                  }}
                 />
               </div>
             </div>
@@ -983,8 +989,10 @@ export default function AdminUsers() {
                 <Select
                   value={roleFilter}
                   onValueChange={(value) => {
-                    setRoleFilter(value);
-                    setPage(1);
+                    startTransition(() => {
+                      setRoleFilter(value);
+                      setPage(1);
+                    });
                   }}>
                   <SelectTrigger className="h-10 w-full md:w-44 text-sm font-bold">
                     <SelectValue placeholder="All Roles" />
@@ -1003,8 +1011,10 @@ export default function AdminUsers() {
                 <Select
                   value={statusFilter}
                   onValueChange={(value) => {
-                    setStatusFilter(value);
-                    setPage(1);
+                    startTransition(() => {
+                      setStatusFilter(value);
+                      setPage(1);
+                    });
                   }}>
                   <SelectTrigger className="h-10 w-full md:w-44 text-sm font-bold">
                     <SelectValue placeholder="All Status" />
@@ -1031,12 +1041,14 @@ export default function AdminUsers() {
                 variant="outline"
                 className="h-10 px-3 text-sm font-bold w-full md:w-auto"
                 onClick={() => {
-                  setSearch("");
-                  setRoleFilter("all");
-                  setStatusFilter("all");
-                  setSortBy("createdAt");
-                  setSortOrder("desc");
-                  setPage(1);
+                  startTransition(() => {
+                    setSearch("");
+                    setRoleFilter("all");
+                    setStatusFilter("all");
+                    setSortBy("createdAt");
+                    setSortOrder("desc");
+                    setPage(1);
+                  });
                 }}>
                 Reset
               </Button>
@@ -1267,6 +1279,8 @@ export default function AdminUsers() {
               columns={columns}
               data={users}
               loading={showSkeleton}
+              virtualize={true}
+              estimatedRowHeight={60}
               tableClassName="table-fixed w-full"
               noResultsMessage="No users found matching the selected criteria."
             />

@@ -342,7 +342,7 @@ export default function SampleIntegrationPage() {
               className="rounded-md border bg-card p-3 text-sm">
               <div className="font-semibold">{feed.system}</div>
               <div className="text-muted-foreground">{feed.purpose}</div>
-              <div className="mt-1 overflow-x-auto rounded bg-muted px-2 py-1 font-mono text-xs">
+              <div className="mt-1 overflow-x-auto rounded bg-muted px-2 py-1  text-xs">
                 {feed.endpoint}
               </div>
             </div>

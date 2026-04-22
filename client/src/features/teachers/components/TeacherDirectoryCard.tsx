@@ -436,6 +436,8 @@ export function TeacherDirectoryCard({
               data={filteredTeachers}
               tableClassName="table-fixed w-full"
               loading={showSkeleton}
+              virtualize={true}
+              estimatedRowHeight={60}
               noResultsMessage={
                 hasActiveFilters
                   ? "No teachers match the current filter set."

@@ -600,7 +600,7 @@ export default function Sections() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {addGlId === g.gradeLevelId && (
-                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-0">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label className="text-xs">Section Name</Label>
