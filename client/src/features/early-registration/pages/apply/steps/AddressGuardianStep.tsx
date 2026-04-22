@@ -3,6 +3,7 @@ import { useFormContext } from "react-hook-form";
 import type { EarlyRegFormData } from "../types";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
+import { Checkbox } from "@/shared/ui/checkbox";
 import { Info, AlertCircle, User, Venus, Mars } from "lucide-react";
 import { Separator } from "@/shared/ui/separator";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
@@ -207,12 +208,11 @@ export default function AddressGuardianStep() {
               Mother&apos;s Details
             </h3>
             <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="hasNoMother"
-                {...register("hasNoMother")}
-                onChange={(e) => {
-                  const val = e.target.checked;
+                checked={hasNoMother}
+                onCheckedChange={(checked) => {
+                  const val = checked === true;
                   setValue("hasNoMother", val);
                   if (val) {
                     setValue("mother.maidenName", "Information not available");
@@ -225,7 +225,6 @@ export default function AddressGuardianStep() {
                     setValue("mother.middleName", "");
                   }
                 }}
-                className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary"
               />
               <Label
                 htmlFor="hasNoMother"
@@ -331,12 +330,11 @@ export default function AddressGuardianStep() {
               Father&apos;s Details
             </h3>
             <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="hasNoFather"
-                {...register("hasNoFather")}
-                onChange={(e) => {
-                  const val = e.target.checked;
+                checked={hasNoFather}
+                onCheckedChange={(checked) => {
+                  const val = checked === true;
                   setValue("hasNoFather", val);
                   if (val) {
                     setValue("father.lastName", "Information not available");
@@ -349,7 +347,6 @@ export default function AddressGuardianStep() {
                     setValue("father.middleName", "");
                   }
                 }}
-                className="w-4 h-4 rounded border-primary text-primary focus:ring-primary accent-primary"
               />
               <Label
                 htmlFor="hasNoFather"

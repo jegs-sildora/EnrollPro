@@ -408,12 +408,11 @@ export default function Step2Family() {
               Mother&apos;s Details
             </h3>
             <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="hasNoMother"
-                {...register("hasNoMother")}
-                onChange={(event) => {
-                  const value = event.target.checked;
+                checked={hasNoMother}
+                onCheckedChange={(checked) => {
+                  const value = checked === true;
                   setValue("hasNoMother", value, {
                     shouldValidate: true,
                     shouldDirty: true,
@@ -444,7 +443,6 @@ export default function Step2Family() {
                     });
                   }
                 }}
-                className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary"
               />
               <Label
                 htmlFor="hasNoMother"
@@ -552,12 +550,11 @@ export default function Step2Family() {
               Father&apos;s Details
             </h3>
             <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="hasNoFather"
-                {...register("hasNoFather")}
-                onChange={(event) => {
-                  const value = event.target.checked;
+                checked={hasNoFather}
+                onCheckedChange={(checked) => {
+                  const value = checked === true;
                   setValue("hasNoFather", value, {
                     shouldValidate: true,
                     shouldDirty: true,
@@ -582,7 +579,6 @@ export default function Step2Family() {
                     });
                   }
                 }}
-                className="w-4 h-4 rounded border-primary text-primary focus:ring-primary accent-primary"
               />
               <Label
                 htmlFor="hasNoFather"

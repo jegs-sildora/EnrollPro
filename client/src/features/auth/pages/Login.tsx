@@ -11,7 +11,6 @@ import {
   Eye,
   EyeOff,
   Globe,
-  GraduationCap,
   Loader2,
   Lock,
   LogIn,
@@ -30,6 +29,7 @@ import {
 } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
+import { Checkbox } from "@/shared/ui/checkbox";
 import { Button } from "@/shared/ui/button";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -131,6 +131,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -139,6 +140,15 @@ export default function Login() {
 
   const googleButtonRef = useRef<HTMLDivElement | null>(null);
   const redirectTimeoutRef = useRef<number | null>(null);
+
+  // Hydrate from localStorage
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("rememberedEmail");
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   const apiBase = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || "";
@@ -188,6 +198,14 @@ export default function Login() {
       }
 
       setAuth(payload.token, payload.user);
+
+      // Persistence logic
+      if (rememberMe) {
+        localStorage.setItem("rememberedEmail", payload.user.email);
+      } else {
+        localStorage.removeItem("rememberedEmail");
+      }
+
       setError(null);
       setSuccess("Login successful! Redirecting...");
 
@@ -203,7 +221,7 @@ export default function Login() {
         navigate("/dashboard", { replace: true });
       }, 800);
     },
-    [navigate, setAuth],
+    [navigate, setAuth, rememberMe],
   );
 
   const handleGoogleCredential = useCallback(
@@ -361,7 +379,12 @@ export default function Login() {
   };
 
   if (token && user) {
-    return <Navigate to="/dashboard" replace />;
+    return (
+      <Navigate
+        to="/dashboard"
+        replace
+      />
+    );
   }
 
   return (
@@ -508,7 +531,9 @@ export default function Login() {
                 </div>
                 <div>
                   <h3 className="font-bold text-white">{feature.title}</h3>
-                  <p className="text-white text-sm font-semibold">{feature.desc}</p>
+                  <p className="text-white text-sm font-semibold">
+                    {feature.desc}
+                  </p>
                 </div>
               </div>
             ))}
@@ -587,7 +612,11 @@ export default function Login() {
                 />
               </pattern>
             </defs>
-            <rect width="100%" height="100%" fill="url(#login-pixel-grid)" />
+            <rect
+              width="100%"
+              height="100%"
+              fill="url(#login-pixel-grid)"
+            />
           </svg>
 
           <div
@@ -600,32 +629,8 @@ export default function Login() {
         </div>
 
         <div className="relative z-10 w-full max-w-[420px]">
-          <div className="lg:hidden flex items-center justify-center gap-3 mb-6">
-            <div
-              className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg overflow-hidden"
-              style={{
-                background: fullLogoUrl
-                  ? "white"
-                  : "linear-gradient(to bottom right, hsl(var(--primary)), hsl(var(--accent)))",
-                boxShadow: "0 10px 15px -3px hsl(var(--primary) / 0.4)",
-              }}>
-              {fullLogoUrl ? (
-                <img
-                  src={fullLogoUrl}
-                  alt={schoolName}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <GraduationCap className="w-7 h-7 text-white" />
-              )}
-            </div>
-            <div>
-              <span className="text-xl font-bold text-gray-900">{acronym}</span>
-              <p className="text-xs text-gray-500">{schoolName}</p>
-            </div>
-          </div>
 
-          <Card className="border-0 shadow-2xl shadow-gray-200 bg-white/90 backdrop-blur-xl rounded-3xl overflow-hidden">
+          <Card className="border-0 shadow-2xl shadow-gray-200 bg-white/90 backdrop-blur-xl rounded-lg overflow-hidden">
             <CardHeader className="space-y-1 text-center pt-5 pb-0 px-6">
               <div
                 className="w-14 h-14 mx-auto rounded-full flex items-center justify-center shadow-lg overflow-hidden"
@@ -653,9 +658,7 @@ export default function Login() {
               </CardTitle>
               <CardDescription className="text-gray-600 text-sm">
                 Sign in to continue to{" "}
-                <span className="font-semibold text-primary">
-                  EnrollPro
-                </span>
+                <span className="font-semibold text-primary">EnrollPro</span>
               </CardDescription>
             </CardHeader>
 
@@ -684,7 +687,9 @@ export default function Login() {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-3">
+              <form
+                onSubmit={handleSubmit}
+                className="space-y-3">
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="email"
@@ -760,9 +765,13 @@ export default function Login() {
 
                 <div className="flex items-center justify-between text-sm">
                   <label className="flex items-center gap-2 cursor-pointer group">
-                    <input
-                      type="checkbox"
-                      className="rounded border-gray-300 text-primary focus:ring-primary/25"
+                    <Checkbox
+                      id="rememberMe"
+                      checked={rememberMe}
+                      onCheckedChange={(checked) =>
+                        setRememberMe(checked as boolean)
+                      }
+                      className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                     />
                     <span className="text-gray-600 group-hover:text-gray-900 transition-colors font-bold text-sm">
                       Remember me
@@ -829,17 +838,6 @@ export default function Login() {
                   )}
                 </div>
               </form>
-
-              <p className="text-[10px] text-gray-400 text-center mt-4 leading-relaxed">
-                By signing in, you agree to our{" "}
-                <a href="#" className="hover:underline text-primary">
-                  Terms
-                </a>{" "}
-                and{" "}
-                <a href="#" className="hover:underline text-primary">
-                  Privacy Policy
-                </a>
-              </p>
             </CardContent>
           </Card>
         </div>

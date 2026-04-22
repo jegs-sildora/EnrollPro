@@ -349,6 +349,7 @@ async function seedScpApplications(
       );
 
       const psaBirthCertNumber = buildPsaBirthCertNumber(seedNumber);
+      const trackingNumber = buildTrackingNumber(scpType, year, seedNumber);
 
       const learner = await prisma.learner.upsert({
         where: { lrn },
@@ -361,6 +362,7 @@ async function seedScpApplications(
           extensionName,
           birthdate,
           sex,
+          studentPhoto: `/uploads/students/${trackingNumber.toLowerCase()}.jpg`,
           placeOfBirth,
           religion,
           motherTongue,
@@ -386,6 +388,7 @@ async function seedScpApplications(
           extensionName,
           birthdate,
           sex,
+          studentPhoto: `/uploads/students/${trackingNumber.toLowerCase()}.jpg`,
           placeOfBirth,
           religion,
           motherTongue,
@@ -403,7 +406,6 @@ async function seedScpApplications(
         },
       });
 
-      const trackingNumber = buildTrackingNumber(scpType, year, seedNumber);
       const contactNumber = buildContactNumber(seedNumber);
       const email = buildEmail(firstName, lastName, seedNumber);
       const submittedAt = new Date(Date.UTC(year, 0, 5 + seedNumber));
@@ -427,7 +429,6 @@ async function seedScpApplications(
           status: "SUBMITTED_BEERF",
           channel: "F2F",
           contactNumber,
-          studentPhoto: `/uploads/students/${trackingNumber.toLowerCase()}.jpg`,
           email,
           primaryContact,
           guardianRelationship,
@@ -449,7 +450,6 @@ async function seedScpApplications(
           status: "SUBMITTED_BEERF",
           channel: "F2F",
           contactNumber,
-          studentPhoto: `/uploads/students/${trackingNumber.toLowerCase()}.jpg`,
           email,
           primaryContact,
           guardianRelationship,

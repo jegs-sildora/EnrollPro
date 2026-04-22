@@ -13,6 +13,7 @@ interface AdmissionStepsSectionProps {
   scpIndex: number;
   scpYearStart: Date;
   scpYearEnd: Date;
+  isSteProgram: boolean;
   onUpdateScpField: (
     index: number,
     field: keyof ScpConfig,
@@ -31,10 +32,10 @@ export function AdmissionStepsSection({
   scpIndex,
   scpYearStart,
   scpYearEnd,
+  isSteProgram,
   onUpdateScpField,
   onUpdateStep,
 }: AdmissionStepsSectionProps) {
-  const isSteProgram = scp.scpType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING";
   const firstExamStepOrder =
     scp.steps.find((step) => isExamStepKind(step.kind))?.stepOrder ?? null;
 
@@ -59,7 +60,7 @@ export function AdmissionStepsSection({
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border bg-background text-foreground hover:bg-muted"
               }`}>
-              1 Phase (Exam Only)
+              1 Exam Phase (Qualifying Exam + Interview)
             </button>
             <button
               type="button"
@@ -71,7 +72,7 @@ export function AdmissionStepsSection({
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border bg-background text-foreground hover:bg-muted"
               }`}>
-              2 Phases (Exam + Interview)
+              2 Exam Phases (Preliminary Exam + Final Exam + Interview)
             </button>
           </div>
           <p className="text-xs text-muted-foreground">

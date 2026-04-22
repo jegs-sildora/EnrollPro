@@ -131,6 +131,7 @@ model SchoolYear {
   enrollOpenDate     DateTime?        @db.Date @map("enroll_open_date")
   enrollCloseDate    DateTime?        @db.Date @map("enroll_close_date")
   isManualOverrideOpen Boolean        @default(false) @map("is_manual_override_open")
+  sectioningConfig   Json?            @map("sectioning_config")
   clonedFromId       Int?             @map("cloned_from_id")
   createdAt          DateTime         @default(now()) @db.Timestamptz @map("created_at")
   
@@ -901,6 +902,7 @@ enum AssessmentKind {
   QUALIFYING_EXAMINATION
   PRELIMINARY_EXAMINATION
   FINAL_EXAMINATION
+  // Legacy / Unused in new standardized pipeline
   GENERAL_ADMISSION_TEST
   TALENT_AUDITION
   PHYSICAL_FITNESS_TEST

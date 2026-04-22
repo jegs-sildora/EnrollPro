@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
+import { Skeleton } from "@/shared/ui/skeleton";
 import { Switch } from "@/shared/ui/switch";
 import { DatePicker } from "@/shared/ui/date-picker";
 

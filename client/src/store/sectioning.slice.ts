@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { SectioningParams } from '@enrollpro/shared';
 
 interface Step {
   title: string;
@@ -22,6 +23,7 @@ interface ProposedAssignment {
 interface SectioningPreview {
   schoolYearLabel: string;
   gradeLevelName: string;
+  params: SectioningParams;
   steps: Step[];
   proposedAssignments: ProposedAssignment[];
 }
@@ -31,6 +33,7 @@ interface SectioningState {
   modifiedAssignments: ProposedAssignment[];
   gradeLevelId: number | null;
   schoolYearId: number | null;
+  sectioningParams: SectioningParams | null;
   isBatchPending: boolean;
   
   setBatchData: (
@@ -39,6 +42,7 @@ interface SectioningState {
     gradeLevelId: number,
     schoolYearId: number
   ) => void;
+  setSectioningParams: (params: SectioningParams) => void;
   updateModifiedAssignments: (assignments: ProposedAssignment[]) => void;
   updateLearnerSection: (applicationId: number, sectionId: number, sectionName: string) => void;
   clearBatch: () => void;
@@ -51,6 +55,7 @@ export const useSectioningStore = create<SectioningState>()(
       modifiedAssignments: [],
       gradeLevelId: null,
       schoolYearId: null,
+      sectioningParams: null,
       isBatchPending: false,
 
       setBatchData: (previewData, modifiedAssignments, gradeLevelId, schoolYearId) => set({
@@ -60,6 +65,8 @@ export const useSectioningStore = create<SectioningState>()(
         schoolYearId,
         isBatchPending: true
       }),
+
+      setSectioningParams: (sectioningParams) => set({ sectioningParams }),
 
       updateModifiedAssignments: (modifiedAssignments) => set({ modifiedAssignments }),
 
@@ -76,6 +83,7 @@ export const useSectioningStore = create<SectioningState>()(
         modifiedAssignments: [],
         gradeLevelId: null,
         schoolYearId: null,
+        sectioningParams: null,
         isBatchPending: false
       })
     }),

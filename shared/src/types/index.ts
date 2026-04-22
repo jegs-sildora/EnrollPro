@@ -45,6 +45,7 @@ import type {
   createSectionSchema,
   updateSectionSchema,
 } from "../schemas/section.schema.js";
+export type { SectioningParams } from "../schemas/section.schema.js";
 import type {
   createSchoolYearSchema,
   updateSchoolYearSchema,

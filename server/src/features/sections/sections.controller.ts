@@ -3,84 +3,97 @@ import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import type { ApplicantType } from "../../generated/prisma/index.js";
 import { SectioningEngine } from "../enrollment/services/sectioning-engine.service.js";
+import { DEFAULT_SECTIONING_PARAMS } from "@enrollpro/shared";
+import type { SectioningParams } from "@enrollpro/shared";
 
 const sectioningEngine = new SectioningEngine(prisma);
 
 export async function getBatchPrerequisites(req: Request, res: Response) {
-	const { gradeLevelId } = req.params;
-	const schoolYearId = req.query.schoolYearId
-		? parseInt(String(req.query.schoolYearId))
-		: null;
+  const { gradeLevelId } = req.params;
+  const schoolYearId = req.query.schoolYearId
+    ? parseInt(String(req.query.schoolYearId))
+    : null;
 
-	if (!schoolYearId) {
-		return res.status(400).json({ message: "School year ID is required" });
-	}
+  if (!schoolYearId) {
+    return res.status(400).json({ message: "School year ID is required" });
+  }
 
-	const prerequisites = await sectioningEngine.getPrerequisites(
-		parseInt(String(gradeLevelId)),
-		schoolYearId,
-	);
+  const prerequisites = await sectioningEngine.getPrerequisites(
+    parseInt(String(gradeLevelId)),
+    schoolYearId,
+  );
 
-	res.json(prerequisites);
+  res.json(prerequisites);
 }
 
 export async function runBatchSectioning(req: Request, res: Response) {
-	const { gradeLevelId, schoolYearId } = req.body;
+  const { gradeLevelId, schoolYearId, params } = req.body;
 
-	const preview = await sectioningEngine.runBatchSectioning(
-		gradeLevelId,
-		schoolYearId,
-	);
+  const resolvedParams: SectioningParams = params ?? DEFAULT_SECTIONING_PARAMS;
 
-	res.json(preview);
+  // Persist the config on the school year so it pre-fills next time
+  await prisma.schoolYear.update({
+    where: { id: schoolYearId },
+    data: { sectioningConfig: resolvedParams },
+  });
+
+  const preview = await sectioningEngine.runBatchSectioning(
+    gradeLevelId,
+    schoolYearId,
+    resolvedParams,
+  );
+
+  res.json(preview);
 }
 
 export async function commitBatchSectioning(req: Request, res: Response) {
-	const { gradeLevelId, schoolYearId, assignments } = req.body;
+  const { gradeLevelId, schoolYearId, assignments } = req.body;
 
-	if (!assignments || assignments.length === 0) {
-		return res.status(400).json({ message: "No assignments provided to commit" });
-	}
+  if (!assignments || assignments.length === 0) {
+    return res
+      .status(400)
+      .json({ message: "No assignments provided to commit" });
+  }
 
-	const results = await prisma.$transaction(async (tx) => {
-		const createdRecords = [];
+  const results = await prisma.$transaction(async (tx) => {
+    const createdRecords = [];
 
-		for (const assignment of assignments) {
-			// Update application status
-			await tx.enrollmentApplication.update({
-				where: { id: assignment.applicationId },
-				data: { status: "OFFICIALLY_ENROLLED" },
-			});
+    for (const assignment of assignments) {
+      // Update application status
+      await tx.enrollmentApplication.update({
+        where: { id: assignment.applicationId },
+        data: { status: "OFFICIALLY_ENROLLED" },
+      });
 
-			// Create enrollment record
-			const record = await tx.enrollmentRecord.create({
-				data: {
-					enrollmentApplicationId: assignment.applicationId,
-					sectionId: assignment.sectionId,
-					schoolYearId,
-					enrolledById: req.user!.userId,
-				},
-			});
+      // Create enrollment record
+      const record = await tx.enrollmentRecord.create({
+        data: {
+          enrollmentApplicationId: assignment.applicationId,
+          sectionId: assignment.sectionId,
+          schoolYearId,
+          enrolledById: req.user!.userId,
+        },
+      });
 
-			createdRecords.push(record);
-		}
+      createdRecords.push(record);
+    }
 
-		return createdRecords;
-	});
+    return createdRecords;
+  });
 
-	await auditLog({
-		userId: req.user!.userId,
-		actionType: "BATCH_SECTIONING_COMMITTED",
-		description: `Committed batch sectioning for ${assignments.length} learners in Grade Level ID ${gradeLevelId}`,
-		subjectType: "Section",
-		recordId: gradeLevelId,
-		req,
-	});
+  await auditLog({
+    userId: req.user!.userId,
+    actionType: "BATCH_SECTIONING_COMMITTED",
+    description: `Committed batch sectioning for ${assignments.length} learners in Grade Level ID ${gradeLevelId}`,
+    subjectType: "Section",
+    recordId: gradeLevelId,
+    req,
+  });
 
-	res.json({
-		message: "Batch sectioning committed successfully",
-		count: results.length,
-	});
+  res.json({
+    message: "Batch sectioning committed successfully",
+    count: results.length,
+  });
 }
 
 const VALID_PROGRAM_TYPES = new Set([

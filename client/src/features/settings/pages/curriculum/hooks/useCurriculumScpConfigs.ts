@@ -5,7 +5,10 @@ import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useSettingsStore } from "@/store/settings.slice";
 import { SCP_TYPES } from "../constants";
 import type { ScpConfig, ScpStepConfig } from "../types";
-import { getDefaultProgramSteps, getSteProgramSteps } from "../utils/scpSteps";
+import {
+  getDefaultProgramSteps,
+  mergeSteProgramSteps,
+} from "../utils/scpSteps";
 
 function cloneUnknown<T>(value: T): T {
   if (value == null) {
@@ -173,10 +176,16 @@ export function useCurriculumScpConfigs() {
         }
 
         if (field === "isTwoPhase") {
-          next[index] = {
-            ...next[index],
-            steps: getSteProgramSteps(value as boolean),
-          };
+          // Only reset steps if the value actually changed
+          if (current[index].isTwoPhase !== value) {
+            next[index] = {
+              ...next[index],
+              steps: mergeSteProgramSteps(
+                current[index].steps,
+                value as boolean,
+              ),
+            };
+          }
         }
 
         return next;

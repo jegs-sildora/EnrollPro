@@ -5,7 +5,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import type { ColumnDef, SortingState, OnChangeFn, Row } from "@tanstack/react-table";
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 

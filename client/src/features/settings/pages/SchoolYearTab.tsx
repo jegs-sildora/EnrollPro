@@ -22,6 +22,8 @@ import {
   CardTitle,
 } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
+import { Skeleton } from "@/shared/ui/skeleton";
+import { Checkbox } from "@/shared/ui/checkbox";
 import { DatePicker } from "@/shared/ui/date-picker";
 import {
   Dialog,
@@ -823,37 +825,37 @@ export default function SchoolYearTab() {
                 </p>
                 <div className="space-y-2 pt-1">
                   <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       id="c1"
-                      className="h-4 w-4"
                       checked={rolloverOptions.cloneStructure}
-                      onChange={(e) =>
+                      onCheckedChange={(checked) =>
                         setRolloverOptions({
                           ...rolloverOptions,
-                          cloneStructure: e.target.checked,
+                          cloneStructure: checked === true,
                         })
                       }
                     />
-                    <label htmlFor="c1" className="text-sm">
+                    <label
+                      htmlFor="c1"
+                      className="text-sm cursor-pointer select-none">
                       Clone grade levels, sections, and SCPs (Adviser
                       assignments will be wiped clean)
                     </label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       id="c3"
-                      className="h-4 w-4"
                       checked={rolloverOptions.carryOverLearners}
-                      onChange={(e) =>
+                      onCheckedChange={(checked) =>
                         setRolloverOptions({
                           ...rolloverOptions,
-                          carryOverLearners: e.target.checked,
+                          carryOverLearners: checked === true,
                         })
                       }
                     />
-                    <label htmlFor="c3" className="text-sm">
+                    <label
+                      htmlFor="c3"
+                      className="text-sm cursor-pointer select-none">
                       Carry over eligible enrolled learners as continuing status
                     </label>
                   </div>

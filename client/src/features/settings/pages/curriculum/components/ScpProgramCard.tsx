@@ -31,6 +31,8 @@ export function ScpProgramCard({
   onUpdateScpField,
   onUpdateStep,
 }: ScpProgramCardProps) {
+  const isSteProgram = scp.scpType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING";
+
   return (
     <div className="rounded-xl border border-border overflow-hidden bg-card">
       <div className="flex items-center justify-between px-4 py-3 bg-muted border-b">
@@ -62,6 +64,7 @@ export function ScpProgramCard({
             scpIndex={scpIndex}
             scpYearStart={scpYearStart}
             scpYearEnd={scpYearEnd}
+            isSteProgram={isSteProgram}
             onUpdateScpField={onUpdateScpField}
             onUpdateStep={onUpdateStep}
           />

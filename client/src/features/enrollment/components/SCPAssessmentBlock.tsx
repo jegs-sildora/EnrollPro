@@ -6,6 +6,7 @@ import { formatDisplayTime12Hour, formatScpType } from "@/shared/lib/utils";
 import { ASSESSMENT_KIND_LABELS } from "@enrollpro/shared";
 import type { AssessmentKind } from "@enrollpro/shared";
 import { Badge } from "@/shared/ui/badge";
+import { Checkbox } from "@/shared/ui/checkbox";
 import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
 import { Label } from "@/shared/ui/label";
@@ -274,14 +275,13 @@ function InterviewResultCard({
         <span>Faculty Interview Result</span>
       </div>
       <label className="flex items-center gap-2 cursor-pointer">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={passed}
           disabled={submitting}
-          onChange={(e) => {
-            onPassedChange(e.target.checked);
+          onCheckedChange={(checked) => {
+            onPassedChange(checked === true);
           }}
-          className="h-4 w-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+          className="h-4 w-4 border-gray-300 data-[state=checked]:bg-violet-600 data-[state=checked]:border-violet-600"
         />
         <span className="text-sm font-bold">
           Did the learner pass the interview?

@@ -1,4 +1,11 @@
-import { useState, useEffect, useCallback, useRef, useMemo, startTransition } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+  startTransition,
+} from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import {
   Search,
@@ -49,6 +56,7 @@ import type {
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { BatchSectioningWizard } from "@/features/enrollment/components/BatchSectioningWizard";
+import { BatchSectioningParamsModal } from "@/features/enrollment/components/BatchSectioningParamsModal";
 import { ApplicationDetailPanel } from "@/features/enrollment/components/ApplicationDetailPanel";
 import { ScheduleExamDialog } from "@/features/enrollment/components/ScheduleExamDialog";
 import { StatusBadge } from "@/features/enrollment/components/StatusBadge";
@@ -324,6 +332,7 @@ export default function Enrollment() {
 
   // Batch Selection state
   const [isBatchWizardOpen, setIsBatchWizardOpen] = useState(false);
+  const [isBatchParamsModalOpen, setIsBatchParamsModalOpen] = useState(false);
   const [batchGradeLevelId, setBatchGradeLevelId] = useState<number | null>(
     null,
   );
@@ -406,7 +415,7 @@ export default function Enrollment() {
       setBatchGradeLevelId(gradeLevelId);
       setBatchGradeLevelName(gradeLevelName);
       setIsGradeSelectDialogOpen(false);
-      setIsBatchWizardOpen(true);
+      setIsBatchParamsModalOpen(true);
     },
     [],
   );
@@ -1347,7 +1356,12 @@ export default function Enrollment() {
   const canConfirmOfficialEnrollment = Boolean(selectedAppSectionName);
 
   // Persistence: Check for pending batch on mount
-  const { isBatchPending, gradeLevelId: storedGlId, previewData: storedPreview } = useSectioningStore();
+  const {
+    isBatchPending,
+    gradeLevelId: storedGlId,
+    previewData: storedPreview,
+    setSectioningParams,
+  } = useSectioningStore();
 
   useEffect(() => {
     if (isBatchPending && storedGlId && storedPreview) {
@@ -2209,10 +2223,6 @@ export default function Enrollment() {
                 )}
               </div>
             </div>
-            <p className="text-[11px] italic text-muted-foreground font-medium">
-              Note: HNHS policy requires 2 STE sections and at least 5 REGULAR
-              (BEC Pilot) sections to be initialized for the selected grade.
-            </p>
           </div>
 
           <DialogFooter>
@@ -2225,6 +2235,20 @@ export default function Enrollment() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BatchSectioningParamsModal
+        isOpen={isBatchParamsModalOpen}
+        onClose={() => setIsBatchParamsModalOpen(false)}
+        onRun={(params) => {
+          setSectioningParams(params);
+          setIsBatchParamsModalOpen(false);
+          setIsBatchWizardOpen(true);
+        }}
+        gradeLevelId={batchGradeLevelId || 0}
+        gradeLevelName={batchGradeLevelName}
+        schoolYearId={ayId || 0}
+        isGrade7={batchGradeLevelName.includes("7")}
+      />
 
       <BatchSectioningWizard
         isOpen={isBatchWizardOpen}

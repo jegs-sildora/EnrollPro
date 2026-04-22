@@ -51,6 +51,56 @@ export function getSteProgramSteps(isTwoPhase: boolean): ScpStepConfig[] {
   );
 }
 
+/**
+ * Smarter merge for STE specifically to preserve field values when toggling between 1-phase and 2-phase.
+ */
+export function mergeSteProgramSteps(
+  currentSteps: ScpStepConfig[],
+  toTwoPhase: boolean,
+): ScpStepConfig[] {
+  const newDefinitions = getSteSteps(toTwoPhase);
+
+  return newDefinitions.map((newDef) => {
+    const freshStep = mapPipelineStepToEditableStep(newDef);
+
+    // Try to find a logical match in current steps to preserve data
+    let matchedStep: ScpStepConfig | undefined;
+
+    if (toTwoPhase) {
+      // 1 Phase -> 2 Phase
+      if (newDef.kind === "PRELIMINARY_EXAMINATION") {
+        matchedStep = currentSteps.find(
+          (s) => s.kind === "QUALIFYING_EXAMINATION",
+        );
+      } else if (newDef.kind === "INTERVIEW") {
+        matchedStep = currentSteps.find((s) => s.kind === "INTERVIEW");
+      }
+    } else {
+      // 2 Phase -> 1 Phase
+      if (newDef.kind === "QUALIFYING_EXAMINATION") {
+        matchedStep = currentSteps.find(
+          (s) => s.kind === "PRELIMINARY_EXAMINATION",
+        );
+      } else if (newDef.kind === "INTERVIEW") {
+        matchedStep = currentSteps.find((s) => s.kind === "INTERVIEW");
+      }
+    }
+
+    if (matchedStep) {
+      return {
+        ...freshStep,
+        scheduledDate: matchedStep.scheduledDate,
+        scheduledTime: matchedStep.scheduledTime,
+        venue: matchedStep.venue,
+        notes: matchedStep.notes,
+        cutoffScore: matchedStep.cutoffScore,
+      };
+    }
+
+    return freshStep;
+  });
+}
+
 export function isExamStepKind(kind: string): boolean {
   return EXAM_STEP_KINDS.includes(kind as (typeof EXAM_STEP_KINDS)[number]);
 }

@@ -89,7 +89,9 @@ const TableSkeleton = () => (
       <Skeleton className="h-4 flex-1" />
     </div>
     {[...Array(8)].map((_, i) => (
-      <div key={i} className="flex items-center space-x-4 p-4 border-b opacity-50">
+      <div
+        key={i}
+        className="flex items-center space-x-4 p-4 border-b opacity-50">
         <Skeleton className="h-8 w-[250px]" />
         <Skeleton className="h-8 w-[50px]" />
         <Skeleton className="h-8 w-[100px]" />
@@ -103,9 +105,9 @@ const TableSkeleton = () => (
 
 const RosterRowComponent = React.forwardRef<
   HTMLTableRowElement,
-  { 
-    row: ProposedAssignment; 
-    gradeSections: any[]; 
+  {
+    row: ProposedAssignment;
+    gradeSections: any[];
     updateAssignment: (appId: number, sectionId: string) => void;
     "data-index"?: number;
   }
@@ -127,11 +129,10 @@ const RosterRowComponent = React.forwardRef<
   };
 
   return (
-    <TableRow 
-      ref={ref} 
+    <TableRow
+      ref={ref}
       data-index={dataIndex}
-      className="hover:bg-muted/30 transition-colors border-b last:border-0 group"
-    >
+      className="hover:bg-muted/30 transition-colors border-b last:border-0 group">
       <TableCell className="py-3 px-4 text-left">
         <div className="flex flex-col">
           <span className="font-bold text-sm uppercase group-hover:text-primary transition-colors leading-tight">
@@ -239,6 +240,7 @@ export function BatchSectioningWizard({
     setBatchData,
     updateLearnerSection,
     clearBatch,
+    sectioningParams,
     gradeLevelId: storedGradeLevelId,
     schoolYearId: storedSchoolYearId,
   } = useSectioningStore();
@@ -246,6 +248,7 @@ export function BatchSectioningWizard({
   const [currentStep, setCurrentStep] = useState<number>(3);
   const [isLoading, setIsLoading] = useState(false);
   const [isCommitting, setIsCommitting] = useState(false);
+  const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false);
   const [gradeSections, setGradeSections] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [sectionFilter, setSectionFilter] = useState<string>("all");
@@ -332,6 +335,7 @@ export function BatchSectioningWizard({
       const res = await api.post("/sections/batch-sectioning/run", {
         gradeLevelId,
         schoolYearId,
+        params: sectioningParams ?? undefined,
       });
       // Store in global state
       setBatchData(
@@ -391,6 +395,14 @@ export function BatchSectioningWizard({
 
     // Use updateLearnerSection from store (Phase 1.3)
     updateLearnerSection(applicationId, section.id, section.name);
+  };
+
+  const handleClose = () => {
+    if (isBatchPending) {
+      setIsDiscardDialogOpen(true);
+    } else {
+      onClose();
+    }
   };
 
   const filteredAssignments = useMemo(() => {
@@ -480,14 +492,14 @@ export function BatchSectioningWizard({
 
   return (
     <>
-      <div className="absolute inset-0 z-[35] flex flex-col h-full bg-background animate-in fade-in duration-0 overflow-hidden text-foreground font-sans">
+      <div className="absolute inset-0 z-[35] flex flex-col bg-background animate-in fade-in duration-0 overflow-hidden text-foreground font-sans">
         {/* Top Header */}
         <div className="h-16 border-b flex items-center justify-between px-6 bg-card shrink-0 shadow-sm">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
               size="icon"
-              onClick={onClose}
+              onClick={handleClose}
               className="text-muted-foreground hover:text-foreground hover:bg-accent">
               <ArrowLeft className="h-5 w-5" />
             </Button>
@@ -515,7 +527,9 @@ export function BatchSectioningWizard({
                 { id: 2, label: "Draft" },
                 { id: 3, label: "Review" },
               ].map((step) => (
-                <div key={step.id} className="flex items-center gap-2">
+                <div
+                  key={step.id}
+                  className="flex items-center gap-2">
                   <div
                     className={cn(
                       "flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold border transition-all",
@@ -549,7 +563,7 @@ export function BatchSectioningWizard({
             <Button
               variant="ghost"
               size="icon"
-              onClick={onClose}
+              onClick={handleClose}
               className="text-muted-foreground hover:bg-destructive hover:text-destructive-foreground">
               <X className="h-6 w-6" />
             </Button>
@@ -585,7 +599,9 @@ export function BatchSectioningWizard({
                       {error}
                     </p>
                   </div>
-                  <Button onClick={onClose} variant="destructive">
+                  <Button
+                    onClick={handleClose}
+                    variant="destructive">
                     Close Wizard
                   </Button>
                 </CardContent>
@@ -644,7 +660,7 @@ export function BatchSectioningWizard({
                                   STE Cut-off Score
                                 </span>
                                 <span className="text-primary font-bold">
-                                  {step.stats.steCutoffScore}
+                                  {Number(step.stats.steCutoffScore).toFixed(3)}
                                 </span>
                               </div>
                             )}
@@ -795,7 +811,10 @@ export function BatchSectioningWizard({
                                   height: `${rowVirtualizer.getVirtualItems()[0]?.start || 0}px`,
                                 }}
                                 className="hover:bg-transparent border-none">
-                                <TableCell colSpan={6} className="p-0" />
+                                <TableCell
+                                  colSpan={6}
+                                  className="p-0"
+                                />
                               </TableRow>
                             )}
 
@@ -855,7 +874,10 @@ export function BatchSectioningWizard({
                                   height: `${rowVirtualizer.getTotalSize() - (rowVirtualizer.getVirtualItems()[rowVirtualizer.getVirtualItems().length - 1]?.end || 0)}px`,
                                 }}
                                 className="hover:bg-transparent border-none">
-                                <TableCell colSpan={6} className="p-0" />
+                                <TableCell
+                                  colSpan={6}
+                                  className="p-0"
+                                />
                               </TableRow>
                             )}
                           </TableBody>
@@ -886,10 +908,7 @@ export function BatchSectioningWizard({
                     <div className="flex gap-4">
                       <Button
                         variant="outline"
-                        onClick={() => {
-                          clearBatch();
-                          onClose();
-                        }}
+                        onClick={handleClose}
                         className="h-12 px-8 font-black uppercase text-xs tracking-widest border-2">
                         Discard Preview
                       </Button>
@@ -945,25 +964,71 @@ export function BatchSectioningWizard({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex flex-col sm:flex-row gap-3 mt-6">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               onClick={() => {
                 clearBatch();
                 onClose(); // Force overlay to close
                 blocker.proceed?.();
               }}
-              className="flex-1 font-bold text-xs uppercase tracking-widest text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-            >
+              className="flex-1 font-bold text-xs uppercase tracking-widest text-muted-foreground hover:text-destructive hover:bg-destructive/10">
               Discard Batch & Leave
             </Button>
-            <Button 
-              variant="default" 
+            <Button
+              variant="default"
               onClick={() => {
                 onClose(); // Force overlay to close
                 blocker.proceed?.();
               }}
-              className="flex-1 font-black text-xs uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-md"
-            >
+              className="flex-1 font-black text-xs uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-md">
+              Keep Data & Leave
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manual Close/Discard Confirmation Dialog */}
+      <Dialog
+        open={isDiscardDialogOpen}
+        onOpenChange={setIsDiscardDialogOpen}>
+        <DialogContent className="sm:max-w-xl border-2">
+          <DialogHeader className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-orange-100 text-orange-600">
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+              <DialogTitle className="text-xl font-bold">
+                Unsaved Batch Roster
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-sm font-medium leading-relaxed">
+              You are about to leave the Sectioning Wizard. The generated
+              rosters for S.Y. 2026-2027 have not been finalized.
+              <br />
+              <br />
+              Don't worry, your progress is paused. You can safely return to
+              this screen to resume auditing, or discard the batch run entirely
+              to start over.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col sm:flex-row gap-3 mt-6">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                clearBatch();
+                setIsDiscardDialogOpen(false);
+                onClose();
+              }}
+              className="flex-1 font-bold text-xs uppercase tracking-widest text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+              Discard Batch & Leave
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => {
+                setIsDiscardDialogOpen(false);
+                onClose();
+              }}
+              className="flex-1 font-black text-xs uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-md">
               Keep Data & Leave
             </Button>
           </DialogFooter>

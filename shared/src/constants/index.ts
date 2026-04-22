@@ -429,21 +429,13 @@ export const SCP_DEFAULT_PIPELINES: Record<ScpType, ScpProgramStepDef[]> = {
   SPECIAL_PROGRAM_IN_THE_ARTS: [
     {
       stepOrder: 1,
-      kind: "GENERAL_ADMISSION_TEST",
-      label: "General Admission Test",
+      kind: "QUALIFYING_EXAMINATION",
+      label: "Qualifying Examination",
       description: "Written exam covering general knowledge and aptitude",
       isRequired: true,
     },
     {
       stepOrder: 2,
-      kind: "TALENT_AUDITION",
-      label: "Talent Audition / Performance",
-      description:
-        "Live performance, on-the-spot drawing/portfolio, creative writing task, or audition per chosen art field",
-      isRequired: true,
-    },
-    {
-      stepOrder: 3,
       kind: "INTERVIEW",
       label: "Interview",
       description:
@@ -454,22 +446,13 @@ export const SCP_DEFAULT_PIPELINES: Record<ScpType, ScpProgramStepDef[]> = {
   SPECIAL_PROGRAM_IN_SPORTS: [
     {
       stepOrder: 1,
-      kind: "PHYSICAL_FITNESS_TEST",
-      label: "Physical Fitness Test (PFT)",
-      description:
-        "Battery of tests measuring agility, strength, and endurance",
+      kind: "QUALIFYING_EXAMINATION",
+      label: "Qualifying Examination",
+      description: "Written exam covering general knowledge and aptitude",
       isRequired: true,
     },
     {
       stepOrder: 2,
-      kind: "SPORTS_SKILLS_TRYOUT",
-      label: "Sports Skills Demonstration (Tryout)",
-      description:
-        "Demonstrate proficiency in specific sport (e.g. Basketball, Swimming, Athletics)",
-      isRequired: true,
-    },
-    {
-      stepOrder: 3,
       kind: "INTERVIEW",
       label: "Interview",
       description: "Assess discipline, sportsmanship, and parental support",
@@ -480,21 +463,13 @@ export const SCP_DEFAULT_PIPELINES: Record<ScpType, ScpProgramStepDef[]> = {
     {
       stepOrder: 1,
       kind: "QUALIFYING_EXAMINATION",
-      label: "Qualifying Test",
+      label: "Qualifying Examination",
       description:
         "Written exam: English and Filipino proficiency, grammar, basic news writing",
       isRequired: true,
     },
     {
       stepOrder: 2,
-      kind: "SKILLS_ASSESSMENT",
-      label: "Skills Assessment (Writing Trials)",
-      description:
-        "On-the-spot writing: news lead, editorial, or feature story",
-      isRequired: true,
-    },
-    {
-      stepOrder: 3,
       kind: "INTERVIEW",
       label: "Interview",
       description:
@@ -505,8 +480,8 @@ export const SCP_DEFAULT_PIPELINES: Record<ScpType, ScpProgramStepDef[]> = {
   SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: [
     {
       stepOrder: 1,
-      kind: "STANDARDIZED_ADMISSION_TOOL",
-      label: "Standardized Admission Tool",
+      kind: "QUALIFYING_EXAMINATION",
+      label: "Qualifying Examination",
       description:
         "Written test assessing linguistic aptitude and readiness for foreign language acquisition",
       isRequired: true,
@@ -514,7 +489,7 @@ export const SCP_DEFAULT_PIPELINES: Record<ScpType, ScpProgramStepDef[]> = {
     {
       stepOrder: 2,
       kind: "INTERVIEW",
-      label: "Interview (with Parent/Guardian)",
+      label: "Interview",
       description:
         "Validate documents and gauge commitment to the extra hours required",
       isRequired: true,
@@ -523,16 +498,16 @@ export const SCP_DEFAULT_PIPELINES: Record<ScpType, ScpProgramStepDef[]> = {
   SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION: [
     {
       stepOrder: 1,
-      kind: "APTITUDE_TEST",
-      label: "Aptitude Test",
+      kind: "QUALIFYING_EXAMINATION",
+      label: "Qualifying Examination",
       description:
         "Written exam: inclination towards IT, Agriculture, Home Economics, or Industrial Arts",
       isRequired: true,
     },
     {
       stepOrder: 2,
-      kind: "INTEREST_INVENTORY",
-      label: "Interest Inventory / Interview",
+      kind: "INTERVIEW",
+      label: "Interview",
       description:
         "Align student interests with specific shop offerings (specializations)",
       isRequired: true,
