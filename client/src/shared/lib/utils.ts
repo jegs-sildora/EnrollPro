@@ -176,6 +176,27 @@ export function isMandatoryDocumentsMet(
 }
 
 /**
+ * Maps learner type enum tokens to human-readable DepEd category labels.
+ */
+export function getLearnerTypeLabel(type: string | null | undefined): string {
+  if (!type) return "Regular";
+  switch (type) {
+    case "NEW_ENROLLEE":
+      return "New Enrollee";
+    case "TRANSFEREE":
+      return "Transferee";
+    case "RETURNING":
+      return "Balik-Aral";
+    case "CONTINUING":
+      return "Continuing";
+    case "OSCYA":
+      return "OSCYA";
+    default:
+      return type.replaceAll("_", " ");
+  }
+}
+
+/**
  * Standardized utility to get a full image URL from a stored path or base64 string.
  */
 export function getImageUrl(photo: string | null | undefined): string | null {

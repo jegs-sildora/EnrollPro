@@ -4,7 +4,11 @@ import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useSettingsStore } from "@/store/settings.slice";
 import { SCP_TYPES } from "../constants";
-import type { ScpConfig, ScpStepConfig } from "../types";
+import type {
+  ScpConfig,
+  ScpGradeRequirementRule,
+  ScpStepConfig,
+} from "../types";
 import {
   getDefaultProgramSteps,
   mergeSteProgramSteps,
@@ -220,6 +224,17 @@ export function useCurriculumScpConfigs() {
     [],
   );
 
+  const handleUpdateGradeRequirements = useCallback(
+    (index: number, rules: ScpGradeRequirementRule[]) => {
+      setScpConfigs((current) => {
+        const next = [...current];
+        next[index] = { ...next[index], gradeRequirements: rules };
+        return next;
+      });
+    },
+    [],
+  );
+
   const handleSaveScp = useCallback(async () => {
     if (!ayId) {
       return;
@@ -287,6 +302,7 @@ export function useCurriculumScpConfigs() {
     savingScp,
     handleUpdateScpField,
     handleUpdateStep,
+    handleUpdateGradeRequirements,
     handleDiscardScpChanges,
     handleSaveScp,
   };

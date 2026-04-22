@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { User } from "lucide-react";
 import { cn, getImageUrl } from "@/shared/lib/utils";
 
@@ -24,7 +24,13 @@ export function UserPhoto({
   children,
   ...props
 }: UserPhotoProps) {
-  const [error, setError] = useState(false);
+  const [error, setError] = React.useState(false);
+
+  // Reset error state when photo changes
+  React.useEffect(() => {
+    setError(false);
+  }, [photo]);
+
   const imageUrl = getImageUrl(photo);
 
   const showFallback = !imageUrl || error;

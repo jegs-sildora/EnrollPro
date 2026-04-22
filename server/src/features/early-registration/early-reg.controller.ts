@@ -231,17 +231,23 @@ async function ensureLegacyApplicationStatusesNormalized(): Promise<void> {
   }
 
   // Convert legacy status values once per process so Prisma can read rows safely.
-  normalizeLegacyStatusPromise = prisma
-    .$transaction(
-      LEGACY_APPLICATION_STATUS_UPDATES.map((statement) =>
-        prisma.$executeRawUnsafe(statement),
-      ),
-    )
-    .then(() => undefined)
-    .catch((error) => {
-      normalizeLegacyStatusPromise = null;
-      throw error;
-    });
+  normalizeLegacyStatusPromise = (async () => {
+    try {
+      await prisma.$transaction(
+        LEGACY_APPLICATION_STATUS_UPDATES.map((statement) =>
+          prisma.$executeRawUnsafe(statement),
+        ),
+      );
+    } catch (error) {
+      if (!isEarlyRegistrationListCompatibilityError(error)) {
+        console.error("[Normalization Error] Unexpected error during status normalization:", error);
+        // Only rethrow if it's not a compatibility issue (e.g. database connection lost)
+        throw error;
+      }
+      // Log as warning and continue; fallback mode in index() will handle this
+      console.warn("[Normalization Warning] Could not normalize legacy statuses due to schema incompatibility. This is expected if the database is not fully migrated.");
+    }
+  })();
 
   await normalizeLegacyStatusPromise;
 }
@@ -295,6 +301,8 @@ type EarlyRegistrationListRawRow = {
   suffix: string | null;
   isPendingLrnCreation: boolean;
   gradeLevelName: string;
+  reportedGrades: Prisma.JsonValue | null;
+  studentPhoto: string | null;
 };
 
 function toIsoStringSafe(value: Date | string): string {
@@ -385,12 +393,14 @@ async function fetchEarlyRegistrationListRawFallback(params: {
       e.applicant_type::text AS "applicantType",
       e.grade_level_id AS "gradeLevelId",
       e.created_at AS "createdAt",
+      e.reported_grades AS "reportedGrades",
       l.lrn,
       l.first_name AS "firstName",
       l.last_name AS "lastName",
       l.middle_name AS "middleName",
       l.extension_name AS suffix,
       l.is_pending_lrn_creation AS "isPendingLrnCreation",
+      l.student_photo AS "studentPhoto",
       g.name AS "gradeLevelName"
     FROM early_registration_applications e
     INNER JOIN learners l ON l.id = e.learner_id
@@ -417,6 +427,12 @@ async function fetchEarlyRegistrationListRawFallback(params: {
 
   const data = rows.map((row) => {
     const normalizedLrn = String(row.lrn ?? "").trim();
+    const ga =
+      row.reportedGrades &&
+      typeof row.reportedGrades === "object" &&
+      !Array.isArray(row.reportedGrades)
+        ? ((row.reportedGrades as any).generalAverage ?? null)
+        : null;
 
     return {
       id: row.id,
@@ -439,9 +455,10 @@ async function fetchEarlyRegistrationListRawFallback(params: {
         extensionName: row.suffix,
         lrn: normalizedLrn,
         isPendingLrnCreation: row.isPendingLrnCreation,
+        studentPhoto: row.studentPhoto,
       },
       assessments: [],
-      generalAverage: null,
+      generalAverage: ga,
     };
   });
 
@@ -1146,6 +1163,27 @@ async function createRegistration(
 
     const isPendingLrnCreation = hasNoLrnDeclared && !lrn;
 
+    // Extract reported grades before SCP validation
+    const rawReportedGrades = body.reportedGrades ?? null;
+    const reportedGrades: {
+      generalAverage?: number | null;
+      english?: number | null;
+      science?: number | null;
+      mathematics?: number | null;
+      filipino?: number | null;
+      lastSchoolName?: string | null;
+      lastSchoolId?: string | null;
+      lastGradeCompleted?: string | null;
+      schoolYearLastAttended?: string | null;
+      lastSchoolAddress?: string | null;
+      lastSchoolType?: string | null;
+    } | null =
+      rawReportedGrades &&
+      typeof rawReportedGrades === "object" &&
+      !Array.isArray(rawReportedGrades)
+        ? (rawReportedGrades as typeof reportedGrades)
+        : null;
+
     if (applicantType !== "REGULAR") {
       const offeredScpConfig = await prisma.scpProgramConfig.findFirst({
         where: {
@@ -1153,13 +1191,39 @@ async function createRegistration(
           scpType: applicantType,
           isOffered: true,
         },
-        select: { id: true },
+        select: { id: true, gradeRequirements: true },
       });
 
       if (!offeredScpConfig) {
         throw new AppError(
           422,
           "The selected SCP track is not available for the active School Year.",
+        );
+      }
+
+      // Validate general average against configured threshold (default 85)
+      const gradeRules = Array.isArray(offeredScpConfig.gradeRequirements)
+        ? (offeredScpConfig.gradeRequirements as Array<Record<string, unknown>>)
+        : [];
+      const gaRule = gradeRules.find(
+        (r) => r.ruleType === "GENERAL_AVERAGE_MIN",
+      );
+      const gaThreshold =
+        typeof gaRule?.minAverage === "number" &&
+        Number.isFinite(gaRule.minAverage)
+          ? gaRule.minAverage
+          : 85;
+
+      const submittedGa =
+        typeof reportedGrades?.generalAverage === "number" &&
+        Number.isFinite(reportedGrades.generalAverage)
+          ? reportedGrades.generalAverage
+          : null;
+
+      if (submittedGa !== null && submittedGa < gaThreshold) {
+        throw new AppError(
+          422,
+          `General average of ${submittedGa}% does not meet the minimum requirement of ${gaThreshold}% for the selected SCP track.`,
         );
       }
     }
@@ -1279,7 +1343,6 @@ async function createRegistration(
     const learnerPayload = {
       lrn,
       isPendingLrnCreation,
-      status: "SUBMITTED_BEERF" as ApplicationStatus,
       psaBirthCertNumber: body.psaBirthCertNumber?.trim().toUpperCase() || null,
       firstName: body.firstName,
       lastName: body.lastName,
@@ -1290,6 +1353,7 @@ async function createRegistration(
       sex: body.sex === "MALE" ? ("MALE" as const) : ("FEMALE" as const),
       placeOfBirth: body.placeOfBirth || null,
       religion: body.religion || null,
+      motherTongue: body.motherTongue || null,
       isIpCommunity: body.isIpCommunity ?? false,
       ipGroupName: body.isIpCommunity ? body.ipGroupName : null,
       isLearnerWithDisability: body.isLearnerWithDisability ?? false,
@@ -1298,6 +1362,8 @@ async function createRegistration(
         : [],
       specialNeedsCategory: body.specialNeedsCategory || null,
       hasPwdId: body.hasPwdId ?? false,
+      is4PsBeneficiary: body.is4PsBeneficiary ?? false,
+      householdId4Ps: body.is4PsBeneficiary ? body.householdId4Ps : null,
       isBalikAral: body.isBalikAral ?? false,
       lastYearEnrolled: body.lastYearEnrolled || null,
       lastGradeLevel: body.lastGradeLevel || null,
@@ -1350,6 +1416,7 @@ async function createRegistration(
           hasNoMother: body.hasNoMother ?? false,
           hasNoFather: body.hasNoFather ?? false,
           isPrivacyConsentGiven: body.isPrivacyConsentGiven ?? false,
+          reportedGrades: reportedGrades ?? undefined,
           encodedById: options.encodedById ?? null,
           trackingNumber: tempTracking,
           familyMembers: {
@@ -1540,6 +1607,7 @@ export async function index(req: Request, res: Response, next: NextFunction) {
     }
 
     if (!schoolYearId) {
+      console.warn("[index] No school year found");
       throw new AppError(400, "No school year specified or active.");
     }
     const resolvedSchoolYearId = schoolYearId;
@@ -1774,10 +1842,21 @@ export async function index(req: Request, res: Response, next: NextFunction) {
 
     const mappedData = registrations.map((reg) => {
       const latestEnrollment = (reg as any).enrollmentApplications?.[0];
+      let ga = latestEnrollment?.previousSchool?.generalAverage ?? null;
+
+      if (ga === null && reg.reportedGrades) {
+        const grades = reg.reportedGrades as any;
+        if (
+          typeof grades.generalAverage === "number" &&
+          Number.isFinite(grades.generalAverage)
+        ) {
+          ga = grades.generalAverage;
+        }
+      }
+
       return {
         ...reg,
-        generalAverage:
-          latestEnrollment?.previousSchool?.generalAverage ?? null,
+        generalAverage: ga,
       };
     });
 
@@ -2760,6 +2839,18 @@ export async function batchVerifyDocumentsPreview(
         });
       }
 
+      let ga = registration.enrollmentApplications[0]?.previousSchool?.generalAverage ?? null;
+
+      if (ga === null && registration.reportedGrades) {
+        const grades = registration.reportedGrades as any;
+        if (
+          typeof grades.generalAverage === "number" &&
+          Number.isFinite(grades.generalAverage)
+        ) {
+          ga = grades.generalAverage;
+        }
+      }
+
       applicants.push({
         id: registration.id,
         name: formatBatchName(
@@ -2776,9 +2867,7 @@ export async function batchVerifyDocumentsPreview(
         requiredChecklistKeys: effectiveColumns
           .filter((column) => column.isMandatory)
           .map((column) => column.key),
-        generalAverage:
-          registration.enrollmentApplications[0]?.previousSchool
-            ?.generalAverage ?? null,
+        generalAverage: ga,
       });
     }
 
@@ -4796,8 +4885,18 @@ export async function batchAssignRegularSectionsPreview(
 
     for (const reg of registrations) {
       const name = formatBatchName(reg.learner.firstName, reg.learner.lastName);
-      const generalAverage =
+      let generalAverage =
         reg.enrollmentApplications[0]?.previousSchool?.generalAverage ?? null;
+
+      if (generalAverage === null && reg.reportedGrades) {
+        const grades = reg.reportedGrades as any;
+        if (
+          typeof grades.generalAverage === "number" &&
+          Number.isFinite(grades.generalAverage)
+        ) {
+          generalAverage = grades.generalAverage;
+        }
+      }
 
       if (reg.applicantType !== "REGULAR") {
         blocked.push({

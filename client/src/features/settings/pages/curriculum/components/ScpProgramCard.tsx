@@ -1,8 +1,13 @@
 import { Badge } from "@/shared/ui/badge";
 import { Switch } from "@/shared/ui/switch";
 import { SCP_TYPES } from "../constants";
-import type { ScpConfig, ScpStepConfig } from "../types";
+import type {
+  ScpConfig,
+  ScpGradeRequirementRule,
+  ScpStepConfig,
+} from "../types";
 import { AdmissionStepsSection } from "./AdmissionStepsSection";
+import { GradeRequirementsSection } from "./GradeRequirementsSection";
 import { ProgramSpecificFieldsSection } from "./ProgramSpecificFieldsSection";
 
 interface ScpProgramCardProps {
@@ -21,6 +26,10 @@ interface ScpProgramCardProps {
     field: keyof ScpStepConfig,
     value: string | boolean | number | null,
   ) => void;
+  onUpdateGradeRequirements: (
+    index: number,
+    rules: ScpGradeRequirementRule[],
+  ) => void;
 }
 
 export function ScpProgramCard({
@@ -30,6 +39,7 @@ export function ScpProgramCard({
   scpYearEnd,
   onUpdateScpField,
   onUpdateStep,
+  onUpdateGradeRequirements,
 }: ScpProgramCardProps) {
   const isSteProgram = scp.scpType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING";
 
@@ -67,6 +77,12 @@ export function ScpProgramCard({
             isSteProgram={isSteProgram}
             onUpdateScpField={onUpdateScpField}
             onUpdateStep={onUpdateStep}
+          />
+
+          <GradeRequirementsSection
+            scp={scp}
+            scpIndex={scpIndex}
+            onUpdateGradeRequirements={onUpdateGradeRequirements}
           />
 
           <ProgramSpecificFieldsSection

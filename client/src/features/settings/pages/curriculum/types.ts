@@ -1,3 +1,20 @@
+export type ScpGradeRuleType =
+  | "GENERAL_AVERAGE_MIN"
+  | "SUBJECT_AVERAGE_MIN"
+  | "SUBJECT_MINIMUMS";
+
+export interface ScpSubjectThreshold {
+  subject: string;
+  min: number;
+}
+
+export interface ScpGradeRequirementRule {
+  ruleType: ScpGradeRuleType;
+  minAverage?: number | null;
+  subjects?: string[];
+  subjectThresholds?: ScpSubjectThreshold[];
+}
+
 export interface ScpStepConfig {
   id?: number;
   stepOrder: number;
@@ -20,7 +37,7 @@ export interface ScpConfig {
   maxSlots: number | null;
   cutoffScore: number | null;
   notes?: string | null;
-  gradeRequirements?: unknown;
+  gradeRequirements?: ScpGradeRequirementRule[] | null;
   rankingFormula?: unknown;
   artFields: string[];
   languages: string[];

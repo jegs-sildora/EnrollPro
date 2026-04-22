@@ -103,6 +103,7 @@ export default function PipelineBatchApplicantsTable({
               <Checkbox
                 checked={selectedIds.has(app.id)}
                 onCheckedChange={() => onToggleSelect(app.id)}
+                onClick={(e) => e.stopPropagation()}
                 disabled={isBatchProcessing}
               />
             </div>
@@ -118,13 +119,19 @@ export default function PipelineBatchApplicantsTable({
         cell: ({ row }) => {
           const app = row.original;
           return (
-            <div className="flex flex-col text-left">
-              <span className="font-bold text-sm uppercase">
-                {app.lastName}, {app.firstName}{" "}
-                {app.middleName ? `${app.middleName.charAt(0)}.` : ""}
-                {app.suffix ? ` ${app.suffix}` : ""}
-              </span>
-              <span className="text-sm font-bold">{app.trackingNumber}</span>
+            <div className="flex items-center gap-3 text-left">
+              <UserPhoto
+                photo={app.studentPhoto}
+                className="w-8 h-8 rounded-full border border-primary/10 shadow-sm"
+              />
+              <div className="flex flex-col">
+                <span className="font-bold text-sm uppercase">
+                  {app.lastName}, {app.firstName}{" "}
+                  {app.middleName ? `${app.middleName.charAt(0)}.` : ""}
+                  {app.suffix ? ` ${app.suffix}` : ""}
+                </span>
+                <span className="text-sm font-bold">{app.trackingNumber}</span>
+              </div>
             </div>
           );
         },

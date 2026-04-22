@@ -59,6 +59,11 @@ interface WalkInFormState {
   contactNumber: string;
   email: string;
   originSchoolName: string;
+  lastSchoolId: string;
+  schoolYearLastAttended: string;
+  lastGradeCompleted: string;
+  lastSchoolType: string;
+  lastSchoolAddress: string;
   peptCertificateNumber: string;
   peptPassingDate: string;
   finalGeneralAverage: string;
@@ -98,6 +103,11 @@ const INITIAL_FORM_STATE: WalkInFormState = {
   contactNumber: "",
   email: "",
   originSchoolName: "",
+  lastSchoolId: "",
+  schoolYearLastAttended: "",
+  lastGradeCompleted: "",
+  lastSchoolType: "PUBLIC",
+  lastSchoolAddress: "",
   peptCertificateNumber: "",
   peptPassingDate: "",
   finalGeneralAverage: "",
@@ -346,9 +356,16 @@ export default function WalkInEncoder() {
       applicantType: "REGULAR",
       gradeLevelId: Number(formData.gradeLevelId),
       academicStatus: formData.academicStatus,
+      lastSchoolName: toOptionalTrimmed(formData.originSchoolName),
+      lastSchoolId: toOptionalTrimmed(formData.lastSchoolId),
+      schoolYearLastAttended: toOptionalTrimmed(formData.schoolYearLastAttended),
+      lastGradeCompleted: toOptionalTrimmed(formData.lastGradeCompleted),
+      lastSchoolType: formData.lastSchoolType,
+      lastSchoolAddress: toOptionalTrimmed(formData.lastSchoolAddress),
       originSchoolName: toOptionalTrimmed(formData.originSchoolName),
       peptCertificateNumber: toOptionalTrimmed(formData.peptCertificateNumber),
       peptPassingDate: formData.peptPassingDate || undefined,
+      generalAverage: finalGeneralAverage,
       contactNumber: toOptionalTrimmed(formData.contactNumber),
       email: toOptionalTrimmed(formData.email),
       currentAddress: {
@@ -670,22 +687,125 @@ export default function WalkInEncoder() {
                 />
               </div>
             </div>
+          </section>
 
-            {formData.learnerType === "TRANSFEREE" && (
+          <section className="space-y-4 rounded-lg border border-border p-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-primary">
+              2. Previous School Information
+            </p>
+
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label className="text-[11px] font-bold uppercase tracking-wider">
-                  Origin School Name *
+                  Name of Last School Attended *
                 </Label>
                 <Input
                   value={formData.originSchoolName}
-                  placeholder="ENTER ORIGIN SCHOOL"
+                  placeholder="SCHOOL NAME"
                   className="h-10 font-bold uppercase"
                   onChange={(event) => {
                     setUpperField("originSchoolName", event.target.value);
                   }}
                 />
               </div>
-            )}
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  DepEd School ID
+                </Label>
+                <Input
+                  value={formData.lastSchoolId}
+                  placeholder="6-DIGIT ID"
+                  maxLength={6}
+                  className="h-10 font-bold uppercase"
+                  onChange={(event) => {
+                    setUpperField("lastSchoolId", event.target.value);
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  School Year Last Attended *
+                </Label>
+                <Select
+                  value={formData.schoolYearLastAttended}
+                  onValueChange={(value) => {
+                    setField("schoolYearLastAttended", value);
+                  }}>
+                  <SelectTrigger className="h-10 font-bold">
+                    <SelectValue placeholder="Select year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 5 }, (_, i) => {
+                      const year = new Date().getFullYear() - i;
+                      const label = `${year - 1}-${year}`;
+                      return (
+                        <SelectItem key={label} value={label}>
+                          {label}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Last Grade Level Completed *
+                </Label>
+                <Select
+                  value={formData.lastGradeCompleted}
+                  onValueChange={(value) => {
+                    setField("lastGradeCompleted", value);
+                  }}>
+                  <SelectTrigger className="h-10 font-bold">
+                    <SelectValue placeholder="Select grade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["6", "7", "8", "9", "10"].map((g) => (
+                      <SelectItem key={g} value={g}>
+                        Grade {g}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  Type of Last School *
+                </Label>
+                <Select
+                  value={formData.lastSchoolType}
+                  onValueChange={(value) => {
+                    setField("lastSchoolType", value);
+                  }}>
+                  <SelectTrigger className="h-10 font-bold">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PUBLIC">Public</SelectItem>
+                    <SelectItem value="PRIVATE">Private</SelectItem>
+                    <SelectItem value="INTERNATIONAL">International</SelectItem>
+                    <SelectItem value="ALS">ALS</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[11px] font-bold uppercase tracking-wider">
+                School Address / Division (Optional)
+              </Label>
+              <Input
+                value={formData.lastSchoolAddress}
+                placeholder="SCHOOL ADDRESS / DIVISION"
+                className="h-10 font-bold uppercase"
+                onChange={(event) => {
+                  setUpperField("lastSchoolAddress", event.target.value);
+                }}
+              />
+            </div>
 
             {formData.learnerType === "ALS" && (
               <div className="grid gap-4 md:grid-cols-2">
@@ -724,7 +844,7 @@ export default function WalkInEncoder() {
 
           <section className="space-y-3 rounded-lg border border-border p-4">
             <p className="text-xs font-bold uppercase tracking-wider text-primary">
-              2. Address
+              3. Address
             </p>
             <div className="grid gap-4 md:grid-cols-3">
               <div className="space-y-2 md:col-span-2">
@@ -806,7 +926,7 @@ export default function WalkInEncoder() {
 
           <section className="space-y-3 rounded-lg border border-border p-4">
             <p className="text-xs font-bold uppercase tracking-wider text-primary">
-              3. Parents / Guardian Information
+              4. Parents / Guardian Information
             </p>
 
             <div className="grid gap-4 md:grid-cols-4">
@@ -1022,7 +1142,7 @@ export default function WalkInEncoder() {
 
           <section className="space-y-3 rounded-lg border border-border p-4">
             <p className="text-xs font-bold uppercase tracking-wider text-primary">
-              4. Physical Requirements Submitted
+              5. Physical Requirements Submitted
             </p>
 
             <div className="grid gap-4 md:grid-cols-3">

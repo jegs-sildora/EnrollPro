@@ -82,36 +82,35 @@ const SheetContent = React.forwardRef<
 	return (
 		<SheetPortal forceMount>
 			<AnimatePresence>
+				{open && <SheetOverlay key="sheet-overlay" />}
 				{open && (
-					<React.Fragment key='sheet-presence'>
-						<SheetOverlay />
-						<DialogPrimitive.Content
-							asChild
-							forceMount
-							ref={ref}
-							{...props}
+					<DialogPrimitive.Content
+						key="sheet-content"
+						asChild
+						forceMount
+						ref={ref}
+						{...props}
+					>
+						<motion.div
+							initial={{
+								x: isRight ? '100%' : isLeft ? '-100%' : 0,
+								y: isTop ? '-100%' : isBottom ? '100%' : 0,
+							}}
+							animate={{ x: 0, y: 0 }}
+							exit={{
+								x: isRight ? '100%' : isLeft ? '-100%' : 0,
+								y: isTop ? '-100%' : isBottom ? '100%' : 0,
+							}}
+							transition={{ type: 'spring', damping: 25, stiffness: 180 }}
+							className={cn(sheetVariants({ side }), className)}
 						>
-							<motion.div
-								initial={{
-									x: isRight ? '100%' : isLeft ? '-100%' : 0,
-									y: isTop ? '-100%' : isBottom ? '100%' : 0,
-								}}
-								animate={{ x: 0, y: 0 }}
-								exit={{
-									x: isRight ? '100%' : isLeft ? '-100%' : 0,
-									y: isTop ? '-100%' : isBottom ? '100%' : 0,
-								}}
-								transition={{ type: 'spring', damping: 25, stiffness: 180 }}
-								className={cn(sheetVariants({ side }), className)}
-							>
-								{children}
-								<DialogPrimitive.Close className='absolute right-6 top-6 rounded-sm opacity-90 ring-offset-[hsl(var(--background))] transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-foreground))] focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-[hsl(var(--primary-foreground))] bg-primary-foreground text-primary'>
-									<X className='h-5 w-5' />
-									<span className='sr-only'>Close</span>
-								</DialogPrimitive.Close>
-							</motion.div>
-						</DialogPrimitive.Content>
-					</React.Fragment>
+							{children}
+							<DialogPrimitive.Close className='absolute right-6 top-6 rounded-sm opacity-90 ring-offset-[hsl(var(--background))] transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-foreground))] focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-[hsl(var(--primary-foreground))] bg-primary-foreground text-primary'>
+								<X className='h-5 w-5' />
+								<span className='sr-only'>Close</span>
+							</DialogPrimitive.Close>
+						</motion.div>
+					</DialogPrimitive.Content>
 				)}
 			</AnimatePresence>
 		</SheetPortal>

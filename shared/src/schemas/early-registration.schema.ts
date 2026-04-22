@@ -79,6 +79,22 @@ export const earlyRegistrationSubmitSchema = z
     learnerType: LearnerTypeEnum,
     isScpApplication: z.boolean().default(false),
     scpType: ScpTypeEnum.optional().nullable(),
+    reportedGrades: z
+      .object({
+        generalAverage: z.number().min(0).max(100).nullable().optional(),
+        english: z.number().min(0).max(100).nullable().optional(),
+        science: z.number().min(0).max(100).nullable().optional(),
+        mathematics: z.number().min(0).max(100).nullable().optional(),
+        filipino: z.number().min(0).max(100).nullable().optional(),
+        lastSchoolName: z.string().optional().nullable(),
+        lastSchoolId: z.string().optional().nullable(),
+        lastGradeCompleted: z.string().optional().nullable(),
+        schoolYearLastAttended: z.string().optional().nullable(),
+        lastSchoolAddress: z.string().optional().nullable(),
+        lastSchoolType: z.string().optional().nullable(),
+      })
+      .nullable()
+      .optional(),
     studentPhoto: z.string().optional().nullable(),
 
     // ── Personal ──────────────────────────────────────────

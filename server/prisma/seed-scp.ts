@@ -169,30 +169,25 @@ function buildScpCutoffScore(scpType: ApplicantType) {
 }
 
 function buildScpGradeRequirements(scpType: ApplicantType) {
-  return {
-    qualifyingTrack: scpType,
-    minimumGeneralAverage: 85,
-    documentRequirements: [
-      {
-        docId: "SF9_REPORT_CARD",
-        policy: "REQUIRED",
-        phase: "EARLY_REGISTRATION",
-        notes: "Latest SF9 with complete grades from previous school year.",
-      },
-      {
-        docId: "GOOD_MORAL_CERTIFICATE",
-        policy: "REQUIRED",
-        phase: "ENROLLMENT",
-        notes: "Issued by school head or guidance office.",
-      },
-      {
-        docId: "MEDICAL_CERTIFICATE",
-        policy: "OPTIONAL",
-        phase: "ENROLLMENT",
-        notes: "Required only when medical accommodations are needed.",
-      },
-    ],
-  };
+  const rules = [
+    {
+      ruleType: "GENERAL_AVERAGE_MIN",
+      minAverage: 85,
+      subjects: [],
+      subjectThresholds: [],
+    },
+  ];
+
+  if (scpType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") {
+    rules.push({
+      ruleType: "SUBJECT_AVERAGE_MIN",
+      minAverage: 85,
+      subjects: ["ENGLISH", "SCIENCE", "MATHEMATICS"],
+      subjectThresholds: [],
+    });
+  }
+
+  return rules;
 }
 
 function buildScpRankingFormula(scpType: ApplicantType) {

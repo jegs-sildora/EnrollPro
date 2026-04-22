@@ -555,8 +555,8 @@ export function createEarlyRegistrationSharedService(
         fatherEmail ||
         null,
 
-      lastSchoolName: prevSchool?.schoolName || application.lastSchoolName,
-      lastSchoolId: prevSchool?.schoolDepedId || application.lastSchoolId,
+      lastSchoolName: prevSchool?.schoolName || (application.reportedGrades as any)?.lastSchoolName || null,
+      lastSchoolId: prevSchool?.schoolDepedId || (application.reportedGrades as any)?.lastSchoolId || null,
       lastGradeCompleted:
         prevSchool?.gradeCompleted || application.lastGradeCompleted,
       schoolYearLastAttended:
@@ -564,10 +564,11 @@ export function createEarlyRegistrationSharedService(
       lastSchoolAddress:
         prevSchool?.schoolAddress || application.lastSchoolAddress,
       lastSchoolType: prevSchool?.schoolType || application.lastSchoolType,
-      generalAverage: 
-        prevSchool?.generalAverage || 
-        application.previousSchool?.generalAverage || 
-        application.checklist?.finalGeneralAverage || 
+      generalAverage:
+        prevSchool?.generalAverage ||
+        application.previousSchool?.generalAverage ||
+        application.checklist?.finalGeneralAverage ||
+        (application.reportedGrades as any)?.generalAverage ||
         null,
 
       learningProgram,
@@ -980,6 +981,23 @@ export function createEarlyRegistrationSharedService(
             where: { id: earlyReg.id },
             data: { status: "ENROLLED" },
           });
+
+          // Carry over Previous School data from reportedGrades JSON
+          const grades = earlyReg.reportedGrades as any;
+          if (grades?.lastSchoolName || grades?.generalAverage) {
+            await ptx.enrollmentPreviousSchool.create({
+              data: {
+                applicationId: finalApp.id,
+                schoolName: grades.lastSchoolName || null,
+                schoolDepedId: grades.lastSchoolId || null,
+                gradeCompleted: grades.lastGradeCompleted || null,
+                schoolYearAttended: grades.schoolYearLastAttended || null,
+                schoolAddress: grades.lastSchoolAddress || null,
+                schoolType: grades.lastSchoolType || null,
+                generalAverage: grades.generalAverage || null,
+              },
+            });
+          }
 
           return finalApp;
         }));

@@ -672,7 +672,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="flex-1 overflow-auto py-3 px-6 scrollbar-thin">
+            className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden py-3 px-6 scrollbar-thin">
             {shouldShowNoSchoolYearState ? <NoSchoolYearState /> : children}
           </motion.main>
         </AnimatePresence>

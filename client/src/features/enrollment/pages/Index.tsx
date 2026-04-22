@@ -22,7 +22,7 @@ import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
-import { cn, formatScpType } from "@/shared/lib/utils";
+import { cn, formatScpType, getLearnerTypeLabel } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Card, CardContent, CardHeader } from "@/shared/ui/card";
@@ -985,9 +985,7 @@ export default function Enrollment() {
               <Badge
                 variant="outline"
                 className="font-bold px-2 py-0.5 h-auto border-slate-300 text-xs leading-tight text-center">
-                {app.learnerType === "CONTINUING"
-                  ? "CONTINUING"
-                  : "NEW/TRANSFER"}
+                {getLearnerTypeLabel(app.learnerType)}
               </Badge>
             </div>
           );
@@ -1372,8 +1370,8 @@ export default function Enrollment() {
   }, [isBatchPending, storedGlId, storedPreview]);
 
   return (
-    <div className="flex h-[calc(100vh-2rem)] overflow-hidden relative">
-      <div className="flex-1 flex flex-col space-y-4 sm:space-y-6 overflow-auto px-2 sm:px-0 pb-24">
+    <div className="flex relative w-full min-w-0 overflow-hidden">
+      <div className="flex-1 min-w-0 flex flex-col space-y-4 sm:space-y-6 px-2 sm:px-0 pb-24">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
@@ -1440,7 +1438,7 @@ export default function Enrollment() {
           }}
         />
 
-        <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
+        <Card className="border-none shadow-sm bg-[hsl(var(--card))] max-w-full overflow-hidden">
           <CardHeader className="px-3 sm:px-6 pb-3">
             <div className="flex flex-col md:flex-row gap-3 md:gap-4 items-end">
               <div className="flex-1 space-y-2 w-full">
@@ -1501,13 +1499,14 @@ export default function Enrollment() {
             )}
           </CardHeader>
 
-          <CardContent className="px-3 sm:px-6">
+          <CardContent className="px-3 sm:px-6 max-w-full overflow-hidden">
             <DataTable
               columns={columns}
               data={visibleApplications}
               loading={showSkeleton}
               virtualize={true}
               estimatedRowHeight={60}
+              className="w-full"
               onRowClick={(app) => {
                 setSelectedId(app.id);
               }}
@@ -1561,7 +1560,7 @@ export default function Enrollment() {
         }}>
         <SheetContent
           side="right"
-          className="p-0 flex flex-row border-l overflow-visible w-screen sm:w-auto sm:max-w-none"
+          className="p-0 flex flex-row border-l overflow-visible w-full sm:w-auto sm:max-w-none"
           style={
             typeof window !== "undefined" && window.innerWidth >= 640
               ? { width: `${panelPercentage}vw` }

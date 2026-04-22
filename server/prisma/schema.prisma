@@ -262,6 +262,7 @@ model EarlyRegistrationApplication {
   hasNoMother           Boolean   @default(false) @map("has_no_mother")
   hasNoFather           Boolean   @default(false) @map("has_no_father")
   isPrivacyConsentGiven Boolean   @map("is_privacy_consent_given")
+  reportedGrades        Json?     @map("reported_grades")
   encodedById           Int?      @map("encoded_by_id")
   verifiedAt            DateTime? @db.Timestamptz @map("verified_at")
   verifiedById          Int?      @map("verified_by_id")
@@ -706,8 +707,10 @@ model AtlasSyncEvent {
 // ═══════════════════════════════════════════════════════════
 
 enum Role {
-  REGISTRAR
   SYSTEM_ADMIN
+  HEAD_REGISTRAR
+  GRADE_LEVEL_COORDINATOR
+  CLASS_ADVISER
   TEACHER
 
   @@map("user_role")

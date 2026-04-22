@@ -188,6 +188,7 @@ export default function EarlyRegistrationForm({
       "hasNoLrn",
       "isScpApplication",
       "scpType",
+      "reportedGrades.generalAverage",
     ],
     "learner-profile": [
       "lastName",
@@ -397,7 +398,9 @@ export default function EarlyRegistrationForm({
           )}
 
           <FormProvider {...methods}>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="space-y-10">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={stepper.state.current.data.id}

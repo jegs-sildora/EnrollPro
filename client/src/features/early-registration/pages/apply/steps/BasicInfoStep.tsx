@@ -217,6 +217,19 @@ const parseGradeRequirements = (
   value: unknown,
 ): ParsedScpGradeRequirement[] => {
   if (!Array.isArray(value)) {
+    if (value && typeof value === "object") {
+      const legacy = value as any;
+      if (typeof legacy.minimumGeneralAverage === "number") {
+        return [
+          {
+            ruleType: "GENERAL_AVERAGE_MIN",
+            minAverage: legacy.minimumGeneralAverage,
+            subjects: [],
+            subjectThresholds: [],
+          },
+        ];
+      }
+    }
     return [];
   }
 
@@ -358,6 +371,7 @@ export default function BasicInfoStep() {
   const hasNoLrn = watch("hasNoLrn");
   const isScpApplication = watch("isScpApplication");
   const scpType = watch("scpType");
+  const reportedGa = watch("reportedGrades.generalAverage");
   const isScpEligible = learnerType === "NEW_ENROLLEE" && gradeLevel === "7";
   const canDeclareNoLrn =
     learnerType === "TRANSFEREE" ||
@@ -401,8 +415,32 @@ export default function BasicInfoStep() {
       };
     }, [scpType, offeredScpConfigByType]);
   const hasOfferedScpPrograms = availableScpPrograms.length > 0;
+
+  // Derive the effective GA threshold from offered configs (fallback: 85)
+  const effectiveScpGaThreshold = useMemo(() => {
+    let min = 85;
+    for (const config of offeredScpConfigs) {
+      const rules = parseGradeRequirements(config.gradeRequirements);
+      const gaRule = rules.find((r) => r.ruleType === "GENERAL_AVERAGE_MIN");
+      if (gaRule?.minAverage != null && Number.isFinite(gaRule.minAverage)) {
+        min = Math.min(min, gaRule.minAverage);
+      }
+    }
+    return min;
+  }, [offeredScpConfigs]);
+
+  const gaValue =
+    typeof reportedGa === "number" && Number.isFinite(reportedGa)
+      ? reportedGa
+      : null;
+  const gaEnteredAndBelowThreshold =
+    isScpEligible && gaValue !== null && gaValue < effectiveScpGaThreshold;
+
   const canSelectScpTrack =
-    isScpEligible && !isLoadingScpConfig && hasOfferedScpPrograms;
+    isScpEligible &&
+    !isLoadingScpConfig &&
+    hasOfferedScpPrograms &&
+    !gaEnteredAndBelowThreshold;
 
   useEffect(() => {
     let isMounted = true;
@@ -762,6 +800,65 @@ export default function BasicInfoStep() {
           )}
         </div>
 
+        {/* ROW 3.5: Grade 6 General Average (shown only for SCP-eligible applicants) */}
+        {isScpEligible && (
+          <div className="space-y-3 p-5 bg-muted/30 rounded-2xl border border-border/50">
+            <Label
+              htmlFor="reportedGa"
+              className="text-sm font-bold uppercase tracking-widest text-primary">
+              Grade 6 General Average
+            </Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+              <div className="space-y-2">
+                <Input
+                  id="reportedGa"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.01}
+                  placeholder="e.g. 88.50"
+                  className={cn(
+                    "h-12 font-bold text-lg bg-white",
+                    gaEnteredAndBelowThreshold &&
+                      "border-amber-400 focus-visible:ring-amber-400",
+                  )}
+                  value={gaValue ?? ""}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    const parsed =
+                      raw === ""
+                        ? null
+                        : Math.min(100, Math.max(0, parseFloat(raw)));
+                    setValue(
+                      "reportedGrades.generalAverage",
+                      Number.isNaN(parsed as number)
+                        ? null
+                        : (parsed as number | null),
+                      { shouldValidate: true },
+                    );
+                  }}
+                />
+                <p className="font-bold text-xs italic flex items-center gap-1 text-muted-foreground">
+                  <Info className="w-4 h-4" />
+                  From your Grade 6 SF9 / Report Card (Quarters 1–3 average).
+                </p>
+              </div>
+
+              {gaEnteredAndBelowThreshold && (
+                <div className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3">
+                  <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                  <p className="text-xs font-semibold text-amber-800 leading-relaxed">
+                    Your general average ({gaValue}%) is below the minimum{" "}
+                    <strong>{effectiveScpGaThreshold}%</strong> required to
+                    apply for any Special Curricular Program. You may still
+                    proceed with a Regular Section.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* ROW 4: Application Track */}
         <div className="space-y-4">
           <div className="p-6 border bg-primary/5 border-primary/20 rounded-2xl space-y-6 shadow-sm">
@@ -851,9 +948,11 @@ export default function BasicInfoStep() {
                     )}>
                     {isLoadingScpConfig
                       ? "Loading available SCP tracks..."
-                      : hasOfferedScpPrograms
-                        ? "Choose this if the learner will apply for an SCP track."
-                        : "No SCP tracks are open for this School Year."}
+                      : gaEnteredAndBelowThreshold
+                        ? `Requires General Average of ${effectiveScpGaThreshold}% or above.`
+                        : hasOfferedScpPrograms
+                          ? "Choose this if the learner will apply for an SCP track."
+                          : "No SCP tracks are open for this School Year."}
                   </p>
                 </button>
               )}

@@ -20,14 +20,29 @@ import {
   Phone,
   UserCog as UserCogIcon,
   Check as CheckIcon,
+  MoreVertical,
+  History,
+  Mail,
+  AlertCircle,
+  Mars,
+  Venus,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
+import { cn } from "@/shared/lib/utils";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -44,7 +59,14 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
-import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/shared/ui/sheet";
 import { motion, AnimatePresence } from "motion/react";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -61,7 +83,12 @@ interface User {
   designation: string | null;
   mobileNumber: string | null;
   email: string;
-  role: "REGISTRAR" | "SYSTEM_ADMIN";
+  role:
+    | "SYSTEM_ADMIN"
+    | "HEAD_REGISTRAR"
+    | "GRADE_LEVEL_COORDINATOR"
+    | "CLASS_ADVISER"
+    | "TEACHER";
   isActive: boolean;
   lastLoginAt: string | null;
   createdAt: string;
@@ -80,6 +107,7 @@ interface FetchUsersParams {
 
 const PAGE_SIZE = 15;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const DEPED_EMAIL_PATTERN = /@deped\.gov\.ph$/i;
 const MOBILE_PATTERN = /^09\d{9}$/;
 const PASSWORD_PATTERN = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
@@ -110,6 +138,11 @@ export default function AdminUsers() {
   const { user: currentUser } = useAuthStore();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [metrics, setMetrics] = useState({
+    totalActiveStaff: 0,
+    pendingUnverified: 0,
+    lockedDeactivated: 0,
+  });
 
   // Rule A & B: Delayed loading
   const showSkeleton = useDelayedLoading(loading);
@@ -124,27 +157,12 @@ export default function AdminUsers() {
   const [sortBy, setSortBy] = useState<string>("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-  // Dialogs
+  // Dialogs & Sheets
   const [createOpen, setCreateOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [deactivateId, setDeactivateId] = useState<number | null>(null);
   const [reactivateId, setReactivateId] = useState<number | null>(null);
-
-  // Inline Editing State
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editFormData, setEditFormData] = useState({
-    firstName: "",
-    lastName: "",
-    middleName: "",
-    suffix: "",
-    sex: "FEMALE" as "MALE" | "FEMALE",
-    employeeId: "",
-    designation: "",
-    mobileNumber: "",
-    email: "",
-    role: "REGISTRAR" as "REGISTRAR" | "SYSTEM_ADMIN",
-  });
 
   // Create Form State
   const [formData, setFormData] = useState({
@@ -157,7 +175,7 @@ export default function AdminUsers() {
     designation: "",
     mobileNumber: "",
     email: "",
-    role: "REGISTRAR" as "REGISTRAR" | "SYSTEM_ADMIN",
+    role: "SYSTEM_ADMIN" as User["role"],
     password: "",
     mustChangePassword: true,
   });
@@ -180,7 +198,7 @@ export default function AdminUsers() {
     designation: "",
     mobileNumber: "",
     email: "",
-    role: "REGISTRAR" as "REGISTRAR" | "SYSTEM_ADMIN",
+    role: "TEACHER" as User["role"],
   });
 
   const validateCreateForm = () => {
@@ -194,6 +212,15 @@ export default function AdminUsers() {
     } else if (!EMAIL_PATTERN.test(formData.email.trim())) {
       nextErrors.email = "Enter a valid email address.";
     }
+
+    // DepEd governance: Employee ID mandatory for high-level roles
+    if (
+      (formData.role === "SYSTEM_ADMIN" || formData.role === "HEAD_REGISTRAR") &&
+      !formData.employeeId.trim()
+    ) {
+      nextErrors.employeeId = "Employee ID is mandatory for this role.";
+    }
+
     if (!formData.mobileNumber.trim()) {
       nextErrors.mobileNumber = "Mobile number is required.";
     } else if (!MOBILE_PATTERN.test(formData.mobileNumber.trim())) {
@@ -220,6 +247,16 @@ export default function AdminUsers() {
     } else if (!EMAIL_PATTERN.test(profileFormData.email.trim())) {
       nextErrors.email = "Enter a valid email address.";
     }
+
+    // DepEd governance: Employee ID mandatory for high-level roles
+    if (
+      (profileFormData.role === "SYSTEM_ADMIN" ||
+        profileFormData.role === "HEAD_REGISTRAR") &&
+      !profileFormData.employeeId.trim()
+    ) {
+      nextErrors.employeeId = "Employee ID is mandatory for this role.";
+    }
+
     if (
       profileFormData.mobileNumber.trim() &&
       !MOBILE_PATTERN.test(profileFormData.mobileNumber.trim())
@@ -294,9 +331,19 @@ export default function AdminUsers() {
     }
   }, [page, roleFilter, statusFilter, debouncedSearch, sortBy, sortOrder]);
 
+  const fetchMetrics = useCallback(async () => {
+    try {
+      const res = await api.get("/admin/users/metrics");
+      setMetrics(res.data);
+    } catch (err) {
+      console.error("Failed to fetch metrics", err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+    fetchMetrics();
+  }, [fetchUsers, fetchMetrics]);
 
   const handleCreate = async () => {
     const nextErrors = validateCreateForm();
@@ -329,7 +376,7 @@ export default function AdminUsers() {
     }
   };
 
-  const openProfileEditor = (user: User) => {
+  const openProfileEditor = useCallback((user: User) => {
     setProfileUser(user);
     setProfileFormData({
       firstName: user.firstName,
@@ -345,7 +392,7 @@ export default function AdminUsers() {
     });
     setProfileErrors({});
     setProfileOpen(true);
-  };
+  }, []);
 
   const handleProfileSave = async () => {
     if (!profileUser) return;
@@ -372,52 +419,6 @@ export default function AdminUsers() {
           ...prev,
           email: duplicateEmailMessage,
         }));
-        return;
-      }
-
-      toastApiError(err as never);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const startEditing = (user: User) => {
-    setEditingId(user.id);
-    setEditFormData({
-      firstName: user.firstName,
-      lastName: user.lastName,
-      middleName: user.middleName || "",
-      suffix: user.suffix || "",
-      sex: user.sex,
-      employeeId: user.employeeId || "",
-      designation: user.designation || "",
-      mobileNumber: user.mobileNumber || "",
-      email: user.email,
-      role: user.role,
-    });
-  };
-
-  const cancelEditing = () => {
-    setEditingId(null);
-  };
-
-  const handleUpdate = async (id: number) => {
-    setSubmitting(true);
-    try {
-      await api.put(`/admin/users/${id}`, editFormData);
-      sileo.success({
-        title: "Account Updated",
-        description: "Changes saved successfully.",
-      });
-      setEditingId(null);
-      fetchUsers();
-    } catch (err) {
-      const duplicateEmailMessage = getDuplicateEmailMessage(err);
-      if (duplicateEmailMessage) {
-        sileo.error({
-          title: "Duplicate email",
-          description: duplicateEmailMessage,
-        });
         return;
       }
 
@@ -477,17 +478,19 @@ export default function AdminUsers() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSort = (field: string) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortBy(field);
-      setSortOrder("asc");
-    }
+  const handleSort = useCallback((field: string) => {
+    setSortBy((prevSortBy) => {
+      if (prevSortBy === field) {
+        setSortOrder((prevOrder) => (prevOrder === "asc" ? "desc" : "asc"));
+      } else {
+        setSortOrder("asc");
+      }
+      return field;
+    });
     setPage(1);
-  };
+  }, []);
 
-  const getSortIcon = (field: string) => {
+  const getSortIcon = useCallback((field: string) => {
     if (sortBy !== field) {
       return <ArrowUpDown className="h-3.5 w-3.5 ml-1 opacity-40" />;
     }
@@ -496,17 +499,7 @@ export default function AdminUsers() {
     ) : (
       <ArrowDown className="h-3.5 w-3.5 ml-1" />
     );
-  };
-
-  const activeCount = useMemo(
-    () => users.filter((user) => user.isActive).length,
-    [users],
-  );
-
-  const adminCount = useMemo(
-    () => users.filter((user) => user.role === "SYSTEM_ADMIN").length,
-    [users],
-  );
+  }, [sortBy, sortOrder]);
 
   const columns = useMemo<ColumnDef<User>[]>(
     () => [
@@ -515,109 +508,31 @@ export default function AdminUsers() {
         header: () => (
           <button
             onClick={() => handleSort("lastName")}
-            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
-            Staff
+            className="flex h-11 w-full items-center justify-start gap-1 px-4 text-[10px] font-extrabold uppercase tracking-widest text-maroon-900 bg-maroon-50/50 hover:bg-maroon-100/50 transition-colors rounded-tl-lg">
+            Staff Details
             {getSortIcon("lastName")}
           </button>
         ),
         cell: ({ row }) => {
           const user = row.original;
-          const isEditing = editingId === user.id;
-
-          if (isEditing) {
-            return (
-              <div className="space-y-1 text-left min-w-[200px]">
-                <Input
-                  placeholder="Last Name"
-                  value={editFormData.lastName}
-                  onChange={(e) =>
-                    setEditFormData({
-                      ...editFormData,
-                      lastName: e.target.value,
-                    })
-                  }
-                  className="h-7 text-sm"
-                />
-                <Input
-                  placeholder="First Name"
-                  value={editFormData.firstName}
-                  onChange={(e) =>
-                    setEditFormData({
-                      ...editFormData,
-                      firstName: e.target.value,
-                    })
-                  }
-                  className="h-7 text-sm"
-                />
-              </div>
-            );
-          }
 
           return (
-            <div className="flex flex-col text-left min-w-[200px] pl-2">
-              <span className="font-bold text-sm uppercase leading-tight">
+            <div className="flex flex-col text-left min-w-[220px] pl-2 py-1">
+              <span className="font-bold text-sm uppercase leading-tight text-foreground">
                 {user.lastName}, {user.firstName}
                 {user.suffix ? ` ${user.suffix}` : ""}
               </span>
-              <span className="text-xs font-bold text-muted-foreground">
-                {user.email}
-              </span>
-            </div>
-          );
-        },
-      },
-      {
-        id: "position",
-        header: () => (
-          <button
-            onClick={() => handleSort("designation")}
-            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
-            Position and ID
-            {getSortIcon("designation")}
-          </button>
-        ),
-        cell: ({ row }) => {
-          const user = row.original;
-          const isEditing = editingId === user.id;
-
-          if (isEditing) {
-            return (
-              <div className="space-y-1 text-left min-w-[150px]">
-                <Input
-                  placeholder="Designation"
-                  value={editFormData.designation}
-                  onChange={(e) =>
-                    setEditFormData({
-                      ...editFormData,
-                      designation: e.target.value,
-                    })
-                  }
-                  className="h-7 text-sm"
-                />
-                <Input
-                  placeholder="Employee ID"
-                  value={editFormData.employeeId}
-                  onChange={(e) =>
-                    setEditFormData({
-                      ...editFormData,
-                      employeeId: e.target.value,
-                    })
-                  }
-                  className="h-7 text-sm"
-                />
-              </div>
-            );
-          }
-
-          return (
-            <div className="space-y-0.5 text-center min-w-[150px]">
-              <div className="text-xs font-bold text-primary flex items-center justify-center gap-1">
-                <Briefcase className="h-3 w-3" />
-                {user.designation || "No Position Set"}
-              </div>
-              <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                <IdCard className="h-3 w-3" />
-                {user.employeeId || "No ID Set"}
+              <div className="flex items-center gap-3 mt-1">
+                <span className="text-[10px] font-extrabold text-muted-foreground flex items-center gap-1 shrink-0">
+                  <IdCard className="h-3 w-3" />
+                  {user.employeeId || <span className="italic font-normal opacity-50">—</span>}
+                </span>
+                {user.designation && (
+                  <span className="text-[10px] font-extrabold text-primary flex items-center gap-1 truncate">
+                    <Briefcase className="h-2.5 w-2.5" />
+                    {user.designation}
+                  </span>
+                )}
               </div>
             </div>
           );
@@ -628,50 +543,20 @@ export default function AdminUsers() {
         header: () => (
           <button
             onClick={() => handleSort("email")}
-            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
-            Contact
+            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-[10px] font-extrabold uppercase tracking-widest text-maroon-900 bg-maroon-50/50 hover:bg-maroon-100/50 transition-colors">
+            Contact Info
             {getSortIcon("email")}
           </button>
         ),
         cell: ({ row }) => {
           const user = row.original;
-          const isEditing = editingId === user.id;
-
-          if (isEditing) {
-            return (
-              <div className="space-y-1 text-left min-w-[200px]">
-                <Input
-                  placeholder="Email"
-                  value={editFormData.email}
-                  onChange={(e) =>
-                    setEditFormData({
-                      ...editFormData,
-                      email: e.target.value,
-                    })
-                  }
-                  className="h-7 text-sm"
-                />
-                <Input
-                  placeholder="Mobile Number"
-                  value={editFormData.mobileNumber}
-                  onChange={(e) =>
-                    setEditFormData({
-                      ...editFormData,
-                      mobileNumber: e.target.value,
-                    })
-                  }
-                  className="h-7 text-sm"
-                />
-              </div>
-            );
-          }
 
           return (
-            <div className="space-y-0.5 text-center min-w-[200px]">
-              <div className="text-sm font-medium">{user.email}</div>
-              <div className="text-sm text-muted-foreground flex items-center justify-center gap-1">
+            <div className="space-y-1 text-center min-w-[200px] py-1">
+              <div className="text-sm font-bold leading-none">{user.email}</div>
+              <div className="text-[11px] font-bold text-muted-foreground flex items-center justify-center gap-1">
                 <Phone className="h-2.5 w-2.5" />
-                {user.mobileNumber || "No Mobile Set"}
+                {user.mobileNumber || <span className="italic font-normal opacity-50">—</span>}
               </div>
             </div>
           );
@@ -682,44 +567,20 @@ export default function AdminUsers() {
         header: () => (
           <button
             onClick={() => handleSort("role")}
-            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
-            Role
+            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-[10px] font-extrabold uppercase tracking-widest text-maroon-900 bg-maroon-50/50 hover:bg-maroon-100/50 transition-colors">
+            Access Role
             {getSortIcon("role")}
           </button>
         ),
         cell: ({ row }) => {
           const user = row.original;
-          const isEditing = editingId === user.id;
-
-          if (isEditing) {
-            return (
-              <div className="flex justify-center min-w-[140px]">
-                <Select
-                  value={editFormData.role}
-                  onValueChange={(value: "REGISTRAR" | "SYSTEM_ADMIN") =>
-                    setEditFormData({
-                      ...editFormData,
-                      role: value,
-                    })
-                  }>
-                  <SelectTrigger className="h-8 w-32 text-xs font-bold uppercase">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="SYSTEM_ADMIN">ADMIN</SelectItem>
-                    <SelectItem value="REGISTRAR">REGISTRAR</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            );
-          }
 
           return (
             <div className="flex justify-center min-w-[140px]">
               <Badge
                 variant="outline"
-                className={`px-2 py-0.5 text-xs uppercase font-bold tracking-tight ${
-                  user.role === "REGISTRAR"
+                className={`text-[10px] font-bold uppercase shrink-0 ${
+                  user.role === "HEAD_REGISTRAR"
                     ? "border-primary/20 bg-primary/10 text-primary"
                     : "border-purple-200 bg-purple-50 text-purple-700"
                 }`}>
@@ -734,8 +595,8 @@ export default function AdminUsers() {
         header: () => (
           <button
             onClick={() => handleSort("isActive")}
-            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
-            Status
+            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-[10px] font-extrabold uppercase tracking-widest text-maroon-900 bg-maroon-50/50 hover:bg-maroon-100/50 transition-colors">
+            Account Status
             {getSortIcon("isActive")}
           </button>
         ),
@@ -750,7 +611,7 @@ export default function AdminUsers() {
                     : "bg-slate-400 ring-slate-100"
                 }`}
               />
-              <span className="text-xs font-semibold">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider">
                 {user.isActive ? "ACTIVE" : "INACTIVE"}
               </span>
             </div>
@@ -762,13 +623,13 @@ export default function AdminUsers() {
         header: () => (
           <button
             onClick={() => handleSort("lastLoginAt")}
-            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-bold uppercase tracking-wider text-primary-foreground/90 hover:bg-primary/90 transition-colors">
-            Last Login
+            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-[10px] font-extrabold uppercase tracking-widest text-maroon-900 bg-maroon-50/50 hover:bg-maroon-100/50 transition-colors">
+            Last Activity
             {getSortIcon("lastLoginAt")}
           </button>
         ),
         cell: ({ row }) => (
-          <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap block text-center min-w-[120px]">
+          <span className="text-[11px] font-bold text-muted-foreground whitespace-nowrap block text-center min-w-[120px]">
             {row.original.lastLoginAt
               ? new Date(row.original.lastLoginAt).toLocaleString("en-US", {
                   month: "short",
@@ -776,114 +637,94 @@ export default function AdminUsers() {
                   hour: "numeric",
                   minute: "2-digit",
                 })
-              : "—"}
+              : <span className="italic font-normal opacity-50">—</span>}
           </span>
         ),
       },
       {
         id: "actions",
-        header: "Actions",
+        header: () => (
+          <div className="flex h-11 w-full items-center justify-center px-3 text-[10px] font-extrabold uppercase tracking-widest text-maroon-900 bg-maroon-50/50 rounded-tr-lg">
+            Actions
+          </div>
+        ),
         cell: ({ row }) => {
           const user = row.original;
-          const isEditing = editingId === user.id;
-
-          if (isEditing) {
-            return (
-              <div className="flex flex-wrap items-center justify-center gap-1.5 min-w-[200px]">
-                <Button
-                  size="sm"
-                  className="h-8 px-2 text-xs gap-1 font-bold"
-                  onClick={() => handleUpdate(user.id)}
-                  disabled={submitting}>
-                  <CheckIcon className="h-3 w-3" />
-                  Update
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 px-2 text-xs gap-1 font-bold"
-                  onClick={cancelEditing}
-                  disabled={submitting}>
-                  Cancel
-                </Button>
-              </div>
-            );
-          }
 
           return (
-            <div className="flex flex-wrap items-center justify-center gap-1.5 min-w-[200px]">
+            <div className="flex items-center justify-center gap-2 min-w-[120px]">
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 px-2 text-xs gap-1 font-bold"
-                onClick={() => startEditing(user)}>
-                <Edit2 className="h-3 w-3" />
-                Quick Edit
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 px-2 text-xs gap-1 font-bold"
+                className="h-8 px-3 font-bold text-xs gap-1 hover:bg-primary hover:text-white transition-colors"
                 onClick={() => openProfileEditor(user)}>
-                <UserCogIcon className="h-3 w-3" />
-                Full Edit
+                <Edit2 className="h-3 w-3" />
+                Edit
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 px-2 text-xs gap-1 font-bold"
-                onClick={() => {
-                  setSelectedUser(user);
-                  setFormData({
-                    ...formData,
-                    password: generatePassword(),
-                    mustChangePassword: true,
-                  });
-                  setResetOpen(true);
-                }}>
-                <Key className="h-3 w-3 text-orange-600" />
-                Password
-              </Button>
-              {user.isActive ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={currentUser?.id === user.id}
-                  className="h-8 px-2 text-xs gap-1 font-bold text-destructive hover:bg-destructive hover:text-destructive-foreground disabled:opacity-30"
-                  onClick={() => setDeactivateId(user.id)}>
-                  <UserMinus className="h-3 w-3" />
-                  Deactivate
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 px-2 text-xs gap-1 font-bold text-emerald-600 hover:bg-emerald-600 hover:text-white"
-                  onClick={() => setReactivateId(user.id)}>
-                  <UserCheck className="h-3 w-3" />
-                  Reactivate
-                </Button>
-              )}
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel className="text-[10px] font-extrabold uppercase tracking-widest opacity-50">
+                    Staff Actions
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSelectedUser(user);
+                      setFormData((prev) => ({
+                        ...prev,
+                        password: generatePassword(),
+                      }));
+                      setResetOpen(true);
+                    }}
+                    className="gap-2 font-bold text-xs">
+                    <Key className="h-3.5 w-3.5 text-orange-600" />
+                    Reset Password
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {user.isActive ? (
+                    <DropdownMenuItem
+                      disabled={currentUser?.id === user.id}
+                      onClick={() => setDeactivateId(user.id)}
+                      className="gap-2 font-bold text-xs text-destructive focus:text-destructive">
+                      <UserMinus className="h-3.5 w-3.5" />
+                      Deactivate User
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem
+                      onClick={() => setReactivateId(user.id)}
+                      className="gap-2 font-bold text-xs text-emerald-600 focus:text-emerald-600">
+                      <UserCheck className="h-3.5 w-3.5" />
+                      Reactivate User
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem className="gap-2 font-bold text-xs opacity-50 cursor-not-allowed">
+                    <History className="h-3.5 w-3.5" />
+                    Audit Trail
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           );
         },
       },
     ],
     [
-      editingId,
-      editFormData,
       submitting,
       currentUser,
       handleSort,
       getSortIcon,
-      handleUpdate,
-      cancelEditing,
-      startEditing,
       openProfileEditor,
       setResetOpen,
       setSelectedUser,
       setFormData,
-      formData,
       setDeactivateId,
       setReactivateId,
     ],
@@ -893,7 +734,7 @@ export default function AdminUsers() {
     <div className="space-y-6 min-w-0 w-full max-w-full overflow-x-hidden">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2 text-maroon-900">
             <UserCogIcon className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
             User Management
           </h1>
@@ -902,57 +743,73 @@ export default function AdminUsers() {
             {schoolName ? ` for ${schoolName}` : ""}
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setCreateErrors({});
-            setFormData({
-              firstName: "",
-              lastName: "",
-              middleName: "",
-              suffix: "",
-              sex: "FEMALE",
-              employeeId: "",
-              designation: "",
-              mobileNumber: "",
-              email: "",
-              role: "REGISTRAR",
-              password: generatePassword(),
-              mustChangePassword: true,
-            });
-            setCreateOpen(true);
-          }}
-          className="h-10 w-full md:w-auto font-bold">
-          <Plus className="h-4 w-4 mr-2" />
-          Add User
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          <Button
+            variant="outline"
+            className="h-10 font-bold gap-2 order-2 sm:order-1"
+            onClick={() => {
+              sileo.info({
+                title: "Coming Soon",
+                description: "Bulk LIS/EBEIS export import will be available in the next update.",
+              });
+            }}>
+            <RefreshCw className="h-4 w-4" />
+            Bulk Import
+          </Button>
+          <Button
+            onClick={() => {
+              setCreateErrors({});
+              setFormData({
+                firstName: "",
+                lastName: "",
+                middleName: "",
+                suffix: "",
+                sex: "FEMALE",
+                employeeId: "",
+                designation: "",
+                mobileNumber: "",
+                email: "",
+                role: "SYSTEM_ADMIN",
+                password: generatePassword(),
+                mustChangePassword: true,
+              });
+              setCreateOpen(true);
+            }}
+            className="h-10 font-bold order-1 sm:order-2">
+            <Plus className="h-4 w-4 mr-2" />
+            Add User
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
         <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
           <CardHeader className="pb-2">
             <p className="text-xs uppercase tracking-wider font-bold text-muted-foreground">
-              Total Accounts
-            </p>
-            <CardTitle className="text-2xl font-extrabold">{total}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
-          <CardHeader className="pb-2">
-            <p className="text-xs uppercase tracking-wider font-bold text-muted-foreground">
-              Active On Current Page
+              Total Active Staff
             </p>
             <CardTitle className="text-2xl font-extrabold text-emerald-600">
-              {activeCount}
+              {metrics.totalActiveStaff}
             </CardTitle>
           </CardHeader>
         </Card>
         <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
           <CardHeader className="pb-2">
             <p className="text-xs uppercase tracking-wider font-bold text-muted-foreground">
-              System Admins On Page
+              Pending Invites / Unverified
             </p>
-            <CardTitle className="text-2xl font-extrabold text-violet-600">
-              {adminCount}
+            <CardTitle className="text-2xl font-extrabold text-orange-600">
+              {metrics.pendingUnverified}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
+          <CardHeader className="pb-2">
+            <p className="text-xs uppercase tracking-wider font-bold text-muted-foreground">
+              Locked / Deactivated
+            </p>
+            <CardTitle className="text-2xl font-extrabold text-destructive">
+              {metrics.lockedDeactivated}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -999,8 +856,11 @@ export default function AdminUsers() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Roles</SelectItem>
-                    <SelectItem value="SYSTEM_ADMIN">Admins</SelectItem>
-                    <SelectItem value="REGISTRAR">Registrars</SelectItem>
+                    <SelectItem value="SYSTEM_ADMIN">System Admins</SelectItem>
+                    <SelectItem value="HEAD_REGISTRAR">Head Registrars</SelectItem>
+                    <SelectItem value="GRADE_LEVEL_COORDINATOR">Coordinators (GLC)</SelectItem>
+                    <SelectItem value="CLASS_ADVISER">Class Advisers</SelectItem>
+                    <SelectItem value="TEACHER">Teachers</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1087,188 +947,112 @@ export default function AdminUsers() {
                 <div
                   key={user.id}
                   className={`rounded-xl border bg-[hsl(var(--card))] p-3 ${!user.isActive ? "opacity-70 bg-muted/20" : ""}`}>
-                  {editingId === user.id ? (
-                    <div className="space-y-2">
-                      <Input
-                        placeholder="Last Name"
-                        value={editFormData.lastName}
-                        onChange={(e) =>
-                          setEditFormData({
-                            ...editFormData,
-                            lastName: e.target.value,
-                          })
-                        }
-                        className="h-9 text-sm"
-                      />
-                      <Input
-                        placeholder="First Name"
-                        value={editFormData.firstName}
-                        onChange={(e) =>
-                          setEditFormData({
-                            ...editFormData,
-                            firstName: e.target.value,
-                          })
-                        }
-                        className="h-9 text-sm"
-                      />
-                      <Input
-                        placeholder="Email"
-                        value={editFormData.email}
-                        onChange={(e) =>
-                          setEditFormData({
-                            ...editFormData,
-                            email: e.target.value,
-                          })
-                        }
-                        className="h-9 text-sm"
-                      />
-                      <Select
-                        value={editFormData.role}
-                        onValueChange={(value: "REGISTRAR" | "SYSTEM_ADMIN") =>
-                          setEditFormData({ ...editFormData, role: value })
-                        }>
-                        <SelectTrigger className="h-9 text-sm font-bold">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="SYSTEM_ADMIN">Admin</SelectItem>
-                          <SelectItem value="REGISTRAR">Registrar</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <div className="flex gap-2 pt-1">
-                        <Button
-                          size="sm"
-                          className="h-9 flex-1 font-bold"
-                          onClick={() => handleUpdate(user.id)}
-                          disabled={submitting}>
-                          Save
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-9 flex-1 font-bold"
-                          onClick={cancelEditing}
-                          disabled={submitting}>
-                          Cancel
-                        </Button>
-                      </div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-bold text-sm uppercase leading-tight break-words">
+                        {user.lastName}, {user.firstName}
+                        {user.suffix ? ` ${user.suffix}` : ""}
+                      </p>
+                      <p className="text-xs font-bold text-muted-foreground truncate mt-0.5">
+                        {user.email}
+                      </p>
                     </div>
-                  ) : (
-                    <>
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="font-bold text-sm uppercase leading-tight break-words">
-                            {user.lastName}, {user.firstName}
-                            {user.suffix ? ` ${user.suffix}` : ""}
-                          </p>
-                          <p className="text-xs font-bold text-muted-foreground truncate">
-                            {user.email}
-                          </p>
-                        </div>
-                        <Badge
-                          variant="outline"
-                          className={`text-[10px] font-bold uppercase shrink-0 ${
-                            user.role === "REGISTRAR"
-                              ? "border-primary/20 bg-primary/10 text-primary"
-                              : "border-purple-200 bg-purple-50 text-purple-700"
-                          }`}>
-                          {user.role === "SYSTEM_ADMIN" ? "ADMIN" : "REGISTRAR"}
-                        </Badge>
-                      </div>
-                      <div className="mt-2 space-y-1 text-xs">
-                        <p className="font-bold flex items-center gap-1">
-                          <Briefcase className="h-3 w-3 text-primary" />
-                          {user.designation || "No position set"}
-                        </p>
-                        <p className="font-medium text-muted-foreground flex items-center gap-1">
-                          <IdCard className="h-3 w-3" />
-                          {user.employeeId || "No ID set"}
-                        </p>
-                        <p className="font-medium text-muted-foreground flex items-center gap-1">
-                          <Phone className="h-3 w-3" />
-                          {user.mobileNumber || "No mobile set"}
-                        </p>
-                      </div>
-                      <div className="mt-2 flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <div
-                            className={`h-2 w-2 rounded-full ring-2 ring-offset-1 ${
-                              user.isActive
-                                ? "bg-green-500 ring-green-100"
-                                : "bg-slate-400 ring-slate-100"
-                            }`}
-                          />
-                          <span className="text-xs font-semibold">
-                            {user.isActive ? "Active" : "Inactive"}
-                          </span>
-                        </div>
-                        <span className="text-[11px] font-semibold text-muted-foreground">
-                          {user.lastLoginAt
-                            ? `Last login ${new Date(
-                                user.lastLoginAt,
-                              ).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                              })}`
-                            : "Never logged in"}
-                        </span>
-                      </div>
-                      <div className="mt-3 grid grid-cols-2 gap-2">
+                    <Badge
+                      variant="outline"
+                      className={`text-[10px] font-bold uppercase shrink-0 ${
+                        user.role === "HEAD_REGISTRAR"
+                          ? "border-primary/20 bg-primary/10 text-primary"
+                          : "border-purple-200 bg-purple-50 text-purple-700"
+                      }`}>
+                      {user.role}
+                    </Badge>
+                  </div>
+                  <div className="mt-2.5 flex flex-wrap gap-y-1.5 gap-x-4 text-xs font-bold">
+                    <div className="flex items-center gap-1.5 text-primary">
+                      <Briefcase className="h-3 w-3 shrink-0" />
+                      {user.designation || <span className="italic font-normal opacity-50">—</span>}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <IdCard className="h-3 w-3 shrink-0" />
+                      {user.employeeId || <span className="italic font-normal opacity-50">—</span>}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Phone className="h-3 w-3 shrink-0" />
+                      {user.mobileNumber || <span className="italic font-normal opacity-50">—</span>}
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between border-t border-dashed pt-2.5">
+                    <div className="flex items-center gap-1.5">
+                      <div
+                        className={`h-2 w-2 rounded-full ring-2 ring-offset-1 ${
+                          user.isActive
+                            ? "bg-green-500 ring-green-100"
+                            : "bg-slate-400 ring-slate-100"
+                        }`}
+                      />
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider">
+                        {user.isActive ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-bold text-muted-foreground">
+                      {user.lastLoginAt
+                        ? `Active ${new Date(user.lastLoginAt).toLocaleDateString()}`
+                        : "No activity"}
+                    </span>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-9 text-xs font-bold gap-1.5"
+                      onClick={() => openProfileEditor(user)}>
+                      <Edit2 className="h-3.5 w-3.5" />
+                      Edit User
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-9 text-xs font-bold"
-                          onClick={() => startEditing(user)}>
-                          <Edit2 className="h-3.5 w-3.5 mr-1.5" />
-                          Quick Edit
+                          className="h-9 text-xs font-bold gap-1.5">
+                          <MoreVertical className="h-3.5 w-3.5" />
+                          More
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-9 text-xs font-bold"
-                          onClick={() => openProfileEditor(user)}>
-                          <UserCogIcon className="h-3.5 w-3.5 mr-1.5" />
-                          Full Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-9 text-xs font-bold"
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem
                           onClick={() => {
                             setSelectedUser(user);
-                            setFormData({
-                              ...formData,
+                            setFormData((prev) => ({
+                              ...prev,
                               password: generatePassword(),
-                              mustChangePassword: true,
-                            });
+                            }));
                             setResetOpen(true);
-                          }}>
-                          <Key className="h-3.5 w-3.5 mr-1.5 text-orange-600" />
-                          Password
-                        </Button>
+                          }}
+                          className="gap-2 font-bold text-xs">
+                          <Key className="h-3.5 w-3.5 text-orange-600" />
+                          Reset Password
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         {user.isActive ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
+                          <DropdownMenuItem
                             disabled={currentUser?.id === user.id}
-                            className="h-9 text-xs font-bold text-destructive hover:bg-destructive hover:text-destructive-foreground disabled:opacity-30"
-                            onClick={() => setDeactivateId(user.id)}>
-                            <UserMinus className="h-3.5 w-3.5 mr-1.5" />
-                            Deactivate
-                          </Button>
+                            onClick={() => setDeactivateId(user.id)}
+                            className="gap-2 font-bold text-xs text-destructive focus:text-destructive">
+                            <UserMinus className="h-3.5 w-3.5" />
+                            Deactivate User
+                          </DropdownMenuItem>
                         ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-9 text-xs font-bold text-emerald-600 hover:bg-emerald-600 hover:text-white"
-                            onClick={() => setReactivateId(user.id)}>
-                            <UserCheck className="h-3.5 w-3.5 mr-1.5" />
-                            Reactivate
-                          </Button>
+                          <DropdownMenuItem
+                            onClick={() => setReactivateId(user.id)}
+                            className="gap-2 font-bold text-xs text-emerald-600 focus:text-emerald-600">
+                            <UserCheck className="h-3.5 w-3.5" />
+                            Reactivate User
+                          </DropdownMenuItem>
                         )}
-                      </div>
-                    </>
-                  )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
               ))
             )}
@@ -1314,151 +1098,236 @@ export default function AdminUsers() {
         </CardContent>
       </Card>
 
-      {/* Add User Dialog */}
-      <Dialog
+      {/* Add User Account Drawer */}
+      <Sheet
         open={createOpen}
         onOpenChange={(open) => {
           setCreateOpen(open);
           if (!open) setCreateErrors({});
         }}>
-        <DialogContent className="w-[95vw] max-w-2xl sm:w-full overflow-y-auto max-h-[90vh] scrollbar-thin">
-          <DialogHeader>
-            <DialogTitle>Add User Account</DialogTitle>
-            <DialogDescription>
-              Add a new Registrar or Admin to the system.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="grid gap-4 sm:grid-cols-3">
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto scrollbar-thin">
+          <SheetHeader className="pb-6 border-b">
+            <SheetTitle className="text-2xl font-bold flex items-center gap-2 text-maroon-900">
+              <UserCogIcon className="h-6 w-6 text-primary" />
+              Add User Account
+            </SheetTitle>
+            <SheetDescription>
+              Create a new administrative or faculty account for the school system.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="space-y-6 py-6">
+            {/* Identity Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-muted-foreground">
+                <IdCard className="h-3.5 w-3.5" />
+                Staff Identity
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">First Name *</Label>
+                  <Input
+                    placeholder="e.g. Regina"
+                    value={formData.firstName}
+                    onChange={(e) => {
+                      setCreateErrors((prev) => ({ ...prev, firstName: "" }));
+                      setFormData({ ...formData, firstName: e.target.value });
+                    }}
+                    className={createErrors.firstName ? "border-destructive h-10 font-bold" : "h-10 font-bold"}
+                  />
+                  {createErrors.firstName && (
+                    <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
+                      {createErrors.firstName}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">Last Name *</Label>
+                  <Input
+                    placeholder="e.g. Cruz"
+                    value={formData.lastName}
+                    onChange={(e) => {
+                      setCreateErrors((prev) => ({ ...prev, lastName: "" }));
+                      setFormData({ ...formData, lastName: e.target.value });
+                    }}
+                    className={createErrors.lastName ? "border-destructive h-10 font-bold" : "h-10 font-bold"}
+                  />
+                  {createErrors.lastName && (
+                    <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
+                      {createErrors.lastName}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">Middle Name</Label>
+                  <Input
+                    placeholder="Optional"
+                    value={formData.middleName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, middleName: e.target.value })
+                    }
+                    className="h-10 font-bold"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">Suffix</Label>
+                  <Input
+                    placeholder="e.g. Jr., III"
+                    value={formData.suffix}
+                    onChange={(e) =>
+                      setFormData({ ...formData, suffix: e.target.value })
+                    }
+                    className="h-10 font-bold"
+                  />
+                </div>
+              </div>
+              <div className="space-y-3">
+                <Label className="text-xs font-bold uppercase">
+                  Sex at Birth <span className="text-destructive">*</span>
+                </Label>
+                <div className="flex gap-4 pt-1">
+                  {(
+                    [
+                      { value: "MALE", label: "MALE", icon: Mars },
+                      { value: "FEMALE", label: "FEMALE", icon: Venus },
+                    ] as const
+                  ).map((s) => (
+                    <button
+                      key={s.value}
+                      type="button"
+                      onClick={() =>
+                        setFormData({ ...formData, sex: s.value })
+                      }
+                      className={cn(
+                        "flex items-center gap-2 rounded-lg border-2 px-4 py-2 cursor-pointer transition-colors text-sm uppercase",
+                        formData.sex === s.value
+                          ? "border-primary bg-primary/5 font-bold"
+                          : "border-border hover:bg-muted/50",
+                      )}>
+                      <s.icon
+                        className={cn(
+                          "w-4 h-4",
+                          formData.sex === s.value
+                            ? "text-primary"
+                            : "text-muted-foreground",
+                        )}
+                      />
+                      <span className="font-bold">{s.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Employment Section */}
+            <div className="space-y-4 pt-4 border-t">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-muted-foreground">
+                <Briefcase className="h-3.5 w-3.5" />
+                Employment & Role
+              </div>
               <div className="space-y-2">
-                <Label>First Name *</Label>
-                <Input
-                  placeholder="e.g. Regina"
-                  value={formData.firstName}
-                  onChange={(e) => {
-                    setCreateErrors((prev) => ({ ...prev, firstName: "" }));
-                    setFormData({ ...formData, firstName: e.target.value });
-                  }}
-                  className={createErrors.firstName ? "border-destructive" : ""}
-                />
-                {createErrors.firstName && (
-                  <p className="text-xs font-semibold text-destructive">
-                    {createErrors.firstName}
+                <Label className="text-xs font-bold uppercase">Assign Access Role *</Label>
+                <Select
+                  value={formData.role}
+                  onValueChange={(v: User["role"]) =>
+                    setFormData({ ...formData, role: v })
+                  }>
+                  <SelectTrigger className="h-11 font-bold">
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SYSTEM_ADMIN">System Administrator</SelectItem>
+                    <SelectItem value="HEAD_REGISTRAR">Head Registrar</SelectItem>
+                    <SelectItem value="GRADE_LEVEL_COORDINATOR">Grade Level Coordinator (GLC)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {formData.role === "CLASS_ADVISER" && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-2 p-3 bg-muted/50 rounded-lg border border-dashed border-primary/20">
+                  <Label className="text-[10px] font-extrabold uppercase text-primary">Assign to Section (Optional)</Label>
+                  <Select disabled>
+                    <SelectTrigger className="h-10 font-bold opacity-50 italic">
+                      <SelectValue placeholder="Loading sections..." />
+                    </SelectTrigger>
+                  </Select>
+                  <p className="text-[10px] font-bold text-muted-foreground italic">
+                    Section list will be populated from the active school year.
                   </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label>Middle Name</Label>
-                <Input
-                  placeholder="e.g. Alcantara"
-                  value={formData.middleName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, middleName: e.target.value })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Last Name *</Label>
-                <Input
-                  placeholder="e.g. Cruz"
-                  value={formData.lastName}
-                  onChange={(e) => {
-                    setCreateErrors((prev) => ({ ...prev, lastName: "" }));
-                    setFormData({ ...formData, lastName: e.target.value });
-                  }}
-                  className={createErrors.lastName ? "border-destructive" : ""}
-                />
-                {createErrors.lastName && (
-                  <p className="text-xs font-semibold text-destructive">
-                    {createErrors.lastName}
-                  </p>
-                )}
+                </motion.div>
+              )}
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">
+                    Employee ID { (formData.role === "SYSTEM_ADMIN" || formData.role === "HEAD_REGISTRAR") ? "*" : "(Optional)" }
+                  </Label>
+                  <Input
+                    placeholder="e.g. 1234567"
+                    value={formData.employeeId}
+                    onChange={(e) => {
+                      setCreateErrors((prev) => ({ ...prev, employeeId: "" }));
+                      setFormData({ ...formData, employeeId: e.target.value });
+                    }}
+                    className={createErrors.employeeId ? "border-destructive h-10 font-bold" : "h-10 font-bold"}
+                  />
+                  {createErrors.employeeId && (
+                    <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
+                      {createErrors.employeeId}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">Plantilla Position</Label>
+                  <Input
+                    placeholder="e.g. Registrar I"
+                    value={formData.designation}
+                    onChange={(e) =>
+                      setFormData({ ...formData, designation: e.target.value })
+                    }
+                    className="h-10 font-bold"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-2">
-                <Label>Suffix</Label>
-                <Input
-                  placeholder="e.g. Jr., III"
-                  value={formData.suffix}
-                  onChange={(e) =>
-                    setFormData({ ...formData, suffix: e.target.value })
-                  }
-                />
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label className="mb-3 block">Sex *</Label>
-                <RadioGroup
-                  value={formData.sex}
-                  onValueChange={(v: "MALE" | "FEMALE") =>
-                    setFormData({ ...formData, sex: v })
-                  }
-                  className="flex gap-6 mt-1">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="MALE" id="sex-male" />
-                    <Label
-                      htmlFor="sex-male"
-                      className="font-medium cursor-pointer">
-                      Male
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="FEMALE" id="sex-female" />
-                    <Label
-                      htmlFor="sex-female"
-                      className="font-medium cursor-pointer">
-                      Female
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Employee ID (Optional)</Label>
-                <Input
-                  placeholder="e.g. 1234567"
-                  value={formData.employeeId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, employeeId: e.target.value })
-                  }
-                />
+            {/* Contact Section */}
+            <div className="space-y-4 pt-4 border-t">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-muted-foreground">
+                <Mail className="h-3.5 w-3.5" />
+                Contact Information
               </div>
               <div className="space-y-2">
-                <Label>Position / Designation</Label>
-                <Input
-                  placeholder="e.g. Registrar I"
-                  value={formData.designation}
-                  onChange={(e) =>
-                    setFormData({ ...formData, designation: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Email Address *</Label>
+                <Label className="text-xs font-bold uppercase text-foreground/80 flex justify-between">
+                  Email Address *
+                  {formData.email && !DEPED_EMAIL_PATTERN.test(formData.email) && (
+                    <span className="text-[10px] text-orange-600 flex items-center gap-1 lowercase font-bold italic animate-pulse">
+                      <AlertCircle className="h-3 w-3" /> non-deped domain
+                    </span>
+                  )}
+                </Label>
                 <Input
                   type="email"
-                  placeholder="registrar@school.edu.ph"
+                  placeholder="e.g. juana.cruz001@deped.gov.ph"
                   value={formData.email}
                   onChange={(e) => {
                     setCreateErrors((prev) => ({ ...prev, email: "" }));
                     setFormData({ ...formData, email: e.target.value });
                   }}
-                  className={createErrors.email ? "border-destructive" : ""}
+                  className={createErrors.email ? "border-destructive h-10 font-bold" : "h-10 font-bold"}
                 />
                 {createErrors.email && (
-                  <p className="text-xs font-semibold text-destructive">
+                  <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
                     {createErrors.email}
                   </p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label>Mobile Number *</Label>
+                <Label className="text-xs font-bold uppercase">Mobile Number *</Label>
                 <Input
                   placeholder="e.g. 09123456789"
                   value={formData.mobileNumber}
@@ -1466,187 +1335,88 @@ export default function AdminUsers() {
                     setCreateErrors((prev) => ({ ...prev, mobileNumber: "" }));
                     setFormData({ ...formData, mobileNumber: e.target.value });
                   }}
-                  className={
-                    createErrors.mobileNumber ? "border-destructive" : ""
-                  }
+                  className={createErrors.mobileNumber ? "border-destructive h-10 font-bold" : "h-10 font-bold"}
                 />
                 {createErrors.mobileNumber && (
-                  <p className="text-xs font-semibold text-destructive">
+                  <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
                     {createErrors.mobileNumber}
                   </p>
                 )}
               </div>
             </div>
-            <p className="text-sm text-muted-foreground italic -mt-2">
-              Official email and mobile number are required for account
-              recovery.
-            </p>
 
-            <div className="space-y-2">
-              <Label>Role *</Label>
-              <RadioGroup
-                value={formData.role}
-                onValueChange={(v: "REGISTRAR" | "SYSTEM_ADMIN") =>
-                  setFormData({ ...formData, role: v })
-                }
-                className="flex flex-row gap-4">
-                <div
-                  className={`flex items-center gap-3 rounded-lg border p-2.5 hover:bg-muted/50 cursor-pointer transition-all relative flex-1 ${
-                    formData.role === "SYSTEM_ADMIN"
-                      ? "border-primary bg-primary/5 shadow-sm"
-                      : "border-border"
-                  }`}
-                  onClick={() =>
-                    setFormData({ ...formData, role: "SYSTEM_ADMIN" })
-                  }>
-                  <RadioGroupItem value="SYSTEM_ADMIN" id="role-admin" />
-                  <Label
-                    htmlFor="role-admin"
-                    className={`flex flex-col gap-0.5 cursor-pointer flex-1 ${
-                      formData.role === "SYSTEM_ADMIN" ? "text-primary" : ""
-                    }`}>
-                    <span className="font-bold text-sm">Admin</span>
-                    <span
-                      className={`text-sm leading-tight ${
-                        formData.role === "SYSTEM_ADMIN"
-                          ? "text-primary/70"
-                          : "text-muted-foreground"
-                      }`}>
-                      Full access & logs.
-                    </span>
-                  </Label>
-                </div>
-                <div
-                  className={`flex items-center gap-3 rounded-lg border p-2.5 hover:bg-muted/50 cursor-pointer transition-all relative flex-1 ${
-                    formData.role === "REGISTRAR"
-                      ? "border-primary bg-primary/5 shadow-sm"
-                      : "border-border"
-                  }`}
-                  onClick={() =>
-                    setFormData({ ...formData, role: "REGISTRAR" })
-                  }>
-                  <RadioGroupItem value="REGISTRAR" id="role-reg" />
-                  <Label
-                    htmlFor="role-reg"
-                    className={`flex flex-col gap-0.5 cursor-pointer flex-1 ${
-                      formData.role === "REGISTRAR" ? "text-primary" : ""
-                    }`}>
-                    <span className="font-bold text-sm">Registrar</span>
-                    <span
-                      className={`text-sm leading-tight ${
-                        formData.role === "REGISTRAR"
-                          ? "text-primary/70"
-                          : "text-muted-foreground"
-                      }`}>
-                      Enrollment & sections.
-                    </span>
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-            <div className="space-y-2">
-              <Label>Temporary Password *</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={formData.password}
-                  onChange={(e) => {
-                    setCreateErrors((prev) => ({ ...prev, password: "" }));
-                    setFormData({ ...formData, password: e.target.value });
-                  }}
-                  className={
-                    createErrors.password
-                      ? "border-destructive text-sm sm:text-sm"
-                      : "text-sm sm:text-sm"
-                  }
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="shrink-0 h-9 w-9"
-                  onClick={() => {
-                    setCreateErrors((prev) => ({ ...prev, password: "" }));
-                    setIsGenerating(true);
-                    setFormData({ ...formData, password: generatePassword() });
-                    setTimeout(() => setIsGenerating(false), 600);
-                  }}
-                  title="Generate">
-                  <motion.div
-                    animate={isGenerating ? { rotate: 360 } : { rotate: 0 }}
-                    transition={{ duration: 0.5, ease: "easeInOut" }}>
-                    <RefreshCw className="h-4 w-4" />
-                  </motion.div>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="shrink-0 h-9 w-9 overflow-hidden"
-                  onClick={() => copyToClipboard(formData.password)}
-                  title="Copy">
-                  <AnimatePresence mode="wait">
-                    {copied ? (
-                      <motion.div
-                        key="check"
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}>
-                        <CheckIcon className="h-4 w-4 text-green-600" />
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="copy"
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}>
-                        <Copy className="h-4 w-4" />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </Button>
-              </div>
-              {createErrors.password && (
-                <p className="text-xs font-semibold text-destructive">
-                  {createErrors.password}
-                </p>
-              )}
-            </div>
-            <div className="p-3 rounded-lg bg-primary text-primary-foreground text-sm leading-relaxed shadow-sm">
-              <strong className="flex items-center gap-1.5 mb-0.5">
+            {/* Security Section */}
+            <div className="space-y-4 pt-4 border-t">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-muted-foreground">
                 <ShieldAlert className="h-3.5 w-3.5" />
-                Security Notice:
-              </strong>
-              Users will be required to change this temporary password upon
-              their first login for security compliance.
+                Security & Onboarding
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase">Temporary Password *</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={formData.password}
+                    readOnly
+                    className="h-10 font-mono text-sm bg-muted/30"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0 h-10 w-10"
+                    onClick={() => {
+                      setCreateErrors((prev) => ({ ...prev, password: "" }));
+                      setIsGenerating(true);
+                      setFormData({ ...formData, password: generatePassword() });
+                      setTimeout(() => setIsGenerating(false), 600);
+                    }}
+                    title="Regenerate">
+                    <RefreshCw className={`h-4 w-4 ${isGenerating ? "animate-spin" : ""}`} />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0 h-10 w-10"
+                    onClick={() => copyToClipboard(formData.password)}
+                    title="Copy">
+                    {copied ? <CheckIcon className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-lg bg-orange-50 border border-orange-100 text-[11px] font-bold text-orange-800 leading-relaxed uppercase tracking-tighter">
+                <div className="flex items-center gap-1.5 mb-1 text-orange-900">
+                  <ShieldAlert className="h-3.5 w-3.5" />
+                  Governance Notice
+                </div>
+                Credential sharing should follow school policy. User must reset this password upon first access.
+              </div>
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <SheetFooter className="sticky -bottom-8 bg-background pt-6 pb-6 border-t mt-4 flex flex-row gap-3">
             <Button
               variant="outline"
               onClick={() => setCreateOpen(false)}
               disabled={submitting}
-              className="w-full sm:w-auto">
-              Cancel
+              className="flex-1 h-11 font-bold uppercase tracking-widest text-xs text-maroon-900">
+              Discard
             </Button>
             <Button
               onClick={handleCreate}
-              disabled={
-                submitting ||
-                !formData.firstName ||
-                !formData.lastName ||
-                !formData.email ||
-                !formData.mobileNumber ||
-                !formData.password
-              }
-              className="w-full sm:w-auto">
-              {submitting ? "Creating..." : "Create Account"}
+              disabled={submitting}
+              className="flex-[2] h-11 font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20">
+              {submitting ? (
+                <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Plus className="h-4 w-4 mr-2" />
+              )}
+              Create Account
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
-      {/* Full Profile Edit Dialog */}
-      <Dialog
+      {/* Edit User Profile Drawer */}
+      <Sheet
         open={profileOpen}
         onOpenChange={(open) => {
           setProfileOpen(open);
@@ -1655,257 +1425,222 @@ export default function AdminUsers() {
             setProfileErrors({});
           }
         }}>
-        <DialogContent className="w-[95vw] max-w-2xl sm:w-full overflow-y-auto max-h-[90vh] scrollbar-thin">
-          <DialogHeader>
-            <DialogTitle>Edit User Profile</DialogTitle>
-            <DialogDescription>
-              Update account information for {profileUser?.lastName},{" "}
-              {profileUser?.firstName}.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-2">
-                <Label>First Name *</Label>
-                <Input
-                  value={profileFormData.firstName}
-                  onChange={(e) => {
-                    setProfileErrors((prev) => ({ ...prev, firstName: "" }));
-                    setProfileFormData({
-                      ...profileFormData,
-                      firstName: e.target.value,
-                    });
-                  }}
-                  className={
-                    profileErrors.firstName ? "border-destructive" : ""
-                  }
-                />
-                {profileErrors.firstName && (
-                  <p className="text-xs font-semibold text-destructive">
-                    {profileErrors.firstName}
-                  </p>
-                )}
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto scrollbar-thin">
+          <SheetHeader className="pb-6 border-b">
+            <SheetTitle className="text-2xl font-bold flex items-center gap-2 text-maroon-900">
+              <Edit2 className="h-6 w-6 text-primary" />
+              Edit User Profile
+            </SheetTitle>
+            <SheetDescription>
+              Modify staff identity and access permissions for {profileUser?.lastName}.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="space-y-6 py-6">
+            {/* Identity Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-muted-foreground">
+                <IdCard className="h-3.5 w-3.5" />
+                Staff Identity
               </div>
-              <div className="space-y-2">
-                <Label>Middle Name</Label>
-                <Input
-                  value={profileFormData.middleName}
-                  onChange={(e) =>
-                    setProfileFormData({
-                      ...profileFormData,
-                      middleName: e.target.value,
-                    })
-                  }
-                />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">First Name *</Label>
+                  <Input
+                    value={profileFormData.firstName}
+                    onChange={(e) => {
+                      setProfileErrors((prev) => ({ ...prev, firstName: "" }));
+                      setProfileFormData({ ...profileFormData, firstName: e.target.value });
+                    }}
+                    className={profileErrors.firstName ? "border-destructive h-10 font-bold" : "h-10 font-bold"}
+                  />
+                  {profileErrors.firstName && (
+                    <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
+                      {profileErrors.firstName}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">Last Name *</Label>
+                  <Input
+                    value={profileFormData.lastName}
+                    onChange={(e) => {
+                      setProfileErrors((prev) => ({ ...prev, lastName: "" }));
+                      setProfileFormData({ ...profileFormData, lastName: e.target.value });
+                    }}
+                    className={profileErrors.lastName ? "border-destructive h-10 font-bold" : "h-10 font-bold"}
+                  />
+                  {profileErrors.lastName && (
+                    <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
+                      {profileErrors.lastName}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Last Name *</Label>
-                <Input
-                  value={profileFormData.lastName}
-                  onChange={(e) => {
-                    setProfileErrors((prev) => ({ ...prev, lastName: "" }));
-                    setProfileFormData({
-                      ...profileFormData,
-                      lastName: e.target.value,
-                    });
-                  }}
-                  className={profileErrors.lastName ? "border-destructive" : ""}
-                />
-                {profileErrors.lastName && (
-                  <p className="text-xs font-semibold text-destructive">
-                    {profileErrors.lastName}
-                  </p>
-                )}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">Middle Name</Label>
+                  <Input
+                    value={profileFormData.middleName}
+                    onChange={(e) =>
+                      setProfileFormData({ ...profileFormData, middleName: e.target.value })
+                    }
+                    className="h-10 font-bold"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">Suffix</Label>
+                  <Input
+                    value={profileFormData.suffix}
+                    onChange={(e) =>
+                      setProfileFormData({ ...profileFormData, suffix: e.target.value })
+                    }
+                    className="h-10 font-bold"
+                  />
+                </div>
               </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-2">
-                <Label>Suffix</Label>
-                <Input
-                  value={profileFormData.suffix}
-                  onChange={(e) =>
-                    setProfileFormData({
-                      ...profileFormData,
-                      suffix: e.target.value,
-                    })
-                  }
-                />
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label className="mb-3 block">Sex *</Label>
-                <RadioGroup
-                  value={profileFormData.sex}
-                  onValueChange={(v: "MALE" | "FEMALE") =>
-                    setProfileFormData({ ...profileFormData, sex: v })
-                  }
-                  className="flex gap-6 mt-1">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="MALE" id="sex-profile-male" />
-                    <Label
-                      htmlFor="sex-profile-male"
-                      className="font-medium cursor-pointer">
-                      Male
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="FEMALE" id="sex-profile-female" />
-                    <Label
-                      htmlFor="sex-profile-female"
-                      className="font-medium cursor-pointer">
-                      Female
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Employee ID</Label>
-                <Input
-                  value={profileFormData.employeeId}
-                  onChange={(e) =>
-                    setProfileFormData({
-                      ...profileFormData,
-                      employeeId: e.target.value,
-                    })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Position / Designation</Label>
-                <Input
-                  value={profileFormData.designation}
-                  onChange={(e) =>
-                    setProfileFormData({
-                      ...profileFormData,
-                      designation: e.target.value,
-                    })
-                  }
-                />
+              <div className="space-y-3">
+                <Label className="text-xs font-bold uppercase">
+                  Sex at Birth <span className="text-destructive">*</span>
+                </Label>
+                <div className="flex gap-4 pt-1">
+                  {(
+                    [
+                      { value: "MALE", label: "MALE", icon: Mars },
+                      { value: "FEMALE", label: "FEMALE", icon: Venus },
+                    ] as const
+                  ).map((s) => (
+                    <button
+                      key={s.value}
+                      type="button"
+                      onClick={() =>
+                        setProfileFormData({ ...profileFormData, sex: s.value })
+                      }
+                      className={cn(
+                        "flex items-center gap-2 rounded-lg border-2 px-4 py-2 cursor-pointer transition-colors text-sm uppercase",
+                        profileFormData.sex === s.value
+                          ? "border-primary bg-primary/5 font-bold"
+                          : "border-border hover:bg-muted/50",
+                      )}>
+                      <s.icon
+                        className={cn(
+                          "w-4 h-4",
+                          profileFormData.sex === s.value
+                            ? "text-primary"
+                            : "text-muted-foreground",
+                        )}
+                      />
+                      <span className="font-bold">{s.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            {/* Employment Section */}
+            <div className="space-y-4 pt-4 border-t">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-muted-foreground">
+                <Briefcase className="h-3.5 w-3.5" />
+                Employment & Role
+              </div>
               <div className="space-y-2">
-                <Label>Email Address *</Label>
+                <Label className="text-xs font-bold uppercase">Update Access Role *</Label>
+                <Select
+                  value={profileFormData.role}
+                  onValueChange={(v: User["role"]) =>
+                    setProfileFormData({ ...profileFormData, role: v })
+                  }>
+                  <SelectTrigger className="h-11 font-bold text-primary">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SYSTEM_ADMIN">System Administrator</SelectItem>
+                    <SelectItem value="HEAD_REGISTRAR">Head Registrar</SelectItem>
+                    <SelectItem value="GRADE_LEVEL_COORDINATOR">Grade Level Coordinator (GLC)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">
+                    Employee ID { (profileFormData.role === "SYSTEM_ADMIN" || profileFormData.role === "HEAD_REGISTRAR") ? "*" : "(Optional)" }
+                  </Label>
+                  <Input
+                    value={profileFormData.employeeId}
+                    onChange={(e) => {
+                      setProfileErrors((prev) => ({ ...prev, employeeId: "" }));
+                      setProfileFormData({ ...profileFormData, employeeId: e.target.value });
+                    }}
+                    className={profileErrors.employeeId ? "border-destructive h-10 font-bold" : "h-10 font-bold"}
+                  />
+                  {profileErrors.employeeId && (
+                    <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
+                      {profileErrors.employeeId}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">Plantilla Position</Label>
+                  <Input
+                    value={profileFormData.designation}
+                    onChange={(e) =>
+                      setProfileFormData({ ...profileFormData, designation: e.target.value })
+                    }
+                    className="h-10 font-bold"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Contact Section */}
+            <div className="space-y-4 pt-4 border-t">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-muted-foreground">
+                <Mail className="h-3.5 w-3.5" />
+                Contact Information
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase flex justify-between">
+                  Email Address *
+                  {profileFormData.email && !DEPED_EMAIL_PATTERN.test(profileFormData.email) && (
+                    <span className="text-[10px] text-orange-600 flex items-center gap-1 lowercase font-bold italic">
+                      <AlertCircle className="h-3 w-3" /> non-deped domain
+                    </span>
+                  )}
+                </Label>
                 <Input
                   type="email"
                   value={profileFormData.email}
                   onChange={(e) => {
                     setProfileErrors((prev) => ({ ...prev, email: "" }));
-                    setProfileFormData({
-                      ...profileFormData,
-                      email: e.target.value,
-                    });
+                    setProfileFormData({ ...profileFormData, email: e.target.value });
                   }}
-                  className={profileErrors.email ? "border-destructive" : ""}
+                  className={profileErrors.email ? "border-destructive h-10 font-bold" : "h-10 font-bold"}
                 />
                 {profileErrors.email && (
-                  <p className="text-xs font-semibold text-destructive">
+                  <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
                     {profileErrors.email}
                   </p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label>Mobile Number</Label>
+                <Label className="text-xs font-bold uppercase">Mobile Number</Label>
                 <Input
                   value={profileFormData.mobileNumber}
                   onChange={(e) => {
                     setProfileErrors((prev) => ({ ...prev, mobileNumber: "" }));
-                    setProfileFormData({
-                      ...profileFormData,
-                      mobileNumber: e.target.value,
-                    });
+                    setProfileFormData({ ...profileFormData, mobileNumber: e.target.value });
                   }}
-                  className={
-                    profileErrors.mobileNumber ? "border-destructive" : ""
-                  }
+                  className={profileErrors.mobileNumber ? "border-destructive h-10 font-bold" : "h-10 font-bold"}
                 />
                 {profileErrors.mobileNumber && (
-                  <p className="text-xs font-semibold text-destructive">
+                  <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
                     {profileErrors.mobileNumber}
                   </p>
                 )}
               </div>
             </div>
-
-            <div className="space-y-2">
-              <Label>Role *</Label>
-              <RadioGroup
-                value={profileFormData.role}
-                onValueChange={(v: "REGISTRAR" | "SYSTEM_ADMIN") =>
-                  setProfileFormData({ ...profileFormData, role: v })
-                }
-                className="flex flex-row gap-4">
-                <div
-                  className={`flex items-center gap-3 rounded-lg border p-2.5 hover:bg-muted/50 cursor-pointer transition-all relative flex-1 ${
-                    profileFormData.role === "SYSTEM_ADMIN"
-                      ? "border-primary bg-primary/5 shadow-sm"
-                      : "border-border"
-                  }`}
-                  onClick={() =>
-                    setProfileFormData({
-                      ...profileFormData,
-                      role: "SYSTEM_ADMIN",
-                    })
-                  }>
-                  <RadioGroupItem
-                    value="SYSTEM_ADMIN"
-                    id="role-profile-admin"
-                  />
-                  <Label
-                    htmlFor="role-profile-admin"
-                    className={`flex flex-col gap-0.5 cursor-pointer flex-1 ${
-                      profileFormData.role === "SYSTEM_ADMIN"
-                        ? "text-primary"
-                        : ""
-                    }`}>
-                    <span className="font-bold text-sm">Admin</span>
-                    <span
-                      className={`text-sm leading-tight ${
-                        profileFormData.role === "SYSTEM_ADMIN"
-                          ? "text-primary/70"
-                          : "text-muted-foreground"
-                      }`}>
-                      Full access & logs.
-                    </span>
-                  </Label>
-                </div>
-                <div
-                  className={`flex items-center gap-3 rounded-lg border p-2.5 hover:bg-muted/50 cursor-pointer transition-all relative flex-1 ${
-                    profileFormData.role === "REGISTRAR"
-                      ? "border-primary bg-primary/5 shadow-sm"
-                      : "border-border"
-                  }`}
-                  onClick={() =>
-                    setProfileFormData({
-                      ...profileFormData,
-                      role: "REGISTRAR",
-                    })
-                  }>
-                  <RadioGroupItem value="REGISTRAR" id="role-profile-reg" />
-                  <Label
-                    htmlFor="role-profile-reg"
-                    className={`flex flex-col gap-0.5 cursor-pointer flex-1 ${
-                      profileFormData.role === "REGISTRAR" ? "text-primary" : ""
-                    }`}>
-                    <span className="font-bold text-sm">Registrar</span>
-                    <span
-                      className={`text-sm leading-tight ${
-                        profileFormData.role === "REGISTRAR"
-                          ? "text-primary/70"
-                          : "text-muted-foreground"
-                      }`}>
-                      Enrollment & sections.
-                    </span>
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <SheetFooter className="sticky bottom-0 bg-background pt-6 pb-2 border-t mt-4 flex flex-row gap-3">
             <Button
               variant="outline"
               onClick={() => {
@@ -1914,18 +1649,23 @@ export default function AdminUsers() {
                 setProfileErrors({});
               }}
               disabled={submitting}
-              className="w-full sm:w-auto">
-              Cancel
+              className="flex-1 h-11 font-bold uppercase tracking-widest text-xs text-maroon-900">
+              Discard
             </Button>
             <Button
               onClick={handleProfileSave}
               disabled={submitting}
-              className="w-full sm:w-auto">
-              {submitting ? "Saving..." : "Save Changes"}
+              className="flex-[2] h-11 font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20">
+              {submitting ? (
+                <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <CheckIcon className="h-4 w-4 mr-2" />
+              )}
+              Save Changes
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
       {/* Reset Password Dialog */}
       <Dialog open={resetOpen} onOpenChange={setResetOpen}>

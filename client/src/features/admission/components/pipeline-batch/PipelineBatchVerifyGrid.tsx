@@ -199,6 +199,7 @@ export default function PipelineBatchVerifyGrid({
                   onCheckedChange={(checked) =>
                     setVerifyRequiredDocsForRow(applicant.id, Boolean(checked))
                   }
+                  onClick={(e) => e.stopPropagation()}
                   disabled={
                     isBatchProcessing ||
                     isRetained ||
@@ -265,6 +266,7 @@ export default function PipelineBatchVerifyGrid({
                 onCheckedChange={(checked) =>
                   setVerifyColumnForAll(column.key, Boolean(checked))
                 }
+                onClick={(e) => e.stopPropagation()}
                 disabled={
                   isBatchProcessing || verifyGridApplicants.length === 0
                 }
@@ -336,6 +338,7 @@ export default function PipelineBatchVerifyGrid({
               onCheckedChange={(checked) =>
                 setVerifyRowMarked(applicant.id, Boolean(checked))
               }
+              onClick={(e) => e.stopPropagation()}
               disabled={clearanceDisabled}
             />
             <span className="text-[11px] font-bold whitespace-nowrap">
@@ -383,6 +386,7 @@ export default function PipelineBatchVerifyGrid({
               className={verificationCheckboxClassName}
               checked={verifyAllChecked}
               onCheckedChange={(checked) => setVerifyAll(Boolean(checked))}
+              onClick={(e) => e.stopPropagation()}
               disabled={
                 isBatchProcessing ||
                 verifyGridApplicants.length === 0 ||

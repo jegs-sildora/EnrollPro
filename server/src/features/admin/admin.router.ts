@@ -17,6 +17,7 @@ const router: Router = Router();
 router.use(authenticate, authorize("SYSTEM_ADMIN"));
 
 // User Management
+router.get("/users/metrics", userCtrl.metrics);
 router.get("/users", userCtrl.index);
 router.post("/users", validate(createUserSchema), userCtrl.store);
 router.put("/users/:id", validate(updateUserSchema), userCtrl.update);

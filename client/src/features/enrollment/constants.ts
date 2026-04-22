@@ -15,7 +15,7 @@ export const STATUS_CONFIG: Record<
     className: "bg-amber-100 text-amber-800 border-amber-300",
   },
   READY_FOR_SECTIONING: {
-    label: "Ready for Sectioning",
+    label: "Verified Docs",
     className: "bg-green-100 text-green-800 border-green-300",
   },
   OFFICIALLY_ENROLLED: {
@@ -35,7 +35,7 @@ export const STATUS_CONFIG: Record<
     className: "bg-slate-100 text-slate-700 border-slate-300",
   },
   VERIFIED: {
-    label: "Ready for Sectioning",
+    label: "Verified Docs",
     className: "bg-blue-100 text-blue-800 border-blue-300",
   },
   UNDER_REVIEW: {

@@ -335,3 +335,26 @@ export async function resetPassword(req: Request, res: Response) {
 		res.status(500).json({ message: error.message });
 	}
 }
+
+export async function metrics(_req: Request, res: Response) {
+	try {
+		const [totalActiveStaff, pendingUnverified, lockedDeactivated] =
+			await Promise.all([
+				prisma.user.count({ where: { isActive: true } }),
+				prisma.user.count({
+					where: {
+						OR: [{ mustChangePassword: true }, { lastLoginAt: null }],
+					},
+				}),
+				prisma.user.count({ where: { isActive: false } }),
+			]);
+
+		res.json({
+			totalActiveStaff,
+			pendingUnverified,
+			lockedDeactivated,
+		});
+	} catch (error: any) {
+		res.status(500).json({ message: error.message });
+	}
+}

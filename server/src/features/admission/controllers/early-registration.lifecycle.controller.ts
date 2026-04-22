@@ -917,15 +917,29 @@ export function createEarlyRegistrationLifecycleController(
               ? { createMany: { data: familyData } }
               : undefined,
           previousSchool:
+            data.lastSchoolName ||
             data.originSchoolName ||
-            typeof data.checklist?.finalGeneralAverage === "number"
+            typeof data.checklist?.finalGeneralAverage === "number" ||
+            typeof data.generalAverage === "number"
               ? {
                   create: {
-                    schoolName: normalizeOptional(data.originSchoolName),
+                    schoolName: normalizeOptional(
+                      data.lastSchoolName || data.originSchoolName,
+                    ),
+                    schoolDepedId: normalizeOptional(data.lastSchoolId),
+                    gradeCompleted: normalizeOptional(data.lastGradeCompleted),
+                    schoolYearAttended: normalizeOptional(
+                      data.schoolYearLastAttended,
+                    ),
+                    schoolAddress: normalizeOptional(data.lastSchoolAddress),
+                    schoolType: normalizeOptional(data.lastSchoolType),
                     generalAverage:
-                      typeof data.checklist?.finalGeneralAverage === "number"
-                        ? data.checklist.finalGeneralAverage
-                        : null,
+                      typeof data.generalAverage === "number"
+                        ? data.generalAverage
+                        : typeof data.checklist?.finalGeneralAverage ===
+                            "number"
+                          ? data.checklist.finalGeneralAverage
+                          : null,
                   },
                 }
               : undefined,

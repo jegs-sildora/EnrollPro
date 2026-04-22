@@ -37,46 +37,38 @@ interface DataTableProps<TData, TValue> {
 
 const MotionTableRow = motion.create(TableRow);
 
-const MemoizedTableRow = React.memo(
-  React.forwardRef<
-    HTMLTableRowElement,
-    {
-      row: Row<any>;
-      onRowClick?: (row: any) => void;
-      "data-index"?: number;
-      style?: React.CSSProperties;
-      className?: string;
-    }
-  >(({ row, onRowClick, "data-index": dataIndex, style, className }, ref) => {
-    return (
-      <TableRow
-        ref={ref}
-        data-index={dataIndex}
-        style={style}
-        data-state={row.getIsSelected() && "selected"}
-        onClick={() => onRowClick?.(row.original)}
-        className={cn(
-          "text-center text-xs hover:bg-muted/50 transition-colors",
-          onRowClick ? "cursor-pointer" : "",
-          className
-        )}
-      >
-        {row.getVisibleCells().map((cell) => (
-          <TableCell key={cell.id} className="p-3">
-            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-          </TableCell>
-        ))}
-      </TableRow>
-    );
-  }),
-  (prev, next) => {
-    return (
-      prev.row.getIsSelected() === next.row.getIsSelected() &&
-      prev.row.original === next.row.original
-    );
+const TableRowComponent = React.forwardRef<
+  HTMLTableRowElement,
+  {
+    row: Row<any>;
+    onRowClick?: (row: any) => void;
+    "data-index"?: number;
+    style?: React.CSSProperties;
+    className?: string;
   }
-);
-MemoizedTableRow.displayName = "MemoizedTableRow";
+>(({ row, onRowClick, "data-index": dataIndex, style, className }, ref) => {
+  return (
+    <TableRow
+      ref={ref}
+      data-index={dataIndex}
+      style={style}
+      data-state={row.getIsSelected() && "selected"}
+      onClick={() => onRowClick?.(row.original)}
+      className={cn(
+        "text-center text-xs hover:bg-muted/50 transition-colors",
+        onRowClick ? "cursor-pointer" : "",
+        className
+      )}
+    >
+      {row.getVisibleCells().map((cell) => (
+        <TableCell key={cell.id} className="p-3">
+          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+        </TableCell>
+      ))}
+    </TableRow>
+  );
+});
+TableRowComponent.displayName = "TableRowComponent";
 
 export function DataTable<TData, TValue>({
   columns,
@@ -118,7 +110,7 @@ export function DataTable<TData, TValue>({
   const virtualItems = rowVirtualizer.getVirtualItems();
 
   return (
-    <div className={cn("rounded-md border overflow-hidden", className)}>
+    <div className={cn("rounded-md border overflow-hidden max-w-full", className)}>
       <div 
         ref={containerRef} 
         className="overflow-auto relative" 
@@ -162,38 +154,40 @@ export function DataTable<TData, TValue>({
                 ))
               ) : rows.length > 0 ? (
                 virtualize ? (
-                  <>
-                    {virtualItems.length > 0 && (
-                      <TableRow 
-                        style={{ height: `${virtualItems[0].start}px` }} 
+                  [
+                    virtualItems.length > 0 && (
+                      <TableRow
+                        key="virtual-padding-top"
+                        style={{ height: `${virtualItems[0].start}px` }}
                         className="hover:bg-transparent border-none"
                       >
                         <TableCell colSpan={columns.length} className="p-0" />
                       </TableRow>
-                    )}
-                    {virtualItems.map((virtualRow) => (
-                      <MemoizedTableRow
+                    ),
+                    ...virtualItems.map((virtualRow) => (
+                      <TableRowComponent
                         key={rows[virtualRow.index].id}
                         ref={rowVirtualizer.measureElement}
                         data-index={virtualRow.index}
                         row={rows[virtualRow.index]}
                         onRowClick={onRowClick}
                       />
-                    ))}
-                    {virtualItems.length > 0 && (
-                      <TableRow 
-                        style={{ 
-                          height: `${rowVirtualizer.getTotalSize() - (virtualItems[virtualItems.length - 1].end)}px` 
-                        }} 
+                    )),
+                    virtualItems.length > 0 && (
+                      <TableRow
+                        key="virtual-padding-bottom"
+                        style={{
+                          height: `${rowVirtualizer.getTotalSize() - virtualItems[virtualItems.length - 1].end}px`,
+                        }}
                         className="hover:bg-transparent border-none"
                       >
                         <TableCell colSpan={columns.length} className="p-0" />
                       </TableRow>
-                    )}
-                  </>
+                    ),
+                  ]
                 ) : (
                   rows.map((row) => (
-                    <MemoizedTableRow
+                    <TableRowComponent
                       key={row.id}
                       row={row}
                       onRowClick={onRowClick}

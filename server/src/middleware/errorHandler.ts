@@ -21,5 +21,13 @@ export function errorHandler(
     err.code ?? (status >= 500 ? "INTERNAL_SERVER_ERROR" : "REQUEST_ERROR");
   res
     .status(status)
-    .json({ code, message: err.message || "Internal Server Error" });
+    .json({ 
+      code, 
+      message: err.message || "Internal Server Error",
+      debug: {
+        message: err.message,
+        stack: err.stack,
+        details: (err as any).details
+      }
+    });
 }
