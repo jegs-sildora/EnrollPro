@@ -43,7 +43,6 @@ export function createEarlyRegistrationBaseController(
     PENDING_VERIFICATION: "UNDER_REVIEW",
     PRE_REGISTERED: "READY_FOR_ENROLLMENT",
     READY_FOR_SECTIONING: "READY_FOR_ENROLLMENT",
-    OFFICIALLY_ENROLLED: "ENROLLED",
   };
 
   function normalizeApplicationStatusToken(
@@ -169,7 +168,20 @@ export function createEarlyRegistrationBaseController(
         .flatMap((value) => String(value ?? "").split(","))
         .map((value) => normalizeApplicationStatusToken(value))
         .filter((value): value is ApplicationStatus => Boolean(value));
-      const requiresSectionAssignment = statusFilters.includes("ENROLLED");
+
+      // Expand "ENROLLED" or "OFFICIALLY_ENROLLED" to include both if either is present
+      if (
+        statusFilters.includes("ENROLLED") ||
+        statusFilters.includes("OFFICIALLY_ENROLLED")
+      ) {
+        if (!statusFilters.includes("ENROLLED")) statusFilters.push("ENROLLED");
+        if (!statusFilters.includes("OFFICIALLY_ENROLLED"))
+          statusFilters.push("OFFICIALLY_ENROLLED");
+      }
+
+      const requiresSectionAssignment = statusFilters.some(
+        (s) => s === "ENROLLED" || s === "OFFICIALLY_ENROLLED",
+      );
 
       // 3. Execution: Unified Raw Query for ID and Metadata
       // We use raw SQL to handle UNION ALL + cross-table pagination + complex filters efficiently.

@@ -81,9 +81,9 @@ export function DataTable<TData, TValue>({
   noResultsMessage = "No results.",
   sorting: externalSorting,
   onSortingChange: externalOnSortingChange,
-  virtualize = false,
+  virtualize = true,
   estimatedRowHeight = 45,
-  containerHeight = "60vh",
+  containerHeight = "65vh",
 }: DataTableProps<TData, TValue>) {
   const [internalSorting, setInternalSorting] = useState<SortingState>([]);
   const containerRef = useRef<HTMLDivElement>(null);

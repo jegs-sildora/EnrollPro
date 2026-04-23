@@ -31,7 +31,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
@@ -229,7 +231,28 @@ export function BatchSectioningWizard({
   const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false);
   const [gradeSections, setGradeSections] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [programFilter, setProgramFilter] = useState<string>("all");
   const [sectionFilter, setSectionFilter] = useState<string>("all");
+
+  const uniquePrograms = useMemo(() => {
+    if (!previewData) return [];
+    const programs = new Set(modifiedAssignments.map((a) => a.programType));
+    return Array.from(programs).sort();
+  }, [previewData, modifiedAssignments]);
+
+  const uniqueSections = useMemo(() => {
+    if (!previewData) return [];
+
+    // Get assignments matching the current program filter
+    const relevantAssignments =
+      programFilter === "all"
+        ? modifiedAssignments
+        : modifiedAssignments.filter((a) => a.programType === programFilter);
+
+    const sections = new Set(relevantAssignments.map((a) => a.sectionName));
+    return Array.from(sections).sort();
+  }, [previewData, modifiedAssignments, programFilter]);
+
   const [viewingReclassified, setViewingReclassified] = useState<{
     title: string;
     learners: ProposedAssignment[];
@@ -374,8 +397,23 @@ export function BatchSectioningWizard({
     }
   };
 
+  const handleProgramFilterChange = (value: string) => {
+    setProgramFilter(value);
+    setSectionFilter("all");
+  };
+
   const filteredAssignments = useMemo(() => {
     let list = [...modifiedAssignments];
+
+    // Program Filter
+    if (programFilter !== "all") {
+      list = list.filter((a) => a.programType === programFilter);
+    }
+
+    // Section Filter
+    if (sectionFilter !== "all") {
+      list = list.filter((a) => a.sectionName === sectionFilter);
+    }
 
     // Sort logic
     list.sort((a, b) => {
@@ -407,19 +445,8 @@ export function BatchSectioningWizard({
       return a.learnerName.localeCompare(b.learnerName);
     });
 
-    if (sectionFilter === "all") return list;
-    return list.filter((a) => a.sectionName === sectionFilter);
-  }, [modifiedAssignments, sectionFilter, sortConfig]);
-
-  const uniqueSections = useMemo(() => {
-    if (!previewData) return [];
-    // Combine original sections and any manually assigned sections
-    const sections = new Set([
-      ...previewData.proposedAssignments.map((a) => a.sectionName),
-      ...modifiedAssignments.map((a) => a.sectionName),
-    ]);
-    return Array.from(sections).sort();
-  }, [previewData, modifiedAssignments]);
+    return list;
+  }, [modifiedAssignments, programFilter, sectionFilter, sortConfig]);
 
   const virtualItemsData = useMemo(() => {
     const items: Array<
@@ -713,6 +740,32 @@ export function BatchSectioningWizard({
                           <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
                             <Filter className="w-3.5 h-3.5" /> Filter Preview
                           </div>
+
+                          {/* Program Filter */}
+                          <Select
+                            value={programFilter}
+                            onValueChange={handleProgramFilterChange}>
+                            <SelectTrigger className="w-[200px] h-10 font-bold bg-card border-2">
+                              <SelectValue placeholder="All Programs" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem
+                                value="all"
+                                className="font-bold uppercase text-xs">
+                                All Programs
+                              </SelectItem>
+                              {uniquePrograms.map((prog) => (
+                                <SelectItem
+                                  key={prog}
+                                  value={prog}
+                                  className="font-medium">
+                                  {formatScpType(prog)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+
+                          {/* Section Filter (Cascading) */}
                           <Select
                             value={sectionFilter}
                             onValueChange={setSectionFilter}>
@@ -725,14 +778,79 @@ export function BatchSectioningWizard({
                                 className="font-bold uppercase text-xs">
                                 All Sections (Full Roster)
                               </SelectItem>
-                              {uniqueSections.map((section) => (
-                                <SelectItem
-                                  key={section}
-                                  value={section}
-                                  className="font-medium">
-                                  {section}
-                                </SelectItem>
-                              ))}
+
+                              {programFilter === "REGULAR" ||
+                              programFilter === "all" ? (
+                                <>
+                                  {/* Regular Sections */}
+                                  <SelectGroup>
+                                    <SelectLabel className="font-black text-[10px] text-muted-foreground uppercase tracking-widest bg-muted/30 px-2 py-1">
+                                      Pilot Sections
+                                    </SelectLabel>
+                                    {uniqueSections
+                                      .filter((s) => s.startsWith("Pilot"))
+                                      .map((section) => (
+                                        <SelectItem
+                                          key={section}
+                                          value={section}
+                                          className="font-medium">
+                                          {section}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectGroup>
+                                  <SelectGroup>
+                                    <SelectLabel className="font-black text-[10px] text-muted-foreground uppercase tracking-widest bg-muted/30 px-2 py-1 mt-2">
+                                      Heterogeneous Sections
+                                    </SelectLabel>
+                                    {uniqueSections
+                                      .filter(
+                                        (s) =>
+                                          !s.startsWith("Pilot") &&
+                                          !s.startsWith("STE") &&
+                                          !s.startsWith("SPA") &&
+                                          !s.startsWith("SPS") &&
+                                          !s.startsWith("SPJ") &&
+                                          !s.startsWith("SPFL") &&
+                                          !s.startsWith("SPTVE"),
+                                      )
+                                      .map((section) => (
+                                        <SelectItem
+                                          key={section}
+                                          value={section}
+                                          className="font-medium">
+                                          {section}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectGroup>
+                                </>
+                              ) : null}
+
+                              {/* Special Program Sections */}
+                              {programFilter !== "REGULAR" && (
+                                <SelectGroup>
+                                  <SelectLabel className="font-black text-[10px] text-muted-foreground uppercase tracking-widest bg-muted/30 px-2 py-1">
+                                    Special Sections
+                                  </SelectLabel>
+                                  {uniqueSections
+                                    .filter(
+                                      (s) =>
+                                        s.startsWith("STE") ||
+                                        s.startsWith("SPA") ||
+                                        s.startsWith("SPS") ||
+                                        s.startsWith("SPJ") ||
+                                        s.startsWith("SPFL") ||
+                                        s.startsWith("SPTVE"),
+                                    )
+                                    .map((section) => (
+                                      <SelectItem
+                                        key={section}
+                                        value={section}
+                                        className="font-medium">
+                                        {section}
+                                      </SelectItem>
+                                    ))}
+                                </SelectGroup>
+                              )}
                             </SelectContent>
                           </Select>
                         </div>

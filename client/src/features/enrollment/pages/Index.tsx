@@ -66,6 +66,7 @@ import {
   ENROLLMENT_SUB_MENU_OPTIONS,
   PENDING_VERIFICATION_STATUSES,
   SECTION_ASSIGNMENT_STATUSES,
+  OFFICIAL_ROSTER_STATUSES,
   type EnrollmentSubMenu,
 } from "@/features/enrollment/workflow.constants";
 import type {
@@ -606,7 +607,7 @@ export default function Enrollment() {
       }
 
       if (workflowView === "OFFICIAL_ROSTER") {
-        params.append("status", "ENROLLED");
+        params.append("status", Array.from(OFFICIAL_ROSTER_STATUSES).join(","));
         params.append("withSection", "true");
       }
 
@@ -643,7 +644,7 @@ export default function Enrollment() {
           return SECTION_ASSIGNMENT_STATUSES.has(app.status) && !hasSection;
         }
 
-        return app.status === "ENROLLED" && hasSection;
+        return OFFICIAL_ROSTER_STATUSES.has(app.status as any) && hasSection;
       });
 
       setApplications(filteredApps);

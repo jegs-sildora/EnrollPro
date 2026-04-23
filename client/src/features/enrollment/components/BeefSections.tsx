@@ -4,25 +4,46 @@ import { format, differenceInYears } from "date-fns";
 import { motion, AnimatePresence } from "motion/react";
 import type { ApplicantDetail } from "@/features/enrollment/hooks/useApplicationDetail";
 
+import {
+  User,
+  MapPin,
+  Users,
+  GraduationCap,
+  Tags,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
+
+import { Badge } from "@/shared/ui/badge";
+
 interface SectionProps {
   title: string;
+  icon?: React.ReactNode;
   children: React.ReactNode;
 }
 
-function CollapsibleSection({ title, children }: SectionProps) {
+function CollapsibleSection({ title, icon, children }: SectionProps) {
   const [isOpen, setIsOpen] = useState(true);
 
   return (
     <div className="border rounded-md mb-4 bg-[hsl(var(--card))] overflow-hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between w-full p-3 font-bold text-sm cursor-pointer hover:bg-[hsl(var(--muted)/50)] transition-colors">
-        <span>
-          {isOpen ? "▾" : "▸"} {title}
-        </span>
+        className="flex items-center justify-between w-full p-3 font-bold text-sm cursor-pointer hover:bg-[hsl(var(--muted)/50)] transition-colors text-left group">
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground group-hover:text-primary transition-colors">
+            {isOpen ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
+          </span>
+          {icon && <span className="text-primary">{icon}</span>}
+          <span>{title}</span>
+        </div>
         <span
-          className={`text-xs text-muted-foreground ${isOpen ? "opacity-60" : ""}`}>
-          {isOpen ? "Expanded" : "Expand"}
+          className={`text-[10px] uppercase tracking-widest text-muted-foreground ${isOpen ? "opacity-60" : ""}`}>
+          {isOpen ? "Hide" : "Show"}
         </span>
       </button>
       <AnimatePresence initial={false}>
@@ -32,7 +53,7 @@ function CollapsibleSection({ title, children }: SectionProps) {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}>
-            <div className="p-4 pt-4 text-sm border-t grid grid-cols-[140px_1fr] gap-x-2 gap-y-1.5 font-bold">
+            <div className="p-4 pt-4 text-sm border-t grid grid-cols-[140px_1fr] gap-x-2 gap-y-2 font-bold">
               {children}
             </div>
           </motion.div>
@@ -53,12 +74,27 @@ const isValid = (value: any) => {
   );
 };
 
-function DataItem({ label, value }: { label: string; value: any }) {
-  if (!isValid(value)) return null;
+function DataItem({
+  label,
+  value,
+  mutedIfInvalid = false,
+}: {
+  label: string;
+  value: any;
+  mutedIfInvalid?: boolean;
+}) {
+  const valid = isValid(value);
+  if (!valid && !mutedIfInvalid) return null;
+
   return (
     <>
       <span className="text-muted-foreground">{label}:</span>
-      <span>{value}</span>
+      <span
+        className={
+          !valid ? "text-muted-foreground/50 italic font-medium" : "uppercase"
+        }>
+        {valid ? value : "Not provided"}
+      </span>
     </>
   );
 }
@@ -89,7 +125,9 @@ export function PersonalInfo({ applicant }: { applicant: ApplicantDetail }) {
   }
 
   return (
-    <CollapsibleSection title="Personal Information">
+    <CollapsibleSection
+      title="Personal Information"
+      icon={<User className="h-4 w-4" />}>
       <DataItem label="Full Name" value={fullName} />
       <DataItem label="Date of Birth" value={formattedBirthDate} />
       <DataItem label="Age" value={age} />
@@ -124,7 +162,9 @@ export function AddressInfo({ applicant }: { applicant: ApplicantDetail }) {
   }
 
   return (
-    <CollapsibleSection title="Home Address">
+    <CollapsibleSection
+      title="Home Address"
+      icon={<MapPin className="h-4 w-4" />}>
       <DataItem label="House No/Street" value={houseNoStreet} />
       <DataItem label="Sitio/Purok" value={sitio} />
       <DataItem label="Barangay" value={barangay} />
@@ -139,41 +179,48 @@ export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
     applicant as any;
 
   const getContactInfo = (label: string, info: any, isPrimary: boolean) => {
-    if (!info) return null;
-    const firstName = info.firstName;
-    const lastName = info.lastName || info.maidenName;
+    const firstName = info?.firstName;
+    const lastName = info?.lastName || info?.maidenName;
 
-    if (!isValid(firstName) || !isValid(lastName)) return null;
+    const validName = isValid(firstName) || isValid(lastName);
 
-    const fullName = info.maidenName
-      ? `${firstName} ${info.maidenName}`
-      : `${firstName} ${info.lastName}`;
+    const fullName = !validName
+      ? null
+      : info.maidenName
+        ? `${firstName || ""} ${info.maidenName}`.trim()
+        : `${firstName || ""} ${info.lastName || ""}`.trim();
 
     return {
       label,
       fullName,
       isPrimary,
-      details: [info.contactNumber, info.email]
+      details: [info?.contactNumber, info?.email]
         .filter((v) => isValid(v))
         .join(" | "),
       relationship:
-        info.relationship && info.relationship !== label.toUpperCase()
+        info?.relationship && info.relationship !== label.toUpperCase()
           ? info.relationship
           : null,
     };
   };
 
-  const mother = getContactInfo("Mother", motherName, primaryContact === "MOTHER");
-  const father = getContactInfo("Father", fatherName, primaryContact === "FATHER");
-  const guardian = getContactInfo("Guardian", guardianInfo, primaryContact === "GUARDIAN");
-
-  // Visibility check
-  if (!mother && !father && !guardian && !isValid(applicant.emailAddress)) {
-    return null;
-  }
+  const mother = getContactInfo(
+    "Mother",
+    motherName,
+    primaryContact === "MOTHER",
+  );
+  const father = getContactInfo(
+    "Father",
+    fatherName,
+    primaryContact === "FATHER",
+  );
+  const guardian = getContactInfo(
+    "Guardian",
+    guardianInfo,
+    primaryContact === "GUARDIAN",
+  );
 
   const renderContact = (c: any) => {
-    if (!c) return null;
     return (
       <React.Fragment key={c.label}>
         <span className="text-muted-foreground flex items-center gap-1.5">
@@ -185,8 +232,15 @@ export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
           )}
         </span>
         <div className="flex flex-col">
-          <span className="uppercase">{c.fullName}</span>
-          <span className="text-xs text-muted-foreground font-medium">
+          {c.fullName ? (
+            <span className="uppercase">{c.fullName}</span>
+          ) : (
+            <span className="text-muted-foreground/50 italic font-medium">
+              Not provided
+            </span>
+          )}
+          <span
+            className={`text-xs font-medium ${c.details ? "text-muted-foreground" : "text-muted-foreground/50 italic"}`}>
             {c.details || "No contact info"}
             {c.relationship && ` (${c.relationship})`}
           </span>
@@ -196,16 +250,31 @@ export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
   };
 
   return (
-    <CollapsibleSection title="Parents & Guardian">
+    <CollapsibleSection
+      title="Parents & Guardian (SF1)"
+      icon={<Users className="h-4 w-4" />}>
       {renderContact(mother)}
       {renderContact(father)}
       {renderContact(guardian)}
-      <DataItem label="Primary Email" value={applicant.emailAddress} />
+      <DataItem
+        label="Primary Email"
+        value={applicant.emailAddress}
+        mutedIfInvalid
+      />
     </CollapsibleSection>
   );
 }
 
 export function PreviousSchool({ applicant }: { applicant: ApplicantDetail }) {
+  const formattedAve = isValid(applicant.generalAverage)
+    ? Number(applicant.generalAverage).toFixed(2)
+    : null;
+
+  const readingProfile = (applicant as any).readingProfileLevel?.replace(
+    "_",
+    " ",
+  );
+
   // Visibility check
   if (
     !isValid(applicant.lastSchoolName) &&
@@ -219,7 +288,9 @@ export function PreviousSchool({ applicant }: { applicant: ApplicantDetail }) {
   }
 
   return (
-    <CollapsibleSection title="Previous School">
+    <CollapsibleSection
+      title="Previous School"
+      icon={<GraduationCap className="h-4 w-4" />}>
       <DataItem label="School Name" value={applicant.lastSchoolName} />
       <DataItem label="School ID" value={applicant.lastSchoolId} />
       <DataItem label="Grade Completed" value={applicant.lastGradeCompleted} />
@@ -229,56 +300,98 @@ export function PreviousSchool({ applicant }: { applicant: ApplicantDetail }) {
       />
       <DataItem label="School Address" value={applicant.lastSchoolAddress} />
       <DataItem label="School Type" value={applicant.lastSchoolType} />
-      <DataItem label="General Average" value={applicant.generalAverage} />
+      <DataItem label="General Average" value={formattedAve} />
+      <DataItem label="Reading Profile" value={readingProfile} />
     </CollapsibleSection>
   );
 }
 
 export function Classifications({ applicant }: { applicant: ApplicantDetail }) {
   const learnerType = applicant.learnerType?.replace("_", " ");
-  const ipInfo = applicant.isIpCommunity
-    ? `YES (${applicant.ipGroupName || "No Group"})`
-    : null;
-  const p4sInfo = applicant.is4PsBeneficiary
-    ? `YES (${applicant.householdId4Ps || "No ID"})`
-    : null;
-  const disability = applicant.isLearnerWithDisability ? "YES" : null;
-  const balikAral = applicant.isBalikAral
-    ? `YES (Last: ${applicant.lastYearEnrolled})`
-    : null;
-
-  // Visibility check
-  if (
-    !isValid(learnerType) &&
-    !isValid(ipInfo) &&
-    !isValid(p4sInfo) &&
-    !isValid(disability) &&
-    !isValid(balikAral)
-  ) {
-    return null;
-  }
+  const isIp = Boolean(applicant.isIpCommunity);
+  const is4Ps = Boolean(applicant.is4PsBeneficiary);
+  const isPwd = Boolean(applicant.isLearnerWithDisability);
+  const isBalikAral = Boolean(applicant.isBalikAral);
 
   return (
-    <CollapsibleSection title="Classifications">
+    <CollapsibleSection
+      title="Classifications"
+      icon={<Tags className="h-4 w-4" />}>
       <DataItem label="Learner Type" value={learnerType} />
-      <DataItem label="IP Community" value={ipInfo} />
-      <DataItem label="4Ps Beneficiary" value={p4sInfo} />
 
-      {disability && (
-        <>
-          <span className="text-muted-foreground">Disability:</span>
-          <div className="flex flex-col">
-            <span>YES</span>
+      <span className="text-muted-foreground">IP Community:</span>
+      <div>
+        {isIp ? (
+          <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">
+            ✓ IP Member ({applicant.ipGroupName || "No Group"})
+          </Badge>
+        ) : (
+          <Badge
+            variant="outline"
+            className="text-muted-foreground/50 border-muted">
+            ✕ Not an IP Member
+          </Badge>
+        )}
+      </div>
+
+      <span className="text-muted-foreground">4Ps Beneficiary:</span>
+      <div>
+        {is4Ps ? (
+          <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200">
+            ✓ 4Ps Beneficiary ({applicant.householdId4Ps || "No ID"})
+          </Badge>
+        ) : (
+          <Badge
+            variant="outline"
+            className="text-muted-foreground/50 border-muted">
+            ✕ Not a 4Ps Beneficiary
+          </Badge>
+        )}
+      </div>
+
+      <span className="text-muted-foreground">Disability:</span>
+      <div>
+        {isPwd ? (
+          <div className="space-y-2">
+            <Badge className="bg-rose-100 text-rose-800 hover:bg-rose-100 border-rose-200">
+              ✓ Has Disability
+            </Badge>
             {applicant.disabilityTypes?.length > 0 && (
-              <span className="text-xs text-muted-foreground font-medium">
-                Types: {applicant.disabilityTypes.join(", ")}
-              </span>
+              <div className="flex flex-wrap gap-2">
+                {applicant.disabilityTypes.map((t) => (
+                  <Badge
+                    key={t}
+                    variant="outline"
+                    className="border-rose-200 text-rose-700 h-5 px-1.5 text-[10px]">
+                    {t}
+                  </Badge>
+                ))}
+              </div>
             )}
           </div>
-        </>
-      )}
+        ) : (
+          <Badge
+            variant="outline"
+            className="text-muted-foreground/50 border-muted">
+            ✕ No Disability
+          </Badge>
+        )}
+      </div>
 
-      <DataItem label="Balik-Aral" value={balikAral} />
+      <span className="text-muted-foreground">Balik-Aral:</span>
+      <div>
+        {isBalikAral ? (
+          <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200">
+            ✓ Returning (Last: {applicant.lastYearEnrolled})
+          </Badge>
+        ) : (
+          <Badge
+            variant="outline"
+            className="text-muted-foreground/50 border-muted">
+            ✕ No
+          </Badge>
+        )}
+      </div>
     </CollapsibleSection>
   );
 }

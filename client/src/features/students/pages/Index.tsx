@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, startTransition } from "react";
+import { useState, useEffect, useCallback, useMemo, startTransition, useRef } from "react";
 import { useNavigate } from "react-router";
 import {
   Search,
@@ -62,9 +62,13 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { Label } from "@/shared/ui/label";
+import { Sheet, SheetContent } from "@/shared/ui/sheet";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
+import { StudentDetailPanel } from "../components/StudentDetailPanel";
+import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
+import { useResizablePanel } from "@/features/admission/pages/early-registration/hooks/useResizablePanel";
 
 interface Student {
   id: number;
@@ -241,8 +245,6 @@ const formatLearningProgramLabel = (
     : displayName;
 };
 
-import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
-
 export default function Students() {
   const navigate = useNavigate();
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
@@ -252,6 +254,9 @@ export default function Students() {
   const [loading, setLoading] = useState(true);
   const showSkeleton = useDelayedLoading(loading);
   const [initialLoad, setInitialLoad] = useState(true);
+
+  const { panelPercentage, isDesktopViewport, startResizing } =
+    useResizablePanel();
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -285,11 +290,9 @@ export default function Students() {
   const [sections, setSections] = useState<Section[]>([]);
   const [filteredSections, setFilteredSections] = useState<Section[]>([]);
 
-  const [selectedStudent, setSelectedStudent] = useState<StudentDetail | null>(
+  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(
     null,
   );
-  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-  const [detailLoading, setDetailLoading] = useState(false);
   const [actionSubmitting, setActionSubmitting] = useState(false);
 
   const [showTransferOutDialog, setShowTransferOutDialog] = useState(false);
@@ -479,17 +482,7 @@ export default function Students() {
   }, [fetchSummary]);
 
   const handleViewDetails = useCallback(async (studentId: number) => {
-    setDetailLoading(true);
-    setDetailDialogOpen(true);
-    try {
-      const res = await api.get(`/students/${studentId}`);
-      setSelectedStudent(res.data.student);
-    } catch (err) {
-      toastApiError(err as never);
-      setDetailDialogOpen(false);
-    } finally {
-      setDetailLoading(false);
-    }
+    setSelectedStudentId(studentId);
   }, []);
 
   const getEnrolledBadge = () => (
@@ -520,13 +513,6 @@ export default function Students() {
     return age;
   };
 
-  const handleOpenPermanentRecord = useCallback(
-    (studentId: number) => {
-      navigate(`/students/${studentId}?tab=academic`);
-    },
-    [navigate],
-  );
-
   const handleOpenProfilePage = useCallback(
     (studentId: number) => {
       navigate(`/students/${studentId}`);
@@ -552,18 +538,12 @@ export default function Students() {
 
   const refreshDetailIfOpen = useCallback(
     async (studentId: number) => {
-      if (!detailDialogOpen || selectedStudent?.id !== studentId) {
+      if (selectedStudentId !== studentId) {
         return;
       }
-
-      try {
-        const res = await api.get(`/students/${studentId}`);
-        setSelectedStudent(res.data.student);
-      } catch (err) {
-        toastApiError(err as never);
-      }
+      // StudentDetailPanel fetches internally on id change.
     },
-    [detailDialogOpen, selectedStudent?.id],
+    [selectedStudentId],
   );
 
   const openTransferOutDialog = useCallback(
@@ -985,12 +965,6 @@ export default function Students() {
                   Open Full Profile
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => handleOpenPermanentRecord(row.original.id)}
-                  className="cursor-pointer">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Generate SF10 / Permanent Record
-                </DropdownMenuItem>
-                <DropdownMenuItem
                   onClick={() => openGoodMoralPreview(row.original.id)}
                   className="cursor-pointer">
                   <FileCheck2 className="mr-2 h-4 w-4" />
@@ -1037,7 +1011,6 @@ export default function Students() {
       getSortIcon,
       handleViewDetails,
       handleOpenProfilePage,
-      handleOpenPermanentRecord,
       openGoodMoralPreview,
       openProfileQuickEditDialog,
       openAssignLrnDialog,
@@ -1453,12 +1426,6 @@ export default function Students() {
                           Open Full Profile
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleOpenPermanentRecord(student.id)}
-                          className="cursor-pointer">
-                          <FileText className="mr-2 h-4 w-4" />
-                          Generate SF10 / Permanent Record
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
                           onClick={() => openGoodMoralPreview(student.id)}
                           className="cursor-pointer">
                           <FileCheck2 className="mr-2 h-4 w-4" />
@@ -1546,251 +1513,45 @@ export default function Students() {
         </CardContent>
       </Card>
 
-      {/* Student Detail Dialog */}
-      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-        <DialogContent className="w-[calc(100vw-1rem)] sm:w-full max-w-3xl max-h-[90vh] overflow-y-auto p-0">
-          <div className="p-4 sm:p-6 space-y-6">
-            <DialogHeader className="space-y-2">
-              <DialogTitle className="text-lg sm:text-xl font-extrabold">
-                Enrolled Learner Details
-              </DialogTitle>
-              <DialogDescription className="text-sm font-medium">
-                Complete profile and enrollment details for{" "}
-                {selectedStudent?.trackingNumber}
-              </DialogDescription>
-            </DialogHeader>
-
-            {detailLoading ? (
-              <div className="space-y-3 animate-pulse">
-                <div className="h-4 bg-muted rounded w-1/3" />
-                <div className="h-24 bg-muted rounded w-full" />
-                <div className="h-24 bg-muted rounded w-full" />
-              </div>
-            ) : selectedStudent ? (
-              <div className="space-y-6">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  {getEnrolledBadge()}
-                  <span className="text-xs sm:text-sm font-semibold text-[hsl(var(--muted-foreground))] break-all">
-                    {selectedStudent.trackingNumber}
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  <h3 className="font-bold text-xs sm:text-sm uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
-                    Personal Information
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-[11px] uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]">
-                        Full Name
-                      </Label>
-                      <p className="text-sm font-semibold break-words">
-                        {selectedStudent.fullName}
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="text-[11px] uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]">
-                        LRN
-                      </Label>
-                      <p className="text-sm font-semibold">
-                        {selectedStudent.lrn}
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="text-[11px] uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]">
-                        Date of Birth
-                      </Label>
-                      <p className="text-sm font-medium">
-                        {formatDate(selectedStudent.birthDate)} (
-                        {calculateAge(selectedStudent.birthDate)} yrs)
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="text-[11px] uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]">
-                        Sex
-                      </Label>
-                      <p className="text-sm font-medium">
-                        {selectedStudent.sex}
-                      </p>
-                    </div>
-                    <div className="sm:col-span-2">
-                      <Label className="text-[11px] uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]">
-                        Home Address
-                      </Label>
-                      <p className="text-sm font-medium break-words">
-                        {selectedStudent.address}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <h3 className="font-bold text-xs sm:text-sm uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
-                    Family and Contact
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-[11px] uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]">
-                        Parent or Guardian
-                      </Label>
-                      <p className="text-sm font-medium">
-                        {selectedStudent.parentGuardianName}
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="text-[11px] uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]">
-                        Contact Number
-                      </Label>
-                      <p className="text-sm font-medium break-words">
-                        {selectedStudent.parentGuardianContact}
-                      </p>
-                    </div>
-                    <div className="sm:col-span-2">
-                      <Label className="text-[11px] uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]">
-                        Email Address
-                      </Label>
-                      <p className="text-sm font-medium break-words">
-                        {selectedStudent.emailAddress}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <h3 className="font-bold text-xs sm:text-sm uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
-                    Enrollment Information
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-[11px] uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]">
-                        School Year
-                      </Label>
-                      <p className="text-sm font-medium">
-                        {selectedStudent.schoolYear}
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="text-[11px] uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]">
-                        Grade Level
-                      </Label>
-                      <p className="text-sm font-medium">
-                        {selectedStudent.gradeLevel}
-                      </p>
-                    </div>
-                    {selectedStudent.enrollment ? (
-                      <>
-                        <div>
-                          <Label className="text-[11px] uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]">
-                            Section
-                          </Label>
-                          <p className="text-sm font-medium">
-                            {selectedStudent.enrollment.section}
-                          </p>
-                        </div>
-                        {selectedStudent.enrollment.advisingTeacher && (
-                          <div>
-                            <Label className="text-[11px] uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]">
-                              Advising Teacher
-                            </Label>
-                            <p className="text-sm font-medium">
-                              {selectedStudent.enrollment.advisingTeacher}
-                            </p>
-                          </div>
-                        )}
-                        <div>
-                          <Label className="text-[11px] uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]">
-                            Enrolled On
-                          </Label>
-                          <p className="text-sm font-medium">
-                            {formatDate(selectedStudent.enrollment.enrolledAt)}
-                          </p>
-                        </div>
-                        <div>
-                          <Label className="text-[11px] uppercase tracking-wider font-bold text-[hsl(var(--muted-foreground))]">
-                            Enrolled By
-                          </Label>
-                          <p className="text-sm font-medium">
-                            {selectedStudent.enrollment.enrolledBy}
-                          </p>
-                        </div>
-                        {selectedStudent.enrollment.eosyStatus && (
-                          <div className="sm:col-span-2 rounded-lg border border-dashed p-3 space-y-1">
-                            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                              Lifecycle Outcome
-                            </p>
-                            <p className="text-sm font-semibold">
-                              {selectedStudent.enrollment.eosyStatus
-                                .replaceAll("_", " ")
-                                .toLowerCase()
-                                .replace(/\b\w/g, (letter) =>
-                                  letter.toUpperCase(),
-                                )}
-                            </p>
-                            {selectedStudent.enrollment.transferOutDate && (
-                              <p className="text-xs font-medium text-muted-foreground">
-                                Transfer Date:{" "}
-                                {formatDate(
-                                  selectedStudent.enrollment.transferOutDate,
-                                )}
-                              </p>
-                            )}
-                            {selectedStudent.enrollment
-                              .transferOutSchoolName && (
-                              <p className="text-xs font-medium text-muted-foreground">
-                                Destination School:{" "}
-                                {
-                                  selectedStudent.enrollment
-                                    .transferOutSchoolName
-                                }
-                              </p>
-                            )}
-                            {selectedStudent.enrollment.transferOutReason && (
-                              <p className="text-xs font-medium text-muted-foreground">
-                                Transfer Reason:{" "}
-                                {selectedStudent.enrollment.transferOutReason}
-                              </p>
-                            )}
-                            {selectedStudent.enrollment.dropOutDate && (
-                              <p className="text-xs font-medium text-muted-foreground">
-                                Dropout Date:{" "}
-                                {formatDate(
-                                  selectedStudent.enrollment.dropOutDate,
-                                )}
-                              </p>
-                            )}
-                            {selectedStudent.enrollment.dropOutReason && (
-                              <p className="text-xs font-medium text-muted-foreground">
-                                Dropout Reason:{" "}
-                                {selectedStudent.enrollment.dropOutReason}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="sm:col-span-2 rounded-lg border border-dashed p-3">
-                        <p className="text-sm font-semibold text-muted-foreground">
-                          No enrollment assignment details are currently
-                          available.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t text-xs sm:text-sm text-[hsl(var(--muted-foreground))] space-y-1">
-                  <p className="font-semibold">
-                    Applied: {formatDate(selectedStudent.createdAt)}
-                  </p>
-                  <p className="font-semibold">
-                    Last Updated: {formatDate(selectedStudent.updatedAt)}
-                  </p>
-                </div>
-              </div>
-            ) : null}
+      {/* Student Detail Panel */}
+      <Sheet
+        open={selectedStudentId !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedStudentId(null);
+        }}>
+        <SheetContent
+          side="right"
+          className="p-0 flex flex-row border-l overflow-visible w-full sm:w-auto sm:max-w-none"
+          style={
+            isDesktopViewport
+              ? { width: `${panelPercentage}vw` }
+              : undefined
+          }>
+          {/* Resize Handle — hidden on mobile */}
+          <div
+            onMouseDown={startResizing}
+            className="absolute left-[-4px] top-0 bottom-0 w-[8px] cursor-col-resize z-50 hover:bg-primary/30 transition-colors hidden sm:flex items-center justify-center group">
+            <div className="h-8 w-1.5 rounded-full bg-muted-foreground/20 group-hover:bg-primary/50" />
           </div>
-        </DialogContent>
-      </Dialog>
+
+          {selectedStudentId && (
+            <div className="flex-1 flex flex-col h-full overflow-hidden">
+              <StudentDetailPanel
+                id={selectedStudentId}
+                onClose={() => setSelectedStudentId(null)}
+                onOpenProfilePage={handleOpenProfilePage}
+                onOpenPermanentRecord={handleOpenPermanentRecord}
+                onOpenGoodMoral={openGoodMoralPreview}
+                onQuickEdit={openProfileQuickEditDialog}
+                onAssignLrn={openAssignLrnDialog}
+                onShift={openShiftDialog}
+                onTransferOut={openTransferOutDialog}
+                onDropout={openDropoutDialog}
+              />
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
 
       <Dialog
         open={showTransferOutDialog}

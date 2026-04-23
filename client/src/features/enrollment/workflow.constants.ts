@@ -32,3 +32,8 @@ export const SECTION_ASSIGNMENT_STATUSES = new Set([
   "READY_FOR_SECTIONING",
   "VERIFIED",
 ]);
+
+export const OFFICIAL_ROSTER_STATUSES = new Set([
+  "ENROLLED",
+  "OFFICIALLY_ENROLLED",
+]);
