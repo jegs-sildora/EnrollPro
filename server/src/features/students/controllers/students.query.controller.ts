@@ -99,7 +99,7 @@ export const createStudentsQueryController = (
 
         return {
           learningProgram:
-            applicant.enrollmentRecord?.section.programType ||
+            applicant.enrollmentRecord?.section?.programType ||
             applicant.programDetail?.scpType ||
             "REGULAR",
           dateEnrolled:
@@ -119,9 +119,9 @@ export const createStudentsQueryController = (
           emailAddress: applicant.earlyRegistration?.email ?? null,
           trackingNumber: applicant.trackingNumber,
           status: applicant.status,
-          gradeLevel: applicant.gradeLevel.name,
+          gradeLevel: applicant.gradeLevel?.name || "Unknown",
           gradeLevelId: applicant.gradeLevelId,
-          section: applicant.enrollmentRecord?.section.name || null,
+          section: applicant.enrollmentRecord?.section?.name || null,
           sectionId: applicant.enrollmentRecord?.sectionId || null,
           createdAt: applicant.createdAt,
           updatedAt: applicant.updatedAt,
@@ -139,7 +139,10 @@ export const createStudentsQueryController = (
       });
     } catch (error) {
       console.error("Error fetching students:", error);
-      res.status(500).json({ message: "Failed to fetch students" });
+      res.status(500).json({ 
+        message: "Failed to fetch students",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   };
 

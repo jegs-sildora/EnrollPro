@@ -93,19 +93,31 @@ const resolveStudentOrderBy = (
     case "gradeLevel":
       return [{ gradeLevel: { displayOrder: sortOrder } }, { id: "asc" }];
     case "section":
+      // Fallback to createdAt if enrollmentRecord might be null
       return [
         { enrollmentRecord: { section: { name: sortOrder } } },
+        { createdAt: sortOrder },
         { id: "asc" },
       ];
     case "dateEnrolled":
     case "enrolledAt":
-      return [{ enrollmentRecord: { enrolledAt: sortOrder } }, { id: "asc" }];
+      // Primary sort by enrolledAt, fallback to createdAt for robustness
+      return [
+        { enrollmentRecord: { enrolledAt: sortOrder } },
+        { createdAt: sortOrder },
+        { id: "asc" },
+      ];
     case "createdAt":
       return [{ createdAt: sortOrder }, { id: "asc" }];
     case "updatedAt":
       return [{ updatedAt: sortOrder }, { id: "asc" }];
     default:
-      return [{ enrollmentRecord: { enrolledAt: "desc" } }, { id: "asc" }];
+      // Default to dateEnrolled descending if possible, else createdAt
+      return [
+        { enrollmentRecord: { enrolledAt: "desc" } },
+        { createdAt: "desc" },
+        { id: "asc" },
+      ];
   }
 };
 
@@ -314,11 +326,15 @@ export async function getStudentsSummary(query: {
     }
 
     const programType =
-      application.enrollmentRecord?.section.programType ||
+      application.enrollmentRecord?.section?.programType ||
       application.programDetail?.scpType ||
       "REGULAR";
 
-    programBreakdown[programType] += 1;
+    if (programBreakdown[programType] !== undefined) {
+      programBreakdown[programType] += 1;
+    } else {
+      programBreakdown["REGULAR"] += 1;
+    }
   }
 
   const totalEnrolled =

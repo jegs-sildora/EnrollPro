@@ -35,6 +35,7 @@ interface SectioningState {
   schoolYearId: number | null;
   sectioningParams: SectioningParams | null;
   isBatchPending: boolean;
+  smartSyncStatus: Record<number, boolean>;
   
   setBatchData: (
     previewData: SectioningPreview, 
@@ -46,6 +47,7 @@ interface SectioningState {
   updateModifiedAssignments: (assignments: ProposedAssignment[]) => void;
   updateLearnerSection: (applicationId: number, sectionId: number, sectionName: string) => void;
   clearBatch: () => void;
+  setSmartSynced: (gradeLevelId: number, synced: boolean) => void;
 }
 
 export const useSectioningStore = create<SectioningState>()(
@@ -57,6 +59,7 @@ export const useSectioningStore = create<SectioningState>()(
       schoolYearId: null,
       sectioningParams: null,
       isBatchPending: false,
+      smartSyncStatus: {},
 
       setBatchData: (previewData, modifiedAssignments, gradeLevelId, schoolYearId) => set({
         previewData,
@@ -85,7 +88,14 @@ export const useSectioningStore = create<SectioningState>()(
         schoolYearId: null,
         sectioningParams: null,
         isBatchPending: false
-      })
+      }),
+
+      setSmartSynced: (gradeLevelId, synced) => set((state) => ({
+        smartSyncStatus: {
+          ...state.smartSyncStatus,
+          [gradeLevelId]: synced
+        }
+      }))
     }),
     {
       name: 'enrollpro-sectioning'

@@ -226,6 +226,11 @@ model Learner {
   hasPwdId                Boolean   @default(false) @map("has_pwd_id")
   is4PsBeneficiary        Boolean   @default(false) @map("is_4ps_beneficiary")
   householdId4Ps          String?   @map("household_id_4ps")
+  
+  // S.M.A.R.T. Sync Fields (Academic Records from previous school year)
+  previousGenAve          Float?    @map("previous_gen_ave")
+  promotionStatus         String?   @map("promotion_status")
+
   isBalikAral             Boolean   @default(false) @map("is_balik_aral")
   lastYearEnrolled        String?   @map("last_year_enrolled")
   lastGradeLevel          String?   @map("last_grade_level")

@@ -231,16 +231,27 @@ export class SectioningEngine {
       proposedAssignments: [],
     };
 
+    // --- PRE-PROCESSING: Filter out RETAINED learners ---
+    const eligibleApplicants = applicants.filter(
+      (a) => (a as any).learner?.promotionStatus !== "RETAINED",
+    );
+
     // --- STEP 1: SCP Segregation (Top 70 STE or Vacancy Fill) ---
-    const steApplicants = applicants.filter(
+    const steApplicants = eligibleApplicants.filter(
       (a) => a.applicantType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
     );
 
-    // Sort by Admission Exam Score
+    // Sort by Admission Exam Score (Grade 7) or Previous Gen Ave (Grade 8-10)
     const sortedSte = [...steApplicants].sort((a, b) => {
-      const scoreA = a.earlyRegistration?.assessments[0]?.score ?? 0;
-      const scoreB = b.earlyRegistration?.assessments[0]?.score ?? 0;
-      return scoreB - scoreA;
+      if (isGrade7) {
+        const scoreA = a.earlyRegistration?.assessments[0]?.score ?? 0;
+        const scoreB = b.earlyRegistration?.assessments[0]?.score ?? 0;
+        return scoreB - scoreA;
+      } else {
+        const aveA = (a as any).learner?.previousGenAve ?? 0;
+        const aveB = (b as any).learner?.previousGenAve ?? 0;
+        return aveB - aveA;
+      }
     });
 
     let steToAssign: any[] = [];
@@ -316,15 +327,21 @@ export class SectioningEngine {
 
     // --- STEP 2: BEC Pilot Slicing (Top 200 REGULAR or Vacancy Fill) ---
     const regularPool = [
-      ...applicants.filter((a) => a.applicantType === "REGULAR"),
+      ...eligibleApplicants.filter((a) => a.applicantType === "REGULAR"),
       ...steSpillover, // Reclassified to REGULAR
     ];
 
-    // Sort descending by Gen Ave
+    // Sort descending by Gen Ave (Grade 7 uses previous school info, Grade 8-10 uses synced SMART data)
     const sortedRegular = regularPool.sort((a, b) => {
-      const aveA = a.previousSchool?.generalAverage ?? 0;
-      const aveB = b.previousSchool?.generalAverage ?? 0;
-      return aveB - aveA;
+      if (isGrade7) {
+        const aveA = a.previousSchool?.generalAverage ?? 0;
+        const aveB = b.previousSchool?.generalAverage ?? 0;
+        return aveB - aveA;
+      } else {
+        const aveA = (a as any).learner?.previousGenAve ?? 0;
+        const aveB = (b as any).learner?.previousGenAve ?? 0;
+        return aveB - aveA;
+      }
     });
 
     let pilotToAssign: any[] = [];
@@ -457,9 +474,17 @@ export class SectioningEngine {
     );
 
     // 3. Sort each sub-pool by General Average to maintain academic balance during the snake
-    const sortFn = (a: any, b: any) =>
-      (b.previousSchool?.generalAverage || 0) -
-      (a.previousSchool?.generalAverage || 0);
+    const sortFn = (a: any, b: any) => {
+      const isGrade7 =
+        a.gradeLevel?.name?.includes("7") || a.gradeLevel?.displayOrder === 7;
+      const aveA = isGrade7
+        ? a.previousSchool?.generalAverage || 0
+        : (a as any).learner?.previousGenAve || 0;
+      const aveB = isGrade7
+        ? b.previousSchool?.generalAverage || 0
+        : (b as any).learner?.previousGenAve || 0;
+      return aveB - aveA;
+    };
     [
       frustratedMales,
       frustratedFemales,
@@ -514,6 +539,9 @@ export class SectioningEngine {
   }
 
   private mapToProposed(app: any, section: any) {
+    const isGrade7 =
+      app.gradeLevel?.name?.includes("7") || app.gradeLevel?.displayOrder === 7;
+
     return {
       applicationId: app.id,
       sectionId: section.id,
@@ -521,7 +549,9 @@ export class SectioningEngine {
       learnerName: `${app.learner.lastName}, ${app.learner.firstName}`,
       lrn: app.learner.lrn,
       gender: app.learner.sex,
-      genAve: app.previousSchool?.generalAverage ?? null,
+      genAve: isGrade7
+        ? app.previousSchool?.generalAverage ?? null
+        : (app as any).learner?.previousGenAve ?? null,
       readingProfile: app.readingProfileLevel,
       programType: app.applicantType,
     };

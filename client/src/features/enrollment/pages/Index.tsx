@@ -1384,7 +1384,28 @@ export default function Enrollment() {
     gradeLevelId: storedGlId,
     previewData: storedPreview,
     setSectioningParams,
+    smartSyncStatus,
+    setSmartSynced,
   } = useSectioningStore();
+
+  const [isSyncingSmart, setIsSyncingSmart] = useState<number | null>(null);
+
+  const handleSmartSync = async (gradeLevelId: number) => {
+    setIsSyncingSmart(gradeLevelId);
+    try {
+      await api.post("/enrollment/sync-smart-grades", { gradeLevelId });
+      setSmartSynced(gradeLevelId, true);
+      sileo.success({
+        title: "S.M.A.R.T. Sync Complete",
+        description:
+          "Academic records and promotion statuses have been updated.",
+      });
+    } catch (err) {
+      toastApiError(err as never);
+    } finally {
+      setIsSyncingSmart(null);
+    }
+  };
 
   useEffect(() => {
     if (isBatchPending && storedGlId && storedPreview) {
@@ -2233,23 +2254,68 @@ export default function Enrollment() {
               <Label className="text-xs font-bold uppercase tracking-wider">
                 Target Grade Level
               </Label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-3">
                 {loadingGradeLevels ? (
                   <div className="col-span-2 flex items-center justify-center py-4">
                     <Loader2 className="h-5 w-5 animate-spin text-primary" />
                   </div>
                 ) : (
-                  gradeLevels.map((gl) => (
-                    <Button
-                      key={gl.id}
-                      variant="outline"
-                      className="h-10 font-bold text-xs"
-                      onClick={() =>
-                        handleStartBatchSectioning(gl.id, gl.name)
-                      }>
-                      {formatGradeLevelLabel(gl.name)}
-                    </Button>
-                  ))
+                  gradeLevels.map((gl) => {
+                    const gradeNum = extractGradeLevelNumber(gl.name);
+                    const isG7 = gradeNum === 7;
+                    const isSynced = smartSyncStatus[gl.id] === true;
+                    const isSyncing = isSyncingSmart === gl.id;
+
+                    return (
+                      <div
+                        key={gl.id}
+                        className="flex items-center gap-3 p-3 rounded-lg border bg-card">
+                        <div className="flex-1">
+                          <p className="font-bold text-sm">
+                            {formatGradeLevelLabel(gl.name)}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter">
+                            {isG7
+                              ? "Uses Early Reg Assessment Score"
+                              : isSynced
+                                ? "✅ S.M.A.R.T. Data Synchronized"
+                                : "⚠️ Academic Records Missing"}
+                          </p>
+                        </div>
+
+                        {isG7 || isSynced ? (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="h-9 px-4 font-bold text-xs bg-primary hover:bg-primary/90"
+                            onClick={() =>
+                              handleStartBatchSectioning(gl.id, gl.name)
+                            }>
+                            Open Wizard
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={isSyncing}
+                            className="h-9 px-4 font-black text-[10px] uppercase tracking-widest border-2 border-primary/20 text-primary hover:bg-primary/5"
+                            onClick={() => handleSmartSync(gl.id)}>
+                            {isSyncing ? (
+                              <>
+                                <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                                Syncing...
+                              </>
+                            ) : (
+                              <>
+                                <RefreshCw className="h-3 w-3 mr-2" />
+                                Sync Academic Records
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>

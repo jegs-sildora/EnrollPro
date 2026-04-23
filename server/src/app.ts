@@ -20,6 +20,7 @@ import teachersRoutes from "./features/teachers/teachers.router.js";
 import learnerRoutes from "./features/learner/learner.router.js";
 import earlyRegRoutes from "./features/early-registration/early-reg.router.js";
 import eosyRoutes from "./features/enrollment/eosy.router.js";
+import enrollmentRoutes from "./features/enrollment/enrollment.router.js";
 import integrationRoutes from "./features/integration/integration.router.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { historicalReadOnlyGuard } from "./middleware/historical-read-only.guard.js";
@@ -97,6 +98,7 @@ app.use("/api/teachers", teachersRoutes);
 app.use("/api/learner", learnerRoutes);
 app.use("/api/early-registrations", earlyRegRoutes);
 app.use("/api/eosy", eosyRoutes);
+app.use("/api/enrollment", enrollmentRoutes);
 app.use("/api/integration/v1", integrationRoutes);
 
 // Error handler
