@@ -88,8 +88,8 @@ export function DataTable<TData, TValue>({
   const [internalSorting, setInternalSorting] = useState<SortingState>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Apply 300ms delay and 500ms min-display to loading state
-  const showSkeleton = useDelayedLoading(loading, 300, 500);
+  // Apply skeleton loading with default delay and min-display
+  const showSkeleton = useDelayedLoading(loading);
 
   const table = useReactTable({
     data,

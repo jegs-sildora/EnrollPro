@@ -1,6 +1,8 @@
 import { Loader2, RefreshCw } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import { TableSkeleton } from "@/shared/ui/table-skeleton";
+import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import type { RegularSectionBatchPreview } from "./types";
 
 interface PipelineBatchRegularSectionAssignmentProps {
@@ -22,6 +24,7 @@ export default function PipelineBatchRegularSectionAssignment({
   requiredSlots,
   onReloadPreview,
 }: PipelineBatchRegularSectionAssignmentProps) {
+  const showSkeleton = useDelayedLoading(previewLoading);
   const summary = preview?.summary;
   const sectionPlans = preview?.sections ?? [];
   const blockedReasonCounts = (preview?.blocked ?? []).reduce<
@@ -110,26 +113,17 @@ export default function PipelineBatchRegularSectionAssignment({
           </div>
         </div>
 
-        {previewLoading && (
-          <div className="rounded-lg border border-dashed p-3 flex items-center gap-2 text-xs font-bold text-foreground">
-            <Loader2 className="size-4 animate-spin" />
-            Building deterministic hybrid section plan...
-          </div>
-        )}
-
-        {!previewLoading && !preview && (
+        {showSkeleton ? (
+          <TableSkeleton />
+        ) : !preview ? (
           <p className="text-xs font-bold text-muted-foreground">
             Generate a preview plan to inspect allocations before commit.
           </p>
-        )}
-
-        {!previewLoading && preview && sectionPlans.length === 0 && (
+        ) : sectionPlans.length === 0 ? (
           <p className="text-xs font-bold text-destructive">
             No regular sections are available for this grade level.
           </p>
-        )}
-
-        {!previewLoading && preview && sectionPlans.length > 0 && (
+        ) : (
           <div className="space-y-2">
             {sectionPlans.map((section) => (
               <div

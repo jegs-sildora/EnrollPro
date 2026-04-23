@@ -48,55 +48,7 @@ import { toastApiError } from "@/shared/hooks/useApiToast";
 import { cn, formatScpType } from "@/shared/lib/utils";
 import { useSectioningStore } from "@/store/sectioning.slice";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
-
-interface Props {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-  gradeLevelId: number;
-  gradeLevelName: string;
-  schoolYearId: number;
-}
-
-interface ProposedAssignment {
-  applicationId: number;
-  sectionId: number;
-  sectionName: string;
-  learnerName: string;
-  lrn: string | null;
-  gender: string | null;
-  genAve: number | null;
-  readingProfile: string | null;
-  programType: string;
-}
-
-const resolveReadingProfileLabel = (level?: string | null): string => {
-  if (!level) return "-";
-  return level
-    .toLowerCase()
-    .split("_")
-    .map((t) => t.charAt(0).toUpperCase() + t.slice(1))
-    .join(" ");
-};
-
-const TableSkeleton = () => (
-  <div className="rounded-lg border overflow-hidden">
-    <div className="bg-muted px-4 py-3 border-b flex items-center justify-between gap-4">
-      <Skeleton className="h-4 w-[250px]" />
-      <Skeleton className="h-4 w-[100px]" />
-      <Skeleton className="h-4 w-[100px]" />
-      <Skeleton className="h-4 w-[100px]" />
-    </div>
-    {[...Array(6)].map((_, i) => (
-      <div key={i} className="px-4 py-4 border-b flex items-center justify-between gap-4">
-        <Skeleton className="h-5 w-[250px]" />
-        <Skeleton className="h-5 w-[80px]" />
-        <Skeleton className="h-5 w-[80px]" />
-        <Skeleton className="h-5 flex-1" />
-      </div>
-    ))}
-  </div>
-);
+import { TableSkeleton } from "@/shared/ui/table-skeleton";
 
 const RosterRowComponent = React.forwardRef<
   HTMLTableRowElement,
@@ -259,16 +211,7 @@ export function BatchSectioningWizard({
     direction: "asc",
   });
 
-  const [isTableDeferred, setIsTableDeferred] = useState(true);
   const parentRef = React.useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (previewData) {
-      setIsTableDeferred(true);
-      const timer = setTimeout(() => setIsTableDeferred(false), 100);
-      return () => clearTimeout(timer);
-    }
-  }, [previewData]);
 
   // Route Guard / Blocker
   const blocker = useBlocker(
@@ -569,7 +512,7 @@ export function BatchSectioningWizard({
         {/* Main Content Area */}
         <div className="flex-1 overflow-auto bg-muted/10">
           <div className="max-w-6xl mx-auto py-10 px-6 pb-32">
-            {showSkeleton ? (
+            {!previewData && showSkeleton ? (
               <div className="flex flex-col items-center justify-center py-20 space-y-4">
                 <Loader2 className="h-12 w-12 text-primary animate-spin" />
                 <div className="text-center">
@@ -754,7 +697,7 @@ export function BatchSectioningWizard({
                   </div>
 
                   <div className="border-2 shadow-xl overflow-hidden rounded-xl bg-card min-h-[600px]">
-                    {isTableDeferred ? (
+                    {showSkeleton ? (
                       <TableSkeleton />
                     ) : (
                       <div

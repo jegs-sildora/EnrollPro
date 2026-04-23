@@ -8,8 +8,8 @@ import { useState, useEffect, useRef } from "react";
  */
 export function useDelayedLoading(
   isLoading: boolean,
-  delay: number = 300,
-  minDisplay: number = 500,
+  delay: number = 0,
+  minDisplay: number = 300,
 ): boolean {
   const [showLoading, setShowLoading] = useState(false);
   const showStartTimeRef = useRef<number>(0);
@@ -27,11 +27,16 @@ export function useDelayedLoading(
 
       // If not already showing, start the delay timer
       if (!showLoading && !delayTimerRef.current) {
-        delayTimerRef.current = setTimeout(() => {
+        if (delay === 0) {
           setShowLoading(true);
           showStartTimeRef.current = Date.now();
-          delayTimerRef.current = null;
-        }, delay);
+        } else {
+          delayTimerRef.current = setTimeout(() => {
+            setShowLoading(true);
+            showStartTimeRef.current = Date.now();
+            delayTimerRef.current = null;
+          }, delay);
+        }
       }
     } 
     // If we stopped loading
@@ -60,10 +65,6 @@ export function useDelayedLoading(
     };
   }, [isLoading, delay, minDisplay, showLoading]);
 
-  // If no delay or min display is requested, fallback to raw isLoading
-  if (delay === 0 && minDisplay === 0) {
-    return isLoading;
-  }
-
-  return showLoading;
+  // Return immediately if loading and no delay, otherwise return state
+  return (delay === 0 && isLoading) || showLoading;
 }

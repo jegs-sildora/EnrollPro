@@ -33,14 +33,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/ui/table";
+import { TableSkeleton } from "@/shared/ui/table-skeleton";
 
 const MANILA_TIME_ZONE = "Asia/Manila";
 const MIN_ACTIVE_CALENDAR_SPAN_DAYS = 240;
@@ -1054,7 +1047,9 @@ export default function SchoolYearTab() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {archivedYears.length > 0 ? (
+          {showSkeleton ? (
+            <TableSkeleton />
+          ) : archivedYears.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
