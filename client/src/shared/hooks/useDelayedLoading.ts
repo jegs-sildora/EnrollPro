@@ -3,23 +3,24 @@ import { useState, useEffect, useRef } from "react";
 /**
  * Hook to manage delayed loading states to prevent "flickering" of skeletons.
  *
- * Defaults to 300ms delay to avoid flashing for fast requests.
- * Defaults to 500ms min display to ensure the skeleton is readable if shown.
+ * Defaults to 0ms delay to ensure the skeleton is shown immediately.
+ * Defaults to 300ms min display to ensure the skeleton is readable if shown.
  */
 export function useDelayedLoading(
   isLoading: boolean,
   delay: number = 0,
   minDisplay: number = 300,
 ): boolean {
-  const [showLoading, setShowLoading] = useState(false);
-  const showStartTimeRef = useRef<number>(0);
+  // Initialize state immediately if delay is 0
+  const [showLoading, setShowLoading] = useState(isLoading && delay === 0);
+  const showStartTimeRef = useRef<number>(isLoading && delay === 0 ? Date.now() : 0);
   const delayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const minDisplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     // If we are starting to load
     if (isLoading) {
-      // Clear any pending exit timers
+      // Clear any pending exit timers since we're loading again
       if (minDisplayTimerRef.current) {
         clearTimeout(minDisplayTimerRef.current);
         minDisplayTimerRef.current = null;
@@ -56,6 +57,9 @@ export function useDelayedLoading(
           setShowLoading(false);
           minDisplayTimerRef.current = null;
         }, remaining);
+      } else if (!showLoading) {
+        // Just in case we're not showing and loading stopped
+        showStartTimeRef.current = 0;
       }
     }
 
@@ -65,6 +69,5 @@ export function useDelayedLoading(
     };
   }, [isLoading, delay, minDisplay, showLoading]);
 
-  // Return immediately if loading and no delay, otherwise return state
-  return (delay === 0 && isLoading) || showLoading;
+  return showLoading;
 }

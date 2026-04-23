@@ -2639,6 +2639,7 @@ export default function PipelineBatchView({
         if (applicantType !== "REGULAR") {
           return (
             <PipelineBatchScpAssessmentInterviewGrid
+              loading={loading}
               selectedApplications={selectedApplications}
               isBatchProcessing={isBatchProcessing}
               mode="RECORD_ASSESSMENT"
@@ -2687,6 +2688,7 @@ export default function PipelineBatchView({
         if (applicantType !== "REGULAR") {
           return (
             <PipelineBatchScpAssessmentInterviewGrid
+              loading={loading}
               selectedApplications={selectedApplications}
               isBatchProcessing={isBatchProcessing}
               mode="FINALIZE_PHASE_ONE"
@@ -2703,6 +2705,7 @@ export default function PipelineBatchView({
         }
         return (
           <PipelineBatchFinalizeInterviewGrid
+            loading={loading}
             selectedApplications={selectedApplications}
             finalizeInterviewRows={finalizeInterviewRows}
             isBatchProcessing={isBatchProcessing}

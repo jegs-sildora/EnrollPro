@@ -12,6 +12,7 @@ import { DataTable } from "@/shared/ui/data-table";
 import type { Application, FinalizeInterviewRowState } from "./types";
 
 interface PipelineBatchFinalizeInterviewGridProps {
+  loading: boolean;
   selectedApplications: Application[];
   finalizeInterviewRows: Record<number, FinalizeInterviewRowState>;
   isBatchProcessing: boolean;
@@ -22,6 +23,7 @@ interface PipelineBatchFinalizeInterviewGridProps {
 }
 
 export default function PipelineBatchFinalizeInterviewGrid({
+  loading,
   selectedApplications,
   finalizeInterviewRows,
   isBatchProcessing,
@@ -217,6 +219,7 @@ export default function PipelineBatchFinalizeInterviewGrid({
       <DataTable
         columns={columns}
         data={selectedApplications}
+        loading={loading}
         className="rounded-lg border overflow-auto min-h-0"
         noResultsMessage="No applicants loaded."
       />

@@ -8,6 +8,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { Application } from "./types";
 
 interface PipelineBatchScpAssessmentInterviewGridProps {
+  loading: boolean;
   selectedApplications: Application[];
   isBatchProcessing: boolean;
   mode: "RECORD_ASSESSMENT" | "FINALIZE_PHASE_ONE";
@@ -25,6 +26,7 @@ interface PipelineBatchScpAssessmentInterviewGridProps {
 }
 
 export default function PipelineBatchScpAssessmentInterviewGrid({
+  loading,
   selectedApplications,
   isBatchProcessing,
   mode,
@@ -320,6 +322,7 @@ export default function PipelineBatchScpAssessmentInterviewGrid({
         <DataTable
           columns={columns}
           data={selectedApplications}
+          loading={loading}
           className="rounded-lg border overflow-auto min-h-0 relative"
           noResultsMessage="No applicants loaded."
         />

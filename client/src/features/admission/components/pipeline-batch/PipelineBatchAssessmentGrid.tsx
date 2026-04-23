@@ -220,19 +220,13 @@ export default function PipelineBatchAssessmentGrid({
         </p>
       </div>
 
-      {scoreGridLoading ? (
-        <div className="rounded-lg border p-6 text-center text-sm font-bold text-foreground">
-          Loading ranking formula...
-        </div>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={selectedApplications}
-          loading={scoreGridLoading}
-          className="rounded-lg border overflow-auto min-h-0"
-          noResultsMessage="No applicants loaded."
-        />
-      )}
+      <DataTable
+        columns={columns}
+        data={selectedApplications}
+        loading={scoreGridLoading}
+        className="rounded-lg border overflow-auto min-h-0"
+        noResultsMessage="No applicants loaded."
+      />
     </div>
   );
 }
