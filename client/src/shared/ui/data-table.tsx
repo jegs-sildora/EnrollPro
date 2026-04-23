@@ -19,6 +19,7 @@ import {
 } from "@/shared/ui/table";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { cn } from "@/shared/lib/utils";
+import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -87,6 +88,9 @@ export function DataTable<TData, TValue>({
   const [internalSorting, setInternalSorting] = useState<SortingState>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Apply 300ms delay and 500ms min-display to loading state
+  const showSkeleton = useDelayedLoading(loading, 300, 500);
+
   const table = useReactTable({
     data,
     columns,
@@ -139,7 +143,7 @@ export function DataTable<TData, TValue>({
           </TableHeader>
           <TableBody className="relative">
             <AnimatePresence mode="popLayout" initial={false}>
-              {loading ? (
+              {showSkeleton ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <MotionTableRow
                     key={`skeleton-${i}`}
@@ -147,9 +151,11 @@ export function DataTable<TData, TValue>({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}>
-                    <TableCell colSpan={columns.length} className="p-4">
-                      <Skeleton className="h-6 w-full" />
-                    </TableCell>
+                    {columns.map((_, index) => (
+                      <TableCell key={index} className="p-4">
+                        <Skeleton className="h-5 w-full" />
+                      </TableCell>
+                    ))}
                   </MotionTableRow>
                 ))
               ) : rows.length > 0 ? (
@@ -194,6 +200,12 @@ export function DataTable<TData, TValue>({
                     />
                   ))
                 )
+              ) : loading ? (
+                // During the delay window (showSkeleton=false but loading=true), 
+                // render empty space instead of "No results" to avoid flickering
+                <TableRow className="hover:bg-transparent border-none">
+                  <TableCell colSpan={columns.length} className="h-24" />
+                </TableRow>
               ) : (
                 <MotionTableRow
                   key="no-results"

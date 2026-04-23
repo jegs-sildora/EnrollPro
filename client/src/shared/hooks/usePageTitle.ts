@@ -30,7 +30,7 @@ function resolvePageTitle(pathname: string, search: string): string | null {
     "/login": "Sign In",
     "/early-registration": "Basic Education Early Registration Form",
     "/change-password": "Change Password",
-    "/enrollment": "BASIC EDUCATION ENROLLMENT FORM",
+    "/enrollment": "Basic Education Enrollment Form",
     "/monitoring/f2f-early-registration":
       "Walk-in Basic Education Early Registration Form",
     "/applications": "Basic Education Early Registration Form",

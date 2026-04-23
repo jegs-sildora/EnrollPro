@@ -46,7 +46,6 @@ import { Checkbox } from "@/shared/ui/checkbox";
 import { Sheet, SheetContent } from "@/shared/ui/sheet";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
-import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { format } from "date-fns";
 import type {
   CellContext,
@@ -247,9 +246,6 @@ export default function Enrollment() {
     resolveWorkflowFromQuery(workflowParam),
   );
   const workflowViewRef = useRef<EnrollmentSubMenu>(workflowView);
-
-  // Rule A & B: Delayed loading
-  const showSkeleton = useDelayedLoading(loading);
 
   // Filters
   const [search, setSearch] = useState(() => searchParam?.trim() ?? "");
@@ -849,7 +845,10 @@ export default function Enrollment() {
       id: "student",
       accessorKey: "lastName",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="LEARNER" />
+        <DataTableColumnHeader
+          column={column}
+          title="LEARNER"
+        />
       ),
       cell: ({ row }) => (
         <div className="flex flex-col text-left min-w-[200px]">
@@ -869,7 +868,10 @@ export default function Enrollment() {
         id: "lrn",
         accessorKey: "lrn",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="LRN" />
+          <DataTableColumnHeader
+            column={column}
+            title="LRN"
+          />
         ),
         cell: ({ row }) => (
           <span className="font-bold text-sm block">
@@ -884,7 +886,10 @@ export default function Enrollment() {
       id: "program",
       accessorKey: "applicantType",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="PROGRAM" />
+        <DataTableColumnHeader
+          column={column}
+          title="PROGRAM"
+        />
       ),
       cell: ({ row }) => (
         <div className="flex justify-center">
@@ -901,7 +906,10 @@ export default function Enrollment() {
       id: "genAve",
       accessorKey: "generalAverage",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="GEN AVE" />
+        <DataTableColumnHeader
+          column={column}
+          title="GEN AVE"
+        />
       ),
       cell: ({ row }) => (
         <span className="font-bold text-sm block text-center">
@@ -915,7 +923,10 @@ export default function Enrollment() {
         id: "gradeLevel",
         accessorKey: "gradeLevelId",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="GRADE LEVEL" />
+          <DataTableColumnHeader
+            column={column}
+            title="GRADE LEVEL"
+          />
         ),
         cell: ({ row }) => (
           <span className="font-bold text-sm block">
@@ -930,7 +941,10 @@ export default function Enrollment() {
         id: "readingProfile",
         accessorKey: "readingProfileLevel",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="READING" />
+          <DataTableColumnHeader
+            column={column}
+            title="READING"
+          />
         ),
         cell: ({ row }: CellContext<Application, unknown>) => {
           const app = row.original;
@@ -1014,12 +1028,16 @@ export default function Enrollment() {
                 </SelectTrigger>
                 <SelectContent>
                   {isLoadingOptions && (
-                    <SelectItem value="LOADING" disabled>
+                    <SelectItem
+                      value="LOADING"
+                      disabled>
                       Loading sections...
                     </SelectItem>
                   )}
                   {!isLoadingOptions && sectionOptions.length === 0 && (
-                    <SelectItem value="NO_SECTION_AVAILABLE" disabled>
+                    <SelectItem
+                      value="NO_SECTION_AVAILABLE"
+                      disabled>
                       No sections available
                     </SelectItem>
                   )}
@@ -1083,7 +1101,10 @@ export default function Enrollment() {
         id: "status",
         accessorKey: "status",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="STATUS" />
+          <DataTableColumnHeader
+            column={column}
+            title="STATUS"
+          />
         ),
         cell: ({ row }) => (
           <div className="flex justify-center">
@@ -1101,7 +1122,10 @@ export default function Enrollment() {
         id: "createdAt",
         accessorKey: "createdAt",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="DATE" />
+          <DataTableColumnHeader
+            column={column}
+            title="DATE"
+          />
         ),
         cell: ({ row }) => (
           <span className="text-sm font-bold block text-center min-w-[140px]">
@@ -1503,7 +1527,7 @@ export default function Enrollment() {
             <DataTable
               columns={columns}
               data={visibleApplications}
-              loading={showSkeleton}
+              loading={loading}
               virtualize={true}
               estimatedRowHeight={60}
               className="w-full"
@@ -1820,7 +1844,9 @@ export default function Enrollment() {
       </Sheet>
 
       {/* Enrollment Confirmation Dialog */}
-      <Dialog open={isEnrollModalOpen} onOpenChange={setIsEnrollModalOpen}>
+      <Dialog
+        open={isEnrollModalOpen}
+        onOpenChange={setIsEnrollModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xs font-bold uppercase tracking-wider">
@@ -2032,7 +2058,9 @@ export default function Enrollment() {
                 </SelectTrigger>
                 <SelectContent>
                   {READING_PROFILE_LEVEL_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}>
                       {option.label}
                     </SelectItem>
                   ))}
@@ -2134,7 +2162,9 @@ export default function Enrollment() {
                 </SelectTrigger>
                 <SelectContent>
                   {UNENROLL_REASONS.map((reason) => (
-                    <SelectItem key={reason} value={reason}>
+                    <SelectItem
+                      key={reason}
+                      value={reason}>
                       {reason}
                     </SelectItem>
                   ))}

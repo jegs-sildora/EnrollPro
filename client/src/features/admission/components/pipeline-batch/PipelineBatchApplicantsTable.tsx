@@ -9,6 +9,7 @@ import {
   Square,
 } from "lucide-react";
 import { StatusBadge } from "@/features/enrollment/components/StatusBadge";
+import { UserPhoto } from "@/shared/components/UserPhoto";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { Checkbox } from "@/shared/ui/checkbox";
@@ -20,7 +21,7 @@ import type { Application } from "./types";
 
 interface PipelineBatchApplicantsTableProps {
   applications: Application[];
-  showSkeleton: boolean;
+  loading: boolean;
   showAssessment: boolean;
   selectedIds: Set<number>;
   isBatchProcessing: boolean;
@@ -42,7 +43,7 @@ interface PipelineBatchApplicantsTableProps {
 
 export default function PipelineBatchApplicantsTable({
   applications,
-  showSkeleton,
+  loading,
   showAssessment,
   selectedIds,
   isBatchProcessing,
@@ -114,7 +115,10 @@ export default function PipelineBatchApplicantsTable({
         id: "applicant",
         accessorKey: "lastName",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="APPLICANT" />
+          <DataTableColumnHeader
+            column={column}
+            title="APPLICANT"
+          />
         ),
         cell: ({ row }) => {
           const app = row.original;
@@ -140,7 +144,10 @@ export default function PipelineBatchApplicantsTable({
         id: "lrn",
         accessorKey: "lrn",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="LRN" />
+          <DataTableColumnHeader
+            column={column}
+            title="LRN"
+          />
         ),
         cell: ({ row }) => (
           <span className="font-bold text-sm block">
@@ -152,7 +159,10 @@ export default function PipelineBatchApplicantsTable({
         id: "generalAverage",
         accessorKey: "generalAverage",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="GENERAL AVERAGE" />
+          <DataTableColumnHeader
+            column={column}
+            title="GENERAL AVERAGE"
+          />
         ),
         cell: ({ row }) => (
           <span className="font-bold text-sm block text-center">
@@ -164,7 +174,10 @@ export default function PipelineBatchApplicantsTable({
         id: "gradeLevel",
         accessorKey: "gradeLevel.name",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="GRADE LEVEL" />
+          <DataTableColumnHeader
+            column={column}
+            title="GRADE LEVEL"
+          />
         ),
         cell: ({ row }) => (
           <span className="font-bold text-sm block">
@@ -176,13 +189,19 @@ export default function PipelineBatchApplicantsTable({
         id: "status",
         accessorKey: "status",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="STATUS" />
+          <DataTableColumnHeader
+            column={column}
+            title="STATUS"
+          />
         ),
         cell: ({ row }) => {
           const app = row.original;
           return (
             <div className="flex flex-col items-center gap-1">
-              <StatusBadge status={app.status} className="text-sm font-bold" />
+              <StatusBadge
+                status={app.status}
+                className="text-sm font-bold"
+              />
               {app.status === "FAILED_ASSESSMENT" && (
                 <p className="max-w-[210px] text-[11px] font-bold text-destructive leading-tight">
                   {getNotQualifiedReason(app)}
@@ -196,7 +215,10 @@ export default function PipelineBatchApplicantsTable({
         id: "date",
         accessorKey: "createdAt",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="DATE" />
+          <DataTableColumnHeader
+            column={column}
+            title="DATE"
+          />
         ),
         cell: ({ row }) => (
           <span className="text-sm font-bold block">
@@ -332,7 +354,7 @@ export default function PipelineBatchApplicantsTable({
       <DataTable
         columns={columns}
         data={applications}
-        loading={showSkeleton}
+        loading={loading}
         noResultsMessage="No applicants found."
       />
 
@@ -349,7 +371,9 @@ export default function PipelineBatchApplicantsTable({
             disabled={page === 1}>
             Previous
           </Button>
-          <Badge variant="secondary" className="px-3 h-8 text-xs font-bold">
+          <Badge
+            variant="secondary"
+            className="px-3 h-8 text-xs font-bold">
             Page {page}
           </Badge>
           <Button

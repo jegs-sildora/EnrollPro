@@ -11,7 +11,6 @@ import {
 import api from "@/shared/api/axiosInstance";
 import { useAuthStore } from "@/store/auth.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
-import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -66,8 +65,6 @@ export default function AuditLogs() {
   const [exporting, setExporting] = useState(false);
   const [forbidden, setForbidden] = useState(false);
 
-  const showSkeleton = useDelayedLoading(loading);
-
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -113,7 +110,9 @@ export default function AuditLogs() {
         accessorKey: "actionType",
         header: "Action",
         cell: ({ row }) => (
-          <Badge variant="outline" className="font-semibold">
+          <Badge
+            variant="outline"
+            className="font-semibold">
             {actionLabel(row.original.actionType)}
           </Badge>
         ),
@@ -403,7 +402,11 @@ export default function AuditLogs() {
               <CardTitle className="text-base">Activity Log</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <DataTable columns={columns} data={logs} loading={showSkeleton} />
+              <DataTable
+                columns={columns}
+                data={logs}
+                loading={loading}
+              />
 
               {totalPages > 1 && (
                 <div className="flex items-center justify-between pt-2">

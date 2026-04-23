@@ -10,7 +10,6 @@ import { sileo } from "sileo";
 import { Download, Mail, RefreshCw, RotateCcw, Search } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
-import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -85,8 +84,6 @@ export default function EmailLogs() {
   const [exporting, setExporting] = useState(false);
   const [resendingId, setResendingId] = useState<number | null>(null);
   const [resendTarget, setResendTarget] = useState<EmailLogRow | null>(null);
-
-  const showSkeleton = useDelayedLoading(loading);
 
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -323,7 +320,10 @@ export default function EmailLogs() {
             />
             Refresh
           </Button>
-          <Button variant="outline" onClick={handleExport} disabled={exporting}>
+          <Button
+            variant="outline"
+            onClick={handleExport}
+            disabled={exporting}>
             <Download className="h-4 w-4 mr-2" />
             {exporting ? "Exporting..." : "Export CSV"}
           </Button>
@@ -350,7 +350,9 @@ export default function EmailLogs() {
                 <SelectContent>
                   <SelectItem value="all">All statuses</SelectItem>
                   {STATUS_OPTIONS.map((status) => (
-                    <SelectItem key={status} value={status}>
+                    <SelectItem
+                      key={status}
+                      value={status}>
                       {status}
                     </SelectItem>
                   ))}
@@ -372,7 +374,9 @@ export default function EmailLogs() {
                 <SelectContent>
                   <SelectItem value="all">All triggers</SelectItem>
                   {TRIGGER_OPTIONS.map((trigger) => (
-                    <SelectItem key={trigger} value={trigger}>
+                    <SelectItem
+                      key={trigger}
+                      value={trigger}>
                       {triggerLabel(trigger)}
                     </SelectItem>
                   ))}
@@ -481,7 +485,7 @@ export default function EmailLogs() {
           <DataTable
             columns={columns}
             data={visibleLogs}
-            loading={showSkeleton}
+            loading={loading}
           />
 
           {totalPages > 1 && (

@@ -147,7 +147,9 @@ export function TeacherDirectoryCard({
             <MoreHorizontal className="h-3.5 w-3.5" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align={compact ? "start" : "end"} className="w-48">
+        <DropdownMenuContent
+          align={compact ? "start" : "end"}
+          className="w-48">
           {teacher.isActive ? (
             <DropdownMenuItem
               onClick={() => onDeactivateTeacher(teacher.id)}
@@ -187,7 +189,10 @@ export function TeacherDirectoryCard({
       id: "teacher",
       accessorKey: "lastName",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="TEACHER" />
+        <DataTableColumnHeader
+          column={column}
+          title="TEACHER"
+        />
       ),
       cell: ({ row }) => (
         <div className="flex flex-col text-left max-w-[220px]">
@@ -206,7 +211,10 @@ export function TeacherDirectoryCard({
       id: "employeeId",
       accessorKey: "employeeId",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="EMPLOYEE ID" />
+        <DataTableColumnHeader
+          column={column}
+          title="EMPLOYEE ID"
+        />
       ),
       cell: ({ row }) => (
         <span className="text-xs font-semibold block text-center">
@@ -233,7 +241,10 @@ export function TeacherDirectoryCard({
       id: "status",
       accessorKey: "isActive",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="STATUS" />
+        <DataTableColumnHeader
+          column={column}
+          title="STATUS"
+        />
       ),
       cell: ({ row }) => (
         <div className="flex justify-center">
@@ -346,7 +357,9 @@ export function TeacherDirectoryCard({
           <div className="md:hidden space-y-3">
             {showSkeleton ? (
               Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="rounded-xl border p-3 space-y-3">
+                <div
+                  key={index}
+                  className="rounded-xl border p-3 space-y-3">
                   <Skeleton className="h-5 w-40" />
                   <Skeleton className="h-4 w-28" />
                   <Skeleton className="h-4 w-full" />
@@ -435,7 +448,7 @@ export function TeacherDirectoryCard({
               columns={columns}
               data={filteredTeachers}
               tableClassName="table-fixed w-full"
-              loading={showSkeleton}
+              loading={loading}
               virtualize={true}
               estimatedRowHeight={60}
               noResultsMessage={

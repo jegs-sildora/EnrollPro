@@ -22,7 +22,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/shared/ui/tooltip";
-import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { format } from "date-fns";
 import BatchResultsModal from "./BatchResultsModal";
 import type { BatchResults } from "./BatchResultsModal";
@@ -68,7 +67,6 @@ export default function PipelineBatchView({
   const [applications, setApplications] = useState<Application[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const showSkeleton = useDelayedLoading(loading);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -2931,7 +2929,7 @@ export default function PipelineBatchView({
 
           <PipelineBatchApplicantsTable
             applications={applications}
-            showSkeleton={showSkeleton}
+            loading={loading}
             showAssessment={showAssessment}
             selectedIds={selectedIds}
             isBatchProcessing={isBatchProcessing}
@@ -2971,7 +2969,10 @@ export default function PipelineBatchView({
       />
 
       {/* Batch Results Modal */}
-      <BatchResultsModal results={batchResults} onClose={handleResultsClose} />
+      <BatchResultsModal
+        results={batchResults}
+        onClose={handleResultsClose}
+      />
     </>
   );
 }

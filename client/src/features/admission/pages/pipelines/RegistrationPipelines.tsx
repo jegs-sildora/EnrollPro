@@ -10,9 +10,11 @@ import { SCP_ACRONYMS, SCP_LABELS } from "@/shared/lib/utils";
 import PipelineBatchView from "@/features/admission/components/PipelineBatchView";
 import { useSettingsStore } from "@/store/settings.slice";
 import { ACTIVE_REGISTRATION_EXCLUDED_STATUSES } from "@/features/admission/constants/registrationWorkflow";
+import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 
 export default function RegistrationPipelines() {
-  const { configs, loading, error } = useScpConfigs();
+  const { configs, loading: rawLoading, error } = useScpConfigs();
+  const loading = useDelayedLoading(rawLoading);
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const [searchParams, setSearchParams] = useSearchParams();

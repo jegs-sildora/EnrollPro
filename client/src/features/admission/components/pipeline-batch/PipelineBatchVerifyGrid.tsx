@@ -414,20 +414,14 @@ export default function PipelineBatchVerifyGrid({
         </div>
       </div>
 
-      {verifyGridLoading ? (
-        <div className="rounded-lg border p-6 text-center text-sm font-bold text-foreground">
-          Loading checklist matrix...
-        </div>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={verifyGridApplicants}
-          loading={verifyGridLoading}
-          className="rounded-lg border overflow-auto min-h-0 relative"
-          tableClassName="table-fixed min-w-[1180px]"
-          noResultsMessage="No applicants loaded for verification."
-        />
-      )}
+      <DataTable
+        columns={columns}
+        data={verifyGridApplicants}
+        loading={verifyGridLoading}
+        className="rounded-lg border overflow-auto min-h-0 relative"
+        tableClassName="table-fixed min-w-[1180px]"
+        noResultsMessage="No applicants loaded for verification."
+      />
     </div>
   );
 }

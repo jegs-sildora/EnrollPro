@@ -47,6 +47,7 @@ import {
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { cn, formatScpType } from "@/shared/lib/utils";
 import { useSectioningStore } from "@/store/sectioning.slice";
+import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 
 interface Props {
   isOpen: boolean;
@@ -79,25 +80,19 @@ const resolveReadingProfileLabel = (level?: string | null): string => {
 };
 
 const TableSkeleton = () => (
-  <div className="p-4 space-y-4">
-    <div className="flex items-center space-x-4 p-4 border-b">
+  <div className="rounded-lg border overflow-hidden">
+    <div className="bg-muted px-4 py-3 border-b flex items-center justify-between gap-4">
       <Skeleton className="h-4 w-[250px]" />
-      <Skeleton className="h-4 w-[50px]" />
       <Skeleton className="h-4 w-[100px]" />
       <Skeleton className="h-4 w-[100px]" />
-      <Skeleton className="h-4 w-[150px]" />
-      <Skeleton className="h-4 flex-1" />
+      <Skeleton className="h-4 w-[100px]" />
     </div>
-    {[...Array(8)].map((_, i) => (
-      <div
-        key={i}
-        className="flex items-center space-x-4 p-4 border-b opacity-50">
-        <Skeleton className="h-8 w-[250px]" />
-        <Skeleton className="h-8 w-[50px]" />
-        <Skeleton className="h-8 w-[100px]" />
-        <Skeleton className="h-8 w-[100px]" />
-        <Skeleton className="h-8 w-[150px]" />
-        <Skeleton className="h-8 flex-1" />
+    {[...Array(6)].map((_, i) => (
+      <div key={i} className="px-4 py-4 border-b flex items-center justify-between gap-4">
+        <Skeleton className="h-5 w-[250px]" />
+        <Skeleton className="h-5 w-[80px]" />
+        <Skeleton className="h-5 w-[80px]" />
+        <Skeleton className="h-5 flex-1" />
       </div>
     ))}
   </div>
@@ -247,6 +242,7 @@ export function BatchSectioningWizard({
 
   const [currentStep, setCurrentStep] = useState<number>(3);
   const [isLoading, setIsLoading] = useState(false);
+  const showSkeleton = useDelayedLoading(isLoading);
   const [isCommitting, setIsCommitting] = useState(false);
   const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false);
   const [gradeSections, setGradeSections] = useState<any[]>([]);
@@ -573,7 +569,7 @@ export function BatchSectioningWizard({
         {/* Main Content Area */}
         <div className="flex-1 overflow-auto bg-muted/10">
           <div className="max-w-6xl mx-auto py-10 px-6 pb-32">
-            {isLoading ? (
+            {showSkeleton ? (
               <div className="flex flex-col items-center justify-center py-20 space-y-4">
                 <Loader2 className="h-12 w-12 text-primary animate-spin" />
                 <div className="text-center">

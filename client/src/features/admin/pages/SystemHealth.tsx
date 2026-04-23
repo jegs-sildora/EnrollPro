@@ -191,7 +191,10 @@ export default function SystemHealth() {
             </p>
           )}
         </div>
-        <Button variant="outline" onClick={fetchHealthData} disabled={loading}>
+        <Button
+          variant="outline"
+          onClick={fetchHealthData}
+          disabled={loading}>
           <RefreshCw
             className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
           />
@@ -339,14 +342,17 @@ export default function SystemHealth() {
             {showSkeleton ? (
               <div className="space-y-2">
                 {Array.from({ length: 6 }).map((_, idx) => (
-                  <Skeleton key={`counts-${idx}`} className="h-4 w-full" />
+                  <Skeleton
+                    key={`counts-${idx}`}
+                    className="h-4 w-full"
+                  />
                 ))}
               </div>
             ) : (
               <DataTable
                 columns={countColumns}
                 data={countData}
-                loading={showSkeleton}
+                loading={loading}
               />
             )}
           </CardContent>
@@ -366,7 +372,10 @@ export default function SystemHealth() {
             {showSkeleton ? (
               <div className="space-y-2">
                 {Array.from({ length: 8 }).map((_, idx) => (
-                  <Skeleton key={`runtime-${idx}`} className="h-4 w-full" />
+                  <Skeleton
+                    key={`runtime-${idx}`}
+                    className="h-4 w-full"
+                  />
                 ))}
               </div>
             ) : health ? (
@@ -421,7 +430,9 @@ export default function SystemHealth() {
                     <p className="font-semibold">Active Users by Role</p>
                     <div className="flex flex-wrap gap-2">
                       {userRoles.map(([role, count]) => (
-                        <Badge key={role} variant="outline">
+                        <Badge
+                          key={role}
+                          variant="outline">
                           {role}: {count}
                         </Badge>
                       ))}

@@ -241,6 +241,8 @@ const formatLearningProgramLabel = (
     : displayName;
 };
 
+import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
+
 export default function Students() {
   const navigate = useNavigate();
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
@@ -248,6 +250,7 @@ export default function Students() {
 
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
+  const showSkeleton = useDelayedLoading(loading);
   const [initialLoad, setInitialLoad] = useState(true);
 
   const [search, setSearch] = useState("");
@@ -1346,7 +1349,7 @@ export default function Students() {
         </CardHeader>
         <CardContent className="px-3 sm:px-6 pb-4">
           <div className="md:hidden space-y-3">
-            {loading ? (
+            {showSkeleton ? (
               Array.from({ length: 4 }).map((_, index) => (
                 <div
                   key={index}
@@ -1357,9 +1360,13 @@ export default function Students() {
                 </div>
               ))
             ) : students.length === 0 ? (
-              <div className="rounded-xl border p-6 text-center text-sm font-bold">
-                No enrolled learners found for the selected filters.
-              </div>
+              loading ? (
+                <div className="h-40" />
+              ) : (
+                <div className="rounded-xl border p-6 text-center text-sm font-bold">
+                  No enrolled learners found for the selected filters.
+                </div>
+              )
             ) : (
               students.map((student) => (
                 <div

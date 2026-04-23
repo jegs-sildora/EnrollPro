@@ -13,7 +13,7 @@ import type { Application } from "../hooks/useEarlyRegistrations";
 
 interface TableProps {
   applications: Application[];
-  showSkeleton: boolean;
+  loading: boolean;
   selectedId: number | null;
   setSelectedId: (id: number | null) => void;
   getNextAction: (status: string) => string;
@@ -30,7 +30,7 @@ function resolveHandoffSearchToken(application: Application): string {
 
 export function EarlyRegistrationTable({
   applications,
-  showSkeleton,
+  loading,
   selectedId: _selectedId,
   setSelectedId,
   getNextAction,
@@ -68,7 +68,10 @@ export function EarlyRegistrationTable({
         id: "applicant",
         accessorKey: "lastName",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="APPLICANT" />
+          <DataTableColumnHeader
+            column={column}
+            title="APPLICANT"
+          />
         ),
         cell: ({ row: tableRow }) => {
           const app = tableRow.original;
@@ -90,7 +93,10 @@ export function EarlyRegistrationTable({
         id: "lrn",
         accessorKey: "lrn",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="LRN" />
+          <DataTableColumnHeader
+            column={column}
+            title="LRN"
+          />
         ),
         cell: ({ row: tableRow }) => (
           <span className="font-bold text-sm">
@@ -104,7 +110,10 @@ export function EarlyRegistrationTable({
         id: "gradeLevel",
         accessorKey: "gradeLevel.name",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="GRADE LEVEL" />
+          <DataTableColumnHeader
+            column={column}
+            title="GRADE LEVEL"
+          />
         ),
         cell: ({ row: tableRow }) => (
           <span className="font-bold text-sm">
@@ -116,7 +125,10 @@ export function EarlyRegistrationTable({
         id: "applicantType",
         accessorKey: "applicantType",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="CURRICULUM PROGRAM" />
+          <DataTableColumnHeader
+            column={column}
+            title="CURRICULUM PROGRAM"
+          />
         ),
         cell: ({ row: tableRow }) => (
           <p className="font-bold text-xs leading-tight text-center">
@@ -128,7 +140,10 @@ export function EarlyRegistrationTable({
         id: "status",
         accessorKey: "status",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="STATUS" />
+          <DataTableColumnHeader
+            column={column}
+            title="STATUS"
+          />
         ),
         cell: ({ row: tableRow }) => {
           const app = tableRow.original;
@@ -165,7 +180,10 @@ export function EarlyRegistrationTable({
         id: "date",
         accessorKey: "createdAt",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="DATE" />
+          <DataTableColumnHeader
+            column={column}
+            title="DATE"
+          />
         ),
         cell: ({ row: tableRow }) => (
           <span className="text-sm font-bold block text-center">
@@ -218,7 +236,7 @@ export function EarlyRegistrationTable({
       <DataTable
         columns={columns}
         data={orderedApplications}
-        loading={showSkeleton}
+        loading={loading}
         virtualize={true}
         estimatedRowHeight={50}
         onRowClick={(app) => {

@@ -215,11 +215,14 @@ function deriveNextSchoolYearLabel(activeYear: SYItem, fallbackLabel: string) {
   return fallbackLabel;
 }
 
+import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
+
 export default function SchoolYearTab() {
   const { setSettings } = useSettingsStore();
   const [years, setYears] = useState<SYItem[]>([]);
   const [defaults, setDefaults] = useState<Defaults | null>(null);
   const [loading, setLoading] = useState(true);
+  const showSkeleton = useDelayedLoading(loading);
 
   // Create state
   const [creating, setCreating] = useState(false);

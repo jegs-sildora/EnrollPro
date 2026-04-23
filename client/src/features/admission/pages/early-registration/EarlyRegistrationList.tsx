@@ -154,7 +154,7 @@ export default function EarlyRegistration() {
 
             <EarlyRegistrationTable
               applications={applications}
-              showSkeleton={showSkeleton}
+              loading={loading}
               selectedId={selectedId}
               setSelectedId={setSelectedId}
               getNextAction={getNextAction}
@@ -173,7 +173,9 @@ export default function EarlyRegistration() {
                   disabled={page === 1 || loading}>
                   Previous
                 </Button>
-                <Badge variant="secondary" className="px-3 h-8 text-xs">
+                <Badge
+                  variant="secondary"
+                  className="px-3 h-8 text-xs">
                   Page {page}
                 </Badge>
                 <Button

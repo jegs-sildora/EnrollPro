@@ -39,7 +39,6 @@ import {
 import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
-import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { useAuthStore } from "@/store/auth.slice";
 import { format } from "date-fns";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -136,8 +135,6 @@ export default function EosyUpdating() {
   const [batchPromoteConfirmOpen, setBatchPromoteConfirmOpen] = useState(false);
   const [schoolFinalizeConfirmOpen, setSchoolFinalizeConfirmOpen] =
     useState(false);
-
-  const showSkeleton = useDelayedLoading(loadingRecords);
 
   const fetchSections = useCallback(async () => {
     if (!ayId) return;
@@ -597,7 +594,10 @@ export default function EosyUpdating() {
         id: "lrn",
         accessorKey: "enrollmentApplication.learner.lrn",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="LRN" />
+          <DataTableColumnHeader
+            column={column}
+            title="LRN"
+          />
         ),
         cell: ({ row }) => (
           <span className="font-bold">
@@ -609,7 +609,10 @@ export default function EosyUpdating() {
         id: "name",
         accessorKey: "enrollmentApplication.learner.lastName",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="NAME" />
+          <DataTableColumnHeader
+            column={column}
+            title="NAME"
+          />
         ),
         cell: ({ row }) => {
           const sex = row.original.enrollmentApplication.learner.sex;
@@ -635,7 +638,10 @@ export default function EosyUpdating() {
         id: "status",
         accessorKey: "eosyStatus",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="STATUS" />
+          <DataTableColumnHeader
+            column={column}
+            title="STATUS"
+          />
         ),
         cell: ({ row }) => {
           const r = row.original;
@@ -681,10 +687,16 @@ export default function EosyUpdating() {
         header: "ACTIONS",
         cell: () =>
           isFinalized ? (
-            <div className="h-8 w-8" aria-hidden="true" />
+            <div
+              className="h-8 w-8"
+              aria-hidden="true"
+            />
           ) : (
             <div className="flex justify-center">
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0">
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -789,7 +801,9 @@ export default function EosyUpdating() {
                 </SelectTrigger>
                 <SelectContent>
                   {sections.map((s) => (
-                    <SelectItem key={s.id} value={String(s.id)}>
+                    <SelectItem
+                      key={s.id}
+                      value={String(s.id)}>
                       {s.gradeLevel.name} - {s.name}{" "}
                       {s.isEosyFinalized ? "🔒" : ""}
                     </SelectItem>
@@ -893,7 +907,7 @@ export default function EosyUpdating() {
             <DataTable
               columns={columns}
               data={records}
-              loading={showSkeleton}
+              loading={loadingRecords}
               noResultsMessage="No students found in this section."
               className="border-none rounded-none"
             />
@@ -1052,7 +1066,9 @@ export default function EosyUpdating() {
               onClick={() => setFinalizeModal({ open: false, section: null })}>
               Cancel
             </Button>
-            <Button onClick={confirmFinalizeClass} className="bg-primary">
+            <Button
+              onClick={confirmFinalizeClass}
+              className="bg-primary">
               Confirm & Lock Class
             </Button>
           </DialogFooter>

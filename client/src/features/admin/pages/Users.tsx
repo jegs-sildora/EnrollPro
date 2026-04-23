@@ -1,4 +1,10 @@
-import { useState, useEffect, useCallback, useMemo, startTransition } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  startTransition,
+} from "react";
 import { useSettingsStore } from "@/store/settings.slice";
 import { sileo } from "sileo";
 import { useAuthStore } from "@/store/auth.slice";
@@ -215,7 +221,8 @@ export default function AdminUsers() {
 
     // DepEd governance: Employee ID mandatory for high-level roles
     if (
-      (formData.role === "SYSTEM_ADMIN" || formData.role === "HEAD_REGISTRAR") &&
+      (formData.role === "SYSTEM_ADMIN" ||
+        formData.role === "HEAD_REGISTRAR") &&
       !formData.employeeId.trim()
     ) {
       nextErrors.employeeId = "Employee ID is mandatory for this role.";
@@ -490,16 +497,19 @@ export default function AdminUsers() {
     setPage(1);
   }, []);
 
-  const getSortIcon = useCallback((field: string) => {
-    if (sortBy !== field) {
-      return <ArrowUpDown className="h-3.5 w-3.5 ml-1 opacity-40" />;
-    }
-    return sortOrder === "asc" ? (
-      <ArrowUp className="h-3.5 w-3.5 ml-1" />
-    ) : (
-      <ArrowDown className="h-3.5 w-3.5 ml-1" />
-    );
-  }, [sortBy, sortOrder]);
+  const getSortIcon = useCallback(
+    (field: string) => {
+      if (sortBy !== field) {
+        return <ArrowUpDown className="h-3.5 w-3.5 ml-1 opacity-40" />;
+      }
+      return sortOrder === "asc" ? (
+        <ArrowUp className="h-3.5 w-3.5 ml-1" />
+      ) : (
+        <ArrowDown className="h-3.5 w-3.5 ml-1" />
+      );
+    },
+    [sortBy, sortOrder],
+  );
 
   const columns = useMemo<ColumnDef<User>[]>(
     () => [
@@ -525,7 +535,9 @@ export default function AdminUsers() {
               <div className="flex items-center gap-3 mt-1">
                 <span className="text-[10px] font-extrabold text-muted-foreground flex items-center gap-1 shrink-0">
                   <IdCard className="h-3 w-3" />
-                  {user.employeeId || <span className="italic font-normal opacity-50">—</span>}
+                  {user.employeeId || (
+                    <span className="italic font-normal opacity-50">—</span>
+                  )}
                 </span>
                 {user.designation && (
                   <span className="text-[10px] font-extrabold text-primary flex items-center gap-1 truncate">
@@ -556,7 +568,9 @@ export default function AdminUsers() {
               <div className="text-sm font-bold leading-none">{user.email}</div>
               <div className="text-[11px] font-bold text-muted-foreground flex items-center justify-center gap-1">
                 <Phone className="h-2.5 w-2.5" />
-                {user.mobileNumber || <span className="italic font-normal opacity-50">—</span>}
+                {user.mobileNumber || (
+                  <span className="italic font-normal opacity-50">—</span>
+                )}
               </div>
             </div>
           );
@@ -630,14 +644,16 @@ export default function AdminUsers() {
         ),
         cell: ({ row }) => (
           <span className="text-[11px] font-bold text-muted-foreground whitespace-nowrap block text-center min-w-[120px]">
-            {row.original.lastLoginAt
-              ? new Date(row.original.lastLoginAt).toLocaleString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                })
-              : <span className="italic font-normal opacity-50">—</span>}
+            {row.original.lastLoginAt ? (
+              new Date(row.original.lastLoginAt).toLocaleString("en-US", {
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+              })
+            ) : (
+              <span className="italic font-normal opacity-50">—</span>
+            )}
           </span>
         ),
       },
@@ -671,7 +687,9 @@ export default function AdminUsers() {
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent
+                  align="end"
+                  className="w-48">
                   <DropdownMenuLabel className="text-[10px] font-extrabold uppercase tracking-widest opacity-50">
                     Staff Actions
                   </DropdownMenuLabel>
@@ -750,7 +768,8 @@ export default function AdminUsers() {
             onClick={() => {
               sileo.info({
                 title: "Coming Soon",
-                description: "Bulk LIS/EBEIS export import will be available in the next update.",
+                description:
+                  "Bulk LIS/EBEIS export import will be available in the next update.",
               });
             }}>
             <RefreshCw className="h-4 w-4" />
@@ -857,9 +876,15 @@ export default function AdminUsers() {
                   <SelectContent>
                     <SelectItem value="all">All Roles</SelectItem>
                     <SelectItem value="SYSTEM_ADMIN">System Admins</SelectItem>
-                    <SelectItem value="HEAD_REGISTRAR">Head Registrars</SelectItem>
-                    <SelectItem value="GRADE_LEVEL_COORDINATOR">Coordinators (GLC)</SelectItem>
-                    <SelectItem value="CLASS_ADVISER">Class Advisers</SelectItem>
+                    <SelectItem value="HEAD_REGISTRAR">
+                      Head Registrars
+                    </SelectItem>
+                    <SelectItem value="GRADE_LEVEL_COORDINATOR">
+                      Coordinators (GLC)
+                    </SelectItem>
+                    <SelectItem value="CLASS_ADVISER">
+                      Class Advisers
+                    </SelectItem>
                     <SelectItem value="TEACHER">Teachers</SelectItem>
                   </SelectContent>
                 </Select>
@@ -970,15 +995,21 @@ export default function AdminUsers() {
                   <div className="mt-2.5 flex flex-wrap gap-y-1.5 gap-x-4 text-xs font-bold">
                     <div className="flex items-center gap-1.5 text-primary">
                       <Briefcase className="h-3 w-3 shrink-0" />
-                      {user.designation || <span className="italic font-normal opacity-50">—</span>}
+                      {user.designation || (
+                        <span className="italic font-normal opacity-50">—</span>
+                      )}
                     </div>
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                       <IdCard className="h-3 w-3 shrink-0" />
-                      {user.employeeId || <span className="italic font-normal opacity-50">—</span>}
+                      {user.employeeId || (
+                        <span className="italic font-normal opacity-50">—</span>
+                      )}
                     </div>
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                       <Phone className="h-3 w-3 shrink-0" />
-                      {user.mobileNumber || <span className="italic font-normal opacity-50">—</span>}
+                      {user.mobileNumber || (
+                        <span className="italic font-normal opacity-50">—</span>
+                      )}
                     </div>
                   </div>
                   <div className="mt-3 flex items-center justify-between border-t border-dashed pt-2.5">
@@ -1019,7 +1050,9 @@ export default function AdminUsers() {
                           More
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuContent
+                        align="end"
+                        className="w-48">
                         <DropdownMenuItem
                           onClick={() => {
                             setSelectedUser(user);
@@ -1062,7 +1095,7 @@ export default function AdminUsers() {
             <DataTable
               columns={columns}
               data={users}
-              loading={showSkeleton}
+              loading={loading}
               virtualize={true}
               estimatedRowHeight={60}
               tableClassName="table-fixed w-full"
@@ -1112,7 +1145,8 @@ export default function AdminUsers() {
               Add User Account
             </SheetTitle>
             <SheetDescription>
-              Create a new administrative or faculty account for the school system.
+              Create a new administrative or faculty account for the school
+              system.
             </SheetDescription>
           </SheetHeader>
           <div className="space-y-6 py-6">
@@ -1124,7 +1158,9 @@ export default function AdminUsers() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">First Name *</Label>
+                  <Label className="text-xs font-bold uppercase">
+                    First Name *
+                  </Label>
                   <Input
                     placeholder="e.g. Regina"
                     value={formData.firstName}
@@ -1132,7 +1168,11 @@ export default function AdminUsers() {
                       setCreateErrors((prev) => ({ ...prev, firstName: "" }));
                       setFormData({ ...formData, firstName: e.target.value });
                     }}
-                    className={createErrors.firstName ? "border-destructive h-10 font-bold" : "h-10 font-bold"}
+                    className={
+                      createErrors.firstName
+                        ? "border-destructive h-10 font-bold"
+                        : "h-10 font-bold"
+                    }
                   />
                   {createErrors.firstName && (
                     <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
@@ -1141,7 +1181,9 @@ export default function AdminUsers() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">Last Name *</Label>
+                  <Label className="text-xs font-bold uppercase">
+                    Last Name *
+                  </Label>
                   <Input
                     placeholder="e.g. Cruz"
                     value={formData.lastName}
@@ -1149,7 +1191,11 @@ export default function AdminUsers() {
                       setCreateErrors((prev) => ({ ...prev, lastName: "" }));
                       setFormData({ ...formData, lastName: e.target.value });
                     }}
-                    className={createErrors.lastName ? "border-destructive h-10 font-bold" : "h-10 font-bold"}
+                    className={
+                      createErrors.lastName
+                        ? "border-destructive h-10 font-bold"
+                        : "h-10 font-bold"
+                    }
                   />
                   {createErrors.lastName && (
                     <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
@@ -1160,7 +1206,9 @@ export default function AdminUsers() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">Middle Name</Label>
+                  <Label className="text-xs font-bold uppercase">
+                    Middle Name
+                  </Label>
                   <Input
                     placeholder="Optional"
                     value={formData.middleName}
@@ -1196,9 +1244,7 @@ export default function AdminUsers() {
                     <button
                       key={s.value}
                       type="button"
-                      onClick={() =>
-                        setFormData({ ...formData, sex: s.value })
-                      }
+                      onClick={() => setFormData({ ...formData, sex: s.value })}
                       className={cn(
                         "flex items-center gap-2 rounded-lg border-2 px-4 py-2 cursor-pointer transition-colors text-sm uppercase",
                         formData.sex === s.value
@@ -1227,7 +1273,9 @@ export default function AdminUsers() {
                 Employment & Role
               </div>
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase">Assign Access Role *</Label>
+                <Label className="text-xs font-bold uppercase">
+                  Assign Access Role *
+                </Label>
                 <Select
                   value={formData.role}
                   onValueChange={(v: User["role"]) =>
@@ -1237,9 +1285,15 @@ export default function AdminUsers() {
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="SYSTEM_ADMIN">System Administrator</SelectItem>
-                    <SelectItem value="HEAD_REGISTRAR">Head Registrar</SelectItem>
-                    <SelectItem value="GRADE_LEVEL_COORDINATOR">Grade Level Coordinator (GLC)</SelectItem>
+                    <SelectItem value="SYSTEM_ADMIN">
+                      System Administrator
+                    </SelectItem>
+                    <SelectItem value="HEAD_REGISTRAR">
+                      Head Registrar
+                    </SelectItem>
+                    <SelectItem value="GRADE_LEVEL_COORDINATOR">
+                      Grade Level Coordinator (GLC)
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1249,7 +1303,9 @@ export default function AdminUsers() {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="space-y-2 p-3 bg-muted/50 rounded-lg border border-dashed border-primary/20">
-                  <Label className="text-[10px] font-extrabold uppercase text-primary">Assign to Section (Optional)</Label>
+                  <Label className="text-[10px] font-extrabold uppercase text-primary">
+                    Assign to Section (Optional)
+                  </Label>
                   <Select disabled>
                     <SelectTrigger className="h-10 font-bold opacity-50 italic">
                       <SelectValue placeholder="Loading sections..." />
@@ -1264,7 +1320,11 @@ export default function AdminUsers() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase">
-                    Employee ID { (formData.role === "SYSTEM_ADMIN" || formData.role === "HEAD_REGISTRAR") ? "*" : "(Optional)" }
+                    Employee ID{" "}
+                    {formData.role === "SYSTEM_ADMIN" ||
+                    formData.role === "HEAD_REGISTRAR"
+                      ? "*"
+                      : "(Optional)"}
                   </Label>
                   <Input
                     placeholder="e.g. 1234567"
@@ -1273,7 +1333,11 @@ export default function AdminUsers() {
                       setCreateErrors((prev) => ({ ...prev, employeeId: "" }));
                       setFormData({ ...formData, employeeId: e.target.value });
                     }}
-                    className={createErrors.employeeId ? "border-destructive h-10 font-bold" : "h-10 font-bold"}
+                    className={
+                      createErrors.employeeId
+                        ? "border-destructive h-10 font-bold"
+                        : "h-10 font-bold"
+                    }
                   />
                   {createErrors.employeeId && (
                     <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
@@ -1282,7 +1346,9 @@ export default function AdminUsers() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">Plantilla Position</Label>
+                  <Label className="text-xs font-bold uppercase">
+                    Plantilla Position
+                  </Label>
                   <Input
                     placeholder="e.g. Registrar I"
                     value={formData.designation}
@@ -1304,11 +1370,12 @@ export default function AdminUsers() {
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase text-foreground/80 flex justify-between">
                   Email Address *
-                  {formData.email && !DEPED_EMAIL_PATTERN.test(formData.email) && (
-                    <span className="text-[10px] text-orange-600 flex items-center gap-1 lowercase font-bold italic animate-pulse">
-                      <AlertCircle className="h-3 w-3" /> non-deped domain
-                    </span>
-                  )}
+                  {formData.email &&
+                    !DEPED_EMAIL_PATTERN.test(formData.email) && (
+                      <span className="text-[10px] text-orange-600 flex items-center gap-1 lowercase font-bold italic animate-pulse">
+                        <AlertCircle className="h-3 w-3" /> non-deped domain
+                      </span>
+                    )}
                 </Label>
                 <Input
                   type="email"
@@ -1318,7 +1385,11 @@ export default function AdminUsers() {
                     setCreateErrors((prev) => ({ ...prev, email: "" }));
                     setFormData({ ...formData, email: e.target.value });
                   }}
-                  className={createErrors.email ? "border-destructive h-10 font-bold" : "h-10 font-bold"}
+                  className={
+                    createErrors.email
+                      ? "border-destructive h-10 font-bold"
+                      : "h-10 font-bold"
+                  }
                 />
                 {createErrors.email && (
                   <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
@@ -1327,7 +1398,9 @@ export default function AdminUsers() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase">Mobile Number *</Label>
+                <Label className="text-xs font-bold uppercase">
+                  Mobile Number *
+                </Label>
                 <Input
                   placeholder="e.g. 09123456789"
                   value={formData.mobileNumber}
@@ -1335,7 +1408,11 @@ export default function AdminUsers() {
                     setCreateErrors((prev) => ({ ...prev, mobileNumber: "" }));
                     setFormData({ ...formData, mobileNumber: e.target.value });
                   }}
-                  className={createErrors.mobileNumber ? "border-destructive h-10 font-bold" : "h-10 font-bold"}
+                  className={
+                    createErrors.mobileNumber
+                      ? "border-destructive h-10 font-bold"
+                      : "h-10 font-bold"
+                  }
                 />
                 {createErrors.mobileNumber && (
                   <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
@@ -1352,7 +1429,9 @@ export default function AdminUsers() {
                 Security & Onboarding
               </div>
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase">Temporary Password *</Label>
+                <Label className="text-xs font-bold uppercase">
+                  Temporary Password *
+                </Label>
                 <div className="flex gap-2">
                   <Input
                     value={formData.password}
@@ -1366,11 +1445,16 @@ export default function AdminUsers() {
                     onClick={() => {
                       setCreateErrors((prev) => ({ ...prev, password: "" }));
                       setIsGenerating(true);
-                      setFormData({ ...formData, password: generatePassword() });
+                      setFormData({
+                        ...formData,
+                        password: generatePassword(),
+                      });
                       setTimeout(() => setIsGenerating(false), 600);
                     }}
                     title="Regenerate">
-                    <RefreshCw className={`h-4 w-4 ${isGenerating ? "animate-spin" : ""}`} />
+                    <RefreshCw
+                      className={`h-4 w-4 ${isGenerating ? "animate-spin" : ""}`}
+                    />
                   </Button>
                   <Button
                     variant="outline"
@@ -1378,7 +1462,11 @@ export default function AdminUsers() {
                     className="shrink-0 h-10 w-10"
                     onClick={() => copyToClipboard(formData.password)}
                     title="Copy">
-                    {copied ? <CheckIcon className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                    {copied ? (
+                      <CheckIcon className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
               </div>
@@ -1388,7 +1476,8 @@ export default function AdminUsers() {
                   <ShieldAlert className="h-3.5 w-3.5" />
                   Governance Notice
                 </div>
-                Credential sharing should follow school policy. User must reset this password upon first access.
+                Credential sharing should follow school policy. User must reset
+                this password upon first access.
               </div>
             </div>
           </div>
@@ -1432,7 +1521,8 @@ export default function AdminUsers() {
               Edit User Profile
             </SheetTitle>
             <SheetDescription>
-              Modify staff identity and access permissions for {profileUser?.lastName}.
+              Modify staff identity and access permissions for{" "}
+              {profileUser?.lastName}.
             </SheetDescription>
           </SheetHeader>
           <div className="space-y-6 py-6">
@@ -1444,14 +1534,23 @@ export default function AdminUsers() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">First Name *</Label>
+                  <Label className="text-xs font-bold uppercase">
+                    First Name *
+                  </Label>
                   <Input
                     value={profileFormData.firstName}
                     onChange={(e) => {
                       setProfileErrors((prev) => ({ ...prev, firstName: "" }));
-                      setProfileFormData({ ...profileFormData, firstName: e.target.value });
+                      setProfileFormData({
+                        ...profileFormData,
+                        firstName: e.target.value,
+                      });
                     }}
-                    className={profileErrors.firstName ? "border-destructive h-10 font-bold" : "h-10 font-bold"}
+                    className={
+                      profileErrors.firstName
+                        ? "border-destructive h-10 font-bold"
+                        : "h-10 font-bold"
+                    }
                   />
                   {profileErrors.firstName && (
                     <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
@@ -1460,14 +1559,23 @@ export default function AdminUsers() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">Last Name *</Label>
+                  <Label className="text-xs font-bold uppercase">
+                    Last Name *
+                  </Label>
                   <Input
                     value={profileFormData.lastName}
                     onChange={(e) => {
                       setProfileErrors((prev) => ({ ...prev, lastName: "" }));
-                      setProfileFormData({ ...profileFormData, lastName: e.target.value });
+                      setProfileFormData({
+                        ...profileFormData,
+                        lastName: e.target.value,
+                      });
                     }}
-                    className={profileErrors.lastName ? "border-destructive h-10 font-bold" : "h-10 font-bold"}
+                    className={
+                      profileErrors.lastName
+                        ? "border-destructive h-10 font-bold"
+                        : "h-10 font-bold"
+                    }
                   />
                   {profileErrors.lastName && (
                     <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
@@ -1478,11 +1586,16 @@ export default function AdminUsers() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">Middle Name</Label>
+                  <Label className="text-xs font-bold uppercase">
+                    Middle Name
+                  </Label>
                   <Input
                     value={profileFormData.middleName}
                     onChange={(e) =>
-                      setProfileFormData({ ...profileFormData, middleName: e.target.value })
+                      setProfileFormData({
+                        ...profileFormData,
+                        middleName: e.target.value,
+                      })
                     }
                     className="h-10 font-bold"
                   />
@@ -1492,7 +1605,10 @@ export default function AdminUsers() {
                   <Input
                     value={profileFormData.suffix}
                     onChange={(e) =>
-                      setProfileFormData({ ...profileFormData, suffix: e.target.value })
+                      setProfileFormData({
+                        ...profileFormData,
+                        suffix: e.target.value,
+                      })
                     }
                     className="h-10 font-bold"
                   />
@@ -1543,7 +1659,9 @@ export default function AdminUsers() {
                 Employment & Role
               </div>
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase">Update Access Role *</Label>
+                <Label className="text-xs font-bold uppercase">
+                  Update Access Role *
+                </Label>
                 <Select
                   value={profileFormData.role}
                   onValueChange={(v: User["role"]) =>
@@ -1553,9 +1671,15 @@ export default function AdminUsers() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="SYSTEM_ADMIN">System Administrator</SelectItem>
-                    <SelectItem value="HEAD_REGISTRAR">Head Registrar</SelectItem>
-                    <SelectItem value="GRADE_LEVEL_COORDINATOR">Grade Level Coordinator (GLC)</SelectItem>
+                    <SelectItem value="SYSTEM_ADMIN">
+                      System Administrator
+                    </SelectItem>
+                    <SelectItem value="HEAD_REGISTRAR">
+                      Head Registrar
+                    </SelectItem>
+                    <SelectItem value="GRADE_LEVEL_COORDINATOR">
+                      Grade Level Coordinator (GLC)
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1563,15 +1687,26 @@ export default function AdminUsers() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase">
-                    Employee ID { (profileFormData.role === "SYSTEM_ADMIN" || profileFormData.role === "HEAD_REGISTRAR") ? "*" : "(Optional)" }
+                    Employee ID{" "}
+                    {profileFormData.role === "SYSTEM_ADMIN" ||
+                    profileFormData.role === "HEAD_REGISTRAR"
+                      ? "*"
+                      : "(Optional)"}
                   </Label>
                   <Input
                     value={profileFormData.employeeId}
                     onChange={(e) => {
                       setProfileErrors((prev) => ({ ...prev, employeeId: "" }));
-                      setProfileFormData({ ...profileFormData, employeeId: e.target.value });
+                      setProfileFormData({
+                        ...profileFormData,
+                        employeeId: e.target.value,
+                      });
                     }}
-                    className={profileErrors.employeeId ? "border-destructive h-10 font-bold" : "h-10 font-bold"}
+                    className={
+                      profileErrors.employeeId
+                        ? "border-destructive h-10 font-bold"
+                        : "h-10 font-bold"
+                    }
                   />
                   {profileErrors.employeeId && (
                     <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
@@ -1580,11 +1715,16 @@ export default function AdminUsers() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">Plantilla Position</Label>
+                  <Label className="text-xs font-bold uppercase">
+                    Plantilla Position
+                  </Label>
                   <Input
                     value={profileFormData.designation}
                     onChange={(e) =>
-                      setProfileFormData({ ...profileFormData, designation: e.target.value })
+                      setProfileFormData({
+                        ...profileFormData,
+                        designation: e.target.value,
+                      })
                     }
                     className="h-10 font-bold"
                   />
@@ -1601,20 +1741,28 @@ export default function AdminUsers() {
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase flex justify-between">
                   Email Address *
-                  {profileFormData.email && !DEPED_EMAIL_PATTERN.test(profileFormData.email) && (
-                    <span className="text-[10px] text-orange-600 flex items-center gap-1 lowercase font-bold italic">
-                      <AlertCircle className="h-3 w-3" /> non-deped domain
-                    </span>
-                  )}
+                  {profileFormData.email &&
+                    !DEPED_EMAIL_PATTERN.test(profileFormData.email) && (
+                      <span className="text-[10px] text-orange-600 flex items-center gap-1 lowercase font-bold italic">
+                        <AlertCircle className="h-3 w-3" /> non-deped domain
+                      </span>
+                    )}
                 </Label>
                 <Input
                   type="email"
                   value={profileFormData.email}
                   onChange={(e) => {
                     setProfileErrors((prev) => ({ ...prev, email: "" }));
-                    setProfileFormData({ ...profileFormData, email: e.target.value });
+                    setProfileFormData({
+                      ...profileFormData,
+                      email: e.target.value,
+                    });
                   }}
-                  className={profileErrors.email ? "border-destructive h-10 font-bold" : "h-10 font-bold"}
+                  className={
+                    profileErrors.email
+                      ? "border-destructive h-10 font-bold"
+                      : "h-10 font-bold"
+                  }
                 />
                 {profileErrors.email && (
                   <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
@@ -1623,14 +1771,23 @@ export default function AdminUsers() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase">Mobile Number</Label>
+                <Label className="text-xs font-bold uppercase">
+                  Mobile Number
+                </Label>
                 <Input
                   value={profileFormData.mobileNumber}
                   onChange={(e) => {
                     setProfileErrors((prev) => ({ ...prev, mobileNumber: "" }));
-                    setProfileFormData({ ...profileFormData, mobileNumber: e.target.value });
+                    setProfileFormData({
+                      ...profileFormData,
+                      mobileNumber: e.target.value,
+                    });
                   }}
-                  className={profileErrors.mobileNumber ? "border-destructive h-10 font-bold" : "h-10 font-bold"}
+                  className={
+                    profileErrors.mobileNumber
+                      ? "border-destructive h-10 font-bold"
+                      : "h-10 font-bold"
+                  }
                 />
                 {profileErrors.mobileNumber && (
                   <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
@@ -1668,7 +1825,9 @@ export default function AdminUsers() {
       </Sheet>
 
       {/* Reset Password Dialog */}
-      <Dialog open={resetOpen} onOpenChange={setResetOpen}>
+      <Dialog
+        open={resetOpen}
+        onOpenChange={setResetOpen}>
         <DialogContent className="w-[95vw] max-w-md sm:w-full overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
