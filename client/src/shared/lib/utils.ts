@@ -201,7 +201,7 @@ export function getLearnerTypeLabel(type: string | null | undefined): string {
  */
 export function getImageUrl(photo: string | null | undefined): string | null {
   if (!photo) return null;
-  if (photo.startsWith("data:")) return photo;
+  if (photo.startsWith("data:") || photo.startsWith("http")) return photo;
 
   // Standardize backend origin detection
   let apiUrl = import.meta.env.VITE_API_URL || "";

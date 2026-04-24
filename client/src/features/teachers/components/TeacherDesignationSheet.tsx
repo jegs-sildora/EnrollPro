@@ -1,11 +1,13 @@
 import type { Dispatch, SetStateAction } from "react";
-import { AlertTriangle, User } from "lucide-react";
+import { AlertTriangle, User, ShieldCheck, Calendar, Info } from "lucide-react";
+import { motion } from "motion/react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Switch } from "@/shared/ui/switch";
 import { Textarea } from "@/shared/ui/textarea";
+import { UserPhoto } from "@/shared/components/UserPhoto";
 import {
   Select,
   SelectContent,
@@ -109,9 +111,11 @@ export function TeacherDesignationSheet({
           <div className="bg-[hsl(var(--muted))] p-3 sm:p-4 rounded-md border">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-xl border-2 border-primary border-dashed shadow-sm bg-background flex items-center justify-center">
-                  <User className="h-5 w-5 text-muted-foreground/70" />
-                </div>
+                <UserPhoto
+                  photo={designationOpenFor?.photoPath}
+                  containerClassName="h-12 w-12 rounded-xl border-2 border-primary shadow-sm bg-background"
+                  alt={teacherDisplayName}
+                />
                 <div>
                   <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
                     Teacher
@@ -151,21 +155,57 @@ export function TeacherDesignationSheet({
             onValueChange={(value) =>
               setDesignationDrawerTab(value as DesignationDrawerTab)
             }
-            className="space-y-3">
-            <TabsList className="grid w-full grid-cols-3 bg-muted/40 h-auto p-1">
-              <TabsTrigger value="role-load" className="py-2 text-xs">
-                Role & Load
+            className="space-y-4">
+            <TabsList className="w-full flex h-auto gap-1 p-1 bg-white border border-border relative rounded-lg">
+              <TabsTrigger
+                value="role-load"
+                className="flex-1 py-2 gap-2 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-xs">
+                {designationDrawerTab === "role-load" && (
+                  <motion.div
+                    layoutId="designation-active-pill"
+                    className="absolute inset-0 bg-primary rounded-md"
+                    transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                  />
+                )}
+                <ShieldCheck className="h-3.5 w-3.5 relative z-20" />
+                <span className="relative z-20">Role & Load</span>
               </TabsTrigger>
-              <TabsTrigger value="schedule-notes" className="py-2 text-xs">
-                Schedule & Notes
+              <TabsTrigger
+                value="schedule-notes"
+                className="flex-1 py-2 gap-2 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-xs">
+                {designationDrawerTab === "schedule-notes" && (
+                  <motion.div
+                    layoutId="designation-active-pill"
+                    className="absolute inset-0 bg-primary rounded-md"
+                    transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                  />
+                )}
+                <Calendar className="h-3.5 w-3.5 relative z-20" />
+                <span className="relative z-20">Schedule & Notes</span>
               </TabsTrigger>
-              <TabsTrigger value="review" className="py-2 text-xs">
-                Review
+              <TabsTrigger
+                value="review"
+                className="flex-1 py-2 gap-2 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-xs">
+                {designationDrawerTab === "review" && (
+                  <motion.div
+                    layoutId="designation-active-pill"
+                    className="absolute inset-0 bg-primary rounded-md"
+                    transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                  />
+                )}
+                <Info className="h-3.5 w-3.5 relative z-20" />
+                <span className="relative z-20">Review</span>
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="role-load" className="mt-0 space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
+            <TabsContent
+              value="role-load"
+              className="mt-0 focus-visible:outline-none ring-0">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-md border bg-card p-3 sm:p-4 space-y-3">
                   <div className="flex items-center justify-between gap-3">
                     <Label
@@ -312,11 +352,17 @@ export function TeacherDesignationSheet({
                     />
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </TabsContent>
 
-            <TabsContent value="schedule-notes" className="mt-0 space-y-4">
-              <div className="rounded-md border bg-card p-3 sm:p-4 space-y-4">
+            <TabsContent
+              value="schedule-notes"
+              className="mt-0 focus-visible:outline-none ring-0">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                className="rounded-md border bg-card p-3 sm:p-4 space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label className="text-xs uppercase tracking-wider">
@@ -383,39 +429,48 @@ export function TeacherDesignationSheet({
                     rows={3}
                   />
                 </div>
-              </div>
+              </motion.div>
             </TabsContent>
 
-            <TabsContent value="review" className="mt-0 space-y-4">
-              {designationCollision ? (
-                <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-3 sm:px-4 sm:py-4 text-amber-900 space-y-2">
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className="h-4 w-4 mt-0.5" />
-                    <div className="text-sm">
-                      <p className="font-medium">Adviser conflict detected</p>
-                      <p className="text-xs">
-                        {designationCollision.gradeLevelName ?? "Grade"} -{" "}
-                        {designationCollision.sectionName} is currently assigned
-                        to {designationCollision.currentAdviserName}.
-                      </p>
+            <TabsContent
+              value="review"
+              className="mt-0 focus-visible:outline-none ring-0">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}>
+                {designationCollision ? (
+                  <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-3 sm:px-4 sm:py-4 text-amber-900 space-y-2">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="h-4 w-4 mt-0.5" />
+                      <div className="text-sm">
+                        <p className="font-medium">Adviser conflict detected</p>
+                        <p className="text-xs">
+                          {designationCollision.gradeLevelName ?? "Grade"} -{" "}
+                          {designationCollision.sectionName} is currently
+                          assigned to {designationCollision.currentAdviserName}.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label
+                        htmlFor="allowCollisionOverride"
+                        className="text-xs">
+                        Override existing adviser assignment
+                      </Label>
+                      <Switch
+                        id="allowCollisionOverride"
+                        checked={allowCollisionOverride}
+                        onCheckedChange={setAllowCollisionOverride}
+                      />
                     </div>
                   </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <Label htmlFor="allowCollisionOverride" className="text-xs">
-                      Override existing adviser assignment
-                    </Label>
-                    <Switch
-                      id="allowCollisionOverride"
-                      checked={allowCollisionOverride}
-                      onCheckedChange={setAllowCollisionOverride}
-                    />
+                ) : (
+                  <div className="rounded-md border bg-muted/30 px-3 py-3 text-xs text-muted-foreground">
+                    No adviser collision detected for the selected section.
                   </div>
-                </div>
-              ) : (
-                <div className="rounded-md border bg-muted/30 px-3 py-3 text-xs text-muted-foreground">
-                  No adviser collision detected for the selected section.
-                </div>
-              )}
+                )}
+              </motion.div>
             </TabsContent>
           </Tabs>
         </div>

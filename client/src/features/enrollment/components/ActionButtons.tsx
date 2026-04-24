@@ -119,6 +119,15 @@ export function ActionButtons({
     setIsConfirmLockOpen(false);
   };
 
+  const canMarkAsVerified = [
+    "EARLY_REG_SUBMITTED",
+    "PENDING_VERIFICATION",
+    "SUBMITTED_BEERF",
+    "SUBMITTED_BEEF",
+    "UNDER_REVIEW",
+    "READY_FOR_ENROLLMENT",
+  ].includes(status);
+
   return (
     <>
       {isEnrollmentVerificationMode ? (
