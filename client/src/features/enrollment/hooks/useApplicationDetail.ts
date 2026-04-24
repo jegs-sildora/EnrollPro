@@ -54,18 +54,6 @@ export interface EnrollmentDetail {
   };
 }
 
-export interface EmailLog {
-  id: number;
-  recipient: string;
-  subject: string;
-  trigger: string;
-  status: string;
-  applicantId: number | null;
-  errorMessage: string | null;
-  attemptedAt: string;
-  sentAt: string | null;
-}
-
 export interface ChecklistData {
   id: number;
   applicantId: number;
@@ -270,7 +258,6 @@ export interface ApplicantDetail {
     } | null;
   }[];
   checklist?: ChecklistData;
-  emailLogs?: EmailLog[];
   auditLogs?: AuditLog[];
   healthRecords?: HealthRecord[];
 }

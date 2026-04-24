@@ -15,28 +15,6 @@ export async function health(req: Request, res: Response) {
       dbStatus = "DOWN";
     }
 
-    // Email service check (basic)
-    const emailStatus = process.env.RESEND_API_KEY ? "OK" : "DEGRADED";
-
-    // Email delivery rate (last 30 days)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    const [totalEmails, sentEmails] = await Promise.all([
-      prisma.emailLog.count({
-        where: { attemptedAt: { gte: thirtyDaysAgo } },
-      }),
-      prisma.emailLog.count({
-        where: {
-          attemptedAt: { gte: thirtyDaysAgo },
-          status: "SENT",
-        },
-      }),
-    ]);
-
-    const deliveryRate =
-      totalEmails > 0 ? ((sentEmails / totalEmails) * 100).toFixed(1) : "0.0";
-
     // Record counts
     const counts = await getRecordCounts();
 
@@ -54,7 +32,6 @@ export async function health(req: Request, res: Response) {
 
     res.json({
       database: { status: dbStatus, avgQueryMs: dbAvgQuery },
-      email: { status: emailStatus, deliveryRate, totalEmails, sentEmails },
       storage: { status: "OK" },
       server: serverInfo,
       counts,
@@ -76,19 +53,6 @@ export async function dashboardStats(req: Request, res: Response) {
       _count: true,
     });
 
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    const [totalEmails, sentEmails] = await Promise.all([
-      prisma.emailLog.count({ where: { attemptedAt: { gte: thirtyDaysAgo } } }),
-      prisma.emailLog.count({
-        where: { attemptedAt: { gte: thirtyDaysAgo }, status: "SENT" },
-      }),
-    ]);
-
-    const deliveryRate =
-      totalEmails > 0 ? ((sentEmails / totalEmails) * 100).toFixed(1) : "0.0";
-
     let dbStatus = "OK";
     try {
       await prisma.$queryRaw`SELECT 1`;
@@ -102,8 +66,6 @@ export async function dashboardStats(req: Request, res: Response) {
         acc[item.role] = item._count;
         return acc;
       }, {}),
-      emailDeliveryRate: deliveryRate,
-      emailStats: { total: totalEmails, sent: sentEmails },
       systemStatus: dbStatus,
     });
   } catch (error: any) {
@@ -120,7 +82,6 @@ async function getRecordCounts() {
     earlyRegistrations,
     applications,
     enrollments,
-    emailLogs,
     auditLogs,
   ] = await Promise.all([
     prisma.user.count(),
@@ -130,7 +91,6 @@ async function getRecordCounts() {
     prisma.earlyRegistrationApplication.count(),
     prisma.enrollmentApplication.count(),
     prisma.enrollmentRecord.count(),
-    prisma.emailLog.count(),
     prisma.auditLog.count(),
   ]);
 
@@ -142,7 +102,6 @@ async function getRecordCounts() {
     earlyRegistrations,
     applications,
     enrollments,
-    emailLogs,
     auditLogs,
   };
 }

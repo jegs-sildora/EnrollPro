@@ -8,7 +8,6 @@ import {
   adminResetPasswordSchema,
 } from "@enrollpro/shared";
 import * as userCtrl from "./admin-user.controller.js";
-import * as emailCtrl from "./admin-email-log.controller.js";
 import * as sysCtrl from "./admin-system.controller.js";
 
 const router: Router = Router();
@@ -28,12 +27,6 @@ router.patch(
   validate(adminResetPasswordSchema),
   userCtrl.resetPassword,
 );
-
-// Email Logs
-router.get("/email-logs", emailCtrl.index);
-router.get("/email-logs/export", emailCtrl.exportCsv);
-router.get("/email-logs/:id", emailCtrl.show);
-router.patch("/email-logs/:id/resend", emailCtrl.resend);
 
 // System Health
 router.get("/system/health", sysCtrl.health);

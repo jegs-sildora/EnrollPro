@@ -31,7 +31,6 @@ export function createEarlyRegistrationBaseController(
   } = deps;
   const {
     flattenAssessmentData,
-    queueEmail,
     toUpperCaseRecursive,
     findApplicantOrThrow,
     resolveLinkedEarlyRegistration,
@@ -1022,13 +1021,6 @@ export function createEarlyRegistrationBaseController(
       recordId: application.id,
       req,
     });
-
-    await queueEmail(
-      application.id,
-      body.email,
-      `Enrollment Application Received - ${trackingNumber}`,
-      "APPLICATION_SUBMITTED",
-    );
 
     // Link early registration if provided
     if (linkedEarlyRegistrationId) {

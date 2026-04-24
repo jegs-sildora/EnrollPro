@@ -112,12 +112,7 @@ async function main() {
     const preservedBefore = await getPreservedCounts(prisma);
 
     const summary = await prisma.$transaction(async (tx) => {
-      // 1. Clear records that reference EnrollmentApplication without DB-level cascade.
-      const emailLogsResult = await tx.emailLog.deleteMany({
-        where: { applicationId: { not: null } },
-      });
-
-      // 2. Clear dependent application tables explicitly for wipe robustness.
+      // 1. Clear dependent application tables explicitly for wipe robustness.
       const enrollmentRecordsResult = await tx.enrollmentRecord.deleteMany({});
       const enrollmentPreviousSchoolsResult =
         await tx.enrollmentPreviousSchool.deleteMany({});
@@ -155,7 +150,6 @@ async function main() {
       }
 
       return {
-        emailLogsCleared: emailLogsResult.count,
         enrollmentRecordsCleared: enrollmentRecordsResult.count,
         enrollmentPreviousSchoolsCleared: enrollmentPreviousSchoolsResult.count,
         enrollmentProgramDetailsCleared: enrollmentProgramDetailsResult.count,
@@ -171,9 +165,6 @@ async function main() {
       };
     });
 
-    console.log(
-      `✅ Enrollment-linked email logs cleared (${summary.emailLogsCleared}).`,
-    );
     console.log(
       `✅ Enrollment records cleared (${summary.enrollmentRecordsCleared}).`,
     );

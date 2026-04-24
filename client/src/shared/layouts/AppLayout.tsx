@@ -440,14 +440,6 @@ function AppSidebar() {
                         pathname={pathname}
                       />
                     )}
-                    {isAdmin && (
-                      <NavItem
-                        to="/admin/email-logs"
-                        icon={Mail}
-                        label="Email Logs"
-                        pathname={pathname}
-                      />
-                    )}
                     <NavItem
                       to="/audit-logs"
                       icon={ScrollText}

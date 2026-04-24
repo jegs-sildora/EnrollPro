@@ -45,7 +45,6 @@ function resolvePageTitle(pathname: string, search: string): string | null {
     "/settings": "Settings",
     "/teachers": "Teachers",
     "/admin/users": "User Management",
-    "/admin/email-logs": "Email Logs",
     "/admin/system": "System Health",
     "/monitoring/enrollment/requirements": "Documentary Requirements",
   };

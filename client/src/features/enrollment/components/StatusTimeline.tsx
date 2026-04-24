@@ -7,8 +7,7 @@ interface Props {
 }
 
 export function StatusTimeline({ applicant }: Props) {
-	// Use a simulated basic timeline if emailLogs or auditLogs are not structured yet,
-	// or build from applicant timestamps
+	// Build timeline from applicant timestamps and logs
 	const timeline = [];
 
 	if (applicant.createdAt && !isNaN(new Date(applicant.createdAt).getTime())) {
@@ -18,7 +17,7 @@ export function StatusTimeline({ applicant }: Props) {
 		});
 	}
 
-	// Example heuristic timeline. In reality, we'd map over applicant.emailLogs or an audit array.
+	// Example heuristic timeline. In reality, we'd map over audit logs or specialized tracking.
 	// We'll stick to a simple display.
 	if (
 		[

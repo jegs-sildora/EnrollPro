@@ -1883,7 +1883,6 @@ export default function PipelineBatchView({
             scheduledTime: examScheduleForm.scheduledTime,
             venue: examScheduleForm.venue,
             notes: examScheduleForm.notes || null,
-            sendEmail: true,
           },
         );
         responseData = res.data;
@@ -1983,7 +1982,6 @@ export default function PipelineBatchView({
             scheduledTime: interviewScheduleForm.scheduledTime,
             venue: interviewScheduleForm.venue,
             notes: interviewScheduleForm.notes || null,
-            sendEmail: true,
           },
         );
         responseData = res.data;

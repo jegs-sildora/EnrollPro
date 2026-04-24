@@ -31,12 +31,6 @@ interface HealthResponse {
     status: string;
     avgQueryMs: number;
   };
-  email: {
-    status: string;
-    deliveryRate: string;
-    totalEmails: number;
-    sentEmails: number;
-  };
   storage: {
     status: string;
   };
@@ -62,7 +56,6 @@ interface HealthResponse {
     sections: number;
     applications: number;
     enrollments: number;
-    emailLogs: number;
     auditLogs: number;
   };
   timezone: string;
@@ -71,11 +64,6 @@ interface HealthResponse {
 interface StatsResponse {
   activeUsers: number;
   usersByRole: Record<string, number>;
-  emailDeliveryRate: string;
-  emailStats: {
-    total: number;
-    sent: number;
-  };
   systemStatus: string;
 }
 
@@ -238,39 +226,6 @@ export default function SystemHealth() {
         <Card className="border-none shadow-sm">
           <CardHeader className="pb-2">
             <CardDescription className="text-xs font-bold uppercase tracking-wider">
-              Email
-            </CardDescription>
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <Mail className="h-5 w-5 text-primary" />
-              {showSkeleton ? (
-                <Skeleton className="h-6 w-28" />
-              ) : (
-                `${health?.email.deliveryRate || "0.0"}%`
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            {showSkeleton ? (
-              <Skeleton className="h-4 w-44" />
-            ) : (
-              <>
-                <Badge
-                  variant="outline"
-                  className={statusClass(health?.email.status || "DEGRADED")}>
-                  {health?.email.status || "DEGRADED"}
-                </Badge>
-                <p className="text-muted-foreground">
-                  {health?.email.sentEmails ?? 0} sent /{" "}
-                  {health?.email.totalEmails ?? 0} attempts (30d)
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="border-none shadow-sm">
-          <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-bold uppercase tracking-wider">
               Users
             </CardDescription>
             <CardTitle className="flex items-center gap-2 text-xl">
@@ -292,9 +247,6 @@ export default function SystemHealth() {
                   className={statusClass(stats?.systemStatus || "DOWN")}>
                   System: {stats?.systemStatus || "DOWN"}
                 </Badge>
-                <p className="text-muted-foreground">
-                  Delivery rate (30d): {stats?.emailDeliveryRate || "0.0"}%
-                </p>
               </>
             )}
           </CardContent>

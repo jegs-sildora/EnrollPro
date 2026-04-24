@@ -275,22 +275,6 @@ export function createEarlyRegistrationSharedService(
     }
   }
 
-  async function queueEmail(
-    applicationId: number,
-    recipient: string | null,
-    subject: string,
-    trigger: any,
-  ): Promise<void> {
-    if (!recipient) return;
-    try {
-      await deps.prisma.emailLog.create({
-        data: { recipient, subject, trigger, status: "PENDING", applicationId },
-      });
-    } catch {
-      // Non-critical: don't fail request on email queue errors
-    }
-  }
-
   async function flattenAssessmentData(application: Record<string, any>) {
     // Check if it's EarlyRegistrationApplication or EnrollmentApplication
     const assessments = (application.assessments ||
@@ -656,10 +640,6 @@ export function createEarlyRegistrationSharedService(
               },
             },
           },
-          emailLogs: {
-            orderBy: { attemptedAt: "desc" },
-            take: 10,
-          },
         },
       });
     }
@@ -1009,7 +989,6 @@ export function createEarlyRegistrationSharedService(
     findApplicantOrThrow,
     findEarlyRegOrThrow,
     assertTransition,
-    queueEmail,
     flattenAssessmentData,
     getDetailedApplicationOrThrow,
     toUpperCaseRecursive,

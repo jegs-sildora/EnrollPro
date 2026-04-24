@@ -19,7 +19,6 @@ export function createEarlyRegistrationOperationsController(
   const {
     findApplicantOrThrow,
     assertTransition,
-    queueEmail,
     getDetailedApplicationOrThrow,
     updateApplicationStatus,
   } = createEarlyRegistrationSharedService(deps);
@@ -55,13 +54,6 @@ export function createEarlyRegistrationOperationsController(
         recordId: applicantId,
         req,
       });
-
-      await queueEmail(
-        applicantId,
-        applicant.earlyRegistration?.email ?? null,
-        `Assessment Passed - ${applicant.trackingNumber}`,
-        "ASSESSMENT_PASSED",
-      );
 
       res.json(updated);
     } catch (error) {
@@ -137,13 +129,6 @@ export function createEarlyRegistrationOperationsController(
         recordId: applicantId,
         req,
       });
-
-      await queueEmail(
-        applicantId,
-        applicant.earlyRegistration?.email ?? null,
-        `Assessment Result — ${applicant.trackingNumber}`,
-        "ASSESSMENT_FAILED",
-      );
 
       res.json(updated);
     } catch (error) {
@@ -327,13 +312,6 @@ export function createEarlyRegistrationOperationsController(
         recordId: applicantId,
         req,
       });
-
-      await queueEmail(
-        applicantId,
-        applicant.earlyRegistration?.email ?? applicant.email ?? null,
-        `Regular Section Placement — ${applicant.trackingNumber}`,
-        "APPLICATION_APPROVED",
-      );
 
       res.json(result);
     } catch (error) {

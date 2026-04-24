@@ -3819,17 +3819,6 @@ export async function batchScheduleStep(
           });
         });
 
-        if (sendEmail !== false) {
-          await sharedService.queueEmail(
-            registration.id,
-            registration.email ?? null,
-            mode === "INTERVIEW"
-              ? "Interview schedule update"
-              : "Assessment schedule update",
-            "EXAM_SCHEDULED",
-          );
-        }
-
         succeeded.push({
           id: registration.id,
           name,
@@ -4069,15 +4058,6 @@ export async function batchSaveScores(
             },
           });
         });
-
-        if (!isPassed && failureReason) {
-          await sharedService.queueEmail(
-            registration.id,
-            registration.email ?? null,
-            `Assessment Result - ${registration.trackingNumber}: ${failureReason} Automatically rerouted to REGULAR enrollment track.`,
-            "ASSESSMENT_FAILED",
-          );
-        }
 
         succeeded.push({
           id: registration.id,

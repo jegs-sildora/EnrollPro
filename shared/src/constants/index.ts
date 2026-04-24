@@ -177,15 +177,6 @@ export const ApplicantTypeEnum = z.enum([
   "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
   "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
 ]);
-export const EmailTriggerEnum = z.enum([
-  "APPLICATION_SUBMITTED",
-  "APPLICATION_APPROVED",
-  "APPLICATION_REJECTED",
-  "EXAM_SCHEDULED",
-  "ASSESSMENT_PASSED",
-  "ASSESSMENT_FAILED",
-]);
-export const EmailStatusEnum = z.enum(["PENDING", "SENT", "FAILED"]);
 export const AdmissionChannelEnum = z.enum(["ONLINE", "F2F"]);
 export const DocumentStatusEnum = z.enum([
   "SUBMITTED",

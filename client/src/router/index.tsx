@@ -23,7 +23,6 @@ import NotFound from "@/shared/components/NotFound";
 
 // Admin Pages
 import AdminUsers from "@/features/admin/pages/Users";
-import EmailLogs from "@/features/admin/pages/EmailLogs";
 import SystemHealth from "@/features/admin/pages/SystemHealth";
 import Teachers from "@/features/teachers/pages/Index";
 
@@ -231,14 +230,6 @@ export const router = createBrowserRouter([
             element: (
               <AppLayout>
                 <AdminUsers />
-              </AppLayout>
-            ),
-          },
-          {
-            path: "/admin/email-logs",
-            element: (
-              <AppLayout>
-                <EmailLogs />
               </AppLayout>
             ),
           },

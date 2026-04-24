@@ -11,7 +11,6 @@ export function createEarlyRegistrationAssessmentController(
   const {
     findApplicantOrThrow,
     assertTransition,
-    queueEmail,
     updateApplicationStatus,
   } = createEarlyRegistrationSharedService(deps);
   async function markEligible(req: Request, res: Response, next: NextFunction) {
@@ -170,13 +169,6 @@ export function createEarlyRegistrationAssessmentController(
         recordId: applicantId,
         req,
       });
-
-      await queueEmail(
-        applicantId,
-        applicant.earlyRegistration?.email ?? applicant.email ?? null,
-        `Assessment Scheduled - ${applicant.trackingNumber}`,
-        "EXAM_SCHEDULED",
-      );
 
       res.json(updated);
     } catch (error) {
@@ -409,16 +401,9 @@ export function createEarlyRegistrationAssessmentController(
             : "EarlyRegistrationApplication",
         recordId: applicantId,
         req,
-      });
+        });
 
-      await queueEmail(
-        applicantId,
-        applicant.earlyRegistration?.email ?? applicant.email ?? null,
-        `Interview Scheduled - ${applicant.trackingNumber}`,
-        "EXAM_SCHEDULED",
-      );
-
-      res.json(updated);
+        res.json(updated);
     } catch (error) {
       next(error);
     }
@@ -587,13 +572,6 @@ export function createEarlyRegistrationAssessmentController(
         recordId: applicantId,
         req,
       });
-
-      await queueEmail(
-        applicantId,
-        applicant.earlyRegistration?.email ?? applicant.email ?? null,
-        `Interview Passed - ${applicant.trackingNumber}`,
-        "APPLICATION_APPROVED",
-      );
 
       res.json(updated);
     } catch (error) {

@@ -381,6 +381,14 @@ export default function BasicInfoStep() {
   const [offeredScpConfigs, setOfferedScpConfigs] = useState<
     OfferedScpProgramConfig[]
   >([]);
+  const [inputGaValue, setInputGaValue] = useState<string>("");
+
+  // Sync state from form value on mount
+  useEffect(() => {
+    if (reportedGa !== undefined && reportedGa !== null) {
+      setInputGaValue(reportedGa.toString());
+    }
+  }, []);
 
   const availableScpPrograms = useMemo(
     () =>
@@ -812,30 +820,29 @@ export default function BasicInfoStep() {
               <div className="space-y-2">
                 <Input
                   id="reportedGa"
-                  type="number"
-                  min={0}
-                  max={100}
-                  step={0.01}
+                  type="text"
+                  inputMode="decimal"
                   placeholder="e.g. 88.50"
                   className={cn(
                     "h-12 font-bold text-lg bg-white",
                     gaEnteredAndBelowThreshold &&
                       "border-amber-400 focus-visible:ring-amber-400",
                   )}
-                  value={gaValue ?? ""}
+                  value={inputGaValue}
                   onChange={(e) => {
-                    const raw = e.target.value;
-                    const parsed =
-                      raw === ""
-                        ? null
-                        : Math.min(100, Math.max(0, parseFloat(raw)));
-                    setValue(
-                      "reportedGrades.generalAverage",
-                      Number.isNaN(parsed as number)
-                        ? null
-                        : (parsed as number | null),
-                      { shouldValidate: true },
-                    );
+                    const val = e.target.value;
+                    // Allow only digits and at most one decimal point with 2 places
+                    if (val === "" || /^(\d+)?(\.\d{0,2})?$/.test(val)) {
+                      const parsed = val === "" ? null : parseFloat(val);
+
+                      if (parsed === null || (!isNaN(parsed) && parsed <= 100)) {
+                        setValue(
+                          "reportedGrades.generalAverage",
+                          parsed === null ? null : Number(parsed.toFixed(2)),
+                        );
+                        setInputGaValue(val);
+                      }
+                    }
                   }}
                 />
                 <p className="font-bold text-xs italic flex items-center gap-1 text-muted-foreground">

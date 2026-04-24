@@ -364,7 +364,6 @@ model EnrollmentApplication {
   previousSchool          EnrollmentPreviousSchool?
   programDetail           EnrollmentProgramDetail?
   checklist               ApplicationChecklist?
-  emailLogs               EmailLog[]
   enrollmentRecord        EnrollmentRecord?
 
   @@index([status, schoolYearId], name: "idx_enrollment_apps_status_sy")
@@ -531,25 +530,6 @@ model AuditLog {
   @@index([createdAt], name: "idx_audit_logs_created_at")
   @@index([userId], name: "idx_audit_logs_user_id")
   @@map("audit_logs")
-}
-
-/// Transactional email log
-model EmailLog {
-  id           Int          @id @default(autoincrement())
-  recipient    String
-  subject      String
-  trigger      EmailTrigger
-  status       EmailStatus  @default(PENDING)
-  applicationId Int?         @map("application_id")
-  errorMessage String?      @map("error_message")
-  attemptedAt  DateTime     @default(now()) @db.Timestamptz @map("attempted_at")
-  sentAt       DateTime?    @db.Timestamptz @map("sent_at")
-  
-  application  EnrollmentApplication? @relation(fields: [applicationId], references: [id])
-
-  @@index([status], name: "idx_email_logs_status")
-  @@index([trigger], name: "idx_email_logs_trigger")
-  @@map("email_logs")
 }
 
 /// Student health measurement (SF8)
@@ -798,25 +778,6 @@ enum ApplicantType {
   SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION
 
   @@map("applicant_type")
-}
-
-enum EmailTrigger {
-  APPLICATION_SUBMITTED
-  APPLICATION_APPROVED
-  APPLICATION_REJECTED
-  EXAM_SCHEDULED
-  ASSESSMENT_PASSED
-  ASSESSMENT_FAILED
-
-  @@map("email_trigger")
-}
-
-enum EmailStatus {
-  PENDING
-  SENT
-  FAILED
-
-  @@map("email_status")
 }
 
 enum AdmissionChannel {

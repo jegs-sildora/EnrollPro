@@ -1152,13 +1152,18 @@ export default function WalkInEncoder() {
                 </Label>
                 <Input
                   value={formData.finalGeneralAverage}
-                  placeholder="88.5"
+                  placeholder="88.50"
                   className="h-10 font-bold"
+                  inputMode="decimal"
                   onChange={(event) => {
-                    const normalized = event.target.value
-                      .replace(/[^\d.]/g, "")
-                      .replace(/(\..*)\./g, "$1");
-                    setField("finalGeneralAverage", normalized);
+                    const val = event.target.value;
+                    // Allow only digits and at most one decimal point with 2 places
+                    if (val === "" || /^(\d+)?(\.\d{0,2})?$/.test(val)) {
+                      const num = val === "" ? null : parseFloat(val);
+                      if (num === null || (!isNaN(num) && num <= 100)) {
+                        setField("finalGeneralAverage", val);
+                      }
+                    }
                   }}
                 />
               </div>

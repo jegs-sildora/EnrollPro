@@ -69,7 +69,12 @@ const optionalGeneralAverageSchema = z.preprocess(
     .min(0, "Final General Average must be between 0 and 100")
     .max(100, "Final General Average must be between 0 and 100")
     .refine(
-      (value) => Number.isInteger(value * 100),
+      (value) => {
+        if (value === undefined || value === null) return true;
+        const stringValue = value.toString();
+        const decimalPart = stringValue.split(".")[1];
+        return !decimalPart || decimalPart.length <= 2;
+      },
       "Final General Average must have up to 2 decimal places",
     )
     .optional()
@@ -795,7 +800,6 @@ export const batchScheduleStepSchema = z.object({
   scheduledTime: z.string().min(1, "Scheduled time is required"),
   venue: z.string().min(1, "Venue is required"),
   notes: z.string().optional().nullable(),
-  sendEmail: z.boolean().default(true),
 });
 
 export const batchSaveScoresSchema = z.object({

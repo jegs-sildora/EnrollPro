@@ -128,17 +128,26 @@ export default function Step4PreviousSchool() {
             <Input
               autoComplete="off"
               id="final-general-average"
-              type="number"
+              type="text"
               inputMode="decimal"
-              step="0.01"
-              min={0}
-              max={100}
               placeholder="e.g. 89.75"
-              {...register("generalAverage")}
               className={cn(
                 "h-11 font-bold",
                 errors.generalAverage && "border-destructive",
               )}
+              value={watch("generalAverage") ?? ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                // Allow only digits and at most one decimal point with 2 places
+                if (val === "" || /^(\d+)?(\.\d{0,2})?$/.test(val)) {
+                  const num = val === "" ? null : parseFloat(val);
+                  if (num === null || (!isNaN(num) && num <= 100)) {
+                    setValue("generalAverage", val as any, {
+                      shouldValidate: true,
+                    });
+                  }
+                }
+              }}
             />
             {errors.generalAverage && (
               <p className="text-[0.6875rem] text-destructive font-medium">

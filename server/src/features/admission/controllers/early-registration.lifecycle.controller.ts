@@ -12,7 +12,6 @@ export function createEarlyRegistrationLifecycleController(
   const {
     findApplicantOrThrow,
     assertTransition,
-    queueEmail,
     toUpperCaseRecursive,
     updateApplicationStatus,
     migrateEarlyRegToEnrollment,
@@ -283,13 +282,6 @@ export function createEarlyRegistrationLifecycleController(
         recordId: applicantId,
         req,
       });
-
-      await queueEmail(
-        applicantId,
-        applicant.earlyRegistration?.email ?? null,
-        `Application Approved - ${applicant.trackingNumber}`,
-        "APPLICATION_APPROVED",
-      );
 
       res.json(result);
     } catch (error) {
@@ -1426,13 +1418,6 @@ export function createEarlyRegistrationLifecycleController(
         recordId: applicantId,
         req,
       });
-
-      await queueEmail(
-        applicantId,
-        applicant.earlyRegistration?.email ?? null,
-        `Application Update - ${applicant.trackingNumber}`,
-        "APPLICATION_REJECTED",
-      );
 
       res.json(updated);
     } catch (error) {
