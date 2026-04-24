@@ -893,13 +893,22 @@ export function createEarlyRegistrationLifecycleController(
           gradeLevelId: gradeLevel.id,
           applicantType: applicantType as any,
           learnerType: learnerType as any,
-          status: "VERIFIED",
+          status:
+            data.isMissingSf9 || data.hasUnsettledPrivateAccount
+              ? "TEMPORARILY_ENROLLED"
+              : "VERIFIED",
+          intakeMethod: "BEEF_FULL",
           admissionChannel: "F2F",
           guardianRelationship: normalizeOptional(data.guardianRelationship),
           hasNoMother: !motherData,
           hasNoFather: !fatherData,
           encodedById: req.user!.userId,
           isPrivacyConsentGiven: true,
+          isTemporarilyEnrolled:
+            data.isMissingSf9 || data.hasUnsettledPrivateAccount || false,
+          isMissingSf9: data.isMissingSf9 || false,
+          hasUnsettledPrivateAccount: data.hasUnsettledPrivateAccount || false,
+          originatingSchoolName: normalizeOptional(data.originatingSchoolName),
           addresses:
             addressData.length > 0
               ? { createMany: { data: addressData } }
@@ -1044,6 +1053,7 @@ export function createEarlyRegistrationLifecycleController(
         "TEMPORARILY_ENROLLED",
         {
           isTemporarilyEnrolled: true,
+          isMissingSf9: !checklist?.isSf9Submitted,
         },
       );
 

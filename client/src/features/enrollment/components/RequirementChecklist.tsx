@@ -322,6 +322,10 @@ export function RequirementChecklist({
   }, [documents]);
 
   const getRequirementStatus = (requirement: RequirementItem) => {
+    // If the API explicitly marks it as met (e.g. Once-Only rule), prioritize that
+    const apiReq = requirements.find((r) => r.type === requirement.type);
+    if ((apiReq as any)?.isMet) return "met";
+
     if (requirement.checklistKey) {
       return localChecklist[requirement.checklistKey] ? "met" : "missing";
     }

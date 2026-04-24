@@ -763,7 +763,7 @@ export default function WalkInEncoder() {
                     <SelectValue placeholder="Select grade" />
                   </SelectTrigger>
                   <SelectContent>
-                    {["6", "7", "8", "9", "10"].map((g) => (
+                    {["6", "7", "8", "9"].map((g) => (
                       <SelectItem key={g} value={g}>
                         Grade {g}
                       </SelectItem>

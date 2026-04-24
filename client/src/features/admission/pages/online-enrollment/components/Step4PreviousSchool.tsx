@@ -11,8 +11,9 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
-import { Info, HelpCircle } from "lucide-react";
+import { Info, HelpCircle, ShieldAlert } from "lucide-react";
 import { cn, getManilaNow } from "@/shared/lib/utils";
+import { Checkbox } from "@/shared/ui/checkbox";
 
 export default function Step4PreviousSchool() {
   const {
@@ -36,6 +37,9 @@ export default function Step4PreviousSchool() {
     { value: "International", label: "International" },
     { value: "ALS", label: "ALS" },
   ] as const;
+
+  const isMissingSf9 = watch("isMissingSf9");
+  const hasUnsettledPrivateAccount = watch("hasUnsettledPrivateAccount");
 
   useEffect(() => {
     if (!lastSchoolType) {
@@ -216,6 +220,74 @@ export default function Step4PreviousSchool() {
             placeholder="City/Municipality, Province"
             className="h-11 font-bold uppercase"
           />
+        </div>
+      </div>
+
+      <div className="pt-6 border-t space-y-6">
+        <div className="flex items-center gap-2">
+          <ShieldAlert className="h-5 w-5 text-amber-600" />
+          <h3 className="text-sm font-black uppercase tracking-tight text-amber-700">
+            DepEd Order 017, s. 2025: Compliance & Deficiencies
+          </h3>
+        </div>
+
+        <div className="rounded-2xl border-2 border-amber-100 bg-amber-50/50 p-6 space-y-6">
+          <p className="text-xs font-bold text-amber-900/70 leading-relaxed">
+            If the learner is unable to provide standard transfer credentials or has financial issues with a private school, please flag it here. 
+            <span className="block mt-1 opacity-80 italic">Learner will be admitted as "Temporarily Enrolled" until resolved.</span>
+          </p>
+
+          <div className="space-y-4">
+            <div className="flex items-start space-x-3 p-4 bg-white rounded-xl border border-amber-200/60 shadow-sm">
+              <Checkbox
+                id="missing-sf9"
+                checked={isMissingSf9}
+                onCheckedChange={(checked) => setValue("isMissingSf9", checked === true)}
+                className="mt-1 border-amber-400 data-[state=checked]:bg-amber-600"
+              />
+              <div className="grid gap-1.5 leading-none">
+                <Label htmlFor="missing-sf9" className="text-sm font-bold text-amber-950 cursor-pointer select-none">
+                  Missing SF9 (Report Card)
+                </Label>
+                <p className="text-[10px] font-medium text-amber-700/70">
+                  Learner failed to submit SF9 from the originating school.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col space-y-4 p-4 bg-white rounded-xl border border-amber-200/60 shadow-sm">
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="private-debt"
+                  checked={hasUnsettledPrivateAccount}
+                  onCheckedChange={(checked) => setValue("hasUnsettledPrivateAccount", checked === true)}
+                  className="mt-1 border-amber-400 data-[state=checked]:bg-amber-600"
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <Label htmlFor="private-debt" className="text-sm font-bold text-amber-950 cursor-pointer select-none">
+                    Unsettled Private School Account
+                  </Label>
+                  <p className="text-[10px] font-medium text-amber-700/70">
+                    Learner has existing financial obligations at a private institution.
+                  </p>
+                </div>
+              </div>
+
+              {hasUnsettledPrivateAccount && (
+                <div className="pl-7 space-y-2 animate-in slide-in-from-top-2 duration-200">
+                   <Label htmlFor="origin-school" className="text-[10px] font-black uppercase text-amber-900/50 tracking-widest">
+                    Originating School Name
+                   </Label>
+                   <Input 
+                    id="origin-school"
+                    {...register("originatingSchoolName")}
+                    placeholder="e.g. St. Scholastica's Academy"
+                    className="h-10 bg-amber-50/30 border-amber-200 font-bold uppercase placeholder:text-amber-300"
+                   />
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

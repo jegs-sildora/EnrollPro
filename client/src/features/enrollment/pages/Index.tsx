@@ -60,6 +60,7 @@ import { ApplicationDetailPanel } from "@/features/enrollment/components/Applica
 import { ScheduleExamDialog } from "@/features/enrollment/components/ScheduleExamDialog";
 import { StatusBadge } from "@/features/enrollment/components/StatusBadge";
 import { EnrollmentWorkflowTabs } from "@/features/enrollment/components/EnrollmentWorkflowTabs";
+import { ConfirmationSlipModal } from "@/features/enrollment/components/ConfirmationSlipModal";
 import { useSectioningStore } from "@/store/sectioning.slice";
 import {
   ENROLLMENT_SUB_MENU_DESCRIPTIONS,
@@ -339,6 +340,7 @@ export default function Enrollment() {
   const [loadingGradeLevels, setLoadingGradeLevels] = useState(false);
 
   const [isWalkInGateOpen, setIsWalkInGateOpen] = useState(false);
+  const [isConfirmSlipModalOpen, setIsConfirmSlipModalOpen] = useState(false);
   const [walkInLrn, setWalkInLrn] = useState("");
   const [walkInNoLrn, setWalkInNoLrn] = useState(false);
   const [isWalkInGateChecking, setIsWalkInGateChecking] = useState(false);
@@ -1437,12 +1439,24 @@ export default function Enrollment() {
               <School className="h-4 w-4 mr-2" />
               Open Batch Section Assignment
             </Button>
-            <Button
-              variant="outline"
-              className="h-10 px-3 flex-1 md:flex-none text-sm font-bold"
-              onClick={openWalkInGate}>
-              <UserPlus className="h-4 w-4 mr-2" />+ Walk-In BEEF
-            </Button>
+            
+            {pendingQueueFilter === "CONTINUING_JHS" ? (
+              <Button
+                variant="default"
+                className="h-10 px-3 flex-1 md:flex-none text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={() => setIsConfirmSlipModalOpen(true)}>
+                <UserCheck className="h-4 w-4 mr-2" />
+                Process Confirmation Slip
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                className="h-10 px-3 flex-1 md:flex-none text-sm font-bold border-red-200 text-red-700 hover:bg-red-50"
+                onClick={openWalkInGate}>
+                <UserPlus className="h-4 w-4 mr-2" />+ Walk-In BEEF
+              </Button>
+            )}
+
             <Button
               variant="outline"
               className="h-10 px-3 flex-1 md:flex-none text-sm font-bold"
@@ -2356,6 +2370,13 @@ export default function Enrollment() {
         gradeLevelId={batchGradeLevelId || 0}
         gradeLevelName={batchGradeLevelName}
         schoolYearId={ayId || 0}
+      />
+
+      <ConfirmationSlipModal
+        open={isConfirmSlipModalOpen}
+        onOpenChange={setIsConfirmSlipModalOpen}
+        activeSchoolYearId={ayId}
+        onSuccess={fetchData}
       />
     </div>
   );

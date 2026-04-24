@@ -8,6 +8,59 @@ const PORTAL_LOOKUP_ERROR = "Invalid learner credentials.";
 const toDateOnly = (date: Date): string => date.toISOString().slice(0, 10);
 
 /**
+ * Rapid lookup for Registrars using only LRN.
+ * GET /api/learner/lookup?lrn={LRN}
+ */
+export const lookupLearnerByLrn = async (req: Request, res: Response) => {
+  try {
+    const { lrn } = req.query as { lrn: string };
+
+    if (!lrn || lrn.length !== 12) {
+      return res.status(400).json({ message: "Invalid LRN format. Exactly 12 digits required." });
+    }
+
+    const learner = await prisma.learner.findUnique({
+      where: { lrn },
+      include: {
+        enrollmentApplications: {
+          orderBy: { schoolYearId: "desc" },
+          take: 1,
+          include: {
+            gradeLevel: true,
+            enrollmentRecord: {
+              include: {
+                section: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!learner) {
+      return res.status(404).json({ message: "Learner not found." });
+    }
+
+    const latestApp = learner.enrollmentApplications[0];
+
+    return res.json({
+      id: learner.id,
+      lrn: learner.lrn,
+      firstName: learner.firstName,
+      lastName: learner.lastName,
+      middleName: learner.middleName,
+      previousGradeLevel: latestApp?.gradeLevel.name ?? "N/A",
+      previousSection: latestApp?.enrollmentRecord?.section?.name ?? "N/A",
+      previousGenAve: learner.previousGenAve,
+      promotionStatus: learner.promotionStatus,
+    });
+  } catch (error) {
+    console.error("Registrar learner lookup failed:", error);
+    return res.status(500).json({ message: "Error performing learner lookup." });
+  }
+};
+
+/**
  * Lookup learner records using LRN, Birthdate, and PIN.
  * POST /api/learner/lookup
  */

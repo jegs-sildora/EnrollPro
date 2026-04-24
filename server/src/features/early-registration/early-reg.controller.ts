@@ -1925,6 +1925,7 @@ export async function getRequirements(
       applicantType: registration.applicantType,
       isLwd: registration.learner.isLearnerWithDisability,
       isPeptAePasser: false,
+      hasPsaVerified: registration.learner.hasPsaBirthCertificate,
       documentRequirements,
     });
 

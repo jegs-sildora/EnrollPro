@@ -207,6 +207,9 @@ model Learner {
   lrn                     String?   @unique(map: "uq_learners_lrn") @db.VarChar(12)
   isPendingLrnCreation    Boolean   @default(false) @map("is_pending_lrn_creation")
   psaBirthCertNumber      String?   @map("psa_birth_cert_number")
+  hasPsaBirthCertificate  Boolean   @default(false) @map("has_psa_birth_certificate")
+  birthCertificateVerifiedBy String?  @map("birth_certificate_verified_by")
+  birthCertificateVerifiedDate DateTime? @db.Timestamptz @map("birth_certificate_verified_date")
   firstName               String    @map("first_name")
   lastName                String    @map("last_name")
   middleName              String?   @map("middle_name")
@@ -327,10 +330,15 @@ model EnrollmentApplication {
   applicantType           ApplicantType     @default(REGULAR) @map("applicant_type")
   learnerType             LearnerType       @default(NEW_ENROLLEE) @map("learner_type")
   status                  ApplicationStatus @default(SUBMITTED_BEEF)
+  intakeMethod            IntakeMethod      @default(BEEF_FULL) @map("intake_method")
   admissionChannel        AdmissionChannel  @default(ONLINE) @map("admission_channel")
   trackingNumber          String?           @unique(map: "uq_enrollment_tracking_number") @map("tracking_number")
   learningModalities      String[]          @map("learning_modalities")
   isTemporarilyEnrolled   Boolean           @default(false) @map("is_temporarily_enrolled")
+  isMissingSf9            Boolean           @default(false) @map("is_missing_sf9")
+  hasUnsettledPrivateAccount Boolean        @default(false) @map("has_unsettled_private_account")
+  originatingSchoolName   String?           @map("originating_school_name")
+  temporaryStatusDeadline DateTime?         @db.Date @map("temporary_status_deadline")
   documentaryDeadlineAt   DateTime?         @db.Date @map("documentary_deadline_at")
   complianceStatus        ComplianceStatus? @map("compliance_status")
   rejectionReason         String?           @map("rejection_reason")
@@ -890,4 +898,11 @@ enum ScpOptionType {
   SPORT
 
   @@map("scp_option_type")
+}
+
+enum IntakeMethod {
+  BEEF_FULL
+  CONFIRMATION_SLIP
+
+  @@map("intake_method")
 }

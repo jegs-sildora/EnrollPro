@@ -4,12 +4,15 @@ import AdmissionHeader from "../../components/AdmissionHeader";
 import PrivacyNotice from "./PrivacyNotice";
 import EarlyRegistrationForm from "./EarlyRegistrationForm";
 import EnrollmentSuccess from "./components/EnrollmentSuccess";
+import { IntakeChoice } from "./components/IntakeChoice";
+import { ReturningLearnerFlow } from "./components/ReturningLearnerFlow";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 import type { ApplicationSubmitResponse } from "@enrollpro/shared";
 
 const CONSENT_KEY = "enrollpro_apply_consent";
+const INTAKE_KEY = "enrollpro_intake_choice";
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
 type EnrollmentSubmitSuccessPayload = Pick<
@@ -26,6 +29,9 @@ export default function Apply() {
   const [hasConsented, setHasConsented] = useState(() => {
     return sessionStorage.getItem(CONSENT_KEY) === "true";
   });
+  const [intakeChoice, setIntakeChoice] = useState<"NEW" | "RETURNING" | null>(() => {
+    return sessionStorage.getItem(INTAKE_KEY) as "NEW" | "RETURNING" | null;
+  });
   const [submittedSuccessData, setSubmittedSuccessData] =
     useState<EnrollmentSubmitSuccessPayload | null>(null);
 
@@ -37,9 +43,16 @@ export default function Apply() {
     setHasConsented(true);
   };
 
+  const handleIntakeChoice = (choice: "NEW" | "RETURNING") => {
+    sessionStorage.setItem(INTAKE_KEY, choice);
+    setIntakeChoice(choice);
+  };
+
   const handleReset = () => {
     sessionStorage.removeItem(CONSENT_KEY);
+    sessionStorage.removeItem(INTAKE_KEY);
     setHasConsented(false);
+    setIntakeChoice(null);
     setSubmittedSuccessData(null);
   };
 
@@ -214,6 +227,27 @@ export default function Apply() {
                       exit={{ opacity: 0, scale: 0.98 }}
                       transition={{ duration: 0.3 }}>
                       <PrivacyNotice onAccept={handleAccept} />
+                    </motion.div>
+                  ) : !intakeChoice ? (
+                    <motion.div
+                      key="choice"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.98 }}
+                      transition={{ duration: 0.3 }}>
+                      <IntakeChoice onChoice={handleIntakeChoice} />
+                    </motion.div>
+                  ) : intakeChoice === "RETURNING" ? (
+                    <motion.div
+                      key="returning"
+                      initial={{ opacity: 0, scale: 1.02, y: 20 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 1.02 }}
+                      transition={{ duration: 0.4, ease: "easeOut" }}>
+                      <ReturningLearnerFlow
+                        onBack={() => setIntakeChoice(null)}
+                        onSuccess={(data) => setSubmittedSuccessData(data)}
+                      />
                     </motion.div>
                   ) : (
                     <motion.div

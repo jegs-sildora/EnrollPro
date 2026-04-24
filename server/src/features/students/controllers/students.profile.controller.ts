@@ -230,12 +230,158 @@ export const createStudentsProfileController = (
     }
   };
 
+  const clearDeficiency = async (req: Request, res: Response) => {
+    try {
+      const userId = getRequestUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const parsedId = Number.parseInt(String(req.params.id ?? ""), 10);
+      if (Number.isNaN(parsedId)) {
+        return res.status(400).json({ message: "Invalid student id" });
+      }
+
+      const { deficiencyType } = req.body as { deficiencyType: "SF9" | "FINANCIAL" | "ALL" };
+
+      const applicant = await deps.prisma.enrollmentApplication.findUnique({
+        where: { id: parsedId },
+        include: { learner: true },
+      });
+
+      if (!applicant) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      const updateData: any = {};
+      if (deficiencyType === "SF9") {
+        updateData.isMissingSf9 = false;
+      } else if (deficiencyType === "FINANCIAL") {
+        updateData.hasUnsettledPrivateAccount = false;
+      } else if (deficiencyType === "ALL") {
+        updateData.isMissingSf9 = false;
+        updateData.hasUnsettledPrivateAccount = false;
+      }
+
+      const updated = await deps.prisma.$transaction(async (tx) => {
+        const currentApp = await tx.enrollmentApplication.findUnique({
+          where: { id: parsedId },
+        });
+
+        const newIsMissingSf9 = updateData.isMissingSf9 ?? currentApp!.isMissingSf9;
+        const newHasUnsettled = updateData.hasUnsettledPrivateAccount ?? currentApp!.hasUnsettledPrivateAccount;
+        
+        const isNowClear = !newIsMissingSf9 && !newHasUnsettled;
+
+        return tx.enrollmentApplication.update({
+          where: { id: parsedId },
+          data: {
+            ...updateData,
+            isTemporarilyEnrolled: !isNowClear,
+            status: isNowClear ? "ENROLLED" : "TEMPORARILY_ENROLLED",
+          },
+          include: { learner: true },
+        });
+      });
+
+      await deps.prisma.auditLog.create({
+        data: {
+          userId,
+          actionType: "DEFICIENCY_CLEARED",
+          description: `Cleared ${deficiencyType} deficiency for ${updated.learner.firstName} ${updated.learner.lastName}`,
+          subjectType: "EnrollmentApplication",
+          recordId: parsedId,
+          ipAddress: req.ip || "unknown",
+          userAgent: req.headers["user-agent"] || null,
+        },
+      });
+
+      res.json({ message: "Deficiency cleared successfully", student: updated });
+    } catch (error) {
+      console.error("Error clearing deficiency:", error);
+      res.status(500).json({ message: "Failed to clear deficiency" });
+    }
+  };
+
+  const verifyPsa = async (req: Request, res: Response) => {
+    try {
+      const userId = getRequestUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const parsedId = Number.parseInt(String(req.params.id ?? ""), 10);
+      if (Number.isNaN(parsedId)) {
+        return res.status(400).json({ message: "Invalid student id" });
+      }
+
+      // 1. Get the verifier's name
+      const verifier = await deps.prisma.user.findUnique({
+        where: { id: userId },
+        select: { firstName: true, lastName: true },
+      });
+
+      const verifierName = verifier ? `${verifier.firstName} ${verifier.lastName}` : "Unknown Admin";
+
+      // 2. Update Learner record
+      const applicant = await deps.prisma.enrollmentApplication.findUnique({
+        where: { id: parsedId },
+        include: { learner: true },
+      });
+
+      if (!applicant) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      await deps.prisma.$transaction(async (tx) => {
+        await tx.learner.update({
+          where: { id: applicant.learnerId },
+          data: {
+            hasPsaBirthCertificate: true,
+            birthCertificateVerifiedBy: verifierName,
+            birthCertificateVerifiedDate: new Date(),
+          },
+        });
+
+        // 3. Automatically update the checklist for the current enrollment application
+        await tx.applicationChecklist.updateMany({
+          where: { enrollmentId: parsedId },
+          data: {
+            isPsaBirthCertPresented: true,
+            isOriginalPsaBcCollected: true,
+            updatedById: userId,
+          },
+        });
+      });
+
+      await deps.prisma.auditLog.create({
+        data: {
+          userId,
+          actionType: "PSA_VERIFIED",
+          description: `Verified PSA Birth Certificate for ${applicant.learner.firstName} ${applicant.learner.lastName}`,
+          subjectType: "Learner",
+          recordId: applicant.learnerId,
+          ipAddress: req.ip || "unknown",
+          userAgent: req.headers["user-agent"] || null,
+        },
+      });
+
+      res.json({ message: "PSA Birth Certificate verified successfully" });
+    } catch (error) {
+      console.error("Error verifying PSA:", error);
+      res.status(500).json({ message: "Failed to verify PSA Birth Certificate" });
+    }
+  };
+
   return {
     updateStudent,
     resetPortalPin,
+    clearDeficiency,
+    verifyPsa,
   };
 };
 
 const studentsProfileController = createStudentsProfileController();
 
-export const { updateStudent, resetPortalPin } = studentsProfileController;
+export const { updateStudent, resetPortalPin, clearDeficiency, verifyPsa } =
+  studentsProfileController;

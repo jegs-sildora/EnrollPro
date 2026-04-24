@@ -9,6 +9,8 @@ import {
 import {
   updateStudent,
   resetPortalPin,
+  clearDeficiency,
+  verifyPsa,
 } from "./controllers/students.profile.controller.js";
 import {
   getHealthRecords as getStudentHealthRecords,
@@ -72,6 +74,20 @@ router.post(
   "/:id/reset-portal-pin",
   authorize("REGISTRAR", "SYSTEM_ADMIN"),
   resetPortalPin,
+);
+
+// Clear Deficiency
+router.post(
+  "/:id/clear-deficiency",
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  clearDeficiency,
+);
+
+// Verify PSA
+router.post(
+  "/:id/verify-psa",
+  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  verifyPsa,
 );
 
 export default router;

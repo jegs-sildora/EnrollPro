@@ -124,6 +124,7 @@ export function createEarlyRegistrationBaseController(
         applicantType: applicant.applicantType,
         isLwd: applicant.learner?.isLearnerWithDisability ?? false,
         isPeptAePasser: false,
+        hasPsaVerified: applicant.learner?.hasPsaBirthCertificate ?? false,
         documentRequirements,
       });
 
@@ -880,6 +881,17 @@ export function createEarlyRegistrationBaseController(
           hasNoMother: body.hasNoMother ?? false,
           hasNoFather: body.hasNoFather ?? false,
 
+          // DepEd Compliance (Temporary Enrollment)
+          status:
+            body.isMissingSf9 || body.hasUnsettledPrivateAccount
+              ? "TEMPORARILY_ENROLLED"
+              : "SUBMITTED_BEEF",
+          isTemporarilyEnrolled:
+            body.isMissingSf9 || body.hasUnsettledPrivateAccount || false,
+          isMissingSf9: body.isMissingSf9 || false,
+          hasUnsettledPrivateAccount: body.hasUnsettledPrivateAccount || false,
+          originatingSchoolName: body.originatingSchoolName || null,
+
           // Relations
           gradeLevelId: gradeLevel.id,
           schoolYearId: activeYear.id,
@@ -1299,6 +1311,7 @@ export function createEarlyRegistrationBaseController(
         lastGradeLevel: learner.lastGradeLevel,
         is4PsBeneficiary: learner.is4PsBeneficiary,
         householdId4Ps: learner.householdId4Ps,
+        hasPsaBirthCertificate: learner.hasPsaBirthCertificate,
         // Demographic fields from learner table
         gradeLevel: normalizedGradeLevel,
         learnerType: reg.learnerType,

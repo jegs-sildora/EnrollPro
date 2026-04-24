@@ -71,6 +71,7 @@ interface ProposedAssignment {
   genAve: number | null;
   readingProfile: string | null;
   programType: string;
+  status: string;
 }
 
 const resolveReadingProfileLabel = (level?: string | null): string => {
@@ -114,9 +115,17 @@ const RosterRowComponent = React.forwardRef<
       className="hover:bg-muted/30 transition-colors border-b last:border-0 group">
       <TableCell className="py-3 px-4 text-left">
         <div className="flex flex-col">
-          <span className="font-bold text-sm uppercase group-hover:text-primary transition-colors leading-tight">
-            {row.learnerName}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-sm uppercase group-hover:text-primary transition-colors leading-tight">
+              {row.learnerName}
+            </span>
+            {row.status === "TEMPORARILY_ENROLLED" && (
+              <Badge variant="outline" className="h-5 px-1.5 border-amber-300 bg-amber-50 text-amber-700 font-black text-[9px] uppercase tracking-tighter gap-1">
+                <AlertTriangle className="h-2.5 w-2.5" />
+                Temporary
+              </Badge>
+            )}
+          </div>
           <span className="text-[10px] font-black text-muted-foreground tracking-tighter uppercase">
             {row.lrn || "NO LRN"}
           </span>

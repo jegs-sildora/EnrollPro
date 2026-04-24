@@ -13,6 +13,7 @@ import {
   Tags,
   Activity,
   History,
+  FileText,
   Info,
   UserCheck,
   ShieldCheck,
@@ -51,6 +52,7 @@ export default function StudentProfile() {
         "application",
         "classifications",
         "health",
+        "documents",
       ]),
     [],
   );
@@ -104,10 +106,25 @@ export default function StudentProfile() {
               </h1>
               <Badge
                 variant={student.status === "ENROLLED" ? "default" : "outline"}
-                className={student.status === "ENROLLED" ? "bg-green-600" : ""}>
-                {student.status}
+                className={cn(
+                  student.status === "ENROLLED" ? "bg-green-600" : "",
+                  student.status === "TEMPORARILY_ENROLLED" && "bg-amber-100 text-amber-800 border-amber-300"
+                )}>
+                {student.status.replace("_", " ")}
               </Badge>
             </div>
+
+            {student.status === "TEMPORARILY_ENROLLED" && (
+              <div className="flex items-center gap-2 mt-1 px-3 py-1 rounded-lg bg-amber-50 border border-amber-100 animate-in fade-in slide-in-from-left-2 duration-500">
+                 <ShieldCheck className="h-3 w-3 text-amber-600" />
+                 <p className="text-[10px] font-black uppercase tracking-wider text-amber-700">
+                    Deficiency: {student.isMissingSf9 && "Missing SF9 (Report Card)"}
+                    {student.isMissingSf9 && student.hasUnsettledPrivateAccount && " & "}
+                    {student.hasUnsettledPrivateAccount && `Unsettled Account (${student.originatingSchoolName || "Private School"})`}
+                 </p>
+              </div>
+            )}
+
             <div className="flex items-center gap-4 mt-1 text-muted-foreground text-sm font-medium">
               <span className="flex items-center gap-1">
                 <Fingerprint className="h-3.5 w-3.5" />{" "}
@@ -212,6 +229,21 @@ export default function StudentProfile() {
             <Activity className="h-4 w-4 relative z-20" />
             <span className="relative z-20 hidden sm:inline">
               Health Records
+            </span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="documents"
+            className="flex-1 min-w-32 py-2 gap-2 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+            {activeTab === "documents" && (
+              <motion.div
+                layoutId="profile-active-pill"
+                className="absolute inset-0 bg-primary rounded-md"
+                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+              />
+            )}
+            <FileText className="h-4 w-4 relative z-20" />
+            <span className="relative z-20 hidden sm:inline">
+              Requirements
             </span>
           </TabsTrigger>
         </TabsList>
@@ -582,6 +614,70 @@ export default function StudentProfile() {
               transition={{ duration: 0.2 }}
               className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-6">
+                {student.status === "TEMPORARILY_ENROLLED" && (
+                  <Card className="border-amber-200 bg-amber-50/30 overflow-hidden">
+                    <CardHeader className="bg-amber-100/50 pb-3">
+                      <div className="flex items-center gap-3">
+                         <div className="p-2 bg-amber-600 rounded-lg text-white">
+                            <ShieldCheck className="h-5 w-5" />
+                         </div>
+                         <div>
+                            <CardTitle className="text-lg font-black uppercase text-amber-900 leading-none">Deficiency Resolution</CardTitle>
+                            <p className="text-[10px] font-bold text-amber-700/70 mt-1 uppercase tracking-widest">DepEd Order 017, s. 2025 Compliance</p>
+                         </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-6 space-y-4">
+                       <div className="p-4 bg-white rounded-xl border border-amber-200 space-y-3">
+                          <p className="text-xs font-bold text-slate-600 leading-relaxed italic">
+                            "Learners lacking transfer credentials or with private school debt must be admitted temporarily but restricted from official clearance generation."
+                          </p>
+                          
+                          <div className="flex flex-wrap gap-3 pt-2">
+                             {student.isMissingSf9 && (
+                               <Button 
+                                  variant="default" 
+                                  size="sm" 
+                                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold h-9 gap-2"
+                                  onClick={async () => {
+                                     if(window.confirm("Confirm that SF9 (Report Card) has been officially received and verified?")) {
+                                        try {
+                                           await api.post(`/students/${student.id}/clear-deficiency`, { deficiencyType: "SF9" });
+                                           sileo.success({ title: "SF9 Verified", description: "Learner's documentary deficiency has been updated." });
+                                           refetch();
+                                        } catch(e) { toastApiError(e as any); }
+                                     }
+                                  }}
+                               >
+                                  <ClipboardList className="h-4 w-4" />
+                                  Verify / Receive SF9
+                               </Button>
+                             )}
+
+                             {student.hasUnsettledPrivateAccount && (
+                               <Button 
+                                  variant="default" 
+                                  size="sm" 
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9 gap-2"
+                                  onClick={async () => {
+                                     if(window.confirm(`Confirm that LIS clearance has been received from ${student.originatingSchoolName || "the private school"}?`)) {
+                                        try {
+                                           await api.post(`/students/${student.id}/clear-deficiency`, { deficiencyType: "FINANCIAL" });
+                                           sileo.success({ title: "Financial Clearance Received", description: "Learner's private account flag has been cleared." });
+                                           refetch();
+                                        } catch(e) { toastApiError(e as any); }
+                                     }
+                                  }}
+                               >
+                                  <ShieldCheck className="h-4 w-4" />
+                                  Confirm LIS Clearance
+                               </Button>
+                             )}
+                          </div>
+                       </div>
+                    </CardContent>
+                  </Card>
+                )}
                 <SCPAssessmentBlock applicant={student} />
                 <Card>
                   <CardHeader>
@@ -762,6 +858,105 @@ export default function StudentProfile() {
                 </CardHeader>
                 <CardContent className="pt-0">
                   <HealthRecords applicant={student} onRefresh={refetch} />
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="documents" className="m-0 focus-visible:outline-none ring-0">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-primary" />
+                    Permanent Documentary Vault
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {student.hasPsaBirthCertificate ? (
+                      <div className="flex flex-col p-6 rounded-2xl bg-emerald-50 border-2 border-emerald-100 space-y-4 animate-in zoom-in-95 duration-300">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-emerald-600 rounded-lg text-white">
+                            <CheckCircle2 className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h3 className="font-black text-emerald-900 uppercase leading-none">PSA Birth Certificate</h3>
+                            <p className="text-[10px] font-bold text-emerald-700/70 mt-1 uppercase tracking-widest">Verified & Locked on File</p>
+                          </div>
+                        </div>
+                        
+                        <div className="pt-2 space-y-1">
+                          <p className="text-[10px] font-black text-emerald-800/40 uppercase tracking-tighter">Verification Metadata</p>
+                          <p className="text-xs font-bold text-emerald-900">
+                            Verified by: <span className="uppercase">{student.birthCertificateVerifiedBy}</span>
+                          </p>
+                          <p className="text-xs font-medium text-emerald-700">
+                            Date: {student.birthCertificateVerifiedDate ? format(new Date(student.birthCertificateVerifiedDate), "MMMM d, yyyy") : "N/A"}
+                          </p>
+                        </div>
+                        
+                        <div className="bg-white/50 p-3 rounded-lg border border-emerald-100">
+                          <p className="text-[10px] font-medium text-emerald-800 leading-relaxed italic">
+                            "In compliance with DepEd Order 017, s. 2025, this document is only required once and will be carried over for all future enrollments."
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col p-6 rounded-2xl bg-rose-50 border-2 border-rose-100 space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-rose-600 rounded-lg text-white">
+                            <AlertTriangle className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h3 className="font-black text-rose-900 uppercase leading-none">PSA Birth Certificate</h3>
+                            <p className="text-[10px] font-bold text-rose-700/70 mt-1 uppercase tracking-widest text-rose-600">Missing from Vault</p>
+                          </div>
+                        </div>
+
+                        <div className="bg-white/50 p-3 rounded-lg border border-rose-100">
+                          <p className="text-xs font-bold text-rose-900 leading-relaxed">
+                            Requirement Deadline: <span className="text-rose-600">October 31, 2026</span>
+                          </p>
+                        </div>
+
+                        <Button 
+                          className="w-full h-12 bg-rose-600 hover:bg-rose-700 text-white font-black uppercase tracking-wide gap-2 shadow-lg shadow-rose-200"
+                          onClick={async () => {
+                            if(window.confirm("Verify that the physical PSA Birth Certificate has been presented and authenticated?")) {
+                              try {
+                                await api.post(`/students/${student.id}/verify-psa`);
+                                sileo.success({ title: "Document Verified", description: "PSA Birth Certificate has been added to the learner's vault." });
+                                refetch();
+                              } catch(e) { toastApiError(e as any); }
+                            }
+                          }}
+                        >
+                          <UserCheck className="h-5 w-5" />
+                          Verify Physical Document
+                        </Button>
+                      </div>
+                    )}
+
+                    <div className="flex flex-col p-6 rounded-2xl bg-slate-50 border-2 border-slate-100 space-y-4 opacity-60 grayscale cursor-not-allowed">
+                       <div className="flex items-center gap-3">
+                          <div className="p-2 bg-slate-400 rounded-lg text-white">
+                             <Lock className="h-5 w-5" />
+                          </div>
+                          <div>
+                             <h3 className="font-black text-slate-900 uppercase leading-none">SF10 (Permanent Record)</h3>
+                             <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest">Awaiting Graduation / Transfer</p>
+                          </div>
+                       </div>
+                       <p className="text-[10px] font-medium text-slate-500 leading-relaxed italic">
+                         "Original SF10 is held by the school until formal transfer out or completion of JHS."
+                       </p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </motion.div>

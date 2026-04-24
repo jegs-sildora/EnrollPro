@@ -5,6 +5,7 @@ export interface EnrollmentRequirement {
   label: string;
   isRequired: boolean;
   isOnceOnly: boolean;
+  isMet?: boolean;
   description: string;
   phase: 1 | 2;
 }
@@ -103,6 +104,7 @@ export function getRequiredDocuments(params: {
   applicantType: ApplicantType;
   isLwd: boolean;
   isPeptAePasser?: boolean;
+  hasPsaVerified?: boolean;
   documentRequirements?: ScpDocumentRequirementRule[] | null;
 }) {
   const {
@@ -111,6 +113,7 @@ export function getRequiredDocuments(params: {
     applicantType,
     isLwd,
     isPeptAePasser,
+    hasPsaVerified,
     documentRequirements,
   } = params;
   const requirements: EnrollmentRequirement[] = [];
@@ -128,15 +131,18 @@ export function getRequiredDocuments(params: {
     });
   }
 
-  // 2. PSA Birth Certificate - Rule 1: Submitted once per school
+  // 2. PSA Birth Certificate - Rule 1: Submitted once per school stay
+  // Exempt if CONTINUING or if already verified on file
   if (learnerType !== "CONTINUING") {
     requirements.push({
       type: "PSA_BIRTH_CERTIFICATE",
       label: "PSA Birth Certificate",
-      isRequired: true,
+      isRequired: !hasPsaVerified,
       isOnceOnly: true,
-      description:
-        "Required once per school stay. Secondary proof accepted if unavailable.",
+      isMet: hasPsaVerified,
+      description: hasPsaVerified
+        ? "✔️ Verified and Locked on File (DepEd 'Once Only' Rule)"
+        : "Required once per school stay. Secondary proof accepted if unavailable.",
       phase: 1,
     });
   }

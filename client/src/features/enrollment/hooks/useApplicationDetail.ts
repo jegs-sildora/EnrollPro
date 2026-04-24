@@ -229,6 +229,13 @@ export interface ApplicantDetail {
   hasPwdId: boolean;
   learningModalities: string[];
   isTemporarilyEnrolled: boolean;
+  isMissingSf9: boolean;
+  hasUnsettledPrivateAccount: boolean;
+  originatingSchoolName: string | null;
+  temporaryStatusDeadline: string | null;
+  hasPsaBirthCertificate: boolean;
+  birthCertificateVerifiedBy: string | null;
+  birthCertificateVerifiedDate: string | null;
   gradeLevel: { id: number; name: string };
   schoolYear: { id: number; yearLabel: string };
   encodedBy: {

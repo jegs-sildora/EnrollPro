@@ -198,6 +198,12 @@ export const EnrollmentFormSchema = z
     generalAverage: optionalSf9GeneralAverage,
     natScore: z.number().optional().nullable(),
 
+    // Section 7.1: DepEd Compliance (Temporary Enrollment)
+    isMissingSf9: z.boolean().default(false),
+    hasUnsettledPrivateAccount: z.boolean().default(false),
+    originatingSchoolName: z.string().optional().nullable(),
+    temporaryStatusDeadline: z.date().optional().nullable(),
+
     // Section 8: SCP Specifics
     artField: z.string().optional(),
     sportsList: z.array(z.string()).default([]),

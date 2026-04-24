@@ -4,6 +4,75 @@ import { AppError } from "../../lib/AppError.js";
 import axios from "axios";
 
 /**
+ * POST /api/enrollment/confirm-slip
+ * Rapid confirmation for returning Grade 8-10 learners.
+ */
+export async function confirmConfirmationSlip(req: Request, res: Response) {
+  const {
+    learnerId,
+    schoolYearId,
+    gradeLevelId,
+    isMissingSf9,
+    hasUnsettledPrivateAccount,
+    originatingSchoolName,
+  } = req.body;
+  const userId = (req as any).user.id;
+
+  try {
+    // 1. Validate learner exists and is returning
+    const learner = await prisma.learner.findUnique({
+      where: { id: learnerId },
+    });
+
+    if (!learner) {
+      throw new AppError(404, "Learner not found.");
+    }
+
+    const isTemporary = isMissingSf9 || hasUnsettledPrivateAccount;
+
+    // 2. Create the EnrollmentApplication directly
+    const application = await prisma.enrollmentApplication.create({
+      data: {
+        learnerId,
+        schoolYearId,
+        gradeLevelId,
+        status: isTemporary ? "TEMPORARILY_ENROLLED" : "READY_FOR_SECTIONING",
+        intakeMethod: "CONFIRMATION_SLIP",
+        admissionChannel: "F2F", // Registrar workflow is F2F
+        encodedById: userId,
+        isTemporarilyEnrolled: isTemporary || false,
+        isMissingSf9: isMissingSf9 || false,
+        hasUnsettledPrivateAccount: hasUnsettledPrivateAccount || false,
+        originatingSchoolName: originatingSchoolName || null,
+        checklist: {
+          create: {
+            academicStatus: "PROMOTED",
+            isConfirmationSlipReceived: true,
+            isSf9Submitted: !isMissingSf9,
+            isPsaBirthCertPresented: learner.hasPsaBirthCertificate,
+            isOriginalPsaBcCollected: learner.hasPsaBirthCertificate,
+          },
+        },
+      },
+      include: {
+        learner: true,
+        gradeLevel: true,
+      },
+    });
+
+    return res.json({
+      success: true,
+      message: `Enrollment confirmed for ${learner.firstName} ${learner.lastName}.`,
+      application,
+    });
+  } catch (error) {
+    console.error("Confirmation Slip processing failed:", error);
+    if (error instanceof AppError) throw error;
+    throw new AppError(500, "Failed to process confirmation slip.");
+  }
+}
+
+/**
  * POST /api/enrollment/sync-smart-grades
  * Intercepts grade data from S.M.A.R.T. and updates the local Learner database.
  * Supports live Tailscale node fetching with a graceful mock fallback for demo day.

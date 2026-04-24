@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { lookupLearner } from './learner.controller.js';
+import { lookupLearner, lookupLearnerByLrn } from './learner.controller.js';
 import { validate } from '../../middleware/validate.js';
 import { learnerLookupSchema } from '@enrollpro/shared';
 import rateLimit from 'express-rate-limit';
@@ -22,5 +22,8 @@ router.post(
 	validate(learnerLookupSchema),
 	lookupLearner,
 );
+
+// Registrar lookup endpoint for Confirmation Slip workflow
+router.get('/lookup', lookupLearnerByLrn);
 
 export default router;

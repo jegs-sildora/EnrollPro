@@ -88,7 +88,7 @@ export const STATUS_CONFIG: Record<
   },
   TEMPORARILY_ENROLLED: {
     label: "Temporarily Enrolled",
-    className: "bg-emerald-100 text-emerald-800 border-emerald-300",
+    className: "bg-amber-100 text-amber-800 border-amber-300",
   },
   ENROLLED: {
     label: "Enrolled",
