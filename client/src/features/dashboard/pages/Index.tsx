@@ -238,14 +238,6 @@ export default function Dashboard() {
       bg: "bg-purple-50",
     },
     {
-      title: "Email Delivery",
-      value: `${adminStats?.emailDeliveryRate ?? "0.0"}%`,
-      description: "Last 30 days success rate",
-      icon: Mail,
-      color: "text-orange-600",
-      bg: "bg-orange-50",
-    },
-    {
       title: "System Status",
       value: adminStats?.systemStatus === "OK" ? "Healthy" : "Error",
       description: "Database & Core Services",
@@ -314,29 +306,29 @@ export default function Dashboard() {
             <div className="h-px flex-1 bg-purple-100"></div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {adminCards.map((stat) => (
               <Card
                 key={stat.title}
-                className="border-purple-100 bg-white/90 shadow-sm">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
-                  <CardTitle className="text-[0.625rem] font-bold uppercase tracking-wider text-muted-foreground">
+                className="border-purple-100 bg-white shadow-sm transition-all hover:shadow-md">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-4">
+                  <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     {stat.title}
                   </CardTitle>
-                  <div className={`${stat.bg} rounded-md p-2`}>
+                  <div className={`${stat.bg} rounded-full p-2.5`}>
                     <stat.icon className={`h-4 w-4 ${stat.color}`} />
                   </div>
                 </CardHeader>
 
-                <CardContent className="pb-3 pt-0">
+                <CardContent className="pb-4 pt-1">
                   {showSkeleton ? (
                     <Skeleton className="h-8 w-24" />
                   ) : (
                     <>
-                      <div className="text-lg font-black leading-none">
+                      <div className="text-2xl font-black tracking-tight">
                         {stat.value}
                       </div>
-                      <p className="mt-1 text-[0.625rem] text-muted-foreground">
+                      <p className="mt-1 text-xs font-medium text-muted-foreground">
                         {stat.description}
                       </p>
                     </>
@@ -350,32 +342,32 @@ export default function Dashboard() {
 
       <section className="space-y-4" aria-label="Enrollment progress">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-primary opacity-80">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-emerald-600 opacity-80">
             Enrollment Progress
           </h2>
-          <div className="h-px flex-1 bg-sidebar-accent"></div>
+          <div className="h-px flex-1 bg-emerald-100"></div>
         </div>
 
         {isEnrollmentExpanded ? (
           <>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <Card className="lg:col-span-2 border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white shadow-sm">
+              <Card className="lg:col-span-2 border-emerald-200 bg-gradient-to-br from-white to-emerald-50/30 shadow-sm">
                 <CardHeader className="pb-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <CardTitle className="text-lg font-black tracking-tight">
+                    <CardTitle className="text-xl font-black tracking-tight">
                       Total Enrolled
                     </CardTitle>
-                    <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
-                      Main Goal
+                    <Badge className="bg-emerald-600 text-white hover:bg-emerald-700">
+                      Primary Target
                     </Badge>
                   </div>
-                  <CardDescription>
+                  <CardDescription className="text-sm">
                     Active school-year enrollment against total section
                     capacity.
                   </CardDescription>
                 </CardHeader>
 
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6">
                   {showSkeleton ? (
                     <>
                       <Skeleton className="h-10 w-44" />
@@ -386,17 +378,22 @@ export default function Dashboard() {
                     <>
                       <div className="flex flex-wrap items-end justify-between gap-3">
                         <div>
-                          <p className="text-4xl font-black leading-none text-emerald-700">
+                          <p className="text-5xl font-black leading-none text-emerald-700">
                             {formatMetric(enrollmentCurrent)}
                           </p>
-                          <p className="mt-2 text-sm font-semibold text-emerald-900/80">
+                          <p className="mt-3 text-sm font-bold text-emerald-900/60">
                             {formatMetric(enrollmentCurrent)} /{" "}
                             {formatMetric(enrollmentTarget)} seats filled
                           </p>
                         </div>
-                        <p className="text-sm font-bold text-emerald-800">
-                          {enrollmentProgress.toFixed(1)}%
-                        </p>
+                        <div className="flex flex-col items-end">
+                          <span className="text-2xl font-black text-emerald-600">
+                            {enrollmentProgress.toFixed(1)}%
+                          </span>
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-900/40">
+                            Completion
+                          </span>
+                        </div>
                       </div>
 
                       <div
@@ -405,36 +402,38 @@ export default function Dashboard() {
                         aria-valuemax={100}
                         aria-valuenow={Math.round(enrollmentProgressClamped)}
                         aria-label="Enrollment progress toward section capacity"
-                        className="h-2.5 w-full rounded-full bg-emerald-100">
+                        className="h-3 w-full rounded-full bg-emerald-100 overflow-hidden shadow-inner">
                         <div
-                          className="h-2.5 rounded-full bg-emerald-600 transition-all"
+                          className="h-3 rounded-full bg-emerald-600 transition-all duration-1000 ease-out"
                           style={{ width: `${enrollmentProgressClamped}%` }}
                         />
                       </div>
 
-                      <p className="text-xs text-muted-foreground">
-                        {enrollmentTarget === 0
-                          ? "Section capacity target is unavailable until sections are configured."
-                          : seatsRemaining > 0
-                            ? `${formatMetric(seatsRemaining)} seats remaining before reaching target capacity.`
-                            : "Capacity target reached. Consider opening additional sections if intake continues."}
-                      </p>
+                      <div className="rounded-lg bg-white/50 p-3 border border-emerald-100/50">
+                        <p className="text-xs font-medium text-emerald-900/70 leading-relaxed">
+                          {enrollmentTarget === 0
+                            ? "Section capacity target is unavailable until sections are configured."
+                            : seatsRemaining > 0
+                              ? `Strategically, ${formatMetric(seatsRemaining)} seats remain available across all departments before reaching current target capacity.`
+                              : "Capacity target reached. Monitor waitlists or consider opening additional sections if intake continues."}
+                        </p>
+                      </div>
                     </>
                   )}
                 </CardContent>
               </Card>
 
-              <Card className="border-slate-200 bg-white shadow-sm">
+              <Card className="border-slate-200 bg-white shadow-sm flex flex-col">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base font-black tracking-tight">
-                    Focus State
+                    Focus Mode
                   </CardTitle>
-                  <CardDescription>
-                    Command center view adapts to the enrollment season.
+                  <CardDescription className="text-xs">
+                    Current administrative viewport.
                   </CardDescription>
                 </CardHeader>
 
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-4 flex-1">
                   {showSkeleton ? (
                     <>
                       <Skeleton className="h-7 w-28" />
@@ -442,16 +441,20 @@ export default function Dashboard() {
                     </>
                   ) : (
                     <>
-                      <Badge variant="outline" className="font-bold">
-                        {focusStateLabel}
-                      </Badge>
-                      <p className="text-xs text-muted-foreground">
-                        Enrollment phase: {enrollmentPhase.replaceAll("_", " ")}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        High-priority bottlenecks are surfaced below as direct
-                        action cards.
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="font-bold border-primary/20 text-primary bg-primary/5 px-2 py-1">
+                          {focusStateLabel}
+                        </Badge>
+                      </div>
+                      <div className="space-y-3 pt-2">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                          <div className="h-1.5 w-1.5 rounded-full bg-blue-500"></div>
+                          Phase: {enrollmentPhase.replaceAll("_", " ")}
+                        </div>
+                        <p className="text-xs leading-relaxed text-muted-foreground italic">
+                          "System adapts dashboards based on the academic calendar to surface relevant bottlenecks."
+                        </p>
+                      </div>
                     </>
                   )}
                 </CardContent>
@@ -460,14 +463,14 @@ export default function Dashboard() {
 
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
               <Card
-                className={`shadow-sm transition-colors ${pendingReviewAlert ? "border-amber-300 bg-amber-50/70" : "border-slate-200 bg-white"}`}>
+                className={`shadow-sm transition-all hover:shadow-md ${pendingReviewAlert ? "border-amber-300 bg-amber-50/50" : "border-slate-200 bg-white"}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                       Pending Review
                     </CardTitle>
                     <div
-                      className={`rounded-md p-2 ${pendingReviewAlert ? "bg-amber-100" : "bg-slate-100"}`}>
+                      className={`rounded-full p-2.5 ${pendingReviewAlert ? "bg-amber-100" : "bg-slate-100"}`}>
                       <ClipboardList
                         className={`h-4 w-4 ${pendingReviewAlert ? "text-amber-700" : "text-slate-600"}`}
                       />
@@ -475,7 +478,7 @@ export default function Dashboard() {
                   </div>
                 </CardHeader>
 
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-4">
                   {showSkeleton ? (
                     <>
                       <Skeleton className="h-8 w-24" />
@@ -483,20 +486,20 @@ export default function Dashboard() {
                     </>
                   ) : (
                     <>
-                      <div className="text-3xl font-black">
+                      <div className="text-4xl font-black">
                         {formatMetric(pendingReviewCount)}
                       </div>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs font-medium text-muted-foreground min-h-[2rem]">
                         {pendingReviewAlert
-                          ? "Review queue is above threshold. Immediate registrar action is recommended."
-                          : "Queue is within normal range. Continue monitoring throughout the day."}
+                          ? "Review queue has reached critical volume. Registrar intervention required."
+                          : "Process is stable. Review queue is performing within established parameters."}
                       </p>
                     </>
                   )}
 
                   <Button
                     type="button"
-                    className="w-full justify-start"
+                    className="w-full font-bold"
                     variant={pendingReviewAlert ? "default" : "outline"}
                     onClick={() =>
                       navigate(
@@ -504,21 +507,21 @@ export default function Dashboard() {
                       )
                     }>
                     {pendingReviewCount > 0
-                      ? `-> Review ${formatMetric(pendingReviewCount)} Applications`
-                      : "-> Open Pending Verification Queue"}
+                      ? `Review ${formatMetric(pendingReviewCount)} Applications`
+                      : "Open Verification Queue"}
                   </Button>
                 </CardContent>
               </Card>
 
               <Card
-                className={`shadow-sm transition-colors ${sectionsCapacityAlert ? "border-red-300 bg-red-50/70" : "border-slate-200 bg-white"}`}>
+                className={`shadow-sm transition-all hover:shadow-md ${sectionsCapacityAlert ? "border-red-300 bg-red-50/50" : "border-slate-200 bg-white"}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      Sections at Capacity
+                      Capacity Saturation
                     </CardTitle>
                     <div
-                      className={`rounded-md p-2 ${sectionsCapacityAlert ? "bg-red-100" : "bg-slate-100"}`}>
+                      className={`rounded-full p-2.5 ${sectionsCapacityAlert ? "bg-red-100" : "bg-slate-100"}`}>
                       <AlertTriangle
                         className={`h-4 w-4 ${sectionsCapacityAlert ? "text-red-700" : "text-slate-600"}`}
                       />
@@ -526,7 +529,7 @@ export default function Dashboard() {
                   </div>
                 </CardHeader>
 
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-4">
                   {showSkeleton ? (
                     <>
                       <Skeleton className="h-8 w-24" />
@@ -534,25 +537,25 @@ export default function Dashboard() {
                     </>
                   ) : (
                     <>
-                      <div className="text-3xl font-black">
+                      <div className="text-4xl font-black">
                         {formatMetric(sectionsAtCapacityCount)}
                       </div>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs font-medium text-muted-foreground min-h-[2rem]">
                         {sectionsCapacityAlert
-                          ? "Capacity pressure detected. Open sections management to rebalance before lockouts occur."
-                          : "No immediate section bottlenecks detected. Keep monitoring fill rates."}
+                          ? "Section saturation detected. Allocation limits nearing maximum thresholds."
+                          : "Section distribution is currently balanced across all grade levels."}
                       </p>
                     </>
                   )}
 
                   <Button
                     type="button"
-                    className="w-full justify-start"
+                    className="w-full font-bold"
                     variant={sectionsCapacityAlert ? "destructive" : "outline"}
                     onClick={() => navigate("/sections")}>
                     {sectionsAtCapacityCount > 0
-                      ? "-> Manage Sections"
-                      : "-> Open Sections Workspace"}
+                      ? "Balance Sections"
+                      : "Open Section Workspace"}
                   </Button>
                 </CardContent>
               </Card>
@@ -574,14 +577,14 @@ export default function Dashboard() {
                 <Skeleton className="h-8 w-44" />
               ) : (
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary" className="font-bold">
+                  <Badge variant="secondary" className="font-bold px-3">
                     Enrolled: {formatMetric(enrollmentCurrent)}
                   </Badge>
-                  <Badge variant="secondary" className="font-bold">
-                    Pending Review: {formatMetric(pendingReviewCount)}
+                  <Badge variant="secondary" className="font-bold px-3">
+                    Pending: {formatMetric(pendingReviewCount)}
                   </Badge>
-                  <Badge variant="secondary" className="font-bold">
-                    Capacity Alerts: {formatMetric(sectionsAtCapacityCount)}
+                  <Badge variant="secondary" className="font-bold px-3">
+                    Saturation Alerts: {formatMetric(sectionsAtCapacityCount)}
                   </Badge>
                 </div>
               )}
@@ -603,13 +606,13 @@ export default function Dashboard() {
             {earlyRegCards.map((stat) => (
               <Card
                 key={stat.title}
-                className="border-amber-100 bg-white shadow-sm">
+                className="border-amber-100 bg-white shadow-sm transition-all hover:shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs font-bold uppercase text-muted-foreground">
+                  <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                     {stat.title}
                   </CardTitle>
-                  <div className={`${stat.bg} rounded-md p-2`}>
-                    <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                  <div className={`${stat.bg} rounded-full p-2`}>
+                    <stat.icon className={`h-3.5 w-3.5 ${stat.color}`} />
                   </div>
                 </CardHeader>
 
@@ -617,7 +620,7 @@ export default function Dashboard() {
                   {showSkeleton ? (
                     <Skeleton className="h-8 w-20" />
                   ) : (
-                    <div className="text-2xl font-black">
+                    <div className="text-2xl font-black tracking-tight">
                       {formatMetric(stat.value)}
                     </div>
                   )}
@@ -641,16 +644,16 @@ export default function Dashboard() {
                 <Skeleton className="h-8 w-52" />
               ) : (
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary" className="font-bold">
+                  <Badge variant="secondary" className="font-bold px-3 border-amber-200">
                     Submitted:{" "}
                     {formatMetric(stats?.earlyRegistration?.submitted ?? 0)}
                   </Badge>
-                  <Badge variant="secondary" className="font-bold">
-                    Exam Scheduled:{" "}
+                  <Badge variant="secondary" className="font-bold px-3 border-amber-200">
+                    Exams:{" "}
                     {formatMetric(stats?.earlyRegistration?.examScheduled ?? 0)}
                   </Badge>
-                  <Badge variant="secondary" className="font-bold">
-                    Ready for Enrollment:{" "}
+                  <Badge variant="secondary" className="font-bold px-3 border-amber-200">
+                    Ready:{" "}
                     {formatMetric(
                       stats?.earlyRegistration?.readyForEnrollment ?? 0,
                     )}
@@ -663,39 +666,41 @@ export default function Dashboard() {
       </section>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="border-opacity-50 shadow-sm">
-          <CardHeader>
+        <Card className="border-opacity-50 shadow-sm overflow-hidden">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100">
             <CardTitle className="text-lg font-bold">Quick Overview</CardTitle>
-            <CardDescription>
-              Trend charts and distribution widgets for the active school year
-              will appear here.
+            <CardDescription className="text-xs">
+              Trend charts and distribution widgets.
             </CardDescription>
           </CardHeader>
 
-          <CardContent>
-            <div className="flex h-40 flex-col items-center justify-center space-y-2 text-center">
-              <div className="rounded-full bg-muted p-3">
-                <Activity className="h-6 w-6 text-muted-foreground opacity-20" />
+          <CardContent className="py-10">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
+              <div className="rounded-full bg-slate-100 p-4 ring-8 ring-slate-50">
+                <Activity className="h-8 w-8 text-slate-300" />
               </div>
-              <p className="max-w-52 text-xs text-muted-foreground">
-                This panel is reserved for enrollment trend visualization and
-                forecast snapshots.
-              </p>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-slate-400">Visualization Engine</h3>
+                <p className="max-w-64 text-xs text-muted-foreground/60 leading-relaxed">
+                  Real-time enrollment trends and forecast models are currently aggregating data for this period.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-opacity-50 shadow-sm">
-          <CardHeader>
+        <Card className="border-opacity-50 shadow-sm overflow-hidden">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100">
             <CardTitle className="text-lg font-bold">
-              Recent System Logs
+              System Logs
             </CardTitle>
-            <CardDescription>Latest administrative actions</CardDescription>
+            <CardDescription className="text-xs">Latest administrative actions.</CardDescription>
           </CardHeader>
 
-          <CardContent>
-            <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
-              No recent activity to display.
+          <CardContent className="py-10">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center text-slate-400">
+               <ShieldCheck className="h-10 w-10 opacity-20" />
+               <p className="text-xs font-medium tracking-wide">NO RECENT AUDIT ACTIVITY</p>
             </div>
           </CardContent>
         </Card>
