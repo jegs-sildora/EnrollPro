@@ -347,6 +347,8 @@ export default function PipelineBatchApplicantsTable({
     onSaveResult,
     getRemarkByScore,
     getNotQualifiedReason,
+    showAssessment,
+    hasEnrollmentBridgeRows,
   ]);
 
   return (

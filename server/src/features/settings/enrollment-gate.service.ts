@@ -35,7 +35,8 @@ export function isEnrollmentOpen(year: SchoolYear): boolean {
 
 export function getEnrollmentPhase(
 	year: SchoolYear,
-): 'EARLY_REGISTRATION' | 'REGULAR_ENROLLMENT' | 'CLOSED' | 'OVERRIDE' {
+): 'EARLY_REGISTRATION' | 'REGULAR_ENROLLMENT' | 'CLOSED' | 'OVERRIDE' | 'BOSY_LOCKED' {
+	if (year.status === 'BOSY_LOCKED') return 'BOSY_LOCKED';
 	if (year.isManualOverrideOpen) return 'OVERRIDE';
 
 	const now = new Date();

@@ -97,7 +97,7 @@ export function BatchConfirmationModal({
         params: { schoolYearId: activeSchoolYearId }
       });
       const gradeLevels = glRes.data.gradeLevels || [];
-      const targetGradeLevel = gradeLevels.find((gl: any) => {
+      const targetGradeLevel = gradeLevels.find((gl: { name: string; id: number }) => {
         const numMatch = gl.name.match(/\d+/);
         return numMatch && parseInt(numMatch[0]) === targetNum;
       });
@@ -123,11 +123,11 @@ export function BatchConfirmationModal({
       setStagingList(prev => [newEntry, ...prev]);
       setLrnInput("");
       scanInputRef.current?.focus();
-    } catch (err: any) {
-      if (err.response?.status === 404) {
+    } catch (err: unknown) {
+      if (err && typeof err === "object" && "response" in err && (err as any).response?.status === 404) {
         sileo.error({ title: "Not Found", description: `LRN ${lrn} was not found in the database.` });
       } else {
-        toastApiError(err);
+        toastApiError(err as any);
       }
     } finally {
       setLoading(false);
@@ -151,7 +151,7 @@ export function BatchConfirmationModal({
       header: true,
       skipEmptyLines: true,
       complete: async (results) => {
-        const rows = results.data as any[];
+        const rows = results.data as Record<string, string>[];
         const validRows = [];
         const errors = [];
 
@@ -227,7 +227,7 @@ export function BatchConfirmationModal({
 
       onSuccess?.();
       onOpenChange(false);
-    } catch (err) {
+    } catch (err: unknown) {
       toastApiError(err as any);
     } finally {
       setIsProcessing(false);

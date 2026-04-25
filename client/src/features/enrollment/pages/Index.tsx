@@ -17,7 +17,9 @@ import {
   UserCheck,
   LogOut,
   Loader2,
+  Lock,
 } from "lucide-react";
+import { motion } from "motion/react";
 import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -61,6 +63,7 @@ import { ScheduleExamDialog } from "@/features/enrollment/components/ScheduleExa
 import { StatusBadge } from "@/features/enrollment/components/StatusBadge";
 import { EnrollmentWorkflowTabs } from "@/features/enrollment/components/EnrollmentWorkflowTabs";
 import { BatchConfirmationModal } from "@/features/enrollment/components/BatchConfirmationModal";
+import { PinHandoverModal } from "@/features/enrollment/components/PinHandoverModal";
 import { useSectioningStore } from "@/store/sectioning.slice";
 import {
   ENROLLMENT_SUB_MENU_DESCRIPTIONS,
@@ -100,6 +103,11 @@ interface Application {
     section?: { id: number; name: string } | null;
   } | null;
   section?: { name: string } | null;
+}
+
+interface GradeLevel {
+  id: number;
+  name: string;
 }
 
 interface SectionOption {
@@ -233,8 +241,14 @@ function resolveWorkflowFromQuery(value: string | null): EnrollmentSubMenu {
 }
 
 export default function Enrollment() {
-  const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
+  const { 
+    activeSchoolYearId, 
+    viewingSchoolYearId,
+    activeSchoolYearLabel,
+    systemStatus 
+  } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
+  const isBosyLocked = systemStatus === "BOSY_LOCKED";
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const workflowParam = searchParams.get("workflow");
@@ -335,11 +349,20 @@ export default function Enrollment() {
   );
   const [batchGradeLevelName, setBatchGradeLevelName] = useState<string>("");
   const [isGradeSelectDialogOpen, setIsGradeSelectDialogOpen] = useState(false);
-  const [gradeLevels, setGradeLevels] = useState<any[]>([]);
+  const [gradeLevels, setGradeLevels] = useState<GradeLevel[]>([]);
   const [loadingGradeLevels, setLoadingGradeLevels] = useState(false);
 
   const [isWalkInGateOpen, setIsWalkInGateOpen] = useState(false);
   const [isBatchConfirmSlipModalOpen, setIsBatchConfirmSlipModalOpen] = useState(false);
+  const [pinHandover, setPinHandover] = useState<{
+    open: boolean;
+    learnerName: string;
+    pin: string;
+  }>({
+    open: false,
+    learnerName: "",
+    pin: "",
+  });
   const [walkInLrn, setWalkInLrn] = useState("");
   const [walkInNoLrn, setWalkInNoLrn] = useState(false);
   const [isWalkInGateChecking, setIsWalkInGateChecking] = useState(false);
@@ -377,25 +400,25 @@ export default function Enrollment() {
         params: { schoolYearId: ayId },
       });
 
-      const allLevels = response.data.gradeLevels || [];
+      const allLevels: GradeLevel[] = response.data.gradeLevels || [];
 
       // Map to normalize and filter only JHS (7-10)
-      const jhsLevels = allLevels.filter((gl: any) => {
+      const jhsLevels = allLevels.filter((gl) => {
         const num = extractGradeLevelNumber(gl.name);
         return num !== null && num >= 7 && num <= 10;
       });
 
       // Sort according to user preference: 7, 9, 8, 10
       const order = [7, 9, 8, 10];
-      jhsLevels.sort((a: any, b: any) => {
+      jhsLevels.sort((a, b) => {
         const numA = extractGradeLevelNumber(a.name) || 0;
         const numB = extractGradeLevelNumber(b.name) || 0;
         return order.indexOf(numA) - order.indexOf(numB);
       });
 
       setGradeLevels(jhsLevels);
-    } catch (err) {
-      toastApiError(err as never);
+    } catch (err: unknown) {
+      toastApiError(err as any);
     } finally {
       setLoadingGradeLevels(false);
     }
@@ -768,9 +791,11 @@ export default function Enrollment() {
         });
 
         if (enrollResponse.data?.rawPortalPin) {
-          alert(
-            `SUCCESS: Official enrollment confirmed.\n\nIMPORTANT: The Learner Portal PIN is ${enrollResponse.data.rawPortalPin}\n\nPlease write this down on the enrollment slip. This PIN will only be shown once.`,
-          );
+          setPinHandover({
+            open: true,
+            learnerName: `${application.lastName}, ${application.firstName}`,
+            pin: enrollResponse.data.rawPortalPin,
+          });
         }
 
         await fetchData();
@@ -1300,9 +1325,11 @@ export default function Enrollment() {
       fetchData();
 
       if (res.data.rawPortalPin) {
-        alert(
-          `SUCCESS: Official enrollment confirmed.\n\nIMPORTANT: The Learner Portal PIN is ${res.data.rawPortalPin}\n\nPlease write this down on the enrollment slip. This PIN will only be shown once.`,
-        );
+        setPinHandover({
+          open: true,
+          learnerName: `${selectedApp.lastName}, ${selectedApp.firstName}`,
+          pin: res.data.rawPortalPin,
+        });
       } else {
         sileo.success({
           title: "Enrolled",
@@ -1356,27 +1383,48 @@ export default function Enrollment() {
   }, [isBatchPending, storedGlId, storedPreview]);
 
   return (
-    <div className="flex relative w-full min-w-0 overflow-hidden">
-      <div className="flex-1 min-w-0 flex flex-col space-y-4 sm:space-y-6 px-2 sm:px-0">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Enrollment Management
-            </h1>
-            <p className="text-sm font-bold">
-              {ENROLLMENT_SUB_MENU_DESCRIPTIONS[workflowView]}
-            </p>
+    <div className="flex flex-col w-full min-w-0 overflow-hidden space-y-4 sm:space-y-6">
+      {isBosyLocked && (
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-emerald-600 text-white px-4 py-3 rounded-xl flex items-center justify-between shadow-lg border-2 border-emerald-400/30"
+        >
+          <div className="flex items-center gap-3">
+            <div className="bg-white/20 p-2 rounded-lg">
+              <Lock className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-black uppercase tracking-widest leading-none">BOSY Locked ({activeSchoolYearLabel})</p>
+              <p className="text-xs font-bold text-emerald-100 mt-1">Official SF1 Rosters Finalized. Late Enrollment rules now apply.</p>
+            </div>
           </div>
-          <div className="flex w-full md:w-auto gap-2">
-            <Button
-              variant="default"
-              className="h-10 px-3 flex-1 md:flex-none text-sm font-bold bg-primary hover:bg-primary/90"
-              onClick={() => {
-                void openBatchAssignModal();
-              }}>
-              <School className="h-4 w-4 mr-2" />
-              Open Batch Section Assignment
-            </Button>
+          <Badge className="bg-white text-emerald-700 font-black hover:bg-white uppercase tracking-tighter">Academic Phase</Badge>
+        </motion.div>
+      )}
+
+      <div className="flex relative w-full min-w-0 overflow-hidden">
+        <div className="flex-1 min-w-0 flex flex-col space-y-4 sm:space-y-6 px-2 sm:px-0">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">
+                Enrollment Management
+              </h1>
+              <p className="text-sm font-bold">
+                {ENROLLMENT_SUB_MENU_DESCRIPTIONS[workflowView]}
+              </p>
+            </div>
+            <div className="flex w-full md:w-auto gap-2">
+              <Button
+                variant="default"
+                disabled={isBosyLocked}
+                className="h-10 px-3 flex-1 md:flex-none text-sm font-bold bg-primary hover:bg-primary/90 disabled:bg-slate-200 disabled:text-slate-500"
+                onClick={() => {
+                  void openBatchAssignModal();
+                }}>
+                <School className="h-4 w-4 mr-2" />
+                Open Batch Section Assignment
+              </Button>
             
             {pendingQueueFilter === "CONTINUING_JHS" ? (
               <Button
@@ -1528,6 +1576,7 @@ export default function Enrollment() {
           </CardContent>
         </Card>
       </div>
+    </div>
 
       {/* TIER 1 - SLIDE-OVER PANEL */}
       <Sheet
@@ -2294,6 +2343,15 @@ export default function Enrollment() {
         onOpenChange={setIsBatchConfirmSlipModalOpen}
         activeSchoolYearId={ayId}
         onSuccess={fetchData}
+      />
+
+      <PinHandoverModal
+        open={pinHandover.open}
+        onOpenChange={(open) =>
+          setPinHandover((prev) => ({ ...prev, open }))
+        }
+        learnerName={pinHandover.learnerName}
+        pin={pinHandover.pin}
       />
     </div>
   );

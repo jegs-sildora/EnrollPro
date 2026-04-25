@@ -59,6 +59,7 @@ export interface ChecklistData {
   applicantId: number;
   academicStatus: "PROMOTED" | "RETAINED";
   isPsaBirthCertPresented: boolean;
+  isSecondaryBirthDocPresented: boolean;
   isOriginalPsaBcCollected: boolean;
   isSf9Submitted: boolean;
   isSf10Requested: boolean;
@@ -234,6 +235,7 @@ export interface ApplicantDetail {
   originatingSchoolName: string | null;
   temporaryStatusDeadline: string | null;
   hasPsaBirthCertificate: boolean;
+  birthCertificateType: string | null;
   birthCertificateVerifiedBy: string | null;
   birthCertificateVerifiedDate: string | null;
   gradeLevel: { id: number; name: string };

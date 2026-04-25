@@ -170,6 +170,7 @@ export const LearnerTypeEnum = z.enum([
 ]);
 export const ApplicantTypeEnum = z.enum([
   "REGULAR",
+  "LATE_ENROLLEE",
   "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
   "SPECIAL_PROGRAM_IN_THE_ARTS",
   "SPECIAL_PROGRAM_IN_SPORTS",

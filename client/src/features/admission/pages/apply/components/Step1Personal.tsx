@@ -805,23 +805,23 @@ export default function Step1Personal() {
             className="h-11 font-bold uppercase"
           />
         </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="religion" className="text-sm font-semibold">
-            Religion
-          </Label>
-          <Input
-            id="religion"
-            {...register("religion")}
-            autoComplete="off"
-            placeholder="e.g. Roman Catholic"
-            className="h-11 font-bold uppercase"
-          />
-        </div>
       </div>
 
       <div className="pt-6 border-t border-border/40">
-        <div className="grid grid-cols-1 gap-x-8 gap-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+          <div className="space-y-1.5">
+            <Label htmlFor="religion" className="text-sm font-semibold">
+              Religion
+            </Label>
+            <Input
+              id="religion"
+              {...register("religion")}
+              autoComplete="off"
+              placeholder="e.g. Roman Catholic"
+              className="h-11 font-bold uppercase"
+            />
+          </div>
+
           <div className="space-y-2">
             <Label
               htmlFor="psaBirthCertNumber"

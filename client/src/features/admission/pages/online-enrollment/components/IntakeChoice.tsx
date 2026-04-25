@@ -12,7 +12,7 @@ export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
     <div className="max-w-4xl mx-auto p-4 md:p-0 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="text-center space-y-2">
         <h2 className="text-3xl font-black text-foreground uppercase">Welcome to Online Enrollment</h2>
-        <p className="text-foreground font-semibold">To begin, please select the appropriate learner category.</p>
+        <h3 className="text-foreground font-semibold">To begin, please select the appropriate learner category.</h3>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -119,10 +119,6 @@ export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
           </CardContent>
         </Card>
       </div>
-      
-      <p className="text-center text-xs font-black text-foreground uppercase tracking-widest">
-        DepEd Order No. 017, s. 2025 Compliant Workflow
-      </p>
     </div>
   );
 }

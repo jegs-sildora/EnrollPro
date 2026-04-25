@@ -18,13 +18,22 @@ import {
 import type { Application } from "../hooks/useEarlyRegistrations";
 import type { ApplicantDetail } from "@/features/enrollment/hooks/useApplicationDetail";
 
+interface SectionOption {
+  id: number;
+  name: string;
+  maxCapacity: number;
+  _count: {
+    enrollments: number;
+  };
+}
+
 interface ActionDialogsProps {
   actionType: "APPROVE" | "REJECT" | "ELIGIBLE" | null;
   setActionType: (type: "APPROVE" | "REJECT" | "ELIGIBLE" | null) => void;
   selectedApp: Application | ApplicantDetail | null;
   selectedSectionId: string;
   setSelectedSectionId: (id: string) => void;
-  sections: any[];
+  sections: SectionOption[];
   rejectionReason: string;
   setRejectionReason: (reason: string) => void;
   handleMarkEligible: (app: Application | ApplicantDetail | null) => void;

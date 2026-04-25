@@ -35,6 +35,7 @@ import {
   PopoverTrigger,
 } from "@/shared/ui/popover";
 import { cn } from "@/shared/lib/utils";
+import { useSettingsStore } from "@/store/settings.slice";
 
 type LearnerType = "NEW_ENROLLEE" | "TRANSFEREE" | "RETURNING" | "ALS";
 type AcademicStatus = "PROMOTED" | "RETAINED";
@@ -174,6 +175,8 @@ function hasContactIdentity(person: ContactPersonState): boolean {
 export default function WalkInEncoder() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { systemStatus, activeSchoolYearLabel } = useSettingsStore();
+  const isBosyLocked = systemStatus === "BOSY_LOCKED";
 
   const initialLrn = useMemo(
     () => normalizeLrn(searchParams.get("lrn") ?? ""),
@@ -447,7 +450,7 @@ export default function WalkInEncoder() {
       sex: formData.sex,
       placeOfBirth: toOptionalTrimmed(formData.placeOfBirth),
       learnerType: formData.learnerType,
-      applicantType: "REGULAR",
+      applicantType: isBosyLocked ? "LATE_ENROLLEE" : "REGULAR",
       gradeLevelId: Number(formData.gradeLevelId),
       academicStatus: formData.academicStatus,
       lastSchoolName: toOptionalTrimmed(formData.originSchoolName),
@@ -539,19 +542,28 @@ export default function WalkInEncoder() {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Enrollment
         </Button>
-        <Badge variant="secondary" className="text-[11px] font-bold">
-          Direct Intake: BOSY Walk-In
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-[11px] font-bold">
+            Direct Intake: {activeSchoolYearLabel}
+          </Badge>
+          {isBosyLocked && (
+            <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 text-[11px] font-black uppercase tracking-widest border-none px-3">
+              Late Enrollment Phase
+            </Badge>
+          )}
+        </div>
       </div>
 
       <Card className="border-none shadow-sm">
         <CardHeader className="space-y-2">
-          <CardTitle className="text-xl font-bold">
-            Direct Intake: Basic Education Enrollment Form
+          <CardTitle className="text-xl font-bold flex items-center gap-2">
+            {isBosyLocked ? "Late Enrollee Intake (BEEF)" : "Direct Intake: Basic Education Enrollment Form"}
           </CardTitle>
           <p className="text-xs font-semibold text-muted-foreground">
-            Encode paper BEEF in one pass. This lane skips pending verification
-            and routes directly to sectioning after document confirmation.
+            {isBosyLocked 
+              ? "BOSY is locked. New students will be processed as Late Enrollees and routed directly to Inline Slotting."
+              : "Encode paper BEEF in one pass. This lane skips pending verification and routes directly to sectioning after document confirmation."
+            }
           </p>
         </CardHeader>
 

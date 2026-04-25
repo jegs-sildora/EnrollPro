@@ -315,6 +315,9 @@ export const createStudentsProfileController = (
         return res.status(400).json({ message: "Invalid student id" });
       }
 
+      const { type } = req.body;
+      const isPsa = type === "PSA";
+
       // 1. Get the verifier's name
       const verifier = await deps.prisma.user.findUnique({
         where: { id: userId },
@@ -334,21 +337,36 @@ export const createStudentsProfileController = (
       }
 
       await deps.prisma.$transaction(async (tx) => {
-        await tx.learner.update({
-          where: { id: applicant.learnerId },
-          data: {
-            hasPsaBirthCertificate: true,
-            birthCertificateVerifiedBy: verifierName,
-            birthCertificateVerifiedDate: new Date(),
-          },
-        });
+        // Only update Learner's permanent vault if it's a PSA document
+        if (isPsa) {
+          await tx.learner.update({
+            where: { id: applicant.learnerId },
+            data: {
+              hasPsaBirthCertificate: true,
+              birthCertificateType: "PSA",
+              birthCertificateVerifiedBy: verifierName,
+              birthCertificateVerifiedDate: new Date(),
+            },
+          });
+        } else {
+          // Track that a secondary document was used to verify identity
+          await tx.learner.update({
+            where: { id: applicant.learnerId },
+            data: {
+              birthCertificateType: "SECONDARY",
+              birthCertificateVerifiedBy: verifierName,
+              birthCertificateVerifiedDate: new Date(),
+            },
+          });
+        }
 
         // 3. Automatically update the checklist for the current enrollment application
         await tx.applicationChecklist.updateMany({
           where: { enrollmentId: parsedId },
           data: {
-            isPsaBirthCertPresented: true,
-            isOriginalPsaBcCollected: true,
+            isPsaBirthCertPresented: true, // This allows the enrollment to proceed
+            isSecondaryBirthDocPresented: !isPsa,
+            isOriginalPsaBcCollected: isPsa,
             updatedById: userId,
           },
         });
@@ -357,8 +375,10 @@ export const createStudentsProfileController = (
       await deps.prisma.auditLog.create({
         data: {
           userId,
-          actionType: "PSA_VERIFIED",
-          description: `Verified PSA Birth Certificate for ${applicant.learner.firstName} ${applicant.learner.lastName}`,
+          actionType: isPsa ? "PSA_VERIFIED" : "SECONDARY_BIRTH_DOC_VERIFIED",
+          description: isPsa 
+            ? `Verified PSA Birth Certificate for ${applicant.learner.firstName} ${applicant.learner.lastName} (Permanently Locked)` 
+            : `Verified Secondary Birth Document for ${applicant.learner.firstName} ${applicant.learner.lastName} (Temporary Clearance)`,
           subjectType: "Learner",
           recordId: applicant.learnerId,
           ipAddress: req.ip || "unknown",
@@ -366,10 +386,14 @@ export const createStudentsProfileController = (
         },
       });
 
-      res.json({ message: "PSA Birth Certificate verified successfully" });
+      res.json({ 
+        message: isPsa 
+          ? "PSA Birth Certificate verified successfully" 
+          : "Secondary document verified successfully. PSA still required by deadline." 
+      });
     } catch (error) {
-      console.error("Error verifying PSA:", error);
-      res.status(500).json({ message: "Failed to verify PSA Birth Certificate" });
+      console.error("Error verifying document:", error);
+      res.status(500).json({ message: "Failed to verify document" });
     }
   };
 

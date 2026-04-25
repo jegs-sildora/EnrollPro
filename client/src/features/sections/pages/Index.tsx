@@ -1133,7 +1133,7 @@ export default function Sections() {
                             <p className="text-sm font-bold uppercase tracking-wider">
                               No Sections Configured
                             </p>
-                            <p className="text-xs mt-1">
+                            <p className="text-xs mt-1 font-semibold">
                               Click the "Add Section" button to begin
                               structuring this grade level.
                             </p>

@@ -146,7 +146,7 @@ export default function Step4PreviousSchool() {
                 if (val === "" || /^(\d+)?(\.\d{0,2})?$/.test(val)) {
                   const num = val === "" ? null : parseFloat(val);
                   if (num === null || (!isNaN(num) && num <= 100)) {
-                    setValue("generalAverage", val as any, {
+                    setValue("generalAverage", val as unknown as number, {
                       shouldValidate: true,
                     });
                   }

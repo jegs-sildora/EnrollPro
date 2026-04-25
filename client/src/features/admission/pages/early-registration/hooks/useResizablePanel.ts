@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useLayoutEffect } from "react";
 
 const DESKTOP_PANEL_BREAKPOINT = 1024;
 
@@ -37,22 +37,32 @@ export function useResizablePanel() {
     [isDesktopViewport],
   );
 
-  const stopResizing = useCallback(() => {
+  const [isResizingState, setIsResizingState] = useState(false);
+
+  function stopResizing() {
     isResizing.current = false;
+    setIsResizingState(false);
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", stopResizing);
-    document.body.style.cursor = "default";
-    document.body.style.userSelect = "auto";
-  }, [handleMouseMove]);
+  }
 
   const startResizing = useCallback(() => {
     if (!isDesktopViewport) return;
     isResizing.current = true;
+    setIsResizingState(true);
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", stopResizing);
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
-  }, [handleMouseMove, isDesktopViewport, stopResizing]);
+  }, [handleMouseMove, isDesktopViewport]);
+
+  useLayoutEffect(() => {
+    if (isResizingState) {
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+    } else {
+      document.body.style.cursor = "default";
+      document.body.style.userSelect = "auto";
+    }
+  }, [isResizingState]);
 
   return {
     panelPercentage,

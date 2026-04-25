@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, type ReactNode } from "react";
 import { Outlet } from "react-router";
 import { useSettingsStore, type PaletteColor } from "@/store/settings.slice";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
+import { Loader2 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 
 const DEFAULT_ACCENT_HSL = "221 83% 53%";
@@ -42,7 +43,7 @@ function contrastForeground(hsl: string): string {
 }
 
 export default function RootLayout({ children }: { children?: ReactNode }) {
-  const { colorScheme, selectedAccentHsl, logoUrl, setSettings } =
+  const { colorScheme, selectedAccentHsl, logoUrl, setSettings, initialized, isHydrated } =
     useSettingsStore();
 
   // Dynamically update document.title on every route change
@@ -61,9 +62,14 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
           activeSchoolYearId: res.data.activeSchoolYearId,
           activeSchoolYearLabel: res.data.activeSchoolYearLabel,
           enrollmentPhase: res.data.enrollmentPhase,
+          systemStatus: res.data.systemStatus,
+          bosyLockedAt: res.data.bosyLockedAt,
         });
       })
-      .catch(() => {});
+      .catch(() => {
+        // Fallback to initialized even on error to prevent infinite loading
+        setSettings({});
+      });
   }, [setSettings]);
 
   // Update favicon dynamically based on logoUrl
@@ -143,6 +149,14 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
     root.style.setProperty("--background", "0 0% 96%");
     root.style.setProperty("--card", "0 0% 100%");
   }, [colorScheme, selectedAccentHsl, setSettings]);
+
+  if (!isHydrated || !initialized) {
+    return (
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50">
+        <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
+      </div>
+    );
+  }
 
   return children ? <>{children}</> : <Outlet />;
 }

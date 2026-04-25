@@ -715,6 +715,7 @@ export const batchProcessSchema = z.object({
 
 const CHECKLIST_FIELD_KEYS = [
   "isPsaBirthCertPresented",
+  "isSecondaryBirthDocPresented",
   "isOriginalPsaBcCollected",
   "isSf9Submitted",
   "isSf10Requested",
@@ -732,6 +733,7 @@ export const academicStatusSchema = z.enum(ACADEMIC_STATUS_VALUES);
 
 const checklistUpdateInputSchema = z.object({
   isPsaBirthCertPresented: z.boolean().optional(),
+  isSecondaryBirthDocPresented: z.boolean().optional(),
   isOriginalPsaBcCollected: z.boolean().optional(),
   isSf9Submitted: z.boolean().optional(),
   isSf10Requested: z.boolean().optional(),

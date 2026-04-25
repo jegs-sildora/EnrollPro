@@ -106,22 +106,29 @@ const getSectionPriority = (name: string): number => {
   return 3;
 };
 
+interface Section {
+  id: number;
+  name: string;
+}
+
 const RosterRowComponent = React.forwardRef<
   HTMLTableRowElement,
   {
     row: ProposedAssignment;
-    gradeSections: any[];
+    gradeSections: Section[];
     updateAssignment: (appId: number, sectionId: string) => void;
     "data-index"?: number;
   }
 >(({ row, gradeSections, updateAssignment, "data-index": dataIndex }, ref) => {
   // 3.4.1 Update local row state immediately for instant visual feedback.
   const [localSectionId, setLocalSectionId] = useState(String(row.sectionId));
+  const [prevSectionId, setPrevSectionId] = useState(row.sectionId);
 
-  // Keep local state in sync with external changes (e.g. from filtering/sorting)
-  useEffect(() => {
+  // Recommended React pattern: Adjusting state when a prop changes during render
+  if (row.sectionId !== prevSectionId) {
+    setPrevSectionId(row.sectionId);
     setLocalSectionId(String(row.sectionId));
-  }, [row.sectionId]);
+  }
 
   const handleValueChange = (val: string) => {
     setLocalSectionId(val);
@@ -203,7 +210,7 @@ const RosterRowComponent = React.forwardRef<
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {gradeSections.map((s: any) => (
+              {gradeSections.map((s) => (
                 <SelectItem
                   key={s.id}
                   value={String(s.id)}
@@ -261,7 +268,7 @@ export function BatchSectioningWizard({
   const showSkeleton = useDelayedLoading(isLoading);
   const [isCommitting, setIsCommitting] = useState(false);
   const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false);
-  const [gradeSections, setGradeSections] = useState<any[]>([]);
+  const [gradeSections, setGradeSections] = useState<Section[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [programFilter, setProgramFilter] = useState<string>("all");
   const [sectionFilter, setSectionFilter] = useState<string>("all");
@@ -368,11 +375,12 @@ export function BatchSectioningWizard({
         gradeLevelId,
         schoolYearId,
       );
-    } catch (err: any) {
-      setError(
-        err.response?.data?.message || "Failed to generate sectioning preview.",
-      );
-      toastApiError(err as never);
+    } catch (err: unknown) {
+      const message = err && typeof err === "object" && "response" in err
+          ? (err as { response: { data?: { message?: string } } }).response.data?.message
+          : "Failed to generate sectioning preview.";
+      setError(message || "An unexpected error occurred.");
+      toastApiError(err as any);
     } finally {
       setIsLoading(false);
     }
@@ -382,7 +390,7 @@ export function BatchSectioningWizard({
     try {
       const res = await api.get(`/sections?gradeLevelId=${gradeLevelId}`);
       setGradeSections(res.data.sections || []);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to fetch sections", err);
     }
   };
@@ -406,8 +414,8 @@ export function BatchSectioningWizard({
       clearBatch();
       onSuccess();
       onClose();
-    } catch (err) {
-      toastApiError(err as never);
+    } catch (err: unknown) {
+      toastApiError(err as any);
     } finally {
       setIsCommitting(false);
     }
@@ -690,7 +698,7 @@ export function BatchSectioningWizard({
                                   Assigned
                                 </span>
                                 <span className="text-foreground">
-                                  {step.stats?.assigned} Learners
+                                  {Number(step.stats?.assigned)} Learners
                                 </span>
                               </div>
 
@@ -717,17 +725,17 @@ export function BatchSectioningWizard({
                                       Pilot Cut-off (Gen Ave)
                                     </span>
                                     <span className="text-primary font-bold">
-                                      {step.stats.pilotCutoffAve.toFixed(3)}
+                                      {Number(step.stats.pilotCutoffAve).toFixed(3)}
                                     </span>
                                   </div>
                                 )}
 
-                              {step.stats?.spillover > 0 && (
+                              {Number(step.stats?.spillover) > 0 && (
                                 <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-orange-600">
                                   <span>Reclassified</span>
                                   <div className="flex items-center gap-2">
                                     <span>
-                                      {step.stats?.spillover} Learners
+                                      {Number(step.stats?.spillover)} Learners
                                     </span>
                                     <Button
                                       variant="ghost"
@@ -748,11 +756,11 @@ export function BatchSectioningWizard({
                                   </div>
                                 </div>
                               )}
-                              {step.stats?.frustratedCount > 0 && (
+                              {Number(step.stats?.frustratedCount) > 0 && (
                                 <div className="flex justify-between text-[10px] font-black uppercase tracking-wider text-destructive">
                                   <span>Remedial Balance</span>
                                   <span>
-                                    {step.stats?.frustratedCount} Profiles
+                                    {Number(step.stats?.frustratedCount)} Profiles
                                   </span>
                                 </div>
                               )}

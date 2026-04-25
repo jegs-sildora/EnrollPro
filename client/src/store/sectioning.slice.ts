@@ -5,7 +5,15 @@ import type { SectioningParams } from '@enrollpro/shared';
 interface Step {
   title: string;
   description: string;
-  stats?: Record<string, any>;
+  stats?: {
+    assigned?: number;
+    steCutoffScore?: number | null;
+    pilotCutoffAve?: number | null;
+    spillover?: number;
+    reclassifiedLearners?: ProposedAssignment[];
+    frustratedCount?: number;
+    [key: string]: any;
+  };
 }
 
 interface ProposedAssignment {

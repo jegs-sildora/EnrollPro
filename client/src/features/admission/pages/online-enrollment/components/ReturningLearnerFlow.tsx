@@ -11,6 +11,22 @@ import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useSettingsStore } from "@/store/settings.slice";
 import { sileo } from "sileo";
 
+interface LearnerLookupResult {
+  id: number;
+  firstName: string;
+  lastName: string;
+  promotionStatus: string;
+  previousGradeLevel: string;
+  previousSection: string;
+  previousGenAve?: number;
+  hasPsaBirthCertificate: boolean;
+}
+
+interface GradeLevelOption {
+  id: number;
+  name: string;
+}
+
 interface ReturningLearnerFlowProps {
   onBack: () => void;
   onSuccess: (data: any) => void;
@@ -20,7 +36,7 @@ export function ReturningLearnerFlow({ onBack, onSuccess }: ReturningLearnerFlow
   const { activeSchoolYearId, activeSchoolYearLabel } = useSettingsStore();
   const [lrn, setLrn] = useState("");
   const [loading, setLoading] = useState(false);
-  const [learner, setLearner] = useState<any>(null);
+  const [learner, setLearner] = useState<LearnerLookupResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -32,11 +48,11 @@ export function ReturningLearnerFlow({ onBack, onSuccess }: ReturningLearnerFlow
     try {
       const res = await api.get(`/learner/lookup?lrn=${lrn}`);
       setLearner(res.data);
-    } catch (err: any) {
-      if (err.response?.status === 404) {
+    } catch (err: unknown) {
+      if (err && typeof err === "object" && "response" in err && (err as any).response?.status === 404) {
         setError("Learner record not found. Please verify the LRN or proceed as a New Student.");
       } else {
-        toastApiError(err);
+        toastApiError(err as any);
       }
       setLearner(null);
     } finally {
@@ -61,12 +77,12 @@ export function ReturningLearnerFlow({ onBack, onSuccess }: ReturningLearnerFlow
         params: { schoolYearId: activeSchoolYearId }
       });
       
-      const gradeLevels = glRes.data.gradeLevels || [];
+      const gradeLevels: GradeLevelOption[] = glRes.data.gradeLevels || [];
       const prevNumMatch = learner.previousGradeLevel.match(/\d+/);
       const prevNum = prevNumMatch ? parseInt(prevNumMatch[0]) : 7;
       const targetNum = prevNum + 1;
       
-      const targetGradeLevel = gradeLevels.find((gl: any) => {
+      const targetGradeLevel = gradeLevels.find((gl) => {
         const numMatch = gl.name.match(/\d+/);
         return numMatch && parseInt(numMatch[0]) === targetNum;
       });
@@ -91,7 +107,7 @@ export function ReturningLearnerFlow({ onBack, onSuccess }: ReturningLearnerFlow
       });
 
       onSuccess(res.data.application);
-    } catch (err) {
+    } catch (err: unknown) {
       toastApiError(err as any);
     } finally {
       setSubmitting(false);

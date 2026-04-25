@@ -32,6 +32,7 @@ import { motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { HealthRecords } from "@/features/students/components/tabs/HealthRecords";
+import { PinResetHandoverModal } from "@/features/students/components/PinResetHandoverModal";
 import { StatusTimeline } from "@/features/enrollment/components/StatusTimeline";
 import { SCPAssessmentBlock } from "@/features/enrollment/components/SCPAssessmentBlock";
 import { Badge } from "@/shared/ui/badge";
@@ -39,9 +40,9 @@ import { Label } from "@/shared/ui/label";
 import { Separator } from "@/shared/ui/separator";
 import api from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
-import { type AxiosError } from "axios";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { cn } from "@/shared/lib/utils";
+import { DocumentAuthModal } from "@/features/students/components/DocumentAuthModal";
 
 export default function StudentProfile() {
   const { id } = useParams();
@@ -67,12 +68,37 @@ export default function StudentProfile() {
     : "personal";
 
   const [activeTab, setActiveTab] = useState(resolvedInitialTab);
+  const [isPinResetModalOpen, setIsPinResetModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
   const {
     data: student,
     loading,
     error,
     refetch,
   } = useApplicationDetail(Number(id), true);
+
+  const handleVerifyPsa = async (type: "PSA" | "SECONDARY") => {
+    if (!student) return;
+    try {
+      await api.post(`/students/${student.id}/verify-psa`, { type });
+      sileo.success({ 
+        title: "Document Verified", 
+        description: type === "PSA" 
+          ? "PSA Birth Certificate has been added to the learner's vault." 
+          : "Secondary document accepted for temporary clearance."
+      });
+      refetch();
+    } catch (err: unknown) {
+      toastApiError(err as any);
+    }
+  };
+
+  const handleConfirmResetPin = async (): Promise<string> => {
+    if (!student) throw new Error("Student not found");
+    const res = await api.post(`/students/${student.id}/reset-portal-pin`);
+    return res.data.pin;
+  };
 
   if (loading)
     return <div className="p-8 text-center">Loading student profile...</div>;
@@ -484,57 +510,31 @@ export default function StudentProfile() {
                       </div>
                       <Button
                         variant="default"
-                        onClick={async () => {
-                          if (
-                            window.confirm(
-                              "Are you sure you want to reset the portal PIN? The old PIN will no longer work.",
-                            )
-                          ) {
-                            try {
-                              const res = await api.post(
-                                `/students/${student.id}/reset-portal-pin`,
-                              );
-                              const newPin = res.data.pin;
-                              sileo.success({
-                                title: "PIN Reset Successful",
-                                description:
-                                  "Please copy this new PIN: " + newPin,
-                                duration: 10000,
-                              });
-                            } catch (e: unknown) {
-                              toastApiError(
-                                e as AxiosError<{
-                                  message?: string;
-                                  errors?: Record<string, string[]>;
-                                }>,
-                              );
-                            }
-                          }
-                        }}>
+                        onClick={() => setIsPinResetModalOpen(true)}>
                         Reset Portal PIN
                       </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </motion.div>
-          </TabsContent>
+                      </div>
+                      </CardContent>
+                      </Card>
+                      )}
+                      </motion.div>
+                      </TabsContent>
 
-          <TabsContent value="academic" className="m-0 focus-visible:outline-none ring-0">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <GraduationCap className="h-4 w-4 text-primary" />
-                    Previous Academic Record
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
-                    <div className="space-y-4">
+                      <TabsContent value="academic" className="m-0 focus-visible:outline-none ring-0">
+                      <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}>
+                      <Card>
+                      <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4 text-primary" />
+                      Previous Academic Record
+                      </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
+                      <div className="space-y-4">
                       <div className="space-y-1">
                         <Label className="text-muted-foreground">
                           Last School Attended
@@ -559,8 +559,8 @@ export default function StudentProfile() {
                           {student.lastSchoolAddress || "N/A"}
                         </p>
                       </div>
-                    </div>
-                    <div className="space-y-4">
+                      </div>
+                      <div className="space-y-4">
                       <div className="space-y-1">
                         <Label className="text-muted-foreground">
                           Last Grade Level Completed
@@ -604,23 +604,23 @@ export default function StudentProfile() {
                             "N/A"}
                         </p>
                       </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </TabsContent>
+                      </div>
+                      </div>
+                      </CardContent>
+                      </Card>
+                      </motion.div>
+                      </TabsContent>
 
-          <TabsContent value="application" className="m-0 focus-visible:outline-none ring-0">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
-              className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="md:col-span-2 space-y-6">
-                {student.status === "TEMPORARILY_ENROLLED" && (
-                  <Card className="border-amber-200 bg-amber-50/30 overflow-hidden">
-                    <CardHeader className="bg-amber-100/50 pb-3">
+                      <TabsContent value="application" className="m-0 focus-visible:outline-none ring-0">
+                      <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="md:col-span-2 space-y-6">
+                      {student.status === "TEMPORARILY_ENROLLED" && (
+                      <Card className="border-amber-200 bg-amber-50/30 overflow-hidden">
+                      <CardHeader className="bg-amber-100/50 pb-3">
                       <div className="flex items-center gap-3">
                          <div className="p-2 bg-amber-600 rounded-lg text-white">
                             <ShieldCheck className="h-5 w-5" />
@@ -630,13 +630,13 @@ export default function StudentProfile() {
                             <p className="text-[10px] font-bold text-amber-700/70 mt-1 uppercase tracking-widest">DepEd Order 017, s. 2025 Compliance</p>
                          </div>
                       </div>
-                    </CardHeader>
-                    <CardContent className="pt-6 space-y-4">
+                      </CardHeader>
+                      <CardContent className="pt-6 space-y-4">
                        <div className="p-4 bg-white rounded-xl border border-amber-200 space-y-3">
                           <p className="text-xs font-bold text-slate-600 leading-relaxed italic">
                             "Learners lacking transfer credentials or with private school debt must be admitted temporarily but restricted from official clearance generation."
                           </p>
-                          
+
                           <div className="flex flex-wrap gap-3 pt-2">
                              {student.isMissingSf9 && (
                                <Button 
@@ -649,7 +649,9 @@ export default function StudentProfile() {
                                            await api.post(`/students/${student.id}/clear-deficiency`, { deficiencyType: "SF9" });
                                            sileo.success({ title: "SF9 Verified", description: "Learner's documentary deficiency has been updated." });
                                            refetch();
-                                        } catch(e) { toastApiError(e as any); }
+                                        } catch (err: unknown) {
+                                           toastApiError(err as any);
+                                        }
                                      }
                                   }}
                                >
@@ -669,7 +671,9 @@ export default function StudentProfile() {
                                            await api.post(`/students/${student.id}/clear-deficiency`, { deficiencyType: "FINANCIAL" });
                                            sileo.success({ title: "Financial Clearance Received", description: "Learner's private account flag has been cleared." });
                                            refetch();
-                                        } catch(e) { toastApiError(e as any); }
+                                        } catch (err: unknown) {
+                                           toastApiError(err as any);
+                                        }
                                      }
                                   }}
                                >
@@ -679,57 +683,57 @@ export default function StudentProfile() {
                              )}
                           </div>
                        </div>
-                    </CardContent>
-                  </Card>
-                )}
-                <SCPAssessmentBlock applicant={student} />
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
+                      </CardContent>
+                      </Card>
+                      )}
+                      <SCPAssessmentBlock applicant={student} />
+                      <Card>
+                      <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
                       <History className="h-4 w-4 text-primary" />
                       Status History
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <StatusTimeline applicant={student} />
-                  </CardContent>
-                </Card>
-              </div>
-              <Card className="h-fit">
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Info className="h-4 w-4 text-primary" />
-                    Application Metadata
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4 text-sm font-bold">
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground flex items-center gap-2">
+                      </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                      <StatusTimeline applicant={student} />
+                      </CardContent>
+                      </Card>
+                      </div>
+                      <Card className="h-fit">
+                      <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                      <Info className="h-4 w-4 text-primary" />
+                      Application Metadata
+                      </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4 text-sm font-bold">
+                      <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground flex items-center gap-2">
                       <Fingerprint className="h-3.5 w-3.5" /> Tracking No:
-                    </span>
-                    <span className="uppercase">{student.trackingNumber}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground flex items-center gap-2">
+                      </span>
+                      <span className="uppercase">{student.trackingNumber}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground flex items-center gap-2">
                       <ShieldCheck className="h-3.5 w-3.5" /> Admission Channel:
-                    </span>
-                    <span className="uppercase">{student.admissionChannel}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground flex items-center gap-2">
+                      </span>
+                      <span className="uppercase">{student.admissionChannel}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground flex items-center gap-2">
                       <UserCheck className="h-3.5 w-3.5" /> Learner Type:
-                    </span>
-                    <span className="uppercase">{student.learnerType?.replace("_", " ")}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground flex items-center gap-2">
+                      </span>
+                      <span className="uppercase">{student.learnerType?.replace("_", " ")}</span>
+                      </div>
+                      <Separator />
+                      <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground flex items-center gap-2">
                       <Calendar className="h-3.5 w-3.5" /> Date Applied:
-                    </span>
-                    <span>{format(new Date(student.createdAt), "MMM d, yyyy")}</span>
-                  </div>
-                  {student.encodedBy && (
-                    <div className="flex justify-between items-center">
+                      </span>
+                      <span>{format(new Date(student.createdAt), "MMM d, yyyy")}</span>
+                      </div>
+                      {student.encodedBy && (
+                      <div className="flex justify-between items-center">
                       <span className="text-muted-foreground flex items-center gap-2">
                         <User className="h-3.5 w-3.5" /> Encoded By:
                       </span>
@@ -737,28 +741,28 @@ export default function StudentProfile() {
                         {student.encodedBy.firstName}{" "}
                         {student.encodedBy.lastName}
                       </span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-          </TabsContent>
+                      </div>
+                      )}
+                      </CardContent>
+                      </Card>
+                      </motion.div>
+                      </TabsContent>
 
-          <TabsContent value="classifications" className="m-0 focus-visible:outline-none ring-0">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Tags className="h-4 w-4 text-primary" />
-                    Classifications & Special Programs
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
-                    <div className="space-y-6">
+                      <TabsContent value="classifications" className="m-0 focus-visible:outline-none ring-0">
+                      <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}>
+                      <Card>
+                      <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                      <Tags className="h-4 w-4 text-primary" />
+                      Classifications & Special Programs
+                      </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
+                      <div className="space-y-6">
                       <div className="space-y-2">
                         <Label className="text-muted-foreground block mb-2">
                           IP Community Membership
@@ -821,8 +825,8 @@ export default function StudentProfile() {
                           </Badge>
                         )}
                       </div>
-                    </div>
-                    <div className="space-y-6">
+                      </div>
+                      <div className="space-y-6">
                       {student.isScpApplication && (
                         <div className="space-y-2">
                           <Label className="text-muted-foreground">
@@ -841,76 +845,131 @@ export default function StudentProfile() {
                           </div>
                         </div>
                       )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </TabsContent>
+                      </div>
+                      </div>
+                      </CardContent>
+                      </Card>
+                      </motion.div>
+                      </TabsContent>
 
-          <TabsContent value="health" className="m-0 focus-visible:outline-none ring-0">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Stethoscope className="h-4 w-4 text-primary" />
-                    Nutritional Status & Health History
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <HealthRecords applicant={student} onRefresh={refetch} />
-                </CardContent>
-              </Card>
-            </motion.div>
-          </TabsContent>
+                      <TabsContent value="health" className="m-0 focus-visible:outline-none ring-0">
+                      <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}>
+                      <Card>
+                      <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                      <Stethoscope className="h-4 w-4 text-primary" />
+                      Nutritional Status & Health History
+                      </CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                      <HealthRecords applicant={student} onRefresh={refetch} />
+                      </CardContent>
+                      </Card>
+                      </motion.div>
+                      </TabsContent>
 
-          <TabsContent value="documents" className="m-0 focus-visible:outline-none ring-0">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <ShieldCheck className="h-4 w-4 text-primary" />
-                    Permanent Documentary Vault
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {student.hasPsaBirthCertificate ? (
-                      <div className="flex flex-col p-6 rounded-2xl bg-emerald-50 border-2 border-emerald-100 space-y-4 animate-in zoom-in-95 duration-300">
+                      <TabsContent value="documents" className="m-0 focus-visible:outline-none ring-0">
+                      <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="space-y-6">
+                      <Card>
+                      <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                      <ShieldCheck className="h-4 w-4 text-primary" />
+                      Permanent Documentary Vault
+                      </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {student.hasPsaBirthCertificate || student.birthCertificateType === "SECONDARY" ? (
+                      <div className={cn(
+                        "flex flex-col p-6 rounded-2xl border-2 space-y-4 animate-in zoom-in-95 duration-300",
+                        student.hasPsaBirthCertificate 
+                          ? "bg-emerald-50 border-emerald-100" 
+                          : "bg-amber-50 border-amber-100"
+                      )}>
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-emerald-600 rounded-lg text-white">
-                            <CheckCircle2 className="h-5 w-5" />
+                          <div className={cn(
+                            "p-2 rounded-lg text-white",
+                            student.hasPsaBirthCertificate ? "bg-emerald-600" : "bg-amber-600"
+                          )}>
+                            {student.hasPsaBirthCertificate ? <CheckCircle2 className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
                           </div>
                           <div>
-                            <h3 className="font-black text-emerald-900 uppercase leading-none">PSA Birth Certificate</h3>
-                            <p className="text-[10px] font-bold text-emerald-700/70 mt-1 uppercase tracking-widest">Verified & Locked on File</p>
+                            <h3 className={cn(
+                              "font-black uppercase leading-none",
+                              student.hasPsaBirthCertificate ? "text-emerald-900" : "text-amber-900"
+                            )}>
+                              {student.hasPsaBirthCertificate ? "PSA Birth Certificate" : "Secondary Birth Document"}
+                            </h3>
+                            <p className={cn(
+                              "text-[10px] font-bold mt-1 uppercase tracking-widest",
+                              student.hasPsaBirthCertificate ? "text-emerald-700/70" : "text-amber-700/70"
+                            )}>
+                              {student.hasPsaBirthCertificate ? "Verified & Locked on File" : "Temporary Compliance (D.O. 017)"}
+                            </p>
                           </div>
                         </div>
-                        
+
                         <div className="pt-2 space-y-1">
-                          <p className="text-[10px] font-black text-emerald-800/40 uppercase tracking-tighter">Verification Metadata</p>
-                          <p className="text-xs font-bold text-emerald-900">
+                          <p className={cn(
+                            "text-[10px] font-black uppercase tracking-tighter",
+                            student.hasPsaBirthCertificate ? "text-emerald-800/40" : "text-amber-800/40"
+                          )}>Verification Metadata</p>
+                          <p className={cn(
+                            "text-xs font-bold",
+                            student.hasPsaBirthCertificate ? "text-emerald-900" : "text-amber-900"
+                          )}>
                             Verified by: <span className="uppercase">{student.birthCertificateVerifiedBy}</span>
                           </p>
-                          <p className="text-xs font-medium text-emerald-700">
+                          <p className={cn(
+                            "text-xs font-medium",
+                            student.hasPsaBirthCertificate ? "text-emerald-700" : "text-amber-700"
+                          )}>
                             Date: {student.birthCertificateVerifiedDate ? format(new Date(student.birthCertificateVerifiedDate), "MMMM d, yyyy") : "N/A"}
                           </p>
                         </div>
-                        
-                        <div className="bg-white/50 p-3 rounded-lg border border-emerald-100">
-                          <p className="text-[10px] font-medium text-emerald-800 leading-relaxed italic">
+
+                        {!student.hasPsaBirthCertificate && (
+                          <div className="bg-white/50 p-3 rounded-lg border border-amber-200">
+                             <p className="text-xs font-bold text-amber-900">
+                               PSA Deadline: <span className="text-rose-600 font-black underline">October 31, 2026</span>
+                             </p>
+                             <p className="text-[10px] font-medium text-amber-700 mt-1 leading-tight">
+                               Secondary proof accepted. PSA must be submitted by the deadline to finalize the permanent record.
+                             </p>
+                          </div>
+                        )}
+
+                        <div className={cn(
+                          "p-3 rounded-lg border",
+                          student.hasPsaBirthCertificate ? "bg-white/50 border-emerald-100" : "bg-white/50 border-amber-100"
+                        )}>
+                          <p className={cn(
+                            "text-[10px] font-medium leading-relaxed italic",
+                            student.hasPsaBirthCertificate ? "text-emerald-800" : "text-amber-800"
+                          )}>
                             "In compliance with DepEd Order 017, s. 2025, this document is only required once and will be carried over for all future enrollments."
                           </p>
                         </div>
+
+                        {!student.hasPsaBirthCertificate && (
+                           <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="w-full border-amber-300 text-amber-800 hover:bg-amber-100 font-bold uppercase text-[10px] tracking-widest h-8"
+                              onClick={() => setIsAuthModalOpen(true)}
+                           >
+                              Update to PSA Original
+                           </Button>
+                        )}
                       </div>
-                    ) : (
+                      ) : (
                       <div className="flex flex-col p-6 rounded-2xl bg-rose-50 border-2 border-rose-100 space-y-4">
                         <div className="flex items-center gap-3">
                           <div className="p-2 bg-rose-600 rounded-lg text-white">
@@ -930,23 +989,15 @@ export default function StudentProfile() {
 
                         <Button 
                           className="w-full h-12 bg-rose-600 hover:bg-rose-700 text-white font-black uppercase tracking-wide gap-2 shadow-lg shadow-rose-200"
-                          onClick={async () => {
-                            if(window.confirm("Verify that the physical PSA Birth Certificate has been presented and authenticated?")) {
-                              try {
-                                await api.post(`/students/${student.id}/verify-psa`);
-                                sileo.success({ title: "Document Verified", description: "PSA Birth Certificate has been added to the learner's vault." });
-                                refetch();
-                              } catch(e) { toastApiError(e as any); }
-                            }
-                          }}
+                          onClick={() => setIsAuthModalOpen(true)}
                         >
                           <UserCheck className="h-5 w-5" />
                           Verify Physical Document
                         </Button>
                       </div>
-                    )}
+                      )}
 
-                    <div className="flex flex-col p-6 rounded-2xl bg-slate-50 border-2 border-slate-100 space-y-4 opacity-60 grayscale cursor-not-allowed">
+                      <div className="flex flex-col p-6 rounded-2xl bg-slate-50 border-2 border-slate-100 space-y-4 opacity-60 grayscale cursor-not-allowed">
                        <div className="flex items-center gap-3">
                           <div className="p-2 bg-slate-400 rounded-lg text-white">
                              <Lock className="h-5 w-5" />
@@ -959,14 +1010,31 @@ export default function StudentProfile() {
                        <p className="text-[10px] font-medium text-slate-500 leading-relaxed italic">
                          "Original SF10 is held by the school until formal transfer out or completion of JHS."
                        </p>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </TabsContent>
-        </div>
-      </Tabs>
-    </div>
-  );
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </TabsContent>
+          </div>
+        </Tabs>
+
+        <PinResetHandoverModal
+          open={isPinResetModalOpen}
+          onOpenChange={setIsPinResetModalOpen}
+          studentName={`${student.lastName}, ${student.firstName}`}
+          gradeLevel={student.gradeLevel.name}
+          onConfirmReset={handleConfirmResetPin}
+        />
+
+        <DocumentAuthModal
+          open={isAuthModalOpen}
+          onOpenChange={setIsAuthModalOpen}
+          studentName={`${student.lastName}, ${student.firstName}`}
+          trackingNumber={student.trackingNumber}
+          onConfirm={handleVerifyPsa}
+        />
+      </div>
+    );
 }
+

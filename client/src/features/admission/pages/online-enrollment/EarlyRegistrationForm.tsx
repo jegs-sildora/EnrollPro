@@ -412,6 +412,11 @@ export default function EnrollmentForm({
         stepper.navigation.next();
       }
       scrollToTopInstant();
+    } else {
+      sileo.error({
+        title: "Incomplete Information",
+        description: "Please provide the following required information to proceed",
+      });
     }
   };
 
@@ -429,6 +434,9 @@ export default function EnrollmentForm({
 
   const goToValidationIssue = (issue: ValidationIssue) => {
     const isStepChanging = currentStepId !== issue.stepId;
+
+    setIsEditing(true);
+    sessionStorage.setItem(EDITING_KEY, "true");
 
     if (isStepChanging) {
       stepper.navigation.goTo(issue.stepId);

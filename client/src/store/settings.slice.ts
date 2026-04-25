@@ -25,15 +25,29 @@ export interface SettingsState {
 		| 'EARLY_REGISTRATION'
 		| 'REGULAR_ENROLLMENT'
 		| 'CLOSED'
-		| 'OVERRIDE';
+		| 'OVERRIDE'
+		| 'BOSY_LOCKED';
+	systemStatus:
+		| 'DRAFT'
+		| 'UPCOMING'
+		| 'PREPARATION'
+		| 'ENROLLMENT_OPEN'
+		| 'BOSY_LOCKED'
+		| 'EOSY_PROCESSING'
+		| 'ACTIVE'
+		| 'ARCHIVED';
+	bosyLockedAt: string | null;
 	/** Session-level override for browsing a different SY */
 	viewingSchoolYearId: number | null;
 	accentForeground: string | null;
 	accentMutedForeground: string | null;
 	fontSize: number; // 100 by default (percentage)
+	isHydrated: boolean;
+	initialized: boolean;
 	setSettings: (settings: Partial<SettingsState>) => void;
 	setViewingSY: (id: number | null) => void;
 	setFontSize: (size: number) => void;
+	setHydrated: () => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -46,16 +60,24 @@ export const useSettingsStore = create<SettingsState>()(
 			activeSchoolYearId: null,
 			activeSchoolYearLabel: null,
 			enrollmentPhase: 'CLOSED',
+			systemStatus: 'DRAFT',
+			bosyLockedAt: null,
 			viewingSchoolYearId: null,
 			accentForeground: null,
 			accentMutedForeground: null,
 			fontSize: 100, // percentage
-			setSettings: (settings) => set((state) => ({ ...state, ...settings })),
+			isHydrated: false,
+			initialized: false,
+			setSettings: (settings) => set((state) => ({ ...state, ...settings, initialized: true })),
 			setViewingSY: (id) => set({ viewingSchoolYearId: id }),
 			setFontSize: (size) => set({ fontSize: size }),
+			setHydrated: () => set({ isHydrated: true }),
 		}),
 		{
 			name: 'enrollpro-settings',
+			onRehydrateStorage: () => (state) => {
+				state?.setHydrated();
+			},
 		},
 	),
 );

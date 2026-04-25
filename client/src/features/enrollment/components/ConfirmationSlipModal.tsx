@@ -66,11 +66,11 @@ export function ConfirmationSlipModal({
     try {
       const res = await api.get(`/learner/lookup?lrn=${lookupLrn}`);
       setLearner(res.data);
-    } catch (err: any) {
-      if (err.response?.status === 404) {
+    } catch (err: unknown) {
+      if (err && typeof err === "object" && "response" in err && (err as any).response?.status === 404) {
         setError("Learner not found. Please verify the LRN.");
       } else {
-        toastApiError(err);
+        toastApiError(err as any);
       }
       setLearner(null);
     } finally {
@@ -97,7 +97,7 @@ export function ConfirmationSlipModal({
       const prevNum = prevNumMatch ? parseInt(prevNumMatch[0]) : 7;
       const targetNum = prevNum + 1;
       
-      const targetGradeLevel = gradeLevels.find((gl: any) => {
+      const targetGradeLevel = gradeLevels.find((gl: { name: string; id: number }) => {
         const numMatch = gl.name.match(/\d+/);
         return numMatch && parseInt(numMatch[0]) === targetNum;
       });
@@ -126,7 +126,7 @@ export function ConfirmationSlipModal({
       setLrn("");
       setLearner(null);
       inputRef.current?.focus();
-    } catch (err) {
+    } catch (err: unknown) {
       toastApiError(err as any);
     } finally {
       setSaving(false);

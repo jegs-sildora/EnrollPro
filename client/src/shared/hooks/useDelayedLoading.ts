@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 
 /**
  * Hook to manage delayed loading states to prevent "flickering" of skeletons.
@@ -13,9 +13,15 @@ export function useDelayedLoading(
 ): boolean {
   // Initialize state immediately if delay is 0
   const [showLoading, setShowLoading] = useState(isLoading && delay === 0);
-  const showStartTimeRef = useRef<number>(isLoading && delay === 0 ? Date.now() : 0);
+  const showStartTimeRef = useRef<number>(0);
   const delayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const minDisplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useLayoutEffect(() => {
+    if (isLoading && delay === 0) {
+      showStartTimeRef.current = Date.now();
+    }
+  }, []);
 
   useEffect(() => {
     // If we are starting to load
@@ -29,7 +35,7 @@ export function useDelayedLoading(
       // If not already showing, start the delay timer
       if (!showLoading && !delayTimerRef.current) {
         if (delay === 0) {
-          setShowLoading(true);
+          queueMicrotask(() => setShowLoading(true));
           showStartTimeRef.current = Date.now();
         } else {
           delayTimerRef.current = setTimeout(() => {

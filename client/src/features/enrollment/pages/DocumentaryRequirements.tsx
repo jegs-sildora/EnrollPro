@@ -27,10 +27,32 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import { useMemo } from "react";
 
+interface PhaseDataRow {
+  feature: string;
+  phase1: React.ReactNode;
+  phase2: React.ReactNode;
+  phase1Class?: string;
+  phase2Class?: string;
+}
+
+interface JhsDataRow {
+  grade: string;
+  type: React.ReactNode;
+  phase1: string;
+  phase2: string;
+  phase1Class?: string;
+}
+
+interface SpecialDataRow {
+  category: React.ReactNode;
+  phase1: string;
+  phase2: string;
+}
+
 export default function DocumentaryRequirements() {
   usePageTitle();
 
-  const phaseColumns = useMemo<ColumnDef<any>[]>(
+  const phaseColumns = useMemo<ColumnDef<PhaseDataRow>[]>(
     () => [
       {
         accessorKey: "feature",
@@ -71,7 +93,7 @@ export default function DocumentaryRequirements() {
     [],
   );
 
-  const phaseData = [
+  const phaseData: PhaseDataRow[] = [
     {
       feature: "Schedule",
       phase1: "Last Sat of Jan to Last Fri of Feb",
@@ -102,7 +124,7 @@ export default function DocumentaryRequirements() {
     },
   ];
 
-  const jhsColumns = useMemo<ColumnDef<any>[]>(
+  const jhsColumns = useMemo<ColumnDef<JhsDataRow>[]>(
     () => [
       {
         accessorKey: "grade",
@@ -144,7 +166,7 @@ export default function DocumentaryRequirements() {
     [],
   );
 
-  const jhsData = [
+  const jhsData: JhsDataRow[] = [
     {
       grade: "7",
       type: <Badge variant="outline">New Enrollee</Badge>,
@@ -178,7 +200,7 @@ export default function DocumentaryRequirements() {
     },
   ];
 
-  const specialColumns = useMemo<ColumnDef<any>[]>(
+  const specialColumns = useMemo<ColumnDef<SpecialDataRow>[]>(
     () => [
       {
         accessorKey: "category",
@@ -209,7 +231,7 @@ export default function DocumentaryRequirements() {
     [],
   );
 
-  const specialData = [
+  const specialData: SpecialDataRow[] = [
     {
       category: (
         <div className="font-bold flex items-center gap-1.5">

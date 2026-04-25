@@ -89,7 +89,6 @@ export function useRegistrationActions(onSuccess: () => void) {
     stepOrder: number,
     kind: string,
     score: number,
-    _cutoffScore: number | null,
   ) => {
     if (!selectedId) return;
     try {

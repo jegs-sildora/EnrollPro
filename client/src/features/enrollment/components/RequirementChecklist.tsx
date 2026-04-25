@@ -61,6 +61,7 @@ interface RequirementItem {
   label: string;
   description: string;
   isMandatory: boolean;
+  isMet?: boolean;
 }
 
 interface ApiRequirement {
@@ -68,10 +69,12 @@ interface ApiRequirement {
   label: string;
   isRequired: boolean;
   description?: string;
+  isMet?: boolean;
 }
 
 const CHECKLIST_FIELD_LABELS: Record<ChecklistFieldKey, string> = {
   isPsaBirthCertPresented: "PSA Birth Certificate",
+  isSecondaryBirthDocPresented: "Secondary Birth Document",
   isOriginalPsaBcCollected: "Original PSA Copy Collected",
   isSf9Submitted: "SF9 / Report Card",
   isSf10Requested: "SF10 (Permanent Record)",
@@ -85,6 +88,8 @@ const CHECKLIST_FIELD_LABELS: Record<ChecklistFieldKey, string> = {
 const CHECKLIST_FIELD_DESCRIPTIONS: Record<ChecklistFieldKey, string> = {
   isPsaBirthCertPresented:
     "Submitted once per school stay. Mandatory for new enrollees and transferees.",
+  isSecondaryBirthDocPresented:
+    "Temporary clearance via LCR, Baptismal, or Barangay Cert per D.O. 017, s. 2025.",
   isOriginalPsaBcCollected:
     "Track if the original PSA copy has been collected for records filing.",
   isSf9Submitted:

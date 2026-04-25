@@ -16,6 +16,7 @@ export const SCP_LABELS: Record<string, string> = {
   SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION:
     "Special Program in Tech-Voc Education",
   REGULAR: "Regular",
+  LATE_ENROLLEE: "Late Enrollee",
 };
 
 export const SCP_ACRONYMS: Record<string, string> = {
@@ -26,6 +27,7 @@ export const SCP_ACRONYMS: Record<string, string> = {
   SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: "SPFL",
   SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION: "SPTVE",
   REGULAR: "Regular",
+  LATE_ENROLLEE: "Late",
 };
 
 /**
@@ -147,7 +149,7 @@ export function toUpperCaseRecursive<T>(obj: T): T {
  */
 export function isMandatoryDocumentsMet(
   learnerType: string | null | undefined,
-  checklist: any,
+  checklist: any | null | undefined,
 ): boolean {
   if (!checklist || !learnerType) return false;
 

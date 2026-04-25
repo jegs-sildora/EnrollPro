@@ -21,9 +21,9 @@ function extractMinAverage(
     if (rule?.minAverage != null && Number.isFinite(rule.minAverage)) {
       return rule.minAverage;
     }
-  } else if (rules && typeof rules === "object") {
+  } else if (rules && typeof rules === "object" && !Array.isArray(rules)) {
     // Handle legacy object format
-    const legacy = rules as any;
+    const legacy = rules as unknown as { minimumGeneralAverage?: number };
     if (
       ruleType === "GENERAL_AVERAGE_MIN" &&
       typeof legacy.minimumGeneralAverage === "number"

@@ -4,6 +4,7 @@ import SchoolProfileTab from "./SchoolProfileTab";
 import SchoolYearTab from "./SchoolYearTab";
 import CurriculumTab from "./CurriculumTab";
 import EnrollmentGateTab from "./EnrollmentGateTab";
+import AcademicYearLifecycleTab from "./AcademicYearLifecycleTab";
 import DocumentaryRequirements from "@/features/enrollment/pages/DocumentaryRequirements";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -13,6 +14,7 @@ const VALID_TABS = [
   "curriculum",
   "enrollment",
   "requirements",
+  "lifecycle",
 ] as const;
 type SettingsTab = (typeof VALID_TABS)[number];
 
@@ -106,6 +108,18 @@ export default function Settings() {
             )}
             <span className="relative z-20">Requirements</span>
           </TabsTrigger>
+          <TabsTrigger
+            value="lifecycle"
+            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+            {activeTab === "lifecycle" && (
+              <motion.div
+                layoutId="settings-active-pill"
+                className="absolute inset-0 bg-primary rounded-md"
+                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+              />
+            )}
+            <span className="relative z-20">Lifecycle</span>
+          </TabsTrigger>
         </TabsList>
 
         <AnimatePresence mode="wait">
@@ -190,6 +204,23 @@ export default function Settings() {
                 forceMount
                 className="mt-0 focus-visible:outline-none ring-0">
                 <DocumentaryRequirements />
+              </TabsContent>
+            </motion.div>
+          )}
+
+          {activeTab === "lifecycle" && (
+            <motion.div
+              key="lifecycle"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="w-full">
+              <TabsContent
+                value="lifecycle"
+                forceMount
+                className="mt-0 focus-visible:outline-none ring-0">
+                <AcademicYearLifecycleTab />
               </TabsContent>
             </motion.div>
           )}

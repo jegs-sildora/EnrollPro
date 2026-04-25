@@ -217,13 +217,13 @@ const parseGradeRequirements = (
   value: unknown,
 ): ParsedScpGradeRequirement[] => {
   if (!Array.isArray(value)) {
-    if (value && typeof value === "object") {
-      const legacy = value as any;
-      if (typeof legacy.minimumGeneralAverage === "number") {
+    if (isRecord(value)) {
+      const minGA = value.minimumGeneralAverage;
+      if (typeof minGA === "number") {
         return [
           {
             ruleType: "GENERAL_AVERAGE_MIN",
-            minAverage: legacy.minimumGeneralAverage,
+            minAverage: minGA,
             subjects: [],
             subjectThresholds: [],
           },

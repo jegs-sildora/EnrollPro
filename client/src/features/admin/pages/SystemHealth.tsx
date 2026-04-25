@@ -94,6 +94,11 @@ function statusClass(status: string) {
   return "border-red-200 bg-red-50 text-red-700";
 }
 
+interface MetricRow {
+  metric: string;
+  value: number;
+}
+
 export default function SystemHealth() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [stats, setStats] = useState<StatsResponse | null>(null);
@@ -130,16 +135,16 @@ export default function SystemHealth() {
     );
   }, [stats]);
 
-  const countData = useMemo(() => {
+  const countData = useMemo<MetricRow[]>(() => {
     if (!health) return [];
     return Object.entries(health.counts).map(([key, value]) => ({
       metric:
         key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, " $1"),
-      value,
+      value: value as number,
     }));
   }, [health]);
 
-  const countColumns = useMemo<ColumnDef<any>[]>(
+  const countColumns = useMemo<ColumnDef<MetricRow>[]>(
     () => [
       {
         accessorKey: "metric",

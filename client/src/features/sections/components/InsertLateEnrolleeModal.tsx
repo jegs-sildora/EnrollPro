@@ -72,7 +72,8 @@ export function InsertLateEnrolleeModal({
         params: { schoolYearId },
       });
       setPool(res.data.pool);
-    } catch (err) {
+    } catch (err: unknown) {
+      console.error("Pool fetch failed", err);
       sileo.error({
         title: "Load Error",
         description: "Could not retrieve the unsectioned learner pool.",
@@ -104,10 +105,13 @@ export function InsertLateEnrolleeModal({
       
       onSuccess();
       onOpenChange(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err && typeof err === "object" && "response" in err
+          ? (err as { response: { data?: { message?: string } } }).response.data?.message
+          : "An unexpected error occurred during manual sectioning.";
       sileo.error({
         title: "Slotting Failed",
-        description: err.response?.data?.message || "An unexpected error occurred during manual sectioning.",
+        description: message,
       });
     } finally {
       setIsSubmitting(false);

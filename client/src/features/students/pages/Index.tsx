@@ -65,7 +65,7 @@ import { Sheet, SheetContent } from "@/shared/ui/sheet";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
-import { StudentDetailPanel } from "../components/StudentDetailPanel";
+import { StudentDetailPanel, type StudentDetail as PanelStudentDetail } from "../components/StudentDetailPanel";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { useResizablePanel } from "@/features/admission/pages/early-registration/hooks/useResizablePanel";
 
@@ -538,9 +538,27 @@ export default function Students() {
     [selectedStudentId],
   );
 
+  /** Helper to map detail from panel to local Student interface */
+  const mapPanelDetailToStudent = (detail: PanelStudentDetail): Student => {
+    return {
+      ...detail,
+      learningProgram: "REGULAR", // Default fallback, though ideally fetched
+      dateEnrolled: detail.enrollment?.enrolledAt || detail.createdAt,
+      lifecycleOutcome: detail.enrollment?.eosyStatus || null,
+      dropOutReason: detail.enrollment?.dropOutReason || null,
+      dropOutDate: detail.enrollment?.dropOutDate || null,
+      transferOutDate: detail.enrollment?.transferOutDate || null,
+      transferOutSchoolName: detail.enrollment?.transferOutSchoolName || null,
+      transferOutReason: detail.enrollment?.transferOutReason || null,
+      section: detail.enrollment?.section || null,
+      sectionId: detail.enrollment?.sectionId || null,
+    };
+  };
+
   const openTransferOutDialog = useCallback(
-    (student: Student) => {
-      setActionStudent(student);
+    (student: Student | PanelStudentDetail) => {
+      const s = "learningProgram" in student ? student : mapPanelDetailToStudent(student);
+      setActionStudent(s);
       setTransferOutDate(toDateInputValue());
       setTransferOutSchoolName("");
       setTransferOutReason("");
@@ -550,8 +568,9 @@ export default function Students() {
   );
 
   const openDropoutDialog = useCallback(
-    (student: Student) => {
-      setActionStudent(student);
+    (student: Student | PanelStudentDetail) => {
+      const s = "learningProgram" in student ? student : mapPanelDetailToStudent(student);
+      setActionStudent(s);
       setDropoutDate(toDateInputValue());
       setDropoutReasonCode("LACK_OF_INTEREST");
       setDropoutReasonDetails("");
@@ -560,17 +579,19 @@ export default function Students() {
     [toDateInputValue],
   );
 
-  const openShiftDialog = useCallback((student: Student) => {
-    setActionStudent(student);
+  const openShiftDialog = useCallback((student: Student | PanelStudentDetail) => {
+    const s = "learningProgram" in student ? student : mapPanelDetailToStudent(student);
+    setActionStudent(s);
     setShiftTargetSectionId("");
     setShowShiftDialog(true);
   }, []);
 
-  const openProfileQuickEditDialog = useCallback(async (student: Student) => {
-    setActionStudent(student);
+  const openProfileQuickEditDialog = useCallback(async (student: Student | PanelStudentDetail) => {
+    const s = "learningProgram" in student ? student : mapPanelDetailToStudent(student);
+    setActionStudent(s);
 
     try {
-      const res = await api.get(`/students/${student.id}`);
+      const res = await api.get(`/students/${s.id}`);
       const detail = res.data.student as StudentDetail & {
         religion?: string | null;
         motherTongue?: string | null;
@@ -582,9 +603,9 @@ export default function Students() {
       };
 
       setProfileForm({
-        emailAddress: detail.emailAddress ?? student.emailAddress ?? "",
+        emailAddress: detail.emailAddress ?? s.emailAddress ?? "",
         contactNumber:
-          detail.parentGuardianContact ?? student.parentGuardianContact ?? "",
+          detail.parentGuardianContact ?? s.parentGuardianContact ?? "",
         religion: detail.religion ?? "",
         motherTongue: detail.motherTongue ?? "",
         currentAddress:
@@ -595,26 +616,27 @@ export default function Students() {
           ]
             .filter(Boolean)
             .join(", ") ||
-          student.address ||
+          s.address ||
           "",
       });
     } catch {
       setProfileForm({
-        emailAddress: student.emailAddress ?? "",
-        contactNumber: student.parentGuardianContact ?? "",
+        emailAddress: s.emailAddress ?? "",
+        contactNumber: s.parentGuardianContact ?? "",
         religion: "",
         motherTongue: "",
-        currentAddress: student.address || "",
+        currentAddress: s.address || "",
       });
     }
 
     setShowProfileDialog(true);
   }, []);
 
-  const openAssignLrnDialog = useCallback((student: Student) => {
-    setActionStudent(student);
+  const openAssignLrnDialog = useCallback((student: Student | PanelStudentDetail) => {
+    const s = "learningProgram" in student ? student : mapPanelDetailToStudent(student);
+    setActionStudent(s);
     setLrnForm({
-      lrn: /^\d{12}$/.test(student.lrn || "") ? student.lrn : "",
+      lrn: /^\d{12}$/.test(s.lrn || "") ? s.lrn : "",
     });
     setShowLrnDialog(true);
   }, []);

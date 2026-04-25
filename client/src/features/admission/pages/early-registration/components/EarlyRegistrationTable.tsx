@@ -31,7 +31,6 @@ function resolveHandoffSearchToken(application: Application): string {
 export function EarlyRegistrationTable({
   applications,
   loading,
-  selectedId: _selectedId,
   setSelectedId,
   getNextAction,
 }: TableProps) {

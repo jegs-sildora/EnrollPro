@@ -47,6 +47,7 @@ model User {
   encodedEnrollmentApps EnrollmentApplication[] @relation("EnrollmentAppEncodedBy")
   profileLockedEnrollmentApps EnrollmentApplication[] @relation("EnrollmentProfileLockedBy")
   readingProfileAssessedEnrollmentApps EnrollmentApplication[] @relation("EnrollmentReadingProfileAssessedBy")
+  lockedSchoolYears      SchoolYear[]            @relation("SchoolYearLockedBy")
   enrollmentRecords      EnrollmentRecord[]
   
   recordedHealthRecords HealthRecord[] @relation("HealthRecordRecordedBy")
@@ -132,11 +133,14 @@ model SchoolYear {
   enrollCloseDate    DateTime?        @db.Date @map("enroll_close_date")
   isManualOverrideOpen Boolean        @default(false) @map("is_manual_override_open")
   sectioningConfig   Json?            @map("sectioning_config")
+  bosyLockedAt       DateTime?        @db.Timestamptz @map("bosy_locked_at")
+  bosyLockedById     Int?             @map("bosy_locked_by_id")
   clonedFromId       Int?             @map("cloned_from_id")
   createdAt          DateTime         @default(now()) @db.Timestamptz @map("created_at")
   
   clonedFrom         SchoolYear?      @relation("SchoolYearClone", fields: [clonedFromId], references: [id])
   clones             SchoolYear[]     @relation("SchoolYearClone")
+  bosyLockedBy       User?            @relation("SchoolYearLockedBy", fields: [bosyLockedById], references: [id])
   gradeLevels        GradeLevel[]
   schoolSettings     SchoolSetting[]
   scpProgramConfigs  ScpProgramConfig[]
@@ -208,6 +212,7 @@ model Learner {
   isPendingLrnCreation    Boolean   @default(false) @map("is_pending_lrn_creation")
   psaBirthCertNumber      String?   @map("psa_birth_cert_number")
   hasPsaBirthCertificate  Boolean   @default(false) @map("has_psa_birth_certificate")
+  birthCertificateType    String?   @map("birth_certificate_type")
   birthCertificateVerifiedBy String?  @map("birth_certificate_verified_by")
   birthCertificateVerifiedDate DateTime? @db.Timestamptz @map("birth_certificate_verified_date")
   firstName               String    @map("first_name")
@@ -466,6 +471,7 @@ model ApplicationChecklist {
   enrollmentId                       Int?      @unique(map: "uq_enrollment_checklist_id") @map("enrollment_id")
   academicStatus                     AcademicStatus @default(PROMOTED) @map("academic_status")
   isPsaBirthCertPresented            Boolean   @default(false) @map("is_psa_birth_cert_presented")
+  isSecondaryBirthDocPresented       Boolean   @default(false) @map("is_secondary_birth_doc_presented")
   isOriginalPsaBcCollected           Boolean   @default(false) @map("is_original_psa_bc_collected")
   isSf9Submitted                     Boolean   @default(false) @map("is_sf9_submitted")
   isSf10Requested                    Boolean   @default(false) @map("is_sf10_requested")
@@ -781,6 +787,10 @@ enum ReadingProfileLevel {
 enum SchoolYearStatus {
   DRAFT
   UPCOMING
+  PREPARATION
+  ENROLLMENT_OPEN
+  BOSY_LOCKED
+  EOSY_PROCESSING
   ACTIVE
   ARCHIVED
 
@@ -789,6 +799,7 @@ enum SchoolYearStatus {
 
 enum ApplicantType {
   REGULAR
+  LATE_ENROLLEE
   SCIENCE_TECHNOLOGY_AND_ENGINEERING
   SPECIAL_PROGRAM_IN_THE_ARTS
   SPECIAL_PROGRAM_IN_SPORTS

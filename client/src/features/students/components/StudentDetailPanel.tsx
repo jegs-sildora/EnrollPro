@@ -32,7 +32,28 @@ import {
 	Classifications,
 } from "@/features/enrollment/components/BeefSections";
 
-interface StudentDetail {
+interface Address {
+	houseNo?: string;
+	street?: string;
+	sitio?: string;
+	barangay: string;
+	cityMunicipality: string;
+	province: string;
+	zipCode?: string;
+	type?: string;
+}
+
+interface FamilyMember {
+	firstName: string;
+	lastName: string;
+	maidenName?: string;
+	contactNumber?: string;
+	email?: string;
+	relationship: string;
+	fullName?: string;
+}
+
+export interface StudentDetail {
 	id: number;
 	lrn: string;
 	fullName: string;
@@ -43,11 +64,11 @@ interface StudentDetail {
 	sex: string;
 	birthDate: string;
 	address: string;
-	currentAddress: any;
-	permanentAddress: any;
-	motherName: any;
-	fatherName: any;
-	guardianInfo: any;
+	currentAddress: Address | null;
+	permanentAddress: Address | null;
+	motherName: FamilyMember | null;
+	fatherName: FamilyMember | null;
+	guardianInfo: FamilyMember | null;
 	parentGuardianName: string;
 	parentGuardianContact: string;
 	emailAddress: string;
@@ -58,6 +79,8 @@ interface StudentDetail {
 	gradeLevelId: number;
 	schoolYear: string;
 	schoolYearId: number;
+	generalAverage?: number | null;
+	readingProfileLevel?: string | null;
 	enrollment: {
 		id: number;
 		section: string;
@@ -83,11 +106,11 @@ interface Props {
 	onOpenProfilePage: (id: number) => void;
 	onOpenPermanentRecord: (id: number) => void;
 	onOpenGoodMoral: (id: number) => void;
-	onQuickEdit: (student: any) => void;
-	onAssignLrn: (student: any) => void;
-	onShift: (student: any) => void;
-	onTransferOut: (student: any) => void;
-	onDropout: (student: any) => void;
+	onQuickEdit: (student: StudentDetail) => void;
+	onAssignLrn: (student: StudentDetail) => void;
+	onShift: (student: StudentDetail) => void;
+	onTransferOut: (student: StudentDetail) => void;
+	onDropout: (student: StudentDetail) => void;
 }
 
 export function StudentDetailPanel({
@@ -116,9 +139,12 @@ export function StudentDetailPanel({
 			try {
 				const res = await api.get(`/students/${id}`);
 				setStudent(res.data.student);
-			} catch (err: any) {
-				setError(err.response?.data?.message || "Failed to load student details");
-				toastApiError(err as never);
+			} catch (err: unknown) {
+				const message = err && typeof err === "object" && "response" in err
+          ? (err as { response: { data?: { message?: string } } }).response.data?.message
+          : "Failed to load student details";
+				setError(message || "An unexpected error occurred.");
+				toastApiError(err as any);
 			} finally {
 				setLoading(false);
 			}
@@ -176,7 +202,7 @@ export function StudentDetailPanel({
 	const formatDate = (dateString: string) => {
 		try {
 			return format(new Date(dateString), "MMMM d, yyyy");
-		} catch (e) {
+		} catch {
 			return "N/A";
 		}
 	};
@@ -222,10 +248,10 @@ export function StudentDetailPanel({
 					...student,
 					generalAverage:
 						student.enrollment?.eosyStatus === null && student.enrollment // Use enrollment average if available or fallback
-							? (student as any).generalAverage
-							: (student as any).generalAverage,
-				} as any,
-				readingProfileLevel: (student as any).readingProfileLevel,
+							? student.generalAverage
+							: student.generalAverage,
+				},
+				readingProfileLevel: student.readingProfileLevel,
 			}
 		: null;
 

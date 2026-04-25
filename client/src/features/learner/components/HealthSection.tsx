@@ -11,12 +11,20 @@ interface Props {
   learner: LearnerProfile;
 }
 
+interface ProcessedHealthRecord extends HealthRecord {
+  bmi: number;
+  category: string;
+  color: string;
+  hfa: string;
+  hfaColor: string;
+}
+
 export function HealthSection({ learner }: Props) {
   const records = learner.healthRecords || [];
   const birthDate = new Date(learner.birthDate);
   const sex = learner.sex as "Male" | "Female";
 
-  const getRecordDetails = (record: HealthRecord) => {
+  const getRecordDetails = (record: HealthRecord): ProcessedHealthRecord => {
     const age = differenceInYears(new Date(record.assessmentDate), birthDate);
     const bmiResult = computeBmi(record.weightKg, record.heightCm, age, sex);
     const hfaResult = computeHfa(record.heightCm, age, sex);
@@ -31,7 +39,7 @@ export function HealthSection({ learner }: Props) {
   const processedRecords = records.map(getRecordDetails);
   const latest = processedRecords[0];
 
-  const columns = useMemo<ColumnDef<any>[]>(
+  const columns = useMemo<ColumnDef<ProcessedHealthRecord>[]>(
     () => [
       {
         accessorKey: "schoolYear",

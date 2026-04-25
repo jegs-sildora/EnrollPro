@@ -41,6 +41,8 @@ export async function getPublicSettings(
     selectedAccentHsl: settings.selectedAccentHsl,
     activeSchoolYearId: settings.activeSchoolYearId,
     activeSchoolYearLabel: settings.activeSchoolYear?.yearLabel ?? null,
+    activeSchoolYearStatus: settings.activeSchoolYear?.status ?? null,
+    systemStatus: settings.activeSchoolYear?.status ?? "DRAFT",
     enrollmentPhase,
   });
 }

@@ -123,6 +123,21 @@ export default function EarlyRegistrationForm({
   const currentIndex =
     steps.findIndex((s) => s.id === stepper.state.current.data.id) + 1;
 
+  const validationIssues = Array.from(
+    new Map(
+      Object.entries(methods.formState.errors)
+        .flatMap(([fieldPath, errorValue]) => {
+          const collect = (val: any, path: string): Array<{ path: string; message: string }> => {
+            if (!val || typeof val !== "object") return [];
+            if (val.message) return [{ path, message: val.message }];
+            return Object.entries(val).flatMap(([k, v]) => collect(v, `${path}.${k}`));
+          };
+          return collect(errorValue, fieldPath);
+        })
+        .map((issue) => [`${issue.path}|${issue.message}`, issue]),
+    ).values(),
+  );
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   };
@@ -214,8 +229,6 @@ export default function EarlyRegistrationForm({
     "legal-consent": ["isPrivacyConsentGiven"],
   };
 
-  const hasBlockingErrors = Object.keys(methods.formState.errors).length > 0;
-
   const checkLrnAvailability = async (): Promise<boolean> => {
     if (getValues("hasNoLrn") === true) {
       clearErrors("lrn");
@@ -267,12 +280,20 @@ export default function EarlyRegistrationForm({
     const isValid = fields.length > 0 ? await trigger(fields) : true;
 
     if (!isValid) {
+      sileo.error({
+        title: "Incomplete Information",
+        description: "Please provide the following required information to proceed",
+      });
       return;
     }
 
     if (stepId === "basic-info") {
       const isLrnAvailable = await checkLrnAvailability();
       if (!isLrnAvailable) {
+        sileo.error({
+          title: "LRN Validation Failed",
+          description: "Please provide the following required information to proceed",
+        });
         return;
       }
     }
@@ -295,6 +316,39 @@ export default function EarlyRegistrationForm({
     sessionStorage.setItem(EDITING_KEY, "true");
     stepper.navigation.goTo(steps[stepId - 1].id);
     scrollToTop();
+  };
+
+  const goToValidationIssue = (fieldPath: string) => {
+    // Find step for this field
+    let stepId = "basic-info";
+    for (const [sId, fields] of Object.entries(STEP_FIELDS)) {
+      if (fields.some(f => f === fieldPath || fieldPath.startsWith(f + "."))) {
+        stepId = sId;
+        break;
+      }
+    }
+
+    const isStepChanging = stepper.state.current.data.id !== stepId;
+
+    setIsEditing(true);
+    sessionStorage.setItem(EDITING_KEY, "true");
+
+    if (isStepChanging) {
+      stepper.navigation.goTo(stepId as any);
+    }
+
+    window.setTimeout(
+      () => {
+        const target = document.getElementsByName(fieldPath).item(0);
+        if (target instanceof HTMLElement) {
+          target.scrollIntoView({ behavior: "smooth", block: "center" });
+          target.focus({ preventScroll: true });
+        } else {
+          scrollToTop();
+        }
+      },
+      isStepChanging ? 260 : 0,
+    );
   };
 
   const onSubmit = async (data: EarlyRegFormData) => {
@@ -424,7 +478,7 @@ export default function EarlyRegistrationForm({
               </AnimatePresence>
 
               {/* Global error summary */}
-              {Object.keys(methods.formState.errors).length > 0 && (
+              {validationIssues.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -432,17 +486,22 @@ export default function EarlyRegistrationForm({
                   className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl space-y-2 mt-6">
                   <div className="flex items-center gap-2 text-destructive font-bold text-sm">
                     <AlertCircle className="w-4 h-4" />
-                    Please complete the required fields below.
+                    Please provide the following required information to
+                    proceed:
                   </div>
                   <ul className="list-disc pl-6 text-xs font-bold text-destructive/80 space-y-1">
-                    {Array.from(
-                      new Set(
-                        Object.values(methods.formState.errors).flatMap(
-                          (errorValue) => collectErrorMessages(errorValue),
-                        ),
-                      ),
-                    ).map((msg, i) => (
-                      <li key={i}>{msg as string}</li>
+                    {validationIssues.map((issue, i) => (
+                      <li key={i}>
+                        <a
+                          href={`#${issue.path}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            goToValidationIssue(issue.path);
+                          }}
+                          className="underline underline-offset-2 hover:text-destructive focus:outline-none focus:ring-2 focus:ring-destructive/40 rounded-sm">
+                          {issue.message}
+                        </a>
+                      </li>
                     ))}
                   </ul>
                 </motion.div>
@@ -467,7 +526,7 @@ export default function EarlyRegistrationForm({
                     size="lg"
                     onClick={nextStep}
                     disabled={
-                      isSubmitting || hasBlockingErrors || isCheckingLrn
+                      isSubmitting || isCheckingLrn
                     }
                     className="h-12 px-8 font-semibold sm:w-auto w-full bg-primary text-primary-foreground hover:bg-primary/90">
                     {isEditing ? "Update and Review" : "Next Step"}

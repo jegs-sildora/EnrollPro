@@ -63,7 +63,7 @@ function CollapsibleSection({ title, icon, children }: SectionProps) {
   );
 }
 
-const isValid = (value: any) => {
+const isValid = (value: unknown) => {
   if (value === null || value === undefined || value === "") return false;
   const s = String(value).toUpperCase();
   return (
@@ -80,7 +80,7 @@ function DataItem({
   mutedIfInvalid = false,
 }: {
   label: string;
-  value: any;
+  value: unknown;
   mutedIfInvalid?: boolean;
 }) {
   const valid = isValid(value);
@@ -93,7 +93,7 @@ function DataItem({
         className={
           !valid ? "text-muted-foreground/50 italic font-medium" : "uppercase"
         }>
-        {valid ? value : "Not provided"}
+        {valid ? String(value) : "Not provided"}
       </span>
     </>
   );
@@ -140,15 +140,18 @@ export function PersonalInfo({ applicant }: { applicant: ApplicantDetail }) {
 }
 
 export function AddressInfo({ applicant }: { applicant: ApplicantDetail }) {
-  const addr = applicant.currentAddress || (applicant as any).address;
+  const addr = applicant.currentAddress || (applicant as unknown as { address: unknown }).address;
+
+  const addrObj = (addr as unknown) as Record<string, unknown> | null;
+  const applicantObj = applicant as unknown as Record<string, unknown>;
 
   const houseNoStreet =
-    addr?.houseNo || addr?.street || (applicant as any).houseNoStreet;
-  const sitio = addr?.sitio || (applicant as any).sitio;
-  const barangay = addr?.barangay || (applicant as any).barangay;
+    addrObj?.houseNo || addrObj?.street || applicantObj?.houseNoStreet;
+  const sitio = addrObj?.sitio || applicantObj?.sitio;
+  const barangay = addrObj?.barangay || applicantObj?.barangay;
   const cityMunicipality =
-    addr?.cityMunicipality || (applicant as any).cityMunicipality;
-  const province = addr?.province || (applicant as any).province;
+    addrObj?.cityMunicipality || applicantObj?.cityMunicipality;
+  const province = addrObj?.province || applicantObj?.province;
 
   // Visibility check
   if (
@@ -175,20 +178,25 @@ export function AddressInfo({ applicant }: { applicant: ApplicantDetail }) {
 }
 
 export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
-  const { fatherName, motherName, guardianInfo, primaryContact } =
-    applicant as any;
+  const applicantObj = applicant as unknown as { 
+    fatherName?: Record<string, unknown>; 
+    motherName?: Record<string, unknown>; 
+    guardianInfo?: Record<string, unknown>; 
+    primaryContact?: string;
+  };
+  const { fatherName, motherName, guardianInfo, primaryContact } = applicantObj;
 
-  const getContactInfo = (label: string, info: any, isPrimary: boolean) => {
-    const firstName = info?.firstName;
-    const lastName = info?.lastName || info?.maidenName;
+  const getContactInfo = (label: string, info: Record<string, unknown> | undefined, isPrimary: boolean) => {
+    const firstName = info?.firstName as string | undefined;
+    const lastName = (info?.lastName || info?.maidenName) as string | undefined;
 
     const validName = isValid(firstName) || isValid(lastName);
 
     const fullName = !validName
       ? null
-      : info.maidenName
+      : info?.maidenName
         ? `${firstName || ""} ${info.maidenName}`.trim()
-        : `${firstName || ""} ${info.lastName || ""}`.trim();
+        : `${firstName || ""} ${info?.lastName || ""}`.trim();
 
     return {
       label,
@@ -199,7 +207,7 @@ export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
         .join(" | "),
       relationship:
         info?.relationship && info.relationship !== label.toUpperCase()
-          ? info.relationship
+          ? (info.relationship as string)
           : null,
     };
   };
@@ -220,7 +228,7 @@ export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
     primaryContact === "GUARDIAN",
   );
 
-  const renderContact = (c: any) => {
+  const renderContact = (c: { label: string; fullName: string | null; isPrimary: boolean; details: string; relationship: string | null }) => {
     return (
       <React.Fragment key={c.label}>
         <span className="text-muted-foreground flex items-center gap-1.5">
@@ -270,7 +278,7 @@ export function PreviousSchool({ applicant }: { applicant: ApplicantDetail }) {
     ? Number(applicant.generalAverage).toFixed(2)
     : null;
 
-  const readingProfile = (applicant as any).readingProfileLevel?.replace(
+  const readingProfile = (applicant as unknown as { readingProfileLevel?: string }).readingProfileLevel?.replace(
     "_",
     " ",
   );

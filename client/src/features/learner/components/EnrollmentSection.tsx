@@ -10,11 +10,18 @@ interface Props {
 	learner: LearnerProfile;
 }
 
+interface EnrollmentHistoryRow {
+  schoolYear: string;
+  gradeLevel: string;
+  sectionOrSchool: string;
+  status: string;
+}
+
 export function EnrollmentSection({ learner }: Props) {
 	const currentEnrollment = learner.enrollment;
 
 	// History is not directly in the API yet, but we can show the current and previous school
-	const history = [
+	const history: EnrollmentHistoryRow[] = [
 		{
 			schoolYear: learner.schoolYear?.yearLabel || 'Current',
 			gradeLevel: learner.gradeLevel?.name || 'N/A',
@@ -32,7 +39,7 @@ export function EnrollmentSection({ learner }: Props) {
 		});
 	}
 
-  const columns = useMemo<ColumnDef<any>[]>(
+  const columns = useMemo<ColumnDef<EnrollmentHistoryRow>[]>(
     () => [
       {
         accessorKey: "schoolYear",
