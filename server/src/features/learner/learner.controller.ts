@@ -53,6 +53,7 @@ export const lookupLearnerByLrn = async (req: Request, res: Response) => {
       previousSection: latestApp?.enrollmentRecord?.section?.name ?? "N/A",
       previousGenAve: learner.previousGenAve,
       promotionStatus: learner.promotionStatus,
+      studentPhoto: learner.studentPhoto,
     });
   } catch (error) {
     console.error("Registrar learner lookup failed:", error);
@@ -144,6 +145,7 @@ export const lookupLearner = async (req: Request, res: Response) => {
         motherTongue: application.learner.motherTongue,
         religion: application.learner.religion,
         status: application.status,
+        studentPhoto: application.learner.studentPhoto,
         currentAddress: currentAddress
           ? {
               houseNumber: currentAddress.houseNoStreet,

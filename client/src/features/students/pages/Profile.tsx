@@ -19,7 +19,6 @@ import {
   ShieldCheck,
   Stethoscope,
   Users,
-  CheckCircle2,
   AlertTriangle,
   Lock,
 } from "lucide-react";
@@ -886,56 +885,72 @@ export default function StudentProfile() {
                       </CardHeader>
                       <CardContent className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {student.hasPsaBirthCertificate || student.birthCertificateType === "SECONDARY" ? (
+                      {student.hasPsaBirthCertificate || student.birthCertificateType === "PSA" || student.birthCertificateType === "SECONDARY" ? (
                       <div className={cn(
                         "flex flex-col p-6 rounded-2xl border-2 space-y-4 animate-in zoom-in-95 duration-300",
                         student.hasPsaBirthCertificate 
-                          ? "bg-emerald-50 border-emerald-100" 
+                          ? "bg-card border-emerald-200" 
                           : "bg-amber-50 border-amber-100"
                       )}>
                         <div className="flex items-center gap-3">
                           <div className={cn(
                             "p-2 rounded-lg text-white",
-                            student.hasPsaBirthCertificate ? "bg-emerald-600" : "bg-amber-600"
+                            (student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "bg-emerald-600" : "bg-amber-600"
                           )}>
-                            {student.hasPsaBirthCertificate ? <CheckCircle2 className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
+                            {(student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? <ShieldCheck className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
                           </div>
                           <div>
                             <h3 className={cn(
                               "font-black uppercase leading-none",
-                              student.hasPsaBirthCertificate ? "text-emerald-900" : "text-amber-900"
+                              (student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "text-foreground" : "text-amber-900"
                             )}>
-                              {student.hasPsaBirthCertificate ? "PSA Birth Certificate" : "Secondary Birth Document"}
+                              {(student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "PSA Birth Certificate" : "Secondary Birth Document"}
                             </h3>
                             <p className={cn(
                               "text-[10px] font-bold mt-1 uppercase tracking-widest",
-                              student.hasPsaBirthCertificate ? "text-emerald-700/70" : "text-amber-700/70"
+                              (student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "text-emerald-600" : "text-amber-700/70"
                             )}>
-                              {student.hasPsaBirthCertificate ? "Verified & Locked on File" : "Temporary Compliance (D.O. 017)"}
+                              {(student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "SECURED IN VAULT" : "Temporary Compliance (D.O. 017)"}
                             </p>
                           </div>
                         </div>
 
-                        <div className="pt-2 space-y-1">
+                        <div className={cn(
+                          "pt-3 pb-4 px-4 space-y-2 rounded-xl",
+                          (student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "bg-muted/50 border border-border" : ""
+                        )}>
                           <p className={cn(
                             "text-[10px] font-black uppercase tracking-tighter",
-                            student.hasPsaBirthCertificate ? "text-emerald-800/40" : "text-amber-800/40"
+                            (student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "text-muted-foreground/60" : "text-amber-800/40"
                           )}>Verification Metadata</p>
                           <p className={cn(
                             "text-xs font-bold",
-                            student.hasPsaBirthCertificate ? "text-emerald-900" : "text-amber-900"
+                            (student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "text-foreground" : "text-amber-900"
                           )}>
-                            Verified by: <span className="uppercase">{student.birthCertificateVerifiedBy}</span>
+                            Document Type: <span className="uppercase">{(student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "Original PSA" : "Secondary"}</span>
+                          </p>
+                          <p className={cn(
+                            "text-xs font-bold",
+                            (student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "text-foreground" : "text-amber-900"
+                          )}>
+                            Authenticated by: <span className="uppercase">{student.birthCertificateVerifiedBy || "Registrar"}</span>
                           </p>
                           <p className={cn(
                             "text-xs font-medium",
-                            student.hasPsaBirthCertificate ? "text-emerald-700" : "text-amber-700"
+                            (student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "text-muted-foreground" : "text-amber-700"
                           )}>
-                            Date: {student.birthCertificateVerifiedDate ? format(new Date(student.birthCertificateVerifiedDate), "MMMM d, yyyy") : "N/A"}
+                            Date Secured: {student.birthCertificateVerifiedDate ? format(new Date(student.birthCertificateVerifiedDate), "MMMM d, yyyy, hh:mm a") : "N/A"}
                           </p>
                         </div>
 
-                        {!student.hasPsaBirthCertificate && (
+                        {(student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? (
+                          <div className="flex items-center gap-2 bg-primary/10 p-3 rounded-lg border border-primary/20 mt-2">
+                             <Lock className="h-4 w-4 text-primary" />
+                             <p className="text-[10px] font-black uppercase tracking-widest text-primary">
+                               Vault Locked - DepEd "Once Only" Rule Satisfied
+                             </p>
+                          </div>
+                        ) : (
                           <div className="bg-white/50 p-3 rounded-lg border border-amber-200">
                              <p className="text-xs font-bold text-amber-900">
                                PSA Deadline: <span className="text-rose-600 font-black underline">October 31, 2026</span>
@@ -948,21 +963,21 @@ export default function StudentProfile() {
 
                         <div className={cn(
                           "p-3 rounded-lg border",
-                          student.hasPsaBirthCertificate ? "bg-white/50 border-emerald-100" : "bg-white/50 border-amber-100"
+                          (student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "bg-white/50 border-emerald-100" : "bg-white/50 border-amber-100"
                         )}>
                           <p className={cn(
                             "text-[10px] font-medium leading-relaxed italic",
-                            student.hasPsaBirthCertificate ? "text-emerald-800" : "text-amber-800"
+                            (student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "text-emerald-800" : "text-amber-800"
                           )}>
                             "In compliance with DepEd Order 017, s. 2025, this document is only required once and will be carried over for all future enrollments."
                           </p>
                         </div>
 
-                        {!student.hasPsaBirthCertificate && (
+                        {!(student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") && (
                            <Button 
                               variant="outline" 
                               size="sm"
-                              className="w-full border-amber-300 text-amber-800 hover:bg-amber-100 font-bold uppercase text-[10px] tracking-widest h-8"
+                              className="w-full border-amber-300 text-amber-800 hover:bg-amber-100 font-bold uppercase text-[10px] tracking-widest h-8 mt-2"
                               onClick={() => setIsAuthModalOpen(true)}
                            >
                               Update to PSA Original
@@ -988,10 +1003,10 @@ export default function StudentProfile() {
                         </div>
 
                         <Button 
-                          className="w-full h-12 bg-rose-600 hover:bg-rose-700 text-white font-black uppercase tracking-wide gap-2 shadow-lg shadow-rose-200"
+                          className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-wide gap-2 shadow-lg shadow-primary/20"
                           onClick={() => setIsAuthModalOpen(true)}
                         >
-                          <UserCheck className="h-5 w-5" />
+                          <ShieldCheck className="h-5 w-5" />
                           Verify Physical Document
                         </Button>
                       </div>

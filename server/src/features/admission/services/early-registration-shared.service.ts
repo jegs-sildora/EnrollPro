@@ -451,6 +451,7 @@ export function createEarlyRegistrationSharedService(
       lrn: learner.lrn || application.lrn,
       isPendingLrnCreation: Boolean(
         learner.isPendingLrnCreation ??
+        application.isPendingLrnCreation ??
         application.learner?.isPendingLrnCreation ??
         false,
       ),
@@ -472,7 +473,11 @@ export function createEarlyRegistrationSharedService(
         false,
       disabilityTypes:
         learner.disabilityTypes || application.disabilityTypes || [],
-      studentPhoto: learner.studentPhoto || application.studentPhoto,
+      studentPhoto: learner.studentPhoto || application.studentPhoto || null,
+      hasPsaBirthCertificate: Boolean(learner.hasPsaBirthCertificate),
+      birthCertificateType: learner.birthCertificateType || null,
+      birthCertificateVerifiedBy: learner.birthCertificateVerifiedBy || null,
+      birthCertificateVerifiedDate: learner.birthCertificateVerifiedDate || null,
 
       // Standardize address format for frontend
       currentAddress: currentAddr

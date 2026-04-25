@@ -219,6 +219,7 @@ export function StudentDetailPanel({
 					sex: student.sex,
 					birthdate: student.birthDate,
 					lrn: student.lrn,
+					studentPhoto: student.studentPhoto,
 				},
 				addresses: [
 					student.currentAddress && { ...student.currentAddress, type: "CURRENT" },

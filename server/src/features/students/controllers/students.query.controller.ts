@@ -123,6 +123,7 @@ export const createStudentsQueryController = (
           gradeLevelId: applicant.gradeLevelId,
           section: applicant.enrollmentRecord?.section?.name || null,
           sectionId: applicant.enrollmentRecord?.sectionId || null,
+          studentPhoto: applicant.learner?.studentPhoto || null,
           createdAt: applicant.createdAt,
           updatedAt: applicant.updatedAt,
         };
@@ -248,6 +249,7 @@ export const createStudentsQueryController = (
         rejectionReason: applicant.rejectionReason,
         gradeLevel: applicant.gradeLevel.name,
         gradeLevelId: applicant.gradeLevelId,
+        studentPhoto: applicant.learner?.studentPhoto || null,
         schoolYear: applicant.schoolYear.yearLabel,
         schoolYearId: applicant.schoolYearId,
         enrollment: applicant.enrollmentRecord

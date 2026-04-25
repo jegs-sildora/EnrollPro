@@ -1,0 +1,84 @@
+ENROLLPRO DATABASE TABLES & RELATIONSHIPS GUIDE
+============================================
+
+This guide explains the purpose and technical cardinality (1:1, 1:M) of each table based on the system's PostgreSQL ERD.
+
+RELATIONSHIP LEGEND
+-------------------
+1:1  : One-to-One (One record in Table A matches exactly one in Table B)
+1:M  : One-to-Many (One record in Table A can have multiple records in Table B)
+M:1  : Many-to-One (Inverse of One-to-Many)
+
+1. STAFF AND SYSTEM ACCESS
+--------------------------
+- users: Stores administrative and registrar staff accounts.
+  - Relationship [1:M]: users -> accounts (One user can link multiple OAuth providers)
+  - Relationship [1:M]: users -> audit_logs (One user generates many activity logs)
+  - Relationship [1:M]: users -> users (Self-referencing: One admin can create many users)
+- accounts: Stores OAuth identity tokens (Google/Microsoft).
+- audit_logs: Immutable security trail of staff actions.
+
+2. SCHOOL AND ACADEMIC STRUCTURE
+--------------------------------
+- school_settings: Global configuration (School Name, Logo).
+  - Relationship [M:1]: school_settings -> school_years (Points to one active academic year)
+- school_years: Academic year definitions and enrollment windows.
+  - Relationship [1:M]: school_years -> grade_levels (One year contains G7, G8, G9, G10)
+  - Relationship [1:M]: school_years -> enrollment_records (One year holds many official enrollments)
+  - Relationship [M:1]: school_years -> school_years (Self-referencing: One year cloned from a previous one)
+- grade_levels: Specific grade categories (e.g., Grade 7) for a specific year.
+  - Relationship [1:M]: grade_levels -> sections (One grade contains multiple class sections)
+- sections: Specific class groups (e.g., "7-Einstein") with capacity limits.
+  - Relationship [M:1]: sections -> teachers (One section is managed by one advising teacher)
+- departments: Administrative grouping of teachers (e.g., Science Dept).
+
+3. LEARNER IDENTITY (MASTER DATA)
+---------------------------------
+- learners: Master student record (Permanent LRN, Birth Registry info).
+  - Relationship [1:M]: learners -> early_registration_applications (Phase 1 history)
+  - Relationship [1:M]: learners -> enrollment_applications (Phase 2 history)
+  - Relationship [1:M]: learners -> health_records (Multiple SF8 nutritional logs)
+- health_records: BMI and nutritional tracking (SF8).
+
+4. PHASE 1: EARLY REGISTRATION (JAN - MAY)
+-------------------------------------------
+- early_registration_applications: Records for the "Pre-Registration" phase.
+  - Relationship [1:M]: early_registration_apps -> early_registration_assessments (Many test scores)
+  - Relationship [1:1]: early_registration_apps -> application_checklists (One document tracker)
+- early_registration_assessments: Entrance exam or interview scores.
+
+5. PHASE 2: OFFICIAL ENROLLMENT
+-------------------------------
+- enrollment_applications: Digital Basic Education Enrollment Form (BEEF).
+  - Relationship [1:1]: enrollment_apps -> enrollment_previous_schools (Unique history record)
+  - Relationship [1:1]: enrollment_apps -> enrollment_program_details (Unique SCP record)
+  - Relationship [1:1]: enrollment_apps -> application_checklists (Unique document tracker)
+  - Relationship [1:1]: enrollment_apps -> enrollment_records (One application yields one official slot)
+  - Relationship [M:1]: enrollment_apps -> early_registration_apps (Link from Phase 1 to Phase 2)
+- enrollment_previous_schools: Records for transferees (Previous GPA, School Name).
+- enrollment_program_details: Choice-specific data for programs like STE or Arts.
+- application_addresses: Physical location data (Current vs Permanent).
+  - Relationship [M:1]: application_addresses -> early_registration_apps
+  - Relationship [M:1]: application_addresses -> enrollment_apps
+- application_family_members: Parents/Guardian data and contact numbers.
+  - Relationship [M:1]: application_family_members -> early_registration_apps
+  - Relationship [M:1]: application_family_members -> enrollment_apps
+- application_checklists: Tracking for SF9, PSA Birth Cert, and other documents.
+- enrollment_records: The official "Enrolled" status linking a student to a Section.
+
+6. SPECIAL CURRICULAR PROGRAMS (SCP)
+------------------------------------
+- scp_program_configs: Rules/Criteria for programs like STE (Science) or SPA (Arts).
+  - Relationship [1:M]: scp_program_configs -> scp_program_steps (Admission pipeline steps)
+  - Relationship [1:M]: scp_program_configs -> scp_program_options (Program choices/fields)
+- scp_program_steps: Ordered admission steps (e.g., 1. Exam, 2. Interview).
+- scp_program_options: Specific options (e.g., Sports Table -> "Basketball", "Volleyball").
+
+7. FACULTY AND INTEGRATION
+--------------------------
+- teachers: Faculty profile data.
+  - Relationship [1:M]: teachers -> teacher_subjects (List of subjects taught)
+  - Relationship [1:M]: teachers -> teacher_designations (Yearly workload/roles)
+- teacher_subjects: Subject specialization of a teacher.
+- teacher_designations: Roles like "Grade Level Coordinator" for a specific year.
+- atlas_sync_events: Integration logs tracking data flow to external DepEd systems.

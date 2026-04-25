@@ -276,6 +276,7 @@ export function ApplicationDetailPanel({
           learnerType={applicant.learnerType}
           checklist={applicant.checklist}
           documents={applicant.documents}
+          hasPsaBirthCertificate={applicant.hasPsaBirthCertificate}
           endpointBase={endpointBase}
           onRefresh={refetch}
           onMandatoryStatusChange={setMandatoryMet}

@@ -348,6 +348,7 @@ export default function EarlyRegistrationDetail() {
                         learnerType={applicant.learnerType}
                         checklist={applicant.checklist}
                         documents={applicant.documents}
+                        hasPsaBirthCertificate={applicant.hasPsaBirthCertificate}
                         endpointBase="/early-registrations"
                         onRefresh={refetch}
                       />

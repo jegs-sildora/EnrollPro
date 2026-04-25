@@ -173,7 +173,7 @@ export interface ApplicantDetail {
   placeOfBirth: string | null;
   religion: string | null;
   motherTongue: string | null;
-  currentAddress: Address;
+  currentAddress: Address | null;
   permanentAddress: Address | null;
   motherName: ParentInfo;
   fatherName: ParentInfo;

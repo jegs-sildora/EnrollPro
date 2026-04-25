@@ -60,6 +60,7 @@ import { BatchSectioningWizard } from "@/features/enrollment/components/BatchSec
 import { BatchSectioningParamsModal } from "@/features/enrollment/components/BatchSectioningParamsModal";
 import { ApplicationDetailPanel } from "@/features/enrollment/components/ApplicationDetailPanel";
 import { ScheduleExamDialog } from "@/features/enrollment/components/ScheduleExamDialog";
+import { UserPhoto } from "@/shared/components/UserPhoto";
 import { StatusBadge } from "@/features/enrollment/components/StatusBadge";
 import { EnrollmentWorkflowTabs } from "@/features/enrollment/components/EnrollmentWorkflowTabs";
 import { BatchConfirmationModal } from "@/features/enrollment/components/BatchConfirmationModal";
@@ -103,6 +104,7 @@ interface Application {
     section?: { id: number; name: string } | null;
   } | null;
   section?: { name: string } | null;
+  studentPhoto?: string | null;
 }
 
 interface GradeLevel {
@@ -874,14 +876,21 @@ export default function Enrollment() {
         />
       ),
       cell: ({ row }) => (
-        <div className="flex flex-col text-left min-w-[200px]">
-          <span className="font-bold text-sm uppercase">
-            {row.original.lastName}, {row.original.firstName}
-          </span>
-          <span className="text-[11px] font-black text-muted-foreground tracking-tighter">
-            {row.original.lrn ||
-              (row.original.isPendingLrnCreation ? "PENDING" : "NO LRN")}
-          </span>
+        <div className="flex items-center gap-3 min-w-[200px]">
+          <UserPhoto
+            photo={row.original.studentPhoto}
+            containerClassName="w-10 h-10 rounded-full border shadow-sm shrink-0"
+            alt={`${row.original.lastName} photo`}
+          />
+          <div className="flex flex-col text-left">
+            <span className="font-bold text-sm uppercase leading-tight">
+              {row.original.lastName}, {row.original.firstName}
+            </span>
+            <span className="text-[11px] font-black text-muted-foreground tracking-tighter">
+              {row.original.lrn ||
+                (row.original.isPendingLrnCreation ? "PENDING" : "NO LRN")}
+            </span>
+          </div>
         </div>
       ),
     });

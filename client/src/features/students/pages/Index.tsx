@@ -99,6 +99,7 @@ interface Student {
   sectionId: number | null;
   createdAt: string;
   updatedAt: string;
+  studentPhoto?: string | null;
 }
 
 interface StudentDetail extends Student {

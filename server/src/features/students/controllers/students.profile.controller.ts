@@ -326,14 +326,31 @@ export const createStudentsProfileController = (
 
       const verifierName = verifier ? `${verifier.firstName} ${verifier.lastName}` : "Unknown Admin";
 
-      // 2. Update Learner record
-      const applicant = await deps.prisma.enrollmentApplication.findUnique({
+      // 2. Find application (polymorphic lookup)
+      let applicant: any = await deps.prisma.enrollmentApplication.findUnique({
         where: { id: parsedId },
         include: { learner: true },
       });
 
+      let appType: "ENROLLMENT" | "EARLY_REGISTRATION" = "ENROLLMENT";
+
+      if (!applicant) {
+        applicant = await deps.prisma.earlyRegistrationApplication.findUnique({
+          where: { id: parsedId },
+          include: { learner: true },
+        });
+        appType = "EARLY_REGISTRATION";
+      }
+
       if (!applicant) {
         return res.status(404).json({ message: "Student not found" });
+      }
+
+      // Check if already PSA verified - Lock the vault
+      if (applicant.learner.hasPsaBirthCertificate) {
+        return res.status(400).json({ 
+          message: "PSA Birth Certificate is already verified and locked in vault per DepEd Order 017, s. 2025." 
+        });
       }
 
       await deps.prisma.$transaction(async (tx) => {
@@ -360,16 +377,28 @@ export const createStudentsProfileController = (
           });
         }
 
-        // 3. Automatically update the checklist for the current enrollment application
-        await tx.applicationChecklist.updateMany({
-          where: { enrollmentId: parsedId },
-          data: {
-            isPsaBirthCertPresented: true, // This allows the enrollment to proceed
-            isSecondaryBirthDocPresented: !isPsa,
-            isOriginalPsaBcCollected: isPsa,
-            updatedById: userId,
-          },
-        });
+        // 3. Automatically update the checklist for the current application
+        if (appType === "ENROLLMENT") {
+          await tx.applicationChecklist.updateMany({
+            where: { enrollmentId: parsedId },
+            data: {
+              isPsaBirthCertPresented: true, // This allows the enrollment to proceed
+              isSecondaryBirthDocPresented: !isPsa,
+              isOriginalPsaBcCollected: isPsa,
+              updatedById: userId,
+            },
+          });
+        } else {
+          await tx.applicationChecklist.updateMany({
+            where: { earlyRegistrationId: parsedId },
+            data: {
+              isPsaBirthCertPresented: true,
+              isSecondaryBirthDocPresented: !isPsa,
+              isOriginalPsaBcCollected: isPsa,
+              updatedById: userId,
+            },
+          });
+        }
       });
 
       await deps.prisma.auditLog.create({
@@ -379,8 +408,8 @@ export const createStudentsProfileController = (
           description: isPsa 
             ? `Verified PSA Birth Certificate for ${applicant.learner.firstName} ${applicant.learner.lastName} (Permanently Locked)` 
             : `Verified Secondary Birth Document for ${applicant.learner.firstName} ${applicant.learner.lastName} (Temporary Clearance)`,
-          subjectType: "Learner",
-          recordId: applicant.learnerId,
+          subjectType: appType === "ENROLLMENT" ? "EnrollmentApplication" : "EarlyRegistrationApplication",
+          recordId: parsedId,
           ipAddress: req.ip || "unknown",
           userAgent: req.headers["user-agent"] || null,
         },

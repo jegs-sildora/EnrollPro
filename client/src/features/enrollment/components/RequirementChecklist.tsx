@@ -48,6 +48,7 @@ interface Props {
   onRefresh: () => void;
   onMandatoryStatusChange?: (isMet: boolean) => void;
   readOnly?: boolean;
+  hasPsaBirthCertificate?: boolean;
 }
 
 type ChecklistFieldKey = keyof Omit<
@@ -235,6 +236,7 @@ export function RequirementChecklist({
   onRefresh,
   onMandatoryStatusChange,
   readOnly = false,
+  hasPsaBirthCertificate = false,
 }: Props) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isLoadingRequirements, setIsLoadingRequirements] = useState(true);
@@ -330,6 +332,11 @@ export function RequirementChecklist({
     // If the API explicitly marks it as met (e.g. Once-Only rule), prioritize that
     const apiReq = requirements.find((r) => r.type === requirement.type);
     if ((apiReq as any)?.isMet) return "met";
+
+    // Vault Override: If PSA is already verified in the learner's vault, it's permanently met
+    if (requirement.type === "PSA_BIRTH_CERTIFICATE" && hasPsaBirthCertificate) {
+      return "met";
+    }
 
     if (requirement.checklistKey) {
       return localChecklist[requirement.checklistKey] ? "met" : "missing";
@@ -511,7 +518,13 @@ export function RequirementChecklist({
                       if (!req.checklistKey) return;
                       handleToggle(req.checklistKey, !!checked);
                     }}
-                    disabled={readOnly || isUpdating || !req.checklistKey}
+                    disabled={
+                      readOnly ||
+                      isUpdating ||
+                      !req.checklistKey ||
+                      (req.type === "PSA_BIRTH_CERTIFICATE" &&
+                        hasPsaBirthCertificate)
+                    }
                     className="shrink-0"
                   />
                   <div className="flex-1 space-y-1 overflow-hidden">
