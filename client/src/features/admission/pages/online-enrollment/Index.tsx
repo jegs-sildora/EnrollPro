@@ -35,7 +35,7 @@ export default function Apply() {
   const [submittedSuccessData, setSubmittedSuccessData] =
     useState<EnrollmentSubmitSuccessPayload | null>(null);
 
-  const { schoolName, logoUrl, enrollmentPhase } = useSettingsStore();
+  const { schoolName, logoUrl, enrollmentPhase, activeSchoolYearLabel } = useSettingsStore();
   const isClosed = enrollmentPhase === "CLOSED";
 
   const handleAccept = () => {
@@ -143,7 +143,7 @@ export default function Apply() {
           isClosed={isClosed}
           logoUrl={logoUrl}
           schoolName={schoolName}
-          title="BASIC EDUCATION ENROLLMENT FORM"
+          title={`S.Y. ${activeSchoolYearLabel} ADMISSIONS`}
         />
 
         <main
@@ -184,10 +184,10 @@ export default function Apply() {
                   </div>
                   <div className="space-y-4 max-w-lg mx-auto">
                     <h3 className="text-xl sm:text-2xl font-bold text-black">
-                      BASIC EDUCATION ENROLLMENT FORM is Currently Closed
+                      {activeSchoolYearLabel || "Admissions"} Portal is Currently Closed
                     </h3>
                     <p className="text-sm sm:text-base text-black leading-relaxed">
-                      The online portal for BASIC EDUCATION ENROLLMENT FORM is
+                      The online portal for {activeSchoolYearLabel || "Admissions"} is
                       not currently accepting applications. Registration periods
                       are scheduled according to the DepEd school calendar.
                     </p>
@@ -257,6 +257,7 @@ export default function Apply() {
                       exit={{ opacity: 0, scale: 1.02 }}
                       transition={{ duration: 0.4, ease: "easeOut" }}>
                       <EarlyRegistrationForm
+                        onBack={() => setIntakeChoice(null)}
                         onSuccess={(data) => setSubmittedSuccessData(data)}
                       />
                     </motion.div>

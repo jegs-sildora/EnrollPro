@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Card, CardTitle, CardContent, CardDescription, CardFooter } from "@/shared/ui/card";
+import { Card, CardTitle, CardContent, CardDescription} from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -17,7 +17,7 @@ interface ReturningLearnerFlowProps {
 }
 
 export function ReturningLearnerFlow({ onBack, onSuccess }: ReturningLearnerFlowProps) {
-  const { activeSchoolYearId } = useSettingsStore();
+  const { activeSchoolYearId, activeSchoolYearLabel } = useSettingsStore();
   const [lrn, setLrn] = useState("");
   const [loading, setLoading] = useState(false);
   const [learner, setLearner] = useState<any>(null);
@@ -87,7 +87,7 @@ export function ReturningLearnerFlow({ onBack, onSuccess }: ReturningLearnerFlow
 
       sileo.success({
         title: "Confirmation Received!",
-        description: `Your child's enrollment for S.Y. 2026-2027 has been confirmed.`
+        description: `Your child's enrollment for ${activeSchoolYearLabel || "S.Y. 2026-2027"} has been confirmed.`
       });
 
       onSuccess(res.data.application);
@@ -99,23 +99,27 @@ export function ReturningLearnerFlow({ onBack, onSuccess }: ReturningLearnerFlow
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4 md:p-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-400">
-      <Button variant="ghost" onClick={onBack} className="group font-bold text-muted-foreground">
-        <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" /> Back to Selection
+    <div className="max-w-6xl mx-auto p-4 md:p-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-400">
+      <Button 
+        onClick={onBack} 
+        className="group font-black uppercase tracking-widest bg-emerald-600 text-white shadow-md transition-all px-6"
+      >
+        <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" /> 
+        Back to Selection
       </Button>
 
       <Card className="border-2 border-emerald-100 shadow-xl overflow-hidden bg-background">
         <div className="bg-emerald-600 px-6 py-8 text-white text-center">
           <UserCheck className="h-12 w-12 mx-auto mb-4" />
-          <CardTitle className="text-2xl font-black uppercase tracking-tight">Returning Student Confirmation</CardTitle>
-          <CardDescription className="text-emerald-100 font-medium mt-2">
-            Streamlined enrollment for learners returning for the next grade level.
+          <CardTitle className="text-2xl font-black uppercase">Continuing Learner Confirmation</CardTitle>
+          <CardDescription className="text-white font-semibold mt-2">
+            Streamlined enrollment for learners moving up to the next grade level.
           </CardDescription>
         </div>
 
         <CardContent className="p-8 space-y-8">
           <div className="space-y-3">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+            <Label className="text-sm font-black uppercase tracking-widest text-foreground">
               1. Enter Learner's 12-Digit LRN
             </Label>
             <div className="relative">
@@ -184,7 +188,7 @@ export function ReturningLearnerFlow({ onBack, onSuccess }: ReturningLearnerFlow
                   className="mt-1 border-emerald-500 data-[state=checked]:bg-emerald-600"
                 />
                 <Label htmlFor="confirm-enroll" className="text-sm font-bold leading-relaxed cursor-pointer select-none text-foreground">
-                  I hereby confirm the enrollment of this learner for the School Year 2026-2027. 
+                  I hereby confirm the enrollment of this learner for the School Year {activeSchoolYearLabel || "2026-2027"}. 
                   I certify that all information in the existing records is still accurate.
                 </Label>
               </div>
@@ -206,11 +210,6 @@ export function ReturningLearnerFlow({ onBack, onSuccess }: ReturningLearnerFlow
             </div>
           )}
         </CardContent>
-        <CardFooter className="bg-muted/20 border-t p-4 text-center">
-          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest w-full">
-            Validated via National Learner Information System
-          </p>
-        </CardFooter>
       </Card>
     </div>
   );

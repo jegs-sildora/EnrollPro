@@ -235,8 +235,10 @@ type EnrollmentSubmitSuccessPayload = Pick<
 
 export default function EnrollmentForm({
   onSuccess,
+  onBack,
 }: {
   onSuccess?: (data: EnrollmentSubmitSuccessPayload) => void;
+  onBack?: () => void;
 }) {
   const [initialDraft] = useState(() => {
     const draft = sessionStorage.getItem(DRAFT_KEY);
@@ -629,6 +631,15 @@ export default function EnrollmentForm({
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-0">
+      {onBack && (
+        <Button 
+          onClick={onBack} 
+          className="mb-6 group font-black uppercase bg-primary text-white hover:bg-primary/90 shadow-md transition-all px-6"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" /> 
+          Back to Selection
+        </Button>
+      )}
       <StepProgressBar
         currentStep={currentIndex}
         totalSteps={steps.length}

@@ -10,7 +10,6 @@ import { useNavigate, useSearchParams } from "react-router";
 import {
   Search,
   Eye,
-  Download,
   RefreshCw,
   FileCheck2,
   School,
@@ -244,7 +243,6 @@ export default function Enrollment() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [isExportingLis, setIsExportingLis] = useState(false);
   const [workflowView, setWorkflowView] = useState<EnrollmentSubMenu>(() =>
     resolveWorkflowFromQuery(workflowParam),
   );
@@ -421,10 +419,6 @@ export default function Enrollment() {
   );
 
   const visibleApplications = useMemo(() => {
-    if (workflowView !== "PENDING_VERIFICATION") {
-      return applications;
-    }
-
     if (pendingQueueFilter === "ALL") {
       return applications;
     }
@@ -440,7 +434,7 @@ export default function Enrollment() {
 
       return application.learnerType === "CONTINUING";
     });
-  }, [applications, pendingQueueFilter, workflowView]);
+  }, [applications, pendingQueueFilter]);
 
   const resetWalkInGate = useCallback(() => {
     setWalkInLrn("");
@@ -1251,12 +1245,6 @@ export default function Enrollment() {
     setSelectedId,
   ]);
 
-  useEffect(() => {
-    if (workflowView !== "PENDING_VERIFICATION") {
-      setPendingQueueFilter("ALL");
-    }
-  }, [workflowView]);
-
   // --- Resizable Panel Logic (Fluid Percentage) ---
   const [panelPercentage, setPanelPercentage] = useState(45);
   const isResizing = useRef(false);
@@ -1302,57 +1290,6 @@ export default function Enrollment() {
 
     setPage(1);
   }, [workflowParam, searchParam, handleWorkflowViewChange]);
-
-  const handleExportLis = async () => {
-    if (workflowView !== "OFFICIAL_ROSTER") {
-      sileo.error({
-        title: "Official Roster Required",
-        description:
-          "Switch to Official Roster before exporting LIS Master CSV.",
-      });
-      return;
-    }
-
-    if (!ayId) return;
-
-    setIsExportingLis(true);
-    try {
-      const response = await api.get("/applications/exports/lis-master", {
-        params: { schoolYearId: ayId },
-        responseType: "blob",
-      });
-
-      const contentDisposition =
-        (response.headers?.["content-disposition"] as string | undefined) ?? "";
-      const fileNameMatch = contentDisposition.match(
-        /filename\*?=(?:UTF-8''|")?([^";]+)/i,
-      );
-      const fileName = fileNameMatch?.[1]
-        ? decodeURIComponent(fileNameMatch[1].replace(/"/g, ""))
-        : `lis-master-${ayId}.csv`;
-
-      const blob = new Blob([response.data], {
-        type: "text/csv;charset=utf-8;",
-      });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-
-      sileo.success({
-        title: "LIS Export Ready",
-        description: "Master CSV downloaded successfully.",
-      });
-    } catch (err) {
-      toastApiError(err as never);
-    } finally {
-      setIsExportingLis(false);
-    }
-  };
 
   const handleEnroll = async () => {
     if (!selectedApp) return;
@@ -1470,25 +1407,6 @@ export default function Enrollment() {
               />
               Refresh
             </Button>
-
-            <Button
-              variant="outline"
-              className={`h-10 px-3 flex-1 md:flex-none text-sm font-bold ${
-                workflowView !== "OFFICIAL_ROSTER"
-                  ? "opacity-60 cursor-not-allowed"
-                  : ""
-              }`}
-              onClick={handleExportLis}
-              disabled={
-                isExportingLis || !ayId || workflowView !== "OFFICIAL_ROSTER"
-              }>
-              <Download className="h-4 w-4 mr-2" />
-              {isExportingLis
-                ? "Exporting LIS..."
-                : workflowView === "OFFICIAL_ROSTER"
-                  ? "Export LIS Master CSV"
-                  : "Export LIS (Official Roster Only)"}
-            </Button>
           </div>
         </div>
 
@@ -1534,30 +1452,28 @@ export default function Enrollment() {
               </Button>
             </div>
 
-            {workflowView === "PENDING_VERIFICATION" && (
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Queue Filter
-                </span>
-                {PENDING_QUEUE_FILTER_OPTIONS.map((option) => (
-                  <Button
-                    key={option.value}
-                    type="button"
-                    variant={
-                      pendingQueueFilter === option.value
-                        ? "default"
-                        : "outline"
-                    }
-                    size="sm"
-                    className="h-8 text-sm font-bold"
-                    onClick={() => {
-                      setPendingQueueFilter(option.value);
-                    }}>
-                    {option.label}
-                  </Button>
-                ))}
-              </div>
-            )}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                Queue Filter
+              </span>
+              {PENDING_QUEUE_FILTER_OPTIONS.map((option) => (
+                <Button
+                  key={option.value}
+                  type="button"
+                  variant={
+                    pendingQueueFilter === option.value
+                      ? "default"
+                      : "outline"
+                  }
+                  size="sm"
+                  className="h-8 text-sm font-bold"
+                  onClick={() => {
+                    setPendingQueueFilter(option.value);
+                  }}>
+                  {option.label}
+                </Button>
+              ))}
+            </div>
           </CardHeader>
 
           <CardContent className="px-3 sm:px-6 max-w-full overflow-hidden">
