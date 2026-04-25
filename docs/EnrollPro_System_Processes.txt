@@ -1,0 +1,75 @@
+EnrollPro System Processes - Use Case & Process Guide
+Scope: Junior High School (Grades 7-10)
+
+--------------------------------------------------------------------------------
+ACTOR 1: SYSTEM ADMINISTRATOR / SCHOOL HEAD
+--------------------------------------------------------------------------------
+1. System Setup & Configuration
+   - Manage Academic School Year (Activate/Deactivate).
+   - Define Enrollment Gate Windows (Schedule early registration and official enrollment phases).
+   - Manage Grade Levels and Sections (Create sections, define capacities, set program types).
+   - Configure Special Curricular Programs (SCP) (Define program names, e.g., STE, SPA).
+   - Establish SCP Admission Criteria (Define Gate 1 prerequisites and Gate 3 algorithmic ranking weights).
+
+2. Personnel & Security Management
+   - Manage Teacher Profiles (Create, update, deactivate).
+   - Assign Class Advisers to specific sections.
+   - Manage System User Accounts (Provision Registrar access, manage roles).
+   - Monitor System Audit Logs (Track user actions and system changes).
+
+--------------------------------------------------------------------------------
+ACTOR 2: SCHOOL REGISTRAR
+--------------------------------------------------------------------------------
+1. Early Registration & Screening (Phase 1)
+   - Process Early Registration Applications (For incoming Grade 7, Transferees, and Balik-Aral learners).
+   - Verify Learner Reference Numbers (LRN) and academic prerequisites.
+   - Encode SCP Assessment Scores (Input raw scores for Gate 2 screening).
+   - Finalize SCP Qualifications (Approve/Reject based on system ranking).
+
+2. Official Enrollment Management (Phase 2)
+   - Process Walk-In Enrollment (Encode Basic Education Enrollment Form [BEEF] for Grade 7 and Transferees).
+   - Process Batch Confirmation Slips (Rapid intake of returning Grade 8-10 learners).
+   - Encode Health and Reading Data (Input Brigada Kalusugan BMI and Reading levels).
+   - Manage Documentary Requirements (Verify physical documents and lock the "Once Only" Birth Certificate vault).
+   - Manage Temporary Enrollments (Flag learners with missing documents or unsettled obligations, monitor grace periods).
+   - Finalize Learner Status (Transition verified learners to "Ready for Sectioning").
+
+3. Sectioning & Late Enrollee Management (Phase 3)
+   - Execute Batch Sectioning Assignment (Trigger the autonomous sorting engine for the locked batch).
+   - Process Late Enrollees / Inline Slotting (Manually assign walk-in learners to pre-locked sections based on real-time capacity).
+   - Notify Grading System of Late Additions (Trigger data update to the external grading system).
+
+4. Student Information & Integration
+   - Manage Student Records (Search, view, and update demographic and academic history).
+   - Manage Learner Credentials (Reset portal PINs).
+   - Process Transferee Records (Automate digital SF10 requests).
+   - Generate National Enrollment Reports (Export LIS Beginning of School Year [BOSY] rosters).
+   - Synchronize Master Rosters (Push finalized section data to external Scheduling and Grading systems).
+
+--------------------------------------------------------------------------------
+ACTOR 3: PARENT / GUARDIAN
+--------------------------------------------------------------------------------
+1. Application & Consent
+   - Submit Early Registration Application (Online submission for Grade 7/Transferees).
+   - Submit Enrollment Confirmation (Provide physical consent via Drop-Box for returning Grades 8-10).
+   - Monitor Application Status (Track enrollment progress via the Learner Portal).
+
+--------------------------------------------------------------------------------
+ACTOR 4: LEARNER
+--------------------------------------------------------------------------------
+1. Portal Access
+   - Access Learner Portal (Login using LRN and PIN).
+   - View Academic Placement (View finalized Grade Level, Section, and Class Adviser).
+
+--------------------------------------------------------------------------------
+SYSTEM (AUTONOMOUS PROCESSES)
+--------------------------------------------------------------------------------
+1. Autonomous Sorting Engine
+   - Allocate SCP Sections (Assign qualified learners based on program hard caps).
+   - Allocate Star Sections (Assign top-performing learners to homogeneous sections based on external grading data).
+   - Allocate Standard Sections (Distribute remaining learners evenly across heterogeneous sections via round-robin).
+
+2. Policy & Constraint Enforcement
+   - Enforce Capacity Limits (Prevent over-enrollment in specific sections).
+   - Enforce No Collection Policy (Ensure financial flags do not block enrollment progression).
+   - Enforce Document Validations (Automatically flag learners as Temporarily Enrolled if mandatory fields are missing).

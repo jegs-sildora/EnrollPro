@@ -253,7 +253,7 @@ export default function EnrollmentSuccess({
               <div
                 style={{ backgroundColor: "#061E29", color: "#ffffff" }}
                 className="px-4 py-2  text-xs font-bold">
-                VALID_AUTHENTIC_SUBMISSION_{trackingNumber.replace(/-/g, "_")}
+                VALID_AUTHENTIC_SUBMISSION_{trackingNumber?.replace(/-/g, "_") || "PENDING"}
               </div>
             </div>
             <div className="text-right space-y-1">

@@ -260,7 +260,7 @@ export default function EarlyRegSuccessView({
               <div
                 style={{ backgroundColor: "#061E29", color: "#ffffff" }}
                 className="px-4 py-2  text-xs font-bold uppercase">
-                VALID_EARLY_REG_{trackingNumber.replace(/-/g, "_")}
+                VALID_EARLY_REG_{trackingNumber?.replace(/-/g, "_") || "PENDING"}
               </div>
             </div>
             <div className="text-right space-y-1">

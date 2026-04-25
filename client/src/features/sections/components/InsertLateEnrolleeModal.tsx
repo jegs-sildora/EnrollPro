@@ -199,7 +199,7 @@ export function InsertLateEnrolleeModal({
                               </Badge>
                             ) : (
                               <Badge variant="secondary" className="text-[9px] font-black uppercase">
-                                {learner.applicantType.replace(/_/g, ' ')}
+                                {learner.applicantType?.replace(/_/g, ' ')}
                               </Badge>
                             )}
                           </div>

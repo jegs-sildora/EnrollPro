@@ -1420,7 +1420,7 @@ export default function Enrollment() {
 
   return (
     <div className="flex relative w-full min-w-0 overflow-hidden">
-      <div className="flex-1 min-w-0 flex flex-col space-y-4 sm:space-y-6 px-2 sm:px-0 pb-24">
+      <div className="flex-1 min-w-0 flex flex-col space-y-4 sm:space-y-6 px-2 sm:px-0">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">

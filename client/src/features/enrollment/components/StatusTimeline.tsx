@@ -36,7 +36,7 @@ export function StatusTimeline({ applicant }: Props) {
 	) {
 		const statusLabel =
 			STATUS_CONFIG[applicant.status]?.label ||
-			applicant.status.replace('_', ' ');
+			applicant.status?.replace('_', ' ');
 		timeline.push({
 			date: new Date(applicant.updatedAt),
 			label: `Status changed to ${statusLabel}`,

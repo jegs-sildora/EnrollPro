@@ -114,7 +114,7 @@ export default function StudentProfile() {
                   student.status === "ENROLLED" ? "bg-green-600" : "",
                   student.status === "TEMPORARILY_ENROLLED" && "bg-amber-100 text-amber-800 border-amber-300"
                 )}>
-                {student.status.replace("_", " ")}
+                {student.status?.replace("_", " ")}
               </Badge>
             </div>
 
@@ -719,7 +719,7 @@ export default function StudentProfile() {
                     <span className="text-muted-foreground flex items-center gap-2">
                       <UserCheck className="h-3.5 w-3.5" /> Learner Type:
                     </span>
-                    <span className="uppercase">{student.learnerType.replace("_", " ")}</span>
+                    <span className="uppercase">{student.learnerType?.replace("_", " ")}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between items-center">
