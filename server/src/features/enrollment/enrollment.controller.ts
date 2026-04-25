@@ -73,6 +73,110 @@ export async function confirmConfirmationSlip(req: Request, res: Response) {
 }
 
 /**
+ * POST /api/enrollment/batch-confirm
+ * Rapid batch processing for Grade 8-10 confirmation slips.
+ */
+export async function batchConfirmConfirmationSlips(
+  req: Request,
+  res: Response,
+) {
+  const { batch } = req.body as {
+    batch: {
+      learnerId: number;
+      schoolYearId: number;
+      gradeLevelId: number;
+      guardianName: string;
+      contactNumber: string;
+      isEnrolling: boolean;
+      intakeMethod?: string;
+    }[];
+  };
+  const userId = (req as any).user.id;
+
+  if (!batch || !Array.isArray(batch)) {
+    return res.status(400).json({ message: "Batch array is required." });
+  }
+
+  try {
+    const results = await prisma.$transaction(async (tx) => {
+      const updates = [];
+
+      for (const entry of batch) {
+        const {
+          learnerId,
+          schoolYearId,
+          gradeLevelId,
+          guardianName,
+          contactNumber,
+          isEnrolling,
+          intakeMethod = "BATCH_CONFIRMATION",
+        } = entry;
+
+        // Create or update EnrollmentApplication
+        const app = await tx.enrollmentApplication.upsert({
+          where: {
+            // Find existing application for this learner and school year
+            // Note: Since we don't have a unique constraint on (learnerId, schoolYearId) for EnrollmentApplication
+            // we'll use a findFirst check or rely on the assumption of one app per sy.
+            // Actually, uq_early_reg_per_sy exists on EarlyRegistrationApplication, but not on BEEF.
+            // Let's find by learnerId and schoolYearId first.
+            id:
+              (
+                await tx.enrollmentApplication.findFirst({
+                  where: { learnerId, schoolYearId },
+                  select: { id: true },
+                })
+              )?.id || -1,
+          },
+          create: {
+            learnerId,
+            schoolYearId,
+            gradeLevelId,
+            status: isEnrolling ? "READY_FOR_SECTIONING" : "TRANSFERRING_OUT",
+            intakeMethod: "CONFIRMATION_SLIP",
+            admissionChannel: "F2F",
+            encodedById: userId,
+            guardianName,
+            contactNumber,
+            confirmationConsent: isEnrolling,
+            batchIntakeMethod: intakeMethod,
+            checklist: {
+              create: {
+                academicStatus: "PROMOTED",
+                isConfirmationSlipReceived: true,
+                isSf9Submitted: true,
+              },
+            },
+          },
+          update: {
+            gradeLevelId,
+            status: isEnrolling ? "READY_FOR_SECTIONING" : "TRANSFERRING_OUT",
+            guardianName,
+            contactNumber,
+            confirmationConsent: isEnrolling,
+            batchIntakeMethod: intakeMethod,
+          },
+        });
+
+        updates.push(app);
+      }
+      return updates;
+    });
+
+    return res.json({
+      success: true,
+      message: `Successfully processed ${results.length} confirmation slips.`,
+      processedCount: results.length,
+    });
+  } catch (error) {
+    console.error("Batch confirmation failed:", error);
+    return res
+      .status(500)
+      .json({ message: "Error processing batch confirmation." });
+  }
+}
+
+/**
  * POST /api/enrollment/sync-smart-grades
  * Intercepts grade data from S.M.A.R.T. and updates the local Learner database.
  * Supports live Tailscale node fetching with a graceful mock fallback for demo day.

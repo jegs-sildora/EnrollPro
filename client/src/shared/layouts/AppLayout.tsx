@@ -17,7 +17,6 @@ import {
   GraduationCap,
   Shield,
   Activity,
-  Mail,
   AlertTriangle,
   TrendingUp,
 } from "lucide-react";

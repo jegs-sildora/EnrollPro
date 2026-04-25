@@ -15,6 +15,7 @@ import {
   FileCheck2,
   School,
   UserPlus,
+  UserCheck,
   LogOut,
   Loader2,
 } from "lucide-react";
@@ -60,7 +61,7 @@ import { ApplicationDetailPanel } from "@/features/enrollment/components/Applica
 import { ScheduleExamDialog } from "@/features/enrollment/components/ScheduleExamDialog";
 import { StatusBadge } from "@/features/enrollment/components/StatusBadge";
 import { EnrollmentWorkflowTabs } from "@/features/enrollment/components/EnrollmentWorkflowTabs";
-import { ConfirmationSlipModal } from "@/features/enrollment/components/ConfirmationSlipModal";
+import { BatchConfirmationModal } from "@/features/enrollment/components/BatchConfirmationModal";
 import { useSectioningStore } from "@/store/sectioning.slice";
 import {
   ENROLLMENT_SUB_MENU_DESCRIPTIONS,
@@ -340,7 +341,7 @@ export default function Enrollment() {
   const [loadingGradeLevels, setLoadingGradeLevels] = useState(false);
 
   const [isWalkInGateOpen, setIsWalkInGateOpen] = useState(false);
-  const [isConfirmSlipModalOpen, setIsConfirmSlipModalOpen] = useState(false);
+  const [isBatchConfirmSlipModalOpen, setIsBatchConfirmSlipModalOpen] = useState(false);
   const [walkInLrn, setWalkInLrn] = useState("");
   const [walkInNoLrn, setWalkInNoLrn] = useState(false);
   const [isWalkInGateChecking, setIsWalkInGateChecking] = useState(false);
@@ -898,7 +899,7 @@ export default function Enrollment() {
         <div className="flex justify-center">
           <Badge
             variant="outline"
-            className="font-bold px-2 py-0.5 h-auto border-slate-300 text-xs leading-tight text-center">
+            className="font-bold px-2 py-0.5 h-auto border-slate-300 text-sm leading-tight text-center">
             {formatScpType(row.original.applicantType)}
           </Badge>
         </div>
@@ -960,7 +961,7 @@ export default function Enrollment() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 text-xs font-bold"
+                  className="h-7 text-sm font-bold"
                   onClick={() => openReadingProfileDialog(app)}>
                   <FileCheck2 className="h-3 w-3 mr-1" />
                   Set Profile
@@ -973,7 +974,7 @@ export default function Enrollment() {
             <div className="flex justify-center">
               <Badge
                 variant="outline"
-                className="font-bold px-2 py-0.5 h-auto border-emerald-300 text-emerald-700 text-xs leading-tight text-center">
+                className="font-bold px-2 py-0.5 h-auto border-emerald-300 text-emerald-700 text-sm leading-tight text-center">
                 {resolveReadingProfileLabel(app.readingProfileLevel)}
               </Badge>
             </div>
@@ -1001,7 +1002,7 @@ export default function Enrollment() {
             <div className="flex justify-center">
               <Badge
                 variant="outline"
-                className="font-bold px-2 py-0.5 h-auto border-slate-300 text-xs leading-tight text-center">
+                className="font-bold px-2 py-0.5 h-auto border-slate-300 text-sm leading-tight text-center">
                 {getLearnerTypeLabel(app.learnerType)}
               </Badge>
             </div>
@@ -1026,7 +1027,7 @@ export default function Enrollment() {
                     void ensureSectionOptionsLoaded(app.id);
                   }
                 }}>
-                <SelectTrigger className="h-8 w-40 text-xs font-bold border-2">
+                <SelectTrigger className="h-8 w-40 text-sm font-bold border-2">
                   <SelectValue placeholder="Select section" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1425,7 +1426,7 @@ export default function Enrollment() {
             <h1 className="text-3xl font-bold tracking-tight">
               Enrollment Management
             </h1>
-            <p className="text-xs font-bold">
+            <p className="text-sm font-bold">
               {ENROLLMENT_SUB_MENU_DESCRIPTIONS[workflowView]}
             </p>
           </div>
@@ -1444,9 +1445,9 @@ export default function Enrollment() {
               <Button
                 variant="default"
                 className="h-10 px-3 flex-1 md:flex-none text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
-                onClick={() => setIsConfirmSlipModalOpen(true)}>
+                onClick={() => setIsBatchConfirmSlipModalOpen(true)}>
                 <UserCheck className="h-4 w-4 mr-2" />
-                Process Confirmation Slip
+                Batch Confirmation Pipeline
               </Button>
             ) : (
               <Button
@@ -1548,7 +1549,7 @@ export default function Enrollment() {
                         : "outline"
                     }
                     size="sm"
-                    className="h-8 text-xs font-bold"
+                    className="h-8 text-sm font-bold"
                     onClick={() => {
                       setPendingQueueFilter(option.value);
                     }}>
@@ -1576,7 +1577,7 @@ export default function Enrollment() {
             />
 
             <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mt-4 font-bold">
-              <span className="text-xs text-muted-foreground">
+              <span className="text-sm text-muted-foreground">
                 Showing {visibleApplications.length} learners in{" "}
                 {
                   ENROLLMENT_SUB_MENU_OPTIONS.find(
@@ -1588,20 +1589,20 @@ export default function Enrollment() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-9 sm:h-8 text-xs font-bold"
+                  className="h-9 sm:h-8 text-sm font-bold"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}>
                   Previous
                 </Button>
                 <Badge
                   variant="secondary"
-                  className="px-3 h-8 text-xs font-bold">
+                  className="px-3 h-8 text-sm font-bold">
                   Page {page}
                 </Badge>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-9 sm:h-8 text-xs font-bold"
+                  className="h-9 sm:h-8 text-sm font-bold"
                   onClick={() => setPage((p) => p + 1)}
                   disabled={page * 15 >= total}>
                   Next
@@ -1885,17 +1886,17 @@ export default function Enrollment() {
         onOpenChange={setIsEnrollModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-xs font-bold uppercase tracking-wider">
+            <DialogTitle className="text-sm font-bold uppercase tracking-wider">
               Official Enrollment Confirmation
             </DialogTitle>
-            <DialogDescription className="text-xs font-semibold">
+            <DialogDescription className="text-sm font-semibold">
               Confirming enrollment for {selectedApp?.lastName},{" "}
               {selectedApp?.firstName}
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-4">
-            <p className="text-xs font-medium">
+            <p className="text-sm font-medium">
               This action confirms the{" "}
               <span className="font-bold text-green-700">
                 OFFICIAL ENROLLMENT
@@ -1903,13 +1904,13 @@ export default function Enrollment() {
               for Phase 2.
             </p>
             <div className="mt-4 p-3 rounded-lg bg-emerald-50 border border-emerald-100 space-y-2">
-              <div className="flex justify-between text-xs">
+              <div className="flex justify-between text-sm">
                 <span className="text-emerald-700 font-bold">Section:</span>
                 <span className="font-bold">
                   {selectedAppSectionName ?? "Not Assigned"}
                 </span>
               </div>
-              <div className="flex justify-between text-xs">
+              <div className="flex justify-between text-sm">
                 <span className="text-emerald-700 font-bold">Grade Level:</span>
                 <span className="font-bold">
                   {selectedApp?.gradeLevel?.name
@@ -1919,11 +1920,11 @@ export default function Enrollment() {
               </div>
             </div>
             {!canConfirmOfficialEnrollment && (
-              <p className="text-xs mt-2 font-bold text-amber-700">
+              <p className="text-sm mt-2 font-bold text-amber-700">
                 Official enrollment is locked until a section is assigned.
               </p>
             )}
-            <p className="text-xs mt-4 italic text-muted-foreground font-medium">
+            <p className="text-sm mt-4 italic text-muted-foreground font-medium">
               Ensure all physical documents (PSA, SF9) have been verified in
               person before proceeding.
             </p>
@@ -1933,11 +1934,11 @@ export default function Enrollment() {
             <Button
               variant="outline"
               onClick={() => setIsEnrollModalOpen(false)}
-              className="text-xs font-bold">
+              className="text-sm font-bold">
               Cancel
             </Button>
             <Button
-              className="bg-green-600 hover:bg-green-700 text-xs font-bold"
+              className="bg-green-600 hover:bg-green-700 text-sm font-bold"
               disabled={!canConfirmOfficialEnrollment}
               onClick={handleEnroll}>
               Confirm Official Enrollment
@@ -1965,10 +1966,10 @@ export default function Enrollment() {
         }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-xs font-bold uppercase tracking-wider">
+            <DialogTitle className="text-sm font-bold uppercase tracking-wider">
               Verify LRN / Existing Record
             </DialogTitle>
-            <DialogDescription className="text-xs font-semibold">
+            <DialogDescription className="text-sm font-semibold">
               Check the learner first before opening Direct Intake to avoid
               duplicate BOSY records.
             </DialogDescription>
@@ -1978,7 +1979,7 @@ export default function Enrollment() {
             <div className="space-y-2">
               <Label
                 htmlFor="walkInLrn"
-                className="text-xs font-bold uppercase tracking-wider">
+                className="text-sm font-bold uppercase tracking-wider">
                 Enter 12-Digit LRN
               </Label>
               <Input
@@ -1987,7 +1988,7 @@ export default function Enrollment() {
                 maxLength={12}
                 disabled={walkInNoLrn || isWalkInGateChecking}
                 placeholder="109988776655"
-                className="h-10 text-xs font-bold"
+                className="h-10 text-sm font-bold"
                 onChange={(event) => {
                   const normalized = event.target.value
                     .replace(/[^\d]/g, "")
@@ -2013,7 +2014,7 @@ export default function Enrollment() {
               <div className="space-y-1">
                 <Label
                   htmlFor="walkInNoLrn"
-                  className="text-xs font-bold tracking-wide">
+                  className="text-sm font-bold tracking-wide">
                   Learner has no LRN yet
                 </Label>
                 <p className="text-[11px] font-semibold text-muted-foreground">
@@ -2026,13 +2027,13 @@ export default function Enrollment() {
           <DialogFooter>
             <Button
               variant="outline"
-              className="text-xs font-bold"
+              className="text-sm font-bold"
               disabled={isWalkInGateChecking}
               onClick={() => setIsWalkInGateOpen(false)}>
               Cancel
             </Button>
             <Button
-              className="text-xs font-bold"
+              className="text-sm font-bold"
               disabled={isWalkInGateChecking}
               onClick={() => {
                 void handleProceedWalkInGate();
@@ -2052,10 +2053,10 @@ export default function Enrollment() {
         }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-xs font-bold uppercase tracking-wider">
+            <DialogTitle className="text-sm font-bold uppercase tracking-wider">
               Encode Reading Profile
             </DialogTitle>
-            <DialogDescription className="text-xs font-semibold">
+            <DialogDescription className="text-sm font-semibold">
               Reading Profile is required before section assignment and official
               enrollment.
             </DialogDescription>
@@ -2063,10 +2064,10 @@ export default function Enrollment() {
 
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase tracking-wider">
+              <Label className="text-sm font-bold uppercase tracking-wider">
                 Learner
               </Label>
-              <p className="text-xs font-semibold">
+              <p className="text-sm font-semibold">
                 {readingProfileDialog.application
                   ? `${readingProfileDialog.application.lastName}, ${readingProfileDialog.application.firstName}`
                   : "N/A"}
@@ -2076,7 +2077,7 @@ export default function Enrollment() {
             <div className="space-y-2">
               <Label
                 htmlFor="readingProfileLevel"
-                className="text-xs font-bold uppercase tracking-wider">
+                className="text-sm font-bold uppercase tracking-wider">
                 Reading Profile Level
               </Label>
               <Select
@@ -2089,7 +2090,7 @@ export default function Enrollment() {
                 }}>
                 <SelectTrigger
                   id="readingProfileLevel"
-                  className="h-10 text-xs font-bold">
+                  className="h-10 text-sm font-bold">
                   <SelectValue placeholder="Select reading profile" />
                 </SelectTrigger>
                 <SelectContent>
@@ -2107,7 +2108,7 @@ export default function Enrollment() {
             <div className="space-y-2">
               <Label
                 htmlFor="readingProfileNotes"
-                className="text-xs font-bold uppercase tracking-wider">
+                className="text-sm font-bold uppercase tracking-wider">
                 Notes (Optional)
               </Label>
               <Textarea
@@ -2120,7 +2121,7 @@ export default function Enrollment() {
                   }));
                 }}
                 placeholder="Record assessment notes or remarks"
-                className="min-h-24 text-xs font-semibold"
+                className="min-h-24 text-sm font-semibold"
                 maxLength={500}
               />
             </div>
@@ -2129,13 +2130,13 @@ export default function Enrollment() {
           <DialogFooter>
             <Button
               variant="outline"
-              className="text-xs font-bold"
+              className="text-sm font-bold"
               onClick={closeReadingProfileDialog}
               disabled={readingProfileDialog.saving}>
               Cancel
             </Button>
             <Button
-              className="text-xs font-bold"
+              className="text-sm font-bold"
               disabled={
                 readingProfileDialog.saving || !readingProfileDialog.level
               }
@@ -2159,10 +2160,10 @@ export default function Enrollment() {
         }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-xs font-bold uppercase tracking-wider">
+            <DialogTitle className="text-sm font-bold uppercase tracking-wider">
               Un-enrol Learner
             </DialogTitle>
-            <DialogDescription className="text-xs font-semibold">
+            <DialogDescription className="text-sm font-semibold">
               Record the reason for removing this learner from the official
               roster.
             </DialogDescription>
@@ -2170,10 +2171,10 @@ export default function Enrollment() {
 
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase tracking-wider">
+              <Label className="text-sm font-bold uppercase tracking-wider">
                 Learner
               </Label>
-              <p className="text-xs font-semibold">
+              <p className="text-sm font-semibold">
                 {unenrollDialog.application
                   ? `${unenrollDialog.application.lastName}, ${unenrollDialog.application.firstName}`
                   : "N/A"}
@@ -2183,7 +2184,7 @@ export default function Enrollment() {
             <div className="space-y-2">
               <Label
                 htmlFor="unenrollReason"
-                className="text-xs font-bold uppercase tracking-wider">
+                className="text-sm font-bold uppercase tracking-wider">
                 Reason
               </Label>
               <Select
@@ -2193,7 +2194,7 @@ export default function Enrollment() {
                 }}>
                 <SelectTrigger
                   id="unenrollReason"
-                  className="h-10 text-xs font-bold">
+                  className="h-10 text-sm font-bold">
                   <SelectValue placeholder="Select reason" />
                 </SelectTrigger>
                 <SelectContent>
@@ -2211,7 +2212,7 @@ export default function Enrollment() {
             <div className="space-y-2">
               <Label
                 htmlFor="unenrollNote"
-                className="text-xs font-bold uppercase tracking-wider">
+                className="text-sm font-bold uppercase tracking-wider">
                 Note (Optional)
               </Label>
               <Textarea
@@ -2224,7 +2225,7 @@ export default function Enrollment() {
                   }));
                 }}
                 placeholder="Add extra details for audit context"
-                className="min-h-24 text-xs font-semibold"
+                className="min-h-24 text-sm font-semibold"
               />
             </div>
           </div>
@@ -2232,12 +2233,12 @@ export default function Enrollment() {
           <DialogFooter>
             <Button
               variant="outline"
-              className="text-xs font-bold"
+              className="text-sm font-bold"
               onClick={closeUnenrollDialog}>
               Cancel
             </Button>
             <Button
-              className="text-xs font-bold bg-destructive hover:bg-destructive/90"
+              className="text-sm font-bold bg-destructive hover:bg-destructive/90"
               disabled={!unenrollDialog.reason}
               onClick={() => {
                 void handleUnenrollSubmit();
@@ -2254,10 +2255,10 @@ export default function Enrollment() {
         onOpenChange={setIsGradeSelectDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-xs font-bold uppercase tracking-wider">
+            <DialogTitle className="text-sm font-bold uppercase tracking-wider">
               Select Grade Level for Batch Sectioning
             </DialogTitle>
-            <DialogDescription className="text-xs font-semibold">
+            <DialogDescription className="text-sm font-semibold">
               The Batch Wizard will run on the entire unassigned pool of
               learners for the selected grade level.
             </DialogDescription>
@@ -2265,7 +2266,7 @@ export default function Enrollment() {
 
           <div className="py-4 space-y-4">
             <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase tracking-wider">
+              <Label className="text-sm font-bold uppercase tracking-wider">
                 Target Grade Level
               </Label>
               <div className="grid grid-cols-1 gap-3">
@@ -2301,7 +2302,7 @@ export default function Enrollment() {
                           <Button
                             variant="default"
                             size="sm"
-                            className="h-9 px-4 font-bold text-xs bg-primary hover:bg-primary/90"
+                            className="h-9 px-4 font-bold text-sm bg-primary hover:bg-primary/90"
                             onClick={() =>
                               handleStartBatchSectioning(gl.id, gl.name)
                             }>
@@ -2339,7 +2340,7 @@ export default function Enrollment() {
             <Button
               variant="ghost"
               onClick={() => setIsGradeSelectDialogOpen(false)}
-              className="text-xs font-bold">
+              className="text-sm font-bold">
               Cancel
             </Button>
           </DialogFooter>
@@ -2372,9 +2373,9 @@ export default function Enrollment() {
         schoolYearId={ayId || 0}
       />
 
-      <ConfirmationSlipModal
-        open={isConfirmSlipModalOpen}
-        onOpenChange={setIsConfirmSlipModalOpen}
+      <BatchConfirmationModal
+        open={isBatchConfirmSlipModalOpen}
+        onOpenChange={setIsBatchConfirmSlipModalOpen}
         activeSchoolYearId={ayId}
         onSuccess={fetchData}
       />

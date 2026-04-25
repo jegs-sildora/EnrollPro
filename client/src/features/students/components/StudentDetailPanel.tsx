@@ -9,21 +9,10 @@ import {
 	ArrowRightLeft,
 	FileBadge2,
 	BadgeAlert,
-	Loader2,
 	CheckCircle2,
 	Clock,
 	User,
-	Users,
 	GraduationCap,
-	ClipboardList,
-	Tags,
-	Activity,
-	MapPin,
-	Phone,
-	Mail,
-	Info,
-	School,
-	CircleAlert,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -34,7 +23,7 @@ import { Badge } from "@/shared/ui/badge";
 import { SheetTitle, SheetDescription } from "@/shared/ui/sheet";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { ImageEnlarger } from "@/shared/components/ImageEnlarger";
-import { formatScpType, getImageUrl } from "@/shared/lib/utils";
+import { getImageUrl } from "@/shared/lib/utils";
 import {
 	PersonalInfo,
 	AddressInfo,
@@ -92,6 +81,7 @@ interface Props {
 	id: number;
 	onClose: () => void;
 	onOpenProfilePage: (id: number) => void;
+	onOpenPermanentRecord: (id: number) => void;
 	onOpenGoodMoral: (id: number) => void;
 	onQuickEdit: (student: any) => void;
 	onAssignLrn: (student: any) => void;
@@ -104,6 +94,7 @@ export function StudentDetailPanel({
 	id,
 	onClose,
 	onOpenProfilePage,
+	onOpenPermanentRecord,
 	onOpenGoodMoral,
 	onQuickEdit,
 	onAssignLrn,
@@ -409,6 +400,13 @@ export function StudentDetailPanel({
 					onClick={() => onOpenProfilePage(student.id)}>
 					<Eye className="mr-2 h-4 w-4" />
 					Full Profile
+				</Button>
+				<Button
+					variant="secondary"
+					className="font-bold text-xs h-9 uppercase tracking-widest border shadow-sm"
+					onClick={() => onOpenPermanentRecord(student.id)}>
+					<FileText className="mr-2 h-4 w-4" />
+					Permanent Record
 				</Button>
 				<Button
 					variant="secondary"

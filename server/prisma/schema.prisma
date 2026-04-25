@@ -344,6 +344,10 @@ model EnrollmentApplication {
   rejectionReason         String?           @map("rejection_reason")
   isPrivacyConsentGiven   Boolean           @default(false) @map("is_privacy_consent_given")
   guardianRelationship    String?           @map("guardian_relationship")
+  guardianName            String?           @map("guardian_name")
+  contactNumber           String?           @map("contact_number")
+  confirmationConsent     Boolean?          @map("confirmation_consent")
+  batchIntakeMethod       String?           @map("batch_intake_method")
   hasNoMother             Boolean           @default(false) @map("has_no_mother")
   hasNoFather             Boolean           @default(false) @map("has_no_father")
   portalPin               String?           @map("portal_pin")
@@ -488,6 +492,12 @@ model EnrollmentRecord {
   schoolYearId          Int          @map("school_year_id")
   enrolledAt            DateTime     @default(now()) @db.Timestamptz @map("enrolled_at")
   enrolledById          Int          @map("enrolled_by_id")
+  sectioningMethod      SectioningMethod @default(BATCH_ALGORITHM) @map("sectioning_method")
+  dateSectioned         DateTime?    @db.Timestamptz @map("date_sectioned")
+  guardianName          String?      @map("guardian_name")
+  contactNumber         String?      @map("contact_number")
+  confirmationConsent   Boolean?     @map("confirmation_consent")
+  intakeMethod          String?      @map("enrollment_record_intake_method")
   eosyStatus            EosyStatus?  @map("eosy_status")
   dropOutReason         String?      @map("drop_out_reason")
   dropOutDate           DateTime?    @db.Date @map("drop_out_date")
@@ -754,6 +764,7 @@ enum ApplicationStatus {
   ENROLLED
   REJECTED
   WITHDRAWN
+  TRANSFERRING_OUT
 
   @@map("application_status")
 }
@@ -905,4 +916,11 @@ enum IntakeMethod {
   CONFIRMATION_SLIP
 
   @@map("intake_method")
+}
+
+enum SectioningMethod {
+  BATCH_ALGORITHM
+  INLINE_SLOTTING
+
+  @@map("sectioning_method")
 }

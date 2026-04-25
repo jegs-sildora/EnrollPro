@@ -83,6 +83,29 @@ const resolveReadingProfileLabel = (level?: string | null): string => {
     .join(" ");
 };
 
+const isPilotSection = (name: string): boolean => {
+  const n = name.toUpperCase();
+  return n.startsWith("PILOT") || /^SECTION\s*[1-5](\s|$)/.test(n);
+};
+
+const isSpecialSection = (name: string): boolean => {
+  const n = name.toUpperCase();
+  return (
+    n.startsWith("STE") ||
+    n.startsWith("SPA") ||
+    n.startsWith("SPS") ||
+    n.startsWith("SPJ") ||
+    n.startsWith("SPFL") ||
+    n.startsWith("SPTVE")
+  );
+};
+
+const getSectionPriority = (name: string): number => {
+  if (isSpecialSection(name)) return 1;
+  if (isPilotSection(name)) return 2;
+  return 3;
+};
+
 const RosterRowComponent = React.forwardRef<
   HTMLTableRowElement,
   {
@@ -145,7 +168,7 @@ const RosterRowComponent = React.forwardRef<
       <TableCell className="py-3 px-4 text-center">
         <Badge
           variant="outline"
-          className="text-[10px] font-black border-border bg-background uppercase tracking-tighter">
+          className="text-[10px] font-black border-border bg-background uppercase">
           {formatScpType(row.programType)}
         </Badge>
       </TableCell>
@@ -156,7 +179,7 @@ const RosterRowComponent = React.forwardRef<
         <Badge
           variant="outline"
           className={cn(
-            "text-[10px] font-black uppercase tracking-tighter",
+            "text-[10px] font-black uppercase",
             row.readingProfile === "FRUSTRATION" ||
               row.readingProfile === "NON_READER"
               ? "border-destructive/30 text-destructive bg-destructive/5"
@@ -426,6 +449,15 @@ export function BatchSectioningWizard({
 
     // Sort logic
     list.sort((a, b) => {
+      // 1. Primary Sort: Section Type Priority (SCP -> Pilot -> Hetero)
+      const prioA = getSectionPriority(a.sectionName);
+      const prioB = getSectionPriority(b.sectionName);
+
+      if (prioA !== prioB) {
+        return prioA - prioB;
+      }
+
+      // 2. Secondary Sort: Selected Sort Field
       const field = sortConfig.field;
       const direction = sortConfig.direction === "asc" ? 1 : -1;
 
@@ -511,7 +543,7 @@ export function BatchSectioningWizard({
                   variant="ghost"
                   size="icon"
                   onClick={handleClose}
-                  className="text-muted-foreground hover:text-foreground hover:bg-accent">
+                  className="text-muted-foreground">
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div>
@@ -797,7 +829,7 @@ export function BatchSectioningWizard({
                                       Pilot Sections
                                     </SelectLabel>
                                     {uniqueSections
-                                      .filter((s) => s.startsWith("Pilot"))
+                                      .filter((s) => isPilotSection(s))
                                       .map((section) => (
                                         <SelectItem
                                           key={section}
@@ -814,7 +846,7 @@ export function BatchSectioningWizard({
                                     {uniqueSections
                                       .filter(
                                         (s) =>
-                                          !s.startsWith("Pilot") &&
+                                          !isPilotSection(s) &&
                                           !s.startsWith("STE") &&
                                           !s.startsWith("SPA") &&
                                           !s.startsWith("SPS") &&

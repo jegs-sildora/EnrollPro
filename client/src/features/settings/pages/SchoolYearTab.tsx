@@ -34,6 +34,14 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { TableSkeleton } from "@/shared/ui/table-skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/shared/ui/table";
 
 const MANILA_TIME_ZONE = "Asia/Manila";
 const MIN_ACTIVE_CALENDAR_SPAN_DAYS = 240;

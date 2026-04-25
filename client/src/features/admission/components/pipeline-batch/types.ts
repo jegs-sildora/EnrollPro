@@ -19,6 +19,7 @@ export interface Application {
   assessments: EarlyRegistrationAssessment[];
   generalAverage: number | null;
   createdAt: string;
+  studentPhoto?: string | null;
 }
 
 export interface EarlyRegistrationAssessment {

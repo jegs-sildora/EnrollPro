@@ -6,7 +6,6 @@ import {
   CheckCircle,
   AlertTriangle,
   UserCog,
-  Mail,
   Activity,
   ShieldCheck,
   FileText,

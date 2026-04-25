@@ -9,7 +9,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
@@ -88,6 +90,23 @@ interface EosyExportLockState {
   canFinalizeSchoolYear: boolean;
   lockReason: string | null;
 }
+
+const isPilotSection = (name: string): boolean => {
+  const n = name.toUpperCase();
+  return n.startsWith("PILOT") || /^SECTION\s*[1-5](\s|$)/.test(n);
+};
+
+const isSpecialSection = (name: string): boolean => {
+  const n = name.toUpperCase();
+  return (
+    n.startsWith("STE") ||
+    n.startsWith("SPA") ||
+    n.startsWith("SPS") ||
+    n.startsWith("SPJ") ||
+    n.startsWith("SPFL") ||
+    n.startsWith("SPTVE")
+  );
+};
 
 export default function EosyUpdating() {
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
@@ -800,14 +819,56 @@ export default function EosyUpdating() {
                   <SelectValue placeholder="Select Section" />
                 </SelectTrigger>
                 <SelectContent>
-                  {sections.map((s) => (
-                    <SelectItem
-                      key={s.id}
-                      value={String(s.id)}>
-                      {s.gradeLevel.name} - {s.name}{" "}
-                      {s.isEosyFinalized ? "🔒" : ""}
-                    </SelectItem>
-                  ))}
+                  <SelectGroup>
+                    <SelectLabel className="font-black text-[10px] text-muted-foreground uppercase tracking-widest bg-muted/30 px-2 py-1">
+                      Special Sections (SCP)
+                    </SelectLabel>
+                    {sections
+                      .filter((s) => isSpecialSection(s.name))
+                      .map((s) => (
+                        <SelectItem
+                          key={s.id}
+                          value={String(s.id)}>
+                          {s.gradeLevel.name} - {s.name}{" "}
+                          {s.isEosyFinalized ? "🔒" : ""}
+                        </SelectItem>
+                      ))}
+                  </SelectGroup>
+
+                  <SelectGroup>
+                    <SelectLabel className="font-black text-[10px] text-muted-foreground uppercase tracking-widest bg-muted/30 px-2 py-1 mt-2">
+                      Pilot Sections
+                    </SelectLabel>
+                    {sections
+                      .filter((s) => isPilotSection(s.name))
+                      .map((s) => (
+                        <SelectItem
+                          key={s.id}
+                          value={String(s.id)}>
+                          {s.gradeLevel.name} - {s.name}{" "}
+                          {s.isEosyFinalized ? "🔒" : ""}
+                        </SelectItem>
+                      ))}
+                  </SelectGroup>
+
+                  <SelectGroup>
+                    <SelectLabel className="font-black text-[10px] text-muted-foreground uppercase tracking-widest bg-muted/30 px-2 py-1 mt-2">
+                      Heterogeneous Sections
+                    </SelectLabel>
+                    {sections
+                      .filter(
+                        (s) =>
+                          !isSpecialSection(s.name) && !isPilotSection(s.name),
+                      )
+                      .map((s) => (
+                        <SelectItem
+                          key={s.id}
+                          value={String(s.id)}>
+                          {s.gradeLevel.name} - {s.name}{" "}
+                          {s.isEosyFinalized ? "🔒" : ""}
+                        </SelectItem>
+                      ))}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>

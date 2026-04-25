@@ -113,7 +113,7 @@ export default function EarlyRegistration() {
               asChild
               className="h-10 px-3 flex-1 md:flex-none text-sm font-bold bg-primary hover:bg-primary/90">
               <Link to="/monitoring/f2f-early-registration">
-                <UserPlus className="h-4 w-4 mr-2" />+ Walk-In Learner
+                <UserPlus className="h-4 w-4 mr-2" />+ Walk-In BEERF
               </Link>
             </Button>
             <Button

@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
-import { AlertTriangle, User, ShieldCheck, Calendar, Info } from "lucide-react";
+import { AlertTriangle, ShieldCheck, Calendar, Info } from "lucide-react";
 import { motion } from "motion/react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";

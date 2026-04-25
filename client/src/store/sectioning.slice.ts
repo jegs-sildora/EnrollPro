@@ -18,6 +18,7 @@ interface ProposedAssignment {
   genAve: number | null;
   readingProfile: string | null;
   programType: string;
+  status: string;
 }
 
 interface SectioningPreview {

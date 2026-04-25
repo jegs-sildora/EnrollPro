@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/shared/ui/card";
+import { Card, CardTitle, CardContent, CardDescription, CardFooter } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Badge } from "@/shared/ui/badge";
-import { Search, UserCheck, Loader2, AlertCircle, ArrowLeft } from "lucide-react";
+import { CheckCircle2, UserCheck, Loader2, AlertCircle, ArrowLeft } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -30,7 +30,7 @@ export function ReturningLearnerFlow({ onBack, onSuccess }: ReturningLearnerFlow
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get(`/learners/lookup?lrn=${lrn}`);
+      const res = await api.get(`/learner/lookup?lrn=${lrn}`);
       setLearner(res.data);
     } catch (err: any) {
       if (err.response?.status === 404) {
@@ -100,11 +100,11 @@ export function ReturningLearnerFlow({ onBack, onSuccess }: ReturningLearnerFlow
 
   return (
     <div className="max-w-2xl mx-auto p-4 md:p-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-400">
-      <Button variant="ghost" onClick={onBack} className="group font-bold text-slate-500">
+      <Button variant="ghost" onClick={onBack} className="group font-bold text-muted-foreground">
         <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" /> Back to Selection
       </Button>
 
-      <Card className="border-2 border-emerald-100 shadow-xl overflow-hidden">
+      <Card className="border-2 border-emerald-100 shadow-xl overflow-hidden bg-background">
         <div className="bg-emerald-600 px-6 py-8 text-white text-center">
           <UserCheck className="h-12 w-12 mx-auto mb-4" />
           <CardTitle className="text-2xl font-black uppercase tracking-tight">Returning Student Confirmation</CardTitle>
@@ -115,7 +115,7 @@ export function ReturningLearnerFlow({ onBack, onSuccess }: ReturningLearnerFlow
 
         <CardContent className="p-8 space-y-8">
           <div className="space-y-3">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
               1. Enter Learner's 12-Digit LRN
             </Label>
             <div className="relative">
@@ -123,7 +123,7 @@ export function ReturningLearnerFlow({ onBack, onSuccess }: ReturningLearnerFlow
                 value={lrn}
                 onChange={(e) => setLrn(e.target.value.replace(/\D/g, "").slice(0, 12))}
                 placeholder="101234567890"
-                className="h-16 text-3xl font-black tracking-[0.2em] text-center border-2 border-slate-200 focus-visible:ring-emerald-500"
+                className="h-16 text-3xl font-black tracking-[0.2em] text-center border-2 border-border focus-visible:ring-emerald-500"
               />
               {loading && (
                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -146,7 +146,7 @@ export function ReturningLearnerFlow({ onBack, onSuccess }: ReturningLearnerFlow
                 <div className="flex justify-between items-start">
                   <div className="flex flex-col">
                     <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 opacity-70">Learner Profile Found</span>
-                    <h3 className="text-2xl font-black text-slate-900 uppercase leading-none mt-1">
+                    <h3 className="text-2xl font-black text-foreground uppercase leading-none mt-1">
                       {learner.lastName}, {learner.firstName}
                     </h3>
                   </div>
@@ -157,11 +157,11 @@ export function ReturningLearnerFlow({ onBack, onSuccess }: ReturningLearnerFlow
 
                 <div className="grid grid-cols-2 gap-4 pt-2">
                   <div className="space-y-1">
-                    <span className="text-[9px] font-black uppercase text-slate-400">Previous Grade</span>
-                    <p className="font-bold text-slate-700">{learner.previousGradeLevel} • {learner.previousSection}</p>
+                    <span className="text-[9px] font-black uppercase text-muted-foreground">Previous Grade</span>
+                    <p className="font-bold text-foreground">{learner.previousGradeLevel} • {learner.previousSection}</p>
                   </div>
                   <div className="space-y-1">
-                    <span className="text-[9px] font-black uppercase text-slate-400">Gen. Average</span>
+                    <span className="text-[9px] font-black uppercase text-muted-foreground">Gen. Average</span>
                     <p className="font-bold text-emerald-700">{learner.previousGenAve?.toFixed(2) || "N/A"}</p>
                   </div>
                 </div>
@@ -176,14 +176,14 @@ export function ReturningLearnerFlow({ onBack, onSuccess }: ReturningLearnerFlow
                 )}
               </div>
 
-              <div className="flex items-start space-x-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="flex items-start space-x-3 p-4 bg-muted/20 rounded-xl border border-border">
                 <Checkbox 
                   id="confirm-enroll" 
                   checked={isConfirmed}
                   onCheckedChange={(checked) => setIsConfirmed(checked === true)}
                   className="mt-1 border-emerald-500 data-[state=checked]:bg-emerald-600"
                 />
-                <Label htmlFor="confirm-enroll" className="text-sm font-bold leading-relaxed cursor-pointer select-none text-slate-700">
+                <Label htmlFor="confirm-enroll" className="text-sm font-bold leading-relaxed cursor-pointer select-none text-foreground">
                   I hereby confirm the enrollment of this learner for the School Year 2026-2027. 
                   I certify that all information in the existing records is still accurate.
                 </Label>
@@ -206,8 +206,8 @@ export function ReturningLearnerFlow({ onBack, onSuccess }: ReturningLearnerFlow
             </div>
           )}
         </CardContent>
-        <CardFooter className="bg-slate-50 border-t p-4 text-center">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest w-full">
+        <CardFooter className="bg-muted/20 border-t p-4 text-center">
+          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest w-full">
             Validated via National Learner Information System
           </p>
         </CardFooter>

@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
-import type { ApplicantType } from "../../generated/prisma/index.js";
+import type { ApplicantType, ApplicationStatus, SectioningMethod } from "../../generated/prisma/index.js";
 import { SectioningEngine } from "../enrollment/services/sectioning-engine.service.js";
 import { DEFAULT_SECTIONING_PARAMS } from "@enrollpro/shared";
 import type { SectioningParams } from "@enrollpro/shared";
@@ -59,13 +59,25 @@ export async function commitBatchSectioning(req: Request, res: Response) {
     const createdRecords = [];
 
     for (const assignment of assignments) {
-      // Update application status
-      await tx.enrollmentApplication.update({
+      // 1. Fetch current application to check status
+      const app = await tx.enrollmentApplication.findUnique({
         where: { id: assignment.applicationId },
-        data: { status: "OFFICIALLY_ENROLLED" },
+        select: { status: true },
       });
 
-      // Create enrollment record
+      // 2. Update application status
+      // If it's already temporary, stay temporary. Otherwise, move to ENROLLED.
+      const nextStatus =
+        app?.status === "TEMPORARILY_ENROLLED"
+          ? "TEMPORARILY_ENROLLED"
+          : "ENROLLED";
+
+      await tx.enrollmentApplication.update({
+        where: { id: assignment.applicationId },
+        data: { status: nextStatus },
+      });
+
+      // 3. Create enrollment record
       const record = await tx.enrollmentRecord.create({
         data: {
           enrollmentApplicationId: assignment.applicationId,
@@ -105,7 +117,23 @@ const VALID_PROGRAM_TYPES = new Set([
   "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
   "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
 ]);
-const INACTIVE_EOSY_STATUSES = ["TRANSFERRED_OUT", "DROPPED_OUT"] as const;
+
+const INACTIVE_EOSY_STATUSES = ["TRANSFERRED_OUT", "DROPPED_OUT"];
+
+/**
+ * Common filter for active enrollment records.
+ * Includes NULL eosyStatus and excludes specific inactive statuses.
+ */
+const activeEnrollmentFilter = {
+  OR: [
+    { eosyStatus: { equals: null } },
+    {
+      eosyStatus: {
+        notIn: INACTIVE_EOSY_STATUSES as any,
+      },
+    },
+  ],
+};
 
 export async function listSections(req: Request, res: Response): Promise<void> {
   const ayId = req.params.ayId ? parseInt(req.params.ayId as string) : null;
@@ -143,23 +171,23 @@ export async function listSections(req: Request, res: Response): Promise<void> {
         _count: {
           select: {
             enrollmentRecords: {
-              where: {
-                NOT: {
-                  eosyStatus: {
-                    in: [...INACTIVE_EOSY_STATUSES],
-                  },
-                },
-              },
+              where: activeEnrollmentFilter,
             },
           },
         },
       },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }, { id: "asc" }],
     });
+
     // Format teacher names
     const formatted = sections.map((s) => ({
       ...s,
       displayName: s.displayName ?? s.name,
+      enrolledCount: s._count.enrollmentRecords,
+      fillPercent:
+        s.maxCapacity > 0
+          ? Math.round((s._count.enrollmentRecords / s.maxCapacity) * 100)
+          : 0,
       advisingTeacher: s.advisingTeacher
         ? {
             id: s.advisingTeacher.id,
@@ -201,13 +229,7 @@ export async function listSections(req: Request, res: Response): Promise<void> {
           _count: {
             select: {
               enrollmentRecords: {
-                where: {
-                  NOT: {
-                    eosyStatus: {
-                      in: [...INACTIVE_EOSY_STATUSES],
-                    },
-                  },
-                },
+                where: activeEnrollmentFilter,
               },
             },
           },
@@ -220,25 +242,26 @@ export async function listSections(req: Request, res: Response): Promise<void> {
     gradeLevelId: gl.id,
     gradeLevelName: gl.name,
     displayOrder: gl.displayOrder,
-    sections: gl.sections.map((s) => ({
-      id: s.id,
-      name: s.name,
-      displayName: s.displayName ?? s.name,
-      sortOrder: s.sortOrder,
-      programType: s.programType,
-      maxCapacity: s.maxCapacity,
-      enrolledCount: s._count.enrollmentRecords,
-      fillPercent:
-        s.maxCapacity > 0
-          ? Math.round((s._count.enrollmentRecords / s.maxCapacity) * 100)
-          : 0,
-      advisingTeacher: s.advisingTeacher
-        ? {
-            id: s.advisingTeacher.id,
-            name: `${s.advisingTeacher.lastName}, ${s.advisingTeacher.firstName}${s.advisingTeacher.middleName ? ` ${s.advisingTeacher.middleName.charAt(0)}.` : ""}`,
-          }
-        : null,
-    })),
+    sections: gl.sections.map((s) => {
+      const count = s._count?.enrollmentRecords ?? 0;
+      return {
+        id: s.id,
+        name: s.name,
+        displayName: s.displayName ?? s.name,
+        sortOrder: s.sortOrder,
+        programType: s.programType,
+        maxCapacity: s.maxCapacity,
+        enrolledCount: count,
+        fillPercent:
+          s.maxCapacity > 0 ? Math.round((count / s.maxCapacity) * 100) : 0,
+        advisingTeacher: s.advisingTeacher
+          ? {
+              id: s.advisingTeacher.id,
+              name: `${s.advisingTeacher.lastName}, ${s.advisingTeacher.firstName}${s.advisingTeacher.middleName ? ` ${s.advisingTeacher.middleName.charAt(0)}.` : ""}`,
+            }
+          : null,
+      };
+    }),
   }));
 
   res.json({ gradeLevels: result });
@@ -435,4 +458,225 @@ export async function deleteSection(
   });
 
   res.json({ message: "Section deleted" });
+}
+
+export async function getSectionRoster(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const id = parseInt(req.params.id as string);
+
+  const section = await prisma.section.findUnique({
+    where: { id },
+    include: {
+      gradeLevel: {
+        include: {
+          schoolYear: {
+            select: { classOpeningDate: true },
+          },
+        },
+      },
+      enrollmentRecords: {
+        where: activeEnrollmentFilter,
+        include: {
+          enrollmentApplication: {
+            include: {
+              learner: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!section) {
+    res.status(404).json({ message: "Section not found" });
+    return;
+  }
+
+  const learners = section.enrollmentRecords.map((record) => ({
+    id: record.enrollmentApplication.id,
+    lrn: record.enrollmentApplication.learner.lrn,
+    firstName: record.enrollmentApplication.learner.firstName,
+    lastName: record.enrollmentApplication.learner.lastName,
+    middleName: record.enrollmentApplication.learner.middleName,
+    sex: record.enrollmentApplication.learner.sex,
+    status: record.enrollmentApplication.status,
+    birthdate: record.enrollmentApplication.learner.birthdate,
+    learnerType: record.enrollmentApplication.learnerType,
+    dateSectioned: record.dateSectioned,
+    sectioningMethod: record.sectioningMethod,
+  }));
+
+  res.json({
+    sectionName: section.name,
+    classOpeningDate: section.gradeLevel.schoolYear.classOpeningDate,
+    learners,
+  });
+}
+
+export async function getUnsectionedPool(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const gradeLevelId = parseInt(req.params.gradeLevelId as string);
+  const schoolYearId = req.query.schoolYearId
+    ? parseInt(req.query.schoolYearId as string)
+    : null;
+
+  if (!schoolYearId) {
+    res.status(400).json({ message: "schoolYearId is required" });
+    return;
+  }
+
+  const applications = await prisma.enrollmentApplication.findMany({
+    where: {
+      gradeLevelId,
+      schoolYearId,
+      status: "READY_FOR_SECTIONING",
+    },
+    include: {
+      learner: true,
+    },
+    orderBy: [{ learner: { lastName: "asc" } }, { learner: { firstName: "asc" } }],
+  });
+
+  const pool = applications.map((app) => ({
+    id: app.id,
+    lrn: app.learner.lrn,
+    firstName: app.learner.firstName,
+    lastName: app.learner.lastName,
+    middleName: app.learner.middleName,
+    applicantType: app.applicantType,
+    learnerType: app.learnerType,
+  }));
+
+  res.json({ pool });
+}
+
+export async function inlineSlotLearner(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const sectionId = parseInt(req.params.id as string);
+  const { enrollmentApplicationId } = req.body;
+
+  if (!enrollmentApplicationId) {
+    res.status(400).json({ message: "enrollmentApplicationId is required" });
+    return;
+  }
+
+  // 1. Fetch Section and Application
+  const [section, app] = await Promise.all([
+    prisma.section.findUnique({
+      where: { id: sectionId },
+      include: {
+        _count: {
+          select: {
+            enrollmentRecords: {
+              where: activeEnrollmentFilter,
+            },
+          },
+        },
+      },
+    }),
+    prisma.enrollmentApplication.findUnique({
+      where: { id: enrollmentApplicationId },
+      include: { learner: true },
+    }),
+  ]);
+
+  if (!section) {
+    res.status(404).json({ message: "Section not found" });
+    return;
+  }
+
+  if (!app) {
+    res.status(404).json({ message: "Enrollment application not found" });
+    return;
+  }
+
+  // 2. Validate Capacity
+  if (section._count.enrollmentRecords >= section.maxCapacity) {
+    res.status(400).json({
+      message: `Section ${section.name} has reached maximum capacity (${section.maxCapacity}).`,
+    });
+    return;
+  }
+
+  // 3. Validate Status
+  if (app.status !== "READY_FOR_SECTIONING") {
+    res.status(400).json({
+      message: `Learner is not in "READY_FOR_SECTIONING" status. Current status: ${app.status}`,
+    });
+    return;
+  }
+
+  // 4. Constraint Guardrail: Program Type Match
+  // Special Curricular Programs (SCP) like STE require exact matches.
+  const isScpSection = section.programType !== "REGULAR";
+  if (isScpSection && app.applicantType !== section.programType) {
+    res.status(400).json({
+      message: `Constraint Violation: Cannot slot a ${app.applicantType} learner into a ${section.programType} section.`,
+    });
+    return;
+  }
+
+  // 5. Execute Slotting in Transaction
+  const record = await prisma.$transaction(async (tx) => {
+    // A. Create Enrollment Record
+    const newRecord = await tx.enrollmentRecord.create({
+      data: {
+        enrollmentApplicationId: app.id,
+        sectionId: section.id,
+        schoolYearId: app.schoolYearId,
+        enrolledById: req.user!.userId,
+        sectioningMethod: "INLINE_SLOTTING",
+        dateSectioned: new Date(),
+      },
+    });
+
+    // B. Update Application Status
+    await tx.enrollmentApplication.update({
+      where: { id: app.id },
+      data: { status: "ENROLLED" },
+    });
+
+    // C. Queue S.M.A.R.T. Sync Event
+    // Payload as per blueprint Phase 4.1
+    const syncPayload = {
+      event: "LATE_ENROLLEE_ADDED",
+      lrn: app.learner.lrn,
+      section_id: section.id,
+      adviser_id: section.advisingTeacherId,
+      timestamp: new Date().toISOString(),
+    };
+
+    await tx.atlasSyncEvent.create({
+      data: {
+        eventId: crypto.randomUUID(),
+        eventType: "SMART_GRADING_SYNC",
+        schoolYearId: app.schoolYearId,
+        payload: syncPayload,
+        requestUrl: `${process.env.SMART_API_BASE_URL || "http://100.93.66.120:3000"}/api/sync/late-enrollee`,
+        status: "PENDING",
+      },
+    });
+
+    return newRecord;
+  });
+
+  await auditLog({
+    userId: req.user!.userId,
+    actionType: "INLINE_SLOTTING",
+    description: `Manually slotted learner ${app.learner.lastName}, ${app.learner.firstName} (LRN: ${app.learner.lrn}) into section ${section.name}`,
+    subjectType: "Section",
+    recordId: section.id,
+    req,
+  });
+
+  res.status(201).json({
+    message: "Learner successfully slotted and synced to grading system.",
+    record,
+  });
 }

@@ -22,6 +22,7 @@ export interface SectioningPreview {
     genAve: number | null;
     readingProfile: string | null;
     programType: string;
+    status: string;
   }[];
 }
 
@@ -100,7 +101,7 @@ export class SectioningEngine {
         where: {
           gradeLevelId,
           schoolYearId,
-          status: "VERIFIED",
+          status: { in: ["VERIFIED", "TEMPORARILY_ENROLLED", "READY_FOR_SECTIONING"] },
           enrollmentRecord: null,
         },
       }),
@@ -147,12 +148,12 @@ export class SectioningEngine {
     const isGrade7 =
       gradeLevel.name.includes("7") || gradeLevel.displayOrder === 7;
 
-    // 1. Fetch all eligible learners (VERIFIED status, no section yet)
+    // 1. Fetch all eligible learners (VERIFIED, TEMPORARILY_ENROLLED, or READY_FOR_SECTIONING status, no section yet)
     const applicants = await this.prisma.enrollmentApplication.findMany({
       where: {
         gradeLevelId,
         schoolYearId,
-        status: "VERIFIED",
+        status: { in: ["VERIFIED", "TEMPORARILY_ENROLLED", "READY_FOR_SECTIONING"] },
         enrollmentRecord: null,
       },
       include: {
@@ -554,6 +555,7 @@ export class SectioningEngine {
         : (app as any).learner?.previousGenAve ?? null,
       readingProfile: app.readingProfileLevel,
       programType: app.applicantType,
+      status: app.status,
     };
   }
 

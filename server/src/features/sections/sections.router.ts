@@ -5,6 +5,9 @@ import {
 	createSection,
 	updateSection,
 	deleteSection,
+	getSectionRoster,
+	getUnsectionedPool,
+	inlineSlotLearner,
 	getBatchPrerequisites,
 	runBatchSectioning,
 	commitBatchSectioning,
@@ -77,6 +80,27 @@ router.delete(
 	authenticate,
 	authorize('REGISTRAR', 'SYSTEM_ADMIN'),
 	deleteSection,
+);
+
+router.get(
+	'/:id/roster',
+	authenticate,
+	authorize('REGISTRAR', 'SYSTEM_ADMIN'),
+	getSectionRoster,
+);
+
+router.get(
+	'/unsectioned-pool/:gradeLevelId',
+	authenticate,
+	authorize('REGISTRAR', 'SYSTEM_ADMIN'),
+	getUnsectionedPool,
+);
+
+router.post(
+	'/:id/inline-slot',
+	authenticate,
+	authorize('REGISTRAR', 'SYSTEM_ADMIN'),
+	inlineSlotLearner,
 );
 
 export default router;

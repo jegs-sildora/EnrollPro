@@ -11,7 +11,6 @@ import {
   Clock3,
   Database,
   HardDrive,
-  Mail,
   Monitor,
   RefreshCw,
   Server,

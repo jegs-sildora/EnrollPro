@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import {
+  ArrowLeft,
+  RefreshCw,
+  Calendar as CalendarIcon,
+} from "lucide-react";
+import {
+  format,
+  isValid,
+  parse,
+  isAfter,
+  isBefore,
+} from "date-fns";
 import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -17,6 +28,13 @@ import {
 } from "@/shared/ui/select";
 import { Badge } from "@/shared/ui/badge";
 import { Checkbox } from "@/shared/ui/checkbox";
+import { Calendar } from "@/shared/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/shared/ui/popover";
+import { cn } from "@/shared/lib/utils";
 
 type LearnerType = "NEW_ENROLLEE" | "TRANSFEREE" | "RETURNING" | "ALS";
 type AcademicStatus = "PROMOTED" | "RETAINED";
@@ -116,14 +134,22 @@ const INITIAL_FORM_STATE: WalkInFormState = {
 };
 
 const LEARNER_TYPE_OPTIONS: Array<{ value: LearnerType; label: string }> = [
-  { value: "NEW_ENROLLEE", label: "New Enrollee" },
-  { value: "TRANSFEREE", label: "Transferee" },
-  { value: "RETURNING", label: "Balik-Aral" },
-  { value: "ALS", label: "ALS / PEPT Passer" },
+  { value: "NEW_ENROLLEE", label: "NEW ENROLLEE" },
+  { value: "TRANSFEREE", label: "TRANSFEREE" },
+  { value: "RETURNING", label: "BALIK-ARAL" },
+  { value: "ALS", label: "ALS / PEPT PASSER" },
 ];
 
 function normalizeLrn(value: string): string {
   return value.replace(/[^\d]/g, "").slice(0, 12);
+}
+
+function normalizeSchoolId(value: string): string {
+  return value.replace(/[^\d]/g, "").slice(0, 6);
+}
+
+function normalizeContactNumber(value: string): string {
+  return value.replace(/[^\d]/g, "").slice(0, 11);
 }
 
 function parseGradeLevelNumber(label: string): number | null {
@@ -166,6 +192,63 @@ export default function WalkInEncoder() {
   const [gradeLevels, setGradeLevels] = useState<GradeLevelOption[]>([]);
   const [loadingGradeLevels, setLoadingGradeLevels] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const [dateInput, setDateInput] = useState(() => {
+    if (!formData.birthdate) return "";
+    const d = new Date(formData.birthdate);
+    return isValid(d) ? format(d, "MM/dd/yyyy") : "";
+  });
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState<Date>(() => {
+    if (formData.birthdate) {
+      const d = new Date(formData.birthdate);
+      if (isValid(d)) return d;
+    }
+    return new Date();
+  });
+
+  const handleDateTyping = (
+    value: string,
+    onChange: (val: string) => void,
+  ) => {
+    const isDeleting = value.length < dateInput.length;
+    const cleaned = value.replace(/\D/g, "").slice(0, 8);
+
+    let masked = "";
+    if (cleaned.length > 0) {
+      masked = cleaned.slice(0, 2);
+      if (cleaned.length > 2 || (cleaned.length === 2 && !isDeleting)) {
+        masked += "/";
+      }
+      if (cleaned.length > 2) {
+        masked += cleaned.slice(2, 4);
+        if (cleaned.length > 4 || (cleaned.length === 4 && !isDeleting)) {
+          masked += "/";
+        }
+      }
+      if (cleaned.length > 4) {
+        masked += cleaned.slice(4, 8);
+      }
+    }
+
+    setDateInput(masked);
+
+    if (masked.length === 10) {
+      const parsedDate = parse(masked, "MM/dd/yyyy", new Date());
+      if (
+        isValid(parsedDate) &&
+        !isAfter(parsedDate, new Date()) &&
+        !isBefore(parsedDate, new Date(1900, 0, 1))
+      ) {
+        onChange(format(parsedDate, "yyyy-MM-dd"));
+        setCalendarMonth(parsedDate);
+      } else {
+        onChange("");
+      }
+    } else {
+      onChange("");
+    }
+  };
 
   useEffect(() => {
     void fetchGradeLevels();
@@ -288,6 +371,17 @@ export default function WalkInEncoder() {
       sileo.error({
         title: "Origin School Required",
         description: "Provide origin school name for transferees.",
+      });
+      return false;
+    }
+
+    if (
+      formData.lastSchoolId.trim() &&
+      !/^\d{6}$/.test(formData.lastSchoolId.trim())
+    ) {
+      sileo.error({
+        title: "Invalid School ID",
+        description: "DepEd School ID must be exactly 6 digits.",
       });
       return false;
     }
@@ -646,14 +740,75 @@ export default function WalkInEncoder() {
                 <Label className="text-[11px] font-bold uppercase tracking-wider">
                   Birthdate *
                 </Label>
-                <Input
-                  type="date"
-                  value={formData.birthdate}
-                  className="h-10 font-bold"
-                  onChange={(event) => {
-                    setField("birthdate", event.target.value);
-                  }}
-                />
+                <div className="relative">
+                  <Input
+                    placeholder="MM/DD/YYYY"
+                    maxLength={10}
+                    inputMode="numeric"
+                    value={dateInput}
+                    onChange={(e) =>
+                      handleDateTyping(e.target.value, (val) =>
+                        setField("birthdate", val),
+                      )
+                    }
+                    className={cn(
+                      "h-10 font-bold pr-10",
+                      !formData.birthdate && "border-amber-200/60",
+                    )}
+                  />
+                  <Popover
+                    open={isCalendarOpen}
+                    onOpenChange={(open) => {
+                      if (open && formData.birthdate) {
+                        const d = new Date(formData.birthdate);
+                        if (isValid(d)) setCalendarMonth(d);
+                      }
+                      setIsCalendarOpen(open);
+                    }}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-full w-9 hover:bg-transparent">
+                        <CalendarIcon
+                          className={cn(
+                            "h-4 w-4 transition-colors",
+                            isCalendarOpen
+                              ? "text-primary"
+                              : "text-muted-foreground",
+                          )}
+                        />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar
+                        mode="single"
+                        captionLayout="dropdown"
+                        selected={
+                          formData.birthdate
+                            ? new Date(formData.birthdate)
+                            : undefined
+                        }
+                        month={calendarMonth}
+                        onMonthChange={setCalendarMonth}
+                        onSelect={(date) => {
+                          if (date) {
+                            const formatted = format(date, "yyyy-MM-dd");
+                            setField("birthdate", formatted);
+                            setDateInput(format(date, "MM/dd/yyyy"));
+                            setCalendarMonth(date);
+                            setIsCalendarOpen(false);
+                          }
+                        }}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date(1950, 0, 1)
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label className="text-[11px] font-bold uppercase tracking-wider">
@@ -716,9 +871,10 @@ export default function WalkInEncoder() {
                   value={formData.lastSchoolId}
                   placeholder="6-DIGIT ID"
                   maxLength={6}
-                  className="h-10 font-bold uppercase"
+                  inputMode="numeric"
+                  className="h-10 font-bold"
                   onChange={(event) => {
-                    setUpperField("lastSchoolId", event.target.value);
+                    setField("lastSchoolId", normalizeSchoolId(event.target.value));
                   }}
                 />
               </div>
@@ -760,12 +916,12 @@ export default function WalkInEncoder() {
                     setField("lastGradeCompleted", value);
                   }}>
                   <SelectTrigger className="h-10 font-bold">
-                    <SelectValue placeholder="Select grade" />
+                    <SelectValue placeholder="SELECT GRADE" />
                   </SelectTrigger>
                   <SelectContent>
                     {["6", "7", "8", "9"].map((g) => (
                       <SelectItem key={g} value={g}>
-                        Grade {g}
+                        GRADE {g}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -784,9 +940,9 @@ export default function WalkInEncoder() {
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="PUBLIC">Public</SelectItem>
-                    <SelectItem value="PRIVATE">Private</SelectItem>
-                    <SelectItem value="INTERNATIONAL">International</SelectItem>
+                    <SelectItem value="PUBLIC">PUBLIC</SelectItem>
+                    <SelectItem value="PRIVATE">PRIVATE</SelectItem>
+                    <SelectItem value="INTERNATIONAL">INTERNATIONAL</SelectItem>
                     <SelectItem value="ALS">ALS</SelectItem>
                   </SelectContent>
                 </Select>
@@ -976,12 +1132,14 @@ export default function WalkInEncoder() {
                 <Input
                   value={formData.mother.contactNumber}
                   placeholder="09XXXXXXXXX"
+                  maxLength={11}
+                  inputMode="numeric"
                   className="h-10 font-bold"
                   onChange={(event) => {
                     setContactField(
                       "mother",
                       "contactNumber",
-                      event.target.value,
+                      normalizeContactNumber(event.target.value),
                     );
                   }}
                 />
@@ -989,6 +1147,7 @@ export default function WalkInEncoder() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-4">
+              {/* ... Father names ... */}
               <div className="space-y-2">
                 <Label className="text-[11px] font-bold uppercase tracking-wider">
                   Father - First Name
@@ -1035,12 +1194,14 @@ export default function WalkInEncoder() {
                 <Input
                   value={formData.father.contactNumber}
                   placeholder="09XXXXXXXXX"
+                  maxLength={11}
+                  inputMode="numeric"
                   className="h-10 font-bold"
                   onChange={(event) => {
                     setContactField(
                       "father",
                       "contactNumber",
-                      event.target.value,
+                      normalizeContactNumber(event.target.value),
                     );
                   }}
                 />
@@ -1048,6 +1209,7 @@ export default function WalkInEncoder() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-4">
+              {/* ... Guardian names ... */}
               <div className="space-y-2">
                 <Label className="text-[11px] font-bold uppercase tracking-wider">
                   Guardian - First Name
@@ -1085,12 +1247,14 @@ export default function WalkInEncoder() {
                 <Input
                   value={formData.guardian.contactNumber}
                   placeholder="09XXXXXXXXX"
+                  maxLength={11}
+                  inputMode="numeric"
                   className="h-10 font-bold"
                   onChange={(event) => {
                     setContactField(
                       "guardian",
                       "contactNumber",
-                      event.target.value,
+                      normalizeContactNumber(event.target.value),
                     );
                   }}
                 />
@@ -1118,9 +1282,11 @@ export default function WalkInEncoder() {
                 <Input
                   value={formData.contactNumber}
                   placeholder="09XXXXXXXXX"
+                  maxLength={11}
+                  inputMode="numeric"
                   className="h-10 font-bold"
                   onChange={(event) => {
-                    setField("contactNumber", event.target.value);
+                    setField("contactNumber", normalizeContactNumber(event.target.value));
                   }}
                 />
               </div>

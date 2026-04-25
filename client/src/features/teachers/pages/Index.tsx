@@ -566,7 +566,7 @@ export default function Teachers() {
             <GraduationCap className="h-7 w-7 md:h-8 md:w-8 text-primary" />
             Teacher Management
           </h1>
-          <p className="text-sm text-muted-foreground text-balance">
+          <p className="text-sm text-foreground text-balance font-bold">
             Manage teacher profiles, learning areas, and adviser assignments.
           </p>
         </div>

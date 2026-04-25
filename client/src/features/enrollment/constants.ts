@@ -102,4 +102,8 @@ export const STATUS_CONFIG: Record<
     label: "Withdrawn",
     className: "bg-zinc-100 text-zinc-700 border-zinc-300",
   },
+  TRANSFERRING_OUT: {
+    label: "Transferring Out",
+    className: "bg-rose-50 text-rose-700 border-rose-200",
+  },
 };

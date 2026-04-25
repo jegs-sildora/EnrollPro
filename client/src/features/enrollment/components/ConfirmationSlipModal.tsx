@@ -64,7 +64,7 @@ export function ConfirmationSlipModal({
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get(`/learners/lookup?lrn=${lookupLrn}`);
+      const res = await api.get(`/learner/lookup?lrn=${lookupLrn}`);
       setLearner(res.data);
     } catch (err: any) {
       if (err.response?.status === 404) {

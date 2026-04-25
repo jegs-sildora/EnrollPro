@@ -19,13 +19,16 @@ import {
   ShieldCheck,
   Stethoscope,
   Users,
+  CheckCircle2,
+  AlertTriangle,
+  Lock,
 } from "lucide-react";
 import { useApplicationDetail } from "@/features/enrollment/hooks/useApplicationDetail";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { Button } from "@/shared/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { HealthRecords } from "@/features/students/components/tabs/HealthRecords";
@@ -38,6 +41,7 @@ import api from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
 import { type AxiosError } from "axios";
 import { toastApiError } from "@/shared/hooks/useApiToast";
+import { cn } from "@/shared/lib/utils";
 
 export default function StudentProfile() {
   const { id } = useParams();

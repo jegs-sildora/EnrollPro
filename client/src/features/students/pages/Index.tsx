@@ -1,9 +1,8 @@
-import { useState, useEffect, useCallback, useMemo, startTransition, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, startTransition } from "react";
 import { useNavigate } from "react-router";
 import {
   Search,
   Eye,
-  FileText,
   MoreHorizontal,
   ArrowRightLeft,
   BadgeAlert,
@@ -499,23 +498,16 @@ export default function Students() {
     });
   };
 
-  const calculateAge = (birthDate: string) => {
-    const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    if (
-      monthDiff < 0 ||
-      (monthDiff === 0 && today.getDate() < birth.getDate())
-    ) {
-      age--;
-    }
-    return age;
-  };
-
   const handleOpenProfilePage = useCallback(
     (studentId: number) => {
       navigate(`/students/${studentId}`);
+    },
+    [navigate],
+  );
+
+  const handleOpenPermanentRecord = useCallback(
+    (studentId: number) => {
+      navigate(`/students/${studentId}?tab=permanent-record`);
     },
     [navigate],
   );
@@ -1051,7 +1043,7 @@ export default function Students() {
           <Users className="h-8 w-8" />
           Learner Directory
         </h1>
-        <p className="text-sm font-medium text-[hsl(var(--muted-foreground))]">
+        <p className="text-sm font-bold text-foreground">
           Manage officially enrolled learner records for the selected school
           year.
         </p>
