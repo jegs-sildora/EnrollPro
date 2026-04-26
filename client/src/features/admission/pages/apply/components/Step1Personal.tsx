@@ -533,12 +533,11 @@ export default function Step1Personal() {
               fallbackIcon={
                 <div className="flex flex-col items-center text-muted-foreground group-hover:text-primary transition-colors">
                   <Camera className="w-8 h-8 mb-1" />
-                  <span className="text-[0.625rem] uppercase font-bold tracking-tight">
+                  <span className="text-[0.625rem] uppercase font-bold ">
                     Upload 2x2
                   </span>
                 </div>
-              }
-            >
+              }>
               {studentPhoto && (
                 <button
                   onClick={clearPhoto}
@@ -561,7 +560,9 @@ export default function Step1Personal() {
         {/* NAME FIELDS COLUMN */}
         <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label htmlFor="lastName" className="text-sm font-semibold">
+            <Label
+              htmlFor="lastName"
+              className="text-sm font-semibold">
               Last Name <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -583,7 +584,9 @@ export default function Step1Personal() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="firstName" className="text-sm font-semibold">
+            <Label
+              htmlFor="firstName"
+              className="text-sm font-semibold">
               First Name <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -605,7 +608,9 @@ export default function Step1Personal() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="middleName" className="text-sm font-semibold">
+            <Label
+              htmlFor="middleName"
+              className="text-sm font-semibold">
               Middle Name
             </Label>
             <Input
@@ -618,7 +623,9 @@ export default function Step1Personal() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="extensionName" className="text-sm font-semibold">
+            <Label
+              htmlFor="extensionName"
+              className="text-sm font-semibold">
               Suffix (Extension)
             </Label>
             <Select
@@ -629,7 +636,9 @@ export default function Step1Personal() {
               </SelectTrigger>
               <SelectContent>
                 {["N/A", "Jr.", "Sr.", "II", "III", "IV", "V"].map((opt) => (
-                  <SelectItem key={opt} value={opt}>
+                  <SelectItem
+                    key={opt}
+                    value={opt}>
                     {opt}
                   </SelectItem>
                 ))}
@@ -689,7 +698,9 @@ export default function Step1Personal() {
                       />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="end">
+                  <PopoverContent
+                    className="w-auto p-0"
+                    align="end">
                     <Calendar
                       mode="single"
                       captionLayout="dropdown"
@@ -723,7 +734,9 @@ export default function Step1Personal() {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="age" className="text-sm font-semibold">
+          <Label
+            htmlFor="age"
+            className="text-sm font-semibold">
             Age
           </Label>
           <Input
@@ -773,7 +786,9 @@ export default function Step1Personal() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
         <div className="space-y-1.5">
-          <Label htmlFor="placeOfBirth" className="text-sm font-semibold">
+          <Label
+            htmlFor="placeOfBirth"
+            className="text-sm font-semibold">
             Place of Birth <span className="text-destructive">*</span>
           </Label>
           <Input
@@ -794,7 +809,9 @@ export default function Step1Personal() {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="motherTongue" className="text-sm font-semibold">
+          <Label
+            htmlFor="motherTongue"
+            className="text-sm font-semibold">
             Mother Tongue
           </Label>
           <Input
@@ -810,7 +827,9 @@ export default function Step1Personal() {
       <div className="pt-6 border-t border-border/40">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
           <div className="space-y-1.5">
-            <Label htmlFor="religion" className="text-sm font-semibold">
+            <Label
+              htmlFor="religion"
+              className="text-sm font-semibold">
               Religion
             </Label>
             <Input

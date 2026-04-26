@@ -89,7 +89,7 @@ export function TeacherDesignationSheet({
         side="right"
         className="w-full p-0 sm:max-w-3xl flex flex-col overflow-hidden bg-background">
         <SheetHeader className="space-y-1 border-b p-3 sm:p-4 pr-14 shrink-0 bg-primary font-black">
-          <SheetTitle className="text-base sm:text-lg text-primary-foreground font-black tracking-tight uppercase">
+          <SheetTitle className="text-base sm:text-lg text-primary-foreground font-black  uppercase">
             Teacher Designation
           </SheetTitle>
           <SheetDescription className="text-[11px] sm:text-xs text-primary-foreground flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
@@ -120,7 +120,7 @@ export function TeacherDesignationSheet({
                   <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
                     Teacher
                   </p>
-                  <h3 className="font-black text-base sm:text-lg uppercase tracking-tight break-words">
+                  <h3 className="font-black text-base sm:text-lg uppercase  break-words">
                     {teacherDisplayName}
                   </h3>
                 </div>

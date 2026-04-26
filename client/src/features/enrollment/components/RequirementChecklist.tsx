@@ -334,7 +334,10 @@ export function RequirementChecklist({
     if ((apiReq as any)?.isMet) return "met";
 
     // Vault Override: If PSA is already verified in the learner's vault, it's permanently met
-    if (requirement.type === "PSA_BIRTH_CERTIFICATE" && hasPsaBirthCertificate) {
+    if (
+      requirement.type === "PSA_BIRTH_CERTIFICATE" &&
+      hasPsaBirthCertificate
+    ) {
       return "met";
     }
 
@@ -448,7 +451,7 @@ export function RequirementChecklist({
                 isLoadingRequirements ||
                 !hasPendingChanges
               }
-              className="h-7 text-[0.625rem] font-bold uppercase tracking-tight gap-1.5">
+              className="h-7 text-[0.625rem] font-bold uppercase  gap-1.5">
               {isUpdating ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
               ) : (
@@ -490,7 +493,9 @@ export function RequirementChecklist({
                 </SelectContent>
               </Select>
               {currentAcademicStatus === "RETAINED" && (
-                <Badge variant="destructive" className="text-[10px] font-bold">
+                <Badge
+                  variant="destructive"
+                  className="text-[10px] font-bold">
                   Retained blocks verification/enrollment
                 </Badge>
               )}
@@ -599,7 +604,9 @@ export function RequirementChecklist({
             size="sm"
             className="w-full text-[0.625rem] h-8 font-bold gap-2 uppercase tracking-wider"
             asChild>
-            <Link to="/settings?tab=requirements" target="_blank">
+            <Link
+              to="/settings?tab=requirements"
+              target="_blank">
               <BookOpen className="h-3 w-3" />
               View Requirements Guide
               <ExternalLink className="h-2 w-2 ml-auto" />

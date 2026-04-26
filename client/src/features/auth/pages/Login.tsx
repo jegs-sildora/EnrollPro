@@ -466,7 +466,7 @@ export default function Login() {
         <div className="relative z-10 flex flex-col justify-center px-12 xl:px-20 text-white w-full">
           <div className="flex items-center gap-4 mb-12">
             <div>
-              <h1 className="text-4xl font-bold tracking-tight">{acronym}</h1>
+              <h1 className="text-4xl font-bold ">{acronym}</h1>
               <p className="text-white text-sm font-bold max-w-md">
                 {projectTagline}
               </p>
@@ -474,7 +474,7 @@ export default function Login() {
           </div>
 
           <div className="space-y-3 mb-12">
-            <h2 className="text-3xl xl:text-4xl font-bold leading-tight tracking-tight">
+            <h2 className="text-3xl xl:text-4xl font-bold leading-tight ">
               {schoolName}
             </h2>
             <p className="text-white text-sm font-bold">{jhsScopeLabel}</p>
@@ -629,7 +629,6 @@ export default function Login() {
         </div>
 
         <div className="relative z-10 w-full max-w-[420px]">
-
           <Card className="border-0 shadow-2xl shadow-gray-200 bg-white/90 backdrop-blur-xl rounded-lg overflow-hidden">
             <CardHeader className="space-y-1 text-center pt-5 pb-0 px-6">
               <div

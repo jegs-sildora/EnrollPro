@@ -231,7 +231,7 @@ export function TeacherFormSheet({
 
         <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
           <SheetHeader className="space-y-1 border-b bg-primary px-6 py-4 pr-14 shrink-0">
-            <SheetTitle className="text-base sm:text-lg text-primary-foreground font-black tracking-tight uppercase">
+            <SheetTitle className="text-base sm:text-lg text-primary-foreground font-black  uppercase">
               {title}
             </SheetTitle>
             <SheetDescription className="text-[11px] sm:text-xs text-primary-foreground/90 font-medium">
@@ -246,9 +246,13 @@ export function TeacherFormSheet({
                   photo={photoPreviewUrl}
                   containerClassName={cn(
                     "h-20 w-20 shrink-0 rounded-xl border border-dashed border-primary",
-                    canShowPhoto ? "cursor-zoom-in transition hover:border-solid" : ""
+                    canShowPhoto
+                      ? "cursor-zoom-in transition hover:border-solid"
+                      : "",
                   )}
-                  onEnlarge={canShowPhoto ? () => setIsPhotoEnlarged(true) : undefined}
+                  onEnlarge={
+                    canShowPhoto ? () => setIsPhotoEnlarged(true) : undefined
+                  }
                   alt="Teacher preview"
                 />
 
@@ -411,7 +415,9 @@ export function TeacherFormSheet({
                         Not set
                       </SelectItem>
                       {TEACHER_PLANTILLA_POSITION_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
+                        <SelectItem
+                          key={option.value}
+                          value={option.value}>
                           {option.label}
                         </SelectItem>
                       ))}
@@ -439,7 +445,9 @@ export function TeacherFormSheet({
                         Not set
                       </SelectItem>
                       {learningAreaOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
+                        <SelectItem
+                          key={option.value}
+                          value={option.value}>
                           {option.label}
                         </SelectItem>
                       ))}
@@ -470,7 +478,9 @@ export function TeacherFormSheet({
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-60" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent align="start" className="w-80 p-3 sm:w-96">
+                    <PopoverContent
+                      align="start"
+                      className="w-80 p-3 sm:w-96">
                       <div className="relative">
                         <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input

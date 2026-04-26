@@ -288,7 +288,7 @@ export default function SampleIntegrationPage() {
     <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 md:px-8">
       <header className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <h1 className="flex items-center gap-2 text-3xl font-bold tracking-tight">
+          <h1 className="flex items-center gap-2 text-3xl font-bold ">
             <Database className="h-7 w-7 text-primary" />
             Core API Feed Console
           </h1>
@@ -307,7 +307,10 @@ export default function SampleIntegrationPage() {
             </Badge>
           </div>
         </div>
-        <Button onClick={loadData} disabled={loading} variant="outline">
+        <Button
+          onClick={loadData}
+          disabled={loading}
+          variant="outline">
           <RefreshCw
             className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`}
           />
@@ -375,7 +378,9 @@ export default function SampleIntegrationPage() {
                   </p>
                 ) : (
                   teachers.map((teacher) => (
-                    <div key={teacher.id} className="rounded border p-2">
+                    <div
+                      key={teacher.id}
+                      className="rounded border p-2">
                       <p className="font-semibold">
                         {formatTeacherName(teacher)}
                       </p>
@@ -436,7 +441,9 @@ export default function SampleIntegrationPage() {
                   </p>
                 ) : (
                   staffUsers.map((member) => (
-                    <div key={member.id} className="rounded border p-2">
+                    <div
+                      key={member.id}
+                      className="rounded border p-2">
                       <p className="font-semibold">{formatUserName(member)}</p>
                       <p className="text-xs text-muted-foreground">
                         User ID: {member.id} | Role: {member.role}
@@ -489,7 +496,9 @@ export default function SampleIntegrationPage() {
                   </p>
                 ) : (
                   learners.map((learnerRow) => (
-                    <div key={learnerRow.id} className="rounded border p-2">
+                    <div
+                      key={learnerRow.id}
+                      className="rounded border p-2">
                       <p className="font-semibold">{learnerRow.fullName}</p>
                       <p className="text-xs text-muted-foreground">
                         Application ID: {learnerRow.id} | Tracking:{" "}

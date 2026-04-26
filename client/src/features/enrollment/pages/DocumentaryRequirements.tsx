@@ -267,9 +267,7 @@ export default function DocumentaryRequirements() {
   return (
     <div className="space-y-6 w-full max-w-[1600px] mx-auto pb-10 px-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Documentary Requirements Guide
-        </h1>
+        <h1 className="text-3xl font-bold ">Documentary Requirements Guide</h1>
         <p className="text-muted-foreground">
           Official reference for enrollment documents based on DepEd Order No.
           017, s. 2025.
@@ -418,13 +416,17 @@ export default function DocumentaryRequirements() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="jhs" className="w-full">
+          <Tabs
+            defaultValue="jhs"
+            className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="jhs">Junior High (7-10)</TabsTrigger>
               <TabsTrigger value="special">Special Categories</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="jhs" className="space-y-4">
+            <TabsContent
+              value="jhs"
+              className="space-y-4">
               <DataTable
                 columns={jhsColumns}
                 data={jhsData}
@@ -432,7 +434,9 @@ export default function DocumentaryRequirements() {
               />
             </TabsContent>
 
-            <TabsContent value="special" className="space-y-4">
+            <TabsContent
+              value="special"
+              className="space-y-4">
               <DataTable
                 columns={specialColumns}
                 data={specialData}

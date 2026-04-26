@@ -99,7 +99,7 @@ export default function F2FEarlyRegistrationSuccess({
               Application Tracking Number
             </p>
             <div className="flex items-center justify-center gap-4">
-              <p className="text-4xl  font-black text-foreground tracking-tighter">
+              <p className="text-4xl  font-black text-foreground ">
                 {trackingNumber}
               </p>
               <div

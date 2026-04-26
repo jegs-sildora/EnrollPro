@@ -127,10 +127,15 @@ export default function EarlyRegistrationForm({
     new Map(
       Object.entries(methods.formState.errors)
         .flatMap(([fieldPath, errorValue]) => {
-          const collect = (val: any, path: string): Array<{ path: string; message: string }> => {
+          const collect = (
+            val: any,
+            path: string,
+          ): Array<{ path: string; message: string }> => {
             if (!val || typeof val !== "object") return [];
             if (val.message) return [{ path, message: val.message }];
-            return Object.entries(val).flatMap(([k, v]) => collect(v, `${path}.${k}`));
+            return Object.entries(val).flatMap(([k, v]) =>
+              collect(v, `${path}.${k}`),
+            );
           };
           return collect(errorValue, fieldPath);
         })
@@ -282,7 +287,8 @@ export default function EarlyRegistrationForm({
     if (!isValid) {
       sileo.error({
         title: "Incomplete Information",
-        description: "Please provide the following required information to proceed",
+        description:
+          "Please provide the following required information to proceed",
       });
       return;
     }
@@ -292,7 +298,8 @@ export default function EarlyRegistrationForm({
       if (!isLrnAvailable) {
         sileo.error({
           title: "LRN Validation Failed",
-          description: "Please provide the following required information to proceed",
+          description:
+            "Please provide the following required information to proceed",
         });
         return;
       }
@@ -322,7 +329,9 @@ export default function EarlyRegistrationForm({
     // Find step for this field
     let stepId = "basic-info";
     for (const [sId, fields] of Object.entries(STEP_FIELDS)) {
-      if (fields.some(f => f === fieldPath || fieldPath.startsWith(f + "."))) {
+      if (
+        fields.some((f) => f === fieldPath || fieldPath.startsWith(f + "."))
+      ) {
         stepId = sId;
         break;
       }
@@ -434,7 +443,7 @@ export default function EarlyRegistrationForm({
                 {currentIndex}
               </div>
               <div>
-                <h2 className="text-xl font-bold tracking-tight text-foreground leading-tight">
+                <h2 className="text-xl font-bold  text-foreground leading-tight">
                   {stepper.state.current.data.title}
                 </h2>
                 <p className="text-sm text-muted-foreground mt-0.5 font-bold">
@@ -525,9 +534,7 @@ export default function EarlyRegistrationForm({
                     type="button"
                     size="lg"
                     onClick={nextStep}
-                    disabled={
-                      isSubmitting || isCheckingLrn
-                    }
+                    disabled={isSubmitting || isCheckingLrn}
                     className="h-12 px-8 font-semibold sm:w-auto w-full bg-primary text-primary-foreground hover:bg-primary/90">
                     {isEditing ? "Update and Review" : "Next Step"}
                     <ArrowRight className="ml-2 h-4 w-4" />

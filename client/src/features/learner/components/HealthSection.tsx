@@ -162,7 +162,7 @@ export function HealthSection({ learner }: Props) {
                 <div
                   key={item.label}
                   className="bg-white p-3 rounded-lg border border-blue-100 shadow-sm">
-                  <span className="block text-[0.625rem] font-bold text-blue-800/60 uppercase tracking-tighter mb-1">
+                  <span className="block text-[0.625rem] font-bold text-blue-800/60 uppercase  mb-1">
                     {item.label}
                   </span>
                   <span

@@ -78,7 +78,7 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
             className="h-20 w-auto object-contain"
           />
         </div>
-        <CardTitle className="text-2xl font-bold tracking-tight">
+        <CardTitle className="text-2xl font-bold ">
           View Your School Records
         </CardTitle>
         <CardDescription className="text-sm">
@@ -87,9 +87,13 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-5">
           {error && (
-            <Alert variant="destructive" className="py-3">
+            <Alert
+              variant="destructive"
+              className="py-3">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription className="text-xs font-medium">
                 {error}
@@ -121,39 +125,51 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
               Date of Birth *
             </Label>
             <div className="grid grid-cols-3 gap-2">
-              <Select value={month} onValueChange={setMonth}>
+              <Select
+                value={month}
+                onValueChange={setMonth}>
                 <SelectTrigger className="h-11">
                   <SelectValue placeholder="Month" />
                 </SelectTrigger>
                 <SelectContent>
                   {MONTHS.map((m) => (
-                    <SelectItem key={m} value={m}>
+                    <SelectItem
+                      key={m}
+                      value={m}>
                       {m}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <Select value={day} onValueChange={setDay}>
+              <Select
+                value={day}
+                onValueChange={setDay}>
                 <SelectTrigger className="h-11">
                   <SelectValue placeholder="Day" />
                 </SelectTrigger>
                 <SelectContent>
                   {days.map((d) => (
-                    <SelectItem key={d} value={d}>
+                    <SelectItem
+                      key={d}
+                      value={d}>
                       {d}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <Select value={year} onValueChange={setYear}>
+              <Select
+                value={year}
+                onValueChange={setYear}>
                 <SelectTrigger className="h-11">
                   <SelectValue placeholder="Year" />
                 </SelectTrigger>
                 <SelectContent>
                   {years.map((y) => (
-                    <SelectItem key={y} value={y}>
+                    <SelectItem
+                      key={y}
+                      value={y}>
                       {y}
                     </SelectItem>
                   ))}

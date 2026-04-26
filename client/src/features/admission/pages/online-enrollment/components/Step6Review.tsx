@@ -75,7 +75,7 @@ const DataItem = ({
 
   return (
     <div className="space-y-0.5">
-      <p className="text-[0.625rem] font-bold uppercase text-muted-foreground tracking-tight">
+      <p className="text-[0.625rem] font-bold uppercase text-muted-foreground ">
         {label}
       </p>
       <p className="font-bold text-foreground truncate">
@@ -140,7 +140,10 @@ export default function Step6Review({
               </div>
             </div>
           )}
-          <DataItem label="Full Name" value={fullName} />
+          <DataItem
+            label="Full Name"
+            value={fullName}
+          />
           <DataItem
             label="Birthdate"
             value={data.birthdate ? format(data.birthdate, "MMMM d, yyyy") : ""}
@@ -168,8 +171,15 @@ export default function Step6Review({
             label="Primary Contact"
             value={data.primaryContact?.replace("_", " ")}
           />
-          <DataItem label="Primary Contact Number" value={data.contactNumber} />
-          <DataItem label="Primary Email" value={data.email} noUppercase />
+          <DataItem
+            label="Primary Contact Number"
+            value={data.contactNumber}
+          />
+          <DataItem
+            label="Primary Email"
+            value={data.email}
+            noUppercase
+          />
           <DataItem
             label="Mother"
             value={`${data.mother?.firstName || ""} ${data.mother?.lastName || ""}`}
@@ -232,7 +242,10 @@ export default function Step6Review({
           icon={School}
           stepId={4}
           onEdit={onEdit}>
-          <DataItem label="Last School" value={data.lastSchoolName} />
+          <DataItem
+            label="Last School"
+            value={data.lastSchoolName}
+          />
           <DataItem
             label="Last Grade Completed"
             value={data.lastGradeCompleted}
@@ -241,7 +254,10 @@ export default function Step6Review({
             label="School Year Last Attended"
             value={data.schoolYearLastAttended}
           />
-          <DataItem label="School Type" value={data.lastSchoolType} />
+          <DataItem
+            label="School Type"
+            value={data.lastSchoolType}
+          />
           <DataItem
             label="Final General Average (SF9)"
             value={generalAverageDisplay}

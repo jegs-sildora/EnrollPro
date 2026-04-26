@@ -179,7 +179,10 @@ export const EnrollmentFormSchema = z
     contactNumber: z
       .string()
       .regex(/^09\d{2}-\d{3}-\d{4}$/, "Use format 09XX-XXX-XXXX."),
-    isContactInfoConfirmed: z.boolean().default(false),
+    isContactInfoConfirmed: z.boolean().refine((val) => val === true, {
+      message:
+        "You must confirm that the primary contact number and email are still active and correct.",
+    }),
     guardianRelationship: z.string().optional().nullable(),
     email: z
       .string()
@@ -200,8 +203,10 @@ export const EnrollmentFormSchema = z
 
     // Section 7.1: DepEd Compliance (Temporary Enrollment)
     isMissingSf9: z.boolean().default(false),
+    hasSf9CertificationLetter: z.boolean().default(false),
     hasUnsettledPrivateAccount: z.boolean().default(false),
     originatingSchoolName: z.string().optional().nullable(),
+    hasExecutedAffidavit: z.boolean().default(false),
     temporaryStatusDeadline: z.date().optional().nullable(),
 
     // Section 8: SCP Specifics
@@ -300,15 +305,6 @@ export const EnrollmentFormSchema = z
       }
     }
 
-    if (!data.isContactInfoConfirmed) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message:
-          "Please confirm that your contact details are current before proceeding.",
-        path: ["isContactInfoConfirmed"],
-      });
-    }
-
     const isMotherAvailable = !data.hasNoMother;
     const isFatherAvailable = !data.hasNoFather;
 
@@ -371,6 +367,15 @@ export const EnrollmentFormSchema = z
         message:
           "Complete guardian details before selecting Guardian as primary contact.",
         path: ["primaryContact"],
+      });
+    }
+
+    if (data.hasUnsettledPrivateAccount && !data.hasExecutedAffidavit) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "You must confirm that the affidavit has been physically executed and filed.",
+        path: ["hasExecutedAffidavit"],
       });
     }
   });

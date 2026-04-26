@@ -325,39 +325,56 @@ export default function Sections() {
           variant="outline"
           className="text-[9px] font-black uppercase border-amber-300 bg-amber-50 text-amber-700 shadow-none px-2 py-0.5">
           ⚠️ Temporary
-        </Badge>
+        </Badge>,
       );
     }
 
     // Phase 5: Late Enrollee Logic
-    if (learner.sectioningMethod === "INLINE_SLOTTING" && learner.dateSectioned) {
-      const isLate = !classOpeningDate || new Date(learner.dateSectioned) > new Date(classOpeningDate);
+    if (
+      learner.sectioningMethod === "INLINE_SLOTTING" &&
+      learner.dateSectioned
+    ) {
+      const isLate =
+        !classOpeningDate ||
+        new Date(learner.dateSectioned) > new Date(classOpeningDate);
       if (isLate) {
         remarks.push(
-          <span key="late" className="text-[10px] font-black text-emerald-600 uppercase tracking-tight bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 ml-1">
+          <span
+            key="late"
+            className="text-[10px] font-black text-emerald-600 uppercase  bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 ml-1">
             Late Enrollee ({format(new Date(learner.dateSectioned), "MMM d")})
-          </span>
+          </span>,
         );
       }
     }
 
     if (learner.learnerType === "TRANSFEREE") {
       remarks.push(
-        <span key="transferee" className="text-[10px] font-bold text-foreground uppercase tracking-tight ml-1">
+        <span
+          key="transferee"
+          className="text-[10px] font-bold text-foreground uppercase  ml-1">
           [ Transferee ]
-        </span>
-      );
-    }
-    
-    if (learner.learnerType === "RETURNING") {
-      remarks.push(
-        <span key="returning" className="text-[10px] font-bold text-foreground uppercase tracking-tight ml-1">
-          [ Balik-Aral ]
-        </span>
+        </span>,
       );
     }
 
-    return remarks.length > 0 ? <div className="flex flex-wrap items-center justify-center gap-1">{remarks}</div> : <span className="text-foreground">-</span>;
+    if (learner.learnerType === "RETURNING") {
+      remarks.push(
+        <span
+          key="returning"
+          className="text-[10px] font-bold text-foreground uppercase  ml-1">
+          [ Balik-Aral ]
+        </span>,
+      );
+    }
+
+    return remarks.length > 0 ? (
+      <div className="flex flex-wrap items-center justify-center gap-1">
+        {remarks}
+      </div>
+    ) : (
+      <span className="text-foreground">-</span>
+    );
   };
 
   const { maleLearners, femaleLearners } = useMemo(() => {
@@ -613,7 +630,7 @@ export default function Sections() {
                   </div>
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
-                      <h4 className="font-black text-base uppercase tracking-tight">
+                      <h4 className="font-black text-base uppercase ">
                         {displaySectionName}
                       </h4>
                       <Badge
@@ -666,7 +683,7 @@ export default function Sections() {
                         maxCapacity: s.maxCapacity,
                         enrolledCount: s.enrolledCount,
                         programType: s.programType,
-                        gradeLevelId: glId
+                        gradeLevelId: glId,
                       })
                     }>
                     <Users className="h-3.5 w-3.5 mr-2" /> View Roster
@@ -736,7 +753,7 @@ export default function Sections() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Sections</h1>
+          <h1 className="text-3xl font-bold ">Sections</h1>
           <p className="text-sm text-foreground font-bold">
             Manage grade level sections and advising teachers
           </p>
@@ -750,7 +767,9 @@ export default function Sections() {
             onClick={() => setViewMode("heatmap")}
             className={cn(
               "h-8 px-4 font-bold text-xs relative z-10 transition-colors",
-              viewMode === "heatmap" ? "text-primary-foreground hover:text-primary-foreground" : "text-foreground hover:bg-transparent"
+              viewMode === "heatmap"
+                ? "text-primary-foreground hover:text-primary-foreground"
+                : "text-foreground hover:bg-transparent",
             )}>
             {viewMode === "heatmap" && (
               <motion.div
@@ -769,7 +788,9 @@ export default function Sections() {
             onClick={() => setViewMode("list")}
             className={cn(
               "h-8 px-4 font-bold text-xs relative z-10 transition-colors",
-              viewMode === "list" ? "text-primary-foreground hover:text-primary-foreground" : "text-foreground hover:bg-transparent"
+              viewMode === "list"
+                ? "text-primary-foreground hover:text-primary-foreground"
+                : "text-foreground hover:bg-transparent",
             )}>
             {viewMode === "list" && (
               <motion.div
@@ -783,7 +804,6 @@ export default function Sections() {
             </span>
           </Button>
         </div>
-
       </div>
 
       {showSkeleton ? (
@@ -826,13 +846,20 @@ export default function Sections() {
                       <motion.div
                         layoutId="heatmap-grade-pill"
                         className="absolute inset-0 bg-primary rounded-md"
-                        transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                        transition={{
+                          type: "spring",
+                          bounce: 0.15,
+                          duration: 0.5,
+                        }}
                       />
                     )}
-                    <span className={cn(
-                      "relative z-20",
-                      heatmapGradeFilter === "all" ? "text-primary-foreground" : "text-foreground"
-                    )}>
+                    <span
+                      className={cn(
+                        "relative z-20",
+                        heatmapGradeFilter === "all"
+                          ? "text-primary-foreground"
+                          : "text-foreground",
+                      )}>
                       All Grades
                     </span>
                   </TabsTrigger>
@@ -845,13 +872,20 @@ export default function Sections() {
                         <motion.div
                           layoutId="heatmap-grade-pill"
                           className="absolute inset-0 bg-primary rounded-md"
-                          transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                          transition={{
+                            type: "spring",
+                            bounce: 0.15,
+                            duration: 0.5,
+                          }}
                         />
                       )}
-                      <span className={cn(
-                        "relative z-20",
-                        heatmapGradeFilter === option.value ? "text-primary-foreground" : "text-foreground"
-                      )}>
+                      <span
+                        className={cn(
+                          "relative z-20",
+                          heatmapGradeFilter === option.value
+                            ? "text-primary-foreground"
+                            : "text-foreground",
+                        )}>
                         {option.label}
                       </span>
                     </TabsTrigger>
@@ -877,13 +911,15 @@ export default function Sections() {
                     onClick={() =>
                       setViewRosterSection({
                         id: section.id,
-                        name: formatSectionLabel(section.displayName ?? section.name),
+                        name: formatSectionLabel(
+                          section.displayName ?? section.name,
+                        ),
                         gradeLevelName: group.gradeLevelName,
                         adviserName: section.advisingTeacher?.name ?? null,
                         maxCapacity: section.maxCapacity,
                         enrolledCount: section.enrolledCount,
                         programType: section.programType,
-                        gradeLevelId: group.gradeLevelId
+                        gradeLevelId: group.gradeLevelId,
                       })
                     }
                     className="flex items-center gap-3 rounded-lg border border-border p-3 cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-all group">
@@ -1146,14 +1182,14 @@ export default function Sections() {
                                 isSpecialSection(s.name),
                               ),
                               g.gradeLevelName,
-                              g.gradeLevelId
+                              g.gradeLevelId,
                             )}
 
                             {renderSectionGroup(
                               "Pilot Sections",
                               g.sections.filter((s) => isPilotSection(s.name)),
                               g.gradeLevelName,
-                              g.gradeLevelId
+                              g.gradeLevelId,
                             )}
 
                             {renderSectionGroup(
@@ -1164,7 +1200,7 @@ export default function Sections() {
                                   !isPilotSection(s.name),
                               ),
                               g.gradeLevelName,
-                              g.gradeLevelId
+                              g.gradeLevelId,
                             )}
                           </div>
                         )}
@@ -1183,7 +1219,7 @@ export default function Sections() {
         onOpenChange={(open) => !open && setEditSection(null)}>
         <DialogContent className="max-w-md border-2">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold uppercase tracking-tight">
+            <DialogTitle className="text-xl font-bold uppercase ">
               Edit Section
             </DialogTitle>
           </DialogHeader>
@@ -1326,7 +1362,7 @@ export default function Sections() {
                   <Users className="h-6 w-6" />
                 </div>
                 <div className="space-y-1.5">
-                  <DialogTitle className="text-2xl font-black uppercase tracking-tight text-foreground leading-none">
+                  <DialogTitle className="text-2xl font-black uppercase  text-foreground leading-none">
                     School Form 1 (SF1)
                   </DialogTitle>
                   <div className="flex flex-col gap-1">
@@ -1380,10 +1416,11 @@ export default function Sections() {
                     {(viewRosterSection?.enrolledCount ?? 0) >=
                       (viewRosterSection?.maxCapacity ?? 0) && (
                       <TooltipContent className="bg-slate-900 text-white border-none text-[10px] font-bold uppercase tracking-widest p-3 shadow-xl">
-                         <div className="flex items-center gap-2">
-                            <AlertTriangle className="h-4 w-4 text-amber-400" />
-                            Maximum capacity reached. Override requires Principal's PIN.
-                         </div>
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4 text-amber-400" />
+                          Maximum capacity reached. Override requires
+                          Principal's PIN.
+                        </div>
                       </TooltipContent>
                     )}
                   </Tooltip>

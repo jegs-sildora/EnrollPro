@@ -81,11 +81,12 @@ export default function StudentProfile() {
     if (!student) return;
     try {
       await api.post(`/students/${student.id}/verify-psa`, { type });
-      sileo.success({ 
-        title: "Document Verified", 
-        description: type === "PSA" 
-          ? "PSA Birth Certificate has been added to the learner's vault." 
-          : "Secondary document accepted for temporary clearance."
+      sileo.success({
+        title: "Document Verified",
+        description:
+          type === "PSA"
+            ? "PSA Birth Certificate has been added to the learner's vault."
+            : "Secondary document accepted for temporary clearance.",
       });
       refetch();
     } catch (err: unknown) {
@@ -129,7 +130,7 @@ export default function StudentProfile() {
 
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-tight">
+              <h1 className="text-2xl font-bold ">
                 {student.lastName}, {student.firstName}{" "}
                 {student.middleName || ""}
               </h1>
@@ -137,20 +138,30 @@ export default function StudentProfile() {
                 variant={student.status === "ENROLLED" ? "default" : "outline"}
                 className={cn(
                   student.status === "ENROLLED" ? "bg-green-600" : "",
-                  student.status === "TEMPORARILY_ENROLLED" && "bg-amber-100 text-amber-800 border-amber-300"
+                  student.status === "TEMPORARILY_ENROLLED" &&
+                    "bg-amber-100 text-amber-800 border-amber-300",
                 )}>
                 {student.status?.replace("_", " ")}
               </Badge>
+              {student.applicantType === "LATE_ENROLLEE" && (
+                <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-black">
+                  Late Enrolled
+                </Badge>
+              )}
             </div>
 
             {student.status === "TEMPORARILY_ENROLLED" && (
               <div className="flex items-center gap-2 mt-1 px-3 py-1 rounded-lg bg-amber-50 border border-amber-100 animate-in fade-in slide-in-from-left-2 duration-500">
-                 <ShieldCheck className="h-3 w-3 text-amber-600" />
-                 <p className="text-[10px] font-black uppercase tracking-wider text-amber-700">
-                    Deficiency: {student.isMissingSf9 && "Missing SF9 (Report Card)"}
-                    {student.isMissingSf9 && student.hasUnsettledPrivateAccount && " & "}
-                    {student.hasUnsettledPrivateAccount && `Unsettled Account (${student.originatingSchoolName || "Private School"})`}
-                 </p>
+                <ShieldCheck className="h-3 w-3 text-amber-600" />
+                <p className="text-[10px] font-black uppercase tracking-wider text-amber-700">
+                  Deficiency:{" "}
+                  {student.isMissingSf9 && "Missing SF9 (Report Card)"}
+                  {student.isMissingSf9 &&
+                    student.hasUnsettledPrivateAccount &&
+                    " & "}
+                  {student.hasUnsettledPrivateAccount &&
+                    `Unsettled Account (${student.originatingSchoolName || "Private School"})`}
+                </p>
               </div>
             )}
 
@@ -198,7 +209,9 @@ export default function StudentProfile() {
               />
             )}
             <User className="h-4 w-4 relative z-20" />
-            <span className="relative z-20 hidden sm:inline">Personal Info</span>
+            <span className="relative z-20 hidden sm:inline">
+              Personal Info
+            </span>
           </TabsTrigger>
           <TabsTrigger
             value="academic"
@@ -271,14 +284,14 @@ export default function StudentProfile() {
               />
             )}
             <FileText className="h-4 w-4 relative z-20" />
-            <span className="relative z-20 hidden sm:inline">
-              Requirements
-            </span>
+            <span className="relative z-20 hidden sm:inline">Requirements</span>
           </TabsTrigger>
         </TabsList>
 
         <div className="mt-6">
-          <TabsContent value="personal" className="m-0 focus-visible:outline-none ring-0">
+          <TabsContent
+            value="personal"
+            className="m-0 focus-visible:outline-none ring-0">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -315,12 +328,8 @@ export default function StudentProfile() {
                       </p>
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-muted-foreground">
-                        Religion
-                      </Label>
-                      <p className="font-medium">
-                        {student.religion || "N/A"}
-                      </p>
+                      <Label className="text-muted-foreground">Religion</Label>
+                      <p className="font-medium">{student.religion || "N/A"}</p>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-muted-foreground">
@@ -356,8 +365,7 @@ export default function StudentProfile() {
                     {student?.permanentAddress && (
                       <div className="space-y-1">
                         <Label className="text-muted-foreground flex items-center gap-2">
-                          <MapPin className="h-3.5 w-3.5" /> Permanent
-                          Address
+                          <MapPin className="h-3.5 w-3.5" /> Permanent Address
                         </Label>
                         <p className="font-medium">
                           {student.permanentAddress.houseNo || ""}{" "}
@@ -404,8 +412,7 @@ export default function StudentProfile() {
                               : "text-muted-foreground/50 italic"
                           }`}>
                           <Phone className="h-3 w-3" />{" "}
-                          {student.motherName?.contactNumber ||
-                            "No contact"}
+                          {student.motherName?.contactNumber || "No contact"}
                         </p>
                       </div>
                     </div>
@@ -433,8 +440,7 @@ export default function StudentProfile() {
                               : "text-muted-foreground/50 italic"
                           }`}>
                           <Phone className="h-3 w-3" />{" "}
-                          {student.fatherName?.contactNumber ||
-                            "No contact"}
+                          {student.fatherName?.contactNumber || "No contact"}
                         </p>
                       </div>
                     </div>
@@ -464,8 +470,7 @@ export default function StudentProfile() {
                               : "text-muted-foreground/50 italic"
                           }`}>
                           <Phone className="h-3 w-3" />{" "}
-                          {student.guardianInfo?.contactNumber ||
-                            "No contact"}
+                          {student.guardianInfo?.contactNumber || "No contact"}
                         </p>
                       </div>
                     </div>
@@ -499,12 +504,10 @@ export default function StudentProfile() {
                   <CardContent>
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div>
-                        <p className="text-sm font-medium">
-                          Reset Portal PIN
-                        </p>
+                        <p className="text-sm font-medium">Reset Portal PIN</p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Generate a new 6-digit PIN for the learner portal.
-                          The current PIN will be invalidated.
+                          Generate a new 6-digit PIN for the learner portal. The
+                          current PIN will be invalidated.
                         </p>
                       </div>
                       <Button
@@ -512,28 +515,30 @@ export default function StudentProfile() {
                         onClick={() => setIsPinResetModalOpen(true)}>
                         Reset Portal PIN
                       </Button>
-                      </div>
-                      </CardContent>
-                      </Card>
-                      )}
-                      </motion.div>
-                      </TabsContent>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </motion.div>
+          </TabsContent>
 
-                      <TabsContent value="academic" className="m-0 focus-visible:outline-none ring-0">
-                      <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.2 }}>
-                      <Card>
-                      <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                      <GraduationCap className="h-4 w-4 text-primary" />
-                      Previous Academic Record
-                      </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
-                      <div className="space-y-4">
+          <TabsContent
+            value="academic"
+            className="m-0 focus-visible:outline-none ring-0">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <GraduationCap className="h-4 w-4 text-primary" />
+                    Previous Academic Record
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
+                    <div className="space-y-4">
                       <div className="space-y-1">
                         <Label className="text-muted-foreground">
                           Last School Attended
@@ -558,8 +563,8 @@ export default function StudentProfile() {
                           {student.lastSchoolAddress || "N/A"}
                         </p>
                       </div>
-                      </div>
-                      <div className="space-y-4">
+                    </div>
+                    <div className="space-y-4">
                       <div className="space-y-1">
                         <Label className="text-muted-foreground">
                           Last Grade Level Completed
@@ -603,136 +608,170 @@ export default function StudentProfile() {
                             "N/A"}
                         </p>
                       </div>
-                      </div>
-                      </div>
-                      </CardContent>
-                      </Card>
-                      </motion.div>
-                      </TabsContent>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
 
-                      <TabsContent value="application" className="m-0 focus-visible:outline-none ring-0">
-                      <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="md:col-span-2 space-y-6">
-                      {student.status === "TEMPORARILY_ENROLLED" && (
-                      <Card className="border-amber-200 bg-amber-50/30 overflow-hidden">
-                      <CardHeader className="bg-amber-100/50 pb-3">
+          <TabsContent
+            value="application"
+            className="m-0 focus-visible:outline-none ring-0">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="md:col-span-2 space-y-6">
+                {student.status === "TEMPORARILY_ENROLLED" && (
+                  <Card className="border-amber-200 bg-amber-50/30 overflow-hidden">
+                    <CardHeader className="bg-amber-100/50 pb-3">
                       <div className="flex items-center gap-3">
-                         <div className="p-2 bg-amber-600 rounded-lg text-white">
-                            <ShieldCheck className="h-5 w-5" />
-                         </div>
-                         <div>
-                            <CardTitle className="text-lg font-black uppercase text-amber-900 leading-none">Deficiency Resolution</CardTitle>
-                            <p className="text-[10px] font-bold text-amber-700/70 mt-1 uppercase tracking-widest">DepEd Order 017, s. 2025 Compliance</p>
-                         </div>
-                      </div>
-                      </CardHeader>
-                      <CardContent className="pt-6 space-y-4">
-                       <div className="p-4 bg-white rounded-xl border border-amber-200 space-y-3">
-                          <p className="text-xs font-bold text-slate-600 leading-relaxed italic">
-                            "Learners lacking transfer credentials or with private school debt must be admitted temporarily but restricted from official clearance generation."
+                        <div className="p-2 bg-amber-600 rounded-lg text-white">
+                          <ShieldCheck className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg font-black uppercase text-amber-900 leading-none">
+                            Deficiency Resolution
+                          </CardTitle>
+                          <p className="text-[10px] font-bold text-amber-700/70 mt-1 uppercase tracking-widest">
+                            DepEd Order 017, s. 2025 Compliance
                           </p>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-6 space-y-4">
+                      <div className="p-4 bg-white rounded-xl border border-amber-200 space-y-3">
+                        <p className="text-xs font-bold text-slate-600 leading-relaxed italic">
+                          "Learners lacking transfer credentials or with private
+                          school debt must be admitted temporarily but
+                          restricted from official clearance generation."
+                        </p>
 
-                          <div className="flex flex-wrap gap-3 pt-2">
-                             {student.isMissingSf9 && (
-                               <Button 
-                                  variant="default" 
-                                  size="sm" 
-                                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold h-9 gap-2"
-                                  onClick={async () => {
-                                     if(window.confirm("Confirm that SF9 (Report Card) has been officially received and verified?")) {
-                                        try {
-                                           await api.post(`/students/${student.id}/clear-deficiency`, { deficiencyType: "SF9" });
-                                           sileo.success({ title: "SF9 Verified", description: "Learner's documentary deficiency has been updated." });
-                                           refetch();
-                                        } catch (err: unknown) {
-                                           toastApiError(err as any);
-                                        }
-                                     }
-                                  }}
-                               >
-                                  <ClipboardList className="h-4 w-4" />
-                                  Verify / Receive SF9
-                               </Button>
-                             )}
+                        <div className="flex flex-wrap gap-3 pt-2">
+                          {student.isMissingSf9 && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="bg-amber-600 hover:bg-amber-700 text-white font-bold h-9 gap-2"
+                              onClick={async () => {
+                                if (
+                                  window.confirm(
+                                    "Confirm that SF9 (Report Card) has been officially received and verified?",
+                                  )
+                                ) {
+                                  try {
+                                    await api.post(
+                                      `/students/${student.id}/clear-deficiency`,
+                                      { deficiencyType: "SF9" },
+                                    );
+                                    sileo.success({
+                                      title: "SF9 Verified",
+                                      description:
+                                        "Learner's documentary deficiency has been updated.",
+                                    });
+                                    refetch();
+                                  } catch (err: unknown) {
+                                    toastApiError(err as any);
+                                  }
+                                }
+                              }}>
+                              <ClipboardList className="h-4 w-4" />
+                              Verify / Receive SF9
+                            </Button>
+                          )}
 
-                             {student.hasUnsettledPrivateAccount && (
-                               <Button 
-                                  variant="default" 
-                                  size="sm" 
-                                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9 gap-2"
-                                  onClick={async () => {
-                                     if(window.confirm(`Confirm that LIS clearance has been received from ${student.originatingSchoolName || "the private school"}?`)) {
-                                        try {
-                                           await api.post(`/students/${student.id}/clear-deficiency`, { deficiencyType: "FINANCIAL" });
-                                           sileo.success({ title: "Financial Clearance Received", description: "Learner's private account flag has been cleared." });
-                                           refetch();
-                                        } catch (err: unknown) {
-                                           toastApiError(err as any);
-                                        }
-                                     }
-                                  }}
-                               >
-                                  <ShieldCheck className="h-4 w-4" />
-                                  Confirm LIS Clearance
-                               </Button>
-                             )}
-                          </div>
-                       </div>
-                      </CardContent>
-                      </Card>
-                      )}
-                      <SCPAssessmentBlock applicant={student} />
-                      <Card>
-                      <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
+                          {student.hasUnsettledPrivateAccount && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9 gap-2"
+                              onClick={async () => {
+                                if (
+                                  window.confirm(
+                                    `Confirm that LIS clearance has been received from ${student.originatingSchoolName || "the private school"}?`,
+                                  )
+                                ) {
+                                  try {
+                                    await api.post(
+                                      `/students/${student.id}/clear-deficiency`,
+                                      { deficiencyType: "FINANCIAL" },
+                                    );
+                                    sileo.success({
+                                      title: "Financial Clearance Received",
+                                      description:
+                                        "Learner's private account flag has been cleared.",
+                                    });
+                                    refetch();
+                                  } catch (err: unknown) {
+                                    toastApiError(err as any);
+                                  }
+                                }
+                              }}>
+                              <ShieldCheck className="h-4 w-4" />
+                              Confirm LIS Clearance
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+                <SCPAssessmentBlock applicant={student} />
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
                       <History className="h-4 w-4 text-primary" />
                       Status History
-                      </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                      <StatusTimeline applicant={student} />
-                      </CardContent>
-                      </Card>
-                      </div>
-                      <Card className="h-fit">
-                      <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                      <Info className="h-4 w-4 text-primary" />
-                      Application Metadata
-                      </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4 text-sm font-bold">
-                      <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground flex items-center gap-2">
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <StatusTimeline applicant={student} />
+                  </CardContent>
+                </Card>
+              </div>
+              <Card className="h-fit">
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Info className="h-4 w-4 text-primary" />
+                    Application Metadata
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 text-sm font-bold">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground flex items-center gap-2">
                       <Fingerprint className="h-3.5 w-3.5" /> Tracking No:
-                      </span>
-                      <span className="uppercase">{student.trackingNumber}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground flex items-center gap-2">
+                    </span>
+                    <span className="uppercase">{student.trackingNumber}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground flex items-center gap-2">
                       <ShieldCheck className="h-3.5 w-3.5" /> Admission Channel:
-                      </span>
-                      <span className="uppercase">{student.admissionChannel}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground flex items-center gap-2">
+                    </span>
+                    <span className="uppercase">
+                      {student.admissionChannel}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground flex items-center gap-2">
                       <UserCheck className="h-3.5 w-3.5" /> Learner Type:
-                      </span>
-                      <span className="uppercase">{student.learnerType?.replace("_", " ")}</span>
-                      </div>
-                      <Separator />
-                      <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground flex items-center gap-2">
+                    </span>
+                    <span className="uppercase">
+                      {student.learnerType?.replace("_", " ")}
+                    </span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground flex items-center gap-2">
                       <Calendar className="h-3.5 w-3.5" /> Date Applied:
-                      </span>
-                      <span>{format(new Date(student.createdAt), "MMM d, yyyy")}</span>
-                      </div>
-                      {student.encodedBy && (
-                      <div className="flex justify-between items-center">
+                    </span>
+                    <span>
+                      {format(new Date(student.createdAt), "MMM d, yyyy")}
+                    </span>
+                  </div>
+                  {student.encodedBy && (
+                    <div className="flex justify-between items-center">
                       <span className="text-muted-foreground flex items-center gap-2">
                         <User className="h-3.5 w-3.5" /> Encoded By:
                       </span>
@@ -740,28 +779,30 @@ export default function StudentProfile() {
                         {student.encodedBy.firstName}{" "}
                         {student.encodedBy.lastName}
                       </span>
-                      </div>
-                      )}
-                      </CardContent>
-                      </Card>
-                      </motion.div>
-                      </TabsContent>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
 
-                      <TabsContent value="classifications" className="m-0 focus-visible:outline-none ring-0">
-                      <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.2 }}>
-                      <Card>
-                      <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                      <Tags className="h-4 w-4 text-primary" />
-                      Classifications & Special Programs
-                      </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
-                      <div className="space-y-6">
+          <TabsContent
+            value="classifications"
+            className="m-0 focus-visible:outline-none ring-0">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Tags className="h-4 w-4 text-primary" />
+                    Classifications & Special Programs
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
+                    <div className="space-y-6">
                       <div className="space-y-2">
                         <Label className="text-muted-foreground block mb-2">
                           IP Community Membership
@@ -824,16 +865,14 @@ export default function StudentProfile() {
                           </Badge>
                         )}
                       </div>
-                      </div>
-                      <div className="space-y-6">
+                    </div>
+                    <div className="space-y-6">
                       {student.isScpApplication && (
                         <div className="space-y-2">
                           <Label className="text-muted-foreground">
                             Special Curricular Program
                           </Label>
-                          <p className="font-bold text-lg">
-                            {student.scpType}
-                          </p>
+                          <p className="font-bold text-lg">{student.scpType}</p>
                           <div className="text-muted-foreground">
                             {student.artField && (
                               <p>Field: {student.artField}</p>
@@ -844,212 +883,312 @@ export default function StudentProfile() {
                           </div>
                         </div>
                       )}
-                      </div>
-                      </div>
-                      </CardContent>
-                      </Card>
-                      </motion.div>
-                      </TabsContent>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
 
-                      <TabsContent value="health" className="m-0 focus-visible:outline-none ring-0">
-                      <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.2 }}>
-                      <Card>
-                      <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                      <Stethoscope className="h-4 w-4 text-primary" />
-                      Nutritional Status & Health History
-                      </CardTitle>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                      <HealthRecords applicant={student} onRefresh={refetch} />
-                      </CardContent>
-                      </Card>
-                      </motion.div>
-                      </TabsContent>
+          <TabsContent
+            value="health"
+            className="m-0 focus-visible:outline-none ring-0">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Stethoscope className="h-4 w-4 text-primary" />
+                    Nutritional Status & Health History
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <HealthRecords
+                    applicant={student}
+                    onRefresh={refetch}
+                  />
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
 
-                      <TabsContent value="documents" className="m-0 focus-visible:outline-none ring-0">
-                      <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="space-y-6">
-                      <Card>
-                      <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                      <ShieldCheck className="h-4 w-4 text-primary" />
-                      Permanent Documentary Vault
-                      </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {student.hasPsaBirthCertificate || student.birthCertificateType === "PSA" || student.birthCertificateType === "SECONDARY" ? (
-                      <div className={cn(
-                        "flex flex-col p-6 rounded-2xl border-2 space-y-4 animate-in zoom-in-95 duration-300",
-                        student.hasPsaBirthCertificate 
-                          ? "bg-card border-emerald-200" 
-                          : "bg-amber-50 border-amber-100"
-                      )}>
+          <TabsContent
+            value="documents"
+            className="m-0 focus-visible:outline-none ring-0">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-primary" />
+                    Permanent Documentary Vault
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {student.hasPsaBirthCertificate ||
+                    student.birthCertificateType === "PSA" ||
+                    student.birthCertificateType === "SECONDARY" ? (
+                      <div
+                        className={cn(
+                          "flex flex-col p-6 rounded-2xl border-2 space-y-4 animate-in zoom-in-95 duration-300",
+                          student.hasPsaBirthCertificate
+                            ? "bg-card border-emerald-200"
+                            : "bg-amber-50 border-amber-100",
+                        )}>
                         <div className="flex items-center gap-3">
-                          <div className={cn(
-                            "p-2 rounded-lg text-white",
-                            (student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "bg-emerald-600" : "bg-amber-600"
-                          )}>
-                            {(student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? <ShieldCheck className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
+                          <div
+                            className={cn(
+                              "p-2 rounded-lg text-white",
+                              student.hasPsaBirthCertificate ||
+                                student.birthCertificateType === "PSA"
+                                ? "bg-emerald-600"
+                                : "bg-amber-600",
+                            )}>
+                            {student.hasPsaBirthCertificate ||
+                            student.birthCertificateType === "PSA" ? (
+                              <ShieldCheck className="h-5 w-5" />
+                            ) : (
+                              <AlertTriangle className="h-5 w-5" />
+                            )}
                           </div>
                           <div>
-                            <h3 className={cn(
-                              "font-black uppercase leading-none",
-                              (student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "text-foreground" : "text-amber-900"
-                            )}>
-                              {(student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "PSA Birth Certificate" : "Secondary Birth Document"}
+                            <h3
+                              className={cn(
+                                "font-black uppercase leading-none",
+                                student.hasPsaBirthCertificate ||
+                                  student.birthCertificateType === "PSA"
+                                  ? "text-foreground"
+                                  : "text-amber-900",
+                              )}>
+                              {student.hasPsaBirthCertificate ||
+                              student.birthCertificateType === "PSA"
+                                ? "PSA Birth Certificate"
+                                : "Secondary Birth Document"}
                             </h3>
-                            <p className={cn(
-                              "text-[10px] font-bold mt-1 uppercase tracking-widest",
-                              (student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "text-emerald-600" : "text-amber-700/70"
-                            )}>
-                              {(student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "SECURED IN VAULT" : "Temporary Compliance (D.O. 017)"}
+                            <p
+                              className={cn(
+                                "text-[10px] font-bold mt-1 uppercase tracking-widest",
+                                student.hasPsaBirthCertificate ||
+                                  student.birthCertificateType === "PSA"
+                                  ? "text-emerald-600"
+                                  : "text-amber-700/70",
+                              )}>
+                              {student.hasPsaBirthCertificate ||
+                              student.birthCertificateType === "PSA"
+                                ? "SECURED IN VAULT"
+                                : "Temporary Compliance (D.O. 017)"}
                             </p>
                           </div>
                         </div>
 
-                        <div className={cn(
-                          "pt-3 pb-4 px-4 space-y-2 rounded-xl",
-                          (student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "bg-muted/50 border border-border" : ""
-                        )}>
-                          <p className={cn(
-                            "text-[10px] font-black uppercase tracking-tighter",
-                            (student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "text-muted-foreground/60" : "text-amber-800/40"
-                          )}>Verification Metadata</p>
-                          <p className={cn(
-                            "text-xs font-bold",
-                            (student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "text-foreground" : "text-amber-900"
+                        <div
+                          className={cn(
+                            "pt-3 pb-4 px-4 space-y-2 rounded-xl",
+                            student.hasPsaBirthCertificate ||
+                              student.birthCertificateType === "PSA"
+                              ? "bg-muted/50 border border-border"
+                              : "",
                           )}>
-                            Document Type: <span className="uppercase">{(student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "Original PSA" : "Secondary"}</span>
+                          <p
+                            className={cn(
+                              "text-[10px] font-black uppercase ",
+                              student.hasPsaBirthCertificate ||
+                                student.birthCertificateType === "PSA"
+                                ? "text-muted-foreground/60"
+                                : "text-amber-800/40",
+                            )}>
+                            Verification Metadata
                           </p>
-                          <p className={cn(
-                            "text-xs font-bold",
-                            (student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "text-foreground" : "text-amber-900"
-                          )}>
-                            Authenticated by: <span className="uppercase">{student.birthCertificateVerifiedBy || "Registrar"}</span>
+                          <p
+                            className={cn(
+                              "text-xs font-bold",
+                              student.hasPsaBirthCertificate ||
+                                student.birthCertificateType === "PSA"
+                                ? "text-foreground"
+                                : "text-amber-900",
+                            )}>
+                            Document Type:{" "}
+                            <span className="uppercase">
+                              {student.hasPsaBirthCertificate ||
+                              student.birthCertificateType === "PSA"
+                                ? "Original PSA"
+                                : "Secondary"}
+                            </span>
                           </p>
-                          <p className={cn(
-                            "text-xs font-medium",
-                            (student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "text-muted-foreground" : "text-amber-700"
-                          )}>
-                            Date Secured: {student.birthCertificateVerifiedDate ? format(new Date(student.birthCertificateVerifiedDate), "MMMM d, yyyy, hh:mm a") : "N/A"}
+                          <p
+                            className={cn(
+                              "text-xs font-bold",
+                              student.hasPsaBirthCertificate ||
+                                student.birthCertificateType === "PSA"
+                                ? "text-foreground"
+                                : "text-amber-900",
+                            )}>
+                            Authenticated by:{" "}
+                            <span className="uppercase">
+                              {student.birthCertificateVerifiedBy ||
+                                "Registrar"}
+                            </span>
+                          </p>
+                          <p
+                            className={cn(
+                              "text-xs font-medium",
+                              student.hasPsaBirthCertificate ||
+                                student.birthCertificateType === "PSA"
+                                ? "text-muted-foreground"
+                                : "text-amber-700",
+                            )}>
+                            Date Secured:{" "}
+                            {student.birthCertificateVerifiedDate
+                              ? format(
+                                  new Date(
+                                    student.birthCertificateVerifiedDate,
+                                  ),
+                                  "MMMM d, yyyy, hh:mm a",
+                                )
+                              : "N/A"}
                           </p>
                         </div>
 
-                        {(student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? (
+                        {student.hasPsaBirthCertificate ||
+                        student.birthCertificateType === "PSA" ? (
                           <div className="flex items-center gap-2 bg-primary/10 p-3 rounded-lg border border-primary/20 mt-2">
-                             <Lock className="h-4 w-4 text-primary" />
-                             <p className="text-[10px] font-black uppercase tracking-widest text-primary">
-                               Vault Locked - DepEd "Once Only" Rule Satisfied
-                             </p>
+                            <Lock className="h-4 w-4 text-primary" />
+                            <p className="text-[10px] font-black uppercase tracking-widest text-primary">
+                              Vault Locked - DepEd "Once Only" Rule Satisfied
+                            </p>
                           </div>
                         ) : (
                           <div className="bg-white/50 p-3 rounded-lg border border-amber-200">
-                             <p className="text-xs font-bold text-amber-900">
-                               PSA Deadline: <span className="text-rose-600 font-black underline">October 31, 2026</span>
-                             </p>
-                             <p className="text-[10px] font-medium text-amber-700 mt-1 leading-tight">
-                               Secondary proof accepted. PSA must be submitted by the deadline to finalize the permanent record.
-                             </p>
+                            <p className="text-xs font-bold text-amber-900">
+                              PSA Deadline:{" "}
+                              <span className="text-rose-600 font-black underline">
+                                October 31, 2026
+                              </span>
+                            </p>
+                            <p className="text-[10px] font-medium text-amber-700 mt-1 leading-tight">
+                              Secondary proof accepted. PSA must be submitted by
+                              the deadline to finalize the permanent record.
+                            </p>
                           </div>
                         )}
 
-                        <div className={cn(
-                          "p-3 rounded-lg border",
-                          (student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "bg-white/50 border-emerald-100" : "bg-white/50 border-amber-100"
-                        )}>
-                          <p className={cn(
-                            "text-[10px] font-medium leading-relaxed italic",
-                            (student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") ? "text-emerald-800" : "text-amber-800"
+                        <div
+                          className={cn(
+                            "p-3 rounded-lg border",
+                            student.hasPsaBirthCertificate ||
+                              student.birthCertificateType === "PSA"
+                              ? "bg-white/50 border-emerald-100"
+                              : "bg-white/50 border-amber-100",
                           )}>
-                            "In compliance with DepEd Order 017, s. 2025, this document is only required once and will be carried over for all future enrollments."
+                          <p
+                            className={cn(
+                              "text-[10px] font-medium leading-relaxed italic",
+                              student.hasPsaBirthCertificate ||
+                                student.birthCertificateType === "PSA"
+                                ? "text-emerald-800"
+                                : "text-amber-800",
+                            )}>
+                            "In compliance with DepEd Order 017, s. 2025, this
+                            document is only required once and will be carried
+                            over for all future enrollments."
                           </p>
                         </div>
 
-                        {!(student.hasPsaBirthCertificate || student.birthCertificateType === "PSA") && (
-                           <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="w-full border-amber-300 text-amber-800 hover:bg-amber-100 font-bold uppercase text-[10px] tracking-widest h-8 mt-2"
-                              onClick={() => setIsAuthModalOpen(true)}
-                           >
-                              Update to PSA Original
-                           </Button>
+                        {!(
+                          student.hasPsaBirthCertificate ||
+                          student.birthCertificateType === "PSA"
+                        ) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full border-amber-300 text-amber-800 hover:bg-amber-100 font-bold uppercase text-[10px] tracking-widest h-8 mt-2"
+                            onClick={() => setIsAuthModalOpen(true)}>
+                            Update to PSA Original
+                          </Button>
                         )}
                       </div>
-                      ) : (
+                    ) : (
                       <div className="flex flex-col p-6 rounded-2xl bg-rose-50 border-2 border-rose-100 space-y-4">
                         <div className="flex items-center gap-3">
                           <div className="p-2 bg-rose-600 rounded-lg text-white">
                             <AlertTriangle className="h-5 w-5" />
                           </div>
                           <div>
-                            <h3 className="font-black text-rose-900 uppercase leading-none">PSA Birth Certificate</h3>
-                            <p className="text-[10px] font-bold text-rose-700/70 mt-1 uppercase tracking-widest text-rose-600">Missing from Vault</p>
+                            <h3 className="font-black text-rose-900 uppercase leading-none">
+                              PSA Birth Certificate
+                            </h3>
+                            <p className="text-[10px] font-bold text-rose-700/70 mt-1 uppercase tracking-widest text-rose-600">
+                              Missing from Vault
+                            </p>
                           </div>
                         </div>
 
                         <div className="bg-white/50 p-3 rounded-lg border border-rose-100">
                           <p className="text-xs font-bold text-rose-900 leading-relaxed">
-                            Requirement Deadline: <span className="text-rose-600">October 31, 2026</span>
+                            Requirement Deadline:{" "}
+                            <span className="text-rose-600">
+                              October 31, 2026
+                            </span>
                           </p>
                         </div>
 
-                        <Button 
+                        <Button
                           className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-wide gap-2 shadow-lg shadow-primary/20"
-                          onClick={() => setIsAuthModalOpen(true)}
-                        >
+                          onClick={() => setIsAuthModalOpen(true)}>
                           <ShieldCheck className="h-5 w-5" />
                           Verify Physical Document
                         </Button>
                       </div>
-                      )}
+                    )}
 
-                      <div className="flex flex-col p-6 rounded-2xl bg-slate-50 border-2 border-slate-100 space-y-4 opacity-60 grayscale cursor-not-allowed">
-                       <div className="flex items-center gap-3">
-                          <div className="p-2 bg-slate-400 rounded-lg text-white">
-                             <Lock className="h-5 w-5" />
-                          </div>
-                          <div>
-                             <h3 className="font-black text-slate-900 uppercase leading-none">SF10 (Permanent Record)</h3>
-                             <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest">Awaiting Graduation / Transfer</p>
-                          </div>
-                       </div>
-                       <p className="text-[10px] font-medium text-slate-500 leading-relaxed italic">
-                         "Original SF10 is held by the school until formal transfer out or completion of JHS."
-                       </p>
+                    <div className="flex flex-col p-6 rounded-2xl bg-slate-50 border-2 border-slate-100 space-y-4 opacity-60 grayscale cursor-not-allowed">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-slate-400 rounded-lg text-white">
+                          <Lock className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-black text-slate-900 uppercase leading-none">
+                            SF10 (Permanent Record)
+                          </h3>
+                          <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest">
+                            Awaiting Graduation / Transfer
+                          </p>
+                        </div>
                       </div>
+                      <p className="text-[10px] font-medium text-slate-500 leading-relaxed italic">
+                        "Original SF10 is held by the school until formal
+                        transfer out or completion of JHS."
+                      </p>
                     </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </TabsContent>
-          </div>
-        </Tabs>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
+        </div>
+      </Tabs>
 
-        <PinResetHandoverModal
-          open={isPinResetModalOpen}
-          onOpenChange={setIsPinResetModalOpen}
-          studentName={`${student.lastName}, ${student.firstName}`}
-          gradeLevel={student.gradeLevel.name}
-          onConfirmReset={handleConfirmResetPin}
-        />
+      <PinResetHandoverModal
+        open={isPinResetModalOpen}
+        onOpenChange={setIsPinResetModalOpen}
+        studentName={`${student.lastName}, ${student.firstName}`}
+        gradeLevel={student.gradeLevel.name}
+        onConfirmReset={handleConfirmResetPin}
+      />
 
-        <DocumentAuthModal
-          open={isAuthModalOpen}
-          onOpenChange={setIsAuthModalOpen}
-          studentName={`${student.lastName}, ${student.firstName}`}
-          trackingNumber={student.trackingNumber}
-          onConfirm={handleVerifyPsa}
-        />
-      </div>
-    );
+      <DocumentAuthModal
+        open={isAuthModalOpen}
+        onOpenChange={setIsAuthModalOpen}
+        studentName={`${student.lastName}, ${student.firstName}`}
+        trackingNumber={student.trackingNumber}
+        onConfirm={handleVerifyPsa}
+      />
+    </div>
+  );
 }
-

@@ -297,7 +297,9 @@ export default function Dashboard() {
       </div>
 
       {isAdmin && (
-        <section className="space-y-3" aria-label="System oversight">
+        <section
+          className="space-y-3"
+          aria-label="System oversight">
           <div className="flex items-center gap-2">
             <h2 className="text-xs font-bold uppercase tracking-wider text-purple-600 opacity-80">
               System Oversight
@@ -324,9 +326,7 @@ export default function Dashboard() {
                     <Skeleton className="h-8 w-24" />
                   ) : (
                     <>
-                      <div className="text-2xl font-black tracking-tight">
-                        {stat.value}
-                      </div>
+                      <div className="text-2xl font-black ">{stat.value}</div>
                       <p className="mt-1 text-xs font-medium text-muted-foreground">
                         {stat.description}
                       </p>
@@ -339,7 +339,9 @@ export default function Dashboard() {
         </section>
       )}
 
-      <section className="space-y-4" aria-label="Enrollment progress">
+      <section
+        className="space-y-4"
+        aria-label="Enrollment progress">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-bold uppercase tracking-wider text-emerald-600 opacity-80">
             Enrollment Progress
@@ -353,7 +355,7 @@ export default function Dashboard() {
               <Card className="lg:col-span-2 border-emerald-200 bg-gradient-to-br from-white to-emerald-50/30 shadow-sm">
                 <CardHeader className="pb-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <CardTitle className="text-xl font-black tracking-tight">
+                    <CardTitle className="text-xl font-black ">
                       Total Enrolled
                     </CardTitle>
                     <Badge className="bg-emerald-600 text-white hover:bg-emerald-700">
@@ -424,7 +426,7 @@ export default function Dashboard() {
 
               <Card className="border-slate-200 bg-white shadow-sm flex flex-col">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-black tracking-tight">
+                  <CardTitle className="text-base font-black ">
                     Focus Mode
                   </CardTitle>
                   <CardDescription className="text-xs">
@@ -441,7 +443,9 @@ export default function Dashboard() {
                   ) : (
                     <>
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="font-bold border-primary/20 text-primary bg-primary/5 px-2 py-1">
+                        <Badge
+                          variant="outline"
+                          className="font-bold border-primary/20 text-primary bg-primary/5 px-2 py-1">
                           {focusStateLabel}
                         </Badge>
                       </div>
@@ -451,7 +455,8 @@ export default function Dashboard() {
                           Phase: {enrollmentPhase.replaceAll("_", " ")}
                         </div>
                         <p className="text-xs leading-relaxed text-muted-foreground italic">
-                          "System adapts dashboards based on the academic calendar to surface relevant bottlenecks."
+                          "System adapts dashboards based on the academic
+                          calendar to surface relevant bottlenecks."
                         </p>
                       </div>
                     </>
@@ -563,7 +568,7 @@ export default function Dashboard() {
         ) : (
           <Card className="border-slate-200 bg-white shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-black tracking-tight">
+              <CardTitle className="text-base font-black ">
                 Enrollment Summary
               </CardTitle>
               <CardDescription>
@@ -576,13 +581,19 @@ export default function Dashboard() {
                 <Skeleton className="h-8 w-44" />
               ) : (
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary" className="font-bold px-3">
+                  <Badge
+                    variant="secondary"
+                    className="font-bold px-3">
                     Enrolled: {formatMetric(enrollmentCurrent)}
                   </Badge>
-                  <Badge variant="secondary" className="font-bold px-3">
+                  <Badge
+                    variant="secondary"
+                    className="font-bold px-3">
                     Pending: {formatMetric(pendingReviewCount)}
                   </Badge>
-                  <Badge variant="secondary" className="font-bold px-3">
+                  <Badge
+                    variant="secondary"
+                    className="font-bold px-3">
                     Saturation Alerts: {formatMetric(sectionsAtCapacityCount)}
                   </Badge>
                 </div>
@@ -592,7 +603,9 @@ export default function Dashboard() {
         )}
       </section>
 
-      <section className="space-y-4" aria-label="Early registration">
+      <section
+        className="space-y-4"
+        aria-label="Early registration">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-bold uppercase tracking-wider text-amber-600 opacity-80">
             Early Registration
@@ -619,7 +632,7 @@ export default function Dashboard() {
                   {showSkeleton ? (
                     <Skeleton className="h-8 w-20" />
                   ) : (
-                    <div className="text-2xl font-black tracking-tight">
+                    <div className="text-2xl font-black ">
                       {formatMetric(stat.value)}
                     </div>
                   )}
@@ -630,7 +643,7 @@ export default function Dashboard() {
         ) : (
           <Card className="border-amber-100 bg-white shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-black tracking-tight">
+              <CardTitle className="text-base font-black ">
                 Early Registration Summary
               </CardTitle>
               <CardDescription>
@@ -643,15 +656,21 @@ export default function Dashboard() {
                 <Skeleton className="h-8 w-52" />
               ) : (
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary" className="font-bold px-3 border-amber-200">
+                  <Badge
+                    variant="secondary"
+                    className="font-bold px-3 border-amber-200">
                     Submitted:{" "}
                     {formatMetric(stats?.earlyRegistration?.submitted ?? 0)}
                   </Badge>
-                  <Badge variant="secondary" className="font-bold px-3 border-amber-200">
+                  <Badge
+                    variant="secondary"
+                    className="font-bold px-3 border-amber-200">
                     Exams:{" "}
                     {formatMetric(stats?.earlyRegistration?.examScheduled ?? 0)}
                   </Badge>
-                  <Badge variant="secondary" className="font-bold px-3 border-amber-200">
+                  <Badge
+                    variant="secondary"
+                    className="font-bold px-3 border-amber-200">
                     Ready:{" "}
                     {formatMetric(
                       stats?.earlyRegistration?.readyForEnrollment ?? 0,
@@ -679,9 +698,12 @@ export default function Dashboard() {
                 <Activity className="h-8 w-8 text-slate-300" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-sm font-bold text-slate-400">Visualization Engine</h3>
+                <h3 className="text-sm font-bold text-slate-400">
+                  Visualization Engine
+                </h3>
                 <p className="max-w-64 text-xs text-muted-foreground/60 leading-relaxed">
-                  Real-time enrollment trends and forecast models are currently aggregating data for this period.
+                  Real-time enrollment trends and forecast models are currently
+                  aggregating data for this period.
                 </p>
               </div>
             </div>
@@ -690,16 +712,18 @@ export default function Dashboard() {
 
         <Card className="border-opacity-50 shadow-sm overflow-hidden">
           <CardHeader className="bg-slate-50/50 border-b border-slate-100">
-            <CardTitle className="text-lg font-bold">
-              System Logs
-            </CardTitle>
-            <CardDescription className="text-xs">Latest administrative actions.</CardDescription>
+            <CardTitle className="text-lg font-bold">System Logs</CardTitle>
+            <CardDescription className="text-xs">
+              Latest administrative actions.
+            </CardDescription>
           </CardHeader>
 
           <CardContent className="py-10">
             <div className="flex flex-col items-center justify-center space-y-4 text-center text-slate-400">
-               <ShieldCheck className="h-10 w-10 opacity-20" />
-               <p className="text-xs font-medium tracking-wide">NO RECENT AUDIT ACTIVITY</p>
+              <ShieldCheck className="h-10 w-10 opacity-20" />
+              <p className="text-xs font-medium tracking-wide">
+                NO RECENT AUDIT ACTIVITY
+              </p>
             </div>
           </CardContent>
         </Card>

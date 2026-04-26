@@ -243,11 +243,11 @@ function resolveWorkflowFromQuery(value: string | null): EnrollmentSubMenu {
 }
 
 export default function Enrollment() {
-  const { 
-    activeSchoolYearId, 
+  const {
+    activeSchoolYearId,
     viewingSchoolYearId,
     activeSchoolYearLabel,
-    systemStatus 
+    systemStatus,
   } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const isBosyLocked = systemStatus === "BOSY_LOCKED";
@@ -355,7 +355,8 @@ export default function Enrollment() {
   const [loadingGradeLevels, setLoadingGradeLevels] = useState(false);
 
   const [isWalkInGateOpen, setIsWalkInGateOpen] = useState(false);
-  const [isBatchConfirmSlipModalOpen, setIsBatchConfirmSlipModalOpen] = useState(false);
+  const [isBatchConfirmSlipModalOpen, setIsBatchConfirmSlipModalOpen] =
+    useState(false);
   const [pinHandover, setPinHandover] = useState<{
     open: boolean;
     learnerName: string;
@@ -886,7 +887,7 @@ export default function Enrollment() {
             <span className="font-bold text-sm uppercase leading-tight">
               {row.original.lastName}, {row.original.firstName}
             </span>
-            <span className="text-[11px] font-black text-muted-foreground tracking-tighter">
+            <span className="text-[11px] font-black text-muted-foreground ">
               {row.original.lrn ||
                 (row.original.isPendingLrnCreation ? "PENDING" : "NO LRN")}
             </span>
@@ -1394,21 +1395,26 @@ export default function Enrollment() {
   return (
     <div className="flex flex-col w-full min-w-0 overflow-hidden space-y-4 sm:space-y-6">
       {isBosyLocked && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-emerald-600 text-white px-4 py-3 rounded-xl flex items-center justify-between shadow-lg border-2 border-emerald-400/30"
-        >
+          className="bg-emerald-600 text-white px-4 py-3 rounded-xl flex items-center justify-between shadow-lg border-2 border-emerald-400/30">
           <div className="flex items-center gap-3">
             <div className="bg-white/20 p-2 rounded-lg">
               <Lock className="h-5 w-5 text-white" />
             </div>
             <div>
-              <p className="text-sm font-black uppercase tracking-widest leading-none">BOSY Locked ({activeSchoolYearLabel})</p>
-              <p className="text-xs font-bold text-emerald-100 mt-1">Official SF1 Rosters Finalized. Late Enrollment rules now apply.</p>
+              <p className="text-sm font-black uppercase tracking-widest leading-none">
+                BOSY Locked ({activeSchoolYearLabel})
+              </p>
+              <p className="text-xs font-bold text-emerald-100 mt-1">
+                Official SF1 Rosters Finalized. Late Enrollment rules now apply.
+              </p>
             </div>
           </div>
-          <Badge className="bg-white text-emerald-700 font-black hover:bg-white uppercase tracking-tighter">Academic Phase</Badge>
+          <Badge className="bg-white text-emerald-700 font-black hover:bg-white uppercase ">
+            Academic Phase
+          </Badge>
         </motion.div>
       )}
 
@@ -1416,9 +1422,7 @@ export default function Enrollment() {
         <div className="flex-1 min-w-0 flex flex-col space-y-4 sm:space-y-6 px-2 sm:px-0">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">
-                Enrollment Management
-              </h1>
+              <h1 className="text-3xl font-bold ">Enrollment Management</h1>
               <p className="text-sm font-bold">
                 {ENROLLMENT_SUB_MENU_DESCRIPTIONS[workflowView]}
               </p>
@@ -1434,158 +1438,158 @@ export default function Enrollment() {
                 <School className="h-4 w-4 mr-2" />
                 Open Batch Section Assignment
               </Button>
-            
-            {pendingQueueFilter === "CONTINUING_JHS" ? (
-              <Button
-                variant="default"
-                className="h-10 px-3 flex-1 md:flex-none text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
-                onClick={() => setIsBatchConfirmSlipModalOpen(true)}>
-                <UserCheck className="h-4 w-4 mr-2" />
-                Batch Confirmation Pipeline
-              </Button>
-            ) : (
+
+              {pendingQueueFilter === "CONTINUING_JHS" ? (
+                <Button
+                  variant="default"
+                  className="h-10 px-3 flex-1 md:flex-none text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={() => setIsBatchConfirmSlipModalOpen(true)}>
+                  <UserCheck className="h-4 w-4 mr-2" />
+                  Batch Confirmation Pipeline
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="h-10 px-3 flex-1 md:flex-none text-sm font-bold border-red-200 text-red-700 hover:bg-red-50"
+                  onClick={openWalkInGate}>
+                  <UserPlus className="h-4 w-4 mr-2" />+ Walk-In BEEF
+                </Button>
+              )}
+
               <Button
                 variant="outline"
-                className="h-10 px-3 flex-1 md:flex-none text-sm font-bold border-red-200 text-red-700 hover:bg-red-50"
-                onClick={openWalkInGate}>
-                <UserPlus className="h-4 w-4 mr-2" />+ Walk-In BEEF
+                className="h-10 px-3 flex-1 md:flex-none text-sm font-bold"
+                onClick={() => {
+                  void fetchData();
+                }}
+                disabled={loading || !ayId}>
+                <RefreshCw
+                  className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+                />
+                Refresh
               </Button>
-            )}
-
-            <Button
-              variant="outline"
-              className="h-10 px-3 flex-1 md:flex-none text-sm font-bold"
-              onClick={() => {
-                void fetchData();
-              }}
-              disabled={loading || !ayId}>
-              <RefreshCw
-                className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
-              />
-              Refresh
-            </Button>
+            </div>
           </div>
-        </div>
 
-        <EnrollmentWorkflowTabs
-          value={workflowView}
-          onValueChange={(nextView) => {
-            handleWorkflowViewChange(nextView);
-          }}
-        />
+          <EnrollmentWorkflowTabs
+            value={workflowView}
+            onValueChange={(nextView) => {
+              handleWorkflowViewChange(nextView);
+            }}
+          />
 
-        <Card className="border-none shadow-sm bg-[hsl(var(--card))] max-w-full overflow-hidden">
-          <CardHeader className="px-3 sm:px-6 pb-3">
-            <div className="flex flex-col md:flex-row gap-3 md:gap-4 items-end">
-              <div className="flex-1 space-y-2 w-full">
-                <Label className="text-sm uppercase tracking-wider font-bold text-muted-foreground">
-                  Search Learner
-                </Label>
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="LRN, First Name, Last Name..."
-                    className="pl-9 h-10 text-sm font-bold"
-                    value={search}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setSearch(val);
-                      startTransition(() => {
-                        setPage(1);
-                      });
-                    }}
-                  />
+          <Card className="border-none shadow-sm bg-[hsl(var(--card))] max-w-full overflow-hidden">
+            <CardHeader className="px-3 sm:px-6 pb-3">
+              <div className="flex flex-col md:flex-row gap-3 md:gap-4 items-end">
+                <div className="flex-1 space-y-2 w-full">
+                  <Label className="text-sm uppercase tracking-wider font-bold text-muted-foreground">
+                    Search Learner
+                  </Label>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="LRN, First Name, Last Name..."
+                      className="pl-9 h-10 text-sm font-bold"
+                      value={search}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSearch(val);
+                        startTransition(() => {
+                          setPage(1);
+                        });
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  variant="outline"
+                  className="h-10 px-3 w-full md:w-auto text-sm font-bold"
+                  onClick={() => {
+                    setSearch("");
+                    setPage(1);
+                  }}>
+                  Reset
+                </Button>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Queue Filter
+                </span>
+                {PENDING_QUEUE_FILTER_OPTIONS.map((option) => (
+                  <Button
+                    key={option.value}
+                    type="button"
+                    variant={
+                      pendingQueueFilter === option.value
+                        ? "default"
+                        : "outline"
+                    }
+                    size="sm"
+                    className="h-8 text-sm font-bold"
+                    onClick={() => {
+                      setPendingQueueFilter(option.value);
+                    }}>
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+            </CardHeader>
+
+            <CardContent className="px-3 sm:px-6 max-w-full overflow-hidden">
+              <DataTable
+                columns={columns}
+                data={visibleApplications}
+                loading={loading}
+                virtualize={true}
+                estimatedRowHeight={60}
+                className="w-full"
+                onRowClick={(app) => {
+                  setSelectedId(app.id);
+                }}
+                noResultsMessage={TABLE_NO_RESULTS_MESSAGES[workflowView]}
+                sorting={sorting}
+                onSortingChange={onSortingChange}
+              />
+
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mt-4 font-bold">
+                <span className="text-sm text-muted-foreground">
+                  Showing {visibleApplications.length} learners in{" "}
+                  {
+                    ENROLLMENT_SUB_MENU_OPTIONS.find(
+                      (option) => option.value === workflowView,
+                    )?.label
+                  }
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 sm:h-8 text-sm font-bold"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}>
+                    Previous
+                  </Button>
+                  <Badge
+                    variant="secondary"
+                    className="px-3 h-8 text-sm font-bold">
+                    Page {page}
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 sm:h-8 text-sm font-bold"
+                    onClick={() => setPage((p) => p + 1)}
+                    disabled={page * 15 >= total}>
+                    Next
+                  </Button>
                 </div>
               </div>
-
-              <Button
-                variant="outline"
-                className="h-10 px-3 w-full md:w-auto text-sm font-bold"
-                onClick={() => {
-                  setSearch("");
-                  setPage(1);
-                }}>
-                Reset
-              </Button>
-            </div>
-
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                Queue Filter
-              </span>
-              {PENDING_QUEUE_FILTER_OPTIONS.map((option) => (
-                <Button
-                  key={option.value}
-                  type="button"
-                  variant={
-                    pendingQueueFilter === option.value
-                      ? "default"
-                      : "outline"
-                  }
-                  size="sm"
-                  className="h-8 text-sm font-bold"
-                  onClick={() => {
-                    setPendingQueueFilter(option.value);
-                  }}>
-                  {option.label}
-                </Button>
-              ))}
-            </div>
-          </CardHeader>
-
-          <CardContent className="px-3 sm:px-6 max-w-full overflow-hidden">
-            <DataTable
-              columns={columns}
-              data={visibleApplications}
-              loading={loading}
-              virtualize={true}
-              estimatedRowHeight={60}
-              className="w-full"
-              onRowClick={(app) => {
-                setSelectedId(app.id);
-              }}
-              noResultsMessage={TABLE_NO_RESULTS_MESSAGES[workflowView]}
-              sorting={sorting}
-              onSortingChange={onSortingChange}
-            />
-
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mt-4 font-bold">
-              <span className="text-sm text-muted-foreground">
-                Showing {visibleApplications.length} learners in{" "}
-                {
-                  ENROLLMENT_SUB_MENU_OPTIONS.find(
-                    (option) => option.value === workflowView,
-                  )?.label
-                }
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-9 sm:h-8 text-sm font-bold"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}>
-                  Previous
-                </Button>
-                <Badge
-                  variant="secondary"
-                  className="px-3 h-8 text-sm font-bold">
-                  Page {page}
-                </Badge>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-9 sm:h-8 text-sm font-bold"
-                  onClick={() => setPage((p) => p + 1)}
-                  disabled={page * 15 >= total}>
-                  Next
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
 
       {/* TIER 1 - SLIDE-OVER PANEL */}
       <Sheet
@@ -2263,7 +2267,7 @@ export default function Enrollment() {
                           <p className="font-bold text-sm">
                             {formatGradeLevelLabel(gl.name)}
                           </p>
-                          <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter">
+                          <p className="text-[10px] text-muted-foreground uppercase font-black ">
                             {isG7
                               ? "Uses Early Reg Assessment Score"
                               : isSynced
@@ -2356,9 +2360,7 @@ export default function Enrollment() {
 
       <PinHandoverModal
         open={pinHandover.open}
-        onOpenChange={(open) =>
-          setPinHandover((prev) => ({ ...prev, open }))
-        }
+        onOpenChange={(open) => setPinHandover((prev) => ({ ...prev, open }))}
         learnerName={pinHandover.learnerName}
         pin={pinHandover.pin}
       />

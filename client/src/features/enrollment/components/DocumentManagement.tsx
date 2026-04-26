@@ -343,7 +343,7 @@ export function DocumentManagement({
               <div className="flex items-center justify-center">
                 <Badge
                   variant="outline"
-                  className="text-[0.5rem] h-4 px-1 uppercase tracking-tighter">
+                  className="text-[0.5rem] h-4 px-1 uppercase ">
                   {auditRow.modifiedBy?.role || "USER"}
                 </Badge>
               </div>
@@ -450,13 +450,17 @@ export function DocumentManagement({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
               <div className="space-y-2">
                 <Label htmlFor="doc-type">Document Type</Label>
-                <Select value={selectedType} onValueChange={setSelectedType}>
+                <Select
+                  value={selectedType}
+                  onValueChange={setSelectedType}>
                   <SelectTrigger id="doc-type">
                     <SelectValue placeholder="Select type..." />
                   </SelectTrigger>
                   <SelectContent>
                     {DOCUMENT_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
+                      <SelectItem
+                        key={t.value}
+                        value={t.value}>
                         {t.label}
                       </SelectItem>
                     ))}

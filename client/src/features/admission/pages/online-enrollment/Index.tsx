@@ -29,13 +29,16 @@ export default function Apply() {
   const [hasConsented, setHasConsented] = useState(() => {
     return sessionStorage.getItem(CONSENT_KEY) === "true";
   });
-  const [intakeChoice, setIntakeChoice] = useState<"NEW" | "RETURNING" | null>(() => {
-    return sessionStorage.getItem(INTAKE_KEY) as "NEW" | "RETURNING" | null;
-  });
+  const [intakeChoice, setIntakeChoice] = useState<"NEW" | "RETURNING" | null>(
+    () => {
+      return sessionStorage.getItem(INTAKE_KEY) as "NEW" | "RETURNING" | null;
+    },
+  );
   const [submittedSuccessData, setSubmittedSuccessData] =
     useState<EnrollmentSubmitSuccessPayload | null>(null);
 
-  const { schoolName, logoUrl, enrollmentPhase, activeSchoolYearLabel } = useSettingsStore();
+  const { schoolName, logoUrl, enrollmentPhase, activeSchoolYearLabel } =
+    useSettingsStore();
   const isClosed = enrollmentPhase === "CLOSED";
 
   const handleAccept = () => {
@@ -127,7 +130,11 @@ export default function Apply() {
                 />
               </pattern>
             </defs>
-            <rect width="100%" height="100%" fill="url(#pixel-grid)" />
+            <rect
+              width="100%"
+              height="100%"
+              fill="url(#pixel-grid)"
+            />
           </svg>
           {/* Radial glow */}
           <div
@@ -175,7 +182,7 @@ export default function Apply() {
                     </div>
                   )}
                   <div className="space-y-2">
-                    <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-black">
+                    <h2 className="text-2xl sm:text-3xl font-black uppercase  text-black">
                       {schoolName}
                     </h2>
                     <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-destructive/10 text-destructive text-xs font-bold tracking-widest uppercase border border-destructive/20">
@@ -184,12 +191,14 @@ export default function Apply() {
                   </div>
                   <div className="space-y-4 max-w-lg mx-auto">
                     <h3 className="text-xl sm:text-2xl font-bold text-black">
-                      {activeSchoolYearLabel || "Admissions"} Portal is Currently Closed
+                      {activeSchoolYearLabel || "Admissions"} Portal is
+                      Currently Closed
                     </h3>
                     <p className="text-sm sm:text-base text-black leading-relaxed">
-                      The online portal for {activeSchoolYearLabel || "Admissions"} is
-                      not currently accepting applications. Registration periods
-                      are scheduled according to the DepEd school calendar.
+                      The online portal for{" "}
+                      {activeSchoolYearLabel || "Admissions"} is not currently
+                      accepting applications. Registration periods are scheduled
+                      according to the DepEd school calendar.
                     </p>
                     <p className="text-sm text-black font-medium pt-4 border-t border-border/50">
                       Please stay tuned to our official school social media

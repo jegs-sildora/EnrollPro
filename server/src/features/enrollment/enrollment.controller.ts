@@ -13,6 +13,7 @@ export async function confirmConfirmationSlip(req: Request, res: Response) {
     schoolYearId,
     gradeLevelId,
     isMissingSf9,
+    hasSf9CertificationLetter,
     hasUnsettledPrivateAccount,
     originatingSchoolName,
   } = req.body;
@@ -28,7 +29,7 @@ export async function confirmConfirmationSlip(req: Request, res: Response) {
       throw new AppError(404, "Learner not found.");
     }
 
-    const isTemporary = isMissingSf9 || hasUnsettledPrivateAccount;
+    const isTemporary = (isMissingSf9 && !hasSf9CertificationLetter) || hasUnsettledPrivateAccount;
 
     // 2. Create the EnrollmentApplication directly
     const application = await prisma.enrollmentApplication.create({
@@ -42,6 +43,7 @@ export async function confirmConfirmationSlip(req: Request, res: Response) {
         encodedById: userId,
         isTemporarilyEnrolled: isTemporary || false,
         isMissingSf9: isMissingSf9 || false,
+        hasSf9CertificationLetter: hasSf9CertificationLetter || false,
         hasUnsettledPrivateAccount: hasUnsettledPrivateAccount || false,
         originatingSchoolName: originatingSchoolName || null,
         checklist: {

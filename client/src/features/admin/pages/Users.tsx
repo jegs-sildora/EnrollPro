@@ -1175,7 +1175,7 @@ export default function AdminUsers() {
                     }
                   />
                   {createErrors.firstName && (
-                    <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
+                    <p className="text-[10px] font-bold text-destructive uppercase ">
                       {createErrors.firstName}
                     </p>
                   )}
@@ -1198,7 +1198,7 @@ export default function AdminUsers() {
                     }
                   />
                   {createErrors.lastName && (
-                    <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
+                    <p className="text-[10px] font-bold text-destructive uppercase ">
                       {createErrors.lastName}
                     </p>
                   )}
@@ -1340,7 +1340,7 @@ export default function AdminUsers() {
                     }
                   />
                   {createErrors.employeeId && (
-                    <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
+                    <p className="text-[10px] font-bold text-destructive uppercase ">
                       {createErrors.employeeId}
                     </p>
                   )}
@@ -1392,7 +1392,7 @@ export default function AdminUsers() {
                   }
                 />
                 {createErrors.email && (
-                  <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
+                  <p className="text-[10px] font-bold text-destructive uppercase ">
                     {createErrors.email}
                   </p>
                 )}
@@ -1415,7 +1415,7 @@ export default function AdminUsers() {
                   }
                 />
                 {createErrors.mobileNumber && (
-                  <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
+                  <p className="text-[10px] font-bold text-destructive uppercase ">
                     {createErrors.mobileNumber}
                   </p>
                 )}
@@ -1471,7 +1471,7 @@ export default function AdminUsers() {
                 </div>
               </div>
 
-              <div className="p-3 rounded-lg bg-orange-50 border border-orange-100 text-[11px] font-bold text-orange-800 leading-relaxed uppercase tracking-tighter">
+              <div className="p-3 rounded-lg bg-orange-50 border border-orange-100 text-[11px] font-bold text-orange-800 leading-relaxed uppercase ">
                 <div className="flex items-center gap-1.5 mb-1 text-orange-900">
                   <ShieldAlert className="h-3.5 w-3.5" />
                   Governance Notice
@@ -1553,7 +1553,7 @@ export default function AdminUsers() {
                     }
                   />
                   {profileErrors.firstName && (
-                    <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
+                    <p className="text-[10px] font-bold text-destructive uppercase ">
                       {profileErrors.firstName}
                     </p>
                   )}
@@ -1578,7 +1578,7 @@ export default function AdminUsers() {
                     }
                   />
                   {profileErrors.lastName && (
-                    <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
+                    <p className="text-[10px] font-bold text-destructive uppercase ">
                       {profileErrors.lastName}
                     </p>
                   )}
@@ -1709,7 +1709,7 @@ export default function AdminUsers() {
                     }
                   />
                   {profileErrors.employeeId && (
-                    <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
+                    <p className="text-[10px] font-bold text-destructive uppercase ">
                       {profileErrors.employeeId}
                     </p>
                   )}
@@ -1765,7 +1765,7 @@ export default function AdminUsers() {
                   }
                 />
                 {profileErrors.email && (
-                  <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
+                  <p className="text-[10px] font-bold text-destructive uppercase ">
                     {profileErrors.email}
                   </p>
                 )}
@@ -1790,7 +1790,7 @@ export default function AdminUsers() {
                   }
                 />
                 {profileErrors.mobileNumber && (
-                  <p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
+                  <p className="text-[10px] font-bold text-destructive uppercase ">
                     {profileErrors.mobileNumber}
                   </p>
                 )}

@@ -147,7 +147,7 @@ export default function EarlyRegSuccessView({
             <div className="text-center flex-1">
               <h1
                 style={{ color: "#061E29" }}
-                className="text-3xl font-black uppercase tracking-tight mb-1">
+                className="text-3xl font-black uppercase  mb-1">
                 {schoolName}
               </h1>
               <p
@@ -170,16 +170,22 @@ export default function EarlyRegSuccessView({
           <div className="text-center space-y-4">
             <h2
               style={{ color: "#061E29" }}
-              className="text-4xl font-black tracking-tight">
+              className="text-4xl font-black ">
               Application Received!
             </h2>
-            <p style={{ color: "#4b5563" }} className="text-xl font-medium">
+            <p
+              style={{ color: "#4b5563" }}
+              className="text-xl font-medium">
               Your early registration for{" "}
-              <span style={{ color: "#061E29" }} className="font-bold">
+              <span
+                style={{ color: "#061E29" }}
+                className="font-bold">
                 {learnerName}
               </span>{" "}
               has been successfully submitted to{" "}
-              <span style={{ color: "#061E29" }} className="font-bold">
+              <span
+                style={{ color: "#061E29" }}
+                className="font-bold">
                 {schoolName}
               </span>
               .
@@ -196,7 +202,7 @@ export default function EarlyRegSuccessView({
             </p>
             <p
               style={{ color: "#061E29" }}
-              className="text-7xl  font-black tracking-tighter">
+              className="text-7xl  font-black ">
               {trackingNumber}
             </p>
 
@@ -207,7 +213,9 @@ export default function EarlyRegSuccessView({
                   className="text-[0.625rem] font-black uppercase">
                   Date Generated
                 </p>
-                <p style={{ color: "#061E29" }} className="text-sm font-bold">
+                <p
+                  style={{ color: "#061E29" }}
+                  className="text-sm font-bold">
                   {formatManilaDate(getManilaNow(), {
                     year: "numeric",
                     month: "long",
@@ -221,7 +229,9 @@ export default function EarlyRegSuccessView({
                   className="text-[0.625rem] font-black uppercase">
                   Time Generated
                 </p>
-                <p style={{ color: "#061E29" }} className="text-sm font-bold">
+                <p
+                  style={{ color: "#061E29" }}
+                  className="text-sm font-bold">
                   {formatManilaDate(getManilaNow(), {
                     hour: "2-digit",
                     minute: "2-digit",
@@ -236,7 +246,7 @@ export default function EarlyRegSuccessView({
             className="space-y-8 bg-white p-8 border-2 rounded-lg">
             <h3
               style={{ color: "#061E29" }}
-              className="text-2xl font-black flex items-center gap-3 uppercase tracking-tight -mt-3">
+              className="text-2xl font-black flex items-center gap-3 uppercase  -mt-3">
               Important Next Steps
             </h3>
             <TrackingNextSteps
@@ -260,13 +270,14 @@ export default function EarlyRegSuccessView({
               <div
                 style={{ backgroundColor: "#061E29", color: "#ffffff" }}
                 className="px-4 py-2  text-xs font-bold uppercase">
-                VALID_EARLY_REG_{trackingNumber?.replace(/-/g, "_") || "PENDING"}
+                VALID_EARLY_REG_
+                {trackingNumber?.replace(/-/g, "_") || "PENDING"}
               </div>
             </div>
             <div className="text-right space-y-1">
               <p
                 style={{ color: "#061E29" }}
-                className="font-black uppercase tracking-tight text-lg leading-none">
+                className="font-black uppercase  text-lg leading-none">
                 EnrollPro Management System
               </p>
               <p
@@ -312,7 +323,7 @@ export default function EarlyRegSuccessView({
               Your Application Tracking Number
             </p>
             <div className="flex items-center justify-center gap-4">
-              <p className="text-xl sm:text-4xl font-black text-primary tracking-tighter">
+              <p className="text-xl sm:text-4xl font-black text-primary ">
                 {trackingNumber}
               </p>
             </div>

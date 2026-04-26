@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Link } from "react-router";
-import { ArrowRight, ExternalLink} from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import { useApplicationDetail } from "@/features/enrollment/hooks/useApplicationDetail";
 import type { AssessmentStep } from "@/features/enrollment/hooks/useApplicationDetail";
 import { StatusBadge } from "./StatusBadge";
@@ -22,7 +22,11 @@ import { SheetTitle, SheetDescription } from "@/shared/ui/sheet";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { ImageEnlarger } from "@/shared/components/ImageEnlarger";
 import { UserPhoto } from "@/shared/components/UserPhoto";
-import { formatScpType, getImageUrl, isMandatoryDocumentsMet } from "@/shared/lib/utils";
+import {
+  formatScpType,
+  getImageUrl,
+  isMandatoryDocumentsMet,
+} from "@/shared/lib/utils";
 
 interface Props {
   id: number;
@@ -127,7 +131,7 @@ export function ApplicationDetailPanel({
       <div className="flex flex-col h-full overflow-hidden bg-background">
         <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0">
           <div>
-            <SheetTitle className="text-base sm:text-lg font-bold tracking-tight uppercase">
+            <SheetTitle className="text-base sm:text-lg font-bold  uppercase">
               <Skeleton className="h-6 w-40" />
             </SheetTitle>
             <SheetDescription
@@ -152,7 +156,7 @@ export function ApplicationDetailPanel({
     return (
       <div className="flex flex-col h-full overflow-hidden bg-background">
         <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0">
-          <SheetTitle className="text-base sm:text-lg font-bold tracking-tight uppercase">
+          <SheetTitle className="text-base sm:text-lg font-bold  uppercase">
             Error
           </SheetTitle>
           <SheetDescription className="hidden">
@@ -163,7 +167,9 @@ export function ApplicationDetailPanel({
           <p className="text-destructive mb-4">
             {error || "Application not found"}
           </p>
-          <Button variant="outline" onClick={onClose}>
+          <Button
+            variant="outline"
+            onClick={onClose}>
             Close
           </Button>
         </div>
@@ -176,7 +182,7 @@ export function ApplicationDetailPanel({
       {/* Header */}
       <div className="flex items-center justify-between p-3 sm:p-4 border-b shrink-0 bg-primary font-black">
         <div>
-          <SheetTitle className="text-base sm:text-lg text-primary-foreground font-black tracking-tight uppercase">
+          <SheetTitle className="text-base sm:text-lg text-primary-foreground font-black  uppercase">
             Application Detail
           </SheetTitle>
           <SheetDescription className="text-[11px] sm:text-xs text-primary-foreground flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
@@ -209,7 +215,7 @@ export function ApplicationDetailPanel({
               alt={`${applicant.lastName} ${applicant.firstName}`}
             />
             <div className="text-center mt-4">
-              <h3 className="font-black text-lg sm:text-xl uppercase tracking-tight break-words">
+              <h3 className="font-black text-lg sm:text-xl uppercase  break-words">
                 {applicant.lastName}, {applicant.firstName}{" "}
                 {applicant.middleName}
               </h3>

@@ -193,7 +193,9 @@ export function BatchSectioningParamsModal({
     (isGrade7 ? prereqs.isPilotReady : true);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-2xl border-2 p-0 overflow-hidden">
         {/* Header */}
         <DialogHeader className="px-6 pt-6 pb-4 border-b bg-card">
@@ -202,7 +204,7 @@ export function BatchSectioningParamsModal({
               <Settings className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-black uppercase tracking-tight">
+              <DialogTitle className="text-lg font-black uppercase ">
                 Configure Batch Sectioning Parameters
               </DialogTitle>
               <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-0.5">

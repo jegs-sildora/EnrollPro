@@ -266,7 +266,7 @@ export default function EarlyRegistrationDetail() {
           />
 
           <div>
-            <h1 className="text-xs font-bold tracking-tight">
+            <h1 className="text-xs font-bold ">
               {applicant.lastName}, {applicant.firstName} {applicant.middleName}
             </h1>
             <p className="text-muted-foreground flex flex-wrap items-center gap-1 sm:gap-2 mt-1 font-bold text-xs">
@@ -348,7 +348,9 @@ export default function EarlyRegistrationDetail() {
                         learnerType={applicant.learnerType}
                         checklist={applicant.checklist}
                         documents={applicant.documents}
-                        hasPsaBirthCertificate={applicant.hasPsaBirthCertificate}
+                        hasPsaBirthCertificate={
+                          applicant.hasPsaBirthCertificate
+                        }
                         endpointBase="/early-registrations"
                         onRefresh={refetch}
                       />

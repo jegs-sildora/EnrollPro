@@ -17,7 +17,6 @@ export default function AdmissionHeader({
   schoolName,
   title,
 }: AdmissionHeaderProps) {
-
   if (isClosed) return null;
 
   return (
@@ -49,7 +48,7 @@ export default function AdmissionHeader({
 
         {/* 2. School Name & Title (Centered) */}
         <div className="flex flex-col items-center justify-center text-center min-w-0">
-          <span className="text-[0.8rem] sm:text-lg md:text-xl font-black tracking-tight text-foreground leading-none uppercase wrap-break-word">
+          <span className="text-[0.8rem] sm:text-lg md:text-xl font-black  text-foreground leading-none uppercase wrap-break-word">
             {schoolName}
           </span>
           <span className="text-[0.565rem] sm:text-[0.625rem] md:text-xs font-black tracking-widest sm:tracking-[0.15em] uppercase text-foreground mt-0.5 sm:mt-1 wrap-break-word">
@@ -78,9 +77,7 @@ export default function AdmissionHeader({
             className="hidden sm:block h-10 w-10 sm:h-20 sm:w-20 max-w-full object-contain"
           />
         </div>
-
       </div>
     </header>
   );
 }
-

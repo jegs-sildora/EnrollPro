@@ -69,7 +69,7 @@ const DataItem = ({
   noUppercase?: boolean;
 }) => (
   <div className="space-y-0.5">
-    <p className="text-base font-bold uppercase text-muted-foreground tracking-tight">
+    <p className="text-base font-bold uppercase text-muted-foreground ">
       {label}
     </p>
     <p className="text-base font-bold text-foreground truncate uppercase">
@@ -106,7 +106,10 @@ export default function LegalConsentStep({
           icon={ClipboardList}
           stepId={1}
           onEdit={onEdit}>
-          <DataItem label="School Year" value={data.schoolYear} />
+          <DataItem
+            label="School Year"
+            value={data.schoolYear}
+          />
           <DataItem
             label="Grade Level to Enroll"
             value={`Grade ${data.gradeLevel}`}
@@ -115,7 +118,10 @@ export default function LegalConsentStep({
             label="Learner Type"
             value={data.learnerType?.replace("_", " ")}
           />
-          <DataItem label="LEARNER REFERENCE NUMBER" value={data.lrn} />
+          <DataItem
+            label="LEARNER REFERENCE NUMBER"
+            value={data.lrn}
+          />
           <DataItem
             label="Learning Program"
             value={
@@ -156,8 +162,14 @@ export default function LegalConsentStep({
             label="Full Name"
             value={`${data.lastName}, ${data.firstName} ${data.middleName || ""} ${data.extensionName || ""}`}
           />
-          <DataItem label="Sex at Birth" value={data.sex} />
-          <DataItem label="Place of Birth" value={data.placeOfBirth} />
+          <DataItem
+            label="Sex at Birth"
+            value={data.sex}
+          />
+          <DataItem
+            label="Place of Birth"
+            value={data.placeOfBirth}
+          />
           <DataItem
             label="Birthdate"
             value={
@@ -185,9 +197,18 @@ export default function LegalConsentStep({
           icon={Home}
           stepId={3}
           onEdit={onEdit}>
-          <DataItem label="Barangay" value={data.barangay} />
-          <DataItem label="City/Municipality" value={data.cityMunicipality} />
-          <DataItem label="Province" value={data.province} />
+          <DataItem
+            label="Barangay"
+            value={data.barangay}
+          />
+          <DataItem
+            label="City/Municipality"
+            value={data.cityMunicipality}
+          />
+          <DataItem
+            label="Province"
+            value={data.province}
+          />
 
           <div className="sm:col-span-2 mt-2 pt-2 border-t border-border/40 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -195,7 +216,11 @@ export default function LegalConsentStep({
                 label={`Primary Contact (${data.primaryContact?.toLowerCase()})`}
                 value={data.contactNumber}
               />
-              <DataItem label="Primary Email" value={data.email} noUppercase />
+              <DataItem
+                label="Primary Email"
+                value={data.email}
+                noUppercase
+              />
             </div>
 
             {/* Secondary Contacts */}

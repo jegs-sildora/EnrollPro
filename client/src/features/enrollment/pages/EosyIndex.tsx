@@ -729,7 +729,7 @@ export default function EosyUpdating() {
     <div className="flex flex-col space-y-6 px-2 sm:px-0">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">EOSY Updating</h1>
+          <h1 className="text-3xl font-bold ">EOSY Updating</h1>
           <p className="text-muted-foreground">
             End of School Year status finalization for DepEd LIS compliance.
           </p>
@@ -928,7 +928,7 @@ export default function EosyUpdating() {
                 <CardTitle className="text-xl font-bold">
                   Learner Status Grid
                 </CardTitle>
-                <CardDescription className="font-bold text-xs uppercase tracking-tighter text-muted-foreground">
+                <CardDescription className="font-bold text-xs uppercase  text-muted-foreground">
                   {selectedSection
                     ? `Section: ${selectedSection.name}`
                     : "Select a section to begin updating"}

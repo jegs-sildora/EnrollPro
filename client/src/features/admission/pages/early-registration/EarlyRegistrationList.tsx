@@ -100,7 +100,7 @@ export default function EarlyRegistration() {
       <div className="flex-1 flex flex-col space-y-4 sm:space-y-6 overflow-auto px-2 sm:px-4 lg:px-0">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold ">
               Early Registration Monitoring Dashboard
             </h1>
             <p className="text-sm font-bold text-foreground">

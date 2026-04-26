@@ -8,7 +8,13 @@ import {
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-import { Search, UserPlus, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  Search,
+  UserPlus,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/shared/lib/utils";
@@ -54,7 +60,8 @@ export function InsertLateEnrolleeModal({
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [pool, setPool] = useState<UnsectionedLearner[]>([]);
-  const [selectedLearner, setSelectedLearner] = useState<UnsectionedLearner | null>(null);
+  const [selectedLearner, setSelectedLearner] =
+    useState<UnsectionedLearner | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -97,17 +104,19 @@ export function InsertLateEnrolleeModal({
       await api.post(`/sections/${sectionId}/inline-slot`, {
         enrollmentApplicationId: selectedLearner.id,
       });
-      
+
       sileo.success({
         title: "Learner Slotted",
         description: `${selectedLearner.lastName}, ${selectedLearner.firstName} has been added to ${sectionName}. SF1 and Grading systems updated.`,
       });
-      
+
       onSuccess();
       onOpenChange(false);
     } catch (err: unknown) {
-      const message = err && typeof err === "object" && "response" in err
-          ? (err as { response: { data?: { message?: string } } }).response.data?.message
+      const message =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response: { data?: { message?: string } } }).response.data
+              ?.message
           : "An unexpected error occurred during manual sectioning.";
       sileo.error({
         title: "Slotting Failed",
@@ -121,7 +130,9 @@ export function InsertLateEnrolleeModal({
   const isScpSection = programType !== "REGULAR";
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl p-0 overflow-hidden border-none shadow-2xl">
         <DialogHeader className="px-6 pt-6 pb-4 bg-muted/30 border-b border-border">
           <div className="flex items-center gap-3">
@@ -129,7 +140,7 @@ export function InsertLateEnrolleeModal({
               <UserPlus className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-black uppercase tracking-tight">
+              <DialogTitle className="text-lg font-black uppercase ">
                 Insert Late Enrollee
               </DialogTitle>
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
@@ -168,14 +179,16 @@ export function InsertLateEnrolleeModal({
                       No unsectioned learners found
                     </p>
                     <p className="text-xs text-muted-foreground/60 mt-1 max-w-[240px]">
-                      Ensure learners have passed verification and are marked "Ready for Sectioning".
+                      Ensure learners have passed verification and are marked
+                      "Ready for Sectioning".
                     </p>
                   </div>
                 ) : (
                   <div className="divide-y divide-border/50">
                     {filteredPool.map((learner) => {
-                      const isTypeMismatch = isScpSection && learner.applicantType !== programType;
-                      
+                      const isTypeMismatch =
+                        isScpSection && learner.applicantType !== programType;
+
                       return (
                         <button
                           key={learner.id}
@@ -183,27 +196,30 @@ export function InsertLateEnrolleeModal({
                           onClick={() => setSelectedLearner(learner)}
                           className={cn(
                             "w-full px-4 py-3 flex items-center justify-between transition-colors text-left group",
-                            isTypeMismatch 
-                              ? "opacity-50 grayscale cursor-not-allowed bg-muted/10" 
-                              : "hover:bg-muted/50 cursor-pointer"
-                          )}
-                        >
+                            isTypeMismatch
+                              ? "opacity-50 grayscale cursor-not-allowed bg-muted/10"
+                              : "hover:bg-muted/50 cursor-pointer",
+                          )}>
                           <div className="flex flex-col">
                             <span className="font-black text-sm uppercase group-hover:text-primary transition-colors">
                               {learner.lastName}, {learner.firstName}
                             </span>
-                            <span className="text-[10px] font-bold text-muted-foreground tracking-tighter">
+                            <span className="text-[10px] font-bold text-muted-foreground ">
                               LRN: {learner.lrn || "PENDING"}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
                             {isTypeMismatch ? (
-                              <Badge variant="outline" className="text-[9px] font-black uppercase border-red-200 text-red-600 bg-red-50">
+                              <Badge
+                                variant="outline"
+                                className="text-[9px] font-black uppercase border-red-200 text-red-600 bg-red-50">
                                 Program Mismatch
                               </Badge>
                             ) : (
-                              <Badge variant="secondary" className="text-[9px] font-black uppercase">
-                                {learner.applicantType?.replace(/_/g, ' ')}
+                              <Badge
+                                variant="secondary"
+                                className="text-[9px] font-black uppercase">
+                                {learner.applicantType?.replace(/_/g, " ")}
                               </Badge>
                             )}
                           </div>
@@ -232,35 +248,48 @@ export function InsertLateEnrolleeModal({
                     </p>
                   </div>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setSelectedLearner(null)}
-                  className="text-xs font-bold uppercase text-muted-foreground hover:text-foreground"
-                >
+                  className="text-xs font-bold uppercase text-muted-foreground hover:text-foreground">
                   Change
                 </Button>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-xl border border-border bg-muted/20">
-                   <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Target Section</p>
-                   <p className="font-black text-sm uppercase">{sectionName}</p>
-                   <p className="text-xs font-bold text-muted-foreground mt-0.5">{gradeLevelName}</p>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">
+                    Target Section
+                  </p>
+                  <p className="font-black text-sm uppercase">{sectionName}</p>
+                  <p className="text-xs font-bold text-muted-foreground mt-0.5">
+                    {gradeLevelName}
+                  </p>
                 </div>
                 <div className="p-4 rounded-xl border border-border bg-muted/20">
-                   <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Section Status</p>
-                   <p className="font-black text-sm uppercase">{enrolledCount} / {maxCapacity}</p>
-                   <p className="text-xs font-bold text-emerald-600 mt-0.5">Available Slots: {maxCapacity - enrolledCount}</p>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">
+                    Section Status
+                  </p>
+                  <p className="font-black text-sm uppercase">
+                    {enrolledCount} / {maxCapacity}
+                  </p>
+                  <p className="text-xs font-bold text-emerald-600 mt-0.5">
+                    Available Slots: {maxCapacity - enrolledCount}
+                  </p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200">
                 <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <p className="text-xs font-black text-amber-900 uppercase">Inline Slotting Protection</p>
+                  <p className="text-xs font-black text-amber-900 uppercase">
+                    Inline Slotting Protection
+                  </p>
                   <p className="text-[11px] leading-relaxed text-amber-800 font-medium">
-                    This action will bypass the Batch Algorithm. The learner will be added directly to the SF1 roster and synced to the grading microservice.
+                    This action will bypass the Batch Algorithm. The learner
+                    will be added directly to the SF1 roster and synced to the
+                    grading microservice.
                   </p>
                 </div>
               </div>
@@ -269,26 +298,28 @@ export function InsertLateEnrolleeModal({
         </div>
 
         <DialogFooter className="px-6 py-4 bg-muted/30 border-t border-border flex items-center justify-between sm:justify-between">
-           <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-             S.M.A.R.T. Integration Active
-           </p>
-           <div className="flex items-center gap-2">
-             <Button variant="outline" onClick={() => onOpenChange(false)} className="font-bold uppercase text-xs">
-               Cancel
-             </Button>
-             <Button 
-               disabled={!selectedLearner || isSubmitting} 
-               onClick={handleSlotting}
-               className="font-bold uppercase text-xs px-6"
-             >
-               {isSubmitting ? (
-                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-               ) : (
-                 <CheckCircle2 className="h-4 w-4 mr-2" />
-               )}
-               Confirm & Update SF1
-             </Button>
-           </div>
+          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+            S.M.A.R.T. Integration Active
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="font-bold uppercase text-xs">
+              Cancel
+            </Button>
+            <Button
+              disabled={!selectedLearner || isSubmitting}
+              onClick={handleSlotting}
+              className="font-bold uppercase text-xs px-6">
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+              )}
+              Confirm & Update SF1
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

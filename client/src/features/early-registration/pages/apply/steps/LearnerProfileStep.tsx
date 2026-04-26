@@ -185,12 +185,11 @@ export default function LearnerProfileStep() {
               fallbackIcon={
                 <div className="flex flex-col items-center text-muted-foreground group-hover:text-primary transition-colors">
                   <Camera className="w-8 h-8 mb-1" />
-                  <span className="text-[0.625rem] uppercase font-bold tracking-tight">
+                  <span className="text-[0.625rem] uppercase font-bold ">
                     Upload 2x2
                   </span>
                 </div>
-              }
-            >
+              }>
               {studentPhoto && (
                 <button
                   onClick={clearPhoto}
@@ -212,7 +211,9 @@ export default function LearnerProfileStep() {
 
         <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label htmlFor="lastName" className="text-sm font-semibold">
+            <Label
+              htmlFor="lastName"
+              className="text-sm font-semibold">
               Last Name <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -238,7 +239,9 @@ export default function LearnerProfileStep() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="firstName" className="text-sm font-semibold">
+            <Label
+              htmlFor="firstName"
+              className="text-sm font-semibold">
               First Name <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -264,7 +267,9 @@ export default function LearnerProfileStep() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="middleName" className="text-sm font-semibold">
+            <Label
+              htmlFor="middleName"
+              className="text-sm font-semibold">
               Middle Name
             </Label>
             <Input
@@ -280,7 +285,9 @@ export default function LearnerProfileStep() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="extensionName" className="text-sm font-semibold">
+            <Label
+              htmlFor="extensionName"
+              className="text-sm font-semibold">
               Suffix (Extension)
             </Label>
             <Input
@@ -347,7 +354,9 @@ export default function LearnerProfileStep() {
                       />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="end">
+                  <PopoverContent
+                    className="w-auto p-0"
+                    align="end">
                     <Calendar
                       mode="single"
                       captionLayout="dropdown"
@@ -436,10 +445,12 @@ export default function LearnerProfileStep() {
             </p>
           )}
         </div>
-        
+
         <div className="md:col-span-3 lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
           <div className="space-y-1.5">
-            <Label htmlFor="placeOfBirth" className="text-sm font-semibold">
+            <Label
+              htmlFor="placeOfBirth"
+              className="text-sm font-semibold">
               Place of Birth <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -465,7 +476,9 @@ export default function LearnerProfileStep() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="religion" className="text-sm font-semibold">
+            <Label
+              htmlFor="religion"
+              className="text-sm font-semibold">
               Religion
             </Label>
             <Input

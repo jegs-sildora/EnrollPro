@@ -87,6 +87,7 @@ interface Student {
   emailAddress: string;
   trackingNumber: string;
   status: string;
+  applicantType?: string;
   lifecycleOutcome: "TRANSFERRED_OUT" | "DROPPED_OUT" | null;
   dropOutReason: string | null;
   dropOutDate: string | null;
@@ -881,9 +882,16 @@ export default function Students() {
             <span className="font-bold text-sm uppercase leading-tight">
               {row.original.fullName}
             </span>
-            <span className="text-xs font-semibold text-muted-foreground leading-snug">
-              {formatLearningProgramLabel(row.original.learningProgram)}
-            </span>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-xs font-semibold text-muted-foreground leading-snug">
+                {formatLearningProgramLabel(row.original.learningProgram)}
+              </span>
+              {row.original.applicantType === "LATE_ENROLLEE" && (
+                <Badge className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-black">
+                  Late Enrolled
+                </Badge>
+              )}
+            </div>
           </div>
         ),
       },
@@ -1365,9 +1373,16 @@ export default function Students() {
                       <p className="font-bold text-sm uppercase leading-tight break-words">
                         {student.fullName}
                       </p>
-                      <p className="text-xs font-semibold text-muted-foreground leading-snug">
-                        {formatLearningProgramLabel(student.learningProgram)}
-                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-xs font-semibold text-muted-foreground leading-snug">
+                          {formatLearningProgramLabel(student.learningProgram)}
+                        </p>
+                        {student.applicantType === "LATE_ENROLLEE" && (
+                          <Badge className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-black">
+                            Late Enrolled
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                     {getEnrolledBadge()}
                   </div>

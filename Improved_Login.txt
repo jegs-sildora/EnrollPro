@@ -112,14 +112,14 @@ export default function LoginPage() {
               )}
             </div>
             <div>
-              <h1 className="text-4xl font-bold tracking-tight">{acronym}</h1>
+              <h1 className="text-4xl font-bold ">{acronym}</h1>
               <p className="text-white/80 text-sm font-medium tracking-wide">Academic Records Management</p>
             </div>
           </div>
 
           {/* School Name + Details */}
           <div className="space-y-3 mb-12">
-            <h2 className="text-3xl xl:text-4xl font-bold leading-tight tracking-tight">
+            <h2 className="text-3xl xl:text-4xl font-bold leading-tight ">
               {schoolName}
             </h2>
             <div className="flex flex-col gap-1.5 mt-3">

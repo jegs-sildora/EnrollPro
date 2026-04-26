@@ -883,12 +883,13 @@ export function createEarlyRegistrationBaseController(
 
           // DepEd Compliance (Temporary Enrollment)
           status:
-            body.isMissingSf9 || body.hasUnsettledPrivateAccount
+            (body.isMissingSf9 && !body.hasSf9CertificationLetter) || body.hasUnsettledPrivateAccount
               ? "TEMPORARILY_ENROLLED"
               : "SUBMITTED_BEEF",
           isTemporarilyEnrolled:
-            body.isMissingSf9 || body.hasUnsettledPrivateAccount || false,
+            (body.isMissingSf9 && !body.hasSf9CertificationLetter) || body.hasUnsettledPrivateAccount || false,
           isMissingSf9: body.isMissingSf9 || false,
+          hasSf9CertificationLetter: body.hasSf9CertificationLetter || false,
           hasUnsettledPrivateAccount: body.hasUnsettledPrivateAccount || false,
           originatingSchoolName: body.originatingSchoolName || null,
 

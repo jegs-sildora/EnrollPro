@@ -109,7 +109,9 @@ export function ConfirmationModal({
   const Icon = CustomIcon || style.icon;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
           "w-[calc(100%-2rem)] sm:max-w-sm rounded-lg p-8 overflow-hidden",
@@ -133,15 +135,16 @@ export function ConfirmationModal({
               style.iconRing,
               style.iconText,
             )}>
-            <Icon className="w-6 h-6" strokeWidth={2.5} />
+            <Icon
+              className="w-6 h-6"
+              strokeWidth={2.5}
+            />
           </span>
         </div>
 
         {/* ── Header — centred ───────────────────────────────────────── */}
         <DialogHeader className="space-y-2 text-center items-center">
-          <DialogTitle className="text-xl font-bold tracking-tight">
-            {title}
-          </DialogTitle>
+          <DialogTitle className="text-xl font-bold ">{title}</DialogTitle>
           <DialogDescription className="text-sm leading-relaxed text-center">
             {description}
           </DialogDescription>

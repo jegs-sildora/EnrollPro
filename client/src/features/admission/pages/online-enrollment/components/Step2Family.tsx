@@ -910,27 +910,37 @@ export default function Step2Family() {
             </p>
           )}
 
-          <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 space-y-3">
+          <div className={cn(
+            "rounded-xl border p-4 space-y-3 transition-colors",
+            errors.isContactInfoConfirmed 
+              ? "border-destructive bg-destructive/5" 
+              : "border-blue-200 bg-blue-50"
+          )}>
             <div className="flex items-start gap-2">
               <Checkbox
                 id="isContactInfoConfirmed"
                 checked={!!data.isContactInfoConfirmed}
+                className={cn(errors.isContactInfoConfirmed && "border-destructive data-[state=unchecked]:border-destructive")}
                 onCheckedChange={(checked) => {
                   setValue("isContactInfoConfirmed", checked === true, {
                     shouldValidate: true,
                     shouldDirty: true,
                   });
+                  void trigger("isContactInfoConfirmed");
                 }}
               />
               <Label
                 htmlFor="isContactInfoConfirmed"
-                className="text-xs font-semibold leading-relaxed cursor-pointer text-blue-900">
+                className={cn(
+                  "text-xs font-semibold leading-relaxed cursor-pointer",
+                  errors.isContactInfoConfirmed ? "text-destructive" : "text-blue-900"
+                )}>
                 I confirm that the primary contact number and email are still
-                active and correct for this enrollment.
+                active and correct for this enrollment. <span className="text-destructive">*</span>
               </Label>
             </div>
             {errors.isContactInfoConfirmed && (
-              <p className="text-xs text-destructive font-medium flex items-center gap-1">
+              <p className="text-xs text-destructive font-bold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 {errors.isContactInfoConfirmed.message}
               </p>

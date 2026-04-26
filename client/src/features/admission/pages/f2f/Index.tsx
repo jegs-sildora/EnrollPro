@@ -37,7 +37,7 @@ export default function F2FEarlyRegistration() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-3xl font-bold ">
             Walk-in Basic Education Early Registration Form
           </h1>
           <p className="text-sm text-foreground font-bold">
@@ -45,7 +45,10 @@ export default function F2FEarlyRegistration() {
             encoding.
           </p>
         </div>
-        <Button asChild variant="outline" className="gap-2 font-semibold">
+        <Button
+          asChild
+          variant="outline"
+          className="gap-2 font-semibold">
           <Link
             to="/settings?tab=requirements"
             target="_blank"

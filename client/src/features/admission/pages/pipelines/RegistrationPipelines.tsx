@@ -145,7 +145,7 @@ export default function RegistrationPipelines() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">
+          <h1 className="text-3xl font-bold text-foreground ">
             Registration Pipelines
           </h1>
           <p className="text-sm font-bold">
@@ -154,7 +154,10 @@ export default function RegistrationPipelines() {
         </div>
         <div className="flex gap-2">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-9 w-32" />
+            <Skeleton
+              key={i}
+              className="h-9 w-32"
+            />
           ))}
         </div>
         <Skeleton className="h-96 w-full" />
@@ -166,7 +169,7 @@ export default function RegistrationPipelines() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">
+          <h1 className="text-3xl font-bold text-foreground ">
             Registration Pipelines
           </h1>
         </div>
@@ -180,7 +183,7 @@ export default function RegistrationPipelines() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground tracking-tight">
+        <h1 className="text-3xl font-bold text-foreground ">
           Registration Pipelines
         </h1>
         <p className="text-sm font-bold">

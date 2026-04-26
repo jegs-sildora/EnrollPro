@@ -110,7 +110,11 @@ export default function EarlyRegistrationApply() {
                 />
               </pattern>
             </defs>
-            <rect width="100%" height="100%" fill="url(#pixel-grid)" />
+            <rect
+              width="100%"
+              height="100%"
+              fill="url(#pixel-grid)"
+            />
           </svg>
           {/* Radial glow */}
           <div
@@ -158,7 +162,7 @@ export default function EarlyRegistrationApply() {
                     </div>
                   )}
                   <div className="space-y-2">
-                    <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-black">
+                    <h2 className="text-2xl sm:text-3xl font-black uppercase  text-black">
                       {schoolName}
                     </h2>
                     <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-destructive/10 text-destructive text-xs font-bold tracking-widest uppercase border border-destructive/20">

@@ -150,13 +150,15 @@ const RosterRowComponent = React.forwardRef<
               {row.learnerName}
             </span>
             {row.status === "TEMPORARILY_ENROLLED" && (
-              <Badge variant="outline" className="h-5 px-1.5 border-amber-300 bg-amber-50 text-amber-700 font-black text-[9px] uppercase tracking-tighter gap-1">
+              <Badge
+                variant="outline"
+                className="h-5 px-1.5 border-amber-300 bg-amber-50 text-amber-700 font-black text-[9px] uppercase  gap-1">
                 <AlertTriangle className="h-2.5 w-2.5" />
                 Temporary
               </Badge>
             )}
           </div>
-          <span className="text-[10px] font-black text-muted-foreground tracking-tighter uppercase">
+          <span className="text-[10px] font-black text-muted-foreground  uppercase">
             {row.lrn || "NO LRN"}
           </span>
         </div>
@@ -376,8 +378,10 @@ export function BatchSectioningWizard({
         schoolYearId,
       );
     } catch (err: unknown) {
-      const message = err && typeof err === "object" && "response" in err
-          ? (err as { response: { data?: { message?: string } } }).response.data?.message
+      const message =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response: { data?: { message?: string } } }).response.data
+              ?.message
           : "Failed to generate sectioning preview.";
       setError(message || "An unexpected error occurred.");
       toastApiError(err as any);
@@ -555,7 +559,7 @@ export function BatchSectioningWizard({
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div>
-                  <h2 className="text-xl font-bold tracking-tight">
+                  <h2 className="text-xl font-bold ">
                     HNHS Batch Sectioning Wizard
                   </h2>
                   <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">
@@ -598,7 +602,7 @@ export function BatchSectioningWizard({
                       </div>
                       <span
                         className={cn(
-                          "text-[10px] font-black uppercase tracking-tighter",
+                          "text-[10px] font-black uppercase ",
                           currentStep === step.id
                             ? "text-foreground"
                             : "text-muted-foreground",
@@ -676,7 +680,7 @@ export function BatchSectioningWizard({
                                 PHASE {idx + 1}
                               </Badge>
                             </div>
-                            <CardTitle className="text-base font-black uppercase tracking-tight">
+                            <CardTitle className="text-base font-black uppercase ">
                               {step.title}
                             </CardTitle>
                             <p className="text-xs text-muted-foreground font-medium leading-relaxed">
@@ -690,7 +694,8 @@ export function BatchSectioningWizard({
                                   Status
                                 </span>
                                 <span className="text-green-600 flex items-center gap-1">
-                                  <Check className="w-3 h-3 stroke-[3]" /> COMPLETED
+                                  <Check className="w-3 h-3 stroke-[3]" />{" "}
+                                  COMPLETED
                                 </span>
                               </div>
                               <div className="flex justify-between text-[10px] font-black uppercase tracking-wider">
@@ -711,9 +716,9 @@ export function BatchSectioningWizard({
                                       STE Cut-off Score
                                     </span>
                                     <span className="text-primary font-bold">
-                                      {Number(step.stats.steCutoffScore).toFixed(
-                                        3,
-                                      )}
+                                      {Number(
+                                        step.stats.steCutoffScore,
+                                      ).toFixed(3)}
                                     </span>
                                   </div>
                                 )}
@@ -725,7 +730,9 @@ export function BatchSectioningWizard({
                                       Pilot Cut-off (Gen Ave)
                                     </span>
                                     <span className="text-primary font-bold">
-                                      {Number(step.stats.pilotCutoffAve).toFixed(3)}
+                                      {Number(
+                                        step.stats.pilotCutoffAve,
+                                      ).toFixed(3)}
                                     </span>
                                   </div>
                                 )}
@@ -740,7 +747,7 @@ export function BatchSectioningWizard({
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      className="h-5 px-1.5 text-[9px] font-black uppercase tracking-tighter hover:bg-orange-100 flex items-center gap-1"
+                                      className="h-5 px-1.5 text-[9px] font-black uppercase  hover:bg-orange-100 flex items-center gap-1"
                                       onClick={() => {
                                         setReclassifiedLimit(50);
                                         setViewingReclassified({
@@ -760,7 +767,8 @@ export function BatchSectioningWizard({
                                 <div className="flex justify-between text-[10px] font-black uppercase tracking-wider text-destructive">
                                   <span>Remedial Balance</span>
                                   <span>
-                                    {Number(step.stats?.frustratedCount)} Profiles
+                                    {Number(step.stats?.frustratedCount)}{" "}
+                                    Profiles
                                   </span>
                                 </div>
                               )}
@@ -775,7 +783,7 @@ export function BatchSectioningWizard({
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-2">
                           <CheckCircle2 className="h-5 w-5 text-green-600" />
-                          <h3 className="text-lg font-bold uppercase tracking-tight text-foreground">
+                          <h3 className="text-lg font-bold uppercase  text-foreground">
                             Proposed Roster Preview
                           </h3>
                           <Badge
@@ -1048,7 +1056,7 @@ export function BatchSectioningWizard({
               <div className="fixed bottom-0 left-0 right-0 z-[45] bg-card border-t-4 border-primary p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
                 <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="max-w-md text-center sm:text-left">
-                    <p className="font-black text-primary flex items-center justify-center sm:justify-start gap-2 uppercase tracking-tight text-sm">
+                    <p className="font-black text-primary flex items-center justify-center sm:justify-start gap-2 uppercase  text-sm">
                       <AlertTriangle className="h-5 w-5 fill-primary text-primary-foreground" />{" "}
                       Final Commitment Required
                     </p>
@@ -1058,8 +1066,8 @@ export function BatchSectioningWizard({
                       <span className="font-black text-green-700 mx-1 uppercase">
                         Officially Enrolled
                       </span>
-                      , and issue unique portal PINs. This action is audited
-                      and final.
+                      , and issue unique portal PINs. This action is audited and
+                      final.
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -1197,7 +1205,7 @@ export function BatchSectioningWizard({
             }}>
             <DialogContent className="sm:max-w-2xl border-2">
               <DialogHeader>
-                <DialogTitle className="text-xl font-bold uppercase tracking-tight">
+                <DialogTitle className="text-xl font-bold uppercase ">
                   Reclassified Learners — {viewingReclassified?.title}
                 </DialogTitle>
                 <DialogDescription className="text-sm font-medium">
@@ -1244,7 +1252,7 @@ export function BatchSectioningWizard({
                           <TableCell className="text-center">
                             <Badge
                               variant="outline"
-                              className="text-[9px] font-black uppercase tracking-tighter border-orange-200 text-orange-700 bg-orange-50">
+                              className="text-[9px] font-black uppercase  border-orange-200 text-orange-700 bg-orange-50">
                               RECLASSIFIED
                             </Badge>
                           </TableCell>
@@ -1273,7 +1281,7 @@ export function BatchSectioningWizard({
               </div>
               <DialogFooter>
                 <div className="flex w-full items-center justify-between">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase ">
                     Showing{" "}
                     {Math.min(
                       reclassifiedLimit,

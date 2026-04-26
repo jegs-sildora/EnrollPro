@@ -382,7 +382,7 @@ export default function TrackApplication({
           "shadow-xl border-2 border-primary/5 rounded-lg overflow-hidden transition-all duration-500 w-full",
         )}>
         <CardHeader className="bg-primary text-primary-foreground p-8 text-center">
-          <CardTitle className="text-2xl font-black uppercase tracking-tight">
+          <CardTitle className="text-2xl font-black uppercase ">
             Application Monitor
           </CardTitle>
           <CardDescription className="text-primary-foreground/90 font-bold">
@@ -390,7 +390,9 @@ export default function TrackApplication({
           </CardDescription>
         </CardHeader>
         <CardContent className="p-8">
-          <form onSubmit={handleSubmit(onTrack)} className="space-y-6">
+          <form
+            onSubmit={handleSubmit(onTrack)}
+            className="space-y-6">
             <div className="space-y-2">
               <Label
                 htmlFor="trackingNumber"
@@ -447,7 +449,7 @@ export default function TrackApplication({
                 className="mt-8 p-6 bg-primary/5 border-2 border-primary/20 rounded-2xl flex items-start gap-4">
                 <AlertCircle className="w-6 h-6 text-primary shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-black text-primary uppercase tracking-tight">
+                  <h4 className="font-black text-primary uppercase ">
                     Application Not Found
                   </h4>
                   <p className="text-sm font-bold text-primary/80 mt-1">
@@ -474,7 +476,7 @@ export default function TrackApplication({
                     <h3 className="text-xs font-black uppercase tracking-[0.2em] opacity-70">
                       Current Status
                     </h3>
-                    <p className="text-3xl font-black uppercase tracking-tight mt-1">
+                    <p className="text-3xl font-black uppercase  mt-1">
                       {config.label}
                     </p>
                   </div>
@@ -653,7 +655,7 @@ export default function TrackApplication({
                   <div className="text-center flex-1">
                     <h1
                       style={{ color: "#061E29" }}
-                      className="text-3xl font-black uppercase tracking-tight mb-1">
+                      className="text-3xl font-black uppercase  mb-1">
                       {schoolName}
                     </h1>
                     <p
@@ -677,14 +679,16 @@ export default function TrackApplication({
                 <div className="text-center space-y-4">
                   <h2
                     style={{ color: "#061E29" }}
-                    className="text-4xl font-black tracking-tight">
+                    className="text-4xl font-black ">
                     Application Received!
                   </h2>
                   <p
                     style={{ color: "#4b5563" }}
                     className="text-xl font-medium">
                     Your application has been successfully submitted to{" "}
-                    <span style={{ color: "#061E29" }} className="font-bold">
+                    <span
+                      style={{ color: "#061E29" }}
+                      className="font-bold">
                       {schoolName}
                     </span>
                     .
@@ -701,7 +705,7 @@ export default function TrackApplication({
                   </p>
                   <p
                     style={{ color: "#061E29" }}
-                    className="text-7xl  font-black tracking-tighter">
+                    className="text-7xl  font-black ">
                     {status.trackingNumber}
                   </p>
 
@@ -745,7 +749,7 @@ export default function TrackApplication({
                   className="space-y-8 bg-white p-8 border-2 rounded-lg">
                   <h3
                     style={{ color: "#061E29" }}
-                    className="text-2xl font-black flex items-center gap-3 uppercase tracking-tight -mt-3">
+                    className="text-2xl font-black flex items-center gap-3 uppercase  -mt-3">
                     Important Next Steps
                   </h3>
                   <TrackingNextSteps
@@ -776,7 +780,7 @@ export default function TrackApplication({
                   <div className="text-right space-y-1">
                     <p
                       style={{ color: "#061E29" }}
-                      className="font-black uppercase tracking-tight text-lg leading-none">
+                      className="font-black uppercase  text-lg leading-none">
                       EnrollPro Management System
                     </p>
                     <p

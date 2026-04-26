@@ -39,7 +39,7 @@ export default function PrivacyNotice({ onAccept }: PrivacyNoticeProps) {
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
               <ShieldCheck className="w-6 h-6 text-primary" />
             </div>
-            <CardTitle className="text-2xl font-bold tracking-tight">
+            <CardTitle className="text-2xl font-bold ">
               Data Privacy Notice
             </CardTitle>
             <p className="text-sm text-muted-foreground font-medium">
