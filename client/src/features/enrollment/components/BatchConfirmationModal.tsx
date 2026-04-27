@@ -26,6 +26,7 @@ import { Label } from "@/shared/ui/label";
 import { Switch } from "@/shared/ui/switch";
 import { cn } from "@/shared/lib/utils";
 import api from "@/shared/api/axiosInstance";
+import axios from "axios";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { sileo } from "sileo";
 import Papa from "papaparse";
@@ -130,17 +131,15 @@ export function BatchConfirmationModal({
       scanInputRef.current?.focus();
     } catch (err: unknown) {
       if (
-        err &&
-        typeof err === "object" &&
-        "response" in err &&
-        (err as any).response?.status === 404
+        axios.isAxiosError(err) &&
+        err.response?.status === 404
       ) {
         sileo.error({
           title: "Not Found",
           description: `LRN ${lrn} was not found in the database.`,
         });
       } else {
-        toastApiError(err as any);
+        toastApiError(err);
       }
     } finally {
       setLoading(false);

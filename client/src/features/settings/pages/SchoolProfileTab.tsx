@@ -1,6 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { sileo } from "sileo";
-import { Upload, Trash2, School, Palette, Check } from "lucide-react";
+import {
+  Upload,
+  Trash2,
+  School,
+  Palette,
+  Check,
+  Megaphone,
+} from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore, type PaletteColor } from "@/store/settings.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -42,11 +49,24 @@ function isAccentLight(hsl: string): boolean {
 }
 
 export default function SchoolProfileTab() {
-  const { schoolName, logoUrl, colorScheme, selectedAccentHsl, setSettings } =
-    useSettingsStore();
+  const {
+    schoolName,
+    logoUrl,
+    colorScheme,
+    selectedAccentHsl,
+    facebookPageUrl,
+    depedEmail,
+    schoolWebsite,
+    setSettings,
+  } = useSettingsStore();
 
   const [nameValue, setNameValue] = useState(schoolName);
+  const [fbValue, setFbValue] = useState(facebookPageUrl || "");
+  const [emailValue, setEmailValue] = useState(depedEmail || "");
+  const [webValue, setWebValue] = useState(schoolWebsite || "");
+
   const [savingName, setSavingName] = useState(false);
+  const [savingChannels, setSavingChannels] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [removingLogo, setRemovingLogo] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -55,7 +75,10 @@ export default function SchoolProfileTab() {
 
   useEffect(() => {
     setNameValue(schoolName);
-  }, [schoolName]);
+    setFbValue(facebookPageUrl || "");
+    setEmailValue(depedEmail || "");
+    setWebValue(schoolWebsite || "");
+  }, [schoolName, facebookPageUrl, depedEmail, schoolWebsite]);
 
   const palette: PaletteColor[] =
     (colorScheme as { palette?: PaletteColor[] } | null)?.palette ?? [];
@@ -67,8 +90,18 @@ export default function SchoolProfileTab() {
   const handleSaveName = async () => {
     setSavingName(true);
     try {
-      await api.put("/settings/identity", { schoolName: nameValue });
-      setSettings({ schoolName: nameValue });
+      await api.put("/settings/identity", {
+        schoolName: nameValue,
+        facebookPageUrl: fbValue,
+        depedEmail: emailValue,
+        schoolWebsite: webValue,
+      });
+      setSettings({
+        schoolName: nameValue,
+        facebookPageUrl: fbValue,
+        depedEmail: emailValue,
+        schoolWebsite: webValue,
+      });
       sileo.success({
         title: "Settings Saved",
         description: "School name updated.",
@@ -77,6 +110,32 @@ export default function SchoolProfileTab() {
       toastApiError(err as never);
     } finally {
       setSavingName(false);
+    }
+  };
+
+  const handleSaveChannels = async () => {
+    setSavingChannels(true);
+    try {
+      await api.put("/settings/identity", {
+        schoolName: nameValue,
+        facebookPageUrl: fbValue,
+        depedEmail: emailValue,
+        schoolWebsite: webValue,
+      });
+      setSettings({
+        schoolName: nameValue,
+        facebookPageUrl: fbValue,
+        depedEmail: emailValue,
+        schoolWebsite: webValue,
+      });
+      sileo.success({
+        title: "Channels Updated",
+        description: "Communication links have been saved.",
+      });
+    } catch (err) {
+      toastApiError(err as never);
+    } finally {
+      setSavingChannels(false);
     }
   };
 
@@ -194,6 +253,66 @@ export default function SchoolProfileTab() {
               onClick={handleSaveName}
               disabled={savingName || nameValue === schoolName}>
               {savingName ? "Saving..." : "Save"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Official Communication Channels */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-xl">
+            <Megaphone className="h-5 w-5" />
+            Official Communication Channels
+          </CardTitle>
+          <CardDescription>
+            Set the official links and contacts used across public-facing
+            portals to direct parents and stakeholders to the right channels.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid gap-6 font-bold">
+            <div className="space-y-2">
+              <Label htmlFor="facebookUrl">Facebook Page URL</Label>
+              <Input
+                id="facebookUrl"
+                placeholder="https://www.facebook.com/school.official"
+                value={fbValue}
+                onChange={(e) => setFbValue(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="depedEmail">Official DepEd Email Address</Label>
+              <Input
+                id="depedEmail"
+                placeholder="302635@deped.gov.ph"
+                value={emailValue}
+                onChange={(e) => setEmailValue(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="schoolWebsite">School Website (Optional)</Label>
+              <Input
+                id="schoolWebsite"
+                placeholder="https://"
+                value={webValue}
+                onChange={(e) => setWebValue(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-4 border-t border-border/50">
+            <Button
+              onClick={handleSaveChannels}
+              disabled={
+                savingChannels ||
+                (fbValue === (facebookPageUrl || "") &&
+                  emailValue === (depedEmail || "") &&
+                  webValue === (schoolWebsite || ""))
+              }>
+              {savingChannels ? "Saving..." : "Save Channels"}
             </Button>
           </div>
         </CardContent>
@@ -347,6 +466,69 @@ export default function SchoolProfileTab() {
               <Badge variant="warning">Pending</Badge>
               <Badge variant="danger">Rejected</Badge>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Official Communication Channels */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-xl">
+            <Megaphone className="h-5 w-5" />
+            Official Communication Channels
+          </CardTitle>
+          <CardDescription>
+            Set the official links and contacts used across public-facing
+            portals to direct parents and stakeholders to the right channels.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="facebookUrl">Facebook Page URL</Label>
+              <Input
+                id="facebookUrl"
+                placeholder="https://www.facebook.com/hnhs.official"
+                value={fbValue}
+                onChange={(e) => setFbValue(e.target.value)}
+              />
+              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">
+                Appears on: Early Registration & Enrollment Lockout pages
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="depedEmail">Official DepEd Email Address</Label>
+              <Input
+                id="depedEmail"
+                placeholder="302635@deped.gov.ph"
+                value={emailValue}
+                onChange={(e) => setEmailValue(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="schoolWebsite">School Website (Optional)</Label>
+              <Input
+                id="schoolWebsite"
+                placeholder="https://"
+                value={webValue}
+                onChange={(e) => setWebValue(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-4 border-t border-border/50">
+            <Button
+              onClick={handleSaveChannels}
+              disabled={
+                savingChannels ||
+                (fbValue === (facebookPageUrl || "") &&
+                  emailValue === (depedEmail || "") &&
+                  webValue === (schoolWebsite || ""))
+              }>
+              {savingChannels ? "Saving..." : "Save Channels"}
+            </Button>
           </div>
         </CardContent>
       </Card>

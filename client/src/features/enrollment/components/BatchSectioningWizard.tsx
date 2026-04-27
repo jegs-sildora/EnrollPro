@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, startTransition } from "react";
+import React, { useState, useEffect, useMemo, useCallback, startTransition } from "react";
 import {
   Loader2,
   ChevronRight,
@@ -17,6 +17,7 @@ import { sileo } from "sileo";
 import { useBlocker } from "react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import api from "@/shared/api/axiosInstance";
+import axios from "axios";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
@@ -313,8 +314,91 @@ export function BatchSectioningWizard({
       isBatchPending && currentLocation.pathname !== nextLocation.pathname,
   );
 
+  const runPreview = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await api.post("/sections/batch-sectioning/run", {
+        gradeLevelId,
+        schoolYearId,
+        params: sectioningParams ?? undefined,
+      });
+      // Store in global state
+      setBatchData(
+        res.data,
+        res.data.proposedAssignments,
+        gradeLevelId,
+        schoolYearId,
+      );
+    } catch (err: unknown) {
+      const message =
+        axios.isAxiosError(err)
+          ? (err as { response: { data?: { message?: string } } }).response.data
+              ?.message
+          : "Failed to generate sectioning preview.";
+      setError(message || "An unexpected error occurred.");
+      toastApiError(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [gradeLevelId, schoolYearId, sectioningParams, setBatchData]);
+
+  const fetchGradeSections = useCallback(async () => {
+    try {
+      const res = await api.get(`/sections?gradeLevelId=${gradeLevelId}`);
+      setGradeSections(res.data.sections || []);
+    } catch (err: unknown) {
+      console.error("Failed to fetch sections", err);
+    }
+  }, [gradeLevelId]);
+
+  const toggleSort = (field: SortField) => {
+    setSortConfig((prev) => ({
+      field,
+      direction:
+        prev.field === field && prev.direction === "asc" ? "desc" : "asc",
+    }));
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortConfig.field !== field)
+      return <ArrowUpDown className="ml-2 h-3.5 w-3.5 opacity-50" />;
+    return sortConfig.direction === "asc" ? (
+      <ArrowUp className="ml-2 h-3.5 w-3.5" />
+    ) : (
+      <ArrowDown className="ml-2 h-3.5 w-3.5" />
+    );
+  };
+
+  const handleCommit = async () => {
+    if (!previewData) return;
+
+    setIsCommitting(true);
+    try {
+      await api.post("/sections/batch-sectioning/commit", {
+        gradeLevelId,
+        schoolYearId,
+        assignments: modifiedAssignments,
+      });
+
+      sileo.success({
+        title: "Batch Sectioning Success",
+        description: `${modifiedAssignments.length} learners have been officially enrolled and assigned to sections.`,
+      });
+
+      clearBatch();
+      onSuccess();
+      onClose();
+    } catch (err: unknown) {
+      toastApiError(err as never);
+    } finally {
+      setIsCommitting(false);
+    }
+  };
+
+  // Handle re-entry and initial load
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && gradeLevelId && schoolYearId) {
       // Check if we already have matching data in store
       const hasMatchingData =
         isBatchPending &&
@@ -341,89 +425,9 @@ export function BatchSectioningWizard({
     isBatchPending,
     storedGradeLevelId,
     storedSchoolYearId,
+    runPreview,
+    fetchGradeSections,
   ]);
-
-  const toggleSort = (field: SortField) => {
-    setSortConfig((prev) => ({
-      field,
-      direction:
-        prev.field === field && prev.direction === "asc" ? "desc" : "asc",
-    }));
-  };
-
-  const getSortIcon = (field: SortField) => {
-    if (sortConfig.field !== field)
-      return <ArrowUpDown className="ml-2 h-3.5 w-3.5 opacity-50" />;
-    return sortConfig.direction === "asc" ? (
-      <ArrowUp className="ml-2 h-3.5 w-3.5" />
-    ) : (
-      <ArrowDown className="ml-2 h-3.5 w-3.5" />
-    );
-  };
-
-  const runPreview = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const res = await api.post("/sections/batch-sectioning/run", {
-        gradeLevelId,
-        schoolYearId,
-        params: sectioningParams ?? undefined,
-      });
-      // Store in global state
-      setBatchData(
-        res.data,
-        res.data.proposedAssignments,
-        gradeLevelId,
-        schoolYearId,
-      );
-    } catch (err: unknown) {
-      const message =
-        err && typeof err === "object" && "response" in err
-          ? (err as { response: { data?: { message?: string } } }).response.data
-              ?.message
-          : "Failed to generate sectioning preview.";
-      setError(message || "An unexpected error occurred.");
-      toastApiError(err as any);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchGradeSections = async () => {
-    try {
-      const res = await api.get(`/sections?gradeLevelId=${gradeLevelId}`);
-      setGradeSections(res.data.sections || []);
-    } catch (err: unknown) {
-      console.error("Failed to fetch sections", err);
-    }
-  };
-
-  const handleCommit = async () => {
-    if (!previewData) return;
-
-    setIsCommitting(true);
-    try {
-      await api.post("/sections/batch-sectioning/commit", {
-        gradeLevelId,
-        schoolYearId,
-        assignments: modifiedAssignments,
-      });
-
-      sileo.success({
-        title: "Batch Sectioning Success",
-        description: `${modifiedAssignments.length} learners have been officially enrolled and assigned to sections.`,
-      });
-
-      clearBatch();
-      onSuccess();
-      onClose();
-    } catch (err: unknown) {
-      toastApiError(err as any);
-    } finally {
-      setIsCommitting(false);
-    }
-  };
 
   const updateAssignment = (applicationId: number, newSectionId: string) => {
     const section = gradeSections.find((s) => String(s.id) === newSectionId);

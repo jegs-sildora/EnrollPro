@@ -105,6 +105,8 @@ interface Application {
   } | null;
   section?: { name: string } | null;
   studentPhoto?: string | null;
+  earlyRegistrationId?: number | null;
+  source?: "ENROLLMENT" | "EARLY_REGISTRATION" | null;
 }
 
 interface GradeLevel {
@@ -122,7 +124,12 @@ interface SectionOption {
   programType: string;
 }
 
-type PendingQueueFilter = "ALL" | "INCOMING_G7" | "CONTINUING_JHS";
+type PendingQueueFilter =
+  | "ALL"
+  | "INCOMING_G7"
+  | "CONTINUING_JHS"
+  | "EARLY_REGISTRANT"
+  | "STANDARD_WALKIN";
 type ReadingProfileLevel =
   | "INDEPENDENT"
   | "INSTRUCTIONAL"
@@ -134,6 +141,8 @@ const PENDING_QUEUE_FILTER_OPTIONS: Array<{
   label: string;
 }> = [
   { value: "ALL", label: "All" },
+  { value: "EARLY_REGISTRANT", label: "Early Registrants" },
+  { value: "STANDARD_WALKIN", label: "Standard/Walk-in Enrollees" },
   { value: "INCOMING_G7", label: "Incoming G7" },
   { value: "CONTINUING_JHS", label: "Continuing JHS" },
 ];
@@ -421,7 +430,7 @@ export default function Enrollment() {
 
       setGradeLevels(jhsLevels);
     } catch (err: unknown) {
-      toastApiError(err as any);
+      toastApiError(err as never);
     } finally {
       setLoadingGradeLevels(false);
     }
@@ -458,7 +467,25 @@ export default function Enrollment() {
         return gradeLevelNumber === 7;
       }
 
-      return application.learnerType === "CONTINUING";
+      if (pendingQueueFilter === "CONTINUING_JHS") {
+        return application.learnerType === "CONTINUING";
+      }
+
+      if (pendingQueueFilter === "EARLY_REGISTRANT") {
+        return (
+          application.source === "EARLY_REGISTRATION" ||
+          application.earlyRegistrationId != null
+        );
+      }
+
+      if (pendingQueueFilter === "STANDARD_WALKIN") {
+        return (
+          application.source === "ENROLLMENT" ||
+          (application.source == null && application.earlyRegistrationId == null)
+        );
+      }
+
+      return true;
     });
   }, [applications, pendingQueueFilter]);
 
@@ -667,7 +694,7 @@ export default function Enrollment() {
           return SECTION_ASSIGNMENT_STATUSES.has(app.status) && !hasSection;
         }
 
-        return OFFICIAL_ROSTER_STATUSES.has(app.status as any) && hasSection;
+        return OFFICIAL_ROSTER_STATUSES.has(app.status) && hasSection;
       });
 
       setApplications(filteredApps);
@@ -811,7 +838,7 @@ export default function Enrollment() {
         }));
       }
     },
-    [sectionSelectionByApplicationId, fetchData, openReadingProfileDialog],
+    [sectionSelectionByApplicationId, sectionOptionsByApplicationId, fetchData, openReadingProfileDialog],
   );
 
   const openUnenrollDialog = useCallback((app: Application) => {

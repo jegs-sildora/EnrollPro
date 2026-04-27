@@ -112,12 +112,14 @@ model SchoolSetting {
   colorScheme          Json?         @map("color_scheme")
   selectedAccentHsl    String?       @map("selected_accent_hsl")
   activeSchoolYearId   Int?          @map("active_school_year_id")
-  
+  facebookPageUrl      String?       @map("facebook_page_url")
+  depedEmail           String?       @map("deped_email")
+  schoolWebsite        String?       @map("school_website")
+
   activeSchoolYear     SchoolYear?   @relation(fields: [activeSchoolYearId], references: [id])
 
   @@map("school_settings")
 }
-
 /// Academic year with enrollment window dates and lifecycle status
 model SchoolYear {
   id                 Int              @id @default(autoincrement())

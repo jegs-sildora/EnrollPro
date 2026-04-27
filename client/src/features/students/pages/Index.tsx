@@ -254,7 +254,6 @@ export default function Students() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const showSkeleton = useDelayedLoading(loading);
-  const [initialLoad, setInitialLoad] = useState(true);
 
   const { panelPercentage, isDesktopViewport, startResizing } =
     useResizablePanel();
@@ -453,7 +452,6 @@ export default function Students() {
     sectionFilter,
     sortBy,
     sortOrder,
-    initialLoad,
   ]);
 
   const fetchSummary = useCallback(async () => {

@@ -21,7 +21,7 @@ export function useDelayedLoading(
     if (isLoading && delay === 0) {
       showStartTimeRef.current = Date.now();
     }
-  }, []);
+  }, [isLoading, delay]);
 
   useEffect(() => {
     // If we are starting to load

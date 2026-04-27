@@ -244,6 +244,25 @@ function showSectionsErrorToast(
   });
 }
 
+interface RosterLearner {
+  id: number;
+  lrn: string | null;
+  firstName: string;
+  lastName: string;
+  middleName: string | null;
+  gender: string;
+  birthdate: string;
+  status: string;
+  readingProfileLevel: string | null;
+  isPendingLrnCreation: boolean;
+  applicantType: string;
+  enrolledAt: string;
+  sectioningMethod?: string | null;
+  dateSectioned?: string | null;
+  learnerType?: string | null;
+  sex?: string | null;
+}
+
 export default function Sections() {
   const { activeSchoolYearId, viewingSchoolYearId, activeSchoolYearLabel } =
     useSettingsStore();
@@ -303,7 +322,7 @@ export default function Sections() {
     programType: string;
     gradeLevelId: number;
   } | null>(null);
-  const [roster, setRoster] = useState<any[]>([]);
+  const [roster, setRoster] = useState<RosterLearner[]>([]);
   const [loadingRoster, setLoadingRoster] = useState(false);
   const [classOpeningDate, setClassOpeningDate] = useState<string | null>(null);
 
@@ -315,7 +334,7 @@ export default function Sections() {
     return differenceInYears(referenceDate, bday);
   };
 
-  const renderRemarks = (learner: any) => {
+  const renderRemarks = (learner: RosterLearner) => {
     const remarks = [];
 
     if (learner.status === "TEMPORARILY_ENROLLED") {

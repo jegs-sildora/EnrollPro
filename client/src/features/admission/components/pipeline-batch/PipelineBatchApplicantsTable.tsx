@@ -333,7 +333,6 @@ export default function PipelineBatchApplicantsTable({
 
     return cols;
   }, [
-    applications,
     allSelected,
     selectedIds,
     isBatchProcessing,

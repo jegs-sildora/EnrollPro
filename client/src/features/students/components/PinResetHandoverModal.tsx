@@ -41,7 +41,7 @@ export function PinResetHandoverModal({
       const pin = await onConfirmReset();
       setNewPin(pin);
       setStep(2);
-    } catch (err) {
+    } catch {
       // Parent handles toast error via toastApiError
     } finally {
       setIsGenerating(false);

@@ -39,12 +39,12 @@ export function useResizablePanel() {
 
   const [isResizingState, setIsResizingState] = useState(false);
 
-  function stopResizing() {
+  const stopResizing = useCallback(() => {
     isResizing.current = false;
     setIsResizingState(false);
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", stopResizing);
-  }
+  }, [handleMouseMove]);
 
   const startResizing = useCallback(() => {
     if (!isDesktopViewport) return;
@@ -52,7 +52,7 @@ export function useResizablePanel() {
     setIsResizingState(true);
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", stopResizing);
-  }, [handleMouseMove, isDesktopViewport]);
+  }, [handleMouseMove, isDesktopViewport, stopResizing]);
 
   useLayoutEffect(() => {
     if (isResizingState) {

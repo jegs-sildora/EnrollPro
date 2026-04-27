@@ -6,6 +6,7 @@ import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { Card } from "@/shared/ui/card";
 import api from "@/shared/api/axiosInstance";
+import axios from "axios";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { sileo } from "sileo";
 
@@ -67,10 +68,10 @@ export function ConfirmationSlipModal({
       const res = await api.get(`/learner/lookup?lrn=${lookupLrn}`);
       setLearner(res.data);
     } catch (err: unknown) {
-      if (err && typeof err === "object" && "response" in err && (err as any).response?.status === 404) {
+      if (axios.isAxiosError(err) && err.response?.status === 404) {
         setError("Learner not found. Please verify the LRN.");
       } else {
-        toastApiError(err as any);
+        toastApiError(err);
       }
       setLearner(null);
     } finally {
@@ -127,7 +128,7 @@ export function ConfirmationSlipModal({
       setLearner(null);
       inputRef.current?.focus();
     } catch (err: unknown) {
-      toastApiError(err as any);
+      toastApiError(err);
     } finally {
       setSaving(false);
     }

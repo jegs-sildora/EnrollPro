@@ -43,6 +43,13 @@ export async function getPublicSettings(
     activeSchoolYearLabel: settings.activeSchoolYear?.yearLabel ?? null,
     activeSchoolYearStatus: settings.activeSchoolYear?.status ?? null,
     systemStatus: settings.activeSchoolYear?.status ?? "DRAFT",
+    earlyRegOpenDate: settings.activeSchoolYear?.earlyRegOpenDate ?? null,
+    earlyRegCloseDate: settings.activeSchoolYear?.earlyRegCloseDate ?? null,
+    enrollOpenDate: settings.activeSchoolYear?.enrollOpenDate ?? null,
+    enrollCloseDate: settings.activeSchoolYear?.enrollCloseDate ?? null,
+    facebookPageUrl: settings.facebookPageUrl,
+    depedEmail: settings.depedEmail,
+    schoolWebsite: settings.schoolWebsite,
     enrollmentPhase,
   });
 }
@@ -51,18 +58,18 @@ export async function updateIdentity(
   req: Request,
   res: Response,
 ): Promise<void> {
-  const { schoolName } = req.body;
+  const { schoolName, facebookPageUrl, depedEmail, schoolWebsite } = req.body;
   const settings = await getOrCreateSettings();
 
   const updated = await prisma.schoolSetting.update({
     where: { id: settings.id },
-    data: { schoolName },
+    data: { schoolName, facebookPageUrl, depedEmail, schoolWebsite },
   });
 
   await auditLog({
     userId: req.user!.userId,
     actionType: "SETTINGS_UPDATED",
-    description: `Admin updated school name to "${schoolName}"`,
+    description: `Admin updated school identity and communication channels`,
     req,
   });
 

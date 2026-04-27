@@ -228,7 +228,7 @@ export function EarlyRegistrationTable({
         },
       },
     ];
-  }, [getNextAction, setSelectedId, handleNavigateToEnrollment]);
+  }, [getNextAction, setSelectedId]);
 
   return (
     <div className="hidden md:block">

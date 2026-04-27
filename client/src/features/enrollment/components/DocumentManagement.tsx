@@ -160,10 +160,10 @@ export function DocumentManagement({
     "",
   );
 
-  const getDocumentDownloadUrl = (fileName: string | null) => {
+  const getDocumentDownloadUrl = useCallback((fileName: string | null) => {
     if (!fileName) return "#";
     return `${apiOrigin}/uploads/${fileName}`;
-  };
+  }, [apiOrigin]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -194,13 +194,13 @@ export function DocumentManagement({
       if (input) input.value = "";
       onRefresh();
     } catch (error: unknown) {
-      toastApiError(error as never);
+      toastApiError(error);
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleDelete = async (documentType: string) => {
+  const handleDelete = useCallback(async (documentType: string) => {
     if (!confirm("Are you sure you want to delete this document?")) return;
 
     try {
@@ -213,9 +213,9 @@ export function DocumentManagement({
       });
       onRefresh();
     } catch (error: unknown) {
-      toastApiError(error as never);
+      toastApiError(error);
     }
-  };
+  }, [applicantId, endpointBase, onRefresh]);
 
   // Merge checklist items and documents into audit rows
   // Showing only requirements that have been acted upon (uploaded, checked, or logged)

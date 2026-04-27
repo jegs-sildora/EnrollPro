@@ -149,7 +149,7 @@ export function toUpperCaseRecursive<T>(obj: T): T {
  */
 export function isMandatoryDocumentsMet(
   learnerType: string | null | undefined,
-  checklist: any | null | undefined,
+  checklist: Record<string, unknown> | null | undefined,
 ): boolean {
   if (!checklist || !learnerType) return false;
 

@@ -147,7 +147,7 @@ export function StudentDetailPanel({
                 .data?.message
             : "Failed to load student details";
         setError(message || "An unexpected error occurred.");
-        toastApiError(err as any);
+        toastApiError(err);
       } finally {
         setLoading(false);
       }
@@ -265,6 +265,8 @@ export function StudentDetailPanel({
         readingProfileLevel: student.readingProfileLevel,
       }
     : null;
+
+  const typedStudentShim = studentShim as unknown as ApplicantDetail;
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-background">
@@ -428,11 +430,11 @@ export function StudentDetailPanel({
 
         {/* Beef Sections - Reusing shared components */}
         <div className="space-y-2">
-          <PersonalInfo applicant={studentShim as any} />
-          <AddressInfo applicant={studentShim as any} />
-          <GuardianContact applicant={studentShim as any} />
-          <PreviousSchool applicant={studentShim as any} />
-          <Classifications applicant={studentShim as any} />
+          <PersonalInfo applicant={typedStudentShim} />
+          <AddressInfo applicant={typedStudentShim} />
+          <GuardianContact applicant={typedStudentShim} />
+          <PreviousSchool applicant={typedStudentShim} />
+          <Classifications applicant={typedStudentShim} />
         </div>
 
         {/* Quick Metadata */}

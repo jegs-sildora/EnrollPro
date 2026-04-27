@@ -12,7 +12,7 @@ interface Step {
     spillover?: number;
     reclassifiedLearners?: ProposedAssignment[];
     frustratedCount?: number;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 

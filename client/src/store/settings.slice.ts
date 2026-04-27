@@ -21,6 +21,13 @@ export interface SettingsState {
 	selectedAccentHsl: string | null;
 	activeSchoolYearId: number | null;
 	activeSchoolYearLabel: string | null;
+	earlyRegOpenDate: string | null;
+	earlyRegCloseDate: string | null;
+	enrollOpenDate: string | null;
+	enrollCloseDate: string | null;
+	facebookPageUrl: string | null;
+	depedEmail: string | null;
+	schoolWebsite: string | null;
 	enrollmentPhase:
 		| 'EARLY_REGISTRATION'
 		| 'REGULAR_ENROLLMENT'
@@ -59,6 +66,13 @@ export const useSettingsStore = create<SettingsState>()(
 			selectedAccentHsl: null,
 			activeSchoolYearId: null,
 			activeSchoolYearLabel: null,
+			earlyRegOpenDate: null,
+			earlyRegCloseDate: null,
+			enrollOpenDate: null,
+			enrollCloseDate: null,
+			facebookPageUrl: null,
+			depedEmail: null,
+			schoolWebsite: null,
 			enrollmentPhase: 'CLOSED',
 			systemStatus: 'DRAFT',
 			bosyLockedAt: null,

@@ -38,16 +38,18 @@ interface DataTableProps<TData, TValue> {
 
 const MotionTableRow = motion.create(TableRow);
 
-const TableRowComponent = React.forwardRef<
-  HTMLTableRowElement,
-  {
-    row: Row<any>;
-    onRowClick?: (row: any) => void;
-    "data-index"?: number;
-    style?: React.CSSProperties;
-    className?: string;
-  }
->(({ row, onRowClick, "data-index": dataIndex, style, className }, ref) => {
+interface TableRowComponentProps<TData> {
+  row: Row<TData>;
+  onRowClick?: (data: TData) => void;
+  "data-index"?: number;
+  style?: React.CSSProperties;
+  className?: string;
+}
+
+function TableRowComponentInner<TData>(
+  { row, onRowClick, "data-index": dataIndex, style, className }: TableRowComponentProps<TData>,
+  ref: React.ForwardedRef<HTMLTableRowElement>
+) {
   return (
     <TableRow
       ref={ref}
@@ -68,8 +70,11 @@ const TableRowComponent = React.forwardRef<
       ))}
     </TableRow>
   );
-});
-TableRowComponent.displayName = "TableRowComponent";
+}
+
+const TableRowComponent = React.forwardRef(TableRowComponentInner) as <TData>(
+  props: TableRowComponentProps<TData> & { ref?: React.ForwardedRef<HTMLTableRowElement> }
+) => React.ReactElement;
 
 export function DataTable<TData, TValue>({
   columns,

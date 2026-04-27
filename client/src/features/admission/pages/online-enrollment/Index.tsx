@@ -7,7 +7,7 @@ import EnrollmentSuccess from "./components/EnrollmentSuccess";
 import { IntakeChoice } from "./components/IntakeChoice";
 import { ReturningLearnerFlow } from "./components/ReturningLearnerFlow";
 import { motion, AnimatePresence } from "motion/react";
-import { cn } from "@/shared/lib/utils";
+import { cn, getManilaNow } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 import type { ApplicationSubmitResponse } from "@enrollpro/shared";
 
@@ -37,9 +37,27 @@ export default function Apply() {
   const [submittedSuccessData, setSubmittedSuccessData] =
     useState<EnrollmentSubmitSuccessPayload | null>(null);
 
-  const { schoolName, logoUrl, enrollmentPhase, activeSchoolYearLabel } =
-    useSettingsStore();
-  const isClosed = enrollmentPhase === "CLOSED";
+  const {
+    schoolName,
+    logoUrl,
+    enrollmentPhase,
+    activeSchoolYearLabel,
+    systemStatus,
+    facebookPageUrl,
+    enrollOpenDate,
+    enrollCloseDate,
+  } = useSettingsStore();
+
+  const now = getManilaNow();
+  const isWithinEnrollDates =
+    enrollOpenDate &&
+    enrollCloseDate &&
+    now >= new Date(enrollOpenDate) &&
+    now <= new Date(enrollCloseDate);
+
+  const isBosyLocked = systemStatus === "BOSY_LOCKED";
+  const isClosed =
+    (isBosyLocked || enrollmentPhase === "CLOSED") && !isWithinEnrollDates;
 
   const handleAccept = () => {
     sessionStorage.setItem(CONSENT_KEY, "true");
@@ -182,30 +200,128 @@ export default function Apply() {
                     </div>
                   )}
                   <div className="space-y-2">
-                    <h2 className="text-2xl sm:text-3xl font-black uppercase  text-black">
+                    <h2 className="text-2xl sm:text-3xl font-black uppercase text-black">
                       {schoolName}
                     </h2>
                     <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-destructive/10 text-destructive text-xs font-bold tracking-widest uppercase border border-destructive/20">
-                      Registration Inactive
+                      {isBosyLocked
+                        ? "Enrollment Finalized"
+                        : "Registration Inactive"}
                     </div>
                   </div>
-                  <div className="space-y-4 max-w-lg mx-auto">
-                    <h3 className="text-xl sm:text-2xl font-bold text-black">
-                      {activeSchoolYearLabel || "Admissions"} Portal is
-                      Currently Closed
-                    </h3>
-                    <p className="text-sm sm:text-base text-black leading-relaxed">
-                      The online portal for{" "}
-                      {activeSchoolYearLabel || "Admissions"} is not currently
-                      accepting applications. Registration periods are scheduled
-                      according to the DepEd school calendar.
-                    </p>
-                    <p className="text-sm text-black font-medium pt-4 border-t border-border/50">
-                      Please stay tuned to our official school social media
-                      pages or visit the school campus for announcements
-                      regarding the next registration schedule.
-                    </p>
-                  </div>
+
+                  {isBosyLocked ? (
+                    <div className="space-y-6 max-w-lg mx-auto">
+                      <div className="space-y-2">
+                        <h3 className="text-xl sm:text-2xl font-black text-black flex items-center justify-center gap-2">
+                          🔒 ONLINE ENROLLMENT IS CLOSED
+                        </h3>
+                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
+                          S.Y. {activeSchoolYearLabel} classes have officially
+                          begun.
+                        </p>
+                      </div>
+
+                      <div className="p-6 rounded-xl bg-amber-50 border-2 border-amber-200 text-left space-y-4 shadow-inner">
+                        <div className="flex items-center gap-2 text-amber-900 font-black uppercase tracking-wider text-sm">
+                          <span className="text-xl">⚠️</span> LATE ENROLLMENT
+                          INSTRUCTIONS:
+                        </div>
+                        <p className="text-sm text-amber-900 font-bold leading-relaxed">
+                          The online submission portal is now closed to ensure
+                          accurate attendance tracking for the Beginning of
+                          School Year (BOSY).
+                        </p>
+                        <div className="space-y-2 pt-2 border-t border-amber-200/60">
+                          <p className="text-xs font-black text-amber-900 uppercase tracking-tight">
+                            To process a Late Enrollment:
+                          </p>
+                          <p className="text-sm text-amber-900 font-medium">
+                            Please proceed directly to the{" "}
+                            <span className="font-bold">
+                              HNHS Registrar's Office
+                            </span>{" "}
+                            with the following physical documents:
+                          </p>
+                          <ul className="grid grid-cols-1 gap-1.5 mt-2">
+                            <li className="flex items-center gap-2 text-sm font-bold text-amber-950">
+                              <div className="h-1.5 w-1.5 rounded-full bg-amber-600" />
+                              PSA Birth Certificate
+                            </li>
+                            <li className="flex items-center gap-2 text-sm font-bold text-amber-950">
+                              <div className="h-1.5 w-1.5 rounded-full bg-amber-600" />
+                              Previous Report Card (SF9)
+                            </li>
+                          </ul>
+                        </div>
+                        <p className="text-[10px] font-bold text-amber-800/80 italic pt-2">
+                          Note: Late enrollment is subject to the DepEd 80%
+                          minimum attendance policy. Acceptance depends on
+                          available slots and cumulative attendance check.
+                        </p>
+                      </div>
+                      {facebookPageUrl && (
+                        <div className="pt-6 border-t border-slate-200 space-y-4">
+                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide text-center">
+                            For real-time updates and official memorandums,
+                            please follow our page:
+                          </p>
+                          <a
+                            href={facebookPageUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-black uppercase tracking-widest text-xs transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
+                            <svg
+                              className="w-5 h-5 fill-current"
+                              viewBox="0 0 24 24">
+                              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                            </svg>
+                            Visit Official HNHS Facebook Page ➔
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-4 max-w-lg mx-auto">
+                      <h3 className="text-xl sm:text-2xl font-bold text-black">
+                        {activeSchoolYearLabel || "Admissions"} Portal is
+                        Currently Closed
+                      </h3>
+                      <p className="text-sm sm:text-base text-black leading-relaxed">
+                        The online portal for{" "}
+                        {activeSchoolYearLabel || "Admissions"} is not currently
+                        accepting applications. Registration periods are
+                        scheduled according to the DepEd school calendar.
+                      </p>
+                      {facebookPageUrl ? (
+                        <div className="pt-6 border-t border-border/50 space-y-4">
+                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide text-center leading-relaxed">
+                            Please stay tuned to our official school social
+                            media pages for announcements regarding the next
+                            registration schedule.
+                          </p>
+                          <a
+                            href={facebookPageUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-black uppercase tracking-widest text-xs transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
+                            <svg
+                              className="w-5 h-5 fill-current"
+                              viewBox="0 0 24 24">
+                              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                            </svg>
+                            Visit Official HNHS Facebook Page ➔
+                          </a>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-black font-medium pt-4 border-t border-border/50">
+                          Please stay tuned to our official school social media
+                          pages or visit the school campus for announcements
+                          regarding the next registration schedule.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             ) : (

@@ -164,7 +164,7 @@ export default function Step4PreviousSchool() {
               <button
                 key={lt.value}
                 type="button"
-                onClick={() => setValue("lastSchoolType", lt.value as any)}
+                onClick={() => setValue("lastSchoolType", lt.value)}
                 className={cn(
                   "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-11",
                   selectedLastSchoolType === lt.value

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardTitle, CardContent, CardDescription} from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -10,6 +10,7 @@ import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useSettingsStore } from "@/store/settings.slice";
 import { sileo } from "sileo";
+import axios from "axios";
 
 interface LearnerLookupResult {
   id: number;
@@ -27,9 +28,18 @@ interface GradeLevelOption {
   name: string;
 }
 
+interface EnrollmentSubmitSuccessPayload {
+  trackingNumber: string;
+  applicantType: string;
+  programType: string;
+  status: string;
+  currentStep: string;
+  assessmentData?: unknown;
+}
+
 interface ReturningLearnerFlowProps {
   onBack: () => void;
-  onSuccess: (data: any) => void;
+  onSuccess: (data: EnrollmentSubmitSuccessPayload) => void;
 }
 
 export function ReturningLearnerFlow({ onBack, onSuccess }: ReturningLearnerFlowProps) {
@@ -41,7 +51,7 @@ export function ReturningLearnerFlow({ onBack, onSuccess }: ReturningLearnerFlow
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const handleLookup = async () => {
+  const handleLookup = useCallback(async () => {
     if (lrn.length !== 12) return;
     setLoading(true);
     setError(null);
@@ -49,16 +59,16 @@ export function ReturningLearnerFlow({ onBack, onSuccess }: ReturningLearnerFlow
       const res = await api.get(`/learner/lookup?lrn=${lrn}`);
       setLearner(res.data);
     } catch (err: unknown) {
-      if (err && typeof err === "object" && "response" in err && (err as any).response?.status === 404) {
+      if (axios.isAxiosError(err) && err.response?.status === 404) {
         setError("Learner record not found. Please verify the LRN or proceed as a New Student.");
       } else {
-        toastApiError(err as any);
+        toastApiError(err as never);
       }
       setLearner(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, [lrn]);
 
   useEffect(() => {
     if (lrn.length === 12) {
@@ -67,7 +77,7 @@ export function ReturningLearnerFlow({ onBack, onSuccess }: ReturningLearnerFlow
       setLearner(null);
       setError(null);
     }
-  }, [lrn]);
+  }, [lrn, handleLookup]);
 
   const handleSubmit = async () => {
     if (!learner || !activeSchoolYearId) return;
@@ -108,7 +118,7 @@ export function ReturningLearnerFlow({ onBack, onSuccess }: ReturningLearnerFlow
 
       onSuccess(res.data.application);
     } catch (err: unknown) {
-      toastApiError(err as any);
+      toastApiError(err as never);
     } finally {
       setSubmitting(false);
     }

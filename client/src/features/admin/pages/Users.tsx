@@ -735,7 +735,6 @@ export default function AdminUsers() {
       },
     ],
     [
-      submitting,
       currentUser,
       handleSort,
       getSortIcon,

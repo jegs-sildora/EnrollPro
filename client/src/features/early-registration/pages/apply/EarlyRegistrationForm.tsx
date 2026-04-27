@@ -49,17 +49,6 @@ interface EarlyRegFormProps {
   consentStorageKey?: string | null;
 }
 
-const collectErrorMessages = (errorValue: unknown): string[] => {
-  if (!errorValue || typeof errorValue !== "object") return [];
-
-  const maybeMessage = (errorValue as { message?: unknown }).message;
-  if (typeof maybeMessage === "string") {
-    return [maybeMessage];
-  }
-
-  return Object.values(errorValue).flatMap(collectErrorMessages);
-};
-
 export default function EarlyRegistrationForm({
   onSuccess,
   submitEndpoint = "/early-registrations",
@@ -128,11 +117,11 @@ export default function EarlyRegistrationForm({
       Object.entries(methods.formState.errors)
         .flatMap(([fieldPath, errorValue]) => {
           const collect = (
-            val: any,
+            val: unknown,
             path: string,
           ): Array<{ path: string; message: string }> => {
             if (!val || typeof val !== "object") return [];
-            if (val.message) return [{ path, message: val.message }];
+            if ("message" in val && typeof val.message === "string") return [{ path, message: val.message }];
             return Object.entries(val).flatMap(([k, v]) =>
               collect(v, `${path}.${k}`),
             );
@@ -153,7 +142,7 @@ export default function EarlyRegistrationForm({
       setMaxStepReached(currentIndex);
       sessionStorage.setItem(MAX_STEP_KEY, currentIndex.toString());
     }
-  }, [currentIndex, maxStepReached]);
+  }, [currentIndex, maxStepReached, MAX_STEP_KEY]);
 
   // Clear editing mode when reaching review step
   useEffect(() => {
@@ -161,7 +150,7 @@ export default function EarlyRegistrationForm({
       setIsEditing(false);
       sessionStorage.removeItem(EDITING_KEY);
     }
-  }, [stepper.state.current.data.id]);
+  }, [stepper.state.current.data.id, EDITING_KEY]);
 
   // Initial load of max step
   useEffect(() => {
@@ -174,7 +163,7 @@ export default function EarlyRegistrationForm({
     if (savedEditing === "true") {
       setIsEditing(true);
     }
-  }, []);
+  }, [MAX_STEP_KEY, EDITING_KEY]);
 
   // Auto-save draft every 1s
   const allValues = watch();
@@ -185,14 +174,14 @@ export default function EarlyRegistrationForm({
       }
     }, 1000);
     return () => clearTimeout(timer);
-  }, [allValues]);
+  }, [allValues, DRAFT_KEY]);
 
   // Save current step
   useEffect(() => {
     if (stepper.state.current.data.id) {
       sessionStorage.setItem(STEP_KEY, stepper.state.current.data.id);
     }
-  }, [stepper.state.current.data.id]);
+  }, [stepper.state.current.data.id, STEP_KEY]);
 
   // Scroll to top on step change
   useEffect(() => {

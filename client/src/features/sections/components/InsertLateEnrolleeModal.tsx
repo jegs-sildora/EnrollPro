@@ -64,15 +64,7 @@ export function InsertLateEnrolleeModal({
     useState<UnsectionedLearner | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (open) {
-      void fetchPool();
-      setSelectedLearner(null);
-      setSearch("");
-    }
-  }, [open]);
-
-  const fetchPool = async () => {
+  const fetchPool = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get(`/sections/unsectioned-pool/${gradeLevelId}`, {
@@ -88,7 +80,15 @@ export function InsertLateEnrolleeModal({
     } finally {
       setLoading(false);
     }
-  };
+  }, [gradeLevelId, schoolYearId]);
+
+  useEffect(() => {
+    if (open) {
+      void fetchPool();
+      setSelectedLearner(null);
+      setSearch("");
+    }
+  }, [open, fetchPool]);
 
   const filteredPool = pool.filter((l) => {
     const fullName = `${l.lastName} ${l.firstName}`.toLowerCase();

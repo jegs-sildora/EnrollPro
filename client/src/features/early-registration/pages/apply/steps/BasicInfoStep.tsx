@@ -388,7 +388,7 @@ export default function BasicInfoStep() {
     if (reportedGa !== undefined && reportedGa !== null) {
       setInputGaValue(reportedGa.toString());
     }
-  }, []);
+  }, [reportedGa]);
 
   const availableScpPrograms = useMemo(
     () =>

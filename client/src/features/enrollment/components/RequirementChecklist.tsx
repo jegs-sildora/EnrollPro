@@ -331,7 +331,7 @@ export function RequirementChecklist({
   const getRequirementStatus = (requirement: RequirementItem) => {
     // If the API explicitly marks it as met (e.g. Once-Only rule), prioritize that
     const apiReq = requirements.find((r) => r.type === requirement.type);
-    if ((apiReq as any)?.isMet) return "met";
+    if (apiReq?.isMet) return "met";
 
     // Vault Override: If PSA is already verified in the learner's vault, it's permanently met
     if (
