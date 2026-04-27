@@ -117,7 +117,7 @@ export function ApplicationDetailPanel({
   };
 
   const persistedMandatoryMet = applicant
-    ? isMandatoryDocumentsMet(applicant.learnerType, applicant.checklist)
+    ? isMandatoryDocumentsMet(applicant.learnerType, applicant.checklist as any)
     : false;
 
   const [mandatoryMet, setMandatoryMet] = useState(false);

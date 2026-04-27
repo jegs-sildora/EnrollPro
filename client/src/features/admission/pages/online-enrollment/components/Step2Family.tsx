@@ -34,6 +34,7 @@ export default function Step2Family() {
     watch,
     setValue,
     clearErrors,
+    trigger,
     formState: { errors },
   } = useFormContext<EnrollmentFormData>();
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import {
   Trash2,
   Upload,
@@ -194,7 +194,7 @@ export function DocumentManagement({
       if (input) input.value = "";
       onRefresh();
     } catch (error: unknown) {
-      toastApiError(error);
+      toastApiError(error as any);
     } finally {
       setIsUploading(false);
     }
@@ -213,7 +213,7 @@ export function DocumentManagement({
       });
       onRefresh();
     } catch (error: unknown) {
-      toastApiError(error);
+      toastApiError(error as any);
     }
   }, [applicantId, endpointBase, onRefresh]);
 

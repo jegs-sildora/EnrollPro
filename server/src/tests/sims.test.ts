@@ -40,7 +40,7 @@ async function runTests() {
           lastName: "User",
           email: "test@test.com",
           password: "pwd",
-          role: "REGISTRAR",
+          role: "HEAD_REGISTRAR",
           sex: "MALE",
         },
       }));

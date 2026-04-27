@@ -24,6 +24,7 @@ import { SheetTitle, SheetDescription } from "@/shared/ui/sheet";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { ImageEnlarger } from "@/shared/components/ImageEnlarger";
 import { getImageUrl } from "@/shared/lib/utils";
+import type { ApplicantDetail } from "@/features/enrollment/hooks/useApplicationDetail";
 import {
   PersonalInfo,
   AddressInfo,
@@ -147,7 +148,7 @@ export function StudentDetailPanel({
                 .data?.message
             : "Failed to load student details";
         setError(message || "An unexpected error occurred.");
-        toastApiError(err);
+        toastApiError(err as any);
       } finally {
         setLoading(false);
       }

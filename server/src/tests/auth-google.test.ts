@@ -87,7 +87,7 @@ async function runTests(): Promise<void> {
         lastName: "Invitee",
         email: invitedEmail,
         password: "not-used-for-google-login",
-        role: "REGISTRAR",
+        role: "HEAD_REGISTRAR",
         sex: "MALE",
       },
     });

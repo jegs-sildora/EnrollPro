@@ -1,6 +1,5 @@
 import { ArrowRight, Eye, Lock } from "lucide-react";
 import { useMemo } from "react";
-import { useNavigate } from "react-router";
 import { format } from "date-fns";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
@@ -21,21 +20,12 @@ interface TableProps {
 
 const LOCKED_HANDOFF_STATUS = "READY_FOR_ENROLLMENT";
 
-function resolveHandoffSearchToken(application: Application): string {
-  const normalizedLrn = application.lrn?.trim();
-  return normalizedLrn && normalizedLrn.length > 0
-    ? normalizedLrn
-    : application.trackingNumber;
-}
-
 export function EarlyRegistrationTable({
   applications,
   loading,
   setSelectedId,
   getNextAction,
 }: TableProps) {
-  const navigate = useNavigate();
-
   const orderedApplications = useMemo(() => {
     const unlocked: Application[] = [];
     const locked: Application[] = [];
@@ -50,16 +40,6 @@ export function EarlyRegistrationTable({
 
     return [...unlocked, ...locked];
   }, [applications]);
-
-  const handleNavigateToEnrollment = (application: Application) => {
-    const query = new URLSearchParams({
-      workflow: "PENDING_VERIFICATION",
-      search: resolveHandoffSearchToken(application),
-      source: "early-registration",
-    });
-
-    navigate(`/monitoring/enrollment?${query.toString()}`);
-  };
 
   const columns = useMemo<ColumnDef<Application>[]>(() => {
     return [

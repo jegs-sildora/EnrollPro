@@ -5,7 +5,7 @@ import {
   resolveSchoolYearScope,
 } from "./integration.shared.js";
 
-const STAFF_ROLES = ["SYSTEM_ADMIN", "REGISTRAR"] as const;
+const STAFF_ROLES = ["SYSTEM_ADMIN", "HEAD_REGISTRAR"] as const;
 
 function buildStaffName(user: {
   firstName: string;

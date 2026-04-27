@@ -441,7 +441,7 @@ export default function Students() {
       setStudents([]);
     } finally {
       setLoading(false);
-      setInitialLoad(false);
+      // setInitialLoad(false);
     }
   }, [
     ayId,

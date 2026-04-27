@@ -90,7 +90,7 @@ export default function StudentProfile() {
       });
       refetch();
     } catch (err: unknown) {
-      toastApiError(err);
+      toastApiError(err as any);
     }
   };
 
@@ -673,7 +673,7 @@ export default function StudentProfile() {
                                     });
                                     refetch();
                                   } catch (err: unknown) {
-                                    toastApiError(err);
+                                    toastApiError(err as any);
                                   }
                                 }
                               }}>
@@ -705,7 +705,7 @@ export default function StudentProfile() {
                                     });
                                     refetch();
                                   } catch (err: unknown) {
-                                    toastApiError(err);
+                                    toastApiError(err as any);
                                   }
                                 }
                               }}>

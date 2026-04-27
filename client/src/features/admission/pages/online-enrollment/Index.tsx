@@ -371,7 +371,7 @@ export default function Apply() {
                       transition={{ duration: 0.4, ease: "easeOut" }}>
                       <ReturningLearnerFlow
                         onBack={() => setIntakeChoice(null)}
-                        onSuccess={(data) => setSubmittedSuccessData(data)}
+                        onSuccess={(data) => setSubmittedSuccessData(data as any)}
                       />
                     </motion.div>
                   ) : (

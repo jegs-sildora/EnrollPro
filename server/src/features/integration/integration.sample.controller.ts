@@ -171,7 +171,7 @@ export async function listSampleStaff(
   const staff = await prisma.user.findMany({
     where: {
       role: {
-        in: ["SYSTEM_ADMIN", "REGISTRAR"],
+        in: ["SYSTEM_ADMIN", "HEAD_REGISTRAR"],
       },
       email: {
         endsWith: SAMPLE_STAFF_EMAIL_SUFFIX,

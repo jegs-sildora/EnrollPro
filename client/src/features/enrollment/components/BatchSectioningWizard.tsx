@@ -337,7 +337,7 @@ export function BatchSectioningWizard({
               ?.message
           : "Failed to generate sectioning preview.";
       setError(message || "An unexpected error occurred.");
-      toastApiError(err);
+      toastApiError(err as any);
     } finally {
       setIsLoading(false);
     }

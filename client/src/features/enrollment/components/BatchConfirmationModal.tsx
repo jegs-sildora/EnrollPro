@@ -139,7 +139,7 @@ export function BatchConfirmationModal({
           description: `LRN ${lrn} was not found in the database.`,
         });
       } else {
-        toastApiError(err);
+        toastApiError(err as any);
       }
     } finally {
       setLoading(false);

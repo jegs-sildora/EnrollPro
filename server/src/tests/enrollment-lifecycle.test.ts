@@ -66,7 +66,7 @@ async function requestJson(
   };
 }
 
-function authHeader(userId: number, role: "REGISTRAR" | "SYSTEM_ADMIN") {
+function authHeader(userId: number, role: "HEAD_REGISTRAR" | "SYSTEM_ADMIN") {
   const secret = process.env.JWT_SECRET || "integration-test-secret";
   process.env.JWT_SECRET = secret;
 
@@ -161,7 +161,7 @@ async function createFixture(seed: string): Promise<Fixture> {
       lastName: "Tester",
       email: `lifecycle-${seed}@example.com`,
       password: "test-password",
-      role: "REGISTRAR",
+      role: "HEAD_REGISTRAR",
       sex: "FEMALE",
       isActive: true,
     },
@@ -287,7 +287,7 @@ async function runTests(): Promise<void> {
     );
 
     const baseUrl = `http://127.0.0.1:${(address as AddressInfo).port}`;
-    const registrarHeaders = authHeader(fixture.userId, "REGISTRAR");
+    const registrarHeaders = authHeader(fixture.userId, "HEAD_REGISTRAR");
 
     const unenrollValidation = await requestJson(
       baseUrl,

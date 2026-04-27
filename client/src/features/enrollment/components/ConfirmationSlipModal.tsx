@@ -71,7 +71,7 @@ export function ConfirmationSlipModal({
       if (axios.isAxiosError(err) && err.response?.status === 404) {
         setError("Learner not found. Please verify the LRN.");
       } else {
-        toastApiError(err);
+        toastApiError(err as any);
       }
       setLearner(null);
     } finally {
@@ -128,7 +128,7 @@ export function ConfirmationSlipModal({
       setLearner(null);
       inputRef.current?.focus();
     } catch (err: unknown) {
-      toastApiError(err);
+      toastApiError(err as any);
     } finally {
       setSaving(false);
     }

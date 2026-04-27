@@ -156,7 +156,7 @@ async function createFixture(seed: string): Promise<IntegrationFixture> {
         lastName: "Tester",
         email: `integration-user-${seed}@example.com`,
         password: "test-password",
-        role: "REGISTRAR",
+        role: "HEAD_REGISTRAR",
         sex: "MALE",
       },
     });

@@ -1029,6 +1029,7 @@ export function createEarlyRegistrationLifecycleController(
         select: {
           isPsaBirthCertPresented: true,
           academicStatus: true,
+          isSf9Submitted: true,
         },
       });
 
