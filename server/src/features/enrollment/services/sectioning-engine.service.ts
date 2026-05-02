@@ -58,6 +58,7 @@ export class SectioningEngine {
   // Returns all matching sections ordered by sortOrder.
   private async ensureScpSections(
     gradeLevelId: number,
+    schoolYearId: number,
     quota: number,
     sectionCount: number,
   ): Promise<any[]> {
@@ -69,11 +70,12 @@ export class SectioningEngine {
       const name = this.getScpSectionName(PREFIX, i);
       targetNames.push(name);
       await this.prisma.section.upsert({
-        where: { uq_sections_name_grade: { name, gradeLevelId } },
+        where: { uq_sections_name_grade_sy: { name, gradeLevelId, schoolYearId } },
         create: {
           name,
           programType: "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
           gradeLevelId,
+          schoolYearId,
           maxCapacity: capacities[i],
           sortOrder: i + 1,
         },
@@ -82,7 +84,7 @@ export class SectioningEngine {
     }
 
     return this.prisma.section.findMany({
-      where: { gradeLevelId, name: { in: targetNames } },
+      where: { gradeLevelId, schoolYearId, name: { in: targetNames } },
       include: { _count: { select: { enrollmentRecords: true } } },
       orderBy: { sortOrder: "asc" },
     });
@@ -93,7 +95,7 @@ export class SectioningEngine {
       this.prisma.section.findMany({
         where: {
           gradeLevelId,
-          gradeLevel: { schoolYearId },
+          schoolYearId,
         },
       }),
       this.prisma.schoolYear.findUnique({ where: { id: schoolYearId } }),
@@ -190,7 +192,7 @@ export class SectioningEngine {
     const sections = await this.prisma.section.findMany({
       where: {
         gradeLevelId,
-        gradeLevel: { schoolYearId },
+        schoolYearId,
       },
       include: {
         _count: {
@@ -212,6 +214,7 @@ export class SectioningEngine {
     if (isGrade7 && steSections.length < params.steSections) {
       steSections = await this.ensureScpSections(
         gradeLevelId,
+        schoolYearId,
         params.steQuota,
         params.steSections,
       );

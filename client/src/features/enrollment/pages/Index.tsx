@@ -481,7 +481,8 @@ export default function Enrollment() {
       if (pendingQueueFilter === "STANDARD_WALKIN") {
         return (
           application.source === "ENROLLMENT" ||
-          (application.source == null && application.earlyRegistrationId == null)
+          (application.source == null &&
+            application.earlyRegistrationId == null)
         );
       }
 
@@ -782,7 +783,7 @@ export default function Enrollment() {
         selectedSection.enrolledCount >= selectedSection.maxCapacity
       ) {
         const proceed = window.confirm(
-          `⚠️ Section "${selectedSection.name}" is over capacity (${selectedSection.enrolledCount}/${selectedSection.maxCapacity}). Proceed anyway?`,
+          ` Section "${selectedSection.name}" is over capacity (${selectedSection.enrolledCount}/${selectedSection.maxCapacity}). Proceed anyway?`,
         );
         if (!proceed) return;
       }
@@ -838,7 +839,12 @@ export default function Enrollment() {
         }));
       }
     },
-    [sectionSelectionByApplicationId, sectionOptionsByApplicationId, fetchData, openReadingProfileDialog],
+    [
+      sectionSelectionByApplicationId,
+      sectionOptionsByApplicationId,
+      fetchData,
+      openReadingProfileDialog,
+    ],
   );
 
   const openUnenrollDialog = useCallback((app: Application) => {
@@ -1132,7 +1138,7 @@ export default function Enrollment() {
                                 capacityColor,
                               )}>
                               ({section.enrolledCount}/{section.maxCapacity})
-                              {isOverCapacity && " ⚠️"}
+                              {isOverCapacity && " "}
                             </span>
                           </div>
                         </SelectItem>
@@ -1435,9 +1441,10 @@ export default function Enrollment() {
                 BOSY Locked ({activeSchoolYearLabel})
               </p>
               <p className="text-xs font-bold text-emerald-100 mt-1">
-                Official SF1 Rosters Finalized. Late Enrollment rules now apply.
+                System is currently processing Late Enrollees only via Inline
+                Slotting.
               </p>
-            </div>
+            </div>{" "}
           </div>
           <Badge className="bg-white text-emerald-700 font-black hover:bg-white uppercase ">
             Academic Phase
@@ -2299,7 +2306,7 @@ export default function Enrollment() {
                               ? "Uses Early Reg Assessment Score"
                               : isSynced
                                 ? "✅ S.M.A.R.T. Data Synchronized"
-                                : "⚠️ Academic Records Missing"}
+                                : " Academic Records Missing"}
                           </p>
                         </div>
 

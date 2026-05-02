@@ -106,4 +106,8 @@ export const STATUS_CONFIG: Record<
     label: "Transferring Out",
     className: "bg-rose-50 text-rose-700 border-rose-200",
   },
+  LATE_ENROLLEE: {
+    label: "Late Enrollee",
+    className: "bg-amber-100 text-amber-800 border-amber-300",
+  },
 };

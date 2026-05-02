@@ -42,11 +42,12 @@ describe('Curriculum API', () => {
 		schoolYearId = ay.id;
 
 		// Create grade level
-		const gl = await prisma.gradeLevel.create({
-			data: {
+		const gl = await prisma.gradeLevel.upsert({
+			where: { name: 'Grade 7' },
+			update: {},
+			create: {
 				name: 'Grade 7',
 				displayOrder: 7,
-				schoolYearId,
 			},
 		});
 		gradeLevelId = gl.id;
@@ -54,7 +55,6 @@ describe('Curriculum API', () => {
 
 	afterAll(async () => {
 		// Cleanup
-		await prisma.gradeLevel.deleteMany({ where: { schoolYearId } });
 		await prisma.schoolYear.delete({ where: { id: schoolYearId } });
 		await prisma.user.deleteMany({
 			where: { email: 'test-curriculum@test.com' },

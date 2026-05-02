@@ -22,7 +22,7 @@ async function main() {
   if (!schoolYear) throw new Error("No school year found. Run base seed first.");
 
   const grade7 = await prisma.gradeLevel.findFirst({
-    where: { schoolYearId: schoolYear.id, name: { contains: "7" } }
+    where: { name: { contains: "7" } }
   });
 
   if (!grade7) throw new Error("Grade 7 level not found.");
@@ -34,26 +34,30 @@ async function main() {
   console.log("  - Seeding HNHS Policy compliant sections...");
   
   // Tier 1: STE Sections
-  const steA = await prisma.section.findFirst({ where: { name: "STE-A", gradeLevelId: grade7.id } });
+  const steA = await prisma.section.findFirst({
+    where: { name: "STE-A", gradeLevelId: grade7.id, schoolYearId: schoolYear.id },
+  });
   if (!steA) {
     await prisma.section.create({
       data: { 
         name: "STE-A", 
         programType: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", 
         gradeLevelId: grade7.id, 
+        schoolYearId: schoolYear.id,
         maxCapacity: 35,
         sortOrder: 1
       }
     });
   }
 
-  const steB = await prisma.section.findFirst({ where: { name: "STE-B", gradeLevelId: grade7.id } });
+  const steB = await prisma.section.findFirst({ where: { name: "STE-B", gradeLevelId: grade7.id, schoolYearId: schoolYear.id } });
   if (!steB) {
     await prisma.section.create({
       data: { 
         name: "STE-B", 
         programType: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", 
         gradeLevelId: grade7.id, 
+        schoolYearId: schoolYear.id,
         maxCapacity: 35,
         sortOrder: 2
       }
@@ -63,13 +67,14 @@ async function main() {
   // Tier 2: Pilot Sections (Numerical) - Homogeneous
   for (let i = 1; i <= 5; i++) {
     const sectionName = `Section ${i}`;
-    const pilot = await prisma.section.findFirst({ where: { name: sectionName, gradeLevelId: grade7.id } });
+    const pilot = await prisma.section.findFirst({ where: { name: sectionName, gradeLevelId: grade7.id, schoolYearId: schoolYear.id } });
     if (!pilot) {
       await prisma.section.create({
         data: { 
           name: sectionName, 
           programType: "REGULAR", 
           gradeLevelId: grade7.id, 
+          schoolYearId: schoolYear.id,
           maxCapacity: 40,
           sortOrder: 10 + i,
           isHomogeneous: true,
@@ -82,13 +87,14 @@ async function main() {
   // Tier 3: Heterogeneous Sections (National Heroes) - Snake
   const heroes = ["RIZAL", "BONIFACIO", "MABINI", "LUNA", "DEL PILAR", "SILANG"];
   for (let i = 0; i < heroes.length; i++) {
-    const hero = await prisma.section.findFirst({ where: { name: heroes[i], gradeLevelId: grade7.id } });
+    const hero = await prisma.section.findFirst({ where: { name: heroes[i], gradeLevelId: grade7.id, schoolYearId: schoolYear.id } });
     if (!hero) {
       await prisma.section.create({
         data: { 
           name: heroes[i], 
           programType: "REGULAR", 
           gradeLevelId: grade7.id, 
+          schoolYearId: schoolYear.id,
           maxCapacity: 40,
           sortOrder: 20 + i,
           isHomogeneous: false,

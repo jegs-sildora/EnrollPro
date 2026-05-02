@@ -60,10 +60,12 @@ export default function SchoolProfileTab() {
     setSettings,
   } = useSettingsStore();
 
-  const [nameValue, setNameValue] = useState(schoolName);
-  const [fbValue, setFbValue] = useState(facebookPageUrl || "");
-  const [emailValue, setEmailValue] = useState(depedEmail || "");
-  const [webValue, setWebValue] = useState(schoolWebsite || "");
+  const [formData, setFormData] = useState({
+    schoolName: schoolName || "",
+    facebookPageUrl: facebookPageUrl || "",
+    depedEmail: depedEmail || "",
+    schoolWebsite: schoolWebsite || "",
+  });
 
   const [savingName, setSavingName] = useState(false);
   const [savingChannels, setSavingChannels] = useState(false);
@@ -74,10 +76,12 @@ export default function SchoolProfileTab() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setNameValue(schoolName);
-    setFbValue(facebookPageUrl || "");
-    setEmailValue(depedEmail || "");
-    setWebValue(schoolWebsite || "");
+    setFormData({
+      schoolName: schoolName || "",
+      facebookPageUrl: facebookPageUrl || "",
+      depedEmail: depedEmail || "",
+      schoolWebsite: schoolWebsite || "",
+    });
   }, [schoolName, facebookPageUrl, depedEmail, schoolWebsite]);
 
   const palette: PaletteColor[] =
@@ -90,18 +94,8 @@ export default function SchoolProfileTab() {
   const handleSaveName = async () => {
     setSavingName(true);
     try {
-      await api.put("/settings/identity", {
-        schoolName: nameValue,
-        facebookPageUrl: fbValue,
-        depedEmail: emailValue,
-        schoolWebsite: webValue,
-      });
-      setSettings({
-        schoolName: nameValue,
-        facebookPageUrl: fbValue,
-        depedEmail: emailValue,
-        schoolWebsite: webValue,
-      });
+      await api.put("/settings/identity", formData);
+      setSettings(formData);
       sileo.success({
         title: "Settings Saved",
         description: "School name updated.",
@@ -116,18 +110,8 @@ export default function SchoolProfileTab() {
   const handleSaveChannels = async () => {
     setSavingChannels(true);
     try {
-      await api.put("/settings/identity", {
-        schoolName: nameValue,
-        facebookPageUrl: fbValue,
-        depedEmail: emailValue,
-        schoolWebsite: webValue,
-      });
-      setSettings({
-        schoolName: nameValue,
-        facebookPageUrl: fbValue,
-        depedEmail: emailValue,
-        schoolWebsite: webValue,
-      });
+      await api.put("/settings/identity", formData);
+      setSettings(formData);
       sileo.success({
         title: "Channels Updated",
         description: "Communication links have been saved.",
@@ -245,13 +229,15 @@ export default function SchoolProfileTab() {
               <Input
                 className="font-bold"
                 id="schoolName"
-                value={nameValue}
-                onChange={(e) => setNameValue(e.target.value)}
+                value={formData.schoolName}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, schoolName: e.target.value }))
+                }
               />
             </div>
             <Button
               onClick={handleSaveName}
-              disabled={savingName || nameValue === schoolName}>
+              disabled={savingName || formData.schoolName === schoolName}>
               {savingName ? "Saving..." : "Save"}
             </Button>
           </div>
@@ -277,9 +263,17 @@ export default function SchoolProfileTab() {
               <Input
                 id="facebookUrl"
                 placeholder="https://www.facebook.com/school.official"
-                value={fbValue}
-                onChange={(e) => setFbValue(e.target.value)}
+                value={formData.facebookPageUrl}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    facebookPageUrl: e.target.value,
+                  }))
+                }
               />
+              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">
+                Appears on: Early Registration & Enrollment Lockout pages
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -287,8 +281,10 @@ export default function SchoolProfileTab() {
               <Input
                 id="depedEmail"
                 placeholder="302635@deped.gov.ph"
-                value={emailValue}
-                onChange={(e) => setEmailValue(e.target.value)}
+                value={formData.depedEmail}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, depedEmail: e.target.value }))
+                }
               />
             </div>
 
@@ -297,8 +293,10 @@ export default function SchoolProfileTab() {
               <Input
                 id="schoolWebsite"
                 placeholder="https://"
-                value={webValue}
-                onChange={(e) => setWebValue(e.target.value)}
+                value={formData.schoolWebsite}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, schoolWebsite: e.target.value }))
+                }
               />
             </div>
           </div>
@@ -308,9 +306,9 @@ export default function SchoolProfileTab() {
               onClick={handleSaveChannels}
               disabled={
                 savingChannels ||
-                (fbValue === (facebookPageUrl || "") &&
-                  emailValue === (depedEmail || "") &&
-                  webValue === (schoolWebsite || ""))
+                (formData.facebookPageUrl === (facebookPageUrl || "") &&
+                  formData.depedEmail === (depedEmail || "") &&
+                  formData.schoolWebsite === (schoolWebsite || ""))
               }>
               {savingChannels ? "Saving..." : "Save Channels"}
             </Button>
@@ -466,69 +464,6 @@ export default function SchoolProfileTab() {
               <Badge variant="warning">Pending</Badge>
               <Badge variant="danger">Rejected</Badge>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Official Communication Channels */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <Megaphone className="h-5 w-5" />
-            Official Communication Channels
-          </CardTitle>
-          <CardDescription>
-            Set the official links and contacts used across public-facing
-            portals to direct parents and stakeholders to the right channels.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="facebookUrl">Facebook Page URL</Label>
-              <Input
-                id="facebookUrl"
-                placeholder="https://www.facebook.com/hnhs.official"
-                value={fbValue}
-                onChange={(e) => setFbValue(e.target.value)}
-              />
-              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">
-                Appears on: Early Registration & Enrollment Lockout pages
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="depedEmail">Official DepEd Email Address</Label>
-              <Input
-                id="depedEmail"
-                placeholder="302635@deped.gov.ph"
-                value={emailValue}
-                onChange={(e) => setEmailValue(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="schoolWebsite">School Website (Optional)</Label>
-              <Input
-                id="schoolWebsite"
-                placeholder="https://"
-                value={webValue}
-                onChange={(e) => setWebValue(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end pt-4 border-t border-border/50">
-            <Button
-              onClick={handleSaveChannels}
-              disabled={
-                savingChannels ||
-                (fbValue === (facebookPageUrl || "") &&
-                  emailValue === (depedEmail || "") &&
-                  webValue === (schoolWebsite || ""))
-              }>
-              {savingChannels ? "Saving..." : "Save Channels"}
-            </Button>
           </div>
         </CardContent>
       </Card>

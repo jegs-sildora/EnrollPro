@@ -63,10 +63,12 @@ async function findStudentOrThrow(
       enrollmentRecord: {
         include: {
           section: {
-            include: {
-              gradeLevel: {
-                select: { schoolYearId: true },
-              },
+            select: {
+              id: true,
+              name: true,
+              schoolYearId: true,
+              isEosyFinalized: true,
+              programType: true,
             },
           },
         },
@@ -265,7 +267,6 @@ export const createStudentsLifecycleController = (
             select: {
               id: true,
               name: true,
-              schoolYearId: true,
             },
           },
         },
@@ -275,7 +276,7 @@ export const createStudentsLifecycleController = (
         throw new AppError(404, "Target section not found");
       }
 
-      if (targetSection.gradeLevel.schoolYearId !== application.schoolYearId) {
+      if (targetSection.schoolYearId !== application.schoolYearId) {
         throw new AppError(
           422,
           "Target section must belong to the same school year as the learner.",

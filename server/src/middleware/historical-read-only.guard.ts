@@ -48,27 +48,28 @@ export async function historicalReadOnlyGuard(
   res: Response,
   next: NextFunction,
 ): Promise<void> {
+  // 1. NEVER block GET or non-mutation requests
   if (!MUTATION_METHODS.has(req.method.toUpperCase())) {
-    next();
-    return;
+    return next();
   }
 
   // Keep auth/session-related actions (e.g., logout) available at all times.
   if (req.path.startsWith("/api/auth")) {
-    next();
-    return;
+    return next();
   }
 
   const hasBearerToken = req.headers.authorization?.startsWith("Bearer ");
   if (!hasBearerToken) {
-    next();
-    return;
+    return next();
   }
 
   const contextSchoolYearId = parsePositiveIntHeaderValue(
     req.headers[CONTEXT_SCHOOL_YEAR_HEADER],
   );
+  
   if (contextSchoolYearId === "invalid") {
+    const rawValue = req.headers[CONTEXT_SCHOOL_YEAR_HEADER];
+    console.warn(`[Guard] 400 Bad Request: Invalid ${CONTEXT_SCHOOL_YEAR_HEADER} value: "${rawValue}"`);
     res.status(400).json({
       code: "INVALID_SCHOOL_YEAR_CONTEXT",
       message: `${CONTEXT_SCHOOL_YEAR_HEADER} must be a positive integer when provided`,

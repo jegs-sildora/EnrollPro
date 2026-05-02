@@ -222,12 +222,10 @@ async function getActiveSchoolYear() {
 }
 
 async function ensureGradeLevel(params: {
-  schoolYearId: number;
   gradeName: "Grade 7" | "Grade 8" | "Grade 9" | "Grade 10";
 }) {
   const existing = await prisma.gradeLevel.findFirst({
     where: {
-      schoolYearId: params.schoolYearId,
       name: params.gradeName,
     },
     select: { id: true },
@@ -244,7 +242,6 @@ async function ensureGradeLevel(params: {
 
   return prisma.gradeLevel.create({
     data: {
-      schoolYearId: params.schoolYearId,
       name: params.gradeName,
       displayOrder,
     },
@@ -254,14 +251,15 @@ async function ensureGradeLevel(params: {
 
 async function ensureSection(params: {
   gradeLevelId: number;
+  schoolYearId: number;
   sectionName: string;
   applicantType: ApplicantType;
 }) {
   const existing = await prisma.section.findFirst({
     where: {
       gradeLevelId: params.gradeLevelId,
+      schoolYearId: params.schoolYearId,
       name: params.sectionName,
-      programType: params.applicantType,
     },
     select: { id: true },
   });
@@ -273,6 +271,7 @@ async function ensureSection(params: {
   return prisma.section.create({
     data: {
       gradeLevelId: params.gradeLevelId,
+      schoolYearId: params.schoolYearId,
       name: params.sectionName,
       programType: params.applicantType,
       maxCapacity: 45,
@@ -407,12 +406,12 @@ async function seedStudents(params: {
     const sequence = i + 1;
 
     const gradeLevel = await ensureGradeLevel({
-      schoolYearId: params.schoolYearId,
       gradeName: student.gradeName,
     });
 
     const section = await ensureSection({
       gradeLevelId: gradeLevel.id,
+      schoolYearId: params.schoolYearId,
       sectionName: student.sectionName,
       applicantType: student.applicantType,
     });

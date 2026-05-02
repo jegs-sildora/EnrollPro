@@ -160,9 +160,9 @@ export function BatchSectioningParamsModal({
   const steClassSizeError: string | null = (() => {
     if (!isGrade7 || params.steSections === 0) return null;
     if (steAvgPerSection < DEPED_MIN_CLASS_SIZE)
-      return `⚠️ Class size of ${steAvgPerSection.toFixed(1)} is below the DepEd minimum (${DEPED_MIN_CLASS_SIZE}). Lower the number of sections or increase the quota.`;
+      return ` Class size of ${steAvgPerSection.toFixed(1)} is below the DepEd minimum (${DEPED_MIN_CLASS_SIZE}). Lower the number of sections or increase the quota.`;
     if (steAvgPerSection > DEPED_MAX_CLASS_SIZE)
-      return `⚠️ Class size of ${steAvgPerSection.toFixed(1)} exceeds DepEd maximum capacity (${DEPED_MAX_CLASS_SIZE}). Increase the number of sections or lower the quota.`;
+      return ` Class size of ${steAvgPerSection.toFixed(1)} exceeds DepEd maximum capacity (${DEPED_MAX_CLASS_SIZE}). Increase the number of sections or lower the quota.`;
     return null;
   })();
 
@@ -415,8 +415,8 @@ export function BatchSectioningParamsModal({
                 <div className="flex items-start gap-2 p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-destructive">
                   <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                   <p className="text-xs font-black">
-                    ⚠️ Your STE + Pilot allocation ({allocatedCount}) exceeds
-                    the total number of unassigned learners (
+                    Your STE + Pilot allocation ({allocatedCount}) exceeds the
+                    total number of unassigned learners (
                     {prereqs?.unassignedCount}). Reduce your quotas.
                   </p>
                 </div>

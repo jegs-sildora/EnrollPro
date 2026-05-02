@@ -28,30 +28,38 @@ export async function getPublicSettings(
   req: Request,
   res: Response,
 ): Promise<void> {
-  const settings = await getOrCreateSettings();
+  try {
+    const settings = await getOrCreateSettings();
 
-  const enrollmentPhase = settings.activeSchoolYear
-    ? getEnrollmentPhase(settings.activeSchoolYear)
-    : "CLOSED";
+    const enrollmentPhase = settings.activeSchoolYear
+      ? getEnrollmentPhase(settings.activeSchoolYear)
+      : "CLOSED";
 
-  res.json({
-    schoolName: settings.schoolName,
-    logoUrl: settings.logoUrl,
-    colorScheme: settings.colorScheme,
-    selectedAccentHsl: settings.selectedAccentHsl,
-    activeSchoolYearId: settings.activeSchoolYearId,
-    activeSchoolYearLabel: settings.activeSchoolYear?.yearLabel ?? null,
-    activeSchoolYearStatus: settings.activeSchoolYear?.status ?? null,
-    systemStatus: settings.activeSchoolYear?.status ?? "DRAFT",
-    earlyRegOpenDate: settings.activeSchoolYear?.earlyRegOpenDate ?? null,
-    earlyRegCloseDate: settings.activeSchoolYear?.earlyRegCloseDate ?? null,
-    enrollOpenDate: settings.activeSchoolYear?.enrollOpenDate ?? null,
-    enrollCloseDate: settings.activeSchoolYear?.enrollCloseDate ?? null,
-    facebookPageUrl: settings.facebookPageUrl,
-    depedEmail: settings.depedEmail,
-    schoolWebsite: settings.schoolWebsite,
-    enrollmentPhase,
-  });
+    res.json({
+      schoolName: settings.schoolName,
+      logoUrl: settings.logoUrl,
+      colorScheme: settings.colorScheme,
+      selectedAccentHsl: settings.selectedAccentHsl,
+      activeSchoolYearId: settings.activeSchoolYearId,
+      activeSchoolYearLabel: settings.activeSchoolYear?.yearLabel ?? null,
+      activeSchoolYearStatus: settings.activeSchoolYear?.status ?? null,
+      systemStatus: settings.activeSchoolYear?.status ?? "DRAFT",
+      portalControl: settings.activeSchoolYear?.portalControl ?? "AUTO",
+      earlyRegOpenDate: settings.activeSchoolYear?.earlyRegOpenDate ?? null,
+      earlyRegCloseDate: settings.activeSchoolYear?.earlyRegCloseDate ?? null,
+      classOpeningDate: settings.activeSchoolYear?.classOpeningDate ?? null,
+      enrollOpenDate: settings.activeSchoolYear?.enrollOpenDate ?? null,
+      enrollCloseDate: settings.activeSchoolYear?.enrollCloseDate ?? null,
+      facebookPageUrl: settings.facebookPageUrl,
+      depedEmail: settings.depedEmail,
+      schoolWebsite: settings.schoolWebsite,
+      enrollmentPhase,
+    });
+  } catch (error) {
+    console.error("[Settings Controller] Error in getPublicSettings:", error);
+    // Let the global error handler handle it, or send a more specific response
+    throw error;
+  }
 }
 
 export async function updateIdentity(

@@ -830,7 +830,7 @@ export default function EosyUpdating() {
                           key={s.id}
                           value={String(s.id)}>
                           {s.gradeLevel.name} - {s.name}{" "}
-                          {s.isEosyFinalized ? "🔒" : ""}
+                          {s.isEosyFinalized ? "" : ""}
                         </SelectItem>
                       ))}
                   </SelectGroup>
@@ -846,7 +846,7 @@ export default function EosyUpdating() {
                           key={s.id}
                           value={String(s.id)}>
                           {s.gradeLevel.name} - {s.name}{" "}
-                          {s.isEosyFinalized ? "🔒" : ""}
+                          {s.isEosyFinalized ? "" : ""}
                         </SelectItem>
                       ))}
                   </SelectGroup>
@@ -865,7 +865,7 @@ export default function EosyUpdating() {
                           key={s.id}
                           value={String(s.id)}>
                           {s.gradeLevel.name} - {s.name}{" "}
-                          {s.isEosyFinalized ? "🔒" : ""}
+                          {s.isEosyFinalized ? "" : ""}
                         </SelectItem>
                       ))}
                   </SelectGroup>

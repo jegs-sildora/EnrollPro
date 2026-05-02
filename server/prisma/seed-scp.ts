@@ -494,7 +494,6 @@ async function seed() {
 
     const grade7 = await prisma.gradeLevel.findFirst({
       where: {
-        schoolYearId: schoolYear.id,
         OR: [{ name: "Grade 7" }, { displayOrder: 7 }],
       },
       orderBy: { id: "asc" },

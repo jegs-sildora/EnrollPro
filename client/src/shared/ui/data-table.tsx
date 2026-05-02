@@ -64,7 +64,11 @@ function TableRowComponentInner<TData>(
       )}
     >
       {row.getVisibleCells().map((cell) => (
-        <TableCell key={cell.id} className="p-3">
+        <TableCell 
+          key={cell.id} 
+          className="p-3"
+          style={{ width: cell.column.getSize() }}
+        >
           {flexRender(cell.column.columnDef.cell, cell.getContext())}
         </TableCell>
       ))}
@@ -133,7 +137,13 @@ export function DataTable<TData, TValue>({
                   return (
                     <TableHead
                       key={header.id}
-                      className="text-center font-bold text-primary-foreground text-xs h-11 px-3">
+                      className="text-center font-bold text-primary-foreground text-xs h-11 px-3"
+                      style={{ 
+                        width: header.column.getSize(),
+                        minWidth: header.column.columnDef.minSize,
+                        maxWidth: header.column.columnDef.maxSize,
+                      }}
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(

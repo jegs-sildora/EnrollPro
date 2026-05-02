@@ -18,85 +18,36 @@ async function main() {
     console.log("SchoolSettings already exists.");
   }
 
-  // 2. Ensure an active School Year exists
-  let activeYear = await prisma.schoolYear.findFirst({
-    where: { status: "ACTIVE" },
-  });
-
-  if (!activeYear) {
-    activeYear = await prisma.schoolYear.create({
-      data: {
-        yearLabel: "2026-2027",
-        status: "ACTIVE",
-        classOpeningDate: new Date("2026-06-15"),
-        classEndDate: new Date("2027-03-31"),
-        earlyRegOpenDate: new Date("2026-01-01"),
-        earlyRegCloseDate: new Date("2026-05-31"),
-        enrollOpenDate: new Date("2026-05-01"),
-        enrollCloseDate: new Date("2026-06-30"),
-      },
-    });
-    console.log(`✅ Created Active School Year: ${activeYear.yearLabel}`);
-  }
-
-  // Keep singleton settings aligned to the currently active school year.
-  if (settings.activeSchoolYearId !== activeYear.id) {
-    await prisma.schoolSetting.update({
-      where: { id: settings.id },
-      data: { activeSchoolYearId: activeYear.id },
-    });
-    console.log(
-      `✅ SchoolSettings activeSchoolYearId set to ${activeYear.yearLabel}`,
-    );
-  }
-
-  // 3. Ensure Grade Levels Grade 7-Grade 10 exist for the active school year
+  // 2. Ensure Grade Levels Grade 7-Grade 10 exist permanently
   const grades = [
-    { name: "Grade 7", legacyName: "G7", displayOrder: 7 },
-    { name: "Grade 8", legacyName: "G8", displayOrder: 8 },
-    { name: "Grade 9", legacyName: "G9", displayOrder: 9 },
-    { name: "Grade 10", legacyName: "G10", displayOrder: 10 },
+    { name: "Grade 7", displayOrder: 7 },
+    { name: "Grade 8", displayOrder: 8 },
+    { name: "Grade 9", displayOrder: 9 },
+    { name: "Grade 10", displayOrder: 10 },
   ];
 
   for (const grade of grades) {
-    const existingGrade = await prisma.gradeLevel.findFirst({
-      where: {
-        schoolYearId: activeYear.id,
-        OR: [
-          { name: grade.name },
-          { name: grade.legacyName },
-          { displayOrder: grade.displayOrder },
-        ],
-      },
+    const existing = await prisma.gradeLevel.findFirst({
+      where: { name: grade.name },
     });
 
-    if (!existingGrade) {
+    if (existing) {
+      await prisma.gradeLevel.update({
+        where: { id: existing.id },
+        data: { displayOrder: grade.displayOrder },
+      });
+    } else {
       await prisma.gradeLevel.create({
         data: {
           name: grade.name,
           displayOrder: grade.displayOrder,
-          schoolYearId: activeYear.id,
         },
       });
-      console.log(`✅ Created Grade Level: ${grade.name}`);
-    } else if (
-      existingGrade.name !== grade.name ||
-      existingGrade.displayOrder !== grade.displayOrder
-    ) {
-      await prisma.gradeLevel.update({
-        where: { id: existingGrade.id },
-        data: {
-          name: grade.name,
-          displayOrder: grade.displayOrder,
-        },
-      });
-      console.log(
-        `✅ Updated Grade Level: ${existingGrade.name} -> ${grade.name}`,
-      );
     }
+    console.log(`✅ Verified Permanent Grade Level: ${grade.name}`);
   }
 
-  // 4. Create first SYSTEM_ADMIN account
+  // 3. Create first SYSTEM_ADMIN account
   const email = process.env.ADMIN_EMAIL ?? "admin@deped.edu.ph";
   const password = process.env.ADMIN_PASSWORD ?? "Admin2026!";
 

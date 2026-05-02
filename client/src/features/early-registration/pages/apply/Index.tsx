@@ -9,7 +9,6 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn, getManilaNow } from "@/shared/lib/utils";
 import { formatManilaDate } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
-import educationSvg from "@/assets/Department_of_Education.svg";
 import type { ApplicationSubmitResponse } from "@enrollpro/shared";
 
 const CONSENT_KEY = "enrollpro_earlyreg_consent";
@@ -183,11 +182,6 @@ export default function EarlyRegistrationApply() {
                 <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-destructive/50 to-transparent" />
                 <div className="space-y-6 relative z-10">
                   <div className="flex items-center justify-center gap-6">
-                    <img
-                      src={educationSvg}
-                      className="h-24 w-24 sm:h-32 sm:w-32 object-contain drop-shadow-md"
-                      alt="Department of Education"
-                    />
                     {logoUrl ? (
                       <img
                         src={`${API_BASE}${logoUrl}`}
@@ -205,9 +199,7 @@ export default function EarlyRegistrationApply() {
                       {schoolName}
                     </h2>
                     <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black tracking-[0.2em] uppercase border border-slate-200">
-                      {isRegularEnrollment
-                        ? "REDIRECTING..."
-                        : "PHASE CLOSED"}
+                      {isRegularEnrollment ? "REDIRECTING..." : "PHASE CLOSED"}
                     </div>
                   </div>
                   {isRegularEnrollment ? (
@@ -232,7 +224,7 @@ export default function EarlyRegistrationApply() {
                             </p>
                           </div>
                           <div className="flex items-start gap-2 text-blue-900/80 text-xs leading-relaxed border-t border-blue-100 pt-3">
-                            <span className="text-lg leading-none">📝</span>
+                            <span className="text-lg leading-none"></span>
                             <p className="font-medium">
                               If you are a New Learner/Transferee who missed
                               Early Registration, you may now fill out the
@@ -279,10 +271,10 @@ export default function EarlyRegistrationApply() {
                               </span>
                               Early Registration is{" "}
                               <span className="font-bold underline">ONLY</span>{" "}
-                              required for incoming Grade 7 learners, Transferees,
-                              and Balik-Aral. Continuing learners (Grades 8-10)
-                              will be processed during the regular BOSY
-                              enrollment.
+                              required for incoming Grade 7 learners,
+                              Transferees, and Balik-Aral. Continuing learners
+                              (Grades 8-10) will be processed during the regular
+                              BOSY enrollment.
                             </p>
                           </div>
                         </div>
@@ -291,8 +283,8 @@ export default function EarlyRegistrationApply() {
                       {facebookPageUrl && (
                         <div className="pt-6 border-t border-slate-200 space-y-4">
                           <p className="text-xs font-bold text-slate-500 uppercase tracking-wide text-center">
-                            For real-time updates and official memorandums, please
-                            follow our page:
+                            For real-time updates and official memorandums,
+                            please follow our page:
                           </p>
                           <a
                             href={facebookPageUrl}

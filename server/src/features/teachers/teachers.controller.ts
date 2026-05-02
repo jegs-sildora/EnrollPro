@@ -1,8 +1,21 @@
 import type { Request, Response } from "express";
 import {
   DEPED_TEACHER_SUBJECT_VALUES,
+  DEPED_TEACHER_DEPARTMENT_VALUES,
   type TeacherDesignationInput,
 } from "@enrollpro/shared";
+
+const DEFAULT_MAX_WEEKLY_HOURS = 30;
+
+function calculateMaxWeeklyHours(designation: any): number {
+  if (designation?.isTeachingExempt) return 0;
+
+  const base =
+    designation?.customTargetTeachingHoursPerWeek ?? DEFAULT_MAX_WEEKLY_HOURS;
+  const advisoryAdjustment = designation?.advisoryEquivalentHoursPerWeek ?? 0;
+
+  return Math.max(0, base - advisoryAdjustment);
+}
 import { prisma } from "../../lib/prisma.js";
 import {
   deleteUploadedFileByRelativePath,
@@ -210,6 +223,7 @@ function mapDesignation(designation: any, schoolId: number | null) {
     isTeachingExempt: designation.isTeachingExempt,
     customTargetTeachingHoursPerWeek:
       designation.customTargetTeachingHoursPerWeek,
+    computedMaxWeeklyHours: calculateMaxWeeklyHours(designation),
     designationNotes: designation.designationNotes,
     effectiveFrom: toDateOnlyString(designation.effectiveFrom),
     effectiveTo: toDateOnlyString(designation.effectiveTo),
@@ -234,9 +248,7 @@ async function findAdvisorySectionForSchoolYear(
   return prisma.section.findFirst({
     where: {
       id: advisorySectionId,
-      gradeLevel: {
-        schoolYearId,
-      },
+      schoolYearId,
     },
     select: {
       id: true,
@@ -396,6 +408,7 @@ export async function index(req: Request, res: Response) {
         email: teacher.email,
         contactNumber: teacher.contactNumber,
         specialization: teacher.specialization,
+        department: teacher.department,
         plantillaPosition: teacher.plantillaPosition,
         photoPath: teacher.photoPath,
         isActive: teacher.isActive,
@@ -462,6 +475,7 @@ export async function store(req: Request, res: Response) {
       employeeId,
       contactNumber,
       specialization,
+      department,
       plantillaPosition,
       subjects,
       photo,
@@ -506,6 +520,7 @@ export async function store(req: Request, res: Response) {
               employeeId: resolvedEmployeeId,
               contactNumber: normalizedContactNumber,
               specialization: normalizeOptionalUpperText(specialization),
+              department: normalizeOptionalUpperText(department),
               plantillaPosition: normalizeOptionalUpperText(plantillaPosition),
               photoPath: stagedPhotoPath,
               subjects: normalizedSubjects.length
@@ -584,6 +599,7 @@ export async function update(req: Request, res: Response) {
       employeeId,
       contactNumber,
       specialization,
+      department,
       plantillaPosition,
       subjects,
       photo,
@@ -665,6 +681,9 @@ export async function update(req: Request, res: Response) {
                 : {}),
               ...(specialization !== undefined
                 ? { specialization: normalizeOptionalUpperText(specialization) }
+                : {}),
+              ...(department !== undefined
+                ? { department: normalizeOptionalUpperText(department) }
                 : {}),
               ...(plantillaPosition !== undefined
                 ? {
@@ -1035,9 +1054,7 @@ export async function upsertDesignation(req: Request, res: Response) {
           where: {
             advisingTeacherId: id,
             NOT: { id: advisorySectionId },
-            gradeLevel: {
-              schoolYearId: payload.schoolYearId,
-            },
+            schoolYearId: payload.schoolYearId,
           },
           data: {
             advisingTeacherId: null,
@@ -1070,9 +1087,7 @@ export async function upsertDesignation(req: Request, res: Response) {
         await tx.section.updateMany({
           where: {
             advisingTeacherId: id,
-            gradeLevel: {
-              schoolYearId: payload.schoolYearId,
-            },
+            schoolYearId: payload.schoolYearId,
           },
           data: {
             advisingTeacherId: null,

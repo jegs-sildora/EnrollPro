@@ -321,7 +321,66 @@ export default function EarlyRegistrationDetail() {
                       forceMount
                       className="mt-0 focus-visible:outline-none ring-0">
                       <div className="space-y-4">
-                        <SCPAssessmentBlock applicant={applicant} />
+                        <SCPAssessmentBlock
+                          applicant={applicant}
+                          onSaveStepResult={async (
+                            stepOrder,
+                            kind,
+                            score,
+                            cutoffScore,
+                          ) => {
+                            try {
+                              await api.patch(
+                                `/early-registrations/${id}/assessment-score`,
+                                {
+                                  stepOrder,
+                                  kind,
+                                  score,
+                                  cutoffScore,
+                                },
+                              );
+                              sileo.success({
+                                title: "Score Saved",
+                                description: "Assessment result has been recorded.",
+                              });
+                              refetch();
+                            } catch (err) {
+                              toastApiError(err as never);
+                            }
+                          }}
+                          onSubmitInterviewResult={async (score) => {
+                            try {
+                              const interviewStep =
+                                applicant.assessmentSteps?.find(
+                                  (s) => s.kind === "INTERVIEW",
+                                );
+                              if (!interviewStep) return;
+
+                              await api.patch(
+                                `/early-registrations/${id}/assessment-score`,
+                                {
+                                  stepOrder: interviewStep.stepOrder,
+                                  kind: "INTERVIEW",
+                                  score,
+                                  cutoffScore: interviewStep.cutoffScore,
+                                },
+                              );
+                              sileo.success({
+                                title: "Rubric Submitted",
+                                description:
+                                  "Interview score has been recorded.",
+                              });
+                              refetch();
+                            } catch (err) {
+                              toastApiError(err as never);
+                            }
+                          }}
+                          interviewScore={
+                            applicant.assessmentSteps?.find(
+                              (s) => s.kind === "INTERVIEW",
+                            )?.score
+                          }
+                        />
                         <PersonalInfo applicant={applicant} />
                         <GuardianContact applicant={applicant} />
                         <PreviousSchool applicant={applicant} />

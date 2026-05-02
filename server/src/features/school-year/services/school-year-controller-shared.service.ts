@@ -11,25 +11,16 @@ const DEFAULT_GRADES = [
 
 export async function ensureDefaultGradeLevels(
   deps: SchoolYearControllerDeps,
-  schoolYearId: number,
 ): Promise<void> {
   for (const grade of DEFAULT_GRADES) {
-    const existing = await deps.prisma.gradeLevel.findFirst({
-      where: {
-        schoolYearId,
+    await deps.prisma.gradeLevel.upsert({
+      where: { name: grade.name },
+      update: { displayOrder: grade.displayOrder },
+      create: {
         name: grade.name,
+        displayOrder: grade.displayOrder,
       },
     });
-
-    if (!existing) {
-      await deps.prisma.gradeLevel.create({
-        data: {
-          name: grade.name,
-          displayOrder: grade.displayOrder,
-          schoolYearId,
-        },
-      });
-    }
   }
 }
 
@@ -88,7 +79,7 @@ export async function cloneSchoolYearStructure(
   const source = await deps.prisma.schoolYear.findUnique({
     where: { id: cloneFromId },
     include: {
-      gradeLevels: { include: { sections: true } },
+      sections: true,
       scpProgramConfigs: {
         include: { options: true, steps: { orderBy: { stepOrder: "asc" } } },
       },
@@ -99,24 +90,20 @@ export async function cloneSchoolYearStructure(
     return;
   }
 
-  for (const gradeLevel of source.gradeLevels) {
-    const newGradeLevel = await deps.prisma.gradeLevel.create({
+  for (const section of source.sections) {
+    await deps.prisma.section.create({
       data: {
-        name: gradeLevel.name,
-        displayOrder: gradeLevel.displayOrder,
+        name: section.name,
+        displayName: section.displayName,
+        sortOrder: section.sortOrder,
+        maxCapacity: section.maxCapacity,
+        gradeLevelId: section.gradeLevelId,
         schoolYearId: targetSchoolYearId,
+        programType: section.programType,
+        isHomogeneous: section.isHomogeneous,
+        isSnake: section.isSnake,
       },
     });
-
-    for (const section of gradeLevel.sections) {
-      await deps.prisma.section.create({
-        data: {
-          name: section.name,
-          maxCapacity: section.maxCapacity,
-          gradeLevelId: newGradeLevel.id,
-        },
-      });
-    }
   }
 
   for (const scpProgram of source.scpProgramConfigs) {

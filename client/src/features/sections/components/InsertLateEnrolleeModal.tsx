@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -14,11 +14,14 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/shared/lib/utils";
 import { sileo } from "sileo";
+import { useSettingsStore } from "@/store/settings.slice";
+import { differenceInBusinessDays, format } from "date-fns";
 
 interface UnsectionedLearner {
   id: number;
@@ -57,12 +60,23 @@ export function InsertLateEnrolleeModal({
   schoolYearId,
   onSuccess,
 }: InsertLateEnrolleeModalProps) {
+  const { classOpeningDate } = useSettingsStore();
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [pool, setPool] = useState<UnsectionedLearner[]>([]);
   const [selectedLearner, setSelectedLearner] =
     useState<UnsectionedLearner | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const elapsedSchoolDays = useMemo(() => {
+    if (!classOpeningDate) return 0;
+    const start = new Date(classOpeningDate);
+    const today = new Date();
+    if (today <= start) return 0;
+    return differenceInBusinessDays(today, start);
+  }, [classOpeningDate]);
+
+  const isAttendanceAtRisk = elapsedSchoolDays > 20;
 
   const fetchPool = useCallback(async () => {
     setLoading(true);
@@ -135,18 +149,31 @@ export function InsertLateEnrolleeModal({
       onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl p-0 overflow-hidden border-none shadow-2xl">
         <DialogHeader className="px-6 pt-6 pb-4 bg-muted/30 border-b border-border">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg text-primary">
-              <UserPlus className="h-5 w-5" />
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                <UserPlus className="h-5 w-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-black uppercase ">
+                  Insert Late Enrollee
+                </DialogTitle>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
+                  Target: {gradeLevelName} - {sectionName}
+                </p>
+              </div>
             </div>
-            <div>
-              <DialogTitle className="text-lg font-black uppercase ">
-                Insert Late Enrollee
-              </DialogTitle>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
-                Target: {gradeLevelName} - {sectionName}
-              </p>
-            </div>
+            {activeSchoolYear?.classOpeningDate && (
+              <Badge
+                variant="outline"
+                className="bg-white font-bold text-[10px] uppercase border-border px-2">
+                Classes Started:{" "}
+                {format(
+                  new Date(activeSchoolYear.classOpeningDate),
+                  "MMM d, yyyy",
+                )}
+              </Badge>
+            )}
           </div>
         </DialogHeader>
 
@@ -279,6 +306,22 @@ export function InsertLateEnrolleeModal({
                   </p>
                 </div>
               </div>
+
+              {isAttendanceAtRisk && (
+                <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200">
+                  <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="text-xs font-black text-red-900 uppercase">
+                      Attendance Risk
+                    </p>
+                    <p className="text-[11px] leading-relaxed text-red-800 font-medium">
+                      {elapsedSchoolDays} school days have already passed.
+                      Learner may struggle to meet the 80% DepEd attendance
+                      requirement. Ensure catch-up interventions are planned.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200">
                 <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />

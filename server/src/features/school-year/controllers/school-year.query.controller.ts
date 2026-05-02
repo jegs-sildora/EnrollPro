@@ -44,7 +44,6 @@ export function createSchoolYearQueryController(
     }
 
     const gradeLevels = await deps.prisma.gradeLevel.findMany({
-      where: { schoolYearId },
       orderBy: { displayOrder: "asc" },
       select: { id: true, name: true, displayOrder: true },
     });
@@ -58,7 +57,7 @@ export function createSchoolYearQueryController(
       include: {
         _count: {
           select: {
-            gradeLevels: true,
+            sections: true,
             earlyRegistrationApplications: true,
             enrollmentApplications: true,
             enrollmentRecords: true,
@@ -80,12 +79,11 @@ export function createSchoolYearQueryController(
     const year = await deps.prisma.schoolYear.findUnique({
       where: { id },
       include: {
-        gradeLevels: {
-          orderBy: { displayOrder: "asc" },
+        sections: {
+          orderBy: [{ gradeLevel: { displayOrder: "asc" } }, { sortOrder: "asc" }],
           include: {
-            sections: {
-              include: { _count: { select: { enrollmentRecords: true } } },
-            },
+            gradeLevel: true,
+            _count: { select: { enrollmentRecords: true } },
           },
         },
         _count: {

@@ -15,13 +15,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    allowedHosts: [
-      "localhost",
-      "127.0.0.1",
-      "100.120.169.123",
-      "dev-jegs.buru-degree.ts.net",
-      ".buru-degree.ts.net",
-    ],
+    allowedHosts: true, // Disable host check for dev to avoid 403
     proxy: {
       "/api": {
         target: backendTarget,

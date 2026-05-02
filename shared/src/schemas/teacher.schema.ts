@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   DEPED_TEACHER_PLANTILLA_POSITION_VALUES,
   DEPED_TEACHER_SUBJECT_VALUES,
+  DEPED_TEACHER_DEPARTMENT_VALUES,
 } from "../constants/index.js";
 
 const optionalUpperText = z.preprocess((value) => {
@@ -42,6 +43,8 @@ const teacherPlantillaPositionSchema = z.enum(
   DEPED_TEACHER_PLANTILLA_POSITION_VALUES,
 );
 
+const teacherDepartmentSchema = z.enum(DEPED_TEACHER_DEPARTMENT_VALUES);
+
 export const teacherSchema = z.object({
   firstName: z
     .string()
@@ -58,6 +61,22 @@ export const teacherSchema = z.object({
   employeeId: optionalUpperText.optional(),
   contactNumber: optionalContactNumber.optional(),
   specialization: optionalUpperText.optional(),
+  department: z
+    .preprocess(
+      (value) => {
+        if (value === undefined || value === null || value === "") {
+          return null;
+        }
+
+        if (typeof value === "string") {
+          return value.trim().toUpperCase();
+        }
+
+        return value;
+      },
+      z.union([teacherDepartmentSchema, z.null()]),
+    )
+    .optional(),
   plantillaPosition: z
     .preprocess(
       (value) => {

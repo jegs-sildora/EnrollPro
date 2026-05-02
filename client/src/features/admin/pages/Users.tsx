@@ -34,7 +34,7 @@ import {
   Venus,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
-import { cn } from "@/shared/lib/utils";
+import { cn, formatUserRole } from "@/shared/lib/utils";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -598,7 +598,7 @@ export default function AdminUsers() {
                     ? "border-primary/20 bg-primary/10 text-primary"
                     : "border-purple-200 bg-purple-50 text-purple-700"
                 }`}>
-                {user.role}
+                {formatUserRole(user.role)}
               </Badge>
             </div>
           );
@@ -988,7 +988,7 @@ export default function AdminUsers() {
                           ? "border-primary/20 bg-primary/10 text-primary"
                           : "border-purple-200 bg-purple-50 text-purple-700"
                       }`}>
-                      {user.role}
+                      {formatUserRole(user.role)}
                     </Badge>
                   </div>
                   <div className="mt-2.5 flex flex-wrap gap-y-1.5 gap-x-4 text-xs font-bold">

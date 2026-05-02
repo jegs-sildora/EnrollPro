@@ -145,7 +145,7 @@ export default function StudentProfile() {
               </Badge>
               {student.applicantType === "LATE_ENROLLEE" && (
                 <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-black">
-                  Late Enrolled
+                  🕒 Late Enrollee
                 </Badge>
               )}
             </div>
@@ -718,7 +718,13 @@ export default function StudentProfile() {
                     </CardContent>
                   </Card>
                 )}
-                <SCPAssessmentBlock applicant={student} />
+                <SCPAssessmentBlock
+                  applicant={student}
+                  interviewScore={
+                    student.assessmentSteps?.find((s) => s.kind === "INTERVIEW")
+                      ?.score
+                  }
+                />
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">

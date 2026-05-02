@@ -14,6 +14,7 @@ export interface TeacherDesignation {
   isTic: boolean;
   isTeachingExempt: boolean;
   customTargetTeachingHoursPerWeek: number | null;
+  computedMaxWeeklyHours: number;
   designationNotes: string | null;
   effectiveFrom: string | null;
   effectiveTo: string | null;
@@ -64,6 +65,7 @@ export interface Teacher {
   email: string | null;
   contactNumber: string | null;
   specialization: string | null;
+  department: string | null;
   plantillaPosition: string | null;
   photoPath: string | null;
   subjects: string[];
@@ -81,6 +83,7 @@ export interface TeacherFormState {
   employeeId: string;
   contactNumber: string;
   specialization: string;
+  department: string;
   plantillaPosition: string;
   subjects: string[];
   photo: string | null;

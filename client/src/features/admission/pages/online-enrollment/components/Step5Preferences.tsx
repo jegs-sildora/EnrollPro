@@ -13,6 +13,7 @@ import {
 import { cn, SCP_LABELS } from "@/shared/lib/utils";
 import { Label } from "@/shared/ui/label";
 import { Checkbox } from "@/shared/ui/checkbox";
+import { Input } from "@/shared/ui/input";
 import {
   Select,
   SelectContent,
@@ -37,22 +38,117 @@ const GRADE_OPTIONS = [
 
 type ScpTypeValue = NonNullable<EnrollmentFormData["scpType"]>;
 
-interface PublicScpProgramConfig {
-  scpType: unknown;
-  isOffered?: boolean;
+const SCP_GRADE_RULE_TYPES = [
+  "GENERAL_AVERAGE_MIN",
+  "SUBJECT_AVERAGE_MIN",
+  "SUBJECT_MINIMUMS",
+] as const;
+
+type ScpGradeRuleType = (typeof SCP_GRADE_RULE_TYPES)[number];
+
+interface ParsedScpSubjectThreshold {
+  subject: string;
+  min: number;
 }
+
+interface ParsedScpGradeRequirement {
+  ruleType: ScpGradeRuleType;
+  minAverage: number | null;
+  subjects: string[];
+  subjectThresholds: ParsedScpSubjectThreshold[];
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const normalizePercent = (value: unknown): number | null => {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return null;
+  }
+
+  const rounded = Number(value.toFixed(2));
+  return rounded >= 0 && rounded <= 100 ? rounded : null;
+};
+
+const parseGradeRequirements = (
+  value: unknown,
+): ParsedScpGradeRequirement[] => {
+  if (!Array.isArray(value)) {
+    if (isRecord(value)) {
+      const minGA = value.minimumGeneralAverage;
+      if (typeof minGA === "number") {
+        return [
+          {
+            ruleType: "GENERAL_AVERAGE_MIN",
+            minAverage: minGA,
+            subjects: [],
+            subjectThresholds: [],
+          },
+        ];
+      }
+    }
+    return [];
+  }
+
+  const parsed: ParsedScpGradeRequirement[] = [];
+
+  for (const rule of value) {
+    if (!isRecord(rule) || typeof rule.ruleType !== "string") {
+      continue;
+    }
+
+    const normalizedRuleType = rule.ruleType.toUpperCase();
+    if (
+      !SCP_GRADE_RULE_TYPES.includes(normalizedRuleType as ScpGradeRuleType)
+    ) {
+      continue;
+    }
+
+    const subjects = Array.isArray(rule.subjects)
+      ? rule.subjects
+          .filter((subject): subject is string => typeof subject === "string")
+          .map((subject) => subject.trim().toUpperCase())
+          .filter(Boolean)
+      : [];
+
+    const subjectThresholds = Array.isArray(rule.subjectThresholds)
+      ? rule.subjectThresholds.reduce<ParsedScpSubjectThreshold[]>(
+          (acc, threshold) => {
+            if (!isRecord(threshold) || typeof threshold.subject !== "string") {
+              return acc;
+            }
+
+            const min = normalizePercent(threshold.min);
+            if (min === null) {
+              return acc;
+            }
+
+            acc.push({
+              subject: threshold.subject.trim().toUpperCase(),
+              min,
+            });
+
+            return acc;
+          },
+          [],
+        )
+      : [];
+
+    parsed.push({
+      ruleType: normalizedRuleType as ScpGradeRuleType,
+      minAverage: normalizePercent(rule.minAverage),
+      subjects,
+      subjectThresholds,
+    });
+  }
+
+  return parsed;
+};
 
 interface OfferedScpProgramConfig {
   scpType: ScpTypeValue;
+  gradeRequirements: unknown;
 }
-
-interface PublicScpConfigResponse {
-  scpProgramConfigs?: PublicScpProgramConfig[];
-}
-
-const isScpTypeValue = (value: unknown): value is ScpTypeValue =>
-  typeof value === "string" &&
-  SCP_PROGRAMS.some((program) => program.id === value);
 
 const SCP_PROGRAMS: Array<{ id: ScpTypeValue; label: string; desc: string }> = [
   {
@@ -91,6 +187,7 @@ export default function Step5Enrollment() {
   const {
     watch,
     setValue,
+    register,
     clearErrors,
     formState: { errors },
   } = useFormContext<EnrollmentFormData>();
@@ -105,12 +202,20 @@ export default function Step5Enrollment() {
   const sportsList = watch("sportsList");
   const foreignLanguage = watch("foreignLanguage");
   const learningModalities = watch("learningModalities");
+  const reportedGa = watch("generalAverage");
 
   const [isLoadingScpConfig, setIsLoadingScpConfig] = useState(true);
   const [scpConfigError, setScpConfigError] = useState<string | null>(null);
   const [offeredScpConfigs, setOfferedScpConfigs] = useState<
     OfferedScpProgramConfig[]
   >([]);
+  const [inputGaValue, setInputGaValue] = useState<string>("");
+
+  useEffect(() => {
+    if (reportedGa !== undefined && reportedGa !== null) {
+      setInputGaValue(reportedGa.toString());
+    }
+  }, [reportedGa]);
 
   const selectedSportsList = sportsList ?? [];
   const selectedSportsCount = sportsList?.length ?? 0;
@@ -131,8 +236,32 @@ export default function Step5Enrollment() {
   );
 
   const hasOfferedScpPrograms = availableScpPrograms.length > 0;
+
+  // Derive the effective GA threshold from offered configs (fallback: 85)
+  const effectiveScpGaThreshold = useMemo(() => {
+    let min = 85;
+    for (const config of offeredScpConfigs) {
+      const rules = parseGradeRequirements(config.gradeRequirements);
+      const gaRule = rules.find((r) => r.ruleType === "GENERAL_AVERAGE_MIN");
+      if (gaRule?.minAverage != null && Number.isFinite(gaRule.minAverage)) {
+        min = Math.min(min, gaRule.minAverage);
+      }
+    }
+    return min;
+  }, [offeredScpConfigs]);
+
+  const gaValue =
+    typeof reportedGa === "number" && Number.isFinite(reportedGa)
+      ? reportedGa
+      : null;
+  const gaEnteredAndBelowThreshold =
+    isScpEligible && gaValue !== null && gaValue < effectiveScpGaThreshold;
+
   const canSelectScpTrack =
-    shouldShowScpCard && !isLoadingScpConfig && hasOfferedScpPrograms;
+    shouldShowScpCard &&
+    !isLoadingScpConfig &&
+    hasOfferedScpPrograms &&
+    !gaEnteredAndBelowThreshold;
 
   const canDeclareNoLrn =
     learnerType === "TRANSFEREE" ||
@@ -160,6 +289,7 @@ export default function Step5Enrollment() {
           if (config.isOffered !== false && isScpTypeValue(config.scpType)) {
             acc.push({
               scpType: config.scpType,
+              gradeRequirements: config.gradeRequirements,
             });
           }
           return acc;
@@ -383,6 +513,68 @@ export default function Step5Enrollment() {
         {errors.gradeLevel?.message && (
           <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-2">
             <AlertCircle className="w-3 h-3" /> {errors.gradeLevel.message}
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-3 p-5 bg-muted/30 rounded-2xl border border-border/50">
+        <Label
+          htmlFor="generalAverage"
+          className="text-sm font-bold uppercase tracking-widest text-primary">
+          General Average <span className="text-destructive">*</span>
+        </Label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+          <div className="space-y-2">
+            <Input
+              id="generalAverage"
+              type="text"
+              inputMode="decimal"
+              placeholder="e.g. 88.50"
+              className={cn(
+                "h-12 font-bold text-lg bg-white border-2",
+                gaEnteredAndBelowThreshold &&
+                  "border-amber-400 focus-visible:ring-amber-400",
+                errors.generalAverage && "border-destructive",
+              )}
+              value={inputGaValue}
+              onChange={(e) => {
+                const val = e.target.value;
+                // Allow only digits and at most one decimal point with 2 places
+                if (val === "" || /^(\d+)?(\.\d{0,2})?$/.test(val)) {
+                  const parsed = val === "" ? null : parseFloat(val);
+
+                  if (parsed === null || (!isNaN(parsed) && parsed <= 100)) {
+                    setValue(
+                      "generalAverage",
+                      parsed === null ? null : Number(parsed.toFixed(2)),
+                      { shouldValidate: true, shouldDirty: true },
+                    );
+                    setInputGaValue(val);
+                  }
+                }
+              }}
+            />
+            <p className="font-bold text-xs italic flex items-center gap-1 text-muted-foreground">
+              <Info className="w-4 h-4" />
+              Final general average from the last completed grade level.
+            </p>
+          </div>
+
+          {gaEnteredAndBelowThreshold && (
+            <div className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3">
+              <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+              <p className="text-xs font-semibold text-amber-800 leading-relaxed">
+                Your general average ({gaValue}%) is below the minimum{" "}
+                <strong>{effectiveScpGaThreshold}%</strong> required to apply
+                for any Special Curricular Program. You may still proceed with a
+                Regular Section.
+              </p>
+            </div>
+          )}
+        </div>
+        {errors.generalAverage?.message && (
+          <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-1">
+            <AlertCircle className="w-3 h-3" /> {errors.generalAverage.message}
           </p>
         )}
       </div>

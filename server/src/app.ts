@@ -34,12 +34,18 @@ const defaultClientOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
   "http://localhost:5175",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:5174",
+  "http://127.0.0.1:5175",
   "http://100.120.169.123:5173",
   "http://100.120.169.123:5174",
   "http://100.120.169.123:5175",
   "http://dev-jegs.buru-degree.ts.net:5173",
   "http://dev-jegs.buru-degree.ts.net:5174",
   "http://dev-jegs.buru-degree.ts.net:5175",
+  "http://buru-degree.ts.net:5173",
+  "http://buru-degree.ts.net:5174",
+  "http://buru-degree.ts.net:5175",
 ];
 const configuredClientOrigins = [
   process.env.CLIENT_URL,
@@ -57,23 +63,56 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Middleware
+// 2. Manual CORS & Preflight Handler (Before any body parsing or guards)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  
+  // Always set these headers for every response
+  if (origin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  } else {
+    // Fallback for cases where origin is not provided but we still want to be safe
+    res.setHeader("Access-Control-Allow-Origin", "*");
+  }
+
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, x-school-year-context-id, x-requested-with"
+  );
+
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
+  }
+  next();
+});
+
+// 3. Standard Security & Parsing
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
     contentSecurityPolicy: false,
   }),
 );
-app.use(
-  cors({
-    origin: allowedClientOrigins,
-    credentials: true,
-  }),
-);
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser());
+
+// 4. Guards & Routes
 app.use(historicalReadOnlyGuard);
+
+// Debug endpoint
+app.get("/api/debug-server", (req, res) => {
+  res.json({
+    ok: true,
+    time: new Date().toISOString(),
+    method: req.method,
+    path: req.path,
+    headers: req.headers,
+    allowedOrigins: allowedClientOrigins
+  });
+});
 
 // Static files for uploads
 app.use("/uploads", express.static(uploadsDir));
@@ -81,6 +120,9 @@ app.use("/uploads", express.static(uploadsDir));
 // Routes
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true });
+});
+app.get("/api/ping", (_req, res) => {
+  res.send("pong");
 });
 app.use("/api/auth", authRoutes);
 app.use("/api/settings", settingsRoutes);

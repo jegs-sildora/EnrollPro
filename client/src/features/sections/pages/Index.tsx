@@ -64,7 +64,7 @@ import {
 } from "@/shared/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
-import { differenceInYears, format } from "date-fns";
+import { differenceInYears } from "date-fns";
 import { Badge } from "@/shared/ui/badge";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/shared/lib/utils";
@@ -343,26 +343,36 @@ export default function Sections() {
           key="temp"
           variant="outline"
           className="text-[9px] font-black uppercase border-amber-300 bg-amber-50 text-amber-700 shadow-none px-2 py-0.5">
-          ⚠️ Temporary
+          Temporary
         </Badge>,
       );
     }
 
     // Phase 5: Late Enrollee Logic
-    if (
-      learner.sectioningMethod === "INLINE_SLOTTING" &&
-      learner.dateSectioned
-    ) {
-      const isLate =
-        !classOpeningDate ||
-        new Date(learner.dateSectioned) > new Date(classOpeningDate);
-      if (isLate) {
+    const isLate =
+      learner.applicantType === "LATE_ENROLLEE" ||
+      (learner.sectioningMethod === "INLINE_SLOTTING" &&
+        learner.dateSectioned &&
+        (!classOpeningDate ||
+          new Date(learner.dateSectioned) > new Date(classOpeningDate)));
+
+    if (isLate) {
+      remarks.push(
+        <Badge
+          key="late"
+          variant="warning"
+          className="text-[9px] font-black uppercase bg-amber-100 text-amber-700 border-amber-200 shadow-none px-2 py-0.5 whitespace-nowrap inline-flex items-center gap-1">
+          🕒 Late Enrollee
+        </Badge>,
+      );
+
+      if (learner.sf1Remarks) {
         remarks.push(
-          <span
-            key="late"
-            className="text-[10px] font-black text-emerald-600 uppercase  bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 ml-1">
-            Late Enrollee ({format(new Date(learner.dateSectioned), "MMM d")})
-          </span>,
+          <p
+            key="sf1-remark"
+            className="text-[9px] font-bold text-muted-foreground mt-0.5 italic leading-tight">
+            {learner.sf1Remarks}
+          </p>,
         );
       }
     }
@@ -1405,7 +1415,7 @@ export default function Sections() {
                         <Badge
                           variant="outline"
                           className="text-[9px] h-4 font-black uppercase border-amber-200 bg-amber-50 text-amber-600 shadow-none px-1.5">
-                          ⚠️ Unassigned
+                          Unassigned
                         </Badge>
                       )}
                     </div>

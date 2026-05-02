@@ -205,7 +205,22 @@ export function TeacherDesignationSheet({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
-                className="grid gap-3 sm:grid-cols-2">
+                className="space-y-4">
+                
+                <div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-4 flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-black uppercase text-primary">Calculated Weekly Load</h4>
+                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight">Synchronized to ATLAS Scheduling Engine</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-3xl font-black text-primary">
+                      {designationForm.isTeachingExempt ? 0 : Math.max(0, (Number(designationForm.customTargetTeachingHoursPerWeek) || 30) - (Number(designationForm.advisoryEquivalentHoursPerWeek) || 0))}
+                    </span>
+                    <span className="text-xs font-bold text-primary ml-1 uppercase">hrs</span>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-md border bg-card p-3 sm:p-4 space-y-3">
                   <div className="flex items-center justify-between gap-3">
                     <Label
@@ -352,8 +367,9 @@ export function TeacherDesignationSheet({
                     />
                   </div>
                 </div>
-              </motion.div>
-            </TabsContent>
+              </div>
+            </motion.div>
+          </TabsContent>
 
             <TabsContent
               value="schedule-notes"

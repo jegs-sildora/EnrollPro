@@ -53,7 +53,6 @@ interface Props {
     score: number,
     cutoffScore: number | null,
   ) => Promise<void>;
-  onMarkInterviewPassed?: () => Promise<void>;
   showActions?: boolean;
   showRawJson?: boolean;
   pipelineProcessHref?: string;
@@ -79,7 +78,6 @@ export function ApplicationDetailPanel({
   onSetProfileLock,
   onMarkVerified,
   onSaveStepResult,
-  onMarkInterviewPassed,
   showActions = true,
   showRawJson = false,
   pipelineProcessHref,
@@ -95,10 +93,9 @@ export function ApplicationDetailPanel({
   const showSkeleton = useDelayedLoading(loading);
 
   const [isPhotoEnlarged, setIsPhotoEnlarged] = useState(false);
-  const [interviewPassChecked, setInterviewPassChecked] = useState(false);
 
   useEffect(() => {
-    setInterviewPassChecked(false);
+    // No longer need to reset interviewPassChecked
   }, [id]);
 
   const runAndClose = async (
@@ -261,19 +258,27 @@ export function ApplicationDetailPanel({
               : undefined
           }
           onSubmitInterviewResult={
-            showActions && onMarkInterviewPassed
-              ? async (passed) => {
-                  if (passed) {
-                    await runAndClose(onMarkInterviewPassed);
-                  } else {
-                    await runAndClose(onFail);
+            showActions && onSaveStepResult
+              ? async (score) => {
+                  const interviewStep = applicant.assessmentSteps?.find(
+                    (s) => s.kind === "INTERVIEW",
+                  );
+                  if (interviewStep) {
+                    await onSaveStepResult(
+                      interviewStep.stepOrder,
+                      "INTERVIEW",
+                      score,
+                      interviewStep.cutoffScore,
+                    );
+                    refetch();
                   }
-                  setInterviewPassChecked(false);
                 }
               : undefined
           }
-          interviewPassChecked={interviewPassChecked}
-          onInterviewPassChange={setInterviewPassChecked}
+          interviewScore={
+            applicant.assessmentSteps?.find((s) => s.kind === "INTERVIEW")
+              ?.score
+          }
         />
 
         {/* Documentary Checklist */}

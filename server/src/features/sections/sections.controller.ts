@@ -55,43 +55,40 @@ export async function commitBatchSectioning(req: Request, res: Response) {
       .json({ message: "No assignments provided to commit" });
   }
 
-  const results = await prisma.$transaction(async (tx) => {
-    const createdRecords = [];
+  const results = await prisma.$transaction(
+    async (tx) => {
+      const appIds = assignments.map((a: any) => a.applicationId);
 
-    for (const assignment of assignments) {
-      // 1. Fetch current application to check status
-      const app = await tx.enrollmentApplication.findUnique({
-        where: { id: assignment.applicationId },
-        select: { status: true },
-      });
-
-      // 2. Update application status
-      // If it's already temporary, stay temporary. Otherwise, move to ENROLLED.
-      const nextStatus =
-        app?.status === "TEMPORARILY_ENROLLED"
-          ? "TEMPORARILY_ENROLLED"
-          : "ENROLLED";
-
-      await tx.enrollmentApplication.update({
-        where: { id: assignment.applicationId },
-        data: { status: nextStatus },
-      });
-
-      // 3. Create enrollment record
-      const record = await tx.enrollmentRecord.create({
-        data: {
-          enrollmentApplicationId: assignment.applicationId,
-          sectionId: assignment.sectionId,
-          schoolYearId,
-          enrolledById: req.user!.userId,
+      // 1. Update application statuses in bulk
+      // If it's NOT already temporarily enrolled, move to ENROLLED.
+      // If it IS temporarily enrolled, we leave it as is.
+      await tx.enrollmentApplication.updateMany({
+        where: {
+          id: { in: appIds },
+          status: { not: "TEMPORARILY_ENROLLED" },
         },
+        data: { status: "ENROLLED" },
       });
 
-      createdRecords.push(record);
-    }
+      // 2. Create enrollment records in bulk
+      const recordsToCreate = assignments.map((assignment: any) => ({
+        enrollmentApplicationId: assignment.applicationId,
+        sectionId: assignment.sectionId,
+        schoolYearId,
+        enrolledById: req.user!.userId,
+      }));
 
-    return createdRecords;
-  });
+      await tx.enrollmentRecord.createMany({
+        data: recordsToCreate,
+      });
+
+      // Return a dummy array with the same length to satisfy the response logic
+      return new Array(assignments.length);
+    },
+    {
+      timeout: 15000, // Increase timeout to 15 seconds for batch operations
+    },
+  );
 
   await auditLog({
     userId: req.user!.userId,
@@ -209,13 +206,15 @@ export async function listSections(req: Request, res: Response): Promise<void> {
   const whereClause: any = { schoolYearId: ayId };
 
   const gradeLevels = await prisma.gradeLevel.findMany({
-    where: whereClause,
     orderBy: { displayOrder: "asc" },
     include: {
       sections: {
-        ...(normalizedProgramType
-          ? { where: { programType: normalizedProgramType as any } }
-          : {}),
+        where: {
+          schoolYearId: ayId,
+          ...(normalizedProgramType
+            ? { where: { programType: normalizedProgramType as any } }
+            : {}),
+        },
         orderBy: [{ sortOrder: "asc" }, { name: "asc" }, { id: "asc" }],
         include: {
           advisingTeacher: {
@@ -298,13 +297,16 @@ export async function createSection(
     sortOrder,
     maxCapacity,
     gradeLevelId,
+    schoolYearId,
     programType,
     advisingTeacherId,
   } = req.body;
 
   const normalizedName = typeof name === "string" ? name.trim() : "";
-  if (!normalizedName || !gradeLevelId) {
-    res.status(400).json({ message: "name and gradeLevelId are required" });
+  if (!normalizedName || !gradeLevelId || !schoolYearId) {
+    res
+      .status(400)
+      .json({ message: "name, gradeLevelId, and schoolYearId are required" });
     return;
   }
 
@@ -325,6 +327,7 @@ export async function createSection(
           await prisma.section.aggregate({
             where: {
               gradeLevelId,
+              schoolYearId,
               programType: normalizedProgramType as ApplicantType,
             },
             _max: { sortOrder: true },
@@ -338,6 +341,7 @@ export async function createSection(
       sortOrder: resolvedSortOrder,
       maxCapacity: maxCapacity ?? 40,
       gradeLevelId,
+      schoolYearId,
       programType: normalizedProgramType as ApplicantType,
       advisingTeacherId: advisingTeacherId ?? null,
     },
@@ -469,13 +473,10 @@ export async function getSectionRoster(
   const section = await prisma.section.findUnique({
     where: { id },
     include: {
-      gradeLevel: {
-        include: {
-          schoolYear: {
-            select: { classOpeningDate: true },
-          },
-        },
+      schoolYear: {
+        select: { classOpeningDate: true },
       },
+      gradeLevel: true,
       enrollmentRecords: {
         where: activeEnrollmentFilter,
         include: {
@@ -504,13 +505,15 @@ export async function getSectionRoster(
     status: record.enrollmentApplication.status,
     birthdate: record.enrollmentApplication.learner.birthdate,
     learnerType: record.enrollmentApplication.learnerType,
+    applicantType: record.enrollmentApplication.applicantType,
     dateSectioned: record.dateSectioned,
     sectioningMethod: record.sectioningMethod,
+    sf1Remarks: record.sf1Remarks,
   }));
 
   res.json({
     sectionName: section.name,
-    classOpeningDate: section.gradeLevel.schoolYear.classOpeningDate,
+    classOpeningDate: section.schoolYear.classOpeningDate,
     learners,
   });
 }
@@ -624,7 +627,26 @@ export async function inlineSlotLearner(
 
   // 5. Execute Slotting in Transaction
   const record = await prisma.$transaction(async (tx) => {
-    // A. Create Enrollment Record
+    // A. Determine if this is a Late Enrollment based on School Year Status
+    const sy = await tx.schoolYear.findUnique({
+      where: { id: app.schoolYearId },
+      select: { status: true, classOpeningDate: true },
+    });
+
+    const isLateEnrollment = sy?.status === "BOSY_LOCKED" || sy?.status === "EOSY_PROCESSING" || sy?.status === "ACTIVE";
+    let sf1Remarks = null;
+
+    if (isLateEnrollment) {
+      const today = new Date();
+      const formattedDate = today.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+      sf1Remarks = `Late Enrollee (Date of First Attendance: ${formattedDate})`;
+    }
+
+    // B. Create Enrollment Record
     const newRecord = await tx.enrollmentRecord.create({
       data: {
         enrollmentApplicationId: app.id,
@@ -633,23 +655,28 @@ export async function inlineSlotLearner(
         enrolledById: req.user!.userId,
         sectioningMethod: "INLINE_SLOTTING",
         dateSectioned: new Date(),
+        sf1Remarks,
       },
     });
 
-    // B. Update Application Status
+    // C. Update Application Status and Type
     await tx.enrollmentApplication.update({
       where: { id: app.id },
-      data: { status: "ENROLLED" },
+      data: { 
+        status: "ENROLLED",
+        applicantType: isLateEnrollment ? "LATE_ENROLLEE" : app.applicantType,
+      },
     });
 
-    // C. Queue S.M.A.R.T. Sync Event
+    // D. Queue S.M.A.R.T. Sync Event
     // Payload as per blueprint Phase 4.1
     const syncPayload = {
-      event: "LATE_ENROLLEE_ADDED",
+      event: isLateEnrollment ? "LATE_ENROLLEE_ADDED" : "ENROLLEE_ADDED",
       lrn: app.learner.lrn,
       section_id: section.id,
       adviser_id: section.advisingTeacherId,
       timestamp: new Date().toISOString(),
+      is_late: isLateEnrollment,
     };
 
     await tx.atlasSyncEvent.create({

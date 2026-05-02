@@ -36,17 +36,9 @@ function extractMinAverage(
 
 function buildRules(
   isSte: boolean,
-  generalAverageMin: number,
   subjectAverageMin: number,
 ): ScpGradeRequirementRule[] {
-  const rules: ScpGradeRequirementRule[] = [
-    {
-      ruleType: "GENERAL_AVERAGE_MIN",
-      minAverage: generalAverageMin,
-      subjects: [],
-      subjectThresholds: [],
-    },
-  ];
+  const rules: ScpGradeRequirementRule[] = [];
 
   if (isSte) {
     rules.push({
@@ -68,26 +60,15 @@ export function GradeRequirementsSection({
   const isSte = scp.scpType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING";
   const currentRules = scp.gradeRequirements ?? [];
 
-  const generalAverageMin = extractMinAverage(
-    currentRules,
-    "GENERAL_AVERAGE_MIN",
-  );
   const subjectAverageMin = extractMinAverage(
     currentRules,
     "SUBJECT_AVERAGE_MIN",
   );
 
-  const handleGeneralAverageChange = (raw: string) => {
-    const parsed =
-      raw === "" ? 85 : Math.min(100, Math.max(0, parseFloat(raw) || 85));
-    const next = buildRules(isSte, parsed, subjectAverageMin);
-    onUpdateGradeRequirements(scpIndex, next);
-  };
-
   const handleSubjectAverageChange = (raw: string) => {
     const parsed =
       raw === "" ? 85 : Math.min(100, Math.max(0, parseFloat(raw) || 85));
-    const next = buildRules(isSte, generalAverageMin, parsed);
+    const next = buildRules(isSte, parsed);
     onUpdateGradeRequirements(scpIndex, next);
   };
 
@@ -100,32 +81,7 @@ export function GradeRequirementsSection({
         </Label>
       </div>
 
-      <div
-        className={
-          isSte
-            ? "grid grid-cols-1 sm:grid-cols-2 gap-3"
-            : "grid grid-cols-1 gap-3"
-        }>
-        <div className="space-y-1.5">
-          <Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-            Minimum General Average (%)
-          </Label>
-          <Input
-            type="number"
-            min={0}
-            max={100}
-            step={0.5}
-            value={generalAverageMin}
-            onChange={(e) => handleGeneralAverageChange(e.target.value)}
-            className="h-9 text-sm font-bold"
-            placeholder="85"
-          />
-          <p className="text-xs text-muted-foreground flex items-start gap-1">
-            <Info className="h-3 w-3 mt-0.5 shrink-0" />
-            From the latest SF9 / Report Card.
-          </p>
-        </div>
-
+      <div className="grid grid-cols-1 gap-3">
         {isSte && (
           <div className="space-y-1.5">
             <Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
@@ -148,10 +104,17 @@ export function GradeRequirementsSection({
             </p>
           </div>
         )}
+
+        {!isSte && (
+          <p className="text-xs font-semibold italic text-muted-foreground py-2">
+            No specific grade average requirements are defined for this program
+            type.
+          </p>
+        )}
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Learners who do not meet the minimum general average will be
+        Learners who do not meet the minimum grade requirements will be
         automatically blocked from selecting this SCP track during online early
         registration.
       </p>

@@ -157,8 +157,19 @@ export const APPLICATION_VALID_TRANSITIONS: Record<
 export const SchoolYearStatusEnum = z.enum([
   "DRAFT",
   "UPCOMING",
+  "PREPARATION",
+  "ENROLLMENT_OPEN",
+  "BOSY_LOCKED",
+  "EOSY_PROCESSING",
   "ACTIVE",
   "ARCHIVED",
+]);
+
+export const PortalControlEnum = z.enum([
+  "AUTO",
+  "FORCE_OPEN_PHASE_1",
+  "FORCE_OPEN_PHASE_2",
+  "FORCE_CLOSE_ALL",
 ]);
 export const LearnerTypeEnum = z.enum([
   "NEW_ENROLLEE",
@@ -229,6 +240,30 @@ export const LastSchoolTypeEnum = z.enum([
 export const GradeLevelEnum = z.enum(["7", "8", "9", "10"]);
 
 // ─── DepEd Teacher Catalog ─────────────────────────────
+export const DEPED_TEACHER_DEPARTMENT_VALUES = [
+  "LANGUAGES",
+  "MATHEMATICS",
+  "SCIENCE",
+  "SOCIAL STUDIES",
+  "MAPEH",
+  "VALUES EDUCATION",
+  "TLE",
+  "GUIDANCE",
+  "ADMINISTRATION",
+] as const;
+
+export const DEPED_TEACHER_DEPARTMENT_OPTIONS = [
+  { value: "LANGUAGES", label: "Languages" },
+  { value: "MATHEMATICS", label: "Mathematics" },
+  { value: "SCIENCE", label: "Science" },
+  { value: "SOCIAL STUDIES", label: "Social Studies / AP" },
+  { value: "MAPEH", label: "MAPEH" },
+  { value: "VALUES EDUCATION", label: "Values Education / EsP" },
+  { value: "TLE", label: "TLE / TVL" },
+  { value: "GUIDANCE", label: "Guidance" },
+  { value: "ADMINISTRATION", label: "Administration" },
+] as const;
+
 export const DEPED_TEACHER_SUBJECT_VALUES = [
   "ENGLISH",
   "FILIPINO",

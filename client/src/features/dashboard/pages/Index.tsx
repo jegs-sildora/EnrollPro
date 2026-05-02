@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
+import { motion } from "framer-motion";
 import {
   ClipboardList,
   Users,
@@ -11,10 +12,12 @@ import {
   FileText,
   FileCheck,
   GitPullRequest,
+  Lock,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useAuthStore } from "@/store/auth.slice";
 import { useSettingsStore } from "@/store/settings.slice";
+import { formatUserRole } from "@/shared/lib/utils";
 import {
   Card,
   CardContent,
@@ -85,8 +88,10 @@ function formatFocusMode(mode: FocusMode): string {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { enrollmentPhase } = useSettingsStore();
+  const { enrollmentPhase, systemStatus, activeSchoolYearLabel } =
+    useSettingsStore();
   const isAdmin = user?.role === "SYSTEM_ADMIN";
+  const isBosyLocked = systemStatus === "BOSY_LOCKED";
 
   const [stats, setStats] = useState<Stats | null>(null);
   const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
@@ -249,6 +254,31 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {isBosyLocked && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-emerald-600 text-white px-4 py-3 rounded-xl flex items-center justify-between shadow-lg border-2 border-emerald-400/30">
+          <div className="flex items-center gap-3">
+            <div className="bg-white/20 p-2 rounded-lg">
+              <Lock className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-black uppercase tracking-widest leading-none">
+                BOSY Locked ({activeSchoolYearLabel})
+              </p>
+              <p className="text-xs font-bold text-emerald-100 mt-1">
+                System is currently processing Late Enrollees only via Inline
+                Slotting.
+              </p>
+            </div>
+          </div>
+          <Badge className="bg-white text-emerald-700 font-black hover:bg-white uppercase ">
+            Academic Phase
+          </Badge>
+        </motion.div>
+      )}
+
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
@@ -265,7 +295,7 @@ export default function Dashboard() {
             variant="outline"
             className="h-6 gap-1 border-primary border-opacity-20 bg-sidebar-accent text-primary">
             <ShieldCheck className="h-3 w-3" />
-            {user?.role} Access
+            {formatUserRole(user?.role)} Access
           </Badge>
 
           <div className="flex flex-col items-start gap-1 md:items-end">

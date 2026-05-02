@@ -1099,7 +1099,6 @@ async function createRegistration(
     const normalizedGradeLevel = normalizeGradeLevelToken(body.gradeLevel);
     const gradeLevelV2 = await prisma.gradeLevel.findFirst({
       where: {
-        schoolYearId: activeYear.id,
         OR: [
           { name: { equals: normalizedGradeLevel, mode: "insensitive" } },
           {
@@ -1653,7 +1652,6 @@ export async function index(req: Request, res: Response, next: NextFunction) {
       const normalizedGradeLevel = normalizeGradeLevelToken(gradeLevel);
       const matchingGradeLevels = await prisma.gradeLevel.findMany({
         where: {
-          schoolYearId: resolvedSchoolYearId,
           OR: [
             { name: { equals: normalizedGradeLevel, mode: "insensitive" } },
             {

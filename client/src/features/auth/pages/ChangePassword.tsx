@@ -262,7 +262,7 @@ export default function ChangePassword() {
                   {rules.map((r) => (
                     <li
                       key={r.label}
-                      className={`flex items-center gap-2 text-sm font-medium transition-colors ${r.pass ? "text-emerald-600" : "text-muted-foreground"}`}>
+                      className={`flex items-center gap-2 text-sm font-bold transition-colors ${r.pass ? "text-emerald-600" : "text-muted-foreground"}`}>
                       {r.pass ? (
                         <CheckSquare className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
                       ) : (

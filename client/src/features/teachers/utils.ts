@@ -1,6 +1,7 @@
 import {
   DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS,
   DEPED_TEACHER_SUBJECT_OPTIONS,
+  DEPED_TEACHER_DEPARTMENT_OPTIONS,
 } from "@enrollpro/shared";
 import type { Teacher, TeacherFormState } from "./types";
 
@@ -10,6 +11,7 @@ export const DEPED_LEARNING_AREA_OPTIONS = DEPED_TEACHER_SUBJECT_OPTIONS;
 export const TEACHER_SUBJECT_OPTIONS = DEPED_TEACHER_SUBJECT_OPTIONS;
 export const TEACHER_PLANTILLA_POSITION_OPTIONS =
   DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS;
+export const TEACHER_DEPARTMENT_OPTIONS = DEPED_TEACHER_DEPARTMENT_OPTIONS;
 
 export function createEmptyTeacherForm(): TeacherFormState {
   return {
@@ -20,6 +22,7 @@ export function createEmptyTeacherForm(): TeacherFormState {
     employeeId: "",
     contactNumber: "",
     specialization: "",
+    department: "",
     plantillaPosition: "",
     subjects: [],
     photo: null,

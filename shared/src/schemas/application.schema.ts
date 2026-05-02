@@ -647,6 +647,19 @@ export const scpRankingFormulaSchema = z
   });
 
 // ─── SCP Assessment Step Config Schema (for CurriculumTab) ───
+const rubricCriterionSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional().nullable(),
+  maxPts: z.number(),
+});
+
+const rubricCategorySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  criteria: z.array(rubricCriterionSchema),
+});
+
 export const scpProgramStepConfigSchema = z.object({
   id: z.number().optional(),
   stepOrder: z.number().int().min(1),
@@ -659,6 +672,7 @@ export const scpProgramStepConfigSchema = z.object({
   venue: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
   cutoffScore: z.number().min(0).max(100).optional().nullable(),
+  rubric: z.array(rubricCategorySchema).optional().nullable(),
 });
 
 export const scpProgramConfigUpdateSchema = z.object({

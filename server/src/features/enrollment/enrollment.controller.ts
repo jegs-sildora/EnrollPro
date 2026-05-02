@@ -184,7 +184,7 @@ export async function batchConfirmConfirmationSlips(
  * Supports live Tailscale node fetching with a graceful mock fallback for demo day.
  */
 export async function syncSmartGrades(req: Request, res: Response) {
-  const { gradeLevelId } = req.body;
+  const { gradeLevelId, schoolYearId } = req.body;
   const apiKey = process.env.SMART_API_KEY;
   const baseUrl = process.env.SMART_API_BASE_URL;
   const fallbackEnabled = process.env.SMART_SYNC_FALLBACK_ENABLED === "true";
@@ -199,17 +199,24 @@ export async function syncSmartGrades(req: Request, res: Response) {
   // Fetch target grade level info for the cohort endpoint
   const gradeLevel = await prisma.gradeLevel.findUnique({
     where: { id: gradeLevelId },
-    include: { schoolYear: true },
   });
 
   if (!gradeLevel) {
     throw new AppError(404, "Grade level not found.");
   }
 
+  const schoolYear = await prisma.schoolYear.findUnique({
+    where: { id: schoolYearId },
+  });
+
+  if (!schoolYear) {
+    throw new AppError(404, "School year not found.");
+  }
+
   // Extract numeric grade (e.g., "Grade 8" -> 8)
   const gradeNumMatch = gradeLevel.name.match(/\d+/);
   const gradeNum = gradeNumMatch ? gradeNumMatch[0] : "8";
-  const syLabel = gradeLevel.schoolYear.yearLabel; // e.g., "2025-2026"
+  const syLabel = schoolYear.yearLabel; // e.g., "2025-2026"
 
   let smartData: any[] = [];
   let isFallbackEngaged = false;

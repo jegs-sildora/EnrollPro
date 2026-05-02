@@ -14,7 +14,45 @@ interface PipelineStep {
   isRequired: boolean;
 }
 
-function mapPipelineStepToEditableStep(step: PipelineStep): ScpStepConfig {
+const generateId = () => Math.random().toString(36).substring(2, 9);
+
+const STE_DEFAULT_RUBRIC = [
+  {
+    id: generateId(),
+    name: "Image Interpretation (40 pts)",
+    criteria: [
+      { id: generateId(), name: "Understanding of the Image", description: "Demonstrate a clear understanding of the image's content and context.", maxPts: 10 },
+      { id: generateId(), name: "Analysis of Key Elements", description: "Identifies and explains key elements such as color, composition, shapes, and symbols.", maxPts: 15 },
+      { id: generateId(), name: "Interpretation of Meaning", description: "Provides a thoughtful interpretation of the image's message or theme.", maxPts: 15 },
+    ]
+  },
+  {
+    id: generateId(),
+    name: "Use of Evidence (10 pts)",
+    criteria: [
+      { id: generateId(), name: "Supports Analysis", description: "Supports analysis with specific details or visual evidence from the image.", maxPts: 10 },
+    ]
+  },
+  {
+    id: generateId(),
+    name: "Insight (35 pts)",
+    criteria: [
+      { id: generateId(), name: "Critical Thinking", description: "Show depth of thought, offering original or nuanced perspectives on the image.", maxPts: 15 },
+      { id: generateId(), name: "Connection to Relevant Concepts", description: "Links the image to broader ideas, historical context, or concepts studied in class.", maxPts: 10 },
+      { id: generateId(), name: "Organization & Structure", description: "Clear and logical flow of ideas in the analysis, well-organized response.", maxPts: 10 },
+    ]
+  },
+  {
+    id: generateId(),
+    name: "Other (15 pts)",
+    criteria: [
+      { id: generateId(), name: "Creativity & Originality", description: "Demonstrate originality in interpretation or creative insights about the image.", maxPts: 10 },
+      { id: generateId(), name: "Clarity of Expression", description: "Clear, concise, and well-articulated writing, free of errors.", maxPts: 5 },
+    ]
+  }
+];
+
+function mapPipelineStepToEditableStep(step: PipelineStep, isSte: boolean): ScpStepConfig {
   return {
     stepOrder: step.stepOrder,
     kind: step.kind,
@@ -26,6 +64,7 @@ function mapPipelineStepToEditableStep(step: PipelineStep): ScpStepConfig {
     venue: null,
     notes: null,
     cutoffScore: null,
+    rubric: isSte && step.kind === "INTERVIEW" ? STE_DEFAULT_RUBRIC : null,
   };
 }
 
@@ -42,12 +81,12 @@ export function getDefaultProgramSteps(
     return [];
   }
 
-  return pipeline.map((step) => mapPipelineStepToEditableStep(step));
+  return pipeline.map((step) => mapPipelineStepToEditableStep(step, isSte));
 }
 
 export function getSteProgramSteps(isTwoPhase: boolean): ScpStepConfig[] {
   return getSteSteps(isTwoPhase).map((step) =>
-    mapPipelineStepToEditableStep(step),
+    mapPipelineStepToEditableStep(step, true),
   );
 }
 
@@ -61,7 +100,7 @@ export function mergeSteProgramSteps(
   const newDefinitions = getSteSteps(toTwoPhase);
 
   return newDefinitions.map((newDef) => {
-    const freshStep = mapPipelineStepToEditableStep(newDef);
+    const freshStep = mapPipelineStepToEditableStep(newDef, true);
 
     // Try to find a logical match in current steps to preserve data
     let matchedStep: ScpStepConfig | undefined;
@@ -94,6 +133,7 @@ export function mergeSteProgramSteps(
         venue: matchedStep.venue,
         notes: matchedStep.notes,
         cutoffScore: matchedStep.cutoffScore,
+        rubric: matchedStep.rubric,
       };
     }
 

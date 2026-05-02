@@ -214,7 +214,7 @@ export default function Apply() {
                     <div className="space-y-6 max-w-lg mx-auto">
                       <div className="space-y-2">
                         <h3 className="text-xl sm:text-2xl font-black text-black flex items-center justify-center gap-2">
-                          🔒 ONLINE ENROLLMENT IS CLOSED
+                          ONLINE ENROLLMENT IS CLOSED
                         </h3>
                         <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
                           S.Y. {activeSchoolYearLabel} classes have officially
@@ -224,7 +224,7 @@ export default function Apply() {
 
                       <div className="p-6 rounded-xl bg-amber-50 border-2 border-amber-200 text-left space-y-4 shadow-inner">
                         <div className="flex items-center gap-2 text-amber-900 font-black uppercase tracking-wider text-sm">
-                          <span className="text-xl">⚠️</span> LATE ENROLLMENT
+                          <span className="text-xl"></span> LATE ENROLLMENT
                           INSTRUCTIONS:
                         </div>
                         <p className="text-sm text-amber-900 font-bold leading-relaxed">
@@ -371,7 +371,9 @@ export default function Apply() {
                       transition={{ duration: 0.4, ease: "easeOut" }}>
                       <ReturningLearnerFlow
                         onBack={() => setIntakeChoice(null)}
-                        onSuccess={(data) => setSubmittedSuccessData(data as any)}
+                        onSuccess={(data) =>
+                          setSubmittedSuccessData(data as any)
+                        }
                       />
                     </motion.div>
                   ) : (

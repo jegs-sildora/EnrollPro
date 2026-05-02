@@ -18,11 +18,8 @@ interface PipelineBatchScpAssessmentInterviewGridProps {
   onScoreChange: (applicantId: number, value: string) => void;
   onAbsentNoShowChange: (applicantId: number, value: boolean) => void;
   isScoreInvalid: (value: string) => boolean;
-  getInterviewDecision: (applicantId: number) => "PASS" | "REJECT" | null;
-  onInterviewDecisionChange: (
-    applicantId: number,
-    decision: "PASS" | "REJECT",
-  ) => void;
+  getInterviewScore?: (applicantId: number) => string;
+  onInterviewScoreChange?: (applicantId: number, score: string) => void;
 }
 
 export default function PipelineBatchScpAssessmentInterviewGrid({
@@ -36,8 +33,8 @@ export default function PipelineBatchScpAssessmentInterviewGrid({
   onScoreChange,
   onAbsentNoShowChange,
   isScoreInvalid,
-  getInterviewDecision,
-  onInterviewDecisionChange,
+  getInterviewScore,
+  onInterviewScoreChange,
 }: PipelineBatchScpAssessmentInterviewGridProps) {
   const isAssessmentMode = mode === "RECORD_ASSESSMENT";
   const scoreInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
@@ -62,6 +59,15 @@ export default function PipelineBatchScpAssessmentInterviewGrid({
       });
     },
     [isAssessmentMode, onScoreChange],
+  );
+
+  const handleInterviewScoreChangeLocal = useCallback(
+    (applicantId: number, value: string) => {
+      if (onInterviewScoreChange) {
+        onInterviewScoreChange(applicantId, value);
+      }
+    },
+    [onInterviewScoreChange],
   );
 
   const columns = useMemo<ColumnDef<Application>[]>(() => {
@@ -251,41 +257,30 @@ export default function PipelineBatchScpAssessmentInterviewGrid({
       });
     } else {
       cols.push({
-        id: "interview",
-        header: "Did the learner pass the interview?",
+        id: "interviewScore",
+        header: "Interview Score (Rubric Total)",
         cell: ({ row }) => {
           const applicant = row.original;
-          const decision = getInterviewDecision(applicant.id);
-          const yesChecked = decision === "PASS";
-          const noChecked = decision === "REJECT";
+          const score = getInterviewScore?.(applicant.id) ?? "";
 
           return (
-            <div className="flex items-center justify-center gap-5 min-w-[270px]">
-              <label className="inline-flex items-center gap-2 text-xs font-bold cursor-pointer">
-                <Checkbox
-                  checked={yesChecked}
-                  onCheckedChange={(checked) => {
-                    if (!isAssessmentMode && checked) {
-                      onInterviewDecisionChange(applicant.id, "PASS");
-                    }
-                  }}
-                  disabled={isBatchProcessing || isAssessmentMode}
-                />
-                Yes
-              </label>
-
-              <label className="inline-flex items-center gap-2 text-xs font-bold cursor-pointer">
-                <Checkbox
-                  checked={noChecked}
-                  onCheckedChange={(checked) => {
-                    if (!isAssessmentMode && checked) {
-                      onInterviewDecisionChange(applicant.id, "REJECT");
-                    }
-                  }}
-                  disabled={isBatchProcessing || isAssessmentMode}
-                />
-                No
-              </label>
+            <div className="flex justify-center min-w-[200px]">
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                step="1"
+                value={score}
+                onChange={(event) =>
+                  handleInterviewScoreChangeLocal(
+                    applicant.id,
+                    event.target.value,
+                  )
+                }
+                disabled={isBatchProcessing}
+                placeholder="0 - 100"
+                className="h-8 w-24 text-center text-sm font-bold"
+              />
             </div>
           );
         },
@@ -303,9 +298,9 @@ export default function PipelineBatchScpAssessmentInterviewGrid({
     assessmentCutoffScore,
     hasConfiguredCutoffScore,
     isBatchProcessing,
-    getInterviewDecision,
+    getInterviewScore,
+    handleInterviewScoreChangeLocal,
     onAbsentNoShowChange,
-    onInterviewDecisionChange,
   ]);
 
   return (

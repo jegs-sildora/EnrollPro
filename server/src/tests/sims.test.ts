@@ -27,9 +27,11 @@ async function runTests() {
 
     const gradeLevel =
       (await prisma.gradeLevel.findFirst()) ||
-      (await prisma.gradeLevel.create({
-        data: { name: "Grade 7", displayOrder: 7, schoolYearId: activeYear.id },
-      }));
+      await prisma.gradeLevel.upsert({
+        where: { name: "Grade 7" },
+        update: {},
+        create: { name: "Grade 7", displayOrder: 7 },
+      });
 
     // Create a user for recording
     const user =

@@ -10,11 +10,12 @@
 ## Authentication
 
 ### `GET /auth/me`
+
 Verify the bearer token and return the authenticated identity.
 
-| | |
-|---|---|
-| **Auth** | Required |
+|             |          |
+| ----------- | -------- |
+| **Auth**    | Required |
 | **Success** | `200 OK` |
 
 ```json
@@ -31,11 +32,12 @@ Verify the bearer token and return the authenticated identity.
 ## Health
 
 ### `GET /health`
+
 Service liveness probe. No auth required.
 
-| | |
-|---|---|
-| **Auth** | None |
+|             |          |
+| ----------- | -------- |
+| **Auth**    | None     |
 | **Success** | `200 OK` |
 
 ```json
@@ -49,11 +51,12 @@ Service liveness probe. No auth required.
 **Public endpoints** (no auth required).
 
 ### `GET /subjects?schoolId=<id>`
+
 List all subjects for a school.
 
-| | |
-|---|---|
-| **Auth** | None |
+|             |          |
+| ----------- | -------- |
+| **Auth**    | None     |
 | **Success** | `200 OK` |
 
 ```json
@@ -75,11 +78,12 @@ List all subjects for a school.
 ---
 
 ### `GET /subjects/:id`
+
 Get a single subject by ID.
 
-| | |
-|---|---|
-| **Auth** | None |
+|             |          |
+| ----------- | -------- |
+| **Auth**    | None     |
 | **Success** | `200 OK` |
 
 ```json
@@ -89,11 +93,12 @@ Get a single subject by ID.
 ---
 
 ### `GET /subjects/stats/:schoolId`
+
 Subject dashboard counts for a school.
 
-| | |
-|---|---|
-| **Auth** | None |
+|             |          |
+| ----------- | -------- |
+| **Auth**    | None     |
 | **Success** | `200 OK` |
 
 ```json
@@ -106,10 +111,12 @@ Subject dashboard counts for a school.
 
 ---
 
-### `POST /subjects` 🔒
+### `POST /subjects`
+
 Create a custom subject.
 
 **Body:**
+
 ```json
 {
   "schoolId": 1,
@@ -121,9 +128,9 @@ Create a custom subject.
 }
 ```
 
-| | |
-|---|---|
-| **Auth** | Required |
+|             |               |
+| ----------- | ------------- |
+| **Auth**    | Required      |
 | **Success** | `201 Created` |
 
 ```json
@@ -132,12 +139,13 @@ Create a custom subject.
 
 ---
 
-### `PATCH /subjects/:id` 🔒
+### `PATCH /subjects/:id`
+
 Update subject fields.
 
-| | |
-|---|---|
-| **Auth** | Required |
+|             |          |
+| ----------- | -------- |
+| **Auth**    | Required |
 | **Success** | `200 OK` |
 
 ```json
@@ -146,24 +154,26 @@ Update subject fields.
 
 ---
 
-### `DELETE /subjects/:id` 🔒
+### `DELETE /subjects/:id`
+
 Delete a subject (blocked if it has active assignments).
 
-| | |
-|---|---|
-| **Auth** | Required |
+|             |                  |
+| ----------- | ---------------- |
+| **Auth**    | Required         |
 | **Success** | `204 No Content` |
 
 ---
 
-### `POST /subjects/seed` 🔒
+### `POST /subjects/seed`
+
 Seed the 9 default DepEd JHS subjects for a school (idempotent).
 
 **Body:** `{ "schoolId": 1 }`
 
-| | |
-|---|---|
-| **Auth** | Required |
+|             |          |
+| ----------- | -------- |
+| **Auth**    | Required |
 | **Success** | `200 OK` |
 
 ```json
@@ -174,12 +184,13 @@ Seed the 9 default DepEd JHS subjects for a school (idempotent).
 
 ## Faculty
 
-### `GET /faculty?schoolId=<id>` 🔒
+### `GET /faculty?schoolId=<id>`
+
 List all faculty members mirrored for a school.
 
-| | |
-|---|---|
-| **Auth** | Required |
+|             |          |
+| ----------- | -------- |
+| **Auth**    | Required |
 | **Success** | `200 OK` |
 
 ```json
@@ -202,12 +213,13 @@ List all faculty members mirrored for a school.
 
 ---
 
-### `GET /faculty/:id` 🔒
+### `GET /faculty/:id`
+
 Get one faculty member by ATLAS internal ID.
 
-| | |
-|---|---|
-| **Auth** | Required |
+|             |          |
+| ----------- | -------- |
+| **Auth**    | Required |
 | **Success** | `200 OK` |
 
 ```json
@@ -216,10 +228,12 @@ Get one faculty member by ATLAS internal ID.
 
 ---
 
-### `PATCH /faculty/:id` 🔒
+### `PATCH /faculty/:id`
+
 Update local scheduling metadata for a faculty member. Requires `version` for optimistic locking.
 
 **Body:**
+
 ```json
 {
   "isActiveForScheduling": true,
@@ -230,9 +244,9 @@ Update local scheduling metadata for a faculty member. Requires `version` for op
 }
 ```
 
-| | |
-|---|---|
-| **Auth** | Required |
+|             |          |
+| ----------- | -------- |
+| **Auth**    | Required |
 | **Success** | `200 OK` |
 
 ```json
@@ -243,14 +257,15 @@ Update local scheduling metadata for a faculty member. Requires `version` for op
 
 ---
 
-### `POST /faculty/sync` 🔒
+### `POST /faculty/sync`
+
 Trigger a full sync of faculty data from the EnrollPro adapter.
 
 **Body:** `{ "schoolId": 1 }`
 
-| | |
-|---|---|
-| **Auth** | Required |
+|             |          |
+| ----------- | -------- |
+| **Auth**    | Required |
 | **Success** | `200 OK` |
 
 ```json
@@ -261,12 +276,13 @@ Trigger a full sync of faculty data from the EnrollPro adapter.
 
 ## Faculty Assignments (Subject-to-Faculty)
 
-### `GET /faculty-assignments/summary?schoolId=<id>` 🔒
+### `GET /faculty-assignments/summary?schoolId=<id>`
+
 Teaching load summary for all faculty in a school.
 
-| | |
-|---|---|
-| **Auth** | Required |
+|             |          |
+| ----------- | -------- |
+| **Auth**    | Required |
 | **Success** | `200 OK` |
 
 ```json
@@ -284,12 +300,13 @@ Teaching load summary for all faculty in a school.
 
 ---
 
-### `GET /faculty-assignments/:facultyId` 🔒
+### `GET /faculty-assignments/:facultyId`
+
 Get all subject assignments for one faculty member.
 
-| | |
-|---|---|
-| **Auth** | Required |
+|             |          |
+| ----------- | -------- |
+| **Auth**    | Required |
 | **Success** | `200 OK` |
 
 ```json
@@ -302,10 +319,12 @@ Get all subject assignments for one faculty member.
 
 ---
 
-### `PUT /faculty-assignments/:facultyId` 🔒
+### `PUT /faculty-assignments/:facultyId`
+
 Replace all subject assignments for a faculty member (full replace).
 
 **Body:**
+
 ```json
 {
   "schoolId": 1,
@@ -316,9 +335,9 @@ Replace all subject assignments for a faculty member (full replace).
 }
 ```
 
-| | |
-|---|---|
-| **Auth** | Required |
+|             |          |
+| ----------- | -------- |
+| **Auth**    | Required |
 | **Success** | `200 OK` |
 
 ```json
@@ -329,12 +348,13 @@ Replace all subject assignments for a faculty member (full replace).
 
 ## Sections
 
-### `GET /sections/summary/:schoolYearId?schoolId=<id>` 🔒
+### `GET /sections/summary/:schoolYearId?schoolId=<id>`
+
 Section counts and list for a school year, sourced from EnrollPro or stub.
 
-| | |
-|---|---|
-| **Auth** | Required |
+|             |          |
+| ----------- | -------- |
+| **Auth**    | Required |
 | **Success** | `200 OK` |
 
 ```json
@@ -347,7 +367,12 @@ Section counts and list for a school year, sourced from EnrollPro or stub.
     "GRADE_10": 3
   },
   "sections": [
-    { "id": "ep-101", "name": "7-Rizal", "gradeLevel": "GRADE_7", "enrolled": 45 }
+    {
+      "id": "ep-101",
+      "name": "7-Rizal",
+      "gradeLevel": "GRADE_7",
+      "enrolled": 45
+    }
   ],
   "sourceMode": "enrollpro"
 }
@@ -359,13 +384,14 @@ Section counts and list for a school year, sourced from EnrollPro or stub.
 
 ## Faculty Preferences
 
-### `GET /preferences/:schoolId/:schoolYearId/faculty/:facultyId` 🔒
+### `GET /preferences/:schoolId/:schoolYearId/faculty/:facultyId`
+
 Get a faculty member's time-slot preferences.
 
-| | |
-|---|---|
-| **Auth** | Required (officer, admin, or own faculty ID) |
-| **Success** | `200 OK` |
+|             |                                              |
+| ----------- | -------------------------------------------- |
+| **Auth**    | Required (officer, admin, or own faculty ID) |
+| **Success** | `200 OK`                                     |
 
 ```json
 {
@@ -377,7 +403,12 @@ Get a faculty member's time-slot preferences.
     "status": "SUBMITTED",
     "notes": "Prefer mornings",
     "timeSlots": [
-      { "day": "MONDAY", "startTime": "07:00", "endTime": "12:00", "preference": "PREFERRED" }
+      {
+        "day": "MONDAY",
+        "startTime": "07:00",
+        "endTime": "12:00",
+        "preference": "PREFERRED"
+      }
     ],
     "version": 2
   }
@@ -386,25 +417,37 @@ Get a faculty member's time-slot preferences.
 
 ---
 
-### `PUT /preferences/:schoolId/:schoolYearId/faculty/:facultyId/draft` 🔒
+### `PUT /preferences/:schoolId/:schoolYearId/faculty/:facultyId/draft`
+
 Save a draft preference (does not submit).
 
 **Body:**
+
 ```json
 {
   "timeSlots": [
-    { "day": "MONDAY", "startTime": "07:00", "endTime": "12:00", "preference": "PREFERRED" },
-    { "day": "FRIDAY", "startTime": "13:00", "endTime": "17:00", "preference": "UNAVAILABLE" }
+    {
+      "day": "MONDAY",
+      "startTime": "07:00",
+      "endTime": "12:00",
+      "preference": "PREFERRED"
+    },
+    {
+      "day": "FRIDAY",
+      "startTime": "13:00",
+      "endTime": "17:00",
+      "preference": "UNAVAILABLE"
+    }
   ],
   "notes": "Available Mon–Thu only",
   "version": 1
 }
 ```
 
-| | |
-|---|---|
-| **Auth** | Required (officer, admin, or own faculty ID) |
-| **Success** | `200 OK` |
+|             |                                              |
+| ----------- | -------------------------------------------- |
+| **Auth**    | Required (officer, admin, or own faculty ID) |
+| **Success** | `200 OK`                                     |
 
 ```json
 { "preference": { "id": 5, "status": "DRAFT", "version": 2, ... } }
@@ -412,15 +455,16 @@ Save a draft preference (does not submit).
 
 ---
 
-### `POST /preferences/:schoolId/:schoolYearId/faculty/:facultyId/submit` 🔒
+### `POST /preferences/:schoolId/:schoolYearId/faculty/:facultyId/submit`
+
 Submit preference (locks it; requires preference window to be open).
 
 **Body:** Same as draft body + `"version": <n>`.
 
-| | |
-|---|---|
-| **Auth** | Required (officer, admin, or own faculty ID) |
-| **Success** | `200 OK` |
+|             |                                              |
+| ----------- | -------------------------------------------- |
+| **Auth**    | Required (officer, admin, or own faculty ID) |
+| **Success** | `200 OK`                                     |
 
 ```json
 { "preference": { "id": 5, "status": "SUBMITTED", "version": 3, ... } }
@@ -431,13 +475,14 @@ Submit preference (locks it; requires preference window to be open).
 
 ---
 
-### `GET /preferences/:schoolId/:schoolYearId/summary` 🔒
+### `GET /preferences/:schoolId/:schoolYearId/summary`
+
 Officer view: submission status for all faculty in a school year.
 
-| | |
-|---|---|
-| **Auth** | Required (officer or admin) |
-| **Success** | `200 OK` |
+|             |                             |
+| ----------- | --------------------------- |
+| **Auth**    | Required (officer or admin) |
+| **Success** | `200 OK`                    |
 
 ```json
 {
@@ -450,15 +495,16 @@ Officer view: submission status for all faculty in a school year.
 
 ---
 
-### `PATCH /preferences/:schoolId/:schoolYearId/status` 🔒
+### `PATCH /preferences/:schoolId/:schoolYearId/status`
+
 Set the preference collection lifecycle status (officer/admin only).
 
 **Body:** `{ "status": "PREFERENCE_COLLECTION" }` — one of `SETUP`, `PREFERENCE_COLLECTION`, `GENERATION`, `REVIEW`, `PUBLISHED`.
 
-| | |
-|---|---|
-| **Auth** | Required (officer or admin) |
-| **Success** | `200 OK` |
+|             |                             |
+| ----------- | --------------------------- |
+| **Auth**    | Required (officer or admin) |
+| **Success** | `200 OK`                    |
 
 ```json
 { "status": "PREFERENCE_COLLECTION" }
@@ -468,13 +514,14 @@ Set the preference collection lifecycle status (officer/admin only).
 
 ## Scheduling Policy
 
-### `GET /policies/scheduling/:schoolId/:schoolYearId` 🔒
+### `GET /policies/scheduling/:schoolId/:schoolYearId`
+
 Fetch scheduling policy for a school year (creates default if none exists).
 
-| | |
-|---|---|
-| **Auth** | Required (officer or admin) |
-| **Success** | `200 OK` |
+|             |                             |
+| ----------- | --------------------------- |
+| **Auth**    | Required (officer or admin) |
+| **Success** | `200 OK`                    |
 
 ```json
 {
@@ -497,15 +544,16 @@ Fetch scheduling policy for a school year (creates default if none exists).
 
 ---
 
-### `PUT /policies/scheduling/:schoolId/:schoolYearId` 🔒
+### `PUT /policies/scheduling/:schoolId/:schoolYearId`
+
 Create or update scheduling policy.
 
 **Body:** Any subset of policy fields.
 
-| | |
-|---|---|
-| **Auth** | Required (officer or admin) |
-| **Success** | `200 OK` |
+|             |                             |
+| ----------- | --------------------------- |
+| **Auth**    | Required (officer or admin) |
+| **Success** | `200 OK`                    |
 
 ```json
 { "policy": { ... } }
@@ -515,13 +563,14 @@ Create or update scheduling policy.
 
 ## Schedule Generation
 
-### `POST /generation/:schoolId/:schoolYearId/runs` 🔒
+### `POST /generation/:schoolId/:schoolYearId/runs`
+
 Trigger a new schedule generation run.
 
-| | |
-|---|---|
-| **Auth** | Required (officer or admin) |
-| **Success** | `201 Created` |
+|             |                             |
+| ----------- | --------------------------- |
+| **Auth**    | Required (officer or admin) |
+| **Success** | `201 Created`               |
 
 ```json
 {
@@ -538,13 +587,14 @@ Trigger a new schedule generation run.
 
 ---
 
-### `GET /generation/:schoolId/:schoolYearId/runs/latest` 🔒
+### `GET /generation/:schoolId/:schoolYearId/runs/latest`
+
 Get the most recent generation run.
 
-| | |
-|---|---|
-| **Auth** | Required (officer or admin) |
-| **Success** | `200 OK` |
+|             |                             |
+| ----------- | --------------------------- |
+| **Auth**    | Required (officer or admin) |
+| **Success** | `200 OK`                    |
 
 ```json
 {
@@ -561,13 +611,14 @@ Get the most recent generation run.
 
 ---
 
-### `GET /generation/:schoolId/:schoolYearId/runs/latest/violations` 🔒
+### `GET /generation/:schoolId/:schoolYearId/runs/latest/violations`
+
 Get constraint violations for the latest run.
 
-| | |
-|---|---|
-| **Auth** | Required (officer or admin) |
-| **Success** | `200 OK` |
+|             |                             |
+| ----------- | --------------------------- |
+| **Auth**    | Required (officer or admin) |
+| **Success** | `200 OK`                    |
 
 ```json
 {
@@ -586,13 +637,14 @@ Get constraint violations for the latest run.
 
 ---
 
-### `GET /generation/:schoolId/:schoolYearId/runs/latest/timetable` 🔒
+### `GET /generation/:schoolId/:schoolYearId/runs/latest/timetable`
+
 Full timetable entries for the latest run.
 
-| | |
-|---|---|
-| **Auth** | Required (officer or admin) |
-| **Success** | `200 OK` |
+|             |                             |
+| ----------- | --------------------------- |
+| **Auth**    | Required (officer or admin) |
+| **Success** | `200 OK`                    |
 
 ```json
 {
@@ -618,13 +670,14 @@ Full timetable entries for the latest run.
 
 ---
 
-### `GET /generation/:schoolId/:schoolYearId/runs/latest/fix-suggestions` 🔒
+### `GET /generation/:schoolId/:schoolYearId/runs/latest/fix-suggestions`
+
 AI-assisted suggestions for resolving hard violations.
 
-| | |
-|---|---|
-| **Auth** | Required (officer or admin) |
-| **Success** | `200 OK` |
+|             |                             |
+| ----------- | --------------------------- |
+| **Auth**    | Required (officer or admin) |
+| **Success** | `200 OK`                    |
 
 ```json
 {
@@ -642,10 +695,12 @@ AI-assisted suggestions for resolving hard violations.
 
 ## Manual Edits (Timetable Review)
 
-### `POST /generation/:schoolId/:schoolYearId/runs/:runId/manual-edits/preview` 🔒
+### `POST /generation/:schoolId/:schoolYearId/runs/:runId/manual-edits/preview`
+
 Preview the effect of a manual edit without committing.
 
 **Body:**
+
 ```json
 {
   "editType": "REASSIGN_ROOM",
@@ -654,10 +709,10 @@ Preview the effect of a manual edit without committing.
 }
 ```
 
-| | |
-|---|---|
-| **Auth** | Required (officer or admin) |
-| **Success** | `200 OK` |
+|             |                             |
+| ----------- | --------------------------- |
+| **Auth**    | Required (officer or admin) |
+| **Success** | `200 OK`                    |
 
 ```json
 {
@@ -670,22 +725,28 @@ Preview the effect of a manual edit without committing.
 
 ---
 
-### `POST /generation/:schoolId/:schoolYearId/runs/:runId/manual-edits/commit` 🔒
+### `POST /generation/:schoolId/:schoolYearId/runs/:runId/manual-edits/commit`
+
 Commit a manual edit to the timetable (with optimistic lock check).
 
 **Body:**
+
 ```json
 {
-  "proposal": { "editType": "REASSIGN_ROOM", "entryId": "entry-abc123", "newRoomId": 4 },
+  "proposal": {
+    "editType": "REASSIGN_ROOM",
+    "entryId": "entry-abc123",
+    "newRoomId": 4
+  },
   "expectedVersion": 3,
   "allowSoftOverride": false
 }
 ```
 
-| | |
-|---|---|
-| **Auth** | Required (officer or admin) |
-| **Success** | `200 OK` |
+|             |                             |
+| ----------- | --------------------------- |
+| **Auth**    | Required (officer or admin) |
+| **Success** | `200 OK`                    |
 
 ```json
 { "entry": { "id": "entry-abc123", "roomId": 4, ... }, "version": 4 }
@@ -697,13 +758,14 @@ Commit a manual edit to the timetable (with optimistic lock check).
 
 ## Follow-Up Flags
 
-### `GET /follow-up-flags/:schoolId/:schoolYearId/runs/:runId/flags` 🔒
+### `GET /follow-up-flags/:schoolId/:schoolYearId/runs/:runId/flags`
+
 List all follow-up flags for a generation run.
 
-| | |
-|---|---|
-| **Auth** | Required (officer or admin) |
-| **Success** | `200 OK` |
+|             |                             |
+| ----------- | --------------------------- |
+| **Auth**    | Required (officer or admin) |
+| **Success** | `200 OK`                    |
 
 ```json
 {
@@ -721,36 +783,44 @@ List all follow-up flags for a generation run.
 
 ---
 
-### `PUT /follow-up-flags/:schoolId/:schoolYearId/runs/:runId/flags/:entryId` 🔒
+### `PUT /follow-up-flags/:schoolId/:schoolYearId/runs/:runId/flags/:entryId`
+
 Toggle or update a follow-up flag on a timetable entry.
 
 **Body:** `{ "flagged": true, "note": "Optional note" }`
 
-| | |
-|---|---|
-| **Auth** | Required (officer or admin) |
-| **Success** | `200 OK` |
+|             |                             |
+| ----------- | --------------------------- |
+| **Auth**    | Required (officer or admin) |
+| **Success** | `200 OK`                    |
 
 ```json
-{ "flag": { "entryId": "entry-abc123", "flagged": true, "note": "Optional note" } }
+{
+  "flag": {
+    "entryId": "entry-abc123",
+    "flagged": true,
+    "note": "Optional note"
+  }
+}
 ```
 
 ---
 
 ## Room Schedules
 
-### `GET /room-schedules/:schoolId/:schoolYearId/rooms/:roomId?source=latest` 🔒
+### `GET /room-schedules/:schoolId/:schoolYearId/rooms/:roomId?source=latest`
+
 Get full weekly schedule for a room.
 
-| Query `source` | |
-|---|---|
-| `latest` | Use the most recent committed timetable (default) |
-| `run&runId=<id>` | Use a specific generation run |
+| Query `source`   |                                                   |
+| ---------------- | ------------------------------------------------- |
+| `latest`         | Use the most recent committed timetable (default) |
+| `run&runId=<id>` | Use a specific generation run                     |
 
-| | |
-|---|---|
-| **Auth** | Required (officer or admin) |
-| **Success** | `200 OK` |
+|             |                             |
+| ----------- | --------------------------- |
+| **Auth**    | Required (officer or admin) |
+| **Success** | `200 OK`                    |
 
 ```json
 {
@@ -775,11 +845,12 @@ Get full weekly schedule for a room.
 **Public endpoints** (no auth required).
 
 ### `GET /map/schools/:schoolId/buildings`
+
 Get all buildings and their rooms for a school.
 
-| | |
-|---|---|
-| **Auth** | None |
+|             |          |
+| ----------- | -------- |
+| **Auth**    | None     |
 | **Success** | `200 OK` |
 
 ```json
@@ -789,13 +860,22 @@ Get all buildings and their rooms for a school.
       "id": 1,
       "name": "Main Building",
       "shortCode": "MB",
-      "x": 100, "y": 80, "width": 200, "height": 150,
+      "x": 100,
+      "y": 80,
+      "width": 200,
+      "height": 150,
       "color": "#3B82F6",
       "rotation": 0,
       "floorCount": 3,
       "isTeachingBuilding": true,
       "rooms": [
-        { "id": 3, "name": "Room 101", "floor": 1, "type": "REGULAR", "capacity": 45 }
+        {
+          "id": 3,
+          "name": "Room 101",
+          "floor": 1,
+          "type": "REGULAR",
+          "capacity": 45
+        }
       ]
     }
   ]
@@ -805,11 +885,12 @@ Get all buildings and their rooms for a school.
 ---
 
 ### `GET /map/schools/:schoolId/campus-image`
+
 Get the campus image URL.
 
-| | |
-|---|---|
-| **Auth** | None |
+|             |          |
+| ----------- | -------- |
+| **Auth**    | None     |
 | **Success** | `200 OK` |
 
 ```json
@@ -818,12 +899,13 @@ Get the campus image URL.
 
 ---
 
-### `POST /map/schools/:schoolId/campus-image` 🔒
+### `POST /map/schools/:schoolId/campus-image`
+
 Upload a campus image (multipart/form-data, field name: `image`, max 5 MB, PNG/JPEG/WebP).
 
-| | |
-|---|---|
-| **Auth** | Required |
+|             |          |
+| ----------- | -------- |
+| **Auth**    | Required |
 | **Success** | `200 OK` |
 
 ```json
@@ -832,15 +914,20 @@ Upload a campus image (multipart/form-data, field name: `image`, max 5 MB, PNG/J
 
 ---
 
-### `POST /map/schools/:schoolId/buildings` 🔒
+### `POST /map/schools/:schoolId/buildings`
+
 Create a building.
 
 **Body:**
+
 ```json
 {
   "name": "Science Wing",
   "shortCode": "SW",
-  "x": 300, "y": 100, "width": 160, "height": 120,
+  "x": 300,
+  "y": 100,
+  "width": 160,
+  "height": 120,
   "color": "#10B981",
   "rotation": 0,
   "floorCount": 2,
@@ -848,9 +935,9 @@ Create a building.
 }
 ```
 
-| | |
-|---|---|
-| **Auth** | Required |
+|             |               |
+| ----------- | ------------- |
+| **Auth**    | Required      |
 | **Success** | `201 Created` |
 
 ```json
@@ -859,12 +946,13 @@ Create a building.
 
 ---
 
-### `PATCH /map/buildings/:id` 🔒
+### `PATCH /map/buildings/:id`
+
 Update building properties.
 
-| | |
-|---|---|
-| **Auth** | Required |
+|             |          |
+| ----------- | -------- |
+| **Auth**    | Required |
 | **Success** | `200 OK` |
 
 ```json
@@ -873,20 +961,23 @@ Update building properties.
 
 ---
 
-### `DELETE /map/buildings/:id` 🔒
+### `DELETE /map/buildings/:id`
+
 Delete a building and all its rooms.
 
-| | |
-|---|---|
-| **Auth** | Required |
+|             |                  |
+| ----------- | ---------------- |
+| **Auth**    | Required         |
 | **Success** | `204 No Content` |
 
 ---
 
-### `POST /map/buildings/:buildingId/rooms` 🔒
+### `POST /map/buildings/:buildingId/rooms`
+
 Add a room to a building.
 
 **Body:**
+
 ```json
 {
   "name": "Room 201",
@@ -898,9 +989,9 @@ Add a room to a building.
 }
 ```
 
-| | |
-|---|---|
-| **Auth** | Required |
+|             |               |
+| ----------- | ------------- |
+| **Auth**    | Required      |
 | **Success** | `201 Created` |
 
 ```json
@@ -909,12 +1000,13 @@ Add a room to a building.
 
 ---
 
-### `PATCH /map/rooms/:id` 🔒
+### `PATCH /map/rooms/:id`
+
 Update room properties.
 
-| | |
-|---|---|
-| **Auth** | Required |
+|             |          |
+| ----------- | -------- |
+| **Auth**    | Required |
 | **Success** | `200 OK` |
 
 ```json
@@ -923,33 +1015,35 @@ Update room properties.
 
 ---
 
-### `DELETE /map/rooms/:id` 🔒
+### `DELETE /map/rooms/:id`
+
 Delete a room.
 
-| | |
-|---|---|
-| **Auth** | Required |
+|             |                  |
+| ----------- | ---------------- |
+| **Auth**    | Required         |
 | **Success** | `204 No Content` |
 
 ---
 
 ## Common Error Responses
 
-| Status | `code` | Meaning |
-|--------|--------|---------|
-| `400` | `INVALID_PARAM` | Path/query parameter invalid (type, range) |
-| `400` | `MISSING_FIELDS` | Required body field absent |
-| `400` | `INVALID_BODY` | Body shape/value invalid |
-| `401` | `NO_USER` | Authenticated user identity missing |
-| `403` | `FORBIDDEN` | Role not permitted for this endpoint |
-| `404` | `NOT_FOUND` | Requested resource does not exist |
-| `409` | `CONFLICT` | Optimistic lock version mismatch |
-| `409` | `DUPLICATE` | Unique constraint violation |
-| `423` | `WINDOW_CLOSED` | Lifecycle phase gate blocks the action |
-| `503` | `UPSTREAM_UNAVAILABLE` | Upstream service (EnrollPro) unreachable |
-| `500` | — | Unhandled server error |
+| Status | `code`                 | Meaning                                    |
+| ------ | ---------------------- | ------------------------------------------ |
+| `400`  | `INVALID_PARAM`        | Path/query parameter invalid (type, range) |
+| `400`  | `MISSING_FIELDS`       | Required body field absent                 |
+| `400`  | `INVALID_BODY`         | Body shape/value invalid                   |
+| `401`  | `NO_USER`              | Authenticated user identity missing        |
+| `403`  | `FORBIDDEN`            | Role not permitted for this endpoint       |
+| `404`  | `NOT_FOUND`            | Requested resource does not exist          |
+| `409`  | `CONFLICT`             | Optimistic lock version mismatch           |
+| `409`  | `DUPLICATE`            | Unique constraint violation                |
+| `423`  | `WINDOW_CLOSED`        | Lifecycle phase gate blocks the action     |
+| `503`  | `UPSTREAM_UNAVAILABLE` | Upstream service (EnrollPro) unreachable   |
+| `500`  | —                      | Unhandled server error                     |
 
 All error responses follow the shape:
+
 ```json
 { "code": "ERROR_CODE", "message": "Human-readable description." }
 ```

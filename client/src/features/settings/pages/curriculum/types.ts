@@ -15,6 +15,19 @@ export interface ScpGradeRequirementRule {
   subjectThresholds?: ScpSubjectThreshold[];
 }
 
+export interface RubricCriterion {
+  id: string;
+  name: string;
+  description: string | null;
+  maxPts: number;
+}
+
+export interface RubricCategory {
+  id: string;
+  name: string;
+  criteria: RubricCriterion[];
+}
+
 export interface ScpStepConfig {
   id?: number;
   stepOrder: number;
@@ -27,6 +40,7 @@ export interface ScpStepConfig {
   venue: string | null;
   notes: string | null;
   cutoffScore: number | null;
+  rubric?: RubricCategory[] | null;
 }
 
 export interface ScpConfig {

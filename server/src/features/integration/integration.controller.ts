@@ -351,9 +351,7 @@ export async function listIntegrationSections(
   }
 
   const where: Record<string, unknown> = {
-    gradeLevel: {
-      schoolYearId: scope.schoolYearId,
-    },
+    schoolYearId: scope.schoolYearId,
   };
 
   if (gradeLevelId) {
@@ -384,7 +382,7 @@ export async function listIntegrationSections(
         },
       },
     },
-    orderBy: [{ gradeLevelId: "asc" }, { name: "asc" }],
+    orderBy: [{ gradeLevel: { displayOrder: "asc" } }, { name: "asc" }],
   });
 
   res.json({
@@ -395,16 +393,18 @@ export async function listIntegrationSections(
       maxCapacity: section.maxCapacity,
       enrolledCount: section._count.enrollmentRecords,
       gradeLevel: section.gradeLevel,
+      advisingTeacher: section.advisingTeacher
+        ? {
+            id: section.advisingTeacher.id,
+            firstName: section.advisingTeacher.firstName,
+            lastName: section.advisingTeacher.lastName,
+            middleName: section.advisingTeacher.middleName,
+          }
+        : null,
       schoolYear: {
         id: scope.schoolYearId,
         yearLabel: scope.schoolYearLabel,
       },
-      advisingTeacher: section.advisingTeacher
-        ? {
-            id: section.advisingTeacher.id,
-            name: buildTeacherName(section.advisingTeacher),
-          }
-        : null,
     })),
     meta: {
       scope,
@@ -450,9 +450,7 @@ export async function listSectionLearners(
   const section = await prisma.section.findFirst({
     where: {
       id: sectionId,
-      gradeLevel: {
-        schoolYearId: scope.schoolYearId,
-      },
+      schoolYearId: scope.schoolYearId,
     },
     include: {
       gradeLevel: {

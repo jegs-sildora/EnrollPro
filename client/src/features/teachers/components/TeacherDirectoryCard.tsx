@@ -174,7 +174,9 @@ export function TeacherDirectoryCard({
     {
       id: "photo",
       header: "",
-      size: 50,
+      size: 60,
+      minSize: 60,
+      maxSize: 60,
       cell: ({ row }) => (
         <div className="flex justify-center">
           <UserPhoto
@@ -188,14 +190,17 @@ export function TeacherDirectoryCard({
     {
       id: "teacher",
       accessorKey: "lastName",
+      size: 250,
+      minSize: 200,
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
           title="TEACHER"
+          className="justify-start pl-0"
         />
       ),
       cell: ({ row }) => (
-        <div className="flex flex-col text-left max-w-[220px]">
+        <div className="flex flex-col text-left">
           <span className="font-bold text-sm uppercase leading-tight">
             {formatTeacherName(row.original)}
           </span>
@@ -210,6 +215,8 @@ export function TeacherDirectoryCard({
     {
       id: "employeeId",
       accessorKey: "employeeId",
+      size: 130,
+      minSize: 120,
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
@@ -223,23 +230,64 @@ export function TeacherDirectoryCard({
       ),
     },
     {
-      id: "specialization",
-      accessorKey: "specialization",
+      id: "department",
+      accessorKey: "department",
+      size: 200,
+      minSize: 180,
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
-          title="LEARNING AREA / DEPARTMENT"
+          title="DEPT / SPECIALIZATION"
         />
       ),
       cell: ({ row }) => (
-        <span className="text-xs font-semibold block text-center break-words">
-          {row.original.specialization || "Not set"}
-        </span>
+        <div className="flex flex-col items-center text-center">
+          <span className="text-xs font-bold uppercase text-primary">
+            {row.original.department || "-"}
+          </span>
+          <span className="text-[10px] text-muted-foreground italic truncate">
+            {row.original.specialization || "Generalist"}
+          </span>
+        </div>
+      ),
+    },
+    {
+      id: "subjects",
+      size: 240,
+      minSize: 220,
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title="QUALIFIED SUBJECTS"
+        />
+      ),
+      cell: ({ row }) => (
+        <div className="flex flex-wrap justify-center gap-1">
+          {row.original.subjects.length > 0 ? (
+            row.original.subjects.slice(0, 3).map((sub) => (
+              <Badge
+                key={sub}
+                variant="outline"
+                className="text-[9px] px-1 py-0 h-4 bg-muted/50">
+                {sub}
+              </Badge>
+            ))
+          ) : (
+            <span className="text-[10px] text-muted-foreground">-</span>
+          )}
+          {row.original.subjects.length > 3 && (
+            <span className="text-[9px] text-muted-foreground">
+              +{row.original.subjects.length - 3}
+            </span>
+          )}
+        </div>
       ),
     },
     {
       id: "status",
       accessorKey: "isActive",
+      size: 120,
+      minSize: 100,
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
@@ -254,7 +302,14 @@ export function TeacherDirectoryCard({
     },
     {
       id: "designation",
-      header: "DESIGNATION",
+      size: 160,
+      minSize: 140,
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title="DESIGNATION"
+        />
+      ),
       cell: ({ row }) => (
         <span className="text-xs font-semibold block text-center break-words">
           {formatDesignationSummary(row.original)}
@@ -262,17 +317,15 @@ export function TeacherDirectoryCard({
       ),
     },
     {
-      id: "advisory",
-      header: "ADVISORY",
-      cell: ({ row }) => (
-        <div className="flex justify-center">
-          {renderAdvisoryStatus(row.original)}
-        </div>
-      ),
-    },
-    {
       id: "actions",
-      header: "ACTIONS",
+      size: 200,
+      minSize: 180,
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title="ACTIONS"
+        />
+      ),
       cell: ({ row }) => (
         <div className="w-full flex justify-center">
           {renderTeacherActions(row.original)}
@@ -443,11 +496,11 @@ export function TeacherDirectoryCard({
             )}
           </div>
 
-          <div className="hidden md:block w-full max-w-full overflow-x-hidden">
+          <div className="hidden md:block w-full max-w-full overflow-x-auto">
             <DataTable
               columns={columns}
               data={filteredTeachers}
-              tableClassName="table-fixed w-full"
+              tableClassName="min-w-full"
               loading={loading}
               virtualize={true}
               estimatedRowHeight={60}

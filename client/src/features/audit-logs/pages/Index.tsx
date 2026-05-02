@@ -15,6 +15,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Badge } from "@/shared/ui/badge";
+import { formatUserRole } from "@/shared/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 
 import type { ColumnDef } from "@tanstack/react-table";
@@ -99,7 +100,7 @@ export default function AuditLogs() {
               </p>
               {log.user && (
                 <p className="text-xs text-muted-foreground">
-                  ID {log.user.id} • {log.user.role}
+                  ID {log.user.id} • {formatUserRole(log.user.role)}
                 </p>
               )}
             </div>

@@ -31,9 +31,8 @@ interface Props {
     score: number,
     cutoffScore: number | null,
   ) => Promise<void>;
-  onSubmitInterviewResult?: (passed: boolean) => Promise<void>;
-  interviewPassChecked?: boolean;
-  onInterviewPassChange?: (checked: boolean) => void;
+  onSubmitInterviewResult?: (score: number) => Promise<void>;
+  interviewScore?: number | null;
 }
 
 const STATUS_CONFIG = {
@@ -70,6 +69,133 @@ const STATUS_CONFIG = {
     line: "bg-border",
   },
 } as const;
+
+function InterviewRubricCard({
+  currentScore,
+  onSubmitInterviewResult,
+}: {
+  currentScore: number | null;
+  onSubmitInterviewResult?: (score: number) => Promise<void>;
+}) {
+  const [submitting, setSubmitting] = useState(false);
+  const [scores, setScores] = useState({
+    understanding: 0,
+    elements: 0,
+    meaning: 0,
+    evidence: 0,
+    thinking: 0,
+    connection: 0,
+    organization: 0,
+    creativity: 0,
+    clarity: 0,
+  });
+
+  const totalScore = Object.values(scores).reduce((a, b) => a + b, 0);
+
+  const updateScore = (key: keyof typeof scores, val: string, max: number) => {
+    let num = parseInt(val) || 0;
+    if (num < 0) num = 0;
+    if (num > max) num = max;
+    setScores((prev) => ({ ...prev, [key]: num }));
+  };
+
+  const handleSubmit = async () => {
+    if (!onSubmitInterviewResult) return;
+    setSubmitting(true);
+    try {
+      await onSubmitInterviewResult(totalScore);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const rubric = [
+    {
+      group: "Image Interpretation (40 pts)",
+      items: [
+        { key: "understanding", label: "Understanding of the Image", max: 10 },
+        { key: "elements", label: "Analysis of Key Elements", max: 15 },
+        { key: "meaning", label: "Interpretation of Meaning", max: 15 },
+      ],
+    },
+    {
+      group: "Evidence (10 pts)",
+      items: [{ key: "evidence", label: "Use of Evidence", max: 10 }],
+    },
+    {
+      group: "Insight (35 pts)",
+      items: [
+        { key: "thinking", label: "Critical Thinking", max: 15 },
+        { key: "connection", label: "Connection to Relevant Concepts", max: 10 },
+        { key: "organization", label: "Organization & Structure", max: 10 },
+      ],
+    },
+    {
+      group: "Other (15 pts)",
+      items: [
+        { key: "creativity", label: "Creativity & Originality", max: 10 },
+        { key: "clarity", label: "Clarity of Expression", max: 5 },
+      ],
+    },
+  ];
+
+  return (
+    <div className="border border-violet-400/60 bg-violet-50/50 rounded-md p-4 space-y-4 mb-4">
+      <div className="flex items-center justify-between border-b border-violet-400/60 pb-2">
+        <div className="flex items-center gap-2 font-bold text-sm">
+          <span>&#128221;</span>
+          <span>STE Picture Analysis Rubric</span>
+        </div>
+        <Badge className="bg-violet-600 text-white font-black">
+          TOTAL: {totalScore} / 100
+        </Badge>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        {rubric.map((group) => (
+          <div key={group.group} className="space-y-3">
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-violet-700 opacity-70">
+              {group.group}
+            </h4>
+            {group.items.map((item) => (
+              <div key={item.key} className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <Label className="text-xs font-bold">{item.label}</Label>
+                  <span className="text-[10px] font-bold opacity-50">
+                    Max {item.max}
+                  </span>
+                </div>
+                <Input
+                  type="number"
+                  min="0"
+                  max={item.max}
+                  value={scores[item.key as keyof typeof scores] || ""}
+                  onChange={(e) =>
+                    updateScore(item.key as keyof typeof scores, e.target.value, item.max)
+                  }
+                  className="h-8 text-sm font-bold bg-white"
+                />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      <Button
+        className="w-full font-bold bg-violet-600 text-white hover:bg-violet-700 shadow-md shadow-violet-200"
+        disabled={submitting}
+        onClick={handleSubmit}>
+        {submitting ? "Saving result..." : "Submit Rubric Score"}
+      </Button>
+
+      {currentScore !== null && (
+        <p className="text-[10px] text-center font-bold text-violet-600 italic">
+          Last recorded score: {currentScore} / 100
+        </p>
+      )}
+    </div>
+  );
+}
 
 function InlineScoreCard({
   steps,
@@ -246,74 +372,11 @@ function InlineScoreCard({
   );
 }
 
-function InterviewResultCard({
-  passed,
-  onPassedChange,
-  onSubmitInterviewResult,
-}: {
-  passed: boolean;
-  onPassedChange: (checked: boolean) => void;
-  onSubmitInterviewResult?: (passed: boolean) => Promise<void>;
-}) {
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleSubmit = async () => {
-    if (!onSubmitInterviewResult) return;
-
-    setSubmitting(true);
-    try {
-      await onSubmitInterviewResult(passed);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="border border-violet-400/60 bg-violet-50/50 rounded-md p-3 space-y-3 mb-4">
-      <div className="flex items-center gap-2 font-bold text-sm border-b border-violet-400/60 pb-2">
-        <span>&#128221;</span>
-        <span>Faculty Interview Result</span>
-      </div>
-      <label className="flex items-center gap-2 cursor-pointer">
-        <Checkbox
-          checked={passed}
-          disabled={submitting}
-          onCheckedChange={(checked) => {
-            onPassedChange(checked === true);
-          }}
-          className="h-4 w-4 border-gray-300 data-[state=checked]:bg-violet-600 data-[state=checked]:border-violet-600"
-        />
-        <span className="text-sm font-bold">
-          Did the learner pass the interview?
-        </span>
-      </label>
-
-      <Button
-        className={`w-full font-bold ${
-          passed
-            ? "bg-emerald-600 text-white hover:bg-emerald-700"
-            : "bg-red-600 text-white hover:bg-red-700"
-        }`}
-        disabled={submitting}
-        onClick={() => {
-          void handleSubmit();
-        }}>
-        {submitting
-          ? "Saving interview result..."
-          : passed
-            ? "Mark as Passed"
-            : "Mark as Failed"}
-      </Button>
-    </div>
-  );
-}
-
 export function SCPAssessmentBlock({
   applicant,
   onSaveStepResult,
   onSubmitInterviewResult,
-  interviewPassChecked,
-  onInterviewPassChange,
+  interviewScore,
 }: Props) {
   if (applicant.applicantType === "REGULAR") return null;
 
@@ -460,12 +523,11 @@ export function SCPAssessmentBlock({
           <InlineScoreCard steps={steps} onSave={onSaveStepResult} />
         )}
 
-      {/* Interview Result Card — shown when interview is scheduled */}
+      {/* Interview Rubric Card — shown when interview is scheduled */}
       {applicant.status === "INTERVIEW_SCHEDULED" &&
         onSubmitInterviewResult && (
-          <InterviewResultCard
-            passed={interviewPassChecked ?? false}
-            onPassedChange={onInterviewPassChange ?? (() => {})}
+          <InterviewRubricCard
+            currentScore={interviewScore ?? null}
             onSubmitInterviewResult={onSubmitInterviewResult}
           />
         )}

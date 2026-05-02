@@ -24,7 +24,7 @@ interface ScpProgramCardProps {
     scpIndex: number,
     stepIndex: number,
     field: keyof ScpStepConfig,
-    value: string | boolean | number | null,
+    value: any,
   ) => void;
   onUpdateGradeRequirements: (
     index: number,

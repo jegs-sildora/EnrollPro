@@ -8,6 +8,7 @@ import type {
   ScpConfig,
   ScpGradeRequirementRule,
   ScpStepConfig,
+  RubricCategory,
 } from "../types";
 import {
   getDefaultProgramSteps,
@@ -30,7 +31,10 @@ function cloneScpConfigs(configs: ScpConfig[]): ScpConfig[] {
     sportsList: [...scp.sportsList],
     gradeRequirements: cloneUnknown(scp.gradeRequirements),
     rankingFormula: cloneUnknown(scp.rankingFormula),
-    steps: scp.steps.map((step) => ({ ...step })),
+    steps: scp.steps.map((step) => ({ 
+      ...step,
+      rubric: step.rubric ? cloneUnknown(step.rubric) : null
+    })),
   }));
 }
 
@@ -180,7 +184,6 @@ export function useCurriculumScpConfigs() {
         }
 
         if (field === "isTwoPhase") {
-          // Only reset steps if the value actually changed
           if (current[index].isTwoPhase !== value) {
             next[index] = {
               ...next[index],
@@ -203,21 +206,22 @@ export function useCurriculumScpConfigs() {
       scpIndex: number,
       stepIndex: number,
       field: keyof ScpStepConfig,
-      value: string | boolean | number | null,
+      value: any,
     ) => {
       setScpConfigs((current) => {
-        const next = [...current];
-        const steps = [...next[scpIndex].steps];
+        const next = cloneScpConfigs(current);
+        const steps = next[scpIndex].steps;
         const normalizedValue =
           field === "scheduledTime" &&
           (value == null || String(value).trim() === "")
             ? "08:00 AM"
             : value;
+        
         steps[stepIndex] = {
           ...steps[stepIndex],
           [field]: normalizedValue,
         };
-        next[scpIndex] = { ...next[scpIndex], steps };
+        
         return next;
       });
     },
@@ -258,11 +262,38 @@ export function useCurriculumScpConfigs() {
         notes: scp.notes ?? null,
         gradeRequirements: scp.gradeRequirements ?? null,
         rankingFormula: normalizeRankingFormulaForPayload(scp.rankingFormula),
-        steps: scp.steps.map((step) => ({
-          ...step,
-          venue: step.venue?.trim().toUpperCase() || null,
-          cutoffScore: step.cutoffScore ?? null,
-        })),
+        steps: scp.steps.map((step) => {
+           // EXPLICIT HIGH-FIDELITY SERIALIZATION
+           let cleanRubric: any[] | null = null;
+           
+           if (Array.isArray(step.rubric)) {
+              cleanRubric = (step.rubric as RubricCategory[]).map((cat) => ({
+                id: String(cat.id),
+                name: String(cat.name || ""),
+                criteria: cat.criteria.map((crit) => ({
+                  id: String(crit.id),
+                  name: String(crit.name || ""),
+                  description: crit.description ? String(crit.description) : null,
+                  maxPts: Number(crit.maxPts) || 0,
+                })),
+              }));
+           }
+
+           return {
+            id: step.id,
+            stepOrder: step.stepOrder,
+            kind: step.kind,
+            label: step.label,
+            description: step.description,
+            isRequired: step.isRequired,
+            scheduledDate: step.scheduledDate,
+            scheduledTime: step.scheduledTime,
+            venue: step.venue?.trim().toUpperCase() || null,
+            notes: step.notes ?? null,
+            cutoffScore: step.cutoffScore ?? null,
+            rubric: cleanRubric,
+           };
+        }),
       }));
 
       await api.put(`/curriculum/${ayId}/scp-config`, {

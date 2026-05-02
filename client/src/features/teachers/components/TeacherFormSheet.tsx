@@ -27,10 +27,11 @@ import {
   DEPED_LEARNING_AREA_OPTIONS,
   TEACHER_PLANTILLA_POSITION_OPTIONS,
   TEACHER_SUBJECT_OPTIONS,
+  TEACHER_DEPARTMENT_OPTIONS,
 } from "../utils";
 
 type TeacherFormField = Exclude<keyof TeacherFormState, "photo" | "subjects">;
-const EMPTY_LEARNING_AREA_VALUE = "__NONE__";
+const EMPTY_DEPARTMENT_VALUE = "__NONE__";
 const EMPTY_PLANTILLA_POSITION_VALUE = "__NONE__";
 
 interface TeacherFormSheetProps {
@@ -74,6 +75,15 @@ export function TeacherFormSheet({
   );
   const isResizing = useRef(false);
   const [isPhotoEnlarged, setIsPhotoEnlarged] = useState(false);
+  const [isSubjectsPopoverOpen, setIsSubjectsPopoverOpen] = useState(false);
+  const [subjectSearchTerm, setSubjectSearchTerm] = useState("");
+
+  useEffect(() => {
+    if (!open) {
+      setIsSubjectsPopoverOpen(false);
+      setSubjectSearchTerm("");
+    }
+  }, [open]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -133,9 +143,6 @@ export function TeacherFormSheet({
     };
   }, [stopResizing]);
 
-  const [isSubjectsPopoverOpen, setIsSubjectsPopoverOpen] = useState(false);
-  const [subjectSearchTerm, setSubjectSearchTerm] = useState("");
-
   const submitLabel = mode === "create" ? "Create Teacher" : "Save Changes";
   const submittingLabel = mode === "create" ? "Creating..." : "Saving...";
   const photoHint =
@@ -143,29 +150,6 @@ export function TeacherFormSheet({
       ? "Upload JPG, PNG, or WEBP (max 5 MB)."
       : "Upload a new photo to replace the current one.";
   const canShowPhoto = Boolean(photoPreviewUrl);
-  const learningAreaOptions = useMemo(() => {
-    const currentValue = formData.specialization.trim();
-    const hasCurrentValue = DEPED_LEARNING_AREA_OPTIONS.some(
-      (option) => option.value === currentValue,
-    );
-
-    if (!currentValue || hasCurrentValue) {
-      return DEPED_LEARNING_AREA_OPTIONS;
-    }
-
-    return [
-      ...DEPED_LEARNING_AREA_OPTIONS,
-      {
-        value: currentValue,
-        label: `${currentValue} (existing)`,
-      },
-    ] as const;
-  }, [formData.specialization]);
-
-  const selectedLearningAreaValue =
-    formData.specialization.trim().length > 0
-      ? formData.specialization
-      : EMPTY_LEARNING_AREA_VALUE;
 
   const selectedPlantillaPositionValue =
     formData.plantillaPosition.trim().length > 0
@@ -428,23 +412,23 @@ export function TeacherFormSheet({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Learning Area / Department</Label>
+                  <Label>Department</Label>
                   <Select
-                    value={selectedLearningAreaValue}
+                    value={formData.department || EMPTY_DEPARTMENT_VALUE}
                     onValueChange={(value) =>
                       onFieldChange(
-                        "specialization",
-                        value === EMPTY_LEARNING_AREA_VALUE ? "" : value,
+                        "department",
+                        value === EMPTY_DEPARTMENT_VALUE ? "" : value,
                       )
                     }>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a learning area" />
+                      <SelectValue placeholder="Select a department" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={EMPTY_LEARNING_AREA_VALUE}>
+                      <SelectItem value={EMPTY_DEPARTMENT_VALUE}>
                         Not set
                       </SelectItem>
-                      {learningAreaOptions.map((option) => (
+                      {TEACHER_DEPARTMENT_OPTIONS.map((option) => (
                         <SelectItem
                           key={option.value}
                           value={option.value}>
@@ -456,7 +440,23 @@ export function TeacherFormSheet({
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Teaching Subjects</Label>
+                  <Label>Specialization / Learning Area</Label>
+                  <Input
+                    placeholder="e.g. Pure Mathematics, Organic Chemistry"
+                    value={formData.specialization}
+                    onChange={(event) =>
+                      onFieldChange("specialization", event.target.value)
+                    }
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    Specific expertise within the department.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>Teaching Subjects (Qualifications)</Label>
                   <Popover
                     open={isSubjectsPopoverOpen}
                     onOpenChange={(nextOpen) => {

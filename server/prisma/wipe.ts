@@ -106,7 +106,7 @@ function hasPreservedCountMismatch(
 }
 
 async function main() {
-  console.log("⚠️  Starting learner/application data wipe...");
+  console.log("  Starting learner/application data wipe...");
 
   try {
     const preservedBefore = await getPreservedCounts(prisma);

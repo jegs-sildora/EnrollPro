@@ -89,6 +89,7 @@ model Teacher {
   email          String?   @map("email")
   contactNumber  String?   @map("contact_number")
   specialization String?
+  department     String?   @map("department") // For ATLAS integration: Languages, Mathematics, Science, etc.
   plantillaPosition String?   @map("plantilla_position")
   photoPath      String?   @map("photo_path")
   isActive       Boolean          @default(true) @map("is_active")
@@ -133,7 +134,7 @@ model SchoolYear {
   earlyRegCloseDate  DateTime?        @db.Date @map("early_reg_close_date")
   enrollOpenDate     DateTime?        @db.Date @map("enroll_open_date")
   enrollCloseDate    DateTime?        @db.Date @map("enroll_close_date")
-  isManualOverrideOpen Boolean        @default(false) @map("is_manual_override_open")
+  portalControl      PortalControl    @default(AUTO) @map("portal_control")
   sectioningConfig   Json?            @map("sectioning_config")
   bosyLockedAt       DateTime?        @db.Timestamptz @map("bosy_locked_at")
   bosyLockedById     Int?             @map("bosy_locked_by_id")
@@ -143,7 +144,7 @@ model SchoolYear {
   clonedFrom         SchoolYear?      @relation("SchoolYearClone", fields: [clonedFromId], references: [id])
   clones             SchoolYear[]     @relation("SchoolYearClone")
   bosyLockedBy       User?            @relation("SchoolYearLockedBy", fields: [bosyLockedById], references: [id])
-  gradeLevels        GradeLevel[]
+  sections           Section[]
   schoolSettings     SchoolSetting[]
   scpProgramConfigs  ScpProgramConfig[]
   healthRecords      HealthRecord[]
@@ -157,21 +158,18 @@ model SchoolYear {
   @@map("school_years")
 }
 
-/// JHS grade levels (e.g. Grade 7, Grade 10) cloned per school year
+/// JHS grade levels (e.g. Grade 7, Grade 10) - Permanent global records
 model GradeLevel {
   id             Int          @id @default(autoincrement())
-  name           String
+  name           String       @unique(map: "uq_grade_levels_name")
   displayOrder   Int          @map("display_order")
-  schoolYearId   Int          @map("school_year_id")
   createdAt      DateTime     @default(now()) @db.Timestamptz @map("created_at")
   
-  schoolYear     SchoolYear   @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
   sections       Section[]
   
   earlyRegistrationApplications EarlyRegistrationApplication[]
   enrollmentApplications        EnrollmentApplication[]
 
-  @@index([schoolYearId], name: "idx_grade_levels_school_year_id")
   @@map("grade_levels")
 }
 
@@ -183,6 +181,7 @@ model Section {
   sortOrder         Int          @default(9999) @map("sort_order")
   maxCapacity       Int          @default(40) @map("max_capacity")
   gradeLevelId      Int          @map("grade_level_id")
+  schoolYearId      Int          @map("school_year_id")
   programType       ApplicantType @default(REGULAR) @map("program_type")
   isHomogeneous     Boolean      @default(false) @map("is_homogeneous")
   isSnake           Boolean      @default(false) @map("is_snake")
@@ -193,12 +192,14 @@ model Section {
   
   advisingTeacher   Teacher?     @relation(fields: [advisingTeacherId], references: [id])
   gradeLevel        GradeLevel   @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
+  schoolYear        SchoolYear   @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
   enrollmentRecords EnrollmentRecord[]
   teacherDesignations TeacherDesignation[] @relation("TeacherDesignationAdvisorySection")
 
   @@index([gradeLevelId], name: "idx_sections_grade_level_id")
+  @@index([schoolYearId], name: "idx_sections_school_year_id")
   @@index([gradeLevelId, programType], name: "idx_sections_grade_level_program_type")
-  @@unique([name, gradeLevelId], name: "uq_sections_name_grade")
+  @@unique([name, gradeLevelId, schoolYearId], name: "uq_sections_name_grade_sy")
   @@map("sections")
 }
 
@@ -517,6 +518,7 @@ model EnrollmentRecord {
   transferOutDate       DateTime?    @db.Date @map("transfer_out_date")
   transferOutSchoolName String?      @map("transfer_out_school_name")
   transferOutReason     String?      @map("transfer_out_reason")
+  sf1Remarks            String?      @map("sf1_remarks")
   
   schoolYear            SchoolYear   @relation(fields: [schoolYearId], references: [id])
   enrollmentApplication EnrollmentApplication @relation(fields: [enrollmentApplicationId], references: [id], onDelete: Cascade)
@@ -620,12 +622,43 @@ model ScpProgramStep {
   venue         String?
   notes         String?
   cutoffScore   Float?         @map("cutoff_score")
+  rubric        Json?
   
   scpProgramConfig   ScpProgramConfig @relation(fields: [scpProgramConfigId], references: [id], onDelete: Cascade)
+  rubricCategories   RubricCategory[]
 
   @@unique([scpProgramConfigId, stepOrder], name: "uq_scp_program_steps_order")
   @@index([scpProgramConfigId], name: "idx_scp_program_steps_config_id")
   @@map("scp_program_steps")
+}
+
+/// Dynamic rubric categories for an assessment step
+model RubricCategory {
+  id               Int            @id @default(autoincrement())
+  scpProgramStepId Int            @map("scp_program_step_id")
+  name             String
+  displayOrder     Int            @default(0) @map("display_order")
+  
+  scpProgramStep   ScpProgramStep @relation(fields: [scpProgramStepId], references: [id], onDelete: Cascade)
+  criteria         RubricCriterion[]
+
+  @@index([scpProgramStepId], name: "idx_rubric_categories_step_id")
+  @@map("rubric_categories")
+}
+
+/// Individual scoring criteria within a rubric category
+model RubricCriterion {
+  id               Int            @id @default(autoincrement())
+  rubricCategoryId Int            @map("rubric_category_id")
+  name             String
+  description      String?
+  maxPts           Float          @map("max_pts")
+  displayOrder     Int            @default(0) @map("display_order")
+  
+  category         RubricCategory @relation(fields: [rubricCategoryId], references: [id], onDelete: Cascade)
+
+  @@index([rubricCategoryId], name: "idx_rubric_criteria_category_id")
+  @@map("rubric_criteria")
 }
 
 /// Options for SCP configuration
@@ -941,4 +974,13 @@ enum SectioningMethod {
   INLINE_SLOTTING
 
   @@map("sectioning_method")
+}
+
+enum PortalControl {
+  AUTO
+  FORCE_OPEN_PHASE_1
+  FORCE_OPEN_PHASE_2
+  FORCE_CLOSE_ALL
+
+  @@map("portal_control")
 }

@@ -2,12 +2,27 @@ import type { Request, Response, NextFunction } from "express";
 import { AppError } from "../lib/AppError.js";
 
 export function errorHandler(
-  err: Error & { statusCode?: number; code?: string },
+  err: unknown,
   req: Request,
   res: Response,
   _next: NextFunction,
 ): void {
-  console.error("[Error Details]", err);
+  const error = err as Error & { 
+    statusCode?: number; 
+    status?: number; 
+    code?: string; 
+    details?: unknown;
+    stack?: string;
+  };
+
+  const status = error.statusCode || error.status || 500;
+  
+  // Log detailed error info to server console
+  console.error(`[Error] ${req.method} ${req.path} - Status: ${status}`);
+  console.error(`[Origin] ${req.headers.origin || "no origin"}`);
+  console.error(`[Message] ${error.message || "Unknown error"}`);
+  if (error.stack) console.error(`[Stack] ${error.stack}`);
+  if (error.details) console.error(`[Details]`, JSON.stringify(error.details, null, 2));
 
   if (err instanceof AppError) {
     res
@@ -16,18 +31,21 @@ export function errorHandler(
     return;
   }
 
-  const status = err.statusCode ?? 500;
   const code =
-    err.code ?? (status >= 500 ? "INTERNAL_SERVER_ERROR" : "REQUEST_ERROR");
+    error.code ?? (status >= 500 ? "INTERNAL_SERVER_ERROR" : "REQUEST_ERROR");
+    
   res
     .status(status)
     .json({ 
       code, 
-      message: err.message || "Internal Server Error",
-      debug: {
-        message: err.message,
-        stack: err.stack,
-        details: (err as any).details
-      }
+      message: error.message || "Internal Server Error",
+      debug: process.env.NODE_ENV === 'development' ? {
+        message: error.message,
+        stack: error.stack,
+        details: error.details,
+        path: req.path,
+        method: req.method,
+        origin: req.headers.origin
+      } : undefined
     });
 }

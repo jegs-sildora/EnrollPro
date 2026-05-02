@@ -7,65 +7,100 @@ import {
   getSteSteps,
   type ScpType,
 } from "@enrollpro/shared";
+import { Prisma } from "../../generated/prisma/index.js";
+
+// ─── Helpers ──────────────────────────────────────────────
 
 function normalizePositiveInteger(value: unknown): number | null {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    return null;
-  }
-
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
   const normalized = Math.trunc(value);
   return normalized > 0 ? normalized : null;
 }
 
-function extractMaxSlotsFromRankingFormula(
-  rankingFormula: unknown,
-): number | null {
-  if (
-    !rankingFormula ||
-    typeof rankingFormula !== "object" ||
-    Array.isArray(rankingFormula)
-  ) {
-    return null;
-  }
-
-  return normalizePositiveInteger(
-    (rankingFormula as Record<string, unknown>).maxSlots,
-  );
+function extractMaxSlotsFromRankingFormula(rankingFormula: unknown): number | null {
+  if (!rankingFormula || typeof rankingFormula !== "object" || Array.isArray(rankingFormula)) return null;
+  return normalizePositiveInteger((rankingFormula as Record<string, unknown>).maxSlots);
 }
 
-function mergeMaxSlotsIntoRankingFormula(
-  rankingFormula: unknown,
-  maxSlots: unknown,
-): Record<string, unknown> | null {
-  const baseRankingFormula =
-    rankingFormula &&
-    typeof rankingFormula === "object" &&
-    !Array.isArray(rankingFormula)
-      ? { ...(rankingFormula as Record<string, unknown>) }
-      : {};
-
+function mergeMaxSlotsIntoRankingFormula(rankingFormula: unknown, maxSlots: unknown): Record<string, unknown> | null {
+  const baseRankingFormula = rankingFormula && typeof rankingFormula === "object" && !Array.isArray(rankingFormula)
+    ? { ...(rankingFormula as Record<string, unknown>) }
+    : {};
   const normalizedMaxSlots = normalizePositiveInteger(maxSlots);
-  if (normalizedMaxSlots == null) {
-    delete baseRankingFormula.maxSlots;
-  } else {
-    baseRankingFormula.maxSlots = normalizedMaxSlots;
-  }
-
+  if (normalizedMaxSlots == null) delete baseRankingFormula.maxSlots;
+  else baseRankingFormula.maxSlots = normalizedMaxSlots;
   return Object.keys(baseRankingFormula).length > 0 ? baseRankingFormula : null;
 }
 
+/**
+ * Standard transformation of ScpProgramConfig with its relations 
+ * into the shape the frontend expects.
+ */
+async function transformScpConfigs(configs: any[]) {
+  return configs.map((cfg) => ({
+    id: cfg.id,
+    scpType: cfg.scpType,
+    isOffered: cfg.isOffered,
+    isTwoPhase: cfg.isTwoPhase ?? false,
+    maxSlots: extractMaxSlotsFromRankingFormula(cfg.rankingFormula),
+    cutoffScore: cfg.cutoffScore,
+    notes: cfg.notes,
+    gradeRequirements: cfg.gradeRequirements,
+    rankingFormula: cfg.rankingFormula,
+    artFields: cfg.options.filter((o: any) => o.optionType === "ART_FIELD").map((o: any) => o.value),
+    languages: cfg.options.filter((o: any) => o.optionType === "LANGUAGE").map((o: any) => o.value),
+    sportsList: cfg.options.filter((o: any) => o.optionType === "SPORT").map((o: any) => o.value),
+    steps: cfg.steps.map((step: any) => ({
+      id: step.id,
+      stepOrder: step.stepOrder,
+      kind: step.kind,
+      label: step.label,
+      description: step.description,
+      isRequired: step.isRequired,
+      scheduledDate: step.scheduledDate,
+      scheduledTime: step.scheduledTime,
+      venue: step.venue,
+      notes: step.notes,
+      cutoffScore: step.cutoffScore,
+      // Map relational rubric back to JSON array for UI
+      rubric: (step.rubricCategories || []).map((cat: any) => ({
+        id: String(cat.id),
+        name: cat.name,
+        criteria: (cat.criteria || []).map((crit: any) => ({
+          id: String(crit.id),
+          name: crit.name,
+          description: crit.description,
+          maxPts: crit.maxPts,
+        })),
+      })),
+    })),
+  }));
+}
+
+const SCP_FETCH_INCLUDE = {
+  options: true,
+  steps: {
+    orderBy: { stepOrder: "asc" as const },
+    include: {
+      rubricCategories: {
+        orderBy: { displayOrder: "asc" as const },
+        include: {
+          criteria: { orderBy: { displayOrder: "asc" as const } },
+        },
+      },
+    },
+  },
+};
+
 // ─── Grade Levels ─────────────────────────────────────────
 
-export async function listGradeLevels(
-  req: Request,
-  res: Response,
-): Promise<void> {
+export async function listGradeLevels(req: Request, res: Response): Promise<void> {
   const ayId = parseInt(req.params.ayId as string);
   const gradeLevels = await prisma.gradeLevel.findMany({
-    where: { schoolYearId: ayId },
     orderBy: { displayOrder: "asc" },
     include: {
       sections: {
+        where: { schoolYearId: ayId },
         include: { _count: { select: { enrollmentRecords: true } } },
       },
     },
@@ -73,30 +108,16 @@ export async function listGradeLevels(
   res.json({ gradeLevels });
 }
 
-export async function createGradeLevel(
-  req: Request,
-  res: Response,
-): Promise<void> {
-  const ayId = parseInt(req.params.ayId as string);
+export async function createGradeLevel(req: Request, res: Response): Promise<void> {
   const { name, displayOrder } = req.body;
-
   if (!name) {
     res.status(400).json({ message: "Name is required" });
     return;
   }
-
-  const count = await prisma.gradeLevel.count({
-    where: { schoolYearId: ayId },
-  });
-
+  const count = await prisma.gradeLevel.count();
   const gl = await prisma.gradeLevel.create({
-    data: {
-      name,
-      displayOrder: displayOrder ?? count + 1,
-      schoolYearId: ayId,
-    },
+    data: { name, displayOrder: displayOrder ?? count + 1 },
   });
-
   await auditLog({
     userId: req.user!.userId,
     actionType: "GRADE_LEVEL_CREATED",
@@ -105,61 +126,39 @@ export async function createGradeLevel(
     recordId: gl.id,
     req,
   });
-
   res.status(201).json({ gradeLevel: gl });
 }
 
-export async function updateGradeLevel(
-  req: Request,
-  res: Response,
-): Promise<void> {
+export async function updateGradeLevel(req: Request, res: Response): Promise<void> {
   const id = parseInt(req.params.id as string);
   const { name, displayOrder } = req.body;
-
   const gl = await prisma.gradeLevel.findUnique({ where: { id } });
   if (!gl) {
     res.status(404).json({ message: "Grade level not found" });
     return;
   }
-
   const updated = await prisma.gradeLevel.update({
     where: { id },
-    data: {
-      ...(name ? { name } : {}),
-      ...(displayOrder !== undefined ? { displayOrder } : {}),
-    },
+    data: { ...(name ? { name } : {}), ...(displayOrder !== undefined ? { displayOrder } : {}) },
   });
-
   res.json({ gradeLevel: updated });
 }
 
-export async function deleteGradeLevel(
-  req: Request,
-  res: Response,
-): Promise<void> {
+export async function deleteGradeLevel(req: Request, res: Response): Promise<void> {
   const id = parseInt(req.params.id as string);
-
   const gl = await prisma.gradeLevel.findUnique({
     where: { id },
-    include: {
-      _count: { select: { sections: true, enrollmentApplications: true } },
-    },
+    include: { _count: { select: { sections: true, enrollmentApplications: true } } },
   });
-
   if (!gl) {
     res.status(404).json({ message: "Grade level not found" });
     return;
   }
-
   if (gl._count.enrollmentApplications > 0) {
-    res.status(400).json({
-      message: "Cannot delete a grade level with existing applicants",
-    });
+    res.status(400).json({ message: "Cannot delete a grade level with existing applicants" });
     return;
   }
-
   await prisma.gradeLevel.delete({ where: { id } });
-
   await auditLog({
     userId: req.user!.userId,
     actionType: "GRADE_LEVEL_DELETED",
@@ -168,51 +167,22 @@ export async function deleteGradeLevel(
     recordId: id,
     req,
   });
-
   res.json({ message: "Grade level deleted" });
 }
 
 // ─── SCP Configs ──────────────────────────────────────────
 
-export async function listScpConfigs(
-  req: Request,
-  res: Response,
-): Promise<void> {
+export async function listScpConfigs(req: Request, res: Response): Promise<void> {
   const ayId = parseInt(req.params.ayId as string);
   const scpProgramConfigs = await prisma.scpProgramConfig.findMany({
     where: { schoolYearId: ayId },
-    include: {
-      options: true,
-      steps: { orderBy: { stepOrder: "asc" } },
-    },
+    include: SCP_FETCH_INCLUDE,
   });
-
-  // Transform options back to the flat array shape the client expects
-  const transformed = scpProgramConfigs.map((cfg) => ({
-    ...cfg,
-    isTwoPhase: cfg.isTwoPhase ?? false,
-    maxSlots: extractMaxSlotsFromRankingFormula(cfg.rankingFormula),
-    gradeRequirements: cfg.gradeRequirements ?? null,
-    rankingFormula: cfg.rankingFormula ?? null,
-    artFields: cfg.options
-      .filter((o) => o.optionType === "ART_FIELD")
-      .map((o) => o.value),
-    languages: cfg.options
-      .filter((o) => o.optionType === "LANGUAGE")
-      .map((o) => o.value),
-    sportsList: cfg.options
-      .filter((o) => o.optionType === "SPORT")
-      .map((o) => o.value),
-    options: undefined,
-  }));
-
+  const transformed = await transformScpConfigs(scpProgramConfigs);
   res.json({ scpProgramConfigs: transformed });
 }
 
-export async function updateScpConfigs(
-  req: Request,
-  res: Response,
-): Promise<void> {
+export async function updateScpConfigs(req: Request, res: Response): Promise<void> {
   const ayId = parseInt(req.params.ayId as string);
   const { scpProgramConfigs } = req.body;
 
@@ -222,147 +192,101 @@ export async function updateScpConfigs(
   }
 
   try {
-    const updatedConfigs = await prisma.$transaction(async (tx) => {
-      const results = [];
-
+    const finalConfigs = await prisma.$transaction(async (tx) => {
       for (const config of scpProgramConfigs) {
         const {
-          id,
-          scpType,
-          isOffered,
-          isTwoPhase,
-          maxSlots,
-          cutoffScore,
-          notes,
-          gradeRequirements,
-          rankingFormula,
-          artFields,
-          languages,
-          sportsList,
-          steps,
+          id, scpType, isOffered, isTwoPhase, maxSlots, cutoffScore,
+          notes, gradeRequirements, rankingFormula, artFields,
+          languages, sportsList, steps,
         } = config;
 
-        const scpData: Record<string, unknown> = {
+        const scpData: Record<string, any> = {
           isOffered: isOffered ?? false,
           isTwoPhase: isTwoPhase ?? false,
           cutoffScore: cutoffScore ?? null,
         };
 
-        if (Object.prototype.hasOwnProperty.call(config, "notes")) {
-          scpData.notes = notes ?? null;
-        }
-        if (Object.prototype.hasOwnProperty.call(config, "gradeRequirements")) {
+        if (Object.prototype.hasOwnProperty.call(config, "notes")) scpData.notes = notes ?? null;
+        if (Object.prototype.hasOwnProperty.call(config, "gradeRequirements"))
           scpData.gradeRequirements = gradeRequirements ?? null;
-        }
-        if (
-          Object.prototype.hasOwnProperty.call(config, "rankingFormula") ||
-          Object.prototype.hasOwnProperty.call(config, "maxSlots")
-        ) {
-          scpData.rankingFormula = mergeMaxSlotsIntoRankingFormula(
-            rankingFormula,
-            maxSlots,
-          );
+        if (Object.prototype.hasOwnProperty.call(config, "rankingFormula") || Object.prototype.hasOwnProperty.call(config, "maxSlots")) {
+          scpData.rankingFormula = mergeMaxSlotsIntoRankingFormula(rankingFormula, maxSlots);
         }
 
         let scpProgramConfig;
         if (id) {
-          scpProgramConfig = await tx.scpProgramConfig.update({
-            where: { id },
-            data: scpData,
-          });
-          // Delete existing options for this config and re-create
-          await tx.scpProgramOption.deleteMany({
-            where: { scpProgramConfigId: id },
-          });
-          // Delete existing steps and re-create
-          await tx.scpProgramStep.deleteMany({
-            where: { scpProgramConfigId: id },
-          });
+          scpProgramConfig = await tx.scpProgramConfig.update({ where: { id }, data: scpData });
+          await tx.scpProgramOption.deleteMany({ where: { scpProgramConfigId: id } });
+          await tx.scpProgramStep.deleteMany({ where: { scpProgramConfigId: id } });
         } else {
           scpProgramConfig = await tx.scpProgramConfig.create({
             data: { schoolYearId: ayId, scpType, ...scpData },
           });
         }
 
-        // Build option records
-        const optionData: any[] = [];
-        for (const v of artFields ?? []) {
-          optionData.push({
-            scpProgramConfigId: scpProgramConfig.id,
-            optionType: "ART_FIELD",
-            value: v,
-          });
-        }
-        for (const v of languages ?? []) {
-          optionData.push({
-            scpProgramConfigId: scpProgramConfig.id,
-            optionType: "LANGUAGE",
-            value: v,
-          });
-        }
-        for (const v of sportsList ?? []) {
-          optionData.push({
-            scpProgramConfigId: scpProgramConfig.id,
-            optionType: "SPORT",
-            value: v,
-          });
-        }
-        if (optionData.length > 0) {
-          await tx.scpProgramOption.createMany({ data: optionData });
-        }
+        const optionData = [
+          ...(artFields ?? []).map((v: string) => ({ scpProgramConfigId: scpProgramConfig.id, optionType: "ART_FIELD" as const, value: v })),
+          ...(languages ?? []).map((v: string) => ({ scpProgramConfigId: scpProgramConfig.id, optionType: "LANGUAGE" as const, value: v })),
+          ...(sportsList ?? []).map((v: string) => ({ scpProgramConfigId: scpProgramConfig.id, optionType: "SPORT" as const, value: v })),
+        ];
+        if (optionData.length > 0) await tx.scpProgramOption.createMany({ data: optionData });
 
-        // Build assessment step records from DepEd pipeline (immutable)
-        // Only scheduledDate, scheduledTime, venue, and notes come from the client
-        // For STE, select the 1-phase or 2-phase pipeline based on the toggle
-        const pipeline =
-          scpType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING"
-            ? getSteSteps(isTwoPhase ?? false)
-            : (SCP_DEFAULT_PIPELINES[scpType as ScpType] ?? []);
+        const pipeline = scpType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING"
+          ? getSteSteps(isTwoPhase ?? false)
+          : (SCP_DEFAULT_PIPELINES[scpType as ScpType] ?? []);
 
         if (isOffered && pipeline.length > 0) {
-          // Build a lookup map for client-provided schedule overrides keyed by stepOrder
-          const clientSteps = Array.isArray(steps) ? steps : [];
-          const scheduleMap = new Map<
-            number,
-            {
-              scheduledDate?: string;
-              scheduledTime?: string;
-              venue?: string;
-              notes?: string;
-              cutoffScore?: number;
-            }
-          >();
-          for (const s of clientSteps) {
-            if (s.stepOrder) {
-              scheduleMap.set(s.stepOrder, s);
-            }
-          }
-
-          const stepData = pipeline.map((pipelineStep) => {
-            const override = scheduleMap.get(pipelineStep.stepOrder);
-            return {
-              scpProgramConfigId: scpProgramConfig.id,
-              stepOrder: pipelineStep.stepOrder,
-              kind: pipelineStep.kind as any,
-              label: pipelineStep.label,
-              description: pipelineStep.description,
-              isRequired: pipelineStep.isRequired,
-              scheduledDate: override?.scheduledDate
-                ? normalizeDateToUtcNoon(new Date(override.scheduledDate))
-                : null,
-              scheduledTime: override?.scheduledTime ?? null,
-              venue: override?.venue ?? null,
-              notes: override?.notes ?? null,
-              cutoffScore: override?.cutoffScore ?? null,
-            };
+          const clientStepMap = new Map<string, any>();
+          (steps || []).forEach((s: any) => {
+            clientStepMap.set(`order-${s.stepOrder}`, s);
+            if (s.kind) clientStepMap.set(`kind-${s.kind}`, s);
           });
-          await tx.scpProgramStep.createMany({ data: stepData });
-        }
 
-        results.push(scpProgramConfig);
+          for (const pipelineStep of pipeline) {
+            const clientStep = clientStepMap.get(`order-${pipelineStep.stepOrder}`) || clientStepMap.get(`kind-${pipelineStep.kind}`);
+            
+            // USE ATOMIC NESTED CREATE FOR GUARANTEED RELATIONAL INTEGRITY
+            const rubricData = clientStep?.rubric;
+            const hasRubric = Array.isArray(rubricData) && rubricData.length > 0;
+
+            await tx.scpProgramStep.create({
+              data: {
+                scpProgramConfigId: scpProgramConfig.id,
+                stepOrder: pipelineStep.stepOrder,
+                kind: pipelineStep.kind as any,
+                label: pipelineStep.label,
+                description: pipelineStep.description,
+                isRequired: pipelineStep.isRequired,
+                scheduledDate: clientStep?.scheduledDate ? normalizeDateToUtcNoon(new Date(clientStep.scheduledDate)) : null,
+                scheduledTime: clientStep?.scheduledTime ?? null,
+                venue: clientStep?.venue ?? null,
+                notes: clientStep?.notes ?? null,
+                cutoffScore: clientStep?.cutoffScore ?? null,
+                rubric: rubricData || null, // Keep JSON for safety
+                rubricCategories: hasRubric ? {
+                  create: rubricData.map((cat: any, i: number) => ({
+                    name: cat.name || "Unnamed Category",
+                    displayOrder: i,
+                    criteria: {
+                      create: (cat.criteria || []).map((crit: any, j: number) => ({
+                        name: crit.name || "Unnamed Criterion",
+                        description: crit.description || null,
+                        maxPts: Number(crit.maxPts) || 0,
+                        displayOrder: j
+                      }))
+                    }
+                  }))
+                } : undefined
+              },
+            });
+          }
+        }
       }
 
-      return results;
+      return tx.scpProgramConfig.findMany({
+        where: { schoolYearId: ayId },
+        include: SCP_FETCH_INCLUDE,
+      });
     });
 
     await auditLog({
@@ -374,10 +298,10 @@ export async function updateScpConfigs(
       req,
     });
 
-    res.json({ scpProgramConfigs: updatedConfigs });
+    const transformed = await transformScpConfigs(finalConfigs);
+    res.json({ scpProgramConfigs: transformed });
   } catch (error: any) {
-    res
-      .status(500)
-      .json({ message: "Failed to update SCP configs", error: error.message });
+    console.error("Update SCP Configs Error:", error);
+    res.status(500).json({ message: "Failed to update SCP configs", error: error.message });
   }
 }

@@ -48,7 +48,7 @@ export function createSchoolYearLifecycleController(
         data: { status: "ACTIVE" },
       });
 
-      await ensureDefaultGradeLevels(deps, id);
+      await ensureDefaultGradeLevels(deps);
       await setActiveSchoolYear(deps, id);
     } else {
       await deps.prisma.schoolYear.update({

@@ -1538,9 +1538,9 @@ export default function PipelineBatchView({
     ],
   );
 
-  const getScpInterviewDecision = useCallback(
-    (applicantId: number): "PASS" | "REJECT" | null => {
-      return finalizeInterviewRows[applicantId]?.decision ?? null;
+  const getScpInterviewScore = useCallback(
+    (applicantId: number) => {
+      return finalizeInterviewRows[applicantId]?.interviewScore ?? "";
     },
     [finalizeInterviewRows],
   );
@@ -1555,22 +1555,12 @@ export default function PipelineBatchView({
     setAbsentNoShow(applicantId, value);
   };
 
-  const setScpInterviewDecision = useCallback(
-    (applicantId: number, decision: "PASS" | "REJECT") => {
+  const updateScpInterviewScore = useCallback(
+    (applicantId: number, score: string) => {
       setActionFormError(null);
-      setFinalizeInterviewRows((prev) => ({
-        ...prev,
-        [applicantId]: {
-          ...(prev[applicantId] ?? { ...DEFAULT_FINALIZE_INTERVIEW_ROW }),
-          decision,
-          rejectOutcome:
-            decision === "PASS"
-              ? "SUBMITTED_BEERF"
-              : (prev[applicantId]?.rejectOutcome ?? "SUBMITTED_BEERF"),
-        },
-      }));
+      updateFinalizeRow(applicantId, { interviewScore: score });
     },
-    [],
+    [updateFinalizeRow],
   );
 
   const isAssessmentRowPrepared = useCallback(
@@ -1998,19 +1988,24 @@ export default function PipelineBatchView({
             ? Number(row.interviewScore)
             : null;
 
-          if (interviewScore != null && !Number.isFinite(interviewScore)) {
-            throw new Error("Interview score must be numeric when provided.");
+          if (interviewScore === null) {
+            throw new Error(
+              `Enter an interview rubric total for applicant #${id}.`,
+            );
           }
 
-          if (row.decision === "REJECT" && !row.rejectOutcome) {
-            throw new Error("Select a reject outcome for rejected applicants.");
+          if (!Number.isFinite(interviewScore)) {
+            throw new Error("Interview score must be numeric.");
           }
+
+          // Automatic decision based on score vs cutoff
+          const cutoff = Number(scpAssessmentCutoffScore ?? 0);
+          const decision = interviewScore >= cutoff ? "PASS" : "REJECT";
 
           return {
             id,
-            decision: row.decision,
-            rejectOutcome:
-              row.decision === "REJECT" ? row.rejectOutcome : undefined,
+            decision,
+            rejectOutcome: decision === "REJECT" ? "SUBMITTED_BEERF" : undefined,
             interviewScore,
             remarks: row.remarks || null,
           };
@@ -2647,8 +2642,8 @@ export default function PipelineBatchView({
               onScoreChange={updateScpPrimaryScoreValue}
               onAbsentNoShowChange={setScpAbsentNoShow}
               isScoreInvalid={isScpScoreValueInvalid}
-              getInterviewDecision={getScpInterviewDecision}
-              onInterviewDecisionChange={setScpInterviewDecision}
+              getInterviewScore={getScpInterviewScore}
+              onInterviewScoreChange={updateScpInterviewScore}
             />
           );
         }
@@ -2696,8 +2691,8 @@ export default function PipelineBatchView({
               onScoreChange={updateScpPrimaryScoreValue}
               onAbsentNoShowChange={setScpAbsentNoShow}
               isScoreInvalid={isScpScoreValueInvalid}
-              getInterviewDecision={getScpInterviewDecision}
-              onInterviewDecisionChange={setScpInterviewDecision}
+              getInterviewScore={getScpInterviewScore}
+              onInterviewScoreChange={updateScpInterviewScore}
             />
           );
         }

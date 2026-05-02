@@ -43,8 +43,7 @@ export async function getStats(req: Request, res: Response): Promise<void> {
       ? prisma.$queryRaw<{ count: bigint }[]>`
           SELECT COUNT(*)::bigint AS count
           FROM "sections" s
-          JOIN "grade_levels" gl ON gl.id = s."grade_level_id"
-          WHERE gl."school_year_id" = ${schoolYearId}
+          WHERE s."school_year_id" = ${schoolYearId}
             AND (
               SELECT COUNT(*)
               FROM "enrollment_records" e
@@ -92,19 +91,13 @@ export async function getStats(req: Request, res: Response): Promise<void> {
       },
     }),
     prisma.section.aggregate({
-      where: schoolYearId
-        ? {
-            gradeLevel: {
-              schoolYearId,
-            },
-          }
-        : undefined,
+      where: schoolYearId ? { schoolYearId } : undefined,
       _sum: { maxCapacity: true },
     }),
   ]);
 
   const sectionCapacityTarget = Number(
-    totalSectionCapacity._sum.maxCapacity ?? 0,
+    totalSectionCapacity?._sum?.maxCapacity ?? 0,
   );
   const enrollmentProgressPercent =
     sectionCapacityTarget > 0

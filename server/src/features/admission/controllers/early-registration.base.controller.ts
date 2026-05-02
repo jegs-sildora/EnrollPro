@@ -527,7 +527,6 @@ export function createEarlyRegistrationBaseController(
     // 3. Resolve grade level
     const gradeLevel = await prisma.gradeLevel.findFirst({
       where: {
-        schoolYearId: activeYear.id,
         name: { contains: body.gradeLevel, mode: "insensitive" },
       },
     });

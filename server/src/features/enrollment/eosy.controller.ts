@@ -27,12 +27,12 @@ async function getSchoolYearExportLockState(schoolYearId: number) {
     }),
     prisma.section.count({
       where: {
-        gradeLevel: { schoolYearId },
+        schoolYearId,
       },
     }),
     prisma.section.count({
       where: {
-        gradeLevel: { schoolYearId },
+        schoolYearId,
         isEosyFinalized: true,
       },
     }),
@@ -79,9 +79,7 @@ export async function getEosySections(
     const { schoolYearId } = req.query;
     const sections = await prisma.section.findMany({
       where: {
-        gradeLevel: {
-          schoolYearId: parseInt(String(schoolYearId)),
-        },
+        schoolYearId: parseInt(String(schoolYearId)),
       },
       include: {
         gradeLevel: true,
@@ -143,13 +141,9 @@ export async function updateEosyRecord(
       include: {
         section: {
           include: {
-            gradeLevel: {
+            schoolYear: {
               select: {
-                schoolYear: {
-                  select: {
-                    isEosyFinalized: true,
-                  },
-                },
+                isEosyFinalized: true,
               },
             },
           },
@@ -158,7 +152,7 @@ export async function updateEosyRecord(
     });
 
     if (!record) throw new AppError(404, "Enrollment record not found.");
-    if (record.section.gradeLevel.schoolYear.isEosyFinalized) {
+    if (record.section.schoolYear.isEosyFinalized) {
       throw new AppError(
         422,
         "Cannot update status. School year EOSY is finalized and export lock is active.",
@@ -203,13 +197,9 @@ export async function finalizeSection(
     const section = await prisma.section.findUnique({
       where: { id: sectionId },
       include: {
-        gradeLevel: {
+        schoolYear: {
           select: {
-            schoolYear: {
-              select: {
-                isEosyFinalized: true,
-              },
-            },
+            isEosyFinalized: true,
           },
         },
       },
@@ -218,7 +208,7 @@ export async function finalizeSection(
     if (!section) {
       throw new AppError(404, "Section not found.");
     }
-    if (section.gradeLevel.schoolYear.isEosyFinalized) {
+    if (section.schoolYear.isEosyFinalized) {
       throw new AppError(
         422,
         "Cannot finalize class. School year EOSY is already finalized.",
@@ -257,13 +247,9 @@ export async function reopenSection(
     const section = await prisma.section.findUnique({
       where: { id: sectionId },
       include: {
-        gradeLevel: {
+        schoolYear: {
           select: {
-            schoolYear: {
-              select: {
-                isEosyFinalized: true,
-              },
-            },
+            isEosyFinalized: true,
           },
         },
       },
@@ -272,7 +258,7 @@ export async function reopenSection(
     if (!section) {
       throw new AppError(404, "Section not found.");
     }
-    if (section.gradeLevel.schoolYear.isEosyFinalized) {
+    if (section.schoolYear.isEosyFinalized) {
       throw new AppError(
         422,
         "Cannot reopen class. School year EOSY is finalized and export lock is active.",
@@ -346,7 +332,7 @@ export async function finalizeSchoolYear(
 
     const totalSections = await prisma.section.count({
       where: {
-        gradeLevel: { schoolYearId: syId },
+        schoolYearId: syId,
       },
     });
     if (totalSections === 0) {
@@ -359,7 +345,7 @@ export async function finalizeSchoolYear(
     // 1. Check if all sections are finalized
     const unfinalizedSections = await prisma.section.count({
       where: {
-        gradeLevel: { schoolYearId: syId },
+        schoolYearId: syId,
         isEosyFinalized: false,
       },
     });
@@ -414,9 +400,7 @@ export async function downloadFinalLisExport(
     const records = await prisma.enrollmentRecord.findMany({
       where: {
         section: {
-          gradeLevel: {
-            schoolYearId: syId,
-          },
+          schoolYearId: syId,
         },
       },
       include: {

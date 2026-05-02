@@ -199,6 +199,14 @@ export function getLearnerTypeLabel(type: string | null | undefined): string {
 }
 
 /**
+ * Formats a user role enum token by replacing underscores with spaces.
+ */
+export function formatUserRole(role: string | null | undefined): string {
+  if (!role) return "N/A";
+  return role.replaceAll("_", " ");
+}
+
+/**
  * Standardized utility to get a full image URL from a stored path or base64 string.
  */
 export function getImageUrl(photo: string | null | undefined): string | null {

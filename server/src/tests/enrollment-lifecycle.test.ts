@@ -143,15 +143,16 @@ async function createFixture(seed: string): Promise<Fixture> {
     data: {
       yearLabel: `LIFE-${seed}`,
       status: "ACTIVE",
-      isManualOverrideOpen: true,
+      portalControl: "FORCE_OPEN_PHASE_2",
     },
   });
 
-  const gradeLevel = await prisma.gradeLevel.create({
-    data: {
+  const gradeLevel = await prisma.gradeLevel.upsert({
+    where: { name: `Grade 7-${seed}` },
+    update: {},
+    create: {
       name: `Grade 7-${seed}`,
       displayOrder: 7,
-      schoolYearId: schoolYear.id,
     },
   });
 
@@ -171,6 +172,7 @@ async function createFixture(seed: string): Promise<Fixture> {
     data: {
       name: `Lifecycle-Section-${seed}`,
       gradeLevelId: gradeLevel.id,
+      schoolYearId: schoolYear.id,
       programType: "REGULAR",
       maxCapacity: 40,
     },

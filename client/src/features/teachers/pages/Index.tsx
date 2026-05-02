@@ -231,6 +231,7 @@ export default function Teachers() {
       employeeId: normalizeOptionalInput(formData.employeeId),
       contactNumber: normalizeOptionalInput(formData.contactNumber),
       specialization: normalizeOptionalInput(formData.specialization),
+      department: normalizeOptionalInput(formData.department),
       plantillaPosition: normalizeOptionalInput(formData.plantillaPosition),
       subjects,
       photo: formData.photo,
@@ -280,6 +281,7 @@ export default function Teachers() {
       employeeId: teacher.employeeId || "",
       contactNumber: teacher.contactNumber || "",
       specialization: teacher.specialization || "",
+      department: teacher.department || "",
       plantillaPosition: teacher.plantillaPosition || "",
       subjects: teacher.subjects,
       photo: teacher.photoPath,
@@ -315,6 +317,7 @@ export default function Teachers() {
       employeeId: normalizeOptionalInput(editFormData.employeeId),
       contactNumber: normalizeOptionalInput(editFormData.contactNumber),
       specialization: normalizeOptionalInput(editFormData.specialization),
+      department: normalizeOptionalInput(editFormData.department),
       plantillaPosition: normalizeOptionalInput(editFormData.plantillaPosition),
       subjects,
     };

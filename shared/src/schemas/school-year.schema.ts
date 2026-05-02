@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SchoolYearStatusEnum } from "../constants/index.js";
+import { SchoolYearStatusEnum, PortalControlEnum } from "../constants/index.js";
 
 export const createSchoolYearSchema = z.object({
   yearLabel: z.string().min(1, "Year label is required"),
@@ -33,5 +33,5 @@ export const transitionSchoolYearSchema = z.object({
 });
 
 export const toggleOverrideSchema = z.object({
-  isManualOverrideOpen: z.boolean(),
+  portalControl: PortalControlEnum,
 });

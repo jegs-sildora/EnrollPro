@@ -23,6 +23,7 @@ export interface SettingsState {
 	activeSchoolYearLabel: string | null;
 	earlyRegOpenDate: string | null;
 	earlyRegCloseDate: string | null;
+	classOpeningDate: string | null;
 	enrollOpenDate: string | null;
 	enrollCloseDate: string | null;
 	facebookPageUrl: string | null;
@@ -68,6 +69,7 @@ export const useSettingsStore = create<SettingsState>()(
 			activeSchoolYearLabel: null,
 			earlyRegOpenDate: null,
 			earlyRegCloseDate: null,
+			classOpeningDate: null,
 			enrollOpenDate: null,
 			enrollCloseDate: null,
 			facebookPageUrl: null,

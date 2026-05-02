@@ -886,7 +886,7 @@ export default function Students() {
               </span>
               {row.original.applicantType === "LATE_ENROLLEE" && (
                 <Badge className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-black">
-                  Late Enrolled
+                  🕒 Late Enrollee
                 </Badge>
               )}
             </div>

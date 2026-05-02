@@ -3,11 +3,13 @@
 This guide explains how to properly configure the `JWT_SECRET` environment variable required for the EnrollPro backend authentication system on a Windows development machine.
 
 ## Why is this needed?
+
 The `JWT_SECRET` is a unique string used to sign and verify JSON Web Tokens. It ensures that the session cookies issued by EnrollPro cannot be forged by unauthorized users.
 
 ---
 
 ## Step 1: Generate a Secure Secret
+
 You should never use a simple word like "secret" or "password". Generate a cryptographically secure random string using Node.js.
 
 1. Open **PowerShell** or **Command Prompt**.
@@ -20,6 +22,7 @@ You should never use a simple word like "secret" or "password". Generate a crypt
 ---
 
 ## Step 2: Configure the Server Environment
+
 You need to add this secret to your local server configuration.
 
 1. Navigate to the `server/` directory in the project root:
@@ -44,6 +47,7 @@ You need to add this secret to your local server configuration.
 ---
 
 ## Step 3: Verify the Setup
+
 1. Ensure the backend server is running. If it was already running, you **must restart it** for the new environment variables to take effect.
 2. If you are using `pnpm`:
    ```powershell
@@ -52,7 +56,8 @@ You need to add this secret to your local server configuration.
 
 ---
 
-## ⚠️ Security Warnings
+## Security Warnings
+
 - **Never commit your `.env` file to Git.** It is already ignored by `.gitignore`.
 - **Never share your `JWT_SECRET`.** If someone gets this string, they can bypass all authentication in your system.
 - **Production vs. Development:** Use a different secret for your production/live environment than the one you use for local development.
@@ -60,5 +65,6 @@ You need to add this secret to your local server configuration.
 ---
 
 ## Troubleshooting (Windows Specific)
+
 - **File Extensions:** Ensure the file is named exactly `.env` and not `.env.txt`. In Windows File Explorer, enable "File name extensions" under the View tab to be sure.
 - **Quotes:** While not strictly required for all characters, it is best practice to wrap the secret in double quotes (`"..."`) in the `.env` file to handle special characters correctly.

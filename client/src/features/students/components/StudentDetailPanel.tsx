@@ -315,7 +315,7 @@ export function StudentDetailPanel({
                 </Badge>
                 {student.applicantType === "LATE_ENROLLEE" && (
                   <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 gap-1 px-3 py-1 rounded-full text-[11px] uppercase tracking-wider shadow-sm font-black">
-                    Late Enrolled
+                    🕒 Late Enrollee
                   </Badge>
                 )}
               </div>

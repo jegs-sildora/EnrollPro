@@ -13,7 +13,9 @@ function toManilaDateString(date: Date): string {
 }
 
 export function isEnrollmentOpen(year: SchoolYear): boolean {
-	if (year.isManualOverrideOpen) return true;
+	if (year.portalControl === 'FORCE_OPEN_PHASE_1' || year.portalControl === 'FORCE_OPEN_PHASE_2')
+		return true;
+	if (year.portalControl === 'FORCE_CLOSE_ALL') return false;
 
 	const now = new Date();
 	const todayStr = toManilaDateString(now);
@@ -37,7 +39,9 @@ export function getEnrollmentPhase(
 	year: SchoolYear,
 ): 'EARLY_REGISTRATION' | 'REGULAR_ENROLLMENT' | 'CLOSED' | 'OVERRIDE' | 'BOSY_LOCKED' {
 	if (year.status === 'BOSY_LOCKED') return 'BOSY_LOCKED';
-	if (year.isManualOverrideOpen) return 'OVERRIDE';
+	if (year.portalControl === 'FORCE_OPEN_PHASE_1') return 'EARLY_REGISTRATION';
+	if (year.portalControl === 'FORCE_OPEN_PHASE_2') return 'REGULAR_ENROLLMENT';
+	if (year.portalControl === 'FORCE_CLOSE_ALL') return 'CLOSED';
 
 	const now = new Date();
 	const todayStr = toManilaDateString(now);

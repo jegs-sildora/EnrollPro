@@ -84,6 +84,7 @@ async function carryOverEligibleLearners(
           },
           section: {
             select: {
+              gradeLevelId: true,
               gradeLevel: {
                 select: {
                   displayOrder: true,
@@ -94,7 +95,6 @@ async function carryOverEligibleLearners(
         },
       }),
       deps.prisma.gradeLevel.findMany({
-        where: { schoolYearId: targetSchoolYearId },
         select: {
           id: true,
           displayOrder: true,
@@ -258,7 +258,7 @@ export function createSchoolYearAdminController(
     const existing = await deps.prisma.schoolYear.findUnique({
       where: { yearLabel: resolvedYearLabel },
     });
-    if (existing) {
+    if (existing && existing.status !== "DRAFT") {
       res
         .status(400)
         .json({ message: "A school year with this label already exists" });
@@ -275,8 +275,19 @@ export function createSchoolYearAdminController(
         ? null
         : Number(cloneFromId);
 
-    const year = await deps.prisma.schoolYear.create({
-      data: {
+    const year = await deps.prisma.schoolYear.upsert({
+      where: { yearLabel: resolvedYearLabel },
+      update: {
+        status: "ACTIVE",
+        classOpeningDate: schedule.classOpeningDate,
+        classEndDate: schedule.classEndDate,
+        earlyRegOpenDate: schedule.earlyRegOpenDate,
+        earlyRegCloseDate: schedule.earlyRegCloseDate,
+        enrollOpenDate: schedule.enrollOpenDate,
+        enrollCloseDate: schedule.enrollCloseDate,
+        clonedFromId: normalizedCloneFromId,
+      },
+      create: {
         yearLabel: resolvedYearLabel,
         status: "ACTIVE",
         classOpeningDate: schedule.classOpeningDate,
@@ -295,7 +306,7 @@ export function createSchoolYearAdminController(
       await cloneSchoolYearStructure(deps, normalizedCloneFromId, year.id);
     }
 
-    await ensureDefaultGradeLevels(deps, year.id);
+    await ensureDefaultGradeLevels(deps);
 
     await deps.auditLog({
       userId: req.user!.userId,
@@ -309,7 +320,10 @@ export function createSchoolYearAdminController(
     const full = await deps.prisma.schoolYear.findUnique({
       where: { id: year.id },
       include: {
-        gradeLevels: { orderBy: { displayOrder: "asc" } },
+        sections: {
+          orderBy: [{ gradeLevel: { displayOrder: "asc" } }, { sortOrder: "asc" }],
+          include: { gradeLevel: true },
+        },
         _count: {
           select: {
             earlyRegistrationApplications: true,
@@ -378,9 +392,9 @@ export function createSchoolYearAdminController(
 
     const existingTargetYear = await deps.prisma.schoolYear.findUnique({
       where: { yearLabel: resolvedYearLabel },
-      select: { id: true },
+      select: { id: true, status: true },
     });
-    if (existingTargetYear) {
+    if (existingTargetYear && existingTargetYear.status !== "DRAFT") {
       res
         .status(400)
         .json({ message: "A school year with this label already exists" });
@@ -430,8 +444,19 @@ export function createSchoolYearAdminController(
       data: { status: "ARCHIVED" },
     });
 
-    const newYear = await deps.prisma.schoolYear.create({
-      data: {
+    const newYear = await deps.prisma.schoolYear.upsert({
+      where: { yearLabel: resolvedYearLabel },
+      update: {
+        status: "ACTIVE",
+        classOpeningDate: schedule.classOpeningDate,
+        classEndDate: schedule.classEndDate,
+        earlyRegOpenDate: schedule.earlyRegOpenDate,
+        earlyRegCloseDate: schedule.earlyRegCloseDate,
+        enrollOpenDate: schedule.enrollOpenDate,
+        enrollCloseDate: schedule.enrollCloseDate,
+        clonedFromId: activeYear.id,
+      },
+      create: {
         yearLabel: resolvedYearLabel,
         status: "ACTIVE",
         classOpeningDate: schedule.classOpeningDate,
@@ -450,7 +475,7 @@ export function createSchoolYearAdminController(
       await cloneSchoolYearStructure(deps, activeYear.id, newYear.id);
     }
 
-    await ensureDefaultGradeLevels(deps, newYear.id);
+    await ensureDefaultGradeLevels(deps);
 
     const rolloverSummary = carryOverLearners
       ? await carryOverEligibleLearners(
@@ -474,7 +499,10 @@ export function createSchoolYearAdminController(
     const full = await deps.prisma.schoolYear.findUnique({
       where: { id: newYear.id },
       include: {
-        gradeLevels: { orderBy: { displayOrder: "asc" } },
+        sections: {
+          orderBy: [{ gradeLevel: { displayOrder: "asc" } }, { sortOrder: "asc" }],
+          include: { gradeLevel: true },
+        },
         _count: {
           select: {
             earlyRegistrationApplications: true,
@@ -572,41 +600,62 @@ export function createSchoolYearAdminController(
 
     const existingTargetYear = await deps.prisma.schoolYear.findUnique({
       where: { yearLabel: resolvedYearLabel },
-      select: { id: true },
+      select: { id: true, status: true },
     });
-    if (existingTargetYear && existingTargetYear.id !== activeYear?.id) {
+
+    if (
+      existingTargetYear &&
+      existingTargetYear.id !== activeYear?.id &&
+      existingTargetYear.status !== "DRAFT"
+    ) {
       res
         .status(400)
         .json({ message: "A school year with this label already exists" });
       return;
     }
 
-    res.json({
-      rolloverDraft: {
-        yearLabel: resolvedYearLabel,
+    const draft = await deps.prisma.schoolYear.upsert({
+      where: { yearLabel: resolvedYearLabel },
+      update: {
         classOpeningDate: schedule.classOpeningDate,
         classEndDate: schedule.classEndDate,
         earlyRegOpenDate: schedule.earlyRegOpenDate,
         earlyRegCloseDate: schedule.earlyRegCloseDate,
         enrollOpenDate: schedule.enrollOpenDate,
         enrollCloseDate: schedule.enrollCloseDate,
+        status: "DRAFT",
       },
+      create: {
+        yearLabel: resolvedYearLabel,
+        status: "DRAFT",
+        classOpeningDate: schedule.classOpeningDate,
+        classEndDate: schedule.classEndDate,
+        earlyRegOpenDate: schedule.earlyRegOpenDate,
+        earlyRegCloseDate: schedule.earlyRegCloseDate,
+        enrollOpenDate: schedule.enrollOpenDate,
+        enrollCloseDate: schedule.enrollCloseDate,
+        clonedFromId: activeYear?.id ?? null,
+      },
+    });
+
+    res.json({
+      rolloverDraft: draft,
     });
   }
 
   async function toggleOverride(req: Request, res: Response): Promise<void> {
     const id = parseSchoolYearId(req);
-    const { isManualOverrideOpen } = req.body;
+    const { portalControl } = req.body;
 
     const updated = await deps.prisma.schoolYear.update({
       where: { id },
-      data: { isManualOverrideOpen },
+      data: { portalControl },
     });
 
     await deps.auditLog({
       userId: req.user!.userId,
       actionType: "SCHOOL_YEAR_OVERRIDE_TOGGLED",
-      description: `Manual override set to ${isManualOverrideOpen ? "OPEN" : "OFF"} for year "${updated.yearLabel}"`,
+      description: `Manual override state set to ${portalControl} for year "${updated.yearLabel}"`,
       subjectType: "SchoolYear",
       recordId: id,
       req,
@@ -633,6 +682,8 @@ export function createSchoolYearAdminController(
         yearLabel: true,
         classOpeningDate: true,
         classEndDate: true,
+        earlyRegOpenDate: true,
+        earlyRegCloseDate: true,
         enrollOpenDate: true,
         enrollCloseDate: true,
       },
@@ -703,6 +754,31 @@ export function createSchoolYearAdminController(
           ? deps.normalizeDateToUtcNoon(new Date(enrollCloseDate))
           : null
         : existingYear.enrollCloseDate;
+
+    // ─── Phase Date Collision Validation (DepEd Alignment) ───
+    const nextEarlyRegOpenDate =
+      earlyRegOpenDate !== undefined
+        ? earlyRegOpenDate
+          ? deps.normalizeDateToUtcNoon(new Date(earlyRegOpenDate))
+          : null
+        : existingYear.earlyRegOpenDate;
+
+    const nextEarlyRegCloseDate =
+      earlyRegCloseDate !== undefined
+        ? earlyRegCloseDate
+          ? deps.normalizeDateToUtcNoon(new Date(earlyRegCloseDate))
+          : null
+        : existingYear.earlyRegCloseDate;
+
+    if (nextEarlyRegCloseDate && nextEnrollOpenDate) {
+      if (nextEnrollOpenDate.getTime() <= nextEarlyRegCloseDate.getTime()) {
+        res.status(400).json({
+          message:
+            "Phase dates cannot overlap. Please ensure Early Registration (Phase 1) concludes before Official Enrollment (Phase 2) begins.",
+        });
+        return;
+      }
+    }
 
     if (nextClassOpeningDate && nextEnrollOpenDate) {
       if (nextEnrollOpenDate.getTime() > nextClassOpeningDate.getTime()) {

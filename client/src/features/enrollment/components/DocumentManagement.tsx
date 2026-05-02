@@ -15,6 +15,7 @@ import { sileo } from "sileo";
 import { useAuthStore } from "@/store/auth.slice";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
+import { formatUserRole } from "@/shared/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import {
   Select,
@@ -344,7 +345,7 @@ export function DocumentManagement({
                 <Badge
                   variant="outline"
                   className="text-[0.5rem] h-4 px-1 uppercase ">
-                  {auditRow.modifiedBy?.role || "USER"}
+                  {formatUserRole(auditRow.modifiedBy?.role) || "USER"}
                 </Badge>
               </div>
             </div>
