@@ -117,7 +117,7 @@ export async function listSampleTeachers(
       },
       _count: {
         select: {
-          sections: true,
+          advisoryHistory: true,
         },
       },
     },
@@ -125,7 +125,7 @@ export async function listSampleTeachers(
   });
 
   res.json({
-    data: teachers.map((teacher) => {
+    data: teachers.map((teacher: any) => {
       const designation = teacher.teacherDesignations[0] ?? null;
 
       return {
@@ -139,7 +139,7 @@ export async function listSampleTeachers(
         contactNumber: teacher.contactNumber,
         specialization: teacher.specialization,
         isActive: teacher.isActive,
-        sectionCount: teacher._count.sections,
+        sectionCount: teacher._count.advisoryHistory,
         designation: {
           isClassAdviser: designation?.isClassAdviser ?? false,
           isTic: designation?.isTic ?? false,

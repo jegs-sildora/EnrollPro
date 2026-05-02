@@ -63,6 +63,8 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
           activeSchoolYearLabel: res.data.activeSchoolYearLabel,
           earlyRegOpenDate: res.data.earlyRegOpenDate,
           earlyRegCloseDate: res.data.earlyRegCloseDate,
+          classOpeningDate: res.data.classOpeningDate,
+          classEndDate: res.data.classEndDate,
           enrollOpenDate: res.data.enrollOpenDate,
           enrollCloseDate: res.data.enrollCloseDate,
           enrollmentPhase: res.data.enrollmentPhase,

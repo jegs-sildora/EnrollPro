@@ -635,8 +635,13 @@ export function createEarlyRegistrationSharedService(
             include: {
               section: {
                 include: {
-                  advisingTeacher: {
-                    select: { id: true, firstName: true, lastName: true },
+                  advisers: {
+                    where: { status: "ACTIVE" },
+                    include: {
+                      teacher: {
+                        select: { id: true, firstName: true, lastName: true },
+                      },
+                    },
                   },
                 },
               },

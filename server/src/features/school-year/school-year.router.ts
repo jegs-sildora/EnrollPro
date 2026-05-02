@@ -31,7 +31,7 @@ const router: Router = Router();
 router.get(
   "/",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
   listSchoolYears,
 );
 router.get(
@@ -43,7 +43,7 @@ router.get(
 router.get(
   "/grade-levels",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
   listGradeLevels,
 );
 router.get("/:id", authenticate, authorize("SYSTEM_ADMIN"), getSchoolYear);

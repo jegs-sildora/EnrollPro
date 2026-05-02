@@ -2,6 +2,7 @@ import "dotenv/config";
 import {
   ApplicantType,
   PrismaClient,
+  Role,
   type Sex,
 } from "../../server/src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -24,17 +25,24 @@ type SampleTeacher = {
   employeeId: string;
   firstName: string;
   lastName: string;
-  middleName: string | null;
+  middleName: string;
+  designation: string;
   specialization: string;
+  department: string;
+  plantillaPosition: string;
+  subjects: string[];
   email: string;
   contactNumber: string;
+  isActive: boolean;
+  isClassAdviser: boolean;
+  isTic: boolean;
 };
 
 type SampleStaff = {
   firstName: string;
   lastName: string;
-  middleName: string | null;
-  role: "SYSTEM_ADMIN" | "REGISTRAR";
+  middleName: string;
+  role: Role;
   designation: string;
   email: string;
   mobileNumber: string;
@@ -43,7 +51,7 @@ type SampleStaff = {
 type SampleStudent = {
   firstName: string;
   lastName: string;
-  middleName: string | null;
+  middleName: string;
   sex: Sex;
   gradeName: "Grade 7" | "Grade 8" | "Grade 9" | "Grade 10";
   sectionName: string;
@@ -51,49 +59,164 @@ type SampleStudent = {
 };
 
 type GradeCode = "G7" | "G8" | "G9" | "G10";
-type TeacherSeed = [string, string, string | null, string];
-type StaffSeed = [string, string, SampleStaff["role"], string, string];
-type StudentSeed = [
-  string,
-  string,
-  string | null,
-  Sex,
-  GradeCode,
-  string,
-  ApplicantType,
+type TeacherSeed = [
+  string, // firstName
+  string, // lastName
+  string, // middleName
+  string, // designation (Official Title)
+  string, // specialization
+  string, // department
+  string, // plantillaPosition
+  string[], // subjects
+  boolean, // isActive
+  boolean, // isClassAdviser
+  boolean, // isTic
 ];
 
-const GRADE_NAME_BY_CODE: Record<GradeCode, SampleStudent["gradeName"]> = {
-  G7: "Grade 7",
-  G8: "Grade 8",
-  G9: "Grade 9",
-  G10: "Grade 10",
-};
-
 const TEACHER_SEEDS: TeacherSeed[] = [
-  ["Ana", "Ramos", null, "MATHEMATICS"],
-  ["Mark", "Santos", "Luna", "SCIENCE"],
-  ["Joy", "Dizon", null, "ENGLISH"],
-  ["Paolo", "Mendoza", "Cruz", "FILIPINO"],
-  ["Rhea", "Torres", null, "ARALING PANLIPUNAN"],
-  ["Carlo", "Villanueva", "Reyes", "MAPEH"],
-  ["Lea", "Garcia", null, "TLE"],
-  ["Joel", "Navarro", "Perez", "VALUES EDUCATION"],
-  ["Grace", "Aquino", null, "ICT"],
-  ["Nico", "Flores", "Diaz", "ESP"],
+  [
+    "Ana",
+    "Ramos",
+    "Santos",
+    "Teacher III",
+    "MATHEMATICS",
+    "Mathematics",
+    "TEACHER_3",
+    ["MATH"],
+    true,
+    true,
+    false,
+  ],
+  [
+    "Mark",
+    "Santos",
+    "Luna",
+    "Master Teacher I",
+    "SCIENCE",
+    "Science",
+    "MASTER_TEACHER_1",
+    ["SCI"],
+    true,
+    true,
+    false,
+  ],
+  [
+    "Joy",
+    "Dizon",
+    "Perez",
+    "Teacher I",
+    "ENGLISH",
+    "Languages",
+    "TEACHER_1",
+    ["ENG"],
+    true,
+    false,
+    false,
+  ],
+  [
+    "Paolo",
+    "Mendoza",
+    "Cruz",
+    "Teacher II",
+    "FILIPINO",
+    "Languages",
+    "TEACHER_2",
+    ["FIL"],
+    true,
+    true,
+    false,
+  ],
+  [
+    "Rhea",
+    "Torres",
+    "Garcia",
+    "Teacher III",
+    "ARALING PANLIPUNAN",
+    "Social Studies",
+    "TEACHER_3",
+    ["AP"],
+    true,
+    false,
+    true,
+  ],
+  [
+    "Carlo",
+    "Villanueva",
+    "Reyes",
+    "Teacher I",
+    "MAPEH",
+    "MAPEH",
+    "TEACHER_1",
+    ["MAPEH"],
+    true,
+    false,
+    false,
+  ],
+  [
+    "Lea",
+    "Garcia",
+    "Diaz",
+    "Teacher II",
+    "TLE",
+    "TLE",
+    "TEACHER_2",
+    ["TLE"],
+    true,
+    true,
+    false,
+  ],
+  [
+    "Joel",
+    "Navarro",
+    "Perez",
+    "Master Teacher II",
+    "VALUES EDUCATION",
+    "Values",
+    "MASTER_TEACHER_2",
+    ["VE"],
+    true,
+    true,
+    false,
+  ],
+  [
+    "Grace",
+    "Aquino",
+    "Bautista",
+    "Teacher III",
+    "ICT",
+    "TLE",
+    "TEACHER_3",
+    ["ICT"],
+    true,
+    false,
+    false,
+  ],
+  [
+    "Nico",
+    "Flores",
+    "Diaz",
+    "Teacher I",
+    "ESP",
+    "Values",
+    "TEACHER_1",
+    ["ESP"],
+    true,
+    false,
+    false,
+  ],
 ];
 
 const STAFF_SEEDS: StaffSeed[] = [
-  ["System", "Admin One", "SYSTEM_ADMIN", "sysadmin1", "09180000001"],
-  ["System", "Admin Two", "SYSTEM_ADMIN", "sysadmin2", "09180000002"],
-  ["System", "Admin Three", "SYSTEM_ADMIN", "sysadmin3", "09180000003"],
-  ["System", "Admin Four", "SYSTEM_ADMIN", "sysadmin4", "09180000004"],
-  ["System", "Admin Five", "SYSTEM_ADMIN", "sysadmin5", "09180000005"],
-  ["Registrar", "One", "REGISTRAR", "registrar1", "09180000006"],
-  ["Registrar", "Two", "REGISTRAR", "registrar2", "09180000007"],
-  ["Registrar", "Three", "REGISTRAR", "registrar3", "09180000008"],
-  ["Registrar", "Four", "REGISTRAR", "registrar4", "09180000009"],
-  ["Registrar", "Five", "REGISTRAR", "registrar5", "09180000010"],
+  ["System", "Admin One", Role.SYSTEM_ADMIN, "sysadmin1", "09180000001"],
+  ["System", "Admin Two", Role.SYSTEM_ADMIN, "sysadmin2", "09180000002"],
+  ["System", "Admin Three", Role.SYSTEM_ADMIN, "sysadmin3", "09180000003"],
+  ["System", "Admin Four", Role.SYSTEM_ADMIN, "sysadmin4", "09180000004"],
+  ["System", "Admin Five", Role.SYSTEM_ADMIN, "sysadmin5", "09180000005"],
+  ["Registrar", "One", Role.HEAD_REGISTRAR, "registrar1", "09180000006"],
+  ["Registrar", "Two", Role.HEAD_REGISTRAR, "registrar2", "09180000007"],
+  ["Registrar", "Three", Role.HEAD_REGISTRAR, "registrar3", "09180000008"],
+  ["Registrar", "Four", Role.HEAD_REGISTRAR, "registrar4", "09180000009"],
+  ["Registrar", "Five", Role.HEAD_REGISTRAR, "registrar5", "09180000010"],
 ];
 
 const STUDENT_SEEDS: StudentSeed[] = [
@@ -149,13 +272,42 @@ const STUDENT_SEEDS: StudentSeed[] = [
   ],
 ];
 
+const GRADE_NAME_BY_CODE: Record<GradeCode, SampleStudent["gradeName"]> = {
+  G7: "Grade 7",
+  G8: "Grade 8",
+  G9: "Grade 9",
+  G10: "Grade 10",
+};
+
 const SAMPLE_TEACHERS: SampleTeacher[] = TEACHER_SEEDS.map(
-  ([firstName, lastName, middleName, specialization], index) => ({
+  (
+    [
+      firstName,
+      lastName,
+      middleName,
+      designation,
+      specialization,
+      department,
+      plantillaPosition,
+      subjects,
+      isActive,
+      isClassAdviser,
+      isTic,
+    ],
+    index,
+  ) => ({
     employeeId: `${SAMPLE_TEACHER_EMPLOYEE_PREFIX}-${String(index + 1).padStart(3, "0")}`,
     firstName,
     lastName,
     middleName,
+    designation,
     specialization,
+    department,
+    plantillaPosition,
+    subjects,
+    isActive,
+    isClassAdviser,
+    isTic,
     email: `${firstName.toLowerCase()}.${lastName
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, ".")}${SAMPLE_STAFF_EMAIL_SUFFIX}`,
@@ -167,7 +319,7 @@ const SAMPLE_STAFF: SampleStaff[] = STAFF_SEEDS.map(
   ([firstName, lastName, role, emailLocalPart, mobileNumber]) => ({
     firstName,
     lastName,
-    middleName: null,
+    middleName: "D",
     role,
     designation: role === "SYSTEM_ADMIN" ? "SYSTEM ADMINISTRATOR" : "REGISTRAR",
     email: `${emailLocalPart}${SAMPLE_STAFF_EMAIL_SUFFIX}`,
@@ -206,6 +358,15 @@ async function getActiveSchoolYear() {
       "No ACTIVE school year found. Run db:seed first and activate a school year.",
     );
   }
+
+  // Ensure BOSY and EOSY are set exactly as requested
+  await prisma.schoolYear.update({
+    where: { id: activeYear.id },
+    data: {
+      classOpeningDate: new Date("2026-06-01"),
+      classEndDate: new Date("2027-03-31"),
+    },
+  });
 
   const settings = await prisma.schoolSetting.findFirst({
     select: { id: true, activeSchoolYearId: true },
@@ -280,9 +441,34 @@ async function ensureSection(params: {
   });
 }
 
-async function seedTeachers() {
+async function seedTeachers(params: { schoolYearId: number; operatorId: number }) {
   let created = 0;
   let updated = 0;
+
+  // Ensure we have some sections for class advisers
+  const grade7 = await ensureGradeLevel({ gradeName: "Grade 7" });
+  const sections = await Promise.all([
+    ensureSection({
+      gradeLevelId: grade7.id,
+      schoolYearId: params.schoolYearId,
+      sectionName: "Rosal",
+      applicantType: "REGULAR",
+    }),
+    ensureSection({
+      gradeLevelId: grade7.id,
+      schoolYearId: params.schoolYearId,
+      sectionName: "Mabini",
+      applicantType: "REGULAR",
+    }),
+    ensureSection({
+      gradeLevelId: grade7.id,
+      schoolYearId: params.schoolYearId,
+      sectionName: "Luna",
+      applicantType: "REGULAR",
+    }),
+  ]);
+
+  let sectionIdx = 0;
 
   for (const teacher of SAMPLE_TEACHERS) {
     const existing = await prisma.teacher.findUnique({
@@ -290,28 +476,127 @@ async function seedTeachers() {
       select: { id: true },
     });
 
-    await prisma.teacher.upsert({
+    const teacherRecord = await prisma.teacher.upsert({
       where: { employeeId: teacher.employeeId },
       update: {
         firstName: teacher.firstName,
         lastName: teacher.lastName,
         middleName: teacher.middleName,
+        designation: teacher.designation,
         specialization: teacher.specialization,
+        department: teacher.department,
+        plantillaPosition: teacher.plantillaPosition,
         email: teacher.email,
         contactNumber: teacher.contactNumber,
-        isActive: true,
+        isActive: teacher.isActive,
+        photoPath: `teacher-photos/dummy-${teacher.lastName.toLowerCase()}.png`,
       },
       create: {
         employeeId: teacher.employeeId,
         firstName: teacher.firstName,
         lastName: teacher.lastName,
         middleName: teacher.middleName,
+        designation: teacher.designation,
         specialization: teacher.specialization,
+        department: teacher.department,
+        plantillaPosition: teacher.plantillaPosition,
         email: teacher.email,
         contactNumber: teacher.contactNumber,
-        isActive: true,
+        isActive: teacher.isActive,
+        photoPath: `teacher-photos/dummy-${teacher.lastName.toLowerCase()}.png`,
       },
     });
+
+    // Seed TeacherDesignation (Load Status)
+    const assignedSectionId =
+      teacher.isClassAdviser && sectionIdx < sections.length
+        ? sections[sectionIdx++].id
+        : null;
+
+    await prisma.teacherDesignation.upsert({
+      where: {
+        uq_teacher_designations_teacher_sy: {
+          teacherId: teacherRecord.id,
+          schoolYearId: params.schoolYearId,
+        },
+      },
+      update: {
+        isClassAdviser: teacher.isClassAdviser && !!assignedSectionId,
+        advisorySectionId: assignedSectionId,
+        advisoryEquivalentHoursPerWeek:
+          teacher.isClassAdviser && assignedSectionId ? 5 : 0,
+        isTic: teacher.isTic,
+        effectiveFrom: new Date("2026-06-01"),
+        effectiveTo: new Date("2027-03-31"),
+        updatedById: params.operatorId,
+      },
+      create: {
+        teacherId: teacherRecord.id,
+        schoolYearId: params.schoolYearId,
+        isClassAdviser: teacher.isClassAdviser && !!assignedSectionId,
+        advisorySectionId: assignedSectionId,
+        advisoryEquivalentHoursPerWeek:
+          teacher.isClassAdviser && assignedSectionId ? 5 : 0,
+        isTic: teacher.isTic,
+        effectiveFrom: new Date("2026-06-01"),
+        effectiveTo: new Date("2027-03-31"),
+        updatedById: params.operatorId,
+      },
+    });
+
+    // If Class Adviser, also seed the historical ledger
+    if (teacher.isClassAdviser && assignedSectionId) {
+      await prisma.sectionAdviser.upsert({
+        where: {
+          id: -1, // Use a query to find or create
+          // Actually upsert on many fields is not possible without a unique constraint
+          // We'll just findFirst and update or create
+        },
+        create: {
+          sectionId: assignedSectionId,
+          teacherId: teacherRecord.id,
+          schoolYearId: params.schoolYearId,
+          status: "ACTIVE",
+          effectiveFrom: new Date("2026-06-01"),
+        },
+        update: {}, // No update needed for now
+      }).catch(async () => {
+          // Fallback if upsert fails due to id: -1
+          const existingLedger = await prisma.sectionAdviser.findFirst({
+              where: {
+                  sectionId: assignedSectionId,
+                  teacherId: teacherRecord.id,
+                  schoolYearId: params.schoolYearId,
+                  status: "ACTIVE"
+              }
+          });
+          if (!existingLedger) {
+              await prisma.sectionAdviser.create({
+                  data: {
+                      sectionId: assignedSectionId,
+                      teacherId: teacherRecord.id,
+                      schoolYearId: params.schoolYearId,
+                      status: "ACTIVE",
+                      effectiveFrom: new Date("2026-06-01"),
+                  }
+              });
+          }
+      });
+    }
+
+    // Handle TeacherSubject qualifications
+    await prisma.teacherSubject.deleteMany({
+      where: { teacherId: teacherRecord.id },
+    });
+
+    if (teacher.subjects.length > 0) {
+      await prisma.teacherSubject.createMany({
+        data: teacher.subjects.map((subjectCode) => ({
+          teacherId: teacherRecord.id,
+          subject: subjectCode,
+        })),
+      });
+    }
 
     if (existing) {
       updated++;
@@ -374,7 +659,7 @@ async function seedStaffUsers() {
         endsWith: SAMPLE_STAFF_EMAIL_SUFFIX,
       },
       role: {
-        in: ["SYSTEM_ADMIN", "REGISTRAR"],
+        in: [Role.SYSTEM_ADMIN, Role.HEAD_REGISTRAR],
       },
     },
     select: { id: true },
@@ -515,9 +800,13 @@ async function seedStudents(params: {
 
 async function main() {
   const schoolYear = await getActiveSchoolYear();
-
-  const teacherStats = await seedTeachers();
   const staffStats = await seedStaffUsers();
+
+  const teacherStats = await seedTeachers({
+    schoolYearId: schoolYear.id,
+    operatorId: staffStats.operatorId,
+  });
+
   const studentStats = await seedStudents({
     schoolYearId: schoolYear.id,
     operatorId: staffStats.operatorId,

@@ -7,6 +7,7 @@ import {
   parsePositiveInt,
   resolveSchoolYearScope,
 } from "./integration.shared.js";
+import { SectionAdviserStatus } from "../../generated/prisma/index.js";
 
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
@@ -238,7 +239,7 @@ export async function listIntegrationFaculty(
   const teachers = await prisma.teacher.findMany({
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     include: {
-      _count: { select: { sections: true } },
+      _count: { select: { advisoryHistory: true } },
       teacherDesignations: {
         where: { schoolYearId: scope.schoolYearId },
         include: {
@@ -267,7 +268,7 @@ export async function listIntegrationFaculty(
     },
   });
 
-  const rows = teachers.map((teacher) => {
+  const rows = teachers.map((teacher: any) => {
     const designation = teacher.teacherDesignations[0] ?? null;
 
     return {
@@ -281,7 +282,7 @@ export async function listIntegrationFaculty(
       contactNumber: teacher.contactNumber,
       specialization: teacher.specialization,
       isActive: teacher.isActive,
-      sectionCount: teacher._count.sections,
+      sectionCount: teacher._count.advisoryHistory,
       schoolId: scope.schoolId,
       schoolName: scope.schoolName,
       schoolYearId: scope.schoolYearId,
@@ -368,12 +369,17 @@ export async function listIntegrationSections(
           displayOrder: true,
         },
       },
-      advisingTeacher: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          middleName: true,
+      advisers: {
+        where: { status: SectionAdviserStatus.ACTIVE },
+        include: {
+          teacher: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              middleName: true,
+            },
+          },
         },
       },
       _count: {
@@ -386,26 +392,29 @@ export async function listIntegrationSections(
   });
 
   res.json({
-    data: sections.map((section) => ({
-      id: section.id,
-      name: section.name,
-      programType: section.programType,
-      maxCapacity: section.maxCapacity,
-      enrolledCount: section._count.enrollmentRecords,
-      gradeLevel: section.gradeLevel,
-      advisingTeacher: section.advisingTeacher
-        ? {
-            id: section.advisingTeacher.id,
-            firstName: section.advisingTeacher.firstName,
-            lastName: section.advisingTeacher.lastName,
-            middleName: section.advisingTeacher.middleName,
-          }
-        : null,
-      schoolYear: {
-        id: scope.schoolYearId,
-        yearLabel: scope.schoolYearLabel,
-      },
-    })),
+    data: sections.map((section) => {
+      const activeAdviser = section.advisers[0]?.teacher ?? null;
+      return {
+        id: section.id,
+        name: section.name,
+        programType: section.programType,
+        maxCapacity: section.maxCapacity,
+        enrolledCount: section._count.enrollmentRecords,
+        gradeLevel: section.gradeLevel,
+        advisingTeacher: activeAdviser
+          ? {
+              id: activeAdviser.id,
+              firstName: activeAdviser.firstName,
+              lastName: activeAdviser.lastName,
+              middleName: activeAdviser.middleName,
+            }
+          : null,
+        schoolYear: {
+          id: scope.schoolYearId,
+          yearLabel: scope.schoolYearLabel,
+        },
+      };
+    }),
     meta: {
       scope,
       total: sections.length,
@@ -460,12 +469,17 @@ export async function listSectionLearners(
           displayOrder: true,
         },
       },
-      advisingTeacher: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          middleName: true,
+      advisers: {
+        where: { status: SectionAdviserStatus.ACTIVE },
+        include: {
+          teacher: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              middleName: true,
+            },
+          },
         },
       },
     },
@@ -522,6 +536,8 @@ export async function listSectionLearners(
     }),
   ]);
 
+  const activeAdviser = section.advisers[0]?.teacher ?? null;
+
   res.json({
     data: {
       section: {
@@ -530,10 +546,10 @@ export async function listSectionLearners(
         programType: section.programType,
         maxCapacity: section.maxCapacity,
         gradeLevel: section.gradeLevel,
-        advisingTeacher: section.advisingTeacher
+        advisingTeacher: activeAdviser
           ? {
-              id: section.advisingTeacher.id,
-              name: buildTeacherName(section.advisingTeacher),
+              id: activeAdviser.id,
+              name: buildTeacherName(activeAdviser),
             }
           : null,
       },

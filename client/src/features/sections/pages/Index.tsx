@@ -18,6 +18,7 @@ import {
   Mars,
   Venus,
   UserPlus,
+  RefreshCcw,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -25,6 +26,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { InsertLateEnrolleeModal } from "../components/InsertLateEnrolleeModal";
+import { SectionHandoverModal } from "../components/SectionHandoverModal";
 import {
   Card,
   CardContent,
@@ -307,6 +309,14 @@ export default function Sections() {
 
   // Late Enrollee Modal State
   const [showLateEnrolleeModal, setShowLateEnrolleeModal] = useState(false);
+
+  // Handover Modal State
+  const [handoverSection, setHandoverSection] = useState<{
+    id: number;
+    name: string;
+    gradeLevelName: string;
+    advisingTeacher: { id: number; name: string } | null;
+  } | null>(null);
 
   // Heatmap grade filter
   const [heatmapGradeFilter, setHeatmapGradeFilter] = useState<string>("all");
@@ -723,6 +733,20 @@ export default function Sections() {
                     className="h-8 font-bold"
                     onClick={() => openEdit(s)}>
                     <Edit2 className="h-3.5 w-3.5 mr-2" /> Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 font-bold text-amber-600 border-amber-200 hover:bg-amber-50"
+                    onClick={() =>
+                      setHandoverSection({
+                        id: s.id,
+                        name: displaySectionName,
+                        gradeLevelName: gradeLevelName,
+                        advisingTeacher: s.advisingTeacher,
+                      })
+                    }>
+                    <RefreshCcw className="h-3.5 w-3.5 mr-2" /> Handover
                   </Button>
                   {isDeleteDisabled ? (
                     <Button
@@ -1678,6 +1702,19 @@ export default function Sections() {
             void fetchRoster(viewRosterSection.id);
             void fetchData();
           }}
+        />
+      )}
+
+      {handoverSection && (
+        <SectionHandoverModal
+          open={!!handoverSection}
+          onOpenChange={(open) => !open && setHandoverSection(null)}
+          sectionId={handoverSection.id}
+          sectionName={handoverSection.name}
+          gradeLevelName={handoverSection.gradeLevelName}
+          currentAdviser={handoverSection.advisingTeacher}
+          teachers={teachers}
+          onSuccess={fetchData}
         />
       )}
     </div>

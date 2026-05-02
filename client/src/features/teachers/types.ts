@@ -29,6 +29,8 @@ export interface AdvisorySectionOption {
   label: string;
   gradeLevelName: string;
   sectionName: string;
+  maxCapacity: number;
+  enrolledCount: number;
   currentAdviserId: number | null;
   currentAdviserName: string | null;
 }
@@ -39,6 +41,8 @@ export interface SectionsApiResponse {
     sections?: Array<{
       id: number;
       name: string;
+      maxCapacity: number;
+      enrolledCount: number;
       advisingTeacher?: {
         id?: number | null;
         name?: string | null;
@@ -64,6 +68,7 @@ export interface Teacher {
   middleName: string | null;
   email: string | null;
   contactNumber: string | null;
+  designationTitle: string | null;
   specialization: string | null;
   department: string | null;
   plantillaPosition: string | null;
@@ -82,6 +87,7 @@ export interface TeacherFormState {
   email: string;
   employeeId: string;
   contactNumber: string;
+  designation: string;
   specialization: string;
   department: string;
   plantillaPosition: string;
@@ -99,6 +105,7 @@ export interface DesignationFormState {
   designationNotes: string;
   effectiveFrom: string;
   effectiveTo: string;
+  isCustomPeriod: boolean;
   reason: string;
 }
 

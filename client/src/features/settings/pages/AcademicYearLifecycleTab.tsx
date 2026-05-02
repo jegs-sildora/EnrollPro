@@ -219,11 +219,7 @@ export default function AcademicYearLifecycleTab() {
 
   return (
     <div className="space-y-6 max-w-7xl">
-      <Card
-        className={cn(
-          "bg-white shadow-sm",
-          isLocked ? "border-emerald-200" : "border-amber-200",
-        )}>
+      <Card className={cn("bg-white shadow-sm")}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="space-y-1">
@@ -231,12 +227,12 @@ export default function AcademicYearLifecycleTab() {
                 {isLocked ? (
                   <>
                     <Lock className="h-5 w-5 text-emerald-600" />
-                    BOSY Status: Locked
+                    Beginning of School Year Status: Locked
                   </>
                 ) : (
                   <>
                     <Unlock className="h-5 w-5 text-amber-600" />
-                    BOSY Status: Open
+                    Beginning of School Year Status: Open
                   </>
                 )}
               </CardTitle>

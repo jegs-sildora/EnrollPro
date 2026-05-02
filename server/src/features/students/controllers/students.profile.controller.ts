@@ -208,7 +208,7 @@ export const createStudentsProfileController = (
       });
       const userName = user
         ? `${user.firstName} ${user.lastName}`
-        : "Registrar";
+        : "HEAD_REGISTRAR";
       const learnerName = `${applicant.learner.firstName} ${applicant.learner.lastName}`;
 
       await deps.prisma.auditLog.create({

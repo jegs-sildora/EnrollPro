@@ -196,7 +196,7 @@ export function TeacherDirectoryCard({
         <DataTableColumnHeader
           column={column}
           title="TEACHER"
-          className="justify-start pl-0"
+          className="justify-center pl-0"
         />
       ),
       cell: ({ row }) => (
@@ -230,6 +230,21 @@ export function TeacherDirectoryCard({
       ),
     },
     {
+      id: "designationTitle",
+      accessorKey: "designationTitle",
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title="DESIGNATION"
+        />
+      ),
+      cell: ({ row }) => (
+        <span className="text-xs font-medium block text-center uppercase text-muted-foreground">
+          {row.original.designationTitle || "-"}
+        </span>
+      ),
+    },
+    {
       id: "department",
       accessorKey: "department",
       size: 200,
@@ -245,7 +260,7 @@ export function TeacherDirectoryCard({
           <span className="text-xs font-bold uppercase text-primary">
             {row.original.department || "-"}
           </span>
-          <span className="text-[10px] text-muted-foreground italic truncate">
+          <span className="text-xs font-bold text-foreground">
             {row.original.specialization || "Generalist"}
           </span>
         </div>
@@ -307,7 +322,7 @@ export function TeacherDirectoryCard({
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
-          title="DESIGNATION"
+          title="LOAD STATUS"
         />
       ),
       cell: ({ row }) => (

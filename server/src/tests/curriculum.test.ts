@@ -16,10 +16,10 @@ describe('Curriculum API', () => {
 		const user = await prisma.user.create({
 			data: {
 				firstName: 'Test',
-				lastName: 'Registrar',
+				lastName: 'HEAD_REGISTRAR',
 				email: 'test-curriculum@test.com',
 				password: hashedPassword,
-				role: 'REGISTRAR',
+				role: 'HEAD_REGISTRAR',
 				sex: 'FEMALE',
 			},
 		});

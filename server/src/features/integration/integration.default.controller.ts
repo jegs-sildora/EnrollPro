@@ -158,7 +158,7 @@ export async function listDefaultFaculty(
     where: { isActive: true },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     include: {
-      _count: { select: { sections: true } },
+      _count: { select: { advisoryHistory: true } },
       teacherDesignations: {
         where: { schoolYearId: scope.schoolYearId },
         include: {
@@ -180,7 +180,7 @@ export async function listDefaultFaculty(
     },
   });
 
-  const rows = teachers.map((teacher) => {
+  const rows = teachers.map((teacher: any) => {
     const designation = teacher.teacherDesignations[0] ?? null;
 
     return {
@@ -193,7 +193,7 @@ export async function listDefaultFaculty(
       email: teacher.email,
       contactNumber: teacher.contactNumber,
       specialization: teacher.specialization,
-      sectionCount: teacher._count.sections,
+      sectionCount: teacher._count.advisoryHistory,
       isClassAdviser: designation?.isClassAdviser ?? false,
       advisoryEquivalentHoursPerWeek:
         designation?.advisoryEquivalentHoursPerWeek ?? 0,

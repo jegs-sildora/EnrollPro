@@ -42,3 +42,11 @@ export const batchSectioningSchema = z.object({
     )
     .optional(),
 });
+
+export const advisoryHandoverSchema = z.object({
+  substituteTeacherId: z.number().int().positive("Substitute teacher is required"),
+  handoverReason: z.string().min(5, "Reason must be at least 5 characters"),
+  handoverDate: z.string().or(z.date()).optional(),
+});
+
+export type AdvisoryHandoverInput = z.infer<typeof advisoryHandoverSchema>;

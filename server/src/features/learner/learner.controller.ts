@@ -94,8 +94,13 @@ export const lookupLearner = async (req: Request, res: Response) => {
           include: {
             section: {
               include: {
-                advisingTeacher: {
-                  select: { firstName: true, lastName: true },
+                advisers: {
+                  where: { status: "ACTIVE" },
+                  include: {
+                    teacher: {
+                      select: { firstName: true, lastName: true },
+                    },
+                  },
                 },
               },
             },
@@ -132,6 +137,8 @@ export const lookupLearner = async (req: Request, res: Response) => {
       orderBy: [{ assessmentDate: "desc" }, { assessmentPeriod: "asc" }],
     });
 
+    const activeAdviser = (application.enrollmentRecord?.section as any)?.advisers?.[0]?.teacher ?? null;
+
     return res.json({
       learner: {
         id: application.learner.id,
@@ -160,15 +167,10 @@ export const lookupLearner = async (req: Request, res: Response) => {
               section: application.enrollmentRecord.section
                 ? {
                     name: application.enrollmentRecord.section.name,
-                    advisingTeacher: application.enrollmentRecord.section
-                      .advisingTeacher
+                    advisingTeacher: activeAdviser
                       ? {
-                          firstName:
-                            application.enrollmentRecord.section.advisingTeacher
-                              .firstName,
-                          lastName:
-                            application.enrollmentRecord.section.advisingTeacher
-                              .lastName,
+                          firstName: activeAdviser.firstName,
+                          lastName: activeAdviser.lastName,
                         }
                       : null,
                   }

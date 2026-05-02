@@ -783,7 +783,7 @@ export default function SchoolYearTab() {
   }
 
   return (
-    <div className="space-y-6 mx-auto">
+    <div className="space-y-6 mx-auto bg-white p-6 rounded-lg shadow">
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
           <CalendarDays className="h-6 w-6" />

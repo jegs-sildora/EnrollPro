@@ -8,7 +8,7 @@ const router: Router = Router();
 router.get(
   "/",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.index,
 );
 router.get("/export", authenticate, authorize("SYSTEM_ADMIN"), ctrl.exportCsv);

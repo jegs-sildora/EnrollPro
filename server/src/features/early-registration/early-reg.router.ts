@@ -67,7 +67,7 @@ router.post(
 router.post(
   "/f2f",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   validate(earlyRegistrationSubmitSchema),
   ctrl.storeF2F,
 );
@@ -75,28 +75,28 @@ router.post(
 router.get(
   "/",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
   ctrl.index,
 );
 
 router.get(
   "/:id",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
   ctrl.show,
 );
 
 router.patch(
   "/:id/verify",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.verify,
 );
 
 router.post(
   "/:id/documents",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   upload.single("document"),
   ctrl.uploadDocument,
 );
@@ -104,14 +104,14 @@ router.post(
 router.delete(
   "/:id/documents",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.removeDocument,
 );
 
 router.patch(
   "/:id/checklist",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   validate(updateChecklistSchema),
   ctrl.updateChecklist,
 );
@@ -120,14 +120,14 @@ router.patch(
 router.patch(
   "/batch-process",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.batchProcess,
 );
 
 router.post(
   "/batch/verify-documents/preview",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   validate(batchVerifyDocumentsPreviewSchema),
   ctrl.batchVerifyDocumentsPreview,
 );
@@ -135,7 +135,7 @@ router.post(
 router.patch(
   "/batch/verify-documents",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   validate(batchVerifyDocumentsSchema),
   ctrl.batchVerifyDocuments,
 );
@@ -143,7 +143,7 @@ router.patch(
 router.patch(
   "/batch/assign-regular-section/commit",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   validate(batchAssignRegularSectionCommitSchema),
   ctrl.batchAssignRegularSectionsCommit,
 );
@@ -151,7 +151,7 @@ router.patch(
 router.post(
   "/batch/assign-regular-section/preview",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   validate(batchAssignRegularSectionPreviewSchema),
   ctrl.batchAssignRegularSectionsPreview,
 );
@@ -159,7 +159,7 @@ router.post(
 router.patch(
   "/batch/assign-regular-section",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   validate(batchAssignRegularSectionSchema),
   ctrl.batchAssignRegularSection,
 );
@@ -167,7 +167,7 @@ router.patch(
 router.patch(
   "/batch/schedule-step",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   validate(batchScheduleStepSchema),
   ctrl.batchScheduleStep,
 );
@@ -175,7 +175,7 @@ router.patch(
 router.patch(
   "/batch/save-scores",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   validate(batchSaveScoresSchema),
   ctrl.batchSaveScores,
 );
@@ -183,7 +183,7 @@ router.patch(
 router.patch(
   "/batch/finalize-interview",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   validate(batchFinalizeInterviewSchema),
   ctrl.batchFinalizeInterview,
 );
@@ -191,21 +191,21 @@ router.patch(
 router.get(
   "/:id/detailed",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
   ctrl.showDetailed,
 );
 
 router.get(
   "/:id/requirements",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
   ctrl.getRequirements,
 );
 
 router.patch(
   "/:id/reject",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   validate(rejectSchema),
   ctrl.reject,
 );
@@ -213,21 +213,21 @@ router.patch(
 router.patch(
   "/:id/withdraw",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.withdraw,
 );
 
 router.patch(
   "/:id/mark-eligible",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.markEligible,
 );
 
 router.patch(
   "/:id/schedule-assessment",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   validate(scheduleAssessmentStepSchema),
   ctrl.scheduleAssessment,
 );
@@ -235,56 +235,56 @@ router.patch(
 router.patch(
   "/:id/record-step-result",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.recordStepResult,
 );
 
 router.patch(
   "/:id/pass",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.pass,
 );
 
 router.patch(
   "/:id/fail",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.fail,
 );
 
 router.patch(
   "/:id/approve",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.approve,
 );
 
 router.patch(
   "/:id/temporarily-enroll",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.temporarilyEnroll,
 );
 
 router.patch(
   "/:id/enroll",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.enroll,
 );
 
 router.patch(
   "/:id/assign-lrn",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.assignLrn,
 );
 
 router.patch(
   "/:id/mark-interview-passed",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.markInterviewPassed,
 );
 

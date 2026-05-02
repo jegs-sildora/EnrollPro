@@ -382,6 +382,17 @@ export function TeacherFormSheet({
                 </div>
 
                 <div className="space-y-2">
+                  <Label>Designation</Label>
+                  <Input
+                    placeholder="e.g. MASTER TEACHER I, TEACHER III"
+                    value={formData.designation}
+                    onChange={(event) =>
+                      onFieldChange("designation", event.target.value)
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <Label>Plantilla Position</Label>
                   <Select
                     value={selectedPlantillaPositionValue}

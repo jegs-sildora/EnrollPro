@@ -179,7 +179,14 @@ async function createFixture(seed: string): Promise<IntegrationFixture> {
         schoolYearId: schoolYear.id,
         programType: "REGULAR",
         maxCapacity: 40,
-        advisingTeacherId: teacher.id,
+        advisers: {
+          create: {
+            teacherId: teacher.id,
+            schoolYearId: schoolYear.id,
+            status: "ACTIVE",
+            effectiveFrom: new Date(),
+          },
+        },
       },
     });
     fixture.sectionId = section.id;

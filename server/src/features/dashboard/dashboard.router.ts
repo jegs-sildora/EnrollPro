@@ -9,7 +9,7 @@ const router: Router = Router();
 router.get(
 	'/stats',
 	authenticate,
-	authorize('REGISTRAR', 'SYSTEM_ADMIN', 'TEACHER'),
+	authorize('HEAD_REGISTRAR', 'SYSTEM_ADMIN', 'TEACHER'),
 	getStats,
 );
 

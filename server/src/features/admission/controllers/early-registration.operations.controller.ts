@@ -449,12 +449,17 @@ export function createEarlyRegistrationOperationsController(
           programType: requiredSectionProgramType as any,
         },
         include: {
-          advisingTeacher: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              middleName: true,
+          advisers: {
+            where: { status: "ACTIVE" },
+            include: {
+              teacher: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  middleName: true,
+                },
+              },
             },
           },
           _count: { select: { enrollmentRecords: true } },
@@ -462,7 +467,7 @@ export function createEarlyRegistrationOperationsController(
         orderBy: { name: "asc" },
       });
 
-      const formatted = sections.map((s) => ({
+      const formatted = sections.map((s: any) => ({
         id: s.id,
         name: s.name,
         programType: s.programType,
@@ -475,10 +480,10 @@ export function createEarlyRegistrationOperationsController(
             : 0,
         isFull: s._count.enrollmentRecords >= s.maxCapacity,
         isNearFull: s._count.enrollmentRecords >= s.maxCapacity * 0.8,
-        advisingTeacher: s.advisingTeacher
+        advisingTeacher: s.advisers?.[0]?.teacher
           ? {
-              id: s.advisingTeacher.id,
-              name: `${s.advisingTeacher.lastName}, ${s.advisingTeacher.firstName}${s.advisingTeacher.middleName ? ` ${s.advisingTeacher.middleName.charAt(0)}.` : ""}`,
+              id: s.advisers[0].teacher.id,
+              name: `${s.advisers[0].teacher.lastName}, ${s.advisers[0].teacher.firstName}${s.advisers[0].teacher.middleName ? ` ${s.advisers[0].teacher.middleName.charAt(0)}.` : ""}`,
             }
           : null,
       }));
@@ -915,7 +920,7 @@ export function createEarlyRegistrationOperationsController(
         await findApplicantOrThrow(applicantId);
 
       const canStartReview =
-        req.user?.role === "REGISTRAR" || req.user?.role === "SYSTEM_ADMIN";
+        req.user?.role === "HEAD_REGISTRAR" || req.user?.role === "SYSTEM_ADMIN";
 
       const isSubmittedStatus =
         applicant.status === "SUBMITTED_BEERF" ||

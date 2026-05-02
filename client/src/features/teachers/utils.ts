@@ -21,6 +21,7 @@ export function createEmptyTeacherForm(): TeacherFormState {
     email: "",
     employeeId: "",
     contactNumber: "",
+    designation: "",
     specialization: "",
     department: "",
     plantillaPosition: "",

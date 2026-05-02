@@ -68,6 +68,7 @@ function createEmptyDesignationForm(): DesignationFormState {
     designationNotes: "",
     effectiveFrom: "",
     effectiveTo: "",
+    isCustomPeriod: false,
     reason: "",
   };
 }
@@ -78,6 +79,8 @@ export default function Teachers() {
 
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
+  const [bosyDate, setBosyDate] = useState<string | null>(null);
+  const [eosyDate, setEosyDate] = useState<string | null>(null);
 
   const showSkeleton = useDelayedLoading(loading);
 
@@ -126,6 +129,8 @@ export default function Teachers() {
         params: ayId ? { schoolYearId: ayId } : undefined,
       });
       setTeachers(res.data.teachers || []);
+      setBosyDate(res.data.scope?.classOpeningDate || null);
+      setEosyDate(res.data.scope?.classEndDate || null);
     } catch (err) {
       toastApiError(err as never);
     } finally {
@@ -151,9 +156,11 @@ export default function Teachers() {
         .flatMap((gradeLevel) =>
           (gradeLevel.sections ?? []).map((section) => ({
             id: section.id,
-            label: `${gradeLevel.gradeLevelName} - ${section.name}`,
+            label: `${gradeLevel.gradeLevelName} - ${section.name} (${section.enrolledCount}/${section.maxCapacity} Learners)`,
             gradeLevelName: gradeLevel.gradeLevelName,
             sectionName: section.name,
+            maxCapacity: section.maxCapacity,
+            enrolledCount: section.enrolledCount,
             currentAdviserId: section.advisingTeacher?.id ?? null,
             currentAdviserName: section.advisingTeacher?.name ?? null,
           })),
@@ -280,6 +287,7 @@ export default function Teachers() {
       email: teacher.email || "",
       employeeId: teacher.employeeId || "",
       contactNumber: teacher.contactNumber || "",
+      designation: teacher.designationTitle || "",
       specialization: teacher.specialization || "",
       department: teacher.department || "",
       plantillaPosition: teacher.plantillaPosition || "",
@@ -429,6 +437,18 @@ export default function Teachers() {
   const openDesignationEditor = (teacher: Teacher) => {
     setDesignationOpenFor(teacher);
     setDesignationDrawerTab("role-load");
+
+    const bosy = bosyDate?.split("T")[0] || "";
+    const eosy = eosyDate?.split("T")[0] || "";
+
+    const teacherFrom = teacher.designation?.effectiveFrom?.split("T")[0];
+    const teacherTo = teacher.designation?.effectiveTo?.split("T")[0];
+
+    const hasCustomPeriod =
+      Boolean(teacherFrom) &&
+      Boolean(teacherTo) &&
+      (teacherFrom !== bosy || teacherTo !== eosy);
+
     setDesignationForm({
       isClassAdviser: teacher.designation?.isClassAdviser ?? false,
       advisorySectionId:
@@ -441,8 +461,9 @@ export default function Teachers() {
       customTargetTeachingHoursPerWeek:
         teacher.designation?.customTargetTeachingHoursPerWeek?.toString() ?? "",
       designationNotes: teacher.designation?.designationNotes ?? "",
-      effectiveFrom: teacher.designation?.effectiveFrom ?? "",
-      effectiveTo: teacher.designation?.effectiveTo ?? "",
+      effectiveFrom: teacherFrom ?? bosy,
+      effectiveTo: teacherTo ?? eosy,
+      isCustomPeriod: hasCustomPeriod,
       reason: "",
     });
     setDesignationCollision(null);
@@ -472,7 +493,7 @@ export default function Teachers() {
     setSubmitting(true);
     try {
       const advisoryEquivalentHoursPerWeek = designationForm.isClassAdviser
-        ? Number(designationForm.advisoryEquivalentHoursPerWeek || "5")
+        ? 5
         : 0;
 
       const customTargetRaw =
@@ -485,6 +506,14 @@ export default function Teachers() {
         ? Number(designationForm.advisorySectionId)
         : null;
 
+      const settings = useSettingsStore.getState();
+      const effectiveFrom = designationForm.isCustomPeriod
+        ? designationForm.effectiveFrom || null
+        : settings.classOpeningDate || null;
+      const effectiveTo = designationForm.isCustomPeriod
+        ? designationForm.effectiveTo || null
+        : settings.classEndDate || null;
+
       const payload = {
         schoolYearId: ayId,
         isClassAdviser: designationForm.isClassAdviser,
@@ -494,8 +523,8 @@ export default function Teachers() {
         isTeachingExempt: designationForm.isTeachingExempt,
         customTargetTeachingHoursPerWeek,
         designationNotes: designationForm.designationNotes.trim() || null,
-        effectiveFrom: designationForm.effectiveFrom || null,
-        effectiveTo: designationForm.effectiveTo || null,
+        effectiveFrom,
+        effectiveTo,
         reason: designationForm.reason.trim() || null,
       };
 

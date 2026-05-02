@@ -48,6 +48,7 @@ export async function getPublicSettings(
       earlyRegOpenDate: settings.activeSchoolYear?.earlyRegOpenDate ?? null,
       earlyRegCloseDate: settings.activeSchoolYear?.earlyRegCloseDate ?? null,
       classOpeningDate: settings.activeSchoolYear?.classOpeningDate ?? null,
+      classEndDate: settings.activeSchoolYear?.classEndDate ?? null,
       enrollOpenDate: settings.activeSchoolYear?.enrollOpenDate ?? null,
       enrollCloseDate: settings.activeSchoolYear?.enrollCloseDate ?? null,
       facebookPageUrl: settings.facebookPageUrl,

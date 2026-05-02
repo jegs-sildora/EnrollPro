@@ -8,28 +8,28 @@ const router = Router();
 router.get(
   "/sections",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.getEosySections,
 );
 
 router.get(
   "/sections/:id/records",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.getSectionRecords,
 );
 
 router.patch(
   "/records/:id",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.updateEosyRecord,
 );
 
 router.post(
   "/sections/:id/finalize",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.finalizeSection,
 );
 
@@ -43,14 +43,14 @@ router.post(
 router.get(
   "/school-year/:schoolYearId/export-lock",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.getSchoolYearExportLock,
 );
 
 router.get(
   "/school-year/:schoolYearId/final-lis-export",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.downloadFinalLisExport,
 );
 

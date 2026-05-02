@@ -26,26 +26,26 @@ const router: Router = Router();
 router.use(authenticate);
 
 // Get all students with search and filters
-router.get("/", authorize("REGISTRAR", "SYSTEM_ADMIN", "TEACHER"), getStudents);
+router.get("/", authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "TEACHER"), getStudents);
 
 // Summary cards for enrolled learner reporting (school-year scoped)
 router.get(
   "/summary",
-  authorize("REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
   getStudentsSummary,
 );
 
 // Get single student by ID
 router.get(
   "/:id",
-  authorize("REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
   getStudentById,
 );
 
 // Update student information
 router.put(
   "/:id",
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   validate(updateStudentSchema),
   updateStudent,
 );
@@ -53,18 +53,18 @@ router.put(
 // Health Records
 router.get(
   "/:id/health-records",
-  authorize("REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
   getStudentHealthRecords,
 );
 router.post(
   "/:id/health-records",
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   validate(healthRecordSchema),
   createStudentHealthRecord,
 );
 router.put(
   "/:id/health-records/:recId",
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   validate(healthRecordSchema),
   updateStudentHealthRecord,
 );
@@ -72,21 +72,21 @@ router.put(
 // Portal PIN Reset
 router.post(
   "/:id/reset-portal-pin",
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   resetPortalPin,
 );
 
 // Clear Deficiency
 router.post(
   "/:id/clear-deficiency",
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   clearDeficiency,
 );
 
 // Verify PSA
 router.post(
   "/:id/verify-psa",
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   verifyPsa,
 );
 

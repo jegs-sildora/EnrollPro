@@ -89,6 +89,7 @@ model Teacher {
   email          String?   @map("email")
   contactNumber  String?   @map("contact_number")
   specialization String?
+  designation    String?
   department     String?   @map("department") // For ATLAS integration: Languages, Mathematics, Science, etc.
   plantillaPosition String?   @map("plantilla_position")
   photoPath      String?   @map("photo_path")
@@ -96,7 +97,7 @@ model Teacher {
   createdAt      DateTime         @default(now()) @db.Timestamptz @map("created_at")
   updatedAt      DateTime         @updatedAt @db.Timestamptz @map("updated_at")
   
-  sections       Section[]
+  advisoryHistory SectionAdviser[]
   subjects       TeacherSubject[]
   teacherDesignations TeacherDesignation[]
   atlasSyncEvents AtlasSyncEvent[]
@@ -145,6 +146,7 @@ model SchoolYear {
   clones             SchoolYear[]     @relation("SchoolYearClone")
   bosyLockedBy       User?            @relation("SchoolYearLockedBy", fields: [bosyLockedById], references: [id])
   sections           Section[]
+  sectionAdvisers    SectionAdviser[]
   schoolSettings     SchoolSetting[]
   scpProgramConfigs  ScpProgramConfig[]
   healthRecords      HealthRecord[]
@@ -185,15 +187,14 @@ model Section {
   programType       ApplicantType @default(REGULAR) @map("program_type")
   isHomogeneous     Boolean      @default(false) @map("is_homogeneous")
   isSnake           Boolean      @default(false) @map("is_snake")
-  advisingTeacherId Int?         @map("advising_teacher_id")
   isEosyFinalized   Boolean      @default(false) @map("is_eosy_finalized")
   createdAt         DateTime     @default(now()) @db.Timestamptz @map("created_at")
   updatedAt         DateTime     @updatedAt @db.Timestamptz @map("updated_at")
   
-  advisingTeacher   Teacher?     @relation(fields: [advisingTeacherId], references: [id])
   gradeLevel        GradeLevel   @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
   schoolYear        SchoolYear   @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
   enrollmentRecords EnrollmentRecord[]
+  advisers          SectionAdviser[]
   teacherDesignations TeacherDesignation[] @relation("TeacherDesignationAdvisorySection")
 
   @@index([gradeLevelId], name: "idx_sections_grade_level_id")
@@ -201,6 +202,36 @@ model Section {
   @@index([gradeLevelId, programType], name: "idx_sections_grade_level_program_type")
   @@unique([name, gradeLevelId, schoolYearId], name: "uq_sections_name_grade_sy")
   @@map("sections")
+}
+
+/// Historical ledger of section adviserships for DepEd audit compliance
+model SectionAdviser {
+  id             Int                  @id @default(autoincrement())
+  sectionId      Int                  @map("section_id")
+  teacherId      Int                  @map("teacher_id")
+  schoolYearId   Int                  @map("school_year_id")
+  effectiveFrom  DateTime             @db.Date @map("effective_from")
+  effectiveTo    DateTime?            @db.Date @map("effective_to")
+  status         SectionAdviserStatus @default(ACTIVE) @map("status")
+  handoverReason String?              @map("handover_reason")
+  createdAt      DateTime             @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt      DateTime             @updatedAt @db.Timestamptz @map("updated_at")
+
+  section        Section              @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  teacher        Teacher              @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  schoolYear     SchoolYear           @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+
+  @@index([sectionId], name: "idx_section_advisers_section_id")
+  @@index([teacherId], name: "idx_section_advisers_teacher_id")
+  @@map("section_advisers")
+}
+
+enum SectionAdviserStatus {
+  ACTIVE
+  HANDED_OVER
+  REVOKED
+
+  @@map("section_adviser_status")
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -610,7 +641,7 @@ model ScpProgramConfig {
 
 /// Ordered assessment step in an SCP admission pipeline
 model ScpProgramStep {
-  id            Int            @id @default(autoincrement())
+  id                 Int            @id @default(autoincrement())
   scpProgramConfigId Int            @map("scp_program_config_id")
   stepOrder          Int            @map("step_order")
   kind               AssessmentKind @map("assessment_kind")
@@ -619,13 +650,13 @@ model ScpProgramStep {
   isRequired         Boolean        @default(true) @map("is_required")
   scheduledDate      DateTime?      @db.Date @map("scheduled_date")
   scheduledTime      String?        @map("scheduled_time")
-  venue         String?
-  notes         String?
-  cutoffScore   Float?         @map("cutoff_score")
-  rubric        Json?
-  
-  scpProgramConfig   ScpProgramConfig @relation(fields: [scpProgramConfigId], references: [id], onDelete: Cascade)
-  rubricCategories   RubricCategory[]
+  venue              String?
+  notes              String?
+  cutoffScore        Float?         @map("cutoff_score")
+  rubric             Json?
+
+  scpProgramConfig ScpProgramConfig             @relation(fields: [scpProgramConfigId], references: [id], onDelete: Cascade)
+  rubricCategories ScpInterviewRubricCategory[]
 
   @@unique([scpProgramConfigId, stepOrder], name: "uq_scp_program_steps_order")
   @@index([scpProgramConfigId], name: "idx_scp_program_steps_config_id")
@@ -633,32 +664,32 @@ model ScpProgramStep {
 }
 
 /// Dynamic rubric categories for an assessment step
-model RubricCategory {
-  id               Int            @id @default(autoincrement())
-  scpProgramStepId Int            @map("scp_program_step_id")
+model ScpInterviewRubricCategory {
+  id               Int    @id @default(autoincrement())
+  scpProgramStepId Int    @map("scp_program_step_id")
   name             String
-  displayOrder     Int            @default(0) @map("display_order")
-  
-  scpProgramStep   ScpProgramStep @relation(fields: [scpProgramStepId], references: [id], onDelete: Cascade)
-  criteria         RubricCriterion[]
+  displayOrder     Int    @default(0) @map("display_order")
+
+  scpProgramStep ScpProgramStep                @relation(fields: [scpProgramStepId], references: [id], onDelete: Cascade)
+  criteria       ScpInterviewRubricCriterion[]
 
   @@index([scpProgramStepId], name: "idx_rubric_categories_step_id")
-  @@map("rubric_categories")
+  @@map("scp_interview_rubric_categories")
 }
 
 /// Individual scoring criteria within a rubric category
-model RubricCriterion {
-  id               Int            @id @default(autoincrement())
-  rubricCategoryId Int            @map("rubric_category_id")
+model ScpInterviewRubricCriterion {
+  id               Int     @id @default(autoincrement())
+  rubricCategoryId Int     @map("rubric_category_id")
   name             String
   description      String?
-  maxPts           Float          @map("max_pts")
-  displayOrder     Int            @default(0) @map("display_order")
-  
-  category         RubricCategory @relation(fields: [rubricCategoryId], references: [id], onDelete: Cascade)
+  maxPts           Float   @map("max_pts")
+  displayOrder     Int     @default(0) @map("display_order")
+
+  category ScpInterviewRubricCategory @relation(fields: [rubricCategoryId], references: [id], onDelete: Cascade)
 
   @@index([rubricCategoryId], name: "idx_rubric_criteria_category_id")
-  @@map("rubric_criteria")
+  @@map("scp_interview_rubric_criteria")
 }
 
 /// Options for SCP configuration

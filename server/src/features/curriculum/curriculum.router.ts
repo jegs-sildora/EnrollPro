@@ -44,7 +44,7 @@ router.delete(
 router.get(
   "/:ayId/scp-config",
   authenticate,
-  authorize("REGISTRAR", "SYSTEM_ADMIN"),
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   listScpConfigs,
 );
 router.put(

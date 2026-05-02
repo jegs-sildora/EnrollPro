@@ -121,7 +121,7 @@ export const createStudentsHealthController = (
 
       const userName = record.recordedBy
         ? `${record.recordedBy.firstName} ${record.recordedBy.lastName}`
-        : "Registrar";
+        : "HEAD_REGISTRAR";
       const learnerName = `${record.learner.firstName} ${record.learner.lastName}`;
       const yearLabel = record.schoolYear.yearLabel;
       const periodLabel = assessmentPeriod === "BOSY" ? "BoSY" : "EoSY";
@@ -187,7 +187,7 @@ export const createStudentsHealthController = (
       });
       const userName = user
         ? `${user.firstName} ${user.lastName}`
-        : "Registrar";
+        : "HEAD_REGISTRAR";
       const learnerName = `${record.learner.firstName} ${record.learner.lastName}`;
 
       const changedFields = [];

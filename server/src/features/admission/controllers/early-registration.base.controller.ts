@@ -407,8 +407,13 @@ export function createEarlyRegistrationBaseController(
             include: {
               section: {
                 include: {
-                  advisingTeacher: {
-                    select: { id: true, firstName: true, lastName: true },
+                  advisers: {
+                    where: { status: "ACTIVE" },
+                    include: {
+                      teacher: {
+                        select: { id: true, firstName: true, lastName: true },
+                      },
+                    },
                   },
                 },
               },
@@ -455,7 +460,7 @@ export function createEarlyRegistrationBaseController(
         if (!earlyReg) throw new AppError(404, "Application not found");
 
         const canStartReview =
-          req.user?.role === "REGISTRAR" || req.user?.role === "SYSTEM_ADMIN";
+          req.user?.role === "HEAD_REGISTRAR" || req.user?.role === "SYSTEM_ADMIN";
 
         if (earlyReg.status === "SUBMITTED_BEERF" && canStartReview) {
           await prisma.earlyRegistrationApplication.update({

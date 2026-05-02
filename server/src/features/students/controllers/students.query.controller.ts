@@ -188,12 +188,17 @@ export const createStudentsQueryController = (
             include: {
               section: {
                 include: {
-                  advisingTeacher: {
-                    select: {
-                      id: true,
-                      firstName: true,
-                      lastName: true,
-                      middleName: true,
+                  advisers: {
+                    where: { status: "ACTIVE" },
+                    include: {
+                      teacher: {
+                        select: {
+                          id: true,
+                          firstName: true,
+                          lastName: true,
+                          middleName: true,
+                        },
+                      },
                     },
                   },
                 },
@@ -214,6 +219,8 @@ export const createStudentsQueryController = (
       if (!applicant) {
         return res.status(404).json({ message: "Student not found" });
       }
+
+      const activeAdviser = (applicant.enrollmentRecord?.section as any)?.advisers?.[0]?.teacher ?? null;
 
       const addresses = applicant.addresses as AddressLike[];
       const familyMembers = applicant.familyMembers as FamilyMemberLike[];
@@ -259,11 +266,8 @@ export const createStudentsQueryController = (
               id: applicant.enrollmentRecord.id,
               section: applicant.enrollmentRecord.section.name,
               sectionId: applicant.enrollmentRecord.sectionId,
-              advisingTeacher: applicant.enrollmentRecord.section
-                .advisingTeacher
-                ? buildFullName(
-                    applicant.enrollmentRecord.section.advisingTeacher,
-                  )
+              advisingTeacher: activeAdviser
+                ? buildFullName(activeAdviser)
                 : null,
               enrolledAt: applicant.enrollmentRecord.enrolledAt,
               enrolledBy: `${applicant.enrollmentRecord.enrolledBy.lastName}, ${applicant.enrollmentRecord.enrolledBy.firstName}`,

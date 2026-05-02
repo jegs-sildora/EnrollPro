@@ -60,6 +60,7 @@ export const teacherSchema = z.object({
   email: z.string().trim().email("Invalid email address").optional().nullable(),
   employeeId: optionalUpperText.optional(),
   contactNumber: optionalContactNumber.optional(),
+  designation: optionalUpperText.optional(),
   specialization: optionalUpperText.optional(),
   department: z
     .preprocess(
