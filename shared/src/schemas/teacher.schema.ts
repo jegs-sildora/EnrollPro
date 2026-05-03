@@ -3,6 +3,7 @@ import {
   DEPED_TEACHER_PLANTILLA_POSITION_VALUES,
   DEPED_TEACHER_SUBJECT_VALUES,
   DEPED_TEACHER_DEPARTMENT_VALUES,
+  DEPED_TEACHER_SPECIALIZATION_VALUES,
 } from "../constants/index.js";
 
 const optionalUpperText = z.preprocess((value) => {
@@ -45,6 +46,8 @@ const teacherPlantillaPositionSchema = z.enum(
 
 const teacherDepartmentSchema = z.enum(DEPED_TEACHER_DEPARTMENT_VALUES);
 
+const teacherSpecializationSchema = z.enum(DEPED_TEACHER_SPECIALIZATION_VALUES);
+
 export const teacherSchema = z.object({
   firstName: z
     .string()
@@ -61,7 +64,22 @@ export const teacherSchema = z.object({
   employeeId: optionalUpperText.optional(),
   contactNumber: optionalContactNumber.optional(),
   designation: optionalUpperText.optional(),
-  specialization: optionalUpperText.optional(),
+  specialization: z
+    .preprocess(
+      (value) => {
+        if (value === undefined || value === null || value === "") {
+          return null;
+        }
+
+        if (typeof value === "string") {
+          return value.trim().toUpperCase();
+        }
+
+        return value;
+      },
+      z.union([teacherSpecializationSchema, z.null()]),
+    )
+    .optional(),
   department: z
     .preprocess(
       (value) => {
@@ -124,17 +142,17 @@ const optionalDateOnly = z
 
 export const teacherDesignationSchema = z
   .object({
-    schoolYearId: z.number().int().positive("schoolYearId is required"),
+    schoolYearId: z.coerce.number().int().positive("schoolYearId is required"),
     isClassAdviser: z.boolean().default(false),
-    advisorySectionId: z.number().int().positive().optional().nullable(),
-    advisoryEquivalentHoursPerWeek: z
+    advisorySectionId: z.coerce.number().int().positive().optional().nullable(),
+    advisoryEquivalentHoursPerWeek: z.coerce
       .number()
       .min(0, "Advisory equivalent hours must be non-negative")
       .max(60, "Advisory equivalent hours cannot exceed 60")
       .optional(),
     isTic: z.boolean().default(false),
     isTeachingExempt: z.boolean().default(false),
-    customTargetTeachingHoursPerWeek: z
+    customTargetTeachingHoursPerWeek: z.coerce
       .number()
       .min(0, "Target teaching hours must be non-negative")
       .max(60, "Target teaching hours cannot exceed 60")
@@ -162,3 +180,19 @@ export const teacherDesignationSchema = z
       });
     }
   });
+
+export const TEACHER_DEACTIVATION_REASONS = [
+  "Retirement",
+  "Transfer (School-to-School)",
+  "Resignation",
+  "Extended Leave",
+  "End of Contract",
+] as const;
+
+export const deactivateTeacherSchema = z.object({
+  reason: z.enum(TEACHER_DEACTIVATION_REASONS, {
+    message: "Please select a valid deactivation reason",
+  }),
+});
+
+export type DeactivateTeacherInput = z.infer<typeof deactivateTeacherSchema>;

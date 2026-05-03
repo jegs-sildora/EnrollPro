@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronsUpDown, Search, Trash2, X } from "lucide-react";
+import { Check, ChevronsUpDown, Search, Trash2, X } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -26,9 +26,11 @@ import type { TeacherFormState } from "../types";
 import {
   DEPED_LEARNING_AREA_OPTIONS,
   TEACHER_PLANTILLA_POSITION_OPTIONS,
-  TEACHER_SUBJECT_OPTIONS,
+  TEACHER_SUBJECT_GROUPS,
+  TEACHER_SPECIALIZATION_GROUPS,
   TEACHER_DEPARTMENT_OPTIONS,
 } from "../utils";
+import { SelectGroup, SelectLabel } from "@/shared/ui/select";
 
 type TeacherFormField = Exclude<keyof TeacherFormState, "photo" | "subjects">;
 const EMPTY_DEPARTMENT_VALUE = "__NONE__";
@@ -160,25 +162,33 @@ export function TeacherFormSheet({
     return Array.from(new Set(formData.subjects));
   }, [formData.subjects]);
 
-  const filteredSubjectOptions = useMemo(() => {
+  const allSubjectOptions = useMemo(
+    () => TEACHER_SUBJECT_GROUPS.flatMap((g) => g.options),
+    [],
+  );
+
+  const filteredSubjectGroups = useMemo(() => {
     const normalizedQuery = subjectSearchTerm.trim().toLowerCase();
     if (!normalizedQuery) {
-      return TEACHER_SUBJECT_OPTIONS;
+      return TEACHER_SUBJECT_GROUPS;
     }
 
-    return TEACHER_SUBJECT_OPTIONS.filter(
-      (option) =>
-        option.label.toLowerCase().includes(normalizedQuery) ||
-        option.value.toLowerCase().includes(normalizedQuery),
-    );
+    return TEACHER_SUBJECT_GROUPS.map((group) => ({
+      ...group,
+      options: group.options.filter(
+        (option) =>
+          option.label.toLowerCase().includes(normalizedQuery) ||
+          option.value.toLowerCase().includes(normalizedQuery),
+      ),
+    })).filter((group) => group.options.length > 0);
   }, [subjectSearchTerm]);
 
   const subjectLabelMap = useMemo(
     () =>
       new Map<string, string>(
-        TEACHER_SUBJECT_OPTIONS.map((option) => [option.value, option.label]),
+        allSubjectOptions.map((option) => [option.value, option.label]),
       ),
-    [],
+    [allSubjectOptions],
   );
 
   const toggleSubject = useCallback(
@@ -191,6 +201,11 @@ export function TeacherFormSheet({
     },
     [onSubjectsChange, selectedSubjects],
   );
+
+  const selectedSpecializationValue =
+    formData.specialization.trim().length > 0
+      ? formData.specialization
+      : "__NONE__";
 
   return (
     <Sheet
@@ -452,15 +467,38 @@ export function TeacherFormSheet({
 
                 <div className="space-y-2">
                   <Label>Specialization / Learning Area</Label>
-                  <Input
-                    placeholder="e.g. Pure Mathematics, Organic Chemistry"
-                    value={formData.specialization}
-                    onChange={(event) =>
-                      onFieldChange("specialization", event.target.value)
-                    }
-                  />
-                  <p className="text-[10px] text-muted-foreground">
-                    Specific expertise within the department.
+                  <Select
+                    value={selectedSpecializationValue}
+                    onValueChange={(value) =>
+                      onFieldChange(
+                        "specialization",
+                        value === "__NONE__" ? "" : value,
+                      )
+                    }>
+                    <SelectTrigger className="font-bold">
+                      <SelectValue placeholder="Select primary specialization" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__NONE__">Not set</SelectItem>
+                      {TEACHER_SPECIALIZATION_GROUPS.map((group) => (
+                        <SelectGroup key={group.group}>
+                          <SelectLabel className="text-[10px] font-black uppercase tracking-widest text-primary/70 py-2">
+                            {group.group}
+                          </SelectLabel>
+                          {group.options.map((option) => (
+                            <SelectItem
+                              key={option.value}
+                              value={option.value}
+                              className="text-xs uppercase font-bold">
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground font-bold">
+                    Primary degree or major qualification.
                   </p>
                 </div>
               </div>
@@ -480,11 +518,11 @@ export function TeacherFormSheet({
                       <Button
                         type="button"
                         variant="outline"
-                        className="w-full justify-between font-normal">
+                        className="w-full justify-between font-bold">
                         <span className="truncate">
                           {selectedSubjects.length > 0
                             ? `${selectedSubjects.length} selected`
-                            : "Select one or more subjects"}
+                            : "Select all assigned subjects"}
                         </span>
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-60" />
                       </Button>
@@ -495,46 +533,55 @@ export function TeacherFormSheet({
                       <div className="relative">
                         <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                          placeholder="Search subjects"
+                          placeholder="Search BEC or SCP subjects..."
                           value={subjectSearchTerm}
                           onChange={(event) =>
                             setSubjectSearchTerm(event.target.value)
                           }
-                          className="pl-8"
+                          className="pl-8 font-bold"
                         />
                       </div>
 
-                      <div className="mt-3 max-h-56 space-y-1 overflow-y-auto pr-1">
-                        {filteredSubjectOptions.length === 0 ? (
-                          <p className="px-2 py-3 text-sm text-muted-foreground">
+                      <div className="mt-3 max-h-72 space-y-4 overflow-y-auto pr-1">
+                        {filteredSubjectGroups.length === 0 ? (
+                          <p className="px-2 py-3 text-sm text-muted-foreground font-bold italic">
                             No subjects match your search.
                           </p>
                         ) : (
-                          filteredSubjectOptions.map((option) => {
-                            const isSelected = selectedSubjects.includes(
-                              option.value,
-                            );
+                          filteredSubjectGroups.map((group) => (
+                            <div
+                              key={group.group}
+                              className="space-y-1">
+                              <h4 className="px-2 text-[10px] font-black uppercase tracking-widest text-primary/80">
+                                {group.group}
+                              </h4>
+                              <div className="space-y-0.5">
+                                {group.options.map((option) => {
+                                  const isSelected = selectedSubjects.includes(
+                                    option.value,
+                                  );
 
-                            return (
-                              <button
-                                key={option.value}
-                                type="button"
-                                onClick={() => toggleSubject(option.value)}
-                                className={cn(
-                                  "flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition",
-                                  isSelected
-                                    ? "bg-primary/10 text-foreground"
-                                    : "hover:bg-muted",
-                                )}>
-                                <span>{option.label}</span>
-                                {isSelected ? (
-                                  <span className="text-xs font-semibold uppercase text-primary">
-                                    Added
-                                  </span>
-                                ) : null}
-                              </button>
-                            );
-                          })
+                                  return (
+                                    <button
+                                      key={option.value}
+                                      type="button"
+                                      onClick={() => toggleSubject(option.value)}
+                                      className={cn(
+                                        "flex w-full items-center justify-between rounded-md px-2 py-2 text-left transition",
+                                        isSelected
+                                          ? "bg-primary text-primary-foreground font-black"
+                                          : "hover:bg-muted text-foreground font-bold text-xs uppercase",
+                                      )}>
+                                      <span>{option.label}</span>
+                                      {isSelected ? (
+                                        <Check className="h-3.5 w-3.5 stroke-[4]" />
+                                      ) : null}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))
                         )}
                       </div>
                     </PopoverContent>
@@ -542,20 +589,20 @@ export function TeacherFormSheet({
 
                   <div className="flex flex-wrap gap-2 pt-1">
                     {selectedSubjects.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">
-                        Select all teaching subjects assigned to this teacher.
+                      <p className="text-[10px] text-muted-foreground font-bold italic">
+                        Select all teaching subjects (both BEC and SCP) assigned to this teacher.
                       </p>
                     ) : (
                       selectedSubjects.map((subject) => (
                         <Badge
                           key={subject}
                           variant="secondary"
-                          className="gap-1.5 pr-1">
+                          className="gap-1.5 pr-1 py-1 text-[10px] font-black uppercase border-primary/20">
                           <span>{subjectLabelMap.get(subject) ?? subject}</span>
                           <button
                             type="button"
                             onClick={() => toggleSubject(subject)}
-                            className="rounded-full p-0.5 text-muted-foreground transition hover:text-foreground"
+                            className="rounded-full p-0.5 text-muted-foreground transition hover:text-foreground hover:bg-muted"
                             aria-label={`Remove ${subject}`}>
                             <X className="h-3 w-3" />
                           </button>

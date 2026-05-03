@@ -265,34 +265,236 @@ export const DEPED_TEACHER_DEPARTMENT_OPTIONS = [
 ] as const;
 
 export const DEPED_TEACHER_SUBJECT_VALUES = [
+  // BEC Core
   "ENGLISH",
   "FILIPINO",
   "MATHEMATICS",
   "SCIENCE",
   "ARALING PANLIPUNAN",
   "MAPEH",
-  "TLE",
-  "ESP",
   "VALUES EDUCATION",
+  "TLE",
+  "HOME ECONOMICS",
+  "INDUSTRIAL ARTS",
+  "AGRI_FISHERY ARTS",
   "ICT",
-  "EPP",
-  "MOTHER TONGUE",
+  // STE
+  "ENVIRONMENTAL SCIENCE",
+  "RESEARCH I",
+  "BASIC STATISTICS",
+  "RESEARCH II",
+  "ADVANCED STATISTICS",
+  "BIOTECHNOLOGY",
+  "RESEARCH III",
+  "ADVANCED PHYSICS",
+  "ADVANCED CHEMISTRY",
+  "ELECTRONICS",
+  // SPA
+  "MUSIC",
+  "VISUAL ARTS",
+  "THEATER ARTS",
+  "MEDIA ARTS",
+  "CREATIVE WRITING",
+  "DANCE",
+  // SPS
+  "INDIVIDUAL / DUAL SPORTS",
+  "TEAM SPORTS",
+  "SPORTS OFFICIATING",
+  "SPORTS COACHING",
+  // SPJ
+  "BASICS OF JOURNALISM",
+  "PRINT BROADCASTING & PHOTOJOURNALISM",
+  "RADIO BROADCASTING",
+  "TV BROADCASTING & ONLINE JOURNALISM",
+  // SPFL
+  "SPANISH",
+  "JAPANESE",
+  "FRENCH",
+  "GERMAN",
+  "MANDARIN",
+  "KOREAN",
 ] as const;
 
-export const DEPED_TEACHER_SUBJECT_OPTIONS = [
-  { value: "ENGLISH", label: "English" },
-  { value: "FILIPINO", label: "Filipino" },
-  { value: "MATHEMATICS", label: "Mathematics" },
-  { value: "SCIENCE", label: "Science" },
-  { value: "ARALING PANLIPUNAN", label: "Araling Panlipunan" },
-  { value: "MAPEH", label: "MAPEH" },
-  { value: "TLE", label: "TLE" },
-  { value: "ESP", label: "ESP" },
-  { value: "VALUES EDUCATION", label: "Values Education" },
-  { value: "ICT", label: "ICT" },
-  { value: "EPP", label: "EPP" },
-  { value: "MOTHER TONGUE", label: "Mother Tongue" },
+export const DEPED_TEACHER_SUBJECT_GROUPS = [
+  {
+    group: "Basic Education Curriculum (BEC)",
+    options: [
+      { value: "ENGLISH", label: "English" },
+      { value: "FILIPINO", label: "Filipino" },
+      { value: "MATHEMATICS", label: "Mathematics" },
+      { value: "SCIENCE", label: "Science" },
+      { value: "ARALING PANLIPUNAN", label: "Araling Panlipunan (AP)" },
+      { value: "MAPEH", label: "MAPEH" },
+      { value: "VALUES EDUCATION", label: "Values Education / EsP" },
+      { value: "TLE", label: "Technology and Livelihood Education (TLE)" },
+      { value: "HOME ECONOMICS", label: "Home Economics (HE)" },
+      { value: "INDUSTRIAL ARTS", label: "Industrial Arts (IA)" },
+      { value: "AGRI_FISHERY ARTS", label: "Agri-Fishery Arts (AFA)" },
+      { value: "ICT", label: "Information and Communications Technology (ICT)" },
+    ],
+  },
+  {
+    group: "Science, Technology, and Engineering (STE)",
+    options: [
+      { value: "ENVIRONMENTAL SCIENCE", label: "Environmental Science" },
+      { value: "RESEARCH I", label: "Research I / Basic Statistics" },
+      { value: "BASIC STATISTICS", label: "Basic Statistics" },
+      { value: "RESEARCH II", label: "Research II / Advanced Statistics" },
+      { value: "ADVANCED STATISTICS", label: "Advanced Statistics" },
+      { value: "BIOTECHNOLOGY", label: "Biotechnology" },
+      { value: "RESEARCH III", label: "Research III / Advanced Physics" },
+      { value: "ADVANCED PHYSICS", label: "Advanced Physics" },
+      { value: "ADVANCED CHEMISTRY", label: "Advanced Chemistry" },
+      { value: "ELECTRONICS", label: "Electronics" },
+    ],
+  },
+  {
+    group: "Special Program in the Arts (SPA)",
+    options: [
+      { value: "MUSIC", label: "Music (Vocal / Instrumental)" },
+      { value: "VISUAL ARTS", label: "Visual Arts" },
+      { value: "THEATER ARTS", label: "Theater Arts" },
+      { value: "MEDIA ARTS", label: "Media Arts" },
+      { value: "CREATIVE WRITING", label: "Creative Writing (English / Filipino)" },
+      { value: "DANCE", label: "Dance" },
+    ],
+  },
+  {
+    group: "Special Program in Sports (SPS)",
+    options: [
+      { value: "INDIVIDUAL / DUAL SPORTS", label: "Individual / Dual Sports" },
+      { value: "TEAM SPORTS", label: "Team Sports" },
+      { value: "SPORTS OFFICIATING", label: "Sports Officiating" },
+      { value: "SPORTS COACHING", label: "Sports Coaching & Leadership" },
+    ],
+  },
+  {
+    group: "Special Program in Journalism (SPJ)",
+    options: [
+      { value: "BASICS OF JOURNALISM", label: "Basics of Journalism" },
+      { value: "PRINT BROADCASTING & PHOTOJOURNALISM", label: "Print Broadcasting & Photojournalism" },
+      { value: "RADIO BROADCASTING", label: "Radio Broadcasting" },
+      { value: "TV BROADCASTING & ONLINE JOURNALISM", label: "TV Broadcasting & Online Journalism" },
+    ],
+  },
+  {
+    group: "Special Program in Foreign Language (SPFL)",
+    options: [
+      { value: "SPANISH", label: "Spanish" },
+      { value: "JAPANESE", label: "Japanese (Nihongo)" },
+      { value: "FRENCH", label: "French" },
+      { value: "GERMAN", label: "German" },
+      { value: "MANDARIN", label: "Mandarin" },
+      { value: "KOREAN", label: "Korean" },
+    ],
+  },
+];
+
+export const DEPED_TEACHER_SUBJECT_OPTIONS = DEPED_TEACHER_SUBJECT_GROUPS.flatMap(g => g.options);
+
+export const DEPED_TEACHER_SPECIALIZATION_VALUES = [
+  "MAJOR IN ENGLISH / APPLIED LINGUISTICS",
+  "MAJOR IN FILIPINO",
+  "MAJOR IN MATHEMATICS",
+  "MAJOR IN GENERAL SCIENCE / BIOLOGY / CHEMISTRY / PHYSICS",
+  "MAJOR IN SOCIAL STUDIES / HISTORY",
+  "MAJOR IN VALUES EDUCATION",
+  "MAJOR IN MAPEH",
+  "MAJOR IN HOME ECONOMICS",
+  "MAJOR IN INDUSTRIAL ARTS",
+  "MAJOR IN AGRI-FISHERY ARTS",
+  "MAJOR IN ICT",
+  "MAJOR IN PHYSICS",
+  "MAJOR IN CHEMISTRY",
+  "MAJOR IN BIOLOGY",
+  "MAJOR IN MATHEMATICS (WITH STATISTICS BACKGROUND)",
+  "MAJOR IN MUSIC EDUCATION",
+  "FINE ARTS",
+  "THEATER / PERFORMING ARTS",
+  "LITERATURE / CREATIVE WRITING",
+  "DANCE",
+  "MAJOR IN PHYSICAL EDUCATION",
+  "SPORTS SCIENCE",
+  "CERTIFIED SPECIALIST COACH",
+  "MASS COMMUNICATION",
+  "JOURNALISM",
+  "MAJOR IN ENGLISH (CAMPUS JOURNALISM)",
+  "MAJOR IN FILIPINO (CAMPUS JOURNALISM)",
+  "LINGUISTICS",
+  "DELE CERTIFIED (SPANISH)",
+  "JLPT CERTIFIED (JAPANESE)",
+  "DELF CERTIFIED (FRENCH)",
+  "HSK CERTIFIED (MANDARIN)",
+  "TOPIK CERTIFIED (KOREAN)",
 ] as const;
+
+export const DEPED_TEACHER_SPECIALIZATION_GROUPS = [
+  {
+    group: "Basic Education Curriculum (BEC)",
+    options: [
+      { value: "MAJOR IN ENGLISH / APPLIED LINGUISTICS", label: "Major in English / Applied Linguistics" },
+      { value: "MAJOR IN FILIPINO", label: "Major in Filipino" },
+      { value: "MAJOR IN MATHEMATICS", label: "Major in Mathematics" },
+      { value: "MAJOR IN GENERAL SCIENCE / BIOLOGY / CHEMISTRY / PHYSICS", label: "Major in General Science / Biology / Chemistry / Physics" },
+      { value: "MAJOR IN SOCIAL STUDIES / HISTORY", label: "Major in Social Studies / History" },
+      { value: "MAJOR IN VALUES EDUCATION", label: "Major in Values Education" },
+      { value: "MAJOR IN MAPEH", label: "Major in MAPEH (or specific Physical Education / Health degrees)" },
+      { value: "MAJOR IN HOME ECONOMICS", label: "Major in Home Economics (HE)" },
+      { value: "MAJOR IN INDUSTRIAL ARTS", label: "Major in Industrial Arts (IA)" },
+      { value: "MAJOR IN AGRI-FISHERY ARTS", label: "Major in Agri-Fishery Arts (AFA)" },
+      { value: "MAJOR IN ICT", label: "Major in Information and Communications Technology (ICT)" },
+    ],
+  },
+  {
+    group: "Science, Technology, and Engineering (STE)",
+    options: [
+      { value: "MAJOR IN PHYSICS", label: "Major in Physics" },
+      { value: "MAJOR IN CHEMISTRY", label: "Major in Chemistry" },
+      { value: "MAJOR IN BIOLOGY", label: "Major in Biology" },
+      { value: "MAJOR IN MATHEMATICS (WITH STATISTICS BACKGROUND)", label: "Major in Mathematics (with Statistics background)" },
+    ],
+  },
+  {
+    group: "Special Program in the Arts (SPA)",
+    options: [
+      { value: "MAJOR IN MUSIC EDUCATION", label: "Major in Music Education" },
+      { value: "FINE ARTS", label: "Fine Arts" },
+      { value: "THEATER / PERFORMING ARTS", label: "Theater/Performing Arts" },
+      { value: "LITERATURE / CREATIVE WRITING", label: "Literature/Creative Writing" },
+      { value: "DANCE", label: "Dance" },
+    ],
+  },
+  {
+    group: "Special Program in Sports (SPS)",
+    options: [
+      { value: "MAJOR IN PHYSICAL EDUCATION", label: "Major in Physical Education" },
+      { value: "SPORTS SCIENCE", label: "Sports Science" },
+      { value: "CERTIFIED SPECIALIST COACH", label: "Certified Specialist Coach" },
+    ],
+  },
+  {
+    group: "Special Program in Journalism (SPJ)",
+    options: [
+      { value: "MASS COMMUNICATION", label: "Mass Communication" },
+      { value: "JOURNALISM", label: "Journalism" },
+      { value: "MAJOR IN ENGLISH (CAMPUS JOURNALISM)", label: "Major in English (with Campus Journalism background)" },
+      { value: "MAJOR IN FILIPINO (CAMPUS JOURNALISM)", label: "Major in Filipino (with Campus Journalism background)" },
+    ],
+  },
+  {
+    group: "Special Program in Foreign Language (SPFL)",
+    options: [
+      { value: "LINGUISTICS", label: "Linguistics" },
+      { value: "DELE CERTIFIED (SPANISH)", label: "DELE Certified (Spanish)" },
+      { value: "JLPT CERTIFIED (JAPANESE)", label: "JLPT Certified (Japanese)" },
+      { value: "DELF CERTIFIED (FRENCH)", label: "DELF Certified (French)" },
+      { value: "HSK CERTIFIED (MANDARIN)", label: "HSK Certified (Mandarin)" },
+      { value: "TOPIK CERTIFIED (KOREAN)", label: "TOPIK Certified (Korean)" },
+    ],
+  },
+];
+
+export const DEPED_TEACHER_SPECIALIZATION_OPTIONS = DEPED_TEACHER_SPECIALIZATION_GROUPS.flatMap(g => g.options);
 
 export const DEPED_TEACHER_PLANTILLA_POSITION_VALUES = [
   "TEACHER I",

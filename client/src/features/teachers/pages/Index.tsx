@@ -9,6 +9,13 @@ import { getImageUrl } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -34,6 +41,16 @@ import {
   formatTeacherName,
   normalizeOptionalInput,
 } from "../utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/select";
+import { Label } from "@/shared/ui/label";
+import { AlertTriangle, UserMinus, Loader2 } from "lucide-react";
+import { TEACHER_DEACTIVATION_REASONS } from "@enrollpro/shared";
 
 type TeacherFormField = Exclude<keyof TeacherFormState, "photo" | "subjects">;
 
@@ -88,7 +105,9 @@ export default function Teachers() {
   const [editOpen, setEditOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
   const [editPhotoChanged, setEditPhotoChanged] = useState(false);
-  const [deactivateId, setDeactivateId] = useState<number | null>(null);
+  const [teacherToDeactivate, setTeacherToDeactivate] =
+    useState<Teacher | null>(null);
+  const [deactivateReason, setDeactivateReason] = useState("");
   const [reactivateId, setReactivateId] = useState<number | null>(null);
   const [designationOpenFor, setDesignationOpenFor] = useState<Teacher | null>(
     null,
@@ -369,10 +388,11 @@ export default function Teachers() {
   const handleToggleStatus = async (
     id: number,
     action: "deactivate" | "reactivate",
+    reason?: string,
   ) => {
     setSubmitting(true);
     try {
-      await api.patch(`/teachers/${id}/${action}`);
+      await api.patch(`/teachers/${id}/${action}`, { reason });
       sileo.success({
         title:
           action === "deactivate"
@@ -380,7 +400,8 @@ export default function Teachers() {
             : "Teacher Reactivated",
         description: "Teacher status updated successfully.",
       });
-      setDeactivateId(null);
+      setTeacherToDeactivate(null);
+      setDeactivateReason("");
       setReactivateId(null);
       fetchTeachers();
     } catch (err) {
@@ -389,6 +410,16 @@ export default function Teachers() {
       setSubmitting(false);
     }
   };
+
+  const hasDeactivationBlocker = useMemo(() => {
+    if (!teacherToDeactivate?.designation) return false;
+    const d = teacherToDeactivate.designation;
+    return (
+      d.isClassAdviser ||
+      (Number(d.advisoryEquivalentHoursPerWeek) || 0) > 0 ||
+      (Number(d.customTargetTeachingHoursPerWeek) || 0) > 0
+    );
+  }, [teacherToDeactivate]);
 
   const filteredTeachers = useMemo(() => {
     const normalizedSearch = searchQuery.trim().toLowerCase();
@@ -438,11 +469,11 @@ export default function Teachers() {
     setDesignationOpenFor(teacher);
     setDesignationDrawerTab("role-load");
 
-    const bosy = bosyDate?.split("T")[0] || "";
-    const eosy = eosyDate?.split("T")[0] || "";
+    const bosy = bosyDate?.split("T")[0] || null;
+    const eosy = eosyDate?.split("T")[0] || null;
 
-    const teacherFrom = teacher.designation?.effectiveFrom?.split("T")[0];
-    const teacherTo = teacher.designation?.effectiveTo?.split("T")[0];
+    const teacherFrom = teacher.designation?.effectiveFrom?.split("T")[0] || null;
+    const teacherTo = teacher.designation?.effectiveTo?.split("T")[0] || null;
 
     const hasCustomPeriod =
       Boolean(teacherFrom) &&
@@ -461,8 +492,8 @@ export default function Teachers() {
       customTargetTeachingHoursPerWeek:
         teacher.designation?.customTargetTeachingHoursPerWeek?.toString() ?? "",
       designationNotes: teacher.designation?.designationNotes ?? "",
-      effectiveFrom: teacherFrom ?? bosy,
-      effectiveTo: teacherTo ?? eosy,
+      effectiveFrom: teacherFrom ?? bosy ?? "",
+      effectiveTo: teacherTo ?? eosy ?? "",
       isCustomPeriod: hasCustomPeriod,
       reason: "",
     });
@@ -509,10 +540,10 @@ export default function Teachers() {
       const settings = useSettingsStore.getState();
       const effectiveFrom = designationForm.isCustomPeriod
         ? designationForm.effectiveFrom || null
-        : settings.classOpeningDate || null;
+        : settings.classOpeningDate?.split("T")[0] || null;
       const effectiveTo = designationForm.isCustomPeriod
         ? designationForm.effectiveTo || null
-        : settings.classEndDate || null;
+        : settings.classEndDate?.split("T")[0] || null;
 
       const payload = {
         schoolYearId: ayId,
@@ -669,9 +700,9 @@ export default function Teachers() {
         onRefresh={fetchTeachers}
         onOpenDesignationEditor={openDesignationEditor}
         onEditTeacher={startEditing}
-        onDeactivateTeacher={setDeactivateId}
+        onDeactivateTeacher={setTeacherToDeactivate}
         onReactivateTeacher={setReactivateId}
-      />
+        />
 
       <TeacherFormSheet
         mode="create"
@@ -768,18 +799,138 @@ export default function Teachers() {
         onSave={handleSaveDesignation}
       />
 
-      <ConfirmationModal
-        open={Boolean(deactivateId)}
-        onOpenChange={(open) => !open && setDeactivateId(null)}
-        title="Deactivate Teacher"
-        description="This teacher will be marked as inactive and won't appear in section adviser dropdowns."
-        confirmText="Yes, Deactivate"
-        onConfirm={() =>
-          deactivateId && handleToggleStatus(deactivateId, "deactivate")
-        }
-        loading={submitting}
-        variant="warning"
-      />
+      <Dialog
+        open={Boolean(teacherToDeactivate)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setTeacherToDeactivate(null);
+            setDeactivateReason("");
+          }
+        }}>
+        <DialogContent className="max-w-md border-2 p-0 overflow-hidden rounded-2xl bg-background">
+          <DialogHeader className="px-6 py-6 bg-destructive text-destructive-foreground">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-destructive-foreground/10 rounded-lg">
+                <UserMinus className="h-6 w-6" />
+              </div>
+              <DialogTitle className="text-xl font-black uppercase tracking-tight text-white">
+                Deactivate Teacher Profile
+              </DialogTitle>
+            </div>
+          </DialogHeader>
+
+          <div className="p-6 space-y-6">
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
+                Are you sure you want to deactivate:
+              </p>
+              <div className="flex items-center gap-3 pt-2">
+                <div className="h-10 w-10 rounded-full bg-muted border flex items-center justify-center shrink-0">
+                  <GraduationCap className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="font-black text-base uppercase leading-none">
+                    {teacherToDeactivate
+                      ? formatTeacherName(teacherToDeactivate)
+                      : ""}
+                  </p>
+                  <p className="text-[11px] font-bold text-muted-foreground mt-1 uppercase tracking-tight">
+                    ID: {teacherToDeactivate?.employeeId || "N/A"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {hasDeactivationBlocker ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
+                <div className="space-y-1">
+                  <p className="text-[11px] font-black uppercase text-amber-800 tracking-wider leading-none">
+                    Deactivation Blocked
+                  </p>
+                  <p className="text-[10px] font-bold text-amber-700 leading-relaxed">
+                    ⚠️ Cannot Deactivate: This teacher has an active advisory
+                    section or teaching load. You must reassign their load before
+                    deactivating their account.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="rounded-xl border bg-muted/30 p-4 space-y-1">
+                  <p className="text-[10px] font-bold text-muted-foreground leading-relaxed uppercase tracking-tight">
+                    This teacher currently has{" "}
+                    <span className="text-foreground font-black">
+                      NO ACTIVE LOAD
+                    </span>
+                    . Deactivating will revoke system access and remove them from
+                    future scheduling. Historical records will be preserved.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest">
+                    Reason for Deactivation (Required for Audit Log)
+                  </Label>
+                  <Select
+                    value={deactivateReason}
+                    onValueChange={setDeactivateReason}>
+                    <SelectTrigger className="h-11 font-bold uppercase text-xs">
+                      <SelectValue placeholder="Select reason..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TEACHER_DEACTIVATION_REASONS.map((reason) => (
+                        <SelectItem
+                          key={reason}
+                          value={reason}
+                          className="font-bold text-xs uppercase">
+                          {reason}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+          </div>
+
+          <DialogFooter className="px-6 py-4 bg-muted/20 border-t flex flex-row items-center justify-between gap-4">
+            <Button
+              variant="ghost"
+              onClick={() => setTeacherToDeactivate(null)}
+              className="font-black uppercase text-xs tracking-widest h-11 px-8">
+              Cancel
+            </Button>
+            <Button
+              onClick={() =>
+                teacherToDeactivate &&
+                handleToggleStatus(
+                  teacherToDeactivate.id,
+                  "deactivate",
+                  deactivateReason,
+                )
+              }
+              disabled={
+                submitting ||
+                hasDeactivationBlocker ||
+                !deactivateReason ||
+                !teacherToDeactivate
+              }
+              className="font-black uppercase text-xs tracking-widest h-11 px-8 bg-destructive hover:bg-destructive/90 shadow-lg shadow-destructive/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                  Deactivating...
+                </>
+              ) : (
+                <>
+                  <UserMinus className="mr-2 h-4 w-4" /> Yes, Deactivate
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmationModal
         open={Boolean(reactivateId)}

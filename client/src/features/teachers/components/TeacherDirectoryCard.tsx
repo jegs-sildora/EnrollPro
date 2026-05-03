@@ -56,7 +56,7 @@ interface TeacherDirectoryCardProps {
   onRefresh: () => void;
   onOpenDesignationEditor: (teacher: Teacher) => void;
   onEditTeacher: (teacher: Teacher) => void;
-  onDeactivateTeacher: (id: number) => void;
+  onDeactivateTeacher: (teacher: Teacher) => void;
   onReactivateTeacher: (id: number) => void;
 }
 
@@ -87,7 +87,7 @@ export function TeacherDirectoryCard({
       return (
         <Badge
           variant="outline"
-          className="text-[0.625rem] text-muted-foreground">
+          className="text-xs text-foreground">
           None
         </Badge>
       );
@@ -96,7 +96,7 @@ export function TeacherDirectoryCard({
     return (
       <Badge
         variant="success"
-        className="max-w-[220px] truncate text-[0.625rem]"
+        className="max-w-[220px] truncate text-xs"
         title={`Assigned to ${advisorySummary}`}>
         Assigned: {advisorySummary}
       </Badge>
@@ -108,7 +108,7 @@ export function TeacherDirectoryCard({
       <div
         className={`h-2 w-2 rounded-full ring-2 ring-offset-1 ${teacher.isActive ? "bg-green-500 ring-green-100" : "bg-slate-400 ring-slate-100"}`}
       />
-      <span className="text-[0.6875rem] font-medium">
+      <span className="text-[0.6875rem] font-bold">
         {teacher.isActive ? "Active" : "Inactive"}
       </span>
     </div>
@@ -120,7 +120,7 @@ export function TeacherDirectoryCard({
       <Button
         variant="outline"
         size="sm"
-        className="h-7 px-2 text-[0.625rem] gap-1 whitespace-nowrap"
+        className="h-7 px-2 text-xs gap-1 whitespace-nowrap"
         onClick={() => onOpenDesignationEditor(teacher)}
         disabled={!ayId}
         title={
@@ -131,7 +131,7 @@ export function TeacherDirectoryCard({
       <Button
         variant="outline"
         size="sm"
-        className="h-7 px-2 text-[0.625rem] gap-1 whitespace-nowrap"
+        className="h-7 px-2 text-xs gap-1 whitespace-nowrap"
         onClick={() => onEditTeacher(teacher)}
         title="Edit profile">
         <Edit2 className="h-3 w-3" />
@@ -152,7 +152,7 @@ export function TeacherDirectoryCard({
           className="w-48">
           {teacher.isActive ? (
             <DropdownMenuItem
-              onClick={() => onDeactivateTeacher(teacher.id)}
+              onClick={() => onDeactivateTeacher(teacher)}
               className="cursor-pointer text-destructive focus:text-destructive">
               <UserMinus className="mr-2 h-4 w-4" />
               Deactivate
@@ -204,7 +204,7 @@ export function TeacherDirectoryCard({
           <span className="font-bold text-sm uppercase leading-tight">
             {formatTeacherName(row.original)}
           </span>
-          <span className="text-xs text-muted-foreground truncate">
+          <span className="text-xs text-foreground truncate">
             {row.original.email ||
               row.original.contactNumber ||
               "No contact info"}
@@ -239,7 +239,7 @@ export function TeacherDirectoryCard({
         />
       ),
       cell: ({ row }) => (
-        <span className="text-xs font-medium block text-center uppercase text-muted-foreground">
+        <span className="text-xs font-bold block text-center uppercase text-foreground">
           {row.original.designationTitle || "-"}
         </span>
       ),
@@ -288,10 +288,10 @@ export function TeacherDirectoryCard({
               </Badge>
             ))
           ) : (
-            <span className="text-[10px] text-muted-foreground">-</span>
+            <span className="text-[10px] text-foreground">-</span>
           )}
           {row.original.subjects.length > 3 && (
-            <span className="text-[9px] text-muted-foreground">
+            <span className="text-[9px] text-foreground">
               +{row.original.subjects.length - 3}
             </span>
           )}
@@ -415,7 +415,7 @@ export function TeacherDirectoryCard({
               Clear
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-foreground">
             Showing {filteredTeachers.length} of {teachers.length} teachers
           </p>
         </div>
@@ -435,7 +435,7 @@ export function TeacherDirectoryCard({
                 </div>
               ))
             ) : filteredTeachers.length === 0 ? (
-              <div className="rounded-xl border px-4 py-8 text-center text-sm text-muted-foreground italic">
+              <div className="rounded-xl border px-4 py-8 text-center text-sm text-foreground italic">
                 {hasActiveFilters
                   ? "No teachers match the current filter set."
                   : 'No teachers found. Click "Add Teacher" to create one.'}
@@ -456,7 +456,7 @@ export function TeacherDirectoryCard({
                         <p className="font-bold text-sm uppercase leading-tight">
                           {formatTeacherName(teacher)}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
+                        <p className="text-xs text-foreground mt-0.5">
                           {teacher.email || "No email address"}
                         </p>
                       </div>
@@ -466,7 +466,7 @@ export function TeacherDirectoryCard({
 
                   <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
                     <div>
-                      <p className="text-muted-foreground uppercase tracking-wide">
+                      <p className="text-foreground uppercase tracking-wide">
                         Employee ID
                       </p>
                       <p className="font-semibold">
@@ -474,7 +474,7 @@ export function TeacherDirectoryCard({
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground uppercase tracking-wide">
+                      <p className="text-foreground uppercase tracking-wide">
                         Learning Area
                       </p>
                       <p className="font-semibold">
@@ -482,7 +482,7 @@ export function TeacherDirectoryCard({
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground uppercase tracking-wide">
+                      <p className="text-foreground uppercase tracking-wide">
                         Contact
                       </p>
                       <p className="font-semibold">
@@ -490,7 +490,7 @@ export function TeacherDirectoryCard({
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground uppercase tracking-wide">
+                      <p className="text-foreground uppercase tracking-wide">
                         Designation
                       </p>
                       <p className="font-semibold">
@@ -498,7 +498,7 @@ export function TeacherDirectoryCard({
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground uppercase tracking-wide">
+                      <p className="text-foreground uppercase tracking-wide">
                         Advisory
                       </p>
                       {renderAdvisoryStatus(teacher)}

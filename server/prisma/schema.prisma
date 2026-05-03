@@ -90,7 +90,7 @@ model Teacher {
   contactNumber  String?   @map("contact_number")
   specialization String?
   designation    String?
-  department     String?   @map("department") // For ATLAS integration: Languages, Mathematics, Science, etc.
+  departmentId   Int?             @map("department_id")
   plantillaPosition String?   @map("plantilla_position")
   photoPath      String?   @map("photo_path")
   isActive       Boolean          @default(true) @map("is_active")
@@ -101,6 +101,9 @@ model Teacher {
   subjects       TeacherSubject[]
   teacherDesignations TeacherDesignation[]
   atlasSyncEvents AtlasSyncEvent[]
+
+  department       Department? @relation("DepartmentTeachers", fields: [departmentId], references: [id])
+  headedDepartment Department? @relation("DepartmentHead")
 
   @@map("teachers")
 }
@@ -564,14 +567,18 @@ model EnrollmentRecord {
 // OTHER SYSTEM MODELS
 // ═══════════════════════════════════════════════════════════
 
-/// Academic department (future use)
+/// Academic department linked to faculty
 model Department {
   id          Int      @id @default(autoincrement())
   name        String
   code        String   @unique(map: "uq_departments_code")
   description String?
+  headId      Int?     @unique(map: "uq_departments_head_id") @map("head_id")
   createdAt   DateTime @default(now()) @db.Timestamptz @map("created_at")
   updatedAt   DateTime @updatedAt @db.Timestamptz @map("updated_at")
+
+  teachers    Teacher[] @relation("DepartmentTeachers")
+  head        Teacher?  @relation("DepartmentHead", fields: [headId], references: [id])
 
   @@map("departments")
 }

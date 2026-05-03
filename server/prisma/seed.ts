@@ -55,29 +55,32 @@ async function main() {
   const firstName = process.env.ADMIN_FIRST_NAME ?? "System";
   const lastName = process.env.ADMIN_LAST_NAME ?? "Administrator";
 
+  // 4. Seed Standard DepEd JHS Departments
+  const departments = [
+    { name: "Mathematics", code: "MATH", description: "Mathematics Department" },
+    { name: "Science", code: "SCI", description: "Science Department" },
+    { name: "English", code: "ENG", description: "English Department" },
+    { name: "Filipino", code: "FIL", description: "Filipino Department" },
+    { name: "Araling Panlipunan", code: "AP", description: "Araling Panlipunan Department" },
+    { name: "Edukasyon sa Pagpapakatao", code: "ESP", description: "EsP Department" },
+    { name: "MAPEH", code: "MAPEH", description: "Music, Arts, Physical Education, and Health" },
+    { name: "Technology and Livelihood Education", code: "TLE", description: "TLE Department" }
+  ];
+
+  for (const dept of departments) {
+    await prisma.department.upsert({
+      where: { code: dept.code },
+      update: { name: dept.name, description: dept.description },
+      create: { name: dept.name, code: dept.code, description: dept.description },
+    });
+  }
+  console.log("✅ Verified Standard DepEd Departments");
+
   const existingAdmin = await prisma.user.findUnique({ where: { email } });
   if (existingAdmin) {
     console.log(`Admin account already exists: ${email}`);
     return;
   }
-
-  const hashed = await bcrypt.hash(password, 12);
-
-  await prisma.user.create({
-    data: {
-      firstName,
-      lastName,
-      email,
-      password: hashed,
-      role: "SYSTEM_ADMIN",
-      isActive: true,
-      mustChangePassword: true,
-    },
-  });
-
-  console.log(`✅ System Admin created: ${email}`);
-  console.log(`   Temporary password:   ${password}`);
-  console.log(`   ⚠  Change this password immediately after first login.`);
 }
 
 main()

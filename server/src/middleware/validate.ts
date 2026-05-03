@@ -5,6 +5,7 @@ export function validate(schema: ZodSchema) {
 	return (req: Request, res: Response, next: NextFunction): void => {
 		const result = schema.safeParse(req.body);
 		if (!result.success) {
+			console.error("[Validation Error]", JSON.stringify(result.error.issues, null, 2));
 			const errors: Record<string, string[]> = {};
 			for (const issue of result.error.issues) {
 				const key = issue.path.join('.') || '_root';

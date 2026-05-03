@@ -3,6 +3,7 @@ import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { saveBase64Image } from "../../lib/fileUploader.js";
 import { SectionAdviserStatus } from "../../generated/prisma/index.js";
+import { DEPED_TEACHER_SUBJECT_VALUES } from "@enrollpro/shared";
 
 // Helper functions that were missing
 function formatTeacherName(teacher: {
@@ -48,24 +49,7 @@ function parseDateOnly(val: any): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
-const ALLOWED_TEACHER_SUBJECTS = new Set([
-  "FIL",
-  "ENG",
-  "MATH",
-  "SCI",
-  "AP",
-  "MAPEH",
-  "VE",
-  "TLE",
-  "HG",
-  "ESP",
-  "ICT",
-  "ARTS",
-  "SPORTS",
-  "JRNL",
-  "FL",
-  "TVL",
-]);
+const ALLOWED_TEACHER_SUBJECTS = new Set<string>(DEPED_TEACHER_SUBJECT_VALUES);
 
 function normalizeTeacherSubjectsList(subjects: unknown): string[] {
   if (!Array.isArray(subjects)) {
@@ -430,7 +414,39 @@ export async function update(req: Request, res: Response) {
 export async function deactivate(req: Request, res: Response) {
   const idStr = String(req.params.id);
   const id = parseInt(idStr);
+  const { reason } = req.body;
+
   try {
+    // Check for active loads across all school years that are not ARCHIVED
+    const activeLoads = await prisma.teacherDesignation.findMany({
+      where: {
+        teacherId: id,
+        schoolYear: {
+          status: { not: "ARCHIVED" },
+        },
+        OR: [
+          { isClassAdviser: true },
+          { advisoryEquivalentHoursPerWeek: { gt: 0 } },
+          { customTargetTeachingHoursPerWeek: { gt: 0 } },
+        ],
+      },
+      include: {
+        schoolYear: true,
+        advisorySection: true,
+      },
+    });
+
+    if (activeLoads.length > 0) {
+      const load = activeLoads[0];
+      const context = load.isClassAdviser
+        ? `active advisory for ${load.advisorySection?.name}`
+        : "active teaching load";
+
+      return res.status(409).json({
+        message: `Cannot deactivate: This teacher has an ${context} in ${load.schoolYear.yearLabel}. You must reassign their load before deactivating their account.`,
+      });
+    }
+
     const teacher = await prisma.teacher.update({
       where: { id },
       data: { isActive: false },
@@ -439,7 +455,7 @@ export async function deactivate(req: Request, res: Response) {
     await auditLog({
       userId: req.user!.userId,
       actionType: "TEACHER_DEACTIVATED",
-      description: `Deactivated teacher: ${teacher.lastName}, ${teacher.firstName}`,
+      description: `Deactivated teacher: ${teacher.lastName}, ${teacher.firstName}. Reason: ${reason}`,
       subjectType: "Teacher",
       recordId: id,
       req,

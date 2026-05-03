@@ -40,7 +40,6 @@ import type {
   Teacher,
 } from "../types";
 import { formatDateTime, formatTeacherName } from "../utils";
-import { cn } from "@/shared/lib/utils";
 
 interface TeacherDesignationSheetProps {
   open: boolean;
@@ -127,7 +126,7 @@ export function TeacherDesignationSheet({
                   alt={teacherDisplayName}
                 />
                 <div>
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  <p className="text-[10px] uppercase st text-foreground">
                     Teacher
                   </p>
                   <h3 className="font-black text-base sm:text-lg uppercase  break-words">
@@ -142,7 +141,7 @@ export function TeacherDesignationSheet({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-0 border-t pt-3 mt-3 text-xs">
               <div>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                <p className="text-[10px] uppercase st text-foreground">
                   Last Updated By
                 </p>
                 <p className="text-sm">
@@ -150,7 +149,7 @@ export function TeacherDesignationSheet({
                 </p>
               </div>
               <div className="text-left sm:text-right">
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                <p className="text-[10px] uppercase st text-foreground">
                   Last Updated At
                 </p>
                 <p className="text-sm">
@@ -220,7 +219,7 @@ export function TeacherDesignationSheet({
                 <div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-4 flex items-center justify-between">
                   <div>
                     <h4 className="text-sm font-black uppercase text-primary">Calculated Weekly Load</h4>
-                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight">Synchronized to ATLAS Scheduling Engine</p>
+                    <p className="text-[10px] text-foreground font-medium uppercase ">Synchronized to ATLAS Scheduling Engine</p>
                   </div>
                   <div className="text-right">
                     <span className="text-3xl font-black text-primary">
@@ -235,7 +234,7 @@ export function TeacherDesignationSheet({
                   <div className="flex items-center justify-between gap-3">
                     <Label
                       htmlFor="isClassAdviser"
-                      className="text-xs uppercase tracking-wider">
+                      className="text-xs uppercase r">
                       Class Adviser
                     </Label>
                     <Switch
@@ -253,7 +252,7 @@ export function TeacherDesignationSheet({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                    <Label className="text-xs uppercase r text-foreground">
                       Advisory Section
                     </Label>
                     <Select
@@ -289,7 +288,7 @@ export function TeacherDesignationSheet({
                             value={section.id.toString()}>
                             <div className="flex items-center justify-between w-full gap-2">
                               <span>{section.sectionName}</span>
-                              <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                              <span className="text-[10px] text-foreground bg-muted px-1.5 py-0.5 rounded">
                                 {section.enrolledCount}/{section.maxCapacity}
                               </span>
                             </div>
@@ -308,7 +307,7 @@ export function TeacherDesignationSheet({
                     ) : null}
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                    <Label className="text-xs uppercase r text-foreground flex items-center gap-1">
                       Advisory Equivalent Hours / Week
                     </Label>
                     <div className="relative group">
@@ -334,7 +333,7 @@ export function TeacherDesignationSheet({
                   <div className="flex items-center justify-between gap-3">
                     <Label
                       htmlFor="isTic"
-                      className="text-xs uppercase tracking-wider">
+                      className="text-xs uppercase r">
                       Teacher In Charge (TIC)
                     </Label>
                     <Switch
@@ -351,7 +350,7 @@ export function TeacherDesignationSheet({
                   <div className="flex items-center justify-between gap-3">
                     <Label
                       htmlFor="isTeachingExempt"
-                      className="text-xs uppercase tracking-wider">
+                      className="text-xs uppercase r">
                       Teaching Exempt
                     </Label>
                     <Switch
@@ -366,7 +365,7 @@ export function TeacherDesignationSheet({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                    <Label className="text-xs uppercase r text-foreground">
                       Custom Target Teaching Hours / Week
                     </Label>
                     <Input
@@ -402,10 +401,10 @@ export function TeacherDesignationSheet({
                     <div className="space-y-0.5">
                       <Label
                         htmlFor="isCustomPeriod"
-                        className="text-xs uppercase tracking-wider font-black">
+                        className="text-xs uppercase r font-black">
                         Custom Designation Period
                       </Label>
-                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight">
+                      <p className="text-[10px] text-foreground font-medium uppercase ">
                         Enable for mid-year replacements or leave of absence
                       </p>
                     </div>
@@ -423,7 +422,7 @@ export function TeacherDesignationSheet({
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label className="text-xs uppercase tracking-wider flex items-center gap-1.5">
+                      <Label className="text-xs uppercase r flex items-center gap-1.5">
                         Effective From
                         {!designationForm.isCustomPeriod && (
                           <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black italic">
@@ -451,7 +450,7 @@ export function TeacherDesignationSheet({
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-xs uppercase tracking-wider flex items-center gap-1.5">
+                      <Label className="text-xs uppercase r flex items-center gap-1.5">
                         Effective To
                         {!designationForm.isCustomPeriod && (
                           <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black italic">
@@ -483,7 +482,7 @@ export function TeacherDesignationSheet({
 
                 <div className="rounded-md border bg-card p-3 sm:p-4 space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-xs uppercase tracking-wider">
+                    <Label className="text-xs uppercase r">
                       Designation Notes
                     </Label>
                     <Textarea
@@ -500,7 +499,7 @@ export function TeacherDesignationSheet({
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs uppercase tracking-wider">
+                    <Label className="text-xs uppercase r">
                       Reason for Change
                     </Label>
                     <Textarea
@@ -529,11 +528,11 @@ export function TeacherDesignationSheet({
                 className="space-y-4">
                 <div className="rounded-md border bg-card overflow-hidden">
                   <div className="bg-primary/5 px-4 py-3 border-b space-y-1">
-                    <h4 className="text-xs font-black uppercase text-primary tracking-wider">
+                    <h4 className="text-xs font-black uppercase text-primary r">
                       Designation Summary: {designationOpenFor?.lastName},{" "}
                       {designationOpenFor?.firstName}
                     </h4>
-                    <p className="text-[10px] text-muted-foreground font-black uppercase tracking-tight flex items-center gap-1.5">
+                    <p className="text-[10px] text-foreground font-black uppercase  flex items-center gap-1.5">
                       <Calendar className="h-3 w-3" />
                       Effective:{" "}
                       {designationForm.isCustomPeriod ? (
@@ -548,7 +547,7 @@ export function TeacherDesignationSheet({
                   </div>
                   <div className="p-4 space-y-3">
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">
+                      <span className="text-foreground">
                         Base Academic Load (from Atlas Engine)
                       </span>
                       <span className="font-black">
@@ -563,7 +562,7 @@ export function TeacherDesignationSheet({
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">
+                      <span className="text-foreground">
                         Class Adviser ({selectedAdvisorySection?.label ?? "N/A"})
                       </span>
                       <span className="font-black">
@@ -571,7 +570,7 @@ export function TeacherDesignationSheet({
                       </span>
                     </div>
                     <div className="border-t pt-3 flex justify-between text-base">
-                      <span className="font-black uppercase tracking-tight">
+                      <span className="font-black uppercase ">
                         Total Designated Load
                       </span>
                       <span className="font-black text-primary">
@@ -589,7 +588,7 @@ export function TeacherDesignationSheet({
                     const total = Number(designationForm.customTargetTeachingHoursPerWeek) || 30;
                     if (total > 30) {
                       return (
-                        <div className="bg-amber-50 px-4 py-3 border-t flex items-start gap-2 text-[11px] text-amber-800 font-bold uppercase tracking-tight">
+                        <div className="bg-amber-50 px-4 py-3 border-t flex items-start gap-2 text-[11px] text-amber-800 font-bold uppercase ">
                           <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
                           <p>
                             LEGAL OVERLOAD ({total} Hrs): Exceeding the 30-hour limit under R.A. 4670 
@@ -600,17 +599,17 @@ export function TeacherDesignationSheet({
                     }
                     if (total === 30) {
                       return (
-                        <div className="bg-blue-50 px-4 py-3 border-t flex items-start gap-2 text-[11px] text-blue-800 font-bold uppercase tracking-tight">
+                        <div className="bg-blue-50 px-4 py-3 border-t flex items-start gap-2 text-[11px] text-blue-800 font-bold uppercase">
                           <Info className="h-4 w-4 shrink-0 text-blue-600" />
                           <p>
-                            ℹ️ STANDARD FULL LOAD: This designation exactly meets the 30-hour standard 
+                            STANDARD FULL LOAD: This designation exactly meets the 30-hour standard 
                             teaching threshold under R.A. 4670. No overload pay required.
                           </p>
                         </div>
                       );
                     }
                     return (
-                      <div className="bg-muted/30 px-4 py-3 border-t flex items-start gap-2 text-[11px] text-muted-foreground font-bold uppercase tracking-tight">
+                      <div className="bg-muted/30 px-4 py-3 border-t flex items-start gap-2 text-[11px] text-foreground font-bold uppercase ">
                         <Info className="h-4 w-4 shrink-0" />
                         <p>
                           UNDERLOAD STATUS ({total} Hrs): Teacher load is below the 30-hour 
@@ -626,7 +625,7 @@ export function TeacherDesignationSheet({
                     <div className="flex items-start gap-2">
                       <AlertTriangle className="h-4 w-4 mt-0.5 text-amber-600" />
                       <div className="text-sm">
-                        <p className="font-black uppercase tracking-tight">
+                        <p className="font-black uppercase ">
                           Adviser conflict detected
                         </p>
                         <p className="text-xs font-medium">
@@ -639,7 +638,7 @@ export function TeacherDesignationSheet({
                     <div className="flex items-center justify-between gap-4 pt-1">
                       <Label
                         htmlFor="allowCollisionOverride"
-                        className="text-[11px] font-black uppercase tracking-tight text-amber-800">
+                        className="text-[11px] font-black uppercase  text-amber-800">
                         Override existing adviser assignment
                       </Label>
                       <Switch
@@ -650,7 +649,7 @@ export function TeacherDesignationSheet({
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-md border bg-emerald-50 border-emerald-100 px-3 py-3 text-xs text-emerald-800 flex items-center gap-2 font-bold uppercase tracking-tight">
+                  <div className="rounded-md border bg-emerald-50 border-emerald-100 px-3 py-3 text-xs text-emerald-800 flex items-center gap-2 font-bold uppercase ">
                     <ShieldCheck className="h-4 w-4 text-emerald-600" />
                     SYSTEM CHECK: No scheduling or advisory collisions
                     detected.
@@ -671,7 +670,7 @@ export function TeacherDesignationSheet({
                   else if (designationDrawerTab === "schedule-notes") setDesignationDrawerTab("role-load");
                 }}
                 disabled={submitting}
-                className="w-full sm:w-auto font-black uppercase text-xs tracking-widest gap-2">
+                className="w-full sm:w-auto font-black uppercase text-xs st gap-2">
                 <ArrowLeft className="h-4 w-4" /> Back
               </Button>
             )}
@@ -682,7 +681,7 @@ export function TeacherDesignationSheet({
               variant="outline"
               onClick={onClose}
               disabled={submitting}
-              className="w-full sm:w-auto font-black uppercase text-xs tracking-widest">
+              className="w-full sm:w-auto font-black uppercase text-xs st">
               Cancel
             </Button>
 
@@ -690,7 +689,7 @@ export function TeacherDesignationSheet({
               <Button
                 onClick={onSave}
                 disabled={submitting || !ayId}
-                className="w-full sm:w-auto font-black uppercase text-xs tracking-widest gap-2">
+                className="w-full sm:w-auto font-black uppercase text-xs st gap-2">
                 {submitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" /> Saving...
@@ -708,7 +707,7 @@ export function TeacherDesignationSheet({
                   else if (designationDrawerTab === "schedule-notes") setDesignationDrawerTab("review");
                 }}
                 disabled={submitting}
-                className="w-full sm:w-auto font-black uppercase text-xs tracking-widest gap-2">
+                className="w-full sm:w-auto font-black uppercase text-xs st gap-2">
                 Next Step <ArrowRight className="h-4 w-4" />
               </Button>
             )}
