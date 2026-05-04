@@ -1,68 +1,84 @@
-import type { SchoolYear } from '../../generated/prisma/index.js';
+import type { SchoolYear } from "../../generated/prisma/index.js";
 
 /**
- * Normalizes a Date object to a YYYY-MM-DD string in Manila timezone
+ * Normalizes a Date object to a numeric YYYYMMDD token in Manila timezone.
+ * Using numeric comparison avoids locale-specific string formatting issues.
  */
-function toManilaDateString(date: Date): string {
-	return new Intl.DateTimeFormat('en-CA', {
-		timeZone: 'Asia/Manila',
-		year: 'numeric',
-		month: '2-digit',
-		day: '2-digit',
-	}).format(date);
+function toManilaDateToken(date: Date): number {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+
+  const parts = formatter.formatToParts(date);
+  const year = Number(parts.find((part) => part.type === "year")?.value ?? "0");
+  const month = Number(
+    parts.find((part) => part.type === "month")?.value ?? "0",
+  );
+  const day = Number(parts.find((part) => part.type === "day")?.value ?? "0");
+
+  return year * 10000 + month * 100 + day;
 }
 
 export function isEnrollmentOpen(year: SchoolYear): boolean {
-	if (year.portalControl === 'FORCE_OPEN_PHASE_1' || year.portalControl === 'FORCE_OPEN_PHASE_2')
-		return true;
-	if (year.portalControl === 'FORCE_CLOSE_ALL') return false;
+  if (
+    year.portalControl === "FORCE_OPEN_PHASE_1" ||
+    year.portalControl === "FORCE_OPEN_PHASE_2"
+  )
+    return true;
+  if (year.portalControl === "FORCE_CLOSE_ALL") return false;
 
-	const now = new Date();
-	const todayStr = toManilaDateString(now);
+  const todayToken = toManilaDateToken(new Date());
 
-	const inPhase1 =
-		year.earlyRegOpenDate &&
-		year.earlyRegCloseDate &&
-		todayStr >= toManilaDateString(year.earlyRegOpenDate) &&
-		todayStr <= toManilaDateString(year.earlyRegCloseDate);
+  const inPhase1 =
+    year.earlyRegOpenDate &&
+    year.earlyRegCloseDate &&
+    todayToken >= toManilaDateToken(year.earlyRegOpenDate) &&
+    todayToken <= toManilaDateToken(year.earlyRegCloseDate);
 
-	const inPhase2 =
-		year.enrollOpenDate &&
-		year.enrollCloseDate &&
-		todayStr >= toManilaDateString(year.enrollOpenDate) &&
-		todayStr <= toManilaDateString(year.enrollCloseDate);
+  const inPhase2 =
+    year.enrollOpenDate &&
+    year.enrollCloseDate &&
+    todayToken >= toManilaDateToken(year.enrollOpenDate) &&
+    todayToken <= toManilaDateToken(year.enrollCloseDate);
 
-	return Boolean(inPhase1 || inPhase2);
+  return Boolean(inPhase1 || inPhase2);
 }
 
 export function getEnrollmentPhase(
-	year: SchoolYear,
-): 'EARLY_REGISTRATION' | 'REGULAR_ENROLLMENT' | 'CLOSED' | 'OVERRIDE' | 'BOSY_LOCKED' {
-	if (year.status === 'BOSY_LOCKED') return 'BOSY_LOCKED';
-	if (year.portalControl === 'FORCE_OPEN_PHASE_1') return 'EARLY_REGISTRATION';
-	if (year.portalControl === 'FORCE_OPEN_PHASE_2') return 'REGULAR_ENROLLMENT';
-	if (year.portalControl === 'FORCE_CLOSE_ALL') return 'CLOSED';
+  year: SchoolYear,
+):
+  | "EARLY_REGISTRATION"
+  | "REGULAR_ENROLLMENT"
+  | "CLOSED"
+  | "OVERRIDE"
+  | "BOSY_LOCKED" {
+  if (year.status === "BOSY_LOCKED") return "BOSY_LOCKED";
+  if (year.portalControl === "FORCE_OPEN_PHASE_1") return "EARLY_REGISTRATION";
+  if (year.portalControl === "FORCE_OPEN_PHASE_2") return "REGULAR_ENROLLMENT";
+  if (year.portalControl === "FORCE_CLOSE_ALL") return "CLOSED";
 
-	const now = new Date();
-	const todayStr = toManilaDateString(now);
+  const todayToken = toManilaDateToken(new Date());
 
-	if (
-		year.earlyRegOpenDate &&
-		year.earlyRegCloseDate &&
-		todayStr >= toManilaDateString(year.earlyRegOpenDate) &&
-		todayStr <= toManilaDateString(year.earlyRegCloseDate)
-	) {
-		return 'EARLY_REGISTRATION';
-	}
+  if (
+    year.earlyRegOpenDate &&
+    year.earlyRegCloseDate &&
+    todayToken >= toManilaDateToken(year.earlyRegOpenDate) &&
+    todayToken <= toManilaDateToken(year.earlyRegCloseDate)
+  ) {
+    return "EARLY_REGISTRATION";
+  }
 
-	if (
-		year.enrollOpenDate &&
-		year.enrollCloseDate &&
-		todayStr >= toManilaDateString(year.enrollOpenDate) &&
-		todayStr <= toManilaDateString(year.enrollCloseDate)
-	) {
-		return 'REGULAR_ENROLLMENT';
-	}
+  if (
+    year.enrollOpenDate &&
+    year.enrollCloseDate &&
+    todayToken >= toManilaDateToken(year.enrollOpenDate) &&
+    todayToken <= toManilaDateToken(year.enrollCloseDate)
+  ) {
+    return "REGULAR_ENROLLMENT";
+  }
 
-	return 'CLOSED';
+  return "CLOSED";
 }

@@ -460,7 +460,8 @@ export function createEarlyRegistrationBaseController(
         if (!earlyReg) throw new AppError(404, "Application not found");
 
         const canStartReview =
-          req.user?.role === "HEAD_REGISTRAR" || req.user?.role === "SYSTEM_ADMIN";
+          req.user?.role === "HEAD_REGISTRAR" ||
+          req.user?.role === "SYSTEM_ADMIN";
 
         if (earlyReg.status === "SUBMITTED_BEERF" && canStartReview) {
           await prisma.earlyRegistrationApplication.update({
@@ -850,7 +851,8 @@ export function createEarlyRegistrationBaseController(
       specialNeedsCategory: body.specialNeedsCategory || null,
       hasPwdId: body.hasPwdId ?? false,
       isBalikAral: body.isBalikAral ?? false,
-      lastYearEnrolled: body.schoolYearLastAttended || body.lastYearEnrolled || null,
+      lastYearEnrolled:
+        body.schoolYearLastAttended || body.lastYearEnrolled || null,
       lastGradeLevel: body.lastGradeCompleted || body.lastGradeLevel || null,
       is4PsBeneficiary: body.is4PsBeneficiary ?? false,
       householdId4Ps: body.is4PsBeneficiary ? body.householdId4Ps : null,
@@ -887,11 +889,14 @@ export function createEarlyRegistrationBaseController(
 
           // DepEd Compliance (Temporary Enrollment)
           status:
-            (body.isMissingSf9 && !body.hasSf9CertificationLetter) || body.hasUnsettledPrivateAccount
+            (body.isMissingSf9 && !body.hasSf9CertificationLetter) ||
+            body.hasUnsettledPrivateAccount
               ? "TEMPORARILY_ENROLLED"
               : "SUBMITTED_BEEF",
           isTemporarilyEnrolled:
-            (body.isMissingSf9 && !body.hasSf9CertificationLetter) || body.hasUnsettledPrivateAccount || false,
+            (body.isMissingSf9 && !body.hasSf9CertificationLetter) ||
+            body.hasUnsettledPrivateAccount ||
+            false,
           isMissingSf9: body.isMissingSf9 || false,
           hasSf9CertificationLetter: body.hasSf9CertificationLetter || false,
           hasUnsettledPrivateAccount: body.hasUnsettledPrivateAccount || false,
@@ -1041,7 +1046,7 @@ export function createEarlyRegistrationBaseController(
 
     // Link early registration if provided
     if (linkedEarlyRegistrationId) {
-      const nextEarlyRegStatus: ApplicationStatus = "READY_FOR_ENROLLMENT";
+      const nextEarlyRegStatus: ApplicationStatus = "SUBMITTED_BEEF";
 
       await prisma.earlyRegistrationApplication.update({
         where: { id: linkedEarlyRegistrationId },

@@ -397,12 +397,23 @@ export function createEarlyRegistrationLifecycleController(
         );
       }
 
-      const updated = await updateApplicationStatus(applicantId, "VERIFIED");
+      const targetStatus =
+        applicant.applicantType === "REGULAR" &&
+        applicant.status === "SUBMITTED_BEERF"
+          ? "READY_FOR_ENROLLMENT"
+          : "VERIFIED";
+
+      const updated = await updateApplicationStatus(applicantId, targetStatus);
+
+      const verificationDescription =
+        targetStatus === "READY_FOR_ENROLLMENT"
+          ? `Validated intake documents for ${applicant.learner.firstName} ${applicant.learner.lastName} (#${applicantId}) and routed to READY_FOR_ENROLLMENT for online enrollment handoff`
+          : `Verified physical documents for ${applicant.learner.firstName} ${applicant.learner.lastName} (#${applicantId})`;
 
       await auditLog({
         userId: req.user!.userId,
         actionType: "APPLICATION_VERIFIED",
-        description: `Verified physical documents for ${applicant.learner.firstName} ${applicant.learner.lastName} (#${applicantId})`,
+        description: verificationDescription,
         subjectType: "EnrollmentApplication",
         recordId: applicantId,
         req,
@@ -894,7 +905,8 @@ export function createEarlyRegistrationLifecycleController(
           applicantType: applicantType as any,
           learnerType: learnerType as any,
           status:
-            (data.isMissingSf9 && !data.hasSf9CertificationLetter) || data.hasUnsettledPrivateAccount
+            (data.isMissingSf9 && !data.hasSf9CertificationLetter) ||
+            data.hasUnsettledPrivateAccount
               ? "TEMPORARILY_ENROLLED"
               : "VERIFIED",
           intakeMethod: "BEEF_FULL",
@@ -905,7 +917,9 @@ export function createEarlyRegistrationLifecycleController(
           encodedById: req.user!.userId,
           isPrivacyConsentGiven: true,
           isTemporarilyEnrolled:
-            (data.isMissingSf9 && !data.hasSf9CertificationLetter) || data.hasUnsettledPrivateAccount || false,
+            (data.isMissingSf9 && !data.hasSf9CertificationLetter) ||
+            data.hasUnsettledPrivateAccount ||
+            false,
           isMissingSf9: data.isMissingSf9 || false,
           hasSf9CertificationLetter: data.hasSf9CertificationLetter || false,
           hasUnsettledPrivateAccount: data.hasUnsettledPrivateAccount || false,

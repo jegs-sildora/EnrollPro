@@ -38,113 +38,6 @@ const GRADE_OPTIONS = [
 
 type ScpTypeValue = NonNullable<EnrollmentFormData["scpType"]>;
 
-const SCP_GRADE_RULE_TYPES = [
-  "GENERAL_AVERAGE_MIN",
-  "SUBJECT_AVERAGE_MIN",
-  "SUBJECT_MINIMUMS",
-] as const;
-
-type ScpGradeRuleType = (typeof SCP_GRADE_RULE_TYPES)[number];
-
-interface ParsedScpSubjectThreshold {
-  subject: string;
-  min: number;
-}
-
-interface ParsedScpGradeRequirement {
-  ruleType: ScpGradeRuleType;
-  minAverage: number | null;
-  subjects: string[];
-  subjectThresholds: ParsedScpSubjectThreshold[];
-}
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
-
-const normalizePercent = (value: unknown): number | null => {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    return null;
-  }
-
-  const rounded = Number(value.toFixed(2));
-  return rounded >= 0 && rounded <= 100 ? rounded : null;
-};
-
-const parseGradeRequirements = (
-  value: unknown,
-): ParsedScpGradeRequirement[] => {
-  if (!Array.isArray(value)) {
-    if (isRecord(value)) {
-      const minGA = value.minimumGeneralAverage;
-      if (typeof minGA === "number") {
-        return [
-          {
-            ruleType: "GENERAL_AVERAGE_MIN",
-            minAverage: minGA,
-            subjects: [],
-            subjectThresholds: [],
-          },
-        ];
-      }
-    }
-    return [];
-  }
-
-  const parsed: ParsedScpGradeRequirement[] = [];
-
-  for (const rule of value) {
-    if (!isRecord(rule) || typeof rule.ruleType !== "string") {
-      continue;
-    }
-
-    const normalizedRuleType = rule.ruleType.toUpperCase();
-    if (
-      !SCP_GRADE_RULE_TYPES.includes(normalizedRuleType as ScpGradeRuleType)
-    ) {
-      continue;
-    }
-
-    const subjects = Array.isArray(rule.subjects)
-      ? rule.subjects
-          .filter((subject): subject is string => typeof subject === "string")
-          .map((subject) => subject.trim().toUpperCase())
-          .filter(Boolean)
-      : [];
-
-    const subjectThresholds = Array.isArray(rule.subjectThresholds)
-      ? rule.subjectThresholds.reduce<ParsedScpSubjectThreshold[]>(
-          (acc, threshold) => {
-            if (!isRecord(threshold) || typeof threshold.subject !== "string") {
-              return acc;
-            }
-
-            const min = normalizePercent(threshold.min);
-            if (min === null) {
-              return acc;
-            }
-
-            acc.push({
-              subject: threshold.subject.trim().toUpperCase(),
-              min,
-            });
-
-            return acc;
-          },
-          [],
-        )
-      : [];
-
-    parsed.push({
-      ruleType: normalizedRuleType as ScpGradeRuleType,
-      minAverage: normalizePercent(rule.minAverage),
-      subjects,
-      subjectThresholds,
-    });
-  }
-
-  return parsed;
-};
-
 interface OfferedScpProgramConfig {
   scpType: ScpTypeValue;
   gradeRequirements: unknown;
@@ -225,7 +118,9 @@ export default function Step5Enrollment() {
   const hasQuickLrnLookupSuccess =
     typeof quickLrnLookupId === "number" && Number.isFinite(quickLrnLookupId);
   const isProgramSelectionLocked = hasQuickLrnLookupSuccess;
-  const shouldShowScpCard = isScpEligible && hasQuickLrnLookupSuccess;
+  const isLockedRegularTrack = isProgramSelectionLocked && !isScpApplication;
+  const shouldShowScpCard =
+    isScpEligible && hasQuickLrnLookupSuccess && !isLockedRegularTrack;
 
   const availableScpPrograms = useMemo(
     () =>
@@ -237,31 +132,8 @@ export default function Step5Enrollment() {
 
   const hasOfferedScpPrograms = availableScpPrograms.length > 0;
 
-  // Derive the effective GA threshold from offered configs (fallback: 85)
-  const effectiveScpGaThreshold = useMemo(() => {
-    let min = 85;
-    for (const config of offeredScpConfigs) {
-      const rules = parseGradeRequirements(config.gradeRequirements);
-      const gaRule = rules.find((r) => r.ruleType === "GENERAL_AVERAGE_MIN");
-      if (gaRule?.minAverage != null && Number.isFinite(gaRule.minAverage)) {
-        min = Math.min(min, gaRule.minAverage);
-      }
-    }
-    return min;
-  }, [offeredScpConfigs]);
-
-  const gaValue =
-    typeof reportedGa === "number" && Number.isFinite(reportedGa)
-      ? reportedGa
-      : null;
-  const gaEnteredAndBelowThreshold =
-    isScpEligible && gaValue !== null && gaValue < effectiveScpGaThreshold;
-
   const canSelectScpTrack =
-    shouldShowScpCard &&
-    !isLoadingScpConfig &&
-    hasOfferedScpPrograms &&
-    !gaEnteredAndBelowThreshold;
+    shouldShowScpCard && !isLoadingScpConfig && hasOfferedScpPrograms;
 
   const canDeclareNoLrn =
     learnerType === "TRANSFEREE" ||
@@ -532,8 +404,6 @@ export default function Step5Enrollment() {
               placeholder="e.g. 88.50"
               className={cn(
                 "h-12 font-bold text-lg bg-white border-2",
-                gaEnteredAndBelowThreshold &&
-                  "border-amber-400 focus-visible:ring-amber-400",
                 errors.generalAverage && "border-destructive",
               )}
               value={inputGaValue}
@@ -559,18 +429,6 @@ export default function Step5Enrollment() {
               Final general average from the last completed grade level.
             </p>
           </div>
-
-          {gaEnteredAndBelowThreshold && (
-            <div className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3">
-              <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-              <p className="text-xs font-semibold text-amber-800 leading-relaxed">
-                Your general average ({gaValue}%) is below the minimum{" "}
-                <strong>{effectiveScpGaThreshold}%</strong> required to apply
-                for any Special Curricular Program. You may still proceed with a
-                Regular Section.
-              </p>
-            </div>
-          )}
         </div>
         {errors.generalAverage?.message && (
           <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-1">
@@ -679,7 +537,8 @@ export default function Step5Enrollment() {
           {isProgramSelectionLocked && (
             <p className="font-bold text-xs italic flex items-center gap-1 text-muted-foreground">
               <Info className="w-4 h-4" />
-              Learning Program and SCP selection are locked because this form is linked to an existing Early Registration.
+              Learning Program and SCP selection are locked because this form is
+              linked to an existing Early Registration.
             </p>
           )}
 
@@ -728,7 +587,9 @@ export default function Step5Enrollment() {
                   </Label>
                   <div className="grid grid-cols-1 gap-3">
                     {availableScpPrograms.map((program) => (
-                      <div key={program.id} className="space-y-0">
+                      <div
+                        key={program.id}
+                        className="space-y-0">
                         <button
                           type="button"
                           disabled={isProgramSelectionLocked}
@@ -797,7 +658,9 @@ export default function Step5Enrollment() {
                                       </SelectTrigger>
                                       <SelectContent>
                                         {SPA_ART_FIELDS.map((field) => (
-                                          <SelectItem key={field} value={field}>
+                                          <SelectItem
+                                            key={field}
+                                            value={field}>
                                             {field}
                                           </SelectItem>
                                         ))}
@@ -909,7 +772,9 @@ export default function Step5Enrollment() {
           </Label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
             {LEARNING_MODALITIES.map((modality) => (
-              <div key={modality} className="flex items-center space-x-3">
+              <div
+                key={modality}
+                className="flex items-center space-x-3">
                 <Checkbox
                   id={`modality-${modality}`}
                   checked={selectedLearningModalities.includes(modality)}

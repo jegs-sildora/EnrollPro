@@ -159,28 +159,6 @@ function resolveCurrentStepFromRawStatus(
   }
 }
 
-function formatAssessmentHint(
-  assessmentData?: TrackingAssessmentData,
-): string | null {
-  if (!assessmentData) {
-    return null;
-  }
-
-  if (assessmentData.phaseStatus === "COMPLETED") {
-    return "All required SCP assessment steps have been completed.";
-  }
-
-  const latest = assessmentData.latestSchedule;
-  if (!latest?.scheduledDate) {
-    return "Assessment scheduling is in progress. Please monitor this page for schedule updates.";
-  }
-
-  const timeText = latest.scheduledTime ? ` at ${latest.scheduledTime}` : "";
-  const venueText = latest.venue ? `, ${latest.venue}` : "";
-
-  return `Latest schedule: ${latest.label} on ${latest.scheduledDate}${timeText}${venueText}.`;
-}
-
 function getTerminalStatusNotice(
   status: TrackingStatus,
   programType: TrackingProgramType,
@@ -210,6 +188,123 @@ function getTerminalStatusNotice(
   }
 }
 
+type RenderStep = {
+  id: string;
+  title: string;
+  description: string;
+  isCompleted: boolean;
+  isActive: boolean;
+};
+
+function computeSteps(
+  currentStep: TrackingCurrentStep,
+  programType: TrackingProgramType,
+  status: TrackingStatus,
+  assessmentData?: TrackingAssessmentData,
+): RenderStep[] {
+  const steps: RenderStep[] = [];
+  const orderedBaseSteps = STEP_ORDER[programType];
+  const currentIndex = orderedBaseSteps.indexOf(currentStep);
+
+  // 1. Pre-assessment steps
+  const preAssessmentSteps: TrackingCurrentStep[] = [
+    "APPLICATION_SUBMITTED",
+    "REGISTRAR_REVIEW",
+  ];
+
+  for (const stepKey of preAssessmentSteps) {
+    const stepIdx = orderedBaseSteps.indexOf(stepKey);
+    const metadata = STEP_METADATA[stepKey];
+    const isCompleted =
+      stepIdx < currentIndex ||
+      (status === "ENROLLED" && stepKey === "ENROLLED");
+    const isActive = stepIdx === currentIndex && status !== "ENROLLED";
+
+    steps.push({
+      id: stepKey,
+      title: metadata.title,
+      description: metadata.description[programType],
+      isCompleted,
+      isActive,
+    });
+  }
+
+  // 2. Assessment steps (SCP only)
+  if (programType === "SCP") {
+    if (assessmentData && assessmentData.steps.length > 0) {
+      let foundActive = false;
+      const isPastAssessment =
+        currentStep === "ENROLLMENT_QUALIFICATION" || currentStep === "ENROLLED";
+      const isBeforeAssessment = currentIndex < orderedBaseSteps.indexOf("ASSESSMENT_PHASE");
+
+      for (const s of assessmentData.steps) {
+        const isStepCompleted = isPastAssessment || (s.result !== null && s.result !== undefined);
+        let isStepActive = false;
+
+        if (currentStep === "ASSESSMENT_PHASE" && !isPastAssessment && !isBeforeAssessment && !foundActive && !isStepCompleted) {
+          isStepActive = true;
+          foundActive = true;
+        }
+
+        let desc = s.scheduledDate
+          ? `Scheduled: ${s.scheduledDate}${s.scheduledTime ? ` at ${s.scheduledTime}` : ""}${s.venue ? ` (${s.venue})` : ""}`
+          : "Scheduling in progress...";
+
+        if (s.result) {
+          desc = `Result: ${s.result}${s.score !== null ? ` (Score: ${s.score})` : ""}`;
+        }
+
+        steps.push({
+          id: `ASSESSMENT_${s.stepOrder}`,
+          title: s.label,
+          description: desc,
+          isCompleted: isStepCompleted,
+          isActive: isStepActive,
+        });
+      }
+    } else {
+      // Fallback if no steps are configured yet
+      const stepIdx = orderedBaseSteps.indexOf("ASSESSMENT_PHASE");
+      const metadata = STEP_METADATA["ASSESSMENT_PHASE"];
+      const isCompleted = stepIdx < currentIndex;
+      const isActive = stepIdx === currentIndex && status !== "ENROLLED";
+
+      steps.push({
+        id: "ASSESSMENT_PHASE",
+        title: metadata.title,
+        description: metadata.description["SCP"],
+        isCompleted,
+        isActive,
+      });
+    }
+  }
+
+  // 3. Post-assessment steps
+  const postAssessmentSteps: TrackingCurrentStep[] = [
+    "ENROLLMENT_QUALIFICATION",
+    "ENROLLED",
+  ];
+
+  for (const stepKey of postAssessmentSteps) {
+    const stepIdx = orderedBaseSteps.indexOf(stepKey);
+    const metadata = STEP_METADATA[stepKey];
+    const isCompleted =
+      stepIdx < currentIndex ||
+      (status === "ENROLLED" && stepKey === "ENROLLED");
+    const isActive = stepIdx === currentIndex && status !== "ENROLLED";
+
+    steps.push({
+      id: stepKey,
+      title: metadata.title,
+      description: metadata.description[programType],
+      isCompleted,
+      isActive,
+    });
+  }
+
+  return steps;
+}
+
 export default function TrackingNextSteps({
   applicantType,
   programType,
@@ -233,12 +328,16 @@ export default function TrackingNextSteps({
     normalizeCurrentStep(currentStep) ??
     resolveCurrentStep(resolvedStatus, resolvedProgramType);
 
-  const orderedSteps = STEP_ORDER[resolvedProgramType];
-  const currentIndex = Math.max(0, orderedSteps.indexOf(resolvedCurrentStep));
-  const assessmentHint = formatAssessmentHint(assessmentData);
   const terminalNotice = getTerminalStatusNotice(
     resolvedStatus,
     resolvedProgramType,
+  );
+
+  const computedSteps = computeSteps(
+    resolvedCurrentStep,
+    resolvedProgramType,
+    resolvedStatus,
+    assessmentData,
   );
 
   return (
@@ -257,26 +356,14 @@ export default function TrackingNextSteps({
       )}
 
       <ol className="space-y-4">
-        {orderedSteps.map((step, index) => {
-          const isCompleted =
-            index < currentIndex ||
-            (resolvedStatus === "ENROLLED" && index === currentIndex);
-          const isActive =
-            index === currentIndex && resolvedStatus !== "ENROLLED";
-
-          const metadata = STEP_METADATA[step];
-          const description =
-            step === "ASSESSMENT_PHASE" && assessmentHint
-              ? assessmentHint
-              : metadata.description[resolvedProgramType];
-
+        {computedSteps.map((step, index) => {
           return (
-            <li key={step} className="relative pl-11">
-              {index < orderedSteps.length - 1 && (
+            <li key={step.id} className="relative pl-11">
+              {index < computedSteps.length - 1 && (
                 <span
                   className={cn(
                     "absolute left-[15px] top-7 h-full border-l-2",
-                    isCompleted ? "border-emerald-400" : "border-muted/80",
+                    step.isCompleted ? "border-emerald-400" : "border-muted/80",
                   )}
                 />
               )}
@@ -284,16 +371,16 @@ export default function TrackingNextSteps({
               <span
                 className={cn(
                   "absolute left-0 top-1 flex h-8 w-8 items-center justify-center rounded-full border-2",
-                  isCompleted &&
+                  step.isCompleted &&
                     "border-emerald-500 bg-emerald-50 text-emerald-700",
-                  isActive && "border-blue-500 bg-blue-50 text-blue-700",
-                  !isCompleted &&
-                    !isActive &&
+                  step.isActive && "border-blue-500 bg-blue-50 text-blue-700",
+                  !step.isCompleted &&
+                    !step.isActive &&
                     "border-muted bg-background text-muted-foreground",
                 )}>
-                {isCompleted ? (
+                {step.isCompleted ? (
                   <CheckCircle2 className="h-4 w-4" />
-                ) : isActive ? (
+                ) : step.isActive ? (
                   <Clock3 className="h-4 w-4" />
                 ) : (
                   <CircleDashed className="h-4 w-4" />
@@ -304,13 +391,13 @@ export default function TrackingNextSteps({
                 <p
                   className={cn(
                     "text-sm font-black uppercase tracking-wide",
-                    isCompleted && "text-emerald-700",
-                    isActive && "text-blue-700",
-                    !isCompleted && !isActive && "text-muted-foreground",
+                    step.isCompleted && "text-emerald-700",
+                    step.isActive && "text-blue-700",
+                    !step.isCompleted && !step.isActive && "text-muted-foreground",
                   )}>
-                  {metadata.title}
+                  {step.title}
                 </p>
-                <p className="text-sm text-muted-foreground">{description}</p>
+                <p className="text-sm text-muted-foreground">{step.description}</p>
               </div>
             </li>
           );

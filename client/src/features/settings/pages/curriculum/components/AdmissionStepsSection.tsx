@@ -494,7 +494,7 @@ export function AdmissionStepsSection({
                         {step.stepOrder === firstExamStepOrder ? (
                           <div className="space-y-1">
                             <Label className="text-sm font-bold uppercase">
-                              Max Slots/Quota
+                              Max Slots
                             </Label>
                             <Input
                               type="number"

@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { Button } from "@/shared/ui/button";
 import GuestLayout from "@/shared/layouts/GuestLayout";
 import AdmissionHeader from "@/features/admission/components/AdmissionHeader";
-import PrivacyNotice from "@/features/admission/pages/online-enrollment/PrivacyNotice";
+import PrivacyNotice from "@/shared/components/PrivacyNotice";
 import EarlyRegistrationForm from "./EarlyRegistrationForm";
 import EarlyRegSuccessView from "./components/EarlyRegSuccessView";
 import { motion, AnimatePresence } from "motion/react";
@@ -368,7 +368,7 @@ export default function EarlyRegistrationApply() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.98 }}
                     transition={{ duration: 0.3 }}>
-                    <PrivacyNotice onAccept={handleAccept} />
+                    <PrivacyNotice variant="BEERF" onAccept={handleAccept} />
                   </motion.div>
                 ) : (
                   <motion.div

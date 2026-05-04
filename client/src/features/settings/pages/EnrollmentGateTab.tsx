@@ -1,12 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { sileo } from "sileo";
-import {
-  CalendarClock,
-  CalendarDays,
-  Settings2,
-  AlertTriangle,
-  ShieldCheck,
-} from "lucide-react";
+import { CalendarClock, CalendarDays, Settings2 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -22,13 +16,6 @@ import {
 import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { DatePicker } from "@/shared/ui/date-picker";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
 
 import { formatManilaDate } from "@/shared/lib/utils";
 
@@ -53,6 +40,25 @@ function getDatePartsInTimeZone(date: Date, timeZone = MANILA_TIME_ZONE) {
 
 function utcNoonDate(year: number, monthIndex: number, day: number) {
   return new Date(Date.UTC(year, monthIndex, day, 12, 0, 0, 0));
+}
+
+function toManilaDateToken(value: string | Date): number {
+  const date = typeof value === "string" ? new Date(value) : value;
+  const { year, month, day } = getDatePartsInTimeZone(date);
+  return year * 10000 + month * 100 + day;
+}
+
+function dateTokenToUtcMillis(token: number): number {
+  const year = Math.floor(token / 10000);
+  const month = Math.floor((token % 10000) / 100);
+  const day = token % 100;
+  return Date.UTC(year, month - 1, day, 0, 0, 0, 0);
+}
+
+function diffTokenDays(laterToken: number, earlierToken: number): number {
+  const diffMs =
+    dateTokenToUtcMillis(laterToken) - dateTokenToUtcMillis(earlierToken);
+  return Math.max(0, Math.round(diffMs / (1000 * 60 * 60 * 24)));
 }
 
 type PortalControl =
@@ -84,21 +90,21 @@ function formatDate(dateString: string | null): string {
 function getPhaseStatus(openDate: string | null, closeDate: string | null) {
   if (!openDate || !closeDate)
     return { label: "⚫ UNSCHEDULED", color: "bg-gray-100 text-gray-700" };
-  const now = new Date().getTime();
-  const start = new Date(openDate).getTime();
-  const end = new Date(closeDate).getTime();
+  const todayToken = toManilaDateToken(new Date());
+  const startToken = toManilaDateToken(openDate);
+  const endToken = toManilaDateToken(closeDate);
 
-  if (now < start) {
-    const days = Math.ceil((start - now) / (1000 * 60 * 60 * 24));
+  if (todayToken < startToken) {
+    const days = diffTokenDays(startToken, todayToken);
     return {
       label: `🔵 SCHEDULED (Opens in ${days} day(s))`,
       color: "bg-blue-100 text-blue-700",
     };
   }
-  if (now > end) {
+  if (todayToken > endToken) {
     return { label: "⚫ CONCLUDED", color: "bg-slate-100 text-slate-500" };
   }
-  const daysLeft = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+  const daysLeft = diffTokenDays(endToken, todayToken);
   return {
     label: `🟢 ACTIVE · Closes in ${daysLeft} day(s)`,
     color: "bg-green-100 text-green-700 font-bold",
@@ -135,62 +141,6 @@ export default function EnrollmentGateTab() {
     [currentManilaYear],
   );
 
-  const transitionRange = useMemo(() => {
-    if (!ay?.earlyRegCloseDate || !ay?.enrollOpenDate) return null;
-
-    const start = new Date(ay.earlyRegCloseDate);
-    start.setUTCDate(start.getUTCDate() + 1);
-
-    const end = new Date(ay.enrollOpenDate);
-    end.setUTCDate(end.getUTCDate() - 1);
-
-    return {
-      start: formatManilaDate(start.toISOString(), {
-        month: "short",
-        day: "numeric",
-      }),
-      end: formatManilaDate(end.toISOString(), {
-        month: "short",
-        day: "numeric",
-      }),
-      rawStart: start,
-      rawEnd: end,
-    };
-  }, [ay]);
-
-  const isCurrentlyInTransition = useMemo(() => {
-    if (!transitionRange) return false;
-    const now = new Date().getTime();
-    return (
-      now >= transitionRange.rawStart.getTime() &&
-      now <= transitionRange.rawEnd.getTime()
-    );
-  }, [transitionRange]);
-
-  const isPortalActuallyOpen = useMemo(() => {
-    if (!ay) return false;
-    if (ay.portalControl === "FORCE_OPEN_PHASE_1") return true;
-    if (ay.portalControl === "FORCE_OPEN_PHASE_2") return true;
-    if (ay.portalControl === "FORCE_CLOSE_ALL") return false;
-
-    // AUTO Mode logic
-    const now = new Date().getTime();
-    const p1Start = ay.earlyRegOpenDate
-      ? new Date(ay.earlyRegOpenDate).getTime()
-      : 0;
-    const p1End = ay.earlyRegCloseDate
-      ? new Date(ay.earlyRegCloseDate).getTime()
-      : 0;
-    const p2Start = ay.enrollOpenDate
-      ? new Date(ay.enrollOpenDate).getTime()
-      : 0;
-    const p2End = ay.enrollCloseDate
-      ? new Date(ay.enrollCloseDate).getTime()
-      : 0;
-
-    return (now >= p1Start && now <= p1End) || (now >= p2Start && now <= p2End);
-  }, [ay]);
-
   const fetchAy = useCallback(async () => {
     if (!activeSchoolYearId) {
       setLoading(false);
@@ -223,31 +173,11 @@ export default function EnrollmentGateTab() {
     fetchAy();
   }, [fetchAy]);
 
-  const handlePortalControlChange = async (value: string) => {
-    if (!ay) return;
-    try {
-      await api.patch(`/school-years/${ay.id}/override`, {
-        portalControl: value,
-      });
-      setAy({ ...ay, portalControl: value as PortalControl });
-
-      // Sync store Phase
-      const pubRes = await api.get("/settings/public");
-      setSettings({ enrollmentPhase: pubRes.data.enrollmentPhase });
-
-      sileo.success({
-        title: "Portal Mode Updated",
-        description: `Global control set to ${value.replace(/_/g, " ")}.`,
-      });
-    } catch (err) {
-      toastApiError(err as never);
-    }
-  };
-
   const handleSaveDates = async () => {
     if (!ay) return;
 
     // ─── UX Blueprint Validation: Timeline Collision Check ───
+    /* Commented out for demonstration: 
     if (earlyRegCloseDate && enrollOpenDate) {
       if (enrollOpenDate.getTime() <= earlyRegCloseDate.getTime()) {
         sileo.error({
@@ -273,6 +203,7 @@ export default function EnrollmentGateTab() {
         return;
       }
     }
+    */
 
     setSaving(true);
     try {
@@ -335,71 +266,6 @@ export default function EnrollmentGateTab() {
 
   return (
     <div className="space-y-6">
-      {/* Global Control Card */}
-      <Card className="border-primary/20 shadow-md">
-        <CardHeader className="pb-4">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-primary/10 rounded-lg text-primary">
-              <ShieldCheck className="h-5 w-5" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">GLOBAL PORTAL CONTROL</CardTitle>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-muted/50 rounded-xl border border-border/50">
-            <div className="space-y-1">
-              <p className="text-sm font-bold flex items-center gap-1.5">
-                Control Mode
-                {ay.portalControl !== "AUTO" && (
-                  <Badge
-                    variant="warning"
-                    className="h-5 px-1.5">
-                    Override Active
-                  </Badge>
-                )}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Determines if the enrollment forms are currently accessible to
-                the public.
-              </p>
-            </div>
-
-            <Select
-              value={ay.portalControl}
-              onValueChange={handlePortalControlChange}>
-              <SelectTrigger className="w-full sm:w-[280px] font-bold bg-background shadow-sm border-2">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem
-                  value="AUTO"
-                  className="font-bold">
-                  Auto-Schedule (Follows dates below)
-                </SelectItem>
-                <SelectItem
-                  value="FORCE_OPEN_PHASE_1"
-                  className="text-amber-600 font-bold">
-                  Force-Open Phase 1 (Override)
-                </SelectItem>
-                <SelectItem
-                  value="FORCE_OPEN_PHASE_2"
-                  className="text-amber-600 font-bold">
-                  Force-Open Phase 2 (Override)
-                </SelectItem>
-                <SelectItem
-                  value="FORCE_CLOSE_ALL"
-                  className="text-destructive font-bold">
-                  {" "}
-                  Force-Close All Portals
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
       <Card className="shadow-md">
         <CardHeader className="flex flex-row items-center justify-between pb-4 border-b bg-muted/20">
           <div className="flex items-center gap-3">
@@ -408,7 +274,7 @@ export default function EnrollmentGateTab() {
             </div>
             <div>
               <CardTitle className="text-xl">
-                Enrollment Schedule Configuration
+                Admission Schedule Configuration
               </CardTitle>
               <CardDescription>S.Y. {ay.yearLabel}</CardDescription>
             </div>
@@ -504,60 +370,6 @@ export default function EnrollmentGateTab() {
             )}
           </div>
 
-          {transitionRange ? (
-            <div className="relative py-2">
-              <div className="bg-muted/30 border-2 border-dashed border-muted-foreground/20 rounded-2xl p-6 text-center space-y-2">
-                <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                  <span className="text-xl"></span>
-                  <span className="text-xs font-black uppercase tracking-[0.2em]">
-                    System Transition Period
-                  </span>
-                </div>
-                <p className="text-xl font-black text-foreground">
-                  {transitionRange.start} — {transitionRange.end}
-                </p>
-                <div className="text-sm text-muted-foreground mx-auto leading-relaxed font-bold space-y-1">
-                  <p>
-                    Public portals{" "}
-                    {isCurrentlyInTransition ? "are currently" : "will be"}{" "}
-                    <span
-                      className={`font-bold underline decoration-2 ${
-                        isPortalActuallyOpen
-                          ? "text-green-600 decoration-green-600/30"
-                          : "text-foreground decoration-destructive/30"
-                      }`}>
-                      {isPortalActuallyOpen ? "OPEN" : "CLOSED"}
-                    </span>
-                    {ay.portalControl !== "AUTO" && (
-                      <span className="ml-1 opacity-70">
-                        (Manual Override Active)
-                      </span>
-                    )}
-                  </p>
-                  {isCurrentlyInTransition && (
-                    <p>
-                      Registrars should utilize this time to consolidate Early
-                      Registration projections and configure section capacities.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="relative py-4">
-              <div
-                className="absolute inset-0 flex items-center"
-                aria-hidden="true">
-                <div className="w-full border-t-2 border-dashed border-muted-foreground/20"></div>
-              </div>
-              <div className="relative flex justify-center">
-                <span className="bg-background px-4 text-xs font-bold text-muted-foreground uppercase tracking-[0.3em]">
-                  Transition
-                </span>
-              </div>
-            </div>
-          )}
-
           {/* Phase 2 */}
           <div className="">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -597,12 +409,14 @@ export default function EnrollmentGateTab() {
                     <DatePicker
                       date={enrollOpenDate}
                       setDate={setEnrollOpenDate}
+                      /* Commented out for demonstration: 
                       minDate={
                         earlyRegCloseDate
                           ? new Date(earlyRegCloseDate.getTime() + 86400000)
                           : minDate
                       }
                       maxDate={maxDate}
+                      */
                       className="font-bold h-12 text-lg shadow-sm border-2"
                     />
                   </div>
@@ -613,12 +427,15 @@ export default function EnrollmentGateTab() {
                     <DatePicker
                       date={enrollCloseDate}
                       setDate={setEnrollCloseDate}
+                      /* Commented out for demonstration: 
                       minDate={enrollOpenDate || minDate}
                       maxDate={maxDate}
+                      */
                       className="font-bold h-12 text-lg shadow-sm border-2"
                     />
                   </div>
                 </div>
+                {/* Commented out for demonstration:
                 <div className="flex items-start gap-2 p-4 bg-blue-50 border border-blue-100 rounded-xl">
                   <AlertTriangle className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
                   <p className="text-xs text-blue-700 leading-relaxed font-bold">
@@ -628,6 +445,7 @@ export default function EnrollmentGateTab() {
                     Classes.
                   </p>
                 </div>
+                */}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

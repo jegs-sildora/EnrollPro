@@ -770,6 +770,7 @@ export function createSchoolYearAdminController(
           : null
         : existingYear.earlyRegCloseDate;
 
+    /* Commented out for demonstration:
     if (nextEarlyRegCloseDate && nextEnrollOpenDate) {
       if (nextEnrollOpenDate.getTime() <= nextEarlyRegCloseDate.getTime()) {
         res.status(400).json({
@@ -797,6 +798,7 @@ export function createSchoolYearAdminController(
         return;
       }
     }
+    */
 
     const updated = await deps.prisma.schoolYear.update({
       where: { id },

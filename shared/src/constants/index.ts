@@ -83,6 +83,7 @@ export const APPLICATION_VALID_TRANSITIONS: Record<
 > = {
   SUBMITTED_BEERF: [
     "VERIFIED",
+    "SUBMITTED_BEEF",
     "UNDER_REVIEW",
     "EXAM_SCHEDULED",
     "REJECTED",
@@ -90,6 +91,7 @@ export const APPLICATION_VALID_TRANSITIONS: Record<
   ],
   SUBMITTED_BEEF: [
     "VERIFIED",
+    "SUBMITTED_BEERF",
     "UNDER_REVIEW",
     "EXAM_SCHEDULED",
     "REJECTED",
@@ -142,6 +144,7 @@ export const APPLICATION_VALID_TRANSITIONS: Record<
     "WITHDRAWN",
   ],
   READY_FOR_ENROLLMENT: [
+    "SUBMITTED_BEEF",
     "ENROLLED",
     "TEMPORARILY_ENROLLED",
     "REJECTED",
@@ -328,7 +331,10 @@ export const DEPED_TEACHER_SUBJECT_GROUPS = [
       { value: "HOME ECONOMICS", label: "Home Economics (HE)" },
       { value: "INDUSTRIAL ARTS", label: "Industrial Arts (IA)" },
       { value: "AGRI_FISHERY ARTS", label: "Agri-Fishery Arts (AFA)" },
-      { value: "ICT", label: "Information and Communications Technology (ICT)" },
+      {
+        value: "ICT",
+        label: "Information and Communications Technology (ICT)",
+      },
     ],
   },
   {
@@ -353,7 +359,10 @@ export const DEPED_TEACHER_SUBJECT_GROUPS = [
       { value: "VISUAL ARTS", label: "Visual Arts" },
       { value: "THEATER ARTS", label: "Theater Arts" },
       { value: "MEDIA ARTS", label: "Media Arts" },
-      { value: "CREATIVE WRITING", label: "Creative Writing (English / Filipino)" },
+      {
+        value: "CREATIVE WRITING",
+        label: "Creative Writing (English / Filipino)",
+      },
       { value: "DANCE", label: "Dance" },
     ],
   },
@@ -370,9 +379,15 @@ export const DEPED_TEACHER_SUBJECT_GROUPS = [
     group: "Special Program in Journalism (SPJ)",
     options: [
       { value: "BASICS OF JOURNALISM", label: "Basics of Journalism" },
-      { value: "PRINT BROADCASTING & PHOTOJOURNALISM", label: "Print Broadcasting & Photojournalism" },
+      {
+        value: "PRINT BROADCASTING & PHOTOJOURNALISM",
+        label: "Print Broadcasting & Photojournalism",
+      },
       { value: "RADIO BROADCASTING", label: "Radio Broadcasting" },
-      { value: "TV BROADCASTING & ONLINE JOURNALISM", label: "TV Broadcasting & Online Journalism" },
+      {
+        value: "TV BROADCASTING & ONLINE JOURNALISM",
+        label: "TV Broadcasting & Online Journalism",
+      },
     ],
   },
   {
@@ -388,7 +403,8 @@ export const DEPED_TEACHER_SUBJECT_GROUPS = [
   },
 ];
 
-export const DEPED_TEACHER_SUBJECT_OPTIONS = DEPED_TEACHER_SUBJECT_GROUPS.flatMap(g => g.options);
+export const DEPED_TEACHER_SUBJECT_OPTIONS =
+  DEPED_TEACHER_SUBJECT_GROUPS.flatMap((g) => g.options);
 
 export const DEPED_TEACHER_SPECIALIZATION_VALUES = [
   "MAJOR IN ENGLISH / APPLIED LINGUISTICS",
@@ -430,17 +446,45 @@ export const DEPED_TEACHER_SPECIALIZATION_GROUPS = [
   {
     group: "Basic Education Curriculum (BEC)",
     options: [
-      { value: "MAJOR IN ENGLISH / APPLIED LINGUISTICS", label: "Major in English / Applied Linguistics" },
+      {
+        value: "MAJOR IN ENGLISH / APPLIED LINGUISTICS",
+        label: "Major in English / Applied Linguistics",
+      },
       { value: "MAJOR IN FILIPINO", label: "Major in Filipino" },
       { value: "MAJOR IN MATHEMATICS", label: "Major in Mathematics" },
-      { value: "MAJOR IN GENERAL SCIENCE / BIOLOGY / CHEMISTRY / PHYSICS", label: "Major in General Science / Biology / Chemistry / Physics" },
-      { value: "MAJOR IN SOCIAL STUDIES / HISTORY", label: "Major in Social Studies / History" },
-      { value: "MAJOR IN VALUES EDUCATION", label: "Major in Values Education" },
-      { value: "MAJOR IN MAPEH", label: "Major in MAPEH (or specific Physical Education / Health degrees)" },
-      { value: "MAJOR IN HOME ECONOMICS", label: "Major in Home Economics (HE)" },
-      { value: "MAJOR IN INDUSTRIAL ARTS", label: "Major in Industrial Arts (IA)" },
-      { value: "MAJOR IN AGRI-FISHERY ARTS", label: "Major in Agri-Fishery Arts (AFA)" },
-      { value: "MAJOR IN ICT", label: "Major in Information and Communications Technology (ICT)" },
+      {
+        value: "MAJOR IN GENERAL SCIENCE / BIOLOGY / CHEMISTRY / PHYSICS",
+        label: "Major in General Science / Biology / Chemistry / Physics",
+      },
+      {
+        value: "MAJOR IN SOCIAL STUDIES / HISTORY",
+        label: "Major in Social Studies / History",
+      },
+      {
+        value: "MAJOR IN VALUES EDUCATION",
+        label: "Major in Values Education",
+      },
+      {
+        value: "MAJOR IN MAPEH",
+        label:
+          "Major in MAPEH (or specific Physical Education / Health degrees)",
+      },
+      {
+        value: "MAJOR IN HOME ECONOMICS",
+        label: "Major in Home Economics (HE)",
+      },
+      {
+        value: "MAJOR IN INDUSTRIAL ARTS",
+        label: "Major in Industrial Arts (IA)",
+      },
+      {
+        value: "MAJOR IN AGRI-FISHERY ARTS",
+        label: "Major in Agri-Fishery Arts (AFA)",
+      },
+      {
+        value: "MAJOR IN ICT",
+        label: "Major in Information and Communications Technology (ICT)",
+      },
     ],
   },
   {
@@ -449,7 +493,10 @@ export const DEPED_TEACHER_SPECIALIZATION_GROUPS = [
       { value: "MAJOR IN PHYSICS", label: "Major in Physics" },
       { value: "MAJOR IN CHEMISTRY", label: "Major in Chemistry" },
       { value: "MAJOR IN BIOLOGY", label: "Major in Biology" },
-      { value: "MAJOR IN MATHEMATICS (WITH STATISTICS BACKGROUND)", label: "Major in Mathematics (with Statistics background)" },
+      {
+        value: "MAJOR IN MATHEMATICS (WITH STATISTICS BACKGROUND)",
+        label: "Major in Mathematics (with Statistics background)",
+      },
     ],
   },
   {
@@ -458,16 +505,25 @@ export const DEPED_TEACHER_SPECIALIZATION_GROUPS = [
       { value: "MAJOR IN MUSIC EDUCATION", label: "Major in Music Education" },
       { value: "FINE ARTS", label: "Fine Arts" },
       { value: "THEATER / PERFORMING ARTS", label: "Theater/Performing Arts" },
-      { value: "LITERATURE / CREATIVE WRITING", label: "Literature/Creative Writing" },
+      {
+        value: "LITERATURE / CREATIVE WRITING",
+        label: "Literature/Creative Writing",
+      },
       { value: "DANCE", label: "Dance" },
     ],
   },
   {
     group: "Special Program in Sports (SPS)",
     options: [
-      { value: "MAJOR IN PHYSICAL EDUCATION", label: "Major in Physical Education" },
+      {
+        value: "MAJOR IN PHYSICAL EDUCATION",
+        label: "Major in Physical Education",
+      },
       { value: "SPORTS SCIENCE", label: "Sports Science" },
-      { value: "CERTIFIED SPECIALIST COACH", label: "Certified Specialist Coach" },
+      {
+        value: "CERTIFIED SPECIALIST COACH",
+        label: "Certified Specialist Coach",
+      },
     ],
   },
   {
@@ -475,8 +531,14 @@ export const DEPED_TEACHER_SPECIALIZATION_GROUPS = [
     options: [
       { value: "MASS COMMUNICATION", label: "Mass Communication" },
       { value: "JOURNALISM", label: "Journalism" },
-      { value: "MAJOR IN ENGLISH (CAMPUS JOURNALISM)", label: "Major in English (with Campus Journalism background)" },
-      { value: "MAJOR IN FILIPINO (CAMPUS JOURNALISM)", label: "Major in Filipino (with Campus Journalism background)" },
+      {
+        value: "MAJOR IN ENGLISH (CAMPUS JOURNALISM)",
+        label: "Major in English (with Campus Journalism background)",
+      },
+      {
+        value: "MAJOR IN FILIPINO (CAMPUS JOURNALISM)",
+        label: "Major in Filipino (with Campus Journalism background)",
+      },
     ],
   },
   {
@@ -484,7 +546,10 @@ export const DEPED_TEACHER_SPECIALIZATION_GROUPS = [
     options: [
       { value: "LINGUISTICS", label: "Linguistics" },
       { value: "DELE CERTIFIED (SPANISH)", label: "DELE Certified (Spanish)" },
-      { value: "JLPT CERTIFIED (JAPANESE)", label: "JLPT Certified (Japanese)" },
+      {
+        value: "JLPT CERTIFIED (JAPANESE)",
+        label: "JLPT Certified (Japanese)",
+      },
       { value: "DELF CERTIFIED (FRENCH)", label: "DELF Certified (French)" },
       { value: "HSK CERTIFIED (MANDARIN)", label: "HSK Certified (Mandarin)" },
       { value: "TOPIK CERTIFIED (KOREAN)", label: "TOPIK Certified (Korean)" },
@@ -492,7 +557,8 @@ export const DEPED_TEACHER_SPECIALIZATION_GROUPS = [
   },
 ];
 
-export const DEPED_TEACHER_SPECIALIZATION_OPTIONS = DEPED_TEACHER_SPECIALIZATION_GROUPS.flatMap(g => g.options);
+export const DEPED_TEACHER_SPECIALIZATION_OPTIONS =
+  DEPED_TEACHER_SPECIALIZATION_GROUPS.flatMap((g) => g.options);
 
 export const DEPED_TEACHER_PLANTILLA_POSITION_VALUES = [
   "TEACHER I",
@@ -538,19 +604,31 @@ export const DEPED_TEACHER_ACADEMIC_DESIGNATION_OPTIONS = [
 ] as const;
 
 export const DEPED_TEACHER_ANCILLARY_ROLE_OPTIONS = [
-  { value: "TEACHER-IN-CHARGE (TIC) / OFFICER-IN-CHARGE (OIC)", label: "Teacher-in-Charge (TIC) / Officer-in-Charge (OIC)" },
+  {
+    value: "TEACHER-IN-CHARGE (TIC) / OFFICER-IN-CHARGE (OIC)",
+    label: "Teacher-in-Charge (TIC) / Officer-in-Charge (OIC)",
+  },
   { value: "LIS COORDINATOR", label: "LIS Coordinator" },
   { value: "ICT COORDINATOR", label: "ICT Coordinator" },
   { value: "SDRRM COORDINATOR", label: "SDRRM Coordinator" },
   { value: "GUIDANCE DESIGNATE", label: "Guidance Designate" },
   { value: "SCHOOL PAPER ADVISER (SPA)", label: "School Paper Adviser (SPA)" },
   { value: "PROPERTY CUSTODIAN", label: "Property Custodian" },
-  { value: "CLINIC TEACHER / HEALTH COORDINATOR", label: "Clinic Teacher / Health Coordinator" },
+  {
+    value: "CLINIC TEACHER / HEALTH COORDINATOR",
+    label: "Clinic Teacher / Health Coordinator",
+  },
   { value: "SPORTS COORDINATOR", label: "Sports Coordinator" },
   { value: "BSP / GSP COORDINATOR", label: "BSP / GSP Coordinator" },
-  { value: "GULAYAN SA PAARALAN (GPP) COORDINATOR", label: "Gulayan sa Paaralan (GPP) Coordinator" },
+  {
+    value: "GULAYAN SA PAARALAN (GPP) COORDINATOR",
+    label: "Gulayan sa Paaralan (GPP) Coordinator",
+  },
   { value: "FEEDING COORDINATOR", label: "Feeding Coordinator" },
-  { value: "SUPREME SECONDARY LEARNER GOVERNMENT (SSLG) ADVISER", label: "Supreme Secondary Learner Government (SSLG) Adviser" },
+  {
+    value: "SUPREME SECONDARY LEARNER GOVERNMENT (SSLG) ADVISER",
+    label: "Supreme Secondary Learner Government (SSLG) Adviser",
+  },
 ] as const;
 
 // ─── DO 017 s.2025 Early Registration Enums ─────────────

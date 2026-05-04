@@ -20,6 +20,7 @@ import type {
 } from "./types";
 
 interface PipelineBatchVerifyGridProps {
+  disableDocumentChecks?: boolean;
   verifyGridLoading: boolean;
   verifyGridColumns: VerifyGridColumn[];
   verifyGridApplicants: VerifyGridApplicant[];
@@ -54,6 +55,7 @@ interface PipelineBatchVerifyGridProps {
 }
 
 export default function PipelineBatchVerifyGrid({
+  disableDocumentChecks = false,
   verifyGridLoading,
   verifyGridColumns,
   verifyGridApplicants,
@@ -193,25 +195,32 @@ export default function PipelineBatchVerifyGrid({
               )}
 
               <div className="flex items-center gap-1.5 text-[10px] leading-none">
-                <Checkbox
-                  className={verificationCheckboxClassName}
-                  checked={requiredDocsChecked}
-                  onCheckedChange={(checked) =>
-                    setVerifyRequiredDocsForRow(applicant.id, Boolean(checked))
-                  }
-                  onClick={(e) => e.stopPropagation()}
-                  disabled={
-                    isBatchProcessing ||
-                    isRetained ||
-                    applicant.requiredChecklistKeys.length === 0
-                  }
-                />
-                <span
-                  className={`font-bold ${
-                    isRetained ? "text-muted-foreground" : "text-foreground"
-                  }`}>
-                  All required docs
-                </span>
+                {!disableDocumentChecks && (
+                  <>
+                    <Checkbox
+                      className={verificationCheckboxClassName}
+                      checked={requiredDocsChecked}
+                      onCheckedChange={(checked) =>
+                        setVerifyRequiredDocsForRow(
+                          applicant.id,
+                          Boolean(checked),
+                        )
+                      }
+                      onClick={(e) => e.stopPropagation()}
+                      disabled={
+                        isBatchProcessing ||
+                        isRetained ||
+                        applicant.requiredChecklistKeys.length === 0
+                      }
+                    />
+                    <span
+                      className={`font-bold ${
+                        isRetained ? "text-muted-foreground" : "text-foreground"
+                      }`}>
+                      All required docs
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           );
@@ -247,56 +256,60 @@ export default function PipelineBatchVerifyGrid({
       },
     ];
 
-    verifyGridColumns.forEach((column) => {
-      cols.push({
-        id: column.key,
-        header: () => {
-          const columnChecked = isVerifyColumnFullyChecked(column.key);
-          return (
-            <div className="flex flex-col items-center gap-1 mx-auto">
-              <span className="leading-tight">
-                {getColumnHeaderLabel(column)}
-                {column.isMandatory && (
-                  <span className="ml-0.5 text-destructive">*</span>
-                )}
-              </span>
-              <Checkbox
-                className={verificationCheckboxClassName}
-                checked={columnChecked}
-                onCheckedChange={(checked) =>
-                  setVerifyColumnForAll(column.key, Boolean(checked))
-                }
-                onClick={(e) => e.stopPropagation()}
-                disabled={
-                  isBatchProcessing || verifyGridApplicants.length === 0
-                }
-              />
-            </div>
-          );
-        },
-        cell: ({ row }) => {
-          const applicant = row.original;
-          const academicStatus =
-            verifyAcademicStatuses[applicant.id] ?? "PROMOTED";
-          const isRetained = academicStatus === "RETAINED";
-          return (
-            <div
-              className={`flex items-center justify-center ${
-                isRetained ? "opacity-50" : ""
-              }`}>
-              <Checkbox
-                className={verificationCheckboxClassName}
-                checked={Boolean(verifyGridValues[applicant.id]?.[column.key])}
-                onCheckedChange={(checked) =>
-                  setVerifyCell(applicant.id, column.key, Boolean(checked))
-                }
-                disabled={isBatchProcessing || isRetained}
-              />
-            </div>
-          );
-        },
+    if (!disableDocumentChecks) {
+      verifyGridColumns.forEach((column) => {
+        cols.push({
+          id: column.key,
+          header: () => {
+            const columnChecked = isVerifyColumnFullyChecked(column.key);
+            return (
+              <div className="flex flex-col items-center gap-1 mx-auto">
+                <span className="leading-tight">
+                  {getColumnHeaderLabel(column)}
+                  {column.isMandatory && (
+                    <span className="ml-0.5 text-destructive">*</span>
+                  )}
+                </span>
+                <Checkbox
+                  className={verificationCheckboxClassName}
+                  checked={columnChecked}
+                  onCheckedChange={(checked) =>
+                    setVerifyColumnForAll(column.key, Boolean(checked))
+                  }
+                  onClick={(e) => e.stopPropagation()}
+                  disabled={
+                    isBatchProcessing || verifyGridApplicants.length === 0
+                  }
+                />
+              </div>
+            );
+          },
+          cell: ({ row }) => {
+            const applicant = row.original;
+            const academicStatus =
+              verifyAcademicStatuses[applicant.id] ?? "PROMOTED";
+            const isRetained = academicStatus === "RETAINED";
+            return (
+              <div
+                className={`flex items-center justify-center ${
+                  isRetained ? "opacity-50" : ""
+                }`}>
+                <Checkbox
+                  className={verificationCheckboxClassName}
+                  checked={Boolean(
+                    verifyGridValues[applicant.id]?.[column.key],
+                  )}
+                  onCheckedChange={(checked) =>
+                    setVerifyCell(applicant.id, column.key, Boolean(checked))
+                  }
+                  disabled={isBatchProcessing || isRetained}
+                />
+              </div>
+            );
+          },
+        });
       });
-    });
+    }
 
     cols.push({
       id: "clearance",
@@ -324,8 +337,12 @@ export default function PipelineBatchVerifyGrid({
             ? "Retained Tagged"
             : "Mark Retained"
           : rowMarked
-            ? "Cleared"
-            : "Mark Verified";
+            ? disableDocumentChecks
+              ? "Marked"
+              : "Cleared"
+            : disableDocumentChecks
+              ? "Mark Handoff"
+              : "Mark Verified";
 
         return (
           <div
@@ -377,26 +394,29 @@ export default function PipelineBatchVerifyGrid({
     <div className="space-y-3 min-h-0 flex flex-col">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs font-bold text-foreground">
-          Clearance marked: {markedCount}/{verifyGridApplicants.length}
+          {disableDocumentChecks ? "Handoff marked" : "Clearance marked"}:{" "}
+          {markedCount}/{verifyGridApplicants.length}
         </p>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2 rounded-md border bg-background px-2 py-1">
-            <Checkbox
-              className={verificationCheckboxClassName}
-              checked={verifyAllChecked}
-              onCheckedChange={(checked) => setVerifyAll(Boolean(checked))}
-              onClick={(e) => e.stopPropagation()}
-              disabled={
-                isBatchProcessing ||
-                verifyGridApplicants.length === 0 ||
-                verifyGridColumns.length === 0
-              }
-            />
-            <span className="text-[11px] font-bold text-foreground leading-none">
-              Toggle all docs
-            </span>
-          </div>
+          {!disableDocumentChecks && (
+            <div className="flex items-center gap-2 rounded-md border bg-background px-2 py-1">
+              <Checkbox
+                className={verificationCheckboxClassName}
+                checked={verifyAllChecked}
+                onCheckedChange={(checked) => setVerifyAll(Boolean(checked))}
+                onClick={(e) => e.stopPropagation()}
+                disabled={
+                  isBatchProcessing ||
+                  verifyGridApplicants.length === 0 ||
+                  verifyGridColumns.length === 0
+                }
+              />
+              <span className="text-[11px] font-bold text-foreground leading-none">
+                Toggle all docs
+              </span>
+            </div>
+          )}
 
           <Button
             variant="outline"
@@ -419,7 +439,11 @@ export default function PipelineBatchVerifyGrid({
         data={verifyGridApplicants}
         loading={verifyGridLoading}
         className="rounded-lg border overflow-auto min-h-0 relative"
-        tableClassName="table-fixed min-w-[1180px]"
+        tableClassName={
+          disableDocumentChecks
+            ? "table-fixed min-w-[760px]"
+            : "table-fixed min-w-[1180px]"
+        }
         noResultsMessage="No applicants loaded for verification."
       />
     </div>

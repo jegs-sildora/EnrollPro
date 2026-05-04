@@ -1,7 +1,7 @@
 import { useState } from "react";
 import GuestLayout from "@/shared/layouts/GuestLayout";
 import AdmissionHeader from "../../components/AdmissionHeader";
-import PrivacyNotice from "./PrivacyNotice";
+import PrivacyNotice from "@/shared/components/PrivacyNotice";
 import EarlyRegistrationForm from "./EarlyRegistrationForm";
 import EnrollmentSuccess from "./components/EnrollmentSuccess";
 import { Button } from "@/shared/ui/button";
@@ -42,14 +42,52 @@ export default function Apply() {
     schoolName,
     logoUrl,
     enrollmentPhase,
+    enrollOpenDate,
+    enrollCloseDate,
     activeSchoolYearLabel,
     systemStatus,
     facebookPageUrl,
     schoolWebsite,
   } = useSettingsStore();
 
+  const toManilaDateToken = (value: Date): number => {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Manila",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const parts = formatter.formatToParts(value);
+    const year = Number(
+      parts.find((part) => part.type === "year")?.value ?? "0",
+    );
+    const month = Number(
+      parts.find((part) => part.type === "month")?.value ?? "0",
+    );
+    const day = Number(parts.find((part) => part.type === "day")?.value ?? "0");
+
+    return year * 10000 + month * 100 + day;
+  };
+
+  const isWithinOfficialBosyEnrollmentWindow = (() => {
+    if (!enrollOpenDate || !enrollCloseDate) {
+      return enrollmentPhase === "REGULAR_ENROLLMENT";
+    }
+
+    const open = new Date(enrollOpenDate);
+    const close = new Date(enrollCloseDate);
+    if (Number.isNaN(open.getTime()) || Number.isNaN(close.getTime())) {
+      return enrollmentPhase === "REGULAR_ENROLLMENT";
+    }
+
+    const todayToken = toManilaDateToken(new Date());
+    const openToken = toManilaDateToken(open);
+    const closeToken = toManilaDateToken(close);
+    return todayToken >= openToken && todayToken <= closeToken;
+  })();
+
   const isBosyLocked = systemStatus === "BOSY_LOCKED";
-  const isClosed = isBosyLocked || enrollmentPhase !== "REGULAR_ENROLLMENT";
+  const isClosed = isBosyLocked || !isWithinOfficialBosyEnrollmentWindow;
 
   const handleAccept = () => {
     sessionStorage.setItem(CONSENT_KEY, "true");
@@ -342,7 +380,10 @@ export default function Apply() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.98 }}
                       transition={{ duration: 0.3 }}>
-                      <PrivacyNotice onAccept={handleAccept} />
+                      <PrivacyNotice
+                        variant="BEEF"
+                        onAccept={handleAccept}
+                      />
                     </motion.div>
                   ) : !intakeChoice ? (
                     <motion.div

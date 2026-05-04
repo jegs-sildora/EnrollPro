@@ -14,10 +14,11 @@ import { cn } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 
 interface PrivacyNoticeProps {
+  variant: "BEERF" | "BEEF";
   onAccept: () => void;
 }
 
-export default function PrivacyNotice({ onAccept }: PrivacyNoticeProps) {
+export default function PrivacyNotice({ variant, onAccept }: PrivacyNoticeProps) {
   const [agreed, setAgreed] = useState(false);
   const [hasScrolledNotice, setHasScrolledNotice] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -30,6 +31,8 @@ export default function PrivacyNotice({ onAccept }: PrivacyNoticeProps) {
       setHasScrolledNotice(true);
     }
   };
+
+  const isBeerf = variant === "BEERF";
 
   return (
     <div className="mx-auto p-4 md:p-8">
@@ -55,15 +58,28 @@ export default function PrivacyNotice({ onAccept }: PrivacyNoticeProps) {
               className="max-h-80 overflow-y-auto border rounded-xl p-5 bg-muted/5 space-y-5 relative scroll-smooth">
               {/* Header Section */}
               <section>
-                <h3 className="font-bold text-foreground mb-1 text-base">
-                  {schoolName.toUpperCase()} - DATA PRIVACY NOTICE
+                <h3 className="font-bold text-foreground mb-1 text-base uppercase">
+                  {schoolName} - DATA PRIVACY NOTICE ({variant})
                 </h3>
                 <p className="text-muted-foreground text-sm mb-2">
-                  The Department of Education (DepEd) and {schoolName} collect
-                  personal information only for the{" "}
-                  <strong>BASIC EDUCATION EARLY REGISTRATION</strong> process.
-                  This helps us plan classrooms, teachers, and school resources
-                  for the incoming School Year.
+                  {isBeerf ? (
+                    <>
+                      The Department of Education (DepEd) and {schoolName} collect
+                      personal information only for the{" "}
+                      <strong>BASIC EDUCATION EARLY REGISTRATION</strong> process.
+                      This helps us plan classrooms, teachers, and school resources
+                      for the incoming School Year.
+                    </>
+                  ) : (
+                    <>
+                      The Department of Education (DepEd) and {schoolName} collect
+                      personal and academic information for the purpose of{" "}
+                      <strong>OFFICIAL ENROLLMENT</strong>. This information is
+                      required to establish the learner's official record in the
+                      Learner Information System (LIS) and for the issuance of
+                      official school documents.
+                    </>
+                  )}
                 </p>
               </section>
 
@@ -75,26 +91,23 @@ export default function PrivacyNotice({ onAccept }: PrivacyNoticeProps) {
                   Why we collect your information
                 </h4>
                 <ul className="list-disc pl-5 space-y-2 text-muted-foreground text-sm">
-                  <li>
-                    To process and validate Basic Education Early Registration
-                    applications.
-                  </li>
-                  <li>
-                    To estimate learner distribution per Grade Level and
-                    program.
-                  </li>
-                  <li>
-                    To pre-register or update profiles in the DepEd Learner
-                    Information System (LIS).
-                  </li>
-                  <li>
-                    To communicate updates regarding registration status and
-                    schedules.
-                  </li>
-                  <li>
-                    To identify potential beneficiaries for equity programs
-                    (4Ps, IP, LWD).
-                  </li>
+                  {isBeerf ? (
+                    <>
+                      <li>To process and validate Early Registration applications.</li>
+                      <li>To estimate learner distribution per Grade Level and program.</li>
+                      <li>To pre-register or update profiles in the DepEd LIS.</li>
+                      <li>To communicate updates regarding registration status.</li>
+                      <li>To identify potential beneficiaries for equity programs.</li>
+                    </>
+                  ) : (
+                    <>
+                      <li>To facilitate official enrollment and sectioning for the current School Year.</li>
+                      <li>To maintain accurate permanent records (SF10) in the LIS.</li>
+                      <li>To track academic progress, attendance, and promotion status.</li>
+                      <li>To issue certifications, report cards (SF9), and other credentials.</li>
+                      <li>To ensure compliance with DepEd policies and educational standards.</li>
+                    </>
+                  )}
                 </ul>
               </section>
 
@@ -110,8 +123,7 @@ export default function PrivacyNotice({ onAccept }: PrivacyNoticeProps) {
                     number.
                   </p>
                   <p>
-                    <strong>Sensitive Information:</strong> Disability status,
-                    IP affiliation, 4Ps ID, and school records.
+                    <strong>Sensitive Information:</strong> {isBeerf ? "Disability status, IP affiliation, 4Ps ID, and school records." : "Academic grades, behavioral records, health information, and family background."}
                   </p>
                 </div>
               </section>
@@ -122,9 +134,9 @@ export default function PrivacyNotice({ onAccept }: PrivacyNoticeProps) {
                   How we protect your information
                 </h4>
                 <p className="text-muted-foreground text-sm">
-                  Data is stored securely in the LIS. Access is strictly
+                  Data is stored securely in the LIS and the school's local database. Access is strictly
                   restricted to authorized personnel only. Physical forms are
-                  kept for no more than one year.
+                  kept in secure filing systems in accordance with DepEd records management policies.
                 </p>
               </section>
 
@@ -182,7 +194,7 @@ export default function PrivacyNotice({ onAccept }: PrivacyNoticeProps) {
               className="text-sm font-medium leading-relaxed cursor-pointer select-none">
               I have read and understood the Data Privacy Notice above. I agree
               to the collection and processing of my child's information by{" "}
-              {schoolName} and DepEd.
+              {schoolName} and DepEd for the purpose of {isBeerf ? "Early Registration" : "Official Enrollment"}.
               <span className="text-destructive ml-1">*</span>
             </Label>
           </div>
@@ -190,7 +202,7 @@ export default function PrivacyNotice({ onAccept }: PrivacyNoticeProps) {
             onClick={onAccept}
             disabled={!agreed}
             className="w-full h-12 text-base font-semibold transition-all bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground">
-            Continue to Application Form
+            Continue to {isBeerf ? "Registration" : "Enrollment"} Form
           </Button>
         </CardFooter>
       </Card>

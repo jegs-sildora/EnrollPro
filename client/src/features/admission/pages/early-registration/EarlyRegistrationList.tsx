@@ -92,8 +92,20 @@ export default function EarlyRegistration() {
   // Derived State
   const showSkeleton = useDelayedLoading(loading);
 
-  const getNextAction = (currentStatus: string) =>
-    NEXT_ACTION_BY_STATUS[currentStatus] ?? "Review Applicant";
+  const getNextAction = (currentStatus: string, applicantType?: string) => {
+    const normalizedApplicantType = String(applicantType ?? "")
+      .trim()
+      .toUpperCase();
+
+    if (
+      currentStatus === "SUBMITTED_BEEF" &&
+      normalizedApplicantType === "REGULAR"
+    ) {
+      return "View in Enrollment";
+    }
+
+    return NEXT_ACTION_BY_STATUS[currentStatus] ?? "Review Applicant";
+  };
 
   return (
     <div className="flex h-[calc(100vh-2rem)] overflow-hidden">

@@ -29,7 +29,7 @@ import {
   ACTIVE_REGISTRATION_EXCLUDED_STATUSES,
   REGISTRATION_STAGE_QUICK_FILTERS,
   getRegistrationBatchActionByStatus,
-  REGISTRATION_VALID_TRANSITIONS,
+  getRegistrationValidTransitions,
 } from "@/features/admission/constants/registrationWorkflow";
 import PipelineBatchScheduleForm from "./pipeline-batch/PipelineBatchScheduleForm";
 import PipelineBatchVerifyGrid from "@/features/admission/components/pipeline-batch/PipelineBatchVerifyGrid";
@@ -353,6 +353,9 @@ export default function PipelineBatchView({
       : null);
 
   const derivedTargetStatus = activeBatchAction?.targetStatus ?? "";
+  const isEnrollmentQueueHandoffAction =
+    activeBatchAction?.id === "VERIFY_DOCUMENTS" &&
+    activeBatchAction.targetStatus === "READY_FOR_ENROLLMENT";
 
   const preflightSummary = useMemo(() => {
     if (!derivedTargetStatus || selectedApplications.length === 0) {
@@ -366,7 +369,10 @@ export default function PipelineBatchView({
     const ineligible: Array<{ app: Application; reason: string }> = [];
 
     for (const app of selectedApplications) {
-      const allowedTargets = REGISTRATION_VALID_TRANSITIONS[app.status] ?? [];
+      const allowedTargets = getRegistrationValidTransitions(
+        app.status,
+        app.applicantType,
+      );
       const matchesConfiguredTarget =
         allowedTargets.includes(derivedTargetStatus);
       const hasAssessmentBridgeTransition =
@@ -486,6 +492,10 @@ export default function PipelineBatchView({
       );
       if (!applicant) return { done: 0, total: 0 };
 
+      if (isEnrollmentQueueHandoffAction) {
+        return { done: 1, total: 1 };
+      }
+
       const academicStatus =
         verifyGridAcademicStatuses[applicantId] ?? applicant.academicStatus;
       if (academicStatus === "RETAINED") {
@@ -505,18 +515,31 @@ export default function PipelineBatchView({
 
       return { done, total };
     },
-    [verifyGridAcademicStatuses, verifyGridApplicants, verifyGridValues],
+    [
+      isEnrollmentQueueHandoffAction,
+      verifyGridAcademicStatuses,
+      verifyGridApplicants,
+      verifyGridValues,
+    ],
   );
 
   const isVerifyRowReady = useCallback(
     (applicantId: number) => {
+      if (isEnrollmentQueueHandoffAction) {
+        return true;
+      }
+
       const academicStatus = verifyGridAcademicStatuses[applicantId];
       if (academicStatus === "RETAINED") return true;
 
       const { done, total } = getVerifyRequiredCompletion(applicantId);
       return total > 0 ? done === total : true;
     },
-    [getVerifyRequiredCompletion, verifyGridAcademicStatuses],
+    [
+      getVerifyRequiredCompletion,
+      isEnrollmentQueueHandoffAction,
+      verifyGridAcademicStatuses,
+    ],
   );
 
   const orderedVerifyGridColumns = useMemo(() => {
@@ -584,6 +607,14 @@ export default function PipelineBatchView({
           return;
         }
 
+        if (isEnrollmentQueueHandoffAction) {
+          setVerifyRowsMarked((prev) => ({
+            ...prev,
+            [applicantId]: false,
+          }));
+          return;
+        }
+
         const values = verifyGridValues[applicantId] ?? applicant.checklist;
         const rowReady = applicant.requiredChecklistKeys.every((requiredKey) =>
           Boolean(values[requiredKey]),
@@ -604,7 +635,7 @@ export default function PipelineBatchView({
         };
       });
     },
-    [verifyGridApplicants, verifyGridValues],
+    [isEnrollmentQueueHandoffAction, verifyGridApplicants, verifyGridValues],
   );
 
   const setVerifyLrnDraft = useCallback(
@@ -768,6 +799,11 @@ export default function PipelineBatchView({
       setVerifyLrnEditingId(null);
       setVerifyRowsMarked(
         applicants.reduce<Record<number, boolean>>((acc, applicant) => {
+          if (isEnrollmentQueueHandoffAction) {
+            acc[applicant.id] = false;
+            return acc;
+          }
+
           const rowReady = applicant.requiredChecklistKeys.every(
             (requiredKey) => Boolean(applicant.checklist[requiredKey]),
           );
@@ -796,7 +832,7 @@ export default function PipelineBatchView({
     } finally {
       setVerifyGridLoading(false);
     }
-  }, [selectedIds]);
+  }, [isEnrollmentQueueHandoffAction, selectedIds]);
 
   const loadRegularSectionPreview = useCallback(async () => {
     if (hasMixedSelectedGradeLevels || scopedEligibleIds.length === 0) {
@@ -1763,7 +1799,8 @@ export default function PipelineBatchView({
 
         const markedReadyApplicants = eligibleVerifyApplicants.filter(
           (applicant) =>
-            verifyRowsMarked[applicant.id] && isVerifyRowReady(applicant.id),
+            verifyRowsMarked[applicant.id] &&
+            (isEnrollmentQueueHandoffAction || isVerifyRowReady(applicant.id)),
         );
 
         skippedClientSide = eligibleVerifyApplicants
@@ -1772,26 +1809,29 @@ export default function PipelineBatchView({
             id: applicant.id,
             name: applicant.name,
             trackingNumber: applicant.trackingNumber,
-            reason:
-              "Not marked as verified in the checklist table. Skipped by batch submit.",
+            reason: isEnrollmentQueueHandoffAction
+              ? "Not marked for enrollment queue handoff. Skipped by batch submit."
+              : "Not marked as verified in the checklist table. Skipped by batch submit.",
           }));
 
-        skippedClientSide = [
-          ...skippedClientSide,
-          ...eligibleVerifyApplicants
-            .filter(
-              (applicant) =>
-                verifyRowsMarked[applicant.id] &&
-                !isVerifyRowReady(applicant.id),
-            )
-            .map((applicant) => ({
-              id: applicant.id,
-              name: applicant.name,
-              trackingNumber: applicant.trackingNumber,
-              reason:
-                "Required checklist items are incomplete. Skipped by batch submit.",
-            })),
-        ];
+        if (!isEnrollmentQueueHandoffAction) {
+          skippedClientSide = [
+            ...skippedClientSide,
+            ...eligibleVerifyApplicants
+              .filter(
+                (applicant) =>
+                  verifyRowsMarked[applicant.id] &&
+                  !isVerifyRowReady(applicant.id),
+              )
+              .map((applicant) => ({
+                id: applicant.id,
+                name: applicant.name,
+                trackingNumber: applicant.trackingNumber,
+                reason:
+                  "Required checklist items are incomplete. Skipped by batch submit.",
+              })),
+          ];
+        }
 
         const applicantsPayload = markedReadyApplicants.map((applicant) => ({
           id: applicant.id,
@@ -1803,7 +1843,9 @@ export default function PipelineBatchView({
 
         if (applicantsPayload.length === 0) {
           setActionFormError(
-            "Mark at least one row for clearance before submitting.",
+            isEnrollmentQueueHandoffAction
+              ? "Mark at least one student for enrollment queue handoff before submitting."
+              : "Mark at least one row for clearance before submitting.",
           );
           return;
         }
@@ -2005,7 +2047,8 @@ export default function PipelineBatchView({
           return {
             id,
             decision,
-            rejectOutcome: decision === "REJECT" ? "SUBMITTED_BEERF" : undefined,
+            rejectOutcome:
+              decision === "REJECT" ? "SUBMITTED_BEERF" : undefined,
             interviewScore,
             remarks: row.remarks || null,
           };
@@ -2518,7 +2561,9 @@ export default function PipelineBatchView({
 
     switch (activeBatchAction.id) {
       case "VERIFY_DOCUMENTS":
-        return "Mark at least one row for clearance after completing required checklist items (or set retained rows as Mark Retained).";
+        return isEnrollmentQueueHandoffAction
+          ? "Mark at least one student for enrollment queue handoff."
+          : "Mark at least one row for clearance after completing required checklist items (or set retained rows as Mark Retained).";
       case "ASSIGN_REGULAR_SECTION":
         if (hasMixedSelectedGradeLevels) {
           return "Selected applicants must belong to one grade level for section assignment.";
@@ -2553,6 +2598,7 @@ export default function PipelineBatchView({
     regularSectionAssignableCount,
     regularSectionPreview,
     regularSectionPreviewLoading,
+    isEnrollmentQueueHandoffAction,
   ]);
 
   const renderActionForm = () => {
@@ -2568,6 +2614,7 @@ export default function PipelineBatchView({
       case "VERIFY_DOCUMENTS":
         return (
           <PipelineBatchVerifyGrid
+            disableDocumentChecks={isEnrollmentQueueHandoffAction}
             verifyGridLoading={verifyGridLoading}
             verifyGridColumns={orderedVerifyGridColumns}
             verifyGridApplicants={verifyGridApplicants}

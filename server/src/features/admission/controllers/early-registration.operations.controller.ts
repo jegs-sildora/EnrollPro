@@ -8,8 +8,8 @@ import type {
 import type { AdmissionControllerDeps } from "../services/admission-controller.deps.js";
 import { createAdmissionControllerDeps } from "../services/admission-controller.deps.js";
 import {
-  VALID_TRANSITIONS,
   createEarlyRegistrationSharedService,
+  resolveAllowedTransitionsForApplicant,
 } from "../services/early-registration-shared.service.js";
 
 export function createEarlyRegistrationOperationsController(
@@ -693,7 +693,10 @@ export function createEarlyRegistrationOperationsController(
           // Early Registration - limited family update via MaidenName if relationship is Mother
           if (motherMaidenName !== undefined) {
             await tx.applicationFamilyMember.updateMany({
-              where: { earlyRegistrationId: applicantId, relationship: "MOTHER" },
+              where: {
+                earlyRegistrationId: applicantId,
+                relationship: "MOTHER",
+              },
               data: { maidenName: motherMaidenName },
             });
           }
@@ -920,7 +923,8 @@ export function createEarlyRegistrationOperationsController(
         await findApplicantOrThrow(applicantId);
 
       const canStartReview =
-        req.user?.role === "HEAD_REGISTRAR" || req.user?.role === "SYSTEM_ADMIN";
+        req.user?.role === "HEAD_REGISTRAR" ||
+        req.user?.role === "SYSTEM_ADMIN";
 
       const isSubmittedStatus =
         applicant.status === "SUBMITTED_BEERF" ||
@@ -1073,6 +1077,7 @@ export function createEarlyRegistrationOperationsController(
           select: {
             id: true,
             status: true,
+            applicantType: true,
             learner: { select: { firstName: true, lastName: true } },
             trackingNumber: true,
           },
@@ -1082,6 +1087,7 @@ export function createEarlyRegistrationOperationsController(
           select: {
             id: true,
             status: true,
+            applicantType: true,
             learner: { select: { firstName: true, lastName: true } },
             trackingNumber: true,
           },
@@ -1134,7 +1140,10 @@ export function createEarlyRegistrationOperationsController(
         }
 
         const { data: applicant, type: appType } = applicantInfo;
-        const allowedTransitions = VALID_TRANSITIONS[applicant.status] ?? [];
+        const allowedTransitions = resolveAllowedTransitionsForApplicant({
+          status: applicant.status,
+          applicantType: applicant.applicantType,
+        });
 
         if (!allowedTransitions.includes(targetStatus)) {
           failed.push({

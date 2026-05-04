@@ -103,6 +103,14 @@ const EARLY_REG_TRANSITIONS: Record<string, ApplicationStatus[]> = {
   ],
   SUBMITTED_BEERF: [
     "VERIFIED",
+    "READY_FOR_ENROLLMENT",
+    "UNDER_REVIEW",
+    "EXAM_SCHEDULED",
+    "REJECTED",
+    "WITHDRAWN",
+  ],
+  SUBMITTED_BEEF: [
+    "VERIFIED",
     "UNDER_REVIEW",
     "EXAM_SCHEDULED",
     "REJECTED",
@@ -156,6 +164,7 @@ const EARLY_REG_TRANSITIONS: Record<string, ApplicationStatus[]> = {
     "WITHDRAWN",
   ],
   READY_FOR_ENROLLMENT: [
+    "SUBMITTED_BEEF",
     "ENROLLED",
     "TEMPORARILY_ENROLLED",
     "REJECTED",
@@ -168,12 +177,31 @@ const EARLY_REG_TRANSITIONS: Record<string, ApplicationStatus[]> = {
   WITHDRAWN: [],
 };
 
+function resolveAllowedTransitionsForApplication(
+  current: ApplicationStatus,
+  applicantType?: ApplicantType | string | null,
+): ApplicationStatus[] {
+  const normalizedApplicantType = String(applicantType ?? "")
+    .trim()
+    .toUpperCase();
+
+  return current === "SUBMITTED_BEERF" && normalizedApplicantType === "REGULAR"
+    ? (["READY_FOR_ENROLLMENT"] as ApplicationStatus[])
+    : (EARLY_REG_TRANSITIONS[current] ?? []);
+}
+
 function assertEarlyRegTransition(
   current: ApplicationStatus,
   target: ApplicationStatus,
   contextMessage?: string,
+  applicantType?: ApplicantType | string | null,
 ): void {
-  if (!(EARLY_REG_TRANSITIONS[current]?.includes(target) ?? false)) {
+  const allowedTransitions = resolveAllowedTransitionsForApplication(
+    current,
+    applicantType,
+  );
+
+  if (!allowedTransitions.includes(target)) {
     throw new AppError(
       422,
       contextMessage ?? `Cannot transition from "${current}" to "${target}".`,
@@ -240,12 +268,17 @@ async function ensureLegacyApplicationStatusesNormalized(): Promise<void> {
       );
     } catch (error) {
       if (!isEarlyRegistrationListCompatibilityError(error)) {
-        console.error("[Normalization Error] Unexpected error during status normalization:", error);
+        console.error(
+          "[Normalization Error] Unexpected error during status normalization:",
+          error,
+        );
         // Only rethrow if it's not a compatibility issue (e.g. database connection lost)
         throw error;
       }
       // Log as warning and continue; fallback mode in index() will handle this
-      console.warn("[Normalization Warning] Could not normalize legacy statuses due to schema incompatibility. This is expected if the database is not fully migrated.");
+      console.warn(
+        "[Normalization Warning] Could not normalize legacy statuses due to schema incompatibility. This is expected if the database is not fully migrated.",
+      );
     }
   })();
 
@@ -671,7 +704,7 @@ function resolveBatchVerifyTarget(
 ): ApplicationStatus | null {
   if (applicantType === "REGULAR") {
     if (status === "UNDER_REVIEW") return "VERIFIED";
-    if (status === "SUBMITTED_BEERF") return "VERIFIED";
+    if (status === "SUBMITTED_BEERF") return "READY_FOR_ENROLLMENT";
     return null;
   }
 
@@ -2173,19 +2206,41 @@ export async function verify(req: Request, res: Response, next: NextFunction) {
       );
     }
 
+    const targetStatus: ApplicationStatus =
+      registration.applicantType === "REGULAR"
+        ? "READY_FOR_ENROLLMENT"
+        : "VERIFIED";
+
+    assertEarlyRegTransition(
+      registration.status,
+      targetStatus,
+      `Cannot transition registration with status "${registration.status}" to "${targetStatus}".`,
+      registration.applicantType,
+    );
+
+    const transitionData =
+      targetStatus === "VERIFIED"
+        ? {
+            status: targetStatus,
+            verifiedAt: new Date(),
+            verifiedById: req.user!.userId,
+          }
+        : { status: targetStatus };
+
     const updated = await prisma.earlyRegistrationApplication.update({
       where: { id },
-      data: {
-        status: "VERIFIED",
-        verifiedAt: new Date(),
-        verifiedById: req.user!.userId,
-      },
+      data: transitionData,
     });
+
+    const verificationDescription =
+      targetStatus === "READY_FOR_ENROLLMENT"
+        ? `Early registration #${id} routed to READY_FOR_ENROLLMENT for online enrollment handoff.`
+        : `Early registration #${id} verified.`;
 
     await auditLog({
       userId: req.user!.userId,
       actionType: "EARLY_REGISTRATION_VERIFIED",
-      description: `Early registration #${id} verified.`,
+      description: verificationDescription,
       subjectType: "EarlyRegistrationApplication",
       recordId: id,
       req,
@@ -2321,6 +2376,7 @@ export async function reject(req: Request, res: Response, next: NextFunction) {
       reg.status,
       "REJECTED",
       `Cannot reject. Current status: "${reg.status}".`,
+      reg.applicantType,
     );
 
     const updated = await prisma.earlyRegistrationApplication.update({
@@ -2357,6 +2413,7 @@ export async function withdraw(
       reg.status,
       "WITHDRAWN",
       `Cannot withdraw. Current status: "${reg.status}".`,
+      reg.applicantType,
     );
 
     const updated = await prisma.earlyRegistrationApplication.update({
@@ -2393,6 +2450,7 @@ export async function markEligible(
       reg.status,
       "ELIGIBLE",
       `Cannot mark as eligible. Current status: "${reg.status}".`,
+      reg.applicantType,
     );
 
     const updated = await prisma.earlyRegistrationApplication.update({
@@ -2434,6 +2492,7 @@ export async function scheduleAssessment(
       reg.status,
       targetStatus,
       `Cannot schedule assessment. Current status: "${reg.status}".`,
+      reg.applicantType,
     );
 
     // Fetch pipeline step config for defaults
@@ -2549,6 +2608,7 @@ export async function recordStepResult(
       reg.status,
       "ASSESSMENT_TAKEN",
       `Cannot record result. Current status: "${reg.status}".`,
+      reg.applicantType,
     );
 
     // Load pipeline config
@@ -2673,6 +2733,7 @@ export async function pass(req: Request, res: Response, next: NextFunction) {
       reg.status,
       "PASSED",
       `Cannot mark as passed. Current status: "${reg.status}".`,
+      reg.applicantType,
     );
 
     const updated = await prisma.earlyRegistrationApplication.update({
@@ -2706,6 +2767,7 @@ export async function fail(req: Request, res: Response, next: NextFunction) {
       reg.status,
       "SUBMITTED_BEERF",
       `Cannot reroute failed assessment. Current status: "${reg.status}".`,
+      reg.applicantType,
     );
 
     const updated = await prisma.$transaction(async (tx) => {
@@ -2838,7 +2900,9 @@ export async function batchVerifyDocumentsPreview(
         });
       }
 
-      let ga = registration.enrollmentApplications[0]?.previousSchool?.generalAverage ?? null;
+      let ga =
+        registration.enrollmentApplications[0]?.previousSchool
+          ?.generalAverage ?? null;
 
       if (ga === null && registration.reportedGrades) {
         const grades = registration.reportedGrades as any;
@@ -3011,6 +3075,7 @@ export async function batchVerifyDocuments(
             registration.status,
             "REJECTED",
             `Cannot flag retained learner while status is "${registration.status}".`,
+            registration.applicantType,
           );
 
           const checklistPatch = extractChecklistPatch(row.checklist);
@@ -3071,6 +3136,7 @@ export async function batchVerifyDocuments(
           registration.status,
           targetStatus,
           `Cannot batch verify while status is "${registration.status}".`,
+          registration.applicantType,
         );
       } catch (error) {
         failed.push({
@@ -3088,10 +3154,7 @@ export async function batchVerifyDocuments(
         ...checklistPatch,
       };
 
-      const requiresMandatoryDocs =
-        targetStatus === "ELIGIBLE" ||
-        (registration.applicantType === "REGULAR" &&
-          targetStatus === "VERIFIED");
+      const requiresMandatoryDocs = targetStatus === "ELIGIBLE";
 
       if (requiresMandatoryDocs) {
         await getScpConfigCached(
@@ -3119,7 +3182,7 @@ export async function batchVerifyDocuments(
             id: registration.id,
             name,
             trackingNumber: registration.trackingNumber,
-            reason: `Cannot mark eligible; missing required documents: ${missingMandatory.join(", ")}.`,
+            reason: `Cannot transition to ${targetStatus.replaceAll("_", " ")}; missing required documents: ${missingMandatory.join(", ")}.`,
           });
           continue;
         }
@@ -3425,6 +3488,7 @@ export async function batchAssignRegularSection(
             registration.status,
             targetStatus,
             `Cannot transition application #${registration.id} from "${registration.status}" to "${targetStatus}".`,
+            registration.applicantType,
           );
         } catch (error) {
           failed.push({
@@ -3658,6 +3722,7 @@ export async function batchScheduleStep(
           registration.status,
           targetStatus,
           `Cannot schedule while status is "${registration.status}".`,
+          registration.applicantType,
         );
       } catch (error) {
         failed.push({
@@ -4021,6 +4086,7 @@ export async function batchSaveScores(
           registration.status,
           targetStatus,
           `Cannot resolve assessment outcome while status is "${registration.status}".`,
+          registration.applicantType,
         );
 
         const componentSummary = summarizeComponentScores(
@@ -4174,6 +4240,7 @@ export async function batchFinalizeInterview(
           registration.status,
           targetStatus,
           `Cannot finalize interview while status is "${registration.status}".`,
+          registration.applicantType,
         );
 
         const latestInterview = registration.assessments.find(
@@ -4287,7 +4354,10 @@ export async function batchProcess(
 
     for (const app of applications) {
       const name = `${app.learner.lastName}, ${app.learner.firstName}`;
-      const allowed = EARLY_REG_TRANSITIONS[app.status] ?? [];
+      const allowed = resolveAllowedTransitionsForApplication(
+        app.status,
+        app.applicantType,
+      );
       if (!allowed.includes(targetStatus)) {
         failed.push({
           id: app.id,
@@ -4384,6 +4454,7 @@ export async function approve(req: Request, res: Response, next: NextFunction) {
       reg.status,
       ApplicationStatus.READY_FOR_ENROLLMENT,
       `Cannot approve an early registration with status "${reg.status}". Only PASSED or INTERVIEW_SCHEDULED applications can be approved.`,
+      reg.applicantType,
     );
 
     const result = await prisma.$transaction(async (tx) => {
@@ -4499,6 +4570,8 @@ export async function temporarilyEnroll(
     assertEarlyRegTransition(
       reg.status,
       ApplicationStatus.TEMPORARILY_ENROLLED,
+      undefined,
+      reg.applicantType,
     );
 
     const updated = await prisma.$transaction(async (tx) => {
@@ -4549,7 +4622,12 @@ export async function enroll(req: Request, res: Response, next: NextFunction) {
       (reg.learner as { isPendingLrnCreation?: boolean })
         .isPendingLrnCreation === true;
 
-    assertEarlyRegTransition(reg.status, ApplicationStatus.ENROLLED);
+    assertEarlyRegTransition(
+      reg.status,
+      ApplicationStatus.ENROLLED,
+      undefined,
+      reg.applicantType,
+    );
 
     if (learnerPendingLrn) {
       throw new AppError(
@@ -4735,6 +4813,7 @@ export async function markInterviewPassed(
       reg.status,
       ApplicationStatus.READY_FOR_ENROLLMENT,
       `Cannot mark interview passed. Current status: "${reg.status}".`,
+      reg.applicantType,
     );
 
     const updated = await prisma.$transaction(async (tx) => {

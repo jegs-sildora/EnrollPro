@@ -843,7 +843,7 @@ export default function Teachers() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1 text-left">
           <h1 className="text-2xl md:text-3xl font-bold flex items-center justify-start gap-2 text-balance">
-            <GraduationCap className="h-7 w-7 md:h-8 md:w-8 text-primary" />
+            <GraduationCap className="h-7 w-7 md:h-8 md:w-8" />
             Teacher Management
           </h1>
           <p className="text-sm text-foreground text-balance font-bold">

@@ -1,6 +1,9 @@
 import { APPLICATION_VALID_TRANSITIONS } from "@enrollpro/shared";
 
-export const ACTIVE_REGISTRATION_EXCLUDED_STATUSES = ["ENROLLED"] as const;
+export const ACTIVE_REGISTRATION_EXCLUDED_STATUSES = [
+  "ENROLLED",
+  "SUBMITTED_BEEF",
+] as const;
 
 export const REGISTRATION_STAGE_QUICK_FILTERS = [
   { value: "ALL", label: "All Active" },
@@ -25,6 +28,25 @@ export const REGISTRATION_VALID_TRANSITIONS: Record<string, string[]> =
       [...targets],
     ]),
   );
+
+export function getRegistrationValidTransitions(
+  status: string,
+  applicantType?: string,
+): string[] {
+  const normalizedStatus = status.trim().toUpperCase();
+  const normalizedApplicantType = String(applicantType ?? "")
+    .trim()
+    .toUpperCase();
+
+  if (
+    normalizedStatus === "SUBMITTED_BEERF" &&
+    normalizedApplicantType === "REGULAR"
+  ) {
+    return ["READY_FOR_ENROLLMENT"];
+  }
+
+  return REGISTRATION_VALID_TRANSITIONS[normalizedStatus] ?? [];
+}
 
 export const REGISTRATION_BATCH_TARGET_OPTIONS = [
   { value: "SUBMITTED_BEERF", label: "Submitted" },
@@ -170,6 +192,16 @@ export const REGISTRATION_BATCH_ACTIONS_BY_STATUS: Record<
 const REGULAR_BATCH_ACTION_OVERRIDES_BY_STATUS: Partial<
   Record<string, RegistrationBatchActionConfig>
 > = {
+  SUBMITTED_BEERF: {
+    id: "VERIFY_DOCUMENTS",
+    triggerStatus: "SUBMITTED_BEERF",
+    targetStatus: "READY_FOR_ENROLLMENT",
+    buttonLabel: "Batch Route to Enrollment Queue",
+    modalTitle: "Batch Enrollment Queue Handoff",
+    modalDescription:
+      "Move selected regular applicants from submitted BEERF to READY_FOR_ENROLLMENT so they can proceed to online BOSY enrollment submission.",
+    submitLabel: "Route to Enrollment Queue",
+  },
   UNDER_REVIEW: {
     id: "VERIFY_DOCUMENTS",
     triggerStatus: "UNDER_REVIEW",

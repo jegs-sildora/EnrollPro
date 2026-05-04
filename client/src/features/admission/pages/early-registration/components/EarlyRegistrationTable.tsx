@@ -15,10 +15,30 @@ interface TableProps {
   loading: boolean;
   selectedId: number | null;
   setSelectedId: (id: number | null) => void;
-  getNextAction: (status: string) => string;
+  getNextAction: (status: string, applicantType?: string) => string;
 }
 
-const LOCKED_HANDOFF_STATUS = "READY_FOR_ENROLLMENT";
+function isLockedEnrollmentHandoff(application: Application): boolean {
+  return (
+    application.status === "READY_FOR_ENROLLMENT" ||
+    (application.status === "SUBMITTED_BEEF" &&
+      application.applicantType === "REGULAR")
+  );
+}
+
+function buildEnrollmentHandoffHref(application: Application): string {
+  const normalizedLrn = application.lrn.trim();
+  const searchToken =
+    normalizedLrn.length > 0 ? normalizedLrn : application.trackingNumber;
+
+  const query = new URLSearchParams({
+    workflow: "PENDING_VERIFICATION",
+    search: searchToken,
+    source: "early-registration",
+  });
+
+  return `/monitoring/enrollment?${query.toString()}`;
+}
 
 export function EarlyRegistrationTable({
   applications,
@@ -31,7 +51,7 @@ export function EarlyRegistrationTable({
     const locked: Application[] = [];
 
     for (const application of applications) {
-      if (application.status === LOCKED_HANDOFF_STATUS) {
+      if (isLockedEnrollmentHandoff(application)) {
         locked.push(application);
       } else {
         unlocked.push(application);
@@ -126,7 +146,7 @@ export function EarlyRegistrationTable({
         ),
         cell: ({ row: tableRow }) => {
           const app = tableRow.original;
-          const isLockedHandoff = app.status === LOCKED_HANDOFF_STATUS;
+          const isLockedHandoff = isLockedEnrollmentHandoff(app);
           return (
             <div className="flex justify-center">
               {isLockedHandoff ? (
@@ -151,7 +171,10 @@ export function EarlyRegistrationTable({
         header: "NEXT ACTION",
         cell: ({ row: tableRow }) => (
           <p className="text-xs font-bold text-center">
-            {getNextAction(tableRow.original.status)}
+            {getNextAction(
+              tableRow.original.status,
+              tableRow.original.applicantType,
+            )}
           </p>
         ),
       },
@@ -177,7 +200,7 @@ export function EarlyRegistrationTable({
         header: "ACTIONS",
         cell: ({ row: tableRow }) => {
           const app = tableRow.original;
-          const isLockedHandoff = app.status === LOCKED_HANDOFF_STATUS;
+          const isLockedHandoff = isLockedEnrollmentHandoff(app);
           return (
             <div className="flex justify-center">
               {isLockedHandoff ? (
@@ -186,7 +209,7 @@ export function EarlyRegistrationTable({
                   variant="link"
                   size="sm"
                   className="h-8 px-0 text-xs font-bold text-primary">
-                  <a href="/monitoring/enrollment">
+                  <a href={buildEnrollmentHandoffHref(app)}>
                     <ArrowRight className="h-3.5 w-3.5 mr-1" />
                     View in Enrollment
                   </a>
@@ -219,7 +242,7 @@ export function EarlyRegistrationTable({
         virtualize={true}
         estimatedRowHeight={50}
         onRowClick={(app) => {
-          if (app.status !== LOCKED_HANDOFF_STATUS) {
+          if (!isLockedEnrollmentHandoff(app)) {
             setSelectedId(app.id);
           }
         }}

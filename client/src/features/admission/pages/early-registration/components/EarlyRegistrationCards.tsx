@@ -14,10 +14,16 @@ interface CardsProps {
   showSkeleton: boolean;
   selectedId: number | null;
   setSelectedId: (id: number | null) => void;
-  getNextAction: (status: string) => string;
+  getNextAction: (status: string, applicantType?: string) => string;
 }
 
-const LOCKED_HANDOFF_STATUS = "READY_FOR_ENROLLMENT";
+function isLockedEnrollmentHandoff(application: Application): boolean {
+  return (
+    application.status === "READY_FOR_ENROLLMENT" ||
+    (application.status === "SUBMITTED_BEEF" &&
+      application.applicantType === "REGULAR")
+  );
+}
 
 function resolveHandoffSearchToken(application: Application): string {
   const normalizedLrn = application.lrn?.trim();
@@ -40,7 +46,7 @@ export function EarlyRegistrationCards({
     const locked: Application[] = [];
 
     for (const application of applications) {
-      if (application.status === LOCKED_HANDOFF_STATUS) {
+      if (isLockedEnrollmentHandoff(application)) {
         locked.push(application);
       } else {
         unlocked.push(application);
@@ -64,7 +70,9 @@ export function EarlyRegistrationCards({
     <div className="md:hidden space-y-3">
       {showSkeleton ? (
         Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-xl border p-3 space-y-3">
+          <div
+            key={i}
+            className="rounded-xl border p-3 space-y-3">
             <div className="flex items-start justify-between gap-2">
               <div className="space-y-2 flex-1">
                 <Skeleton className="h-4 w-40" />
@@ -81,7 +89,7 @@ export function EarlyRegistrationCards({
         </div>
       ) : (
         orderedApplications.map((app) => {
-          const isLockedHandoff = app.status === LOCKED_HANDOFF_STATUS;
+          const isLockedHandoff = isLockedEnrollmentHandoff(app);
 
           return (
             <div
@@ -139,7 +147,7 @@ export function EarlyRegistrationCards({
                   )}
                 </div>
                 <p className="text-[10px] font-bold shrink-0 text-right">
-                  {getNextAction(app.status)}
+                  {getNextAction(app.status, app.applicantType)}
                 </p>
               </div>
 

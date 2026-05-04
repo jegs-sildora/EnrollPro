@@ -202,6 +202,28 @@ export const VALID_TRANSITIONS = APPLICATION_VALID_TRANSITIONS as Record<
   ApplicationStatus[]
 >;
 
+function isRegularApplicant(applicantType: string | null | undefined): boolean {
+  return (
+    String(applicantType ?? "")
+      .trim()
+      .toUpperCase() === "REGULAR"
+  );
+}
+
+export function resolveAllowedTransitionsForApplicant(application: {
+  status: ApplicationStatus;
+  applicantType?: string | null;
+}): ApplicationStatus[] {
+  if (
+    application.status === "SUBMITTED_BEERF" &&
+    isRegularApplicant(application.applicantType)
+  ) {
+    return ["READY_FOR_ENROLLMENT"];
+  }
+
+  return VALID_TRANSITIONS[application.status] ?? [];
+}
+
 export function createEarlyRegistrationSharedService(
   deps: AdmissionControllerDeps,
 ) {
@@ -262,11 +284,14 @@ export function createEarlyRegistrationSharedService(
   }
 
   function assertTransition(
-    application: { status: ApplicationStatus },
+    application: {
+      status: ApplicationStatus;
+      applicantType?: string | null;
+    },
     to: ApplicationStatus,
     contextMessage?: string,
   ): void {
-    if (!(VALID_TRANSITIONS[application.status]?.includes(to) ?? false)) {
+    if (!resolveAllowedTransitionsForApplicant(application).includes(to)) {
       throw new AppError(
         422,
         contextMessage ??
@@ -477,7 +502,8 @@ export function createEarlyRegistrationSharedService(
       hasPsaBirthCertificate: Boolean(learner.hasPsaBirthCertificate),
       birthCertificateType: learner.birthCertificateType || null,
       birthCertificateVerifiedBy: learner.birthCertificateVerifiedBy || null,
-      birthCertificateVerifiedDate: learner.birthCertificateVerifiedDate || null,
+      birthCertificateVerifiedDate:
+        learner.birthCertificateVerifiedDate || null,
 
       // Standardize address format for frontend
       currentAddress: currentAddr
@@ -544,8 +570,14 @@ export function createEarlyRegistrationSharedService(
         fatherEmail ||
         null,
 
-      lastSchoolName: prevSchool?.schoolName || (application.reportedGrades as any)?.lastSchoolName || null,
-      lastSchoolId: prevSchool?.schoolDepedId || (application.reportedGrades as any)?.lastSchoolId || null,
+      lastSchoolName:
+        prevSchool?.schoolName ||
+        (application.reportedGrades as any)?.lastSchoolName ||
+        null,
+      lastSchoolId:
+        prevSchool?.schoolDepedId ||
+        (application.reportedGrades as any)?.lastSchoolId ||
+        null,
       lastGradeCompleted:
         prevSchool?.gradeCompleted || application.lastGradeCompleted,
       schoolYearLastAttended:

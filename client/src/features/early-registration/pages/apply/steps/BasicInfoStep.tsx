@@ -444,11 +444,13 @@ export default function BasicInfoStep() {
   const gaEnteredAndBelowThreshold =
     isScpEligible && gaValue !== null && gaValue < effectiveScpGaThreshold;
 
+  const isGaMeetsThreshold = gaValue !== null && gaValue >= effectiveScpGaThreshold;
+
   const canSelectScpTrack =
     isScpEligible &&
     !isLoadingScpConfig &&
     hasOfferedScpPrograms &&
-    !gaEnteredAndBelowThreshold;
+    isGaMeetsThreshold;
 
   useEffect(() => {
     let isMounted = true;
@@ -520,12 +522,13 @@ export default function BasicInfoStep() {
   }, [learnerType, setValue]);
 
   useEffect(() => {
-    if (!isScpEligible && (isScpApplication || scpType)) {
+    const shouldHideScp = !isScpEligible || !isGaMeetsThreshold;
+    if (shouldHideScp && (isScpApplication || scpType)) {
       setValue("isScpApplication", false, { shouldValidate: true });
       setValue("scpType", null, { shouldValidate: true });
       clearErrors("scpType");
     }
-  }, [isScpEligible, isScpApplication, scpType, setValue, clearErrors]);
+  }, [isScpEligible, isGaMeetsThreshold, isScpApplication, scpType, setValue, clearErrors]);
 
   useEffect(() => {
     if (isLoadingScpConfig || !isScpApplication || hasOfferedScpPrograms) {
@@ -881,7 +884,7 @@ export default function BasicInfoStep() {
             <div
               className={cn(
                 "grid gap-3",
-                isScpEligible ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1",
+                isScpEligible && isGaMeetsThreshold ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1",
               )}>
               <button
                 type="button"
@@ -917,7 +920,7 @@ export default function BasicInfoStep() {
                 </p>
               </button>
 
-              {isScpEligible && (
+              {isScpEligible && isGaMeetsThreshold && (
                 <button
                   type="button"
                   disabled={!canSelectScpTrack}
@@ -965,14 +968,14 @@ export default function BasicInfoStep() {
               )}
             </div>
 
-            {isScpEligible && isLoadingScpConfig && (
+            {isScpEligible && isGaMeetsThreshold && isLoadingScpConfig && (
               <p className="font-bold text-xs italic flex items-center gap-1 mt-2 text-muted-foreground">
                 <Info className="w-4 h-4" />
                 Loading available SCP programs...
               </p>
             )}
 
-            {isScpEligible && !isLoadingScpConfig && scpConfigError && (
+            {isScpEligible && isGaMeetsThreshold && !isLoadingScpConfig && scpConfigError && (
               <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-2">
                 <AlertCircle className="w-3 h-3" />
                 {scpConfigError}
@@ -980,6 +983,7 @@ export default function BasicInfoStep() {
             )}
 
             {isScpEligible &&
+              isGaMeetsThreshold &&
               !isLoadingScpConfig &&
               !scpConfigError &&
               !hasOfferedScpPrograms && (
