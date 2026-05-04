@@ -188,11 +188,11 @@ export const router = createBrowserRouter([
           },
           {
             path: "/monitoring/enrollment/requirements",
-            element: <Navigate to="/settings?tab=requirements" replace />,
+            element: <Navigate to="/settings" replace />,
           },
           {
             path: "/enrollment/requirements",
-            element: <Navigate to="/settings?tab=requirements" replace />,
+            element: <Navigate to="/settings" replace />,
           },
           {
             path: "/audit-logs",

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronsUpDown, Search, Trash2, X } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -29,12 +29,14 @@ import {
   TEACHER_SUBJECT_GROUPS,
   TEACHER_SPECIALIZATION_GROUPS,
   TEACHER_DEPARTMENT_OPTIONS,
+  TEACHER_ACADEMIC_DESIGNATION_OPTIONS,
 } from "../utils";
 import { SelectGroup, SelectLabel } from "@/shared/ui/select";
 
 type TeacherFormField = Exclude<keyof TeacherFormState, "photo" | "subjects">;
 const EMPTY_DEPARTMENT_VALUE = "__NONE__";
 const EMPTY_PLANTILLA_POSITION_VALUE = "__NONE__";
+const EMPTY_DESIGNATION_VALUE = "__NONE__";
 
 interface TeacherFormSheetProps {
   mode: "create" | "edit";
@@ -54,7 +56,7 @@ interface TeacherFormSheetProps {
   onSubmit: () => void;
 }
 
-export function TeacherFormSheet({
+export const TeacherFormSheet = memo(function TeacherFormSheet({
   mode,
   open,
   title,
@@ -76,6 +78,8 @@ export function TeacherFormSheet({
     typeof window !== "undefined" ? window.innerWidth >= 640 : true,
   );
   const isResizing = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
   const [isPhotoEnlarged, setIsPhotoEnlarged] = useState(false);
   const [isSubjectsPopoverOpen, setIsSubjectsPopoverOpen] = useState(false);
   const [subjectSearchTerm, setSubjectSearchTerm] = useState("");
@@ -84,6 +88,7 @@ export function TeacherFormSheet({
     if (!open) {
       setIsSubjectsPopoverOpen(false);
       setSubjectSearchTerm("");
+      setSelectedFileName(null);
     }
   }, [open]);
 
@@ -261,20 +266,41 @@ export function TeacherFormSheet({
                   </p>
                   <p className="text-xs text-muted-foreground">{photoHint}</p>
                   <div className="flex flex-wrap items-center gap-2">
-                    <Input
+                    <input
                       type="file"
+                      ref={fileInputRef}
                       accept="image/*"
                       onChange={(event) => {
-                        onPhotoSelect(event.target.files?.[0]);
+                        const file = event.target.files?.[0];
+                        if (file) {
+                          setSelectedFileName(file.name);
+                        }
+                        onPhotoSelect(file);
                         event.target.value = "";
                       }}
-                      className="max-w-xs"
+                      className="hidden"
                     />
                     <Button
                       variant="outline"
                       size="sm"
                       type="button"
-                      onClick={onRemovePhoto}
+                      className="font-bold"
+                      onClick={() => fileInputRef.current?.click()}>
+                      {selectedFileName ? "Change Photo" : "Choose Photo"}
+                    </Button>
+                    {selectedFileName && (
+                      <span className="text-[10px] font-bold text-primary truncate max-w-[150px]">
+                        {selectedFileName}
+                      </span>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      type="button"
+                      onClick={() => {
+                        setSelectedFileName(null);
+                        onRemovePhoto();
+                      }}
                       disabled={!formData.photo}>
                       <Trash2 className="mr-2 h-3.5 w-3.5" />
                       Remove
@@ -296,40 +322,43 @@ export function TeacherFormSheet({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Last Name *</Label>
+                  <Label className="font-bold text-xs uppercase tracking-tight">Last Name *</Label>
                   <Input
                     placeholder="e.g. Santos"
                     value={formData.lastName}
                     onChange={(event) =>
                       onFieldChange("lastName", event.target.value)
                     }
+                    className="font-bold"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>First Name *</Label>
+                  <Label className="font-bold text-xs uppercase tracking-tight">First Name *</Label>
                   <Input
                     placeholder="e.g. Maria"
                     value={formData.firstName}
                     onChange={(event) =>
                       onFieldChange("firstName", event.target.value)
                     }
+                    className="font-bold"
                   />
                 </div>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Middle Name</Label>
+                  <Label className="font-bold text-xs uppercase tracking-tight">Middle Name</Label>
                   <Input
                     placeholder="e.g. Cruz"
                     value={formData.middleName}
                     onChange={(event) =>
                       onFieldChange("middleName", event.target.value)
                     }
+                    className="font-bold"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Email</Label>
+                  <Label className="font-bold text-xs uppercase tracking-tight">Email</Label>
                   <Input
                     type="email"
                     placeholder="e.g. maria.santos@example.com"
@@ -337,6 +366,7 @@ export function TeacherFormSheet({
                     onChange={(event) =>
                       onFieldChange("email", event.target.value)
                     }
+                    className="font-bold"
                   />
                 </div>
               </div>
@@ -354,7 +384,7 @@ export function TeacherFormSheet({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Contact Number</Label>
+                  <Label className="font-bold text-xs uppercase tracking-tight">Contact Number</Label>
                   <Input
                     placeholder="e.g. 09171234567"
                     inputMode="numeric"
@@ -365,6 +395,7 @@ export function TeacherFormSheet({
                     onChange={(event) =>
                       onFieldChange("contactNumber", event.target.value)
                     }
+                    className="font-bold"
                   />
                 </div>
               </div>
@@ -382,33 +413,52 @@ export function TeacherFormSheet({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Employee ID</Label>
+                  <Label className="font-bold text-xs uppercase tracking-tight">Employee ID</Label>
                   <Input
                     placeholder="Leave blank to auto-generate"
                     value={formData.employeeId}
                     onChange={(event) =>
                       onFieldChange("employeeId", event.target.value)
                     }
+                    className="font-bold"
                   />
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground font-medium">
                     If empty, the system assigns the next ID (for example,
                     TCH-0001).
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Designation</Label>
-                  <Input
-                    placeholder="e.g. MASTER TEACHER I, TEACHER III"
-                    value={formData.designation}
-                    onChange={(event) =>
-                      onFieldChange("designation", event.target.value)
-                    }
-                  />
+                  <Label className="font-bold text-xs uppercase tracking-tight">Academic Designation</Label>
+                  <Select
+                    value={formData.designation || EMPTY_DESIGNATION_VALUE}
+                    onValueChange={(value) =>
+                      onFieldChange(
+                        "designation",
+                        value === EMPTY_DESIGNATION_VALUE ? "" : value,
+                      )
+                    }>
+                    <SelectTrigger className="font-bold">
+                      <SelectValue placeholder="Select designation" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={EMPTY_DESIGNATION_VALUE} className="font-bold">
+                        Not set
+                      </SelectItem>
+                      {TEACHER_ACADEMIC_DESIGNATION_OPTIONS.map((option) => (
+                        <SelectItem
+                          key={option.value}
+                          value={option.value}
+                          className="font-bold uppercase text-xs">
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Plantilla Position</Label>
+                  <Label className="font-bold text-xs uppercase tracking-tight">Plantilla Position</Label>
                   <Select
                     value={selectedPlantillaPositionValue}
                     onValueChange={(value) =>
@@ -417,17 +467,18 @@ export function TeacherFormSheet({
                         value === EMPTY_PLANTILLA_POSITION_VALUE ? "" : value,
                       )
                     }>
-                    <SelectTrigger>
+                    <SelectTrigger className="font-bold">
                       <SelectValue placeholder="Select plantilla position" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={EMPTY_PLANTILLA_POSITION_VALUE}>
+                      <SelectItem value={EMPTY_PLANTILLA_POSITION_VALUE} className="font-bold">
                         Not set
                       </SelectItem>
                       {TEACHER_PLANTILLA_POSITION_OPTIONS.map((option) => (
                         <SelectItem
                           key={option.value}
-                          value={option.value}>
+                          value={option.value}
+                          className="font-bold uppercase text-xs">
                           {option.label}
                         </SelectItem>
                       ))}
@@ -438,7 +489,7 @@ export function TeacherFormSheet({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Department</Label>
+                  <Label className="font-bold text-xs uppercase tracking-tight">Department</Label>
                   <Select
                     value={formData.department || EMPTY_DEPARTMENT_VALUE}
                     onValueChange={(value) =>
@@ -447,17 +498,18 @@ export function TeacherFormSheet({
                         value === EMPTY_DEPARTMENT_VALUE ? "" : value,
                       )
                     }>
-                    <SelectTrigger>
+                    <SelectTrigger className="font-bold">
                       <SelectValue placeholder="Select a department" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={EMPTY_DEPARTMENT_VALUE}>
+                      <SelectItem value={EMPTY_DEPARTMENT_VALUE} className="font-bold">
                         Not set
                       </SelectItem>
                       {TEACHER_DEPARTMENT_OPTIONS.map((option) => (
                         <SelectItem
                           key={option.value}
-                          value={option.value}>
+                          value={option.value}
+                          className="font-bold uppercase text-xs">
                           {option.label}
                         </SelectItem>
                       ))}
@@ -466,7 +518,7 @@ export function TeacherFormSheet({
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Specialization / Learning Area</Label>
+                  <Label className="font-bold text-xs uppercase tracking-tight">Specialization / Learning Area</Label>
                   <Select
                     value={selectedSpecializationValue}
                     onValueChange={(value) =>
@@ -479,7 +531,7 @@ export function TeacherFormSheet({
                       <SelectValue placeholder="Select primary specialization" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__NONE__">Not set</SelectItem>
+                      <SelectItem value="__NONE__" className="font-bold">Not set</SelectItem>
                       {TEACHER_SPECIALIZATION_GROUPS.map((group) => (
                         <SelectGroup key={group.group}>
                           <SelectLabel className="text-[10px] font-black uppercase tracking-widest text-primary/70 py-2">
@@ -497,7 +549,7 @@ export function TeacherFormSheet({
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-[10px] text-muted-foreground font-bold">
+                  <p className="text-[10px] text-muted-foreground font-bold italic">
                     Primary degree or major qualification.
                   </p>
                 </div>
@@ -505,7 +557,7 @@ export function TeacherFormSheet({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2 sm:col-span-2">
-                  <Label>Teaching Subjects (Qualifications)</Label>
+                  <Label className="font-bold text-xs uppercase tracking-tight">Teaching Subjects (Qualifications)</Label>
                   <Popover
                     open={isSubjectsPopoverOpen}
                     onOpenChange={(nextOpen) => {
@@ -643,4 +695,4 @@ export function TeacherFormSheet({
       )}
     </Sheet>
   );
-}
+});

@@ -166,63 +166,63 @@ async function main() {
     });
 
     console.log(
-      `✅ Enrollment records cleared (${summary.enrollmentRecordsCleared}).`,
+      `Enrollment records cleared (${summary.enrollmentRecordsCleared}).`,
     );
     console.log(
-      `✅ Enrollment previous school rows cleared (${summary.enrollmentPreviousSchoolsCleared}).`,
+      `Enrollment previous school rows cleared (${summary.enrollmentPreviousSchoolsCleared}).`,
     );
     console.log(
-      `✅ Enrollment program details cleared (${summary.enrollmentProgramDetailsCleared}).`,
+      `Enrollment program details cleared (${summary.enrollmentProgramDetailsCleared}).`,
     );
     console.log(
-      `✅ Application addresses cleared (${summary.applicationAddressesCleared}).`,
+      `Application addresses cleared (${summary.applicationAddressesCleared}).`,
     );
     console.log(
-      `✅ Application family members cleared (${summary.applicationFamilyMembersCleared}).`,
+      `Application family members cleared (${summary.applicationFamilyMembersCleared}).`,
     );
     console.log(
-      `✅ Application checklists cleared (${summary.applicationChecklistsCleared}).`,
+      `Application checklists cleared (${summary.applicationChecklistsCleared}).`,
     );
     console.log(
-      `✅ Early registration assessments cleared (${summary.earlyRegAssessmentsCleared}).`,
+      `Early registration assessments cleared (${summary.earlyRegAssessmentsCleared}).`,
     );
     console.log(
-      `✅ Enrollment applications cleared (${summary.enrollmentAppsCleared}).`,
+      `Enrollment applications cleared (${summary.enrollmentAppsCleared}).`,
     );
     console.log(
-      `✅ Early registration applications cleared (${summary.earlyRegAppsCleared}).`,
+      `Early registration applications cleared (${summary.earlyRegAppsCleared}).`,
     );
-    console.log(`✅ Health records cleared (${summary.healthRecordsCleared}).`);
-    console.log(`✅ Learners cleared (${summary.learnersCleared}).`);
+    console.log(`Health records cleared (${summary.healthRecordsCleared}).`);
+    console.log(`Learners cleared (${summary.learnersCleared}).`);
 
-    console.log(`✅ Users preserved: ${summary.preservedAfter.users}`);
-    console.log(`✅ Teachers preserved: ${summary.preservedAfter.teachers}`);
+    console.log(`Users preserved: ${summary.preservedAfter.users}`);
+    console.log(`Teachers preserved: ${summary.preservedAfter.teachers}`);
     console.log(
-      `✅ School settings preserved: ${summary.preservedAfter.schoolSettings}`,
+      `School settings preserved: ${summary.preservedAfter.schoolSettings}`,
     );
     console.log(
-      `✅ School years preserved: ${summary.preservedAfter.schoolYears}`,
+      `School years preserved: ${summary.preservedAfter.schoolYears}`,
     );
     console.log(
-      `✅ Grade levels preserved: ${summary.preservedAfter.gradeLevels}`,
+      `Grade levels preserved: ${summary.preservedAfter.gradeLevels}`,
     );
-    console.log(`✅ Sections preserved: ${summary.preservedAfter.sections}`);
+    console.log(`Sections preserved: ${summary.preservedAfter.sections}`);
     console.log(
-      `✅ SCP configs preserved: ${summary.preservedAfter.scpProgramConfigs}`,
-    );
-    console.log(
-      `✅ SCP steps preserved: ${summary.preservedAfter.scpProgramSteps}`,
+      `SCP configs preserved: ${summary.preservedAfter.scpProgramConfigs}`,
     );
     console.log(
-      `✅ SCP options preserved: ${summary.preservedAfter.scpProgramOptions}`,
+      `SCP steps preserved: ${summary.preservedAfter.scpProgramSteps}`,
+    );
+    console.log(
+      `SCP options preserved: ${summary.preservedAfter.scpProgramOptions}`,
     );
 
-    console.log("\n✨ Learner/application data reset successful!");
+    console.log("\nLearner/application data reset successful!");
     console.log(
       "   Preserved: Users, Teachers, SchoolYears, Sections, GradeLevels, SchoolSettings, and SCP configuration.",
     );
   } catch (error) {
-    console.error("❌ Error during wipe:", error);
+    console.error("Error during wipe:", error);
     process.exit(1);
   }
 }

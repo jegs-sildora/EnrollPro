@@ -62,7 +62,14 @@ function normalizeTeacherFieldValue(
     return value.replace(/\D/g, "").slice(0, 11);
   }
 
-  if (field === "email") {
+  // Preserve case for select-based fields and emails
+  if (
+    field === "email" ||
+    field === "designation" ||
+    field === "department" ||
+    field === "plantillaPosition" ||
+    field === "specialization"
+  ) {
     return value;
   }
 
@@ -79,7 +86,7 @@ function createEmptyDesignationForm(): DesignationFormState {
     isClassAdviser: false,
     advisorySectionId: "",
     advisoryEquivalentHoursPerWeek: "5",
-    isTic: false,
+    ancillaryRoles: [],
     isTeachingExempt: false,
     customTargetTeachingHoursPerWeek: "",
     designationNotes: "",
@@ -140,6 +147,34 @@ export default function Teachers() {
   const [designationForm, setDesignationForm] = useState<DesignationFormState>(
     createEmptyDesignationForm,
   );
+
+  const handleFieldChange = useCallback(
+    (field: TeacherFormField, value: string) => {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: normalizeTeacherFieldValue(field, value),
+      }));
+    },
+    [],
+  );
+
+  const handleEditFieldChange = useCallback(
+    (field: TeacherFormField, value: string) => {
+      setEditFormData((prev) => ({
+        ...prev,
+        [field]: normalizeTeacherFieldValue(field, value),
+      }));
+    },
+    [],
+  );
+
+  const handleSubjectsChange = useCallback((subjects: string[]) => {
+    setFormData((prev) => ({ ...prev, subjects }));
+  }, []);
+
+  const handleEditSubjectsChange = useCallback((subjects: string[]) => {
+    setEditFormData((prev) => ({ ...prev, subjects }));
+  }, []);
 
   const fetchTeachers = useCallback(async () => {
     setLoading(true);
@@ -256,6 +291,7 @@ export default function Teachers() {
       email: normalizeOptionalInput(formData.email),
       employeeId: normalizeOptionalInput(formData.employeeId),
       contactNumber: normalizeOptionalInput(formData.contactNumber),
+      designation: normalizeOptionalInput(formData.designation),
       specialization: normalizeOptionalInput(formData.specialization),
       department: normalizeOptionalInput(formData.department),
       plantillaPosition: normalizeOptionalInput(formData.plantillaPosition),
@@ -306,11 +342,11 @@ export default function Teachers() {
       email: teacher.email || "",
       employeeId: teacher.employeeId || "",
       contactNumber: teacher.contactNumber || "",
-      designation: teacher.designationTitle || "",
-      specialization: teacher.specialization || "",
-      department: teacher.department || "",
-      plantillaPosition: teacher.plantillaPosition || "",
-      subjects: teacher.subjects,
+      designation: (teacher.designationTitle || "").toUpperCase(),
+      specialization: (teacher.specialization || "").toUpperCase(),
+      department: (teacher.department || "").toUpperCase(),
+      plantillaPosition: (teacher.plantillaPosition || "").toUpperCase(),
+      subjects: teacher.subjects.map((s) => s.toUpperCase()),
       photo: teacher.photoPath,
     });
     setEditOpen(true);
@@ -343,6 +379,7 @@ export default function Teachers() {
       email: normalizeOptionalInput(editFormData.email),
       employeeId: normalizeOptionalInput(editFormData.employeeId),
       contactNumber: normalizeOptionalInput(editFormData.contactNumber),
+      designation: normalizeOptionalInput(editFormData.designation),
       specialization: normalizeOptionalInput(editFormData.specialization),
       department: normalizeOptionalInput(editFormData.department),
       plantillaPosition: normalizeOptionalInput(editFormData.plantillaPosition),
@@ -448,12 +485,17 @@ export default function Teachers() {
         (designationFilter === "adviser"
           ? Boolean(teacher.designation?.isClassAdviser)
           : designationFilter === "tic"
-            ? Boolean(teacher.designation?.isTic)
+            ? Boolean(
+                teacher.designation?.ancillaryRoles?.includes(
+                  "Teacher-in-Charge (TIC) / Officer-in-Charge (OIC)",
+                ),
+              )
             : designationFilter === "exempt"
               ? Boolean(teacher.designation?.isTeachingExempt)
               : !teacher.designation ||
                 (!teacher.designation.isClassAdviser &&
-                  !teacher.designation.isTic &&
+                  (!teacher.designation.ancillaryRoles ||
+                    teacher.designation.ancillaryRoles.length === 0) &&
                   !teacher.designation.isTeachingExempt));
 
       return matchesSearch && matchesStatus && matchesDesignation;
@@ -487,7 +529,7 @@ export default function Teachers() {
       advisoryEquivalentHoursPerWeek: String(
         teacher.designation?.advisoryEquivalentHoursPerWeek ?? 5,
       ),
-      isTic: teacher.designation?.isTic ?? false,
+      ancillaryRoles: teacher.designation?.ancillaryRoles ?? [],
       isTeachingExempt: teacher.designation?.isTeachingExempt ?? false,
       customTargetTeachingHoursPerWeek:
         teacher.designation?.customTargetTeachingHoursPerWeek?.toString() ?? "",
@@ -550,7 +592,7 @@ export default function Teachers() {
         isClassAdviser: designationForm.isClassAdviser,
         advisorySectionId,
         advisoryEquivalentHoursPerWeek,
-        isTic: designationForm.isTic,
+        ancillaryRoles: designationForm.ancillaryRoles,
         isTeachingExempt: designationForm.isTeachingExempt,
         customTargetTeachingHoursPerWeek,
         designationNotes: designationForm.designationNotes.trim() || null,
@@ -621,6 +663,181 @@ export default function Teachers() {
     });
   };
 
+  const teacherDirectoryCardElement = useMemo(
+    () => (
+      <TeacherDirectoryCard
+        loading={loading}
+        showSkeleton={showSkeleton}
+        teachers={teachers}
+        filteredTeachers={filteredTeachers}
+        searchQuery={searchQuery}
+        statusFilter={statusFilter}
+        designationFilter={designationFilter}
+        hasActiveFilters={hasActiveFilters}
+        ayId={ayId}
+        onSearchQueryChange={(val) => {
+          startTransition(() => {
+            setSearchQuery(val);
+          });
+        }}
+        onStatusFilterChange={setStatusFilter}
+        onDesignationFilterChange={setDesignationFilter}
+        onClearFilters={() => {
+          startTransition(() => {
+            setSearchQuery("");
+          });
+          setStatusFilter("all");
+          setDesignationFilter("all");
+        }}
+        onRefresh={fetchTeachers}
+        onOpenDesignationEditor={openDesignationEditor}
+        onEditTeacher={startEditing}
+        onDeactivateTeacher={setTeacherToDeactivate}
+        onReactivateTeacher={setReactivateId}
+      />
+    ),
+    [
+      loading,
+      showSkeleton,
+      teachers,
+      filteredTeachers,
+      searchQuery,
+      statusFilter,
+      designationFilter,
+      hasActiveFilters,
+      ayId,
+      fetchTeachers,
+      bosyDate,
+      eosyDate,
+    ]
+  );
+
+  const renderedTeacherCreateSheet = useMemo(
+    () => (
+      <TeacherFormSheet
+        mode="create"
+        open={createOpen}
+        title="Add Teacher"
+        description="Create a teacher profile using full schema fields including photo, email, and teaching subjects."
+        formData={formData}
+        photoPreviewUrl={createPhotoPreviewUrl}
+        submitting={submitting}
+        canSubmit={canSubmitCreate}
+        onOpenChange={(open) => {
+          setCreateOpen(open);
+          if (!open) {
+            setFormData(createEmptyTeacherForm());
+          }
+        }}
+        onFieldChange={handleFieldChange}
+        onSubjectsChange={handleSubjectsChange}
+        onPhotoSelect={(file) => {
+          void handlePhotoFileSelection(file, "create");
+        }}
+        onRemovePhoto={() => setFormData((prev) => ({ ...prev, photo: null }))}
+        onCancel={() => {
+          setCreateOpen(false);
+          setFormData(createEmptyTeacherForm());
+        }}
+        onSubmit={handleCreate}
+      />
+    ),
+    [
+      createOpen,
+      formData,
+      createPhotoPreviewUrl,
+      submitting,
+      canSubmitCreate,
+      handleFieldChange,
+      handleSubjectsChange,
+      handleCreate,
+    ],
+  );
+
+  const renderedTeacherEditSheet = useMemo(
+    () => (
+      <TeacherFormSheet
+        mode="edit"
+        open={editOpen}
+        title="Edit Teacher"
+        description={
+          editingTeacher
+            ? `Update ${formatTeacherName(editingTeacher)} profile fields and photo.`
+            : "Update teacher details."
+        }
+        formData={editFormData}
+        photoPreviewUrl={editPhotoPreviewUrl}
+        submitting={submitting}
+        canSubmit={canSubmitEdit && Boolean(editingTeacher)}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeEditSheet();
+            return;
+          }
+          setEditOpen(true);
+        }}
+        onFieldChange={handleEditFieldChange}
+        onSubjectsChange={handleEditSubjectsChange}
+        onPhotoSelect={(file) => {
+          void handlePhotoFileSelection(file, "edit");
+        }}
+        onRemovePhoto={() => {
+          setEditFormData((prev) => ({ ...prev, photo: null }));
+          setEditPhotoChanged(true);
+        }}
+        onCancel={closeEditSheet}
+        onSubmit={handleUpdate}
+      />
+    ),
+    [
+      editOpen,
+      editingTeacher,
+      editFormData,
+      editPhotoPreviewUrl,
+      submitting,
+      canSubmitEdit,
+      handleEditFieldChange,
+      handleEditSubjectsChange,
+      handleUpdate,
+    ],
+  );
+
+  const renderedDesignationSheet = useMemo(
+    () => (
+      <TeacherDesignationSheet
+        open={Boolean(designationOpenFor)}
+        ayId={ayId}
+        submitting={submitting}
+        designationOpenFor={designationOpenFor}
+        designationDrawerTab={designationDrawerTab}
+        setDesignationDrawerTab={setDesignationDrawerTab}
+        designationForm={designationForm}
+        setDesignationForm={setDesignationForm}
+        advisorySections={advisorySections}
+        advisorySectionsLoading={advisorySectionsLoading}
+        selectedAdvisorySection={selectedAdvisorySection}
+        designationCollision={designationCollision}
+        setDesignationCollision={setDesignationCollision}
+        allowCollisionOverride={allowCollisionOverride}
+        setAllowCollisionOverride={setAllowCollisionOverride}
+        onClose={closeDesignationEditor}
+        onSave={handleSaveDesignation}
+      />
+    ),
+    [
+      designationOpenFor,
+      ayId,
+      submitting,
+      designationDrawerTab,
+      designationForm,
+      advisorySections,
+      advisorySectionsLoading,
+      selectedAdvisorySection,
+      designationCollision,
+      allowCollisionOverride,
+    ],
+  );
+
   return (
     <div className="space-y-6 min-w-0 w-full max-w-full overflow-x-hidden">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -673,131 +890,11 @@ export default function Teachers() {
         </div>
       ) : null}
 
-      <TeacherDirectoryCard
-        loading={loading}
-        showSkeleton={showSkeleton}
-        teachers={teachers}
-        filteredTeachers={filteredTeachers}
-        searchQuery={searchQuery}
-        statusFilter={statusFilter}
-        designationFilter={designationFilter}
-        hasActiveFilters={hasActiveFilters}
-        ayId={ayId}
-        onSearchQueryChange={(val) => {
-          startTransition(() => {
-            setSearchQuery(val);
-          });
-        }}
-        onStatusFilterChange={setStatusFilter}
-        onDesignationFilterChange={setDesignationFilter}
-        onClearFilters={() => {
-          startTransition(() => {
-            setSearchQuery("");
-          });
-          setStatusFilter("all");
-          setDesignationFilter("all");
-        }}
-        onRefresh={fetchTeachers}
-        onOpenDesignationEditor={openDesignationEditor}
-        onEditTeacher={startEditing}
-        onDeactivateTeacher={setTeacherToDeactivate}
-        onReactivateTeacher={setReactivateId}
-        />
+      {teacherDirectoryCardElement}
 
-      <TeacherFormSheet
-        mode="create"
-        open={createOpen}
-        title="Add Teacher"
-        description="Create a teacher profile using full schema fields including photo, email, and teaching subjects."
-        formData={formData}
-        photoPreviewUrl={createPhotoPreviewUrl}
-        submitting={submitting}
-        canSubmit={canSubmitCreate}
-        onOpenChange={(open) => {
-          setCreateOpen(open);
-          if (!open) {
-            setFormData(createEmptyTeacherForm());
-          }
-        }}
-        onFieldChange={(field, value) =>
-          setFormData((prev) => ({
-            ...prev,
-            [field]: normalizeTeacherFieldValue(field, value),
-          }))
-        }
-        onSubjectsChange={(subjects) =>
-          setFormData((prev) => ({ ...prev, subjects }))
-        }
-        onPhotoSelect={(file) => {
-          void handlePhotoFileSelection(file, "create");
-        }}
-        onRemovePhoto={() => setFormData((prev) => ({ ...prev, photo: null }))}
-        onCancel={() => {
-          setCreateOpen(false);
-          setFormData(createEmptyTeacherForm());
-        }}
-        onSubmit={handleCreate}
-      />
-
-      <TeacherFormSheet
-        mode="edit"
-        open={editOpen}
-        title="Edit Teacher"
-        description={
-          editingTeacher
-            ? `Update ${formatTeacherName(editingTeacher)} profile fields and photo.`
-            : "Update teacher details."
-        }
-        formData={editFormData}
-        photoPreviewUrl={editPhotoPreviewUrl}
-        submitting={submitting}
-        canSubmit={canSubmitEdit && Boolean(editingTeacher)}
-        onOpenChange={(open) => {
-          if (!open) {
-            closeEditSheet();
-            return;
-          }
-          setEditOpen(true);
-        }}
-        onFieldChange={(field, value) =>
-          setEditFormData((prev) => ({
-            ...prev,
-            [field]: normalizeTeacherFieldValue(field, value),
-          }))
-        }
-        onSubjectsChange={(subjects) =>
-          setEditFormData((prev) => ({ ...prev, subjects }))
-        }
-        onPhotoSelect={(file) => {
-          void handlePhotoFileSelection(file, "edit");
-        }}
-        onRemovePhoto={() => {
-          setEditFormData((prev) => ({ ...prev, photo: null }));
-          setEditPhotoChanged(true);
-        }}
-        onCancel={closeEditSheet}
-        onSubmit={handleUpdate}
-      />
-
-      <TeacherDesignationSheet
-        open={Boolean(designationOpenFor)}
-        ayId={ayId}
-        submitting={submitting}
-        designationOpenFor={designationOpenFor}
-        designationDrawerTab={designationDrawerTab}
-        setDesignationDrawerTab={setDesignationDrawerTab}
-        designationForm={designationForm}
-        setDesignationForm={setDesignationForm}
-        advisorySections={advisorySections}
-        advisorySectionsLoading={advisorySectionsLoading}
-        selectedAdvisorySection={selectedAdvisorySection}
-        designationCollision={designationCollision}
-        setDesignationCollision={setDesignationCollision}
-        allowCollisionOverride={allowCollisionOverride}
-        setAllowCollisionOverride={setAllowCollisionOverride}
-        onClose={closeDesignationEditor}
-        onSave={handleSaveDesignation}
-      />
+      {renderedTeacherCreateSheet}
+      {renderedTeacherEditSheet}
+      {renderedDesignationSheet}
 
       <Dialog
         open={Boolean(teacherToDeactivate)}

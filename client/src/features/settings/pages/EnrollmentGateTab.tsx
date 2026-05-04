@@ -344,9 +344,6 @@ export default function EnrollmentGateTab() {
             </div>
             <div>
               <CardTitle className="text-lg">GLOBAL PORTAL CONTROL</CardTitle>
-              <CardDescription>
-                Determine how the public-facing portals behave.
-              </CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -378,7 +375,7 @@ export default function EnrollmentGateTab() {
               <SelectContent>
                 <SelectItem
                   value="AUTO"
-                  className="font-medium">
+                  className="font-bold">
                   Auto-Schedule (Follows dates below)
                 </SelectItem>
                 <SelectItem
@@ -413,7 +410,7 @@ export default function EnrollmentGateTab() {
               <CardTitle className="text-xl">
                 Enrollment Schedule Configuration
               </CardTitle>
-              <CardDescription>SY {ay.yearLabel}</CardDescription>
+              <CardDescription>S.Y. {ay.yearLabel}</CardDescription>
             </div>
           </div>
           {!isEditing && (
@@ -443,7 +440,7 @@ export default function EnrollmentGateTab() {
                     Early Registration
                   </h4>
                 </div>
-                <p className="text-sm font-medium text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-md inline-block">
+                <p className="text-sm font-bold text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-md inline-block">
                   For:{" "}
                   <span className="text-foreground">
                     Incoming Grade 7, Transferees, and Balik-Aral
@@ -516,10 +513,10 @@ export default function EnrollmentGateTab() {
                     System Transition Period
                   </span>
                 </div>
-                <p className="text-lg font-black text-foreground">
+                <p className="text-xl font-black text-foreground">
                   {transitionRange.start} — {transitionRange.end}
                 </p>
-                <div className="text-xs text-muted-foreground mx-auto leading-relaxed font-medium space-y-1">
+                <div className="text-sm text-muted-foreground mx-auto leading-relaxed font-bold space-y-1">
                   <p>
                     Public portals{" "}
                     {isCurrentlyInTransition ? "are currently" : "will be"}{" "}
@@ -575,7 +572,7 @@ export default function EnrollmentGateTab() {
                     Official BOSY Enrollment
                   </h4>
                 </div>
-                <p className="text-sm font-medium text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-md inline-block">
+                <p className="text-sm font-bold text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-md inline-block">
                   For:{" "}
                   <span className="text-foreground">
                     All grade levels (Continuing & New)
@@ -624,7 +621,7 @@ export default function EnrollmentGateTab() {
                 </div>
                 <div className="flex items-start gap-2 p-4 bg-blue-50 border border-blue-100 rounded-xl">
                   <AlertTriangle className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
-                  <p className="text-xs text-blue-700 leading-relaxed font-medium">
+                  <p className="text-xs text-blue-700 leading-relaxed font-bold">
                     <strong>Timeline Enforcement:</strong> Official Enrollment
                     (Phase 2) cannot open before Early Registration (Phase 1)
                     concludes. It must also close on or before the Start of

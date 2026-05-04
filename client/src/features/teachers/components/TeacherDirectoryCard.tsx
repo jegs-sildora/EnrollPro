@@ -1,3 +1,4 @@
+import { memo } from "react";
 import {
   Edit2,
   FilterX,
@@ -60,7 +61,7 @@ interface TeacherDirectoryCardProps {
   onReactivateTeacher: (id: number) => void;
 }
 
-export function TeacherDirectoryCard({
+export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
   loading,
   showSkeleton,
   teachers,
@@ -96,7 +97,7 @@ export function TeacherDirectoryCard({
     return (
       <Badge
         variant="success"
-        className="max-w-[220px] truncate text-xs"
+        className="max-w-[220px] truncate text-xs font-bold"
         title={`Assigned to ${advisorySummary}`}>
         Assigned: {advisorySummary}
       </Badge>
@@ -120,7 +121,7 @@ export function TeacherDirectoryCard({
       <Button
         variant="outline"
         size="sm"
-        className="h-7 px-2 text-xs gap-1 whitespace-nowrap"
+        className="h-7 px-2 text-xs gap-1 whitespace-nowrap font-bold"
         onClick={() => onOpenDesignationEditor(teacher)}
         disabled={!ayId}
         title={
@@ -131,7 +132,7 @@ export function TeacherDirectoryCard({
       <Button
         variant="outline"
         size="sm"
-        className="h-7 px-2 text-xs gap-1 whitespace-nowrap"
+        className="h-7 px-2 text-xs gap-1 whitespace-nowrap font-bold"
         onClick={() => onEditTeacher(teacher)}
         title="Edit profile">
         <Edit2 className="h-3 w-3" />
@@ -153,14 +154,14 @@ export function TeacherDirectoryCard({
           {teacher.isActive ? (
             <DropdownMenuItem
               onClick={() => onDeactivateTeacher(teacher)}
-              className="cursor-pointer text-destructive focus:text-destructive">
+              className="cursor-pointer text-destructive focus:text-destructive font-bold">
               <UserMinus className="mr-2 h-4 w-4" />
               Deactivate
             </DropdownMenuItem>
           ) : (
             <DropdownMenuItem
               onClick={() => onReactivateTeacher(teacher.id)}
-              className="cursor-pointer text-emerald-700 focus:text-emerald-700">
+              className="cursor-pointer text-emerald-700 focus:text-emerald-700 font-bold">
               <UserCheck className="mr-2 h-4 w-4" />
               Reactivate
             </DropdownMenuItem>
@@ -196,7 +197,7 @@ export function TeacherDirectoryCard({
         <DataTableColumnHeader
           column={column}
           title="TEACHER"
-          className="justify-center pl-0"
+          className="justify-center pl-0 font-bold"
         />
       ),
       cell: ({ row }) => (
@@ -204,7 +205,7 @@ export function TeacherDirectoryCard({
           <span className="font-bold text-sm uppercase leading-tight">
             {formatTeacherName(row.original)}
           </span>
-          <span className="text-xs text-foreground truncate">
+          <span className="text-xs text-foreground truncate font-medium">
             {row.original.email ||
               row.original.contactNumber ||
               "No contact info"}
@@ -221,10 +222,11 @@ export function TeacherDirectoryCard({
         <DataTableColumnHeader
           column={column}
           title="EMPLOYEE ID"
+          className="font-bold"
         />
       ),
       cell: ({ row }) => (
-        <span className="text-xs font-semibold block text-center">
+        <span className="text-xs font-bold block text-center">
           {row.original.employeeId || "-"}
         </span>
       ),
@@ -236,6 +238,7 @@ export function TeacherDirectoryCard({
         <DataTableColumnHeader
           column={column}
           title="DESIGNATION"
+          className="font-bold"
         />
       ),
       cell: ({ row }) => (
@@ -253,6 +256,7 @@ export function TeacherDirectoryCard({
         <DataTableColumnHeader
           column={column}
           title="DEPT / SPECIALIZATION"
+          className="font-bold"
         />
       ),
       cell: ({ row }) => (
@@ -274,6 +278,7 @@ export function TeacherDirectoryCard({
         <DataTableColumnHeader
           column={column}
           title="QUALIFIED SUBJECTS"
+          className="font-bold"
         />
       ),
       cell: ({ row }) => (
@@ -283,15 +288,15 @@ export function TeacherDirectoryCard({
               <Badge
                 key={sub}
                 variant="outline"
-                className="text-[9px] px-1 py-0 h-4 bg-muted/50">
+                className="text-[9px] px-1 py-0 h-4 bg-muted/50 font-bold">
                 {sub}
               </Badge>
             ))
           ) : (
-            <span className="text-[10px] text-foreground">-</span>
+            <span className="text-[10px] text-foreground font-medium">-</span>
           )}
           {row.original.subjects.length > 3 && (
-            <span className="text-[9px] text-foreground">
+            <span className="text-[9px] text-foreground font-bold">
               +{row.original.subjects.length - 3}
             </span>
           )}
@@ -307,6 +312,7 @@ export function TeacherDirectoryCard({
         <DataTableColumnHeader
           column={column}
           title="STATUS"
+          className="font-bold"
         />
       ),
       cell: ({ row }) => (
@@ -323,10 +329,11 @@ export function TeacherDirectoryCard({
         <DataTableColumnHeader
           column={column}
           title="LOAD STATUS"
+          className="font-bold"
         />
       ),
       cell: ({ row }) => (
-        <span className="text-xs font-semibold block text-center break-words">
+        <span className="text-xs font-bold block text-center break-words uppercase">
           {formatDesignationSummary(row.original)}
         </span>
       ),
@@ -339,6 +346,7 @@ export function TeacherDirectoryCard({
         <DataTableColumnHeader
           column={column}
           title="ACTIONS"
+          className="font-bold"
         />
       ),
       cell: ({ row }) => (
@@ -350,11 +358,11 @@ export function TeacherDirectoryCard({
   ];
 
   return (
-    <Card className="w-full min-w-0 overflow-hidden">
+    <Card className="w-full min-w-0 overflow-hidden shadow-sm border-2">
       <CardHeader className="pb-3 px-4 md:px-6 border-b bg-muted/10">
         <div className="space-y-3">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <CardTitle className="text-lg font-semibold">
+            <CardTitle className="text-lg font-bold uppercase tracking-tight">
               Teacher Directory
             </CardTitle>
             <div className="flex items-center gap-2">
@@ -374,20 +382,20 @@ export function TeacherDirectoryCard({
               value={searchQuery}
               onChange={(event) => onSearchQueryChange(event.target.value)}
               placeholder="Search name, ID, learning area, section"
-              className="h-9 md:col-span-2 xl:col-span-2"
+              className="h-9 md:col-span-2 xl:col-span-2 font-bold"
             />
             <Select
               value={statusFilter}
               onValueChange={(value) =>
                 onStatusFilterChange(value as TeacherStatusFilter)
               }>
-              <SelectTrigger className="h-9">
+              <SelectTrigger className="h-9 font-bold uppercase text-xs">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="active">Active Only</SelectItem>
-                <SelectItem value="inactive">Inactive Only</SelectItem>
+                <SelectItem value="all" className="font-bold">All Statuses</SelectItem>
+                <SelectItem value="active" className="font-bold">Active Only</SelectItem>
+                <SelectItem value="inactive" className="font-bold">Inactive Only</SelectItem>
               </SelectContent>
             </Select>
             <Select
@@ -395,27 +403,27 @@ export function TeacherDirectoryCard({
               onValueChange={(value) =>
                 onDesignationFilterChange(value as TeacherDesignationFilter)
               }>
-              <SelectTrigger className="h-9">
+              <SelectTrigger className="h-9 font-bold uppercase text-xs">
                 <SelectValue placeholder="Designation" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Designations</SelectItem>
-                <SelectItem value="adviser">Class Adviser</SelectItem>
-                <SelectItem value="tic">TIC</SelectItem>
-                <SelectItem value="exempt">Teaching Exempt</SelectItem>
-                <SelectItem value="none">No Designation</SelectItem>
+                <SelectItem value="all" className="font-bold">All Designations</SelectItem>
+                <SelectItem value="adviser" className="font-bold">Class Adviser</SelectItem>
+                <SelectItem value="tic" className="font-bold">TIC</SelectItem>
+                <SelectItem value="exempt" className="font-bold">Teaching Exempt</SelectItem>
+                <SelectItem value="none" className="font-bold">No Designation</SelectItem>
               </SelectContent>
             </Select>
             <Button
               variant="ghost"
-              className="h-9"
+              className="h-9 font-bold uppercase text-xs"
               disabled={!hasActiveFilters}
               onClick={onClearFilters}>
               <FilterX className="mr-2 h-4 w-4" />
               Clear
             </Button>
           </div>
-          <p className="text-xs text-foreground">
+          <p className="text-xs text-foreground font-bold">
             Showing {filteredTeachers.length} of {teachers.length} teachers
           </p>
         </div>
@@ -427,7 +435,7 @@ export function TeacherDirectoryCard({
               Array.from({ length: 3 }).map((_, index) => (
                 <div
                   key={index}
-                  className="rounded-xl border p-3 space-y-3">
+                  className="rounded-xl border-2 p-3 space-y-3">
                   <Skeleton className="h-5 w-40" />
                   <Skeleton className="h-4 w-28" />
                   <Skeleton className="h-4 w-full" />
@@ -435,7 +443,7 @@ export function TeacherDirectoryCard({
                 </div>
               ))
             ) : filteredTeachers.length === 0 ? (
-              <div className="rounded-xl border px-4 py-8 text-center text-sm text-foreground italic">
+              <div className="rounded-xl border-2 border-dashed px-4 py-8 text-center text-sm text-foreground italic font-bold">
                 {hasActiveFilters
                   ? "No teachers match the current filter set."
                   : 'No teachers found. Click "Add Teacher" to create one.'}
@@ -444,19 +452,19 @@ export function TeacherDirectoryCard({
               filteredTeachers.map((teacher) => (
                 <div
                   key={teacher.id}
-                  className={`rounded-xl border p-3 space-y-3 ${!teacher.isActive ? "bg-muted/20" : "bg-background"}`}>
+                  className={`rounded-xl border-2 p-3 space-y-3 ${!teacher.isActive ? "bg-muted/20" : "bg-background shadow-sm"}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <UserPhoto
                         photo={teacher.photoPath}
-                        containerClassName="h-10 w-10 rounded-full border shadow-sm"
+                        containerClassName="h-10 w-10 rounded-full border-2 shadow-sm"
                         alt={formatTeacherName(teacher)}
                       />
                       <div>
-                        <p className="font-bold text-sm uppercase leading-tight">
+                        <p className="font-black text-sm uppercase leading-tight">
                           {formatTeacherName(teacher)}
                         </p>
-                        <p className="text-xs text-foreground mt-0.5">
+                        <p className="text-xs text-foreground mt-0.5 font-medium">
                           {teacher.email || "No email address"}
                         </p>
                       </div>
@@ -466,46 +474,48 @@ export function TeacherDirectoryCard({
 
                   <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
                     <div>
-                      <p className="text-foreground uppercase tracking-wide">
+                      <p className="text-foreground uppercase tracking-wide font-bold opacity-70">
                         Employee ID
                       </p>
-                      <p className="font-semibold">
+                      <p className="font-bold">
                         {teacher.employeeId || "-"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-foreground uppercase tracking-wide">
+                      <p className="text-foreground uppercase tracking-wide font-bold opacity-70">
                         Learning Area
                       </p>
-                      <p className="font-semibold">
+                      <p className="font-bold">
                         {teacher.specialization || "Not set"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-foreground uppercase tracking-wide">
+                      <p className="text-foreground uppercase tracking-wide font-bold opacity-70">
                         Contact
                       </p>
-                      <p className="font-semibold">
+                      <p className="font-bold">
                         {teacher.contactNumber || "-"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-foreground uppercase tracking-wide">
+                      <p className="text-foreground uppercase tracking-wide font-bold opacity-70">
                         Designation
                       </p>
-                      <p className="font-semibold">
+                      <p className="font-bold uppercase">
                         {formatDesignationSummary(teacher)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-foreground uppercase tracking-wide">
+                      <p className="text-foreground uppercase tracking-wide font-bold opacity-70">
                         Advisory
                       </p>
                       {renderAdvisoryStatus(teacher)}
                     </div>
                   </div>
 
-                  {renderTeacherActions(teacher, true)}
+                  <div className="pt-2 border-t">
+                    {renderTeacherActions(teacher, true)}
+                  </div>
                 </div>
               ))
             )}
@@ -530,4 +540,4 @@ export function TeacherDirectoryCard({
       </CardContent>
     </Card>
   );
-}
+});

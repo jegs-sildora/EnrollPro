@@ -3,7 +3,6 @@ import { Button } from "@/shared/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
@@ -64,12 +63,11 @@ export default function CurriculumTabPage() {
             <CardHeader>
               <div>
                 <CardTitle className="flex items-center gap-2 text-xl">
-                  <ShieldCheck className="h-5 w-5" />
-                  Special Curricular Programs (SCP)
+                  <div className="h-10 w-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
+                    <ShieldCheck className="h-5 w-5" />
+                  </div>
+                  Special Curricular Programs (SCP) Configuration
                 </CardTitle>
-                <CardDescription className="font-bold">
-                  Configure early registration criteria for STE, SPA, SPS, etc.
-                </CardDescription>
               </div>
             </CardHeader>
             <CardContent>

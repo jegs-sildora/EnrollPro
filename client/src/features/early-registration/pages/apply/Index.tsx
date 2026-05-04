@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router";
+import { Button } from "@/shared/ui/button";
 import GuestLayout from "@/shared/layouts/GuestLayout";
 import AdmissionHeader from "@/features/admission/components/AdmissionHeader";
 import PrivacyNotice from "@/features/admission/pages/online-enrollment/PrivacyNotice";
 import EarlyRegistrationForm from "./EarlyRegistrationForm";
 import EarlyRegSuccessView from "./components/EarlyRegSuccessView";
 import { motion, AnimatePresence } from "motion/react";
-import { cn, getManilaNow } from "@/shared/lib/utils";
-import { formatManilaDate } from "@/shared/lib/utils";
+import { cn, formatManilaDate } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 import type { ApplicationSubmitResponse } from "@enrollpro/shared";
 
@@ -40,25 +40,16 @@ export default function EarlyRegistrationApply() {
     logoUrl,
     enrollmentPhase,
     activeSchoolYearLabel,
+    systemStatus,
     earlyRegOpenDate,
     earlyRegCloseDate,
     facebookPageUrl,
+    schoolWebsite,
   } = useSettingsStore();
 
-  const now = getManilaNow();
-  // Ensure we compare dates without time if needed, but new Date(ISO) usually works.
-  // DepEd dates are usually set to 00:00:00 of the day.
-  const isWithinEarlyRegDates =
-    earlyRegOpenDate &&
-    earlyRegCloseDate &&
-    now >= new Date(earlyRegOpenDate) &&
-    now <= new Date(earlyRegCloseDate);
-
+  const isBosyLocked = systemStatus === "BOSY_LOCKED";
   const isRegularEnrollment = enrollmentPhase === "REGULAR_ENROLLMENT";
-  const isClosed =
-    enrollmentPhase !== "EARLY_REGISTRATION" &&
-    enrollmentPhase !== "OVERRIDE" &&
-    !isWithinEarlyRegDates;
+  const isClosed = enrollmentPhase !== "EARLY_REGISTRATION";
   const targetYear = activeSchoolYearLabel
     ? activeSchoolYearLabel.split("-")[0]
     : new Date().getFullYear();
@@ -199,10 +190,60 @@ export default function EarlyRegistrationApply() {
                       {schoolName}
                     </h2>
                     <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black tracking-[0.2em] uppercase border border-slate-200">
-                      {isRegularEnrollment ? "REDIRECTING..." : "PHASE CLOSED"}
+                      {isBosyLocked ? "ENROLLMENT FINALIZED" : isRegularEnrollment ? "REDIRECTING..." : "PHASE CLOSED"}
                     </div>
                   </div>
-                  {isRegularEnrollment ? (
+
+                  {isBosyLocked ? (
+                    <div className="space-y-6 max-w-lg mx-auto">
+                      <div className="space-y-2">
+                        <h3 className="text-xl sm:text-2xl font-black text-black flex items-center justify-center gap-2">
+                          ONLINE ENROLLMENT IS NOW CLOSED
+                        </h3>
+                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest leading-relaxed">
+                          The standard online enrollment period for S.Y.{" "}
+                          {activeSchoolYearLabel} has officially ended, and
+                          class rosters have been finalized.
+                        </p>
+                      </div>
+
+                      <div className="p-6 rounded-xl bg-red-50 border-2 border-red-200 text-left space-y-4 shadow-inner">
+                        <div className="flex items-center gap-2 text-red-900 font-black uppercase tracking-wider text-sm">
+                          LATE ENROLLMENT INSTRUCTIONS:
+                        </div>
+                        <p className="text-sm text-red-900 font-bold leading-relaxed">
+                          If you still need to enroll a learner, you must now
+                          process this manually. Please proceed to the School
+                          Registrar's Office during working hours (8:00 AM -
+                          5:00 PM) and bring the following:
+                        </p>
+                        <ul className="grid grid-cols-1 gap-1.5 mt-2 pl-4">
+                          <li className="flex items-center gap-2 text-sm font-bold text-red-950 list-disc">
+                            Original SF9 (Report Card)
+                          </li>
+                          <li className="flex items-center gap-2 text-sm font-bold text-red-950 list-disc">
+                            PSA Birth Certificate
+                          </li>
+                        </ul>
+                      </div>
+
+                      <div className="pt-4">
+                        <Button
+                          variant="outline"
+                          size="lg"
+                          className="w-full sm:w-auto px-8 h-12 rounded-xl font-black uppercase tracking-widest text-xs transition-all border-2"
+                          onClick={() => {
+                            if (schoolWebsite) {
+                              window.location.href = schoolWebsite;
+                            } else {
+                              window.location.href = "/";
+                            }
+                          }}>
+                          Return to School Homepage
+                        </Button>
+                      </div>
+                    </div>
+                  ) : isRegularEnrollment ? (
                     <div className="space-y-6 max-w-lg mx-auto">
                       <div className="space-y-2">
                         <h3 className="text-xl sm:text-2xl font-black text-black">
@@ -216,7 +257,6 @@ export default function EarlyRegistrationApply() {
                       <div className="p-6 rounded-xl bg-blue-50/50 border border-blue-100 text-left space-y-4">
                         <div className="space-y-3">
                           <div className="flex items-start gap-2 text-blue-900/80 text-xs leading-relaxed">
-                            <span className="text-lg leading-none">ℹ️</span>
                             <p className="font-medium">
                               If you previously completed Early Registration,
                               your data is saved! You only need to submit your
@@ -224,7 +264,6 @@ export default function EarlyRegistrationApply() {
                             </p>
                           </div>
                           <div className="flex items-start gap-2 text-blue-900/80 text-xs leading-relaxed border-t border-blue-100 pt-3">
-                            <span className="text-lg leading-none"></span>
                             <p className="font-medium">
                               If you are a New Learner/Transferee who missed
                               Early Registration, you may now fill out the
@@ -238,7 +277,7 @@ export default function EarlyRegistrationApply() {
                         <Link
                           to="/enrollment"
                           className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-xs transition-all shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
-                          Proceed to Official Enrollment Portal ➔
+                          Proceed to Official Enrollment Portal
                         </Link>
                       </div>
                     </div>
@@ -260,11 +299,9 @@ export default function EarlyRegistrationApply() {
                       <div className="p-6 rounded-xl bg-blue-50/50 border border-blue-100 text-left space-y-4">
                         <div className="space-y-3">
                           <div className="flex items-center gap-2 text-blue-900 font-bold text-sm">
-                            <span className="text-lg">📅</span> Target Schedule:
-                            {formattedSchedule}
+                            Target Schedule: {formattedSchedule}
                           </div>
                           <div className="flex items-start gap-2 text-blue-900/80 text-xs leading-relaxed">
-                            <span className="text-lg leading-none">📌</span>
                             <p className="font-medium">
                               <span className="font-black uppercase text-[10px] tracking-tight mr-1">
                                 Note:
@@ -296,10 +333,10 @@ export default function EarlyRegistrationApply() {
                               viewBox="0 0 24 24">
                               <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                             </svg>
-                            Visit Official HNHS Facebook Page ➔
-                          </a>
-                        </div>
-                      )}
+                            Visit Official HNHS Facebook Page
+                            </a>
+                            </div>
+                            )}
                     </div>
                   )}
                 </div>

@@ -113,11 +113,18 @@ export async function lockBosy(req: Request, res: Response) {
 
 export async function unlockBosy(req: Request, res: Response) {
   try {
-    const { justification } = req.body;
+    const { justification, pin } = req.body;
+    const adminPin = process.env.ADMIN_BOSY_LOCK_PIN || "123456";
+
+    if (pin !== adminPin) {
+      res.status(403).json({ message: "Invalid Admin PIN" });
+      return;
+    }
 
     if (!justification || justification.length < 10) {
       res.status(400).json({
-        message: "A valid justification (min 10 chars) is required for emergency unlock",
+        message:
+          "A valid justification (min 10 chars) is required for emergency unlock",
       });
       return;
     }

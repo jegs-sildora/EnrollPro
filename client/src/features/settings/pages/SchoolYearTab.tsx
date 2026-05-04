@@ -792,9 +792,6 @@ export default function SchoolYearTab() {
           <h2 className="text-xl font-bold tracking-tight">
             School Year Management
           </h2>
-          <p className="text-[14px] text-foreground font-bold">
-            Manage active, upcoming, and historical academic years.
-          </p>
         </div>
       </div>
 

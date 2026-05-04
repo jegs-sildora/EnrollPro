@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, memo, type ReactNode } from "react";
 import type React from "react";
 import { useNavigate, useLocation, Link } from "react-router";
 import { Toaster } from "sileo";
@@ -144,7 +144,7 @@ function SYSwitcher() {
   );
 }
 
-function NavDivider({ label }: { label: string }) {
+const NavDivider = memo(function NavDivider({ label }: { label: string }) {
   return (
     <div className="px-3 py-2 mt-2 transition-[margin,opacity,height] duration-200 ease-linear group-data-[collapsible=icon]:m-0 group-data-[collapsible=icon]:h-0 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:opacity-0 overflow-hidden">
       <span className="text-[0.625rem] font-bold uppercase tracking-wider text-muted-foreground opacity-60 whitespace-nowrap">
@@ -152,9 +152,9 @@ function NavDivider({ label }: { label: string }) {
       </span>
     </div>
   );
-}
+});
 
-function NavItem({
+const NavItem = memo(function NavItem({
   to,
   icon: Icon,
   label,
@@ -170,7 +170,10 @@ function NavItem({
 
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton asChild isActive={isActive} tooltip={label}>
+      <SidebarMenuButton
+        asChild
+        isActive={isActive}
+        tooltip={label}>
         <Link to={to}>
           <Icon className="size-4" />
           <span>{label}</span>
@@ -178,9 +181,9 @@ function NavItem({
       </SidebarMenuButton>
     </SidebarMenuItem>
   );
-}
+});
 
-function NavItemParent({
+const NavItemParent = memo(function NavItemParent({
   icon: Icon,
   label,
   children,
@@ -211,9 +214,9 @@ function NavItemParent({
       {open && <ul className="mt-0.5 space-y-0.5">{children}</ul>}
     </SidebarMenuItem>
   );
-}
+});
 
-function NavItemChild({
+const NavItemChild = memo(function NavItemChild({
   to,
   icon: Icon,
   label,
@@ -275,7 +278,7 @@ function NavItemChild({
       </SidebarMenuButton>
     </SidebarMenuItem>
   );
-}
+});
 
 function AppSidebar() {
   const location = useLocation();
@@ -567,7 +570,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <SidebarProvider className="relative">
-      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+      <div
+        className="pointer-events-none absolute inset-0"
+        aria-hidden="true">
         <svg
           className="absolute inset-0 h-full w-full opacity-[0.04]"
           xmlns="http://www.w3.org/2000/svg">
@@ -621,7 +626,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               />
             </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#pixel-grid-app-layout)" />
+          <rect
+            width="100%"
+            height="100%"
+            fill="url(#pixel-grid-app-layout)"
+          />
         </svg>
         <div
           className="absolute inset-0"
@@ -642,10 +651,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         {/* Top bar */}
         <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background px-4">
           <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4!" />
+          <Separator
+            orientation="vertical"
+            className="mr-2 h-4!"
+          />
           <span className="text-sm font-medium text-muted-foreground"></span>
           {isHistoricalReadOnly ? (
-            <Badge variant="danger" className="uppercase tracking-wide">
+            <Badge
+              variant="danger"
+              className="uppercase tracking-wide">
               Historical View: Read Only
             </Badge>
           ) : null}

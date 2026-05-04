@@ -45,18 +45,6 @@ export default function F2FEarlyRegistration() {
             encoding.
           </p>
         </div>
-        <Button
-          asChild
-          variant="outline"
-          className="gap-2 font-semibold">
-          <Link
-            to="/settings?tab=requirements"
-            target="_blank"
-            rel="noopener noreferrer">
-            <BookOpen className="w-4 h-4" />
-            View Requirements
-          </Link>
-        </Button>
       </div>
 
       <EarlyRegistrationForm

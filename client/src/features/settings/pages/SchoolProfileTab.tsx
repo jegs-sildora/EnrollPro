@@ -215,17 +215,15 @@ export default function SchoolProfileTab() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-xl">
-            <School className="h-5 w-5" />
+            <div className="h-10 w-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
+              <School className="h-5 w-5" />
+            </div>
             School Name
           </CardTitle>
-          <CardDescription>
-            The name displayed across the application
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <div className="flex-1 space-y-2">
-              <Label htmlFor="schoolName">School Name</Label>
               <Input
                 className="font-bold"
                 id="schoolName"
@@ -248,13 +246,11 @@ export default function SchoolProfileTab() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-xl">
-            <Megaphone className="h-5 w-5" />
+            <div className="h-10 w-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
+              <Megaphone className="h-5 w-5" />
+            </div>
             Official Communication Channels
           </CardTitle>
-          <CardDescription>
-            Set the official links and contacts used across public-facing
-            portals to direct parents and stakeholders to the right channels.
-          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid gap-6 font-bold">
@@ -271,9 +267,6 @@ export default function SchoolProfileTab() {
                   }))
                 }
               />
-              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">
-                Appears on: Early Registration & Enrollment Lockout pages
-              </p>
             </div>
 
             <div className="space-y-2">
@@ -320,7 +313,9 @@ export default function SchoolProfileTab() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-xl">
-            <Palette className="h-5 w-5" />
+            <div className="h-10 w-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
+              <Palette className="h-5 w-5" />
+            </div>
             Logo & Accent Color
           </CardTitle>
           <CardDescription>

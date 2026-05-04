@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { isAxiosError } from "axios";
 import { sileo } from "sileo";
@@ -110,6 +110,151 @@ function normalizeOptionalText(value: unknown): string | null {
   const cleaned = value.trim();
   return cleaned.length ? cleaned : null;
 }
+
+const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
+  acronym,
+  projectTagline,
+  schoolName,
+  jhsScopeLabel,
+  schoolAddress,
+  schoolDivision,
+  schoolRegion,
+  projectFullName,
+}: {
+  acronym: string;
+  projectTagline: string;
+  schoolName: string;
+  jhsScopeLabel: string;
+  schoolAddress: string | null;
+  schoolDivision: string | null;
+  schoolRegion: string | null;
+  projectFullName: string;
+}) {
+  return (
+    <div className="hidden lg:flex lg:w-[55%] xl:w-3/5 relative overflow-hidden bg-primary shrink-0">
+      <div
+        className="absolute inset-0 login-gradient"
+        style={{
+          background:
+            "linear-gradient(to bottom right, hsl(var(--primary)), hsl(var(--primary) / 0.88), hsl(var(--accent) / 0.88))",
+        }}
+      />
+
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-20 w-96 h-96 rounded-full bg-white/10 blur-3xl login-float" />
+        <div
+          className="absolute bottom-32 right-16 w-80 h-80 rounded-full blur-3xl login-float"
+          style={{
+            backgroundColor: "hsl(var(--accent-foreground) / 0.18)",
+            animationDelay: "2s",
+          }}
+        />
+        <div
+          className="absolute top-1/2 left-1/4 w-64 h-64 rounded-full blur-2xl login-float"
+          style={{
+            backgroundColor: "hsl(var(--primary-foreground) / 0.2)",
+            animationDelay: "4s",
+          }}
+        />
+
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)",
+            backgroundSize: "50px 50px",
+          }}
+        />
+
+        <div className="absolute -top-1/2 -right-1/4 w-full h-full bg-[radial-gradient(circle,_rgba(255,255,255,0.08)_0%,_transparent_70%)] rounded-full" />
+      </div>
+
+      <div className="relative z-10 flex flex-col justify-center px-12 xl:px-20 text-white w-full">
+        <div className="flex items-center gap-4 mb-12">
+          <div>
+            <h1 className="text-4xl font-bold ">{acronym}</h1>
+            <p className="text-white text-sm font-bold max-w-md">
+              {projectTagline}
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-3 mb-12">
+          <h2 className="text-3xl xl:text-4xl font-bold leading-tight ">
+            {schoolName}
+          </h2>
+          <p className="text-white text-sm font-bold">{jhsScopeLabel}</p>
+          <div className="flex flex-col gap-1.5 mt-3">
+            {schoolAddress && (
+              <div className="flex items-center gap-2 text-white text-sm font-bold">
+                <MapPin className="w-4 h-4 flex-shrink-0" />
+                <span>{schoolAddress}</span>
+              </div>
+            )}
+            {schoolDivision && (
+              <div className="flex items-center gap-2 text-white text-sm font-bold">
+                <Building2 className="w-4 h-4 flex-shrink-0" />
+                <span>Division of {schoolDivision}</span>
+              </div>
+            )}
+            {schoolRegion && (
+              <div className="flex items-center gap-2 text-white text-sm font-bold">
+                <Globe className="w-4 h-4 flex-shrink-0" />
+                <span>{schoolRegion}</span>
+              </div>
+            )}
+            {!schoolAddress && !schoolDivision && !schoolRegion && (
+              <p className="text-white text-sm font-bold">
+                DepEd Public School Early Registration and Enrollment Portal
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="grid gap-4">
+          {[
+            {
+              icon: BookOpen,
+              title: "Phase 1 Automation",
+              desc: "Early registration intake with dynamic SCP screening",
+            },
+            {
+              icon: BarChart3,
+              title: "Phase 2 Validation",
+              desc: "BEEF, SF9 checks, and enrollment finalization",
+            },
+            {
+              icon: Shield,
+              title: "Priority Sectioning Engine",
+              desc: "SCP hard caps with BEC star and heterogeneous sorting",
+            },
+          ].map((feature) => (
+            <div
+              key={feature.title}
+              className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 transition-all duration-0 hover:bg-white/10 hover:border-white/20 group">
+              <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <feature.icon className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white">{feature.title}</h3>
+                <p className="text-white text-sm font-semibold">
+                  {feature.desc}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="absolute bottom-8 left-12 xl:left-20 flex items-center gap-3 text-white/50 text-sm">
+        <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+          <Shield className="w-4 h-4" />
+        </div>
+        <span>{projectFullName}</span>
+      </div>
+    </div>
+  );
+});
 
 export default function Login() {
   const navigate = useNavigate();
@@ -425,128 +570,16 @@ export default function Login() {
         }
       `}</style>
 
-      <div className="hidden lg:flex lg:w-[55%] xl:w-3/5 relative overflow-hidden bg-primary">
-        <div
-          className="absolute inset-0 login-gradient"
-          style={{
-            background:
-              "linear-gradient(to bottom right, hsl(var(--primary)), hsl(var(--primary) / 0.88), hsl(var(--accent) / 0.88))",
-          }}
-        />
-
-        <div className="absolute inset-0">
-          <div className="absolute top-20 left-20 w-96 h-96 rounded-full bg-white/10 blur-3xl login-float" />
-          <div
-            className="absolute bottom-32 right-16 w-80 h-80 rounded-full blur-3xl login-float"
-            style={{
-              backgroundColor: "hsl(var(--accent-foreground) / 0.18)",
-              animationDelay: "2s",
-            }}
-          />
-          <div
-            className="absolute top-1/2 left-1/4 w-64 h-64 rounded-full blur-2xl login-float"
-            style={{
-              backgroundColor: "hsl(var(--primary-foreground) / 0.2)",
-              animationDelay: "4s",
-            }}
-          />
-
-          <div
-            className="absolute inset-0 opacity-[0.03]"
-            style={{
-              backgroundImage:
-                "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)",
-              backgroundSize: "50px 50px",
-            }}
-          />
-
-          <div className="absolute -top-1/2 -right-1/4 w-full h-full bg-[radial-gradient(circle,_rgba(255,255,255,0.08)_0%,_transparent_70%)] rounded-full" />
-        </div>
-
-        <div className="relative z-10 flex flex-col justify-center px-12 xl:px-20 text-white w-full">
-          <div className="flex items-center gap-4 mb-12">
-            <div>
-              <h1 className="text-4xl font-bold ">{acronym}</h1>
-              <p className="text-white text-sm font-bold max-w-md">
-                {projectTagline}
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-3 mb-12">
-            <h2 className="text-3xl xl:text-4xl font-bold leading-tight ">
-              {schoolName}
-            </h2>
-            <p className="text-white text-sm font-bold">{jhsScopeLabel}</p>
-            <div className="flex flex-col gap-1.5 mt-3">
-              {schoolAddress && (
-                <div className="flex items-center gap-2 text-white text-sm font-bold">
-                  <MapPin className="w-4 h-4 flex-shrink-0" />
-                  <span>{schoolAddress}</span>
-                </div>
-              )}
-              {schoolDivision && (
-                <div className="flex items-center gap-2 text-white text-sm font-bold">
-                  <Building2 className="w-4 h-4 flex-shrink-0" />
-                  <span>Division of {schoolDivision}</span>
-                </div>
-              )}
-              {schoolRegion && (
-                <div className="flex items-center gap-2 text-white text-sm font-bold">
-                  <Globe className="w-4 h-4 flex-shrink-0" />
-                  <span>{schoolRegion}</span>
-                </div>
-              )}
-              {!schoolAddress && !schoolDivision && !schoolRegion && (
-                <p className="text-white text-sm font-bold">
-                  DepEd Public School Early Registration and Enrollment Portal
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid gap-4">
-            {[
-              {
-                icon: BookOpen,
-                title: "Phase 1 Automation",
-                desc: "Early registration intake with dynamic SCP screening",
-              },
-              {
-                icon: BarChart3,
-                title: "Phase 2 Validation",
-                desc: "BEEF, SF9 checks, and enrollment finalization",
-              },
-              {
-                icon: Shield,
-                title: "Priority Sectioning Engine",
-                desc: "SCP hard caps with BEC star and heterogeneous sorting",
-              },
-            ].map((feature) => (
-              <div
-                key={feature.title}
-                className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 transition-all duration-0 hover:bg-white/10 hover:border-white/20 group">
-                <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <feature.icon className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-white">{feature.title}</h3>
-                  <p className="text-white text-sm font-semibold">
-                    {feature.desc}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="absolute bottom-8 left-12 xl:left-20 flex items-center gap-3 text-white/50 text-sm">
-          <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-            <Shield className="w-4 h-4" />
-          </div>
-          <span>{projectFullName}</span>
-        </div>
-      </div>
+      <LoginDecorativeSidebar
+        acronym={acronym}
+        projectTagline={projectTagline}
+        schoolName={schoolName}
+        jhsScopeLabel={jhsScopeLabel}
+        schoolAddress={schoolAddress}
+        schoolDivision={schoolDivision}
+        schoolRegion={schoolRegion}
+        projectFullName={projectFullName}
+      />
 
       <div className="relative w-full lg:w-[45%] xl:w-2/5 flex items-center justify-center p-4 sm:p-6 lg:p-8 overflow-y-auto">
         <div

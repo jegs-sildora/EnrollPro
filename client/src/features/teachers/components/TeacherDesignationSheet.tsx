@@ -39,7 +39,12 @@ import type {
   DesignationFormState,
   Teacher,
 } from "../types";
-import { formatDateTime, formatTeacherName } from "../utils";
+import {
+  formatDateTime,
+  formatTeacherName,
+  TEACHER_ANCILLARY_ROLE_OPTIONS,
+} from "../utils";
+import { Checkbox } from "@/shared/ui/checkbox";
 
 interface TeacherDesignationSheetProps {
   open: boolean;
@@ -330,40 +335,61 @@ export function TeacherDesignationSheet({
                 </div>
 
                 <div className="rounded-md border bg-card p-3 sm:p-4 space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <Label
-                      htmlFor="isTic"
-                      className="text-xs uppercase r">
-                      Teacher In Charge (TIC)
+                  <div className="space-y-3">
+                    <Label className="text-xs uppercase r text-primary font-black">
+                      Ancillary Designations
                     </Label>
-                    <Switch
-                      id="isTic"
-                      checked={designationForm.isTic}
-                      onCheckedChange={(checked) =>
-                        setDesignationForm((prev) => ({
-                          ...prev,
-                          isTic: checked,
-                        }))
-                      }
-                    />
+                    <div className="grid gap-2 pt-1 max-h-48 overflow-y-auto pr-1">
+                      {TEACHER_ANCILLARY_ROLE_OPTIONS.map((option) => (
+                        <div
+                          key={option.value}
+                          className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`ancillary-${option.value}`}
+                            checked={designationForm.ancillaryRoles.includes(
+                              option.value,
+                            )}
+                            onCheckedChange={(checked) => {
+                              setDesignationForm((prev) => ({
+                                ...prev,
+                                ancillaryRoles: checked
+                                  ? [...prev.ancillaryRoles, option.value]
+                                  : prev.ancillaryRoles.filter(
+                                      (r) => r !== option.value,
+                                    ),
+                              }));
+                            }}
+                          />
+                          <label
+                            htmlFor={`ancillary-${option.value}`}
+                            className="text-[10px] font-bold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 uppercase">
+                            {option.label}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <Label
-                      htmlFor="isTeachingExempt"
-                      className="text-xs uppercase r">
-                      Teaching Exempt
-                    </Label>
-                    <Switch
-                      id="isTeachingExempt"
-                      checked={designationForm.isTeachingExempt}
-                      onCheckedChange={(checked) =>
-                        setDesignationForm((prev) => ({
-                          ...prev,
-                          isTeachingExempt: checked,
-                        }))
-                      }
-                    />
+
+                  <div className="pt-3 border-t">
+                    <div className="flex items-center justify-between gap-3">
+                      <Label
+                        htmlFor="isTeachingExempt"
+                        className="text-xs uppercase r">
+                        Teaching Exempt
+                      </Label>
+                      <Switch
+                        id="isTeachingExempt"
+                        checked={designationForm.isTeachingExempt}
+                        onCheckedChange={(checked) =>
+                          setDesignationForm((prev) => ({
+                            ...prev,
+                            isTeachingExempt: checked,
+                          }))
+                        }
+                      />
+                    </div>
                   </div>
+
                   <div className="space-y-2">
                     <Label className="text-xs uppercase r text-foreground">
                       Custom Target Teaching Hours / Week

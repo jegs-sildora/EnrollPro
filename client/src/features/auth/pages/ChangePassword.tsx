@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { memo, useState, useEffect, useMemo } from "react";
 import { useNavigate, Navigate } from "react-router";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
@@ -47,40 +47,15 @@ const schema = z
 
 type FormData = z.infer<typeof schema>;
 
-export default function ChangePassword() {
-  const { user, token, setAuth, clearAuth } = useAuthStore();
-  const { accentForeground } = useSettingsStore();
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [showPw, setShowPw] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+// --- Sub-components for Optimization ---
 
-  const { register, handleSubmit, control, watch } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    mode: "onChange",
-  });
-
-  const newPassword = useWatch({
-    control,
-    name: "newPassword",
-    defaultValue: "",
-  });
-  const confirmPassword = useWatch({
-    control,
-    name: "confirmPassword",
-    defaultValue: "",
-  });
-
-  // Clear error when typing
-  useEffect(() => {
-    const subscription = watch(() => {
-      if (error) setError(null);
-    });
-    return () => subscription.unsubscribe();
-  }, [watch, error]);
-
-  const strokeColor = accentForeground === "0 0% 0%" ? "000000" : "ffffff";
-
+const SecurityRequirements = memo(function SecurityRequirements({ 
+  newPassword, 
+  confirmPassword 
+}: { 
+  newPassword: string; 
+  confirmPassword: string; 
+}) {
   const rules = [
     { label: "Minimum 8 characters", pass: newPassword.length >= 8 },
     { label: "At least one uppercase letter", pass: /[A-Z]/.test(newPassword) },
@@ -94,30 +69,74 @@ export default function ChangePassword() {
       pass: newPassword.length > 0 && newPassword === confirmPassword,
     },
   ];
-  const newPasswordInvalid =
-    newPassword.length > 0 && rules.slice(0, 4).some((r) => !r.pass);
-  const confirmPasswordInvalid =
-    confirmPassword.length > 0 && newPassword !== confirmPassword;
 
-  // If no token, redirect to login
-  if (!token || !user) {
-    return (
-      <Navigate
-        to="/login"
-        replace
-      />
-    );
-  }
+  return (
+    <div className="rounded-xl bg-muted/50 p-4 border border-muted-foreground/10 space-y-3">
+      <p className="font-bold uppercase tracking-widest text-muted-foreground/70 text-[10px]">
+        Security Requirements
+      </p>
+      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+        {rules.map((r) => (
+          <li
+            key={r.label}
+            className={`flex items-center gap-2 text-sm font-bold transition-colors ${r.pass ? "text-emerald-600" : "text-muted-foreground"}`}>
+            {r.pass ? (
+              <CheckSquare className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+            ) : (
+              <Square className="h-3.5 w-3.5 shrink-0 opacity-50" />
+            )}
+            {r.label}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+});
 
-  // If password change is NOT required, redirect to dashboard
-  if (!user.mustChangePassword) {
-    return (
-      <Navigate
-        to="/dashboard"
-        replace
-      />
-    );
-  }
+export default function ChangePassword() {
+  const { user, token, setAuth, clearAuth } = useAuthStore();
+  const { accentForeground } = useSettingsStore();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [showPw, setShowPw] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const { register, handleSubmit, control, watch, formState: { errors } } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    mode: "onChange",
+  });
+
+  // These will trigger re-renders of ONLY the components using them
+  const newPasswordValue = useWatch({ control, name: "newPassword", defaultValue: "" });
+  const confirmPasswordValue = useWatch({ control, name: "confirmPassword", defaultValue: "" });
+
+  // Clear error when typing
+  useEffect(() => {
+    const subscription = watch(() => {
+      if (error) setError(null);
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, error]);
+
+  const strokeColor = accentForeground === "0 0% 0%" ? "000000" : "ffffff";
+
+  // Computed state for error highlighting
+  const newPasswordInvalid = useMemo(() => 
+    newPasswordValue.length > 0 && (
+      newPasswordValue.length < 8 || 
+      !/[A-Z]/.test(newPasswordValue) || 
+      !/[0-9]/.test(newPasswordValue) || 
+      !/[^A-Za-z0-9]/.test(newPasswordValue)
+    ), [newPasswordValue]);
+
+  const confirmPasswordInvalid = useMemo(() => 
+    confirmPasswordValue.length > 0 && newPasswordValue !== confirmPasswordValue, 
+    [newPasswordValue, confirmPasswordValue]
+  );
+
+  // Guard redirects
+  if (!token || !user) return <Navigate to="/login" replace />;
+  if (!user.mustChangePassword) return <Navigate to="/dashboard" replace />;
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
@@ -127,15 +146,11 @@ export default function ChangePassword() {
         newPassword: data.newPassword,
       });
 
-      // Update auth store with new token and updated user object
       setAuth(res.data.token, res.data.user);
-
       sileo.success({
         title: "Password Updated",
-        description:
-          "Your new password has been set. You can now access the system.",
+        description: "Your new password has been set. You can now access the system.",
       });
-
       navigate("/dashboard");
     } catch (err: unknown) {
       const axiosError = err as {
@@ -146,9 +161,7 @@ export default function ChangePassword() {
       } else {
         sileo.error({
           title: "Update Failed",
-          description:
-            axiosError.response?.data?.message ||
-            "Could not update password. Please try again.",
+          description: axiosError.response?.data?.message || "Could not update password. Please try again.",
         });
       }
     } finally {
@@ -167,7 +180,7 @@ export default function ChangePassword() {
         }
       `}</style>
 
-      {/* Pixel grid pattern bg */}
+      {/* Pixel grid pattern bg - No changes here, but memoizing the form content helps */}
       <div
         className="absolute inset-0 z-0"
         style={{ background: "var(--brand)" }}>
@@ -178,7 +191,6 @@ export default function ChangePassword() {
             backgroundSize: "80px 80px",
           }}
         />
-        {/* Large Gradient Glow */}
         <div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full opacity-50 pointer-events-none"
           style={{
@@ -214,8 +226,8 @@ export default function ChangePassword() {
                   className="text-sm font-bold">
                   New Password
                 </Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <div className="relative group">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                   <Input
                     id="newPassword"
                     type={showPw ? "text" : "password"}
@@ -226,7 +238,8 @@ export default function ChangePassword() {
                   <button
                     type="button"
                     onClick={() => setShowPw(!showPw)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    tabIndex={-1}>
                     {showPw ? (
                       <EyeOff className="h-4 w-4" />
                     ) : (
@@ -234,6 +247,11 @@ export default function ChangePassword() {
                     )}
                   </button>
                 </div>
+                {errors.newPassword && (
+                    <p className="text-[10px] font-bold text-destructive uppercase ml-1">
+                      {errors.newPassword.message}
+                    </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -242,8 +260,8 @@ export default function ChangePassword() {
                   className="text-sm font-bold">
                   Confirm New Password
                 </Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <div className="relative group">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                   <Input
                     id="confirmPassword"
                     type={showPw ? "text" : "password"}
@@ -252,27 +270,17 @@ export default function ChangePassword() {
                     {...register("confirmPassword")}
                   />
                 </div>
+                {errors.confirmPassword && (
+                    <p className="text-[10px] font-bold text-destructive uppercase ml-1">
+                      {errors.confirmPassword.message}
+                    </p>
+                )}
               </div>
 
-              <div className="rounded-xl bg-muted/50 p-4 border border-muted-foreground/10 space-y-3">
-                <p className="font-bold uppercase tracking-widest text-muted-foreground/70">
-                  Security Requirements
-                </p>
-                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
-                  {rules.map((r) => (
-                    <li
-                      key={r.label}
-                      className={`flex items-center gap-2 text-sm font-bold transition-colors ${r.pass ? "text-emerald-600" : "text-muted-foreground"}`}>
-                      {r.pass ? (
-                        <CheckSquare className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                      ) : (
-                        <Square className="h-3.5 w-3.5 shrink-0 opacity-50" />
-                      )}
-                      {r.label}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <SecurityRequirements 
+                newPassword={newPasswordValue} 
+                confirmPassword={confirmPasswordValue} 
+              />
             </CardContent>
             <CardFooter className="flex flex-col gap-4 px-8 pb-8 mt-2">
               <AnimatePresence>

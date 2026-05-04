@@ -597,22 +597,6 @@ export function RequirementChecklist({
             {format(new Date(checklist.updatedAt), "MMMM dd, yyyy hh:mm a")}
           </p>
         )}
-
-        <div className="pt-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full text-[0.625rem] h-8 font-bold gap-2 uppercase tracking-wider"
-            asChild>
-            <Link
-              to="/settings?tab=requirements"
-              target="_blank">
-              <BookOpen className="h-3 w-3" />
-              View Requirements Guide
-              <ExternalLink className="h-2 w-2 ml-auto" />
-            </Link>
-          </Button>
-        </div>
       </CardContent>
     </Card>
   );

@@ -4,6 +4,8 @@ import {
   DEPED_TEACHER_DEPARTMENT_OPTIONS,
   DEPED_TEACHER_SUBJECT_GROUPS,
   DEPED_TEACHER_SPECIALIZATION_GROUPS,
+  DEPED_TEACHER_ACADEMIC_DESIGNATION_OPTIONS,
+  DEPED_TEACHER_ANCILLARY_ROLE_OPTIONS,
 } from "@enrollpro/shared";
 import type { Teacher, TeacherFormState } from "./types";
 
@@ -17,6 +19,10 @@ export const TEACHER_SPECIALIZATION_GROUPS =
 export const TEACHER_PLANTILLA_POSITION_OPTIONS =
   DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS;
 export const TEACHER_DEPARTMENT_OPTIONS = DEPED_TEACHER_DEPARTMENT_OPTIONS;
+export const TEACHER_ACADEMIC_DESIGNATION_OPTIONS =
+  DEPED_TEACHER_ACADEMIC_DESIGNATION_OPTIONS;
+export const TEACHER_ANCILLARY_ROLE_OPTIONS =
+  DEPED_TEACHER_ANCILLARY_ROLE_OPTIONS;
 
 export function createEmptyTeacherForm(): TeacherFormState {
   return {
@@ -83,7 +89,9 @@ export function formatDesignationSummary(teacher: Teacher): string {
 
   const tags: string[] = [];
   if (designation.isClassAdviser) tags.push("ADVISER");
-  if (designation.isTic) tags.push("TIC");
+  if (designation.ancillaryRoles && designation.ancillaryRoles.length > 0) {
+    tags.push(...designation.ancillaryRoles);
+  }
   if (designation.isTeachingExempt) tags.push("EXEMPT");
 
   return tags.length > 0 ? tags.join(" · ") : "None";

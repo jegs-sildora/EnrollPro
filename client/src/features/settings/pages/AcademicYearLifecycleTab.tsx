@@ -20,6 +20,13 @@ import {
   DialogTrigger,
 } from "@/shared/ui/dialog";
 import { Textarea } from "@/shared/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
 import {
   Lock,
@@ -42,6 +49,13 @@ interface PreLockStats {
   sectionedCount: number;
 }
 
+const UNLOCK_CATEGORIES = [
+  "Division Office Mandate / Extension",
+  "Critical Data Correction",
+  "System Rollback / Recovery",
+  "Other (Please Specify)",
+];
+
 export default function AcademicYearLifecycleTab() {
   const { activeSchoolYearLabel, systemStatus, bosyLockedAt, setSettings } =
     useSettingsStore();
@@ -49,15 +63,39 @@ export default function AcademicYearLifecycleTab() {
   const [isLockModalOpen, setIsLockModalOpen] = useState(false);
   const [isUnlockModalOpen, setIsUnlockModalOpen] = useState(false);
 
+  // --- Lock State ---
   const [lockConfirmLabel, setLockConfirmLabel] = useState("");
+  const [lockConfirmTouched, setLockConfirmTouched] = useState(false);
   const [pinDigits, setPinDigits] = useState<string[]>(Array(6).fill(""));
+  const [pinTouched, setPinTouched] = useState(false);
   const [visibleIndices, setVisibleIndices] = useState<number[]>([]);
   const lockPin = pinDigits.join("");
   const pinInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
+  const isLockConfirmValid = lockConfirmLabel === activeSchoolYearLabel;
+  const isPinValid = lockPin.length === 6;
+
   const [isLocking, setIsLocking] = useState(false);
 
+  // --- Unlock State ---
+  const [unlockCategory, setUnlockCategory] = useState("");
   const [unlockJustification, setUnlockJustification] = useState("");
+  const [unlockPinDigits, setUnlockPinDigits] = useState<string[]>(
+    Array(6).fill(""),
+  );
+  const [unlockPinTouched, setUnlockPinTouched] = useState(false);
+  const [unlockVisibleIndices, setUnlockVisibleIndices] = useState<number[]>(
+    [],
+  );
+  const unlockPin = unlockPinDigits.join("");
+  const unlockPinInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const isUnlockPinValid = unlockPin.length === 6;
+  const isUnlockFormValid =
+    unlockCategory !== "" &&
+    unlockJustification.length >= 10 &&
+    isUnlockPinValid;
+
   const [isUnlocking, setIsUnlocking] = useState(false);
 
   const [preLockStats, setPreLockStats] = useState<PreLockStats | null>(null);
@@ -84,6 +122,7 @@ export default function AcademicYearLifecycleTab() {
 
   const handleLockBosy = async () => {
     if (lockConfirmLabel !== activeSchoolYearLabel) {
+      setLockConfirmTouched(true);
       sileo.error({
         title: "Validation Failed",
         description: "School year label does not match.",
@@ -92,6 +131,7 @@ export default function AcademicYearLifecycleTab() {
     }
 
     if (!/^\d{6}$/.test(lockPin)) {
+      setPinTouched(true);
       sileo.error({
         title: "Invalid PIN",
         description: "Please enter a valid 6-digit Admin PIN.",
@@ -117,7 +157,9 @@ export default function AcademicYearLifecycleTab() {
 
       setIsLockModalOpen(false);
       setLockConfirmLabel("");
+      setLockConfirmTouched(false);
       setPinDigits(Array(6).fill(""));
+      setPinTouched(false);
       setVisibleIndices([]);
       fetchStatus();
     } catch (err: unknown) {
@@ -138,6 +180,14 @@ export default function AcademicYearLifecycleTab() {
   };
 
   const handleUnlockBosy = async () => {
+    if (unlockCategory === "") {
+      sileo.error({
+        title: "Category Required",
+        description: "Please select an authorization category.",
+      });
+      return;
+    }
+
     if (unlockJustification.length < 10) {
       sileo.error({
         title: "Justification Required",
@@ -147,10 +197,20 @@ export default function AcademicYearLifecycleTab() {
       return;
     }
 
+    if (!isUnlockPinValid) {
+      setUnlockPinTouched(true);
+      sileo.error({
+        title: "PIN Required",
+        description: "Please enter your 6-digit Admin PIN to authorize.",
+      });
+      return;
+    }
+
     setIsUnlocking(true);
     try {
       const res = await api.post("/admin/system/unlock-bosy", {
-        justification: unlockJustification,
+        justification: `[${unlockCategory}] ${unlockJustification}`,
+        pin: unlockPin,
       });
 
       sileo.success({
@@ -163,7 +223,11 @@ export default function AcademicYearLifecycleTab() {
       setSettings(pubRes.data);
 
       setIsUnlockModalOpen(false);
+      setUnlockCategory("");
       setUnlockJustification("");
+      setUnlockPinDigits(Array(6).fill(""));
+      setUnlockPinTouched(false);
+      setUnlockVisibleIndices([]);
       fetchStatus();
     } catch (err: unknown) {
       const message =
@@ -179,6 +243,37 @@ export default function AcademicYearLifecycleTab() {
       });
     } finally {
       setIsUnlocking(false);
+    }
+  };
+
+  const handleUnlockPinChange = (index: number, value: string) => {
+    const newDigits = [...unlockPinDigits];
+    const cleanValue = value.replace(/\D/g, "").slice(-1);
+
+    if (cleanValue) {
+      newDigits[index] = cleanValue;
+      setUnlockPinDigits(newDigits);
+
+      setUnlockVisibleIndices((prev) => [...prev, index]);
+      setTimeout(() => {
+        setUnlockVisibleIndices((prev) => prev.filter((i) => i !== index));
+      }, 1000);
+
+      if (index < 5) {
+        unlockPinInputRefs.current[index + 1]?.focus();
+      }
+    } else if (value === "") {
+      newDigits[index] = "";
+      setUnlockPinDigits(newDigits);
+    }
+  };
+
+  const handleUnlockPinKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (e.key === "Backspace" && !unlockPinDigits[index] && index > 0) {
+      unlockPinInputRefs.current[index - 1]?.focus();
     }
   };
 
@@ -226,12 +321,12 @@ export default function AcademicYearLifecycleTab() {
               <CardTitle className="text-xl flex items-center gap-2">
                 {isLocked ? (
                   <>
-                    <Lock className="h-5 w-5 text-emerald-600" />
+                    <Lock className="h-5 w-5 text-primary" />
                     Beginning of School Year Status: Locked
                   </>
                 ) : (
                   <>
-                    <Unlock className="h-5 w-5 text-amber-600" />
+                    <Unlock className="h-5 w-5 text-primary" />
                     Beginning of School Year Status: Open
                   </>
                 )}
@@ -247,7 +342,7 @@ export default function AcademicYearLifecycleTab() {
               className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border ${
                 isLocked
                   ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                  : "bg-amber-100 text-amber-700 border-amber-200"
+                  : "bg-amber-100 text-primary border-amber-200"
               }`}>
               {systemStatus?.replace("_", " ")}
             </div>
@@ -273,8 +368,7 @@ export default function AcademicYearLifecycleTab() {
               </AlertDescription>
             </Alert>
           ) : (
-            <Alert className="bg-amber-100/50 border-amber-200 text-amber-900">
-              <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <Alert className="bg-amber-100/50 border-amber-200 text-primary">
               <AlertTitle className="font-bold">
                 Enrollment Phase Active
               </AlertTitle>
@@ -311,14 +405,14 @@ export default function AcademicYearLifecycleTab() {
                   </span>
                   <div className="flex items-center gap-2">
                     <span
-                      className={`text-sm font-black ${preLockStats && preLockStats.unsectionedCount > 0 ? "text-red-600" : "text-slate-900"}`}>
+                      className={`text-sm font-black ${preLockStats && preLockStats.unsectionedCount > 0 ? "text-primary" : "text-slate-900"}`}>
                       {preLockStats?.unsectionedCount?.toLocaleString() ??
                         "..."}
                     </span>
                     {preLockStats && preLockStats.unsectionedCount === 0 ? (
                       <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                     ) : (
-                      <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
+                      <AlertTriangle className="h-3.5 w-3.5 text-primary" />
                     )}
                   </div>
                 </div>
@@ -329,13 +423,13 @@ export default function AcademicYearLifecycleTab() {
                   </span>
                   <div className="flex items-center gap-2">
                     <span
-                      className={`text-sm font-black ${preLockStats && preLockStats.pendingCount > 0 ? "text-red-600" : "text-slate-900"}`}>
+                      className={`text-sm font-black ${preLockStats && preLockStats.pendingCount > 0 ? "text-primary" : "text-slate-900"}`}>
                       {preLockStats?.pendingCount?.toLocaleString() ?? "..."}
                     </span>
                     {preLockStats && preLockStats.pendingCount === 0 ? (
                       <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                     ) : (
-                      <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
+                      <AlertTriangle className="h-3.5 w-3.5 text-primary" />
                     )}
                   </div>
                 </div>
@@ -369,22 +463,26 @@ export default function AcademicYearLifecycleTab() {
             <>
               <Dialog
                 open={isLockModalOpen}
-                onOpenChange={setIsLockModalOpen}>
+                onOpenChange={(open) => {
+                  setIsLockModalOpen(open);
+                  if (!open) {
+                    setLockConfirmLabel("");
+                    setLockConfirmTouched(false);
+                    setPinDigits(Array(6).fill(""));
+                    setPinTouched(false);
+                    setVisibleIndices([]);
+                  }
+                }}>
                 <DialogTrigger asChild>
                   <Button
-                    disabled={isLockBlocked}
-                    className={`font-black uppercase tracking-widest transition-all px-8 h-12 ${
-                      isLockBlocked
-                        ? "bg-slate-200 text-slate-500 cursor-not-allowed border-none shadow-none"
-                        : "bg-red-700 text-white hover:bg-red-800 shadow-lg border-b-4 border-red-900 active:border-b-0 active:translate-y-1"
-                    }`}>
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-b-4 border-primary/20 active:border-b-0 active:translate-y-1 font-black uppercase tracking-widest transition-all px-8 h-12">
                     <Lock className="mr-2 h-5 w-5" />
                     Initiate BOSY Lockdown
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[500px]">
                   <DialogHeader>
-                    <DialogTitle className="text-2xl font-black uppercase text-red-700 flex items-center gap-2">
+                    <DialogTitle className="text-2xl font-black uppercase text-primary flex items-center gap-2">
                       <ShieldAlert className="h-6 w-6" />
                       <Lock className="h-6 w-6" />
                       Authorize BOSY Lockdown
@@ -396,11 +494,11 @@ export default function AcademicYearLifecycleTab() {
                   </DialogHeader>
 
                   <div className="space-y-6 py-4">
-                    <div className="bg-red-50 border border-red-200 p-4 rounded-lg space-y-2">
-                      <p className="text-sm font-bold text-red-700 underline uppercase ">
+                    <div className="bg-primary/5 border border-primary/20 p-4 rounded-lg space-y-2">
+                      <p className="text-sm font-bold text-primary underline uppercase ">
                         Critical Impacts:
                       </p>
-                      <ul className="text-xs font-medium space-y-1 list-disc pl-4 text-red-800/80">
+                      <ul className="text-xs font-medium space-y-1 list-disc pl-4 text-primary/80">
                         <li>
                           Mass batch sectioning will be disabled immediately.
                         </li>
@@ -419,61 +517,109 @@ export default function AcademicYearLifecycleTab() {
                       </ul>
                     </div>
 
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label
-                          htmlFor="confirm-sy"
-                          className="text-xs font-black uppercase">
-                          Type the School Year to confirm:
-                        </Label>
-                        <div className="relative">
-                          <Input
-                            id="confirm-sy"
-                            placeholder={activeSchoolYearLabel || "2026-2027"}
-                            value={lockConfirmLabel}
-                            onChange={(e) =>
-                              setLockConfirmLabel(e.target.value)
-                            }
-                            className="font-bold uppercase pr-10"
-                          />
-                          {lockConfirmLabel === activeSchoolYearLabel &&
-                            lockConfirmLabel !== "" && (
-                              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600">
-                                <CheckCircle2 className="h-5 w-5" />
-                              </div>
-                            )}
+                    {isLockBlocked ? (
+                      <div className="bg-primary/5 border border-primary/20 p-4 rounded-lg flex items-start gap-3">
+                        <AlertTriangle className="h-6 w-6 text-primary shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-black text-primary uppercase">
+                            Lockdown Blocked
+                          </p>
+                          <p className="text-xs font-bold text-primary mt-1 leading-relaxed">
+                            You have {totalIncomplete} Unsectioned or Pending
+                            Learners. All active learners must be assigned to a
+                            section before SF1 generation can begin.
+                          </p>
                         </div>
                       </div>
+                    ) : (
+                      <>
+                        <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 flex items-center gap-2">
+                          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                          <p className="text-xs font-bold text-emerald-800 uppercase">
+                            PRE-FLIGHT CHECK PASSED: 0 Pending Learners, 0
+                            Unsectioned.
+                          </p>
+                        </div>
 
-                      <div className="space-y-3">
-                        <Label className="text-xs font-black uppercase">
-                          Enter 6-Digit Admin PIN:
-                        </Label>
-                        <div className="flex justify-between gap-2">
-                          {pinDigits.map((digit, idx) => (
-                            <Input
-                              key={idx}
-                              ref={(el) => {
-                                pinInputRefs.current[idx] = el;
-                              }}
-                              type={
-                                visibleIndices.includes(idx)
-                                  ? "text"
-                                  : "password"
-                              }
-                              inputMode="numeric"
-                              maxLength={1}
-                              value={digit}
-                              onChange={(e) =>
-                                handlePinChange(idx, e.target.value)
-                              }
-                              onKeyDown={(e) => handlePinKeyDown(idx, e)}
-                              className="w-12 h-14 text-center text-xl font-black focus-visible:ring-red-600"
-                            />
-                          ))}
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label
+                              htmlFor="confirm-sy"
+                              className="text-xs font-black uppercase">
+                              Type "{activeSchoolYearLabel}" below to confirm:
+                            </Label>
+                            <div className="relative">
+                              <Input
+                                id="confirm-sy"
+                                placeholder=""
+                                value={lockConfirmLabel}
+                                onChange={(e) =>
+                                  setLockConfirmLabel(e.target.value)
+                                }
+                                onBlur={() => setLockConfirmTouched(true)}
+                                className={cn(
+                                  "font-bold uppercase pr-10",
+                                  lockConfirmTouched &&
+                                    !isLockConfirmValid &&
+                                    "border-primary focus-visible:ring-primary",
+                                )}
+                              />
+                              {lockConfirmLabel === activeSchoolYearLabel &&
+                                lockConfirmLabel !== "" && (
+                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600">
+                                    <CheckCircle2 className="h-5 w-5" />
+                                  </div>
+                                )}
+                            </div>
+                            {lockConfirmTouched && !isLockConfirmValid && (
+                              <p className="text-[10px] text-primary font-bold uppercase animate-in fade-in slide-in-from-top-1 duration-200">
+                                School Year label does not match
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="space-y-3">
+                            <Label className="text-xs font-black uppercase">
+                              Enter 6-Digit Admin PIN:
+                            </Label>
+                            <div className="flex justify-between gap-2">
+                              {pinDigits.map((digit, idx) => (
+                                <Input
+                                  key={idx}
+                                  ref={(el) => {
+                                    pinInputRefs.current[idx] = el;
+                                  }}
+                                  type={
+                                    visibleIndices.includes(idx)
+                                      ? "text"
+                                      : "password"
+                                  }
+                                  inputMode="numeric"
+                                  maxLength={1}
+                                  value={digit}
+                                  onChange={(e) =>
+                                    handlePinChange(idx, e.target.value)
+                                  }
+                                  onKeyDown={(e) => handlePinKeyDown(idx, e)}
+                                  onBlur={() => setPinTouched(true)}
+                                  className={cn(
+                                    "w-12 h-14 text-center text-xl font-black focus-visible:ring-primary",
+                                    pinTouched &&
+                                      !isPinValid &&
+                                      "border-primary focus-visible:ring-primary",
+                                  )}
+                                />
+                              ))}
+                            </div>
+                            {pinTouched && !isPinValid && (
+                              <p className="text-[10px] text-primary font-bold uppercase animate-in fade-in slide-in-from-top-1 duration-200">
+                                Valid 6-digit administrative PIN required
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      </>
+                    )}
                   </div>
 
                   <DialogFooter>
@@ -483,95 +629,181 @@ export default function AcademicYearLifecycleTab() {
                       disabled={isLocking}>
                       Cancel
                     </Button>
-                    <Button
-                      className={cn(
-                        "font-black uppercase tracking-widest transition-colors px-6",
-                        isLocking ||
+                    {!isLockBlocked && (
+                      <Button
+                        className={cn(
+                          "font-black uppercase tracking-widest transition-all px-6",
+                          isLocking ||
+                            lockConfirmLabel !== activeSchoolYearLabel ||
+                            lockPin.length !== 6
+                            ? "bg-slate-200 text-slate-500 cursor-not-allowed"
+                            : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-b-4 border-primary/20 active:border-b-0 active:translate-y-1",
+                        )}
+                        onClick={handleLockBosy}
+                        disabled={
+                          isLocking ||
                           lockConfirmLabel !== activeSchoolYearLabel ||
                           lockPin.length !== 6
-                          ? "bg-slate-300 text-slate-500 hover:bg-slate-300 cursor-not-allowed"
-                          : "bg-red-600 text-white hover:bg-red-700 shadow-md",
-                      )}
-                      onClick={handleLockBosy}
-                      disabled={
-                        isLocking ||
-                        lockConfirmLabel !== activeSchoolYearLabel ||
-                        lockPin.length !== 6
-                      }>
-                      {isLocking
-                        ? "Locking System..."
-                        : "Confirm & Execute Lockdown"}
-                    </Button>
+                        }>
+                        {isLocking
+                          ? "Locking System..."
+                          : "Confirm & Execute Lockdown"}
+                      </Button>
+                    )}
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-
-              {isLockBlocked && (
-                <div className="flex items-center gap-2 text-red-600 bg-red-50 px-4 py-2 rounded-lg border border-red-100 animate-in fade-in slide-in-from-left-2 duration-300">
-                  <AlertTriangle className="h-4 w-4" />
-                  <p className="text-xs font-black uppercase ">
-                    Action Disabled: Resolve all {totalIncomplete} pending and
-                    unsectioned learners before locking.
-                  </p>
-                </div>
-              )}
             </>
           ) : (
             <Dialog
               open={isUnlockModalOpen}
-              onOpenChange={setIsUnlockModalOpen}>
+              onOpenChange={(open) => {
+                setIsUnlockModalOpen(open);
+                if (!open) {
+                  setUnlockCategory("");
+                  setUnlockJustification("");
+                  setUnlockPinDigits(Array(6).fill(""));
+                  setUnlockPinTouched(false);
+                  setUnlockVisibleIndices([]);
+                }
+              }}>
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
-                  className="font-black uppercase tracking-widest border-emerald-200 text-emerald-700 hover:bg-emerald-50">
+                  className="font-black uppercase tracking-widest border-primary/20 text-primary hover:bg-primary/5">
                   <Unlock className="mr-2 h-4 w-4" />
                   Emergency BOSY Unlock
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                  <DialogTitle className="text-2xl font-black uppercase text-emerald-700 flex items-center gap-2">
-                    <Unlock className="h-6 w-6" />
+                  <DialogTitle className="text-2xl font-black uppercase text-primary flex items-center gap-2">
                     Emergency Unlock Protocol
                   </DialogTitle>
                   <DialogDescription className="font-bold text-foreground pt-2">
-                    Reopening BOSY is a restricted action. This will re-enable
-                    all batch operations.
+                    Reopening BOSY is a heavily restricted action.
                   </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="unlock-reason"
-                      className="text-xs font-black uppercase text-emerald-700">
-                      Reason for Unlock (Mandatory):
-                    </Label>
-                    <Textarea
-                      id="unlock-reason"
-                      placeholder="e.g., Mandated by Division Superintendent due to registration extension..."
-                      value={unlockJustification}
-                      onChange={(e) => setUnlockJustification(e.target.value)}
-                      className="min-h-[100px] font-medium"
-                    />
-                    <p className="text-[10px] text-muted-foreground italic">
-                      This justification will be logged alongside your User ID.
+                <div className="space-y-6 py-4">
+                  <div className="bg-primary text-primary-foreground p-4 rounded-lg space-y-2 shadow-inner">
+                    <p className="text-sm font-black uppercase flex items-center gap-2">
+                      System Disruption Warning:
                     </p>
+                    <p className="text-[11px] font-bold leading-relaxed opacity-90">
+                      Unlocking the system will immediately invalidate the
+                      current SF1 rosters and pause synchronization with the
+                      Grading and Scheduling engines until the system is locked
+                      again.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-black uppercase text-primary">
+                        Authorization Category (Required)
+                      </Label>
+                      <Select
+                        value={unlockCategory}
+                        onValueChange={setUnlockCategory}>
+                        <SelectTrigger className="font-bold border-primary/20 focus:ring-primary">
+                          <SelectValue placeholder="Select a reason category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {UNLOCK_CATEGORIES.map((cat) => (
+                            <SelectItem
+                              key={cat}
+                              value={cat}
+                              className="font-bold">
+                              {cat}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="unlock-reason"
+                        className="text-xs font-black uppercase text-primary">
+                        Specific Justification (Required for Audit)
+                      </Label>
+                      <Textarea
+                        id="unlock-reason"
+                        placeholder="Provide the specific mandate or administrative reason..."
+                        value={unlockJustification}
+                        onChange={(e) => setUnlockJustification(e.target.value)}
+                        className="min-h-[80px] font-bold border-primary/20 focus-visible:ring-primary"
+                      />
+                    </div>
+
+                    <div className="space-y-3 pt-2 border-t border-primary/10">
+                      <Label className="text-xs font-black uppercase text-primary">
+                        Enter 6-Digit Admin PIN to Override:
+                      </Label>
+                      <div className="flex justify-between gap-2">
+                        {unlockPinDigits.map((digit, idx) => (
+                          <Input
+                            key={idx}
+                            ref={(el) => {
+                              unlockPinInputRefs.current[idx] = el;
+                            }}
+                            type={
+                              unlockVisibleIndices.includes(idx)
+                                ? "text"
+                                : "password"
+                            }
+                            inputMode="numeric"
+                            maxLength={1}
+                            value={digit}
+                            onChange={(e) =>
+                              handleUnlockPinChange(idx, e.target.value)
+                            }
+                            onKeyDown={(e) => handleUnlockPinKeyDown(idx, e)}
+                            onBlur={() => setUnlockPinTouched(true)}
+                            className={cn(
+                              "w-12 h-14 text-center text-xl font-black focus-visible:ring-primary border-primary/20",
+                              unlockPinTouched &&
+                                !isUnlockPinValid &&
+                                "border-primary bg-primary/5",
+                            )}
+                          />
+                        ))}
+                      </div>
+                      {unlockPinTouched && !isUnlockPinValid && (
+                        <p className="text-[10px] text-primary font-bold uppercase animate-in fade-in slide-in-from-top-1 duration-200">
+                          Valid 6-digit administrative PIN required
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                <DialogFooter>
+                <DialogFooter className="gap-2 sm:gap-0">
                   <Button
                     variant="ghost"
                     onClick={() => setIsUnlockModalOpen(false)}
-                    disabled={isUnlocking}>
+                    disabled={isUnlocking}
+                    className="font-bold">
                     Cancel
                   </Button>
                   <Button
-                    className="font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700"
+                    className={cn(
+                      "font-black uppercase tracking-widest transition-all px-6 shrink-0",
+                      !isUnlockFormValid || isUnlocking
+                        ? "bg-slate-200 text-slate-500 cursor-not-allowed"
+                        : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-b-4 border-primary/20 active:border-b-0 active:translate-y-1",
+                    )}
                     onClick={handleUnlockBosy}
-                    disabled={isUnlocking || unlockJustification.length < 10}>
-                    {isUnlocking ? "Unlocking..." : "Unlock System"}
+                    disabled={!isUnlockFormValid || isUnlocking}>
+                    {isUnlocking ? (
+                      "Processing..."
+                    ) : (
+                      <>
+                        <ShieldAlert className="mr-2 h-4 w-4" /> Force System
+                        Unlock
+                      </>
+                    )}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -580,19 +812,6 @@ export default function AcademicYearLifecycleTab() {
         </CardFooter>
       </Card>
 
-      <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 flex items-start gap-3">
-        <ShieldAlert className="h-5 w-5 text-primary mt-0.5" />
-        <div className="space-y-1">
-          <p className="text-sm font-bold text-primary">
-            Microservice Integration Status
-          </p>
-          <p className="text-xs text-slate-500 font-medium leading-relaxed">
-            When BOSY is locked, EnrollPro automatically signals A.T.L.A.S.
-            (Scheduling) and S.M.A.R.T. (Grading) to ingest the finalized
-            learner rosters. Late enrollees will be synced incrementally.
-          </p>
-        </div>
-      </div>
     </div>
   );
 }

@@ -747,59 +747,8 @@ export default function AdminUsers() {
     ],
   );
 
-  return (
-    <div className="space-y-6 min-w-0 w-full max-w-full overflow-x-hidden">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2 text-maroon-900">
-            <UserCogIcon className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
-            User Management
-          </h1>
-          <p className="text-sm font-medium text-muted-foreground">
-            Provision and manage staff accounts
-            {schoolName ? ` for ${schoolName}` : ""}
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-          <Button
-            variant="outline"
-            className="h-10 font-bold gap-2 order-2 sm:order-1"
-            onClick={() => {
-              sileo.info({
-                title: "Coming Soon",
-                description:
-                  "Bulk LIS/EBEIS export import will be available in the next update.",
-              });
-            }}>
-            <RefreshCw className="h-4 w-4" />
-            Bulk Import
-          </Button>
-          <Button
-            onClick={() => {
-              setCreateErrors({});
-              setFormData({
-                firstName: "",
-                lastName: "",
-                middleName: "",
-                suffix: "",
-                sex: "FEMALE",
-                employeeId: "",
-                designation: "",
-                mobileNumber: "",
-                email: "",
-                role: "SYSTEM_ADMIN",
-                password: generatePassword(),
-                mustChangePassword: true,
-              });
-              setCreateOpen(true);
-            }}
-            className="h-10 font-bold order-1 sm:order-2">
-            <Plus className="h-4 w-4 mr-2" />
-            Add User
-          </Button>
-        </div>
-      </div>
-
+  const metricsElement = useMemo(
+    () => (
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
         <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
           <CardHeader className="pb-2">
@@ -832,7 +781,12 @@ export default function AdminUsers() {
           </CardHeader>
         </Card>
       </div>
+    ),
+    [metrics],
+  );
 
+  const filterElement = useMemo(
+    () => (
       <Card className="w-full min-w-0 overflow-hidden border-none shadow-sm bg-[hsl(var(--card))]">
         <CardHeader className="px-3 sm:px-6 pb-3">
           <div className="flex flex-col md:flex-row gap-3 md:gap-4 items-stretch md:items-end">
@@ -940,7 +894,12 @@ export default function AdminUsers() {
           </div>
         </CardHeader>
       </Card>
+    ),
+    [search, roleFilter, statusFilter, loading, fetchUsers],
+  );
 
+  const tableElement = useMemo(
+    () => (
       <Card className="w-full min-w-0 overflow-hidden border-none shadow-sm bg-[hsl(var(--card))]">
         <CardHeader className="px-3 sm:px-6 pb-2">
           <CardTitle className="text-base sm:text-lg font-extrabold">
@@ -1129,6 +1088,78 @@ export default function AdminUsers() {
           )}
         </CardContent>
       </Card>
+    ),
+    [
+      users,
+      columns,
+      loading,
+      total,
+      page,
+      totalPages,
+      showSkeleton,
+      currentUser,
+      handleSort,
+      getSortIcon,
+      openProfileEditor,
+    ],
+  );
+
+  return (
+    <div className="space-y-6 min-w-0 w-full max-w-full overflow-x-hidden">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2 text-maroon-900">
+            <UserCogIcon className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
+            User Management
+          </h1>
+          <p className="text-sm font-medium text-muted-foreground">
+            Provision and manage staff accounts
+            {schoolName ? ` for ${schoolName}` : ""}
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          <Button
+            variant="outline"
+            className="h-10 font-bold gap-2 order-2 sm:order-1"
+            onClick={() => {
+              sileo.info({
+                title: "Coming Soon",
+                description:
+                  "Bulk LIS/EBEIS export import will be available in the next update.",
+              });
+            }}>
+            <RefreshCw className="h-4 w-4" />
+            Bulk Import
+          </Button>
+          <Button
+            onClick={() => {
+              setCreateErrors({});
+              setFormData({
+                firstName: "",
+                lastName: "",
+                middleName: "",
+                suffix: "",
+                sex: "FEMALE",
+                employeeId: "",
+                designation: "",
+                mobileNumber: "",
+                email: "",
+                role: "SYSTEM_ADMIN",
+                password: generatePassword(),
+                mustChangePassword: true,
+              });
+              setCreateOpen(true);
+            }}
+            className="h-10 font-bold order-1 sm:order-2">
+            <Plus className="h-4 w-4 mr-2" />
+            Add User
+          </Button>
+        </div>
+      </div>
+
+      {metricsElement}
+      {filterElement}
+      {tableElement}
 
       {/* Add User Account Drawer */}
       <Sheet

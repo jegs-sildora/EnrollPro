@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
-import { AlertTriangle, RefreshCcw, Search, ShieldAlert, User } from "lucide-react";
+import { AlertTriangle, Check, Loader2, RefreshCcw, Search, ShieldAlert, User } from "lucide-react";
 import { format } from "date-fns";
+import { cn } from "@/shared/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -109,10 +110,15 @@ export function SectionHandoverModal({
       setSubstituteTeacherId("");
       setHandoverReason("");
       setCustomReason("");
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response: { data?: { message?: string } } }).response.data
+              ?.message
+          : "An unexpected error occurred during the handover process.";
       sileo.error({
         title: "Handover Failed",
-        description: err.response?.data?.message || "An unexpected error occurred during the handover process.",
+        description: message,
       });
     } finally {
       setSubmitting(false);

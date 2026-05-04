@@ -11,7 +11,7 @@ export interface TeacherDesignation {
     gradeLevelName: string | null;
   } | null;
   advisoryEquivalentHoursPerWeek: number;
-  isTic: boolean;
+  ancillaryRoles: string[];
   isTeachingExempt: boolean;
   customTargetTeachingHoursPerWeek: number | null;
   computedMaxWeeklyHours: number;
@@ -99,7 +99,7 @@ export interface DesignationFormState {
   isClassAdviser: boolean;
   advisorySectionId: string;
   advisoryEquivalentHoursPerWeek: string;
-  isTic: boolean;
+  ancillaryRoles: string[];
   isTeachingExempt: boolean;
   customTargetTeachingHoursPerWeek: string;
   designationNotes: string;

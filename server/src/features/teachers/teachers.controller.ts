@@ -2,10 +2,10 @@ import type { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { saveBase64Image } from "../../lib/fileUploader.js";
-import { SectionAdviserStatus } from "../../generated/prisma/index.js";
+import { SectionAdviserStatus, type Prisma } from "../../generated/prisma/index.js";
 import { DEPED_TEACHER_SUBJECT_VALUES } from "@enrollpro/shared";
 
-// Helper functions that were missing
+// Helper functions for data normalization
 function formatTeacherName(teacher: {
   firstName: string;
   lastName: string;
@@ -17,35 +17,35 @@ function formatTeacherName(teacher: {
   return `${teacher.lastName}, ${teacher.firstName}${middleInitial}`;
 }
 
-function normalizeOptionalUpperText(val: any): string | null {
-  if (val === undefined || val === null || val === "") return null;
+function normalizeOptionalUpperText(val: unknown): string | null {
+  if (val === undefined || val === null || val === "" || val === "__NONE__") return null;
   return String(val).trim().toUpperCase();
 }
 
-function normalizeOptionalText(val: any): string | null {
-  if (val === undefined || val === null || val === "") return null;
+function normalizeOptionalText(val: unknown): string | null {
+  if (val === undefined || val === null || val === "" || val === "__NONE__") return null;
   return String(val).trim();
 }
 
-function normalizeRequiredUpperText(val: any): string {
+function normalizeRequiredUpperText(val: unknown): string {
   if (val === undefined || val === null || val === "") return "";
   return String(val).trim().toUpperCase();
 }
 
-function normalizeContactNumber(val: any): string | null {
+function normalizeContactNumber(val: unknown): string | null {
   if (!val) return null;
   return String(val).replace(/\D/g, "").slice(0, 11);
 }
 
-function isValidContactNumber(val: any): boolean {
+function isValidContactNumber(val: unknown): boolean {
   if (!val) return true;
   const normalized = String(val).replace(/\D/g, "");
   return normalized.length === 11 || normalized.length === 0;
 }
 
-function parseDateOnly(val: any): Date | null {
+function parseDateOnly(val: unknown): Date | null {
   if (!val) return null;
-  const d = new Date(val);
+  const d = new Date(val as string);
   return isNaN(d.getTime()) ? null : d;
 }
 
@@ -91,6 +91,7 @@ export async function index(req: Request, res: Response) {
     const teachers = await prisma.teacher.findMany({
       include: {
         subjects: true,
+        department: true,
         teacherDesignations: schoolYearId
           ? {
               where: { schoolYearId },
@@ -108,7 +109,7 @@ export async function index(req: Request, res: Response) {
     });
 
     const formatted = teachers.map((teacher) => {
-      const designation = (teacher.teacherDesignations as any)?.[0] ?? null;
+      const designation = teacher.teacherDesignations?.[0] ?? null;
       return {
         id: teacher.id,
         employeeId: teacher.employeeId,
@@ -119,10 +120,10 @@ export async function index(req: Request, res: Response) {
         contactNumber: teacher.contactNumber,
         designationTitle: teacher.designation,
         specialization: teacher.specialization,
-        department: teacher.department,
+        department: teacher.department?.code || null,
         plantillaPosition: teacher.plantillaPosition,
         photoPath: teacher.photoPath,
-        subjects: teacher.subjects.map((s: any) => s.subject),
+        subjects: teacher.subjects.map((s) => s.subject),
         isActive: teacher.isActive,
         createdAt: teacher.createdAt,
         designation: designation
@@ -140,7 +141,7 @@ export async function index(req: Request, res: Response) {
                 : null,
               advisoryEquivalentHoursPerWeek:
                 designation.advisoryEquivalentHoursPerWeek,
-              isTic: designation.isTic,
+              ancillaryRoles: designation.ancillaryRoles,
               isTeachingExempt: designation.isTeachingExempt,
               customTargetTeachingHoursPerWeek:
                 designation.customTargetTeachingHoursPerWeek,
@@ -166,8 +167,9 @@ export async function index(req: Request, res: Response) {
     }
 
     res.json({ teachers: formatted, scope: scopeData });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: err.message });
   }
 }
 
@@ -208,6 +210,8 @@ export async function store(req: Request, res: Response) {
     const normalizedEmployeeId =
       normalizeOptionalUpperText(employeeId) || (await getNextAutoEmployeeId());
 
+    const deptCode = normalizeOptionalUpperText(department);
+
     let stagedPhotoPath: string | null = null;
     if (typeof photo === "string" && photo.trim().length > 0) {
       stagedPhotoPath = await saveBase64Image(photo, "teacher-photo");
@@ -223,7 +227,9 @@ export async function store(req: Request, res: Response) {
         contactNumber: normalizedContactNumber,
         designation: normalizeOptionalUpperText(designation),
         specialization: normalizeOptionalUpperText(specialization),
-        department: normalizeOptionalUpperText(department),
+        department: deptCode
+          ? { connect: { code: deptCode } }
+          : undefined,
         plantillaPosition: normalizeOptionalUpperText(plantillaPosition),
         photoPath: stagedPhotoPath,
         subjects: normalizedSubjects.length
@@ -247,8 +253,13 @@ export async function store(req: Request, res: Response) {
     });
 
     res.json({ teacher });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error: unknown) {
+    const err = error as any;
+    // Check for unique constraint violation on employee_id
+    if (err.code === "P2002") {
+        return res.status(409).json({ message: "Employee ID already exists" });
+    }
+    res.status(500).json({ message: err.message });
   }
 }
 
@@ -262,7 +273,7 @@ export async function show(req: Request, res: Response) {
   try {
     const teacher = await prisma.teacher.findUnique({
       where: { id },
-      include: { subjects: true },
+      include: { subjects: true, department: true },
     });
 
     if (!teacher) {
@@ -273,11 +284,13 @@ export async function show(req: Request, res: Response) {
       teacher: {
         ...teacher,
         designationTitle: teacher.designation,
-        subjects: teacher.subjects.map((s: any) => s.subject),
+        subjects: teacher.subjects.map((s) => s.subject),
+        department: teacher.department?.code || null,
       },
     });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: err.message });
   }
 }
 
@@ -334,6 +347,8 @@ export async function update(req: Request, res: Response) {
       }
     }
 
+    const deptCode = normalizeOptionalUpperText(department);
+
     const updatedTeacher = await prisma.$transaction(async (tx) => {
       if (normalizedSubjects !== undefined) {
         await tx.teacherSubject.deleteMany({ where: { teacherId: id } });
@@ -375,7 +390,11 @@ export async function update(req: Request, res: Response) {
             ? { specialization: normalizeOptionalUpperText(specialization) }
             : {}),
           ...(department !== undefined
-            ? { department: normalizeOptionalUpperText(department) }
+            ? {
+                department: deptCode
+                  ? { connect: { code: deptCode } }
+                  : { disconnect: true },
+              }
             : {}),
           ...(plantillaPosition !== undefined
             ? {
@@ -403,11 +422,15 @@ export async function update(req: Request, res: Response) {
     res.json({
       teacher: {
         ...updatedTeacher,
-        subjects: updatedTeacher.subjects.map((s: any) => s.subject),
+        subjects: updatedTeacher.subjects.map((s) => s.subject),
       },
     });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error: unknown) {
+    const err = error as any;
+    if (err.code === "P2002") {
+        return res.status(409).json({ message: "Employee ID already exists" });
+    }
+    res.status(500).json({ message: err.message });
   }
 }
 
@@ -462,8 +485,9 @@ export async function deactivate(req: Request, res: Response) {
     });
 
     res.json({ teacher });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: err.message });
   }
 }
 
@@ -486,8 +510,9 @@ export async function reactivate(req: Request, res: Response) {
     });
 
     res.json({ teacher });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: err.message });
   }
 }
 
@@ -566,8 +591,9 @@ export async function showDesignation(req: Request, res: Response) {
           }
         : null,
     });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: err.message });
   }
 }
 
@@ -607,8 +633,9 @@ export async function validateDesignation(req: Request, res: Response) {
     }
 
     res.json({ hasCollision: false });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: err.message });
   }
 }
 
@@ -691,7 +718,7 @@ export async function upsertDesignation(req: Request, res: Response) {
           advisorySectionId,
           advisoryEquivalentHoursPerWeek:
             payload.advisoryEquivalentHoursPerWeek || 0,
-          isTic: payload.isTic,
+          ancillaryRoles: payload.ancillaryRoles || [],
           isTeachingExempt: payload.isTeachingExempt,
           customTargetTeachingHoursPerWeek:
             payload.customTargetTeachingHoursPerWeek ?? null,
@@ -708,7 +735,7 @@ export async function upsertDesignation(req: Request, res: Response) {
           advisorySectionId,
           advisoryEquivalentHoursPerWeek:
             payload.advisoryEquivalentHoursPerWeek || 0,
-          isTic: payload.isTic,
+          ancillaryRoles: payload.ancillaryRoles || [],
           isTeachingExempt: payload.isTeachingExempt,
           customTargetTeachingHoursPerWeek:
             payload.customTargetTeachingHoursPerWeek ?? null,
@@ -783,7 +810,8 @@ export async function upsertDesignation(req: Request, res: Response) {
           : null,
       },
     });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: err.message });
   }
 }

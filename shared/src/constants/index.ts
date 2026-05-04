@@ -241,27 +241,25 @@ export const GradeLevelEnum = z.enum(["7", "8", "9", "10"]);
 
 // ─── DepEd Teacher Catalog ─────────────────────────────
 export const DEPED_TEACHER_DEPARTMENT_VALUES = [
-  "LANGUAGES",
-  "MATHEMATICS",
-  "SCIENCE",
-  "SOCIAL STUDIES",
+  "MATH",
+  "SCI",
+  "ENG",
+  "FIL",
+  "AP",
+  "ESP",
   "MAPEH",
-  "VALUES EDUCATION",
   "TLE",
-  "GUIDANCE",
-  "ADMINISTRATION",
 ] as const;
 
 export const DEPED_TEACHER_DEPARTMENT_OPTIONS = [
-  { value: "LANGUAGES", label: "Languages" },
-  { value: "MATHEMATICS", label: "Mathematics" },
-  { value: "SCIENCE", label: "Science" },
-  { value: "SOCIAL STUDIES", label: "Social Studies / AP" },
+  { value: "MATH", label: "Mathematics" },
+  { value: "SCI", label: "Science" },
+  { value: "ENG", label: "English" },
+  { value: "FIL", label: "Filipino" },
+  { value: "AP", label: "Araling Panlipunan" },
+  { value: "ESP", label: "Edukasyon sa Pagpapakatao" },
   { value: "MAPEH", label: "MAPEH" },
-  { value: "VALUES EDUCATION", label: "Values Education / EsP" },
-  { value: "TLE", label: "TLE / TVL" },
-  { value: "GUIDANCE", label: "Guidance" },
-  { value: "ADMINISTRATION", label: "Administration" },
+  { value: "TLE", label: "Technology and Livelihood Education" },
 ] as const;
 
 export const DEPED_TEACHER_SUBJECT_VALUES = [
@@ -530,6 +528,29 @@ export const DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS = [
   { value: "SCHOOL PRINCIPAL II", label: "School Principal II" },
   { value: "SCHOOL PRINCIPAL III", label: "School Principal III" },
   { value: "SCHOOL PRINCIPAL IV", label: "School Principal IV" },
+] as const;
+
+export const DEPED_TEACHER_ACADEMIC_DESIGNATION_OPTIONS = [
+  { value: "SUBJECT TEACHER", label: "Subject Teacher" },
+  { value: "CLASS ADVISER", label: "Class Adviser" },
+  { value: "GRADE LEVEL COORDINATOR", label: "Grade Level Coordinator" },
+  { value: "DEPARTMENT HEAD", label: "Department Head" },
+] as const;
+
+export const DEPED_TEACHER_ANCILLARY_ROLE_OPTIONS = [
+  { value: "TEACHER-IN-CHARGE (TIC) / OFFICER-IN-CHARGE (OIC)", label: "Teacher-in-Charge (TIC) / Officer-in-Charge (OIC)" },
+  { value: "LIS COORDINATOR", label: "LIS Coordinator" },
+  { value: "ICT COORDINATOR", label: "ICT Coordinator" },
+  { value: "SDRRM COORDINATOR", label: "SDRRM Coordinator" },
+  { value: "GUIDANCE DESIGNATE", label: "Guidance Designate" },
+  { value: "SCHOOL PAPER ADVISER (SPA)", label: "School Paper Adviser (SPA)" },
+  { value: "PROPERTY CUSTODIAN", label: "Property Custodian" },
+  { value: "CLINIC TEACHER / HEALTH COORDINATOR", label: "Clinic Teacher / Health Coordinator" },
+  { value: "SPORTS COORDINATOR", label: "Sports Coordinator" },
+  { value: "BSP / GSP COORDINATOR", label: "BSP / GSP Coordinator" },
+  { value: "GULAYAN SA PAARALAN (GPP) COORDINATOR", label: "Gulayan sa Paaralan (GPP) Coordinator" },
+  { value: "FEEDING COORDINATOR", label: "Feeding Coordinator" },
+  { value: "SUPREME SECONDARY LEARNER GOVERNMENT (SSLG) ADVISER", label: "Supreme Secondary Learner Government (SSLG) Adviser" },
 ] as const;
 
 // ─── DO 017 s.2025 Early Registration Enums ─────────────

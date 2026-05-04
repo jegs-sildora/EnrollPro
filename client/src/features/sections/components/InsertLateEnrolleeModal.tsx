@@ -163,13 +163,13 @@ export function InsertLateEnrolleeModal({
                 </p>
               </div>
             </div>
-            {activeSchoolYear?.classOpeningDate && (
+            {classOpeningDate && (
               <Badge
                 variant="outline"
                 className="bg-white font-bold text-[10px] uppercase border-border px-2">
                 Classes Started:{" "}
                 {format(
-                  new Date(activeSchoolYear.classOpeningDate),
+                  new Date(classOpeningDate),
                   "MMM d, yyyy",
                 )}
               </Badge>
