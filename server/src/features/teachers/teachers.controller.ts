@@ -1,9 +1,7 @@
 import type { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
-import { saveBase64Image } from "../../lib/fileUploader.js";
-import { SectionAdviserStatus, type Prisma } from "../../generated/prisma/index.js";
-import { DEPED_TEACHER_SUBJECT_VALUES } from "@enrollpro/shared";
+import { SectionAdviserStatus } from "../../generated/prisma/index.js";
 
 // Helper functions for data normalization
 function formatTeacherName(teacher: {
@@ -18,18 +16,25 @@ function formatTeacherName(teacher: {
 }
 
 function normalizeOptionalUpperText(val: unknown): string | null {
-  if (val === undefined || val === null || val === "" || val === "__NONE__") return null;
+  if (val === undefined || val === null || val === "" || val === "__NONE__")
+    return null;
   return String(val).trim().toUpperCase();
 }
 
 function normalizeOptionalText(val: unknown): string | null {
-  if (val === undefined || val === null || val === "" || val === "__NONE__") return null;
+  if (val === undefined || val === null || val === "" || val === "__NONE__")
+    return null;
   return String(val).trim();
 }
 
 function normalizeRequiredUpperText(val: unknown): string {
   if (val === undefined || val === null || val === "") return "";
   return String(val).trim().toUpperCase();
+}
+
+function normalizeRequiredLowerEmail(val: unknown): string {
+  if (val === undefined || val === null || val === "") return "";
+  return String(val).trim().toLowerCase();
 }
 
 function normalizeContactNumber(val: unknown): string | null {
@@ -49,37 +54,51 @@ function parseDateOnly(val: unknown): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
-const ALLOWED_TEACHER_SUBJECTS = new Set<string>(DEPED_TEACHER_SUBJECT_VALUES);
+type TeacherIdentityConflictField = "employeeId" | "email";
 
-function normalizeTeacherSubjectsList(subjects: unknown): string[] {
-  if (!Array.isArray(subjects)) {
-    return [];
+function getTeacherIdentityConflictField(
+  error: unknown,
+): TeacherIdentityConflictField | null {
+  if (!error || typeof error !== "object") {
+    return null;
   }
-  return Array.from(
-    new Set(
-      subjects
-        .map((s) => String(s).trim().toUpperCase())
-        .filter(
-          (subject: string) =>
-            subject.length > 0 && ALLOWED_TEACHER_SUBJECTS.has(subject),
-        ),
-    ),
-  );
-}
 
-async function getNextAutoEmployeeId(): Promise<string> {
-  const teachers = await prisma.teacher.findMany({
-    where: { employeeId: { startsWith: "T-" } },
-    select: { employeeId: true },
-  });
+  const prismaLikeError = error as {
+    code?: unknown;
+    meta?: {
+      target?: unknown;
+    };
+  };
 
-  const ids = teachers
-    .map((t) => t.employeeId?.replace("T-", ""))
-    .map((id) => parseInt(id || "0"))
-    .filter((id) => !isNaN(id));
+  if (prismaLikeError.code !== "P2002") {
+    return null;
+  }
 
-  const nextId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
-  return `T-${String(nextId).padStart(4, "0")}`;
+  const rawTarget = prismaLikeError.meta?.target;
+  const targetTokens: string[] = Array.isArray(rawTarget)
+    ? rawTarget.filter((value): value is string => typeof value === "string")
+    : typeof rawTarget === "string"
+      ? [rawTarget]
+      : [];
+
+  if (
+    targetTokens.some(
+      (token) =>
+        token.includes("employee_id") || token.includes("uq_teachers_employee"),
+    )
+  ) {
+    return "employeeId";
+  }
+
+  if (
+    targetTokens.some(
+      (token) => token.includes("email") || token.includes("uq_teachers_email"),
+    )
+  ) {
+    return "email";
+  }
+
+  return null;
 }
 
 export async function index(req: Request, res: Response) {
@@ -92,18 +111,16 @@ export async function index(req: Request, res: Response) {
       include: {
         subjects: true,
         department: true,
-        teacherDesignations: schoolYearId
-          ? {
-              where: { schoolYearId },
+        teacherDesignations: {
+          where: schoolYearId ? { schoolYearId } : { id: -1 },
+          include: {
+            advisorySection: {
               include: {
-                advisorySection: {
-                  include: {
-                    gradeLevel: true,
-                  },
-                },
+                gradeLevel: true,
               },
-            }
-          : false,
+            },
+          },
+        },
       },
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     });
@@ -182,22 +199,27 @@ export async function store(req: Request, res: Response) {
       email,
       employeeId,
       contactNumber,
-      designation,
       specialization,
       department,
       plantillaPosition,
-      subjects,
-      photo,
     } = req.body;
 
     const normalizedFirstName = normalizeRequiredUpperText(firstName);
     const normalizedLastName = normalizeRequiredUpperText(lastName);
+    const normalizedEmployeeId = normalizeRequiredUpperText(employeeId);
+    const normalizedEmail = normalizeRequiredLowerEmail(email);
     const normalizedContactNumber = normalizeContactNumber(contactNumber);
 
-    if (!normalizedFirstName || !normalizedLastName) {
-      return res
-        .status(400)
-        .json({ message: "First name and last name are required" });
+    if (
+      !normalizedFirstName ||
+      !normalizedLastName ||
+      !normalizedEmployeeId ||
+      !normalizedEmail
+    ) {
+      return res.status(400).json({
+        message:
+          "First name, last name, employee ID, and DepEd email are required",
+      });
     }
 
     if (!isValidContactNumber(normalizedContactNumber)) {
@@ -206,41 +228,20 @@ export async function store(req: Request, res: Response) {
         .json({ message: "Contact number must be exactly 11 digits" });
     }
 
-    const normalizedSubjects = normalizeTeacherSubjectsList(subjects);
-    const normalizedEmployeeId =
-      normalizeOptionalUpperText(employeeId) || (await getNextAutoEmployeeId());
-
     const deptCode = normalizeOptionalUpperText(department);
-
-    let stagedPhotoPath: string | null = null;
-    if (typeof photo === "string" && photo.trim().length > 0) {
-      stagedPhotoPath = await saveBase64Image(photo, "teacher-photo");
-    }
 
     const teacher = await prisma.teacher.create({
       data: {
         firstName: normalizedFirstName,
         lastName: normalizedLastName,
         middleName: normalizeOptionalUpperText(middleName),
-        email: normalizeOptionalText(email),
+        email: normalizedEmail,
         employeeId: normalizedEmployeeId,
         contactNumber: normalizedContactNumber,
-        designation: normalizeOptionalUpperText(designation),
         specialization: normalizeOptionalUpperText(specialization),
-        department: deptCode
-          ? { connect: { code: deptCode } }
-          : undefined,
+        department: deptCode ? { connect: { code: deptCode } } : undefined,
         plantillaPosition: normalizeOptionalUpperText(plantillaPosition),
-        photoPath: stagedPhotoPath,
-        subjects: normalizedSubjects.length
-          ? {
-              createMany: {
-                data: normalizedSubjects.map((subject) => ({ subject })),
-              },
-            }
-          : undefined,
       },
-      include: { subjects: true },
     });
 
     await auditLog({
@@ -254,11 +255,18 @@ export async function store(req: Request, res: Response) {
 
     res.json({ teacher });
   } catch (error: unknown) {
-    const err = error as any;
-    // Check for unique constraint violation on employee_id
-    if (err.code === "P2002") {
-        return res.status(409).json({ message: "Employee ID already exists" });
+    const conflictField = getTeacherIdentityConflictField(error);
+    if (conflictField === "employeeId") {
+      return res.status(409).json({ message: "Employee ID already exists" });
     }
+
+    if (conflictField === "email") {
+      return res
+        .status(409)
+        .json({ message: "DepEd email address already exists" });
+    }
+
+    const err = error as Error;
     res.status(500).json({ message: err.message });
   }
 }
@@ -309,12 +317,9 @@ export async function update(req: Request, res: Response) {
       email,
       employeeId,
       contactNumber,
-      designation,
       specialization,
       department,
       plantillaPosition,
-      subjects,
-      photo,
     } = req.body;
 
     const existing = await prisma.teacher.findUnique({ where: { id } });
@@ -322,92 +327,47 @@ export async function update(req: Request, res: Response) {
       return res.status(404).json({ message: "Teacher not found" });
     }
 
-    const normalizedSubjects =
-      subjects !== undefined ? normalizeTeacherSubjectsList(subjects) : undefined;
-    const normalizedContactNumber =
-      contactNumber !== undefined
-        ? normalizeContactNumber(contactNumber)
-        : undefined;
+    const normalizedFirstName = normalizeRequiredUpperText(firstName);
+    const normalizedLastName = normalizeRequiredUpperText(lastName);
+    const normalizedEmployeeId = normalizeRequiredUpperText(employeeId);
+    const normalizedEmail = normalizeRequiredLowerEmail(email);
+    const normalizedContactNumber = normalizeContactNumber(contactNumber);
 
     if (
-      contactNumber !== undefined &&
-      !isValidContactNumber(normalizedContactNumber ?? null)
+      !normalizedFirstName ||
+      !normalizedLastName ||
+      !normalizedEmployeeId ||
+      !normalizedEmail
     ) {
+      return res.status(400).json({
+        message:
+          "First name, last name, employee ID, and DepEd email are required",
+      });
+    }
+
+    if (!isValidContactNumber(normalizedContactNumber)) {
       return res
         .status(400)
         .json({ message: "Contact number must be exactly 11 digits" });
     }
 
-    let stagedPhotoPath: string | null | undefined;
-    if (photo !== undefined) {
-      if (photo === null) {
-        stagedPhotoPath = null;
-      } else if (typeof photo === "string" && photo.trim().length > 0) {
-        stagedPhotoPath = await saveBase64Image(photo, "teacher-photo");
-      }
-    }
-
     const deptCode = normalizeOptionalUpperText(department);
 
-    const updatedTeacher = await prisma.$transaction(async (tx) => {
-      if (normalizedSubjects !== undefined) {
-        await tx.teacherSubject.deleteMany({ where: { teacherId: id } });
-        if (normalizedSubjects.length > 0) {
-          await tx.teacherSubject.createMany({
-            data: normalizedSubjects.map((subject) => ({
-              teacherId: id,
-              subject,
-            })),
-          });
-        }
-      }
-
-      return tx.teacher.update({
-        where: { id },
-        data: {
-          ...(firstName !== undefined
-            ? { firstName: normalizeRequiredUpperText(firstName) }
-            : {}),
-          ...(lastName !== undefined
-            ? { lastName: normalizeRequiredUpperText(lastName) }
-            : {}),
-          ...(middleName !== undefined
-            ? { middleName: normalizeOptionalUpperText(middleName) }
-            : {}),
-          ...(email !== undefined
-            ? { email: normalizeOptionalText(email) }
-            : {}),
-          ...(employeeId !== undefined
-            ? { employeeId: normalizeOptionalUpperText(employeeId) }
-            : {}),
-          ...(normalizedContactNumber !== undefined
-            ? { contactNumber: normalizedContactNumber }
-            : {}),
-          ...(designation !== undefined
-            ? { designation: normalizeOptionalUpperText(designation) }
-            : {}),
-          ...(specialization !== undefined
-            ? { specialization: normalizeOptionalUpperText(specialization) }
-            : {}),
-          ...(department !== undefined
-            ? {
-                department: deptCode
-                  ? { connect: { code: deptCode } }
-                  : { disconnect: true },
-              }
-            : {}),
-          ...(plantillaPosition !== undefined
-            ? {
-                plantillaPosition:
-                  normalizeOptionalUpperText(plantillaPosition),
-              }
-            : {}),
-          ...(stagedPhotoPath !== undefined
-            ? { photoPath: stagedPhotoPath }
-            : {}),
-        },
-        include: { subjects: true },
-      });
+    const updatedTeacher = await prisma.teacher.update({
+      where: { id },
+      data: {
+        firstName: normalizedFirstName,
+        lastName: normalizedLastName,
+        middleName: normalizeOptionalUpperText(middleName),
+        email: normalizedEmail,
+        employeeId: normalizedEmployeeId,
+        contactNumber: normalizedContactNumber,
+        specialization: normalizeOptionalUpperText(specialization),
+        department: deptCode
+          ? { connect: { code: deptCode } }
+          : { disconnect: true },
+        plantillaPosition: normalizeOptionalUpperText(plantillaPosition),
+      },
     });
 
     await auditLog({
@@ -422,14 +382,21 @@ export async function update(req: Request, res: Response) {
     res.json({
       teacher: {
         ...updatedTeacher,
-        subjects: updatedTeacher.subjects.map((s) => s.subject),
       },
     });
   } catch (error: unknown) {
-    const err = error as any;
-    if (err.code === "P2002") {
-        return res.status(409).json({ message: "Employee ID already exists" });
+    const conflictField = getTeacherIdentityConflictField(error);
+    if (conflictField === "employeeId") {
+      return res.status(409).json({ message: "Employee ID already exists" });
     }
+
+    if (conflictField === "email") {
+      return res
+        .status(409)
+        .json({ message: "DepEd email address already exists" });
+    }
+
+    const err = error as Error;
     res.status(500).json({ message: err.message });
   }
 }
@@ -676,22 +643,23 @@ export async function upsertDesignation(req: Request, res: Response) {
       if (collision && payload.allowAdviserOverride) {
         // 1. Close active ledger for current section adviser
         const currentActiveAdviser = await tx.sectionAdviser.findFirst({
-            where: {
-                sectionId: advisorySectionId!,
-                schoolYearId: payload.schoolYearId,
-                status: SectionAdviserStatus.ACTIVE
-            }
+          where: {
+            sectionId: advisorySectionId!,
+            schoolYearId: payload.schoolYearId,
+            status: SectionAdviserStatus.ACTIVE,
+          },
         });
 
         if (currentActiveAdviser) {
-            await tx.sectionAdviser.update({
-                where: { id: currentActiveAdviser.id },
-                data: {
-                    status: SectionAdviserStatus.HANDED_OVER,
-                    effectiveTo: new Date(),
-                    handoverReason: "Administrative Handover (via Teacher Management)"
-                }
-            });
+          await tx.sectionAdviser.update({
+            where: { id: currentActiveAdviser.id },
+            data: {
+              status: SectionAdviserStatus.HANDED_OVER,
+              effectiveTo: new Date(),
+              handoverReason:
+                "Administrative Handover (via Teacher Management)",
+            },
+          });
         }
 
         // 2. Relieve old adviser's designation workload
@@ -755,39 +723,39 @@ export async function upsertDesignation(req: Request, res: Response) {
       if (payload.isClassAdviser && advisorySectionId) {
         // Ensure this teacher doesn't already have an active ledger for this section
         const alreadyActive = await tx.sectionAdviser.findFirst({
-            where: {
-                sectionId: advisorySectionId,
-                teacherId: id,
-                schoolYearId: payload.schoolYearId,
-                status: SectionAdviserStatus.ACTIVE
-            }
+          where: {
+            sectionId: advisorySectionId,
+            teacherId: id,
+            schoolYearId: payload.schoolYearId,
+            status: SectionAdviserStatus.ACTIVE,
+          },
         });
 
         if (!alreadyActive) {
-            await tx.sectionAdviser.create({
-                data: {
-                    sectionId: advisorySectionId,
-                    teacherId: id,
-                    schoolYearId: payload.schoolYearId,
-                    status: SectionAdviserStatus.ACTIVE,
-                    effectiveFrom: parseDateOnly(payload.effectiveFrom) || new Date()
-                }
-            });
+          await tx.sectionAdviser.create({
+            data: {
+              sectionId: advisorySectionId,
+              teacherId: id,
+              schoolYearId: payload.schoolYearId,
+              status: SectionAdviserStatus.ACTIVE,
+              effectiveFrom: parseDateOnly(payload.effectiveFrom) || new Date(),
+            },
+          });
         }
       } else if (!payload.isClassAdviser) {
-          // If being relieved, close any active ledger
-          await tx.sectionAdviser.updateMany({
-              where: {
-                  teacherId: id,
-                  schoolYearId: payload.schoolYearId,
-                  status: SectionAdviserStatus.ACTIVE
-              },
-              data: {
-                  status: SectionAdviserStatus.REVOKED,
-                  effectiveTo: new Date(),
-                  handoverReason: "Designation Revoked"
-              }
-          });
+        // If being relieved, close any active ledger
+        await tx.sectionAdviser.updateMany({
+          where: {
+            teacherId: id,
+            schoolYearId: payload.schoolYearId,
+            status: SectionAdviserStatus.ACTIVE,
+          },
+          data: {
+            status: SectionAdviserStatus.REVOKED,
+            effectiveTo: new Date(),
+            handoverReason: "Designation Revoked",
+          },
+        });
       }
 
       return d;

@@ -87,12 +87,9 @@ export interface TeacherFormState {
   email: string;
   employeeId: string;
   contactNumber: string;
-  designation: string;
   specialization: string;
   department: string;
   plantillaPosition: string;
-  subjects: string[];
-  photo: string | null;
 }
 
 export interface DesignationFormState {

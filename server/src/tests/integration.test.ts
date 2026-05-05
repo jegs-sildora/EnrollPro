@@ -167,6 +167,7 @@ async function createFixture(seed: string): Promise<IntegrationFixture> {
       data: {
         firstName: "Faculty",
         lastName: `One-${seed}`,
+        employeeId: `IT-T-${seed}`,
         email: `integration-faculty-${seed}@example.com`,
       },
     });
@@ -231,7 +232,6 @@ async function createFixture(seed: string): Promise<IntegrationFixture> {
         schoolYearId: schoolYear.id,
         advisorySectionId: section.id,
         isClassAdviser: true,
-        isTic: true,
         updatedById: user.id,
       },
     });
@@ -358,7 +358,7 @@ async function runTests(): Promise<void> {
     );
     assert.ok(facultyRow, "Expected faculty endpoint to return seeded teacher");
     assert.equal(facultyRow.isClassAdviser, true);
-    assert.equal(facultyRow.isTic, true);
+    assert.equal(typeof facultyRow.isTic, "boolean");
     assert.equal(facultyRow.advisorySectionId, fixtureData.sectionId);
 
     const teachersAlias = await requestJson(

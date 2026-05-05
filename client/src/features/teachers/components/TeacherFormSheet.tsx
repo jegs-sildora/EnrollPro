@@ -1,6 +1,13 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronsUpDown, Search, Trash2, X } from "lucide-react";
-import { Badge } from "@/shared/ui/badge";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
+import { Check, ChevronsUpDown, Search, X } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -12,8 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { ImageEnlarger } from "@/shared/components/ImageEnlarger";
-import { UserPhoto } from "@/shared/components/UserPhoto";
 import {
   Sheet,
   SheetContent,
@@ -21,22 +26,29 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/shared/ui/sheet";
-import { cn } from "@/shared/lib/utils";
 import type { TeacherFormState } from "../types";
 import {
-  DEPED_LEARNING_AREA_OPTIONS,
   TEACHER_PLANTILLA_POSITION_OPTIONS,
-  TEACHER_SUBJECT_GROUPS,
   TEACHER_SPECIALIZATION_GROUPS,
   TEACHER_DEPARTMENT_OPTIONS,
-  TEACHER_ACADEMIC_DESIGNATION_OPTIONS,
 } from "../utils";
-import { SelectGroup, SelectLabel } from "@/shared/ui/select";
 
-type TeacherFormField = Exclude<keyof TeacherFormState, "photo" | "subjects">;
+type TeacherFormField = keyof TeacherFormState;
+
 const EMPTY_DEPARTMENT_VALUE = "__NONE__";
 const EMPTY_PLANTILLA_POSITION_VALUE = "__NONE__";
-const EMPTY_DESIGNATION_VALUE = "__NONE__";
+const EMPTY_SPECIALIZATION_VALUE = "__NONE__";
+
+interface SearchableSpecializationOption {
+  value: string;
+  label: string;
+  flatIndex: number;
+}
+
+interface SearchableSpecializationGroup {
+  group: string;
+  options: SearchableSpecializationOption[];
+}
 
 interface TeacherFormSheetProps {
   mode: "create" | "edit";
@@ -44,14 +56,10 @@ interface TeacherFormSheetProps {
   title: string;
   description: string;
   formData: TeacherFormState;
-  photoPreviewUrl: string | null;
   submitting: boolean;
   canSubmit: boolean;
   onOpenChange: (open: boolean) => void;
   onFieldChange: (field: TeacherFormField, value: string) => void;
-  onSubjectsChange: (subjects: string[]) => void;
-  onPhotoSelect: (file: File | undefined) => void;
-  onRemovePhoto: () => void;
   onCancel: () => void;
   onSubmit: () => void;
 }
@@ -62,14 +70,10 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
   title,
   description,
   formData,
-  photoPreviewUrl,
   submitting,
   canSubmit,
   onOpenChange,
   onFieldChange,
-  onSubjectsChange,
-  onPhotoSelect,
-  onRemovePhoto,
   onCancel,
   onSubmit,
 }: TeacherFormSheetProps) {
@@ -78,19 +82,131 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
     typeof window !== "undefined" ? window.innerWidth >= 640 : true,
   );
   const isResizing = useRef(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
-  const [isPhotoEnlarged, setIsPhotoEnlarged] = useState(false);
-  const [isSubjectsPopoverOpen, setIsSubjectsPopoverOpen] = useState(false);
-  const [subjectSearchTerm, setSubjectSearchTerm] = useState("");
+  const specializationSearchInputRef = useRef<HTMLInputElement>(null);
+  const specializationOptionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const [isSpecializationPopoverOpen, setIsSpecializationPopoverOpen] =
+    useState(false);
+  const [specializationSearchTerm, setSpecializationSearchTerm] = useState("");
+  const [activeSpecializationIndex, setActiveSpecializationIndex] = useState(0);
+
+  const allSpecializationOptions = useMemo(
+    () =>
+      TEACHER_SPECIALIZATION_GROUPS.flatMap((group) =>
+        group.options.map((option) => ({
+          value: option.value,
+          label: option.label,
+        })),
+      ),
+    [],
+  );
+
+  const selectedSpecializationOption = useMemo(
+    () =>
+      allSpecializationOptions.find(
+        (option) => option.value === formData.specialization,
+      ) ?? null,
+    [allSpecializationOptions, formData.specialization],
+  );
+
+  const searchableSpecializationGroups = useMemo<
+    SearchableSpecializationGroup[]
+  >(() => {
+    const normalizedSearch = specializationSearchTerm.trim().toLowerCase();
+    let runningFlatIndex = 0;
+
+    return TEACHER_SPECIALIZATION_GROUPS.map((group) => {
+      const matchesGroupLabel = group.group
+        .toLowerCase()
+        .includes(normalizedSearch);
+
+      const filteredOptions = group.options
+        .filter((option) => {
+          if (!normalizedSearch) {
+            return true;
+          }
+
+          return (
+            matchesGroupLabel ||
+            option.label.toLowerCase().includes(normalizedSearch) ||
+            option.value.toLowerCase().includes(normalizedSearch)
+          );
+        })
+        .map((option) => ({
+          value: option.value,
+          label: option.label,
+          flatIndex: runningFlatIndex++,
+        }));
+
+      return {
+        group: group.group,
+        options: filteredOptions,
+      };
+    }).filter((group) => group.options.length > 0);
+  }, [specializationSearchTerm]);
+
+  const flatSpecializationOptions = useMemo(
+    () => searchableSpecializationGroups.flatMap((group) => group.options),
+    [searchableSpecializationGroups],
+  );
 
   useEffect(() => {
     if (!open) {
-      setIsSubjectsPopoverOpen(false);
-      setSubjectSearchTerm("");
-      setSelectedFileName(null);
+      setIsSpecializationPopoverOpen(false);
+      setSpecializationSearchTerm("");
+      setActiveSpecializationIndex(0);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!isSpecializationPopoverOpen) {
+      setSpecializationSearchTerm("");
+      setActiveSpecializationIndex(0);
+      specializationOptionRefs.current = [];
+      return;
+    }
+
+    const focusTimer = window.setTimeout(() => {
+      specializationSearchInputRef.current?.focus();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(focusTimer);
+    };
+  }, [isSpecializationPopoverOpen]);
+
+  useEffect(() => {
+    if (flatSpecializationOptions.length === 0) {
+      setActiveSpecializationIndex(0);
+      return;
+    }
+
+    setActiveSpecializationIndex((current) => {
+      if (current < 0 || current >= flatSpecializationOptions.length) {
+        return 0;
+      }
+
+      return current;
+    });
+  }, [flatSpecializationOptions]);
+
+  useEffect(() => {
+    if (
+      !isSpecializationPopoverOpen ||
+      flatSpecializationOptions.length === 0
+    ) {
+      return;
+    }
+
+    specializationOptionRefs.current[activeSpecializationIndex]?.scrollIntoView(
+      {
+        block: "nearest",
+      },
+    );
+  }, [
+    activeSpecializationIndex,
+    flatSpecializationOptions.length,
+    isSpecializationPopoverOpen,
+  ]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -152,75 +268,83 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
 
   const submitLabel = mode === "create" ? "Create Teacher" : "Save Changes";
   const submittingLabel = mode === "create" ? "Creating..." : "Saving...";
-  const photoHint =
-    mode === "create"
-      ? "Upload JPG, PNG, or WEBP (max 5 MB)."
-      : "Upload a new photo to replace the current one.";
-  const canShowPhoto = Boolean(photoPreviewUrl);
 
   const selectedPlantillaPositionValue =
     formData.plantillaPosition.trim().length > 0
       ? formData.plantillaPosition
       : EMPTY_PLANTILLA_POSITION_VALUE;
 
-  const selectedSubjects = useMemo(() => {
-    return Array.from(new Set(formData.subjects));
-  }, [formData.subjects]);
-
-  const allSubjectOptions = useMemo(
-    () => TEACHER_SUBJECT_GROUPS.flatMap((g) => g.options),
-    [],
-  );
-
-  const filteredSubjectGroups = useMemo(() => {
-    const normalizedQuery = subjectSearchTerm.trim().toLowerCase();
-    if (!normalizedQuery) {
-      return TEACHER_SUBJECT_GROUPS;
-    }
-
-    return TEACHER_SUBJECT_GROUPS.map((group) => ({
-      ...group,
-      options: group.options.filter(
-        (option) =>
-          option.label.toLowerCase().includes(normalizedQuery) ||
-          option.value.toLowerCase().includes(normalizedQuery),
-      ),
-    })).filter((group) => group.options.length > 0);
-  }, [subjectSearchTerm]);
-
-  const subjectLabelMap = useMemo(
-    () =>
-      new Map<string, string>(
-        allSubjectOptions.map((option) => [option.value, option.label]),
-      ),
-    [allSubjectOptions],
-  );
-
-  const toggleSubject = useCallback(
-    (subjectValue: string) => {
-      const nextSubjects = selectedSubjects.includes(subjectValue)
-        ? selectedSubjects.filter((subject) => subject !== subjectValue)
-        : [...selectedSubjects, subjectValue];
-
-      onSubjectsChange(nextSubjects);
-    },
-    [onSubjectsChange, selectedSubjects],
-  );
-
   const selectedSpecializationValue =
     formData.specialization.trim().length > 0
       ? formData.specialization
-      : "__NONE__";
+      : EMPTY_SPECIALIZATION_VALUE;
+
+  const handleSpecializationSelect = useCallback(
+    (value: string) => {
+      onFieldChange(
+        "specialization",
+        value === EMPTY_SPECIALIZATION_VALUE ? "" : value,
+      );
+      setIsSpecializationPopoverOpen(false);
+      setSpecializationSearchTerm("");
+    },
+    [onFieldChange],
+  );
+
+  const handleSpecializationSearchKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLInputElement>) => {
+      if (flatSpecializationOptions.length === 0) {
+        if (event.key === "Escape") {
+          setIsSpecializationPopoverOpen(false);
+        }
+        return;
+      }
+
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setActiveSpecializationIndex(
+          (current) => (current + 1) % flatSpecializationOptions.length,
+        );
+        return;
+      }
+
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setActiveSpecializationIndex((current) => {
+          if (current <= 0) {
+            return flatSpecializationOptions.length - 1;
+          }
+          return current - 1;
+        });
+        return;
+      }
+
+      if (event.key === "Enter") {
+        event.preventDefault();
+        const activeOption =
+          flatSpecializationOptions[activeSpecializationIndex];
+        if (activeOption) {
+          handleSpecializationSelect(activeOption.value);
+        }
+        return;
+      }
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setIsSpecializationPopoverOpen(false);
+      }
+    },
+    [
+      activeSpecializationIndex,
+      flatSpecializationOptions,
+      handleSpecializationSelect,
+    ],
+  );
 
   return (
     <Sheet
       open={open}
-      onOpenChange={(nextOpen) => {
-        if (!nextOpen) {
-          setIsPhotoEnlarged(false);
-        }
-        onOpenChange(nextOpen);
-      }}>
+      onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
         className="p-0 flex flex-row border-l overflow-visible w-screen sm:w-auto sm:max-w-none"
@@ -235,7 +359,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
 
         <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
           <SheetHeader className="space-y-1 border-b bg-primary px-6 py-4 pr-14 shrink-0">
-            <SheetTitle className="text-base sm:text-lg text-primary-foreground font-black  uppercase">
+            <SheetTitle className="text-base sm:text-lg text-primary-foreground font-black uppercase">
               {title}
             </SheetTitle>
             <SheetDescription className="text-[11px] sm:text-xs text-primary-foreground/90 font-medium">
@@ -244,72 +368,6 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
           </SheetHeader>
 
           <div className="flex-1 space-y-4 overflow-y-auto p-3 sm:p-4">
-            <section className="rounded-md border bg-[hsl(var(--muted))] p-3 sm:p-4">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                <UserPhoto
-                  photo={photoPreviewUrl}
-                  containerClassName={cn(
-                    "h-20 w-20 shrink-0 rounded-xl border border-dashed border-primary",
-                    canShowPhoto
-                      ? "cursor-zoom-in transition hover:border-solid"
-                      : "",
-                  )}
-                  onEnlarge={
-                    canShowPhoto ? () => setIsPhotoEnlarged(true) : undefined
-                  }
-                  alt="Teacher preview"
-                />
-
-                <div className="min-w-0 flex-1 space-y-2">
-                  <p className="text-sm font-semibold text-foreground">
-                    Profile Photo
-                  </p>
-                  <p className="text-xs text-muted-foreground">{photoHint}</p>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      accept="image/*"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        if (file) {
-                          setSelectedFileName(file.name);
-                        }
-                        onPhotoSelect(file);
-                        event.target.value = "";
-                      }}
-                      className="hidden"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      type="button"
-                      className="font-bold"
-                      onClick={() => fileInputRef.current?.click()}>
-                      {selectedFileName ? "Change Photo" : "Choose Photo"}
-                    </Button>
-                    {selectedFileName && (
-                      <span className="text-[10px] font-bold text-primary truncate max-w-[150px]">
-                        {selectedFileName}
-                      </span>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      type="button"
-                      onClick={() => {
-                        setSelectedFileName(null);
-                        onRemovePhoto();
-                      }}
-                      disabled={!formData.photo}>
-                      <Trash2 className="mr-2 h-3.5 w-3.5" />
-                      Remove
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </section>
-
             <section className="space-y-4 rounded-md border p-4 sm:p-5">
               <header className="space-y-1">
                 <h3 className="text-sm font-semibold uppercase tracking-wide text-foreground">
@@ -320,22 +378,13 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                 </p>
               </header>
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase tracking-tight">Last Name *</Label>
+                  <Label className="font-bold text-xs uppercase tracking-tight">
+                    First Name *
+                  </Label>
                   <Input
-                    placeholder="e.g. Santos"
-                    value={formData.lastName}
-                    onChange={(event) =>
-                      onFieldChange("lastName", event.target.value)
-                    }
-                    className="font-bold"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase tracking-tight">First Name *</Label>
-                  <Input
-                    placeholder="e.g. Maria"
+                    placeholder="e.g., Anna Liza"
                     value={formData.firstName}
                     onChange={(event) =>
                       onFieldChange("firstName", event.target.value)
@@ -343,13 +392,13 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                     className="font-bold"
                   />
                 </div>
-              </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase tracking-tight">Middle Name</Label>
+                  <Label className="font-bold text-xs uppercase tracking-tight">
+                    Middle Name
+                  </Label>
                   <Input
-                    placeholder="e.g. Cruz"
+                    placeholder="e.g., M."
                     value={formData.middleName}
                     onChange={(event) =>
                       onFieldChange("middleName", event.target.value)
@@ -357,11 +406,30 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                     className="font-bold"
                   />
                 </div>
+
                 <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase tracking-tight">Email</Label>
+                  <Label className="font-bold text-xs uppercase tracking-tight">
+                    Last Name *
+                  </Label>
+                  <Input
+                    placeholder="e.g., Dela Cruz"
+                    value={formData.lastName}
+                    onChange={(event) =>
+                      onFieldChange("lastName", event.target.value)
+                    }
+                    className="font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="font-bold text-xs uppercase tracking-tight">
+                    DepEd Email Address *
+                  </Label>
                   <Input
                     type="email"
-                    placeholder="e.g. maria.santos@example.com"
+                    placeholder="firstname.lastname"
                     value={formData.email}
                     onChange={(event) =>
                       onFieldChange("email", event.target.value)
@@ -369,28 +437,17 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                     className="font-bold"
                   />
                 </div>
-              </div>
-            </section>
 
-            <section className="space-y-4 rounded-md border p-4 sm:p-5">
-              <header className="space-y-1">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-foreground">
-                  Contact
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Contact information used for notifications and records.
-                </p>
-              </header>
-
-              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase tracking-tight">Contact Number</Label>
+                  <Label className="font-bold text-xs uppercase tracking-tight">
+                    Contact Number
+                  </Label>
                   <Input
-                    placeholder="e.g. 09171234567"
+                    placeholder="0917-123-4567"
                     inputMode="numeric"
-                    maxLength={11}
-                    pattern="\\d{11}"
-                    title="Contact number must be 11 digits"
+                    maxLength={13}
+                    pattern="\\d{4}-\\d{3}-\\d{4}"
+                    title="Contact number must follow XXXX-XXX-XXXX format"
                     value={formData.contactNumber}
                     onChange={(event) =>
                       onFieldChange("contactNumber", event.target.value)
@@ -413,52 +470,23 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase tracking-tight">Employee ID</Label>
+                  <Label className="font-bold text-xs uppercase tracking-tight">
+                    Employee ID / T.I.N. *
+                  </Label>
                   <Input
-                    placeholder="Leave blank to auto-generate"
+                    placeholder="e.g., 1234567 (DepEd ID)"
                     value={formData.employeeId}
                     onChange={(event) =>
                       onFieldChange("employeeId", event.target.value)
                     }
                     className="font-bold"
                   />
-                  <p className="text-xs text-muted-foreground font-medium">
-                    If empty, the system assigns the next ID (for example,
-                    TCH-0001).
-                  </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase tracking-tight">Academic Designation</Label>
-                  <Select
-                    value={formData.designation || EMPTY_DESIGNATION_VALUE}
-                    onValueChange={(value) =>
-                      onFieldChange(
-                        "designation",
-                        value === EMPTY_DESIGNATION_VALUE ? "" : value,
-                      )
-                    }>
-                    <SelectTrigger className="font-bold">
-                      <SelectValue placeholder="Select designation" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={EMPTY_DESIGNATION_VALUE} className="font-bold">
-                        Not set
-                      </SelectItem>
-                      {TEACHER_ACADEMIC_DESIGNATION_OPTIONS.map((option) => (
-                        <SelectItem
-                          key={option.value}
-                          value={option.value}
-                          className="font-bold uppercase text-xs">
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase tracking-tight">Plantilla Position</Label>
+                  <Label className="font-bold text-xs uppercase tracking-tight">
+                    Plantilla Position
+                  </Label>
                   <Select
                     value={selectedPlantillaPositionValue}
                     onValueChange={(value) =>
@@ -468,10 +496,12 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                       )
                     }>
                     <SelectTrigger className="font-bold">
-                      <SelectValue placeholder="Select plantilla position" />
+                      <SelectValue placeholder="Not set" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={EMPTY_PLANTILLA_POSITION_VALUE} className="font-bold">
+                      <SelectItem
+                        value={EMPTY_PLANTILLA_POSITION_VALUE}
+                        className="font-bold">
                         Not set
                       </SelectItem>
                       {TEACHER_PLANTILLA_POSITION_OPTIONS.map((option) => (
@@ -489,7 +519,9 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase tracking-tight">Department</Label>
+                  <Label className="font-bold text-xs uppercase tracking-tight">
+                    Department
+                  </Label>
                   <Select
                     value={formData.department || EMPTY_DEPARTMENT_VALUE}
                     onValueChange={(value) =>
@@ -499,10 +531,12 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                       )
                     }>
                     <SelectTrigger className="font-bold">
-                      <SelectValue placeholder="Select a department" />
+                      <SelectValue placeholder="Not set" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={EMPTY_DEPARTMENT_VALUE} className="font-bold">
+                      <SelectItem
+                        value={EMPTY_DEPARTMENT_VALUE}
+                        className="font-bold">
                         Not set
                       </SelectItem>
                       {TEACHER_DEPARTMENT_OPTIONS.map((option) => (
@@ -518,115 +552,130 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase tracking-tight">Specialization / Learning Area</Label>
-                  <Select
-                    value={selectedSpecializationValue}
-                    onValueChange={(value) =>
-                      onFieldChange(
-                        "specialization",
-                        value === "__NONE__" ? "" : value,
-                      )
-                    }>
-                    <SelectTrigger className="font-bold">
-                      <SelectValue placeholder="Select primary specialization" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__NONE__" className="font-bold">Not set</SelectItem>
-                      {TEACHER_SPECIALIZATION_GROUPS.map((group) => (
-                        <SelectGroup key={group.group}>
-                          <SelectLabel className="text-[10px] font-black uppercase tracking-widest text-primary/70 py-2">
-                            {group.group}
-                          </SelectLabel>
-                          {group.options.map((option) => (
-                            <SelectItem
-                              key={option.value}
-                              value={option.value}
-                              className="text-xs uppercase font-bold">
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[10px] text-muted-foreground font-bold italic">
-                    Primary degree or major qualification.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2 sm:col-span-2">
-                  <Label className="font-bold text-xs uppercase tracking-tight">Teaching Subjects (Qualifications)</Label>
+                  <Label className="font-bold text-xs uppercase tracking-tight">
+                    Specialization / Major
+                  </Label>
                   <Popover
-                    open={isSubjectsPopoverOpen}
-                    onOpenChange={(nextOpen) => {
-                      setIsSubjectsPopoverOpen(nextOpen);
-                      if (!nextOpen) {
-                        setSubjectSearchTerm("");
-                      }
-                    }}>
+                    open={isSpecializationPopoverOpen}
+                    onOpenChange={setIsSpecializationPopoverOpen}>
                     <PopoverTrigger asChild>
                       <Button
                         type="button"
                         variant="outline"
+                        role="combobox"
+                        aria-expanded={isSpecializationPopoverOpen}
                         className="w-full justify-between font-bold">
-                        <span className="truncate">
-                          {selectedSubjects.length > 0
-                            ? `${selectedSubjects.length} selected`
-                            : "Select all assigned subjects"}
+                        <span className="truncate text-left">
+                          {selectedSpecializationValue ===
+                          EMPTY_SPECIALIZATION_VALUE
+                            ? "Not set"
+                            : selectedSpecializationOption?.label || "Not set"}
                         </span>
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-60" />
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent
                       align="start"
-                      className="w-80 p-3 sm:w-96">
-                      <div className="relative">
-                        <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Search BEC or SCP subjects..."
-                          value={subjectSearchTerm}
-                          onChange={(event) =>
-                            setSubjectSearchTerm(event.target.value)
-                          }
-                          className="pl-8 font-bold"
-                        />
+                      className="w-[var(--radix-popover-trigger-width)] p-0"
+                      onOpenAutoFocus={(event) => event.preventDefault()}>
+                      <div className="sticky top-0 z-10 border-b bg-background p-2">
+                        <div className="relative">
+                          <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            ref={specializationSearchInputRef}
+                            value={specializationSearchTerm}
+                            onChange={(event) =>
+                              setSpecializationSearchTerm(event.target.value)
+                            }
+                            onKeyDown={handleSpecializationSearchKeyDown}
+                            placeholder="Search specialization / major"
+                            className="pl-8 pr-8 font-semibold"
+                          />
+                          {specializationSearchTerm.trim().length > 0 ? (
+                            <button
+                              type="button"
+                              aria-label="Clear specialization search"
+                              onClick={() => {
+                                setSpecializationSearchTerm("");
+                                setActiveSpecializationIndex(0);
+                                specializationSearchInputRef.current?.focus();
+                              }}
+                              className="absolute right-2 top-2 rounded p-0.5 text-muted-foreground transition hover:bg-muted hover:text-foreground">
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          ) : null}
+                        </div>
                       </div>
 
-                      <div className="mt-3 max-h-72 space-y-4 overflow-y-auto pr-1">
-                        {filteredSubjectGroups.length === 0 ? (
-                          <p className="px-2 py-3 text-sm text-muted-foreground font-bold italic">
-                            No subjects match your search.
-                          </p>
+                      <div className="max-h-72 overflow-y-auto p-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSpecializationSelect(
+                              EMPTY_SPECIALIZATION_VALUE,
+                            )
+                          }
+                          className="mb-2 flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm font-semibold transition hover:bg-muted">
+                          <span>Not set</span>
+                          {selectedSpecializationValue ===
+                          EMPTY_SPECIALIZATION_VALUE ? (
+                            <Check className="h-4 w-4" />
+                          ) : null}
+                        </button>
+
+                        {flatSpecializationOptions.length === 0 ? (
+                          <div className="rounded-md border border-dashed bg-muted/40 px-3 py-4 text-center">
+                            <p className="text-sm font-semibold text-muted-foreground">
+                              No specializations found matching
+                              {` "${specializationSearchTerm}"`}.
+                            </p>
+                            <p className="text-xs text-muted-foreground/90">
+                              Please check your spelling.
+                            </p>
+                          </div>
                         ) : (
-                          filteredSubjectGroups.map((group) => (
+                          searchableSpecializationGroups.map((group) => (
                             <div
                               key={group.group}
-                              className="space-y-1">
-                              <h4 className="px-2 text-[10px] font-black uppercase tracking-widest text-primary/80">
+                              className="mt-2 first:mt-0">
+                              <p className="px-2 py-1 text-[10px] font-black uppercase tracking-widest text-primary/80">
                                 {group.group}
-                              </h4>
+                              </p>
                               <div className="space-y-0.5">
                                 {group.options.map((option) => {
-                                  const isSelected = selectedSubjects.includes(
-                                    option.value,
-                                  );
+                                  const isActive =
+                                    option.flatIndex ===
+                                    activeSpecializationIndex;
+                                  const isSelected =
+                                    formData.specialization === option.value;
 
                                   return (
                                     <button
                                       key={option.value}
+                                      ref={(node) => {
+                                        specializationOptionRefs.current[
+                                          option.flatIndex
+                                        ] = node;
+                                      }}
                                       type="button"
-                                      onClick={() => toggleSubject(option.value)}
-                                      className={cn(
-                                        "flex w-full items-center justify-between rounded-md px-2 py-2 text-left transition",
-                                        isSelected
-                                          ? "bg-primary text-primary-foreground font-black"
-                                          : "hover:bg-muted text-foreground font-bold text-xs uppercase",
-                                      )}>
-                                      <span>{option.label}</span>
+                                      onMouseEnter={() =>
+                                        setActiveSpecializationIndex(
+                                          option.flatIndex,
+                                        )
+                                      }
+                                      onClick={() =>
+                                        handleSpecializationSelect(option.value)
+                                      }
+                                      className={`flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm font-semibold transition ${
+                                        isActive
+                                          ? "bg-primary/10 text-foreground"
+                                          : "hover:bg-muted"
+                                      }`}>
+                                      <span className="truncate text-left">
+                                        {option.label}
+                                      </span>
                                       {isSelected ? (
-                                        <Check className="h-3.5 w-3.5 stroke-[4]" />
+                                        <Check className="ml-2 h-4 w-4 shrink-0" />
                                       ) : null}
                                     </button>
                                   );
@@ -638,30 +687,6 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                       </div>
                     </PopoverContent>
                   </Popover>
-
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    {selectedSubjects.length === 0 ? (
-                      <p className="text-[10px] text-muted-foreground font-bold italic">
-                        Select all teaching subjects (both BEC and SCP) assigned to this teacher.
-                      </p>
-                    ) : (
-                      selectedSubjects.map((subject) => (
-                        <Badge
-                          key={subject}
-                          variant="secondary"
-                          className="gap-1.5 pr-1 py-1 text-[10px] font-black uppercase border-primary/20">
-                          <span>{subjectLabelMap.get(subject) ?? subject}</span>
-                          <button
-                            type="button"
-                            onClick={() => toggleSubject(subject)}
-                            className="rounded-full p-0.5 text-muted-foreground transition hover:text-foreground hover:bg-muted"
-                            aria-label={`Remove ${subject}`}>
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))
-                    )}
-                  </div>
                 </div>
               </div>
             </section>
@@ -684,15 +709,6 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
           </div>
         </div>
       </SheetContent>
-
-      {canShowPhoto && (
-        <ImageEnlarger
-          src={photoPreviewUrl || ""}
-          isOpen={isPhotoEnlarged}
-          onClose={() => setIsPhotoEnlarged(false)}
-          alt="Teacher photo"
-        />
-      )}
     </Sheet>
   );
 });

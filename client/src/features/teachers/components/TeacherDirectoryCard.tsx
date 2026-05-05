@@ -362,7 +362,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       <CardHeader className="pb-3 px-4 md:px-6 border-b bg-muted/10">
         <div className="space-y-3">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <CardTitle className="text-lg font-bold uppercase tracking-tight">
+            <CardTitle className="text-lg font-bold uppercase">
               Teacher Directory
             </CardTitle>
             <div className="flex items-center gap-2">

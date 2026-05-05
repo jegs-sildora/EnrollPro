@@ -1,11 +1,16 @@
-import { useCallback, useEffect, useMemo, useState, startTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  startTransition,
+} from "react";
 import { sileo } from "sileo";
 import { ChevronDown, GraduationCap, Plus, Upload } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
-import { getImageUrl } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import {
@@ -22,7 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { TeacherDirectoryCard } from "../components/TeacherDirectoryCard";
-import { TeacherFormSheet } from "../components/TeacherFormSheet";
+import { TeacherFormSheet } from "@/features/teachers/components/TeacherFormSheet";
 import { TeacherDesignationSheet } from "../components/TeacherDesignationSheet";
 import type {
   AdvisorySectionOption,
@@ -35,8 +40,6 @@ import type {
   TeacherStatusFilter,
 } from "../types";
 import {
-  MAX_TEACHER_PHOTO_BYTES,
-  convertImageToBase64,
   createEmptyTeacherForm,
   formatTeacherName,
   normalizeOptionalInput,
@@ -52,20 +55,42 @@ import { Label } from "@/shared/ui/label";
 import { AlertTriangle, UserMinus, Loader2 } from "lucide-react";
 import { TEACHER_DEACTIVATION_REASONS } from "@enrollpro/shared";
 
-type TeacherFormField = Exclude<keyof TeacherFormState, "photo" | "subjects">;
+type TeacherFormField = keyof TeacherFormState;
+
+const DEPED_EMAIL_DOMAIN = "deped.gov.ph";
+
+interface TeacherUpsertPayload {
+  firstName: string;
+  lastName: string;
+  middleName: string | null;
+  email: string;
+  employeeId: string;
+  contactNumber: string | null;
+  specialization: string | null;
+  department: string | null;
+  plantillaPosition: string | null;
+}
 
 function normalizeTeacherFieldValue(
   field: TeacherFormField,
   value: string,
 ): string {
   if (field === "contactNumber") {
-    return value.replace(/\D/g, "").slice(0, 11);
+    const digitsOnly = value.replace(/\D/g, "").slice(0, 11);
+    if (!digitsOnly) {
+      return "";
+    }
+
+    const firstPart = digitsOnly.slice(0, 4);
+    const secondPart = digitsOnly.slice(4, 7);
+    const thirdPart = digitsOnly.slice(7, 11);
+
+    return [firstPart, secondPart, thirdPart].filter(Boolean).join("-");
   }
 
   // Preserve case for select-based fields and emails
   if (
     field === "email" ||
-    field === "designation" ||
     field === "department" ||
     field === "plantillaPosition" ||
     field === "specialization"
@@ -77,8 +102,30 @@ function normalizeTeacherFieldValue(
 }
 
 function isValidContactNumber(value: string): boolean {
-  const normalized = value.trim();
-  return normalized.length === 0 || /^\d{11}$/.test(normalized);
+  const digitsOnly = value.replace(/\D/g, "");
+  return digitsOnly.length === 0 || /^\d{11}$/.test(digitsOnly);
+}
+
+function normalizeEmailLocalPartSegment(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, ".")
+    .replace(/\.{2,}/g, ".")
+    .replace(/^\.|\.$/g, "");
+}
+
+function buildAutoDepedEmail(firstName: string, lastName: string): string {
+  const firstSegment = normalizeEmailLocalPartSegment(firstName);
+  const lastSegment = normalizeEmailLocalPartSegment(lastName);
+
+  if (!firstSegment || !lastSegment) {
+    return "";
+  }
+
+  return `${firstSegment}.${lastSegment}@${DEPED_EMAIL_DOMAIN}`;
 }
 
 function createEmptyDesignationForm(): DesignationFormState {
@@ -111,7 +158,6 @@ export default function Teachers() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
-  const [editPhotoChanged, setEditPhotoChanged] = useState(false);
   const [teacherToDeactivate, setTeacherToDeactivate] =
     useState<Teacher | null>(null);
   const [deactivateReason, setDeactivateReason] = useState("");
@@ -139,6 +185,8 @@ export default function Teachers() {
   const [formData, setFormData] = useState<TeacherFormState>(
     createEmptyTeacherForm,
   );
+  const [isCreateEmailManuallyEdited, setIsCreateEmailManuallyEdited] =
+    useState(false);
 
   const [editFormData, setEditFormData] = useState<TeacherFormState>(
     createEmptyTeacherForm,
@@ -150,12 +198,51 @@ export default function Teachers() {
 
   const handleFieldChange = useCallback(
     (field: TeacherFormField, value: string) => {
+      const normalizedValue = normalizeTeacherFieldValue(field, value);
+
+      if (field === "email") {
+        if (normalizedValue.trim().length === 0) {
+          setIsCreateEmailManuallyEdited(false);
+          setFormData((prev) => ({
+            ...prev,
+            email: buildAutoDepedEmail(prev.firstName, prev.lastName),
+          }));
+          return;
+        }
+
+        setIsCreateEmailManuallyEdited(true);
+        setFormData((prev) => ({
+          ...prev,
+          email: normalizedValue,
+        }));
+        return;
+      }
+
+      if (field === "firstName" || field === "lastName") {
+        setFormData((prev) => {
+          const nextData = {
+            ...prev,
+            [field]: normalizedValue,
+          };
+
+          if (!isCreateEmailManuallyEdited) {
+            nextData.email = buildAutoDepedEmail(
+              nextData.firstName,
+              nextData.lastName,
+            );
+          }
+
+          return nextData;
+        });
+        return;
+      }
+
       setFormData((prev) => ({
         ...prev,
-        [field]: normalizeTeacherFieldValue(field, value),
+        [field]: normalizedValue,
       }));
     },
-    [],
+    [isCreateEmailManuallyEdited],
   );
 
   const handleEditFieldChange = useCallback(
@@ -167,14 +254,6 @@ export default function Teachers() {
     },
     [],
   );
-
-  const handleSubjectsChange = useCallback((subjects: string[]) => {
-    setFormData((prev) => ({ ...prev, subjects }));
-  }, []);
-
-  const handleEditSubjectsChange = useCallback((subjects: string[]) => {
-    setEditFormData((prev) => ({ ...prev, subjects }));
-  }, []);
 
   const fetchTeachers = useCallback(async () => {
     setLoading(true);
@@ -234,75 +313,29 @@ export default function Teachers() {
     fetchAdvisorySections();
   }, [fetchAdvisorySections]);
 
-  const handlePhotoFileSelection = async (
-    file: File | undefined,
-    mode: "create" | "edit",
-  ) => {
-    if (!file) {
-      return;
-    }
-
-    if (!file.type.startsWith("image/")) {
-      sileo.warning({
-        title: "Invalid Photo",
-        description: "Only image files are allowed for teacher photos.",
-      });
-      return;
-    }
-
-    if (file.size > MAX_TEACHER_PHOTO_BYTES) {
-      sileo.warning({
-        title: "Photo Too Large",
-        description: "Use an image smaller than 5 MB.",
-      });
-      return;
-    }
-
-    try {
-      const base64Image = await convertImageToBase64(file);
-      if (mode === "create") {
-        setFormData((prev) => ({ ...prev, photo: base64Image }));
-        return;
-      }
-
-      setEditFormData((prev) => ({ ...prev, photo: base64Image }));
-      setEditPhotoChanged(true);
-    } catch {
-      sileo.error({
-        title: "Photo Upload Failed",
-        description: "Unable to process the selected photo. Try another file.",
-      });
-    }
-  };
-
   const handleCreate = async () => {
-    const subjects = Array.from(
-      new Set(
-        formData.subjects
-          .map((subject) => subject.trim())
-          .filter((subject) => subject.length > 0),
-      ),
-    );
-
-    const payload = {
+    const payload: TeacherUpsertPayload = {
       firstName: formData.firstName.trim(),
       lastName: formData.lastName.trim(),
       middleName: normalizeOptionalInput(formData.middleName),
-      email: normalizeOptionalInput(formData.email),
-      employeeId: normalizeOptionalInput(formData.employeeId),
+      email: formData.email.trim(),
+      employeeId: formData.employeeId.trim(),
       contactNumber: normalizeOptionalInput(formData.contactNumber),
-      designation: normalizeOptionalInput(formData.designation),
       specialization: normalizeOptionalInput(formData.specialization),
       department: normalizeOptionalInput(formData.department),
       plantillaPosition: normalizeOptionalInput(formData.plantillaPosition),
-      subjects,
-      photo: formData.photo,
     };
 
-    if (!payload.firstName || !payload.lastName) {
+    if (
+      !payload.firstName ||
+      !payload.lastName ||
+      !payload.employeeId ||
+      !payload.email
+    ) {
       sileo.warning({
         title: "Missing Required Fields",
-        description: "First name and last name are required.",
+        description:
+          "First name, last name, DepEd email address, and Employee ID are required.",
       });
       return;
     }
@@ -310,7 +343,7 @@ export default function Teachers() {
     if (!isValidContactNumber(formData.contactNumber)) {
       sileo.warning({
         title: "Invalid Contact Number",
-        description: "Contact number must be exactly 11 digits.",
+        description: "Contact number must follow XXXX-XXX-XXXX (11 digits).",
       });
       return;
     }
@@ -323,6 +356,7 @@ export default function Teachers() {
         description: `${payload.lastName}, ${payload.firstName} has been added.`,
       });
       setCreateOpen(false);
+      setIsCreateEmailManuallyEdited(false);
       setFormData(createEmptyTeacherForm());
       fetchTeachers();
     } catch (err) {
@@ -334,20 +368,19 @@ export default function Teachers() {
 
   const startEditing = (teacher: Teacher) => {
     setEditingTeacher(teacher);
-    setEditPhotoChanged(false);
     setEditFormData({
       firstName: teacher.firstName,
       lastName: teacher.lastName,
       middleName: teacher.middleName || "",
       email: teacher.email || "",
       employeeId: teacher.employeeId || "",
-      contactNumber: teacher.contactNumber || "",
-      designation: (teacher.designationTitle || "").toUpperCase(),
+      contactNumber: normalizeTeacherFieldValue(
+        "contactNumber",
+        teacher.contactNumber || "",
+      ),
       specialization: (teacher.specialization || "").toUpperCase(),
       department: (teacher.department || "").toUpperCase(),
       plantillaPosition: (teacher.plantillaPosition || "").toUpperCase(),
-      subjects: teacher.subjects.map((s) => s.toUpperCase()),
-      photo: teacher.photoPath,
     });
     setEditOpen(true);
   };
@@ -355,7 +388,6 @@ export default function Teachers() {
   const closeEditSheet = () => {
     setEditOpen(false);
     setEditingTeacher(null);
-    setEditPhotoChanged(false);
     setEditFormData(createEmptyTeacherForm());
   };
 
@@ -364,36 +396,28 @@ export default function Teachers() {
       return;
     }
 
-    const subjects = Array.from(
-      new Set(
-        editFormData.subjects
-          .map((subject) => subject.trim())
-          .filter((subject) => subject.length > 0),
-      ),
-    );
-
-    const payload: Record<string, unknown> = {
+    const payload: TeacherUpsertPayload = {
       firstName: editFormData.firstName.trim(),
       lastName: editFormData.lastName.trim(),
       middleName: normalizeOptionalInput(editFormData.middleName),
-      email: normalizeOptionalInput(editFormData.email),
-      employeeId: normalizeOptionalInput(editFormData.employeeId),
+      email: editFormData.email.trim(),
+      employeeId: editFormData.employeeId.trim(),
       contactNumber: normalizeOptionalInput(editFormData.contactNumber),
-      designation: normalizeOptionalInput(editFormData.designation),
       specialization: normalizeOptionalInput(editFormData.specialization),
       department: normalizeOptionalInput(editFormData.department),
       plantillaPosition: normalizeOptionalInput(editFormData.plantillaPosition),
-      subjects,
     };
 
-    if (editPhotoChanged) {
-      payload.photo = editFormData.photo;
-    }
-
-    if (!payload.firstName || !payload.lastName) {
+    if (
+      !payload.firstName ||
+      !payload.lastName ||
+      !payload.employeeId ||
+      !payload.email
+    ) {
       sileo.warning({
         title: "Missing Required Fields",
-        description: "First name and last name are required.",
+        description:
+          "First name, last name, DepEd email address, and Employee ID are required.",
       });
       return;
     }
@@ -401,7 +425,7 @@ export default function Teachers() {
     if (!isValidContactNumber(editFormData.contactNumber)) {
       sileo.warning({
         title: "Invalid Contact Number",
-        description: "Contact number must be exactly 11 digits.",
+        description: "Contact number must follow XXXX-XXX-XXXX (11 digits).",
       });
       return;
     }
@@ -514,7 +538,8 @@ export default function Teachers() {
     const bosy = bosyDate?.split("T")[0] || null;
     const eosy = eosyDate?.split("T")[0] || null;
 
-    const teacherFrom = teacher.designation?.effectiveFrom?.split("T")[0] || null;
+    const teacherFrom =
+      teacher.designation?.effectiveFrom?.split("T")[0] || null;
     const teacherTo = teacher.designation?.effectiveTo?.split("T")[0] || null;
 
     const hasCustomPeriod =
@@ -639,19 +664,22 @@ export default function Teachers() {
     (section) => section.id.toString() === designationForm.advisorySectionId,
   );
 
-  const createPhotoPreviewUrl = getImageUrl(formData.photo);
-  const editPhotoPreviewUrl = getImageUrl(editFormData.photo);
   const canSubmitCreate =
     formData.firstName.trim().length > 0 &&
     formData.lastName.trim().length > 0 &&
+    formData.email.trim().length > 0 &&
+    formData.employeeId.trim().length > 0 &&
     isValidContactNumber(formData.contactNumber);
   const canSubmitEdit =
     editFormData.firstName.trim().length > 0 &&
     editFormData.lastName.trim().length > 0 &&
+    editFormData.email.trim().length > 0 &&
+    editFormData.employeeId.trim().length > 0 &&
     isValidContactNumber(editFormData.contactNumber);
 
   const openCreateTeacherSheet = () => {
     setFormData(createEmptyTeacherForm());
+    setIsCreateEmailManuallyEdited(false);
     setCreateOpen(true);
   };
 
@@ -709,7 +737,7 @@ export default function Teachers() {
       fetchTeachers,
       bosyDate,
       eosyDate,
-    ]
+    ],
   );
 
   const renderedTeacherCreateSheet = useMemo(
@@ -718,25 +746,21 @@ export default function Teachers() {
         mode="create"
         open={createOpen}
         title="Add Teacher"
-        description="Create a teacher profile using full schema fields including photo, email, and teaching subjects."
+        description="Create a new permanent faculty profile for the academic roster."
         formData={formData}
-        photoPreviewUrl={createPhotoPreviewUrl}
         submitting={submitting}
         canSubmit={canSubmitCreate}
-        onOpenChange={(open) => {
+        onOpenChange={(open: boolean) => {
           setCreateOpen(open);
           if (!open) {
+            setIsCreateEmailManuallyEdited(false);
             setFormData(createEmptyTeacherForm());
           }
         }}
         onFieldChange={handleFieldChange}
-        onSubjectsChange={handleSubjectsChange}
-        onPhotoSelect={(file) => {
-          void handlePhotoFileSelection(file, "create");
-        }}
-        onRemovePhoto={() => setFormData((prev) => ({ ...prev, photo: null }))}
         onCancel={() => {
           setCreateOpen(false);
+          setIsCreateEmailManuallyEdited(false);
           setFormData(createEmptyTeacherForm());
         }}
         onSubmit={handleCreate}
@@ -745,11 +769,9 @@ export default function Teachers() {
     [
       createOpen,
       formData,
-      createPhotoPreviewUrl,
       submitting,
       canSubmitCreate,
       handleFieldChange,
-      handleSubjectsChange,
       handleCreate,
     ],
   );
@@ -762,14 +784,13 @@ export default function Teachers() {
         title="Edit Teacher"
         description={
           editingTeacher
-            ? `Update ${formatTeacherName(editingTeacher)} profile fields and photo.`
+            ? `Update ${formatTeacherName(editingTeacher)} profile fields.`
             : "Update teacher details."
         }
         formData={editFormData}
-        photoPreviewUrl={editPhotoPreviewUrl}
         submitting={submitting}
         canSubmit={canSubmitEdit && Boolean(editingTeacher)}
-        onOpenChange={(open) => {
+        onOpenChange={(open: boolean) => {
           if (!open) {
             closeEditSheet();
             return;
@@ -777,14 +798,6 @@ export default function Teachers() {
           setEditOpen(true);
         }}
         onFieldChange={handleEditFieldChange}
-        onSubjectsChange={handleEditSubjectsChange}
-        onPhotoSelect={(file) => {
-          void handlePhotoFileSelection(file, "edit");
-        }}
-        onRemovePhoto={() => {
-          setEditFormData((prev) => ({ ...prev, photo: null }));
-          setEditPhotoChanged(true);
-        }}
         onCancel={closeEditSheet}
         onSubmit={handleUpdate}
       />
@@ -793,11 +806,9 @@ export default function Teachers() {
       editOpen,
       editingTeacher,
       editFormData,
-      editPhotoPreviewUrl,
       submitting,
       canSubmitEdit,
       handleEditFieldChange,
-      handleEditSubjectsChange,
       handleUpdate,
     ],
   );
@@ -852,7 +863,9 @@ export default function Teachers() {
         </div>
         <div className="flex justify-end gap-2 flex-wrap">
           <div className="inline-flex shadow-sm rounded-lg overflow-hidden">
-            <Button onClick={openCreateTeacherSheet} className="rounded-r-none">
+            <Button
+              onClick={openCreateTeacherSheet}
+              className="rounded-r-none">
               <Plus className="h-4 w-4 mr-2" />
               Add Teacher
             </Button>
@@ -865,7 +878,9 @@ export default function Teachers() {
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent
+                align="end"
+                className="w-56">
                 <DropdownMenuItem
                   onClick={openCreateTeacherSheet}
                   className="cursor-pointer">
@@ -947,8 +962,8 @@ export default function Teachers() {
                   </p>
                   <p className="text-[10px] font-bold text-amber-700 leading-relaxed">
                     ⚠️ Cannot Deactivate: This teacher has an active advisory
-                    section or teaching load. You must reassign their load before
-                    deactivating their account.
+                    section or teaching load. You must reassign their load
+                    before deactivating their account.
                   </p>
                 </div>
               </div>
@@ -960,8 +975,9 @@ export default function Teachers() {
                     <span className="text-foreground font-black">
                       NO ACTIVE LOAD
                     </span>
-                    . Deactivating will revoke system access and remove them from
-                    future scheduling. Historical records will be preserved.
+                    . Deactivating will revoke system access and remove them
+                    from future scheduling. Historical records will be
+                    preserved.
                   </p>
                 </div>
 

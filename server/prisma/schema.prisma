@@ -73,11 +73,11 @@ model Account {
 /// Faculty members who serve as section advisers; not login users
 model Teacher {
   id                  Int                  @id @default(autoincrement())
-  employeeId          String?              @unique(map: "uq_teachers_employee_id") @map("employee_id")
+  employeeId          String               @unique(map: "uq_teachers_employee_id") @map("employee_id")
   firstName           String               @map("first_name")
   lastName            String               @map("last_name")
   middleName          String?              @map("middle_name")
-  email               String?              @map("email")
+  email               String               @unique(map: "uq_teachers_email") @map("email")
   contactNumber       String?              @map("contact_number")
   specialization      String?
   isActive            Boolean              @default(true) @map("is_active")

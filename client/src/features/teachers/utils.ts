@@ -1,26 +1,16 @@
 import {
   DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS,
-  DEPED_TEACHER_SUBJECT_OPTIONS,
   DEPED_TEACHER_DEPARTMENT_OPTIONS,
-  DEPED_TEACHER_SUBJECT_GROUPS,
   DEPED_TEACHER_SPECIALIZATION_GROUPS,
-  DEPED_TEACHER_ACADEMIC_DESIGNATION_OPTIONS,
   DEPED_TEACHER_ANCILLARY_ROLE_OPTIONS,
 } from "@enrollpro/shared";
 import type { Teacher, TeacherFormState } from "./types";
 
-export const MAX_TEACHER_PHOTO_BYTES = 5 * 1024 * 1024;
-
-export const DEPED_LEARNING_AREA_OPTIONS = DEPED_TEACHER_SUBJECT_OPTIONS;
-export const TEACHER_SUBJECT_OPTIONS = DEPED_TEACHER_SUBJECT_OPTIONS;
-export const TEACHER_SUBJECT_GROUPS = DEPED_TEACHER_SUBJECT_GROUPS;
 export const TEACHER_SPECIALIZATION_GROUPS =
   DEPED_TEACHER_SPECIALIZATION_GROUPS;
 export const TEACHER_PLANTILLA_POSITION_OPTIONS =
   DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS;
 export const TEACHER_DEPARTMENT_OPTIONS = DEPED_TEACHER_DEPARTMENT_OPTIONS;
-export const TEACHER_ACADEMIC_DESIGNATION_OPTIONS =
-  DEPED_TEACHER_ACADEMIC_DESIGNATION_OPTIONS;
 export const TEACHER_ANCILLARY_ROLE_OPTIONS =
   DEPED_TEACHER_ANCILLARY_ROLE_OPTIONS;
 
@@ -32,33 +22,15 @@ export function createEmptyTeacherForm(): TeacherFormState {
     email: "",
     employeeId: "",
     contactNumber: "",
-    designation: "",
     specialization: "",
     department: "",
     plantillaPosition: "",
-    subjects: [],
-    photo: null,
   };
 }
 
 export function normalizeOptionalInput(value: string): string | null {
   const normalized = value.trim();
   return normalized.length > 0 ? normalized : null;
-}
-
-export function convertImageToBase64(file: File): Promise<string> {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        resolve(reader.result);
-        return;
-      }
-      reject(new Error("Image conversion failed"));
-    };
-    reader.onerror = () => reject(new Error("Image conversion failed"));
-    reader.readAsDataURL(file);
-  });
 }
 
 export function formatTeacherName(

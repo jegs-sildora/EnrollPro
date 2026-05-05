@@ -1,7 +1,6 @@
 import { z } from "zod";
 import {
   DEPED_TEACHER_PLANTILLA_POSITION_VALUES,
-  DEPED_TEACHER_SUBJECT_VALUES,
   DEPED_TEACHER_DEPARTMENT_VALUES,
   DEPED_TEACHER_SPECIALIZATION_VALUES,
 } from "../constants/index.js";
@@ -38,7 +37,12 @@ const optionalContactNumber = z.preprocess(
     .nullable(),
 );
 
-const teacherSubjectSchema = z.enum(DEPED_TEACHER_SUBJECT_VALUES);
+const requiredUpperText = (message: string) =>
+  z
+    .string()
+    .trim()
+    .min(1, message)
+    .transform((value) => value.toUpperCase());
 
 const teacherPlantillaPositionSchema = z.enum(
   DEPED_TEACHER_PLANTILLA_POSITION_VALUES,
@@ -48,91 +52,72 @@ const teacherDepartmentSchema = z.enum(DEPED_TEACHER_DEPARTMENT_VALUES);
 
 const teacherSpecializationSchema = z.enum(DEPED_TEACHER_SPECIALIZATION_VALUES);
 
-export const teacherSchema = z.object({
-  firstName: z
-    .string()
-    .trim()
-    .min(1, "First name is required")
-    .transform((value) => value.toUpperCase()),
-  lastName: z
-    .string()
-    .trim()
-    .min(1, "Last name is required")
-    .transform((value) => value.toUpperCase()),
-  middleName: optionalUpperText.optional(),
-  email: z.string().trim().email("Invalid email address").optional().nullable(),
-  employeeId: optionalUpperText.optional(),
-  contactNumber: optionalContactNumber.optional(),
-  designation: optionalUpperText.optional(),
-  specialization: z
-    .preprocess(
-      (value) => {
-        if (value === undefined || value === null || value === "") {
-          return null;
-        }
+export const teacherSchema = z
+  .object({
+    firstName: requiredUpperText("First name is required"),
+    lastName: requiredUpperText("Last name is required"),
+    middleName: optionalUpperText.optional(),
+    email: z
+      .string()
+      .trim()
+      .min(1, "DepEd email address is required")
+      .email("Invalid email address")
+      .transform((value) => value.toLowerCase()),
+    employeeId: requiredUpperText("Employee ID is required"),
+    contactNumber: optionalContactNumber.optional(),
+    specialization: z
+      .preprocess(
+        (value) => {
+          if (value === undefined || value === null || value === "") {
+            return null;
+          }
 
-        if (typeof value === "string") {
-          return value.trim().toUpperCase();
-        }
+          if (typeof value === "string") {
+            return value.trim().toUpperCase();
+          }
 
-        return value;
-      },
-      z.union([teacherSpecializationSchema, z.null()]),
-    )
-    .optional(),
-  department: z
-    .preprocess(
-      (value) => {
-        if (value === undefined || value === null || value === "") {
-          return null;
-        }
+          return value;
+        },
+        z.union([teacherSpecializationSchema, z.null()]),
+      )
+      .optional(),
+    department: z
+      .preprocess(
+        (value) => {
+          if (value === undefined || value === null || value === "") {
+            return null;
+          }
 
-        if (typeof value === "string") {
-          return value.trim().toUpperCase();
-        }
+          if (typeof value === "string") {
+            return value.trim().toUpperCase();
+          }
 
-        return value;
-      },
-      z.union([teacherDepartmentSchema, z.null()]),
-    )
-    .optional(),
-  plantillaPosition: z
-    .preprocess(
-      (value) => {
-        if (value === undefined || value === null || value === "") {
-          return null;
-        }
+          return value;
+        },
+        z.union([teacherDepartmentSchema, z.null()]),
+      )
+      .optional(),
+    plantillaPosition: z
+      .preprocess(
+        (value) => {
+          if (value === undefined || value === null || value === "") {
+            return null;
+          }
 
-        if (typeof value === "string") {
-          return value.trim().toUpperCase();
-        }
+          if (typeof value === "string") {
+            return value.trim().toUpperCase();
+          }
 
-        return value;
-      },
-      z.union([teacherPlantillaPositionSchema, z.null()]),
-    )
-    .optional(),
-  subjects: z
-    .array(
-      z.preprocess((value) => {
-        if (typeof value === "string") {
-          return value.trim().toUpperCase();
-        }
+          return value;
+        },
+        z.union([teacherPlantillaPositionSchema, z.null()]),
+      )
+      .optional(),
+  })
+  .strict();
 
-        return value;
-      }, teacherSubjectSchema),
-    )
-    .optional()
-    .default([])
-    .transform((subjects) => Array.from(new Set(subjects))),
-  photo: z
-    .string()
-    .startsWith("data:image", "Photo must be a valid base64 data URL")
-    .optional()
-    .nullable(),
-});
-
-export const updateTeacherSchema = teacherSchema.partial();
+// PUT semantics: full profile replacement contract.
+export const updateTeacherSchema = teacherSchema;
 
 const optionalDateOnly = z
   .string()
