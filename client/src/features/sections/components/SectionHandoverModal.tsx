@@ -1,5 +1,12 @@
 import { useState, useMemo } from "react";
-import { AlertTriangle, Check, Loader2, RefreshCcw, Search, ShieldAlert, User } from "lucide-react";
+import {
+  Check,
+  Loader2,
+  RefreshCcw,
+  Search,
+  ShieldAlert,
+  User,
+} from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/shared/lib/utils";
 import {
@@ -87,7 +94,8 @@ export function SectionHandoverModal({
     if (!substituteTeacherId || !handoverReason) {
       sileo.warning({
         title: "Incomplete Fields",
-        description: "Please select a substitute teacher and a reason for handover.",
+        description:
+          "Please select a substitute teacher and a reason for handover.",
       });
       return;
     }
@@ -96,7 +104,10 @@ export function SectionHandoverModal({
     try {
       await api.post(`/sections/${sectionId}/handover-adviser`, {
         substituteTeacherId: parseInt(substituteTeacherId),
-        handoverReason: handoverReason === "Other Administrative Reason" ? customReason : handoverReason,
+        handoverReason:
+          handoverReason === "Other Administrative Reason"
+            ? customReason
+            : handoverReason,
         handoverDate,
       });
 
@@ -125,10 +136,14 @@ export function SectionHandoverModal({
     }
   };
 
-  const selectedSubstitute = teachers.find(t => t.id.toString() === substituteTeacherId);
+  const selectedSubstitute = teachers.find(
+    (t) => t.id.toString() === substituteTeacherId,
+  );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl border-2 p-0 overflow-hidden rounded-2xl bg-background">
         <DialogHeader className="px-6 py-6 bg-primary text-primary-foreground">
           <div className="flex items-center gap-3">
@@ -153,7 +168,9 @@ export function SectionHandoverModal({
               <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
                 Current Adviser (To be relieved)
               </Label>
-              <Badge variant="outline" className="text-[9px] font-black uppercase border-amber-200 bg-amber-50 text-amber-700">
+              <Badge
+                variant="outline"
+                className="text-[9px] font-black uppercase border-amber-200 bg-amber-50 text-amber-700">
                 ACTIVE
               </Badge>
             </div>
@@ -179,13 +196,18 @@ export function SectionHandoverModal({
                 <Label className="text-[10px] font-black uppercase tracking-widest">
                   Reason for Handover (Audit Required)
                 </Label>
-                <Select value={handoverReason} onValueChange={setHandoverReason}>
+                <Select
+                  value={handoverReason}
+                  onValueChange={setHandoverReason}>
                   <SelectTrigger className="h-11 font-bold">
                     <SelectValue placeholder="Select reason..." />
                   </SelectTrigger>
                   <SelectContent>
                     {HANDOVER_REASONS.map((reason) => (
-                      <SelectItem key={reason} value={reason} className="font-bold text-xs uppercase">
+                      <SelectItem
+                        key={reason}
+                        value={reason}
+                        className="font-bold text-xs uppercase">
                         {reason}
                       </SelectItem>
                     ))}
@@ -199,8 +221,7 @@ export function SectionHandoverModal({
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="space-y-2 overflow-hidden"
-                  >
+                    className="space-y-2 overflow-hidden">
                     <Label className="text-[10px] font-black uppercase tracking-widest">
                       Specify Reason
                     </Label>
@@ -225,7 +246,8 @@ export function SectionHandoverModal({
                   className="h-11 font-bold"
                 />
                 <p className="text-[10px] text-muted-foreground font-bold italic leading-tight">
-                  The current adviser remains the signatory until this date. The new adviser assumes authority the following day.
+                  The current adviser remains the signatory until this date. The
+                  new adviser assumes authority the following day.
                 </p>
               </div>
             </div>
@@ -249,24 +271,31 @@ export function SectionHandoverModal({
                   {filteredTeachers.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-center p-4">
                       <p className="text-xs font-bold text-muted-foreground italic">
-                        {searchQuery ? "No matching teachers found" : "Start typing to search..."}
+                        {searchQuery
+                          ? "No matching teachers found"
+                          : "Start typing to search..."}
                       </p>
                     </div>
                   ) : (
                     filteredTeachers.map((teacher) => (
                       <button
                         key={teacher.id}
-                        onClick={() => setSubstituteTeacherId(teacher.id.toString())}
+                        onClick={() =>
+                          setSubstituteTeacherId(teacher.id.toString())
+                        }
                         className={cn(
                           "w-full px-4 py-3 text-left transition-colors hover:bg-muted/50 flex items-center justify-between group",
-                          substituteTeacherId === teacher.id.toString() && "bg-primary/5 border-l-4 border-primary"
-                        )}
-                      >
+                          substituteTeacherId === teacher.id.toString() &&
+                            "bg-primary/5 border-l-4 border-primary",
+                        )}>
                         <div>
-                          <p className={cn(
-                            "font-black text-xs uppercase",
-                            substituteTeacherId === teacher.id.toString() ? "text-primary" : "text-foreground"
-                          )}>
+                          <p
+                            className={cn(
+                              "font-black text-xs uppercase",
+                              substituteTeacherId === teacher.id.toString()
+                                ? "text-primary"
+                                : "text-foreground",
+                            )}>
                             {teacher.name}
                           </p>
                           <p className="text-[10px] font-bold text-muted-foreground">
@@ -294,10 +323,21 @@ export function SectionHandoverModal({
                 Official DepEd Compliance Notice
               </p>
               <p className="text-[10px] font-bold text-amber-700 leading-relaxed">
-                Advisory history is preserved in the ledger for legal audit. Past grading periods will remain officially 
-                signed by <span className="underline">{currentAdviser?.name || "the original adviser"}</span>. 
+                Advisory history is preserved in the ledger for legal audit.
+                Past grading periods will remain officially signed by{" "}
+                <span className="underline">
+                  {currentAdviser?.name || "the original adviser"}
+                </span>
+                .
                 {selectedSubstitute && (
-                  <> <span className="underline">{selectedSubstitute.name}</span> will assume official signing authority for all subsequent periods.</>
+                  <>
+                    {" "}
+                    <span className="underline">
+                      {selectedSubstitute.name}
+                    </span>{" "}
+                    will assume official signing authority for all subsequent
+                    periods.
+                  </>
                 )}
               </p>
             </div>
@@ -308,22 +348,22 @@ export function SectionHandoverModal({
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            className="font-black uppercase text-xs tracking-widest h-11 px-8"
-          >
+            className="font-black uppercase text-xs tracking-widest h-11 px-8">
             Cancel
           </Button>
           <Button
             onClick={handleHandover}
             disabled={submitting || !substituteTeacherId || !handoverReason}
-            className="font-black uppercase text-xs tracking-widest h-11 px-8 bg-primary shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-          >
+            className="font-black uppercase text-xs tracking-widest h-11 px-8 bg-primary shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
             {submitting ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Executing Handover...
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Executing
+                Handover...
               </>
             ) : (
               <>
-                <RefreshCcw className="mr-2 h-4 w-4" /> Execute Official Handover
+                <RefreshCcw className="mr-2 h-4 w-4" /> Execute Official
+                Handover
               </>
             )}
           </Button>

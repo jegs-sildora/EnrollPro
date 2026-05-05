@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router";
 import { sileo } from "sileo";
 import { cn } from "@/shared/lib/utils";
 import {
   Calendar as CalendarIcon,
-  ArrowRight,
   Pencil,
   AlertTriangle,
   Lock,
@@ -33,7 +31,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
@@ -157,6 +154,71 @@ function formatManilaDate(value: string | Date | null | undefined) {
   }).format(date);
 }
 
+function formatCompactManilaDate(value: string | Date | null | undefined) {
+  if (!value) {
+    return "Not set";
+  }
+
+  const date = typeof value === "string" ? new Date(value) : value;
+
+  return new Intl.DateTimeFormat("en-PH", {
+    timeZone: MANILA_TIME_ZONE,
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(date);
+}
+
+function toManilaDateToken(value: string | Date): number {
+  const date = typeof value === "string" ? new Date(value) : value;
+  const { year, month, day } = getDatePartsInTimeZone(date);
+  return year * 10000 + month * 100 + day;
+}
+
+function dateTokenToUtcMillis(token: number): number {
+  const year = Math.floor(token / 10000);
+  const month = Math.floor((token % 10000) / 100);
+  const day = token % 100;
+  return Date.UTC(year, month - 1, day, 0, 0, 0, 0);
+}
+
+function diffTokenDays(laterToken: number, earlierToken: number): number {
+  const diffMs =
+    dateTokenToUtcMillis(laterToken) - dateTokenToUtcMillis(earlierToken);
+  return Math.max(0, Math.round(diffMs / DAY_IN_MS));
+}
+
+function getDateWindowStatus(
+  openDate: string | null | undefined,
+  closeDate: string | null | undefined,
+) {
+  if (!openDate || !closeDate) {
+    return { label: "⚫ UNSCHEDULED", color: "bg-gray-100 text-gray-700" };
+  }
+
+  const todayToken = toManilaDateToken(new Date());
+  const startToken = toManilaDateToken(openDate);
+  const endToken = toManilaDateToken(closeDate);
+
+  if (todayToken < startToken) {
+    const days = diffTokenDays(startToken, todayToken);
+    return {
+      label: `🔵 SCHEDULED (Opens in ${days} day(s))`,
+      color: "bg-blue-100 text-blue-700",
+    };
+  }
+
+  if (todayToken > endToken) {
+    return { label: "⚫ CONCLUDED", color: "bg-slate-100 text-slate-500" };
+  }
+
+  const daysLeft = diffTokenDays(endToken, todayToken);
+  return {
+    label: `🟢 ACTIVE · Closes in ${daysLeft} day(s)`,
+    color: "bg-green-100 text-green-700 font-bold",
+  };
+}
+
 interface SYItem {
   id: number;
   yearLabel: string;
@@ -246,7 +308,7 @@ export default function SchoolYearTab() {
 
   // Activation & Legal state
   const [isAgreedToActivation, setIsAgreedToActivation] = useState(false);
-  const [showEditCalendarModal, setShowEditCalendarModal] = useState(false);
+  const [isEditingActiveCalendar, setIsEditingActiveCalendar] = useState(false);
   const [savingActiveCalendarDates, setSavingActiveCalendarDates] =
     useState(false);
   const [editActiveClassOpening, setEditActiveClassOpening] = useState<
@@ -402,6 +464,22 @@ export default function SchoolYearTab() {
       : undefined;
   }, [editActiveClassOpening]);
 
+  const activeCalendarCurrentOpening = useMemo(
+    () =>
+      activeYear?.classOpeningDate
+        ? normalizeDateToManila(new Date(activeYear.classOpeningDate))
+        : undefined,
+    [activeYear?.classOpeningDate],
+  );
+
+  const activeCalendarCurrentEnd = useMemo(
+    () =>
+      activeYear?.classEndDate
+        ? normalizeDateToManila(new Date(activeYear.classEndDate))
+        : undefined,
+    [activeYear?.classEndDate],
+  );
+
   const activeCalendarSpanDays = useMemo(() => {
     if (!editActiveClassOpening || !editActiveClassEnd) {
       return 0;
@@ -424,6 +502,43 @@ export default function SchoolYearTab() {
 
     return activeCalendarSpanDays >= MIN_ACTIVE_CALENDAR_SPAN_DAYS;
   }, [activeCalendarSpanDays, editActiveClassEnd, editActiveClassOpening]);
+
+  const activeCalendarStatus = useMemo(
+    () =>
+      getDateWindowStatus(
+        activeYear?.classOpeningDate ?? null,
+        activeYear?.classEndDate ?? null,
+      ),
+    [activeYear?.classEndDate, activeYear?.classOpeningDate],
+  );
+
+  const isActiveCalendarDirty = useMemo(
+    () =>
+      !sameUtcCalendarDate(
+        editActiveClassOpening,
+        activeCalendarCurrentOpening,
+      ) || !sameUtcCalendarDate(editActiveClassEnd, activeCalendarCurrentEnd),
+    [
+      activeCalendarCurrentEnd,
+      activeCalendarCurrentOpening,
+      editActiveClassEnd,
+      editActiveClassOpening,
+    ],
+  );
+
+  useEffect(() => {
+    if (!activeYear || isEditingActiveCalendar) {
+      return;
+    }
+
+    setEditActiveClassOpening(activeCalendarCurrentOpening);
+    setEditActiveClassEnd(activeCalendarCurrentEnd);
+  }, [
+    activeCalendarCurrentEnd,
+    activeCalendarCurrentOpening,
+    activeYear,
+    isEditingActiveCalendar,
+  ]);
 
   const currentRolloverDraft = useMemo<RolloverDraftSnapshot | null>(() => {
     if (!editClassOpening || !editClassEnd) {
@@ -698,7 +813,7 @@ export default function SchoolYearTab() {
     setShowNextForm(true);
   };
 
-  const handleOpenEditCalendarModal = () => {
+  const handleBeginActiveCalendarEdit = () => {
     if (!activeYear) {
       return;
     }
@@ -713,7 +828,13 @@ export default function SchoolYearTab() {
         ? normalizeDateToManila(new Date(activeYear.classEndDate))
         : undefined,
     );
-    setShowEditCalendarModal(true);
+    setIsEditingActiveCalendar(true);
+  };
+
+  const handleDiscardActiveCalendarChanges = () => {
+    setEditActiveClassOpening(activeCalendarCurrentOpening);
+    setEditActiveClassEnd(activeCalendarCurrentEnd);
+    setIsEditingActiveCalendar(false);
   };
 
   const handleSaveActiveCalendarDates = async () => {
@@ -741,7 +862,7 @@ export default function SchoolYearTab() {
         title: "Active calendar updated",
         description: "BOSY and EOSY dates were saved successfully.",
       });
-      setShowEditCalendarModal(false);
+      setIsEditingActiveCalendar(false);
       await fetchData();
     } catch (err) {
       toastApiError(err as never);
@@ -855,44 +976,99 @@ export default function SchoolYearTab() {
             </CardHeader>
             <CardContent className="p-6">
               {activeYear ? (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl font-black text-foreground">
-                        S.Y. {activeYear.yearLabel}
+                <div className="space-y-6">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <span className="text-2xl font-black text-foreground">
+                      School Year {activeYear.yearLabel}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`text-xs font-bold px-3 py-1.5 rounded-full border shadow-sm w-fit ${activeCalendarStatus.color}`}>
+                        {activeCalendarStatus.label}
                       </span>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Start of Classes:{" "}
-                        <span className="text-foreground font-bold">
-                          {formatManilaDate(activeYear.classOpeningDate)}
-                        </span>
-                      </p>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        End of School Year:{" "}
-                        <span className="text-foreground font-bold">
-                          {formatManilaDate(activeYear.classEndDate)}
-                        </span>
-                      </p>
+                      {!isEditingActiveCalendar && (
+                        <Button
+                          variant="outline"
+                          className="font-bold"
+                          onClick={handleBeginActiveCalendarEdit}>
+                          <Pencil className="mr-2 h-4 w-4" /> Edit Timeline
+                        </Button>
+                      )}
                     </div>
                   </div>
-                  <div className="flex flex-col gap-3 min-w-[260px]">
-                    <Button
-                      variant="outline"
-                      className="font-bold w-full justify-center shadow-sm"
-                      onClick={handleOpenEditCalendarModal}>
-                      <Pencil className="mr-2 h-4 w-4" /> Edit Dates
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      className="font-bold w-full justify-between shadow-sm border"
-                      asChild>
-                      <Link to="/settings?tab=enrollment">
-                        Go to Enrollment Gate <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </div>
+
+                  {isEditingActiveCalendar ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-muted/30 p-6 rounded-2xl border-2 border-dashed border-primary/20">
+                        <div className="space-y-2">
+                          <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            Opens On
+                          </Label>
+                          <DatePicker
+                            date={editActiveClassOpening}
+                            setDate={(date) =>
+                              setEditActiveClassOpening(
+                                date ? normalizeDateToManila(date) : undefined,
+                              )
+                            }
+                            timeZone={MANILA_TIME_ZONE}
+                            className="font-bold h-12 text-lg shadow-sm border-2"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            Closes On
+                          </Label>
+                          <DatePicker
+                            date={editActiveClassEnd}
+                            setDate={(date) =>
+                              setEditActiveClassEnd(
+                                date ? normalizeDateToManila(date) : undefined,
+                              )
+                            }
+                            timeZone={MANILA_TIME_ZONE}
+                            minDate={activeCalendarMinEosyDate}
+                            className="font-bold h-12 text-lg shadow-sm border-2"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                        <p className="font-semibold">
+                          Adjusting these dates does not automatically change
+                          your Enrollment Gate deadlines.
+                        </p>
+                      </div>
+
+                      {editActiveClassOpening &&
+                        editActiveClassEnd &&
+                        !isActiveCalendarRangeValid && (
+                          <p className="text-xs font-semibold text-destructive">
+                            EOSY must be later than BOSY and at least 240 days
+                            after BOSY.
+                          </p>
+                        )}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div className="flex flex-col items-center justify-center p-6 bg-muted/40 rounded-2xl border shadow-inner">
+                        <span className="text-[0.65rem] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1">
+                          Opens
+                        </span>
+                        <span className="text-2xl font-black text-foreground tracking-tight">
+                          {formatCompactManilaDate(activeYear.classOpeningDate)}
+                        </span>
+                      </div>
+                      <div className="flex flex-col items-center justify-center p-6 bg-muted/40 rounded-2xl border shadow-inner">
+                        <span className="text-[0.65rem] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1">
+                          Closes
+                        </span>
+                        <span className="text-2xl font-black text-foreground tracking-tight">
+                          {formatCompactManilaDate(activeYear.classEndDate)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center space-y-4">
@@ -1026,6 +1202,43 @@ export default function SchoolYearTab() {
               )}
             </CardContent>
           </Card>
+
+          {activeYear && isEditingActiveCalendar && (
+            <div className="sticky bottom-0 z-20">
+              <div className="rounded-lg border border-border bg-background/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/85">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    {isActiveCalendarDirty
+                      ? "You have unsaved active calendar changes."
+                      : "No active calendar changes yet."}
+                  </p>
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      className="font-bold"
+                      onClick={handleDiscardActiveCalendarChanges}
+                      disabled={savingActiveCalendarDates}>
+                      Discard Changes
+                    </Button>
+                    <Button
+                      className="font-bold"
+                      disabled={
+                        savingActiveCalendarDates ||
+                        !editActiveClassOpening ||
+                        !editActiveClassEnd ||
+                        !isActiveCalendarRangeValid ||
+                        !isActiveCalendarDirty
+                      }
+                      onClick={handleSaveActiveCalendarDates}>
+                      {savingActiveCalendarDates
+                        ? "Saving..."
+                        : "Save Schedule Changes"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -1238,90 +1451,6 @@ export default function SchoolYearTab() {
               </div>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={showEditCalendarModal}
-        onOpenChange={(open) => {
-          setShowEditCalendarModal(open);
-          if (!open) {
-            setSavingActiveCalendarDates(false);
-          }
-        }}>
-        <DialogContent className="sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Update Active Calendar</DialogTitle>
-            <DialogDescription>
-              Adjust BOSY and EOSY for the currently active school year.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Start of Classes (BOSY)</Label>
-                <DatePicker
-                  date={editActiveClassOpening}
-                  setDate={(date) =>
-                    setEditActiveClassOpening(
-                      date ? normalizeDateToManila(date) : undefined,
-                    )
-                  }
-                  timeZone={MANILA_TIME_ZONE}
-                  className="font-bold"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>End of School Year (EOSY)</Label>
-                <DatePicker
-                  date={editActiveClassEnd}
-                  setDate={(date) =>
-                    setEditActiveClassEnd(
-                      date ? normalizeDateToManila(date) : undefined,
-                    )
-                  }
-                  timeZone={MANILA_TIME_ZONE}
-                  minDate={activeCalendarMinEosyDate}
-                  className="font-bold"
-                />
-              </div>
-            </div>
-
-            <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              <p className="font-semibold">
-                Adjusting these dates does not automatically change your
-                Enrollment Gate deadlines.
-              </p>
-            </div>
-
-            {editActiveClassOpening &&
-              editActiveClassEnd &&
-              !isActiveCalendarRangeValid && (
-                <p className="text-xs font-semibold text-destructive">
-                  EOSY must be later than BOSY and at least 240 days after BOSY.
-                </p>
-              )}
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              disabled={savingActiveCalendarDates}
-              onClick={() => setShowEditCalendarModal(false)}>
-              Cancel
-            </Button>
-            <Button
-              disabled={
-                savingActiveCalendarDates ||
-                !editActiveClassOpening ||
-                !editActiveClassEnd ||
-                !isActiveCalendarRangeValid
-              }
-              onClick={handleSaveActiveCalendarDates}>
-              {savingActiveCalendarDates ? "Saving..." : "Save Dates"}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -203,6 +203,9 @@ export function getLearnerTypeLabel(type: string | null | undefined): string {
  */
 export function formatUserRole(role: string | null | undefined): string {
   if (!role) return "N/A";
+  if (role === "HEAD_REGISTRAR") return "Head Registrar";
+  if (role === "GRADE_LEVEL_COORDINATOR") return "Grade Level Coordinator";
+  if (role === "CLASS_ADVISER") return "Class Adviser";
   return role.replaceAll("_", " ");
 }
 

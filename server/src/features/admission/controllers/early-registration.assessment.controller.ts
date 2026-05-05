@@ -8,11 +8,8 @@ export function createEarlyRegistrationAssessmentController(
   deps: AdmissionControllerDeps = createAdmissionControllerDeps(),
 ) {
   const { prisma, auditLog, normalizeDateToUtcNoon } = deps;
-  const {
-    findApplicantOrThrow,
-    assertTransition,
-    updateApplicationStatus,
-  } = createEarlyRegistrationSharedService(deps);
+  const { findApplicantOrThrow, assertTransition, updateApplicationStatus } =
+    createEarlyRegistrationSharedService(deps);
   async function markEligible(req: Request, res: Response, next: NextFunction) {
     try {
       const applicantId = parseInt(String(req.params.id));
@@ -401,9 +398,9 @@ export function createEarlyRegistrationAssessmentController(
             : "EarlyRegistrationApplication",
         recordId: applicantId,
         req,
-        });
+      });
 
-        res.json(updated);
+      res.json(updated);
     } catch (error) {
       next(error);
     }
@@ -528,7 +525,10 @@ export function createEarlyRegistrationAssessmentController(
       const { data: applicant, type: appType } =
         await findApplicantOrThrow(applicantId);
 
-      const targetStatus = "READY_FOR_ENROLLMENT";
+      const targetStatus =
+        applicant.applicantType === "REGULAR"
+          ? "READY_FOR_ENROLLMENT"
+          : "PENDING_BEEF";
 
       assertTransition(
         applicant,

@@ -163,12 +163,12 @@ export interface ScoreRowState {
   absentNoShow: boolean;
   remarks: string;
 }
-
 export interface FinalizeInterviewRowState {
   interviewScore: string;
   decision: "PASS" | "REJECT";
   rejectOutcome: "SUBMITTED_BEERF" | "REJECTED";
   remarks: string;
+  absentNoShow: boolean;
 }
 
 export interface ScheduleFormState {
@@ -200,4 +200,5 @@ export const DEFAULT_FINALIZE_INTERVIEW_ROW: FinalizeInterviewRowState = {
   decision: "PASS",
   rejectOutcome: "SUBMITTED_BEERF",
   remarks: "",
+  absentNoShow: false,
 };

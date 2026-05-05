@@ -14,7 +14,7 @@ import {
 import { Separator } from "@/shared/ui/separator";
 import { Switch } from "@/shared/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
-import { InfoIcon } from "lucide-react";
+import { InfoIcon, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { useSettingsStore } from "@/store/settings.slice";
 
@@ -43,8 +43,16 @@ export default function Step3Preferences() {
             <Label>
               Grade Level to Enroll <span className="text-destructive">*</span>
             </Label>
-            <Input value="Grade 7 (JHS)" disabled className="font-bold" />
-            <input type="hidden" value="7" {...register("gradeLevel")} />
+            <Input
+              value="Grade 7 (JHS)"
+              disabled
+              className="font-bold"
+            />
+            <input
+              type="hidden"
+              value="7"
+              {...register("gradeLevel")}
+            />
           </div>
         </div>
 
@@ -110,7 +118,9 @@ export default function Step3Preferences() {
                     </SelectTrigger>
                     <SelectContent>
                       {SPA_ART_FIELDS.map((f) => (
-                        <SelectItem key={f} value={f}>
+                        <SelectItem
+                          key={f}
+                          value={f}>
                           {f}
                         </SelectItem>
                       ))}
@@ -124,7 +134,9 @@ export default function Step3Preferences() {
                   <Label>Sports (Select all that apply)</Label>
                   <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
                     {SPS_SPORTS.map((s) => (
-                      <div key={s} className="flex items-center space-x-2">
+                      <div
+                        key={s}
+                        className="flex items-center space-x-2">
                         <Checkbox
                           id={`sport-${s}`}
                           checked={watch("sportsList")?.includes(s)}
@@ -140,7 +152,9 @@ export default function Step3Preferences() {
                           }}
                           className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-primary"
                         />
-                        <Label htmlFor={`sport-${s}`} className="text-sm">
+                        <Label
+                          htmlFor={`sport-${s}`}
+                          className="text-sm">
                           {s}
                         </Label>
                       </div>
@@ -162,7 +176,9 @@ export default function Step3Preferences() {
                     </SelectTrigger>
                     <SelectContent>
                       {SPFL_LANGUAGES.map((l) => (
-                        <SelectItem key={l} value={l}>
+                        <SelectItem
+                          key={l}
+                          value={l}>
                           {l}
                         </SelectItem>
                       ))}
@@ -195,8 +211,11 @@ export default function Step3Preferences() {
               {...register("lastSchoolName")}
             />
             {errors.lastSchoolName && (
-              <p className="text-xs text-destructive">
-                {errors.lastSchoolName.message}
+              <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-1">
+                <AlertCircle className="w-3 h-3" />
+                <span>
+                  Incomplete Information: {errors.lastSchoolName.message}
+                </span>
               </p>
             )}
           </div>
@@ -246,8 +265,13 @@ export default function Step3Preferences() {
               ) => setValue("lastSchoolType", val)}
               className="flex flex-wrap gap-4 pt-2">
               {["Public", "Private", "International", "ALS"].map((t) => (
-                <div key={t} className="flex items-center space-x-2">
-                  <RadioGroupItem value={t} id={`school-type-${t}`} />
+                <div
+                  key={t}
+                  className="flex items-center space-x-2">
+                  <RadioGroupItem
+                    value={t}
+                    id={`school-type-${t}`}
+                  />
                   <Label htmlFor={`school-type-${t}`}>{t}</Label>
                 </div>
               ))}
@@ -329,8 +353,12 @@ export default function Step3Preferences() {
               placeholder="Type your full name"
             />
             {errors.parentGuardianSignature && (
-              <p className="text-xs text-destructive">
-                {errors.parentGuardianSignature.message}
+              <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-1">
+                <AlertCircle className="w-3 h-3" />
+                <span>
+                  Incomplete Information:{" "}
+                  {errors.parentGuardianSignature.message}
+                </span>
               </p>
             )}
           </div>

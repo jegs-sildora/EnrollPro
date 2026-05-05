@@ -62,7 +62,6 @@ const PREVIOUS_SCHOOL_FIELDS = new Set([
   "schoolYearLastAttended",
   "lastSchoolAddress",
   "lastSchoolType",
-  "generalAverage",
 ]);
 
 const PREFERENCES_FIELDS = new Set([
@@ -74,6 +73,7 @@ const PREFERENCES_FIELDS = new Set([
   "foreignLanguage",
   "learnerType",
   "learningModalities",
+  "generalAverage",
 ]);
 
 const BACKGROUND_FIELDS = new Set([
@@ -397,10 +397,9 @@ export default function EnrollmentForm({
         "lastGradeCompleted",
         "schoolYearLastAttended",
         "lastSchoolType",
-        "generalAverage",
       ];
     } else if (stepper.state.current.data.id === "preferences") {
-      fieldsToValidate = ["gradeLevel", "learnerType"];
+      fieldsToValidate = ["gradeLevel", "learnerType", "generalAverage"];
       if (watch("isScpApplication")) fieldsToValidate.push("scpType");
     }
 
@@ -414,16 +413,24 @@ export default function EnrollmentForm({
       }
       scrollToTopInstant();
     } else {
-      // Suppress toast if only the contact info confirmation is missing or present
+      // Get the labels of the fields that failed validation
       const currentErrors = methods.formState.errors;
+      const missingFieldLabels = fieldsToValidate
+        .filter((field) => {
+          const fieldError = field
+            .split(".")
+            .reduce((obj, key) => (obj as any)?.[key], currentErrors);
+          return !!fieldError;
+        })
+        .map((field) => getFieldLabel(field));
+
       const hasContactConfirmationError =
         !!currentErrors.isContactInfoConfirmed;
 
-      if (!hasContactConfirmationError) {
+      if (!hasContactConfirmationError && missingFieldLabels.length > 0) {
         sileo.error({
           title: "Incomplete Information",
-          description:
-            "Please provide the following required information to proceed",
+          description: `The following required fields are missing or invalid: ${missingFieldLabels.join(", ")}`,
         });
       }
     }
@@ -727,8 +734,8 @@ export default function EnrollmentForm({
                   className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl space-y-2 mt-8">
                   <div className="flex items-center gap-2 text-destructive font-bold text-sm">
                     <AlertCircle className="w-4 h-4" />
-                    Please provide the following required information to
-                    proceed:
+                    Action Required: The following information is missing or
+                    requires correction to proceed:
                   </div>
                   <ul className="list-disc pl-6 text-xs font-bold text-destructive/80 space-y-1">
                     {validationIssues.map((issue, index) => (

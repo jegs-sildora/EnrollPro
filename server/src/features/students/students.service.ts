@@ -216,6 +216,11 @@ export async function findStudents(query: {
     where,
     include: {
       learner: true,
+      earlyRegistration: {
+        select: {
+          email: true,
+        },
+      },
       gradeLevel: true,
       programDetail: {
         select: {

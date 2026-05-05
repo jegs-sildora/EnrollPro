@@ -14,7 +14,6 @@ import {
   FileCheck2,
   School,
   UserPlus,
-  UserCheck,
   LogOut,
   Loader2,
   Lock,
@@ -124,12 +123,7 @@ interface SectionOption {
   programType: string;
 }
 
-type PendingQueueFilter =
-  | "ALL"
-  | "INCOMING_G7"
-  | "CONTINUING_JHS"
-  | "EARLY_REGISTRANT"
-  | "STANDARD_WALKIN";
+type PendingQueueFilter = "ALL" | "PENDING_BEEF" | "AWAITING_VERIFICATION";
 type ReadingProfileLevel =
   | "INDEPENDENT"
   | "INSTRUCTIONAL"
@@ -141,10 +135,8 @@ const PENDING_QUEUE_FILTER_OPTIONS: Array<{
   label: string;
 }> = [
   { value: "ALL", label: "All" },
-  { value: "EARLY_REGISTRANT", label: "Early Registrants" },
-  { value: "STANDARD_WALKIN", label: "Standard/Walk-in Enrollees" },
-  { value: "INCOMING_G7", label: "Incoming G7" },
-  { value: "CONTINUING_JHS", label: "Continuing JHS" },
+  { value: "PENDING_BEEF", label: "Pending BEEF" },
+  { value: "AWAITING_VERIFICATION", label: "Awaiting Verification" },
 ];
 
 const TABLE_NO_RESULTS_MESSAGES: Record<EnrollmentSubMenu, string> = {
@@ -459,34 +451,18 @@ export default function Enrollment() {
     }
 
     return applications.filter((application) => {
-      const gradeLevelNumber = extractGradeLevelNumber(
-        application.gradeLevel.name,
-      );
-
-      if (pendingQueueFilter === "INCOMING_G7") {
-        return gradeLevelNumber === 7;
+      if (pendingQueueFilter === "PENDING_BEEF") {
+        return application.status === "PENDING_BEEF";
       }
 
-      if (pendingQueueFilter === "CONTINUING_JHS") {
-        return application.learnerType === "CONTINUING";
-      }
-
-      if (pendingQueueFilter === "EARLY_REGISTRANT") {
+      if (pendingQueueFilter === "AWAITING_VERIFICATION") {
         return (
-          application.source === "EARLY_REGISTRATION" ||
-          application.earlyRegistrationId != null
+          application.status === "AWAITING_VERIFICATION" ||
+          application.status === "SUBMITTED_BEEF"
         );
       }
 
-      if (pendingQueueFilter === "STANDARD_WALKIN") {
-        return (
-          application.source === "ENROLLMENT" ||
-          (application.source == null &&
-            application.earlyRegistrationId == null)
-        );
-      }
-
-      return true;
+      return application.status === pendingQueueFilter;
     });
   }, [applications, pendingQueueFilter]);
 
@@ -523,8 +499,22 @@ export default function Enrollment() {
         `/early-registrations/check-lrn/${normalizedLrn}`,
       );
       const existingRecord = Boolean(response.data?.exists);
+      const existingStatus = String(response.data?.status ?? "").toUpperCase();
+      const existingEnrollmentId = Number(response.data?.enrollmentId ?? 0);
+      const isPendingBeefLane =
+        existingStatus === "PENDING_BEEF" ||
+        existingStatus === "AWAITING_VERIFICATION" ||
+        existingStatus === "SUBMITTED_BEEF";
 
       if (existingRecord) {
+        if (response.data?.type === "ENROLLMENT" && isPendingBeefLane) {
+          setIsWalkInGateOpen(false);
+          navigate(
+            `/monitoring/enrollment/walk-in?lrn=${encodeURIComponent(normalizedLrn)}${existingEnrollmentId > 0 ? `&enrollmentId=${existingEnrollmentId}` : ""}`,
+          );
+          return;
+        }
+
         sileo.info({
           title: "Existing Learner Found",
           description:
@@ -1209,6 +1199,7 @@ export default function Enrollment() {
         const isPendingVerification = workflowView === "PENDING_VERIFICATION";
         const isSectionAssignment = workflowView === "SECTION_ASSIGNMENT";
         const hasReadingProfile = Boolean(app.readingProfileLevel);
+        const isPendingBeefStatus = app.status === "PENDING_BEEF";
         const selectedSectionId = sectionSelectionByApplicationId[app.id] ?? "";
         const isSavingSection = savingSectionByApplicationId[app.id] === true;
 
@@ -1256,6 +1247,19 @@ export default function Enrollment() {
               }
               onClick={(e) => {
                 e.stopPropagation();
+                if (isPendingVerification && isPendingBeefStatus) {
+                  if (app.lrn) {
+                    navigate(
+                      `/monitoring/enrollment/walk-in?lrn=${encodeURIComponent(app.lrn)}&enrollmentId=${app.id}`,
+                    );
+                  } else {
+                    navigate(
+                      `/monitoring/enrollment/walk-in?noLrn=true&enrollmentId=${app.id}`,
+                    );
+                  }
+                  return;
+                }
+
                 if (isSectionAssignment) {
                   if (!hasReadingProfile) {
                     openReadingProfileDialog(app);
@@ -1270,10 +1274,17 @@ export default function Enrollment() {
                 isSectionAssignment && (isSavingSection || !selectedSectionId)
               }>
               {isPendingVerification ? (
-                <>
-                  <FileCheck2 className="h-3.5 w-3.5 mr-1" />
-                  Verify Docs
-                </>
+                isPendingBeefStatus ? (
+                  <>
+                    <UserPlus className="h-3.5 w-3.5 mr-1" />
+                    Encode BEEF
+                  </>
+                ) : (
+                  <>
+                    <FileCheck2 className="h-3.5 w-3.5 mr-1" />
+                    Verify Docs
+                  </>
+                )
               ) : isSectionAssignment ? (
                 !hasReadingProfile ? (
                   <>
@@ -1310,6 +1321,7 @@ export default function Enrollment() {
     handleAssignAndEnroll,
     openReadingProfileDialog,
     openUnenrollDialog,
+    navigate,
     setSelectedId,
   ]);
 
@@ -1473,22 +1485,12 @@ export default function Enrollment() {
                 Open Batch Section Assignment
               </Button>
 
-              {pendingQueueFilter === "CONTINUING_JHS" ? (
-                <Button
-                  variant="default"
-                  className="h-10 px-3 flex-1 md:flex-none text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
-                  onClick={() => setIsBatchConfirmSlipModalOpen(true)}>
-                  <UserCheck className="h-4 w-4 mr-2" />
-                  Batch Confirmation Pipeline
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  className="h-10 px-3 flex-1 md:flex-none text-sm font-bold border-red-200 text-red-700 hover:bg-red-50"
-                  onClick={openWalkInGate}>
-                  <UserPlus className="h-4 w-4 mr-2" />+ Walk-In BEEF
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                className="h-10 px-3 flex-1 md:flex-none text-sm font-bold border-red-200 text-red-700 hover:bg-red-50"
+                onClick={openWalkInGate}>
+                <UserPlus className="h-4 w-4 mr-2" />+ Walk-In BEEF
+              </Button>
 
               <Button
                 variant="outline"
@@ -1547,28 +1549,30 @@ export default function Enrollment() {
                 </Button>
               </div>
 
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Queue Filter
-                </span>
-                {PENDING_QUEUE_FILTER_OPTIONS.map((option) => (
-                  <Button
-                    key={option.value}
-                    type="button"
-                    variant={
-                      pendingQueueFilter === option.value
-                        ? "default"
-                        : "outline"
-                    }
-                    size="sm"
-                    className="h-8 text-sm font-bold"
-                    onClick={() => {
-                      setPendingQueueFilter(option.value);
-                    }}>
-                    {option.label}
-                  </Button>
-                ))}
-              </div>
+              {workflowView === "PENDING_VERIFICATION" && (
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Queue Filter
+                  </span>
+                  {PENDING_QUEUE_FILTER_OPTIONS.map((option) => (
+                    <Button
+                      key={option.value}
+                      type="button"
+                      variant={
+                        pendingQueueFilter === option.value
+                          ? "default"
+                          : "outline"
+                      }
+                      size="sm"
+                      className="h-8 text-sm font-bold"
+                      onClick={() => {
+                        setPendingQueueFilter(option.value);
+                      }}>
+                      {option.label}
+                    </Button>
+                  ))}
+                </div>
+              )}
             </CardHeader>
 
             <CardContent className="px-3 sm:px-6 max-w-full overflow-hidden">
@@ -1814,21 +1818,6 @@ export default function Enrollment() {
                     toastApiError(err as never);
                   } finally {
                     setLoading(false);
-                  }
-                }}
-                onMarkInterviewPassed={async () => {
-                  try {
-                    await api.patch(
-                      `/applications/${selectedId}/mark-interview-passed`,
-                    );
-                    sileo.success({
-                      title: "Ready for Enrollment",
-                      description:
-                        "Learner moved to Ready for Enrollment status.",
-                    });
-                    fetchData();
-                  } catch (e) {
-                    toastApiError(e as never);
                   }
                 }}
                 onMarkVerified={async () => {

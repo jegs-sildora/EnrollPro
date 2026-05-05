@@ -317,6 +317,7 @@ export function createEarlyRegistrationLifecycleController(
       }
 
       const verificationEligibleStatuses = new Set([
+        "AWAITING_VERIFICATION",
         "SUBMITTED_BEEF",
         "SUBMITTED_BEERF",
         "UNDER_REVIEW",
@@ -326,7 +327,7 @@ export function createEarlyRegistrationLifecycleController(
       if (!verificationEligibleStatuses.has(applicant.status)) {
         throw new AppError(
           422,
-          `Cannot verify application with status "${applicant.status}". Only SUBMITTED_BEEF, SUBMITTED_BEERF, UNDER_REVIEW, or READY_FOR_ENROLLMENT applications can be verified.`,
+          `Cannot verify application with status "${applicant.status}". Only AWAITING_VERIFICATION, SUBMITTED_BEEF, SUBMITTED_BEERF, UNDER_REVIEW, or READY_FOR_ENROLLMENT applications can be verified.`,
         );
       }
 
@@ -716,6 +717,14 @@ export function createEarlyRegistrationLifecycleController(
         applicantType = "REGULAR",
         gradeLevelId,
       } = data;
+      const processOutcome =
+        data.processOutcome === "ENCODE_ONLY"
+          ? "ENCODE_ONLY"
+          : "ENCODE_AND_VERIFY";
+      const requestedEnrollmentId = Number.parseInt(
+        String(data.enrollmentApplicationId ?? ""),
+        10,
+      );
 
       const normalizedLrn =
         typeof data.lrn === "string" && data.lrn.trim().length > 0
@@ -889,93 +898,214 @@ export function createEarlyRegistrationLifecycleController(
         },
       });
 
-      if (existingEnrollment) {
+      const updatableStatuses = new Set([
+        "PENDING_BEEF",
+        "AWAITING_VERIFICATION",
+        "SUBMITTED_BEEF",
+      ]);
+
+      let targetEnrollment = existingEnrollment;
+
+      if (
+        Number.isInteger(requestedEnrollmentId) &&
+        requestedEnrollmentId > 0
+      ) {
+        const requestedEnrollment =
+          await prisma.enrollmentApplication.findFirst({
+            where: {
+              id: requestedEnrollmentId,
+              learnerId: learner.id,
+              schoolYearId: settings.activeSchoolYearId,
+              status: { notIn: ["REJECTED", "WITHDRAWN"] },
+            },
+            select: {
+              id: true,
+              status: true,
+              trackingNumber: true,
+            },
+          });
+
+        if (!requestedEnrollment) {
+          throw new AppError(
+            404,
+            "Selected enrollment record was not found for this learner in the active School Year.",
+          );
+        }
+
+        targetEnrollment = requestedEnrollment;
+      }
+
+      if (targetEnrollment && !updatableStatuses.has(targetEnrollment.status)) {
         throw new AppError(
           409,
-          `An active enrollment already exists for this learner (Tracking: ${existingEnrollment.trackingNumber ?? `#${existingEnrollment.id}`}, Status: ${existingEnrollment.status}).`,
+          `An active enrollment already exists for this learner (Tracking: ${targetEnrollment.trackingNumber ?? `#${targetEnrollment.id}`}, Status: ${targetEnrollment.status}).`,
         );
       }
 
-      // 3. Create Enrollment Application
-      const application = await prisma.enrollmentApplication.create({
-        data: {
-          learnerId: learner.id,
-          schoolYearId: settings.activeSchoolYearId,
-          gradeLevelId: gradeLevel.id,
-          applicantType: applicantType as any,
-          learnerType: learnerType as any,
-          status:
-            (data.isMissingSf9 && !data.hasSf9CertificationLetter) ||
-            data.hasUnsettledPrivateAccount
-              ? "TEMPORARILY_ENROLLED"
-              : "VERIFIED",
-          intakeMethod: "BEEF_FULL",
-          admissionChannel: "F2F",
-          guardianRelationship: normalizeOptional(data.guardianRelationship),
-          hasNoMother: !motherData,
-          hasNoFather: !fatherData,
-          encodedById: req.user!.userId,
-          isPrivacyConsentGiven: true,
-          isTemporarilyEnrolled:
-            (data.isMissingSf9 && !data.hasSf9CertificationLetter) ||
-            data.hasUnsettledPrivateAccount ||
-            false,
-          isMissingSf9: data.isMissingSf9 || false,
-          hasSf9CertificationLetter: data.hasSf9CertificationLetter || false,
-          hasUnsettledPrivateAccount: data.hasUnsettledPrivateAccount || false,
-          originatingSchoolName: normalizeOptional(data.originatingSchoolName),
-          addresses:
-            addressData.length > 0
-              ? { createMany: { data: addressData } }
-              : undefined,
-          familyMembers:
-            familyData.length > 0
-              ? { createMany: { data: familyData } }
-              : undefined,
-          previousSchool:
-            data.lastSchoolName ||
-            data.originSchoolName ||
-            typeof data.checklist?.finalGeneralAverage === "number" ||
-            typeof data.generalAverage === "number"
-              ? {
-                  create: {
-                    schoolName: normalizeOptional(
-                      data.lastSchoolName || data.originSchoolName,
-                    ),
-                    schoolDepedId: normalizeOptional(data.lastSchoolId),
-                    gradeCompleted: normalizeOptional(data.lastGradeCompleted),
-                    schoolYearAttended: normalizeOptional(
-                      data.schoolYearLastAttended,
-                    ),
-                    schoolAddress: normalizeOptional(data.lastSchoolAddress),
-                    schoolType: normalizeOptional(data.lastSchoolType),
-                    generalAverage:
-                      typeof data.generalAverage === "number"
-                        ? data.generalAverage
-                        : typeof data.checklist?.finalGeneralAverage ===
-                            "number"
-                          ? data.checklist.finalGeneralAverage
-                          : null,
-                  },
-                }
-              : undefined,
-        },
-        include: { learner: true },
-      });
+      const shouldTemporarilyEnroll =
+        (data.isMissingSf9 && !data.hasSf9CertificationLetter) ||
+        data.hasUnsettledPrivateAccount ||
+        false;
+      const resolvedStatus =
+        processOutcome === "ENCODE_ONLY"
+          ? "AWAITING_VERIFICATION"
+          : shouldTemporarilyEnroll
+            ? "TEMPORARILY_ENROLLED"
+            : "VERIFIED";
 
-      // 4. Create Tracking Number
+      const persistedApplication = targetEnrollment
+        ? await prisma.enrollmentApplication.update({
+            where: { id: targetEnrollment.id },
+            data: {
+              gradeLevelId: gradeLevel.id,
+              applicantType: applicantType as any,
+              learnerType: learnerType as any,
+              status: resolvedStatus,
+              intakeMethod: "BEEF_FULL",
+              admissionChannel: "F2F",
+              guardianRelationship: normalizeOptional(
+                data.guardianRelationship,
+              ),
+              hasNoMother: !motherData,
+              hasNoFather: !fatherData,
+              encodedById: req.user!.userId,
+              isPrivacyConsentGiven: true,
+              isTemporarilyEnrolled: shouldTemporarilyEnroll,
+              isMissingSf9: data.isMissingSf9 || false,
+              hasSf9CertificationLetter:
+                data.hasSf9CertificationLetter || false,
+              hasUnsettledPrivateAccount:
+                data.hasUnsettledPrivateAccount || false,
+              originatingSchoolName: normalizeOptional(
+                data.originatingSchoolName,
+              ),
+            },
+            include: { learner: true },
+          })
+        : await prisma.enrollmentApplication.create({
+            data: {
+              learnerId: learner.id,
+              schoolYearId: settings.activeSchoolYearId,
+              gradeLevelId: gradeLevel.id,
+              applicantType: applicantType as any,
+              learnerType: learnerType as any,
+              status: resolvedStatus,
+              intakeMethod: "BEEF_FULL",
+              admissionChannel: "F2F",
+              guardianRelationship: normalizeOptional(
+                data.guardianRelationship,
+              ),
+              hasNoMother: !motherData,
+              hasNoFather: !fatherData,
+              encodedById: req.user!.userId,
+              isPrivacyConsentGiven: true,
+              isTemporarilyEnrolled: shouldTemporarilyEnroll,
+              isMissingSf9: data.isMissingSf9 || false,
+              hasSf9CertificationLetter:
+                data.hasSf9CertificationLetter || false,
+              hasUnsettledPrivateAccount:
+                data.hasUnsettledPrivateAccount || false,
+              originatingSchoolName: normalizeOptional(
+                data.originatingSchoolName,
+              ),
+            },
+            include: { learner: true },
+          });
+
+      await prisma.applicationAddress.deleteMany({
+        where: { enrollmentId: persistedApplication.id },
+      });
+      if (addressData.length > 0) {
+        await prisma.applicationAddress.createMany({
+          data: addressData.map((item) => ({
+            ...item,
+            enrollmentId: persistedApplication.id,
+          })),
+        });
+      }
+
+      await prisma.applicationFamilyMember.deleteMany({
+        where: { enrollmentId: persistedApplication.id },
+      });
+      if (familyData.length > 0) {
+        await prisma.applicationFamilyMember.createMany({
+          data: familyData.map((item) => ({
+            ...item,
+            enrollmentId: persistedApplication.id,
+          })),
+        });
+      }
+
+      const hasPreviousSchoolPayload =
+        data.lastSchoolName ||
+        data.originSchoolName ||
+        typeof data.checklist?.finalGeneralAverage === "number" ||
+        typeof data.generalAverage === "number";
+
+      if (hasPreviousSchoolPayload) {
+        await prisma.enrollmentPreviousSchool.upsert({
+          where: { applicationId: persistedApplication.id },
+          update: {
+            schoolName: normalizeOptional(
+              data.lastSchoolName || data.originSchoolName,
+            ),
+            schoolDepedId: normalizeOptional(data.lastSchoolId),
+            gradeCompleted: normalizeOptional(data.lastGradeCompleted),
+            schoolYearAttended: normalizeOptional(data.schoolYearLastAttended),
+            schoolAddress: normalizeOptional(data.lastSchoolAddress),
+            schoolType: normalizeOptional(data.lastSchoolType),
+            generalAverage:
+              typeof data.generalAverage === "number"
+                ? data.generalAverage
+                : typeof data.checklist?.finalGeneralAverage === "number"
+                  ? data.checklist.finalGeneralAverage
+                  : null,
+          },
+          create: {
+            applicationId: persistedApplication.id,
+            schoolName: normalizeOptional(
+              data.lastSchoolName || data.originSchoolName,
+            ),
+            schoolDepedId: normalizeOptional(data.lastSchoolId),
+            gradeCompleted: normalizeOptional(data.lastGradeCompleted),
+            schoolYearAttended: normalizeOptional(data.schoolYearLastAttended),
+            schoolAddress: normalizeOptional(data.lastSchoolAddress),
+            schoolType: normalizeOptional(data.lastSchoolType),
+            generalAverage:
+              typeof data.generalAverage === "number"
+                ? data.generalAverage
+                : typeof data.checklist?.finalGeneralAverage === "number"
+                  ? data.checklist.finalGeneralAverage
+                  : null,
+          },
+        });
+      }
+
       const year = new Date().getFullYear();
-      const trackingNumber = `F2F-ENR-${year}-${String(application.id).padStart(5, "0")}`;
+      const trackingNumber =
+        targetEnrollment?.trackingNumber ??
+        `F2F-ENR-${year}-${String(persistedApplication.id).padStart(5, "0")}`;
 
       const updated = await prisma.enrollmentApplication.update({
-        where: { id: application.id },
+        where: { id: persistedApplication.id },
         data: { trackingNumber },
         include: { learner: true, gradeLevel: true },
       });
 
-      // 5. Create initial checklist
-      await prisma.applicationChecklist.create({
-        data: {
+      await prisma.applicationChecklist.upsert({
+        where: { enrollmentId: updated.id },
+        update: {
+          academicStatus:
+            data.checklist?.academicStatus || data.academicStatus || "PROMOTED",
+          isSf9Submitted: data.checklist?.isSf9Submitted ?? false,
+          isPsaBirthCertPresented:
+            data.checklist?.isPsaBirthCertPresented ?? false,
+          isOriginalPsaBcCollected:
+            data.checklist?.isOriginalPsaBcCollected ??
+            data.checklist?.isPsaBirthCertPresented ??
+            false,
+        },
+        create: {
           enrollmentId: updated.id,
           academicStatus:
             data.checklist?.academicStatus || data.academicStatus || "PROMOTED",
@@ -992,7 +1122,10 @@ export function createEarlyRegistrationLifecycleController(
       await auditLog({
         userId: req.user!.userId,
         actionType: "APPLICATION_SUBMITTED",
-        description: `Walk-in special enrollment created and auto-verified for ${updated.learner.firstName} ${updated.learner.lastName} (#${updated.id})`,
+        description:
+          processOutcome === "ENCODE_ONLY"
+            ? `Registrar encoded BEEF for ${updated.learner.firstName} ${updated.learner.lastName} (#${updated.id}) and routed to AWAITING_VERIFICATION.`
+            : `Registrar encoded and verified BEEF for ${updated.learner.firstName} ${updated.learner.lastName} (#${updated.id}).`,
         subjectType: "EnrollmentApplication",
         recordId: updated.id,
         req,

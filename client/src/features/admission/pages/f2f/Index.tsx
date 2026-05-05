@@ -1,7 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router";
-import { BookOpen } from "lucide-react";
-import { Button } from "@/shared/ui/button";
 import { useAuthStore } from "@/store/auth.slice";
 import EarlyRegistrationForm from "@/features/early-registration/pages/apply/EarlyRegistrationForm";
 import F2FEarlyRegistrationSuccess from "./F2FEarlyRegistrationSuccess";

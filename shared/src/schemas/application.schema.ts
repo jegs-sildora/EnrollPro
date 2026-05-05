@@ -68,15 +68,12 @@ const optionalGeneralAverageSchema = z.preprocess(
     )
     .min(0, "Final General Average must be between 0 and 100")
     .max(100, "Final General Average must be between 0 and 100")
-    .refine(
-      (value) => {
-        if (value === undefined || value === null) return true;
-        const stringValue = value.toString();
-        const decimalPart = stringValue.split(".")[1];
-        return !decimalPart || decimalPart.length <= 2;
-      },
-      "Final General Average must have up to 2 decimal places",
-    )
+    .refine((value) => {
+      if (value === undefined || value === null) return true;
+      const stringValue = value.toString();
+      const decimalPart = stringValue.split(".")[1];
+      return !decimalPart || decimalPart.length <= 2;
+    }, "Final General Average must have up to 2 decimal places")
     .optional()
     .nullable(),
 );
@@ -311,6 +308,10 @@ export const readingProfileUpdateSchema = z.object({
 
 export const specialEnrollmentSchema = z
   .object({
+    enrollmentApplicationId: z.number().int().positive().optional(),
+    processOutcome: z
+      .enum(["ENCODE_ONLY", "ENCODE_AND_VERIFY"])
+      .default("ENCODE_AND_VERIFY"),
     hasNoLrn: z.boolean().default(false),
     lrn: z
       .string()
@@ -370,6 +371,7 @@ export const specialEnrollmentSchema = z
         academicStatus: z.enum(["PROMOTED", "RETAINED"]).optional(),
         isPsaBirthCertPresented: z.boolean().optional(),
         isOriginalPsaBcCollected: z.boolean().optional(),
+        isPsaPhase1CopyMatched: z.boolean().optional(),
         isSf9Submitted: z.boolean().optional(),
         finalGeneralAverage: z.number().min(0).max(100).optional(),
       })
@@ -680,6 +682,7 @@ export const scpProgramConfigUpdateSchema = z.object({
   scpType: ScpTypeEnum,
   isOffered: z.boolean().default(false),
   isTwoPhase: z.boolean().optional().default(false),
+  maxSlots: z.number().int().positive().optional().nullable(),
   cutoffScore: z.number().min(0).max(100).optional().nullable(),
   notes: z.string().optional().nullable(),
   // Accept both the legacy rule-array format and the current metadata object shape.
@@ -704,6 +707,8 @@ export const updateScpProgramConfigsSchema = z.object({
 // ─── Batch Processing Schema ───────────────────────────
 const BATCH_TARGET_STATUSES = [
   "SUBMITTED_BEERF",
+  "PENDING_BEEF",
+  "AWAITING_VERIFICATION",
   "SUBMITTED_BEEF",
   "VERIFIED",
   "UNDER_REVIEW",

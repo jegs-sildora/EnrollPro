@@ -30,6 +30,14 @@ export const STATUS_CONFIG: Record<
     label: "Submitted BEEF",
     className: "bg-slate-100 text-slate-700 border-slate-300",
   },
+  PENDING_BEEF: {
+    label: "Pending BEEF",
+    className: "bg-amber-100 text-amber-800 border-amber-300",
+  },
+  AWAITING_VERIFICATION: {
+    label: "Awaiting Verification",
+    className: "bg-sky-100 text-sky-800 border-sky-300",
+  },
   SUBMITTED: {
     label: "Submitted",
     className: "bg-slate-100 text-slate-700 border-slate-300",

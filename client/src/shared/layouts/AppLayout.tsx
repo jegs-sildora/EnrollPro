@@ -289,7 +289,9 @@ function AppSidebar() {
   const [activeYearLabel, setActiveYearLabel] = useState<string | null>(null);
 
   const isAdmin = user?.role === "SYSTEM_ADMIN";
-  const isRegistrar = user?.role === "REGISTRAR";
+  const isHeadRegistrar = user?.role === "HEAD_REGISTRAR";
+  const isLegacyRegistrar = user?.role === "REGISTRAR";
+  const isRegistrar = isHeadRegistrar || isLegacyRegistrar;
   const pathname = location.pathname;
 
   useEffect(() => {
@@ -371,7 +373,7 @@ function AppSidebar() {
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
-                {/* Items 1–7: shared between REGISTRAR and SYSTEM_ADMIN */}
+                {/* Items 1–7: shared between registrar role and SYSTEM_ADMIN */}
                 {(isRegistrar || isAdmin) && (
                   <>
                     <NavDivider label="Operations" />
@@ -431,31 +433,27 @@ function AppSidebar() {
                   </>
                 )}
 
-                {(isRegistrar || isAdmin) && (
+                {isAdmin && (
                   <>
                     <NavDivider label="System" />
-                    {isAdmin && (
-                      <NavItem
-                        to="/admin/users"
-                        icon={Shield}
-                        label="User Management"
-                        pathname={pathname}
-                      />
-                    )}
+                    <NavItem
+                      to="/admin/users"
+                      icon={Shield}
+                      label="User Management"
+                      pathname={pathname}
+                    />
                     <NavItem
                       to="/audit-logs"
                       icon={ScrollText}
                       label="Audit Logs"
                       pathname={pathname}
                     />
-                    {isAdmin && (
-                      <NavItem
-                        to="/admin/system"
-                        icon={Activity}
-                        label="System Health"
-                        pathname={pathname}
-                      />
-                    )}
+                    <NavItem
+                      to="/admin/system"
+                      icon={Activity}
+                      label="System Health"
+                      pathname={pathname}
+                    />
                     <NavItem
                       to="/settings"
                       icon={Settings}
@@ -505,11 +503,11 @@ function AppSidebar() {
                         System Admin
                       </Badge>
                     )}
-                    {user?.role === "REGISTRAR" && (
+                    {isRegistrar && (
                       <Badge
                         variant="outline"
                         className="mt-0.5 w-fit h-4 px-1 text-[0.5625rem] font-bold border-accent bg-[hsl(var(--accent-muted))] text-accent">
-                        Registrar
+                        {isHeadRegistrar ? "Head Registrar" : "Registrar"}
                       </Badge>
                     )}
                   </div>

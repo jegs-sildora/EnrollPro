@@ -1629,6 +1629,8 @@ export default function PipelineBatchView({
       const row = finalizeInterviewRows[applicantId];
       if (!row) return false;
 
+      if (row.absentNoShow) return true;
+
       if (row.decision === "REJECT" && !row.rejectOutcome) return false;
 
       if (row.interviewScore.trim()) {
@@ -2026,6 +2028,17 @@ export default function PipelineBatchView({
             );
           }
 
+          if (row.absentNoShow) {
+            return {
+              id,
+              decision: "REJECT",
+              rejectOutcome: "SUBMITTED_BEERF",
+              interviewScore: 0,
+              absentNoShow: true,
+              remarks: row.remarks || "Marked absent / no-show.",
+            };
+          }
+
           const interviewScore = row.interviewScore.trim()
             ? Number(row.interviewScore)
             : null;
@@ -2040,15 +2053,22 @@ export default function PipelineBatchView({
             throw new Error("Interview score must be numeric.");
           }
 
-          // Automatic decision based on score vs cutoff
-          const cutoff = Number(scpAssessmentCutoffScore ?? 0);
-          const decision = interviewScore >= cutoff ? "PASS" : "REJECT";
+          let decision = row.decision;
+          let rejectOutcome = row.rejectOutcome;
+
+          // For SCP/non-regular, we still use automatic decision based on score vs cutoff
+          if (applicantType !== "REGULAR") {
+            const cutoff = Number(scpAssessmentCutoffScore ?? 0);
+            decision = interviewScore >= cutoff ? "PASS" : "REJECT";
+            if (decision === "REJECT") {
+              rejectOutcome = "SUBMITTED_BEERF";
+            }
+          }
 
           return {
             id,
             decision,
-            rejectOutcome:
-              decision === "REJECT" ? "SUBMITTED_BEERF" : undefined,
+            rejectOutcome,
             interviewScore,
             remarks: row.remarks || null,
           };

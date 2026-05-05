@@ -71,18 +71,6 @@ export default function Settings() {
             <span className="relative z-20">School Year</span>
           </TabsTrigger>
           <TabsTrigger
-            value="curriculum"
-            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
-            {activeTab === "curriculum" && (
-              <motion.div
-                layoutId="settings-active-pill"
-                className="absolute inset-0 bg-primary rounded-md"
-                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-              />
-            )}
-            <span className="relative z-20">Curriculum</span>
-          </TabsTrigger>
-          <TabsTrigger
             value="enrollment"
             className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
             {activeTab === "enrollment" && (
@@ -93,6 +81,18 @@ export default function Settings() {
               />
             )}
             <span className="relative z-20">Enrollment Gate</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="curriculum"
+            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+            {activeTab === "curriculum" && (
+              <motion.div
+                layoutId="settings-active-pill"
+                className="absolute inset-0 bg-primary rounded-md"
+                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+              />
+            )}
+            <span className="relative z-20">Curriculum</span>
           </TabsTrigger>
           <TabsTrigger
             value="lifecycle"

@@ -63,9 +63,24 @@ export default function PipelineBatchScpAssessmentInterviewGrid({
 
   const handleInterviewScoreChangeLocal = useCallback(
     (applicantId: number, value: string) => {
-      if (onInterviewScoreChange) {
-        onInterviewScoreChange(applicantId, value);
+      // Clamp to 100
+      let val = value;
+      const num = Number(value);
+      if (!isNaN(num) && num > 100) {
+        val = "100";
       }
+
+      if (onInterviewScoreChange) {
+        onInterviewScoreChange(applicantId, val);
+      }
+
+      requestAnimationFrame(() => {
+        const input = scoreInputRefs.current[applicantId];
+        if (!input || input.disabled) return;
+        if (document.activeElement !== input) {
+          input.focus();
+        }
+      });
     },
     [onInterviewScoreChange],
   );
@@ -145,7 +160,13 @@ export default function PipelineBatchScpAssessmentInterviewGrid({
                 step="1"
                 value={scoreValue}
                 onChange={(event) => {
-                  handleScoreChange(applicant.id, event.target.value);
+                  // Clamp to 100
+                  let val = event.target.value;
+                  const num = Number(val);
+                  if (!isNaN(num) && num > 100) {
+                    val = "100";
+                  }
+                  handleScoreChange(applicant.id, val);
                 }}
                 readOnly={!isAssessmentMode}
                 disabled={
@@ -262,10 +283,14 @@ export default function PipelineBatchScpAssessmentInterviewGrid({
         cell: ({ row }) => {
           const applicant = row.original;
           const score = getInterviewScore?.(applicant.id) ?? "";
+          const absentNoShow = getAbsentNoShow(applicant.id);
 
           return (
-            <div className="flex justify-center min-w-[200px]">
+            <div className="space-y-1.5 min-w-[200px]">
               <Input
+                ref={(node) => {
+                  scoreInputRefs.current[applicant.id] = node;
+                }}
                 type="number"
                 min={0}
                 max={100}
@@ -277,10 +302,21 @@ export default function PipelineBatchScpAssessmentInterviewGrid({
                     event.target.value,
                   )
                 }
-                disabled={isBatchProcessing}
+                disabled={isBatchProcessing || absentNoShow}
                 placeholder="0 - 100"
-                className="h-8 w-24 text-center text-sm font-bold"
+                className="h-8 w-24 text-center text-sm font-bold mx-auto"
               />
+
+              <label className="inline-flex items-center gap-2 text-[11px] font-bold text-foreground mx-auto">
+                <Checkbox
+                  checked={absentNoShow}
+                  onCheckedChange={(checked) =>
+                    onAbsentNoShowChange(applicant.id, Boolean(checked))
+                  }
+                  disabled={isBatchProcessing}
+                />
+                No Show / Absent
+              </label>
             </div>
           );
         },
@@ -318,6 +354,7 @@ export default function PipelineBatchScpAssessmentInterviewGrid({
           columns={columns}
           data={selectedApplications}
           loading={loading}
+          virtualize={false}
           className="rounded-lg border overflow-auto min-h-0 relative"
           noResultsMessage="No applicants loaded."
         />

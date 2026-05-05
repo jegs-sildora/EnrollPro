@@ -43,6 +43,16 @@ interface OfferedScpProgramConfig {
   gradeRequirements: unknown;
 }
 
+interface PublicScpProgramConfig {
+  scpType: unknown;
+  isOffered?: boolean;
+  gradeRequirements?: unknown;
+}
+
+interface PublicScpConfigResponse {
+  scpProgramConfigs?: PublicScpProgramConfig[];
+}
+
 const SCP_PROGRAMS: Array<{ id: ScpTypeValue; label: string; desc: string }> = [
   {
     id: "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
@@ -76,11 +86,14 @@ const SCP_PROGRAMS: Array<{ id: ScpTypeValue; label: string; desc: string }> = [
   },
 ] as const;
 
+const isScpTypeValue = (value: unknown): value is ScpTypeValue =>
+  typeof value === "string" &&
+  SCP_PROGRAMS.some((program) => program.id === value);
+
 export default function Step5Enrollment() {
   const {
     watch,
     setValue,
-    register,
     clearErrors,
     formState: { errors },
   } = useFormContext<EnrollmentFormData>();
@@ -107,6 +120,8 @@ export default function Step5Enrollment() {
   useEffect(() => {
     if (reportedGa !== undefined && reportedGa !== null) {
       setInputGaValue(reportedGa.toString());
+    } else {
+      setInputGaValue("");
     }
   }, [reportedGa]);
 
@@ -393,7 +408,7 @@ export default function Step5Enrollment() {
         <Label
           htmlFor="generalAverage"
           className="text-sm font-bold uppercase tracking-widest text-primary">
-          General Average <span className="text-destructive">*</span>
+          Final General Average <span className="text-destructive">*</span>
         </Label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
           <div className="space-y-2">
@@ -416,7 +431,7 @@ export default function Step5Enrollment() {
                   if (parsed === null || (!isNaN(parsed) && parsed <= 100)) {
                     setValue(
                       "generalAverage",
-                      parsed === null ? null : Number(parsed.toFixed(2)),
+                      parsed === null ? Number.NaN : Number(parsed.toFixed(2)),
                       { shouldValidate: true, shouldDirty: true },
                     );
                     setInputGaValue(val);

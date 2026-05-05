@@ -1572,13 +1572,15 @@ export async function checkLrn(
     // Check enrollment applications
     const existingEnrollmentApp = await prisma.enrollmentApplication.findFirst({
       where: { learner: { lrn }, schoolYearId: activeYear.id },
-      select: { id: true },
+      select: { id: true, status: true },
     });
 
     if (existingEnrollmentApp) {
       return res.json({
         exists: true,
         type: "ENROLLMENT",
+        enrollmentId: existingEnrollmentApp.id,
+        status: existingEnrollmentApp.status,
         message: `An enrollment application with LRN ${lrn} already exists for this School Year.`,
       });
     }

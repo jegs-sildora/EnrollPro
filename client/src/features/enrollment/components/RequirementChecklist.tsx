@@ -1,15 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import {
-  Check,
-  AlertCircle,
-  Info,
-  Loader2,
-  ExternalLink,
-  BookOpen,
-  Save,
-} from "lucide-react";
+import { Check, AlertCircle, Info, Loader2, Save } from "lucide-react";
 import { format } from "date-fns";
-import { Link } from "react-router";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { sileo } from "sileo";

@@ -321,7 +321,10 @@ export function createSchoolYearAdminController(
       where: { id: year.id },
       include: {
         sections: {
-          orderBy: [{ gradeLevel: { displayOrder: "asc" } }, { sortOrder: "asc" }],
+          orderBy: [
+            { gradeLevel: { displayOrder: "asc" } },
+            { sortOrder: "asc" },
+          ],
           include: { gradeLevel: true },
         },
         _count: {
@@ -500,7 +503,10 @@ export function createSchoolYearAdminController(
       where: { id: newYear.id },
       include: {
         sections: {
-          orderBy: [{ gradeLevel: { displayOrder: "asc" } }, { sortOrder: "asc" }],
+          orderBy: [
+            { gradeLevel: { displayOrder: "asc" } },
+            { sortOrder: "asc" },
+          ],
           include: { gradeLevel: true },
         },
         _count: {
@@ -770,35 +776,35 @@ export function createSchoolYearAdminController(
           : null
         : existingYear.earlyRegCloseDate;
 
-    /* Commented out for demonstration:
-    if (nextEarlyRegCloseDate && nextEnrollOpenDate) {
-      if (nextEnrollOpenDate.getTime() <= nextEarlyRegCloseDate.getTime()) {
+    if (nextEarlyRegOpenDate && nextEarlyRegCloseDate) {
+      if (nextEarlyRegCloseDate.getTime() < nextEarlyRegOpenDate.getTime()) {
         res.status(400).json({
           message:
-            "Phase dates cannot overlap. Please ensure Early Registration (Phase 1) concludes before Official Enrollment (Phase 2) begins.",
+            "Early Registration close date cannot be earlier than its open date.",
         });
         return;
       }
     }
 
-    if (nextClassOpeningDate && nextEnrollOpenDate) {
-      if (nextEnrollOpenDate.getTime() > nextClassOpeningDate.getTime()) {
+    if (nextEnrollOpenDate && nextEnrollCloseDate) {
+      if (nextEnrollCloseDate.getTime() < nextEnrollOpenDate.getTime()) {
         res.status(400).json({
-          message: "Regular enrollment cannot open after Start of Classes.",
+          message:
+            "Official Enrollment close date cannot be earlier than its open date.",
         });
         return;
       }
     }
 
-    if (nextClassOpeningDate && nextEnrollCloseDate) {
-      if (nextEnrollCloseDate.getTime() > nextClassOpeningDate.getTime()) {
+    if (nextEarlyRegCloseDate && nextEnrollOpenDate) {
+      if (nextEnrollOpenDate.getTime() < nextEarlyRegCloseDate.getTime()) {
         res.status(400).json({
-          message: "Regular enrollment cannot extend past Start of Classes.",
+          message:
+            "Phase 2 cannot begin before Phase 1 closes. Same-day handoff is allowed.",
         });
         return;
       }
     }
-    */
 
     const updated = await deps.prisma.schoolYear.update({
       where: { id },

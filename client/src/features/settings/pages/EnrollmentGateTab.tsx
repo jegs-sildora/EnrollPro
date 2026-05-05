@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { sileo } from "sileo";
-import { CalendarClock, CalendarDays, Settings2 } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarClock,
+  CalendarDays,
+  Settings2,
+} from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -17,9 +22,10 @@ import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { DatePicker } from "@/shared/ui/date-picker";
 
-import { formatManilaDate } from "@/shared/lib/utils";
+import { formatManilaDate} from "@/shared/lib/utils";
 
 const MANILA_TIME_ZONE = "Asia/Manila";
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 function getDatePartsInTimeZone(date: Date, timeZone = MANILA_TIME_ZONE) {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -42,6 +48,11 @@ function utcNoonDate(year: number, monthIndex: number, day: number) {
   return new Date(Date.UTC(year, monthIndex, day, 12, 0, 0, 0));
 }
 
+function normalizeDateToManila(date: Date) {
+  const { year, month, day } = getDatePartsInTimeZone(date);
+  return utcNoonDate(year, month - 1, day);
+}
+
 function toManilaDateToken(value: string | Date): number {
   const date = typeof value === "string" ? new Date(value) : value;
   const { year, month, day } = getDatePartsInTimeZone(date);
@@ -58,7 +69,15 @@ function dateTokenToUtcMillis(token: number): number {
 function diffTokenDays(laterToken: number, earlierToken: number): number {
   const diffMs =
     dateTokenToUtcMillis(laterToken) - dateTokenToUtcMillis(earlierToken);
-  return Math.max(0, Math.round(diffMs / (1000 * 60 * 60 * 24)));
+  return Math.max(0, Math.round(diffMs / DAY_IN_MS));
+}
+
+function toNullableDateToken(value: Date | string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  return toManilaDateToken(value);
 }
 
 type PortalControl =
@@ -141,69 +160,147 @@ export default function EnrollmentGateTab() {
     [currentManilaYear],
   );
 
+  const resetEditableDates = useCallback((data: AYDates | null) => {
+    setEarlyRegOpenDate(
+      data?.earlyRegOpenDate
+        ? normalizeDateToManila(new Date(data.earlyRegOpenDate))
+        : undefined,
+    );
+    setEarlyRegCloseDate(
+      data?.earlyRegCloseDate
+        ? normalizeDateToManila(new Date(data.earlyRegCloseDate))
+        : undefined,
+    );
+    setEnrollOpenDate(
+      data?.enrollOpenDate
+        ? normalizeDateToManila(new Date(data.enrollOpenDate))
+        : undefined,
+    );
+    setEnrollCloseDate(
+      data?.enrollCloseDate
+        ? normalizeDateToManila(new Date(data.enrollCloseDate))
+        : undefined,
+    );
+  }, []);
+
   const fetchAy = useCallback(async () => {
     if (!activeSchoolYearId) {
       setLoading(false);
+      setAy(null);
       return;
     }
+
+    setLoading(true);
     try {
       const res = await api.get(`/school-years/${activeSchoolYearId}`);
       const data = res.data.year;
       setAy(data);
-      setEarlyRegOpenDate(
-        data.earlyRegOpenDate ? new Date(data.earlyRegOpenDate) : undefined,
-      );
-      setEarlyRegCloseDate(
-        data.earlyRegCloseDate ? new Date(data.earlyRegCloseDate) : undefined,
-      );
-      setEnrollOpenDate(
-        data.enrollOpenDate ? new Date(data.enrollOpenDate) : undefined,
-      );
-      setEnrollCloseDate(
-        data.enrollCloseDate ? new Date(data.enrollCloseDate) : undefined,
-      );
+      resetEditableDates(data);
     } catch {
-      // silent
+      setAy(null);
     } finally {
       setLoading(false);
     }
-  }, [activeSchoolYearId]);
+  }, [activeSchoolYearId, resetEditableDates]);
 
   useEffect(() => {
     fetchAy();
   }, [fetchAy]);
 
+  const beginEditing = () => {
+    if (!ay) {
+      return;
+    }
+
+    resetEditableDates(ay);
+    setIsEditing(true);
+  };
+
+  const discardChanges = () => {
+    resetEditableDates(ay);
+    setIsEditing(false);
+  };
+
+  const effectiveEarlyRegOpen = isEditing ? earlyRegOpenDate : ay?.earlyRegOpenDate;
+  const effectiveEarlyRegClose = isEditing ? earlyRegCloseDate : ay?.earlyRegCloseDate;
+  const effectiveEnrollOpen = isEditing ? enrollOpenDate : ay?.enrollOpenDate;
+  const effectiveEnrollClose = isEditing ? enrollCloseDate : ay?.enrollCloseDate;
+
+  const earlyRegOpenToken = toNullableDateToken(effectiveEarlyRegOpen);
+  const earlyRegCloseToken = toNullableDateToken(effectiveEarlyRegClose);
+  const enrollOpenToken = toNullableDateToken(effectiveEnrollOpen);
+  const enrollCloseToken = toNullableDateToken(effectiveEnrollClose);
+
+  const validationErrors = useMemo(() => {
+    const errors: string[] = [];
+
+    if (
+      earlyRegOpenToken !== null &&
+      earlyRegCloseToken !== null &&
+      earlyRegCloseToken < earlyRegOpenToken
+    ) {
+      errors.push(
+        "Phase 1 Closes On date cannot be earlier than its Opens On date.",
+      );
+    }
+
+    if (
+      enrollOpenToken !== null &&
+      enrollCloseToken !== null &&
+      enrollCloseToken < enrollOpenToken
+    ) {
+      errors.push(
+        "Phase 2 Closes On date cannot be earlier than its Opens On date.",
+      );
+    }
+
+    if (
+      earlyRegCloseToken !== null &&
+      enrollOpenToken !== null &&
+      enrollOpenToken < earlyRegCloseToken
+    ) {
+      errors.push(
+        "Phase 2 Opens On cannot be earlier than Phase 1 Closes On.",
+      );
+    }
+
+    return errors;
+  }, [
+    earlyRegCloseToken,
+    earlyRegOpenToken,
+    enrollCloseToken,
+    enrollOpenToken,
+  ]);
+
+  const isTimelineDirty = useMemo(() => {
+    if (!ay) {
+      return false;
+    }
+
+    return (
+      earlyRegOpenToken !== toNullableDateToken(ay.earlyRegOpenDate) ||
+      earlyRegCloseToken !== toNullableDateToken(ay.earlyRegCloseDate) ||
+      enrollOpenToken !== toNullableDateToken(ay.enrollOpenDate) ||
+      enrollCloseToken !== toNullableDateToken(ay.enrollCloseDate)
+    );
+  }, [
+    ay,
+    earlyRegCloseToken,
+    earlyRegOpenToken,
+    enrollCloseToken,
+    enrollOpenToken,
+  ]);
+
   const handleSaveDates = async () => {
     if (!ay) return;
 
-    // ─── UX Blueprint Validation: Timeline Collision Check ───
-    /* Commented out for demonstration: 
-    if (earlyRegCloseDate && enrollOpenDate) {
-      if (enrollOpenDate.getTime() <= earlyRegCloseDate.getTime()) {
-        sileo.error({
-          title: "Timeline Collision Detected",
-          description:
-            "⚠️ Phase dates cannot overlap. Please ensure Early Registration (Phase 1) concludes before Official Enrollment (Phase 2) begins (minimum 1-day gap).",
-        });
-        return;
-      }
+    if (validationErrors.length > 0) {
+      sileo.error({
+        title: "Timeline Validation Error",
+        description: validationErrors[0],
+      });
+      return;
     }
-
-    if (ay.classOpeningDate) {
-      const classOpeningDate = new Date(ay.classOpeningDate);
-
-      if (
-        enrollOpenDate &&
-        enrollOpenDate.getTime() > classOpeningDate.getTime()
-      ) {
-        sileo.error({
-          title: "Invalid Regular Enrollment window",
-          description: "Regular enrollment cannot open after Start of Classes.",
-        });
-        return;
-      }
-    }
-    */
 
     setSaving(true);
     try {
@@ -284,7 +381,7 @@ export default function EnrollmentGateTab() {
               variant="outline"
               size="sm"
               className="font-bold"
-              onClick={() => setIsEditing(true)}>
+              onClick={beginEditing}>
               <Settings2 className="h-4 w-4 mr-2" />
               Edit Timeline
             </Button>
@@ -292,6 +389,7 @@ export default function EnrollmentGateTab() {
         </CardHeader>
 
         <CardContent className="space-y-10 pt-8">
+
           {/* Phase 1 */}
           <div className="relative">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -322,31 +420,52 @@ export default function EnrollmentGateTab() {
             </div>
 
             {isEditing ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-muted/30 p-6 rounded-2xl border-2 border-dashed border-primary/20">
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Opens On
-                  </Label>
-                  <DatePicker
-                    date={earlyRegOpenDate}
-                    setDate={setEarlyRegOpenDate}
-                    minDate={minDate}
-                    maxDate={maxDate}
-                    className="font-bold h-12 text-lg shadow-sm border-2"
-                  />
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-muted/30 p-6 rounded-2xl border-2 border-dashed border-primary/20">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Opens On
+                    </Label>
+                    <DatePicker
+                      date={earlyRegOpenDate}
+                      setDate={(date) =>
+                        setEarlyRegOpenDate(
+                          date ? normalizeDateToManila(date) : undefined,
+                        )
+                      }
+                      minDate={minDate}
+                      maxDate={maxDate}
+                      className="font-bold h-12 text-lg shadow-sm border-2"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Closes On
+                    </Label>
+                    <DatePicker
+                      date={earlyRegCloseDate}
+                      setDate={(date) =>
+                        setEarlyRegCloseDate(
+                          date ? normalizeDateToManila(date) : undefined,
+                        )
+                      }
+                      minDate={earlyRegOpenDate || minDate}
+                      maxDate={maxDate}
+                      className="font-bold h-12 text-lg shadow-sm border-2"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Closes On
-                  </Label>
-                  <DatePicker
-                    date={earlyRegCloseDate}
-                    setDate={setEarlyRegCloseDate}
-                    minDate={minDate}
-                    maxDate={maxDate}
-                    className="font-bold h-12 text-lg shadow-sm border-2"
-                  />
-                </div>
+
+                {earlyRegOpenToken !== null &&
+                  earlyRegCloseToken !== null &&
+                  earlyRegCloseToken < earlyRegOpenToken && (
+                    <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs font-semibold text-destructive">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <p>
+                        Phase 1 Closes On date cannot be earlier than Opens On.
+                      </p>
+                    </div>
+                  )}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -408,15 +527,13 @@ export default function EnrollmentGateTab() {
                     </Label>
                     <DatePicker
                       date={enrollOpenDate}
-                      setDate={setEnrollOpenDate}
-                      /* Commented out for demonstration: 
-                      minDate={
-                        earlyRegCloseDate
-                          ? new Date(earlyRegCloseDate.getTime() + 86400000)
-                          : minDate
+                      setDate={(date) =>
+                        setEnrollOpenDate(
+                          date ? normalizeDateToManila(date) : undefined,
+                        )
                       }
+                      minDate={earlyRegCloseDate || minDate}
                       maxDate={maxDate}
-                      */
                       className="font-bold h-12 text-lg shadow-sm border-2"
                     />
                   </div>
@@ -426,26 +543,42 @@ export default function EnrollmentGateTab() {
                     </Label>
                     <DatePicker
                       date={enrollCloseDate}
-                      setDate={setEnrollCloseDate}
-                      /* Commented out for demonstration: 
+                      setDate={(date) =>
+                        setEnrollCloseDate(
+                          date ? normalizeDateToManila(date) : undefined,
+                        )
+                      }
                       minDate={enrollOpenDate || minDate}
                       maxDate={maxDate}
-                      */
                       className="font-bold h-12 text-lg shadow-sm border-2"
                     />
                   </div>
                 </div>
-                {/* Commented out for demonstration:
-                <div className="flex items-start gap-2 p-4 bg-blue-50 border border-blue-100 rounded-xl">
-                  <AlertTriangle className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
-                  <p className="text-xs text-blue-700 leading-relaxed font-bold">
-                    <strong>Timeline Enforcement:</strong> Official Enrollment
-                    (Phase 2) cannot open before Early Registration (Phase 1)
-                    concludes. It must also close on or before the Start of
-                    Classes.
-                  </p>
-                </div>
-                */}
+
+                {isEditing &&
+                  enrollOpenToken !== null &&
+                  enrollCloseToken !== null &&
+                  enrollCloseToken < enrollOpenToken && (
+                    <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs font-semibold text-destructive">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <p>
+                        Phase 2 Closes On date cannot be earlier than Opens On.
+                      </p>
+                    </div>
+                  )}
+
+                {isEditing &&
+                  earlyRegCloseToken !== null &&
+                  enrollOpenToken !== null &&
+                  enrollOpenToken < earlyRegCloseToken && (
+                    <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs font-semibold text-destructive">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <p>
+                        Phase 2 Opens On cannot be earlier than Phase 1 Closes
+                        On. Same-day handoff is allowed.
+                      </p>
+                    </div>
+                  )}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -470,19 +603,33 @@ export default function EnrollmentGateTab() {
           </div>
 
           {isEditing && (
-            <div className="flex items-center justify-end gap-3 pt-6 border-t">
-              <Button
-                variant="ghost"
-                className="font-bold text-muted-foreground h-11 px-6"
-                onClick={() => setIsEditing(false)}>
-                Discard Changes
-              </Button>
-              <Button
-                className="font-bold h-11 px-8 shadow-lg shadow-primary/20"
-                onClick={handleSaveDates}
-                disabled={saving}>
-                {saving ? "Updating Timeline..." : "Save Schedule Changes"}
-              </Button>
+            <div className="sticky bottom-0 z-20">
+              <div className="rounded-lg border border-border bg-background/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/85">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    {isTimelineDirty
+                      ? "You have unsaved schedule changes."
+                      : "No schedule changes yet."}
+                  </p>
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      className="font-bold"
+                      onClick={discardChanges}
+                      disabled={saving}>
+                      Discard Changes
+                    </Button>
+                    <Button
+                      className="font-bold"
+                      onClick={handleSaveDates}
+                      disabled={
+                        saving || validationErrors.length > 0 || !isTimelineDirty
+                      }>
+                      {saving ? "Updating Timeline..." : "Save Schedule Changes"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </CardContent>

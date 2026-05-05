@@ -1,17 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import {
-  ArrowLeft,
-  RefreshCw,
-  Calendar as CalendarIcon,
-} from "lucide-react";
-import {
-  format,
-  isValid,
-  parse,
-  isAfter,
-  isBefore,
-} from "date-fns";
+import { ArrowLeft, RefreshCw, Calendar as CalendarIcon } from "lucide-react";
+import { format, isValid, parse, isAfter, isBefore } from "date-fns";
 import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
@@ -29,11 +19,7 @@ import {
 import { Badge } from "@/shared/ui/badge";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Calendar } from "@/shared/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/shared/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { cn } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 
@@ -90,6 +76,16 @@ interface WalkInFormState {
   isPsaBirthCertPresented: boolean;
 }
 
+type ProcessOutcome = "ENCODE_ONLY" | "ENCODE_AND_VERIFY";
+
+interface HydrationContextState {
+  source: "ENROLLMENT" | "EARLY_REGISTRATION";
+  status: string;
+  enrollmentApplicationId: number | null;
+  earlyRegistrationId: number | null;
+  applicantType: string | null;
+}
+
 const EMPTY_CONTACT: ContactPersonState = {
   firstName: "",
   lastName: "",
@@ -141,6 +137,17 @@ const LEARNER_TYPE_OPTIONS: Array<{ value: LearnerType; label: string }> = [
   { value: "ALS", label: "ALS / PEPT PASSER" },
 ];
 
+const APPLICANT_TYPE_LABELS: Record<string, string> = {
+  REGULAR: "Regular Basic Education",
+  SCIENCE_TECHNOLOGY_AND_ENGINEERING: "Science, Technology & Engineering (STE)",
+  SPECIAL_PROGRAM_IN_THE_ARTS: "Special Program in the Arts",
+  SPECIAL_PROGRAM_IN_SPORTS: "Special Program in Sports",
+  SPECIAL_PROGRAM_IN_JOURNALISM: "Special Program in Journalism",
+  SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: "Special Program in Foreign Language",
+  SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION:
+    "Special Program in Technical-Vocational Education",
+};
+
 function normalizeLrn(value: string): string {
   return value.replace(/[^\d]/g, "").slice(0, 12);
 }
@@ -186,6 +193,11 @@ export default function WalkInEncoder() {
     () => searchParams.get("noLrn") === "true",
     [searchParams],
   );
+  const initialEnrollmentId = useMemo(() => {
+    const raw = searchParams.get("enrollmentId");
+    const parsed = Number.parseInt(String(raw ?? ""), 10);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+  }, [searchParams]);
 
   const [formData, setFormData] = useState<WalkInFormState>(() => ({
     ...INITIAL_FORM_STATE,
@@ -195,6 +207,13 @@ export default function WalkInEncoder() {
   const [gradeLevels, setGradeLevels] = useState<GradeLevelOption[]>([]);
   const [loadingGradeLevels, setLoadingGradeLevels] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [hydrationContext, setHydrationContext] =
+    useState<HydrationContextState | null>(null);
+  const [hydratedGradeToken, setHydratedGradeToken] = useState<string | null>(
+    null,
+  );
+  const [processOutcome, setProcessOutcome] =
+    useState<ProcessOutcome>("ENCODE_AND_VERIFY");
 
   const [dateInput, setDateInput] = useState(() => {
     if (!formData.birthdate) return "";
@@ -210,10 +229,7 @@ export default function WalkInEncoder() {
     return new Date();
   });
 
-  const handleDateTyping = (
-    value: string,
-    onChange: (val: string) => void,
-  ) => {
+  const handleDateTyping = (value: string, onChange: (val: string) => void) => {
     const isDeleting = value.length < dateInput.length;
     const cleaned = value.replace(/\D/g, "").slice(0, 8);
 
@@ -257,6 +273,106 @@ export default function WalkInEncoder() {
     void fetchGradeLevels();
   }, []);
 
+  useEffect(() => {
+    if (!initialLrn || initialNoLrn) {
+      return;
+    }
+
+    const hydrateFromLrn = async () => {
+      try {
+        const response = await api.get(
+          `/applications/lookup-lrn/${initialLrn}`,
+        );
+        const payload = response.data as Record<string, unknown>;
+
+        const normalizedBirthdate = payload.birthdate
+          ? new Date(String(payload.birthdate)).toISOString().slice(0, 10)
+          : "";
+
+        setFormData((prev) => ({
+          ...prev,
+          hasNoLrn: false,
+          lrn: String(payload.lrn ?? prev.lrn),
+          learnerType: String(
+            payload.learnerType || prev.learnerType,
+          ) as LearnerType,
+          firstName: String(payload.firstName ?? prev.firstName),
+          lastName: String(payload.lastName ?? prev.lastName),
+          middleName: String(payload.middleName ?? prev.middleName),
+          extensionName: String(payload.extensionName ?? prev.extensionName),
+          birthdate: normalizedBirthdate || prev.birthdate,
+          sex: String(payload.sex || prev.sex) as Sex | "",
+          placeOfBirth: String(payload.placeOfBirth ?? prev.placeOfBirth),
+          contactNumber: String(payload.contactNumber ?? prev.contactNumber),
+          email: String(payload.email ?? prev.email),
+          originSchoolName: String(
+            payload.lastSchoolName ?? prev.originSchoolName,
+          ),
+          currentAddressBarangay:
+            String(
+              (payload.currentAddress as { barangay?: string } | null)
+                ?.barangay ?? prev.currentAddressBarangay,
+            ) || prev.currentAddressBarangay,
+          currentAddressCityMunicipality:
+            String(
+              (payload.currentAddress as { cityMunicipality?: string } | null)
+                ?.cityMunicipality ?? prev.currentAddressCityMunicipality,
+            ) || prev.currentAddressCityMunicipality,
+          currentAddressProvince:
+            String(
+              (payload.currentAddress as { province?: string } | null)
+                ?.province ?? prev.currentAddressProvince,
+            ) || prev.currentAddressProvince,
+        }));
+
+        setHydratedGradeToken(String(payload.gradeLevel ?? ""));
+        setHydrationContext({
+          source:
+            String(payload.source) === "ENROLLMENT"
+              ? "ENROLLMENT"
+              : "EARLY_REGISTRATION",
+          status: String(payload.status ?? ""),
+          enrollmentApplicationId:
+            typeof payload.enrollmentApplicationId === "number"
+              ? payload.enrollmentApplicationId
+              : initialEnrollmentId,
+          earlyRegistrationId:
+            typeof payload.earlyRegistrationId === "number"
+              ? payload.earlyRegistrationId
+              : null,
+          applicantType:
+            typeof payload.applicantType === "string"
+              ? payload.applicantType
+              : null,
+        });
+      } catch {
+        // Hydration is best-effort; keep manual flow available.
+      }
+    };
+
+    void hydrateFromLrn();
+  }, [initialLrn, initialNoLrn, initialEnrollmentId]);
+
+  useEffect(() => {
+    if (
+      !hydratedGradeToken ||
+      gradeLevels.length === 0 ||
+      formData.gradeLevelId
+    ) {
+      return;
+    }
+
+    const normalized = hydratedGradeToken.replace(/[^\d]/g, "");
+    const matched = gradeLevels.find((level) => {
+      const levelToken = String(level.name).replace(/[^\d]/g, "");
+      return levelToken === normalized;
+    });
+
+    if (matched) {
+      setField("gradeLevelId", String(matched.id));
+    }
+  }, [formData.gradeLevelId, gradeLevels, hydratedGradeToken]);
+
   const fetchGradeLevels = async () => {
     setLoadingGradeLevels(true);
     try {
@@ -292,6 +408,12 @@ export default function WalkInEncoder() {
 
     return parseGradeLevelNumber(selectedGradeLevel.name) === 7;
   }, [formData.learnerType, selectedGradeLevel]);
+  const isLrnLocked =
+    Boolean(hydrationContext) && Boolean(formData.lrn) && !formData.hasNoLrn;
+  const hydratedApplicantType = hydrationContext?.applicantType ?? null;
+  const hydratedApplicantLabel = hydratedApplicantType
+    ? (APPLICANT_TYPE_LABELS[hydratedApplicantType] ?? hydratedApplicantType)
+    : null;
 
   const setField = <T extends keyof WalkInFormState>(
     key: T,
@@ -440,6 +562,11 @@ export default function WalkInEncoder() {
     const finalGeneralAverage = Number.parseFloat(formData.finalGeneralAverage);
 
     const payload = {
+      enrollmentApplicationId:
+        hydrationContext?.enrollmentApplicationId ??
+        initialEnrollmentId ??
+        undefined,
+      processOutcome,
       lrn: formData.hasNoLrn ? null : formData.lrn.trim(),
       hasNoLrn: formData.hasNoLrn,
       firstName: formData.firstName.trim(),
@@ -455,7 +582,9 @@ export default function WalkInEncoder() {
       academicStatus: formData.academicStatus,
       lastSchoolName: toOptionalTrimmed(formData.originSchoolName),
       lastSchoolId: toOptionalTrimmed(formData.lastSchoolId),
-      schoolYearLastAttended: toOptionalTrimmed(formData.schoolYearLastAttended),
+      schoolYearLastAttended: toOptionalTrimmed(
+        formData.schoolYearLastAttended,
+      ),
       lastGradeCompleted: toOptionalTrimmed(formData.lastGradeCompleted),
       lastSchoolType: formData.lastSchoolType,
       lastSchoolAddress: toOptionalTrimmed(formData.lastSchoolAddress),
@@ -501,6 +630,7 @@ export default function WalkInEncoder() {
         isSf9Submitted: formData.isSf9Submitted,
         isPsaBirthCertPresented: formData.isPsaBirthCertPresented,
         isOriginalPsaBcCollected: formData.isPsaBirthCertPresented,
+        isPsaPhase1CopyMatched: formData.isPsaBirthCertPresented,
         academicStatus: formData.academicStatus,
         finalGeneralAverage,
       },
@@ -519,12 +649,21 @@ export default function WalkInEncoder() {
 
       sileo.success({
         title: "Walk-In Saved",
-        description: "Learner routed to Section Assignment queue.",
+        description:
+          processOutcome === "ENCODE_ONLY"
+            ? "BEEF encoded. Learner routed to Awaiting Verification queue."
+            : "Learner routed to Section Assignment queue.",
       });
 
-      navigate(
-        `/monitoring/enrollment?workflow=SECTION_ASSIGNMENT&search=${encodeURIComponent(trackingHint)}`,
-      );
+      if (processOutcome === "ENCODE_ONLY") {
+        navigate(
+          `/monitoring/enrollment?workflow=PENDING_VERIFICATION&search=${encodeURIComponent(trackingHint)}`,
+        );
+      } else {
+        navigate(
+          `/monitoring/enrollment?workflow=SECTION_ASSIGNMENT&search=${encodeURIComponent(trackingHint)}`,
+        );
+      }
     } catch (error) {
       toastApiError(error as never);
     } finally {
@@ -543,7 +682,9 @@ export default function WalkInEncoder() {
           Back to Enrollment
         </Button>
         <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="text-[11px] font-bold">
+          <Badge
+            variant="secondary"
+            className="text-[11px] font-bold">
             Direct Intake: {activeSchoolYearLabel}
           </Badge>
           {isBosyLocked && (
@@ -557,17 +698,41 @@ export default function WalkInEncoder() {
       <Card className="border-none shadow-sm">
         <CardHeader className="space-y-2">
           <CardTitle className="text-xl font-bold flex items-center gap-2">
-            {isBosyLocked ? "Late Enrollee Intake (BEEF)" : "Direct Intake: Basic Education Enrollment Form"}
+            {isBosyLocked
+              ? "Late Enrollee Intake (BEEF)"
+              : "Direct Intake: Basic Education Enrollment Form"}
           </CardTitle>
           <p className="text-xs font-semibold text-muted-foreground">
-            {isBosyLocked 
+            {isBosyLocked
               ? "BOSY is locked. New students will be processed as Late Enrollees and routed directly to Inline Slotting."
-              : "Encode paper BEEF in one pass. This lane skips pending verification and routes directly to sectioning after document confirmation."
-            }
+              : "Encode paper BEEF in one pass. This lane skips pending verification and routes directly to sectioning after document confirmation."}
           </p>
         </CardHeader>
 
         <CardContent className="space-y-5">
+          {hydrationContext && (
+            <section className="space-y-2 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+              <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 text-[11px] font-black uppercase tracking-widest">
+                Record Found:{" "}
+                {hydrationContext.source === "ENROLLMENT"
+                  ? "Pending Queue Record"
+                  : "Early Registrant"}
+              </Badge>
+              <p className="text-xs font-bold uppercase tracking-wider text-emerald-800">
+                Status: {hydrationContext.status.replace(/_/g, " ")}
+              </p>
+              {hydratedApplicantLabel &&
+                hydratedApplicantType !== "REGULAR" && (
+                  <p className="text-sm font-black text-emerald-900">
+                    Curriculum: {hydratedApplicantLabel}{" "}
+                    {hydrationContext.status === "PENDING_BEEF"
+                      ? "- PASSER"
+                      : ""}
+                  </p>
+                )}
+            </section>
+          )}
+
           <section className="space-y-3 rounded-lg border border-border p-4">
             <p className="text-xs font-bold uppercase tracking-wider text-primary">
               1. Learner Information
@@ -581,7 +746,7 @@ export default function WalkInEncoder() {
                 <Input
                   value={formData.lrn}
                   maxLength={12}
-                  disabled={formData.hasNoLrn}
+                  disabled={formData.hasNoLrn || isLrnLocked}
                   placeholder="109988776655"
                   className="h-10 font-bold"
                   onChange={(event) => {
@@ -604,7 +769,9 @@ export default function WalkInEncoder() {
                   </SelectTrigger>
                   <SelectContent>
                     {LEARNER_TYPE_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
+                      <SelectItem
+                        key={option.value}
+                        value={option.value}>
                         {option.label}
                       </SelectItem>
                     ))}
@@ -676,7 +843,9 @@ export default function WalkInEncoder() {
                 }}
               />
               <div className="space-y-1">
-                <Label htmlFor="walkInNoLrn" className="text-xs font-bold">
+                <Label
+                  htmlFor="walkInNoLrn"
+                  className="text-xs font-bold">
                   Learner has no LRN yet
                 </Label>
                 <p className="text-[11px] font-semibold text-muted-foreground">
@@ -793,7 +962,9 @@ export default function WalkInEncoder() {
                         />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="end">
+                    <PopoverContent
+                      className="w-auto p-0"
+                      align="end">
                       <Calendar
                         mode="single"
                         captionLayout="dropdown"
@@ -886,7 +1057,10 @@ export default function WalkInEncoder() {
                   inputMode="numeric"
                   className="h-10 font-bold"
                   onChange={(event) => {
-                    setField("lastSchoolId", normalizeSchoolId(event.target.value));
+                    setField(
+                      "lastSchoolId",
+                      normalizeSchoolId(event.target.value),
+                    );
                   }}
                 />
               </div>
@@ -910,7 +1084,9 @@ export default function WalkInEncoder() {
                       const year = new Date().getFullYear() - i;
                       const label = `${year - 1}-${year}`;
                       return (
-                        <SelectItem key={label} value={label}>
+                        <SelectItem
+                          key={label}
+                          value={label}>
                           {label}
                         </SelectItem>
                       );
@@ -932,7 +1108,9 @@ export default function WalkInEncoder() {
                   </SelectTrigger>
                   <SelectContent>
                     {["6", "7", "8", "9"].map((g) => (
-                      <SelectItem key={g} value={g}>
+                      <SelectItem
+                        key={g}
+                        value={g}>
                         GRADE {g}
                       </SelectItem>
                     ))}
@@ -1298,7 +1476,10 @@ export default function WalkInEncoder() {
                   inputMode="numeric"
                   className="h-10 font-bold"
                   onChange={(event) => {
-                    setField("contactNumber", normalizeContactNumber(event.target.value));
+                    setField(
+                      "contactNumber",
+                      normalizeContactNumber(event.target.value),
+                    );
                   }}
                 />
               </div>
@@ -1374,9 +1555,49 @@ export default function WalkInEncoder() {
                 <Label
                   htmlFor="isPsaBirthCertPresented"
                   className="text-xs font-bold tracking-wide">
-                  PSA Birth Certificate
+                  Original PSA Birth Certificate (Matches Phase 1 Copy)
                 </Label>
               </div>
+            </div>
+          </section>
+
+          <section className="space-y-3 rounded-lg border border-border p-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-primary">
+              6. Registrar Processing Outcome
+            </p>
+            <div className="grid gap-3 md:grid-cols-2">
+              <button
+                type="button"
+                className={cn(
+                  "rounded-md border px-3 py-2 text-left",
+                  processOutcome === "ENCODE_ONLY"
+                    ? "border-primary bg-primary/5"
+                    : "border-border",
+                )}
+                onClick={() => setProcessOutcome("ENCODE_ONLY")}>
+                <p className="text-xs font-black uppercase tracking-wider">
+                  Encode Only
+                </p>
+                <p className="text-xs font-semibold text-muted-foreground">
+                  Save BEEF then return learner to Awaiting Verification.
+                </p>
+              </button>
+              <button
+                type="button"
+                className={cn(
+                  "rounded-md border px-3 py-2 text-left",
+                  processOutcome === "ENCODE_AND_VERIFY"
+                    ? "border-primary bg-primary/5"
+                    : "border-border",
+                )}
+                onClick={() => setProcessOutcome("ENCODE_AND_VERIFY")}>
+                <p className="text-xs font-black uppercase tracking-wider">
+                  Encode + Verify
+                </p>
+                <p className="text-xs font-semibold text-muted-foreground">
+                  Save BEEF and immediately progress to verification outcome.
+                </p>
+              </button>
             </div>
           </section>
 

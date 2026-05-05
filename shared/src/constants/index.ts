@@ -1,13 +1,22 @@
 import { z } from "zod";
 
 // ─── Enums ──────────────────────────────────────────────
-export const RoleEnum = z.enum(["REGISTRAR", "SYSTEM_ADMIN", "TEACHER"]);
+export const RoleEnum = z.enum([
+  "SYSTEM_ADMIN",
+  "HEAD_REGISTRAR",
+  "GRADE_LEVEL_COORDINATOR",
+  "CLASS_ADVISER",
+  "TEACHER",
+]);
+export type Role = z.infer<typeof RoleEnum>;
 export const SexEnum = z.enum(["MALE", "FEMALE"]);
 
 export const ComplianceStatusEnum = z.enum(["PENDING", "COMPLIED", "OVERDUE"]);
 
 export const APPLICATION_STATUS_VALUES = [
   "SUBMITTED_BEERF",
+  "PENDING_BEEF",
+  "AWAITING_VERIFICATION",
   "SUBMITTED_BEEF",
   "VERIFIED",
   "UNDER_REVIEW",
@@ -60,6 +69,8 @@ export const APPLICATION_STATUS_TO_TRACKING_STATUS: Record<
   z.infer<typeof TrackingStatusEnum>
 > = {
   SUBMITTED_BEERF: "SUBMITTED",
+  PENDING_BEEF: "IN_REVIEW",
+  AWAITING_VERIFICATION: "IN_REVIEW",
   SUBMITTED_BEEF: "SUBMITTED",
   VERIFIED: "IN_REVIEW",
   UNDER_REVIEW: "IN_REVIEW",
@@ -82,10 +93,19 @@ export const APPLICATION_VALID_TRANSITIONS: Record<
   z.infer<typeof ApplicationStatusEnum>[]
 > = {
   SUBMITTED_BEERF: [
+    "PENDING_BEEF",
     "VERIFIED",
     "SUBMITTED_BEEF",
     "UNDER_REVIEW",
     "EXAM_SCHEDULED",
+    "REJECTED",
+    "WITHDRAWN",
+  ],
+  PENDING_BEEF: ["AWAITING_VERIFICATION", "REJECTED", "WITHDRAWN"],
+  AWAITING_VERIFICATION: [
+    "VERIFIED",
+    "READY_FOR_ENROLLMENT",
+    "TEMPORARILY_ENROLLED",
     "REJECTED",
     "WITHDRAWN",
   ],
@@ -132,12 +152,14 @@ export const APPLICATION_VALID_TRANSITIONS: Record<
     "WITHDRAWN",
   ],
   PASSED: [
+    "PENDING_BEEF",
     "READY_FOR_ENROLLMENT",
     "INTERVIEW_SCHEDULED",
     "EXAM_SCHEDULED",
     "WITHDRAWN",
   ],
   INTERVIEW_SCHEDULED: [
+    "PENDING_BEEF",
     "READY_FOR_ENROLLMENT",
     "SUBMITTED_BEERF",
     "SUBMITTED_BEEF",

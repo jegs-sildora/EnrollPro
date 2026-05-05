@@ -263,6 +263,7 @@ interface RosterLearner {
   dateSectioned?: string | null;
   learnerType?: string | null;
   sex?: string | null;
+  sf1Remarks?: string | null;
 }
 
 export default function Sections() {

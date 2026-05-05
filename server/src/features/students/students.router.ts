@@ -5,6 +5,7 @@ import {
   getStudents,
   getStudentsSummary,
   getStudentById,
+  getStudentRecordHistory,
 } from "./controllers/students.query.controller.js";
 import {
   updateStudent,
@@ -26,7 +27,11 @@ const router: Router = Router();
 router.use(authenticate);
 
 // Get all students with search and filters
-router.get("/", authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "TEACHER"), getStudents);
+router.get(
+  "/",
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
+  getStudents,
+);
 
 // Summary cards for enrolled learner reporting (school-year scoped)
 router.get(
@@ -40,6 +45,12 @@ router.get(
   "/:id",
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
   getStudentById,
+);
+
+router.get(
+  "/:id/record-history",
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  getStudentRecordHistory,
 );
 
 // Update student information

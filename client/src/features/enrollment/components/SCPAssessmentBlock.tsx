@@ -6,7 +6,6 @@ import { formatDisplayTime12Hour, formatScpType } from "@/shared/lib/utils";
 import { ASSESSMENT_KIND_LABELS } from "@enrollpro/shared";
 import type { AssessmentKind } from "@enrollpro/shared";
 import { Badge } from "@/shared/ui/badge";
-import { Checkbox } from "@/shared/ui/checkbox";
 import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
 import { Label } from "@/shared/ui/label";
@@ -126,7 +125,11 @@ function InterviewRubricCard({
       group: "Insight (35 pts)",
       items: [
         { key: "thinking", label: "Critical Thinking", max: 15 },
-        { key: "connection", label: "Connection to Relevant Concepts", max: 10 },
+        {
+          key: "connection",
+          label: "Connection to Relevant Concepts",
+          max: 10,
+        },
         { key: "organization", label: "Organization & Structure", max: 10 },
       ],
     },
@@ -153,12 +156,16 @@ function InterviewRubricCard({
 
       <div className="grid gap-4 sm:grid-cols-2">
         {rubric.map((group) => (
-          <div key={group.group} className="space-y-3">
+          <div
+            key={group.group}
+            className="space-y-3">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-violet-700 opacity-70">
               {group.group}
             </h4>
             {group.items.map((item) => (
-              <div key={item.key} className="space-y-1">
+              <div
+                key={item.key}
+                className="space-y-1">
                 <div className="flex justify-between items-center">
                   <Label className="text-xs font-bold">{item.label}</Label>
                   <span className="text-[10px] font-bold opacity-50">
@@ -171,7 +178,11 @@ function InterviewRubricCard({
                   max={item.max}
                   value={scores[item.key as keyof typeof scores] || ""}
                   onChange={(e) =>
-                    updateScore(item.key as keyof typeof scores, e.target.value, item.max)
+                    updateScore(
+                      item.key as keyof typeof scores,
+                      e.target.value,
+                      item.max,
+                    )
                   }
                   className="h-8 text-sm font-bold bg-white"
                 />
@@ -415,7 +426,9 @@ export function SCPAssessmentBlock({
               const isLast = idx === steps.length - 1;
 
               return (
-                <div key={step.stepOrder} className="flex gap-3 pt-1">
+                <div
+                  key={step.stepOrder}
+                  className="flex gap-3 pt-1">
                   {/* Vertical timeline */}
                   <div className="flex flex-col items-center">
                     <Icon className={`h-5 w-5 shrink-0 ${cfg.color}`} />
@@ -520,7 +533,10 @@ export function SCPAssessmentBlock({
         applicant.status === "ASSESSMENT_TAKEN") &&
         hasSteps &&
         onSaveStepResult && (
-          <InlineScoreCard steps={steps} onSave={onSaveStepResult} />
+          <InlineScoreCard
+            steps={steps}
+            onSave={onSaveStepResult}
+          />
         )}
 
       {/* Interview Rubric Card — shown when interview is scheduled */}

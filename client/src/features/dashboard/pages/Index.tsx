@@ -236,7 +236,7 @@ export default function Dashboard() {
     {
       title: "Active Users",
       value: adminStats?.activeUsers ?? 0,
-      description: `${adminStats?.usersByRole["REGISTRAR"] || 0} Registrars | ${adminStats?.usersByRole["TEACHER"] || 0} Teachers`,
+      description: `${(adminStats?.usersByRole["HEAD_REGISTRAR"] ?? 0) + (adminStats?.usersByRole["REGISTRAR"] ?? 0)} Registrars | ${adminStats?.usersByRole["TEACHER"] || 0} Teachers`,
       icon: UserCog,
       color: "text-purple-600",
       bg: "bg-purple-50",

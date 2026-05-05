@@ -28,7 +28,7 @@ import { Button } from "@/shared/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { motion } from "motion/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { HealthRecords } from "@/features/students/components/tabs/HealthRecords";
 import { PinResetHandoverModal } from "@/features/students/components/PinResetHandoverModal";
@@ -42,24 +42,92 @@ import { sileo } from "sileo";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { cn } from "@/shared/lib/utils";
 import { DocumentAuthModal } from "@/features/students/components/DocumentAuthModal";
+import { useAuthStore } from "@/store/auth.slice";
+import axios from "axios";
+
+type StudentRecordHistoryEntry = {
+  id: number;
+  createdAt: string;
+  actionType: string;
+  description: string;
+  subjectType: string | null;
+  recordId: number | null;
+  performedBy: string;
+  performedByRole: string | null;
+};
+
+const formatRecordHistoryAction = (actionType: string): string => {
+  switch (actionType) {
+    case "APPLICATION_ENROLLED":
+      return "Status changed to Officially Enrolled";
+    case "APPLICATION_TEMPORARILY_ENROLLED":
+      return "Status changed to Temporarily Enrolled";
+    case "APPLICATION_UNENROLLED":
+      return "Enrollment reversed";
+    case "LEARNER_SECTION_SHIFTED":
+      return "Section assignment changed";
+    case "LEARNER_SECTIONED_INLINE":
+      return "Assigned to section";
+    case "LEARNER_LRN_ASSIGNED":
+      return "LRN updated";
+    case "PSA_VERIFIED":
+      return "PSA birth certificate verified";
+    case "SECONDARY_BIRTH_DOC_VERIFIED":
+      return "Secondary birth document verified";
+    case "DEFICIENCY_CLEARED":
+      return "Deficiency cleared";
+    case "STUDENT_UPDATED":
+      return "Learner record edited";
+    default:
+      return actionType.replaceAll("_", " ");
+  }
+};
+
+const formatRecordHistoryTimestamp = (value: string): string =>
+  new Date(value).toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 
 export default function StudentProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuthStore();
 
-  const validTabs = useMemo(
-    () =>
-      new Set([
-        "personal",
-        "academic",
-        "application",
-        "classifications",
-        "health",
-        "documents",
-      ]),
-    [],
-  );
+  const canViewRecordHistory =
+    user?.role === "SYSTEM_ADMIN" ||
+    user?.role === "HEAD_REGISTRAR" ||
+    user?.role === "REGISTRAR";
+
+  const handleApiError = (error: unknown, fallbackMessage: string) => {
+    if (axios.isAxiosError(error)) {
+      toastApiError(error as Parameters<typeof toastApiError>[0]);
+      return;
+    }
+
+    sileo.error({ title: "Error", description: fallbackMessage });
+  };
+
+  const validTabs = useMemo(() => {
+    const tabs = [
+      "personal",
+      "academic",
+      "application",
+      "classifications",
+      "health",
+      "documents",
+    ];
+
+    if (canViewRecordHistory) {
+      tabs.push("record-history");
+    }
+
+    return new Set([...tabs]);
+  }, [canViewRecordHistory]);
 
   const initialTabFromQuery = searchParams.get("tab") || "personal";
   const resolvedInitialTab = validTabs.has(initialTabFromQuery)
@@ -69,6 +137,11 @@ export default function StudentProfile() {
   const [activeTab, setActiveTab] = useState(resolvedInitialTab);
   const [isPinResetModalOpen, setIsPinResetModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [recordHistory, setRecordHistory] = useState<
+    StudentRecordHistoryEntry[]
+  >([]);
+  const [recordHistoryLoading, setRecordHistoryLoading] = useState(false);
+  const [recordHistoryLoaded, setRecordHistoryLoaded] = useState(false);
 
   const {
     data: student,
@@ -90,9 +163,36 @@ export default function StudentProfile() {
       });
       refetch();
     } catch (err: unknown) {
-      toastApiError(err as any);
+      handleApiError(err, "Failed to verify learner document.");
     }
   };
+
+  useEffect(() => {
+    if (!student || !canViewRecordHistory || activeTab !== "record-history") {
+      return;
+    }
+
+    if (recordHistoryLoaded) {
+      return;
+    }
+
+    const loadRecordHistory = async () => {
+      setRecordHistoryLoading(true);
+      try {
+        const res = await api.get<{ logs: StudentRecordHistoryEntry[] }>(
+          `/students/${student.id}/record-history`,
+        );
+        setRecordHistory(res.data.logs ?? []);
+        setRecordHistoryLoaded(true);
+      } catch (err: unknown) {
+        handleApiError(err, "Failed to load learner record history.");
+      } finally {
+        setRecordHistoryLoading(false);
+      }
+    };
+
+    void loadRecordHistory();
+  }, [activeTab, canViewRecordHistory, recordHistoryLoaded, student]);
 
   const handleConfirmResetPin = async (): Promise<string> => {
     if (!student) throw new Error("Student not found");
@@ -286,6 +386,23 @@ export default function StudentProfile() {
             <FileText className="h-4 w-4 relative z-20" />
             <span className="relative z-20 hidden sm:inline">Requirements</span>
           </TabsTrigger>
+          {canViewRecordHistory && (
+            <TabsTrigger
+              value="record-history"
+              className="flex-1 min-w-32 py-2 gap-2 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+              {activeTab === "record-history" && (
+                <motion.div
+                  layoutId="profile-active-pill"
+                  className="absolute inset-0 bg-primary rounded-md"
+                  transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                />
+              )}
+              <History className="h-4 w-4 relative z-20" />
+              <span className="relative z-20 hidden sm:inline">
+                Record History
+              </span>
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <div className="mt-6">
@@ -673,7 +790,10 @@ export default function StudentProfile() {
                                     });
                                     refetch();
                                   } catch (err: unknown) {
-                                    toastApiError(err as any);
+                                    handleApiError(
+                                      err,
+                                      "Failed to clear SF9 deficiency.",
+                                    );
                                   }
                                 }
                               }}>
@@ -705,7 +825,10 @@ export default function StudentProfile() {
                                     });
                                     refetch();
                                   } catch (err: unknown) {
-                                    toastApiError(err as any);
+                                    handleApiError(
+                                      err,
+                                      "Failed to clear financial deficiency.",
+                                    );
                                   }
                                 }
                               }}>
@@ -1129,7 +1252,7 @@ export default function StudentProfile() {
                             <h3 className="font-black text-rose-900 uppercase leading-none">
                               PSA Birth Certificate
                             </h3>
-                            <p className="text-[10px] font-bold text-rose-700/70 mt-1 uppercase tracking-widest text-rose-600">
+                            <p className="text-[10px] font-bold mt-1 uppercase tracking-widest text-rose-600">
                               Missing from Vault
                             </p>
                           </div>
@@ -1177,6 +1300,92 @@ export default function StudentProfile() {
               </Card>
             </motion.div>
           </TabsContent>
+
+          {canViewRecordHistory && (
+            <TabsContent
+              value="record-history"
+              className="m-0 focus-visible:outline-none ring-0">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <History className="h-4 w-4 text-primary" />
+                      Record History & Transaction Log
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {recordHistoryLoading ? (
+                      <p className="text-sm text-muted-foreground">
+                        Loading learner transaction history...
+                      </p>
+                    ) : recordHistory.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        No student transaction entries are recorded for this
+                        learner yet.
+                      </p>
+                    ) : (
+                      <div className="overflow-x-auto border rounded-lg">
+                        <table className="w-full text-sm">
+                          <thead className="bg-muted/40">
+                            <tr>
+                              <th className="text-left px-4 py-3 font-bold uppercase text-xs tracking-wider text-muted-foreground">
+                                Date / Time
+                              </th>
+                              <th className="text-left px-4 py-3 font-bold uppercase text-xs tracking-wider text-muted-foreground">
+                                Action
+                              </th>
+                              <th className="text-left px-4 py-3 font-bold uppercase text-xs tracking-wider text-muted-foreground">
+                                Performed By
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {recordHistory.map((entry) => (
+                              <tr
+                                key={entry.id}
+                                className="border-t align-top">
+                                <td className="px-4 py-3 font-medium whitespace-nowrap">
+                                  {formatRecordHistoryTimestamp(
+                                    entry.createdAt,
+                                  )}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <p className="font-semibold">
+                                    {formatRecordHistoryAction(
+                                      entry.actionType,
+                                    )}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {entry.description}
+                                  </p>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <p className="font-semibold">
+                                    {entry.performedBy}
+                                  </p>
+                                  {entry.performedByRole && (
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      {entry.performedByRole.replaceAll(
+                                        "_",
+                                        " ",
+                                      )}
+                                    </p>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </TabsContent>
+          )}
         </div>
       </Tabs>
 

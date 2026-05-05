@@ -39,7 +39,7 @@ export function createEarlyRegistrationBaseController(
   const LRN_REGEX = /^\d{12}$/;
   const LEGACY_APPLICATION_STATUS_ALIASES: Record<string, ApplicationStatus> = {
     EARLY_REG_SUBMITTED: "SUBMITTED_BEERF",
-    PENDING_VERIFICATION: "UNDER_REVIEW",
+    PENDING_VERIFICATION: "AWAITING_VERIFICATION",
     PRE_REGISTERED: "READY_FOR_ENROLLMENT",
     READY_FOR_SECTIONING: "READY_FOR_ENROLLMENT",
   };
@@ -168,6 +168,19 @@ export function createEarlyRegistrationBaseController(
         .flatMap((value) => String(value ?? "").split(","))
         .map((value) => normalizeApplicationStatusToken(value))
         .filter((value): value is ApplicationStatus => Boolean(value));
+
+      // Bridge legacy + new queue statuses during transition.
+      if (statusFilters.includes("AWAITING_VERIFICATION")) {
+        if (!statusFilters.includes("SUBMITTED_BEEF")) {
+          statusFilters.push("SUBMITTED_BEEF");
+        }
+      }
+
+      if (statusFilters.includes("SUBMITTED_BEEF")) {
+        if (!statusFilters.includes("AWAITING_VERIFICATION")) {
+          statusFilters.push("AWAITING_VERIFICATION");
+        }
+      }
 
       // Expand "ENROLLED" or "OFFICIALLY_ENROLLED" to include both if either is present
       if (
@@ -1236,6 +1249,21 @@ export function createEarlyRegistrationBaseController(
       const learner = (await prisma.learner.findUnique({
         where: { lrn },
         include: {
+          enrollmentApplications: {
+            where: {
+              schoolYearId: settings.activeSchoolYearId,
+              status: {
+                in: ["PENDING_BEEF", "AWAITING_VERIFICATION", "SUBMITTED_BEEF"],
+              },
+            },
+            include: {
+              familyMembers: true,
+              addresses: true,
+              gradeLevel: { select: { name: true } },
+            },
+            orderBy: { createdAt: "desc" },
+            take: 1,
+          },
           earlyRegistrationApplications: {
             where: {
               schoolYearId: settings.activeSchoolYearId,
@@ -1267,14 +1295,17 @@ export function createEarlyRegistrationBaseController(
         },
       })) as any;
 
-      if (!learner || learner.earlyRegistrationApplications.length === 0) {
+      const pendingEnrollment = learner?.enrollmentApplications?.[0] ?? null;
+      const latestEarlyRegistration =
+        learner?.earlyRegistrationApplications?.[0] ?? null;
+      const reg = pendingEnrollment ?? latestEarlyRegistration;
+
+      if (!learner || !reg) {
         throw new AppError(
           404,
           "No eligible early registration found for this LRN in the current School Year.",
         );
       }
-
-      const reg = learner.earlyRegistrationApplications[0];
 
       // Map family members to father/mother/guardian fields
       const father = reg.familyMembers.find(
@@ -1297,7 +1328,10 @@ export function createEarlyRegistrationBaseController(
         normalizeGradeLevelToken(reg.gradeLevelId);
 
       res.json({
-        earlyRegistrationId: reg.id,
+        source: pendingEnrollment ? "ENROLLMENT" : "EARLY_REGISTRATION",
+        status: reg.status,
+        enrollmentApplicationId: pendingEnrollment?.id ?? null,
+        earlyRegistrationId: pendingEnrollment?.earlyRegistrationId ?? reg.id,
         lrn: learner.lrn,
         psaBirthCertNumber: learner.psaBirthCertNumber,
         firstName: learner.firstName,

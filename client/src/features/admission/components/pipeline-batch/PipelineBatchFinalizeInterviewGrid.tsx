@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef } from "react";
 import { Input } from "@/shared/ui/input";
+import { Checkbox } from "@/shared/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -33,8 +34,15 @@ export default function PipelineBatchFinalizeInterviewGrid({
 
   const handleInterviewScoreChange = useCallback(
     (applicantId: number, value: string) => {
+      // Clamp to 100
+      let val = value;
+      const num = Number(value);
+      if (!isNaN(num) && num > 100) {
+        val = "100";
+      }
+
       updateFinalizeRow(applicantId, {
-        interviewScore: value,
+        interviewScore: val,
       });
 
       requestAnimationFrame(() => {
@@ -77,9 +85,10 @@ export default function PipelineBatchFinalizeInterviewGrid({
             decision: "PASS",
             rejectOutcome: "SUBMITTED_BEERF",
             remarks: "",
+            absentNoShow: false,
           };
           return (
-            <div className="flex justify-center min-w-[140px]">
+            <div className="space-y-1.5 min-w-[140px]">
               <Input
                 ref={(node) => {
                   scoreInputRefs.current[applicant.id] = node;
@@ -92,9 +101,22 @@ export default function PipelineBatchFinalizeInterviewGrid({
                 onChange={(event) => {
                   handleInterviewScoreChange(applicant.id, event.target.value);
                 }}
-                disabled={isBatchProcessing}
-                className="h-8 w-24 text-center text-sm font-bold"
+                disabled={isBatchProcessing || rowData.absentNoShow}
+                className="h-8 w-24 text-center text-sm font-bold mx-auto"
               />
+
+              <label className="inline-flex items-center gap-2 text-[11px] font-bold text-foreground mx-auto">
+                <Checkbox
+                  checked={rowData.absentNoShow}
+                  onCheckedChange={(checked) =>
+                    updateFinalizeRow(applicant.id, {
+                      absentNoShow: Boolean(checked),
+                    })
+                  }
+                  disabled={isBatchProcessing}
+                />
+                No Show / Absent
+              </label>
             </div>
           );
         },
@@ -220,6 +242,7 @@ export default function PipelineBatchFinalizeInterviewGrid({
         columns={columns}
         data={selectedApplications}
         loading={loading}
+        virtualize={false}
         className="rounded-lg border overflow-auto min-h-0"
         noResultsMessage="No applicants loaded."
       />

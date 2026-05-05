@@ -75,10 +75,12 @@ export const router = createBrowserRouter([
         element: <ChangePassword />,
       },
 
-      // Protected routes for Registrar and System Admin
+      // Protected routes for Head Registrar and System Admin
       {
         element: (
-          <ProtectedRoute allowedRoles={["REGISTRAR", "SYSTEM_ADMIN"]} />
+          <ProtectedRoute
+            allowedRoles={["HEAD_REGISTRAR", "REGISTRAR", "SYSTEM_ADMIN"]}
+          />
         ),
         children: [
           {
@@ -99,19 +101,39 @@ export const router = createBrowserRouter([
           },
           {
             path: "/applications",
-            element: <Navigate to="/monitoring/early-registration" replace />,
+            element: (
+              <Navigate
+                to="/monitoring/early-registration"
+                replace
+              />
+            ),
           },
           {
             path: "/applications/early-registration",
-            element: <Navigate to="/monitoring/early-registration" replace />,
+            element: (
+              <Navigate
+                to="/monitoring/early-registration"
+                replace
+              />
+            ),
           },
           {
             path: "/applications/enrollment",
-            element: <Navigate to="/monitoring/enrollment" replace />,
+            element: (
+              <Navigate
+                to="/monitoring/enrollment"
+                replace
+              />
+            ),
           },
           {
             path: "/applications/admission/:id",
-            element: <Navigate to="/monitoring/early-registration" replace />,
+            element: (
+              <Navigate
+                to="/monitoring/early-registration"
+                replace
+              />
+            ),
           },
           {
             path: "/monitoring/early-registration",
@@ -188,18 +210,20 @@ export const router = createBrowserRouter([
           },
           {
             path: "/monitoring/enrollment/requirements",
-            element: <Navigate to="/settings" replace />,
+            element: (
+              <Navigate
+                to="/settings"
+                replace
+              />
+            ),
           },
           {
             path: "/enrollment/requirements",
-            element: <Navigate to="/settings" replace />,
-          },
-          {
-            path: "/audit-logs",
             element: (
-              <AppLayout>
-                <AuditLogs />
-              </AppLayout>
+              <Navigate
+                to="/settings"
+                replace
+              />
             ),
           },
           {
@@ -241,13 +265,26 @@ export const router = createBrowserRouter([
               </AppLayout>
             ),
           },
+          {
+            path: "/audit-logs",
+            element: (
+              <AppLayout>
+                <AuditLogs />
+              </AppLayout>
+            ),
+          },
         ],
       },
 
       // Default redirect
       {
         path: "/",
-        element: <Navigate to="/dashboard" replace />,
+        element: (
+          <Navigate
+            to="/dashboard"
+            replace
+          />
+        ),
       },
 
       // Fallback
