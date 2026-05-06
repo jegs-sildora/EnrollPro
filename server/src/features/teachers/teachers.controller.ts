@@ -190,87 +190,6 @@ export async function index(req: Request, res: Response) {
   }
 }
 
-export async function store(req: Request, res: Response) {
-  try {
-    const {
-      firstName,
-      lastName,
-      middleName,
-      email,
-      employeeId,
-      contactNumber,
-      specialization,
-      department,
-      plantillaPosition,
-    } = req.body;
-
-    const normalizedFirstName = normalizeRequiredUpperText(firstName);
-    const normalizedLastName = normalizeRequiredUpperText(lastName);
-    const normalizedEmployeeId = normalizeRequiredUpperText(employeeId);
-    const normalizedEmail = normalizeRequiredLowerEmail(email);
-    const normalizedContactNumber = normalizeContactNumber(contactNumber);
-
-    if (
-      !normalizedFirstName ||
-      !normalizedLastName ||
-      !normalizedEmployeeId ||
-      !normalizedEmail
-    ) {
-      return res.status(400).json({
-        message:
-          "First name, last name, employee ID, and DepEd email are required",
-      });
-    }
-
-    if (!isValidContactNumber(normalizedContactNumber)) {
-      return res
-        .status(400)
-        .json({ message: "Contact number must be exactly 11 digits" });
-    }
-
-    const deptCode = normalizeOptionalUpperText(department);
-
-    const teacher = await prisma.teacher.create({
-      data: {
-        firstName: normalizedFirstName,
-        lastName: normalizedLastName,
-        middleName: normalizeOptionalUpperText(middleName),
-        email: normalizedEmail,
-        employeeId: normalizedEmployeeId,
-        contactNumber: normalizedContactNumber,
-        specialization: normalizeOptionalUpperText(specialization),
-        department: deptCode ? { connect: { code: deptCode } } : undefined,
-        plantillaPosition: normalizeOptionalUpperText(plantillaPosition),
-      },
-    });
-
-    await auditLog({
-      userId: req.user!.userId,
-      actionType: "TEACHER_CREATED",
-      description: `Created teacher profile: ${teacher.lastName}, ${teacher.firstName}`,
-      subjectType: "Teacher",
-      recordId: teacher.id,
-      req,
-    });
-
-    res.json({ teacher });
-  } catch (error: unknown) {
-    const conflictField = getTeacherIdentityConflictField(error);
-    if (conflictField === "employeeId") {
-      return res.status(409).json({ message: "Employee ID already exists" });
-    }
-
-    if (conflictField === "email") {
-      return res
-        .status(409)
-        .json({ message: "DepEd email address already exists" });
-    }
-
-    const err = error as Error;
-    res.status(500).json({ message: err.message });
-  }
-}
-
 export async function show(req: Request, res: Response) {
   const idStr = String(req.params.id);
   const id = parseInt(idStr);
@@ -302,6 +221,114 @@ export async function show(req: Request, res: Response) {
   }
 }
 
+interface TeacherUpsertPayload {
+  firstName: string;
+  lastName: string;
+  middleName?: string | null;
+  email: string;
+  employeeId: string;
+  contactNumber?: string | null;
+  specialization?: string | null;
+  departmentCode?: string | null;
+  plantillaPosition?: string | null;
+  subjects?: string[];
+}
+
+export async function store(req: Request, res: Response) {
+  try {
+    const {
+      firstName,
+      lastName,
+      middleName,
+      email,
+      employeeId,
+      contactNumber,
+      specialization,
+      department,
+      plantillaPosition,
+      subjects,
+    } = req.body;
+
+    const normalizedFirstName = normalizeRequiredUpperText(firstName);
+    const normalizedLastName = normalizeRequiredUpperText(lastName);
+    const normalizedEmployeeId = normalizeRequiredUpperText(employeeId);
+    const normalizedEmail = normalizeRequiredLowerEmail(email);
+    const normalizedContactNumber = normalizeContactNumber(contactNumber);
+
+    if (
+      !normalizedFirstName ||
+      !normalizedLastName ||
+      !normalizedEmployeeId ||
+      !normalizedEmail
+    ) {
+      return res.status(400).json({
+        message:
+          "First name, last name, employee ID, and DepEd email are required",
+      });
+    }
+
+    if (!isValidContactNumber(normalizedContactNumber)) {
+      return res
+        .status(400)
+        .json({ message: "Contact number must be exactly 11 digits" });
+    }
+
+    const deptCode = normalizeOptionalUpperText(department);
+
+    const teacher = await prisma.$transaction(async (tx) => {
+      const t = await tx.teacher.create({
+        data: {
+          firstName: normalizedFirstName,
+          lastName: normalizedLastName,
+          middleName: normalizeOptionalUpperText(middleName),
+          email: normalizedEmail,
+          employeeId: normalizedEmployeeId,
+          contactNumber: normalizedContactNumber,
+          specialization: normalizeOptionalUpperText(specialization),
+          department: deptCode ? { connect: { code: deptCode } } : undefined,
+          plantillaPosition: normalizeOptionalUpperText(plantillaPosition),
+        },
+      });
+
+      if (Array.isArray(subjects) && subjects.length > 0) {
+        await tx.teacherSubject.createMany({
+          data: subjects.map((sub) => ({
+            teacherId: t.id,
+            subject: sub.trim().toUpperCase(),
+          })),
+        });
+      }
+
+      return t;
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "TEACHER_CREATED",
+      description: `Created teacher profile: ${teacher.lastName}, ${teacher.firstName}`,
+      subjectType: "Teacher",
+      recordId: teacher.id,
+      req,
+    });
+
+    res.json({ teacher });
+  } catch (error: unknown) {
+    const conflictField = getTeacherIdentityConflictField(error);
+    if (conflictField === "employeeId") {
+      return res.status(409).json({ message: "Employee ID already exists" });
+    }
+
+    if (conflictField === "email") {
+      return res
+        .status(409)
+        .json({ message: "DepEd email address already exists" });
+    }
+
+    const err = error as Error;
+    res.status(500).json({ message: err.message });
+  }
+}
+
 export async function update(req: Request, res: Response) {
   const idStr = String(req.params.id);
   const id = parseInt(idStr);
@@ -320,6 +347,7 @@ export async function update(req: Request, res: Response) {
       specialization,
       department,
       plantillaPosition,
+      subjects,
     } = req.body;
 
     const existing = await prisma.teacher.findUnique({ where: { id } });
@@ -353,21 +381,36 @@ export async function update(req: Request, res: Response) {
 
     const deptCode = normalizeOptionalUpperText(department);
 
-    const updatedTeacher = await prisma.teacher.update({
-      where: { id },
-      data: {
-        firstName: normalizedFirstName,
-        lastName: normalizedLastName,
-        middleName: normalizeOptionalUpperText(middleName),
-        email: normalizedEmail,
-        employeeId: normalizedEmployeeId,
-        contactNumber: normalizedContactNumber,
-        specialization: normalizeOptionalUpperText(specialization),
-        department: deptCode
-          ? { connect: { code: deptCode } }
-          : { disconnect: true },
-        plantillaPosition: normalizeOptionalUpperText(plantillaPosition),
-      },
+    const updatedTeacher = await prisma.$transaction(async (tx) => {
+      const t = await tx.teacher.update({
+        where: { id },
+        data: {
+          firstName: normalizedFirstName,
+          lastName: normalizedLastName,
+          middleName: normalizeOptionalUpperText(middleName),
+          email: normalizedEmail,
+          employeeId: normalizedEmployeeId,
+          contactNumber: normalizedContactNumber,
+          specialization: normalizeOptionalUpperText(specialization),
+          department: deptCode
+            ? { connect: { code: deptCode } }
+            : { disconnect: true },
+          plantillaPosition: normalizeOptionalUpperText(plantillaPosition),
+        },
+      });
+
+      // Sync subjects
+      await tx.teacherSubject.deleteMany({ where: { teacherId: id } });
+      if (Array.isArray(subjects) && subjects.length > 0) {
+        await tx.teacherSubject.createMany({
+          data: subjects.map((sub) => ({
+            teacherId: id,
+            subject: sub.trim().toUpperCase(),
+          })),
+        });
+      }
+
+      return t;
     });
 
     await auditLog({

@@ -94,6 +94,7 @@ export interface TeacherFormState {
   specialization: string;
   department: string;
   plantillaPosition: string;
+  subjects: string[];
 }
 
 export interface DesignationFormState {

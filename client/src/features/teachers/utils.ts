@@ -25,6 +25,7 @@ export function createEmptyTeacherForm(): TeacherFormState {
     specialization: "",
     department: "",
     plantillaPosition: "",
+    subjects: [],
   };
 }
 

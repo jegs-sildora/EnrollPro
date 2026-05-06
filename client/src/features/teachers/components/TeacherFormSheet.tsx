@@ -7,11 +7,12 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { Check, ChevronsUpDown, Search, X } from "lucide-react";
+import { Check, ChevronsUpDown, Search, X, Plus } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import { Badge } from "@/shared/ui/badge";
 import {
   Select,
   SelectContent,
@@ -32,6 +33,7 @@ import {
   TEACHER_SPECIALIZATION_GROUPS,
   TEACHER_DEPARTMENT_OPTIONS,
 } from "../utils";
+import { DEPED_TEACHER_SUBJECT_GROUPS } from "@enrollpro/shared";
 
 type TeacherFormField = keyof TeacherFormState;
 
@@ -59,7 +61,7 @@ interface TeacherFormSheetProps {
   submitting: boolean;
   canSubmit: boolean;
   onOpenChange: (open: boolean) => void;
-  onFieldChange: (field: TeacherFormField, value: string) => void;
+  onFieldChange: (field: TeacherFormField, value: string | string[]) => void;
   onCancel: () => void;
   onSubmit: () => void;
 }
@@ -88,6 +90,9 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
     useState(false);
   const [specializationSearchTerm, setSpecializationSearchTerm] = useState("");
   const [activeSpecializationIndex, setActiveSpecializationIndex] = useState(0);
+
+  const [subjectSearchTerm, setSubjectSearchTerm] = useState("");
+  const [isSubjectPopoverOpen, setIsSubjectPopoverOpen] = useState(false);
 
   const allSpecializationOptions = useMemo(
     () =>
@@ -154,6 +159,8 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
       setIsSpecializationPopoverOpen(false);
       setSpecializationSearchTerm("");
       setActiveSpecializationIndex(0);
+      setIsSubjectPopoverOpen(false);
+      setSubjectSearchTerm("");
     }
   }, [open]);
 
@@ -290,6 +297,29 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
     },
     [onFieldChange],
   );
+
+  const handleSubjectToggle = useCallback(
+    (subject: string) => {
+      const currentSubjects = formData.subjects || [];
+      const exists = currentSubjects.includes(subject);
+      const nextSubjects = exists
+        ? currentSubjects.filter((s) => s !== subject)
+        : [...currentSubjects, subject];
+      onFieldChange("subjects", nextSubjects);
+    },
+    [formData.subjects, onFieldChange],
+  );
+
+  const filteredSubjectGroups = useMemo(() => {
+    return DEPED_TEACHER_SUBJECT_GROUPS.map((group) => ({
+      ...group,
+      options: group.options.filter(
+        (opt) =>
+          opt.label.toLowerCase().includes(subjectSearchTerm.toLowerCase()) ||
+          opt.value.toLowerCase().includes(subjectSearchTerm.toLowerCase()),
+      ),
+    })).filter((group) => group.options.length > 0);
+  }, [subjectSearchTerm]);
 
   const handleSpecializationSearchKeyDown = useCallback(
     (event: ReactKeyboardEvent<HTMLInputElement>) => {
@@ -688,6 +718,93 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                     </PopoverContent>
                   </Popover>
                 </div>
+              </div>
+            </section>
+
+            <section className="space-y-4 rounded-md border p-4 sm:p-5">
+              <header className="space-y-1">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-foreground">
+                  Qualified Subjects
+                </h3>
+                <p className="text-[10px] font-bold uppercase text-muted-foreground">
+                  Subjects the teacher is licensed or certified to teach.
+                </p>
+              </header>
+
+              <div className="flex min-h-[40px] flex-wrap gap-2 rounded-lg border-2 border-dashed bg-muted/20 p-2">
+                {formData.subjects?.map((sub) => (
+                  <Badge
+                    key={sub}
+                    variant="default"
+                    className="gap-1 px-2 py-1 text-[10px] font-black uppercase shadow-sm">
+                    {sub}
+                    <button
+                      type="button"
+                      onClick={() => handleSubjectToggle(sub)}
+                      className="transition-colors hover:text-destructive">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+                <Popover
+                  open={isSubjectPopoverOpen}
+                  onOpenChange={setIsSubjectPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 gap-1 border-2 border-dashed text-xs font-bold uppercase">
+                      <Plus className="h-3 w-3" /> Add Subject
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="start"
+                    className="w-80 p-0 shadow-xl border-2">
+                    <div className="border-b bg-muted/20 p-3">
+                      <div className="relative">
+                        <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                        <Input
+                          value={subjectSearchTerm}
+                          onChange={(e) => setSubjectSearchTerm(e.target.value)}
+                          placeholder="Search subjects..."
+                          className="h-8 pl-7 text-xs font-bold"
+                        />
+                      </div>
+                    </div>
+                    <div className="max-h-80 overflow-y-auto p-2 space-y-4">
+                      {filteredSubjectGroups.map((group) => (
+                        <div
+                          key={group.group}
+                          className="space-y-1">
+                          <p className="px-2 text-[10px] font-black uppercase tracking-widest text-primary/70">
+                            {group.group}
+                          </p>
+                          <div className="grid grid-cols-1 gap-0.5">
+                            {group.options.map((opt) => {
+                              const isSelected = formData.subjects?.includes(
+                                opt.value,
+                              );
+                              return (
+                                <button
+                                  key={opt.value}
+                                  type="button"
+                                  onClick={() => handleSubjectToggle(opt.value)}
+                                  className={`flex items-center justify-between rounded-md px-2 py-1.5 text-left text-xs font-bold uppercase transition ${
+                                    isSelected
+                                      ? "bg-primary text-primary-foreground"
+                                      : "text-foreground hover:bg-muted"
+                                  }`}>
+                                  <span>{opt.label}</span>
+                                  {isSelected && <Check className="h-3 w-3" />}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
             </section>
           </div>

@@ -246,213 +246,232 @@ export async function createSection(
   req: Request,
   res: Response,
 ): Promise<void> {
-  const {
-    name,
-    sortOrder,
-    maxCapacity,
-    gradeLevelId,
-    schoolYearId,
-    programType,
-    advisingTeacherId,
-  } = req.body;
+  try {
+    const {
+      name,
+      sortOrder,
+      maxCapacity,
+      gradeLevelId,
+      schoolYearId,
+      programType,
+      advisingTeacherId,
+    } = req.body;
 
-  const normalizedName = typeof name === "string" ? name.trim() : "";
-  if (!normalizedName || !gradeLevelId || !schoolYearId) {
-    res
-      .status(400)
-      .json({ message: "name, gradeLevelId, and schoolYearId are required" });
-    return;
-  }
+    const normalizedName = typeof name === "string" ? name.trim() : "";
+    if (!normalizedName || !gradeLevelId || !schoolYearId) {
+      res
+        .status(400)
+        .json({ message: "name, gradeLevelId, and schoolYearId are required" });
+      return;
+    }
 
-  const normalizedProgramType =
-    typeof programType === "string" && programType.trim().length > 0
-      ? programType
-      : "REGULAR";
+    const normalizedProgramType =
+      typeof programType === "string" && programType.trim().length > 0
+        ? programType
+        : "REGULAR";
 
-  const resolvedSortOrder =
-    Number.isInteger(sortOrder) && Number(sortOrder) > 0
-      ? Number(sortOrder)
-      : ((
-          await prisma.section.aggregate({
-            where: {
-              gradeLevelId,
-              schoolYearId,
-              programType: normalizedProgramType as ApplicantType,
-            },
-            _max: { sortOrder: true },
-          })
-        )._max.sortOrder ?? 0) + 1;
+    const resolvedSortOrder =
+      Number.isInteger(sortOrder) && Number(sortOrder) > 0
+        ? Number(sortOrder)
+        : ((
+            await prisma.section.aggregate({
+              where: {
+                gradeLevelId,
+                schoolYearId,
+                programType: normalizedProgramType as ApplicantType,
+              },
+              _max: { sortOrder: true },
+            })
+          )._max.sortOrder ?? 0) + 1;
 
-  const section = await prisma.$transaction(async (tx) => {
-    const s = await tx.section.create({
-      data: {
-        name: normalizedName,
-        sortOrder: resolvedSortOrder,
-        maxCapacity: maxCapacity ?? 40,
-        gradeLevelId,
-        schoolYearId,
-        programType: normalizedProgramType as ApplicantType,
-      },
-    });
-
-    if (advisingTeacherId) {
-      const sy = await tx.schoolYear.findUnique({ where: { id: schoolYearId } });
-      await tx.sectionAdviser.create({
+    const section = await prisma.$transaction(async (tx) => {
+      const s = await tx.section.create({
         data: {
-          sectionId: s.id,
-          teacherId: advisingTeacherId,
+          name: normalizedName,
+          sortOrder: resolvedSortOrder,
+          maxCapacity: maxCapacity ?? 40,
+          gradeLevelId,
           schoolYearId,
-          status: SectionAdviserStatus.ACTIVE,
-          effectiveFrom: sy?.classOpeningDate || new Date(),
+          programType: normalizedProgramType as ApplicantType,
         },
       });
-      
-      // Update teacher designation load
-      await tx.teacherDesignation.upsert({
-        where: {
-          uq_teacher_designations_teacher_sy: {
+
+      if (advisingTeacherId) {
+        const sy = await tx.schoolYear.findUnique({ where: { id: schoolYearId } });
+        await tx.sectionAdviser.create({
+          data: {
+            sectionId: s.id,
             teacherId: advisingTeacherId,
             schoolYearId,
+            status: SectionAdviserStatus.ACTIVE,
+            effectiveFrom: sy?.classOpeningDate || new Date(),
           },
-        },
-        update: {
-          isClassAdviser: true,
-          advisorySectionId: s.id,
-          advisoryEquivalentHoursPerWeek: 5,
-        },
-        create: {
-          teacherId: advisingTeacherId,
-          schoolYearId,
-          isClassAdviser: true,
-          advisorySectionId: s.id,
-          advisoryEquivalentHoursPerWeek: 5,
-        },
-      });
+        });
+        
+        // Update teacher designation load
+        await tx.teacherDesignation.upsert({
+          where: {
+            uq_teacher_designations_teacher_sy: {
+              teacherId: advisingTeacherId,
+              schoolYearId,
+            },
+          },
+          update: {
+            isClassAdviser: true,
+            advisorySectionId: s.id,
+            advisoryEquivalentHoursPerWeek: 5,
+          },
+          create: {
+            teacherId: advisingTeacherId,
+            schoolYearId,
+            isClassAdviser: true,
+            advisorySectionId: s.id,
+            advisoryEquivalentHoursPerWeek: 5,
+          },
+        });
+      }
+      return s;
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "SECTION_CREATED",
+      description: `Created section: ${section.name}`,
+      subjectType: "Section",
+      recordId: section.id,
+      req,
+    });
+
+    res.json({ section });
+  } catch (error: any) {
+    console.error("[createSection Error]", error);
+    if (error.code === 'P2002') {
+      res.status(409).json({ message: "A section with this name already exists in this grade level." });
+      return;
     }
-    return s;
-  });
-
-  await auditLog({
-    userId: req.user!.userId,
-    actionType: "SECTION_CREATED",
-    description: `Created section: ${section.name}`,
-    subjectType: "Section",
-    recordId: section.id,
-    req,
-  });
-
-  res.json({ section });
+    res.status(500).json({ message: error.message || "Failed to create section" });
+  }
 }
 
 export async function updateSection(
   req: Request,
   res: Response,
 ): Promise<void> {
-  const id = parseInt(String(req.params.id));
-  const { name, sortOrder, maxCapacity, advisingTeacherId } =
-    req.body;
+  try {
+    const id = parseInt(String(req.params.id));
+    const { name, sortOrder, maxCapacity, advisingTeacherId, programType } =
+      req.body;
 
-  const existing = await prisma.section.findUnique({
-    where: { id },
-    include: {
-      advisers: {
-        where: { status: SectionAdviserStatus.ACTIVE },
-      },
-    },
-  });
-
-  if (!existing) {
-    res.status(404).json({ message: "Section not found" });
-    return;
-  }
-
-  const section = await prisma.$transaction(async (tx) => {
-    const s = await tx.section.update({
+    const existing = await prisma.section.findUnique({
       where: { id },
-      data: {
-        ...(name !== undefined ? { name: name.trim() } : {}),
-        ...(sortOrder !== undefined ? { sortOrder: Number(sortOrder) } : {}),
-        ...(maxCapacity !== undefined ? { maxCapacity: Number(maxCapacity) } : {}),
+      include: {
+        advisers: {
+          where: { status: SectionAdviserStatus.ACTIVE },
+        },
       },
     });
 
-    if (advisingTeacherId !== undefined) {
-      const currentActive = existing.advisers[0];
-      
-      if (!currentActive || currentActive.teacherId !== advisingTeacherId) {
-        // Handle teacher change/assignment
-        if (currentActive) {
-          await tx.sectionAdviser.update({
-            where: { id: currentActive.id },
-            data: {
-              status: SectionAdviserStatus.HANDED_OVER,
-              effectiveTo: new Date(),
-              handoverReason: "Administrative Update",
-            },
-          });
-          
-          await tx.teacherDesignation.updateMany({
-            where: {
-              teacherId: currentActive.teacherId,
-              schoolYearId: s.schoolYearId,
-              advisorySectionId: s.id,
-            },
-            data: {
-              isClassAdviser: false,
-              advisorySectionId: null,
-              advisoryEquivalentHoursPerWeek: 0,
-            },
-          });
-        }
+    if (!existing) {
+      res.status(404).json({ message: "Section not found" });
+      return;
+    }
 
-        if (advisingTeacherId) {
-          const sy = await tx.schoolYear.findUnique({ where: { id: s.schoolYearId } });
-          await tx.sectionAdviser.create({
-            data: {
-              sectionId: s.id,
-              teacherId: advisingTeacherId,
-              schoolYearId: s.schoolYearId,
-              status: SectionAdviserStatus.ACTIVE,
-              effectiveFrom: new Date(),
-            },
-          });
-          
-          await tx.teacherDesignation.upsert({
-            where: {
-              uq_teacher_designations_teacher_sy: {
+    const section = await prisma.$transaction(async (tx) => {
+      const s = await tx.section.update({
+        where: { id },
+        data: {
+          ...(name !== undefined ? { name: name.trim() } : {}),
+          ...(sortOrder !== undefined ? { sortOrder: Number(sortOrder) } : {}),
+          ...(maxCapacity !== undefined ? { maxCapacity: Number(maxCapacity) } : {}),
+          ...(programType !== undefined ? { programType: programType as ApplicantType } : {}),
+        },
+      });
+
+      if (advisingTeacherId !== undefined) {
+        const currentActive = existing.advisers[0];
+        
+        if (!currentActive || currentActive.teacherId !== advisingTeacherId) {
+          // Handle teacher change/assignment
+          if (currentActive) {
+            await tx.sectionAdviser.update({
+              where: { id: currentActive.id },
+              data: {
+                status: SectionAdviserStatus.HANDED_OVER,
+                effectiveTo: new Date(),
+                handoverReason: "Administrative Update",
+              },
+            });
+            
+            await tx.teacherDesignation.updateMany({
+              where: {
+                teacherId: currentActive.teacherId,
+                schoolYearId: s.schoolYearId,
+                advisorySectionId: s.id,
+              },
+              data: {
+                isClassAdviser: false,
+                advisorySectionId: null,
+                advisoryEquivalentHoursPerWeek: 0,
+              },
+            });
+          }
+
+          if (advisingTeacherId) {
+            const sy = await tx.schoolYear.findUnique({ where: { id: s.schoolYearId } });
+            await tx.sectionAdviser.create({
+              data: {
+                sectionId: s.id,
                 teacherId: advisingTeacherId,
                 schoolYearId: s.schoolYearId,
+                status: SectionAdviserStatus.ACTIVE,
+                effectiveFrom: sy?.classOpeningDate || new Date(),
               },
-            },
-            update: {
-              isClassAdviser: true,
-              advisorySectionId: s.id,
-              advisoryEquivalentHoursPerWeek: 5,
-            },
-            create: {
-              teacherId: advisingTeacherId,
-              schoolYearId: s.schoolYearId,
-              isClassAdviser: true,
-              advisorySectionId: s.id,
-              advisoryEquivalentHoursPerWeek: 5,
-            },
-          });
+            });
+            
+            await tx.teacherDesignation.upsert({
+              where: {
+                uq_teacher_designations_teacher_sy: {
+                  teacherId: advisingTeacherId,
+                  schoolYearId: s.schoolYearId,
+                },
+              },
+              update: {
+                isClassAdviser: true,
+                advisorySectionId: s.id,
+                advisoryEquivalentHoursPerWeek: 5,
+              },
+              create: {
+                teacherId: advisingTeacherId,
+                schoolYearId: s.schoolYearId,
+                isClassAdviser: true,
+                advisorySectionId: s.id,
+                advisoryEquivalentHoursPerWeek: 5,
+              },
+            });
+          }
         }
       }
+      return s;
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "SECTION_UPDATED",
+      description: `Updated section: ${section.name}`,
+      subjectType: "Section",
+      recordId: section.id,
+      req,
+    });
+
+    res.json({ section });
+  } catch (error: any) {
+    console.error("[updateSection Error]", error);
+    if (error.code === 'P2002') {
+      res.status(409).json({ message: "A section with this name already exists in this grade level." });
+      return;
     }
-    return s;
-  });
-
-  await auditLog({
-    userId: req.user!.userId,
-    actionType: "SECTION_UPDATED",
-    description: `Updated section: ${section.name}`,
-    subjectType: "Section",
-    recordId: section.id,
-    req,
-  });
-
-  res.json({ section });
+    res.status(500).json({ message: error.message || "Failed to update section" });
+  }
 }
 
 export async function deleteSection(

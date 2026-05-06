@@ -69,6 +69,7 @@ interface TeacherUpsertPayload {
   specialization: string | null;
   department: string | null;
   plantillaPosition: string | null;
+  subjects?: string[];
 }
 
 function normalizeTeacherFieldValue(
@@ -181,6 +182,10 @@ export default function Teachers() {
   const [statusFilter, setStatusFilter] = useState<TeacherStatusFilter>("all");
   const [designationFilter, setDesignationFilter] =
     useState<TeacherDesignationFilter>("all");
+  const [subjectFilter, setSubjectFilter] = useState<string>("all");
+
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(25);
 
   const [formData, setFormData] = useState<TeacherFormState>(
     createEmptyTeacherForm,
@@ -196,9 +201,22 @@ export default function Teachers() {
     createEmptyDesignationForm,
   );
 
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, statusFilter, designationFilter, subjectFilter]);
+
   const handleFieldChange = useCallback(
-    (field: TeacherFormField, value: string) => {
-      const normalizedValue = normalizeTeacherFieldValue(field, value);
+    (field: TeacherFormField, value: string | string[]) => {
+      if (field === "subjects") {
+        setFormData((prev) => ({
+          ...prev,
+          subjects: value as string[],
+        }));
+        return;
+      }
+
+      const normalizedValue = normalizeTeacherFieldValue(field, value as string);
 
       if (field === "email") {
         if (normalizedValue.trim().length === 0) {
@@ -246,10 +264,18 @@ export default function Teachers() {
   );
 
   const handleEditFieldChange = useCallback(
-    (field: TeacherFormField, value: string) => {
+    (field: TeacherFormField, value: string | string[]) => {
+      if (field === "subjects") {
+        setEditFormData((prev) => ({
+          ...prev,
+          subjects: value as string[],
+        }));
+        return;
+      }
+
       setEditFormData((prev) => ({
         ...prev,
-        [field]: normalizeTeacherFieldValue(field, value),
+        [field]: normalizeTeacherFieldValue(field, value as string),
       }));
     },
     [],
@@ -326,6 +352,7 @@ export default function Teachers() {
       specialization: normalizeOptionalInput(formData.specialization),
       department: normalizeOptionalInput(formData.department),
       plantillaPosition: normalizeOptionalInput(formData.plantillaPosition),
+      subjects: formData.subjects,
     };
 
     if (
@@ -383,6 +410,7 @@ export default function Teachers() {
       specialization: (teacher.specialization || "").toUpperCase(),
       department: (teacher.department || "").toUpperCase(),
       plantillaPosition: (teacher.plantillaPosition || "").toUpperCase(),
+      subjects: teacher.subjects || [],
     });
     setEditOpen(true);
   };
@@ -408,6 +436,7 @@ export default function Teachers() {
       specialization: normalizeOptionalInput(editFormData.specialization),
       department: normalizeOptionalInput(editFormData.department),
       plantillaPosition: normalizeOptionalInput(editFormData.plantillaPosition),
+      subjects: editFormData.subjects,
     };
 
     if (
@@ -497,6 +526,7 @@ export default function Teachers() {
           teacher.specialization ?? "",
           teacher.designation?.advisorySection?.name ?? "",
           teacher.designation?.advisorySection?.gradeLevelName ?? "",
+          ...(teacher.subjects || []),
         ]
           .join(" ")
           .toLowerCase()
@@ -524,14 +554,35 @@ export default function Teachers() {
                     teacher.designation.ancillaryRoles.length === 0) &&
                   !teacher.designation.isTeachingExempt));
 
-      return matchesSearch && matchesStatus && matchesDesignation;
+      const matchesSubject =
+        subjectFilter === "all" ||
+        (teacher.subjects || []).some(
+          (s) => s.toUpperCase() === subjectFilter.toUpperCase(),
+        );
+
+      return (
+        matchesSearch && matchesStatus && matchesDesignation && matchesSubject
+      );
     });
-  }, [teachers, searchQuery, statusFilter, designationFilter]);
+  }, [
+    teachers,
+    searchQuery,
+    statusFilter,
+    designationFilter,
+    subjectFilter,
+  ]);
+
+  const paginatedTeachers = useMemo(() => {
+    const start = (page - 1) * limit;
+    const end = start + limit;
+    return filteredTeachers.slice(start, end);
+  }, [filteredTeachers, page, limit]);
 
   const hasActiveFilters =
     searchQuery.trim().length > 0 ||
     statusFilter !== "all" ||
-    designationFilter !== "all";
+    designationFilter !== "all" ||
+    subjectFilter !== "all";
 
   const openDesignationEditor = (teacher: Teacher) => {
     setDesignationOpenFor(teacher);
@@ -700,11 +751,17 @@ export default function Teachers() {
         showSkeleton={showSkeleton}
         teachers={teachers}
         filteredTeachers={filteredTeachers}
+        paginatedTeachers={paginatedTeachers}
         searchQuery={searchQuery}
         statusFilter={statusFilter}
         designationFilter={designationFilter}
+        subjectFilter={subjectFilter}
         hasActiveFilters={hasActiveFilters}
         ayId={ayId}
+        page={page}
+        limit={limit}
+        onPageChange={setPage}
+        onLimitChange={setLimit}
         onSearchQueryChange={(val) => {
           startTransition(() => {
             setSearchQuery(val);
@@ -712,12 +769,14 @@ export default function Teachers() {
         }}
         onStatusFilterChange={setStatusFilter}
         onDesignationFilterChange={setDesignationFilter}
+        onSubjectFilterChange={setSubjectFilter}
         onClearFilters={() => {
           startTransition(() => {
             setSearchQuery("");
           });
           setStatusFilter("all");
           setDesignationFilter("all");
+          setSubjectFilter("all");
         }}
         onRefresh={fetchTeachers}
         onOpenDesignationEditor={openDesignationEditor}
@@ -731,11 +790,15 @@ export default function Teachers() {
       showSkeleton,
       teachers,
       filteredTeachers,
+      paginatedTeachers,
       searchQuery,
       statusFilter,
       designationFilter,
+      subjectFilter,
       hasActiveFilters,
       ayId,
+      page,
+      limit,
       fetchTeachers,
       bosyDate,
       eosyDate,

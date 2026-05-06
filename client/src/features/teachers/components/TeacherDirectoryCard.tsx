@@ -29,6 +29,13 @@ import { UserPhoto } from "@/shared/components/UserPhoto";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
+import { PaginationBar } from "@/shared/components/PaginationBar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/shared/ui/tooltip";
 import type {
   Teacher,
   TeacherDesignationFilter,
@@ -40,16 +47,40 @@ import {
   formatTeacherName,
 } from "../utils";
 
+const SUBJECT_ACRONYMS: Record<string, string> = {
+  MATHEMATICS: "MATH",
+  SCIENCE: "SCI",
+  ENGLISH: "ENG",
+  FILIPINO: "FIL",
+  "ARALING PANLIPUNAN": "AP",
+  "VALUES EDUCATION": "ESP",
+  "EDUKASYON SA PAGPAPAKATAO": "ESP",
+  "EDUKASYON SA PAGPAPAKATAO (ESP)": "ESP",
+  ESP: "ESP",
+  MAPEH: "MAPEH",
+  TLE: "TLE",
+  "HOME ECONOMICS": "HE",
+  "INDUSTRIAL ARTS": "IA",
+  "AGRI_FISHERY ARTS": "AFA",
+  "INFORMATION AND COMMUNICATIONS TECHNOLOGY": "ICT",
+  "INFORMATION AND COMMUNICATIONS TECHNOLOGY (ICT)": "ICT",
+  ICT: "ICT",
+};
+
 interface TeacherDirectoryCardProps {
   loading: boolean;
   showSkeleton: boolean;
-  teachers: Teacher[];
   filteredTeachers: Teacher[];
+  paginatedTeachers: Teacher[];
   searchQuery: string;
   statusFilter: TeacherStatusFilter;
   designationFilter: TeacherDesignationFilter;
   hasActiveFilters: boolean;
   ayId: number | null;
+  page: number;
+  limit: number;
+  onPageChange: (page: number) => void;
+  onLimitChange: (limit: number) => void;
   onSearchQueryChange: (value: string) => void;
   onStatusFilterChange: (value: TeacherStatusFilter) => void;
   onDesignationFilterChange: (value: TeacherDesignationFilter) => void;
@@ -64,13 +95,17 @@ interface TeacherDirectoryCardProps {
 export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
   loading,
   showSkeleton,
-  teachers,
   filteredTeachers,
+  paginatedTeachers,
   searchQuery,
   statusFilter,
   designationFilter,
   hasActiveFilters,
   ayId,
+  page,
+  limit,
+  onPageChange,
+  onLimitChange,
   onSearchQueryChange,
   onStatusFilterChange,
   onDesignationFilterChange,
@@ -283,23 +318,26 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       ),
       cell: ({ row }) => (
         <div className="flex flex-wrap justify-center gap-1">
-          {row.original.subjects.length > 0 ? (
-            row.original.subjects.slice(0, 3).map((sub) => (
-              <Badge
-                key={sub}
-                variant="outline"
-                className="text-[9px] px-1 py-0 h-4 bg-muted/50 font-bold">
-                {sub}
-              </Badge>
-            ))
-          ) : (
-            <span className="text-[10px] text-foreground font-medium">-</span>
-          )}
-          {row.original.subjects.length > 3 && (
-            <span className="text-[9px] text-foreground font-bold">
-              +{row.original.subjects.length - 3}
-            </span>
-          )}
+          <TooltipProvider delayDuration={300}>
+            {row.original.subjects.length > 0 ? (
+              row.original.subjects.map((sub) => (
+                <Tooltip key={sub}>
+                  <TooltipTrigger asChild>
+                    <Badge
+                      variant="outline"
+                      className="cursor-help text-[9px] px-1 py-0 h-4 bg-muted/50 font-bold uppercase transition-colors hover:bg-muted hover:text-primary">
+                      {SUBJECT_ACRONYMS[sub.toUpperCase()] || sub.toUpperCase()}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-[10px] font-bold uppercase">
+                    {sub}
+                  </TooltipContent>
+                </Tooltip>
+              ))
+            ) : (
+              <span className="text-[10px] text-foreground font-medium">-</span>
+            )}
+          </TooltipProvider>
         </div>
       ),
     },
@@ -423,9 +461,6 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
               Clear
             </Button>
           </div>
-          <p className="text-xs text-foreground font-bold">
-            Showing {filteredTeachers.length} of {teachers.length} teachers
-          </p>
         </div>
       </CardHeader>
       <CardContent className="p-0 min-w-0">
@@ -442,14 +477,14 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                   <Skeleton className="h-8 w-full" />
                 </div>
               ))
-            ) : filteredTeachers.length === 0 ? (
+            ) : paginatedTeachers.length === 0 ? (
               <div className="rounded-xl border-2 border-dashed px-4 py-8 text-center text-sm text-foreground italic font-bold">
                 {hasActiveFilters
                   ? "No teachers match the current filter set."
                   : 'No teachers found. Click "Add Teacher" to create one.'}
               </div>
             ) : (
-              filteredTeachers.map((teacher) => (
+              paginatedTeachers.map((teacher) => (
                 <div
                   key={teacher.id}
                   className={`rounded-xl border-2 p-3 space-y-3 ${!teacher.isActive ? "bg-muted/20" : "bg-background shadow-sm"}`}>
@@ -524,7 +559,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
           <div className="hidden md:block flex-1 overflow-auto bg-muted/5 relative">
             <DataTable<Teacher, unknown>
               columns={columns}
-              data={filteredTeachers}
+              data={paginatedTeachers}
               tableClassName="min-w-full"
               loading={loading}
               virtualize={true}
@@ -539,16 +574,14 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
             />
           </div>
 
-          <div className="p-3 border-t bg-background flex items-center justify-between shrink-0 z-30 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.04)]">
-            <span className="text-xs font-bold text-muted-foreground uppercase tracking-tight ml-3">
-              Showing {filteredTeachers.length} of {teachers.length} Teachers
-            </span>
-            <div className="flex items-center gap-2 mr-3">
-              <Badge variant="outline" className="h-6 font-black uppercase text-[10px]">
-                {hasActiveFilters ? "Filtered View" : "Full Directory"}
-              </Badge>
-            </div>
-          </div>
+          <PaginationBar
+            page={page}
+            total={filteredTeachers.length}
+            limit={limit}
+            onPageChange={onPageChange}
+            onLimitChange={onLimitChange}
+            itemName="Teachers"
+          />
         </div>
       </CardContent>
     </Card>

@@ -3654,7 +3654,6 @@ export async function batchScheduleStep(
       scheduledTime,
       venue,
       notes,
-      sendEmail,
     } = req.body as {
       ids: number[];
       expectedStatuses?: Record<string, string>;
@@ -3663,7 +3662,6 @@ export async function batchScheduleStep(
       scheduledTime: string;
       venue: string;
       notes?: string | null;
-      sendEmail?: boolean;
     };
 
     const expectedStatusMap = parseExpectedStatusMap(expectedStatuses);
@@ -5081,7 +5079,7 @@ export async function batchAssignRegularSectionsPreview(
           generalAverage: item.generalAverage,
           sectionId: hSec.id,
           sectionName: hSec.name,
-          sectionDisplayName: hSec.displayName || hSec.name,
+          sectionDisplayName: hSec.name,
           lane: "HOMOGENEOUS",
         });
       }
@@ -5161,7 +5159,7 @@ export async function batchAssignRegularSectionsPreview(
       sections: rawSections.map((s) => ({
         sectionId: s.id,
         sectionName: s.name,
-        sectionDisplayName: s.displayName || s.name,
+        sectionDisplayName: s.name,
         sortOrder: s.sortOrder,
         lane: s.isSnake ? "SNAKE" : "HOMOGENEOUS",
         maxCapacity: s.maxCapacity,
