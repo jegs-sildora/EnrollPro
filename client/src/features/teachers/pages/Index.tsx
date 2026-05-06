@@ -294,6 +294,8 @@ export default function Teachers() {
             sectionName: section.name,
             maxCapacity: section.maxCapacity,
             enrolledCount: section.enrolledCount,
+            programType: section.programType,
+            isHomogeneous: section.isHomogeneous,
             currentAdviserId: section.advisingTeacher?.id ?? null,
             currentAdviserName: section.advisingTeacher?.name ?? null,
           })),

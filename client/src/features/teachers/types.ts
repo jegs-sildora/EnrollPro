@@ -31,6 +31,8 @@ export interface AdvisorySectionOption {
   sectionName: string;
   maxCapacity: number;
   enrolledCount: number;
+  programType: string;
+  isHomogeneous: boolean;
   currentAdviserId: number | null;
   currentAdviserName: string | null;
 }
@@ -43,6 +45,8 @@ export interface SectionsApiResponse {
       name: string;
       maxCapacity: number;
       enrolledCount: number;
+      programType: string;
+      isHomogeneous: boolean;
       advisingTeacher?: {
         id?: number | null;
         name?: string | null;

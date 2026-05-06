@@ -28,8 +28,9 @@ const optionalContactNumber = z.preprocess(
       return value;
     }
 
-    const normalized = value.trim();
-    return normalized.length > 0 ? normalized : null;
+    // Strip all non-digit characters (e.g., hyphens, spaces)
+    const digitsOnly = value.replace(/\D/g, "");
+    return digitsOnly.length > 0 ? digitsOnly : null;
   },
   z
     .string()

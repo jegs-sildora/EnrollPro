@@ -165,6 +165,7 @@ export async function listSections(req: Request, res: Response): Promise<void> {
           displayName: s.displayName,
           maxCapacity: s.maxCapacity,
           programType: s.programType,
+          isHomogeneous: s.isHomogeneous,
           enrolledCount: s._count.enrollmentRecords,
           advisingTeacher: activeAdviser
             ? {
@@ -215,6 +216,7 @@ export async function listSections(req: Request, res: Response): Promise<void> {
           sortOrder: s.sortOrder,
           maxCapacity: s.maxCapacity,
           programType: s.programType,
+          isHomogeneous: s.isHomogeneous,
           enrolledCount: s._count.enrollmentRecords,
           advisingTeacher: activeAdviser
             ? {

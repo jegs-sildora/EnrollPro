@@ -83,6 +83,7 @@ interface SectionItem {
   displayName: string | null;
   sortOrder: number;
   programType: string;
+  isHomogeneous: boolean;
   maxCapacity: number;
   enrolledCount: number;
   fillPercent: number;
@@ -169,6 +170,7 @@ function formatProgramType(programType: string): string {
 }
 
 function fillColor(pct: number): string {
+  if (pct > 100) return "bg-red-600";
   if (pct >= 90) return "bg-red-500";
   if (pct >= 75) return "bg-orange-400";
   if (pct >= 50) return "bg-yellow-400";
@@ -176,27 +178,22 @@ function fillColor(pct: number): string {
 }
 
 function fillEmoji(pct: number): string {
+  if (pct > 100) return "🔴";
   if (pct >= 90) return "🔴";
   if (pct >= 75) return "🟠";
   if (pct >= 50) return "🟡";
   return "🟢";
 }
 
-const isPilotSection = (name: string): boolean => {
-  const n = name.toUpperCase();
+const isPilotSection = (s: SectionItem): boolean => {
+  if (s.programType !== "REGULAR") return false;
+  if (s.isHomogeneous) return true;
+  const n = s.name.toUpperCase();
   return n.startsWith("PILOT") || /^SECTION\s*[1-5](\s|$)/.test(n);
 };
 
-const isSpecialSection = (name: string): boolean => {
-  const n = name.toUpperCase();
-  return (
-    n.startsWith("STE") ||
-    n.startsWith("SPA") ||
-    n.startsWith("SPS") ||
-    n.startsWith("SPJ") ||
-    n.startsWith("SPFL") ||
-    n.startsWith("SPTVE")
-  );
+const isSpecialSection = (s: SectionItem): boolean => {
+  return s.programType !== "REGULAR";
 };
 
 function resolveApiErrorMessage(error: unknown): string | null {
@@ -659,14 +656,21 @@ export default function Sections() {
               s.displayName ?? s.name,
             );
             const isDeleteDisabled = s.enrolledCount > 0;
+            const fillPercent = s.maxCapacity > 0 ? (s.enrolledCount / s.maxCapacity) * 100 : 0;
+            const isOverCapacity = s.enrolledCount > s.maxCapacity;
 
             return (
               <div
                 key={s.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between rounded-lg border border-border bg-card p-4 shadow-sm hover:border-primary/20 transition-all gap-4">
+                className={cn(
+                  "flex flex-col sm:flex-row sm:items-center justify-between rounded-lg border bg-card p-4 shadow-sm transition-all gap-4",
+                  isOverCapacity 
+                    ? "border-red-300 bg-red-50/30 hover:border-red-400" 
+                    : "border-border hover:border-primary/20"
+                )}>
                 <div className="flex items-start sm:items-center gap-4">
                   <div className="text-2xl leading-none mt-0.5 sm:mt-0">
-                    {fillEmoji(s.fillPercent)}
+                    {fillEmoji(fillPercent)}
                   </div>
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
@@ -678,6 +682,11 @@ export default function Sections() {
                         className="text-[9px] uppercase tracking-wider font-bold">
                         {formatProgramType(s.programType)}
                       </Badge>
+                      {s.isHomogeneous && s.programType === "REGULAR" && (
+                        <Badge variant="outline" className="text-[9px] uppercase tracking-wider font-black border-primary/20 text-primary">
+                          Pilot
+                        </Badge>
+                      )}
                     </div>
                     <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs">
                       <div className="flex items-center gap-1.5">
@@ -699,10 +708,15 @@ export default function Sections() {
                         <span className="text-foreground font-semibold">
                           Capacity:
                         </span>
-                        <span className="font-bold">
+                        <span className={cn(
+                          "font-bold",
+                          isOverCapacity ? "text-red-700" : "text-foreground"
+                        )}>
                           {s.enrolledCount}/{s.maxCapacity}{" "}
-                          <span className="text-foreground">
-                            ({Math.round(s.fillPercent)}%)
+                          <span className={cn(
+                            isOverCapacity ? "font-black" : "text-foreground"
+                          )}>
+                            ({Math.round(fillPercent)}%)
                           </span>
                         </span>
                       </div>
@@ -959,48 +973,66 @@ export default function Sections() {
               </p>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {heatmapItems.map(({ group, section }) => (
-                  <div
-                    key={section.id}
-                    onClick={() =>
-                      setViewRosterSection({
-                        id: section.id,
-                        name: formatSectionLabel(
-                          section.displayName ?? section.name,
-                        ),
-                        gradeLevelName: group.gradeLevelName,
-                        adviserName: section.advisingTeacher?.name ?? null,
-                        maxCapacity: section.maxCapacity,
-                        enrolledCount: section.enrolledCount,
-                        programType: section.programType,
-                        gradeLevelId: group.gradeLevelId,
-                      })
-                    }
-                    className="flex items-center gap-3 rounded-lg border border-border p-3 cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-all group">
-                    <span className="text-lg group-hover:scale-110 transition-transform">
-                      {fillEmoji(section.fillPercent)}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold truncate group-hover:text-primary transition-colors">
-                        {formatHeatmapLabel(
-                          group.gradeLevelName,
-                          section.displayName ?? section.name,
-                        )}
-                      </p>
-                      <div className="mt-1 h-2 w-full rounded-full bg-muted">
-                        <div
-                          className={`h-2 rounded-full transition-all ${fillColor(section.fillPercent)}`}
-                          style={{
-                            width: `${Math.min(section.fillPercent, 100)}%`,
-                          }}
-                        />
+                {heatmapItems.map(({ group, section }) => {
+                  const fillPercent = section.maxCapacity > 0 
+                    ? (section.enrolledCount / section.maxCapacity) * 100 
+                    : 0;
+                  const isOverCapacity = section.enrolledCount > section.maxCapacity;
+
+                  return (
+                    <div
+                      key={section.id}
+                      onClick={() =>
+                        setViewRosterSection({
+                          id: section.id,
+                          name: formatSectionLabel(
+                            section.displayName ?? section.name,
+                          ),
+                          gradeLevelName: group.gradeLevelName,
+                          adviserName: section.advisingTeacher?.name ?? null,
+                          maxCapacity: section.maxCapacity,
+                          enrolledCount: section.enrolledCount,
+                          programType: section.programType,
+                          gradeLevelId: group.gradeLevelId,
+                        })
+                      }
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/30 transition-all group",
+                        isOverCapacity
+                          ? "border-red-300 bg-red-50/40 hover:border-red-400"
+                          : "border-border hover:border-primary/50"
+                      )}>
+                      <span className="text-lg group-hover:scale-110 transition-transform">
+                        {fillEmoji(fillPercent)}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold truncate group-hover:text-primary transition-colors">
+                          {formatHeatmapLabel(
+                            group.gradeLevelName,
+                            section.displayName ?? section.name,
+                          )}
+                        </p>
+                        <div className="mt-1 h-2 w-full rounded-full bg-muted">
+                          <div
+                            className={cn(
+                              "h-2 rounded-full transition-all",
+                              fillColor(fillPercent)
+                            )}
+                            style={{
+                              width: `${Math.min(fillPercent, 100)}%`,
+                            }}
+                          />
+                        </div>
                       </div>
+                      <span className={cn(
+                        "text-xs font-bold whitespace-nowrap",
+                        isOverCapacity ? "text-red-700 font-black" : "text-foreground"
+                      )}>
+                        {section.enrolledCount}/{section.maxCapacity}
+                      </span>
                     </div>
-                    <span className="text-xs font-bold text-foreground whitespace-nowrap">
-                      {section.enrolledCount}/{section.maxCapacity}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
                 {heatmapItems.length === 0 &&
                   (groups.every((group) => group.sections.length === 0) ? (
                     <p className="col-span-full text-sm text-[hsl(var(--muted-foreground))] text-center py-4">
@@ -1232,26 +1264,24 @@ export default function Sections() {
                           <div className="space-y-8 pb-4">
                             {renderSectionGroup(
                               "Special Curricular Programs (SCP)",
-                              g.sections.filter((s) =>
-                                isSpecialSection(s.name),
-                              ),
+                              g.sections.filter((s) => isSpecialSection(s)),
                               g.gradeLevelName,
                               g.gradeLevelId,
                             )}
 
                             {renderSectionGroup(
-                              "Pilot Sections",
-                              g.sections.filter((s) => isPilotSection(s.name)),
+                              "Basic Education Curriculum (BEC)",
+                              g.sections.filter((s) => isPilotSection(s)),
                               g.gradeLevelName,
                               g.gradeLevelId,
                             )}
 
                             {renderSectionGroup(
-                              "Regular & Heterogeneous (BEC)",
+                              "Heterogeneous Sections (BEC)",
                               g.sections.filter(
                                 (s) =>
-                                  !isSpecialSection(s.name) &&
-                                  !isPilotSection(s.name),
+                                  !isSpecialSection(s) &&
+                                  !isPilotSection(s),
                               ),
                               g.gradeLevelName,
                               g.gradeLevelId,
