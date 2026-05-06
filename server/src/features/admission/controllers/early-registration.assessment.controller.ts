@@ -525,10 +525,7 @@ export function createEarlyRegistrationAssessmentController(
       const { data: applicant, type: appType } =
         await findApplicantOrThrow(applicantId);
 
-      const targetStatus =
-        applicant.applicantType === "REGULAR"
-          ? "READY_FOR_ENROLLMENT"
-          : "PENDING_BEEF";
+      const targetStatus = "PENDING_BEEF";
 
       assertTransition(
         applicant,

@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../lib/AppError.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
+import { EosyStatus } from "../../generated/prisma/index.js";
 
 function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return "";
@@ -86,6 +87,13 @@ export async function getEosySections(
         _count: {
           select: { enrollmentRecords: true },
         },
+        advisers: {
+          where: { status: "ACTIVE" },
+          include: {
+            teacher: true,
+          },
+          take: 1,
+        },
       },
       orderBy: [{ gradeLevel: { name: "asc" } }, { name: "asc" }],
     });
@@ -109,18 +117,58 @@ export async function getSectionRecords(
         enrollmentApplication: {
           include: {
             learner: true,
+            gradeLevel: true,
+            previousSchool: true,
           },
         },
       },
-      orderBy: {
-        enrollmentApplication: {
-          learner: {
-            lastName: "asc",
+      orderBy: [
+        {
+          enrollmentApplication: {
+            learner: {
+              sex: "asc",
+            },
           },
         },
-      },
+        {
+          enrollmentApplication: {
+            learner: {
+              lastName: "asc",
+            },
+          },
+        },
+        {
+          enrollmentApplication: {
+            learner: {
+              firstName: "asc",
+            },
+          },
+        },
+      ],
     });
-    res.json({ records });
+
+    // Map to include a computed finalAverage for the UI
+    const mappedRecords = records.map((record) => {
+      const app = record.enrollmentApplication;
+      const isGrade7 =
+        app.gradeLevel?.name?.includes("7") || app.gradeLevel?.displayOrder === 7;
+
+      let rawAve: number | null | undefined = null;
+      if (isGrade7) {
+        rawAve = app.previousSchool?.generalAverage ?? app.learner?.previousGenAve;
+      } else {
+        rawAve = app.learner?.previousGenAve ?? app.previousSchool?.generalAverage;
+      }
+
+      const finalAverage = rawAve !== null && rawAve !== undefined ? parseFloat(String(rawAve)) : null;
+
+      return {
+        ...record,
+        finalAverage: isNaN(finalAverage as number) ? null : finalAverage,
+      };
+    });
+
+    res.json({ records: mappedRecords });
   } catch (error) {
     next(error);
   }
@@ -168,7 +216,7 @@ export async function updateEosyRecord(
     const updated = await prisma.enrollmentRecord.update({
       where: { id: recordId },
       data: {
-        eosyStatus: eosyStatus as any,
+        eosyStatus: eosyStatus as EosyStatus,
         dropOutReason: eosyStatus === "DROPPED_OUT" ? dropOutReason : null,
         transferOutDate:
           eosyStatus === "TRANSFERRED_OUT"

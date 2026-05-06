@@ -218,7 +218,7 @@ export function resolveAllowedTransitionsForApplicant(application: {
     application.status === "SUBMITTED_BEERF" &&
     isRegularApplicant(application.applicantType)
   ) {
-    return ["READY_FOR_ENROLLMENT"];
+    return ["PENDING_BEEF"];
   }
 
   return VALID_TRANSITIONS[application.status] ?? [];
@@ -228,6 +228,8 @@ export function createEarlyRegistrationSharedService(
   deps: AdmissionControllerDeps,
 ) {
   const LINKABLE_EARLY_REG_STATUSES = new Set<ApplicationStatus>([
+    "PENDING_BEEF",
+    "AWAITING_VERIFICATION",
     "SUBMITTED_BEERF",
     "VERIFIED",
     "UNDER_REVIEW",

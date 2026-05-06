@@ -39,25 +39,19 @@ const requiredSf9GeneralAverage = z.preprocess(
     return value;
   },
   z
-    .number({
-      invalid_type_error: "Final General Average (SF9) is required.",
-      required_error: "Final General Average (SF9) is required.",
-    })
+    .number()
     .refine(
       (value) => Number.isFinite(value),
       "Final General Average (SF9) is required.",
     )
     .min(0, "General Average must be between 0 and 100.")
     .max(100, "General Average must be between 0 and 100.")
-    .refine(
-      (value) => {
-        if (value === undefined || value === null) return true;
-        const stringValue = value.toString();
-        const decimalPart = stringValue.split(".")[1];
-        return !decimalPart || decimalPart.length <= 2;
-      },
-      "General Average must not exceed two decimal places.",
-    ),
+    .refine((value) => {
+      if (value === undefined || value === null) return true;
+      const stringValue = value.toString();
+      const decimalPart = stringValue.split(".")[1];
+      return !decimalPart || decimalPart.length <= 2;
+    }, "General Average must not exceed two decimal places."),
 );
 
 export const EnrollmentFormSchema = z
@@ -74,7 +68,10 @@ export const EnrollmentFormSchema = z
     schoolYear: z.string().min(1, "Academic year selection is required."),
     lrn: z
       .string()
-      .regex(/^\d{12}$/, "Learner Reference Number must be exactly 12 numeric digits.")
+      .regex(
+        /^\d{12}$/,
+        "Learner Reference Number must be exactly 12 numeric digits.",
+      )
       .optional()
       .or(z.literal("")),
     hasNoLrn: z.boolean().default(false),
@@ -100,13 +97,12 @@ export const EnrollmentFormSchema = z
     firstName: z.string().min(1, "Learner's first name is required."),
     middleName: z.string().optional(),
     extensionName: z.string().optional(),
-    birthdate: z.date({
-      required_error: "Date of birth is required.",
-      invalid_type_error: "Please provide a valid date of birth.",
-    }),
+    birthdate: z.date(),
     age: z.number().min(0),
     sex: z.enum(["Male", "Female"]),
-    placeOfBirth: z.string().min(1, "Place of birth as indicated in birth certificate is required."),
+    placeOfBirth: z
+      .string()
+      .min(1, "Place of birth as indicated in birth certificate is required."),
     motherTongue: z.string().optional(),
     religion: z.string().optional(),
 
@@ -132,7 +128,9 @@ export const EnrollmentFormSchema = z
       houseNo: z.string().optional(),
       street: z.string().optional(),
       barangay: z.string().min(1, "Current barangay is required."),
-      cityMunicipality: z.string().min(1, "Current city/municipality is required."),
+      cityMunicipality: z
+        .string()
+        .min(1, "Current city/municipality is required."),
       province: z.string().min(1, "Current province is required."),
       country: z.string().default("Philippines"),
       zipCode: z.string().optional(),
@@ -184,8 +182,7 @@ export const EnrollmentFormSchema = z
       .string()
       .regex(/^09\d{2}-\d{3}-\d{4}$/, "Please use the format 09XX-XXX-XXXX."),
     isContactInfoConfirmed: z.boolean().refine((val) => val === true, {
-      message:
-        "Confirmation of contact information accuracy is required.",
+      message: "Confirmation of contact information accuracy is required.",
     }),
     guardianRelationship: z.string().optional().nullable(),
     email: z
@@ -194,9 +191,13 @@ export const EnrollmentFormSchema = z
       .min(1, "Email address is required for communication."),
 
     // Section 7: Previous School Information
-    lastSchoolName: z.string().min(1, "Name of the last school attended is required."),
+    lastSchoolName: z
+      .string()
+      .min(1, "Name of the last school attended is required."),
     lastSchoolId: z.string().optional(),
-    lastGradeCompleted: z.string().min(1, "Last grade level completed is required."),
+    lastGradeCompleted: z
+      .string()
+      .min(1, "Last grade level completed is required."),
     schoolYearLastAttended: z
       .string()
       .min(1, "School year of last attendance is required."),
@@ -224,9 +225,12 @@ export const EnrollmentFormSchema = z
 
     // Section 10: Certification
     isCertifiedTrue: z.boolean().refine((val) => val === true, {
-      message: "Verification and certification of the provided information is required.",
+      message:
+        "Verification and certification of the provided information is required.",
     }),
-    parentGuardianSignature: z.string().min(1, "Full legal name of the signatory is required."),
+    parentGuardianSignature: z
+      .string()
+      .min(1, "Full legal name of the signatory is required."),
     dateAccomplished: z.date().default(new Date()),
   })
   .superRefine((data, ctx) => {
@@ -276,7 +280,8 @@ export const EnrollmentFormSchema = z
       if (!data.scpType) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "A Special Curricular Program (SCP) track selection is required.",
+          message:
+            "A Special Curricular Program (SCP) track selection is required.",
           path: ["scpType"],
         });
       }
@@ -284,7 +289,8 @@ export const EnrollmentFormSchema = z
       if (data.scpType === "SPECIAL_PROGRAM_IN_THE_ARTS" && !data.artField) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Preferred Art Field selection is required for SPA applicants.",
+          message:
+            "Preferred Art Field selection is required for SPA applicants.",
           path: ["artField"],
         });
       }
@@ -294,7 +300,8 @@ export const EnrollmentFormSchema = z
       ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "At least one primary sport must be selected for SPS applicants.",
+          message:
+            "At least one primary sport must be selected for SPS applicants.",
           path: ["sportsList"],
         });
       }

@@ -104,7 +104,26 @@ router.get(
   ctrl.exportLisMasterCsv,
 );
 
+router.get(
+  "/exports/sf1",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.exportSf1Csv,
+);
+
 // Protected routes - REGISTRAR + SYSTEM_ADMIN
+router.post(
+  "/special-enrollment",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  (req, res, next) => {
+    console.log("[DEBUG] Hit special-enrollment route");
+    next();
+  },
+  validate(specialEnrollmentSchema),
+  ctrl.specialEnrollment,
+);
+
 router.get(
   "/",
   authenticate,
@@ -208,13 +227,7 @@ router.patch(
   validate(unenrollSchema),
   ctrl.unenroll,
 );
-router.post(
-  "/special-enrollment",
-  authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
-  validate(specialEnrollmentSchema),
-  ctrl.specialEnrollment,
-);
+
 router.patch(
   "/:id/temporarily-enroll",
   authenticate,
@@ -345,5 +358,15 @@ router.patch(
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.fail,
 );
+
+// Catch-all for unhandled routes in this router
+router.use((req, res) => {
+  console.warn(`[DEBUG] 404 in admission.router: ${req.method} ${req.path}`);
+  res.status(404).json({
+    message: `Route ${req.method} ${req.path} not found in admission router`,
+    path: req.path,
+    method: req.method
+  });
+});
 
 export default router;

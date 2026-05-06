@@ -66,6 +66,7 @@ import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { StudentDetailPanel, type StudentDetail as PanelStudentDetail } from "../components/StudentDetailPanel";
+import { PaginationBar } from "@/shared/components/PaginationBar";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { useResizablePanel } from "@/features/admission/pages/early-registration/hooks/useResizablePanel";
 
@@ -264,6 +265,7 @@ export default function Students() {
   const [programFilter, setProgramFilter] = useState<string>("all");
   const [sectionFilter, setSectionFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(50);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [sortBy, setSortBy] = useState<string>("dateEnrolled");
@@ -423,7 +425,7 @@ export default function Students() {
       const params: Record<string, string | number> = {
         schoolYearId: ayId,
         page,
-        limit: 15,
+        limit,
         sortBy,
         sortOrder,
       };
@@ -437,7 +439,7 @@ export default function Students() {
       setTotal(res.data.pagination.total);
       setTotalPages(res.data.pagination.totalPages);
     } catch (err) {
-      toastApiError(err as never);
+      toastApiError(err as any);
       setStudents([]);
     } finally {
       setLoading(false);
@@ -446,6 +448,7 @@ export default function Students() {
   }, [
     ayId,
     page,
+    limit,
     debouncedSearch,
     gradeLevelFilter,
     programFilter,
@@ -465,7 +468,7 @@ export default function Students() {
       });
       setSummary(res.data);
     } catch (err) {
-      toastApiError(err as never);
+      toastApiError(err as any);
       setSummary(null);
     } finally {
       setSummaryLoading(false);
@@ -1341,13 +1344,13 @@ export default function Students() {
             Showing {students.length} of {total} enrolled learners
           </CardDescription>
         </CardHeader>
-        <CardContent className="px-3 sm:px-6 pb-4">
-          <div className="md:hidden space-y-3">
+        <CardContent className="p-0 flex-1 overflow-hidden flex flex-col min-h-0">
+          <div className="md:hidden space-y-3 p-3 overflow-y-auto flex-1 bg-muted/5">
             {showSkeleton ? (
               Array.from({ length: 4 }).map((_, index) => (
                 <div
                   key={index}
-                  className="rounded-xl border p-3 space-y-3 animate-pulse">
+                  className="rounded-xl border p-3 space-y-3 animate-pulse bg-card">
                   <div className="h-4 bg-muted rounded w-2/3" />
                   <div className="h-3 bg-muted rounded w-1/3" />
                   <div className="h-9 bg-muted rounded w-full" />
@@ -1499,45 +1502,29 @@ export default function Students() {
             )}
           </div>
 
-          <div className="hidden md:block">
-            <DataTable
+          <div className="hidden md:block flex-1 overflow-auto bg-muted/5 relative">
+            <DataTable<Student, unknown>
               columns={columns}
               data={students}
               loading={loading}
               virtualize={true}
               estimatedRowHeight={60}
+              className="border-none rounded-none h-full"
+              containerHeight="100%"
               noResultsMessage="No enrolled learners found for the selected filters."
               sorting={sorting}
               onSortingChange={onSortingChange}
             />
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-2">
-              <p className="text-sm font-semibold text-[hsl(var(--muted-foreground))]">
-                Page {page} of {totalPages}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-9 font-bold"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}>
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-9 font-bold"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}>
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
+          <PaginationBar
+            page={page}
+            total={total}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+            itemName="Learners"
+          />
         </CardContent>
       </Card>
 

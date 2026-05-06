@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -9,9 +9,7 @@ import {
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
@@ -34,19 +32,24 @@ import {
   Unlock,
   Building2,
   Download,
-  ChevronRight,
   RefreshCw,
   AlertCircle,
+  Search,
+  Printer,
+  CheckCircle2,
+  GraduationCap,
 } from "lucide-react";
 import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
+import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useAuthStore } from "@/store/auth.slice";
 import { format } from "date-fns";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
-import { useMemo } from "react";
+import { cn } from "@/shared/lib/utils";
+import { motion } from "motion/react";
 
 type EosyStatus =
   | "PROMOTED"
@@ -60,6 +63,8 @@ interface EnrollmentRecord {
   eosyStatus: EosyStatus | null;
   dropOutReason: string | null;
   transferOutDate: string | null;
+  finalAverage: number | null;
+  remarks?: string | null;
   enrollmentApplication: {
     id: number;
     trackingNumber: string;
@@ -77,8 +82,13 @@ interface Section {
   id: number;
   name: string;
   isEosyFinalized: boolean;
-  gradeLevel: { name: string };
+  programType: string;
+  isHomogeneous: boolean;
+  gradeLevel: { name: string; displayOrder: number | null };
   _count: { enrollmentRecords: number };
+  advisers?: Array<{
+    teacher: { firstName: string; lastName: string };
+  }>;
 }
 
 interface EosyExportLockState {
@@ -91,25 +101,9 @@ interface EosyExportLockState {
   lockReason: string | null;
 }
 
-const isPilotSection = (name: string): boolean => {
-  const n = name.toUpperCase();
-  return n.startsWith("PILOT") || /^SECTION\s*[1-5](\s|$)/.test(n);
-};
-
-const isSpecialSection = (name: string): boolean => {
-  const n = name.toUpperCase();
-  return (
-    n.startsWith("STE") ||
-    n.startsWith("SPA") ||
-    n.startsWith("SPS") ||
-    n.startsWith("SPJ") ||
-    n.startsWith("SPFL") ||
-    n.startsWith("SPTVE")
-  );
-};
-
 export default function EosyUpdating() {
-  const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
+  const { activeSchoolYearId, viewingSchoolYearId, activeSchoolYearLabel } =
+    useSettingsStore();
   const user = useAuthStore((state) => state.user);
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const isAdmin = user?.role === "SYSTEM_ADMIN";
@@ -124,6 +118,9 @@ export default function EosyUpdating() {
   const [loadingRecords, setLoadingRecords] = useState(false);
   const [isDownloadingFinalExport, setIsDownloadingFinalExport] =
     useState(false);
+  const [sectionSearch, setSectionSearch] = useState("");
+  const [gradeFilter, setGradeFilter] = useState<string>("ALL");
+  const [incompleteOnly, setIncompleteOnly] = useState(false);
 
   // Modals
   const [dropoutModal, setDropoutModal] = useState<{
@@ -160,9 +157,38 @@ export default function EosyUpdating() {
     setLoading(true);
     try {
       const res = await api.get(`/eosy/sections?schoolYearId=${ayId}`);
-      setSections(res.data.sections || []);
+      const rawSections: Section[] = res.data.sections || [];
+
+      // Implement Institutional Hierarchy Sorting
+      const sorted = [...rawSections].sort((a, b) => {
+        // 1. Grade Level Priority (G7 -> G10)
+        const glA = a.gradeLevel.displayOrder ?? 99;
+        const glB = b.gradeLevel.displayOrder ?? 99;
+        if (glA !== glB) return glA - glB;
+
+        // 2. Program Priority (SCP first)
+        const isScpA = a.programType !== "REGULAR";
+        const isScpB = b.programType !== "REGULAR";
+        if (isScpA !== isScpB) return isScpA ? -1 : 1;
+
+        // 3. Section Type Priority (Star/Pilot sections first)
+        const isStarA =
+          a.name.toUpperCase().startsWith("PILOT") ||
+          /^SECTION\s*[1-5](\s|$)/i.test(a.name) ||
+          a.isHomogeneous;
+        const isStarB =
+          b.name.toUpperCase().startsWith("PILOT") ||
+          /^SECTION\s*[1-5](\s|$)/i.test(b.name) ||
+          b.isHomogeneous;
+        if (isStarA !== isStarB) return isStarA ? -1 : 1;
+
+        // 4. Alphabetical Name
+        return a.name.localeCompare(b.name);
+      });
+
+      setSections(sorted);
     } catch (err) {
-      console.error("Failed to fetch sections", err);
+      toastApiError(err as any);
     } finally {
       setLoading(false);
     }
@@ -190,7 +216,7 @@ export default function EosyUpdating() {
       const res = await api.get(`/eosy/sections/${sectionId}/records`);
       setRecords(res.data.records || []);
     } catch (err) {
-      console.error("Failed to fetch records", err);
+      toastApiError(err as any);
     } finally {
       setLoadingRecords(false);
     }
@@ -247,11 +273,8 @@ export default function EosyUpdating() {
           title: "Status Updated",
           description: "Learner status saved successfully.",
         });
-      } catch {
-        sileo.error({
-          title: "Error",
-          description: "Failed to update status.",
-        });
+      } catch (err) {
+        toastApiError(err as any);
       }
     },
     [exportLock?.schoolYearFinalized],
@@ -289,8 +312,8 @@ export default function EosyUpdating() {
         title: "Status Updated",
         description: "Learner status saved successfully.",
       });
-    } catch {
-      sileo.error({ title: "Error", description: "Failed to update status." });
+    } catch (err) {
+      toastApiError(err as any);
     }
   };
 
@@ -326,8 +349,8 @@ export default function EosyUpdating() {
         title: "Status Updated",
         description: "Learner status saved successfully.",
       });
-    } catch {
-      sileo.error({ title: "Error", description: "Failed to update status." });
+    } catch (err) {
+      toastApiError(err as any);
     }
   };
 
@@ -363,8 +386,8 @@ export default function EosyUpdating() {
         description: "Section has been locked for EOSY.",
       });
       await fetchExportLockState();
-    } catch {
-      sileo.error({ title: "Error", description: "Failed to finalize class." });
+    } catch (err) {
+      toastApiError(err as any);
     }
   };
 
@@ -396,8 +419,8 @@ export default function EosyUpdating() {
         description: "Section is now editable.",
       });
       await fetchExportLockState();
-    } catch {
-      sileo.error({ title: "Error", description: "Failed to re-open class." });
+    } catch (err) {
+      toastApiError(err as any);
     }
   };
 
@@ -412,86 +435,46 @@ export default function EosyUpdating() {
   );
   const emptyRowsCount = records.filter((r) => !r.eosyStatus).length;
 
-  const requestMarkAllPromoted = () => {
-    if (isSchoolYearFinalized) {
-      sileo.error({
-        title: "School Year Locked",
-        description:
-          "School year EOSY is finalized. Status updates are no longer allowed.",
-      });
-      return;
-    }
-
-    if (emptyRowsCount === 0) {
-      sileo.info({
-        title: "No Empty Rows",
-        description: "All learners already have a status.",
-      });
-      return;
-    }
-
-    setBatchPromoteConfirmOpen(true);
-  };
-
   const handleMarkAllPromoted = async () => {
-    const emptyRows = records.filter((r) => !r.eosyStatus);
-    if (emptyRows.length === 0) {
+    const targetRows = records.filter(
+      (r) => !r.eosyStatus && r.finalAverage && r.finalAverage >= 75,
+    );
+
+    if (targetRows.length === 0) {
       setBatchPromoteConfirmOpen(false);
+      sileo.info({
+        title: "No Eligible Records",
+        description: "No un-set learners with passing averages (75+) found.",
+      });
       return;
     }
 
     try {
       await Promise.all(
-        emptyRows.map((r) =>
+        targetRows.map((r) =>
           api.patch(`/eosy/records/${r.id}`, { eosyStatus: "PROMOTED" }),
         ),
       );
 
       setRecords((prev) =>
-        prev.map((r) => (!r.eosyStatus ? { ...r, eosyStatus: "PROMOTED" } : r)),
+        prev.map((r) =>
+          !r.eosyStatus && r.finalAverage && r.finalAverage >= 75
+            ? { ...r, eosyStatus: "PROMOTED" }
+            : r,
+        ),
       );
       sileo.success({
         title: "Batch Updated",
-        description: `${emptyRows.length} learners marked as PROMOTED.`,
+        description: `${targetRows.length} learners with passing averages marked as PROMOTED.`,
       });
       setBatchPromoteConfirmOpen(false);
-    } catch {
-      sileo.error({
-        title: "Batch Error",
-        description: "Failed to update some records.",
-      });
+    } catch (err) {
+      toastApiError(err as any);
     }
-  };
-
-  const requestSchoolFinalize = () => {
-    if (isSchoolYearFinalized) {
-      sileo.info({
-        title: "Already Finalized",
-        description: "School year EOSY export lock is already active.",
-      });
-      return;
-    }
-
-    if (!canFinalizeSchoolLevel) {
-      return;
-    }
-
-    const unfinalized = sections.filter((s) => !s.isEosyFinalized);
-    if (unfinalized.length > 0) {
-      return;
-    }
-
-    setSchoolFinalizeConfirmOpen(true);
   };
 
   const handleSchoolFinalize = async () => {
     if (isSchoolYearFinalized || !canFinalizeSchoolLevel) {
-      setSchoolFinalizeConfirmOpen(false);
-      return;
-    }
-
-    const unfinalized = sections.filter((s) => !s.isEosyFinalized);
-    if (unfinalized.length > 0) {
       setSchoolFinalizeConfirmOpen(false);
       return;
     }
@@ -510,26 +493,14 @@ export default function EosyUpdating() {
           "All records are now locked and export-ready for the school year.",
       });
       void fetchSections();
-    } catch {
+    } catch (err) {
       setSchoolFinalizeConfirmOpen(false);
-      sileo.error({
-        title: "Error",
-        description: "Failed to finalize school year.",
-      });
+      toastApiError(err as any);
     }
   };
 
   const handleDownloadFinalExport = async () => {
     if (!ayId) return;
-    if (!isSchoolYearFinalized) {
-      sileo.error({
-        title: "Finalize Required",
-        description:
-          "Finalize the School Year EOSY first before downloading the final LIS export.",
-      });
-      return;
-    }
-
     setIsDownloadingFinalExport(true);
     try {
       const response = await api.get(
@@ -565,8 +536,9 @@ export default function EosyUpdating() {
         description: "Final school-year LIS CSV downloaded successfully.",
       });
     } catch (err) {
-      const apiMessage = (err as { response?: { data?: { message?: string } } })
-        .response?.data?.message;
+      const apiMessage = (
+        err as { response?: { data?: { message?: string } } }
+      ).response?.data?.message;
 
       sileo.error({
         title: "Export Error",
@@ -578,9 +550,8 @@ export default function EosyUpdating() {
   };
 
   const stats = {
-    promoted: records.filter(
-      (r) => r.eosyStatus === "PROMOTED" || !r.eosyStatus,
-    ).length,
+    promoted: records.filter((r) => r.eosyStatus === "PROMOTED" || !r.eosyStatus)
+      .length,
     retained: records.filter((r) => r.eosyStatus === "RETAINED").length,
     irregular: records.filter((r) => r.eosyStatus === "IRREGULAR").length,
     dropped: records.filter((r) => r.eosyStatus === "DROPPED_OUT").length,
@@ -610,27 +581,12 @@ export default function EosyUpdating() {
   const columns = useMemo<ColumnDef<EnrollmentRecord>[]>(
     () => [
       {
-        id: "lrn",
-        accessorKey: "enrollmentApplication.learner.lrn",
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="LRN"
-          />
-        ),
-        cell: ({ row }) => (
-          <span className="font-bold">
-            {row.original.enrollmentApplication.learner.lrn || "N/A"}
-          </span>
-        ),
-      },
-      {
-        id: "name",
+        id: "student",
         accessorKey: "enrollmentApplication.learner.lastName",
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="NAME"
+            title="LEARNER"
           />
         ),
         cell: ({ row }) => {
@@ -639,16 +595,96 @@ export default function EosyUpdating() {
             sex === "MALE" ? "M" : sex === "FEMALE" ? "F" : null;
 
           return (
-            <div className="flex flex-col text-left pl-2">
-              <span className="font-bold uppercase">
+            <div className="flex flex-col text-left py-0.5 leading-tight text-[11px] sm:text-xs">
+              <span className="font-bold uppercase truncate">
                 {row.original.enrollmentApplication.learner.lastName},{" "}
                 {row.original.enrollmentApplication.learner.firstName}
               </span>
-              {genderLabel && (
-                <span className="text-[10px] text-muted-foreground font-bold uppercase">
-                  Gender: {genderLabel}
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground font-black uppercase">
+                  LRN: {row.original.enrollmentApplication.learner.lrn || "NO LRN"}
                 </span>
-              )}
+                {genderLabel && (
+                  <Badge
+                    variant="outline"
+                    className="h-3 px-1 text-[7px] font-black border-muted-foreground/20">
+                    {genderLabel}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          );
+        },
+      },
+      {
+        id: "finalAve",
+        accessorKey: "finalAverage",
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="General AVE"
+            className="justify-center"
+          />
+        ),
+        cell: ({ row }) => {
+          const ave = row.original.finalAverage;
+          const isFailing = ave !== null && ave < 75;
+          return (
+            <span
+              className={cn(
+                "font-bold text-xs sm:text-sm tabular-nums block text-center",
+                isFailing ? "text-red-600" : "text-emerald-600",
+              )}>
+              {ave?.toFixed(2) || "0.00"}
+            </span>
+          );
+        },
+        size: 80,
+      },
+      {
+        id: "remarks",
+        accessorKey: "remarks",
+        header: () => (
+          <div className="text-center font-bold text-primary-foreground text-xs uppercase tracking-wider">
+            Remarks
+          </div>
+        ),
+        cell: ({ row }) => {
+          const ave = row.original.finalAverage;
+          const status = row.original.eosyStatus;
+
+          if (status === "DROPPED_OUT")
+            return (
+              <div className="text-center">
+                <span className="text-xs font-bold text-amber-600 uppercase bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">
+                  {row.original.dropOutReason || "Dropped"}
+                </span>
+              </div>
+            );
+          if (status === "TRANSFERRED_OUT")
+            return (
+              <div className="text-center">
+                <span className="text-xs font-bold text-blue-600 uppercase bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
+                  Transferred
+                </span>
+              </div>
+            );
+
+          if (ave !== null && ave < 75) {
+            return (
+              <div className="text-center">
+                <span className="text-xs font-bold text-red-600 uppercase italic">
+                  Remediation
+                </span>
+              </div>
+            );
+          }
+
+          return (
+            <div className="text-center">
+              <span className="text-xs font-bold text-muted-foreground uppercase opacity-40">
+                None
+              </span>
             </div>
           );
         },
@@ -659,32 +695,40 @@ export default function EosyUpdating() {
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="STATUS"
+            title="EOSY STATUS"
+            className="justify-center"
           />
         ),
         cell: ({ row }) => {
           const r = row.original;
-          const resolvedStatus = r.eosyStatus ?? "PROMOTED";
+          const resolvedStatus =
+            r.eosyStatus ??
+            (r.finalAverage && r.finalAverage >= 75 ? "PROMOTED" : "RETAINED");
           const statusLabel = formatStatusLabel(r.eosyStatus);
 
           if (isFinalized) {
             return (
-              <div className="flex justify-center min-w-[200px]">
-                <div className="h-9 w-full rounded-md border border-border bg-muted px-3 text-sm font-bold text-muted-foreground flex items-center justify-center">
-                  {statusLabel}
-                </div>
-              </div>
+              <Badge
+                variant="outline"
+                className="h-6 w-24 text-xs font-bold bg-muted text-muted-foreground flex items-center justify-center mx-auto uppercase">
+                {statusLabel}
+              </Badge>
             );
           }
 
           return (
-            <div className="flex justify-center min-w-[200px]">
+            <div className="flex justify-center">
               <Select
                 value={resolvedStatus}
                 onValueChange={(val) => handleStatusChange(r.id, val)}
                 disabled={isFinalized}>
                 <SelectTrigger
-                  className={`h-9 font-bold ${!r.eosyStatus || r.eosyStatus === "PROMOTED" ? "text-emerald-700 bg-emerald-50 border-emerald-200" : "text-amber-700 bg-amber-50 border-amber-200"}`}>
+                  className={cn(
+                    "h-7 w-32 font-black uppercase text-xs r",
+                    !r.eosyStatus || r.eosyStatus === "PROMOTED"
+                      ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                      : "text-amber-700 bg-amber-50 border-amber-200",
+                  )}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -701,282 +745,480 @@ export default function EosyUpdating() {
           );
         },
       },
-      {
-        id: "actions",
-        header: "ACTIONS",
-        cell: () =>
-          isFinalized ? (
-            <div
-              className="h-8 w-8"
-              aria-hidden="true"
-            />
-          ) : (
-            <div className="flex justify-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0">
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          ),
-      },
     ],
     [isFinalized, handleStatusChange],
   );
 
+  const groupedSections = useMemo(() => {
+    const groups: Record<string, Section[]> = {};
+    sections.forEach((s) => {
+      const gl = s.gradeLevel.name;
+      if (!groups[gl]) groups[gl] = [];
+      groups[gl].push(s);
+    });
+    return groups;
+  }, [sections]);
+
+  const gradeLevels = useMemo(() => {
+    const unique = Array.from(new Set(sections.map((s) => s.gradeLevel.name)));
+    return unique.sort((a, b) => {
+      const orderA =
+        sections.find((s) => s.gradeLevel.name === a)?.gradeLevel
+          .displayOrder ?? 99;
+      const orderB =
+        sections.find((s) => s.gradeLevel.name === b)?.gradeLevel
+          .displayOrder ?? 99;
+      return orderA - orderB;
+    });
+  }, [sections]);
+
+  const filteredGroups = useMemo(() => {
+    const search = sectionSearch.toLowerCase().trim();
+    const filtered: Record<string, Section[]> = {};
+
+    Object.entries(groupedSections).forEach(([gl, secs]) => {
+      if (gradeFilter !== "ALL" && gl !== gradeFilter) return;
+
+      const matching = secs.filter((s) => {
+        const adviser = s.advisers?.[0]?.teacher;
+        const adviserName = adviser
+          ? `${adviser.firstName} ${adviser.lastName}`
+          : "";
+        return (
+          s.name.toLowerCase().includes(search) ||
+          adviserName.toLowerCase().includes(search)
+        );
+      });
+      if (matching.length > 0) filtered[gl] = matching;
+    });
+    return filtered;
+  }, [groupedSections, sectionSearch, gradeFilter]);
+
+  const visibleRecords = useMemo(() => {
+    if (!incompleteOnly) return records;
+    return records.filter((r) => !r.eosyStatus);
+  }, [records, incompleteOnly]);
+
   return (
-    <div className="flex flex-col space-y-6 px-2 sm:px-0">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="flex flex-col h-[calc(100vh-100px)] space-y-4 px-2 sm:px-0 overflow-hidden">
+      {/* Global Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0">
         <div>
           <h1 className="text-3xl font-bold ">EOSY Updating</h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm font-bold text-foreground mt-1">
             End of School Year status finalization for DepEd LIS compliance.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {exportLock && (
-            <Badge
-              variant={isSchoolYearFinalized ? "default" : "outline"}
-              className={
-                isSchoolYearFinalized
-                  ? "font-bold"
-                  : "font-bold border-primary/30 text-primary"
-              }>
-              {isSchoolYearFinalized
-                ? "School Year Finalized - Export Locked"
-                : `${exportLock.finalizedSections}/${exportLock.totalSections} Classes Finalized`}
-            </Badge>
+            <div className="flex flex-col items-end mr-2">
+              <span className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-1">
+                Progression Tracker
+              </span>
+              <Badge
+                variant={isSchoolYearFinalized ? "default" : "outline"}
+                className={cn(
+                  "font-black text-xs px-3 h-7",
+                  isSchoolYearFinalized
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "border-primary/40 text-primary bg-primary/5",
+                )}>
+                {isSchoolYearFinalized
+                  ? "SYSTEM LOCKED (100%)"
+                  : `${exportLock.finalizedSections}/${exportLock.totalSections} Classes Finalized`}
+              </Badge>
+            </div>
           )}
+
           {isSchoolYearFinalized ? (
             <Button
-              className="h-10 font-bold bg-primary text-primary-foreground hover:bg-primary/90"
+              className="h-10 px-6 font-bold bg-emerald-600 hover:bg-emerald-700 shadow-md"
               disabled={isDownloadingFinalExport}
               onClick={handleDownloadFinalExport}>
               <Download className="h-4 w-4 mr-2" />
               {isDownloadingFinalExport
-                ? "Preparing Final Export..."
-                : "Download Final LIS Export"}
+                ? "Exporting Master..."
+                : "Finalize School EOSY & Export"}
             </Button>
           ) : (
             isAdmin && (
               <Button
-                className={`h-10 font-bold ${
+                className={cn(
+                  "h-10 px-6 font-bold shadow-md transition-all",
                   canFinalizeSchoolLevel
                     ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                    : "bg-muted text-muted-foreground hover:bg-muted"
-                }`}
+                    : "bg-muted text-muted-foreground cursor-not-allowed opacity-50",
+                )}
                 disabled={!canFinalizeSchoolLevel}
-                onClick={requestSchoolFinalize}>
-                <Building2 className="h-4 w-4 mr-2" />
+                onClick={() => setSchoolFinalizeConfirmOpen(true)}>
+                <Lock className="h-4 w-4 mr-2" />
                 Finalize School EOSY & Export
               </Button>
             )
           )}
+
           <Button
             variant="outline"
-            className="h-10 font-bold"
+            size="icon"
+            className="h-10 w-10 shrink-0 border-2"
             onClick={() => {
               void fetchSections();
               void fetchExportLockState();
             }}>
-            <RefreshCw
-              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
-            />
-            Refresh
+            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           </Button>
         </div>
       </div>
 
       {exportLock?.lockReason && (
-        <div
-          className={`flex items-start gap-2 rounded-lg border px-3 py-2 text-sm ${
+        <motion.div
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          className={cn(
+            "flex items-start gap-3 rounded-xl border-2 px-4 py-3 shadow-sm flex-shrink-0",
             isSchoolYearFinalized
               ? "border-red-200 bg-red-50 text-red-800"
-              : "border-amber-200 bg-amber-50 text-amber-800"
-          }`}>
-          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-          <p className="font-semibold">{exportLock.lockReason}</p>
-        </div>
+              : "border-amber-200 bg-amber-50 text-amber-800",
+          )}>
+          <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
+          <div>
+            <p className="font-black uppercase text-xs r">
+              Operational Status
+            </p>
+            <p className="font-bold text-sm mt-0.5">{exportLock.lockReason}</p>
+          </div>
+        </motion.div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="md:col-span-1 border-none shadow-sm h-fit">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-bold uppercase tracking-wider">
-              Select Class
+      <div className="flex flex-col md:flex-row gap-6 flex-1 min-h-0 overflow-hidden">
+        {/* LEFT SIDEBAR: Class Tracker */}
+        <Card className="w-full md:w-80 border-none shadow-sm flex flex-col h-full bg-card overflow-hidden shrink-0">
+          <CardHeader className="p-4 border-b bg-muted/20 flex-shrink-0">
+            <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+              <GraduationCap className="h-4 w-4 text-primary" />
+              Class Tracker
             </CardTitle>
+            <div className="relative mt-3">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Search section or adviser..."
+                value={sectionSearch}
+                onChange={(e) => setSectionSearch(e.target.value)}
+                className="pl-8 h-9 text-xs font-bold bg-background border-2"
+              />
+            </div>
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              <Button
+                variant={gradeFilter === "ALL" ? "default" : "outline"}
+                size="sm"
+                className="h-7 px-2 text-xs font-black uppercase"
+                onClick={() => setGradeFilter("ALL")}>
+                All
+              </Button>
+              {gradeLevels.map((gl) => (
+                <Button
+                  key={gl}
+                  variant={gradeFilter === gl ? "default" : "outline"}
+                  size="sm"
+                  className="h-7 px-2 text-xs font-black uppercase"
+                  onClick={() => setGradeFilter(gl)}>
+                  {gl.replace(/Grade\s*/i, "G")}
+                </Button>
+              ))}
+            </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase">
-                Section / Adviser
-              </Label>
-              <Select
-                value={selectedSectionId}
-                onValueChange={setSelectedSectionId}>
-                <SelectTrigger className="h-11 font-bold">
-                  <SelectValue placeholder="Select Section" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel className="font-black text-[10px] text-muted-foreground uppercase tracking-widest bg-muted/30 px-2 py-1">
-                      Special Sections (SCP)
-                    </SelectLabel>
-                    {sections
-                      .filter((s) => isSpecialSection(s.name))
-                      .map((s) => (
-                        <SelectItem
-                          key={s.id}
-                          value={String(s.id)}>
-                          {s.gradeLevel.name} - {s.name}{" "}
-                          {s.isEosyFinalized ? "" : ""}
-                        </SelectItem>
-                      ))}
-                  </SelectGroup>
+          <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent min-h-0">
+            <div className="p-2 space-y-4">
+              {Object.entries(filteredGroups).map(([gl, secs]) => (
+                <div
+                  key={gl}
+                  className="space-y-1">
+                  <h3 className="px-3 py-1 text-xs font-black uppercase  text-muted-foreground bg-muted/40 rounded-md mb-2">
+                    {gl}
+                  </h3>
+                  {secs.map((s) => {
+                    const adviser = s.advisers?.[0]?.teacher;
+                    const adviserName = adviser
+                      ? `${adviser.lastName}, ${adviser.firstName}`
+                      : "No Adviser Assigned";
 
-                  <SelectGroup>
-                    <SelectLabel className="font-black text-[10px] text-muted-foreground uppercase tracking-widest bg-muted/30 px-2 py-1 mt-2">
-                      Pilot Sections
-                    </SelectLabel>
-                    {sections
-                      .filter((s) => isPilotSection(s.name))
-                      .map((s) => (
-                        <SelectItem
-                          key={s.id}
-                          value={String(s.id)}>
-                          {s.gradeLevel.name} - {s.name}{" "}
-                          {s.isEosyFinalized ? "" : ""}
-                        </SelectItem>
-                      ))}
-                  </SelectGroup>
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => setSelectedSectionId(String(s.id))}
+                        className={cn(
+                          "w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all text-left group",
+                          selectedSectionId === String(s.id)
+                            ? "bg-primary text-primary-foreground shadow-md"
+                            : "hover:bg-muted",
+                        )}>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs font-black uppercase truncate">
+                            {s.name}
+                          </span>
+                          <span
+                            className={cn(
+                              "text-xs font-bold uppercase truncate",
+                              selectedSectionId === String(s.id)
+                                ? "text-primary-foreground/70"
+                                : "text-muted-foreground",
+                            )}>
+                            Adviser: {adviserName}
+                          </span>
+                        </div>
+                        <div className="shrink-0 ml-2">
+                          {s.isEosyFinalized ? (
+                            <CheckCircle2
+                              className={cn(
+                                "h-4 w-4",
+                                selectedSectionId === String(s.id)
+                                  ? "text-white"
+                                  : "text-emerald-500",
+                              )}
+                            />
+                          ) : (
+                            <div
+                              className={cn(
+                                "h-2 w-2 rounded-full",
+                                selectedSectionId === String(s.id)
+                                  ? "bg-white/50"
+                                  : "bg-red-400",
+                              )}
+                            />
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
 
-                  <SelectGroup>
-                    <SelectLabel className="font-black text-[10px] text-muted-foreground uppercase tracking-widest bg-muted/30 px-2 py-1 mt-2">
-                      Heterogeneous Sections
-                    </SelectLabel>
-                    {sections
-                      .filter(
-                        (s) =>
-                          !isSpecialSection(s.name) && !isPilotSection(s.name),
-                      )
-                      .map((s) => (
-                        <SelectItem
-                          key={s.id}
-                          value={String(s.id)}>
-                          {s.gradeLevel.name} - {s.name}{" "}
-                          {s.isEosyFinalized ? "" : ""}
-                        </SelectItem>
-                      ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+        {/* RIGHT CONTENT: Status Grid */}
+        <Card className="flex-1 border-none shadow-sm flex flex-col overflow-hidden bg-card h-full">
+          {/* ROW 1: IDENTITY */}
+          <CardHeader className="p-5 border-b bg-muted/5 flex-shrink-0">
+            <div className="flex items-center gap-4">
+              <div className="bg-primary/10 p-3 rounded-2xl shrink-0">
+                <Building2 className="h-6 w-6 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-3">
+                  <CardTitle className="text-2xl font-bold uppercase truncate">
+                    {selectedSection ? selectedSection.name : "Select Section"}
+                  </CardTitle>
+                  {selectedSection?.isEosyFinalized && (
+                    <Badge className="bg-emerald-600 text-white font-black uppercase text-xs st h-5 shrink-0">
+                      <Lock className="h-3 w-3 mr-1" />
+                      Finalized
+                    </Badge>
+                  )}
+                </div>
+                <CardDescription className="font-bold text-xs uppercase text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                  {selectedSection ? (
+                    <>
+                      <span>{selectedSection.gradeLevel.name}</span>
+                      <span className="opacity-30">•</span>
+                      <span>End of School Year Reporting</span>
+                      {selectedSection.advisers?.[0] && (
+                        <>
+                          <span className="opacity-30">•</span>
+                          <span className="text-primary font-black">
+                            Adviser: {selectedSection.advisers[0].teacher.lastName},{" "}
+                            {selectedSection.advisers[0].teacher.firstName}
+                          </span>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    "Choose a class from the tracker to start updating statuses"
+                  )}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+
+          {/* ROW 2: CONTROLS & ACTIONS */}
+          {selectedSection && (
+            <div className="px-5 py-3 border-b bg-background flex flex-col sm:flex-row sm:items-center justify-between gap-4 flex-shrink-0">
+              <div className="flex items-center bg-muted/30 p-1 rounded-xl border w-fit">
+                <button
+                  onClick={() => setIncompleteOnly(false)}
+                  className={cn(
+                    "h-8 px-4 text-xs font-black uppercase tracking-widerounded-lg transition-all",
+                    !incompleteOnly
+                      ? "bg-white shadow-sm text-primary border border-border"
+                      : "text-muted-foreground hover:text-primary",
+                  )}>
+                  All ({records.length})
+                </button>
+                <button
+                  onClick={() => setIncompleteOnly(true)}
+                  className={cn(
+                    "h-8 px-4 text-xs font-black uppercase tracking-widerounded-lg transition-all flex items-center gap-2",
+                    incompleteOnly
+                      ? "bg-white shadow-sm text-amber-600 border border-amber-100"
+                      : "text-muted-foreground hover:text-amber-600",
+                  )}>
+                  {emptyRowsCount > 0 && (
+                    <AlertCircle className="h-3 w-3 fill-amber-500 text-white" />
+                  )}
+                  Missing Status ({emptyRowsCount})
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 px-4 font-black text-xs uppercase tracking-wider border-2"
+                  disabled={!selectedSection || selectedSection.isEosyFinalized}
+                  onClick={() =>
+                    sileo.info({
+                      title: "Module Ready",
+                      description: "SF5/SF6 Generation Engine initialized.",
+                    })
+                  }>
+                  <Printer className="h-3.5 w-3.5 mr-2 text-primary" />
+                  Generate SF5 & SF6
+                </Button>
+
+                {!isFinalized && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="h-9 px-4 font-black text-xs uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 shadow-md"
+                    disabled={
+                      records.filter(
+                        (r) => !r.eosyStatus && r.finalAverage && r.finalAverage >= 75,
+                      ).length === 0 || isSchoolYearFinalized
+                    }
+                    onClick={() => setBatchPromoteConfirmOpen(true)}>
+                    <TrendingUp className="h-3.5 w-3.5 mr-2" />
+                    Bulk Mark Promoted
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          <CardContent className="p-0 flex-1 overflow-hidden flex flex-col relative min-h-0">
+            <div className="flex-1 overflow-auto bg-muted/5 relative">
+              <DataTable<EnrollmentRecord, unknown>
+                columns={columns}
+                data={visibleRecords}
+                loading={loadingRecords}
+                getRowClassName={(row: EnrollmentRecord) =>
+                  !row.eosyStatus
+                    ? "bg-amber-50/40 hover:bg-amber-100/40 transition-colors"
+                    : ""
+                }
+                noResultsMessage={
+                  selectedSectionId
+                    ? incompleteOnly
+                      ? "No students missing EOSY status. Great job!"
+                      : "No students found."
+                    : "Please select a section from the Class Tracker sidebar."
+                }
+                className="border-none rounded-none h-full"
+                tableClassName="border-separate border-spacing-0"
+                containerHeight="100%"
+                estimatedRowHeight={50}
+              />
             </div>
 
-            {selectedSection && (
-              <div className="pt-4 border-t space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground font-bold">
-                    Status:
-                  </span>
-                  <Badge
-                    variant={isFinalized ? "default" : "outline"}
-                    className="font-bold">
-                    {isSchoolYearFinalized
-                      ? "SCHOOL LOCKED"
-                      : selectedSection.isEosyFinalized
-                        ? "FINALIZED"
-                        : "EDITABLE"}
-                  </Badge>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground font-bold">
-                    Students:
-                  </span>
-                  <span className="font-bold">
-                    {selectedSection._count.enrollmentRecords}
-                  </span>
-                </div>
-
+            {/* ROW 4: STICKY FOOTER */}
+            {selectedSection && !isSchoolYearFinalized && (
+              <div className="p-5 border-t bg-white flex-shrink-0 z-30 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.04)]">
                 {selectedSection.isEosyFinalized ? (
-                  <Button
-                    variant="outline"
-                    className="w-full h-11 mt-4 font-bold border-primary text-primary hover:bg-primary/5"
-                    disabled={isSchoolYearFinalized}
-                    onClick={() => handleReopenClass(selectedSection.id)}>
-                    <Unlock className="h-4 w-4 mr-2" />
-                    Re-open Updating
-                  </Button>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                      <div className="flex items-center gap-3 text-emerald-700 font-bold text-sm">
+                        <div className="bg-emerald-100 p-1.5 rounded-full">
+                          <CheckCircle2 className="h-5 w-5" />
+                        </div>
+                        Section finalized and locked for SF5/SF6 reporting.
+                      </div>
+                      <div className="hidden md:block h-6 w-px bg-border" />
+                      <span className="text-sm font-bold text-muted-foreground uppercase tracking-tight">
+                        Showing {visibleRecords.length} of {records.length} Learners
+                      </span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="h-11 px-8 font-black uppercase text-xs border-2 border-primary text-primary hover:bg-primary hover:text-white transition-all"
+                      onClick={() => handleReopenClass(selectedSection.id)}>
+                      <Unlock className="h-4 w-4 mr-2" />
+                      Re-open Section
+                    </Button>
+                  </div>
                 ) : (
-                  <Button
-                    className="w-full h-11 mt-4 font-bold bg-primary"
-                    onClick={handleFinalizeClass}
-                    disabled={records.length === 0 || isSchoolYearFinalized}>
-                    <Lock className="h-4 w-4 mr-2" />
-                    Finalize Class
-                  </Button>
+                  <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="flex items-center gap-8">
+                      <div className="flex flex-col">
+                        {emptyRowsCount > 0 ? (
+                          <>
+                            <div className="flex items-center gap-2 text-red-600">
+                              <AlertCircle className="h-5 w-5" />
+                              <span className="font-black text-xs uppercase tracking-tighter">
+                                {emptyRowsCount} learners require an EOSY Status
+                              </span>
+                            </div>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">
+                              Please use 'Bulk Mark' or assign statuses manually to activate
+                              lock.
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2 text-emerald-600">
+                              <CheckCircle2 className="h-5 w-5" />
+                              <span className="font-black text-xs uppercase tracking-tighter">
+                                Ready for Finalization
+                              </span>
+                            </div>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">
+                              All {records.length} learners have been assigned an EOSY status.
+                            </p>
+                          </>
+                        )}
+                      </div>
+
+                      <div className="hidden lg:block h-10 w-px bg-border" />
+
+                      <div className="hidden lg:flex flex-col">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                          Roster Metrics
+                        </span>
+                        <span className="text-sm font-bold text-primary mt-0.5">
+                          Showing {visibleRecords.length} of {records.length} Learners
+                        </span>
+                      </div>
+                    </div>
+
+                    <Button
+                      className={cn(
+                        "h-14 px-10 font-black uppercase tracking-[0.2em] text-sm transition-all shadow-xl",
+                        emptyRowsCount > 0
+                          ? "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
+                          : "bg-primary hover:scale-[1.02] shadow-primary/20",
+                      )}
+                      onClick={handleFinalizeClass}
+                      disabled={records.length === 0 || emptyRowsCount > 0}>
+                      <Lock className="h-5 w-5 mr-3" />
+                      Finalize & Lock Section
+                    </Button>
+                  </div>
                 )}
               </div>
             )}
           </CardContent>
         </Card>
-
-        <Card className="md:col-span-3 border-none shadow-sm">
-          <CardHeader className="pb-3 border-b">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-xl font-bold">
-                  Learner Status Grid
-                </CardTitle>
-                <CardDescription className="font-bold text-xs uppercase  text-muted-foreground">
-                  {selectedSection
-                    ? `Section: ${selectedSection.name}`
-                    : "Select a section to begin updating"}
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-3">
-                {selectedSection && !isFinalized && (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="h-9 font-bold bg-primary hover:bg-primary/90"
-                    disabled={emptyRowsCount === 0 || isSchoolYearFinalized}
-                    onClick={requestMarkAllPromoted}>
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Mark all empty rows as PROMOTED
-                  </Button>
-                )}
-                <div className="h-8 w-px bg-muted" />
-                <Badge
-                  variant="outline"
-                  className="bg-emerald-50 text-emerald-700 border-emerald-200 font-bold px-3">
-                  Promoted: {stats.promoted}
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className="bg-red-50 text-red-700 border-red-200 font-bold px-3">
-                  Negative:{" "}
-                  {stats.retained +
-                    stats.irregular +
-                    stats.dropped +
-                    stats.transferred}
-                </Badge>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <DataTable
-              columns={columns}
-              data={records}
-              loading={loadingRecords}
-              noResultsMessage="No students found in this section."
-              className="border-none rounded-none"
-            />
-          </CardContent>
-        </Card>
       </div>
 
-      {/* Dropout Reason Modal */}
+      {/* Modals & Dialogs */}
       <Dialog
         open={dropoutModal.open}
         onOpenChange={(open) =>
@@ -984,20 +1226,24 @@ export default function EosyUpdating() {
         }>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reason for Drop Out</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="font-bold uppercase tracking-wider">
+              Reason for Drop Out
+            </DialogTitle>
+            <DialogDescription className="font-semibold">
               DepEd requires a specific reason for learners who dropped out.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
             <div className="space-y-2">
-              <Label className="font-bold">Select Reason</Label>
+              <Label className="font-black text-xs uppercase tracking-widest text-muted-foreground">
+                Select Reason
+              </Label>
               <Select
                 value={dropoutModal.reason}
                 onValueChange={(val) =>
                   setDropoutModal({ ...dropoutModal, reason: val })
                 }>
-                <SelectTrigger className="h-10 font-bold">
+                <SelectTrigger className="h-11 font-bold border-2">
                   <SelectValue placeholder="Select Reason" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1019,23 +1265,23 @@ export default function EosyUpdating() {
           </div>
           <DialogFooter>
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={() =>
                 setDropoutModal({ open: false, recordId: null, reason: "" })
-              }>
+              }
+              className="font-bold">
               Cancel
             </Button>
             <Button
               onClick={submitDropoutReason}
               disabled={!dropoutModal.reason}
-              className="bg-primary">
+              className="bg-primary font-bold px-8">
               Save Status
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Transfer Date Modal */}
       <Dialog
         open={transferModal.open}
         onOpenChange={(open) =>
@@ -1043,94 +1289,112 @@ export default function EosyUpdating() {
         }>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Effective Date of Transfer</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="font-bold uppercase tracking-wider">
+              Effective Date of Transfer
+            </DialogTitle>
+            <DialogDescription className="font-semibold">
               Specify the date when the student officially transferred out.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
             <div className="space-y-2">
-              <Label className="font-bold">Effective Date</Label>
+              <Label className="font-black text-xs uppercase tracking-widest text-muted-foreground">
+                Effective Date
+              </Label>
               <Input
                 type="date"
                 value={transferModal.date}
                 onChange={(e) =>
                   setTransferModal({ ...transferModal, date: e.target.value })
                 }
-                className="h-10 font-bold"
+                className="h-11 font-bold border-2"
               />
             </div>
           </div>
           <DialogFooter>
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={() =>
                 setTransferModal({ open: false, recordId: null, date: "" })
-              }>
+              }
+              className="font-bold">
               Cancel
             </Button>
             <Button
               onClick={submitTransferDate}
               disabled={!transferModal.date}
-              className="bg-primary">
+              className="bg-primary font-bold px-8">
               Save Status
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Finalize Class Modal */}
       <Dialog
         open={finalizeModal.open}
         onOpenChange={(open) =>
           !open && setFinalizeModal({ open: false, section: null })
         }>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Lock className="h-5 w-5 text-amber-600" />
+            <DialogTitle className="flex items-center gap-3 font-bold uppercase tracking-wider">
+              <div className="bg-amber-100 p-2 rounded-lg">
+                <Lock className="h-5 w-5 text-amber-600" />
+              </div>
               Finalize Class: {finalizeModal.section?.name}
             </DialogTitle>
-            <DialogDescription>
-              Review the summary below before locking this section. This will
-              prevent further updates by class advisers.
+            <DialogDescription className="font-semibold text-sm">
+              Review the promotion summary before locking this section.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4 bg-muted/30 rounded-lg border p-4 space-y-3">
-            <div className="flex justify-between font-bold">
-              <span>Promoted:</span>
-              <span className="text-emerald-700">{stats.promoted}</span>
+          <div className="py-6 space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center">
+                <p className="text-xs font-black uppercase text-emerald-800 tracking-widest">
+                  Promoted
+                </p>
+                <p className="text-2xl font-black text-emerald-700">
+                  {stats.promoted}
+                </p>
+              </div>
+              <div className="bg-red-50 border border-red-100 rounded-xl p-4 text-center">
+                <p className="text-xs font-black uppercase text-red-800 tracking-widest">
+                  Retained
+                </p>
+                <p className="text-2xl font-black text-red-700">{stats.retained}</p>
+              </div>
             </div>
-            <div className="flex justify-between font-bold">
-              <span>Retained:</span>
-              <span className="text-red-700">{stats.retained}</span>
+            <div className="bg-muted/30 rounded-xl p-4 space-y-2 border-2 border-dashed">
+              <div className="flex justify-between items-center text-xs font-bold text-muted-foreground uppercase tracking-tight">
+                <span>Irregular / Transferred / Dropped</span>
+                <span>{stats.irregular + stats.transferred + stats.dropped}</span>
+              </div>
+              <div className="pt-2 border-t flex justify-between items-center">
+                <span className="text-sm font-black uppercase tracking-wider">
+                  Total Learners
+                </span>
+                <span className="text-lg font-black">{records.length}</span>
+              </div>
             </div>
-            <div className="flex justify-between font-bold text-sm">
-              <span>Irregular / Transferred / Dropped:</span>
-              <span>{stats.irregular + stats.transferred + stats.dropped}</span>
-            </div>
-            <div className="pt-2 border-t flex justify-between font-extrabold text-lg">
-              <span>TOTAL:</span>
-              <span>{records.length}</span>
+            <div className="flex items-start gap-3 p-4 bg-amber-50 border-2 border-amber-200 rounded-xl text-amber-900">
+              <AlertCircle className="h-5 w-5 mt-0.5 shrink-0 text-amber-600" />
+              <p className="text-xs font-bold leading-relaxed">
+                Finalizing locks this section for all advisers. System Admins must
+                manually unlock it for corrections.
+              </p>
             </div>
           </div>
-          <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded-lg text-amber-800 text-xs">
-            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-            <p>
-              Finalizing a class locks it for everyone. Only a System
-              Administrator can re-open it for clerical corrections.
-            </p>
-          </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button
-              variant="outline"
-              onClick={() => setFinalizeModal({ open: false, section: null })}>
+              variant="ghost"
+              onClick={() => setFinalizeModal({ open: false, section: null })}
+              className="font-bold">
               Cancel
             </Button>
             <Button
               onClick={confirmFinalizeClass}
-              className="bg-primary">
-              Confirm & Lock Class
+              className="bg-primary font-black uppercase tracking-widest px-8">
+              Confirm & Lock
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1139,9 +1403,12 @@ export default function EosyUpdating() {
       <ConfirmationModal
         open={batchPromoteConfirmOpen}
         onOpenChange={setBatchPromoteConfirmOpen}
-        title="Confirm Batch Promote"
-        description={`Are you sure you want to mark ${emptyRowsCount} learner${emptyRowsCount === 1 ? "" : "s"} as PROMOTED?`}
-        confirmText="Yes, Mark as Promoted"
+        title="⚡ Smart Bulk Promotion"
+        description={`Apply 'PROMOTED' status to all ${
+          records.filter((r) => !r.eosyStatus && r.finalAverage && r.finalAverage >= 75)
+            .length
+        } learner(s) with a passing average (75.00+) who currently have no status?`}
+        confirmText="Confirm Smart Bulk Promotion"
         onConfirm={handleMarkAllPromoted}
         variant="primary"
       />
@@ -1149,9 +1416,9 @@ export default function EosyUpdating() {
       <ConfirmationModal
         open={schoolFinalizeConfirmOpen}
         onOpenChange={setSchoolFinalizeConfirmOpen}
-        title="Finalize School EOSY & Export"
-        description="CRITICAL ACTION: This will finalize the ENTIRE School Year EOSY and lock all records permanently. Proceed?"
-        confirmText="Yes, Finalize School EOSY"
+        title="🔒 MASTER EOSY FINALIZATION"
+        description={`CRITICAL: This will lock the entire ${activeSchoolYearLabel} school year. No further class updates or status changes will be allowed across all 128 sections. Proceed with Master Lock?`}
+        confirmText="Yes, Finalize & Lock School Year"
         onConfirm={handleSchoolFinalize}
         variant="danger"
       />

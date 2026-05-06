@@ -289,41 +289,126 @@ export default function WalkInEncoder() {
           ? new Date(String(payload.birthdate)).toISOString().slice(0, 10)
           : "";
 
-        setFormData((prev) => ({
-          ...prev,
-          hasNoLrn: false,
-          lrn: String(payload.lrn ?? prev.lrn),
-          learnerType: String(
-            payload.learnerType || prev.learnerType,
-          ) as LearnerType,
-          firstName: String(payload.firstName ?? prev.firstName),
-          lastName: String(payload.lastName ?? prev.lastName),
-          middleName: String(payload.middleName ?? prev.middleName),
-          extensionName: String(payload.extensionName ?? prev.extensionName),
-          birthdate: normalizedBirthdate || prev.birthdate,
-          sex: String(payload.sex || prev.sex) as Sex | "",
-          placeOfBirth: String(payload.placeOfBirth ?? prev.placeOfBirth),
-          contactNumber: String(payload.contactNumber ?? prev.contactNumber),
-          email: String(payload.email ?? prev.email),
-          originSchoolName: String(
-            payload.lastSchoolName ?? prev.originSchoolName,
-          ),
-          currentAddressBarangay:
-            String(
-              (payload.currentAddress as { barangay?: string } | null)
-                ?.barangay ?? prev.currentAddressBarangay,
-            ) || prev.currentAddressBarangay,
-          currentAddressCityMunicipality:
-            String(
-              (payload.currentAddress as { cityMunicipality?: string } | null)
-                ?.cityMunicipality ?? prev.currentAddressCityMunicipality,
-            ) || prev.currentAddressCityMunicipality,
-          currentAddressProvince:
-            String(
-              (payload.currentAddress as { province?: string } | null)
-                ?.province ?? prev.currentAddressProvince,
-            ) || prev.currentAddressProvince,
-        }));
+        setFormData((prev) => {
+          const motherPayload = (payload.mother as
+            | Partial<ContactPersonState>
+            | undefined) ?? {
+            firstName: "",
+            lastName: "",
+            middleName: "",
+            contactNumber: "",
+          };
+          const fatherPayload = (payload.father as
+            | Partial<ContactPersonState>
+            | undefined) ?? {
+            firstName: "",
+            lastName: "",
+            middleName: "",
+            contactNumber: "",
+          };
+          const guardianPayload = (payload.guardian as
+            | Partial<ContactPersonState>
+            | undefined) ?? {
+            firstName: "",
+            lastName: "",
+            middleName: "",
+            contactNumber: "",
+          };
+          const currentAddressPayload =
+            (payload.currentAddress as
+              | {
+                  houseNo?: string;
+                  street?: string;
+                  barangay?: string;
+                  cityMunicipality?: string;
+                  province?: string;
+                }
+              | undefined) ?? undefined;
+
+          return {
+            ...prev,
+            hasNoLrn: false,
+            lrn: String(payload.lrn ?? prev.lrn),
+            learnerType: String(
+              payload.learnerType || prev.learnerType,
+            ) as LearnerType,
+            firstName: String(payload.firstName ?? prev.firstName),
+            lastName: String(payload.lastName ?? prev.lastName),
+            middleName: String(payload.middleName ?? prev.middleName),
+            extensionName: String(payload.extensionName ?? prev.extensionName),
+            birthdate: normalizedBirthdate || prev.birthdate,
+            sex: String(payload.sex || prev.sex) as Sex | "",
+            placeOfBirth: String(payload.placeOfBirth ?? prev.placeOfBirth),
+            contactNumber: String(payload.contactNumber ?? prev.contactNumber),
+            email: String(payload.email ?? prev.email),
+            originSchoolName: String(
+              payload.lastSchoolName ?? prev.originSchoolName,
+            ),
+            guardianRelationship: String(
+              payload.guardianRelationship ?? prev.guardianRelationship,
+            ),
+            mother: {
+              firstName: String(
+                motherPayload.firstName ?? prev.mother.firstName,
+              ),
+              lastName: String(motherPayload.lastName ?? prev.mother.lastName),
+              middleName: String(
+                motherPayload.middleName ?? prev.mother.middleName,
+              ),
+              contactNumber: String(
+                motherPayload.contactNumber ?? prev.mother.contactNumber,
+              ),
+            },
+            father: {
+              firstName: String(
+                fatherPayload.firstName ?? prev.father.firstName,
+              ),
+              lastName: String(fatherPayload.lastName ?? prev.father.lastName),
+              middleName: String(
+                fatherPayload.middleName ?? prev.father.middleName,
+              ),
+              contactNumber: String(
+                fatherPayload.contactNumber ?? prev.father.contactNumber,
+              ),
+            },
+            guardian: {
+              firstName: String(
+                guardianPayload.firstName ?? prev.guardian.firstName,
+              ),
+              lastName: String(
+                guardianPayload.lastName ?? prev.guardian.lastName,
+              ),
+              middleName: String(
+                guardianPayload.middleName ?? prev.guardian.middleName,
+              ),
+              contactNumber: String(
+                guardianPayload.contactNumber ?? prev.guardian.contactNumber,
+              ),
+            },
+            currentAddressHouseNoStreet:
+              String(
+                currentAddressPayload?.houseNo ??
+                  prev.currentAddressHouseNoStreet,
+              ) || prev.currentAddressHouseNoStreet,
+            currentAddressSitio:
+              String(
+                currentAddressPayload?.street ?? prev.currentAddressSitio,
+              ) || prev.currentAddressSitio,
+            currentAddressBarangay:
+              String(
+                currentAddressPayload?.barangay ?? prev.currentAddressBarangay,
+              ) || prev.currentAddressBarangay,
+            currentAddressCityMunicipality:
+              String(
+                currentAddressPayload?.cityMunicipality ??
+                  prev.currentAddressCityMunicipality,
+              ) || prev.currentAddressCityMunicipality,
+            currentAddressProvince:
+              String(
+                currentAddressPayload?.province ?? prev.currentAddressProvince,
+              ) || prev.currentAddressProvince,
+          };
+        });
 
         setHydratedGradeToken(String(payload.gradeLevel ?? ""));
         setHydrationContext({

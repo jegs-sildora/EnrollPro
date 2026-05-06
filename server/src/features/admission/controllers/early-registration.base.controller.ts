@@ -146,6 +146,8 @@ export function createEarlyRegistrationBaseController(
         withoutLrn,
         withoutSection,
         withSection,
+        sortBy = "createdAt",
+        sortOrder = "desc",
         page = "1",
         limit = "15",
       } = req.query;
@@ -182,6 +184,18 @@ export function createEarlyRegistrationBaseController(
         }
       }
 
+      if (statusFilters.includes("PENDING_BEEF")) {
+        if (!statusFilters.includes("READY_FOR_ENROLLMENT")) {
+          statusFilters.push("READY_FOR_ENROLLMENT");
+        }
+      }
+
+      if (statusFilters.includes("READY_FOR_ENROLLMENT")) {
+        if (!statusFilters.includes("PENDING_BEEF")) {
+          statusFilters.push("PENDING_BEEF");
+        }
+      }
+
       // Expand "ENROLLED" or "OFFICIALLY_ENROLLED" to include both if either is present
       if (
         statusFilters.includes("ENROLLED") ||
@@ -197,57 +211,70 @@ export function createEarlyRegistrationBaseController(
       );
 
       // 3. Execution: Unified Raw Query for ID and Metadata
-      // We use raw SQL to handle UNION ALL + cross-table pagination + complex filters efficiently.
-      // This ensures READY_FOR_ENROLLMENT Phase 1 apps are visible in Phase 2 queue.
-
       const searchPattern = search ? `%${String(search)}%` : null;
       const gradeId = gradeLevelId ? parseInt(String(gradeLevelId)) : null;
 
+      // Map sortBy to SQL columns
+      let orderSql = Prisma.empty;
+      const direction = sortOrder?.toString().toLowerCase() === "asc" ? Prisma.sql`ASC` : Prisma.sql`DESC`;
+
+      if (sortBy === "generalAverage") {
+        orderSql = Prisma.sql`ORDER BY l.previous_gen_ave ${direction}, l.last_name ASC`;
+      } else if (sortBy === "lastName" || sortBy === "student") {
+        orderSql = Prisma.sql`ORDER BY l.last_name ${direction}, l.first_name ASC`;
+      } else if (sortBy === "sex" || sortBy === "gender") {
+        // DepEd Standard: Males A-Z, then Females A-Z
+        orderSql = Prisma.sql`ORDER BY l.sex ASC, l.last_name ASC, l.first_name ASC`;
+      } else {
+        // Default: created_at (FIFO support)
+        orderSql = Prisma.sql`ORDER BY q.created_at ${direction}`;
+      }
+
       const results = await prisma.$queryRaw<
-        { id: number; source: "ENROLLMENT" | "EARLY_REGISTRATION" }[]
+        { id: number; source: string }[]
       >`
         WITH base_queue AS (
           -- Phase 2: Official Enrollment Applications
           SELECT 
-            id, 
-            created_at, 
+            ea.id, 
+            ea.created_at, 
             'ENROLLMENT'::text as source,
-            status,
-            applicant_type,
-            grade_level_id,
-            school_year_id,
-            tracking_number,
-            learner_id
-          FROM enrollment_applications
+            ea.status,
+            ea.applicant_type,
+            ea.grade_level_id,
+            ea.school_year_id,
+            ea.tracking_number,
+            ea.learner_id
+          FROM enrollment_applications ea
           WHERE 1=1
-            ${syId ? Prisma.sql`AND school_year_id = ${syId}` : Prisma.empty}
-            ${gradeId ? Prisma.sql`AND grade_level_id = ${gradeId}` : Prisma.empty}
-            ${statusFilters.length > 0 ? Prisma.sql`AND status::text IN (${Prisma.join(statusFilters)})` : Prisma.empty}
-            ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND applicant_type::text = ${applicantType}` : Prisma.empty}
-            ${isTruthyQuery(withoutSection) ? Prisma.sql`AND NOT EXISTS (SELECT 1 FROM enrollment_records WHERE enrollment_application_id = enrollment_applications.id)` : Prisma.empty}
-            ${isTruthyQuery(withSection) || requiresSectionAssignment ? Prisma.sql`AND EXISTS (SELECT 1 FROM enrollment_records WHERE enrollment_application_id = enrollment_applications.id)` : Prisma.empty}
+            ${syId ? Prisma.sql`AND ea.school_year_id = ${syId}` : Prisma.empty}
+            ${gradeId ? Prisma.sql`AND ea.grade_level_id = ${gradeId}` : Prisma.empty}
+            ${statusFilters.length > 0 ? Prisma.sql`AND ea.status::text = ANY(${statusFilters})` : Prisma.empty}
+            ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND ea.applicant_type::text = ${applicantType}` : Prisma.empty}
+            ${isTruthyQuery(withoutSection) ? Prisma.sql`AND NOT EXISTS (SELECT 1 FROM enrollment_records er WHERE er.enrollment_application_id = ea.id)` : Prisma.empty}
+            ${isTruthyQuery(withSection) || requiresSectionAssignment ? Prisma.sql`AND EXISTS (SELECT 1 FROM enrollment_records er WHERE er.enrollment_application_id = ea.id)` : Prisma.empty}
 
           UNION ALL
 
           -- Phase 1: Early Registration Applications (Queued for Phase 2)
           -- ONLY include if NOT yet migrated to an enrollment_application record.
           SELECT 
-            id, 
-            created_at, 
+            era.id, 
+            era.created_at, 
             'EARLY_REGISTRATION'::text as source,
-            status,
-            applicant_type,
-            grade_level_id,
-            school_year_id,
-            tracking_number,
-            learner_id
-          FROM early_registration_applications e
+            era.status,
+            era.applicant_type,
+            era.grade_level_id,
+            era.school_year_id,
+            era.tracking_number,
+            era.learner_id
+          FROM early_registration_applications era
           WHERE 1=1
-            AND NOT EXISTS (SELECT 1 FROM enrollment_applications WHERE early_registration_id = e.id)
-            ${syId ? Prisma.sql`AND school_year_id = ${syId}` : Prisma.empty}
-            ${gradeId ? Prisma.sql`AND grade_level_id = ${gradeId}` : Prisma.empty}
-            ${statusFilters.length > 0 ? Prisma.sql`AND status::text IN (${Prisma.join(statusFilters)})` : Prisma.empty}
-            ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND applicant_type::text = ${applicantType}` : Prisma.empty}
+            AND NOT EXISTS (SELECT 1 FROM enrollment_applications ea_link WHERE ea_link.early_registration_id = era.id)
+            ${syId ? Prisma.sql`AND era.school_year_id = ${syId}` : Prisma.empty}
+            ${gradeId ? Prisma.sql`AND era.grade_level_id = ${gradeId}` : Prisma.empty}
+            ${statusFilters.length > 0 ? Prisma.sql`AND era.status::text = ANY(${statusFilters})` : Prisma.empty}
+            ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND era.applicant_type::text = ${applicantType}` : Prisma.empty}
             -- Early reg apps NEVER have enrollment records (Phase 2 only)
             ${isTruthyQuery(withSection) || requiresSectionAssignment ? Prisma.sql`AND 1=0` : Prisma.empty}
         ),
@@ -271,34 +298,51 @@ export function createEarlyRegistrationBaseController(
                 : Prisma.empty
             }
         )
-        SELECT id, source::text as source
-        FROM filtered_queue
-        ORDER BY created_at DESC
+        SELECT q.id, q.source
+        FROM filtered_queue q
+        JOIN learners l ON q.learner_id = l.id
+        ${orderSql}
         LIMIT ${take} OFFSET ${skip}
       `;
 
-      const [{ count: totalCount }] = await prisma.$queryRaw<
+      const totalCountRaw = await prisma.$queryRaw<
         { count: bigint }[]
       >`
         WITH base_queue AS (
-          SELECT id, learner_id, tracking_number FROM enrollment_applications
+          SELECT 
+            ea.id, 
+            ea.learner_id, 
+            ea.tracking_number,
+            ea.status,
+            ea.applicant_type,
+            ea.grade_level_id,
+            ea.school_year_id
+          FROM enrollment_applications ea
           WHERE 1=1
-            ${syId ? Prisma.sql`AND school_year_id = ${syId}` : Prisma.empty}
-            ${gradeId ? Prisma.sql`AND grade_level_id = ${gradeId}` : Prisma.empty}
-            ${statusFilters.length > 0 ? Prisma.sql`AND status::text IN (${Prisma.join(statusFilters)})` : Prisma.empty}
-            ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND applicant_type::text = ${applicantType}` : Prisma.empty}
-            ${isTruthyQuery(withoutSection) ? Prisma.sql`AND NOT EXISTS (SELECT 1 FROM enrollment_records WHERE enrollment_application_id = enrollment_applications.id)` : Prisma.empty}
-            ${isTruthyQuery(withSection) || requiresSectionAssignment ? Prisma.sql`AND EXISTS (SELECT 1 FROM enrollment_records WHERE enrollment_application_id = enrollment_applications.id)` : Prisma.empty}
+            ${syId ? Prisma.sql`AND ea.school_year_id = ${syId}` : Prisma.empty}
+            ${gradeId ? Prisma.sql`AND ea.grade_level_id = ${gradeId}` : Prisma.empty}
+            ${statusFilters.length > 0 ? Prisma.sql`AND ea.status::text = ANY(${statusFilters})` : Prisma.empty}
+            ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND ea.applicant_type::text = ${applicantType}` : Prisma.empty}
+            ${isTruthyQuery(withoutSection) ? Prisma.sql`AND NOT EXISTS (SELECT 1 FROM enrollment_records er WHERE er.enrollment_application_id = ea.id)` : Prisma.empty}
+            ${isTruthyQuery(withSection) || requiresSectionAssignment ? Prisma.sql`AND EXISTS (SELECT 1 FROM enrollment_records er WHERE er.enrollment_application_id = ea.id)` : Prisma.empty}
 
           UNION ALL
 
-          SELECT id, learner_id, tracking_number FROM early_registration_applications e
+          SELECT 
+            era.id, 
+            era.learner_id, 
+            era.tracking_number,
+            era.status,
+            era.applicant_type,
+            era.grade_level_id,
+            era.school_year_id
+          FROM early_registration_applications era
           WHERE 1=1
-            AND NOT EXISTS (SELECT 1 FROM enrollment_applications WHERE early_registration_id = e.id)
-            ${syId ? Prisma.sql`AND school_year_id = ${syId}` : Prisma.empty}
-            ${gradeId ? Prisma.sql`AND grade_level_id = ${gradeId}` : Prisma.empty}
-            ${statusFilters.length > 0 ? Prisma.sql`AND status::text IN (${Prisma.join(statusFilters)})` : Prisma.empty}
-            ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND applicant_type::text = ${applicantType}` : Prisma.empty}
+            AND NOT EXISTS (SELECT 1 FROM enrollment_applications ea_link WHERE ea_link.early_registration_id = era.id)
+            ${syId ? Prisma.sql`AND era.school_year_id = ${syId}` : Prisma.empty}
+            ${gradeId ? Prisma.sql`AND era.grade_level_id = ${gradeId}` : Prisma.empty}
+            ${statusFilters.length > 0 ? Prisma.sql`AND era.status::text = ANY(${statusFilters})` : Prisma.empty}
+            ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND era.applicant_type::text = ${applicantType}` : Prisma.empty}
             ${isTruthyQuery(withSection) || requiresSectionAssignment ? Prisma.sql`AND 1=0` : Prisma.empty}
         )
         SELECT COUNT(*) as count FROM base_queue q
@@ -321,6 +365,7 @@ export function createEarlyRegistrationBaseController(
           }
       `;
 
+      const totalCount = totalCountRaw[0]?.count ?? 0n;
       // 4. Hydrate Results with Prisma (to maintain include logic)
       const enrollmentIds = results
         .filter((r) => r.source === "ENROLLMENT")

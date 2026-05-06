@@ -73,6 +73,8 @@ interface ProposedAssignment {
   readingProfile: string | null;
   programType: string;
   status: string;
+  rankingScore?: number | null;
+  rank?: number | null;
 }
 
 const resolveReadingProfileLabel = (level?: string | null): string => {
@@ -181,6 +183,18 @@ const RosterRowComponent = React.forwardRef<
           className="text-[10px] font-black border-border bg-background uppercase">
           {formatScpType(row.programType)}
         </Badge>
+      </TableCell>
+      <TableCell className="py-3 px-4 text-center">
+        {row.programType !== "REGULAR" && row.rank ? (
+          <div className="flex flex-col items-center">
+            <span className="font-black text-sm text-primary">#{row.rank}</span>
+            <span className="text-[9px] font-bold text-muted-foreground uppercase">
+              Score: {row.rankingScore?.toFixed(2)}
+            </span>
+          </div>
+        ) : (
+          <span className="text-muted-foreground text-xs">-</span>
+        )}
       </TableCell>
       <TableCell className="py-3 px-4 text-center  font-bold text-sm tabular-nums">
         {row.genAve?.toFixed(3) || "-"}
@@ -465,45 +479,52 @@ export function BatchSectioningWizard({
 
     // Sort logic
     list.sort((a, b) => {
-      // 1. Primary Sort: Section Type Priority (SCP -> Pilot -> Hetero)
-      const prioA = getSectionPriority(a.sectionName);
-      const prioB = getSectionPriority(b.sectionName);
+      // 0. Primary Sort: SCP Applicants First (STE, SPA, etc. always at top)
+      const isScpA = a.programType !== "REGULAR";
+      const isScpB = b.programType !== "REGULAR";
+      if (isScpA !== isScpB) return isScpA ? -1 : 1;
 
-      if (prioA !== prioB) {
-        return prioA - prioB;
+      // 1. Secondary Sort: Section Grouping (CRITICAL for clean separators)
+      // This ensures students in the same section stay together regardless of other sorts.
+      if (a.sectionName !== b.sectionName) {
+        // Still respect section priority (Special -> Pilot -> Hetero)
+        const prioA = getSectionPriority(a.sectionName);
+        const prioB = getSectionPriority(b.sectionName);
+        if (prioA !== prioB) return prioA - prioB;
+
+        return a.sectionName.localeCompare(b.sectionName);
       }
 
-      // 2. Secondary Sort: Selected Sort Field
+      // 2. Tertiary Sort: Selected Sort Field (Numerical for genAve)
       const field = sortConfig.field;
       const direction = sortConfig.direction === "asc" ? 1 : -1;
 
-      // Special case for Gender - MALE (M) should be first by default in SF1
-      if (field === "gender") {
-        if (a.gender === b.gender)
-          return a.learnerName.localeCompare(b.learnerName);
-        return (a.gender === "MALE" ? -1 : 1) * direction;
-      }
-
-      const valA = a[field] ?? "";
-      const valB = b[field] ?? "";
-
-      if (typeof valA === "number" && typeof valB === "number") {
+      if (field === "genAve") {
+        const valA = Number(a.genAve || 0);
+        const valB = Number(b.genAve || 0);
         if (valA !== valB) return (valA - valB) * direction;
+      } else if (field === "gender") {
+        if (a.gender !== b.gender)
+          return (a.gender === "MALE" ? -1 : 1) * direction;
       } else {
-        const strA = String(valA);
-        const strB = String(valB);
-        if (strA !== strB) return strA.localeCompare(strB) * direction;
+        const valA = String(a[field] ?? "");
+        const valB = String(b[field] ?? "");
+        if (valA !== valB) return valA.localeCompare(valB) * direction;
       }
 
-      // Tie-breakers for consistent SF1 order if main field is same
-      if (a.sectionName !== b.sectionName)
-        return a.sectionName.localeCompare(b.sectionName);
+      // 3. Final Tie-breakers for consistent SF1 order (DepEd Standard)
       if (a.gender !== b.gender) return a.gender === "MALE" ? -1 : 1;
       return a.learnerName.localeCompare(b.learnerName);
     });
 
     return list;
-  }, [modifiedAssignments, programFilter, sectionFilter, sortConfig]);
+  }, [
+    modifiedAssignments,
+    programFilter,
+    sectionFilter,
+    sortConfig,
+    getSectionPriority,
+  ]);
 
   const virtualItemsData = useMemo(() => {
     const items: Array<
@@ -945,6 +966,9 @@ export function BatchSectioningWizard({
                                   <TableHead className="text-primary-foreground font-black text-[10px] uppercase tracking-wider h-12 px-4 text-center">
                                     Program
                                   </TableHead>
+                                  <TableHead className="text-primary-foreground font-black text-[10px] uppercase tracking-wider h-12 px-4 text-center">
+                                    Ranking
+                                  </TableHead>
                                   <TableHead className="text-primary-foreground h-12 px-4 text-center">
                                     <button
                                       onClick={() => toggleSort("genAve")}
@@ -974,7 +998,7 @@ export function BatchSectioningWizard({
                                     }}
                                     className="hover:bg-transparent border-none">
                                     <TableCell
-                                      colSpan={6}
+                                      colSpan={7}
                                       className="p-0"
                                     />
                                   </TableRow>
@@ -993,7 +1017,7 @@ export function BatchSectioningWizard({
                                           data-index={virtualRow.index}
                                           className="bg-muted/50 hover:bg-muted/50 border-y border-border/60">
                                           <TableCell
-                                            colSpan={6}
+                                            colSpan={7}
                                             className="py-2.5 px-4">
                                             <div className="flex items-center gap-3">
                                               <div className="h-[1px] flex-1 bg-border/80" />
@@ -1039,7 +1063,7 @@ export function BatchSectioningWizard({
                                     }}
                                     className="hover:bg-transparent border-none">
                                     <TableCell
-                                      colSpan={6}
+                                      colSpan={7}
                                       className="p-0"
                                     />
                                   </TableRow>

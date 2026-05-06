@@ -17,13 +17,23 @@ import {
   LogOut,
   Loader2,
   Lock,
+  Download,
+  Printer,
+  AlertCircle,
 } from "lucide-react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
-import { cn, formatScpType, getLearnerTypeLabel } from "@/shared/lib/utils";
+import { useScpConfigs } from "@/features/admission/hooks/useScpConfigs";
+import {
+  SCP_ACRONYMS,
+  SCP_LABELS,
+  cn,
+  formatScpType,
+  getLearnerTypeLabel,
+} from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Card, CardContent, CardHeader } from "@/shared/ui/card";
@@ -35,6 +45,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -65,6 +76,7 @@ import { EnrollmentWorkflowTabs } from "@/features/enrollment/components/Enrollm
 import { BatchConfirmationModal } from "@/features/enrollment/components/BatchConfirmationModal";
 import { PinHandoverModal } from "@/features/enrollment/components/PinHandoverModal";
 import { useSectioningStore } from "@/store/sectioning.slice";
+import { PaginationBar } from "@/shared/components/PaginationBar";
 import {
   ENROLLMENT_SUB_MENU_DESCRIPTIONS,
   ENROLLMENT_SUB_MENU_OPTIONS,
@@ -106,6 +118,12 @@ interface Application {
   studentPhoto?: string | null;
   earlyRegistrationId?: number | null;
   source?: "ENROLLMENT" | "EARLY_REGISTRATION" | null;
+  learner: {
+    sex: string;
+    firstName: string;
+    lastName: string;
+    lrn: string | null;
+  };
 }
 
 interface GradeLevel {
@@ -243,6 +261,89 @@ function resolveWorkflowFromQuery(value: string | null): EnrollmentSubMenu {
   return matched ? (value as EnrollmentSubMenu) : "PENDING_VERIFICATION";
 }
 
+function SectionListForBulk({
+  applicationId,
+  applicantType,
+  onSelect,
+  loading,
+}: {
+  applicationId: number;
+  applicantType: string;
+  onSelect: (sectionId: number) => void;
+  loading: boolean;
+}) {
+  const [sections, setSections] = useState<SectionOption[]>([]);
+  const [fetching, setFetching] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await api.get(`/applications/${applicationId}/sections`);
+        setSections(res.data.sections ?? []);
+      } catch {
+        setSections([]);
+      } finally {
+        setFetching(false);
+      }
+    }
+    load();
+  }, [applicationId]);
+
+  if (fetching) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const filtered = sections.filter((s) => {
+    if (applicantType === "REGULAR") return s.programType === "REGULAR";
+    return s.programType === applicantType;
+  });
+
+  if (filtered.length === 0) {
+    return (
+      <div className="text-center py-8 text-sm font-bold text-muted-foreground bg-muted/20 rounded-xl border-2 border-dashed">
+        No compatible sections found.
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {filtered.map((section) => {
+        const isFull = section.enrolledCount >= section.maxCapacity;
+        return (
+          <button
+            key={section.id}
+            disabled={loading || isFull}
+            onClick={() => onSelect(section.id)}
+            type="button"
+            className="flex items-center justify-between p-3 rounded-xl border-2 border-border hover:border-primary hover:bg-primary/5 transition-all text-left disabled:opacity-50 disabled:bg-muted group w-full">
+            <div className="flex flex-col">
+              <span className="font-bold text-sm uppercase">
+                {section.name.replace(/\s*-\s*G\d+$/i, "")}
+              </span>
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">
+                {formatScpType(section.programType)}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant={isFull ? "destructive" : "outline"}
+                className="h-6 px-2 font-black tabular-nums">
+                {section.enrolledCount}/{section.maxCapacity}
+              </Badge>
+              {isFull ? "🛑" : "🟢"}
+            </div>
+          </button>
+        );
+      })}
+    </>
+  );
+}
+
 export default function Enrollment() {
   const {
     activeSchoolYearId,
@@ -253,9 +354,22 @@ export default function Enrollment() {
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const isBosyLocked = systemStatus === "BOSY_LOCKED";
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const workflowParam = searchParams.get("workflow");
   const searchParam = searchParams.get("search");
+  const applicantTypeTabParam = searchParams.get("tab") || "REGULAR";
+
+  const { configs, loading: configsLoading } = useScpConfigs();
+  const [applicantTypeTab, setApplicantTypeTab] = useState(applicantTypeTabParam);
+  const [tabCounts, setTabCounts] = useState<Record<string, number>>({});
+
+  // Filters - Moved up to prevent initialization errors
+  const [search, setSearch] = useState(() => searchParam?.trim() ?? "");
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(50);
+  const [pendingQueueFilter, setPendingQueueFilter] =
+    useState<PendingQueueFilter>("ALL");
+  const [genderFilter, setGenderFilter] = useState<"ALL" | "MALE" | "FEMALE">("ALL");
 
   const [applications, setApplications] = useState<Application[]>([]);
   const [total, setTotal] = useState(0);
@@ -265,11 +379,102 @@ export default function Enrollment() {
   );
   const workflowViewRef = useRef<EnrollmentSubMenu>(workflowView);
 
-  // Filters
-  const [search, setSearch] = useState(() => searchParam?.trim() ?? "");
-  const [page, setPage] = useState(1);
-  const [pendingQueueFilter, setPendingQueueFilter] =
-    useState<PendingQueueFilter>("ALL");
+  const tabs = useMemo(
+    () => [
+      {
+        key: "REGULAR",
+        label: "Regular",
+        fullLabel: SCP_LABELS.REGULAR ?? "Regular",
+      },
+      ...configs.map((c) => ({
+        key: c.scpType,
+        label: SCP_ACRONYMS[c.scpType] || c.scpType,
+        fullLabel: SCP_LABELS[c.scpType] || c.scpType,
+      })),
+    ],
+    [configs],
+  );
+
+  const fetchTabCount = useCallback(
+    async (applicantType: string) => {
+      if (!ayId) return 0;
+      const params = new URLSearchParams();
+      params.append("schoolYearId", String(ayId));
+
+      if (workflowView === "SECTION_ASSIGNMENT") {
+        params.append("status", "VERIFIED");
+        params.append("withoutSection", "true");
+        if (genderFilter !== "ALL") params.append("sex", genderFilter);
+      } else {
+        params.append("status", Array.from(OFFICIAL_ROSTER_STATUSES).join(","));
+        params.append("withSection", "true");
+      }
+
+      params.append("applicantType", applicantType);
+      params.append("page", "1");
+      params.append("limit", "1");
+
+      const res = await api.get(`/applications?${params.toString()}`);
+      return Number(res.data?.total ?? res.data?.pagination?.total ?? 0);
+    },
+    [ayId, workflowView, genderFilter],
+  );
+
+  const refreshTabCounts = useCallback(async () => {
+    if (
+      workflowView !== "OFFICIAL_ROSTER" &&
+      workflowView !== "SECTION_ASSIGNMENT"
+    )
+      return;
+    try {
+      const countEntries = await Promise.all(
+        tabs.map(async (tab) => {
+          const count = await fetchTabCount(tab.key);
+          return [tab.key, count] as const;
+        }),
+      );
+      setTabCounts(Object.fromEntries(countEntries));
+    } catch {
+      setTabCounts({});
+    }
+  }, [fetchTabCount, tabs, workflowView]);
+
+  useEffect(() => {
+    if (
+      workflowView === "OFFICIAL_ROSTER" ||
+      workflowView === "SECTION_ASSIGNMENT"
+    ) {
+      void refreshTabCounts();
+    }
+  }, [refreshTabCounts, workflowView]);
+
+  const handleTabChange = useCallback(
+    (value: string) => {
+      setApplicantTypeTab(value);
+      setSearchParams(
+        (previousParams) => {
+          const nextParams = new URLSearchParams(previousParams);
+          nextParams.set("tab", value);
+          return nextParams;
+        },
+        { replace: true },
+      );
+      setPage(1);
+    },
+    [setSearchParams],
+  );
+
+  useEffect(() => {
+    if (
+      (workflowView === "OFFICIAL_ROSTER" ||
+        workflowView === "SECTION_ASSIGNMENT") &&
+      !tabs.some((t) => t.key === applicantTypeTab)
+    ) {
+      setApplicantTypeTab("REGULAR");
+    }
+  }, [applicantTypeTab, tabs, workflowView]);
+
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
 
   const [sortBy, setSortBy] = useState<string>("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -343,6 +548,89 @@ export default function Enrollment() {
   });
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [exporting, setExporting] = useState(false);
+
+  // Bulk Actions
+  const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false);
+  const [bulkAssigning, setBulkAssigning] = useState(false);
+
+  const selectedRows = useMemo(() => {
+    return applications.filter((app, index) => rowSelection[index]);
+  }, [applications, rowSelection]);
+
+  const handleBulkAssign = async (sectionId: number) => {
+    if (selectedRows.length === 0) return;
+    setBulkAssigning(true);
+    try {
+      await api.post("/enrollment/batch-assign-manual", {
+        applicationIds: selectedRows.map((r) => r.id),
+        sectionId,
+      });
+
+      sileo.success({
+        title: "Bulk Assignment Complete",
+        description: `Successfully assigned ${selectedRows.length} learners to section.`,
+      });
+
+      setRowSelection({});
+      setIsBulkAssignOpen(false);
+      void fetchData();
+    } catch (err) {
+      toastApiError(err as any);
+    } finally {
+      setBulkAssigning(false);
+    }
+  };
+
+  const handleExportLis = async () => {
+    if (!ayId) return;
+    setExporting(true);
+    try {
+      const response = await api.get("/applications/exports/lis-master", {
+        params: { schoolYearId: ayId },
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `LIS-Master-${activeSchoolYearLabel}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      toastApiError(err as any);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportSf1 = async () => {
+    if (!ayId) return;
+    setExporting(true);
+    try {
+      const response = await api.get("/applications/exports/sf1", {
+        params: {
+          schoolYearId: ayId,
+          applicantType: applicantTypeTab,
+        },
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `SF1-${applicantTypeTab}-${activeSchoolYearLabel}.csv`,
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      toastApiError(err as any);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   // Batch Selection state
   const [isBatchWizardOpen, setIsBatchWizardOpen] = useState(false);
@@ -392,6 +680,18 @@ export default function Enrollment() {
       setSelectedId(null);
       setLoading(true);
       setPage(1);
+
+      // Reset sorting to contextual defaults
+      if (nextView === "PENDING_VERIFICATION") {
+        setSortBy("createdAt");
+        setSortOrder("asc");
+      } else if (nextView === "SECTION_ASSIGNMENT") {
+        setSortBy("generalAverage");
+        setSortOrder("desc");
+      } else if (nextView === "OFFICIAL_ROSTER") {
+        setSortBy("sex");
+        setSortOrder("asc");
+      }
     },
     [],
   );
@@ -422,7 +722,7 @@ export default function Enrollment() {
 
       setGradeLevels(jhsLevels);
     } catch (err: unknown) {
-      toastApiError(err as never);
+      toastApiError(err as any);
     } finally {
       setLoadingGradeLevels(false);
     }
@@ -535,7 +835,7 @@ export default function Enrollment() {
         `/monitoring/enrollment/walk-in?lrn=${encodeURIComponent(normalizedLrn)}`,
       );
     } catch (err) {
-      toastApiError(err as never);
+      toastApiError(err as any);
     } finally {
       setIsWalkInGateChecking(false);
     }
@@ -612,7 +912,7 @@ export default function Enrollment() {
 
       closeReadingProfileDialog();
     } catch (err) {
-      toastApiError(err as never);
+      toastApiError(err as any);
       setReadingProfileDialog((prev) => ({ ...prev, saving: false }));
     }
   }, [closeReadingProfileDialog, readingProfileDialog]);
@@ -645,15 +945,24 @@ export default function Enrollment() {
       if (workflowView === "SECTION_ASSIGNMENT") {
         params.append("status", "VERIFIED");
         params.append("withoutSection", "true");
+        if (applicantTypeTab !== "ALL") {
+          params.append("applicantType", applicantTypeTab);
+        }
+        if (genderFilter !== "ALL") {
+          params.append("sex", genderFilter);
+        }
       }
 
       if (workflowView === "OFFICIAL_ROSTER") {
         params.append("status", Array.from(OFFICIAL_ROSTER_STATUSES).join(","));
         params.append("withSection", "true");
+        if (applicantTypeTab !== "ALL") {
+          params.append("applicantType", applicantTypeTab);
+        }
       }
 
       params.append("page", String(page));
-      params.append("limit", "15");
+      params.append("limit", String(limit));
       params.append("sortBy", sortBy);
       params.append("sortOrder", sortOrder);
 
@@ -689,6 +998,7 @@ export default function Enrollment() {
       });
 
       setApplications(filteredApps);
+      setRowSelection({}); // Clear selection on fetch
 
       const apiTotal = Number(
         res.data?.total ?? res.data?.pagination?.total ?? filteredApps.length,
@@ -698,13 +1008,13 @@ export default function Enrollment() {
       if (requestId !== latestFetchRequestRef.current) {
         return;
       }
-      toastApiError(err as never);
+      toastApiError(err as any);
     } finally {
       if (requestId === latestFetchRequestRef.current) {
         setLoading(false);
       }
     }
-  }, [ayId, search, page, workflowView, sortBy, sortOrder]);
+  }, [ayId, search, page, limit, workflowView, sortBy, sortOrder, applicantTypeTab, genderFilter]);
 
   useEffect(() => {
     fetchData();
@@ -730,7 +1040,7 @@ export default function Enrollment() {
           [applicationId]: response.data.sections ?? [],
         }));
       } catch (err) {
-        toastApiError(err as never);
+        toastApiError(err as any);
       } finally {
         setLoadingSectionOptionsByApplicationId((prev) => ({
           ...prev,
@@ -821,7 +1131,7 @@ export default function Enrollment() {
 
         await fetchData();
       } catch (err) {
-        toastApiError(err as never);
+        toastApiError(err as any);
       } finally {
         setSavingSectionByApplicationId((prev) => ({
           ...prev,
@@ -883,12 +1193,38 @@ export default function Enrollment() {
       closeUnenrollDialog();
       await fetchData();
     } catch (err) {
-      toastApiError(err as never);
+      toastApiError(err as any);
     }
   }, [closeUnenrollDialog, fetchData, unenrollDialog]);
 
   const columns = useMemo<ColumnDef<Application>[]>(() => {
     const cols: ColumnDef<Application>[] = [];
+
+    // Checkbox column for Section Assignment
+    if (workflowView === "SECTION_ASSIGNMENT") {
+      cols.push({
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={table.getIsAllPageRowsSelected()}
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label="Select all"
+            className="translate-y-[2px] border-white data-[state=checked]:bg-white data-[state=checked]:text-primary"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+            className="translate-y-[2px]"
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+        size: 40,
+      });
+    }
 
     cols.push({
       id: "student",
@@ -900,7 +1236,7 @@ export default function Enrollment() {
         />
       ),
       cell: ({ row }) => (
-        <div className="flex items-center gap-3 min-w-[200px]">
+        <div className="flex items-center gap-3 w-auto min-w-max">
           <UserPhoto
             photo={row.original.studentPhoto}
             containerClassName="w-10 h-10 rounded-full border shadow-sm shrink-0"
@@ -919,6 +1255,28 @@ export default function Enrollment() {
       ),
     });
 
+    // SEX Column
+    cols.push({
+      id: "sex",
+      accessorKey: "learner.sex",
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title="SEX"
+          className="justify-center"
+        />
+      ),
+      cell: ({ row }) => {
+        const sex = row.original.learner.sex;
+        return (
+          <span className="font-bold text-sm block text-center">
+            {sex === "MALE" ? "M" : sex === "FEMALE" ? "F" : "N/A"}
+          </span>
+        );
+      },
+      size: 60,
+    });
+
     if (workflowView !== "SECTION_ASSIGNMENT") {
       cols.push({
         id: "lrn",
@@ -930,7 +1288,7 @@ export default function Enrollment() {
           />
         ),
         cell: ({ row }) => (
-          <span className="font-bold text-sm block">
+          <span className="font-bold text-sm block whitespace-nowrap">
             {row.original.lrn ||
               (row.original.isPendingLrnCreation ? "PENDING" : "N/A")}
           </span>
@@ -948,7 +1306,7 @@ export default function Enrollment() {
         />
       ),
       cell: ({ row }) => (
-        <div className="flex justify-center">
+        <div className="flex justify-center whitespace-nowrap">
           <Badge
             variant="outline"
             className="font-bold px-2 py-0.5 h-auto border-slate-300 text-sm leading-tight text-center">
@@ -968,7 +1326,7 @@ export default function Enrollment() {
         />
       ),
       cell: ({ row }) => (
-        <span className="font-bold text-sm block text-center">
+        <span className="font-bold text-sm block text-center tabular-nums">
           {row.original.generalAverage?.toFixed(2) || "-"}
         </span>
       ),
@@ -985,7 +1343,7 @@ export default function Enrollment() {
           />
         ),
         cell: ({ row }) => (
-          <span className="font-bold text-sm block">
+          <span className="font-bold text-sm block whitespace-nowrap">
             {formatGradeLevelLabel(row.original.gradeLevel.name)}
           </span>
         ),
@@ -1013,7 +1371,7 @@ export default function Enrollment() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 text-sm font-bold"
+                  className="h-7 text-sm font-bold whitespace-nowrap"
                   onClick={() => openReadingProfileDialog(app)}>
                   <FileCheck2 className="h-3 w-3 mr-1" />
                   Set Profile
@@ -1023,7 +1381,7 @@ export default function Enrollment() {
           }
 
           return (
-            <div className="flex justify-center">
+            <div className="flex justify-center whitespace-nowrap">
               <Badge
                 variant="outline"
                 className="font-bold px-2 py-0.5 h-auto border-emerald-300 text-emerald-700 text-sm leading-tight text-center">
@@ -1051,7 +1409,7 @@ export default function Enrollment() {
 
         if (isPendingVerification) {
           return (
-            <div className="flex justify-center">
+            <div className="flex justify-center whitespace-nowrap">
               <Badge
                 variant="outline"
                 className="font-bold px-2 py-0.5 h-auto border-slate-300 text-sm leading-tight text-center">
@@ -1064,7 +1422,7 @@ export default function Enrollment() {
         if (isSectionAssignment && !hasSection) {
           return (
             <div
-              className="flex items-center justify-center gap-2 min-w-[160px]"
+              className="flex items-center justify-center gap-2"
               onClick={(e) => e.stopPropagation()}>
               <Select
                 value={selectedSectionId}
@@ -1079,7 +1437,7 @@ export default function Enrollment() {
                     void ensureSectionOptionsLoaded(app.id);
                   }
                 }}>
-                <SelectTrigger className="h-8 w-40 text-sm font-bold border-2">
+                <SelectTrigger className="h-9 w-44 text-sm font-bold border-2">
                   <SelectValue placeholder="Select section" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1111,24 +1469,30 @@ export default function Enrollment() {
                         (section.enrolledCount / section.maxCapacity) * 100;
 
                       let capacityColor = "text-emerald-600";
-                      if (fillPercent >= 100) capacityColor = "text-red-600";
-                      else if (fillPercent >= 90)
+                      let indicator = "🟢";
+                      if (fillPercent >= 100) {
+                        capacityColor = "text-red-600";
+                        indicator = "🛑";
+                      } else if (fillPercent >= 90) {
                         capacityColor = "text-amber-600";
+                        indicator = "⚠️";
+                      }
 
                       return (
                         <SelectItem
                           key={section.id}
                           value={String(section.id)}
+                          disabled={isOverCapacity}
                           className="font-bold">
                           <div className="flex items-center justify-between w-full gap-4">
-                            <span>{section.name}</span>
+                            <span>{section.name.replace(/\s*-\s*G\d+$/i, "")}</span>
                             <span
                               className={cn(
-                                "text-[10px] font-black tabular-nums",
+                                "text-[10px] font-black tabular-nums flex items-center gap-1.5",
                                 capacityColor,
                               )}>
                               ({section.enrolledCount}/{section.maxCapacity})
-                              {isOverCapacity && " "}
+                              {indicator}
                             </span>
                           </div>
                         </SelectItem>
@@ -1141,11 +1505,11 @@ export default function Enrollment() {
         }
 
         return (
-          <div className="flex justify-center">
+          <div className="flex justify-center whitespace-nowrap">
             <Badge
               variant="outline"
-              className="font-bold px-2 py-0.5 h-auto border-slate-300 text-sm leading-tight text-center text-primary">
-              {sectionName ?? "Not Assigned"}
+              className="font-bold px-2 py-0.5 h-auto border-slate-300 text-sm leading-tight text-center text-primary uppercase">
+              {(sectionName ?? "Not Assigned").replace(/\s*-\s*G\d+$/i, "")}
             </Badge>
           </div>
         );
@@ -1163,7 +1527,7 @@ export default function Enrollment() {
           />
         ),
         cell: ({ row }) => (
-          <div className="flex justify-center">
+          <div className="flex justify-center whitespace-nowrap">
             <StatusBadge
               status={row.original.status}
               className="text-sm font-bold"
@@ -1184,7 +1548,7 @@ export default function Enrollment() {
           />
         ),
         cell: ({ row }) => (
-          <span className="text-sm font-bold block text-center min-w-[140px]">
+          <span className="text-sm font-bold block text-center whitespace-nowrap">
             {format(new Date(row.original.createdAt), "MMMM dd, yyyy")}
           </span>
         ),
@@ -1199,13 +1563,15 @@ export default function Enrollment() {
         const isPendingVerification = workflowView === "PENDING_VERIFICATION";
         const isSectionAssignment = workflowView === "SECTION_ASSIGNMENT";
         const hasReadingProfile = Boolean(app.readingProfileLevel);
-        const isPendingBeefStatus = app.status === "PENDING_BEEF";
+        const isPendingBeefStatus =
+          app.status === "PENDING_BEEF" ||
+          app.status === "READY_FOR_ENROLLMENT";
         const selectedSectionId = sectionSelectionByApplicationId[app.id] ?? "";
         const isSavingSection = savingSectionByApplicationId[app.id] === true;
 
         if (workflowView === "OFFICIAL_ROSTER") {
           return (
-            <div className="flex items-center justify-center gap-2 min-w-[200px]">
+            <div className="flex items-center justify-center gap-2">
               <Button
                 variant="secondary"
                 size="sm"
@@ -1219,7 +1585,8 @@ export default function Enrollment() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 text-sm font-bold border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                disabled={isBosyLocked}
+                className="h-8 text-sm font-bold border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={(e) => {
                   e.stopPropagation();
                   openUnenrollDialog(app);
@@ -1232,7 +1599,7 @@ export default function Enrollment() {
         }
 
         return (
-          <div className="flex justify-center min-w-[150px]">
+          <div className="flex justify-center">
             <Button
               variant={
                 isPendingVerification || isSectionAssignment
@@ -1242,8 +1609,8 @@ export default function Enrollment() {
               size="sm"
               className={
                 isPendingVerification || isSectionAssignment
-                  ? "h-8 bg-primary text-sm font-bold text-primary-foreground hover:opacity-90"
-                  : "h-8 text-sm font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
+                  ? "h-8 bg-primary text-sm font-bold text-primary-foreground hover:opacity-90 whitespace-nowrap"
+                  : "h-8 text-sm font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground whitespace-nowrap"
               }
               onClick={(e) => {
                 e.stopPropagation();
@@ -1323,6 +1690,7 @@ export default function Enrollment() {
     openUnenrollDialog,
     navigate,
     setSelectedId,
+    isBosyLocked,
   ]);
 
   // --- Resizable Panel Logic (Fluid Percentage) ---
@@ -1392,7 +1760,7 @@ export default function Enrollment() {
         });
       }
     } catch (err) {
-      toastApiError(err as never);
+      toastApiError(err as any);
     }
   };
 
@@ -1423,7 +1791,7 @@ export default function Enrollment() {
           "Academic records and promotion statuses have been updated.",
       });
     } catch (err) {
-      toastApiError(err as never);
+      toastApiError(err as any);
     } finally {
       setIsSyncingSmart(null);
     }
@@ -1473,36 +1841,53 @@ export default function Enrollment() {
                 {ENROLLMENT_SUB_MENU_DESCRIPTIONS[workflowView]}
               </p>
             </div>
-            <div className="flex w-full md:w-auto gap-2">
-              <Button
-                variant="default"
-                disabled={isBosyLocked}
-                className="h-10 px-3 flex-1 md:flex-none text-sm font-bold bg-primary hover:bg-primary/90 disabled:bg-slate-200 disabled:text-slate-500"
-                onClick={() => {
-                  void openBatchAssignModal();
-                }}>
-                <School className="h-4 w-4 mr-2" />
-                Open Batch Section Assignment
-              </Button>
+            <div className="flex items-center w-full md:w-auto gap-2">
+              {(workflowView === "SECTION_ASSIGNMENT" ||
+                workflowView === "PENDING_VERIFICATION") && (
+                <Button
+                  variant="outline"
+                  className="h-10 px-3 text-sm font-bold border-red-200 text-red-700 hover:bg-red-50 shrink-0"
+                  onClick={openWalkInGate}>
+                  <UserPlus className="h-4 w-4 mr-2" />+ Walk-In BEEF
+                </Button>
+              )}
+
+              {workflowView === "OFFICIAL_ROSTER" && (
+                <Button
+                  variant="default"
+                  className="h-10 px-3 text-sm font-bold bg-emerald-600 hover:bg-emerald-700 shrink-0"
+                  onClick={handleExportLis}
+                  disabled={exporting || loading}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export LIS Batch
+                </Button>
+              )}
+
+              {workflowView === "SECTION_ASSIGNMENT" && (
+                <Button
+                  variant="default"
+                  disabled={isBosyLocked}
+                  className="h-10 px-3 text-sm font-bold bg-primary hover:bg-primary/90 disabled:bg-slate-200 disabled:text-slate-500 shrink-0"
+                  onClick={() => {
+                    void openBatchAssignModal();
+                  }}>
+                  <School className="h-4 w-4 mr-2" />
+                  Open Batch Section Assignment
+                </Button>
+              )}
 
               <Button
-                variant="outline"
-                className="h-10 px-3 flex-1 md:flex-none text-sm font-bold border-red-200 text-red-700 hover:bg-red-50"
-                onClick={openWalkInGate}>
-                <UserPlus className="h-4 w-4 mr-2" />+ Walk-In BEEF
-              </Button>
-
-              <Button
-                variant="outline"
-                className="h-10 px-3 flex-1 md:flex-none text-sm font-bold"
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 shrink-0 hover:bg-muted"
+                title="Refresh Data"
                 onClick={() => {
                   void fetchData();
                 }}
-                disabled={loading || !ayId}>
+                disabled={loading || exporting || !ayId}>
                 <RefreshCw
-                  className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+                  className={cn("h-5 w-5", loading && "animate-spin")}
                 />
-                Refresh
               </Button>
             </div>
           </div>
@@ -1514,117 +1899,333 @@ export default function Enrollment() {
             }}
           />
 
-          <Card className="border-none shadow-sm bg-[hsl(var(--card))] max-w-full overflow-hidden">
-            <CardHeader className="px-3 sm:px-6 pb-3">
-              <div className="flex flex-col md:flex-row gap-3 md:gap-4 items-end">
-                <div className="flex-1 space-y-2 w-full">
-                  <Label className="text-sm uppercase tracking-wider font-bold text-muted-foreground">
-                    Search Learner
-                  </Label>
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="LRN, First Name, Last Name..."
-                      className="pl-9 h-10 text-sm font-bold"
-                      value={search}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setSearch(val);
-                        startTransition(() => {
-                          setPage(1);
-                        });
-                      }}
-                    />
+          {workflowView === "OFFICIAL_ROSTER" && (
+            <div className="space-y-4">
+              {applications.some((a) => a.status === "TEMPORARILY_ENROLLED") && (
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="bg-amber-50 border-2 border-amber-200 p-4 rounded-xl flex items-start gap-3 shadow-sm">
+                  <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+                  <div>
+                    <h4 className="text-sm font-black text-amber-800 uppercase tracking-tight">
+                      Compliance Warning: Temporary Enrollments
+                    </h4>
+                    <p className="text-xs font-bold text-amber-700 mt-1 leading-relaxed">
+                      {
+                        applications.filter(
+                          (a) => a.status === "TEMPORARILY_ENROLLED",
+                        ).length
+                      }{" "}
+                      learners in this view have pending PSA/SF9 requirements.
+                      Ensure all documents are collected before the{" "}
+                      <span className="underline decoration-2 underline-offset-2 font-black">
+                        October 31
+                      </span>{" "}
+                      national LIS deadline.
+                    </p>
                   </div>
-                </div>
-
-                <Button
-                  variant="outline"
-                  className="h-10 px-3 w-full md:w-auto text-sm font-bold"
-                  onClick={() => {
-                    setSearch("");
-                    setPage(1);
-                  }}>
-                  Reset
-                </Button>
-              </div>
-
-              {workflowView === "PENDING_VERIFICATION" && (
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    Queue Filter
-                  </span>
-                  {PENDING_QUEUE_FILTER_OPTIONS.map((option) => (
-                    <Button
-                      key={option.value}
-                      type="button"
-                      variant={
-                        pendingQueueFilter === option.value
-                          ? "default"
-                          : "outline"
-                      }
-                      size="sm"
-                      className="h-8 text-sm font-bold"
-                      onClick={() => {
-                        setPendingQueueFilter(option.value);
-                      }}>
-                      {option.label}
-                    </Button>
-                  ))}
-                </div>
+                </motion.div>
               )}
+
+              <div className="w-full">
+                <Tabs
+                  value={applicantTypeTab}
+                  onValueChange={handleTabChange}
+                  className="w-full">
+                  <TabsList
+                    className="grid w-full h-auto gap-1 p-1 bg-white border border-border relative"
+                    style={{
+                      gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))`,
+                    }}>
+                    {tabs.map((tab) => (
+                      <TabsTrigger
+                        key={tab.key}
+                        value={tab.key}
+                        title={tab.fullLabel}
+                        className="w-full min-w-0 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+                        {applicantTypeTab === tab.key && (
+                          <motion.div
+                            layoutId="roster-pipeline-active-pill"
+                            className="absolute inset-0 bg-primary rounded-md"
+                            transition={{
+                              type: "spring",
+                              bounce: 0.15,
+                              duration: 0.5,
+                            }}
+                          />
+                        )}
+                        <span className="relative z-20 inline-flex w-full items-center justify-center gap-2 text-xs sm:text-sm">
+                          {tab.label}
+                          <Badge
+                            variant={
+                              applicantTypeTab === tab.key
+                                ? "secondary"
+                                : "outline"
+                            }
+                            className="h-5 px-1.5 text-[10px] font-bold">
+                            {tabCounts[tab.key] ?? 0}
+                          </Badge>
+                        </span>
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </Tabs>
+              </div>
+            </div>
+          )}
+
+          {workflowView === "SECTION_ASSIGNMENT" && (
+            <div className="w-full">
+              <Tabs
+                value={applicantTypeTab}
+                onValueChange={handleTabChange}
+                className="w-full">
+                <TabsList
+                  className="grid w-full h-auto gap-1 p-1 bg-white border border-border relative"
+                  style={{
+                    gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))`,
+                  }}>
+                  {tabs.map((tab) => (
+                    <TabsTrigger
+                      key={tab.key}
+                      value={tab.key}
+                      title={tab.fullLabel}
+                      className="w-full min-w-0 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+                      {applicantTypeTab === tab.key && (
+                        <motion.div
+                          layoutId="assignment-pipeline-active-pill"
+                          className="absolute inset-0 bg-primary rounded-md"
+                          transition={{
+                            type: "spring",
+                            bounce: 0.15,
+                            duration: 0.5,
+                          }}
+                        />
+                      )}
+                      <span className="relative z-20 inline-flex w-full items-center justify-center gap-2 text-xs sm:text-sm">
+                        {tab.label}
+                        <Badge
+                          variant={
+                            applicantTypeTab === tab.key
+                              ? "secondary"
+                              : "outline"
+                          }
+                          className="h-5 px-1.5 text-[10px] font-bold">
+                          {tabCounts[tab.key] ?? 0}
+                        </Badge>
+                      </span>
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            </div>
+          )}
+
+          <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex-1 flex flex-col min-h-0 overflow-hidden relative">
+            <CardHeader className="px-3 sm:px-6 py-4 border-b border-border/50 shrink-0">
+              <div className="flex flex-col xl:flex-row items-center gap-4">
+                <div className="flex-1 w-full relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search LRN, First Name, Last Name..."
+                    className="pl-10 h-11 text-sm font-bold bg-muted/30 border-2 border-transparent focus:border-primary transition-all"
+                    value={search}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSearch(val);
+                      startTransition(() => {
+                        setPage(1);
+                      });
+                    }}
+                  />
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center gap-4 shrink-0">
+                  {workflowView === "SECTION_ASSIGNMENT" && (
+                    <div className="flex items-center gap-2 bg-muted/30 p-1 rounded-lg border">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-2 mr-1">
+                        Gender:
+                      </span>
+                      {(["ALL", "MALE", "FEMALE"] as const).map((g) => (
+                        <Button
+                          key={g}
+                          variant={genderFilter === g ? "secondary" : "ghost"}
+                          size="sm"
+                          className={cn(
+                            "h-7 px-3 text-[10px] font-black uppercase rounded-md tracking-wider transition-all",
+                            genderFilter === g
+                              ? "bg-white shadow-sm text-primary"
+                              : "text-muted-foreground hover:text-primary",
+                          )}
+                          onClick={() => {
+                            setGenderFilter(g);
+                            setPage(1);
+                          }}>
+                          {g === "ALL" ? "All" : g === "MALE" ? "Boys" : "Girls"}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+
+                  {workflowView === "PENDING_VERIFICATION" && (
+                    <div className="flex items-center gap-2 bg-muted/30 p-1 rounded-lg border">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-2 mr-1">
+                        Filter:
+                      </span>
+                      {PENDING_QUEUE_FILTER_OPTIONS.map((option) => (
+                        <Button
+                          key={option.value}
+                          variant={
+                            pendingQueueFilter === option.value
+                              ? "secondary"
+                              : "ghost"
+                          }
+                          size="sm"
+                          className={cn(
+                            "h-7 px-3 text-[10px] font-black uppercase rounded-md tracking-wider transition-all",
+                            pendingQueueFilter === option.value
+                              ? "bg-white shadow-sm text-primary"
+                              : "text-muted-foreground hover:text-primary",
+                          )}
+                          onClick={() => {
+                            setPendingQueueFilter(option.value);
+                          }}>
+                          {option.label}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+
+                  <Button
+                    variant="outline"
+                    className="h-11 px-6 text-sm font-bold border-2 hover:bg-muted"
+                    onClick={() => {
+                      setSearch("");
+                      setGenderFilter("ALL");
+                      setPendingQueueFilter("ALL");
+                      setPage(1);
+                    }}>
+                    Reset Filters
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
 
-            <CardContent className="px-3 sm:px-6 max-w-full overflow-hidden">
-              <DataTable
-                columns={columns}
-                data={visibleApplications}
-                loading={loading}
-                virtualize={true}
-                estimatedRowHeight={60}
-                className="w-full"
-                onRowClick={(app) => {
-                  setSelectedId(app.id);
-                }}
-                noResultsMessage={TABLE_NO_RESULTS_MESSAGES[workflowView]}
-                sorting={sorting}
-                onSortingChange={onSortingChange}
-              />
-
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mt-4 font-bold">
-                <span className="text-sm text-muted-foreground">
-                  Showing {visibleApplications.length} learners in{" "}
-                  {
-                    ENROLLMENT_SUB_MENU_OPTIONS.find(
-                      (option) => option.value === workflowView,
-                    )?.label
-                  }
-                </span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-9 sm:h-8 text-sm font-bold"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}>
-                    Previous
-                  </Button>
-                  <Badge
-                    variant="secondary"
-                    className="px-3 h-8 text-sm font-bold">
-                    Page {page}
-                  </Badge>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-9 sm:h-8 text-sm font-bold"
-                    onClick={() => setPage((p) => p + 1)}
-                    disabled={page * 15 >= total}>
-                    Next
-                  </Button>
-                </div>
+            <CardContent className="p-0 flex-1 overflow-hidden flex flex-col min-h-0">
+              <div className="flex-1 overflow-auto bg-muted/5 relative">
+                <DataTable<Application, unknown>
+                  columns={columns}
+                  data={visibleApplications}
+                  loading={loading}
+                  virtualize={true}
+                  estimatedRowHeight={60}
+                  className="border-none rounded-none h-full"
+                  containerHeight="100%"
+                  onRowClick={(app) => {
+                    setSelectedId(app.id);
+                  }}
+                  noResultsMessage={TABLE_NO_RESULTS_MESSAGES[workflowView]}
+                  sorting={sorting}
+                  onSortingChange={onSortingChange}
+                  rowSelection={rowSelection}
+                  onRowSelectionChange={setRowSelection}
+                />
               </div>
+
+              <PaginationBar
+                page={page}
+                total={total}
+                limit={limit}
+                onPageChange={setPage}
+                onLimitChange={setLimit}
+                itemName="Learners"
+              />
             </CardContent>
+
+            {/* STICKY BULK ACTION BAR */}
+            <AnimatePresence>
+              {selectedRows.length > 0 && (
+                <motion.div
+                  initial={{ y: 100, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: 100, opacity: 0 }}
+                  className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50">
+                  <div className="bg-primary text-primary-foreground px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-8 border-2 border-white/20 backdrop-blur-xl">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-black uppercase tracking-widest opacity-80">
+                        Bulk Actions
+                      </span>
+                      <span className="text-lg font-bold">
+                        {selectedRows.length} Learners Selected
+                      </span>
+                    </div>
+
+                    <div className="h-10 w-[1px] bg-white/20" />
+
+                    <div className="flex items-center gap-3">
+                      <Dialog
+                        open={isBulkAssignOpen}
+                        onOpenChange={setIsBulkAssignOpen}>
+                        <Button
+                          asChild
+                          variant="secondary"
+                          className="font-bold shadow-lg">
+                          <button onClick={() => setIsBulkAssignOpen(true)}>
+                            Assign to Section...
+                          </button>
+                        </Button>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle className="text-sm font-bold uppercase tracking-wider">
+                              Bulk Section Assignment
+                            </DialogTitle>
+                            <DialogDescription className="text-sm font-semibold">
+                              Assign {selectedRows.length} learners to a
+                              specific section.
+                            </DialogDescription>
+                          </DialogHeader>
+
+                          <div className="py-4">
+                            <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground block mb-3">
+                              Select Target Section
+                            </Label>
+                            {/* Simple section list for bulk */}
+                            <div className="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto pr-2">
+                              {/* We fetch sections for the first learner as a representative sample */}
+                              {selectedRows[0] && (
+                                <SectionListForBulk
+                                  applicationId={selectedRows[0].id}
+                                  applicantType={selectedRows[0].applicantType}
+                                  onSelect={handleBulkAssign}
+                                  loading={bulkAssigning}
+                                />
+                              )}
+                            </div>
+                          </div>
+
+                          <DialogFooter>
+                            <Button
+                              variant="ghost"
+                              className="font-bold"
+                              onClick={() => setIsBulkAssignOpen(false)}>
+                              Cancel
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+
+                      <Button
+                        variant="ghost"
+                        className="font-bold text-white hover:bg-white/10"
+                        onClick={() => setRowSelection({})}>
+                        Clear
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </Card>
         </div>
       </div>
@@ -1677,7 +2278,7 @@ export default function Enrollment() {
                       setScheduleStep(null);
                       setIsScheduleDialogOpen(true);
                     } catch (err) {
-                      toastApiError(err as never);
+                      toastApiError(err as any);
                     } finally {
                       setLoading(false);
                     }
@@ -1693,7 +2294,7 @@ export default function Enrollment() {
                     setScheduleStep(step);
                     setIsScheduleDialogOpen(true);
                   } catch (err) {
-                    toastApiError(err as never);
+                    toastApiError(err as any);
                   } finally {
                     setLoading(false);
                   }
@@ -1707,7 +2308,7 @@ export default function Enrollment() {
                     setSelectedApp(fullRes.data);
                     setScheduleStep(step);
                   } catch (err) {
-                    toastApiError(err as never);
+                    toastApiError(err as any);
                   } finally {
                     setLoading(false);
                   }
@@ -1815,7 +2416,7 @@ export default function Enrollment() {
                     setScheduleStep(interviewStep || null);
                     setIsScheduleDialogOpen(true);
                   } catch (err) {
-                    toastApiError(err as never);
+                    toastApiError(err as any);
                   } finally {
                     setLoading(false);
                   }

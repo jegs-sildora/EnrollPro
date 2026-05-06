@@ -521,20 +521,33 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
             )}
           </div>
 
-          <div className="hidden md:block w-full max-w-full overflow-x-auto">
-            <DataTable
+          <div className="hidden md:block flex-1 overflow-auto bg-muted/5 relative">
+            <DataTable<Teacher, unknown>
               columns={columns}
               data={filteredTeachers}
               tableClassName="min-w-full"
               loading={loading}
               virtualize={true}
               estimatedRowHeight={60}
+              className="border-none rounded-none h-full"
+              containerHeight="100%"
               noResultsMessage={
                 hasActiveFilters
                   ? "No teachers match the current filter set."
                   : 'No teachers found. Click "Add Teacher" to create one.'
               }
             />
+          </div>
+
+          <div className="p-3 border-t bg-background flex items-center justify-between shrink-0 z-30 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.04)]">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-tight ml-3">
+              Showing {filteredTeachers.length} of {teachers.length} Teachers
+            </span>
+            <div className="flex items-center gap-2 mr-3">
+              <Badge variant="outline" className="h-6 font-black uppercase text-[10px]">
+                {hasActiveFilters ? "Filtered View" : "Full Directory"}
+              </Badge>
+            </div>
           </div>
         </div>
       </CardContent>

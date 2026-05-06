@@ -798,6 +798,165 @@ export function createEarlyRegistrationOperationsController(
     }
   }
 
+  async function exportSf1Csv(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const schoolYearIdRaw = req.query.schoolYearId
+        ? Number(req.query.schoolYearId)
+        : null;
+
+      if (schoolYearIdRaw !== null && !Number.isInteger(schoolYearIdRaw)) {
+        throw new AppError(400, "schoolYearId must be a valid integer.");
+      }
+
+      let targetSchoolYearId = schoolYearIdRaw;
+      if (targetSchoolYearId === null) {
+        const settings = await prisma.schoolSetting.findFirst({
+          select: { activeSchoolYearId: true },
+        });
+
+        if (!settings?.activeSchoolYearId) {
+          throw new AppError(400, "No active School Year configured.");
+        }
+
+        targetSchoolYearId = settings.activeSchoolYearId;
+      }
+
+      const applicantType = req.query.applicantType as string | undefined;
+
+      const records = await prisma.enrollmentApplication.findMany({
+        where: {
+          schoolYearId: targetSchoolYearId,
+          status: { in: ["ENROLLED", "OFFICIALLY_ENROLLED"] },
+          enrollmentRecord: { isNot: null },
+          ...(applicantType && applicantType !== "ALL"
+            ? { applicantType: applicantType as any }
+            : {}),
+        },
+        include: {
+          learner: true,
+          schoolYear: { select: { yearLabel: true } },
+          gradeLevel: { select: { name: true } },
+          enrollmentRecord: {
+            include: {
+              section: { select: { name: true } },
+            },
+          },
+        },
+      });
+
+      if (records.length === 0) {
+        throw new AppError(404, "No enrolled learners found to export.");
+      }
+
+      // Group by section
+      const sectionsMap = new Map<string, typeof records>();
+      records.forEach((r) => {
+        const sectionName = r.enrollmentRecord?.section?.name ?? "UNASSIGNED";
+        if (!sectionsMap.has(sectionName)) {
+          sectionsMap.set(sectionName, []);
+        }
+        sectionsMap.get(sectionName)!.push(r);
+      });
+
+      const allCsvRows: string[][] = [];
+
+      for (const [sectionName, sectionRecords] of sectionsMap.entries()) {
+        const males = sectionRecords.filter((r) => r.learner.sex === "MALE");
+        const females = sectionRecords.filter(
+          (r) => r.learner.sex === "FEMALE",
+        );
+
+        const sortByNames = (a: typeof records[0], b: typeof records[0]) => {
+          const ln = a.learner.lastName.localeCompare(b.learner.lastName);
+          if (ln !== 0) return ln;
+          return a.learner.firstName.localeCompare(b.learner.firstName);
+        };
+
+        males.sort(sortByNames);
+        females.sort(sortByNames);
+
+        const sampleRecord = sectionRecords[0];
+
+        // Header Rows according to CSV template
+        allCsvRows.push(["School Form 1 (SF 1) School Register", ...Array(45).fill("")]);
+        allCsvRows.push(['"(This replaces  Form 1, Master List & STS Form 2-Family Background and Profile)"', ...Array(45).fill("")]);
+        allCsvRows.push(["School ID ", ...Array(15).fill(""), "Division ", ...Array(29).fill("")]);
+        
+        const syLabel = sampleRecord?.schoolYear?.yearLabel ?? "";
+        const glName = sampleRecord?.gradeLevel?.name ?? "";
+        
+        const metaRow = Array(46).fill("");
+        metaRow[0] = "School Name ";
+        metaRow[16] = "School Year ";
+        metaRow[17] = syLabel;
+        metaRow[26] = "Grade Level ";
+        metaRow[27] = glName;
+        metaRow[36] = "Section ";
+        metaRow[37] = sectionName;
+        allCsvRows.push(metaRow);
+
+        allCsvRows.push([
+          "LRN", "", "NAME\n(Last Name, First Name, Middle Name)", "", "", "", "Sex (M/F)", "BIRTH DATE\n(mm/dd/yyyy)", "", "AGE as of 1st Friday June", "", "MOTHER TONGUE (Grade 1 to 3 Only)", "", "IP\n(Ethnic Group)", "RELIGION", "ADDRESS", "", "", "", "", "", "", "", "", "", "", "", "PARENTS", "", "", "", "", "", "", "", "", "GUARDIAN\n(if Not Parent)", "", "", "", "", "Contact Number of Parent or Guardian", "", "Learning Modality", "REMARKS", "", ""
+        ]);
+        allCsvRows.push([
+          "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "House #/ Street/ Sitio/ Purok", "", "Barangay", "", "", "Municipality/ City", "", "Province", "", "", "", "", "Father's Name (Last Name, First Name, Middle Name)     ", "", "", "", "Mother's Maiden Name (Last Name, First Name, Middle Name)", "", "", "", "", "Name", "", "", "", "Relationship", "", "", "", "(Please refer to the legend on last page)", "", ""
+        ]);
+
+        const mapToRow = (r: typeof records[0]) => {
+          const row = Array(46).fill("");
+          row[0] = r.learner.lrn ?? "";
+          row[2] = `${r.learner.lastName}, ${r.learner.firstName} ${r.learner.middleName ?? ""}`;
+          row[6] = r.learner.sex === "MALE" ? "M" : "F";
+          row[7] = toDateOnly(r.learner.birthdate);
+          row[13] = r.learner.ipGroupName ?? "";
+          row[14] = r.learner.religion ?? "";
+          return row;
+        };
+
+        males.forEach((m) => allCsvRows.push(mapToRow(m)));
+        const maleTotalRow = Array(46).fill("");
+        maleTotalRow[0] = String(males.length);
+        maleTotalRow[2] = "<=== TOTAL MALE";
+        allCsvRows.push(maleTotalRow);
+        
+        females.forEach((f) => allCsvRows.push(mapToRow(f)));
+        const femaleTotalRow = Array(46).fill("");
+        femaleTotalRow[0] = String(females.length);
+        femaleTotalRow[2] = "<=== TOTAL FEMALE";
+        allCsvRows.push(femaleTotalRow);
+        
+        const combinedTotalRow = Array(46).fill("");
+        combinedTotalRow[0] = String(males.length + females.length);
+        combinedTotalRow[2] = "<=== COMBINED";
+        allCsvRows.push(combinedTotalRow);
+
+        // Separator
+        allCsvRows.push([]);
+        allCsvRows.push([]);
+      }
+
+      const csvBody = allCsvRows
+        .map((row) => row.map(csvEscape).join(","))
+        .join("\r\n");
+
+      const safeLabel = (applicantType || "ALL").replace(/[^a-zA-Z0-9_-]+/g, "-");
+
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="SF1-${safeLabel}.csv"`,
+      );
+
+      res.status(200).send(`\uFEFF${csvBody}`);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async function exportLisMasterCsv(
     req: Request,
     res: Response,
@@ -1218,6 +1377,7 @@ export function createEarlyRegistrationOperationsController(
     pass,
     fail,
     exportLisMasterCsv,
+    exportSf1Csv,
     getTimeline,
     offerRegular,
     navigate,
@@ -1236,6 +1396,7 @@ const operationsController = createEarlyRegistrationOperationsController();
 export const pass = operationsController.pass;
 export const fail = operationsController.fail;
 export const exportLisMasterCsv = operationsController.exportLisMasterCsv;
+export const exportSf1Csv = operationsController.exportSf1Csv;
 export const getTimeline = operationsController.getTimeline;
 export const offerRegular = operationsController.offerRegular;
 export const navigate = operationsController.navigate;

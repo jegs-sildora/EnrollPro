@@ -21,7 +21,7 @@ import { Skeleton } from "@/shared/ui/skeleton";
 import { cn } from "@/shared/lib/utils";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 
-interface DataTableProps<TData, TValue> {
+export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   onRowClick?: (row: TData) => void;
@@ -34,6 +34,9 @@ interface DataTableProps<TData, TValue> {
   virtualize?: boolean;
   estimatedRowHeight?: number;
   containerHeight?: string;
+  rowSelection?: Record<string, boolean>;
+  onRowSelectionChange?: OnChangeFn<Record<string, boolean>>;
+  getRowClassName?: (row: TData) => string;
 }
 
 const MotionTableRow = motion.create(TableRow);
@@ -44,12 +47,15 @@ interface TableRowComponentProps<TData> {
   "data-index"?: number;
   style?: React.CSSProperties;
   className?: string;
+  getRowClassName?: (row: TData) => string;
 }
 
 function TableRowComponentInner<TData>(
-  { row, onRowClick, "data-index": dataIndex, style, className }: TableRowComponentProps<TData>,
+  { row, onRowClick, "data-index": dataIndex, style, className, getRowClassName }: TableRowComponentProps<TData>,
   ref: React.ForwardedRef<HTMLTableRowElement>
 ) {
+  const customClassName = getRowClassName ? getRowClassName(row.original) : "";
+
   return (
     <TableRow
       ref={ref}
@@ -60,6 +66,8 @@ function TableRowComponentInner<TData>(
       className={cn(
         "text-center text-xs hover:bg-muted/50 transition-colors",
         onRowClick ? "cursor-pointer" : "",
+        row.getIsSelected() ? "bg-muted/80" : "",
+        customClassName,
         className
       )}
     >
@@ -93,8 +101,12 @@ export function DataTable<TData, TValue>({
   virtualize = true,
   estimatedRowHeight = 45,
   containerHeight = "65vh",
+  rowSelection: externalRowSelection,
+  onRowSelectionChange: externalOnRowSelectionChange,
+  getRowClassName,
 }: DataTableProps<TData, TValue>) {
   const [internalSorting, setInternalSorting] = useState<SortingState>([]);
+  const [internalRowSelection, setInternalRowSelection] = useState({});
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Apply skeleton loading with default delay and min-display
@@ -106,8 +118,10 @@ export function DataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     onSortingChange: externalOnSortingChange ?? setInternalSorting,
+    onRowSelectionChange: externalOnRowSelectionChange ?? setInternalRowSelection,
     state: {
       sorting: externalSorting ?? internalSorting,
+      rowSelection: externalRowSelection ?? internalRowSelection,
     },
   });
 
@@ -192,6 +206,7 @@ export function DataTable<TData, TValue>({
                         data-index={virtualRow.index}
                         row={rows[virtualRow.index]}
                         onRowClick={onRowClick}
+                        getRowClassName={getRowClassName}
                       />
                     )),
                     virtualItems.length > 0 && (
@@ -212,6 +227,7 @@ export function DataTable<TData, TValue>({
                       key={row.id}
                       row={row}
                       onRowClick={onRowClick}
+                      getRowClassName={getRowClassName}
                     />
                   ))
                 )
