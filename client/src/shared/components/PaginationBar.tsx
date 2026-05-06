@@ -1,19 +1,19 @@
-import React from "react";
-import { Button } from "@/shared/ui/button";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from 'lucide-react';
+
+import { Button } from '@/shared/ui/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/shared/ui/select";
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-} from "lucide-react";
-import { cn } from "@/shared/lib/utils";
+} from '@/shared/ui/select';
+import { cn } from '@/shared/lib/utils';
 
 interface PaginationBarProps {
   page: number;
@@ -31,7 +31,7 @@ export function PaginationBar({
   limit,
   onPageChange,
   onLimitChange,
-  itemName = "Learners",
+  itemName = 'Learners',
   className,
 }: PaginationBarProps) {
   const totalPages = Math.ceil(total / limit) || 1;
@@ -62,11 +62,11 @@ export function PaginationBar({
   return (
     <div
       className={cn(
-        "flex flex-col md:flex-row items-center justify-between gap-4 py-3 px-4 bg-background border-t border-border shrink-0 w-full z-30 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)]",
+        'flex flex-col md:flex-row items-center justify-between gap-4 py-3 px-4 bg-background border-t border-border shrink-0 w-full z-30 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)]',
         className,
       )}>
       {/* Zone A & B: Contextual Metrics & Density Control */}
-      <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 text-sm font-bold text-muted-foreground w-full md:w-auto justify-center md:justify-start">
+      <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 text-sm font-bold text-foreground w-full md:w-auto justify-center md:justify-start">
         <span className="whitespace-nowrap">
           Showing {start} to {end} of {total} {itemName}
         </span>
@@ -75,10 +75,10 @@ export function PaginationBar({
           <span>Rows per page:</span>
           <Select
             value={String(limit)}
-            onValueChange={(val) => {
+            onValueChange={(val: string) => {
               onLimitChange(Number(val));
             }}>
-            <SelectTrigger className="h-8 w-16 text-xs font-black border-2 focus:ring-0">
+            <SelectTrigger className="h-8 w-22 text-xs font-black border-2 focus:ring-0">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -96,7 +96,7 @@ export function PaginationBar({
         <Button
           variant="outline"
           size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0 border-2"
+          className="h-8 w-8 text-foreground hover:text-foreground shrink-0 border-2"
           onClick={() => onPageChange(1)}
           disabled={page === 1}
           title="First Page">
@@ -105,7 +105,7 @@ export function PaginationBar({
         <Button
           variant="outline"
           size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-foreground mr-2 shrink-0 border-2"
+          className="h-8 w-8 text-foreground hover:text-foreground mr-2 shrink-0 border-2"
           onClick={() => onPageChange(page - 1)}
           disabled={page === 1}
           title="Previous Page">
@@ -113,19 +113,19 @@ export function PaginationBar({
         </Button>
 
         {visiblePages[0] > 1 && (
-          <span className="text-muted-foreground px-1 font-black">...</span>
+          <span className="text-foreground px-1 font-black">...</span>
         )}
 
         {visiblePages.map((p) => (
           <Button
             key={p}
-            variant={page === p ? "default" : "ghost"}
+            variant={page === p ? 'default' : 'ghost'}
             size="icon"
             className={cn(
-              "h-8 w-8 text-sm font-black transition-all shrink-0 border-2 border-transparent",
+              'h-8 w-8 text-sm font-black transition-all shrink-0 border-2 border-transparent',
               page === p
-                ? "bg-primary text-primary-foreground shadow-md border-primary/20 hover:bg-primary"
-                : "text-muted-foreground hover:bg-muted hover:border-border",
+                ? 'bg-primary text-primary-foreground shadow-md border-primary/20 hover:bg-primary'
+                : 'text-foreground hover:bg-muted hover:border-border',
             )}
             onClick={() => onPageChange(p)}>
             {p}
@@ -133,13 +133,13 @@ export function PaginationBar({
         ))}
 
         {visiblePages[visiblePages.length - 1] < totalPages && (
-          <span className="text-muted-foreground px-1 font-black">...</span>
+          <span className="text-foreground px-1 font-black">...</span>
         )}
 
         <Button
           variant="outline"
           size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-foreground ml-2 shrink-0 border-2"
+          className="h-8 w-8 text-foreground hover:text-foreground ml-2 shrink-0 border-2"
           onClick={() => onPageChange(page + 1)}
           disabled={page === totalPages || totalPages === 0}
           title="Next Page">
@@ -148,7 +148,7 @@ export function PaginationBar({
         <Button
           variant="outline"
           size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0 border-2"
+          className="h-8 w-8 text-foreground hover:text-foreground shrink-0 border-2"
           onClick={() => onPageChange(totalPages)}
           disabled={page === totalPages || totalPages === 0}
           title="Last Page">
