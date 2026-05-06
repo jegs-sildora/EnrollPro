@@ -258,7 +258,7 @@ export default function SchoolProfileTab() {
               <Label htmlFor="facebookUrl">Facebook Page URL</Label>
               <Input
                 id="facebookUrl"
-                placeholder="https://www.facebook.com/school.official"
+                placeholder="https://www.facebook.com/your.school.official"
                 value={formData.facebookPageUrl}
                 onChange={(e) =>
                   setFormData((prev) => ({
@@ -273,7 +273,7 @@ export default function SchoolProfileTab() {
               <Label htmlFor="depedEmail">Official DepEd Email Address</Label>
               <Input
                 id="depedEmail"
-                placeholder="302635@deped.gov.ph"
+                placeholder="school.id@deped.gov.ph"
                 value={formData.depedEmail}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, depedEmail: e.target.value }))
@@ -285,7 +285,7 @@ export default function SchoolProfileTab() {
               <Label htmlFor="schoolWebsite">School Website (Optional)</Label>
               <Input
                 id="schoolWebsite"
-                placeholder="https://"
+                placeholder="https://your-school.edu.ph"
                 value={formData.schoolWebsite}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, schoolWebsite: e.target.value }))

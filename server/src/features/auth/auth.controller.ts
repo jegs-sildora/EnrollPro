@@ -1,7 +1,6 @@
 import type { CookieOptions, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { OAuth2Client } from "google-auth-library";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { AppError } from "../../lib/AppError.js";
@@ -17,26 +16,9 @@ type AuthUser = {
   lastLoginAt: Date | null;
 };
 
-type GoogleTokenPayload = {
-  sub: string;
-  email: string;
-  emailVerified: boolean;
-  hd?: string;
-};
-
-type GoogleIdTokenVerifier = (
-  credential: string,
-) => Promise<GoogleTokenPayload>;
-
 const JWT_EXPIRES_IN: jwt.SignOptions["expiresIn"] =
   (process.env.JWT_EXPIRES_IN as jwt.SignOptions["expiresIn"]) ?? "7d";
 const AUTH_COOKIE_NAME = process.env.AUTH_COOKIE_NAME ?? "enrollpro_session";
-const GOOGLE_PROVIDER = "google";
-const GOOGLE_SCOPE = "openid email profile";
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID?.trim() ?? "";
-const googleOauthClient = GOOGLE_CLIENT_ID
-  ? new OAuth2Client(GOOGLE_CLIENT_ID)
-  : null;
 
 function parseExpiresInToMs(
   expiresIn: jwt.SignOptions["expiresIn"],
@@ -89,43 +71,6 @@ function clearSessionCookie(res: Response): void {
   });
 }
 
-function parseCsv(value: string | undefined): string[] {
-  if (!value) return [];
-  return value
-    .split(",")
-    .map((entry) => entry.trim().toLowerCase())
-    .filter(Boolean);
-}
-
-function isGoogleIdentityAllowed(
-  email: string,
-  hostedDomain?: string,
-): boolean {
-  const normalizedEmail = email.trim().toLowerCase();
-  const allowedDomains = parseCsv(process.env.ALLOWED_GOOGLE_DOMAINS);
-  const allowedEmails = parseCsv(process.env.ALLOWED_GOOGLE_EMAILS);
-
-  if (allowedDomains.length === 0 && allowedEmails.length === 0) {
-    return true;
-  }
-
-  if (allowedEmails.includes(normalizedEmail)) {
-    return true;
-  }
-
-  const emailDomain = normalizedEmail.split("@")[1]?.toLowerCase();
-  const normalizedHd = hostedDomain?.toLowerCase();
-
-  if (!emailDomain && !normalizedHd) {
-    return false;
-  }
-
-  return (
-    (normalizedHd ? allowedDomains.includes(normalizedHd) : false) ||
-    (emailDomain ? allowedDomains.includes(emailDomain) : false)
-  );
-}
-
 function toUserResponse(user: AuthUser) {
   return {
     id: user.id,
@@ -156,60 +101,6 @@ function createAuthToken(user: AuthUser): string {
     jwtSecret,
     { expiresIn: JWT_EXPIRES_IN },
   );
-}
-
-async function defaultGoogleIdTokenVerifier(
-  credential: string,
-): Promise<GoogleTokenPayload> {
-  if (!GOOGLE_CLIENT_ID || !googleOauthClient) {
-    throw new AppError(
-      500,
-      "Google OAuth is not configured on the server.",
-      "GOOGLE_OAUTH_NOT_CONFIGURED",
-    );
-  }
-
-  let ticket;
-  try {
-    ticket = await googleOauthClient.verifyIdToken({
-      idToken: credential,
-      audience: GOOGLE_CLIENT_ID,
-    });
-  } catch {
-    throw new AppError(
-      401,
-      "Invalid Google credential.",
-      "INVALID_GOOGLE_TOKEN",
-    );
-  }
-
-  const payload = ticket.getPayload();
-  if (!payload?.sub || !payload.email) {
-    throw new AppError(
-      401,
-      "Invalid Google credential.",
-      "INVALID_GOOGLE_TOKEN",
-    );
-  }
-
-  return {
-    sub: payload.sub,
-    email: payload.email,
-    emailVerified: Boolean(payload.email_verified),
-    hd: payload.hd ?? undefined,
-  };
-}
-
-let googleIdTokenVerifier: GoogleIdTokenVerifier = defaultGoogleIdTokenVerifier;
-
-export function setGoogleIdTokenVerifierForTests(
-  verifier: GoogleIdTokenVerifier,
-): void {
-  googleIdTokenVerifier = verifier;
-}
-
-export function resetGoogleIdTokenVerifierForTests(): void {
-  googleIdTokenVerifier = defaultGoogleIdTokenVerifier;
 }
 
 export async function login(req: Request, res: Response): Promise<void> {
@@ -255,127 +146,6 @@ export async function login(req: Request, res: Response): Promise<void> {
   res.json({
     token,
     user: toUserResponse(updatedUser),
-  });
-}
-
-export async function googleLogin(req: Request, res: Response): Promise<void> {
-  const { credential } = req.body as { credential: string };
-  const tokenPayload = await googleIdTokenVerifier(credential);
-
-  if (!tokenPayload.emailVerified) {
-    throw new AppError(
-      401,
-      "Google email must be verified before signing in.",
-      "GOOGLE_EMAIL_NOT_VERIFIED",
-    );
-  }
-
-  if (!isGoogleIdentityAllowed(tokenPayload.email, tokenPayload.hd)) {
-    throw new AppError(
-      403,
-      "Domain restricted login: this Google account is not authorized.",
-      "DOMAIN_RESTRICTED",
-    );
-  }
-
-  const normalizedEmail = tokenPayload.email.trim().toLowerCase();
-  const providerAccountId = tokenPayload.sub;
-  const now = new Date();
-
-  const existingAccount = await prisma.account.findUnique({
-    where: {
-      provider_providerAccountId: {
-        provider: GOOGLE_PROVIDER,
-        providerAccountId,
-      },
-    },
-    include: { user: true },
-  });
-
-  let authUser: AuthUser;
-
-  if (existingAccount) {
-    if (!existingAccount.user.isActive) {
-      throw new AppError(
-        401,
-        "Account is inactive. Contact your system administrator.",
-        "ACCOUNT_INACTIVE",
-      );
-    }
-
-    const updatedAccount = await prisma.account.update({
-      where: { id: existingAccount.id },
-      data: {
-        idToken: credential,
-        tokenType: "Bearer",
-        scope: GOOGLE_SCOPE,
-        updatedAt: now,
-        user: {
-          update: {
-            lastLoginAt: now,
-          },
-        },
-      },
-      include: {
-        user: true,
-      },
-    });
-
-    authUser = updatedAccount.user;
-  } else {
-    const invitedUser = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
-    });
-
-    if (!invitedUser) {
-      throw new AppError(
-        403,
-        "Your Google account is not invited to this system.",
-        "INVITE_REQUIRED",
-      );
-    }
-
-    if (!invitedUser.isActive) {
-      throw new AppError(
-        401,
-        "Account is inactive. Contact your system administrator.",
-        "ACCOUNT_INACTIVE",
-      );
-    }
-
-    authUser = await prisma.$transaction(async (tx) => {
-      await tx.account.create({
-        data: {
-          userId: invitedUser.id,
-          type: "oauth",
-          provider: GOOGLE_PROVIDER,
-          providerAccountId,
-          idToken: credential,
-          tokenType: "Bearer",
-          scope: GOOGLE_SCOPE,
-        },
-      });
-
-      return tx.user.update({
-        where: { id: invitedUser.id },
-        data: { lastLoginAt: now },
-      });
-    });
-  }
-
-  const token = createAuthToken(authUser);
-  setSessionCookie(res, token);
-
-  await auditLog({
-    userId: authUser.id,
-    actionType: "USER_LOGIN",
-    description: `User ${authUser.email} logged in via Google from ${req.ip}`,
-    req,
-  });
-
-  res.json({
-    token,
-    user: toUserResponse(authUser),
   });
 }
 

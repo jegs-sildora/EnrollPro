@@ -162,7 +162,6 @@ export async function listSections(req: Request, res: Response): Promise<void> {
         return {
           id: s.id,
           name: s.name,
-          displayName: s.displayName,
           maxCapacity: s.maxCapacity,
           programType: s.programType,
           isHomogeneous: s.isHomogeneous,
@@ -212,7 +211,6 @@ export async function listSections(req: Request, res: Response): Promise<void> {
         return {
           id: s.id,
           name: s.name,
-          displayName: s.displayName,
           sortOrder: s.sortOrder,
           maxCapacity: s.maxCapacity,
           programType: s.programType,
@@ -250,7 +248,6 @@ export async function createSection(
 ): Promise<void> {
   const {
     name,
-    displayName,
     sortOrder,
     maxCapacity,
     gradeLevelId,
@@ -290,7 +287,6 @@ export async function createSection(
     const s = await tx.section.create({
       data: {
         name: normalizedName,
-        displayName: displayName || normalizedName,
         sortOrder: resolvedSortOrder,
         maxCapacity: maxCapacity ?? 40,
         gradeLevelId,
@@ -353,7 +349,7 @@ export async function updateSection(
   res: Response,
 ): Promise<void> {
   const id = parseInt(String(req.params.id));
-  const { name, displayName, sortOrder, maxCapacity, advisingTeacherId } =
+  const { name, sortOrder, maxCapacity, advisingTeacherId } =
     req.body;
 
   const existing = await prisma.section.findUnique({
@@ -375,7 +371,6 @@ export async function updateSection(
       where: { id },
       data: {
         ...(name !== undefined ? { name: name.trim() } : {}),
-        ...(displayName !== undefined ? { displayName: displayName.trim() } : {}),
         ...(sortOrder !== undefined ? { sortOrder: Number(sortOrder) } : {}),
         ...(maxCapacity !== undefined ? { maxCapacity: Number(maxCapacity) } : {}),
       },
@@ -535,7 +530,6 @@ export async function getSectionRoster(
     section: {
       id: section.id,
       name: section.name,
-      displayName: section.displayName,
       maxCapacity: section.maxCapacity,
       programType: section.programType,
       gradeLevel: section.gradeLevel.name,

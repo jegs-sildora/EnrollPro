@@ -236,7 +236,7 @@ export default function Apply() {
                     <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-destructive/10 text-destructive text-xs font-bold tracking-widest uppercase border border-destructive/20">
                       {isBosyLocked
                         ? "Enrollment Finalized"
-                        : "Registration Inactive"}
+                        : "Phase Inactive"}
                     </div>
                   </div>
 

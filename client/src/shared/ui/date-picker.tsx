@@ -39,19 +39,46 @@ export function DatePicker({
 	showYearSelect = true,
 }: DatePickerProps) {
 	const [open, setOpen] = React.useState(false);
+	
+	// Clean and copy dates to avoid reference issues
+	const safeDate = React.useMemo(() => (date ? new Date(date) : undefined), [date]);
+	const safeMinDate = React.useMemo(() => (minDate ? new Date(minDate) : undefined), [minDate]);
+	const safeMaxDate = React.useMemo(() => (maxDate ? new Date(maxDate) : undefined), [maxDate]);
+
+	const [month, setMonth] = React.useState<Date | undefined>(safeDate ?? safeMinDate);
+
+	// Sync month whenever it opens or the date prop changes
+	React.useEffect(() => {
+		if (open) {
+			setMonth(safeDate ?? safeMinDate);
+		}
+	}, [open, safeDate, safeMinDate]);
+
+	const handleOpenChange = (newOpen: boolean) => {
+		setOpen(newOpen);
+		if (newOpen) {
+			setMonth(safeDate ?? safeMinDate);
+		}
+	};
 
 	// Build disabled matchers: block dates outside [minDate, maxDate]
 	const disabled = React.useMemo(() => {
 		const matchers: ({ before: Date } | { after: Date })[] = [];
-		if (minDate) matchers.push({ before: minDate });
-		if (maxDate) matchers.push({ after: maxDate });
+		if (safeMinDate) matchers.push({ before: safeMinDate });
+		if (safeMaxDate) matchers.push({ after: safeMaxDate });
 		return matchers.length > 0 ? matchers : undefined;
-	}, [minDate, maxDate]);
+	}, [safeMinDate, safeMaxDate]);
+
+	// Default ranges to prevent react-day-picker from clamping dropdowns to the current year
+	// 20 years in both directions is usually enough for most EdTech schedules, 
+	// but we'll use a wider window for safety.
+	const defaultStartMonth = React.useMemo(() => new Date(1900, 0, 1), []);
+	const defaultEndMonth = React.useMemo(() => new Date(2100, 11, 31), []);
 
 	return (
 		<Popover
 			open={open}
-			onOpenChange={setOpen}
+			onOpenChange={handleOpenChange}
 		>
 			<PopoverTrigger asChild>
 				<Button
@@ -59,12 +86,12 @@ export function DatePicker({
 					variant='outline'
 					className={cn(
 						'w-full justify-start text-left font-normal',
-						!date && 'text-muted-foreground',
+						!safeDate && 'text-muted-foreground',
 						className,
 					)}
 				>
 					<CalendarIcon className='mr-2 h-4 w-4 shrink-0' />
-					{date ? formatPickerDate(date, timeZone) : <span>{placeholder}</span>}
+					{safeDate ? formatPickerDate(safeDate, timeZone) : <span>{placeholder}</span>}
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent
@@ -72,22 +99,27 @@ export function DatePicker({
 				align='center'
 			>
 				<Calendar
+					// Use a key that forces re-mount when opening or when the date changes externally.
+					// This ensures the calendar internal navigation resets to the current date's month.
+					key={open ? `calendar-open-${safeDate?.getTime() ?? 'none'}` : 'calendar-closed'}
 					mode='single'
 					required
-					selected={date}
+					selected={safeDate}
 					onSelect={(d) => {
 						if (d) {
-							setDate(d);
+							setDate(new Date(d));
 							setOpen(false);
 						}
 					}}
+					// Control the displayed month
+					month={month}
+					onMonthChange={setMonth}
 					// Restrict navigation to only the allowed year range
-					startMonth={minDate}
-					endMonth={maxDate}
+					// CRITICAL: Without startMonth/endMonth, react-day-picker clamps the year dropdown to currentYear
+					startMonth={safeMinDate ?? defaultStartMonth}
+					endMonth={safeMaxDate ?? defaultEndMonth}
 					// Visually disable out-of-range dates
 					disabled={disabled}
-					// Open to selected date, falling back to minDate
-					defaultMonth={date ?? minDate}
 					// Always use dropdown for Month (as requested)
 					captionLayout='dropdown'
 					showYearSelect={showYearSelect}

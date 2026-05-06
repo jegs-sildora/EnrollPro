@@ -36,31 +36,6 @@ import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useAuthStore } from "@/store/auth.slice";
 import { useSettingsStore, type SettingsState } from "@/store/settings.slice";
 
-type GoogleCredentialResponse = {
-  credential: string;
-};
-
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (config: {
-            client_id: string;
-            callback: (response: GoogleCredentialResponse) => void;
-            use_fedcm_for_prompt?: boolean;
-          }) => void;
-          renderButton: (
-            parent: HTMLElement,
-            options: Record<string, string | number | boolean>,
-          ) => void;
-          cancel: () => void;
-        };
-      };
-    };
-  }
-}
-
 type AuthResponseUser = {
   id: number;
   firstName: string;
@@ -262,13 +237,13 @@ export default function Login() {
     useAuthStore();
 
   const settings = useSettingsStore() as SchoolMetaSettings;
-  const schoolName = "EnrollPro";
+  const schoolName = settings.schoolName || "EnrollPro";
   const schoolAddress = normalizeOptionalText(settings.schoolAddress);
   const schoolDivision = normalizeOptionalText(settings.schoolDivision);
   const schoolRegion = normalizeOptionalText(settings.schoolRegion);
   const projectTagline =
     "Digital Platform for Optimized Early Registration and Enrollment";
-  const projectFullName = `EnrollPro: ${projectTagline}`;
+  const projectFullName = `${schoolName}: ${projectTagline}`;
   const jhsScopeLabel = "Junior High School (Grades 7-10)";
 
   const acronym = useMemo(() => getAcronym(schoolName), [schoolName]);
@@ -278,12 +253,9 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [googleUiError, setGoogleUiError] = useState<string | null>(null);
 
-  const googleButtonRef = useRef<HTMLDivElement | null>(null);
   const redirectTimeoutRef = useRef<number | null>(null);
 
   // Hydrate from localStorage
@@ -296,7 +268,6 @@ export default function Login() {
   }, []);
 
   const apiBase = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || "";
 
   const fullLogoUrl = useMemo(() => {
     if (!settings.logoUrl) {
@@ -337,7 +308,7 @@ export default function Login() {
   }, []);
 
   const completeLogin = useCallback(
-    (payload: AuthResponsePayload, source: "password" | "google") => {
+    (payload: AuthResponsePayload) => {
       if (redirectTimeoutRef.current) {
         window.clearTimeout(redirectTimeoutRef.current);
       }
@@ -356,10 +327,7 @@ export default function Login() {
 
       sileo.success({
         title: "Welcome back",
-        description:
-          source === "google"
-            ? `Signed in with Google as ${payload.user.firstName} ${payload.user.lastName}`
-            : `Signed in as ${payload.user.firstName} ${payload.user.lastName}`,
+        description: `Signed in as ${payload.user.firstName} ${payload.user.lastName}`,
       });
 
       redirectTimeoutRef.current = window.setTimeout(() => {
@@ -368,137 +336,6 @@ export default function Login() {
     },
     [navigate, setAuth, rememberMe],
   );
-
-  const handleGoogleCredential = useCallback(
-    async (credential: string) => {
-      setGoogleLoading(true);
-      setError(null);
-      setSuccess(null);
-
-      try {
-        const response = await api.post<AuthResponsePayload>("/auth/google", {
-          credential,
-        });
-        completeLogin(response.data, "google");
-      } catch (err: unknown) {
-        if (isAxiosError(err)) {
-          const status = err.response?.status;
-          const code = err.response?.data?.code;
-
-          if (status === 403 && code === "DOMAIN_RESTRICTED") {
-            setError(
-              "This Google account is not authorized for this DepEd portal.",
-            );
-          } else if (status === 403 && code === "INVITE_REQUIRED") {
-            setError(
-              "Your Google account is not yet invited. Contact your registrar or admin.",
-            );
-          } else if (status === 401 && code === "GOOGLE_EMAIL_NOT_VERIFIED") {
-            setError("Your Google email must be verified before signing in.");
-          } else {
-            toastApiError(err as never);
-          }
-        } else {
-          toastApiError(err as never);
-        }
-      } finally {
-        setGoogleLoading(false);
-      }
-    },
-    [completeLogin],
-  );
-
-  const renderGoogleButton = useCallback(() => {
-    const mountNode = googleButtonRef.current;
-    const googleApi = window.google?.accounts?.id;
-
-    if (!mountNode) {
-      return;
-    }
-
-    if (!googleApi) {
-      setGoogleUiError("Google sign-in is temporarily unavailable.");
-      return;
-    }
-
-    googleApi.initialize({
-      client_id: googleClientId,
-      callback: (response) => {
-        if (response.credential) {
-          void handleGoogleCredential(response.credential);
-        }
-      },
-      use_fedcm_for_prompt: true,
-    });
-
-    mountNode.innerHTML = "";
-    const width = Math.max(280, Math.min(420, mountNode.clientWidth || 320));
-
-    googleApi.renderButton(mountNode, {
-      type: "standard",
-      theme: "outline",
-      text: "continue_with",
-      shape: "pill",
-      size: "large",
-      logo_alignment: "left",
-      width,
-    });
-
-    setGoogleUiError(null);
-  }, [googleClientId, handleGoogleCredential]);
-
-  useEffect(() => {
-    if (!googleClientId) {
-      setGoogleUiError(
-        "Google sign-in is not configured for this environment.",
-      );
-      return;
-    }
-
-    const existingScript = document.querySelector(
-      "script[data-google-gsi='true']",
-    ) as HTMLScriptElement | null;
-
-    const handleLoad = () => {
-      renderGoogleButton();
-    };
-
-    const handleError = () => {
-      setGoogleUiError(
-        "Unable to load Google sign-in. You can still use email and password.",
-      );
-    };
-
-    if (existingScript) {
-      if (window.google?.accounts?.id) {
-        handleLoad();
-      } else {
-        existingScript.addEventListener("load", handleLoad);
-        existingScript.addEventListener("error", handleError);
-      }
-
-      return () => {
-        existingScript.removeEventListener("load", handleLoad);
-        existingScript.removeEventListener("error", handleError);
-        window.google?.accounts?.id?.cancel();
-      };
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
-    script.dataset.googleGsi = "true";
-    script.addEventListener("load", handleLoad);
-    script.addEventListener("error", handleError);
-    document.head.appendChild(script);
-
-    return () => {
-      script.removeEventListener("load", handleLoad);
-      script.removeEventListener("error", handleError);
-      window.google?.accounts?.id?.cancel();
-    };
-  }, [googleClientId, renderGoogleButton]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -511,7 +348,7 @@ export default function Login() {
         email: email.trim(),
         password,
       });
-      completeLogin(response.data, "password");
+      completeLogin(response.data);
     } catch (err: unknown) {
       if (isAxiosError(err) && err.response?.status === 401) {
         setError("Invalid email or password");
@@ -832,43 +669,6 @@ export default function Login() {
                     </span>
                   )}
                 </Button>
-
-                <div className="space-y-3 pt-1">
-                  <div className="relative">
-                    <div
-                      className="absolute inset-0 flex items-center"
-                      aria-hidden="true">
-                      <span className="w-full border-t border-slate-200" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase tracking-[0.22em] font-semibold text-slate-400 bg-white px-3 mx-auto w-fit">
-                      Or continue with
-                    </div>
-                  </div>
-
-                  <div
-                    ref={googleButtonRef}
-                    className="min-h-[44px] w-full flex items-center justify-center"
-                    aria-label="Continue with Google"
-                  />
-
-                  {googleLoading && (
-                    <div
-                      className="text-center text-sm font-bold text-slate-500"
-                      role="status"
-                      aria-live="polite">
-                      Processing Google sign-in...
-                    </div>
-                  )}
-
-                  {googleUiError && (
-                    <div
-                      className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-800"
-                      role="status"
-                      aria-live="polite">
-                      {googleUiError}
-                    </div>
-                  )}
-                </div>
               </form>
             </CardContent>
           </Card>

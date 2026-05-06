@@ -99,7 +99,6 @@ export type RegularSectionLane = "HOMOGENEOUS" | "SNAKE";
 export interface RegularSectionPreviewSection {
   sectionId: number;
   sectionName: string;
-  sectionDisplayName: string;
   sortOrder: number;
   lane: RegularSectionLane;
   maxCapacity: number;
@@ -117,7 +116,6 @@ export interface RegularSectionPreviewAssignment {
   generalAverage: number | null;
   sectionId: number;
   sectionName: string;
-  sectionDisplayName: string;
   lane: RegularSectionLane;
 }
 

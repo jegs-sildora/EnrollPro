@@ -29,7 +29,6 @@ model User {
   createdById                          Int?                           @map("created_by_id")
   createdAt                            DateTime                       @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt                            DateTime                       @updatedAt @map("updated_at") @db.Timestamptz(6)
-  accounts                             Account[]
   updatedChecklists                    ApplicationChecklist[]         @relation("ChecklistUpdatedBy")
   auditLogs                            AuditLog[]
   encodedEarlyRegs                     EarlyRegistrationApplication[] @relation("EarlyRegEncodedBy")
@@ -45,29 +44,6 @@ model User {
   createdUsers                         User[]                         @relation("UserCreatedBy")
 
   @@map("users")
-}
-
-/// OAuth identities linked to invited users; modeled after Auth.js account linkage
-model Account {
-  id                Int      @id @default(autoincrement())
-  userId            Int      @map("user_id")
-  type              String   @default("oauth")
-  provider          String
-  providerAccountId String   @map("provider_account_id")
-  refreshToken      String?  @map("refresh_token")
-  accessToken       String?  @map("access_token")
-  expiresAt         Int?     @map("expires_at")
-  tokenType         String?  @map("token_type")
-  scope             String?
-  idToken           String?  @map("id_token")
-  sessionState      String?  @map("session_state")
-  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId], map: "uq_accounts_provider_provider_account_id")
-  @@index([userId], map: "idx_accounts_user_id")
-  @@map("accounts")
 }
 
 /// Faculty members who serve as section advisers; not login users
@@ -173,7 +149,6 @@ model Section {
   updatedAt           DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
   programType         ApplicantType        @default(REGULAR) @map("program_type")
   isEosyFinalized     Boolean              @default(false) @map("is_eosy_finalized")
-  displayName         String?              @map("display_name")
   sortOrder           Int                  @default(9999) @map("sort_order")
   isHomogeneous       Boolean              @default(false) @map("is_homogeneous")
   isSnake             Boolean              @default(false) @map("is_snake")

@@ -94,7 +94,6 @@ export async function cloneSchoolYearStructure(
     await deps.prisma.section.create({
       data: {
         name: section.name,
-        displayName: section.displayName,
         sortOrder: section.sortOrder,
         maxCapacity: section.maxCapacity,
         gradeLevelId: section.gradeLevelId,

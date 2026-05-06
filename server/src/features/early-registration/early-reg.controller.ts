@@ -5121,7 +5121,7 @@ export async function batchAssignRegularSectionsPreview(
               generalAverage: item.generalAverage,
               sectionId: sec.id,
               sectionName: sec.name,
-              sectionDisplayName: sec.displayName || sec.name,
+              sectionDisplayName: sec.name,
               lane: "SNAKE",
             });
           }

@@ -70,6 +70,9 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
           enrollmentPhase: res.data.enrollmentPhase,
           systemStatus: res.data.systemStatus,
           bosyLockedAt: res.data.bosyLockedAt,
+          facebookPageUrl: res.data.facebookPageUrl,
+          depedEmail: res.data.depedEmail,
+          schoolWebsite: res.data.schoolWebsite,
         });
       })
       .catch(() => {

@@ -1,7 +1,6 @@
 import type { z } from "zod";
 import type {
   loginSchema,
-  googleLoginSchema,
   changePasswordSchema,
   userResponseSchema,
   loginResponseSchema,
@@ -70,7 +69,6 @@ import type {
 
 // ─── Auth Types ────────────────────────────────────────
 export type LoginInput = z.infer<typeof loginSchema>;
-export type GoogleLoginInput = z.infer<typeof googleLoginSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type UserResponse = z.infer<typeof userResponseSchema>;
 export type LoginResponse = z.infer<typeof loginResponseSchema>;

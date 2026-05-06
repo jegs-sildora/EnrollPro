@@ -12,10 +12,8 @@ M:1  : Many-to-One (Inverse of One-to-Many)
 1. STAFF AND SYSTEM ACCESS
 --------------------------
 - users: Stores administrative and registrar staff accounts.
-  - Relationship [1:M]: users -> accounts (One user can link multiple OAuth providers)
   - Relationship [1:M]: users -> audit_logs (One user generates many activity logs)
   - Relationship [1:M]: users -> users (Self-referencing: One admin can create many users)
-- accounts: Stores OAuth identity tokens (Google/Microsoft).
 - audit_logs: Immutable security trail of staff actions.
 
 2. SCHOOL AND ACADEMIC STRUCTURE

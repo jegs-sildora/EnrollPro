@@ -1,9 +1,11 @@
 import "dotenv/config";
 import { PrismaClient, Role, SchoolYearStatus, Sex, PortalControl } from "../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
+import * as pg from "pg";
 import * as bcrypt from "bcryptjs";
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
@@ -42,25 +44,27 @@ async function main() {
   }
 
   // 2. Ensure school settings row exists with DepEd details
+  const defaultSettings = {
+    schoolName: "EnrollPro",
+    depedEmail: "",
+    facebookPageUrl: "",
+    schoolWebsite: "",
+    selectedAccentHsl: "221 83% 53%",
+    activeSchoolYearId: activeSy.id,
+  };
+
   let settings = await prisma.schoolSetting.findFirst();
   if (!settings) {
     settings = await prisma.schoolSetting.create({
-      data: { 
-        schoolName: "EnrollPro National High School",
-        depedEmail: "enrollpro.nhs@deped.gov.ph",
-        facebookPageUrl: "https://facebook.com/enrollpronhs",
-        schoolWebsite: "https://enrollpronhs.edu.ph",
-        selectedAccentHsl: "220 80% 50%",
-        activeSchoolYearId: activeSy.id,
-      },
+      data: defaultSettings,
     });
     console.log("✅ Created default SchoolSettings row.");
   } else {
     await prisma.schoolSetting.update({
       where: { id: settings.id },
-      data: { activeSchoolYearId: activeSy.id }
+      data: defaultSettings
     });
-    console.log("✅ SchoolSettings already exists, updated active SY.");
+    console.log("✅ SchoolSettings already exists, updated with default values and active SY.");
   }
 
   // 3. Ensure Grade Levels Grade 7-Grade 10 exist permanently
@@ -141,4 +145,5 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
   });

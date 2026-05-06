@@ -190,7 +190,7 @@ export default function EarlyRegistrationApply() {
                       {schoolName}
                     </h2>
                     <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black tracking-[0.2em] uppercase border border-slate-200">
-                      {isBosyLocked ? "ENROLLMENT FINALIZED" : isRegularEnrollment ? "REDIRECTING..." : "PHASE CLOSED"}
+                      {isBosyLocked ? "ENROLLMENT FINALIZED" : isRegularEnrollment ? "PHASE CONCLUDED" : "PHASE CLOSED"}
                     </div>
                   </div>
 

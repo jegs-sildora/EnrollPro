@@ -131,7 +131,7 @@ export default function PipelineBatchRegularSectionAssignment({
                 className="rounded-lg border p-3 space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-bold text-foreground">
-                    {section.sectionDisplayName}
+                    {section.sectionName}
                   </p>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="text-[10px]">

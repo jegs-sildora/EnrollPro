@@ -80,7 +80,6 @@ interface Teacher {
 interface SectionItem {
   id: number;
   name: string;
-  displayName: string | null;
   sortOrder: number;
   programType: string;
   isHomogeneous: boolean;
@@ -281,7 +280,6 @@ export default function Sections() {
   // Inline add section state
   const [addGlId, setAddGlId] = useState<number | null>(null);
   const [sectionName, setSectionName] = useState("");
-  const [sectionDisplayName, setSectionDisplayName] = useState("");
   const [sectionSortOrder, setSectionSortOrder] = useState("");
   const [sectionCap, setSectionCap] = useState("40");
   const [sectionProgramType, setSectionProgramType] =
@@ -292,7 +290,6 @@ export default function Sections() {
   // Edit section state
   const [editSection, setEditSection] = useState<SectionItem | null>(null);
   const [editName, setEditName] = useState("");
-  const [editDisplayName, setEditDisplayName] = useState("");
   const [editSortOrder, setEditSortOrder] = useState("");
   const [editCap, setEditCap] = useState("40");
   const [editProgramType, setEditProgramType] = useState<string>("REGULAR");
@@ -538,7 +535,6 @@ export default function Sections() {
     } else {
       setAddGlId(glId);
       setSectionName("");
-      setSectionDisplayName("");
       setSectionSortOrder("");
       setSectionCap("40");
       setSectionProgramType("REGULAR");
@@ -552,7 +548,6 @@ export default function Sections() {
     try {
       await api.post("/sections", {
         name: sectionName.trim(),
-        displayName: sectionDisplayName.trim() || null,
         sortOrder: sectionSortOrder.trim()
           ? parseInt(sectionSortOrder, 10)
           : undefined,
@@ -578,7 +573,6 @@ export default function Sections() {
   const openEdit = (section: SectionItem) => {
     setEditSection(section);
     setEditName(formatSectionLabel(section.name));
-    setEditDisplayName(section.displayName ?? "");
     setEditSortOrder(String(section.sortOrder ?? ""));
     setEditCap(section.maxCapacity.toString());
     setEditProgramType(section.programType ?? "REGULAR");
@@ -593,7 +587,6 @@ export default function Sections() {
     try {
       await api.put(`/sections/${editSection.id}`, {
         name: editName.trim(),
-        displayName: editDisplayName.trim() || null,
         sortOrder: editSortOrder.trim()
           ? parseInt(editSortOrder, 10)
           : undefined,
@@ -653,7 +646,7 @@ export default function Sections() {
         <div className="space-y-3">
           {sectionsToRender.map((s) => {
             const displaySectionName = formatSectionLabel(
-              s.displayName ?? s.name,
+              s.name,
             );
             const isDeleteDisabled = s.enrolledCount > 0;
             const fillPercent = s.maxCapacity > 0 ? (s.enrolledCount / s.maxCapacity) * 100 : 0;
@@ -986,7 +979,7 @@ export default function Sections() {
                         setViewRosterSection({
                           id: section.id,
                           name: formatSectionLabel(
-                            section.displayName ?? section.name,
+                            section.name,
                           ),
                           gradeLevelName: group.gradeLevelName,
                           adviserName: section.advisingTeacher?.name ?? null,
@@ -1009,7 +1002,7 @@ export default function Sections() {
                         <p className="text-sm font-bold truncate group-hover:text-primary transition-colors">
                           {formatHeatmapLabel(
                             group.gradeLevelName,
-                            section.displayName ?? section.name,
+                            section.name,
                           )}
                         </p>
                         <div className="mt-1 h-2 w-full rounded-full bg-muted">
@@ -1129,7 +1122,7 @@ export default function Sections() {
                         {addGlId === g.gradeLevelId && (
                           <div className="space-y-4 bg-muted/20 p-6 rounded-xl border border-primary/20 animate-in fade-in slide-in-from-top-2 duration-300">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                              <div className="space-y-2">
+                              <div className="space-y-2 lg:col-span-2">
                                 <Label className="text-xs font-bold uppercase">
                                   Section Name
                                 </Label>
@@ -1141,19 +1134,6 @@ export default function Sections() {
                                   }
                                   className="h-10 font-bold"
                                   autoFocus
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label className="text-xs font-bold uppercase">
-                                  Display Name
-                                </Label>
-                                <Input
-                                  placeholder="e.g. STAR SECTION"
-                                  value={sectionDisplayName}
-                                  onChange={(e) =>
-                                    setSectionDisplayName(e.target.value)
-                                  }
-                                  className="h-10 font-bold"
                                 />
                               </div>
                               <div className="space-y-2">
@@ -1277,7 +1257,7 @@ export default function Sections() {
                             )}
 
                             {renderSectionGroup(
-                              "Heterogeneous Sections (BEC)",
+                              "Basic Education Curriculum (BEC)",
                               g.sections.filter(
                                 (s) =>
                                   !isSpecialSection(s) &&
@@ -1318,17 +1298,6 @@ export default function Sections() {
                   value={editName}
                   className="font-bold"
                   onChange={(e) => setEditName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2 col-span-2">
-                <Label className="text-xs font-bold uppercase">
-                  Display Name
-                </Label>
-                <Input
-                  placeholder="Shown in batch sectioning and lists"
-                  value={editDisplayName}
-                  className="font-bold"
-                  onChange={(e) => setEditDisplayName(e.target.value)}
                 />
               </div>
               <div className="space-y-2">

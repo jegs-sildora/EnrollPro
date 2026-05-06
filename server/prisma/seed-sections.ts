@@ -1,82 +1,106 @@
 import "dotenv/config";
 import { PrismaClient, ApplicantType } from "../src/generated/prisma/index.js";
+import { PrismaPg } from "@prisma/adapter-pg";
+import * as pg from "pg";
 
-const prisma = new PrismaClient();
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
+
+const STARS = ["SIRIUS", "VEGA", "RIGEL", "ARCTURUS", "CAPELLA", "CANOPUS", "ALTAIR", "PROCYON"];
+const HEROES = [
+  "JOSE RIZAL", "ANDRES BONIFACIO", "APOLINARIO MABINI", "MARCELO DEL PILAR",
+  "JUAN LUNA", "EMILIO JACINTO", "GABRIELA SILANG", "EMILIO AGUINALDO",
+  "GRACIANO LOPEZ JAENA", "GREGORIO DEL PILAR", "MELCHORA AQUINO", "DIEGO SILANG",
+  "FRANCISCO BALAGTAS", "MARCIANA AGONCILLO", "TERESA MAGBANUA", "TRINIDAD TECSON"
+];
+const CORE_VALUES = [
+  "MAKA-DIYOS", "MAKATAO", "MAKAKALIKASAN", "MAKABANSA", "KARANGALAN",
+  "KATAPATAN", "KATAPANGAN", "KAGALINGAN", "KAAYUSAN", "KALAYAAN",
+  "KATARUNGAN", "KASIPAGAN", "PAGKAKAISA", "PAGMAMAHAL", "PAGMALASAKIT",
+  "PAGTITIPID", "PAGKAMALIKHAIN"
+];
+const FLOWERS = [
+  "SAMPAGUITA", "GUMAMELA", "ROSAS", "ORCHID", "SUNFLOWER", "DAISY",
+  "LILY", "TULIP", "JASMINE", "HIBISCUS", "ANTHURIUM", "CATTLEYA"
+];
+const MINERALS = [
+  "GOLD", "SILVER", "COPPER", "IRON", "NICKEL", "CHROMITE",
+  "QUARTZ", "FELDSPAR", "MICA", "TALC", "GYPSUM", "CALCITE", "APATITE"
+];
 
 async function main() {
-  const grade7 = await prisma.gradeLevel.findUnique({ where: { name: "Grade 7" } });
-  const grade10 = await prisma.gradeLevel.findUnique({ where: { name: "Grade 10" } });
-  
-  // Find the first school year that is not ARCHIVED
-  const activeYear = await prisma.schoolYear.findFirst({ 
-    where: { 
-        status: { 
-            not: "ARCHIVED" 
-        } 
-    },
+  console.log("🌱 Seeding DepEd Sections for Grades 7-10...");
+
+  const activeYear = await prisma.schoolYear.findFirst({
+    where: { status: { not: "ARCHIVED" } },
     orderBy: { id: "desc" }
   });
 
-  if (!grade7 || !grade10 || !activeYear) {
-    throw new Error("Grade 7, Grade 10, or a valid School Year not found. Run main db:seed first.");
-  }
+  if (!activeYear) throw new Error("No valid school year found.");
 
-  const sections = [
-    {
-      name: "RIZAL",
-      maxCapacity: 45,
-      gradeLevelId: grade7.id,
-      programType: "REGULAR" as ApplicantType,
-      isEosyFinalized: false,
-      displayName: "GRADE 7 - RIZAL (REGULAR)",
-      sortOrder: 1,
-      isHomogeneous: true,
-      isSnake: false,
-      schoolYearId: activeYear.id,
-    },
-    {
-      name: "CURIE",
-      maxCapacity: 35,
-      gradeLevelId: grade7.id,
-      programType: "SCIENCE_TECHNOLOGY_AND_ENGINEERING" as ApplicantType,
-      isEosyFinalized: false,
-      displayName: "GRADE 7 - CURIE (STE)",
-      sortOrder: 2,
-      isHomogeneous: true,
-      isSnake: false,
-      schoolYearId: activeYear.id,
-    },
-    {
-      name: "BONIFACIO",
-      maxCapacity: 45,
-      gradeLevelId: grade10.id,
-      programType: "REGULAR" as ApplicantType,
-      isEosyFinalized: false,
-      displayName: "GRADE 10 - BONIFACIO (REGULAR)",
-      sortOrder: 1,
-      isHomogeneous: true,
-      isSnake: false,
-      schoolYearId: activeYear.id,
+  const gradeLevels = await prisma.gradeLevel.findMany({
+    where: { name: { in: ["Grade 7", "Grade 8", "Grade 9", "Grade 10"] } },
+    orderBy: { displayOrder: "asc" }
+  });
+
+  for (const grade of gradeLevels) {
+    const gradeNum = parseInt(grade.name.split(" ")[1]);
+    console.log(`\n📦 Processing ${grade.name}...`);
+
+    let currentSortOrder = 1;
+
+    // 1. SCP Sections (2 Stars per grade)
+    const gradeStars = STARS.slice((gradeNum - 7) * 2, (gradeNum - 7) * 2 + 2);
+    for (const star of gradeStars) {
+      await upsertSection(star, grade.id, activeYear.id, "SCIENCE_TECHNOLOGY_AND_ENGINEERING", currentSortOrder++);
     }
-  ];
 
-  console.log("🌱 Seeding DepEd Sections...");
+    // 2. BEC Sections "1" to "5"
+    for (let i = 1; i <= 5; i++) {
+      await upsertSection(i.toString(), grade.id, activeYear.id, "REGULAR", currentSortOrder++);
+    }
 
-  for (const s of sections) {
-    await prisma.section.upsert({
-      where: {
-        uq_sections_name_grade_sy: {
-          name: s.name,
-          gradeLevelId: s.gradeLevelId,
-          schoolYearId: s.schoolYearId,
-        },
-      },
-      update: s,
-      create: s,
-    });
+    // 3. Themed BEC Sections
+    let themes: string[] = [];
+    if (gradeNum === 7) themes = HEROES;
+    else if (gradeNum === 8) themes = CORE_VALUES;
+    else if (gradeNum === 9) themes = FLOWERS;
+    else if (gradeNum === 10) themes = MINERALS;
+
+    for (const name of themes) {
+      await upsertSection(name, grade.id, activeYear.id, "REGULAR", currentSortOrder++);
+    }
+    
+    console.log(`✅ Finished seeding ${currentSortOrder - 1} sections for ${grade.name}.`);
   }
 
-  console.log("✅ Seeded DepEd sections successfully.");
+  console.log("\n✅ All sections seeded successfully.");
+}
+
+async function upsertSection(name: string, gradeId: number, syId: number, program: ApplicantType, sortOrder: number) {
+  await prisma.section.upsert({
+    where: {
+      uq_sections_name_grade_sy: {
+        name,
+        gradeLevelId: gradeId,
+        schoolYearId: syId,
+      },
+    },
+    update: {
+      programType: program,
+      sortOrder,
+      maxCapacity: program === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? 35 : 45
+    },
+    create: {
+      name,
+      gradeLevelId: gradeId,
+      schoolYearId: syId,
+      programType: program,
+      sortOrder,
+      maxCapacity: program === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? 35 : 45
+    },
+  });
 }
 
 main()
@@ -86,4 +110,5 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
   });
