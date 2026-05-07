@@ -442,13 +442,13 @@ export default function AcademicYearLifecycleTab() {
                 System Restrictions
               </h4>
               <ul className="space-y-2">
-                <li className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                <li className="flex items-center gap-2 text-xs font-bold text-foreground">
                   <div
                     className={`h-1.5 w-1.5 rounded-full ${isLocked ? "bg-emerald-500" : "bg-slate-300"}`}
                   />
                   Batch Operations: {isLocked ? "Disabled" : "Enabled"}
                 </li>
-                <li className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                <li className="flex items-center gap-2 text-xs font-bold text-foreground">
                   <div
                     className={`h-1.5 w-1.5 rounded-full ${isLocked ? "bg-emerald-500" : "bg-slate-300"}`}
                   />
@@ -474,8 +474,7 @@ export default function AcademicYearLifecycleTab() {
                   }
                 }}>
                 <DialogTrigger asChild>
-                  <Button
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-b-4 border-primary/20 active:border-b-0 active:translate-y-1 font-black uppercase tracking-widest transition-all px-8 h-12">
+                  <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-b-4 border-primary/20 active:border-b-0 active:translate-y-1 font-black uppercase tracking-widest transition-all px-8 h-12">
                     <Lock className="mr-2 h-5 w-5" />
                     Initiate BOSY Lockdown
                   </Button>
@@ -811,7 +810,6 @@ export default function AcademicYearLifecycleTab() {
           )}
         </CardFooter>
       </Card>
-
     </div>
   );
 }

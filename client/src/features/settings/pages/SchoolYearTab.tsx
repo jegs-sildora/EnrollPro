@@ -925,7 +925,7 @@ export default function SchoolYearTab() {
             <h3 className="text-2xl font-black tracking-tight mb-3 text-foreground uppercase">
               Active School Year Required
             </h3>
-            <p className="text-muted-foreground font-medium max-w-lg mb-8 leading-relaxed">
+            <p className="text-foreground font-medium max-w-lg mb-8 leading-relaxed">
               Before the system can process official enrollments, accept Early
               Registration data, or generate School Form 1 (SF1) rosters, a
               primary academic year must be established.
@@ -1001,7 +1001,7 @@ export default function SchoolYearTab() {
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-muted/30 p-6 rounded-2xl border-2 border-dashed border-primary/20">
                         <div className="space-y-2">
-                          <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                          <Label className="text-xs font-bold uppercase tracking-wider text-foreground">
                             Opens On
                           </Label>
                           <DatePicker
@@ -1016,7 +1016,7 @@ export default function SchoolYearTab() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                          <Label className="text-xs font-bold uppercase tracking-wider text-foreground">
                             Closes On
                           </Label>
                           <DatePicker
@@ -1052,7 +1052,7 @@ export default function SchoolYearTab() {
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div className="flex flex-col items-center justify-center p-6 bg-muted/40 rounded-2xl border shadow-inner">
-                        <span className="text-[0.65rem] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1">
+                        <span className="text-[0.65rem] font-bold text-foreground uppercase tracking-[0.2em] mb-1">
                           Opens
                         </span>
                         <span className="text-2xl font-black text-foreground tracking-tight">
@@ -1060,7 +1060,7 @@ export default function SchoolYearTab() {
                         </span>
                       </div>
                       <div className="flex flex-col items-center justify-center p-6 bg-muted/40 rounded-2xl border shadow-inner">
-                        <span className="text-[0.65rem] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1">
+                        <span className="text-[0.65rem] font-bold text-foreground uppercase tracking-[0.2em] mb-1">
                           Closes
                         </span>
                         <span className="text-2xl font-black text-foreground tracking-tight">
@@ -1072,7 +1072,7 @@ export default function SchoolYearTab() {
                 </div>
               ) : (
                 <div className="text-center space-y-4">
-                  <p className="text-muted-foreground font-medium max-w-lg mx-auto leading-relaxed">
+                  <p className="text-foreground font-medium max-w-lg mx-auto leading-relaxed">
                     No active school year has been set for the system. Prepare a
                     draft school year below to begin.
                   </p>
@@ -1102,13 +1102,13 @@ export default function SchoolYearTab() {
                       </Badge>
                     </div>
                     <div className="space-y-1 text-left">
-                      <p className="text-sm font-medium text-muted-foreground">
+                      <p className="text-sm font-medium text-foreground">
                         Start of Classes:{" "}
                         <span className="text-foreground font-bold">
                           {formatManilaDate(draftYear.classOpeningDate)}
                         </span>
                       </p>
-                      <p className="text-sm font-medium text-muted-foreground">
+                      <p className="text-sm font-medium text-foreground">
                         End of School Year:{" "}
                         <span className="text-foreground font-bold">
                           {formatManilaDate(draftYear.classEndDate)}
@@ -1134,7 +1134,7 @@ export default function SchoolYearTab() {
                 </div>
               ) : (
                 <div className="text-center space-y-5">
-                  <p className="text-muted-foreground font-medium max-w-lg mx-auto leading-relaxed">
+                  <p className="text-foreground font-medium max-w-lg mx-auto leading-relaxed">
                     No upcoming school year has been drafted yet. Prepare the
                     next academic year to allow for Early Registration setup.
                   </p>
@@ -1196,7 +1196,7 @@ export default function SchoolYearTab() {
                   </TableBody>
                 </Table>
               ) : (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-foreground">
                   No archived school years yet.
                 </p>
               )}
@@ -1207,7 +1207,7 @@ export default function SchoolYearTab() {
             <div className="sticky bottom-0 z-20">
               <div className="rounded-lg border border-border bg-background/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/85">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs font-semibold text-muted-foreground">
+                  <p className="text-xs font-semibold text-foreground">
                     {isActiveCalendarDirty
                       ? "You have unsaved active calendar changes."
                       : "No active calendar changes yet."}
@@ -1277,9 +1277,9 @@ export default function SchoolYearTab() {
                     readOnly
                     className="font-bold bg-muted/50 cursor-not-allowed pl-9"
                   />
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground opacity-50" />
                 </div>
-                <p className="text-[10px] text-muted-foreground font-semibold">
+                <p className="text-[10px] text-foreground font-semibold">
                   Auto-generated based on selected dates
                 </p>
                 {isLabelTaken && (
@@ -1318,7 +1318,7 @@ export default function SchoolYearTab() {
                 <p className="text-sm font-semibold">
                   Rollover options from {activeYear.yearLabel}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-foreground">
                   EOSY finalization must be completed before rollover can run.
                 </p>
                 <div className="space-y-2 pt-1">
@@ -1423,7 +1423,7 @@ export default function SchoolYearTab() {
                   "font-bold transition-all shadow-md border-none",
                   isAgreedToActivation
                     ? "bg-[#800000] hover:bg-[#600000] text-white"
-                    : "bg-muted text-muted-foreground grayscale",
+                    : "bg-muted text-foreground grayscale",
                 )}
                 disabled={
                   creating ||

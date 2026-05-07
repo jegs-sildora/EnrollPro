@@ -536,9 +536,8 @@ export default function EosyUpdating() {
         description: "Final school-year LIS CSV downloaded successfully.",
       });
     } catch (err) {
-      const apiMessage = (
-        err as { response?: { data?: { message?: string } } }
-      ).response?.data?.message;
+      const apiMessage = (err as { response?: { data?: { message?: string } } })
+        .response?.data?.message;
 
       sileo.error({
         title: "Export Error",
@@ -550,8 +549,9 @@ export default function EosyUpdating() {
   };
 
   const stats = {
-    promoted: records.filter((r) => r.eosyStatus === "PROMOTED" || !r.eosyStatus)
-      .length,
+    promoted: records.filter(
+      (r) => r.eosyStatus === "PROMOTED" || !r.eosyStatus,
+    ).length,
     retained: records.filter((r) => r.eosyStatus === "RETAINED").length,
     irregular: records.filter((r) => r.eosyStatus === "IRREGULAR").length,
     dropped: records.filter((r) => r.eosyStatus === "DROPPED_OUT").length,
@@ -601,8 +601,9 @@ export default function EosyUpdating() {
                 {row.original.enrollmentApplication.learner.firstName}
               </span>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground font-black uppercase">
-                  LRN: {row.original.enrollmentApplication.learner.lrn || "NO LRN"}
+                <span className="text-xs text-foreground font-black uppercase">
+                  LRN:{" "}
+                  {row.original.enrollmentApplication.learner.lrn || "NO LRN"}
                 </span>
                 {genderLabel && (
                   <Badge
@@ -682,7 +683,7 @@ export default function EosyUpdating() {
 
           return (
             <div className="text-center">
-              <span className="text-xs font-bold text-muted-foreground uppercase opacity-40">
+              <span className="text-xs font-bold text-foreground uppercase opacity-40">
                 None
               </span>
             </div>
@@ -710,7 +711,7 @@ export default function EosyUpdating() {
             return (
               <Badge
                 variant="outline"
-                className="h-6 w-24 text-xs font-bold bg-muted text-muted-foreground flex items-center justify-center mx-auto uppercase">
+                className="h-6 w-24 text-xs font-bold bg-muted text-foreground flex items-center justify-center mx-auto uppercase">
                 {statusLabel}
               </Badge>
             );
@@ -812,7 +813,7 @@ export default function EosyUpdating() {
         <div className="flex items-center gap-3">
           {exportLock && (
             <div className="flex flex-col items-end mr-2">
-              <span className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-1">
+              <span className="text-xs font-black uppercase tracking-widest text-foreground mb-1">
                 Progression Tracker
               </span>
               <Badge
@@ -847,7 +848,7 @@ export default function EosyUpdating() {
                   "h-10 px-6 font-bold shadow-md transition-all",
                   canFinalizeSchoolLevel
                     ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                    : "bg-muted text-muted-foreground cursor-not-allowed opacity-50",
+                    : "bg-muted text-foreground cursor-not-allowed opacity-50",
                 )}
                 disabled={!canFinalizeSchoolLevel}
                 onClick={() => setSchoolFinalizeConfirmOpen(true)}>
@@ -882,9 +883,7 @@ export default function EosyUpdating() {
           )}>
           <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
           <div>
-            <p className="font-black uppercase text-xs r">
-              Operational Status
-            </p>
+            <p className="font-black uppercase text-xs r">Operational Status</p>
             <p className="font-bold text-sm mt-0.5">{exportLock.lockReason}</p>
           </div>
         </motion.div>
@@ -899,7 +898,7 @@ export default function EosyUpdating() {
               Class Tracker
             </CardTitle>
             <div className="relative mt-3">
-              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-foreground" />
               <Input
                 placeholder="Search section or adviser..."
                 value={sectionSearch}
@@ -933,7 +932,7 @@ export default function EosyUpdating() {
                 <div
                   key={gl}
                   className="space-y-1">
-                  <h3 className="px-3 py-1 text-xs font-black uppercase  text-muted-foreground bg-muted/40 rounded-md mb-2">
+                  <h3 className="px-3 py-1 text-xs font-black uppercase  text-foreground bg-muted/40 rounded-md mb-2">
                     {gl}
                   </h3>
                   {secs.map((s) => {
@@ -961,7 +960,7 @@ export default function EosyUpdating() {
                               "text-xs font-bold uppercase truncate",
                               selectedSectionId === String(s.id)
                                 ? "text-primary-foreground/70"
-                                : "text-muted-foreground",
+                                : "text-foreground",
                             )}>
                             Adviser: {adviserName}
                           </span>
@@ -1016,7 +1015,7 @@ export default function EosyUpdating() {
                     </Badge>
                   )}
                 </div>
-                <CardDescription className="font-bold text-xs uppercase text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                <CardDescription className="font-bold text-xs uppercase text-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                   {selectedSection ? (
                     <>
                       <span>{selectedSection.gradeLevel.name}</span>
@@ -1026,7 +1025,8 @@ export default function EosyUpdating() {
                         <>
                           <span className="opacity-30">•</span>
                           <span className="text-primary font-black">
-                            Adviser: {selectedSection.advisers[0].teacher.lastName},{" "}
+                            Adviser:{" "}
+                            {selectedSection.advisers[0].teacher.lastName},{" "}
                             {selectedSection.advisers[0].teacher.firstName}
                           </span>
                         </>
@@ -1050,7 +1050,7 @@ export default function EosyUpdating() {
                     "h-8 px-4 text-xs font-black uppercase tracking-widerounded-lg transition-all",
                     !incompleteOnly
                       ? "bg-white shadow-sm text-primary border border-border"
-                      : "text-muted-foreground hover:text-primary",
+                      : "text-foreground hover:text-primary",
                   )}>
                   All ({records.length})
                 </button>
@@ -1060,7 +1060,7 @@ export default function EosyUpdating() {
                     "h-8 px-4 text-xs font-black uppercase tracking-widerounded-lg transition-all flex items-center gap-2",
                     incompleteOnly
                       ? "bg-white shadow-sm text-amber-600 border border-amber-100"
-                      : "text-muted-foreground hover:text-amber-600",
+                      : "text-foreground hover:text-amber-600",
                   )}>
                   {emptyRowsCount > 0 && (
                     <AlertCircle className="h-3 w-3 fill-amber-500 text-white" />
@@ -1092,7 +1092,10 @@ export default function EosyUpdating() {
                     className="h-9 px-4 font-black text-xs uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 shadow-md"
                     disabled={
                       records.filter(
-                        (r) => !r.eosyStatus && r.finalAverage && r.finalAverage >= 75,
+                        (r) =>
+                          !r.eosyStatus &&
+                          r.finalAverage &&
+                          r.finalAverage >= 75,
                       ).length === 0 || isSchoolYearFinalized
                     }
                     onClick={() => setBatchPromoteConfirmOpen(true)}>
@@ -1142,8 +1145,9 @@ export default function EosyUpdating() {
                         Section finalized and locked for SF5/SF6 reporting.
                       </div>
                       <div className="hidden md:block h-6 w-px bg-border" />
-                      <span className="text-sm font-bold text-muted-foreground uppercase tracking-tight">
-                        Showing {visibleRecords.length} of {records.length} Learners
+                      <span className="text-sm font-bold text-foreground uppercase tracking-tight">
+                        Showing {visibleRecords.length} of {records.length}{" "}
+                        Learners
                       </span>
                     </div>
                     <Button
@@ -1166,9 +1170,9 @@ export default function EosyUpdating() {
                                 {emptyRowsCount} learners require an EOSY Status
                               </span>
                             </div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">
-                              Please use 'Bulk Mark' or assign statuses manually to activate
-                              lock.
+                            <p className="text-[10px] font-bold text-foreground uppercase mt-1">
+                              Please use 'Bulk Mark' or assign statuses manually
+                              to activate lock.
                             </p>
                           </>
                         ) : (
@@ -1179,8 +1183,9 @@ export default function EosyUpdating() {
                                 Ready for Finalization
                               </span>
                             </div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">
-                              All {records.length} learners have been assigned an EOSY status.
+                            <p className="text-[10px] font-bold text-foreground uppercase mt-1">
+                              All {records.length} learners have been assigned
+                              an EOSY status.
                             </p>
                           </>
                         )}
@@ -1189,11 +1194,12 @@ export default function EosyUpdating() {
                       <div className="hidden lg:block h-10 w-px bg-border" />
 
                       <div className="hidden lg:flex flex-col">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-foreground">
                           Roster Metrics
                         </span>
                         <span className="text-sm font-bold text-primary mt-0.5">
-                          Showing {visibleRecords.length} of {records.length} Learners
+                          Showing {visibleRecords.length} of {records.length}{" "}
+                          Learners
                         </span>
                       </div>
                     </div>
@@ -1235,7 +1241,7 @@ export default function EosyUpdating() {
           </DialogHeader>
           <div className="py-4 space-y-4">
             <div className="space-y-2">
-              <Label className="font-black text-xs uppercase tracking-widest text-muted-foreground">
+              <Label className="font-black text-xs uppercase tracking-widest text-foreground">
                 Select Reason
               </Label>
               <Select
@@ -1298,7 +1304,7 @@ export default function EosyUpdating() {
           </DialogHeader>
           <div className="py-4 space-y-4">
             <div className="space-y-2">
-              <Label className="font-black text-xs uppercase tracking-widest text-muted-foreground">
+              <Label className="font-black text-xs uppercase tracking-widest text-foreground">
                 Effective Date
               </Label>
               <Input
@@ -1361,13 +1367,17 @@ export default function EosyUpdating() {
                 <p className="text-xs font-black uppercase text-red-800 tracking-widest">
                   Retained
                 </p>
-                <p className="text-2xl font-black text-red-700">{stats.retained}</p>
+                <p className="text-2xl font-black text-red-700">
+                  {stats.retained}
+                </p>
               </div>
             </div>
             <div className="bg-muted/30 rounded-xl p-4 space-y-2 border-2 border-dashed">
-              <div className="flex justify-between items-center text-xs font-bold text-muted-foreground uppercase tracking-tight">
+              <div className="flex justify-between items-center text-xs font-bold text-foreground uppercase tracking-tight">
                 <span>Irregular / Transferred / Dropped</span>
-                <span>{stats.irregular + stats.transferred + stats.dropped}</span>
+                <span>
+                  {stats.irregular + stats.transferred + stats.dropped}
+                </span>
               </div>
               <div className="pt-2 border-t flex justify-between items-center">
                 <span className="text-sm font-black uppercase tracking-wider">
@@ -1379,8 +1389,8 @@ export default function EosyUpdating() {
             <div className="flex items-start gap-3 p-4 bg-amber-50 border-2 border-amber-200 rounded-xl text-amber-900">
               <AlertCircle className="h-5 w-5 mt-0.5 shrink-0 text-amber-600" />
               <p className="text-xs font-bold leading-relaxed">
-                Finalizing locks this section for all advisers. System Admins must
-                manually unlock it for corrections.
+                Finalizing locks this section for all advisers. System Admins
+                must manually unlock it for corrections.
               </p>
             </div>
           </div>
@@ -1405,8 +1415,9 @@ export default function EosyUpdating() {
         onOpenChange={setBatchPromoteConfirmOpen}
         title="⚡ Smart Bulk Promotion"
         description={`Apply 'PROMOTED' status to all ${
-          records.filter((r) => !r.eosyStatus && r.finalAverage && r.finalAverage >= 75)
-            .length
+          records.filter(
+            (r) => !r.eosyStatus && r.finalAverage && r.finalAverage >= 75,
+          ).length
         } learner(s) with a passing average (75.00+) who currently have no status?`}
         confirmText="Confirm Smart Bulk Promotion"
         onConfirm={handleMarkAllPromoted}

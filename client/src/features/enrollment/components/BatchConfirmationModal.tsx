@@ -130,10 +130,7 @@ export function BatchConfirmationModal({
       setLrnInput("");
       scanInputRef.current?.focus();
     } catch (err: unknown) {
-      if (
-        axios.isAxiosError(err) &&
-        err.response?.status === 404
-      ) {
+      if (axios.isAxiosError(err) && err.response?.status === 404) {
         sileo.error({
           title: "Not Found",
           description: `LRN ${lrn} was not found in the database.`,
@@ -274,7 +271,7 @@ export function BatchConfirmationModal({
               <DialogTitle className="text-2xl font-black uppercase  text-foreground leading-none">
                 Batch Confirmation Pipeline
               </DialogTitle>
-              <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-foreground">
                 <span className="flex items-center gap-1.5">
                   <ShieldCheck className="h-3.5 w-3.5 text-primary" />
                   DO 017, s. 2025 Compliant
@@ -308,7 +305,7 @@ export function BatchConfirmationModal({
                     "relative z-20 flex items-center gap-2 transition-colors duration-200",
                     activeTab === "scan"
                       ? "text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground",
+                      : "text-foreground hover:text-foreground",
                   )}>
                   <Keyboard className="h-3.5 w-3.5" /> Rapid Multi-Scan
                 </span>
@@ -328,7 +325,7 @@ export function BatchConfirmationModal({
                     "relative z-20 flex items-center gap-2 transition-colors duration-200",
                     activeTab === "csv"
                       ? "text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground",
+                      : "text-foreground hover:text-foreground",
                   )}>
                   <FileSpreadsheet className="h-3.5 w-3.5" /> Bulk CSV Upload
                 </span>
@@ -341,7 +338,7 @@ export function BatchConfirmationModal({
               value="scan"
               className="m-0 space-y-6">
               <div className="space-y-3">
-                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex justify-between items-center ml-1">
+                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground flex justify-between items-center ml-1">
                   <span>1. Scan or Type LRN & Hit Enter</span>
                   {loading && (
                     <div className="flex items-center gap-2 text-primary animate-pulse">
@@ -351,7 +348,7 @@ export function BatchConfirmationModal({
                   )}
                 </Label>
                 <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-primary transition-colors">
+                  <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-foreground group-focus-within:text-primary transition-colors">
                     <Search className="h-6 w-6" />
                   </div>
                   <Input
@@ -389,7 +386,7 @@ export function BatchConfirmationModal({
                   <p className="font-black uppercase  text-xl text-foreground">
                     Drop CSV Enrollment List
                   </p>
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                  <p className="text-xs font-bold text-foreground uppercase tracking-widest">
                     Required: LRN, GUARDIAN, CONTACT, CONSENT
                   </p>
                 </div>
@@ -404,7 +401,7 @@ export function BatchConfirmationModal({
             {/* Staging Queue Table (SF1 Style) */}
             <div className="space-y-4 mt-6">
               <div className="flex items-center justify-between px-1">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground flex items-center gap-3">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-foreground flex items-center gap-3">
                   Staging Queue
                   <div className="h-5 px-2 bg-primary/10 text-primary rounded border border-primary/20 flex items-center justify-center font-black">
                     {stagingList.length}
@@ -415,7 +412,7 @@ export function BatchConfirmationModal({
                     variant="ghost"
                     size="sm"
                     onClick={() => setStagingList([])}
-                    className="h-7 px-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-destructive hover:bg-destructive/5">
+                    className="h-7 px-3 text-[10px] font-black uppercase tracking-widest text-foreground hover:text-destructive hover:bg-destructive/5">
                     <Trash2 className="h-3.5 w-3.5 mr-2" /> Clear Queue
                   </Button>
                 )}
@@ -426,13 +423,13 @@ export function BatchConfirmationModal({
                   {stagingList.length === 0 ? (
                     <div className="py-24 flex flex-col items-center justify-center text-center space-y-4">
                       <div className="p-4 bg-muted/30 rounded-full">
-                        <Keyboard className="h-10 w-10 text-muted-foreground/30" />
+                        <Keyboard className="h-10 w-10 text-foreground/30" />
                       </div>
                       <div className="space-y-1">
-                        <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">
+                        <p className="text-sm font-black uppercase tracking-widest text-foreground">
                           Pipeline is Clear
                         </p>
-                        <p className="text-xs text-muted-foreground/50 font-bold uppercase ">
+                        <p className="text-xs text-foreground/50 font-bold uppercase ">
                           Ready for multi-scan or file ingestion
                         </p>
                       </div>
@@ -441,16 +438,16 @@ export function BatchConfirmationModal({
                     <table className="w-full text-left border-collapse">
                       <thead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-md border-b border-border">
                         <tr>
-                          <th className="px-5 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground">
+                          <th className="px-5 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-foreground">
                             Learner / Profile
                           </th>
-                          <th className="px-5 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground">
+                          <th className="px-5 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-foreground">
                             Guardian Name
                           </th>
-                          <th className="px-5 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground">
+                          <th className="px-5 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-foreground">
                             Contact
                           </th>
-                          <th className="px-5 py-4 text-center text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground w-[100px]">
+                          <th className="px-5 py-4 text-center text-[10px] font-black uppercase tracking-[0.15em] text-foreground w-[100px]">
                             Consent
                           </th>
                           <th className="px-5 py-4 w-[60px]"></th>
@@ -472,7 +469,7 @@ export function BatchConfirmationModal({
                                   {s.lastName}, {s.firstName}
                                 </span>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-[10px] font-black text-muted-foreground  tabular-nums bg-muted/50 px-1.5 py-0.5 rounded border border-border/50">
+                                  <span className="text-[10px] font-black text-foreground  tabular-nums bg-muted/50 px-1.5 py-0.5 rounded border border-border/50">
                                     {s.lrn}
                                   </span>
                                   <Badge
@@ -526,7 +523,7 @@ export function BatchConfirmationModal({
                                     "text-[9px] font-black uppercase tracking-[0.1em]",
                                     s.isEnrolling
                                       ? "text-emerald-700"
-                                      : "text-muted-foreground",
+                                      : "text-foreground",
                                   )}>
                                   {s.isEnrolling ? "Enrolling" : "Transfer"}
                                 </span>
@@ -537,7 +534,7 @@ export function BatchConfirmationModal({
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => removeStagedLearner(s.lrn)}
-                                className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors">
+                                className="h-9 w-9 text-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors">
                                 <XCircle className="h-4.5 w-4.5" />
                               </Button>
                             </td>
@@ -554,7 +551,7 @@ export function BatchConfirmationModal({
 
         <DialogFooter className="px-8 py-6 bg-muted/20 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-0">
           <div className="flex flex-col sm:items-start items-center">
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">
+            <p className="text-[10px] font-black text-foreground uppercase tracking-widest mb-2">
               Deployment Dashboard
             </p>
             <div className="flex items-center gap-3">
@@ -566,7 +563,7 @@ export function BatchConfirmationModal({
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg border border-border/50">
                 <div className="w-2 h-2 rounded-full bg-muted-foreground" />
-                <span className="text-[10px] font-black uppercase text-muted-foreground ">
+                <span className="text-[10px] font-black uppercase text-foreground ">
                   Transfers: {stagingList.filter((s) => !s.isEnrolling).length}
                 </span>
               </div>

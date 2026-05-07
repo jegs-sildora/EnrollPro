@@ -1,6 +1,18 @@
 import { useState, useEffect, useRef } from "react";
-import { Search, CheckCircle2, UserCheck, Loader2, AlertCircle } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/shared/ui/dialog";
+import {
+  Search,
+  CheckCircle2,
+  UserCheck,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
@@ -40,7 +52,7 @@ export function ConfirmationSlipModal({
   const [learner, setLearner] = useState<LearnerLookup | null>(null);
   const [confirming, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -85,28 +97,30 @@ export function ConfirmationSlipModal({
     setSaving(true);
     try {
       // Determine target grade level based on previous
-      // For HNHS, we assume promotion to next level. 
+      // For HNHS, we assume promotion to next level.
       // In a real system, we'd fetch GradeLevelId for (previous + 1)
-      
+
       // For Phase 1 demo, we'll fetch all grade levels for active SY and find the next one
       const glRes = await api.get("/school-years/grade-levels", {
-        params: { schoolYearId: activeSchoolYearId }
+        params: { schoolYearId: activeSchoolYearId },
       });
-      
+
       const gradeLevels = glRes.data.gradeLevels || [];
       const prevNumMatch = learner.previousGradeLevel.match(/\d+/);
       const prevNum = prevNumMatch ? parseInt(prevNumMatch[0]) : 7;
       const targetNum = prevNum + 1;
-      
-      const targetGradeLevel = gradeLevels.find((gl: { name: string; id: number }) => {
-        const numMatch = gl.name.match(/\d+/);
-        return numMatch && parseInt(numMatch[0]) === targetNum;
-      });
+
+      const targetGradeLevel = gradeLevels.find(
+        (gl: { name: string; id: number }) => {
+          const numMatch = gl.name.match(/\d+/);
+          return numMatch && parseInt(numMatch[0]) === targetNum;
+        },
+      );
 
       if (!targetGradeLevel) {
         sileo.error({
           title: "Grade Level Error",
-          description: `Could not find Grade ${targetNum} for the active school year.`
+          description: `Could not find Grade ${targetNum} for the active school year.`,
         });
         return;
       }
@@ -119,7 +133,7 @@ export function ConfirmationSlipModal({
 
       sileo.success({
         title: "Enrollment Confirmed",
-        description: `${learner.firstName} ${learner.lastName} is now ready for sectioning.`
+        description: `${learner.firstName} ${learner.lastName} is now ready for sectioning.`,
       });
 
       onSuccess?.();
@@ -135,13 +149,17 @@ export function ConfirmationSlipModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-none shadow-2xl">
         <div className="bg-emerald-600 px-6 py-4 text-white">
           <DialogHeader>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5" />
-              <DialogTitle className="text-lg font-bold">Process Confirmation Slip</DialogTitle>
+              <DialogTitle className="text-lg font-bold">
+                Process Confirmation Slip
+              </DialogTitle>
             </div>
             <DialogDescription className="text-emerald-100 text-xs font-medium">
               Rapid enrollment for promoted returning learners (DO 017, s. 2025)
@@ -151,14 +169,18 @@ export function ConfirmationSlipModal({
 
         <div className="p-6 space-y-6">
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex justify-between">
+            <label className="text-[10px] font-black uppercase tracking-widest text-foreground flex justify-between">
               1. Scan or Type 12-Digit LRN
-              {loading && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
+              {loading && (
+                <Loader2 className="h-3 w-3 animate-spin text-primary" />
+              )}
             </label>
             <Input
               ref={inputRef}
               value={lrn}
-              onChange={(e) => setLrn(e.target.value.replace(/\D/g, "").slice(0, 12))}
+              onChange={(e) =>
+                setLrn(e.target.value.replace(/\D/g, "").slice(0, 12))
+              }
               placeholder="e.g. 101234567890"
               className="h-14 text-2xl font-black tracking-[0.2em] text-center border-2 focus-visible:ring-emerald-500"
               autoComplete="off"
@@ -178,7 +200,9 @@ export function ConfirmationSlipModal({
                 <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800">
                   Learner Found
                 </span>
-                <Badge variant="outline" className="bg-white text-emerald-700 border-emerald-200 font-bold uppercase text-[9px]">
+                <Badge
+                  variant="outline"
+                  className="bg-white text-emerald-700 border-emerald-200 font-bold uppercase text-[9px]">
                   {learner.promotionStatus}
                 </Badge>
               </div>
@@ -188,30 +212,34 @@ export function ConfirmationSlipModal({
                     {learner.lastName}, {learner.firstName} {learner.middleName}
                   </span>
                   <span className="text-xs font-bold text-slate-500">
-                    Previous: {learner.previousGradeLevel} • {learner.previousSection}
+                    Previous: {learner.previousGradeLevel} •{" "}
+                    {learner.previousSection}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col p-2 bg-white rounded border border-emerald-100">
-                    <span className="text-[9px] font-black text-muted-foreground uppercase">Gen Average</span>
+                    <span className="text-[9px] font-black text-foreground uppercase">
+                      Gen Average
+                    </span>
                     <span className="text-lg font-black text-emerald-700">
                       {learner.previousGenAve?.toFixed(2) || "N/A"}
                     </span>
                   </div>
                   <div className="flex flex-col p-2 bg-white rounded border border-emerald-100">
-                    <span className="text-[9px] font-black text-muted-foreground uppercase">Promotion</span>
+                    <span className="text-[9px] font-black text-foreground uppercase">
+                      Promotion
+                    </span>
                     <span className="text-lg font-black text-emerald-700">
                       {learner.promotionStatus === "PROMOTED" ? "YES" : "NO"}
                     </span>
                   </div>
                 </div>
 
-                <Button 
+                <Button
                   className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-wide gap-2 text-lg shadow-lg"
                   onClick={handleConfirm}
-                  disabled={confirming}
-                >
+                  disabled={confirming}>
                   {confirming ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
@@ -228,7 +256,9 @@ export function ConfirmationSlipModal({
           {!learner && !loading && !error && (
             <div className="py-12 flex flex-col items-center justify-center text-center space-y-3 opacity-20">
               <Search className="h-12 w-12" />
-              <p className="text-sm font-bold uppercase tracking-widest">Awaiting LRN Input</p>
+              <p className="text-sm font-bold uppercase tracking-widest">
+                Awaiting LRN Input
+              </p>
             </div>
           )}
         </div>

@@ -84,7 +84,7 @@ export function GradeRequirementsSection({
       <div className="grid grid-cols-1 gap-3">
         {isSte && (
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            <Label className="text-xs font-bold uppercase tracking-wide text-foreground">
               Minimum Subject Average — Eng, Sci & Math (%)
             </Label>
             <Input
@@ -97,7 +97,7 @@ export function GradeRequirementsSection({
               className="h-9 text-sm font-bold"
               placeholder="85"
             />
-            <p className="text-xs text-muted-foreground flex items-start gap-1">
+            <p className="text-xs text-foreground flex items-start gap-1">
               <Info className="h-3 w-3 mt-0.5 shrink-0" />
               Grade 6 average across Q1–Q3 for English, Science, and
               Mathematics.
@@ -106,14 +106,14 @@ export function GradeRequirementsSection({
         )}
 
         {!isSte && (
-          <p className="text-xs font-semibold italic text-muted-foreground py-2">
+          <p className="text-xs font-semibold italic text-foreground py-2">
             No specific grade average requirements are defined for this program
             type.
           </p>
         )}
       </div>
 
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-foreground">
         Learners who do not meet the minimum grade requirements will be
         automatically blocked from selecting this SCP track during online early
         registration.

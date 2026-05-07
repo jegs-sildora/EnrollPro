@@ -156,12 +156,7 @@ export async function index(req: Request, res: Response) {
                     gradeLevelName: designation.advisorySection.gradeLevel.name,
                   }
                 : null,
-              advisoryEquivalentHoursPerWeek:
-                designation.advisoryEquivalentHoursPerWeek,
               ancillaryRoles: designation.ancillaryRoles,
-              isTeachingExempt: designation.isTeachingExempt,
-              customTargetTeachingHoursPerWeek:
-                designation.customTargetTeachingHoursPerWeek,
               effectiveFrom: designation.effectiveFrom,
               effectiveTo: designation.effectiveTo,
             }
@@ -450,18 +445,14 @@ export async function deactivate(req: Request, res: Response) {
   const { reason } = req.body;
 
   try {
-    // Check for active loads across all school years that are not ARCHIVED
-    const activeLoads = await prisma.teacherDesignation.findMany({
+    // Check for active adviser assignments across all school years that are not ARCHIVED
+    const activeAssignments = await prisma.teacherDesignation.findMany({
       where: {
         teacherId: id,
         schoolYear: {
           status: { not: "ARCHIVED" },
         },
-        OR: [
-          { isClassAdviser: true },
-          { advisoryEquivalentHoursPerWeek: { gt: 0 } },
-          { customTargetTeachingHoursPerWeek: { gt: 0 } },
-        ],
+        OR: [{ isClassAdviser: true }],
       },
       include: {
         schoolYear: true,
@@ -469,14 +460,14 @@ export async function deactivate(req: Request, res: Response) {
       },
     });
 
-    if (activeLoads.length > 0) {
-      const load = activeLoads[0];
-      const context = load.isClassAdviser
-        ? `active advisory for ${load.advisorySection?.name}`
-        : "active teaching load";
+    if (activeAssignments.length > 0) {
+      const assignment = activeAssignments[0];
+      const advisorySectionName =
+        assignment.advisorySection?.name ?? "an assigned section";
+      const context = `active advisory assignment for ${advisorySectionName}`;
 
       return res.status(409).json({
-        message: `Cannot deactivate: This teacher has an ${context} in ${load.schoolYear.yearLabel}. You must reassign their load before deactivating their account.`,
+        message: `Cannot deactivate: This teacher has an ${context} in ${assignment.schoolYear.yearLabel}. You must reassign the advisory assignment before deactivating the account.`,
       });
     }
 
@@ -705,13 +696,12 @@ export async function upsertDesignation(req: Request, res: Response) {
           });
         }
 
-        // 2. Relieve old adviser's designation workload
+        // 2. Relieve old adviser's designation
         await tx.teacherDesignation.update({
           where: { id: collision.id },
           data: {
             isClassAdviser: false,
             advisorySectionId: null,
-            advisoryEquivalentHoursPerWeek: 0,
           },
         });
       }
@@ -727,12 +717,7 @@ export async function upsertDesignation(req: Request, res: Response) {
         update: {
           isClassAdviser: payload.isClassAdviser,
           advisorySectionId,
-          advisoryEquivalentHoursPerWeek:
-            payload.advisoryEquivalentHoursPerWeek || 0,
           ancillaryRoles: payload.ancillaryRoles || [],
-          isTeachingExempt: payload.isTeachingExempt,
-          customTargetTeachingHoursPerWeek:
-            payload.customTargetTeachingHoursPerWeek ?? null,
           designationNotes: normalizeOptionalText(payload.designationNotes),
           effectiveFrom: parseDateOnly(payload.effectiveFrom),
           effectiveTo: parseDateOnly(payload.effectiveTo),
@@ -744,12 +729,7 @@ export async function upsertDesignation(req: Request, res: Response) {
           schoolYearId: payload.schoolYearId,
           isClassAdviser: payload.isClassAdviser,
           advisorySectionId,
-          advisoryEquivalentHoursPerWeek:
-            payload.advisoryEquivalentHoursPerWeek || 0,
           ancillaryRoles: payload.ancillaryRoles || [],
-          isTeachingExempt: payload.isTeachingExempt,
-          customTargetTeachingHoursPerWeek:
-            payload.customTargetTeachingHoursPerWeek ?? null,
           designationNotes: normalizeOptionalText(payload.designationNotes),
           effectiveFrom: parseDateOnly(payload.effectiveFrom),
           effectiveTo: parseDateOnly(payload.effectiveTo),

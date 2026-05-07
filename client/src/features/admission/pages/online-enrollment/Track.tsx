@@ -396,7 +396,7 @@ export default function TrackApplication({
             <div className="space-y-2">
               <Label
                 htmlFor="trackingNumber"
-                className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+                className="text-xs font-black uppercase tracking-widest text-foreground">
                 Tracking Number
               </Label>
               <div className="relative">
@@ -412,7 +412,7 @@ export default function TrackApplication({
                   )}
                   autoComplete="off"
                 />
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground" />
               </div>
               {errors.trackingNumber && (
                 <p className="text-xs text-primary font-bold">
@@ -431,10 +431,10 @@ export default function TrackApplication({
 
           {!status && !error && (
             <div className="mt-8 pt-6 border-t border-dashed text-center">
-              <p className="text-md font-bold text-muted-foreground uppercase tracking-widest">
+              <p className="text-md font-bold text-foreground uppercase tracking-widest">
                 Lost or missing confirmation slip?
               </p>
-              <p className="text-xs text-muted-foreground/60 mt-1 uppercase font-bold">
+              <p className="text-xs text-foreground/60 mt-1 uppercase font-bold">
                 Enter your tracking number above to retrieve and download your
                 official slip.
               </p>
@@ -487,7 +487,7 @@ export default function TrackApplication({
 
                 <div className="grid gap-4 text-center grid-cols-1 md:grid-cols-3">
                   <div className="p-5 bg-primary/5 border border-primary/10 rounded-2xl space-y-1">
-                    <p className="text-[0.625rem] font-black uppercase text-muted-foreground tracking-widest flex items-center justify-center gap-1.5">
+                    <p className="text-[0.625rem] font-black uppercase text-foreground tracking-widest flex items-center justify-center gap-1.5">
                       <User className="w-3 h-3" /> Learner's Name
                     </p>
                     <p className="font-black text-primary uppercase">
@@ -496,7 +496,7 @@ export default function TrackApplication({
                     </p>
                   </div>
                   <div className="p-5 bg-primary/5 border border-primary/10 rounded-2xl space-y-1">
-                    <p className="text-[0.625rem] font-black uppercase text-muted-foreground tracking-widest flex items-center justify-center gap-1.5">
+                    <p className="text-[0.625rem] font-black uppercase text-foreground tracking-widest flex items-center justify-center gap-1.5">
                       <FileText className="w-3 h-3" /> Grade Level
                     </p>
                     <p className="font-black text-primary uppercase">
@@ -558,17 +558,17 @@ export default function TrackApplication({
                     )}
 
                   <div className="p-5 bg-white border border-border rounded-2xl space-y-1 text-center md:col-span-3">
-                    <p className="text-[0.625rem] font-black uppercase text-muted-foreground tracking-widest">
+                    <p className="text-[0.625rem] font-black uppercase text-foreground tracking-widest">
                       Date Submitted
                     </p>
-                    <p className="text-xs font-bold text-muted-foreground">
+                    <p className="text-xs font-bold text-foreground">
                       {format(new Date(status.createdAt), "MMMM dd, yyyy")}
                     </p>
                   </div>
                 </div>
 
                 <div className="p-6 bg-white border border-border rounded-2xl space-y-4">
-                  <h4 className="text-sm font-black uppercase tracking-wider text-muted-foreground">
+                  <h4 className="text-sm font-black uppercase tracking-wider text-foreground">
                     Dynamic Next Steps
                   </h4>
                   <TrackingNextSteps
@@ -582,10 +582,10 @@ export default function TrackApplication({
 
                 <div className="flex flex-col items-center justify-center ">
                   <div className="mt-8 pt-6 border-t border-dashed text-center">
-                    <p className="text-md font-bold text-muted-foreground uppercase tracking-widest">
+                    <p className="text-md font-bold text-foreground uppercase tracking-widest">
                       Lost or missing confirmation slip?
                     </p>
-                    <p className="text-xs text-muted-foreground/60 mt-1 uppercase font-bold">
+                    <p className="text-xs text-foreground/60 mt-1 uppercase font-bold">
                       Enter your tracking number above to retrieve and download
                       your official slip.
                     </p>
@@ -608,7 +608,7 @@ export default function TrackApplication({
                 </div>
 
                 <div className="pt-4 text-center">
-                  <p className="text-[0.6875rem] font-bold text-muted-foreground/60 uppercase tracking-widest">
+                  <p className="text-[0.6875rem] font-bold text-foreground/60 uppercase tracking-widest">
                     Last updated: {format(new Date(), "hh:mm a")}
                   </p>
                 </div>

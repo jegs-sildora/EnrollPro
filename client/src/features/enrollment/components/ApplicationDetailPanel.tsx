@@ -133,7 +133,7 @@ export function ApplicationDetailPanel({
             </SheetTitle>
             <SheetDescription
               asChild
-              className="text-[11px] sm:text-xs text-muted-foreground mt-1">
+              className="text-[11px] sm:text-xs text-foreground mt-1">
               <div>
                 <Skeleton className="h-3 w-24" />
               </div>
@@ -326,7 +326,7 @@ export function ApplicationDetailPanel({
 
         {pipelineProcessHref && (
           <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
-            <p className="text-[11px] sm:text-xs uppercase tracking-wider text-muted-foreground">
+            <p className="text-[11px] sm:text-xs uppercase tracking-wider text-foreground">
               Processing Needed?
             </p>
             <Link

@@ -183,7 +183,7 @@ export default function DocumentaryRequirements() {
         </Badge>
       ),
       phase1: "Not Required (Automatically ready for enrollment)",
-      phase1Class: "text-muted-foreground italic",
+      phase1Class: "text-foreground italic",
       phase2: "Confirmation Slip (Annex C) only",
     },
     {
@@ -268,7 +268,7 @@ export default function DocumentaryRequirements() {
     <div className="space-y-6 w-full max-w-[1600px] mx-auto pb-10 px-6">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold ">Documentary Requirements Guide</h1>
-        <p className="text-muted-foreground">
+        <p className="text-foreground">
           Official reference for enrollment documents based on DepEd Order No.
           017, s. 2025.
         </p>
@@ -307,7 +307,7 @@ export default function DocumentaryRequirements() {
                   </span>
                   Once-Only PSA Submission
                 </h4>
-                <p className="text-xs text-muted-foreground leading-relaxed">
+                <p className="text-xs text-foreground leading-relaxed">
                   Birth Certificates are submitted only ONCE throughout K-12 (RA
                   11909). If already on file, do not request again.
                 </p>
@@ -319,7 +319,7 @@ export default function DocumentaryRequirements() {
                   </span>
                   Verification vs Collection
                 </h4>
-                <p className="text-xs text-muted-foreground leading-relaxed">
+                <p className="text-xs text-foreground leading-relaxed">
                   Phase 1 (Early Reg): Verify only. Phase 2 (Actual Enrollment):
                   Collect and file original documents.
                 </p>
@@ -331,7 +331,7 @@ export default function DocumentaryRequirements() {
                   </span>
                   No Refusal Policy
                 </h4>
-                <p className="text-xs text-muted-foreground leading-relaxed">
+                <p className="text-xs text-foreground leading-relaxed">
                   Missing documents are NOT grounds for rejection. Enroll on a{" "}
                   <strong>temporary basis</strong> until Aug 31.
                 </p>
@@ -343,7 +343,7 @@ export default function DocumentaryRequirements() {
                   </span>
                   SF10 Post-Enrollment
                 </h4>
-                <p className="text-xs text-muted-foreground leading-relaxed">
+                <p className="text-xs text-foreground leading-relaxed">
                   SF10 is NOT an initial requirement. It is transmitted
                   school-to-school via LIS after enrollment is complete.
                 </p>
@@ -377,7 +377,7 @@ export default function DocumentaryRequirements() {
               ].map((item) => (
                 <li
                   key={item}
-                  className="flex items-start gap-2 text-muted-foreground">
+                  className="flex items-start gap-2 text-foreground">
                   <span className="mt-0.5 font-bold">✕</span>
                   <span>{item}</span>
                 </li>
@@ -524,7 +524,7 @@ export default function DocumentaryRequirements() {
                       {form.name}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
+                  <p className="text-xs text-foreground leading-relaxed">
                     {form.desc}
                   </p>
                 </div>
@@ -567,7 +567,7 @@ export default function DocumentaryRequirements() {
         </CardContent>
       </Card>
 
-      <div className="flex justify-between items-center text-[0.625rem] text-muted-foreground pt-4 border-t">
+      <div className="flex justify-between items-center text-[0.625rem] text-foreground pt-4 border-t">
         <div className="flex gap-4">
           <p>Policy: DepEd Order No. 017, s. 2025</p>
           <p>Basis: RA 11909 (Once-Only PSA)</p>

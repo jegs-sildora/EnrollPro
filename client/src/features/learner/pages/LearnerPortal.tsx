@@ -67,7 +67,7 @@ export default function LearnerPortal() {
             />
             <div>
               <h1 className="text-xl font-bold ">MY SCHOOL RECORDS</h1>
-              <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
+              <p className="text-xs text-foreground font-bold uppercase tracking-wider">
                 {learner.schoolYear?.yearLabel || "SY 2026-2027"}
               </p>
             </div>
@@ -85,7 +85,7 @@ export default function LearnerPortal() {
               variant="ghost"
               size="sm"
               onClick={handleLogout}
-              className="gap-2 text-muted-foreground hover:text-destructive">
+              className="gap-2 text-foreground hover:text-destructive">
               <LogOut className="h-4 w-4" />
               Exit Portal
             </Button>
@@ -111,7 +111,7 @@ export default function LearnerPortal() {
 
         {/* Footer */}
         <div className="text-center pb-8 print:hidden">
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-foreground">
             For staff access, use the Staff Login link in the footer.
           </p>
         </div>

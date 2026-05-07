@@ -65,7 +65,6 @@ export function formatDesignationSummary(teacher: Teacher): string {
   if (designation.ancillaryRoles && designation.ancillaryRoles.length > 0) {
     tags.push(...designation.ancillaryRoles);
   }
-  if (designation.isTeachingExempt) tags.push("EXEMPT");
 
   return tags.length > 0 ? tags.join(" · ") : "None";
 }

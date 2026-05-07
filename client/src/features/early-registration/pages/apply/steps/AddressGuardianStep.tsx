@@ -92,7 +92,9 @@ export default function AddressGuardianStep() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="sitio" className="text-xs font-bold uppercase">
+            <Label
+              htmlFor="sitio"
+              className="text-xs font-bold uppercase">
               Sitio / Purok
             </Label>
             <Input
@@ -112,7 +114,9 @@ export default function AddressGuardianStep() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-1.5">
-            <Label htmlFor="barangay" className="text-xs font-bold uppercase">
+            <Label
+              htmlFor="barangay"
+              className="text-xs font-bold uppercase">
               Barangay <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -168,7 +172,9 @@ export default function AddressGuardianStep() {
             )}
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="province" className="text-xs font-bold uppercase">
+            <Label
+              htmlFor="province"
+              className="text-xs font-bold uppercase">
               Province <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -228,7 +234,7 @@ export default function AddressGuardianStep() {
               />
               <Label
                 htmlFor="hasNoMother"
-                className="text-xs font-bold uppercase text-muted-foreground cursor-pointer">
+                className="text-xs font-bold uppercase text-foreground cursor-pointer">
                 Information not available
               </Label>
             </div>
@@ -350,7 +356,7 @@ export default function AddressGuardianStep() {
               />
               <Label
                 htmlFor="hasNoFather"
-                className="text-xs font-bold uppercase text-muted-foreground cursor-pointer">
+                className="text-xs font-bold uppercase text-foreground cursor-pointer">
                 Information not available
               </Label>
             </div>
@@ -628,7 +634,7 @@ export default function AddressGuardianStep() {
                       "w-12 h-12 rounded-full flex items-center justify-center transition-colors",
                       watch("primaryContact") === opt.value
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary",
+                        : "bg-muted text-foreground group-hover:bg-primary/10 group-hover:text-primary",
                     )}>
                     <opt.icon className="w-6 h-6" />
                   </div>
@@ -637,7 +643,7 @@ export default function AddressGuardianStep() {
                       "font-bold text-sm uppercase tracking-wider text-center",
                       watch("primaryContact") === opt.value
                         ? "text-primary"
-                        : "text-muted-foreground",
+                        : "text-foreground",
                     )}>
                     {displayLabel}
                   </span>
@@ -661,7 +667,7 @@ export default function AddressGuardianStep() {
           </h3>
 
           {!data.primaryContact && (
-            <p className="text-sm text-muted-foreground italic">
+            <p className="text-sm text-foreground italic">
               Select a primary contact above before entering contact details.
             </p>
           )}
@@ -680,7 +686,7 @@ export default function AddressGuardianStep() {
                   <h4 className="text-sm font-bold uppercase tracking-widest text-primary">
                     Primary Contact
                   </h4>
-                  <Label className="text-xs font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-black uppercase text-foreground tracking-widest flex items-center gap-2">
                     {data.primaryContact === "MOTHER" ? (
                       <Venus className="w-3 h-3" />
                     ) : data.primaryContact === "FATHER" ? (
@@ -807,10 +813,10 @@ export default function AddressGuardianStep() {
                       key={s.id}
                       className="space-y-4 transition-opacity duration-0 opacity-70 hover:opacity-100 focus-within:opacity-100">
                       <div className="flex flex-col gap-1">
-                        <h4 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
+                        <h4 className="text-sm font-bold uppercase tracking-widest text-foreground">
                           Secondary Contact (Optional)
                         </h4>
-                        <Label className="text-xs font-black uppercase text-muted-foreground/60 tracking-widest flex items-center gap-2">
+                        <Label className="text-xs font-black uppercase text-foreground/60 tracking-widest flex items-center gap-2">
                           <s.icon className="w-3 h-3" /> {s.label}'s Contact
                           Information
                         </Label>

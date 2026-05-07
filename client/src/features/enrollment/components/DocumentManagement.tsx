@@ -161,10 +161,13 @@ export function DocumentManagement({
     "",
   );
 
-  const getDocumentDownloadUrl = useCallback((fileName: string | null) => {
-    if (!fileName) return "#";
-    return `${apiOrigin}/uploads/${fileName}`;
-  }, [apiOrigin]);
+  const getDocumentDownloadUrl = useCallback(
+    (fileName: string | null) => {
+      if (!fileName) return "#";
+      return `${apiOrigin}/uploads/${fileName}`;
+    },
+    [apiOrigin],
+  );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -201,22 +204,25 @@ export function DocumentManagement({
     }
   };
 
-  const handleDelete = useCallback(async (documentType: string) => {
-    if (!confirm("Are you sure you want to delete this document?")) return;
+  const handleDelete = useCallback(
+    async (documentType: string) => {
+      if (!confirm("Are you sure you want to delete this document?")) return;
 
-    try {
-      await api.delete(`${endpointBase}/${applicantId}/documents`, {
-        data: { documentType },
-      });
-      sileo.success({
-        title: "Deleted",
-        description: "Document has been removed.",
-      });
-      onRefresh();
-    } catch (error: unknown) {
-      toastApiError(error as any);
-    }
-  }, [applicantId, endpointBase, onRefresh]);
+      try {
+        await api.delete(`${endpointBase}/${applicantId}/documents`, {
+          data: { documentType },
+        });
+        sileo.success({
+          title: "Deleted",
+          description: "Document has been removed.",
+        });
+        onRefresh();
+      } catch (error: unknown) {
+        toastApiError(error as any);
+      }
+    },
+    [applicantId, endpointBase, onRefresh],
+  );
 
   // Merge checklist items and documents into audit rows
   // Showing only requirements that have been acted upon (uploaded, checked, or logged)
@@ -308,19 +314,19 @@ export function DocumentManagement({
                   <FileCheck className="h-4 w-4 text-green-500" />
                 )
               ) : (
-                <XCircle className="h-4 w-4 text-muted-foreground" />
+                <XCircle className="h-4 w-4 text-foreground" />
               )}
               <div className="flex flex-col">
                 <span
                   className={`font-bold ${
                     auditRow.status === "Removed"
-                      ? "text-muted-foreground line-through decoration-1"
+                      ? "text-foreground line-through decoration-1"
                       : ""
                   }`}>
                   {auditRow.label}
                 </span>
                 {auditRow.document?.originalName && (
-                  <span className="text-sm text-muted-foreground font-normal truncate max-w-[200px]">
+                  <span className="text-sm text-foreground font-normal truncate max-w-[200px]">
                     {auditRow.document.originalName}
                   </span>
                 )}

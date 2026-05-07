@@ -787,7 +787,7 @@ export default function WalkInEncoder() {
               ? "Late Enrollee Intake (BEEF)"
               : "Direct Intake: Basic Education Enrollment Form"}
           </CardTitle>
-          <p className="text-xs font-semibold text-muted-foreground">
+          <p className="text-xs font-semibold text-foreground">
             {isBosyLocked
               ? "BOSY is locked. New students will be processed as Late Enrollees and routed directly to Inline Slotting."
               : "Encode paper BEEF in one pass. This lane skips pending verification and routes directly to sectioning after document confirmation."}
@@ -933,7 +933,7 @@ export default function WalkInEncoder() {
                   className="text-xs font-bold">
                   Learner has no LRN yet
                 </Label>
-                <p className="text-[11px] font-semibold text-muted-foreground">
+                <p className="text-[11px] font-semibold text-foreground">
                   Allowed only for incoming Grade 7 or transferee learners.
                 </p>
               </div>
@@ -1040,9 +1040,7 @@ export default function WalkInEncoder() {
                         <CalendarIcon
                           className={cn(
                             "h-4 w-4 transition-colors",
-                            isCalendarOpen
-                              ? "text-primary"
-                              : "text-muted-foreground",
+                            isCalendarOpen ? "text-primary" : "text-foreground",
                           )}
                         />
                       </Button>
@@ -1663,7 +1661,7 @@ export default function WalkInEncoder() {
                 <p className="text-xs font-black uppercase tracking-wider">
                   Encode Only
                 </p>
-                <p className="text-xs font-semibold text-muted-foreground">
+                <p className="text-xs font-semibold text-foreground">
                   Save BEEF then return learner to Awaiting Verification.
                 </p>
               </button>
@@ -1679,7 +1677,7 @@ export default function WalkInEncoder() {
                 <p className="text-xs font-black uppercase tracking-wider">
                   Encode + Verify
                 </p>
-                <p className="text-xs font-semibold text-muted-foreground">
+                <p className="text-xs font-semibold text-foreground">
                   Save BEEF and immediately progress to verification outcome.
                 </p>
               </button>

@@ -84,8 +84,8 @@ export function EarlyRegistrationActionDialogs({
         {actionType === "APPROVE" && (
           <div className="space-y-4 py-4">
             <p className="text-xs sm:text-sm text-emerald-700 font-medium">
-              This candidate will be moved to the Enrollment phase and
-              assigned to a section.
+              This candidate will be moved to the Enrollment phase and assigned
+              to a section.
             </p>
             <div className="space-y-2">
               <Label className="text-xs sm:text-sm">
@@ -116,11 +116,9 @@ export function EarlyRegistrationActionDialogs({
         {actionType === "REJECT" && (
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label className="text-xs sm:text-sm">
-                Reason for Rejection
-              </Label>
+              <Label className="text-xs sm:text-sm">Reason for Rejection</Label>
               <textarea
-                className="w-full min-h-[96px] sm:min-h-[120px] rounded-md border border-input bg-transparent px-3 py-2 text-xs sm:text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="w-full min-h-[96px] sm:min-h-[120px] rounded-md border border-input bg-transparent px-3 py-2 text-xs sm:text-sm shadow-sm placeholder:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 placeholder="Explain why this application is being rejected..."
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}

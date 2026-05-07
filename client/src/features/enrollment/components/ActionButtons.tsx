@@ -148,7 +148,7 @@ export function ActionButtons({
               )}
             </>
           ) : (
-            <p className="text-sm text-muted-foreground text-center py-2">
+            <p className="text-sm text-foreground text-center py-2">
               No verification action available for this application status.
             </p>
           )}
@@ -167,7 +167,7 @@ export function ActionButtons({
                   ? "Unlock Profile (Admin Override)"
                   : "Lock Profile (Admin Override)"}
               </Button>
-              <p className="text-xs text-center text-muted-foreground">
+              <p className="text-xs text-center text-foreground">
                 Profile is currently {isProfileLocked ? "LOCKED" : "UNLOCKED"}.
               </p>
             </>
@@ -177,7 +177,7 @@ export function ActionButtons({
             !canToggleProfileLock) ||
             status === "REJECTED" ||
             status === "WITHDRAWN") && (
-            <p className="text-sm text-muted-foreground text-center py-2">
+            <p className="text-sm text-foreground text-center py-2">
               No further actions available for this application.
             </p>
           )}
@@ -260,26 +260,28 @@ export function ActionButtons({
             )}
 
           {/* SCP: Assessment Scheduled — schedule next step */}
-          {isSCP && status === "EXAM_SCHEDULED" && !assessmentDecisionAction && (
-            <>
-              {/* If there are more pending steps, allow scheduling the next one */}
-              {hasSteps && nextPending && handlers.onScheduleStep && (
+          {isSCP &&
+            status === "EXAM_SCHEDULED" &&
+            !assessmentDecisionAction && (
+              <>
+                {/* If there are more pending steps, allow scheduling the next one */}
+                {hasSteps && nextPending && handlers.onScheduleStep && (
+                  <Button
+                    variant="outline"
+                    className="w-full bg-primary text-primary-foreground font-bold"
+                    onClick={() => handlers.onScheduleStep!(nextPending)}
+                    disabled={!isMandatoryDocumentsMet}>
+                    Schedule Next: {getStepLabel(nextPending)}
+                  </Button>
+                )}
                 <Button
                   variant="outline"
-                  className="w-full bg-primary text-primary-foreground font-bold"
-                  onClick={() => handlers.onScheduleStep!(nextPending)}
-                  disabled={!isMandatoryDocumentsMet}>
-                  Schedule Next: {getStepLabel(nextPending)}
+                  className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-bold"
+                  onClick={handlers.onReject}>
+                  Reject Application
                 </Button>
-              )}
-              <Button
-                variant="outline"
-                className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-bold"
-                onClick={handlers.onReject}>
-                Reject Application
-              </Button>
-            </>
-          )}
+              </>
+            )}
 
           {isSCP &&
             (status === "EXAM_SCHEDULED" || status === "ASSESSMENT_TAKEN") &&
@@ -354,7 +356,7 @@ export function ActionButtons({
                   ? "Unlock Profile (Admin Override)"
                   : "Lock Profile (Admin Override)"}
               </Button>
-              <p className="text-xs text-center text-muted-foreground">
+              <p className="text-xs text-center text-foreground">
                 Profile is currently {isProfileLocked ? "LOCKED" : "UNLOCKED"}.
               </p>
             </>
@@ -364,7 +366,7 @@ export function ActionButtons({
             !canToggleProfileLock) ||
             status === "REJECTED" ||
             status === "WITHDRAWN") && (
-            <p className="text-sm text-muted-foreground text-center py-2">
+            <p className="text-sm text-foreground text-center py-2">
               No further actions available for this application.
             </p>
           )}
@@ -394,4 +396,3 @@ export function ActionButtons({
     </>
   );
 }
-

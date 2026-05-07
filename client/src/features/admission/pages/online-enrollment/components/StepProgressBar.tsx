@@ -80,7 +80,9 @@ export default function StepProgressBar({
               const StepIcon = getStepIcon(step.title, index);
 
               return (
-                <div key={step.id} className="relative min-w-0 flex-1">
+                <div
+                  key={step.id}
+                  className="relative min-w-0 flex-1">
                   {!isLast && (
                     <>
                       <div className="absolute left-1/2 right-[-50%] top-3.5 h-[2px] rounded-full bg-border/70" />
@@ -100,7 +102,7 @@ export default function StepProgressBar({
                         ? "border-primary bg-primary text-primary-foreground"
                         : isActive
                           ? "border-primary bg-primary text-primary-foreground shadow-[0_0_0_2px_hsl(var(--card)),0_0_0_4px_hsl(var(--primary)/0.25)]"
-                          : "border-border bg-card text-muted-foreground",
+                          : "border-border bg-card text-foreground",
                     )}
                     aria-current={isActive ? "step" : undefined}>
                     {isCompleted ? (
@@ -124,7 +126,7 @@ export default function StepProgressBar({
               </span>
             </div>
             {description && (
-              <p className="text-sm font-bold mt-0.5 leading-snug text-muted-foreground">
+              <p className="text-sm font-bold mt-0.5 leading-snug text-foreground">
                 {description}
               </p>
             )}
@@ -150,7 +152,9 @@ export default function StepProgressBar({
                   : "Pending";
 
               return (
-                <div key={step.id} className="relative min-w-0 flex-1">
+                <div
+                  key={step.id}
+                  className="relative min-w-0 flex-1">
                   {!isLast && (
                     <>
                       <div className="absolute left-1/2 right-[-50%] top-[1.125rem] h-[3px] rounded-full bg-border/70" />
@@ -171,7 +175,7 @@ export default function StepProgressBar({
                           ? "border-primary bg-primary text-primary-foreground"
                           : isActive
                             ? "border-primary bg-primary text-primary-foreground shadow-[0_0_0_2px_hsl(var(--card)),0_0_0_4px_hsl(var(--primary)/0.25)]"
-                            : "border-border bg-card text-muted-foreground",
+                            : "border-border bg-card text-foreground",
                       )}
                       aria-current={isActive ? "step" : undefined}>
                       {isCompleted ? (
@@ -201,7 +205,7 @@ export default function StepProgressBar({
                           ? "bg-primary text-primary-foreground"
                           : isActive
                             ? "bg-primary/10 text-primary"
-                            : "bg-muted/70 text-muted-foreground",
+                            : "bg-muted/70 text-foreground",
                       )}
                       aria-label={`Step status: ${statusLabel}`}>
                       {statusLabel}

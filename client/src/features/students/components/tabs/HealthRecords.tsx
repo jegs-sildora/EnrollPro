@@ -84,7 +84,7 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
         id: "date",
         header: "Date",
         cell: ({ row }) => (
-          <span className="text-muted-foreground whitespace-nowrap block text-center">
+          <span className="text-foreground whitespace-nowrap block text-center">
             {format(new Date(row.original.assessmentDate), "MMM d, yyyy")}
           </span>
         ),
@@ -180,7 +180,7 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
           <h2 className="text-lg font-semibold">
             Nutritional Status Assessment (SF8)
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-foreground">
             Monitor student BMI and Height-for-Age (HFA) records for BoSY and
             EoSY.
           </p>
@@ -222,7 +222,7 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
               <div className="text-2xl font-bold">
                 {latestRecord.weightKg} kg / {latestRecord.heightCm} cm
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-foreground mt-1">
                 Recorded on{" "}
                 {format(new Date(latestRecord.assessmentDate), "MMM d, yyyy")}
               </p>
@@ -289,7 +289,7 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
                 return (
                   <>
                     <div className="text-2xl font-bold">{category}</div>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-xs text-foreground mt-1">
                       Nutritional classification based on WHO 2007
                     </p>
                   </>
@@ -301,8 +301,8 @@ export function HealthRecords({ applicant, onRefresh }: HealthRecordsProps) {
       ) : (
         <Card className="border-dashed">
           <CardContent className="py-10 text-center">
-            <Info className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
-            <p className="text-muted-foreground">
+            <Info className="h-10 w-10 text-foreground/30 mx-auto mb-4" />
+            <p className="text-foreground">
               No health records found for this student.
             </p>
             <Button

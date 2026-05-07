@@ -69,9 +69,7 @@ const DataItem = ({
   noUppercase?: boolean;
 }) => (
   <div className="space-y-0.5">
-    <p className="text-base font-bold uppercase text-muted-foreground ">
-      {label}
-    </p>
+    <p className="text-base font-bold uppercase text-foreground ">{label}</p>
     <p className="text-base font-bold text-foreground truncate uppercase">
       {value
         ? noUppercase
@@ -354,7 +352,7 @@ export default function LegalConsentStep({
             onClick={() => setIsConfirmDialogOpen(true)}>
             Submit Registration
           </Button>
-          <p className="text-xs text-muted-foreground flex items-center gap-1.5 font-medium">
+          <p className="text-xs text-foreground flex items-center gap-1.5 font-medium">
             <Info className="w-3.5 h-3.5" />
             Data Privacy consent was recorded before this form.
           </p>

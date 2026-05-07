@@ -165,7 +165,7 @@ export function SectionHandoverModal({
           {/* Current Adviser Section */}
           <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground">
                 Current Adviser (To be relieved)
               </Label>
               <Badge
@@ -176,13 +176,13 @@ export function SectionHandoverModal({
             </div>
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-background border flex items-center justify-center">
-                <User className="h-5 w-5 text-muted-foreground" />
+                <User className="h-5 w-5 text-foreground" />
               </div>
               <div>
                 <p className="font-black text-base uppercase leading-none">
                   {currentAdviser?.name || "Unassigned"}
                 </p>
-                <p className="text-[11px] font-bold text-muted-foreground mt-1">
+                <p className="text-[11px] font-bold text-foreground mt-1">
                   Load tracked until handover date
                 </p>
               </div>
@@ -245,7 +245,7 @@ export function SectionHandoverModal({
                   onChange={(e) => setHandoverDate(e.target.value)}
                   className="h-11 font-bold"
                 />
-                <p className="text-[10px] text-muted-foreground font-bold italic leading-tight">
+                <p className="text-[10px] text-foreground font-bold italic leading-tight">
                   The current adviser remains the signatory until this date. The
                   new adviser assumes authority the following day.
                 </p>
@@ -259,7 +259,7 @@ export function SectionHandoverModal({
                   New Designated Adviser (Substitute)
                 </Label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
                   <Input
                     placeholder="Search Teacher Directory..."
                     value={searchQuery}
@@ -270,7 +270,7 @@ export function SectionHandoverModal({
                 <div className="border rounded-xl h-[180px] overflow-y-auto bg-card divide-y">
                   {filteredTeachers.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-center p-4">
-                      <p className="text-xs font-bold text-muted-foreground italic">
+                      <p className="text-xs font-bold text-foreground italic">
                         {searchQuery
                           ? "No matching teachers found"
                           : "Start typing to search..."}
@@ -298,7 +298,7 @@ export function SectionHandoverModal({
                             )}>
                             {teacher.name}
                           </p>
-                          <p className="text-[10px] font-bold text-muted-foreground">
+                          <p className="text-[10px] font-bold text-foreground">
                             ID: {teacher.employeeId || "N/A"}
                           </p>
                         </div>

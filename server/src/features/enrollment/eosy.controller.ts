@@ -3,6 +3,7 @@ import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../lib/AppError.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { EosyStatus } from "../../generated/prisma/index.js";
+import { queueSectionSync, queueSchoolYearSync, queueEcosystemSync } from "../integration/ecosystem-sync.service.js";
 
 function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return "";
@@ -245,6 +246,7 @@ export async function finalizeSection(
     const section = await prisma.section.findUnique({
       where: { id: sectionId },
       include: {
+        gradeLevel: true,
         schoolYear: {
           select: {
             isEosyFinalized: true,
@@ -267,6 +269,52 @@ export async function finalizeSection(
       where: { id: sectionId },
       data: { isEosyFinalized: true },
     });
+
+    // Hook: Grade 10 Completers Transition
+    // Grade 10 is the end of JHS; promoted learners become Completers
+    if (section.gradeLevel.displayOrder === 10 || section.gradeLevel.name.includes("10")) {
+      const promotedRecords = await prisma.enrollmentRecord.findMany({
+        where: {
+          sectionId: sectionId,
+          eosyStatus: "PROMOTED",
+        },
+        select: {
+          enrollmentApplication: {
+            select: {
+              learnerId: true,
+            },
+          },
+        },
+      });
+
+      const learnerIds = promotedRecords.map(
+        (r) => r.enrollmentApplication.learnerId,
+      );
+
+      if (learnerIds.length > 0) {
+        await prisma.learner.updateMany({
+          where: { id: { in: learnerIds } },
+          data: { status: "JHS_COMPLETER" },
+        });
+
+        // Trigger Ecosystem Sync for status update/revocation
+        for (const learnerId of learnerIds) {
+          await queueEcosystemSync(learnerId, "LEARNER").catch(console.error);
+        }
+
+        await auditLog({
+          userId: req.user!.userId,
+          actionType: "LEARNERS_COMPLETED_JHS",
+          description: `Marked ${learnerIds.length} learners from section ${updated.name} as JHS Completers`,
+          subjectType: "Section",
+          recordId: sectionId,
+          req,
+        });
+      }
+    }
+
+    // Hook: Queue Ecosystem Sync for section
+    await queueSectionSync(sectionId).catch(console.error);
 
     await auditLog({
       userId: req.user!.userId,
@@ -409,6 +457,9 @@ export async function finalizeSchoolYear(
       where: { id: syId },
       data: { isEosyFinalized: true },
     });
+
+    // Hook: Queue Ecosystem Sync for entire school year
+    await queueSchoolYearSync(syId).catch(console.error);
 
     await auditLog({
       userId: req.user!.userId,

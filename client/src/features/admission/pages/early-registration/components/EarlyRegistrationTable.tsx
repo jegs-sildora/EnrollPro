@@ -81,7 +81,7 @@ export function EarlyRegistrationTable({
                 title={`${app.lastName}, ${app.firstName}`}>
                 {app.lastName}, {app.firstName}
               </span>
-              <span className="text-xs text-muted-foreground font-medium whitespace-nowrap">
+              <span className="text-xs text-foreground font-medium whitespace-nowrap">
                 {app.trackingNumber}
               </span>
             </div>

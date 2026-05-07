@@ -468,6 +468,7 @@ export function createEarlyRegistrationSharedService(
     return {
       ...application,
       status: application.status,
+      learnerStatus: learner.status,
       firstName: learner.firstName || application.firstName,
       lastName: learner.lastName || application.lastName,
       middleName: learner.middleName || application.middleName,

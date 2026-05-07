@@ -179,8 +179,12 @@ export const createStudentsQueryController = (
   const getStudents = async (req: Request, res: Response) => {
     try {
       const schoolYearId = parsePositiveInt(req.query.schoolYearId);
-      if (!schoolYearId) {
-        return res.status(400).json({ message: "schoolYearId is required" });
+      const learnerStatus = parseQueryString(req.query.learnerStatus);
+
+      if (!schoolYearId && !learnerStatus) {
+        return res.status(400).json({
+          message: "schoolYearId or learnerStatus is required",
+        });
       }
 
       const {
@@ -189,12 +193,13 @@ export const createStudentsQueryController = (
         page: pageNum,
         limit: limitNum,
       } = await deps.searchStudents({
-        schoolYearId,
+        schoolYearId: schoolYearId ?? undefined,
         search: parseQueryString(req.query.search),
         gradeLevelId: parseQueryString(req.query.gradeLevelId),
         sectionId: parseQueryString(req.query.sectionId),
         programType: parseQueryString(req.query.programType),
         status: parseQueryStringList(req.query.status),
+        learnerStatus,
         page: parseQueryString(req.query.page),
         limit: parseQueryString(req.query.limit),
         sortBy: parseQueryString(req.query.sortBy),
@@ -362,6 +367,7 @@ export const createStudentsQueryController = (
         parentGuardianName: parentOrGuardian.name,
         parentGuardianContact: parentOrGuardian.contact,
         emailAddress: applicant.earlyRegistration?.email ?? null,
+        learnerStatus: applicant.learner?.status || "ACTIVE",
         trackingNumber: applicant.trackingNumber,
         status: applicant.status,
         applicantType: applicant.applicantType,

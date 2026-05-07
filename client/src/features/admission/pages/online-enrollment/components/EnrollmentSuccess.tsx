@@ -306,7 +306,7 @@ export default function EnrollmentSuccess({
                 ? "border-primary bg-primary/5"
                 : "border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/2",
             )}>
-            <p className="text-[0.625rem] text-muted-foreground uppercase tracking-[0.2em] font-black">
+            <p className="text-[0.625rem] text-foreground uppercase tracking-[0.2em] font-black">
               Your Application Tracking Number
             </p>
             <div className="flex items-center justify-center gap-4">
@@ -317,7 +317,7 @@ export default function EnrollmentSuccess({
             <p
               className={cn(
                 "text-xs font-black transition-all duration-200",
-                copied ? "text-primary scale-110" : "text-muted-foreground",
+                copied ? "text-primary scale-110" : "text-foreground",
               )}>
               {copied ? "COPIED TO CLIPBOARD!" : "CLICK TO COPY"}
             </p>

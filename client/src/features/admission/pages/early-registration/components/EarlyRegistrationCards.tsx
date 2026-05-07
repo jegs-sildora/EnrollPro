@@ -115,7 +115,7 @@ export function EarlyRegistrationCards({
                   <p className="font-bold text-sm uppercase leading-tight break-words">
                     {app.lastName}, {app.firstName}
                   </p>
-                  <p className="text-xs font-bold text-muted-foreground truncate">
+                  <p className="text-xs font-bold text-foreground truncate">
                     {app.trackingNumber}
                   </p>
                 </div>
@@ -137,7 +137,7 @@ export function EarlyRegistrationCards({
               <div className="mt-2 flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-xs font-bold">{app.gradeLevel.name}</p>
-                  <p className="text-[11px] text-muted-foreground truncate">
+                  <p className="text-[11px] text-foreground truncate">
                     {formatScpType(app.applicantType)}
                   </p>
                   {app.isPendingLrnCreation && (
@@ -151,7 +151,7 @@ export function EarlyRegistrationCards({
                 </p>
               </div>
 
-              <p className="mt-2 text-[11px] text-muted-foreground font-bold">
+              <p className="mt-2 text-[11px] text-foreground font-bold">
                 Submitted{" "}
                 {app.createdAt
                   ? format(new Date(app.createdAt), "MMMM dd, yyyy")

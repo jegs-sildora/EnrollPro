@@ -95,7 +95,7 @@ export default function PipelineBatchApplicantsTable({
           return isEnrollmentBridgeRow ? (
             <div className="flex items-center justify-center">
               <Lock
-                className="size-3.5 text-muted-foreground"
+                className="size-3.5 text-foreground"
                 aria-label="Moved to enrollment"
               />
             </div>
@@ -323,9 +323,7 @@ export default function PipelineBatchApplicantsTable({
               </a>
             </Button>
           ) : (
-            <span className="text-xs font-bold text-muted-foreground block">
-              —
-            </span>
+            <span className="text-xs font-bold text-foreground block">—</span>
           );
         },
       });

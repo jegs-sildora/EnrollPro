@@ -4,9 +4,10 @@ import {
   ClipboardList,
   Download,
   RefreshCw,
-  Search,
   ShieldAlert,
-  Users,
+  AlertTriangle,
+  History,
+  Activity,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useAuthStore } from "@/store/auth.slice";
@@ -15,11 +16,19 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Badge } from "@/shared/ui/badge";
-import { formatUserRole } from "@/shared/lib/utils";
+import { cn, formatUserRole } from "@/shared/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/select";
 
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
+import { PaginationBar } from "@/shared/components/PaginationBar";
 
 interface AuditUser {
   id: number;
@@ -35,10 +44,16 @@ interface AuditLogRow {
   description: string;
   subjectType: string | null;
   recordId: number | null;
+  resolvedSubject: string | null;
   ipAddress: string;
   userAgent: string | null;
   createdAt: string;
   user: AuditUser | null;
+}
+
+interface FilterMetadata {
+  actionTypes: string[];
+  actors: { id: number; name: string; role: string }[];
 }
 
 const PAGE_SIZE = 20;
@@ -54,9 +69,13 @@ function formatTimestamp(iso: string) {
 }
 
 function actionLabel(actionType: string) {
-  return actionType.replaceAll("_", " ");
+  const label = actionType.replaceAll("_", " ").toLowerCase();
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
+/**
+ * Forensic UI Upgrade: Shift from "Pretty UI" to "Forensic Usability"
+ */
 export default function AuditLogs() {
   const { user } = useAuthStore();
   const isSystemAdmin = user?.role === "SYSTEM_ADMIN";
@@ -68,12 +87,32 @@ export default function AuditLogs() {
 
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const [meta, setMeta] = useState({ criticalCount: 0, activeActors: 0 });
 
-  const [actionType, setActionType] = useState("");
-  const [userId, setUserId] = useState("");
+  const [actionType, setActionType] = useState("all");
+  const [actorId, setActorId] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+
+  const [filterMeta, setFilterMeta] = useState<FilterMetadata>({
+    actionTypes: [],
+    actors: [],
+  });
+
+  const fetchFilterMeta = async () => {
+    try {
+      const res = await api.get("/audit-logs/filters");
+      setFilterMeta(res.data);
+    } catch (err) {
+      console.error("Failed to fetch filter metadata", err);
+    }
+  };
+
+  useEffect(() => {
+    if (isSystemAdmin) {
+      fetchFilterMeta();
+    }
+  }, [isSystemAdmin]);
 
   const columns = useMemo<ColumnDef<AuditLogRow>[]>(
     () => [
@@ -81,9 +120,11 @@ export default function AuditLogs() {
         accessorKey: "createdAt",
         header: "Timestamp",
         cell: ({ row }) => (
-          <span className="whitespace-nowrap text-xs font-medium">
-            {formatTimestamp(row.original.createdAt)}
-          </span>
+          <div className="text-center">
+            <span className="whitespace-nowrap text-xs font-semibold text-foreground">
+              {formatTimestamp(row.original.createdAt)}
+            </span>
+          </div>
         ),
       },
       {
@@ -92,15 +133,15 @@ export default function AuditLogs() {
         cell: ({ row }) => {
           const log = row.original;
           return (
-            <div className="space-y-0.5">
-              <p className="text-sm font-semibold">
+            <div className="space-y-0.5 text-left">
+              <p className="text-sm font-bold  text-foreground">
                 {log.user
                   ? `${log.user.lastName}, ${log.user.firstName}`
                   : "System / Guest"}
               </p>
               {log.user && (
-                <p className="text-xs text-muted-foreground">
-                  ID {log.user.id} • {formatUserRole(log.user.role)}
+                <p className="text-xs font-bold text-foreground ">
+                  ID: {log.user.id} • {formatUserRole(log.user.role)}
                 </p>
               )}
             </div>
@@ -110,25 +151,46 @@ export default function AuditLogs() {
       {
         accessorKey: "actionType",
         header: "Action",
-        cell: ({ row }) => (
-          <Badge
-            variant="outline"
-            className="font-semibold">
-            {actionLabel(row.original.actionType)}
-          </Badge>
-        ),
+        cell: ({ row }) => {
+          const action = row.original.actionType;
+          const isDestructive = action.includes("DELETE") || action.includes("REMOVE") || action.includes("DROP");
+          
+          return (
+            <div className="text-center">
+              <Badge
+                variant={isDestructive ? "destructive" : "secondary"}
+                className={cn(
+                  "font-bold text-xs px-2 py-0.5 border-none",
+                  !isDestructive && "bg-slate-100 text-foreground"
+                )}>
+                {actionLabel(action)}
+              </Badge>
+            </div>
+          );
+        },
       },
       {
-        accessorKey: "subjectType",
+        accessorKey: "subject",
         header: "Subject",
         cell: ({ row }) => {
           const log = row.original;
+          const type = log.subjectType ? log.subjectType.charAt(0) + log.subjectType.slice(1).toLowerCase() : "System";
+          
           return (
-            <span className="text-xs">
-              {log.subjectType
-                ? `${log.subjectType}${log.recordId ? ` #${log.recordId}` : ""}`
-                : "—"}
-            </span>
+            <div className="text-left space-y-0.5 flex justify-center items-center flex-col">
+              <span className="text-xs font-bold text-foreground/80 px-1.5 py-0.5 bg-muted rounded">
+                {type}
+              </span>
+              {log.resolvedSubject ? (
+                <p className="text-sm font-semibold text-foreground">
+                  {log.resolvedSubject}
+                </p>
+              ) : log.recordId ? (
+                <p className="text-xs font-mono text-foreground">
+                  Record #{log.recordId}
+                </p>
+              ) : null}
+            </div>
           );
         },
       },
@@ -136,7 +198,7 @@ export default function AuditLogs() {
         accessorKey: "description",
         header: "Description",
         cell: ({ row }) => (
-          <span className="text-sm max-w-[480px] break-words block">
+          <span className="text-sm font-normal text-foreground max-w-[400px] break-words block text-left leading-relaxed">
             {row.original.description}
           </span>
         ),
@@ -145,7 +207,11 @@ export default function AuditLogs() {
         accessorKey: "ipAddress",
         header: "IP Address",
         cell: ({ row }) => (
-          <span className="text-xs ">{row.original.ipAddress}</span>
+          <div className="text-center">
+            <span className="text-xs font-mono font-bold text-foreground bg-muted/30 px-1.5 py-0.5 rounded">
+              {row.original.ipAddress}
+            </span>
+          </div>
         ),
       },
     ],
@@ -154,12 +220,12 @@ export default function AuditLogs() {
 
   const filterParams = useMemo(() => {
     const params: Record<string, string> = {};
-    if (actionType.trim()) params.actionType = actionType.trim().toUpperCase();
-    if (isSystemAdmin && userId.trim()) params.userId = userId.trim();
+    if (actionType !== "all") params.actionType = actionType;
+    if (isSystemAdmin && actorId !== "all") params.userId = actorId;
     if (dateFrom) params.dateFrom = dateFrom;
     if (dateTo) params.dateTo = dateTo;
     return params;
-  }, [actionType, userId, dateFrom, dateTo, isSystemAdmin]);
+  }, [actionType, actorId, dateFrom, dateTo, isSystemAdmin]);
 
   const fetchLogs = useCallback(
     async (targetPage: number) => {
@@ -176,6 +242,7 @@ export default function AuditLogs() {
 
         setLogs(res.data.logs || []);
         setTotal(res.data.total ?? 0);
+        setMeta(res.data.meta || { criticalCount: 0, activeActors: 0 });
       } catch (err) {
         const status = (err as { response?: { status?: number } }).response
           ?.status;
@@ -196,13 +263,6 @@ export default function AuditLogs() {
   useEffect(() => {
     fetchLogs(page);
   }, [fetchLogs, page]);
-
-  const visibleActors = useMemo(() => {
-    const unique = new Set(
-      logs.map((log) => (log.user ? `${log.user.id}` : "system")),
-    );
-    return unique.size;
-  }, [logs]);
 
   const handleExport = async () => {
     setExporting(true);
@@ -231,7 +291,7 @@ export default function AuditLogs() {
 
       sileo.success({
         title: "Export Ready",
-        description: "Audit log CSV downloaded successfully.",
+        description: "Forensic Audit CSV downloaded successfully.",
       });
     } catch (err) {
       toastApiError(err as never);
@@ -244,17 +304,18 @@ export default function AuditLogs() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <ClipboardList className="h-7 w-7 text-primary" />
+          <h1 className="text-3xl font-bold  flex items-center gap-2 text-foreground">
+            <ClipboardList className="h-8 w-8 text-primary" />
             Audit Logs
           </h1>
-          <p className="text-sm font-medium text-muted-foreground">
-            Review immutable system activity and actor metadata.
+          <p className="text-sm font-bold text-foreground ">
+            Forensic analysis of immutable system activity and actor metadata.
           </p>
         </div>
         <div className="flex gap-2">
           <Button
             variant="outline"
+            className="font-semibold text-xs"
             onClick={() => fetchLogs(page)}
             disabled={loading}>
             <RefreshCw
@@ -264,11 +325,11 @@ export default function AuditLogs() {
           </Button>
           {isSystemAdmin && (
             <Button
-              variant="outline"
+              className="font-semibold text-xs"
               onClick={handleExport}
               disabled={exporting}>
               <Download className="h-4 w-4 mr-2" />
-              {exporting ? "Exporting..." : "Export CSV"}
+              {exporting ? "Exporting..." : "Export forensic CSV"}
             </Button>
           )}
         </div>
@@ -282,7 +343,7 @@ export default function AuditLogs() {
                 <ShieldAlert className="h-6 w-6" />
               </div>
               <p className="font-bold">Access Restricted</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-foreground font-bold">
                 Your role cannot access full audit logs. Contact a system
                 administrator if this access is required.
               </p>
@@ -293,43 +354,58 @@ export default function AuditLogs() {
         <>
           <Card className="border-none shadow-sm">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Filters</CardTitle>
+              <CardTitle className="text-xs font-bold uppercase text-foreground">
+                Forensic Search Filters
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-4">
                 <div className="space-y-2">
-                  <Label>Action Type</Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      value={actionType}
-                      onChange={(e) => {
-                        setActionType(e.target.value);
-                        setPage(1);
-                      }}
-                      placeholder="e.g. APPLICATION_SUBMITTED"
-                      className="pl-9"
-                    />
-                  </div>
+                  <Label className="text-xs font-bold uppercase st text-foreground">
+                    Action Category
+                  </Label>
+                  <Select value={actionType} onValueChange={(val) => { setActionType(val); setPage(1); }}>
+                    <SelectTrigger className="font-semibold text-xs">
+                      <SelectValue placeholder="All Actions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all" className="font-semibold text-xs">All Actions</SelectItem>
+                      {filterMeta.actionTypes.map((at) => (
+                        <SelectItem key={at} value={at} className="font-semibold text-xs">
+                          {actionLabel(at)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 {isSystemAdmin && (
                   <div className="space-y-2">
-                    <Label>User ID</Label>
-                    <Input
-                      value={userId}
-                      onChange={(e) => {
-                        setUserId(e.target.value.replace(/[^0-9]/g, ""));
-                        setPage(1);
-                      }}
-                      placeholder="System admin filter"
-                    />
+                    <Label className="text-xs font-bold uppercase st text-foreground">
+                      Actor Filter
+                    </Label>
+                    <Select value={actorId} onValueChange={(val) => { setActorId(val); setPage(1); }}>
+                      <SelectTrigger className="font-semibold text-xs">
+                        <SelectValue placeholder="All Staff Members" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all" className="font-semibold text-xs">All Staff Members</SelectItem>
+                        {filterMeta.actors.map((actor) => (
+                          <SelectItem key={actor.id} value={actor.id.toString()} className="font-semibold text-xs">
+                            {actor.name} ({formatUserRole(actor.role)})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
                 <div className="space-y-2">
-                  <Label>Date From</Label>
+                  <Label className="text-xs font-bold uppercase st text-foreground">
+                    Date From
+                  </Label>
                   <Input
                     type="date"
                     value={dateFrom}
+                    className="font-semibold text-xs"
                     onChange={(e) => {
                       setDateFrom(e.target.value);
                       setPage(1);
@@ -337,10 +413,13 @@ export default function AuditLogs() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Date To</Label>
+                  <Label className="text-xs font-bold uppercase st text-foreground">
+                    Date To
+                  </Label>
                   <Input
                     type="date"
                     value={dateTo}
+                    className="font-semibold text-xs"
                     onChange={(e) => {
                       setDateTo(e.target.value);
                       setPage(1);
@@ -350,15 +429,16 @@ export default function AuditLogs() {
               </div>
               <div className="flex justify-end">
                 <Button
-                  variant="outline"
+                  variant="ghost"
+                  className="font-bold text-xs st h-8"
                   onClick={() => {
-                    setActionType("");
-                    setUserId("");
+                    setActionType("all");
+                    setActorId("all");
                     setDateFrom("");
                     setDateTo("");
                     setPage(1);
                   }}>
-                  Reset Filters
+                  Clear Investigation Filters
                 </Button>
               </div>
             </CardContent>
@@ -367,77 +447,67 @@ export default function AuditLogs() {
           <div className="grid gap-4 md:grid-cols-3">
             <Card className="border-none shadow-sm">
               <CardHeader className="pb-2">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Total Results
-                </p>
-                <CardTitle className="text-2xl font-extrabold">
-                  {total}
+                <div className="flex items-center gap-2">
+                  <History className="h-4 w-4 text-foreground" />
+                  <p className="text-xs font-bold uppercase st text-foreground">
+                    Total Events
+                  </p>
+                </div>
+                <CardTitle className="text-3xl font-black ">
+                  {total.toLocaleString()}
                 </CardTitle>
               </CardHeader>
             </Card>
             <Card className="border-none shadow-sm">
               <CardHeader className="pb-2">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Visible Rows
-                </p>
-                <CardTitle className="text-2xl font-extrabold">
-                  {logs.length}
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-500" />
+                  <p className="text-xs font-bold uppercase st text-foreground">
+                    Critical Alerts
+                  </p>
+                </div>
+                <CardTitle className="text-3xl font-black  text-amber-600">
+                  {meta.criticalCount.toLocaleString()}
                 </CardTitle>
               </CardHeader>
             </Card>
             <Card className="border-none shadow-sm">
               <CardHeader className="pb-2">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Actors In View
-                </p>
-                <CardTitle className="text-2xl font-extrabold flex items-center gap-2">
-                  <Users className="h-5 w-5 text-primary" />
-                  {visibleActors}
+                <div className="flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-primary" />
+                  <p className="text-xs font-bold uppercase st text-primary">
+                    Active Actors
+                  </p>
+                </div>
+                <CardTitle className="text-3xl font-black  flex items-center gap-2 text-primary">
+                  {meta.activeActors}
                 </CardTitle>
               </CardHeader>
             </Card>
           </div>
 
-          <Card className="border-none shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Activity Log</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <DataTable
-                columns={columns}
-                data={logs}
-                loading={loading}
-              />
+          <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden min-h-[500px]">
+            <DataTable
+              columns={columns}
+              data={logs}
+              loading={loading}
+              virtualize={false}
+            />
 
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between pt-2">
-                  <p className="text-sm font-semibold text-muted-foreground">
-                    Page {page} of {totalPages}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page === 1 || loading}>
-                      Previous
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setPage((p) => Math.min(totalPages, p + 1))
-                      }
-                      disabled={page === totalPages || loading}>
-                      Next
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            {total > 0 && (
+              <PaginationBar
+                page={page}
+                total={total}
+                limit={PAGE_SIZE}
+                onPageChange={setPage}
+                onLimitChange={() => {}} // Fixed page size for forensic scannability
+                itemName="Audit Records"
+              />
+            )}
+          </div>
         </>
       )}
     </div>
   );
 }
+

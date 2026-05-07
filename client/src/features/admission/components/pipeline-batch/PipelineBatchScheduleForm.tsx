@@ -70,12 +70,22 @@ export default function PipelineBatchScheduleForm({
         <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-              <Lock className="size-3.5" aria-hidden="true" />
+              <Lock
+                className="size-3.5"
+                aria-hidden="true"
+              />
               <span>{modeLabel} schedule locked to Global SCP Settings.</span>
             </p>
-            <Button asChild variant="outline" size="sm" className="h-8 text-xs">
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs">
               <a href="/settings?tab=curriculum">
-                <Settings className="size-3.5 mr-1.5" aria-hidden="true" />
+                <Settings
+                  className="size-3.5 mr-1.5"
+                  aria-hidden="true"
+                />
                 Edit in Settings
               </a>
             </Button>
@@ -86,8 +96,11 @@ export default function PipelineBatchScheduleForm({
       <div className="rounded-lg border bg-muted/40 p-3 space-y-3">
         <div className="grid gap-2 md:grid-cols-3">
           <div className="rounded-md bg-background/70 px-2.5 py-2">
-            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-              <CalendarDays className="size-3.5" aria-hidden="true" />
+            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-foreground">
+              <CalendarDays
+                className="size-3.5"
+                aria-hidden="true"
+              />
               {modeLabel} Date
             </p>
             <p className="mt-1 text-sm font-bold text-foreground">
@@ -95,8 +108,11 @@ export default function PipelineBatchScheduleForm({
             </p>
           </div>
           <div className="rounded-md bg-background/70 px-2.5 py-2">
-            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-              <Clock3 className="size-3.5" aria-hidden="true" />
+            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-foreground">
+              <Clock3
+                className="size-3.5"
+                aria-hidden="true"
+              />
               {modeLabel} Time
             </p>
             <p className="mt-1 text-sm font-bold text-foreground">
@@ -104,8 +120,11 @@ export default function PipelineBatchScheduleForm({
             </p>
           </div>
           <div className="rounded-md bg-background/70 px-2.5 py-2">
-            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-              <MapPin className="size-3.5" aria-hidden="true" />
+            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-foreground">
+              <MapPin
+                className="size-3.5"
+                aria-hidden="true"
+              />
               Venue
             </p>
             <p className="mt-1 text-sm font-bold text-foreground">
@@ -115,10 +134,10 @@ export default function PipelineBatchScheduleForm({
         </div>
 
         <div className="space-y-1">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-foreground">
             Notes
           </p>
-          <blockquote className="rounded-r-md border-l-2 border-muted-foreground/35 pl-3 text-sm italic text-muted-foreground">
+          <blockquote className="rounded-r-md border-l-2 border-muted-foreground/35 pl-3 text-sm italic text-foreground">
             {displayNotes}
           </blockquote>
         </div>

@@ -269,7 +269,7 @@ export default function EarlyRegistrationDetail() {
             <h1 className="text-xs font-bold ">
               {applicant.lastName}, {applicant.firstName} {applicant.middleName}
             </h1>
-            <p className="text-muted-foreground flex flex-wrap items-center gap-1 sm:gap-2 mt-1 font-bold text-xs">
+            <p className="text-foreground flex flex-wrap items-center gap-1 sm:gap-2 mt-1 font-bold text-xs">
               <span>#{applicant.trackingNumber}</span>
               <span>•</span>
               <span>{applicant.gradeLevel.name}</span>
@@ -341,7 +341,8 @@ export default function EarlyRegistrationDetail() {
                               );
                               sileo.success({
                                 title: "Score Saved",
-                                description: "Assessment result has been recorded.",
+                                description:
+                                  "Assessment result has been recorded.",
                               });
                               refetch();
                             } catch (err) {
@@ -469,7 +470,7 @@ export default function EarlyRegistrationDetail() {
           className="w-full lg:w-auto space-y-4 sm:space-y-6 overflow-y-auto p-3 sm:p-6 custom-scrollbar bg-muted/10 lg:shrink-0">
           <Card>
             <div className="p-4 pb-0">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
                 Actions
               </h3>
             </div>
@@ -492,18 +493,18 @@ export default function EarlyRegistrationDetail() {
           <Card>
             <CardContent className="p-4 space-y-4">
               <div>
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                <h3 className="text-xs font-bold text-foreground uppercase tracking-wider mb-2">
                   System Info
                 </h3>
                 <div className="text-xs grid grid-cols-[100px_1fr] gap-2 font-bold">
-                  <span className="text-muted-foreground">Channel:</span>
+                  <span className="text-foreground">Channel:</span>
                   <span>
                     {applicant.admissionChannel === "F2F"
                       ? "Face-to-Face"
                       : "Online"}
                   </span>
 
-                  <span className="text-muted-foreground">Created:</span>
+                  <span className="text-foreground">Created:</span>
                   <span>
                     {format(
                       new Date(applicant.createdAt),
@@ -511,7 +512,7 @@ export default function EarlyRegistrationDetail() {
                     )}
                   </span>
 
-                  <span className="text-muted-foreground ">Last Updated:</span>
+                  <span className="text-foreground ">Last Updated:</span>
                   <span>
                     {format(
                       new Date(applicant.updatedAt),
@@ -521,7 +522,7 @@ export default function EarlyRegistrationDetail() {
 
                   {applicant.encodedBy && (
                     <>
-                      <span className="text-muted-foreground">Encoded By:</span>
+                      <span className="text-foreground">Encoded By:</span>
                       <span>
                         {applicant.encodedBy.firstName}{" "}
                         {applicant.encodedBy.lastName}
@@ -537,12 +538,12 @@ export default function EarlyRegistrationDetail() {
                     <span>✅</span> Enrolled
                   </h3>
                   <div className="text-xs grid grid-cols-[100px_1fr] gap-2">
-                    <span className="text-muted-foreground">Section:</span>
+                    <span className="text-foreground">Section:</span>
                     <span className="font-bold">
                       {applicant.enrollment.section?.name || "N/A"}
                     </span>
 
-                    <span className="text-muted-foreground">Adviser:</span>
+                    <span className="text-foreground">Adviser:</span>
                     <span>
                       {applicant.enrollment.section?.advisingTeacher?.firstName}{" "}
                       {applicant.enrollment.section?.advisingTeacher?.lastName}

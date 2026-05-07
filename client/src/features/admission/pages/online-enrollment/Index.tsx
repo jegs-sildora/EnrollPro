@@ -234,9 +234,7 @@ export default function Apply() {
                       {schoolName}
                     </h2>
                     <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-destructive/10 text-destructive text-xs font-bold tracking-widest uppercase border border-destructive/20">
-                      {isBosyLocked
-                        ? "Enrollment Finalized"
-                        : "Phase Inactive"}
+                      {isBosyLocked ? "Enrollment Finalized" : "Phase Inactive"}
                     </div>
                   </div>
 
@@ -246,7 +244,7 @@ export default function Apply() {
                         <h3 className="text-xl sm:text-2xl font-black text-black flex items-center justify-center gap-2">
                           ONLINE ENROLLMENT IS NOW CLOSED
                         </h3>
-                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest leading-relaxed">
+                        <p className="text-sm font-bold text-foreground uppercase tracking-widest leading-relaxed">
                           The standard online enrollment period for S.Y.{" "}
                           {activeSchoolYearLabel} has officially ended, and
                           class rosters have been finalized.

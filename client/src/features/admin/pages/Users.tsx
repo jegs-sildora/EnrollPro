@@ -533,7 +533,7 @@ export default function AdminUsers() {
                 {user.suffix ? ` ${user.suffix}` : ""}
               </span>
               <div className="flex items-center gap-3 mt-1">
-                <span className="text-[10px] font-extrabold text-muted-foreground flex items-center gap-1 shrink-0">
+                <span className="text-[10px] font-extrabold text-foreground flex items-center gap-1 shrink-0">
                   <IdCard className="h-3 w-3" />
                   {user.employeeId || (
                     <span className="italic font-normal opacity-50">—</span>
@@ -566,7 +566,7 @@ export default function AdminUsers() {
           return (
             <div className="space-y-1 text-center min-w-[200px] py-1">
               <div className="text-sm font-bold leading-none">{user.email}</div>
-              <div className="text-[11px] font-bold text-muted-foreground flex items-center justify-center gap-1">
+              <div className="text-[11px] font-bold text-foreground flex items-center justify-center gap-1">
                 <Phone className="h-2.5 w-2.5" />
                 {user.mobileNumber || (
                   <span className="italic font-normal opacity-50">—</span>
@@ -643,7 +643,7 @@ export default function AdminUsers() {
           </button>
         ),
         cell: ({ row }) => (
-          <span className="text-[11px] font-bold text-muted-foreground whitespace-nowrap block text-center min-w-[120px]">
+          <span className="text-[11px] font-bold text-foreground whitespace-nowrap block text-center min-w-[120px]">
             {row.original.lastLoginAt ? (
               new Date(row.original.lastLoginAt).toLocaleString("en-US", {
                 month: "short",
@@ -752,7 +752,7 @@ export default function AdminUsers() {
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
         <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
           <CardHeader className="pb-2">
-            <p className="text-xs uppercase tracking-wider font-bold text-muted-foreground">
+            <p className="text-xs uppercase tracking-wider font-bold text-foreground">
               Total Active Staff
             </p>
             <CardTitle className="text-2xl font-extrabold text-emerald-600">
@@ -762,7 +762,7 @@ export default function AdminUsers() {
         </Card>
         <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
           <CardHeader className="pb-2">
-            <p className="text-xs uppercase tracking-wider font-bold text-muted-foreground">
+            <p className="text-xs uppercase tracking-wider font-bold text-foreground">
               Pending Invites / Unverified
             </p>
             <CardTitle className="text-2xl font-extrabold text-orange-600">
@@ -772,7 +772,7 @@ export default function AdminUsers() {
         </Card>
         <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
           <CardHeader className="pb-2">
-            <p className="text-xs uppercase tracking-wider font-bold text-muted-foreground">
+            <p className="text-xs uppercase tracking-wider font-bold text-foreground">
               Locked / Deactivated
             </p>
             <CardTitle className="text-2xl font-extrabold text-destructive">
@@ -905,7 +905,7 @@ export default function AdminUsers() {
           <CardTitle className="text-base sm:text-lg font-extrabold">
             Staff Accounts
           </CardTitle>
-          <p className="text-xs sm:text-sm font-semibold text-muted-foreground">
+          <p className="text-xs sm:text-sm font-semibold text-foreground">
             Showing {users.length} of {total} users
           </p>
         </CardHeader>
@@ -936,7 +936,7 @@ export default function AdminUsers() {
                         {user.lastName}, {user.firstName}
                         {user.suffix ? ` ${user.suffix}` : ""}
                       </p>
-                      <p className="text-xs font-bold text-muted-foreground truncate mt-0.5">
+                      <p className="text-xs font-bold text-foreground truncate mt-0.5">
                         {user.email}
                       </p>
                     </div>
@@ -957,13 +957,13 @@ export default function AdminUsers() {
                         <span className="italic font-normal opacity-50">—</span>
                       )}
                     </div>
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <div className="flex items-center gap-1.5 text-foreground">
                       <IdCard className="h-3 w-3 shrink-0" />
                       {user.employeeId || (
                         <span className="italic font-normal opacity-50">—</span>
                       )}
                     </div>
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <div className="flex items-center gap-1.5 text-foreground">
                       <Phone className="h-3 w-3 shrink-0" />
                       {user.mobileNumber || (
                         <span className="italic font-normal opacity-50">—</span>
@@ -983,7 +983,7 @@ export default function AdminUsers() {
                         {user.isActive ? "Active" : "Inactive"}
                       </span>
                     </div>
-                    <span className="text-[10px] font-bold text-muted-foreground">
+                    <span className="text-[10px] font-bold text-foreground">
                       {user.lastLoginAt
                         ? `Active ${new Date(user.lastLoginAt).toLocaleDateString()}`
                         : "No activity"}
@@ -1063,7 +1063,7 @@ export default function AdminUsers() {
 
           {totalPages > 1 && (
             <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-2">
-              <p className="text-sm font-semibold text-muted-foreground">
+              <p className="text-sm font-semibold text-foreground">
                 Page {page} of {totalPages}
               </p>
               <div className="flex gap-2">
@@ -1112,7 +1112,7 @@ export default function AdminUsers() {
             <UserCogIcon className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
             User Management
           </h1>
-          <p className="text-sm font-medium text-muted-foreground">
+          <p className="text-sm font-bold text-foreground">
             Provision and manage staff accounts
             {schoolName ? ` for ${schoolName}` : ""}
           </p>
@@ -1182,7 +1182,7 @@ export default function AdminUsers() {
           <div className="space-y-6 py-6">
             {/* Identity Section */}
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-foreground">
                 <IdCard className="h-3.5 w-3.5" />
                 Staff Identity
               </div>
@@ -1286,7 +1286,7 @@ export default function AdminUsers() {
                           "w-4 h-4",
                           formData.sex === s.value
                             ? "text-primary"
-                            : "text-muted-foreground",
+                            : "text-foreground",
                         )}
                       />
                       <span className="font-bold">{s.label}</span>
@@ -1298,7 +1298,7 @@ export default function AdminUsers() {
 
             {/* Employment Section */}
             <div className="space-y-4 pt-4 border-t">
-              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-foreground">
                 <Briefcase className="h-3.5 w-3.5" />
                 Employment & Role
               </div>
@@ -1341,7 +1341,7 @@ export default function AdminUsers() {
                       <SelectValue placeholder="Loading sections..." />
                     </SelectTrigger>
                   </Select>
-                  <p className="text-[10px] font-bold text-muted-foreground italic">
+                  <p className="text-[10px] font-bold text-foreground italic">
                     Section list will be populated from the active school year.
                   </p>
                 </motion.div>
@@ -1393,7 +1393,7 @@ export default function AdminUsers() {
 
             {/* Contact Section */}
             <div className="space-y-4 pt-4 border-t">
-              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-foreground">
                 <Mail className="h-3.5 w-3.5" />
                 Contact Information
               </div>
@@ -1454,7 +1454,7 @@ export default function AdminUsers() {
 
             {/* Security Section */}
             <div className="space-y-4 pt-4 border-t">
-              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-foreground">
                 <ShieldAlert className="h-3.5 w-3.5" />
                 Security & Onboarding
               </div>
@@ -1558,7 +1558,7 @@ export default function AdminUsers() {
           <div className="space-y-6 py-6">
             {/* Identity Section */}
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-foreground">
                 <IdCard className="h-3.5 w-3.5" />
                 Staff Identity
               </div>
@@ -1672,7 +1672,7 @@ export default function AdminUsers() {
                           "w-4 h-4",
                           profileFormData.sex === s.value
                             ? "text-primary"
-                            : "text-muted-foreground",
+                            : "text-foreground",
                         )}
                       />
                       <span className="font-bold">{s.label}</span>
@@ -1684,7 +1684,7 @@ export default function AdminUsers() {
 
             {/* Employment Section */}
             <div className="space-y-4 pt-4 border-t">
-              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-foreground">
                 <Briefcase className="h-3.5 w-3.5" />
                 Employment & Role
               </div>
@@ -1764,7 +1764,7 @@ export default function AdminUsers() {
 
             {/* Contact Section */}
             <div className="space-y-4 pt-4 border-t">
-              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-foreground">
                 <Mail className="h-3.5 w-3.5" />
                 Contact Information
               </div>

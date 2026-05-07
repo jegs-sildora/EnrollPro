@@ -133,10 +133,7 @@ function createEmptyDesignationForm(): DesignationFormState {
   return {
     isClassAdviser: false,
     advisorySectionId: "",
-    advisoryEquivalentHoursPerWeek: "5",
     ancillaryRoles: [],
-    isTeachingExempt: false,
-    customTargetTeachingHoursPerWeek: "",
     designationNotes: "",
     effectiveFrom: "",
     effectiveTo: "",
@@ -175,8 +172,8 @@ export default function Teachers() {
     useState<DesignationCollision | null>(null);
   const [allowCollisionOverride, setAllowCollisionOverride] = useState(false);
   const [designationDrawerTab, setDesignationDrawerTab] = useState<
-    "role-load" | "schedule-notes" | "review"
-  >("role-load");
+    "designation" | "schedule-notes" | "review"
+  >("designation");
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<TeacherStatusFilter>("all");
@@ -216,7 +213,10 @@ export default function Teachers() {
         return;
       }
 
-      const normalizedValue = normalizeTeacherFieldValue(field, value as string);
+      const normalizedValue = normalizeTeacherFieldValue(
+        field,
+        value as string,
+      );
 
       if (field === "email") {
         if (normalizedValue.trim().length === 0) {
@@ -506,11 +506,7 @@ export default function Teachers() {
   const hasDeactivationBlocker = useMemo(() => {
     if (!teacherToDeactivate?.designation) return false;
     const d = teacherToDeactivate.designation;
-    return (
-      d.isClassAdviser ||
-      (Number(d.advisoryEquivalentHoursPerWeek) || 0) > 0 ||
-      (Number(d.customTargetTeachingHoursPerWeek) || 0) > 0
-    );
+    return d.isClassAdviser;
   }, [teacherToDeactivate]);
 
   const filteredTeachers = useMemo(() => {
@@ -546,13 +542,10 @@ export default function Teachers() {
                   "Teacher-in-Charge (TIC) / Officer-in-Charge (OIC)",
                 ),
               )
-            : designationFilter === "exempt"
-              ? Boolean(teacher.designation?.isTeachingExempt)
-              : !teacher.designation ||
-                (!teacher.designation.isClassAdviser &&
-                  (!teacher.designation.ancillaryRoles ||
-                    teacher.designation.ancillaryRoles.length === 0) &&
-                  !teacher.designation.isTeachingExempt));
+            : !teacher.designation ||
+              (!teacher.designation.isClassAdviser &&
+                (!teacher.designation.ancillaryRoles ||
+                  teacher.designation.ancillaryRoles.length === 0)));
 
       const matchesSubject =
         subjectFilter === "all" ||
@@ -564,13 +557,7 @@ export default function Teachers() {
         matchesSearch && matchesStatus && matchesDesignation && matchesSubject
       );
     });
-  }, [
-    teachers,
-    searchQuery,
-    statusFilter,
-    designationFilter,
-    subjectFilter,
-  ]);
+  }, [teachers, searchQuery, statusFilter, designationFilter, subjectFilter]);
 
   const paginatedTeachers = useMemo(() => {
     const start = (page - 1) * limit;
@@ -586,7 +573,7 @@ export default function Teachers() {
 
   const openDesignationEditor = (teacher: Teacher) => {
     setDesignationOpenFor(teacher);
-    setDesignationDrawerTab("role-load");
+    setDesignationDrawerTab("designation");
 
     const bosy = bosyDate?.split("T")[0] || null;
     const eosy = eosyDate?.split("T")[0] || null;
@@ -604,13 +591,7 @@ export default function Teachers() {
       isClassAdviser: teacher.designation?.isClassAdviser ?? false,
       advisorySectionId:
         teacher.designation?.advisorySectionId?.toString() ?? "",
-      advisoryEquivalentHoursPerWeek: String(
-        teacher.designation?.advisoryEquivalentHoursPerWeek ?? 5,
-      ),
       ancillaryRoles: teacher.designation?.ancillaryRoles ?? [],
-      isTeachingExempt: teacher.designation?.isTeachingExempt ?? false,
-      customTargetTeachingHoursPerWeek:
-        teacher.designation?.customTargetTeachingHoursPerWeek?.toString() ?? "",
       designationNotes: teacher.designation?.designationNotes ?? "",
       effectiveFrom: teacherFrom ?? bosy ?? "",
       effectiveTo: teacherTo ?? eosy ?? "",
@@ -643,16 +624,6 @@ export default function Teachers() {
 
     setSubmitting(true);
     try {
-      const advisoryEquivalentHoursPerWeek = designationForm.isClassAdviser
-        ? 5
-        : 0;
-
-      const customTargetRaw =
-        designationForm.customTargetTeachingHoursPerWeek.trim();
-      const customTargetTeachingHoursPerWeek = customTargetRaw
-        ? Number(customTargetRaw)
-        : null;
-
       const advisorySectionId = designationForm.advisorySectionId
         ? Number(designationForm.advisorySectionId)
         : null;
@@ -669,10 +640,7 @@ export default function Teachers() {
         schoolYearId: ayId,
         isClassAdviser: designationForm.isClassAdviser,
         advisorySectionId,
-        advisoryEquivalentHoursPerWeek,
         ancillaryRoles: designationForm.ancillaryRoles,
-        isTeachingExempt: designationForm.isTeachingExempt,
-        customTargetTeachingHoursPerWeek,
         designationNotes: designationForm.designationNotes.trim() || null,
         effectiveFrom,
         effectiveTo,
@@ -749,7 +717,6 @@ export default function Teachers() {
       <TeacherDirectoryCard
         loading={loading}
         showSkeleton={showSkeleton}
-        teachers={teachers}
         filteredTeachers={filteredTeachers}
         paginatedTeachers={paginatedTeachers}
         searchQuery={searchQuery}
@@ -965,7 +932,7 @@ export default function Teachers() {
       </div>
 
       {!ayId ? (
-        <div className="rounded-md border border-dashed bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+        <div className="rounded-md border border-dashed bg-muted/30 px-4 py-3 text-sm text-foreground">
           Set an active school year to edit designation metadata.
         </div>
       ) : null}
@@ -998,12 +965,12 @@ export default function Teachers() {
 
           <div className="p-6 space-y-6">
             <div className="space-y-1">
-              <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
+              <p className="text-sm font-bold text-foreground uppercase tracking-wider">
                 Are you sure you want to deactivate:
               </p>
               <div className="flex items-center gap-3 pt-2">
                 <div className="h-10 w-10 rounded-full bg-muted border flex items-center justify-center shrink-0">
-                  <GraduationCap className="h-5 w-5 text-muted-foreground" />
+                  <GraduationCap className="h-5 w-5 text-foreground" />
                 </div>
                 <div>
                   <p className="font-black text-base uppercase leading-none">
@@ -1011,7 +978,7 @@ export default function Teachers() {
                       ? formatTeacherName(teacherToDeactivate)
                       : ""}
                   </p>
-                  <p className="text-[11px] font-bold text-muted-foreground mt-1 uppercase tracking-tight">
+                  <p className="text-[11px] font-bold text-foreground mt-1 uppercase tracking-tight">
                     ID: {teacherToDeactivate?.employeeId || "N/A"}
                   </p>
                 </div>
@@ -1027,21 +994,21 @@ export default function Teachers() {
                   </p>
                   <p className="text-[10px] font-bold text-amber-700 leading-relaxed">
                     ⚠️ Cannot Deactivate: This teacher has an active advisory
-                    section or teaching load. You must reassign their load
-                    before deactivating their account.
+                    assignment. Reassign the advisory section before
+                    deactivating this account.
                   </p>
                 </div>
               </div>
             ) : (
               <>
                 <div className="rounded-xl border bg-muted/30 p-4 space-y-1">
-                  <p className="text-[10px] font-bold text-muted-foreground leading-relaxed uppercase tracking-tight">
+                  <p className="text-[10px] font-bold text-foreground leading-relaxed uppercase tracking-tight">
                     This teacher currently has{" "}
                     <span className="text-foreground font-black">
-                      NO ACTIVE LOAD
+                      NO ACTIVE ADVISORY ASSIGNMENT
                     </span>
                     . Deactivating will revoke system access and remove them
-                    from future scheduling. Historical records will be
+                    from adviser assignment options. Historical records will be
                     preserved.
                   </p>
                 </div>

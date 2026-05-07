@@ -20,6 +20,12 @@ import {
 } from "./controllers/students.health.controller.js";
 import { validate } from "../../middleware/validate.js";
 import { updateStudentSchema, healthRecordSchema } from "@enrollpro/shared";
+import {
+  getSf10Requests,
+  createSf10Request,
+  updateSf10Request,
+  deleteSf10Request,
+} from "./controllers/sf10.controller.js";
 
 const router: Router = Router();
 
@@ -99,6 +105,28 @@ router.post(
   "/:id/verify-psa",
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   verifyPsa,
+);
+
+// SF10 Requests
+router.get(
+  "/:learnerId/sf10-requests",
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  getSf10Requests,
+);
+router.post(
+  "/:learnerId/sf10-requests",
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  createSf10Request,
+);
+router.put(
+  "/:learnerId/sf10-requests/:requestId",
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  updateSf10Request,
+);
+router.delete(
+  "/:learnerId/sf10-requests/:requestId",
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  deleteSf10Request,
 );
 
 export default router;

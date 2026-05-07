@@ -10,11 +10,7 @@ export interface TeacherDesignation {
     gradeLevelId: number;
     gradeLevelName: string | null;
   } | null;
-  advisoryEquivalentHoursPerWeek: number;
   ancillaryRoles: string[];
-  isTeachingExempt: boolean;
-  customTargetTeachingHoursPerWeek: number | null;
-  computedMaxWeeklyHours: number;
   designationNotes: string | null;
   effectiveFrom: string | null;
   effectiveTo: string | null;
@@ -100,10 +96,7 @@ export interface TeacherFormState {
 export interface DesignationFormState {
   isClassAdviser: boolean;
   advisorySectionId: string;
-  advisoryEquivalentHoursPerWeek: string;
   ancillaryRoles: string[];
-  isTeachingExempt: boolean;
-  customTargetTeachingHoursPerWeek: string;
   designationNotes: string;
   effectiveFrom: string;
   effectiveTo: string;
@@ -111,11 +104,6 @@ export interface DesignationFormState {
   reason: string;
 }
 
-export type DesignationDrawerTab = "role-load" | "schedule-notes" | "review";
+export type DesignationDrawerTab = "designation" | "schedule-notes" | "review";
 export type TeacherStatusFilter = "all" | "active" | "inactive";
-export type TeacherDesignationFilter =
-  | "all"
-  | "adviser"
-  | "tic"
-  | "exempt"
-  | "none";
+export type TeacherDesignationFilter = "all" | "adviser" | "tic" | "none";

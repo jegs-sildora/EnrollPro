@@ -349,7 +349,7 @@ export default function Step5Enrollment() {
                 "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase",
                 learnerType === typeOption.value
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
-                  : "border-border bg-white hover:bg-primary/5 text-muted-foreground hover:text-foreground",
+                  : "border-border bg-white hover:bg-primary/5 text-foreground hover:text-foreground",
               )}>
               <span className="font-bold text-sm leading-tight tracking-wide">
                 {typeOption.label}
@@ -439,7 +439,7 @@ export default function Step5Enrollment() {
                 }
               }}
             />
-            <p className="font-bold text-xs italic flex items-center gap-1 text-muted-foreground">
+            <p className="font-bold text-xs italic flex items-center gap-1 text-foreground">
               <Info className="w-4 h-4" />
               Final general average from the last completed grade level.
             </p>
@@ -497,7 +497,7 @@ export default function Step5Enrollment() {
                   "text-xs pl-8",
                   !isScpApplication
                     ? "text-primary-foreground/80"
-                    : "text-muted-foreground",
+                    : "text-foreground",
                 )}>
                 Standard Junior High curriculum.
               </p>
@@ -513,7 +513,7 @@ export default function Step5Enrollment() {
                     ? "border-primary bg-primary text-primary-foreground"
                     : canSelectScpTrack
                       ? "border-border bg-white hover:bg-primary/5"
-                      : "border-border bg-muted/40 text-muted-foreground cursor-not-allowed opacity-70",
+                      : "border-border bg-muted/40 text-foreground cursor-not-allowed opacity-70",
                 )}
                 onClick={selectScpTrack}>
                 <div className="flex items-center gap-3 mb-1">
@@ -537,7 +537,7 @@ export default function Step5Enrollment() {
                     "text-xs pl-8",
                     isScpApplication
                       ? "text-primary-foreground/80"
-                      : "text-muted-foreground",
+                      : "text-foreground",
                   )}>
                   {isLoadingScpConfig
                     ? "Loading available SCP tracks..."
@@ -550,7 +550,7 @@ export default function Step5Enrollment() {
           </div>
 
           {isProgramSelectionLocked && (
-            <p className="font-bold text-xs italic flex items-center gap-1 text-muted-foreground">
+            <p className="font-bold text-xs italic flex items-center gap-1 text-foreground">
               <Info className="w-4 h-4" />
               Learning Program and SCP selection are locked because this form is
               linked to an existing Early Registration.
@@ -558,14 +558,14 @@ export default function Step5Enrollment() {
           )}
 
           {!isScpEligible && (
-            <p className="font-bold text-xs italic flex items-center gap-1 text-muted-foreground">
+            <p className="font-bold text-xs italic flex items-center gap-1 text-foreground">
               <Info className="w-4 h-4" />
               SCP is available only for New Enrollees applying for Grade 7.
             </p>
           )}
 
           {shouldShowScpCard && isLoadingScpConfig && (
-            <p className="font-bold text-xs italic flex items-center gap-1 text-muted-foreground">
+            <p className="font-bold text-xs italic flex items-center gap-1 text-foreground">
               <Info className="w-4 h-4" />
               Loading available SCP programs...
             </p>
@@ -582,7 +582,7 @@ export default function Step5Enrollment() {
             !isLoadingScpConfig &&
             !scpConfigError &&
             !hasOfferedScpPrograms && (
-              <p className="font-bold text-xs italic flex items-center gap-1 text-muted-foreground">
+              <p className="font-bold text-xs italic flex items-center gap-1 text-foreground">
                 <Info className="w-4 h-4" />
                 No SCP programs are currently offered for this School Year.
               </p>
@@ -639,7 +639,7 @@ export default function Step5Enrollment() {
                               "text-[0.6875rem] pl-8 italic",
                               scpType === program.id
                                 ? "text-primary-foreground/80"
-                                : "text-muted-foreground",
+                                : "text-foreground",
                             )}>
                             {program.desc}
                           </p>

@@ -262,7 +262,7 @@ export default function PipelineBatchScpAssessmentInterviewGrid({
             }
 
             return (
-              <Badge className="h-6 gap-1 rounded-full bg-muted text-muted-foreground hover:bg-muted">
+              <Badge className="h-6 gap-1 rounded-full bg-muted text-foreground hover:bg-muted">
                 <Minus className="size-3.5" />
                 Pending
               </Badge>

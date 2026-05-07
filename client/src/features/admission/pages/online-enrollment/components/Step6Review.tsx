@@ -75,7 +75,7 @@ const DataItem = ({
 
   return (
     <div className="space-y-0.5">
-      <p className="text-[0.625rem] font-bold uppercase text-muted-foreground ">
+      <p className="text-[0.625rem] font-bold uppercase text-foreground ">
         {label}
       </p>
       <p className="font-bold text-foreground truncate">
@@ -375,7 +375,7 @@ export default function Step6Review({
                 autoComplete="off"
                 value={format(new Date(), "MMMM dd, yyyy")}
                 readOnly
-                className="h-12 bg-muted/50 font-bold text-muted-foreground cursor-not-allowed uppercase"
+                className="h-12 bg-muted/50 font-bold text-foreground cursor-not-allowed uppercase"
               />
             </div>
           </div>
@@ -389,7 +389,7 @@ export default function Step6Review({
             onClick={() => setIsConfirmDialogOpen(true)}>
             Submit Application
           </Button>
-          <p className="text-xs text-muted-foreground flex items-center gap-1.5 font-medium italic">
+          <p className="text-xs text-foreground flex items-center gap-1.5 font-medium italic">
             <Info className="w-3.5 h-3.5" />
             Privacy consent was recorded before this submission.
           </p>

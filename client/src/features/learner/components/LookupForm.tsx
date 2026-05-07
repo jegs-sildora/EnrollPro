@@ -104,7 +104,7 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
           <div className="space-y-2">
             <Label
               htmlFor="lrn"
-              className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              className="text-xs font-bold uppercase tracking-wider text-foreground">
               Learner Reference Number (LRN) *
             </Label>
             <Input
@@ -121,7 +121,7 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <Label className="text-xs font-bold uppercase tracking-wider text-foreground">
               Date of Birth *
             </Label>
             <div className="grid grid-cols-3 gap-2">
@@ -181,7 +181,7 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
           <div className="space-y-2">
             <Label
               htmlFor="pin"
-              className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              className="text-xs font-bold uppercase tracking-wider text-foreground">
               Portal PIN *
             </Label>
             <Input
@@ -196,7 +196,7 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
               maxLength={6}
               required
             />
-            <p className="text-[0.625rem] text-muted-foreground text-center">
+            <p className="text-[0.625rem] text-foreground text-center">
               (Found on your official enrollment confirmation slip)
             </p>
           </div>
@@ -211,7 +211,7 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
           <div className="text-center pt-2 border-t">
             <button
               type="button"
-              className="text-[0.625rem] text-muted-foreground hover:text-primary transition-colors underline"
+              className="text-[0.625rem] text-foreground hover:text-primary transition-colors underline"
               onClick={() =>
                 alert(
                   "Please visit the school registrar in person with a valid ID or birth certificate to reset your PIN.",

@@ -40,6 +40,7 @@ model User {
   recordedHealthRecords                HealthRecord[]                 @relation("HealthRecordRecordedBy")
   lockedSchoolYears                    SchoolYear[]                   @relation("SchoolYearLockedBy")
   updatedTeacherDesignations           TeacherDesignation[]           @relation("TeacherDesignationUpdatedBy")
+  ecosystemSyncStatuses                EcosystemSyncStatus[]
   createdBy                            User?                          @relation("UserCreatedBy", fields: [createdById], references: [id])
   createdUsers                         User[]                         @relation("UserCreatedBy")
 
@@ -48,27 +49,28 @@ model User {
 
 /// Faculty members who serve as section advisers; not login users
 model Teacher {
-  id                  Int                  @id @default(autoincrement())
-  employeeId          String               @unique(map: "uq_teachers_employee_id") @map("employee_id")
-  firstName           String               @map("first_name")
-  lastName            String               @map("last_name")
-  middleName          String?              @map("middle_name")
-  email               String               @unique(map: "uq_teachers_email") @map("email")
-  contactNumber       String?              @map("contact_number")
-  specialization      String?
-  isActive            Boolean              @default(true) @map("is_active")
-  createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt           DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
-  photoPath           String?              @map("photo_path")
-  plantillaPosition   String?              @map("plantilla_position")
-  designation         String?
-  departmentId        Int?                 @map("department_id")
-  atlasSyncEvents     AtlasSyncEvent[]
-  headedDepartment    Department?          @relation("DepartmentHead")
-  advisoryHistory     SectionAdviser[]
-  teacherDesignations TeacherDesignation[]
-  subjects            TeacherSubject[]
-  department          Department?          @relation("DepartmentTeachers", fields: [departmentId], references: [id])
+  id                    Int                   @id @default(autoincrement())
+  employeeId            String                @unique(map: "uq_teachers_employee_id") @map("employee_id")
+  firstName             String                @map("first_name")
+  lastName              String                @map("last_name")
+  middleName            String?               @map("middle_name")
+  email                 String                @unique(map: "uq_teachers_email") @map("email")
+  contactNumber         String?               @map("contact_number")
+  specialization        String?
+  isActive              Boolean               @default(true) @map("is_active")
+  createdAt             DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  photoPath             String?               @map("photo_path")
+  plantillaPosition     String?               @map("plantilla_position")
+  designation           String?
+  departmentId          Int?                  @map("department_id")
+  atlasSyncEvents       AtlasSyncEvent[]
+  headedDepartment      Department?           @relation("DepartmentHead")
+  advisoryHistory       SectionAdviser[]
+  teacherDesignations   TeacherDesignation[]
+  subjects              TeacherSubject[]
+  department            Department?           @relation("DepartmentTeachers", fields: [departmentId], references: [id])
+  ecosystemSyncStatuses EcosystemSyncStatus[]
 
   @@map("teachers")
 }
@@ -224,12 +226,33 @@ model Learner {
   birthCertificateVerifiedBy    String?                        @map("birth_certificate_verified_by")
   birthCertificateVerifiedDate  DateTime?                      @map("birth_certificate_verified_date") @db.Timestamptz(6)
   hasPsaBirthCertificate        Boolean                        @default(false) @map("has_psa_birth_certificate")
+  status                        LearnerStatus                  @default(ACTIVE)
   earlyRegistrationApplications EarlyRegistrationApplication[]
   enrollmentApplications        EnrollmentApplication[]
   healthRecords                 HealthRecord[]
+  ecosystemSyncStatuses         EcosystemSyncStatus[]
+  sf10Requests                  Sf10Request[]
 
   @@index([lastName, firstName, birthdate], map: "idx_learners_dedup")
   @@map("learners")
+}
+
+/// Tracking of SF10 (Learner's Permanent Academic Record) requests from other schools
+model Sf10Request {
+  id                      Int                 @id @default(autoincrement())
+  learnerId               Int                 @map("learner_id")
+  requestingSchoolName    String              @map("requesting_school_name")
+  requestingSchoolDepedId String?             @map("requesting_school_deped_id")
+  requestDate             DateTime            @default(now()) @map("request_date") @db.Timestamptz(6)
+  status                  Sf10RequestStatus   @default(PENDING)
+  sentDate                DateTime?           @map("sent_date") @db.Timestamptz(6)
+  notes                   String?
+  createdAt               DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  learner                 Learner             @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+
+  @@index([learnerId], map: "idx_sf10_requests_learner_id")
+  @@map("sf10_requests")
 }
 
 /// One registration record per learner per school year (Phase 1: Jan–May)
@@ -636,28 +659,25 @@ model TeacherSubject {
   @@map("teacher_subjects")
 }
 
-/// School-year scoped ATLAS designation metadata for faculty load computation
+/// School-year scoped faculty designation and advisory assignment metadata
 model TeacherDesignation {
-  id                               Int        @id @default(autoincrement())
-  teacherId                        Int        @map("teacher_id")
-  schoolYearId                     Int        @map("school_year_id")
-  isClassAdviser                   Boolean    @default(false) @map("is_class_adviser")
-  advisoryEquivalentHoursPerWeek   Float      @default(0) @map("advisory_equivalent_hours_per_week")
-  isTeachingExempt                 Boolean    @default(false) @map("is_teaching_exempt")
-  customTargetTeachingHoursPerWeek Float?     @map("custom_target_teaching_hours_per_week")
-  designationNotes                 String?    @map("designation_notes")
-  effectiveFrom                    DateTime?  @map("effective_from") @db.Date
-  effectiveTo                      DateTime?  @map("effective_to") @db.Date
-  updateReason                     String?    @map("update_reason")
-  updatedById                      Int?       @map("updated_by_id")
-  createdAt                        DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt                        DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
-  advisorySectionId                Int?       @map("advisory_section_id")
-  ancillaryRoles                   String[]   @default([]) @map("ancillary_roles")
-  advisorySection                  Section?   @relation("TeacherDesignationAdvisorySection", fields: [advisorySectionId], references: [id])
-  schoolYear                       SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
-  teacher                          Teacher    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  updatedBy                        User?      @relation("TeacherDesignationUpdatedBy", fields: [updatedById], references: [id])
+  id                Int        @id @default(autoincrement())
+  teacherId         Int        @map("teacher_id")
+  schoolYearId      Int        @map("school_year_id")
+  isClassAdviser    Boolean    @default(false) @map("is_class_adviser")
+  designationNotes  String?    @map("designation_notes")
+  effectiveFrom     DateTime?  @map("effective_from") @db.Date
+  effectiveTo       DateTime?  @map("effective_to") @db.Date
+  updateReason      String?    @map("update_reason")
+  updatedById       Int?       @map("updated_by_id")
+  createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+  advisorySectionId Int?       @map("advisory_section_id")
+  ancillaryRoles    String[]   @default([]) @map("ancillary_roles")
+  advisorySection   Section?   @relation("TeacherDesignationAdvisorySection", fields: [advisorySectionId], references: [id])
+  schoolYear        SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+  teacher           Teacher    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  updatedBy         User?      @relation("TeacherDesignationUpdatedBy", fields: [updatedById], references: [id])
 
   @@unique([teacherId, schoolYearId], name: "uq_teacher_designations_teacher_sy")
   @@index([schoolYearId], map: "idx_teacher_designations_school_year_id")
@@ -927,6 +947,23 @@ enum SectioningMethod {
   @@map("sectioning_method")
 }
 
+enum LearnerStatus {
+  ACTIVE
+  JHS_COMPLETER
+  DROPPED
+  TRANSFERRED_OUT
+
+  @@map("learner_status")
+}
+
+enum Sf10RequestStatus {
+  PENDING
+  SENT
+  CANCELLED
+
+  @@map("sf10_request_status")
+}
+
 enum PortalControl {
   AUTO
   FORCE_OPEN_PHASE_1
@@ -934,4 +971,45 @@ enum PortalControl {
   FORCE_CLOSE_ALL
 
   @@map("portal_control")
+}
+
+/// Tracking synchronization status for a user/learner/teacher across various school subsystems
+model EcosystemSyncStatus {
+  id           Int        @id @default(autoincrement())
+  userId       Int?       @map("user_id")
+  learnerId    Int?       @map("learner_id")
+  teacherId    Int?       @map("teacher_id")
+  ecosystem    Ecosystem
+  status       SyncStatus @default(PENDING)
+  externalId   String?    @map("external_id")
+  lastSyncedAt DateTime?  @map("last_synced_at") @db.Timestamptz(6)
+  errorMessage String?    @map("error_message")
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user         User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  learner      Learner?   @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+  teacher      Teacher?   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ecosystem])
+  @@unique([learnerId, ecosystem])
+  @@unique([teacherId, ecosystem])
+  @@map("ecosystem_sync_statuses")
+}
+
+enum Ecosystem {
+  ENROLLPRO
+  ATLAS
+  SMART
+  AIMS
+
+  @@map("ecosystem_type")
+}
+
+enum SyncStatus {
+  PENDING
+  SYNCED
+  FAILED
+  NOT_APPLICABLE
+
+  @@map("sync_status")
 }

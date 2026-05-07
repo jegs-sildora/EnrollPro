@@ -31,7 +31,7 @@ function CollapsibleSection({ title, icon, children }: SectionProps) {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-between w-full p-3 font-bold text-sm cursor-pointer hover:bg-[hsl(var(--muted)/50)] transition-colors text-left group">
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground group-hover:text-primary transition-colors">
+          <span className="text-foreground group-hover:text-primary transition-colors">
             {isOpen ? (
               <ChevronDown className="h-4 w-4" />
             ) : (
@@ -42,7 +42,7 @@ function CollapsibleSection({ title, icon, children }: SectionProps) {
           <span>{title}</span>
         </div>
         <span
-          className={`text-[10px] uppercase tracking-widest text-muted-foreground ${isOpen ? "opacity-60" : ""}`}>
+          className={`text-[10px] uppercase tracking-widest text-foreground ${isOpen ? "opacity-60" : ""}`}>
           {isOpen ? "Hide" : "Show"}
         </span>
       </button>
@@ -88,10 +88,10 @@ function DataItem({
 
   return (
     <>
-      <span className="text-muted-foreground">{label}:</span>
+      <span className="text-foreground">{label}:</span>
       <span
         className={
-          !valid ? "text-muted-foreground/50 italic font-medium" : "uppercase"
+          !valid ? "text-foreground/50 italic font-medium" : "uppercase"
         }>
         {valid ? String(value) : "Not provided"}
       </span>
@@ -128,21 +128,44 @@ export function PersonalInfo({ applicant }: { applicant: ApplicantDetail }) {
     <CollapsibleSection
       title="Personal Information"
       icon={<User className="h-4 w-4" />}>
-      <DataItem label="Full Name" value={fullName} />
-      <DataItem label="Date of Birth" value={formattedBirthDate} />
-      <DataItem label="Age" value={age} />
-      <DataItem label="Sex at Birth" value={applicant.sex?.toUpperCase()} />
-      <DataItem label="Place of Birth" value={applicant.placeOfBirth} />
-      <DataItem label="Religion" value={applicant.religion} />
-      <DataItem label="Mother Tongue" value={applicant.motherTongue} />
+      <DataItem
+        label="Full Name"
+        value={fullName}
+      />
+      <DataItem
+        label="Date of Birth"
+        value={formattedBirthDate}
+      />
+      <DataItem
+        label="Age"
+        value={age}
+      />
+      <DataItem
+        label="Sex at Birth"
+        value={applicant.sex?.toUpperCase()}
+      />
+      <DataItem
+        label="Place of Birth"
+        value={applicant.placeOfBirth}
+      />
+      <DataItem
+        label="Religion"
+        value={applicant.religion}
+      />
+      <DataItem
+        label="Mother Tongue"
+        value={applicant.motherTongue}
+      />
     </CollapsibleSection>
   );
 }
 
 export function AddressInfo({ applicant }: { applicant: ApplicantDetail }) {
-  const addr = applicant.currentAddress || (applicant as unknown as { address: unknown }).address;
+  const addr =
+    applicant.currentAddress ||
+    (applicant as unknown as { address: unknown }).address;
 
-  const addrObj = (addr as unknown) as Record<string, unknown> | null;
+  const addrObj = addr as unknown as Record<string, unknown> | null;
   const applicantObj = applicant as unknown as Record<string, unknown>;
 
   const houseNoStreet =
@@ -168,25 +191,44 @@ export function AddressInfo({ applicant }: { applicant: ApplicantDetail }) {
     <CollapsibleSection
       title="Home Address"
       icon={<MapPin className="h-4 w-4" />}>
-      <DataItem label="House No/Street" value={houseNoStreet} />
-      <DataItem label="Sitio/Purok" value={sitio} />
-      <DataItem label="Barangay" value={barangay} />
-      <DataItem label="City/Municipality" value={cityMunicipality} />
-      <DataItem label="Province" value={province} />
+      <DataItem
+        label="House No/Street"
+        value={houseNoStreet}
+      />
+      <DataItem
+        label="Sitio/Purok"
+        value={sitio}
+      />
+      <DataItem
+        label="Barangay"
+        value={barangay}
+      />
+      <DataItem
+        label="City/Municipality"
+        value={cityMunicipality}
+      />
+      <DataItem
+        label="Province"
+        value={province}
+      />
     </CollapsibleSection>
   );
 }
 
 export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
-  const applicantObj = applicant as unknown as { 
-    fatherName?: Record<string, unknown>; 
-    motherName?: Record<string, unknown>; 
-    guardianInfo?: Record<string, unknown>; 
+  const applicantObj = applicant as unknown as {
+    fatherName?: Record<string, unknown>;
+    motherName?: Record<string, unknown>;
+    guardianInfo?: Record<string, unknown>;
     primaryContact?: string;
   };
   const { fatherName, motherName, guardianInfo, primaryContact } = applicantObj;
 
-  const getContactInfo = (label: string, info: Record<string, unknown> | undefined, isPrimary: boolean) => {
+  const getContactInfo = (
+    label: string,
+    info: Record<string, unknown> | undefined,
+    isPrimary: boolean,
+  ) => {
     const firstName = info?.firstName as string | undefined;
     const lastName = (info?.lastName || info?.maidenName) as string | undefined;
 
@@ -228,10 +270,16 @@ export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
     primaryContact === "GUARDIAN",
   );
 
-  const renderContact = (c: { label: string; fullName: string | null; isPrimary: boolean; details: string; relationship: string | null }) => {
+  const renderContact = (c: {
+    label: string;
+    fullName: string | null;
+    isPrimary: boolean;
+    details: string;
+    relationship: string | null;
+  }) => {
     return (
       <React.Fragment key={c.label}>
-        <span className="text-muted-foreground flex items-center gap-1.5">
+        <span className="text-foreground flex items-center gap-1.5">
           {c.label}:
           {c.isPrimary && (
             <span className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded leading-none">
@@ -243,12 +291,12 @@ export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
           {c.fullName ? (
             <span className="uppercase">{c.fullName}</span>
           ) : (
-            <span className="text-muted-foreground/50 italic font-medium">
+            <span className="text-foreground/50 italic font-medium">
               Not provided
             </span>
           )}
           <span
-            className={`text-xs font-medium ${c.details ? "text-muted-foreground" : "text-muted-foreground/50 italic"}`}>
+            className={`text-xs font-medium ${c.details ? "text-foreground" : "text-foreground/50 italic"}`}>
             {c.details || "No contact info"}
             {c.relationship && ` (${c.relationship})`}
           </span>
@@ -278,10 +326,9 @@ export function PreviousSchool({ applicant }: { applicant: ApplicantDetail }) {
     ? Number(applicant.generalAverage).toFixed(2)
     : null;
 
-  const readingProfile = (applicant as unknown as { readingProfileLevel?: string }).readingProfileLevel?.replace(
-    "_",
-    " ",
-  );
+  const readingProfile = (
+    applicant as unknown as { readingProfileLevel?: string }
+  ).readingProfileLevel?.replace("_", " ");
 
   // Visibility check
   if (
@@ -299,17 +346,38 @@ export function PreviousSchool({ applicant }: { applicant: ApplicantDetail }) {
     <CollapsibleSection
       title="Previous School"
       icon={<GraduationCap className="h-4 w-4" />}>
-      <DataItem label="School Name" value={applicant.lastSchoolName} />
-      <DataItem label="School ID" value={applicant.lastSchoolId} />
-      <DataItem label="Grade Completed" value={applicant.lastGradeCompleted} />
+      <DataItem
+        label="School Name"
+        value={applicant.lastSchoolName}
+      />
+      <DataItem
+        label="School ID"
+        value={applicant.lastSchoolId}
+      />
+      <DataItem
+        label="Grade Completed"
+        value={applicant.lastGradeCompleted}
+      />
       <DataItem
         label="Year Attended"
         value={applicant.schoolYearLastAttended}
       />
-      <DataItem label="School Address" value={applicant.lastSchoolAddress} />
-      <DataItem label="School Type" value={applicant.lastSchoolType} />
-      <DataItem label="General Average" value={formattedAve} />
-      <DataItem label="Reading Profile" value={readingProfile} />
+      <DataItem
+        label="School Address"
+        value={applicant.lastSchoolAddress}
+      />
+      <DataItem
+        label="School Type"
+        value={applicant.lastSchoolType}
+      />
+      <DataItem
+        label="General Average"
+        value={formattedAve}
+      />
+      <DataItem
+        label="Reading Profile"
+        value={readingProfile}
+      />
     </CollapsibleSection>
   );
 }
@@ -325,9 +393,12 @@ export function Classifications({ applicant }: { applicant: ApplicantDetail }) {
     <CollapsibleSection
       title="Classifications"
       icon={<Tags className="h-4 w-4" />}>
-      <DataItem label="Learner Type" value={learnerType} />
+      <DataItem
+        label="Learner Type"
+        value={learnerType}
+      />
 
-      <span className="text-muted-foreground">IP Community:</span>
+      <span className="text-foreground">IP Community:</span>
       <div>
         {isIp ? (
           <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">
@@ -336,13 +407,13 @@ export function Classifications({ applicant }: { applicant: ApplicantDetail }) {
         ) : (
           <Badge
             variant="outline"
-            className="text-muted-foreground/50 border-muted">
+            className="text-foreground/50 border-muted">
             ✕ Not an IP Member
           </Badge>
         )}
       </div>
 
-      <span className="text-muted-foreground">4Ps Beneficiary:</span>
+      <span className="text-foreground">4Ps Beneficiary:</span>
       <div>
         {is4Ps ? (
           <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200">
@@ -351,13 +422,13 @@ export function Classifications({ applicant }: { applicant: ApplicantDetail }) {
         ) : (
           <Badge
             variant="outline"
-            className="text-muted-foreground/50 border-muted">
+            className="text-foreground/50 border-muted">
             ✕ Not a 4Ps Beneficiary
           </Badge>
         )}
       </div>
 
-      <span className="text-muted-foreground">Disability:</span>
+      <span className="text-foreground">Disability:</span>
       <div>
         {isPwd ? (
           <div className="space-y-2">
@@ -380,13 +451,13 @@ export function Classifications({ applicant }: { applicant: ApplicantDetail }) {
         ) : (
           <Badge
             variant="outline"
-            className="text-muted-foreground/50 border-muted">
+            className="text-foreground/50 border-muted">
             ✕ No Disability
           </Badge>
         )}
       </div>
 
-      <span className="text-muted-foreground">Balik-Aral:</span>
+      <span className="text-foreground">Balik-Aral:</span>
       <div>
         {isBalikAral ? (
           <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200">
@@ -395,7 +466,7 @@ export function Classifications({ applicant }: { applicant: ApplicantDetail }) {
         ) : (
           <Badge
             variant="outline"
-            className="text-muted-foreground/50 border-muted">
+            className="text-foreground/50 border-muted">
             ✕ No
           </Badge>
         )}

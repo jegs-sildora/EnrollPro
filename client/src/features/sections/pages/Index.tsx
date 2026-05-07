@@ -375,7 +375,7 @@ export default function Sections() {
         remarks.push(
           <p
             key="sf1-remark"
-            className="text-[9px] font-bold text-muted-foreground mt-0.5 italic leading-tight">
+            className="text-[9px] font-bold text-foreground mt-0.5 italic leading-tight">
             {learner.sf1Remarks}
           </p>,
         );
@@ -645,11 +645,10 @@ export default function Sections() {
         </h3>
         <div className="space-y-3">
           {sectionsToRender.map((s) => {
-            const displaySectionName = formatSectionLabel(
-              s.name,
-            );
+            const displaySectionName = formatSectionLabel(s.name);
             const isDeleteDisabled = s.enrolledCount > 0;
-            const fillPercent = s.maxCapacity > 0 ? (s.enrolledCount / s.maxCapacity) * 100 : 0;
+            const fillPercent =
+              s.maxCapacity > 0 ? (s.enrolledCount / s.maxCapacity) * 100 : 0;
             const isOverCapacity = s.enrolledCount > s.maxCapacity;
 
             return (
@@ -657,9 +656,9 @@ export default function Sections() {
                 key={s.id}
                 className={cn(
                   "flex flex-col sm:flex-row sm:items-center justify-between rounded-lg border bg-card p-4 shadow-sm transition-all gap-4",
-                  isOverCapacity 
-                    ? "border-red-300 bg-red-50/30 hover:border-red-400" 
-                    : "border-border hover:border-primary/20"
+                  isOverCapacity
+                    ? "border-red-300 bg-red-50/30 hover:border-red-400"
+                    : "border-border hover:border-primary/20",
                 )}>
                 <div className="flex items-start sm:items-center gap-4">
                   <div className="text-2xl leading-none mt-0.5 sm:mt-0">
@@ -676,7 +675,9 @@ export default function Sections() {
                         {formatProgramType(s.programType)}
                       </Badge>
                       {s.isHomogeneous && s.programType === "REGULAR" && (
-                        <Badge variant="outline" className="text-[9px] uppercase tracking-wider font-black border-primary/20 text-primary">
+                        <Badge
+                          variant="outline"
+                          className="text-[9px] uppercase tracking-wider font-black border-primary/20 text-primary">
                           Pilot
                         </Badge>
                       )}
@@ -701,14 +702,16 @@ export default function Sections() {
                         <span className="text-foreground font-semibold">
                           Capacity:
                         </span>
-                        <span className={cn(
-                          "font-bold",
-                          isOverCapacity ? "text-red-700" : "text-foreground"
-                        )}>
-                          {s.enrolledCount}/{s.maxCapacity}{" "}
-                          <span className={cn(
-                            isOverCapacity ? "font-black" : "text-foreground"
+                        <span
+                          className={cn(
+                            "font-bold",
+                            isOverCapacity ? "text-red-700" : "text-foreground",
                           )}>
+                          {s.enrolledCount}/{s.maxCapacity}{" "}
+                          <span
+                            className={cn(
+                              isOverCapacity ? "font-black" : "text-foreground",
+                            )}>
                             ({Math.round(fillPercent)}%)
                           </span>
                         </span>
@@ -967,10 +970,12 @@ export default function Sections() {
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {heatmapItems.map(({ group, section }) => {
-                  const fillPercent = section.maxCapacity > 0 
-                    ? (section.enrolledCount / section.maxCapacity) * 100 
-                    : 0;
-                  const isOverCapacity = section.enrolledCount > section.maxCapacity;
+                  const fillPercent =
+                    section.maxCapacity > 0
+                      ? (section.enrolledCount / section.maxCapacity) * 100
+                      : 0;
+                  const isOverCapacity =
+                    section.enrolledCount > section.maxCapacity;
 
                   return (
                     <div
@@ -978,9 +983,7 @@ export default function Sections() {
                       onClick={() =>
                         setViewRosterSection({
                           id: section.id,
-                          name: formatSectionLabel(
-                            section.name,
-                          ),
+                          name: formatSectionLabel(section.name),
                           gradeLevelName: group.gradeLevelName,
                           adviserName: section.advisingTeacher?.name ?? null,
                           maxCapacity: section.maxCapacity,
@@ -993,7 +996,7 @@ export default function Sections() {
                         "flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/30 transition-all group",
                         isOverCapacity
                           ? "border-red-300 bg-red-50/40 hover:border-red-400"
-                          : "border-border hover:border-primary/50"
+                          : "border-border hover:border-primary/50",
                       )}>
                       <span className="text-lg group-hover:scale-110 transition-transform">
                         {fillEmoji(fillPercent)}
@@ -1009,7 +1012,7 @@ export default function Sections() {
                           <div
                             className={cn(
                               "h-2 rounded-full transition-all",
-                              fillColor(fillPercent)
+                              fillColor(fillPercent),
                             )}
                             style={{
                               width: `${Math.min(fillPercent, 100)}%`,
@@ -1017,10 +1020,13 @@ export default function Sections() {
                           />
                         </div>
                       </div>
-                      <span className={cn(
-                        "text-xs font-bold whitespace-nowrap",
-                        isOverCapacity ? "text-red-700 font-black" : "text-foreground"
-                      )}>
+                      <span
+                        className={cn(
+                          "text-xs font-bold whitespace-nowrap",
+                          isOverCapacity
+                            ? "text-red-700 font-black"
+                            : "text-foreground",
+                        )}>
                         {section.enrolledCount}/{section.maxCapacity}
                       </span>
                     </div>
@@ -1260,8 +1266,7 @@ export default function Sections() {
                               "Basic Education Curriculum (BEC)",
                               g.sections.filter(
                                 (s) =>
-                                  !isSpecialSection(s) &&
-                                  !isPilotSection(s),
+                                  !isSpecialSection(s) && !isPilotSection(s),
                               ),
                               g.gradeLevelName,
                               g.gradeLevelId,
@@ -1419,17 +1424,17 @@ export default function Sections() {
                     School Form 1 (SF1)
                   </DialogTitle>
                   <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2 text-[13px] font-black uppercase tracking-wider text-muted-foreground">
+                    <div className="flex items-center gap-2 text-[13px] font-black uppercase tracking-wider text-foreground">
                       <span>
                         {viewRosterSection?.gradeLevelName} -{" "}
                         {viewRosterSection?.name}
                       </span>
                       <span className="w-1.5 h-1.5 rounded-full bg-muted" />
-                      <span className="text-muted-foreground">
+                      <span className="text-foreground">
                         S.Y. {activeSchoolYearLabel || "2026-2027"}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                    <div className="flex items-center gap-2 text-xs font-bold text-foreground uppercase tracking-widest">
                       <span>Class Adviser:</span>
                       {viewRosterSection?.adviserName ? (
                         <span className="text-foreground">
@@ -1501,7 +1506,7 @@ export default function Sections() {
           {!loadingRoster && roster.length > 0 && (
             <div className="bg-muted/10 border-b border-border/60 px-8 py-2.5 flex items-center justify-center gap-12 select-none">
               <div className="flex items-center gap-3">
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">
+                <p className="text-[10px] font-black text-foreground uppercase tracking-[0.2em]">
                   Total Learners
                 </p>
                 <p className="text-base font-black text-foreground">
@@ -1554,19 +1559,19 @@ export default function Sections() {
                   <Table>
                     <TableHeader>
                       <TableRow className="hover:bg-transparent border-none">
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-[10px] font-black uppercase h-11 px-5 text-muted-foreground tracking-wider w-[50px] border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-[10px] font-black uppercase h-11 px-5 text-foreground tracking-wider w-[50px] border-b border-border">
                           #
                         </TableHead>
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-[10px] font-black uppercase h-11 px-5 text-muted-foreground tracking-wider w-[140px] border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-[10px] font-black uppercase h-11 px-5 text-foreground tracking-wider w-[140px] border-b border-border">
                           LRN
                         </TableHead>
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-[10px] font-black uppercase h-11 px-5 text-muted-foreground tracking-wider border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-[10px] font-black uppercase h-11 px-5 text-foreground tracking-wider border-b border-border">
                           Learner Name (Last, First)
                         </TableHead>
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-[10px] font-black uppercase h-11 px-5 text-center text-muted-foreground tracking-wider w-[70px] border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-[10px] font-black uppercase h-11 px-5 text-center text-foreground tracking-wider w-[70px] border-b border-border">
                           Age
                         </TableHead>
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-[10px] font-black uppercase h-11 px-5 text-center text-muted-foreground tracking-wider w-[160px] border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-[10px] font-black uppercase h-11 px-5 text-center text-foreground tracking-wider w-[160px] border-b border-border">
                           Remarks
                         </TableHead>
                       </TableRow>
@@ -1590,10 +1595,10 @@ export default function Sections() {
                             <TableRow
                               key={learner.id}
                               className="hover:bg-muted/50 border-b border-border/50 last:border-0 transition-colors group">
-                              <TableCell className="text-[11px] font-black text-muted-foreground text-center px-5">
+                              <TableCell className="text-[11px] font-black text-foreground text-center px-5">
                                 {index + 1}
                               </TableCell>
-                              <TableCell className="text-[11px] font-bold  text-muted-foreground group-hover:text-foreground transition-colors px-5">
+                              <TableCell className="text-[11px] font-bold  text-foreground group-hover:text-foreground transition-colors px-5">
                                 {learner.lrn || "NO LRN"}
                               </TableCell>
                               <TableCell className="text-sm font-black uppercase py-4 px-5 text-left">
@@ -1636,10 +1641,10 @@ export default function Sections() {
                             <TableRow
                               key={learner.id}
                               className="hover:bg-muted/50 border-b border-border/50 last:border-0 transition-colors group">
-                              <TableCell className="text-[11px] font-black text-muted-foreground text-center px-5">
+                              <TableCell className="text-[11px] font-black text-foreground text-center px-5">
                                 {index + 1}
                               </TableCell>
-                              <TableCell className="text-[11px] font-bold  text-muted-foreground group-hover:text-foreground transition-colors px-5">
+                              <TableCell className="text-[11px] font-bold  text-foreground group-hover:text-foreground transition-colors px-5">
                                 {learner.lrn || "NO LRN"}
                               </TableCell>
                               <TableCell className="text-sm font-black uppercase py-4 px-5 text-left">
@@ -1672,7 +1677,7 @@ export default function Sections() {
 
           <DialogFooter className="bg-muted/20 border-t border-border px-8 py-5 flex flex-row items-center justify-between">
             <div className="flex items-center gap-4">
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+              <p className="text-[10px] font-black text-foreground uppercase tracking-widest">
                 DepEd Order No. 017, s. 2025 Compliant
               </p>
             </div>

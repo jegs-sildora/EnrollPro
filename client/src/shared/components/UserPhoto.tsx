@@ -39,13 +39,15 @@ export function UserPhoto({
     <div
       className={cn(
         "relative overflow-hidden bg-muted flex items-center justify-center shrink-0",
-        onEnlarge && imageUrl && !error && "cursor-zoom-in hover:opacity-90 transition-opacity",
-        containerClassName
+        onEnlarge &&
+          imageUrl &&
+          !error &&
+          "cursor-zoom-in hover:opacity-90 transition-opacity",
+        containerClassName,
       )}
-      onClick={onEnlarge && imageUrl && !error ? onEnlarge : undefined}
-    >
+      onClick={onEnlarge && imageUrl && !error ? onEnlarge : undefined}>
       {showFallback ? (
-        fallbackIcon || <User className="w-1/2 h-1/2 text-muted-foreground/40" />
+        fallbackIcon || <User className="w-1/2 h-1/2 text-foreground/40" />
       ) : (
         <img
           src={imageUrl}

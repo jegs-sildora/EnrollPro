@@ -339,6 +339,11 @@ export const createStudentsLifecycleController = (
             },
           });
 
+          await tx.learner.update({
+            where: { id: application.learnerId },
+            data: { status: "ACTIVE" },
+          });
+
           if (previousProgramType !== targetProgramType) {
             await tx.enrollmentApplication.update({
               where: { id: studentId },
@@ -470,3 +475,4 @@ export const {
   shiftStudentSection,
   assignStudentLrn,
 } = studentsLifecycleController;
+

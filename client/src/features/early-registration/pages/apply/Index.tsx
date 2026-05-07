@@ -190,7 +190,11 @@ export default function EarlyRegistrationApply() {
                       {schoolName}
                     </h2>
                     <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black tracking-[0.2em] uppercase border border-slate-200">
-                      {isBosyLocked ? "ENROLLMENT FINALIZED" : isRegularEnrollment ? "PHASE CONCLUDED" : "PHASE CLOSED"}
+                      {isBosyLocked
+                        ? "ENROLLMENT FINALIZED"
+                        : isRegularEnrollment
+                          ? "PHASE CONCLUDED"
+                          : "PHASE CLOSED"}
                     </div>
                   </div>
 
@@ -200,7 +204,7 @@ export default function EarlyRegistrationApply() {
                         <h3 className="text-xl sm:text-2xl font-black text-black flex items-center justify-center gap-2">
                           ONLINE ENROLLMENT IS NOW CLOSED
                         </h3>
-                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest leading-relaxed">
+                        <p className="text-sm font-bold text-foreground uppercase tracking-widest leading-relaxed">
                           The standard online enrollment period for S.Y.{" "}
                           {activeSchoolYearLabel} has officially ended, and
                           class rosters have been finalized.
@@ -334,9 +338,9 @@ export default function EarlyRegistrationApply() {
                               <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                             </svg>
                             Visit Official HNHS Facebook Page
-                            </a>
-                            </div>
-                            )}
+                          </a>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -368,7 +372,10 @@ export default function EarlyRegistrationApply() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.98 }}
                     transition={{ duration: 0.3 }}>
-                    <PrivacyNotice variant="BEERF" onAccept={handleAccept} />
+                    <PrivacyNotice
+                      variant="BEERF"
+                      onAccept={handleAccept}
+                    />
                   </motion.div>
                 ) : (
                   <motion.div

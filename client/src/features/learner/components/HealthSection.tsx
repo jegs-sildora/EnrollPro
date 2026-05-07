@@ -175,7 +175,7 @@ export function HealthSection({ learner }: Props) {
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+            <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
               All Measurements
             </h3>
             <DataTable
@@ -188,10 +188,10 @@ export function HealthSection({ learner }: Props) {
         </div>
       ) : (
         <div className="text-center py-12 bg-muted/10 rounded-xl border border-dashed border-muted">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-foreground">
             No health records have been entered for your account yet.
           </p>
-          <p className="text-xs text-muted-foreground mt-1 italic">
+          <p className="text-xs text-foreground mt-1 italic">
             Please contact the school registrar or clinic for assistance.
           </p>
         </div>

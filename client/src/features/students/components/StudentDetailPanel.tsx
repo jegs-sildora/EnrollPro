@@ -169,7 +169,7 @@ export function StudentDetailPanel({
             </SheetTitle>
             <SheetDescription
               asChild
-              className="text-[11px] sm:text-xs text-muted-foreground mt-1">
+              className="text-[11px] sm:text-xs text-foreground mt-1">
               <div>
                 <Skeleton className="h-3 w-24" />
               </div>
@@ -324,7 +324,7 @@ export function StudentDetailPanel({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-0 border-t pt-4">
             <div>
-              <p className="text-[10px] sm:text-[0.625rem] uppercase tracking-widest text-muted-foreground">
+              <p className="text-[10px] sm:text-[0.625rem] uppercase tracking-widest text-foreground">
                 Grade Level & Section
               </p>
               <p className="text-xs sm:text-sm">
@@ -334,7 +334,7 @@ export function StudentDetailPanel({
               </p>
             </div>
             <div className="text-left sm:text-right">
-              <p className="text-[10px] sm:text-[0.625rem] uppercase tracking-widest text-muted-foreground">
+              <p className="text-[10px] sm:text-[0.625rem] uppercase tracking-widest text-foreground">
                 Learner Reference Number
               </p>
               <p className="text-xs sm:text-sm tabular-nums">
@@ -351,21 +351,21 @@ export function StudentDetailPanel({
             Enrollment Information
           </div>
           <div className="p-4 text-sm grid grid-cols-[140px_1fr] gap-x-2 gap-y-1.5 font-bold">
-            <span className="text-muted-foreground">School Year:</span>
+            <span className="text-foreground">School Year:</span>
             <span>{student.schoolYear}</span>
-            <span className="text-muted-foreground">Enrolled At:</span>
+            <span className="text-foreground">Enrolled At:</span>
             <span>
               {student.enrollment?.enrolledAt
                 ? formatDate(student.enrollment.enrolledAt)
                 : "N/A"}
             </span>
-            <span className="text-muted-foreground">Enrolled By:</span>
+            <span className="text-foreground">Enrolled By:</span>
             <span className="uppercase">
               {student.enrollment?.enrolledBy || "N/A"}
             </span>
             {student.enrollment?.advisingTeacher && (
               <>
-                <span className="text-muted-foreground">Advising Teacher:</span>
+                <span className="text-foreground">Advising Teacher:</span>
                 <span className="uppercase">
                   {student.enrollment.advisingTeacher}
                 </span>
@@ -387,7 +387,7 @@ export function StudentDetailPanel({
               </p>
               {student.enrollment.transferOutDate && (
                 <p className="text-xs">
-                  <span className="text-muted-foreground mr-2 font-bold uppercase">
+                  <span className="text-foreground mr-2 font-bold uppercase">
                     Date:
                   </span>
                   {formatDate(student.enrollment.transferOutDate)}
@@ -395,7 +395,7 @@ export function StudentDetailPanel({
               )}
               {student.enrollment.transferOutSchoolName && (
                 <p className="text-xs">
-                  <span className="text-muted-foreground mr-2 font-bold uppercase">
+                  <span className="text-foreground mr-2 font-bold uppercase">
                     To:
                   </span>
                   {student.enrollment.transferOutSchoolName}
@@ -403,7 +403,7 @@ export function StudentDetailPanel({
               )}
               {student.enrollment.transferOutReason && (
                 <p className="text-xs">
-                  <span className="text-muted-foreground mr-2 font-bold uppercase">
+                  <span className="text-foreground mr-2 font-bold uppercase">
                     Reason:
                   </span>
                   {student.enrollment.transferOutReason}
@@ -411,7 +411,7 @@ export function StudentDetailPanel({
               )}
               {student.enrollment.dropOutDate && (
                 <p className="text-xs">
-                  <span className="text-muted-foreground mr-2 font-bold uppercase">
+                  <span className="text-foreground mr-2 font-bold uppercase">
                     Date:
                   </span>
                   {formatDate(student.enrollment.dropOutDate)}
@@ -419,7 +419,7 @@ export function StudentDetailPanel({
               )}
               {student.enrollment.dropOutReason && (
                 <p className="text-xs">
-                  <span className="text-muted-foreground mr-2 font-bold uppercase">
+                  <span className="text-foreground mr-2 font-bold uppercase">
                     Reason:
                   </span>
                   {student.enrollment.dropOutReason}
@@ -439,7 +439,7 @@ export function StudentDetailPanel({
         </div>
 
         {/* Quick Metadata */}
-        <div className="pt-4 border-t text-[10px] uppercase tracking-widest text-muted-foreground flex flex-col gap-1">
+        <div className="pt-4 border-t text-[10px] uppercase tracking-widest text-foreground flex flex-col gap-1">
           <div className="flex items-center gap-1.5">
             <Clock className="h-3 w-3" />
             Record Created: {formatDate(student.createdAt)}

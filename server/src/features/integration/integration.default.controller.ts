@@ -195,13 +195,6 @@ export async function listDefaultFaculty(
       specialization: teacher.specialization,
       sectionCount: teacher._count.advisoryHistory,
       isClassAdviser: designation?.isClassAdviser ?? false,
-      advisoryEquivalentHoursPerWeek:
-        designation?.advisoryEquivalentHoursPerWeek ?? 0,
-      isTic: designation?.isTic ?? false,
-      isTIC: designation?.isTic ?? false,
-      isTeachingExempt: designation?.isTeachingExempt ?? false,
-      customTargetTeachingHoursPerWeek:
-        designation?.customTargetTeachingHoursPerWeek ?? null,
       designationNotes: designation?.designationNotes ?? null,
       effectiveFrom: designation?.effectiveFrom ?? null,
       effectiveTo: designation?.effectiveTo ?? null,

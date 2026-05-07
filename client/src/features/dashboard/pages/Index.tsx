@@ -282,7 +282,7 @@ export default function Dashboard() {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-foreground">
             Welcome back,{" "}
             <span className="font-semibold text-primary">
               {user?.firstName} {user?.lastName}
@@ -299,7 +299,7 @@ export default function Dashboard() {
           </Badge>
 
           <div className="flex flex-col items-start gap-1 md:items-end">
-            <p className="text-[0.625rem] font-semibold uppercase tracking-wider text-muted-foreground">
+            <p className="text-[0.625rem] font-semibold uppercase tracking-wider text-foreground">
               Seasonal Focus
             </p>
             <div
@@ -343,7 +343,7 @@ export default function Dashboard() {
                 key={stat.title}
                 className="border-purple-100 bg-white shadow-sm transition-all hover:shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-4">
-                  <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <CardTitle className="text-xs font-bold uppercase tracking-wider text-foreground">
                     {stat.title}
                   </CardTitle>
                   <div className={`${stat.bg} rounded-full p-2.5`}>
@@ -357,7 +357,7 @@ export default function Dashboard() {
                   ) : (
                     <>
                       <div className="text-2xl font-black ">{stat.value}</div>
-                      <p className="mt-1 text-xs font-medium text-muted-foreground">
+                      <p className="mt-1 text-xs font-medium text-foreground">
                         {stat.description}
                       </p>
                     </>
@@ -480,11 +480,11 @@ export default function Dashboard() {
                         </Badge>
                       </div>
                       <div className="space-y-3 pt-2">
-                        <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
                           <div className="h-1.5 w-1.5 rounded-full bg-blue-500"></div>
                           Phase: {enrollmentPhase.replaceAll("_", " ")}
                         </div>
-                        <p className="text-xs leading-relaxed text-muted-foreground italic">
+                        <p className="text-xs leading-relaxed text-foreground italic">
                           "System adapts dashboards based on the academic
                           calendar to surface relevant bottlenecks."
                         </p>
@@ -500,7 +500,7 @@ export default function Dashboard() {
                 className={`shadow-sm transition-all hover:shadow-md ${pendingReviewAlert ? "border-amber-300 bg-amber-50/50" : "border-slate-200 bg-white"}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    <CardTitle className="text-xs font-bold uppercase tracking-wider text-foreground">
                       Pending Review
                     </CardTitle>
                     <div
@@ -523,7 +523,7 @@ export default function Dashboard() {
                       <div className="text-4xl font-black">
                         {formatMetric(pendingReviewCount)}
                       </div>
-                      <p className="text-xs font-medium text-muted-foreground min-h-[2rem]">
+                      <p className="text-xs font-medium text-foreground min-h-[2rem]">
                         {pendingReviewAlert
                           ? "Review queue has reached critical volume. Registrar intervention required."
                           : "Process is stable. Review queue is performing within established parameters."}
@@ -551,7 +551,7 @@ export default function Dashboard() {
                 className={`shadow-sm transition-all hover:shadow-md ${sectionsCapacityAlert ? "border-red-300 bg-red-50/50" : "border-slate-200 bg-white"}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    <CardTitle className="text-xs font-bold uppercase tracking-wider text-foreground">
                       Capacity Saturation
                     </CardTitle>
                     <div
@@ -574,7 +574,7 @@ export default function Dashboard() {
                       <div className="text-4xl font-black">
                         {formatMetric(sectionsAtCapacityCount)}
                       </div>
-                      <p className="text-xs font-medium text-muted-foreground min-h-[2rem]">
+                      <p className="text-xs font-medium text-foreground min-h-[2rem]">
                         {sectionsCapacityAlert
                           ? "Section saturation detected. Allocation limits nearing maximum thresholds."
                           : "Section distribution is currently balanced across all grade levels."}
@@ -650,7 +650,7 @@ export default function Dashboard() {
                 key={stat.title}
                 className="border-amber-100 bg-white shadow-sm transition-all hover:shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-foreground">
                     {stat.title}
                   </CardTitle>
                   <div className={`${stat.bg} rounded-full p-2`}>
@@ -731,7 +731,7 @@ export default function Dashboard() {
                 <h3 className="text-sm font-bold text-slate-400">
                   Visualization Engine
                 </h3>
-                <p className="max-w-64 text-xs text-muted-foreground/60 leading-relaxed">
+                <p className="max-w-64 text-xs text-foreground/60 leading-relaxed">
                   Real-time enrollment trends and forecast models are currently
                   aggregating data for this period.
                 </p>

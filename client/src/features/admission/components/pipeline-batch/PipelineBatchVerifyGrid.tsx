@@ -215,7 +215,7 @@ export default function PipelineBatchVerifyGrid({
                     />
                     <span
                       className={`font-bold ${
-                        isRetained ? "text-muted-foreground" : "text-foreground"
+                        isRetained ? "text-foreground" : "text-foreground"
                       }`}>
                       All required docs
                     </span>
@@ -331,7 +331,7 @@ export default function PipelineBatchVerifyGrid({
             ? "border-emerald-700 bg-emerald-600 text-white"
             : rowReady
               ? "border-primary/90 bg-primary text-primary-foreground"
-              : "border-border bg-muted/60 text-muted-foreground opacity-60";
+              : "border-border bg-muted/60 text-foreground opacity-60";
         const clearanceLabel = isRetained
           ? rowMarked
             ? "Retained Tagged"

@@ -26,7 +26,8 @@ export async function authenticate(
   const auth = req.headers.authorization;
   const bearerToken = auth?.startsWith("Bearer ") ? auth.split(" ")[1] : null;
   const cookieToken = req.cookies?.[AUTH_COOKIE_NAME];
-  const token = bearerToken ?? cookieToken;
+  const queryToken = typeof req.query.token === "string" ? req.query.token : null;
+  const token = bearerToken ?? cookieToken ?? queryToken;
 
   if (!token) {
     res.status(401).json({ code: "UNAUTHORIZED", message: "Unauthorized" });

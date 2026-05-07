@@ -234,14 +234,23 @@ function computeSteps(
     if (assessmentData && assessmentData.steps.length > 0) {
       let foundActive = false;
       const isPastAssessment =
-        currentStep === "ENROLLMENT_QUALIFICATION" || currentStep === "ENROLLED";
-      const isBeforeAssessment = currentIndex < orderedBaseSteps.indexOf("ASSESSMENT_PHASE");
+        currentStep === "ENROLLMENT_QUALIFICATION" ||
+        currentStep === "ENROLLED";
+      const isBeforeAssessment =
+        currentIndex < orderedBaseSteps.indexOf("ASSESSMENT_PHASE");
 
       for (const s of assessmentData.steps) {
-        const isStepCompleted = isPastAssessment || (s.result !== null && s.result !== undefined);
+        const isStepCompleted =
+          isPastAssessment || (s.result !== null && s.result !== undefined);
         let isStepActive = false;
 
-        if (currentStep === "ASSESSMENT_PHASE" && !isPastAssessment && !isBeforeAssessment && !foundActive && !isStepCompleted) {
+        if (
+          currentStep === "ASSESSMENT_PHASE" &&
+          !isPastAssessment &&
+          !isBeforeAssessment &&
+          !foundActive &&
+          !isStepCompleted
+        ) {
           isStepActive = true;
           foundActive = true;
         }
@@ -358,7 +367,9 @@ export default function TrackingNextSteps({
       <ol className="space-y-4">
         {computedSteps.map((step, index) => {
           return (
-            <li key={step.id} className="relative pl-11">
+            <li
+              key={step.id}
+              className="relative pl-11">
               {index < computedSteps.length - 1 && (
                 <span
                   className={cn(
@@ -376,7 +387,7 @@ export default function TrackingNextSteps({
                   step.isActive && "border-blue-500 bg-blue-50 text-blue-700",
                   !step.isCompleted &&
                     !step.isActive &&
-                    "border-muted bg-background text-muted-foreground",
+                    "border-muted bg-background text-foreground",
                 )}>
                 {step.isCompleted ? (
                   <CheckCircle2 className="h-4 w-4" />
@@ -393,11 +404,11 @@ export default function TrackingNextSteps({
                     "text-sm font-black uppercase tracking-wide",
                     step.isCompleted && "text-emerald-700",
                     step.isActive && "text-blue-700",
-                    !step.isCompleted && !step.isActive && "text-muted-foreground",
+                    !step.isCompleted && !step.isActive && "text-foreground",
                   )}>
                   {step.title}
                 </p>
-                <p className="text-sm text-muted-foreground">{step.description}</p>
+                <p className="text-sm text-foreground">{step.description}</p>
               </div>
             </li>
           );

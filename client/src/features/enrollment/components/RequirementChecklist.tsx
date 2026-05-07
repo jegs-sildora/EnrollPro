@@ -424,7 +424,7 @@ export function RequirementChecklist({
           <CardTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
             Documentary Checklist
             {(isUpdating || isLoadingRequirements) && (
-              <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+              <Loader2 className="h-3 w-3 animate-spin text-foreground" />
             )}
           </CardTitle>
           <div className="flex items-center gap-2">
@@ -452,7 +452,7 @@ export function RequirementChecklist({
             </Button>
           </div>
         </div>
-        <p className="text-[0.625rem] text-muted-foreground mt-1">
+        <p className="text-[0.625rem] text-foreground mt-1">
           Learner Type:{" "}
           <span className="font-bold text-primary">
             {getLearnerTypeLabel(learnerType)}
@@ -462,7 +462,7 @@ export function RequirementChecklist({
       <CardContent className="space-y-4">
         {showAcademicStatusControl && (
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
-            <p className="text-[0.625rem] font-bold uppercase tracking-wider text-muted-foreground">
+            <p className="text-[0.625rem] font-bold uppercase tracking-wider text-foreground">
               Academic Status
             </p>
             <div className="mt-2 flex items-center gap-3">
@@ -495,7 +495,7 @@ export function RequirementChecklist({
         )}
 
         {isLoadingRequirements ? (
-          <div className="rounded-lg border border-dashed p-4 text-xs text-muted-foreground">
+          <div className="rounded-lg border border-dashed p-4 text-xs text-foreground">
             Loading requirement rules...
           </div>
         ) : (
@@ -549,7 +549,7 @@ export function RequirementChecklist({
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-3 w-3 text-muted-foreground cursor-help shrink-0" />
+                            <Info className="h-3 w-3 text-foreground cursor-help shrink-0" />
                           </TooltipTrigger>
                           <TooltipContent>
                             <p className="max-w-xs text-xs">
@@ -560,7 +560,7 @@ export function RequirementChecklist({
                       </TooltipProvider>
                     </div>
                     {!req.checklistKey && (
-                      <p className="text-[10px] text-muted-foreground">
+                      <p className="text-[10px] text-foreground">
                         Tracked through uploaded documents.
                       </p>
                     )}
@@ -569,7 +569,7 @@ export function RequirementChecklist({
                     {rowStatus === "met" ? (
                       <Check className="h-3.5 w-3.5 text-green-600" />
                     ) : rowStatus === "unknown" ? (
-                      <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                      <Info className="h-3.5 w-3.5 text-foreground" />
                     ) : (
                       req.isMandatory && (
                         <AlertCircle className="h-3.5 w-3.5 text-amber-500" />

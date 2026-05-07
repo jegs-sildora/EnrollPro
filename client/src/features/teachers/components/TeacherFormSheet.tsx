@@ -403,7 +403,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                 <h3 className="text-sm font-semibold uppercase tracking-wide text-foreground">
                   Personal Details
                 </h3>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-foreground">
                   Basic profile details for the faculty directory.
                 </p>
               </header>
@@ -493,7 +493,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                 <h3 className="text-sm font-semibold uppercase tracking-wide text-foreground">
                   DepEd Employment
                 </h3>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-foreground">
                   Assignment and plantilla data aligned to the DepEd catalog.
                 </p>
               </header>
@@ -610,7 +610,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                       onOpenAutoFocus={(event) => event.preventDefault()}>
                       <div className="sticky top-0 z-10 border-b bg-background p-2">
                         <div className="relative">
-                          <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-foreground" />
                           <Input
                             ref={specializationSearchInputRef}
                             value={specializationSearchTerm}
@@ -630,7 +630,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                                 setActiveSpecializationIndex(0);
                                 specializationSearchInputRef.current?.focus();
                               }}
-                              className="absolute right-2 top-2 rounded p-0.5 text-muted-foreground transition hover:bg-muted hover:text-foreground">
+                              className="absolute right-2 top-2 rounded p-0.5 text-foreground transition hover:bg-muted hover:text-foreground">
                               <X className="h-3.5 w-3.5" />
                             </button>
                           ) : null}
@@ -655,11 +655,11 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
 
                         {flatSpecializationOptions.length === 0 ? (
                           <div className="rounded-md border border-dashed bg-muted/40 px-3 py-4 text-center">
-                            <p className="text-sm font-semibold text-muted-foreground">
+                            <p className="text-sm font-semibold text-foreground">
                               No specializations found matching
                               {` "${specializationSearchTerm}"`}.
                             </p>
-                            <p className="text-xs text-muted-foreground/90">
+                            <p className="text-xs text-foreground/90">
                               Please check your spelling.
                             </p>
                           </div>
@@ -726,7 +726,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                 <h3 className="text-sm font-semibold uppercase tracking-wide text-foreground">
                   Qualified Subjects
                 </h3>
-                <p className="text-[10px] font-bold uppercase text-muted-foreground">
+                <p className="text-[10px] font-bold uppercase text-foreground">
                   Subjects the teacher is licensed or certified to teach.
                 </p>
               </header>
@@ -762,7 +762,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                     className="w-80 p-0 shadow-xl border-2">
                     <div className="border-b bg-muted/20 p-3">
                       <div className="relative">
-                        <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                        <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-foreground" />
                         <Input
                           value={subjectSearchTerm}
                           onChange={(e) => setSubjectSearchTerm(e.target.value)}

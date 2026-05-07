@@ -373,7 +373,7 @@ export default function Step3Preferences() {
           </div>
         </div>
 
-        <p className="text-[0.625rem] text-muted-foreground mt-4 italic">
+        <p className="text-[0.625rem] text-foreground mt-4 italic">
           Your Data Privacy consent was recorded at the start of this form.
           Submission of this form constitutes official application for EARLY
           REGISTRATION{schoolName ? ` to ${schoolName}` : ""}.

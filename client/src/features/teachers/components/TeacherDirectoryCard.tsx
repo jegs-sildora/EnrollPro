@@ -75,6 +75,7 @@ interface TeacherDirectoryCardProps {
   searchQuery: string;
   statusFilter: TeacherStatusFilter;
   designationFilter: TeacherDesignationFilter;
+  subjectFilter: string;
   hasActiveFilters: boolean;
   ayId: number | null;
   page: number;
@@ -84,6 +85,7 @@ interface TeacherDirectoryCardProps {
   onSearchQueryChange: (value: string) => void;
   onStatusFilterChange: (value: TeacherStatusFilter) => void;
   onDesignationFilterChange: (value: TeacherDesignationFilter) => void;
+  onSubjectFilterChange: (value: string) => void;
   onClearFilters: () => void;
   onRefresh: () => void;
   onOpenDesignationEditor: (teacher: Teacher) => void;
@@ -329,7 +331,9 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                       {SUBJECT_ACRONYMS[sub.toUpperCase()] || sub.toUpperCase()}
                     </Badge>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="text-[10px] font-bold uppercase">
+                  <TooltipContent
+                    side="top"
+                    className="text-[10px] font-bold uppercase">
                     {sub}
                   </TooltipContent>
                 </Tooltip>
@@ -366,15 +370,57 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
-          title="LOAD STATUS"
+          title="DESIGNATION"
           className="font-bold"
         />
       ),
-      cell: ({ row }) => (
-        <span className="text-xs font-bold block text-center break-words uppercase">
-          {formatDesignationSummary(row.original)}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const designation = row.original.designation;
+
+        if (!designation) {
+          return (
+            <Badge
+              variant="outline"
+              className="text-[10px] font-bold uppercase">
+              None
+            </Badge>
+          );
+        }
+
+        const ancillaryRoles = designation.ancillaryRoles ?? [];
+        const hasDesignation =
+          designation.isClassAdviser || ancillaryRoles.length > 0;
+
+        if (!hasDesignation) {
+          return (
+            <Badge
+              variant="outline"
+              className="text-[10px] font-bold uppercase">
+              None
+            </Badge>
+          );
+        }
+
+        return (
+          <div className="flex flex-wrap justify-center gap-1">
+            {designation.isClassAdviser ? (
+              <Badge
+                variant="success"
+                className="text-[10px] font-black uppercase">
+                Class Adviser
+              </Badge>
+            ) : null}
+            {ancillaryRoles.map((role) => (
+              <Badge
+                key={`${row.original.id}-${role}`}
+                variant="outline"
+                className="text-[10px] font-bold uppercase">
+                {role}
+              </Badge>
+            ))}
+          </div>
+        );
+      },
     },
     {
       id: "actions",
@@ -431,9 +477,21 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all" className="font-bold">All Statuses</SelectItem>
-                <SelectItem value="active" className="font-bold">Active Only</SelectItem>
-                <SelectItem value="inactive" className="font-bold">Inactive Only</SelectItem>
+                <SelectItem
+                  value="all"
+                  className="font-bold">
+                  All Statuses
+                </SelectItem>
+                <SelectItem
+                  value="active"
+                  className="font-bold">
+                  Active Only
+                </SelectItem>
+                <SelectItem
+                  value="inactive"
+                  className="font-bold">
+                  Inactive Only
+                </SelectItem>
               </SelectContent>
             </Select>
             <Select
@@ -445,11 +503,26 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                 <SelectValue placeholder="Designation" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all" className="font-bold">All Designations</SelectItem>
-                <SelectItem value="adviser" className="font-bold">Class Adviser</SelectItem>
-                <SelectItem value="tic" className="font-bold">TIC</SelectItem>
-                <SelectItem value="exempt" className="font-bold">Teaching Exempt</SelectItem>
-                <SelectItem value="none" className="font-bold">No Designation</SelectItem>
+                <SelectItem
+                  value="all"
+                  className="font-bold">
+                  All Designations
+                </SelectItem>
+                <SelectItem
+                  value="adviser"
+                  className="font-bold">
+                  Class Adviser
+                </SelectItem>
+                <SelectItem
+                  value="tic"
+                  className="font-bold">
+                  TIC
+                </SelectItem>
+                <SelectItem
+                  value="none"
+                  className="font-bold">
+                  No Designation
+                </SelectItem>
               </SelectContent>
             </Select>
             <Button
@@ -512,9 +585,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                       <p className="text-foreground uppercase tracking-wide font-bold opacity-70">
                         Employee ID
                       </p>
-                      <p className="font-bold">
-                        {teacher.employeeId || "-"}
-                      </p>
+                      <p className="font-bold">{teacher.employeeId || "-"}</p>
                     </div>
                     <div>
                       <p className="text-foreground uppercase tracking-wide font-bold opacity-70">

@@ -49,12 +49,12 @@ type FormData = z.infer<typeof schema>;
 
 // --- Sub-components for Optimization ---
 
-const SecurityRequirements = memo(function SecurityRequirements({ 
-  newPassword, 
-  confirmPassword 
-}: { 
-  newPassword: string; 
-  confirmPassword: string; 
+const SecurityRequirements = memo(function SecurityRequirements({
+  newPassword,
+  confirmPassword,
+}: {
+  newPassword: string;
+  confirmPassword: string;
 }) {
   const rules = [
     { label: "Minimum 8 characters", pass: newPassword.length >= 8 },
@@ -72,14 +72,14 @@ const SecurityRequirements = memo(function SecurityRequirements({
 
   return (
     <div className="rounded-xl bg-muted/50 p-4 border border-muted-foreground/10 space-y-3">
-      <p className="font-bold uppercase tracking-widest text-muted-foreground/70 text-[10px]">
+      <p className="font-bold uppercase tracking-widest text-foreground/70 text-[10px]">
         Security Requirements
       </p>
       <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
         {rules.map((r) => (
           <li
             key={r.label}
-            className={`flex items-center gap-2 text-sm font-bold transition-colors ${r.pass ? "text-emerald-600" : "text-muted-foreground"}`}>
+            className={`flex items-center gap-2 text-sm font-bold transition-colors ${r.pass ? "text-emerald-600" : "text-foreground"}`}>
             {r.pass ? (
               <CheckSquare className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
             ) : (
@@ -101,14 +101,28 @@ export default function ChangePassword() {
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { register, handleSubmit, control, watch, formState: { errors } } = useForm<FormData>({
+  const {
+    register,
+    handleSubmit,
+    control,
+    watch,
+    formState: { errors },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
     mode: "onChange",
   });
 
   // These will trigger re-renders of ONLY the components using them
-  const newPasswordValue = useWatch({ control, name: "newPassword", defaultValue: "" });
-  const confirmPasswordValue = useWatch({ control, name: "confirmPassword", defaultValue: "" });
+  const newPasswordValue = useWatch({
+    control,
+    name: "newPassword",
+    defaultValue: "",
+  });
+  const confirmPasswordValue = useWatch({
+    control,
+    name: "confirmPassword",
+    defaultValue: "",
+  });
 
   // Clear error when typing
   useEffect(() => {
@@ -121,22 +135,38 @@ export default function ChangePassword() {
   const strokeColor = accentForeground === "0 0% 0%" ? "000000" : "ffffff";
 
   // Computed state for error highlighting
-  const newPasswordInvalid = useMemo(() => 
-    newPasswordValue.length > 0 && (
-      newPasswordValue.length < 8 || 
-      !/[A-Z]/.test(newPasswordValue) || 
-      !/[0-9]/.test(newPasswordValue) || 
-      !/[^A-Za-z0-9]/.test(newPasswordValue)
-    ), [newPasswordValue]);
+  const newPasswordInvalid = useMemo(
+    () =>
+      newPasswordValue.length > 0 &&
+      (newPasswordValue.length < 8 ||
+        !/[A-Z]/.test(newPasswordValue) ||
+        !/[0-9]/.test(newPasswordValue) ||
+        !/[^A-Za-z0-9]/.test(newPasswordValue)),
+    [newPasswordValue],
+  );
 
-  const confirmPasswordInvalid = useMemo(() => 
-    confirmPasswordValue.length > 0 && newPasswordValue !== confirmPasswordValue, 
-    [newPasswordValue, confirmPasswordValue]
+  const confirmPasswordInvalid = useMemo(
+    () =>
+      confirmPasswordValue.length > 0 &&
+      newPasswordValue !== confirmPasswordValue,
+    [newPasswordValue, confirmPasswordValue],
   );
 
   // Guard redirects
-  if (!token || !user) return <Navigate to="/login" replace />;
-  if (!user.mustChangePassword) return <Navigate to="/dashboard" replace />;
+  if (!token || !user)
+    return (
+      <Navigate
+        to="/login"
+        replace
+      />
+    );
+  if (!user.mustChangePassword)
+    return (
+      <Navigate
+        to="/dashboard"
+        replace
+      />
+    );
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
@@ -149,7 +179,8 @@ export default function ChangePassword() {
       setAuth(res.data.token, res.data.user);
       sileo.success({
         title: "Password Updated",
-        description: "Your new password has been set. You can now access the system.",
+        description:
+          "Your new password has been set. You can now access the system.",
       });
       navigate("/dashboard");
     } catch (err: unknown) {
@@ -161,7 +192,9 @@ export default function ChangePassword() {
       } else {
         sileo.error({
           title: "Update Failed",
-          description: axiosError.response?.data?.message || "Could not update password. Please try again.",
+          description:
+            axiosError.response?.data?.message ||
+            "Could not update password. Please try again.",
         });
       }
     } finally {
@@ -227,7 +260,7 @@ export default function ChangePassword() {
                   New Password
                 </Label>
                 <div className="relative group">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground group-focus-within:text-primary transition-colors" />
                   <Input
                     id="newPassword"
                     type={showPw ? "text" : "password"}
@@ -238,7 +271,7 @@ export default function ChangePassword() {
                   <button
                     type="button"
                     onClick={() => setShowPw(!showPw)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground hover:text-foreground transition-colors"
                     tabIndex={-1}>
                     {showPw ? (
                       <EyeOff className="h-4 w-4" />
@@ -248,9 +281,9 @@ export default function ChangePassword() {
                   </button>
                 </div>
                 {errors.newPassword && (
-                    <p className="text-[10px] font-bold text-destructive uppercase ml-1">
-                      {errors.newPassword.message}
-                    </p>
+                  <p className="text-[10px] font-bold text-destructive uppercase ml-1">
+                    {errors.newPassword.message}
+                  </p>
                 )}
               </div>
 
@@ -261,7 +294,7 @@ export default function ChangePassword() {
                   Confirm New Password
                 </Label>
                 <div className="relative group">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground group-focus-within:text-primary transition-colors" />
                   <Input
                     id="confirmPassword"
                     type={showPw ? "text" : "password"}
@@ -271,15 +304,15 @@ export default function ChangePassword() {
                   />
                 </div>
                 {errors.confirmPassword && (
-                    <p className="text-[10px] font-bold text-destructive uppercase ml-1">
-                      {errors.confirmPassword.message}
-                    </p>
+                  <p className="text-[10px] font-bold text-destructive uppercase ml-1">
+                    {errors.confirmPassword.message}
+                  </p>
                 )}
               </div>
 
-              <SecurityRequirements 
-                newPassword={newPasswordValue} 
-                confirmPassword={confirmPasswordValue} 
+              <SecurityRequirements
+                newPassword={newPasswordValue}
+                confirmPassword={confirmPasswordValue}
               />
             </CardContent>
             <CardFooter className="flex flex-col gap-4 px-8 pb-8 mt-2">
@@ -312,7 +345,7 @@ export default function ChangePassword() {
               <Button
                 type="button"
                 variant="ghost"
-                className="w-full text-xs text-muted-foreground hover:text-primary h-8"
+                className="w-full text-xs text-foreground hover:text-primary h-8"
                 onClick={() => {
                   clearAuth();
                   navigate("/login");

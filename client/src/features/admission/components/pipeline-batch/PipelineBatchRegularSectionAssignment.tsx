@@ -82,7 +82,7 @@ export default function PipelineBatchRegularSectionAssignment({
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           <div className="rounded border bg-muted/30 px-3 py-2">
-            <p className="text-[10px] font-bold uppercase text-muted-foreground">
+            <p className="text-[10px] font-bold uppercase text-foreground">
               Requested
             </p>
             <p className="text-sm font-bold">{requiredSlots}</p>
@@ -116,7 +116,7 @@ export default function PipelineBatchRegularSectionAssignment({
         {showSkeleton ? (
           <TableSkeleton />
         ) : !preview ? (
-          <p className="text-xs font-bold text-muted-foreground">
+          <p className="text-xs font-bold text-foreground">
             Generate a preview plan to inspect allocations before commit.
           </p>
         ) : sectionPlans.length === 0 ? (
@@ -134,7 +134,9 @@ export default function PipelineBatchRegularSectionAssignment({
                     {section.sectionName}
                   </p>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-[10px]">
+                    <Badge
+                      variant="outline"
+                      className="text-[10px]">
                       Order {section.sortOrder}
                     </Badge>
                     <Badge
@@ -146,7 +148,7 @@ export default function PipelineBatchRegularSectionAssignment({
                     </Badge>
                   </div>
                 </div>
-                <p className="text-xs font-bold text-muted-foreground">
+                <p className="text-xs font-bold text-foreground">
                   Capacity {section.enrolledCount}/{section.maxCapacity} | Slots
                   before plan: {section.availableSlots} | Planned:{" "}
                   {section.plannedCount} | Remaining: {section.remainingSlots}
@@ -163,7 +165,9 @@ export default function PipelineBatchRegularSectionAssignment({
               <p className="text-xs font-bold text-red-700">Blocked Reasons</p>
               <div className="space-y-1 max-h-24 overflow-y-auto">
                 {Object.entries(blockedReasonCounts).map(([reason, count]) => (
-                  <p key={reason} className="text-xs font-bold text-red-700">
+                  <p
+                    key={reason}
+                    className="text-xs font-bold text-red-700">
                     {count}x {reason}
                   </p>
                 ))}

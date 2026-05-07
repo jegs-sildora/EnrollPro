@@ -38,7 +38,9 @@ export default function BatchResultsModal({ results, onClose }: Props) {
   const { processed, succeeded, failed } = results;
 
   return (
-    <Dialog open={!!results} onOpenChange={(open) => !open && onClose()}>
+    <Dialog
+      open={!!results}
+      onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-lg font-bold">
@@ -84,7 +86,7 @@ export default function BatchResultsModal({ results, onClose }: Props) {
                   <p className="text-sm font-bold">
                     {item.name}
                     {item.trackingNumber && (
-                      <span className="ml-1 text-xs font-medium text-muted-foreground">
+                      <span className="ml-1 text-xs font-medium text-foreground">
                         (#{item.trackingNumber})
                       </span>
                     )}
@@ -99,7 +101,10 @@ export default function BatchResultsModal({ results, onClose }: Props) {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} className="font-bold">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="font-bold">
             Close
           </Button>
         </DialogFooter>

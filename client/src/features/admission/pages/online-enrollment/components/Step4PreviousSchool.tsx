@@ -320,14 +320,14 @@ export default function Step4PreviousSchool() {
                   <div className="space-y-2">
                     <Label
                       htmlFor="origin-school"
-                      className="text-xs font-black uppercase text-muted-foreground tracking-widest">
+                      className="text-xs font-black uppercase text-foreground tracking-widest">
                       Originating School Name
                     </Label>
                     <Input
                       id="origin-school"
                       {...register("originatingSchoolName")}
                       placeholder="e.g. St. Scholastica's Academy"
-                      className="h-10 bg-muted/30 border-border font-bold uppercase placeholder:text-muted-foreground/50"
+                      className="h-10 bg-muted/30 border-border font-bold uppercase placeholder:text-foreground/50"
                     />
                   </div>
                   <div
@@ -409,7 +409,7 @@ export default function Step4PreviousSchool() {
                               "text-xs italic font-medium",
                               errors.hasExecutedAffidavit
                                 ? "text-destructive/60"
-                                : "text-muted-foreground",
+                                : "text-foreground",
                             )}>
                             (Learner will be flagged as "Temporarily Enrolled"
                             in LIS)

@@ -1,11 +1,6 @@
 import { ShieldCheck, CalendarDays } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { useCurriculumScpConfigs } from "./hooks/useCurriculumScpConfigs";
 import { ScpProgramCard } from "./components/ScpProgramCard";
 
@@ -91,7 +86,7 @@ export default function CurriculumTabPage() {
           <div className="sticky bottom-0 z-20">
             <div className="rounded-lg border border-border bg-background/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/85">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs font-semibold text-muted-foreground">
+                <p className="text-xs font-semibold text-foreground">
                   {hasUnsavedChanges
                     ? "You have unsaved curriculum configuration changes."
                     : "All curriculum configurations are saved."}

@@ -685,7 +685,7 @@ export default function EnrollmentForm({
                 <h2 className="text-xl font-bold  text-foreground leading-tight">
                   {stepper.state.current.data.title}
                 </h2>
-                <p className="text-sm text-muted-foreground mt-0.5">
+                <p className="text-sm text-foreground mt-0.5">
                   {stepper.state.current.data.description}
                 </p>
               </div>

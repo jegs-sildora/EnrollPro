@@ -83,7 +83,7 @@ export default function F2FStepProgressBar({
                           ? "bg-primary border-primary text-primary-foreground"
                           : isActive
                             ? "bg-primary border-primary text-primary-foreground shadow-[0_0_0_3px_hsl(var(--primary)/0.15)]"
-                            : "bg-background border-border text-muted-foreground",
+                            : "bg-background border-border text-foreground",
                       )}>
                       {isCompleted ? (
                         <Check className="w-4 h-4 stroke-[2.5]" />
@@ -99,7 +99,7 @@ export default function F2FStepProgressBar({
                           "text-[0.625rem] lg:text-[0.6875rem] font-semibold uppercase tracking-wider text-center whitespace-nowrap transition-colors duration-200",
                           isCompleted || isActive
                             ? "text-foreground"
-                            : "text-muted-foreground",
+                            : "text-foreground",
                         )}>
                         {step.title}
                       </span>

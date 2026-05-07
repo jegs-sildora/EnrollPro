@@ -87,7 +87,7 @@ function ParamField({
         disabled={disabled}
       />
       {hint && (
-        <p className="text-[10px] text-muted-foreground font-medium leading-tight">
+        <p className="text-[10px] text-foreground font-medium leading-tight">
           {hint}
         </p>
       )}
@@ -207,7 +207,7 @@ export function BatchSectioningParamsModal({
               <DialogTitle className="text-lg font-black uppercase ">
                 Configure Batch Sectioning Parameters
               </DialogTitle>
-              <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-0.5">
+              <DialogDescription className="text-[10px] font-black uppercase tracking-widest text-foreground mt-0.5">
                 S.Y. {schoolYearId} • {gradeLevelName}
               </DialogDescription>
             </div>
@@ -228,7 +228,7 @@ export function BatchSectioningParamsModal({
                   <p className="text-2xl font-black tabular-nums text-primary leading-none">
                     {prereqs?.unassignedCount ?? "–"}
                   </p>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-0.5">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-foreground mt-0.5">
                     Unassigned Learners in Pool
                   </p>
                 </div>
@@ -259,17 +259,17 @@ export function BatchSectioningParamsModal({
               {/* ── TIER 1: STE ── */}
               <div className="rounded-xl border-2 border-border overflow-hidden">
                 <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/50 border-b">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground">
                     Tier 1 — Special Curricular Program (STE)
                   </span>
                   {!isGrade7 && (
-                    <span className="text-[9px] font-black uppercase tracking-wider text-muted-foreground/60 ml-auto">
+                    <span className="text-[9px] font-black uppercase tracking-wider text-foreground/60 ml-auto">
                       Vacancy Fill (Grade 8–10)
                     </span>
                   )}
                 </div>
                 <div className="p-4 space-y-4">
-                  <p className="text-[11px] text-muted-foreground font-medium">
+                  <p className="text-[11px] text-foreground font-medium">
                     System will sort by Early Registration assessment scores.
                   </p>
                   <div className="flex flex-wrap gap-6">
@@ -316,7 +316,7 @@ export function BatchSectioningParamsModal({
                               "text-[11px] font-medium leading-relaxed",
                               steClassSizeError
                                 ? "text-destructive font-bold"
-                                : "text-muted-foreground",
+                                : "text-foreground",
                             )}>
                             {steClassSizeError
                               ? steClassSizeError
@@ -349,17 +349,17 @@ export function BatchSectioningParamsModal({
               {/* ── TIER 2: BEC PILOT ── */}
               <div className="rounded-xl border-2 border-border overflow-hidden">
                 <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/50 border-b">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground">
                     Tier 2 — BEC Pilot Slicing
                   </span>
                   {!isGrade7 && (
-                    <span className="text-[9px] font-black uppercase tracking-wider text-muted-foreground/60 ml-auto">
+                    <span className="text-[9px] font-black uppercase tracking-wider text-foreground/60 ml-auto">
                       Vacancy Fill (Grade 8–10)
                     </span>
                   )}
                 </div>
                 <div className="p-4 space-y-4">
-                  <p className="text-[11px] text-muted-foreground font-medium">
+                  <p className="text-[11px] text-foreground font-medium">
                     System will allocate the top{" "}
                     <span className="font-black text-foreground">
                       {params.pilotSectionCount * params.sectionCapacity}
@@ -393,13 +393,13 @@ export function BatchSectioningParamsModal({
               {/* ── TIER 3: HETERO ── */}
               <div className="rounded-xl border-2 border-border overflow-hidden">
                 <div className="px-4 py-2.5 bg-muted/50 border-b">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground">
                     Tier 3 — Heterogeneous Snake Draft
                   </span>
                 </div>
                 <div className="p-4 flex items-center gap-4">
                   <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
-                  <p className="text-[11px] text-muted-foreground font-medium">
+                  <p className="text-[11px] text-foreground font-medium">
                     The remaining{" "}
                     <span className="font-black text-foreground">
                       {remainingAfterSteAndPilot}

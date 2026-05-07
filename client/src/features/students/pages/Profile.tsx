@@ -14,6 +14,7 @@ import {
   Activity,
   History,
   FileText,
+  FileCheck2,
   Info,
   UserCheck,
   ShieldCheck,
@@ -28,7 +29,7 @@ import { Button } from "@/shared/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { motion } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { format } from "date-fns";
 import { HealthRecords } from "@/features/students/components/tabs/HealthRecords";
 import { PinResetHandoverModal } from "@/features/students/components/PinResetHandoverModal";
@@ -42,6 +43,7 @@ import { sileo } from "sileo";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { cn } from "@/shared/lib/utils";
 import { DocumentAuthModal } from "@/features/students/components/DocumentAuthModal";
+import { Sf10Tracking } from "@/features/students/components/tabs/Sf10Tracking";
 import { useAuthStore } from "@/store/auth.slice";
 import axios from "axios";
 
@@ -143,12 +145,30 @@ export default function StudentProfile() {
   const [recordHistoryLoading, setRecordHistoryLoading] = useState(false);
   const [recordHistoryLoaded, setRecordHistoryLoaded] = useState(false);
 
+  const [sf10Requests, setSf10Requests] = useState<any[]>([]);
+
   const {
     data: student,
     loading,
     error,
     refetch,
   } = useApplicationDetail(Number(id), true);
+
+  const fetchSf10Requests = useCallback(async () => {
+    if (!student?.learnerId) return;
+    try {
+      const res = await api.get(`/students/${student.learnerId}/sf10-requests`);
+      setSf10Requests(res.data.requests || []);
+    } catch (err) {
+      handleApiError(err, "Failed to load SF10 requests.");
+    }
+  }, [student?.learnerId]);
+
+  useEffect(() => {
+    if (activeTab === "sf10" && student?.learnerId) {
+      void fetchSf10Requests();
+    }
+  }, [activeTab, student?.learnerId, fetchSf10Requests]);
 
   const handleVerifyPsa = async (type: "PSA" | "SECONDARY") => {
     if (!student) return;
@@ -265,7 +285,7 @@ export default function StudentProfile() {
               </div>
             )}
 
-            <div className="flex items-center gap-4 mt-1 text-muted-foreground text-sm font-medium">
+            <div className="flex items-center gap-4 mt-1 text-foreground text-sm font-medium">
               <span className="flex items-center gap-1">
                 <Fingerprint className="h-3.5 w-3.5" />{" "}
                 {student.lrn || "NO LRN"}
@@ -281,7 +301,7 @@ export default function StudentProfile() {
         </div>
 
         <div className="hidden md:block text-right">
-          <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">
+          <p className="text-xs text-foreground uppercase font-bold tracking-wider">
             Tracking Number
           </p>
           <p className="text-lg  font-bold">{student.trackingNumber}</p>
@@ -386,6 +406,26 @@ export default function StudentProfile() {
             <FileText className="h-4 w-4 relative z-20" />
             <span className="relative z-20 hidden sm:inline">Requirements</span>
           </TabsTrigger>
+          {(student?.learnerStatus === "JHS_COMPLETER" ||
+            student?.learnerStatus === "DROPPED" ||
+            student?.learnerStatus === "TRANSFERRED_OUT" ||
+            student?.gradeLevel?.name.includes("10")) && (
+            <TabsTrigger
+              value="sf10"
+              className="flex-1 min-w-32 py-2 gap-2 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+              {activeTab === "sf10" && (
+                <motion.div
+                  layoutId="profile-active-pill"
+                  className="absolute inset-0 bg-primary rounded-md"
+                  transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                />
+              )}
+              <FileCheck2 className="h-4 w-4 relative z-20" />
+              <span className="relative z-20 hidden sm:inline">
+                SF10 Tracking
+              </span>
+            </TabsTrigger>
+          )}
           {canViewRecordHistory && (
             <TabsTrigger
               value="record-history"
@@ -424,34 +464,28 @@ export default function StudentProfile() {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div className="space-y-1">
-                      <Label className="text-muted-foreground">
-                        Birth Date
-                      </Label>
+                      <Label className="text-foreground">Birth Date</Label>
                       <p className="font-medium flex items-center gap-2">
                         <Calendar className="h-3.5 w-3.5" />
                         {format(new Date(student.birthDate), "MMMM d, yyyy")}
                       </p>
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-muted-foreground">Sex</Label>
+                      <Label className="text-foreground">Sex</Label>
                       <p className="font-medium uppercase">{student.sex}</p>
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-muted-foreground">
-                        Place of Birth
-                      </Label>
+                      <Label className="text-foreground">Place of Birth</Label>
                       <p className="font-medium">
                         {student.placeOfBirth || "N/A"}
                       </p>
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-muted-foreground">Religion</Label>
+                      <Label className="text-foreground">Religion</Label>
                       <p className="font-medium">{student.religion || "N/A"}</p>
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-muted-foreground">
-                        Mother Tongue
-                      </Label>
+                      <Label className="text-foreground">Mother Tongue</Label>
                       <p className="font-medium">
                         {student.motherTongue || "N/A"}
                       </p>
@@ -462,7 +496,7 @@ export default function StudentProfile() {
 
                   <div className="space-y-3 text-sm">
                     <div className="space-y-1">
-                      <Label className="text-muted-foreground flex items-center gap-2">
+                      <Label className="text-foreground flex items-center gap-2">
                         <MapPin className="h-3.5 w-3.5" /> Current Address
                       </Label>
                       <p className="font-medium">
@@ -481,7 +515,7 @@ export default function StudentProfile() {
                     </div>
                     {student?.permanentAddress && (
                       <div className="space-y-1">
-                        <Label className="text-muted-foreground flex items-center gap-2">
+                        <Label className="text-foreground flex items-center gap-2">
                           <MapPin className="h-3.5 w-3.5" /> Permanent Address
                         </Label>
                         <p className="font-medium">
@@ -507,7 +541,7 @@ export default function StudentProfile() {
                 <CardContent className="space-y-6">
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-xs uppercase tracking-wider text-muted-foreground font-bold">
+                      <Label className="text-xs uppercase tracking-wider text-foreground font-bold">
                         Mother's Maiden Name
                       </Label>
                       <div className="grid grid-cols-2 gap-2 text-sm">
@@ -518,15 +552,15 @@ export default function StudentProfile() {
                             {student.motherName.lastName}
                           </p>
                         ) : (
-                          <p className="font-medium text-muted-foreground/50 italic">
+                          <p className="font-medium text-foreground/50 italic">
                             Not provided
                           </p>
                         )}
                         <p
                           className={`flex items-center gap-2 ${
                             student.motherName?.contactNumber
-                              ? "text-muted-foreground"
-                              : "text-muted-foreground/50 italic"
+                              ? "text-foreground"
+                              : "text-foreground/50 italic"
                           }`}>
                           <Phone className="h-3 w-3" />{" "}
                           {student.motherName?.contactNumber || "No contact"}
@@ -535,7 +569,7 @@ export default function StudentProfile() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-xs uppercase tracking-wider text-muted-foreground font-bold">
+                      <Label className="text-xs uppercase tracking-wider text-foreground font-bold">
                         Father's Name
                       </Label>
                       <div className="grid grid-cols-2 gap-2 text-sm">
@@ -546,15 +580,15 @@ export default function StudentProfile() {
                             {student.fatherName.lastName}
                           </p>
                         ) : (
-                          <p className="font-medium text-muted-foreground/50 italic">
+                          <p className="font-medium text-foreground/50 italic">
                             Not provided
                           </p>
                         )}
                         <p
                           className={`flex items-center gap-2 ${
                             student.fatherName?.contactNumber
-                              ? "text-muted-foreground"
-                              : "text-muted-foreground/50 italic"
+                              ? "text-foreground"
+                              : "text-foreground/50 italic"
                           }`}>
                           <Phone className="h-3 w-3" />{" "}
                           {student.fatherName?.contactNumber || "No contact"}
@@ -563,7 +597,7 @@ export default function StudentProfile() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-xs uppercase tracking-wider text-muted-foreground font-bold">
+                      <Label className="text-xs uppercase tracking-wider text-foreground font-bold">
                         Guardian's Name & Relationship
                       </Label>
                       <div className="grid grid-cols-2 gap-2 text-sm">
@@ -576,15 +610,15 @@ export default function StudentProfile() {
                               `(${student.guardianInfo.relationship})`}
                           </p>
                         ) : (
-                          <p className="font-medium text-muted-foreground/50 italic">
+                          <p className="font-medium text-foreground/50 italic">
                             Not provided
                           </p>
                         )}
                         <p
                           className={`flex items-center gap-2 ${
                             student.guardianInfo?.contactNumber
-                              ? "text-muted-foreground"
-                              : "text-muted-foreground/50 italic"
+                              ? "text-foreground"
+                              : "text-foreground/50 italic"
                           }`}>
                           <Phone className="h-3 w-3" />{" "}
                           {student.guardianInfo?.contactNumber || "No contact"}
@@ -596,13 +630,13 @@ export default function StudentProfile() {
                   <Separator />
 
                   <div className="space-y-1 text-sm">
-                    <Label className="text-muted-foreground flex items-center gap-2">
+                    <Label className="text-foreground flex items-center gap-2">
                       <Mail className="h-3.5 w-3.5" /> Learner Email Address
                     </Label>
                     {student.emailAddress ? (
                       <p className="font-medium">{student.emailAddress}</p>
                     ) : (
-                      <p className="font-medium text-muted-foreground/50 italic">
+                      <p className="font-medium text-foreground/50 italic">
                         No email address provided
                       </p>
                     )}
@@ -622,7 +656,7 @@ export default function StudentProfile() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div>
                         <p className="text-sm font-medium">Reset Portal PIN</p>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-xs text-foreground mt-1">
                           Generate a new 6-digit PIN for the learner portal. The
                           current PIN will be invalidated.
                         </p>
@@ -657,7 +691,7 @@ export default function StudentProfile() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
                     <div className="space-y-4">
                       <div className="space-y-1">
-                        <Label className="text-muted-foreground">
+                        <Label className="text-foreground">
                           Last School Attended
                         </Label>
                         <p className="font-bold text-lg">
@@ -665,15 +699,13 @@ export default function StudentProfile() {
                         </p>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-muted-foreground">
-                          School ID
-                        </Label>
+                        <Label className="text-foreground">School ID</Label>
                         <p className="font-medium">
                           {student.lastSchoolId || "N/A"}
                         </p>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-muted-foreground">
+                        <Label className="text-foreground">
                           School Address
                         </Label>
                         <p className="font-medium">
@@ -683,7 +715,7 @@ export default function StudentProfile() {
                     </div>
                     <div className="space-y-4">
                       <div className="space-y-1">
-                        <Label className="text-muted-foreground">
+                        <Label className="text-foreground">
                           Last Grade Level Completed
                         </Label>
                         <p className="font-bold text-lg">
@@ -691,7 +723,7 @@ export default function StudentProfile() {
                         </p>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-muted-foreground">
+                        <Label className="text-foreground">
                           School Year Last Attended
                         </Label>
                         <p className="font-medium">
@@ -699,15 +731,13 @@ export default function StudentProfile() {
                         </p>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-muted-foreground">
-                          School Type
-                        </Label>
+                        <Label className="text-foreground">School Type</Label>
                         <p className="font-medium uppercase">
                           {student.lastSchoolType || "N/A"}
                         </p>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-muted-foreground">
+                        <Label className="text-foreground">
                           General Average
                         </Label>
                         <p className="font-bold text-lg text-primary">
@@ -717,7 +747,7 @@ export default function StudentProfile() {
                         </p>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-muted-foreground">
+                        <Label className="text-foreground">
                           Phil-IRI (Reading Profile)
                         </Label>
                         <p className="font-bold text-lg text-primary uppercase">
@@ -869,13 +899,13 @@ export default function StudentProfile() {
                 </CardHeader>
                 <CardContent className="space-y-4 text-sm font-bold">
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground flex items-center gap-2">
+                    <span className="text-foreground flex items-center gap-2">
                       <Fingerprint className="h-3.5 w-3.5" /> Tracking No:
                     </span>
                     <span className="uppercase">{student.trackingNumber}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground flex items-center gap-2">
+                    <span className="text-foreground flex items-center gap-2">
                       <ShieldCheck className="h-3.5 w-3.5" /> Admission Channel:
                     </span>
                     <span className="uppercase">
@@ -883,7 +913,7 @@ export default function StudentProfile() {
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground flex items-center gap-2">
+                    <span className="text-foreground flex items-center gap-2">
                       <UserCheck className="h-3.5 w-3.5" /> Learner Type:
                     </span>
                     <span className="uppercase">
@@ -892,7 +922,7 @@ export default function StudentProfile() {
                   </div>
                   <Separator />
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground flex items-center gap-2">
+                    <span className="text-foreground flex items-center gap-2">
                       <Calendar className="h-3.5 w-3.5" /> Date Applied:
                     </span>
                     <span>
@@ -901,7 +931,7 @@ export default function StudentProfile() {
                   </div>
                   {student.encodedBy && (
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground flex items-center gap-2">
+                      <span className="text-foreground flex items-center gap-2">
                         <User className="h-3.5 w-3.5" /> Encoded By:
                       </span>
                       <span>
@@ -933,7 +963,7 @@ export default function StudentProfile() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
                     <div className="space-y-6">
                       <div className="space-y-2">
-                        <Label className="text-muted-foreground block mb-2">
+                        <Label className="text-foreground block mb-2">
                           IP Community Membership
                         </Label>
                         {student.isIpCommunity ? (
@@ -943,13 +973,13 @@ export default function StudentProfile() {
                         ) : (
                           <Badge
                             variant="outline"
-                            className="text-muted-foreground/50 border-muted">
+                            className="text-foreground/50 border-muted">
                             ✕ Not an IP Member
                           </Badge>
                         )}
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-muted-foreground block mb-2">
+                        <Label className="text-foreground block mb-2">
                           4Ps Beneficiary
                         </Label>
                         {student.is4PsBeneficiary ? (
@@ -959,13 +989,13 @@ export default function StudentProfile() {
                         ) : (
                           <Badge
                             variant="outline"
-                            className="text-muted-foreground/50 border-muted">
+                            className="text-foreground/50 border-muted">
                             ✕ Not a 4Ps Beneficiary
                           </Badge>
                         )}
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-muted-foreground block mb-2">
+                        <Label className="text-foreground block mb-2">
                           Learner with Disability
                         </Label>
                         {student.isLearnerWithDisability ? (
@@ -989,7 +1019,7 @@ export default function StudentProfile() {
                         ) : (
                           <Badge
                             variant="outline"
-                            className="text-muted-foreground/50 border-muted">
+                            className="text-foreground/50 border-muted">
                             ✕ No Disability
                           </Badge>
                         )}
@@ -998,11 +1028,11 @@ export default function StudentProfile() {
                     <div className="space-y-6">
                       {student.isScpApplication && (
                         <div className="space-y-2">
-                          <Label className="text-muted-foreground">
+                          <Label className="text-foreground">
                             Special Curricular Program
                           </Label>
                           <p className="font-bold text-lg">{student.scpType}</p>
-                          <div className="text-muted-foreground">
+                          <div className="text-foreground">
                             {student.artField && (
                               <p>Field: {student.artField}</p>
                             )}
@@ -1129,7 +1159,7 @@ export default function StudentProfile() {
                               "text-[10px] font-black uppercase ",
                               student.hasPsaBirthCertificate ||
                                 student.birthCertificateType === "PSA"
-                                ? "text-muted-foreground/60"
+                                ? "text-foreground/60"
                                 : "text-amber-800/40",
                             )}>
                             Verification Metadata
@@ -1169,7 +1199,7 @@ export default function StudentProfile() {
                               "text-xs font-medium",
                               student.hasPsaBirthCertificate ||
                                 student.birthCertificateType === "PSA"
-                                ? "text-muted-foreground"
+                                ? "text-foreground"
                                 : "text-amber-700",
                             )}>
                             Date Secured:{" "}
@@ -1301,6 +1331,26 @@ export default function StudentProfile() {
             </motion.div>
           </TabsContent>
 
+          <TabsContent
+            value="sf10"
+            className="m-0 focus-visible:outline-none ring-0">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}>
+              <Card>
+                <CardContent className="pt-6">
+                  <Sf10Tracking
+                    learnerId={student.learnerId}
+                    requests={sf10Requests}
+                    onRefresh={fetchSf10Requests}
+                    isAlumni={student.learnerStatus === "JHS_COMPLETER"}
+                  />
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
+
           {canViewRecordHistory && (
             <TabsContent
               value="record-history"
@@ -1318,11 +1368,11 @@ export default function StudentProfile() {
                   </CardHeader>
                   <CardContent>
                     {recordHistoryLoading ? (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-foreground">
                         Loading learner transaction history...
                       </p>
                     ) : recordHistory.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-foreground">
                         No student transaction entries are recorded for this
                         learner yet.
                       </p>
@@ -1331,13 +1381,13 @@ export default function StudentProfile() {
                         <table className="w-full text-sm">
                           <thead className="bg-muted/40">
                             <tr>
-                              <th className="text-left px-4 py-3 font-bold uppercase text-xs tracking-wider text-muted-foreground">
+                              <th className="text-left px-4 py-3 font-bold uppercase text-xs tracking-wider text-foreground">
                                 Date / Time
                               </th>
-                              <th className="text-left px-4 py-3 font-bold uppercase text-xs tracking-wider text-muted-foreground">
+                              <th className="text-left px-4 py-3 font-bold uppercase text-xs tracking-wider text-foreground">
                                 Action
                               </th>
-                              <th className="text-left px-4 py-3 font-bold uppercase text-xs tracking-wider text-muted-foreground">
+                              <th className="text-left px-4 py-3 font-bold uppercase text-xs tracking-wider text-foreground">
                                 Performed By
                               </th>
                             </tr>
@@ -1358,7 +1408,7 @@ export default function StudentProfile() {
                                       entry.actionType,
                                     )}
                                   </p>
-                                  <p className="text-xs text-muted-foreground mt-1">
+                                  <p className="text-xs text-foreground mt-1">
                                     {entry.description}
                                   </p>
                                 </td>
@@ -1367,7 +1417,7 @@ export default function StudentProfile() {
                                     {entry.performedBy}
                                   </p>
                                   {entry.performedByRole && (
-                                    <p className="text-xs text-muted-foreground mt-1">
+                                    <p className="text-xs text-foreground mt-1">
                                       {entry.performedByRole.replaceAll(
                                         "_",
                                         " ",

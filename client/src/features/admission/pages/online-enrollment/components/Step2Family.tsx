@@ -447,7 +447,7 @@ export default function Step2Family() {
               />
               <Label
                 htmlFor="hasNoMother"
-                className="text-xs font-bold uppercase text-muted-foreground cursor-pointer">
+                className="text-xs font-bold uppercase text-foreground cursor-pointer">
                 Information not available
               </Label>
             </div>
@@ -583,7 +583,7 @@ export default function Step2Family() {
               />
               <Label
                 htmlFor="hasNoFather"
-                className="text-xs font-bold uppercase text-muted-foreground cursor-pointer">
+                className="text-xs font-bold uppercase text-foreground cursor-pointer">
                 Information not available
               </Label>
             </div>
@@ -873,7 +873,7 @@ export default function Step2Family() {
                       "w-12 h-12 rounded-full flex items-center justify-center transition-colors",
                       data.primaryContact === option.value
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary",
+                        : "bg-muted text-foreground group-hover:bg-primary/10 group-hover:text-primary",
                     )}>
                     <option.icon className="w-6 h-6" />
                   </div>
@@ -882,7 +882,7 @@ export default function Step2Family() {
                       "font-bold text-sm uppercase tracking-wider text-center",
                       data.primaryContact === option.value
                         ? "text-primary"
-                        : "text-muted-foreground",
+                        : "text-foreground",
                     )}>
                     {displayLabel}
                   </span>
@@ -906,22 +906,26 @@ export default function Step2Family() {
           </h3>
 
           {!data.primaryContact && (
-            <p className="text-sm text-muted-foreground italic">
+            <p className="text-sm text-foreground italic">
               Select a primary contact above before entering contact details.
             </p>
           )}
 
-          <div className={cn(
-            "rounded-xl border p-4 space-y-3 transition-colors",
-            errors.isContactInfoConfirmed 
-              ? "border-destructive bg-destructive/5" 
-              : "border-blue-200 bg-blue-50"
-          )}>
+          <div
+            className={cn(
+              "rounded-xl border p-4 space-y-3 transition-colors",
+              errors.isContactInfoConfirmed
+                ? "border-destructive bg-destructive/5"
+                : "border-blue-200 bg-blue-50",
+            )}>
             <div className="flex items-start gap-2">
               <Checkbox
                 id="isContactInfoConfirmed"
                 checked={!!data.isContactInfoConfirmed}
-                className={cn(errors.isContactInfoConfirmed && "border-destructive data-[state=unchecked]:border-destructive")}
+                className={cn(
+                  errors.isContactInfoConfirmed &&
+                    "border-destructive data-[state=unchecked]:border-destructive",
+                )}
                 onCheckedChange={(checked) => {
                   setValue("isContactInfoConfirmed", checked === true, {
                     shouldValidate: true,
@@ -934,10 +938,13 @@ export default function Step2Family() {
                 htmlFor="isContactInfoConfirmed"
                 className={cn(
                   "text-xs font-semibold leading-relaxed cursor-pointer",
-                  errors.isContactInfoConfirmed ? "text-destructive" : "text-blue-900"
+                  errors.isContactInfoConfirmed
+                    ? "text-destructive"
+                    : "text-blue-900",
                 )}>
                 I confirm that the primary contact number and email are still
-                active and correct for this enrollment. <span className="text-destructive">*</span>
+                active and correct for this enrollment.{" "}
+                <span className="text-destructive">*</span>
               </Label>
             </div>
             {errors.isContactInfoConfirmed && (
@@ -961,7 +968,7 @@ export default function Step2Family() {
                   <h4 className="text-sm font-bold uppercase tracking-widest text-primary">
                     Primary Contact
                   </h4>
-                  <Label className="text-xs font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-black uppercase text-foreground tracking-widest flex items-center gap-2">
                     {data.primaryContact === "MOTHER" ? (
                       <Venus className="w-3 h-3" />
                     ) : data.primaryContact === "FATHER" ? (
@@ -1094,10 +1101,10 @@ export default function Step2Family() {
                     key={secondary.id}
                     className="space-y-4 transition-opacity duration-0 opacity-70 hover:opacity-100 focus-within:opacity-100">
                     <div className="flex flex-col gap-1">
-                      <h4 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
+                      <h4 className="text-sm font-bold uppercase tracking-widest text-foreground">
                         Secondary Contact (Optional)
                       </h4>
-                      <Label className="text-xs font-black uppercase text-muted-foreground/60 tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-black uppercase text-foreground/60 tracking-widest flex items-center gap-2">
                         <secondary.icon className="w-3 h-3" />
                         {secondary.label}'s Contact Information
                       </Label>

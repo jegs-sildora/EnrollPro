@@ -2938,7 +2938,7 @@ export default function PipelineBatchView({
                     onClick={handleBatchProcess}
                     className={`font-bold w-full sm:w-auto ${
                       selectedIds.size === 0
-                        ? "bg-muted text-muted-foreground border-border hover:bg-muted"
+                        ? "bg-muted text-foreground border-border hover:bg-muted"
                         : ""
                     }`}>
                     {isBatchProcessing ? (

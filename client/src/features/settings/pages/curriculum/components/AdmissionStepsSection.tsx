@@ -134,7 +134,7 @@ function RubricBuilder({
             <CheckCircle2 className="size-3.5" />
             Interview Evaluation Rubric
           </Label>
-          <p className="text-xs font-bold text-muted-foreground">
+          <p className="text-xs font-bold text-foreground">
             Define categories and criteria. Teachers use this during interviews.
           </p>
         </div>
@@ -143,8 +143,7 @@ function RubricBuilder({
             variant="outline"
             size="sm"
             onClick={onReset}
-            className="h-7 gap-1.5 border-primary/20 text-[10px] font-bold text-primary hover:bg-primary/5"
-          >
+            className="h-7 gap-1.5 border-primary/20 text-[10px] font-bold text-primary hover:bg-primary/5">
             <RotateCcw className="h-3 w-3" />
             RESET TO OFFICIAL STE RUBRIC
           </Button>
@@ -155,10 +154,9 @@ function RubricBuilder({
         {categories.map((cat, catIdx) => (
           <div
             key={cat.id || `cat-${catIdx}`}
-            className="rounded-lg border bg-background shadow-sm"
-          >
+            className="rounded-lg border bg-background shadow-sm">
             <div className="flex items-center gap-2 p-2 bg-muted/30 border-b">
-              <GripVertical className="size-4 text-muted-foreground/40 shrink-0" />
+              <GripVertical className="size-4 text-foreground/40 shrink-0" />
               <div className="flex-1">
                 <Input
                   placeholder="Category Name (e.g., Image Interpretation)"
@@ -171,8 +169,7 @@ function RubricBuilder({
                 variant="ghost"
                 size="icon"
                 className="size-7 text-destructive hover:bg-destructive/10"
-                onClick={() => removeCategory(cat.id)}
-              >
+                onClick={() => removeCategory(cat.id)}>
                 <Trash2 className="size-4" />
               </Button>
             </div>
@@ -202,8 +199,7 @@ function RubricBuilder({
                 {cat.criteria.map((crit, critIdx) => (
                   <div
                     key={crit.id || `crit-${critIdx}`}
-                    className="grid grid-cols-12 gap-2 items-start"
-                  >
+                    className="grid grid-cols-12 gap-2 items-start">
                     <div className="col-span-4">
                       <Input
                         placeholder="Criterion"
@@ -258,8 +254,7 @@ function RubricBuilder({
                         variant="ghost"
                         size="icon"
                         className="size-8 text-foreground hover:text-destructive"
-                        onClick={() => removeCriterion(cat.id, crit.id)}
-                      >
+                        onClick={() => removeCriterion(cat.id, crit.id)}>
                         <X className="size-3.5" />
                       </Button>
                     </div>
@@ -271,8 +266,7 @@ function RubricBuilder({
                 variant="outline"
                 size="sm"
                 className="h-7 text-xs font-bold border-dashed w-full"
-                onClick={() => addCriterion(cat.id)}
-              >
+                onClick={() => addCriterion(cat.id)}>
                 <Plus className="size-3 mr-1" /> Add Criterion
               </Button>
             </div>
@@ -283,8 +277,7 @@ function RubricBuilder({
           variant="secondary"
           size="sm"
           className="w-full font-black text-xs uppercase "
-          onClick={addCategory}
-        >
+          onClick={addCategory}>
           <Plus className="size-3.5 mr-1.5" /> Add Rubric Category
         </Button>
       </div>
@@ -295,8 +288,7 @@ function RubricBuilder({
           isTotalValid
             ? "border-emerald-500 bg-emerald-50/30"
             : "border-amber-500 bg-amber-50/30",
-        )}
-      >
+        )}>
         <div className="flex items-center gap-2">
           {isTotalValid ? (
             <CheckCircle2 className="size-4 text-emerald-600" />
@@ -307,8 +299,7 @@ function RubricBuilder({
             className={cn(
               "text-sm font-black uppercase ",
               isTotalValid ? "text-emerald-700" : "text-amber-700",
-            )}
-          >
+            )}>
             {isTotalValid ? "Rubric Validated" : "Rubric Must Total 100"}
           </span>
         </div>
@@ -318,8 +309,7 @@ function RubricBuilder({
             isTotalValid
               ? "bg-emerald-600 text-white"
               : "bg-amber-600 text-white",
-          )}
-        >
+          )}>
           TOTAL: {actualTotal} / 100
         </div>
       </div>
@@ -357,8 +347,7 @@ export function AdmissionStepsSection({
           <div
             role="radiogroup"
             aria-label="STE examination phase"
-            className="grid grid-cols-1 sm:grid-cols-2 gap-2"
-          >
+            className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <button
               type="button"
               role="radio"
@@ -368,8 +357,7 @@ export function AdmissionStepsSection({
                 !scp.isTwoPhase
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border bg-background text-foreground hover:bg-muted"
-              }`}
-            >
+              }`}>
               1 Exam Phase (Qualifying Exam + Interview)
             </button>
             <button
@@ -381,12 +369,11 @@ export function AdmissionStepsSection({
                 scp.isTwoPhase
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border bg-background text-foreground hover:bg-muted"
-              }`}
-            >
+              }`}>
               2 Exam Phases (Preliminary Exam + Final Exam + Interview)
             </button>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-foreground">
             {scp.isTwoPhase
               ? "Preliminary Exam → Final Exam → Interview"
               : "Qualifying Exam → Interview"}
@@ -405,7 +392,9 @@ export function AdmissionStepsSection({
 
         <div className="space-y-6">
           {scp.steps.map((step, stepIdx) => (
-            <div key={stepIdx} className="relative pl-9">
+            <div
+              key={stepIdx}
+              className="relative pl-9">
               {stepIdx < scp.steps.length - 1 && (
                 <span className="pointer-events-none absolute left-3 top-10 h-[calc(100%+1.25rem)] w-px bg-border" />
               )}
@@ -422,15 +411,13 @@ export function AdmissionStepsSection({
                   {step.isRequired ? (
                     <Badge
                       variant="outline"
-                      className="ml-auto text-sm px-1.5 py-0 h-4"
-                    >
+                      className="ml-auto text-sm px-1.5 py-0 h-4">
                       Required
                     </Badge>
                   ) : (
                     <Badge
                       variant="outline"
-                      className="ml-auto text-sm px-1.5 py-0 h-4 text-muted-foreground"
-                    >
+                      className="ml-auto text-sm px-1.5 py-0 h-4 text-foreground">
                       Optional
                     </Badge>
                   )}
@@ -519,7 +506,7 @@ export function AdmissionStepsSection({
                       </div>
 
                       {step.stepOrder === firstExamStepOrder && (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-foreground">
                           System will pass learners above cut-off, up to the
                           maximum quota, ranked by highest score.
                         </p>
@@ -531,7 +518,7 @@ export function AdmissionStepsSection({
                     scp.steps
                       .slice(0, stepIdx)
                       .some((previousStep) => previousStep.isRequired) && (
-                      <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <p className="flex items-center gap-1 text-xs text-foreground">
                         <Lock className="h-3 w-3" />
                         Gated — requires passing{" "}
                         {scp.steps
@@ -599,7 +586,7 @@ export function AdmissionStepsSection({
               </div>
 
               {stepIdx < scp.steps.length - 1 && (
-                <span className="pointer-events-none absolute -bottom-5 left-[0.15rem] flex h-6 w-6 items-center justify-center rounded-full bg-background text-muted-foreground">
+                <span className="pointer-events-none absolute -bottom-5 left-[0.15rem] flex h-6 w-6 items-center justify-center rounded-full bg-background text-foreground">
                   <ArrowDown className="h-3.5 w-3.5" />
                 </span>
               )}

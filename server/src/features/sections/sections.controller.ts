@@ -232,7 +232,13 @@ export async function listEligibleAdvisers(req: Request, res: Response) {
   const teachers = await prisma.teacher.findMany({
     where: { isActive: true },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-    select: { id: true, firstName: true, lastName: true, middleName: true, employeeId: true },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      middleName: true,
+      employeeId: true,
+    },
   });
   const formatted = teachers.map((t) => ({
     id: t.id,
@@ -297,7 +303,9 @@ export async function createSection(
       });
 
       if (advisingTeacherId) {
-        const sy = await tx.schoolYear.findUnique({ where: { id: schoolYearId } });
+        const sy = await tx.schoolYear.findUnique({
+          where: { id: schoolYearId },
+        });
         await tx.sectionAdviser.create({
           data: {
             sectionId: s.id,
@@ -307,8 +315,8 @@ export async function createSection(
             effectiveFrom: sy?.classOpeningDate || new Date(),
           },
         });
-        
-        // Update teacher designation load
+
+        // Update teacher designation advisory assignment
         await tx.teacherDesignation.upsert({
           where: {
             uq_teacher_designations_teacher_sy: {
@@ -319,14 +327,12 @@ export async function createSection(
           update: {
             isClassAdviser: true,
             advisorySectionId: s.id,
-            advisoryEquivalentHoursPerWeek: 5,
           },
           create: {
             teacherId: advisingTeacherId,
             schoolYearId,
             isClassAdviser: true,
             advisorySectionId: s.id,
-            advisoryEquivalentHoursPerWeek: 5,
           },
         });
       }
@@ -345,11 +351,18 @@ export async function createSection(
     res.json({ section });
   } catch (error: any) {
     console.error("[createSection Error]", error);
-    if (error.code === 'P2002') {
-      res.status(409).json({ message: "A section with this name already exists in this grade level." });
+    if (error.code === "P2002") {
+      res
+        .status(409)
+        .json({
+          message:
+            "A section with this name already exists in this grade level.",
+        });
       return;
     }
-    res.status(500).json({ message: error.message || "Failed to create section" });
+    res
+      .status(500)
+      .json({ message: error.message || "Failed to create section" });
   }
 }
 
@@ -382,14 +395,18 @@ export async function updateSection(
         data: {
           ...(name !== undefined ? { name: name.trim() } : {}),
           ...(sortOrder !== undefined ? { sortOrder: Number(sortOrder) } : {}),
-          ...(maxCapacity !== undefined ? { maxCapacity: Number(maxCapacity) } : {}),
-          ...(programType !== undefined ? { programType: programType as ApplicantType } : {}),
+          ...(maxCapacity !== undefined
+            ? { maxCapacity: Number(maxCapacity) }
+            : {}),
+          ...(programType !== undefined
+            ? { programType: programType as ApplicantType }
+            : {}),
         },
       });
 
       if (advisingTeacherId !== undefined) {
         const currentActive = existing.advisers[0];
-        
+
         if (!currentActive || currentActive.teacherId !== advisingTeacherId) {
           // Handle teacher change/assignment
           if (currentActive) {
@@ -401,7 +418,7 @@ export async function updateSection(
                 handoverReason: "Administrative Update",
               },
             });
-            
+
             await tx.teacherDesignation.updateMany({
               where: {
                 teacherId: currentActive.teacherId,
@@ -411,13 +428,14 @@ export async function updateSection(
               data: {
                 isClassAdviser: false,
                 advisorySectionId: null,
-                advisoryEquivalentHoursPerWeek: 0,
               },
             });
           }
 
           if (advisingTeacherId) {
-            const sy = await tx.schoolYear.findUnique({ where: { id: s.schoolYearId } });
+            const sy = await tx.schoolYear.findUnique({
+              where: { id: s.schoolYearId },
+            });
             await tx.sectionAdviser.create({
               data: {
                 sectionId: s.id,
@@ -427,7 +445,7 @@ export async function updateSection(
                 effectiveFrom: sy?.classOpeningDate || new Date(),
               },
             });
-            
+
             await tx.teacherDesignation.upsert({
               where: {
                 uq_teacher_designations_teacher_sy: {
@@ -438,14 +456,12 @@ export async function updateSection(
               update: {
                 isClassAdviser: true,
                 advisorySectionId: s.id,
-                advisoryEquivalentHoursPerWeek: 5,
               },
               create: {
                 teacherId: advisingTeacherId,
                 schoolYearId: s.schoolYearId,
                 isClassAdviser: true,
                 advisorySectionId: s.id,
-                advisoryEquivalentHoursPerWeek: 5,
               },
             });
           }
@@ -466,11 +482,18 @@ export async function updateSection(
     res.json({ section });
   } catch (error: any) {
     console.error("[updateSection Error]", error);
-    if (error.code === 'P2002') {
-      res.status(409).json({ message: "A section with this name already exists in this grade level." });
+    if (error.code === "P2002") {
+      res
+        .status(409)
+        .json({
+          message:
+            "A section with this name already exists in this grade level.",
+        });
       return;
     }
-    res.status(500).json({ message: error.message || "Failed to update section" });
+    res
+      .status(500)
+      .json({ message: error.message || "Failed to update section" });
   }
 }
 
@@ -584,7 +607,10 @@ export async function getUnsectionedPool(
     include: {
       learner: true,
     },
-    orderBy: [{ learner: { lastName: "asc" } }, { learner: { firstName: "asc" } }],
+    orderBy: [
+      { learner: { lastName: "asc" } },
+      { learner: { firstName: "asc" } },
+    ],
   });
 
   res.json({
@@ -679,10 +705,14 @@ export async function handoverAdviser(req: Request, res: Response) {
 
     const currentActive = section.advisers[0];
     if (!currentActive) {
-      return res.status(400).json({ message: "No active adviser to handover from" });
+      return res
+        .status(400)
+        .json({ message: "No active adviser to handover from" });
     }
 
-    const resolvedHandoverDate = handoverDate ? new Date(handoverDate) : new Date();
+    const resolvedHandoverDate = handoverDate
+      ? new Date(handoverDate)
+      : new Date();
     const nextDay = new Date(resolvedHandoverDate);
     nextDay.setDate(nextDay.getDate() + 1);
 
@@ -693,7 +723,8 @@ export async function handoverAdviser(req: Request, res: Response) {
         data: {
           status: SectionAdviserStatus.HANDED_OVER,
           effectiveTo: resolvedHandoverDate,
-          handoverReason: handoverReason || "Maternity Leave / Mid-year reassignment",
+          handoverReason:
+            handoverReason || "Maternity Leave / Mid-year reassignment",
         },
       });
 
@@ -707,7 +738,6 @@ export async function handoverAdviser(req: Request, res: Response) {
         data: {
           isClassAdviser: false,
           advisorySectionId: null,
-          advisoryEquivalentHoursPerWeek: 0,
         },
       });
 
@@ -733,14 +763,12 @@ export async function handoverAdviser(req: Request, res: Response) {
         update: {
           isClassAdviser: true,
           advisorySectionId: sectionId,
-          advisoryEquivalentHoursPerWeek: 5,
         },
         create: {
           teacherId: substituteTeacherId,
           schoolYearId: section.schoolYearId,
           isClassAdviser: true,
           advisorySectionId: sectionId,
-          advisoryEquivalentHoursPerWeek: 5,
         },
       });
     });

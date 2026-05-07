@@ -142,8 +142,6 @@ export async function listSampleTeachers(
         sectionCount: teacher._count.advisoryHistory,
         designation: {
           isClassAdviser: designation?.isClassAdviser ?? false,
-          isTic: designation?.isTic ?? false,
-          isTeachingExempt: designation?.isTeachingExempt ?? false,
           advisorySectionName: designation?.advisorySection?.name ?? null,
           advisoryGradeLevelName:
             designation?.advisorySection?.gradeLevel?.name ?? null,

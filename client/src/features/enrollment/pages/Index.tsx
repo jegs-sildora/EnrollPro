@@ -18,7 +18,6 @@ import {
   Loader2,
   Lock,
   Download,
-  Printer,
   AlertCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -45,7 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -304,7 +303,7 @@ function SectionListForBulk({
 
   if (filtered.length === 0) {
     return (
-      <div className="text-center py-8 text-sm font-bold text-muted-foreground bg-muted/20 rounded-xl border-2 border-dashed">
+      <div className="text-center py-8 text-sm font-bold text-foreground bg-muted/20 rounded-xl border-2 border-dashed">
         No compatible sections found.
       </div>
     );
@@ -325,7 +324,7 @@ function SectionListForBulk({
               <span className="font-bold text-sm uppercase">
                 {section.name.replace(/\s*-\s*G\d+$/i, "")}
               </span>
-              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">
+              <span className="text-[10px] font-black text-foreground uppercase tracking-wider">
                 {formatScpType(section.programType)}
               </span>
             </div>
@@ -359,8 +358,10 @@ export default function Enrollment() {
   const searchParam = searchParams.get("search");
   const applicantTypeTabParam = searchParams.get("tab") || "REGULAR";
 
-  const { configs, loading: configsLoading } = useScpConfigs();
-  const [applicantTypeTab, setApplicantTypeTab] = useState(applicantTypeTabParam);
+  const { configs, loading: _configsLoading } = useScpConfigs();
+  const [applicantTypeTab, setApplicantTypeTab] = useState(
+    applicantTypeTabParam,
+  );
   const [tabCounts, setTabCounts] = useState<Record<string, number>>({});
 
   // Filters - Moved up to prevent initialization errors
@@ -369,7 +370,9 @@ export default function Enrollment() {
   const [limit, setLimit] = useState(50);
   const [pendingQueueFilter, setPendingQueueFilter] =
     useState<PendingQueueFilter>("ALL");
-  const [genderFilter, setGenderFilter] = useState<"ALL" | "MALE" | "FEMALE">("ALL");
+  const [genderFilter, setGenderFilter] = useState<"ALL" | "MALE" | "FEMALE">(
+    "ALL",
+  );
 
   const [applications, setApplications] = useState<Application[]>([]);
   const [total, setTotal] = useState(0);
@@ -555,7 +558,7 @@ export default function Enrollment() {
   const [bulkAssigning, setBulkAssigning] = useState(false);
 
   const selectedRows = useMemo(() => {
-    return applications.filter((app, index) => rowSelection[index]);
+    return applications.filter((_app, index) => rowSelection[index]);
   }, [applications, rowSelection]);
 
   const handleBulkAssign = async (sectionId: number) => {
@@ -594,34 +597,6 @@ export default function Enrollment() {
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", `LIS-Master-${activeSchoolYearLabel}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      toastApiError(err as any);
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const handleExportSf1 = async () => {
-    if (!ayId) return;
-    setExporting(true);
-    try {
-      const response = await api.get("/applications/exports/sf1", {
-        params: {
-          schoolYearId: ayId,
-          applicantType: applicantTypeTab,
-        },
-        responseType: "blob",
-      });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute(
-        "download",
-        `SF1-${applicantTypeTab}-${activeSchoolYearLabel}.csv`,
-      );
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -1014,7 +989,17 @@ export default function Enrollment() {
         setLoading(false);
       }
     }
-  }, [ayId, search, page, limit, workflowView, sortBy, sortOrder, applicantTypeTab, genderFilter]);
+  }, [
+    ayId,
+    search,
+    page,
+    limit,
+    workflowView,
+    sortBy,
+    sortOrder,
+    applicantTypeTab,
+    genderFilter,
+  ]);
 
   useEffect(() => {
     fetchData();
@@ -1207,7 +1192,9 @@ export default function Enrollment() {
         header: ({ table }) => (
           <Checkbox
             checked={table.getIsAllPageRowsSelected()}
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
             aria-label="Select all"
             className="translate-y-[2px] border-white data-[state=checked]:bg-white data-[state=checked]:text-primary"
           />
@@ -1246,7 +1233,7 @@ export default function Enrollment() {
             <span className="font-bold text-sm uppercase leading-tight">
               {row.original.lastName}, {row.original.firstName}
             </span>
-            <span className="text-[11px] font-black text-muted-foreground ">
+            <span className="text-[11px] font-black text-foreground ">
               {row.original.lrn ||
                 (row.original.isPendingLrnCreation ? "PENDING" : "NO LRN")}
             </span>
@@ -1485,7 +1472,9 @@ export default function Enrollment() {
                           disabled={isOverCapacity}
                           className="font-bold">
                           <div className="flex items-center justify-between w-full gap-4">
-                            <span>{section.name.replace(/\s*-\s*G\d+$/i, "")}</span>
+                            <span>
+                              {section.name.replace(/\s*-\s*G\d+$/i, "")}
+                            </span>
                             <span
                               className={cn(
                                 "text-[10px] font-black tabular-nums flex items-center gap-1.5",
@@ -1901,7 +1890,9 @@ export default function Enrollment() {
 
           {workflowView === "OFFICIAL_ROSTER" && (
             <div className="space-y-4">
-              {applications.some((a) => a.status === "TEMPORARILY_ENROLLED") && (
+              {applications.some(
+                (a) => a.status === "TEMPORARILY_ENROLLED",
+              ) && (
                 <motion.div
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -2026,7 +2017,7 @@ export default function Enrollment() {
             <CardHeader className="px-3 sm:px-6 py-4 border-b border-border/50 shrink-0">
               <div className="flex flex-col xl:flex-row items-center gap-4">
                 <div className="flex-1 w-full relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
                   <Input
                     placeholder="Search LRN, First Name, Last Name..."
                     className="pl-10 h-11 text-sm font-bold bg-muted/30 border-2 border-transparent focus:border-primary transition-all"
@@ -2044,7 +2035,7 @@ export default function Enrollment() {
                 <div className="flex flex-wrap items-center justify-center gap-4 shrink-0">
                   {workflowView === "SECTION_ASSIGNMENT" && (
                     <div className="flex items-center gap-2 bg-muted/30 p-1 rounded-lg border">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-2 mr-1">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-foreground ml-2 mr-1">
                         Gender:
                       </span>
                       {(["ALL", "MALE", "FEMALE"] as const).map((g) => (
@@ -2056,13 +2047,17 @@ export default function Enrollment() {
                             "h-7 px-3 text-[10px] font-black uppercase rounded-md tracking-wider transition-all",
                             genderFilter === g
                               ? "bg-white shadow-sm text-primary"
-                              : "text-muted-foreground hover:text-primary",
+                              : "text-foreground hover:text-primary",
                           )}
                           onClick={() => {
                             setGenderFilter(g);
                             setPage(1);
                           }}>
-                          {g === "ALL" ? "All" : g === "MALE" ? "Boys" : "Girls"}
+                          {g === "ALL"
+                            ? "All"
+                            : g === "MALE"
+                              ? "Boys"
+                              : "Girls"}
                         </Button>
                       ))}
                     </div>
@@ -2070,7 +2065,7 @@ export default function Enrollment() {
 
                   {workflowView === "PENDING_VERIFICATION" && (
                     <div className="flex items-center gap-2 bg-muted/30 p-1 rounded-lg border">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-2 mr-1">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-foreground ml-2 mr-1">
                         Filter:
                       </span>
                       {PENDING_QUEUE_FILTER_OPTIONS.map((option) => (
@@ -2086,7 +2081,7 @@ export default function Enrollment() {
                             "h-7 px-3 text-[10px] font-black uppercase rounded-md tracking-wider transition-all",
                             pendingQueueFilter === option.value
                               ? "bg-white shadow-sm text-primary"
-                              : "text-muted-foreground hover:text-primary",
+                              : "text-foreground hover:text-primary",
                           )}
                           onClick={() => {
                             setPendingQueueFilter(option.value);
@@ -2187,7 +2182,7 @@ export default function Enrollment() {
                           </DialogHeader>
 
                           <div className="py-4">
-                            <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground block mb-3">
+                            <Label className="text-xs font-black uppercase tracking-widest text-foreground block mb-3">
                               Select Target Section
                             </Label>
                             {/* Simple section list for bulk */}
@@ -2526,7 +2521,7 @@ export default function Enrollment() {
                 Official enrollment is locked until a section is assigned.
               </p>
             )}
-            <p className="text-sm mt-4 italic text-muted-foreground font-medium">
+            <p className="text-sm mt-4 italic text-foreground font-medium">
               Ensure all physical documents (PSA, SF9) have been verified in
               person before proceeding.
             </p>
@@ -2619,7 +2614,7 @@ export default function Enrollment() {
                   className="text-sm font-bold tracking-wide">
                   Learner has no LRN yet
                 </Label>
-                <p className="text-[11px] font-semibold text-muted-foreground">
+                <p className="text-[11px] font-semibold text-foreground">
                   Use only for incoming Grade 7 or transferee walk-ins.
                 </p>
               </div>
@@ -2891,7 +2886,7 @@ export default function Enrollment() {
                           <p className="font-bold text-sm">
                             {formatGradeLevelLabel(gl.name)}
                           </p>
-                          <p className="text-[10px] text-muted-foreground uppercase font-black ">
+                          <p className="text-[10px] text-foreground uppercase font-black ">
                             {isG7
                               ? "Uses Early Reg Assessment Score"
                               : isSynced

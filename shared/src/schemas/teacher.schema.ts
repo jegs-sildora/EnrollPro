@@ -131,19 +131,16 @@ export const teacherDesignationSchema = z
     schoolYearId: z.coerce.number().int().positive("schoolYearId is required"),
     isClassAdviser: z.boolean().default(false),
     advisorySectionId: z.coerce.number().int().positive().optional().nullable(),
-    advisoryEquivalentHoursPerWeek: z.coerce
-      .number()
-      .min(0, "Advisory equivalent hours must be non-negative")
-      .max(60, "Advisory equivalent hours cannot exceed 60")
-      .optional(),
-    isTic: z.boolean().default(false),
-    isTeachingExempt: z.boolean().default(false),
-    customTargetTeachingHoursPerWeek: z.coerce
-      .number()
-      .min(0, "Target teaching hours must be non-negative")
-      .max(60, "Target teaching hours cannot exceed 60")
+    ancillaryRoles: z
+      .array(
+        z
+          .string()
+          .trim()
+          .min(1)
+          .transform((value) => value.toUpperCase()),
+      )
       .optional()
-      .nullable(),
+      .default([]),
     designationNotes: z.string().max(1000).optional().nullable(),
     effectiveFrom: optionalDateOnly,
     effectiveTo: optionalDateOnly,

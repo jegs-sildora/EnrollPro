@@ -121,7 +121,8 @@ export default function EarlyRegistrationForm({
             path: string,
           ): Array<{ path: string; message: string }> => {
             if (!val || typeof val !== "object") return [];
-            if ("message" in val && typeof val.message === "string") return [{ path, message: val.message }];
+            if ("message" in val && typeof val.message === "string")
+              return [{ path, message: val.message }];
             return Object.entries(val).flatMap(([k, v]) =>
               collect(v, `${path}.${k}`),
             );
@@ -435,7 +436,7 @@ export default function EarlyRegistrationForm({
                 <h2 className="text-xl font-bold  text-foreground leading-tight">
                   {stepper.state.current.data.title}
                 </h2>
-                <p className="text-sm text-muted-foreground mt-0.5 font-bold">
+                <p className="text-sm text-foreground mt-0.5 font-bold">
                   {stepper.state.current.data.description}
                 </p>
               </div>

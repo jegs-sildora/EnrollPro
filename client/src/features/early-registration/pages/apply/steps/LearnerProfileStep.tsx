@@ -183,7 +183,7 @@ export default function LearnerProfileStep() {
                   : "border-muted-foreground/30 bg-muted/50 hover:border-primary/50 hover:bg-muted/80",
               )}
               fallbackIcon={
-                <div className="flex flex-col items-center text-muted-foreground group-hover:text-primary transition-colors">
+                <div className="flex flex-col items-center text-foreground group-hover:text-primary transition-colors">
                   <Camera className="w-8 h-8 mb-1" />
                   <span className="text-[0.625rem] uppercase font-bold ">
                     Upload 2x2
@@ -347,9 +347,7 @@ export default function LearnerProfileStep() {
                       <CalendarIcon
                         className={cn(
                           "w-5 h-5 transition-colors",
-                          isCalendarOpen
-                            ? "text-primary"
-                            : "text-muted-foreground",
+                          isCalendarOpen ? "text-primary" : "text-foreground",
                         )}
                       />
                     </Button>
@@ -394,7 +392,7 @@ export default function LearnerProfileStep() {
           <div className="h-11 flex items-center px-3 rounded-md border bg-muted text-sm font-bold">
             {age !== null ? `${age}` : "—"}
           </div>
-          <p className="text-[0.625rem] text-muted-foreground italic">
+          <p className="text-[0.625rem] text-foreground italic">
             Auto-calculated from Date of Birth.
           </p>
         </div>
@@ -431,7 +429,7 @@ export default function LearnerProfileStep() {
                     "w-4 h-4",
                     watch("sex") === s.value
                       ? "text-primary"
-                      : "text-muted-foreground",
+                      : "text-foreground",
                   )}
                 />
                 <span className="font-bold">{s.label}</span>
@@ -545,7 +543,7 @@ export default function LearnerProfileStep() {
               <div className="space-y-2 pt-1 max-w-screen">
                 <Label
                   htmlFor="ipGroupName"
-                  className="text-xs font-bold uppercase text-muted-foreground">
+                  className="text-xs font-bold uppercase text-foreground">
                   IP Group / Ethnicity{" "}
                   <span className="text-destructive">*</span>
                 </Label>
@@ -604,7 +602,7 @@ export default function LearnerProfileStep() {
             </div>
             {isPwd && (
               <div className="space-y-3 pt-1">
-                <Label className="text-xs font-bold uppercase text-muted-foreground">
+                <Label className="text-xs font-bold uppercase text-foreground">
                   Select Disability Type(s){" "}
                   <span className="text-destructive">*</span>
                 </Label>

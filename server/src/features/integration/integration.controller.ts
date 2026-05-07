@@ -294,13 +294,6 @@ export async function listIntegrationFaculty(
         designation?.advisorySection?.gradeLevelId ?? null,
       advisorySectionGradeLevelName:
         designation?.advisorySection?.gradeLevel?.name ?? null,
-      advisoryEquivalentHoursPerWeek:
-        designation?.advisoryEquivalentHoursPerWeek ?? 0,
-      isTic: designation?.isTic ?? false,
-      isTIC: designation?.isTic ?? false,
-      isTeachingExempt: designation?.isTeachingExempt ?? false,
-      customTargetTeachingHoursPerWeek:
-        designation?.customTargetTeachingHoursPerWeek ?? null,
       designationNotes: designation?.designationNotes ?? null,
       effectiveFrom: designation?.effectiveFrom ?? null,
       effectiveTo: designation?.effectiveTo ?? null,

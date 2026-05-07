@@ -22,7 +22,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { DatePicker } from "@/shared/ui/date-picker";
 
-import { formatManilaDate} from "@/shared/lib/utils";
+import { formatManilaDate } from "@/shared/lib/utils";
 
 const MANILA_TIME_ZONE = "Asia/Manila";
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -221,10 +221,16 @@ export default function EnrollmentGateTab() {
     setIsEditing(false);
   };
 
-  const effectiveEarlyRegOpen = isEditing ? earlyRegOpenDate : ay?.earlyRegOpenDate;
-  const effectiveEarlyRegClose = isEditing ? earlyRegCloseDate : ay?.earlyRegCloseDate;
+  const effectiveEarlyRegOpen = isEditing
+    ? earlyRegOpenDate
+    : ay?.earlyRegOpenDate;
+  const effectiveEarlyRegClose = isEditing
+    ? earlyRegCloseDate
+    : ay?.earlyRegCloseDate;
   const effectiveEnrollOpen = isEditing ? enrollOpenDate : ay?.enrollOpenDate;
-  const effectiveEnrollClose = isEditing ? enrollCloseDate : ay?.enrollCloseDate;
+  const effectiveEnrollClose = isEditing
+    ? enrollCloseDate
+    : ay?.enrollCloseDate;
 
   const earlyRegOpenToken = toNullableDateToken(effectiveEarlyRegOpen);
   const earlyRegCloseToken = toNullableDateToken(effectiveEarlyRegClose);
@@ -259,9 +265,7 @@ export default function EnrollmentGateTab() {
       enrollOpenToken !== null &&
       enrollOpenToken < earlyRegCloseToken
     ) {
-      errors.push(
-        "Phase 2 Opens On cannot be earlier than Phase 1 Closes On.",
-      );
+      errors.push("Phase 2 Opens On cannot be earlier than Phase 1 Closes On.");
     }
 
     return errors;
@@ -389,7 +393,6 @@ export default function EnrollmentGateTab() {
         </CardHeader>
 
         <CardContent className="space-y-10 pt-8">
-
           {/* Phase 1 */}
           <div className="relative">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -404,7 +407,7 @@ export default function EnrollmentGateTab() {
                     Early Registration
                   </h4>
                 </div>
-                <p className="text-sm font-bold text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-md inline-block">
+                <p className="text-sm font-bold text-foreground bg-muted/50 px-3 py-1.5 rounded-md inline-block">
                   For:{" "}
                   <span className="text-foreground">
                     Incoming Grade 7, Transferees, and Balik-Aral
@@ -423,7 +426,7 @@ export default function EnrollmentGateTab() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-muted/30 p-6 rounded-2xl border-2 border-dashed border-primary/20">
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-foreground">
                       Opens On
                     </Label>
                     <DatePicker
@@ -439,7 +442,7 @@ export default function EnrollmentGateTab() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-foreground">
                       Closes On
                     </Label>
                     <DatePicker
@@ -470,7 +473,7 @@ export default function EnrollmentGateTab() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="flex flex-col items-center justify-center p-6 bg-muted/40 rounded-2xl border shadow-inner">
-                  <span className="text-[0.65rem] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1">
+                  <span className="text-[0.65rem] font-bold text-foreground uppercase tracking-[0.2em] mb-1">
                     Opens
                   </span>
                   <span className="text-2xl font-black text-foreground tracking-tight">
@@ -478,7 +481,7 @@ export default function EnrollmentGateTab() {
                   </span>
                 </div>
                 <div className="flex flex-col items-center justify-center p-6 bg-muted/40 rounded-2xl border shadow-inner">
-                  <span className="text-[0.65rem] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1">
+                  <span className="text-[0.65rem] font-bold text-foreground uppercase tracking-[0.2em] mb-1">
                     Closes
                   </span>
                   <span className="text-2xl font-black text-foreground tracking-tight">
@@ -503,7 +506,7 @@ export default function EnrollmentGateTab() {
                     Official BOSY Enrollment
                   </h4>
                 </div>
-                <p className="text-sm font-bold text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-md inline-block">
+                <p className="text-sm font-bold text-foreground bg-muted/50 px-3 py-1.5 rounded-md inline-block">
                   For:{" "}
                   <span className="text-foreground">
                     All grade levels (Continuing & New)
@@ -522,7 +525,7 @@ export default function EnrollmentGateTab() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-muted/30 p-6 rounded-2xl border-2 border-dashed border-blue-500/20">
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-foreground">
                       Opens On
                     </Label>
                     <DatePicker
@@ -538,7 +541,7 @@ export default function EnrollmentGateTab() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-foreground">
                       Closes On
                     </Label>
                     <DatePicker
@@ -583,7 +586,7 @@ export default function EnrollmentGateTab() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="flex flex-col items-center justify-center p-6 bg-muted/40 rounded-2xl border shadow-inner">
-                  <span className="text-[0.65rem] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1">
+                  <span className="text-[0.65rem] font-bold text-foreground uppercase tracking-[0.2em] mb-1">
                     Opens
                   </span>
                   <span className="text-2xl font-black text-foreground tracking-tight">
@@ -591,7 +594,7 @@ export default function EnrollmentGateTab() {
                   </span>
                 </div>
                 <div className="flex flex-col items-center justify-center p-6 bg-muted/40 rounded-2xl border shadow-inner">
-                  <span className="text-[0.65rem] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1">
+                  <span className="text-[0.65rem] font-bold text-foreground uppercase tracking-[0.2em] mb-1">
                     Closes
                   </span>
                   <span className="text-2xl font-black text-foreground tracking-tight">
@@ -606,7 +609,7 @@ export default function EnrollmentGateTab() {
             <div className="sticky bottom-0 z-20">
               <div className="rounded-lg border border-border bg-background/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/85">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs font-semibold text-muted-foreground">
+                  <p className="text-xs font-semibold text-foreground">
                     {isTimelineDirty
                       ? "You have unsaved schedule changes."
                       : "No schedule changes yet."}
@@ -623,9 +626,13 @@ export default function EnrollmentGateTab() {
                       className="font-bold"
                       onClick={handleSaveDates}
                       disabled={
-                        saving || validationErrors.length > 0 || !isTimelineDirty
+                        saving ||
+                        validationErrors.length > 0 ||
+                        !isTimelineDirty
                       }>
-                      {saving ? "Updating Timeline..." : "Save Schedule Changes"}
+                      {saving
+                        ? "Updating Timeline..."
+                        : "Save Schedule Changes"}
                     </Button>
                   </div>
                 </div>

@@ -229,7 +229,10 @@ export default function SchoolProfileTab() {
                 id="schoolName"
                 value={formData.schoolName}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, schoolName: e.target.value }))
+                  setFormData((prev) => ({
+                    ...prev,
+                    schoolName: e.target.value,
+                  }))
                 }
               />
             </div>
@@ -276,7 +279,10 @@ export default function SchoolProfileTab() {
                 placeholder="school.id@deped.gov.ph"
                 value={formData.depedEmail}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, depedEmail: e.target.value }))
+                  setFormData((prev) => ({
+                    ...prev,
+                    depedEmail: e.target.value,
+                  }))
                 }
               />
             </div>
@@ -288,7 +294,10 @@ export default function SchoolProfileTab() {
                 placeholder="https://your-school.edu.ph"
                 value={formData.schoolWebsite}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, schoolWebsite: e.target.value }))
+                  setFormData((prev) => ({
+                    ...prev,
+                    schoolWebsite: e.target.value,
+                  }))
                 }
               />
             </div>
@@ -340,7 +349,7 @@ export default function SchoolProfileTab() {
                   className="h-full w-full rounded-lg object-contain p-1"
                 />
               ) : (
-                <Upload className="h-8 w-8 text-muted-foreground" />
+                <Upload className="h-8 w-8 text-foreground" />
               )}
             </div>
             <div className="flex flex-1 flex-col gap-3">
@@ -389,7 +398,9 @@ export default function SchoolProfileTab() {
                 {palette.map((color, i) => {
                   const isSelected = color.hsl === currentAccent;
                   return (
-                    <div key={i} className="flex flex-col items-center gap-1">
+                    <div
+                      key={i}
+                      className="flex flex-col items-center gap-1">
                       <button
                         onClick={() => handleSelectAccent(color)}
                         disabled={selectingAccent}
@@ -425,10 +436,10 @@ export default function SchoolProfileTab() {
               />
               <div>
                 <p className="text-sm ">{`hsl(${currentAccent})`}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-foreground">
                   {logoUrl ? "From extracted palette" : "Default blue"}
                 </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-xs text-foreground mt-0.5">
                   Text contrast:{" "}
                   {isAccentLight(currentAccent)
                     ? "Dark text (on light accent)"
@@ -443,7 +454,9 @@ export default function SchoolProfileTab() {
             <p className="text-sm font-medium">Live Preview</p>
             <div className="flex flex-wrap gap-3">
               <Button size="sm">Primary Button</Button>
-              <Button size="sm" variant="outline">
+              <Button
+                size="sm"
+                variant="outline">
                 Outline Button
               </Button>
               <a

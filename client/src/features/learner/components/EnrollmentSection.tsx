@@ -97,7 +97,7 @@ export function EnrollmentSection({ learner }: Props) {
         {currentEnrollment ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
             <div className="grid grid-cols-[140px_1fr] gap-4 items-center py-2 border-b border-muted/30">
-              <span className="text-[0.625rem] font-bold text-muted-foreground uppercase tracking-wider">
+              <span className="text-[0.625rem] font-bold text-foreground uppercase tracking-wider">
                 School Year
               </span>
               <span className="text-sm font-bold">
@@ -105,7 +105,7 @@ export function EnrollmentSection({ learner }: Props) {
               </span>
             </div>
             <div className="grid grid-cols-[140px_1fr] gap-4 items-center py-2 border-b border-muted/30">
-              <span className="text-[0.625rem] font-bold text-muted-foreground uppercase tracking-wider">
+              <span className="text-[0.625rem] font-bold text-foreground uppercase tracking-wider">
                 Grade Level
               </span>
               <span className="text-sm font-bold">
@@ -113,7 +113,7 @@ export function EnrollmentSection({ learner }: Props) {
               </span>
             </div>
             <div className="grid grid-cols-[140px_1fr] gap-4 items-center py-2 border-b border-muted/30">
-              <span className="text-[0.625rem] font-bold text-muted-foreground uppercase tracking-wider">
+              <span className="text-[0.625rem] font-bold text-foreground uppercase tracking-wider">
                 Section
               </span>
               <span className="text-sm font-bold">
@@ -121,7 +121,7 @@ export function EnrollmentSection({ learner }: Props) {
               </span>
             </div>
             <div className="grid grid-cols-[140px_1fr] gap-4 items-center py-2 border-b border-muted/30">
-              <span className="text-[0.625rem] font-bold text-muted-foreground uppercase tracking-wider">
+              <span className="text-[0.625rem] font-bold text-foreground uppercase tracking-wider">
                 Class Adviser
               </span>
               <span className="text-sm font-bold">
@@ -131,7 +131,7 @@ export function EnrollmentSection({ learner }: Props) {
               </span>
             </div>
             <div className="grid grid-cols-[140px_1fr] gap-4 items-center py-2 border-b border-muted/30">
-              <span className="text-[0.625rem] font-bold text-muted-foreground uppercase tracking-wider">
+              <span className="text-[0.625rem] font-bold text-foreground uppercase tracking-wider">
                 Status
               </span>
               <Badge className="w-fit bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100 text-[0.625rem] font-bold uppercase  h-5 px-1.5">
@@ -140,7 +140,7 @@ export function EnrollmentSection({ learner }: Props) {
             </div>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground italic">
+          <p className="text-sm text-foreground italic">
             No active enrollment record found.
           </p>
         )}

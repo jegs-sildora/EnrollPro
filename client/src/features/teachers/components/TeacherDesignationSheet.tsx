@@ -49,7 +49,6 @@ import {
 import { Checkbox } from "@/shared/ui/checkbox";
 import { SCP_ACRONYMS } from "@/shared/lib/utils";
 import { useMemo } from "react";
-import { cn } from "@/shared/lib/utils";
 
 interface TeacherDesignationSheetProps {
   open: boolean;
@@ -230,9 +229,9 @@ export function TeacherDesignationSheet({
             className="space-y-4">
             <TabsList className="w-full flex h-auto gap-1 p-1 bg-white border border-border relative rounded-lg">
               <TabsTrigger
-                value="role-load"
+                value="designation"
                 className="flex-1 py-2 gap-2 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-xs">
-                {designationDrawerTab === "role-load" && (
+                {designationDrawerTab === "designation" && (
                   <motion.div
                     layoutId="designation-active-pill"
                     className="absolute inset-0 bg-primary rounded-md"
@@ -240,7 +239,7 @@ export function TeacherDesignationSheet({
                   />
                 )}
                 <ShieldCheck className="h-3.5 w-3.5 relative z-20" />
-                <span className="relative z-20">Role & Load</span>
+                <span className="relative z-20">Designation</span>
               </TabsTrigger>
               <TabsTrigger
                 value="schedule-notes"
@@ -271,216 +270,145 @@ export function TeacherDesignationSheet({
             </TabsList>
 
             <TabsContent
-              value="role-load"
+              value="designation"
               className="mt-0 focus-visible:outline-none ring-0">
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
                 className="space-y-4">
-                
-                <div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-4 flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-black uppercase text-primary">Calculated Weekly Load</h4>
-                    <p className="text-[10px] text-foreground font-medium uppercase tracking-wider">Standardized DepEd Teaching Load Calculation</p>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-3xl font-black text-primary">
-                      {designationForm.isTeachingExempt ? 0 : Math.max(0, (Number(designationForm.customTargetTeachingHoursPerWeek) || 30) - (Number(designationForm.advisoryEquivalentHoursPerWeek) || 0))}
-                    </span>
-                    <span className="text-xs font-bold text-primary ml-1 uppercase">hrs</span>
-                  </div>
-                </div>
-
                 <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-md border bg-card p-3 sm:p-4 space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <Label
-                      htmlFor="isClassAdviser"
-                      className="text-xs uppercase tracking-wider">
-                      Class Adviser
-                    </Label>
-                    <Switch
-                      id="isClassAdviser"
-                      checked={designationForm.isClassAdviser}
-                      onCheckedChange={(checked) =>
-                        setDesignationForm((prev) => ({
-                          ...prev,
-                          isClassAdviser: checked,
-                          advisorySectionId: checked
-                            ? prev.advisorySectionId
-                            : "",
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs uppercase tracking-wider text-foreground">
-                      Advisory Section
-                    </Label>
-                    <Select
-                      value={designationForm.advisorySectionId || "__none__"}
-                      onValueChange={(value) => {
-                        setDesignationForm((prev) => ({
-                          ...prev,
-                          advisorySectionId: value === "__none__" ? "" : value,
-                        }));
-                        setDesignationCollision(null);
-                        setAllowCollisionOverride(false);
-                      }}
-                      disabled={
-                        !designationForm.isClassAdviser ||
-                        advisorySectionsLoading
-                      }>
-                      <SelectTrigger className="font-bold">
-                        <SelectValue
-                          placeholder={
-                            advisorySectionsLoading
-                              ? "Loading sections..."
-                              : "Select advisory section"
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[400px]">
-                        <SelectItem value="__none__" className="font-bold">
-                          No section selected
-                        </SelectItem>
-                        {sortedGradeLevels.map((gl) => (
-                          <SelectGroup key={gl}>
-                            <SelectLabel className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/70 bg-muted/40 py-1 px-2 mb-1 rounded-sm">
-                              {gl}
-                            </SelectLabel>
-                            {groupedSections[gl].map((section) => (
-                              <SelectItem
-                                key={section.id}
-                                value={section.id.toString()}
-                                className="font-bold">
-                                <div className="flex items-center justify-between w-full gap-8">
-                                  <span className="uppercase text-xs tracking-tight">
-                                    {formatSectionNameForDropdown(section)}
-                                  </span>
-                                  <span className="text-[9px] font-black text-muted-foreground bg-muted px-1.5 py-0.5 rounded tabular-nums">
-                                    {section.enrolledCount}/{section.maxCapacity}
-                                  </span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {selectedAdvisorySection?.currentAdviserName &&
-                    selectedAdvisorySection.currentAdviserId !==
-                      designationOpenFor?.id ? (
-                      <p className="text-[0.6875rem] text-amber-700 font-bold flex items-center gap-1">
-                        <AlertTriangle className="h-3 w-3" />
-                        Currently assigned to{" "}
-                        {selectedAdvisorySection.currentAdviserName}
-                      </p>
-                    ) : null}
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs uppercase tracking-wider text-foreground flex items-center gap-1">
-                      Advisory Equivalent Hours / Week
-                    </Label>
-                    <div className="relative group">
-                      <Input
-                        type="text"
-                        value={
-                          designationForm.isClassAdviser ? "🔒 5.0 HRS" : "0.0"
-                        }
-                        className="bg-muted/50 font-black text-primary border-primary/20 cursor-not-allowed h-9"
-                        readOnly
-                        disabled
-                      />
-                      {designationForm.isClassAdviser && (
-                        <p className="text-[10px] text-primary/70 mt-1 font-bold italic">
-                          (Standardized DepEd Advisory Load)
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-md border bg-card p-3 sm:p-4 space-y-3">
-                  <div className="space-y-3">
-                    <Label className="text-xs uppercase tracking-wider text-primary font-black">
-                      Ancillary Designations
-                    </Label>
-                    <div className="grid gap-2 pt-1 max-h-48 overflow-y-auto pr-1">
-                      {TEACHER_ANCILLARY_ROLE_OPTIONS.map((option) => (
-                        <div
-                          key={option.value}
-                          className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`ancillary-${option.value}`}
-                            checked={designationForm.ancillaryRoles.includes(
-                              option.value,
-                            )}
-                            onCheckedChange={(checked) => {
-                              setDesignationForm((prev) => ({
-                                ...prev,
-                                ancillaryRoles: checked
-                                  ? [...prev.ancillaryRoles, option.value]
-                                  : prev.ancillaryRoles.filter(
-                                      (r) => r !== option.value,
-                                    ),
-                              }));
-                            }}
-                          />
-                          <label
-                            htmlFor={`ancillary-${option.value}`}
-                            className="text-[10px] font-bold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 uppercase">
-                            {option.label}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t">
+                  <div className="rounded-md border bg-card p-3 sm:p-4 space-y-3">
                     <div className="flex items-center justify-between gap-3">
                       <Label
-                        htmlFor="isTeachingExempt"
+                        htmlFor="isClassAdviser"
                         className="text-xs uppercase tracking-wider">
-                        Teaching Exempt
+                        Class Adviser
                       </Label>
                       <Switch
-                        id="isTeachingExempt"
-                        checked={designationForm.isTeachingExempt}
+                        id="isClassAdviser"
+                        checked={designationForm.isClassAdviser}
                         onCheckedChange={(checked) =>
                           setDesignationForm((prev) => ({
                             ...prev,
-                            isTeachingExempt: checked,
+                            isClassAdviser: checked,
+                            advisorySectionId: checked
+                              ? prev.advisorySectionId
+                              : "",
                           }))
                         }
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs uppercase tracking-wider text-foreground">
+                        Advisory Section
+                      </Label>
+                      <Select
+                        value={designationForm.advisorySectionId || "__none__"}
+                        onValueChange={(value) => {
+                          setDesignationForm((prev) => ({
+                            ...prev,
+                            advisorySectionId:
+                              value === "__none__" ? "" : value,
+                          }));
+                          setDesignationCollision(null);
+                          setAllowCollisionOverride(false);
+                        }}
+                        disabled={
+                          !designationForm.isClassAdviser ||
+                          advisorySectionsLoading
+                        }>
+                        <SelectTrigger className="font-bold">
+                          <SelectValue
+                            placeholder={
+                              advisorySectionsLoading
+                                ? "Loading sections..."
+                                : "Select advisory section"
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[400px]">
+                          <SelectItem
+                            value="__none__"
+                            className="font-bold">
+                            No section selected
+                          </SelectItem>
+                          {sortedGradeLevels.map((gl) => (
+                            <SelectGroup key={gl}>
+                              <SelectLabel className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/70 bg-muted/40 py-1 px-2 mb-1 rounded-sm">
+                                {gl}
+                              </SelectLabel>
+                              {groupedSections[gl].map((section) => (
+                                <SelectItem
+                                  key={section.id}
+                                  value={section.id.toString()}
+                                  className="font-bold">
+                                  <div className="flex items-center justify-between w-full gap-8">
+                                    <span className="uppercase text-xs tracking-tight">
+                                      {formatSectionNameForDropdown(section)}
+                                    </span>
+                                    <span className="text-[9px] font-black text-foreground bg-muted px-1.5 py-0.5 rounded tabular-nums">
+                                      {section.enrolledCount}/
+                                      {section.maxCapacity}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {selectedAdvisorySection?.currentAdviserName &&
+                      selectedAdvisorySection.currentAdviserId !==
+                        designationOpenFor?.id ? (
+                        <p className="text-[0.6875rem] text-amber-700 font-bold flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          Currently assigned to{" "}
+                          {selectedAdvisorySection.currentAdviserName}
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-xs uppercase tracking-wider text-foreground">
-                      Custom Target Teaching Hours / Week
-                    </Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={60}
-                      step="0.5"
-                      value={designationForm.customTargetTeachingHoursPerWeek}
-                      onChange={(event) =>
-                        setDesignationForm((prev) => ({
-                          ...prev,
-                          customTargetTeachingHoursPerWeek: event.target.value,
-                        }))
-                      }
-                      placeholder="Optional"
-                    />
+                  <div className="rounded-md border bg-card p-3 sm:p-4 space-y-3">
+                    <div className="space-y-3">
+                      <Label className="text-xs uppercase tracking-wider text-primary font-black">
+                        Ancillary Designations
+                      </Label>
+                      <div className="grid gap-2 pt-1 max-h-48 overflow-y-auto pr-1">
+                        {TEACHER_ANCILLARY_ROLE_OPTIONS.map((option) => (
+                          <div
+                            key={option.value}
+                            className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`ancillary-${option.value}`}
+                              checked={designationForm.ancillaryRoles.includes(
+                                option.value,
+                              )}
+                              onCheckedChange={(checked) => {
+                                setDesignationForm((prev) => ({
+                                  ...prev,
+                                  ancillaryRoles: checked
+                                    ? [...prev.ancillaryRoles, option.value]
+                                    : prev.ancillaryRoles.filter(
+                                        (r) => r !== option.value,
+                                      ),
+                                }));
+                              }}
+                            />
+                            <label
+                              htmlFor={`ancillary-${option.value}`}
+                              className="text-[10px] font-bold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 uppercase">
+                              {option.label}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          </TabsContent>
+              </motion.div>
+            </TabsContent>
 
             <TabsContent
               value="schedule-notes"
@@ -587,7 +515,7 @@ export function TeacherDesignationSheet({
                           designationNotes: event.target.value,
                         }))
                       }
-                      placeholder="Optional notes for load planning and designation context"
+                      placeholder="Optional notes for designation context"
                       rows={4}
                     />
                   </div>
@@ -641,77 +569,26 @@ export function TeacherDesignationSheet({
                   </div>
                   <div className="p-4 space-y-3">
                     <div className="flex justify-between text-sm">
-                      <span className="text-foreground">
-                        Base Academic Load (DepEd Standard)
-                      </span>
+                      <span className="text-foreground">Class Adviser</span>
                       <span className="font-black">
-                        {Math.max(
-                          0,
-                          (Number(
-                            designationForm.customTargetTeachingHoursPerWeek,
-                          ) || 30) -
-                            (designationForm.isClassAdviser ? 5 : 0),
-                        )}{" "}
-                        Hrs / Week
+                        {designationForm.isClassAdviser
+                          ? selectedAdvisorySection
+                            ? formatSectionNameForDropdown(
+                                selectedAdvisorySection,
+                              )
+                            : "YES"
+                          : "NO"}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-foreground">
-                        Class Adviser ({selectedAdvisorySection ? formatSectionNameForDropdown(selectedAdvisorySection) : "N/A"})
-                      </span>
+                      <span className="text-foreground">Ancillary Roles</span>
                       <span className="font-black">
-                        {designationForm.isClassAdviser ? 5 : 0} Hrs / Week
-                      </span>
-                    </div>
-                    <div className="border-t pt-3 flex justify-between text-base">
-                      <span className="font-black uppercase">
-                        Total Designated Load
-                      </span>
-                      <span className="font-black text-primary">
-                        {designationForm.isTeachingExempt
-                          ? 0
-                          : Number(
-                              designationForm.customTargetTeachingHoursPerWeek,
-                            ) || 30}{" "}
-                        Hrs / Week
+                        {designationForm.ancillaryRoles.length > 0
+                          ? designationForm.ancillaryRoles.length
+                          : "NONE"}
                       </span>
                     </div>
                   </div>
-
-                  {!designationForm.isTeachingExempt && (() => {
-                    const total = Number(designationForm.customTargetTeachingHoursPerWeek) || 30;
-                    if (total > 30) {
-                      return (
-                        <div className="bg-amber-50 px-4 py-3 border-t flex items-start gap-2 text-[11px] text-amber-800 font-bold uppercase">
-                          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
-                          <p>
-                            LEGAL OVERLOAD ({total} Hrs): Exceeding the 30-hour limit under R.A. 4670 
-                            requires signed conformity for overload pay.
-                          </p>
-                        </div>
-                      );
-                    }
-                    if (total === 30) {
-                      return (
-                        <div className="bg-blue-50 px-4 py-3 border-t flex items-start gap-2 text-[11px] text-blue-800 font-bold uppercase">
-                          <Info className="h-4 w-4 shrink-0 text-blue-600" />
-                          <p>
-                            STANDARD FULL LOAD: This designation exactly meets the 30-hour standard 
-                            teaching threshold under R.A. 4670. No overload pay required.
-                          </p>
-                        </div>
-                      );
-                    }
-                    return (
-                      <div className="bg-muted/30 px-4 py-3 border-t flex items-start gap-2 text-[11px] text-foreground font-bold uppercase">
-                        <Info className="h-4 w-4 shrink-0" />
-                        <p>
-                          UNDERLOAD STATUS ({total} Hrs): Teacher load is below the 30-hour 
-                          standard teaching threshold.
-                        </p>
-                      </div>
-                    );
-                  })()}
                 </div>
 
                 {designationCollision ? (
@@ -745,8 +622,7 @@ export function TeacherDesignationSheet({
                 ) : (
                   <div className="rounded-md border bg-emerald-50 border-emerald-100 px-3 py-3 text-xs text-emerald-800 flex items-center gap-2 font-bold uppercase">
                     <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                    SYSTEM CHECK: No scheduling or advisory collisions
-                    detected.
+                    SYSTEM CHECK: No advisory collisions detected.
                   </div>
                 )}
               </motion.div>
@@ -756,12 +632,14 @@ export function TeacherDesignationSheet({
 
         <div className="border-t px-3 sm:px-4 py-3 sm:py-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-between items-center shrink-0 bg-background">
           <div>
-            {designationDrawerTab !== "role-load" && (
+            {designationDrawerTab !== "designation" && (
               <Button
                 variant="ghost"
                 onClick={() => {
-                  if (designationDrawerTab === "review") setDesignationDrawerTab("schedule-notes");
-                  else if (designationDrawerTab === "schedule-notes") setDesignationDrawerTab("role-load");
+                  if (designationDrawerTab === "review")
+                    setDesignationDrawerTab("schedule-notes");
+                  else if (designationDrawerTab === "schedule-notes")
+                    setDesignationDrawerTab("designation");
                 }}
                 disabled={submitting}
                 className="w-full sm:w-auto font-black uppercase text-xs tracking-wider gap-2">
@@ -797,8 +675,10 @@ export function TeacherDesignationSheet({
             ) : (
               <Button
                 onClick={() => {
-                  if (designationDrawerTab === "role-load") setDesignationDrawerTab("schedule-notes");
-                  else if (designationDrawerTab === "schedule-notes") setDesignationDrawerTab("review");
+                  if (designationDrawerTab === "designation")
+                    setDesignationDrawerTab("schedule-notes");
+                  else if (designationDrawerTab === "schedule-notes")
+                    setDesignationDrawerTab("review");
                 }}
                 disabled={submitting}
                 className="w-full sm:w-auto font-black uppercase text-xs tracking-wider gap-2">

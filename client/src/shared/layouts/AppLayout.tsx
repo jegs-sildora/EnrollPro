@@ -4,27 +4,28 @@ import { useNavigate, useLocation, Link } from "react-router";
 import { Toaster } from "sileo";
 import {
   LayoutDashboard,
-  ClipboardList,
-  CheckCircle,
+  FileSignature,
+  ClipboardCheck,
   Users,
-  School,
+  Layers,
   Settings,
-  ScrollText,
+  History,
   LogOut,
   ChevronsUpDown,
   ChevronDown,
   Calendar,
-  GraduationCap,
-  Shield,
+  Presentation,
+  UserCog,
   Activity,
-  AlertTriangle,
-  TrendingUp,
+  ArrowUpRightSquare,
+  UserPlus,
+  Network,
+  School,
 } from "lucide-react";
 
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
@@ -36,6 +37,15 @@ import {
   SidebarSeparator,
   SidebarTrigger,
 } from "@/shared/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/shared/ui/avatar";
 import { Separator } from "@/shared/ui/separator";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
@@ -68,6 +78,89 @@ interface SchoolYearItem {
   isActive: boolean;
 }
 
+function UserNav() {
+  const { user, clearAuth } = useAuthStore();
+  const navigate = useNavigate();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const handleLogout = () => {
+    clearAuth();
+    navigate("/login");
+  };
+
+  const initials = user?.firstName
+    ? `${user.firstName.charAt(0)}${user.lastName?.charAt(0) || ""}`.toUpperCase()
+    : "U";
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className="relative h-9 w-fit gap-2 px-2 rounded-lg border border-transparent transition-all">
+            <Avatar className="h-7 w-7 border shadow-sm">
+              <AvatarFallback className="text-[10px] font-bold bg-primary/10 text-primary">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-col items-start text-left leading-tight hidden lg:flex">
+              <span className="text-[11px] font-bold truncate max-w-[120px]">
+                {user?.firstName} {user?.lastName}
+              </span>
+              <span className="text-[9px] text-foreground font-semibold uppercase tracking-wider">
+                {user?.role?.replace("_", " ")}
+              </span>
+            </div>
+            <ChevronDown className="size-3 opacity-50 ml-0.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          className="w-56"
+          align="end"
+          forceMount>
+          <DropdownMenuLabel className="font-normal">
+            <div className="flex flex-col space-y-1">
+              <p className="text-sm font-bold leading-none">
+                {user?.firstName} {user?.lastName}
+              </p>
+              <p className="text-xs leading-none text-foreground">
+                {user?.email}
+              </p>
+            </div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="cursor-pointer font-bold text-xs"
+            asChild>
+            <Link to="/admin/users">
+              <Settings className="mr-2 h-4 w-4" />
+              Account Settings
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="cursor-pointer font-bold text-xs text-destructive focus:text-destructive"
+            onClick={() => setShowLogoutConfirm(true)}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Sign Out
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <ConfirmationModal
+        open={showLogoutConfirm}
+        onOpenChange={setShowLogoutConfirm}
+        title="Sign Out"
+        description="Are you sure you want to sign out of your account?"
+        confirmText="Sign Out"
+        onConfirm={handleLogout}
+        variant="primary"
+      />
+    </>
+  );
+}
+
 function SYSwitcher() {
   const { activeSchoolYearId, viewingSchoolYearId, setViewingSY } =
     useSettingsStore();
@@ -97,7 +190,7 @@ function SYSwitcher() {
             <Button
               variant="outline"
               size="sm"
-              className="h-8 gap-1.5 text-xs font-medium"
+              className="h-8 gap-1.5 text-xs font-bold transition-all duration-200"
               onClick={() => setOpen(!open)}>
               <Calendar className="size-3.5" />
               <span className={isOverride ? "text-destructive" : ""}>
@@ -106,40 +199,49 @@ function SYSwitcher() {
               <ChevronsUpDown className="size-3 opacity-50" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Switch School Year</TooltipContent>
+          <TooltipContent className="animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95">
+            Switch School Year
+          </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-      {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 min-w-45 rounded-md border border-border bg-popover">
-          {years.map((y) => (
-            <button
-              key={y.id}
-              onClick={() => {
-                setViewingSY(y.id === activeSchoolYearId ? null : y.id);
-                setOpen(false);
-              }}
-              className={`flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs ${
-                y.id === currentId
-                  ? "bg-accent text-accent-foreground"
-                  : "hover:bg-sidebar-accent hover:text-accent-foreground"
-              }`}>
-              <span className="flex-1 text-left">{y.yearLabel}</span>
-              <span
-                className={`rounded px-1 py-0.5 text-[0.625rem] font-medium ${
-                  y.status === "ACTIVE"
-                    ? "bg-green-100 text-green-700"
-                    : y.status === "UPCOMING"
-                      ? "bg-blue-100 text-blue-700"
-                      : y.status === "DRAFT"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : "bg-gray-100 text-gray-500"
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="absolute right-0 top-full z-50 mt-1 min-w-45 rounded-md border border-border bg-popover font-bold shadow-lg">
+            {years.map((y) => (
+              <button
+                key={y.id}
+                onClick={() => {
+                  setViewingSY(y.id === activeSchoolYearId ? null : y.id);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors ${
+                  y.id === currentId
+                    ? "bg-accent text-accent-foreground"
+                    : "hover:bg-sidebar-accent hover:text-accent-foreground"
                 }`}>
-                {y.status}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
+                <span className="flex-1 text-left">{y.yearLabel}</span>
+                <span
+                  className={`rounded px-1 py-0.5 text-[0.625rem] font-bold ${
+                    y.status === "ACTIVE"
+                      ? "bg-green-100 text-green-800"
+                      : y.status === "UPCOMING"
+                        ? "bg-blue-100 text-blue-800"
+                        : y.status === "DRAFT"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-gray-100 text-gray-800"
+                  }`}>
+                  {y.status}
+                </span>
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -147,7 +249,7 @@ function SYSwitcher() {
 const NavDivider = memo(function NavDivider({ label }: { label: string }) {
   return (
     <div className="px-3 py-2 mt-2 transition-[margin,opacity,height] duration-200 ease-linear group-data-[collapsible=icon]:m-0 group-data-[collapsible=icon]:h-0 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:opacity-0 overflow-hidden">
-      <span className="text-[0.625rem] font-bold uppercase tracking-wider text-muted-foreground opacity-60 whitespace-nowrap">
+      <span className="text-[0.625rem] font-bold uppercase tracking-wider text-foreground opacity-60 whitespace-nowrap">
         {label}
       </span>
     </div>
@@ -283,28 +385,17 @@ const NavItemChild = memo(function NavItemChild({
 function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, clearAuth } = useAuthStore();
-  const { schoolName, logoUrl, activeSchoolYearId } = useSettingsStore();
+  const { clearAuth } = useAuthStore();
+  const { schoolName, logoUrl } = useSettingsStore();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [activeYearLabel, setActiveYearLabel] = useState<string | null>(null);
 
-  const isAdmin = user?.role === "SYSTEM_ADMIN";
-  const isHeadRegistrar = user?.role === "HEAD_REGISTRAR";
-  const isLegacyRegistrar = user?.role === "REGISTRAR";
-  const isRegistrar = isHeadRegistrar || isLegacyRegistrar;
+  const isAdmin = useAuthStore((s) => s.user?.role === "SYSTEM_ADMIN");
+  const isHeadRegistrar = useAuthStore(
+    (s) => s.user?.role === "HEAD_REGISTRAR",
+  );
+  const isRegistrar =
+    useAuthStore((s) => s.user?.role === "REGISTRAR") || isHeadRegistrar;
   const pathname = location.pathname;
-
-  useEffect(() => {
-    api
-      .get("/school-years")
-      .then((r) => {
-        const found = r.data.years?.find(
-          (y: SchoolYearItem) => y.id === activeSchoolYearId,
-        );
-        setActiveYearLabel(found?.yearLabel ?? null);
-      })
-      .catch(() => {});
-  }, [activeSchoolYearId]);
 
   const handleLogout = () => {
     clearAuth();
@@ -315,53 +406,33 @@ function AppSidebar() {
     <>
       <Sidebar collapsible="icon">
         {/* ── Header: School Identity ── */}
-        <SidebarHeader>
+        <SidebarHeader className="h-20 justify-center px-4">
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton
-                size="lg"
-                className="data-[state=open]:bg-sidebar-accent cursor-default"
-                tooltip={schoolName}>
+              <div className="flex items-center gap-3">
                 {logoUrl ? (
-                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden shrink-0">
+                  <div className="flex aspect-square size-9 items-center justify-center rounded-lg overflow-hidden shrink-0 border bg-white p-1">
                     <img
                       src={`${API_BASE}${logoUrl}`}
                       alt="Logo"
-                      className="size-8 object-contain"
+                      className="size-full object-contain"
                     />
                   </div>
                 ) : (
-                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-muted shrink-0">
-                    <School className="size-4 text-muted-foreground" />
+                  <div className="flex aspect-square size-9 items-center justify-center rounded-lg bg-primary/10 shrink-0">
+                    <School className="size-5 text-primary" />
                   </div>
                 )}
-                <div className="grid flex-1 text-left text-sm leading-tight overflow-hidden">
+                <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                   {schoolName ? (
-                    <span className="truncate font-semibold">{schoolName}</span>
+                    <span className="font-black leading-[1.1] uppercase tracking-tight break-words text-primary">
+                      {schoolName}
+                    </span>
                   ) : (
-                    <Skeleton className="h-3.5 w-28 my-0.5" />
+                    <Skeleton className="h-4 w-28 my-0.5" />
                   )}
-                  <div className="flex items-center gap-1 mt-0.5">
-                    {activeYearLabel ? (
-                      <>
-                        <span className="truncate text-[0.6875rem] text-foreground">
-                          S.Y. {activeYearLabel}
-                        </span>
-                        <span className="shrink-0 text-[0.625rem] font-semibold text-green-600">
-                          ● ACTIVE
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertTriangle className="size-3 shrink-0 text-amber-500" />
-                        <span className="text-[0.6875rem] text-muted-foreground">
-                          No Active Year
-                        </span>
-                      </>
-                    )}
-                  </div>
                 </div>
-              </SidebarMenuButton>
+              </div>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarHeader>
@@ -386,24 +457,24 @@ function AppSidebar() {
 
                     <NavItem
                       to="/monitoring/early-registration"
-                      icon={ClipboardList}
+                      icon={FileSignature}
                       label="Early Registration"
                       pathname={pathname}
                     />
 
                     <NavItemParent
-                      icon={CheckCircle}
+                      icon={ClipboardCheck}
                       label="Enrollment Operations"
                       isActive={false}>
                       <NavItemChild
                         to="/monitoring/enrollment"
-                        icon={ClipboardList}
+                        icon={UserPlus}
                         label="BOSY Registration"
                         pathname={pathname}
                       />
                       <NavItemChild
                         to="/monitoring/enrollment/eosy"
-                        icon={TrendingUp}
+                        icon={ArrowUpRightSquare}
                         label="EOSY Updating"
                         pathname={pathname}
                       />
@@ -419,14 +490,14 @@ function AppSidebar() {
                     {isAdmin && (
                       <NavItem
                         to="/teachers"
-                        icon={GraduationCap}
+                        icon={Presentation}
                         label="Teachers"
                         pathname={pathname}
                       />
                     )}
                     <NavItem
                       to="/sections"
-                      icon={School}
+                      icon={Layers}
                       label="Sections"
                       pathname={pathname}
                     />
@@ -438,13 +509,19 @@ function AppSidebar() {
                     <NavDivider label="System" />
                     <NavItem
                       to="/admin/users"
-                      icon={Shield}
+                      icon={UserCog}
                       label="User Management"
                       pathname={pathname}
                     />
                     <NavItem
+                      to="/admin/ecosystem"
+                      icon={Network}
+                      label="Ecosystem Sync"
+                      pathname={pathname}
+                    />
+                    <NavItem
                       to="/audit-logs"
-                      icon={ScrollText}
+                      icon={History}
                       label="Audit Logs"
                       pathname={pathname}
                     />
@@ -466,57 +543,6 @@ function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
-
-        {/* ── Footer: User ── */}
-        <SidebarFooter>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                size="lg"
-                tooltip={
-                  user?.firstName
-                    ? `${user.firstName} ${user.lastName}`
-                    : "User"
-                }
-                onClick={() => setShowLogoutConfirm(true)}
-                className="relative">
-                {/* Collapsed State: LogOut Icon only */}
-                <div className="absolute inset-0 flex items-center justify-center transition-all duration-200 opacity-0 group-data-[collapsible=icon]:opacity-100 group-data-[collapsible=icon]:scale-100 scale-75">
-                  <LogOut className="size-4 text-muted-foreground" />
-                </div>
-
-                {/* Expanded State: Full Profile */}
-                <div className="flex w-full items-center gap-2 transition-all duration-200 opacity-100 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:scale-95 group-data-[collapsible=icon]:pointer-events-none">
-                  <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground overflow-hidden">
-                    <span className="text-xs font-semibold">
-                      {user?.firstName?.charAt(0).toUpperCase() ?? "U"}
-                    </span>
-                  </div>
-                  <div className="grid flex-1 text-left text-sm leading-tight overflow-hidden">
-                    <span className="truncate font-semibold">
-                      {user?.firstName} {user?.lastName}
-                    </span>
-                    {user?.role === "SYSTEM_ADMIN" && (
-                      <Badge
-                        variant="outline"
-                        className="mt-0.5 w-fit h-4 px-1 text-[0.5625rem] font-bold border-purple-200 bg-purple-50 text-purple-700">
-                        System Admin
-                      </Badge>
-                    )}
-                    {isRegistrar && (
-                      <Badge
-                        variant="outline"
-                        className="mt-0.5 w-fit h-4 px-1 text-[0.5625rem] font-bold border-accent bg-[hsl(var(--accent-muted))] text-accent">
-                        {isHeadRegistrar ? "Head Registrar" : "Registrar"}
-                      </Badge>
-                    )}
-                  </div>
-                  <LogOut className="ml-auto size-4 shrink-0 text-muted-foreground" />
-                </div>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
       </Sidebar>
 
       <ConfirmationModal
@@ -653,17 +679,24 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             orientation="vertical"
             className="mr-2 h-4!"
           />
-          <span className="text-sm font-medium text-muted-foreground"></span>
-          {isHistoricalReadOnly ? (
-            <Badge
-              variant="danger"
-              className="uppercase tracking-wide">
-              Historical View: Read Only
-            </Badge>
-          ) : null}
-          <div className="ml-auto flex items-center gap-2">
-            <AccessibilityMenu />
+          <div className="flex items-center gap-2">
+            {isHistoricalReadOnly ? (
+              <Badge
+                variant="danger"
+                className="uppercase tracking-wide animate-pulse">
+                Historical View: Read Only
+              </Badge>
+            ) : null}
+          </div>
+
+          <div className="ml-auto flex items-center gap-4">
             <SYSwitcher />
+
+            <div className="flex items-center gap-1 border-x px-3 h-8">
+              <AccessibilityMenu />
+            </div>
+
+            <UserNav />
           </div>
         </header>
 

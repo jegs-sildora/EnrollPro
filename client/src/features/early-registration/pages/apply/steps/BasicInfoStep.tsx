@@ -444,7 +444,8 @@ export default function BasicInfoStep() {
   const gaEnteredAndBelowThreshold =
     isScpEligible && gaValue !== null && gaValue < effectiveScpGaThreshold;
 
-  const isGaMeetsThreshold = gaValue !== null && gaValue >= effectiveScpGaThreshold;
+  const isGaMeetsThreshold =
+    gaValue !== null && gaValue >= effectiveScpGaThreshold;
 
   const canSelectScpTrack =
     isScpEligible &&
@@ -528,7 +529,14 @@ export default function BasicInfoStep() {
       setValue("scpType", null, { shouldValidate: true });
       clearErrors("scpType");
     }
-  }, [isScpEligible, isGaMeetsThreshold, isScpApplication, scpType, setValue, clearErrors]);
+  }, [
+    isScpEligible,
+    isGaMeetsThreshold,
+    isScpApplication,
+    scpType,
+    setValue,
+    clearErrors,
+  ]);
 
   useEffect(() => {
     if (isLoadingScpConfig || !isScpApplication || hasOfferedScpPrograms) {
@@ -671,7 +679,7 @@ export default function BasicInfoStep() {
                 }}
               />
             </div>
-            <p className="font-bold text-xs italic flex items-center gap-1 mt-2 text-muted-foreground">
+            <p className="font-bold text-xs italic flex items-center gap-1 mt-2 text-foreground">
               <Info className="w-4 h-4" />
               {hasNoLrn
                 ? "No LRN declared. Registrar will process this learner under pending LRN creation."
@@ -729,9 +737,9 @@ export default function BasicInfoStep() {
                 id="schoolYear"
                 {...register("schoolYear")}
                 readOnly
-                className="h-12 bg-muted/50 text-muted-foreground cursor-not-allowed font-bold pl-10 uppercase border-dashed"
+                className="h-12 bg-muted/50 text-foreground cursor-not-allowed font-bold pl-10 uppercase border-dashed"
               />
-              <School className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70" />
+              <School className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/70" />
             </div>
           </div>
         </div>
@@ -753,7 +761,7 @@ export default function BasicInfoStep() {
                   "flex items-center justify-center p-3 rounded-xl border-2 transition-all text-center h-14 uppercase focus:outline-none focus:ring-2 focus:ring-primary/50",
                   learnerType === lt.value
                     ? "border-primary bg-primary text-primary-foreground shadow-md"
-                    : "border-border bg-white hover:bg-primary/5 text-muted-foreground hover:text-foreground",
+                    : "border-border bg-white hover:bg-primary/5 text-foreground hover:text-foreground",
                 )}>
                 <span className="font-bold text-sm leading-tight tracking-wide">
                   {lt.label}
@@ -838,7 +846,10 @@ export default function BasicInfoStep() {
                     if (val === "" || /^(\d+)?(\.\d{0,2})?$/.test(val)) {
                       const parsed = val === "" ? null : parseFloat(val);
 
-                      if (parsed === null || (!isNaN(parsed) && parsed <= 100)) {
+                      if (
+                        parsed === null ||
+                        (!isNaN(parsed) && parsed <= 100)
+                      ) {
                         setValue(
                           "reportedGrades.generalAverage",
                           parsed === null ? null : Number(parsed.toFixed(2)),
@@ -848,7 +859,7 @@ export default function BasicInfoStep() {
                     }
                   }}
                 />
-                <p className="font-bold text-xs italic flex items-center gap-1 text-muted-foreground">
+                <p className="font-bold text-xs italic flex items-center gap-1 text-foreground">
                   <Info className="w-4 h-4" />
                   From your Grade 6 SF9 / Report Card (Quarters 1–3 average).
                 </p>
@@ -884,7 +895,9 @@ export default function BasicInfoStep() {
             <div
               className={cn(
                 "grid gap-3",
-                isScpEligible && isGaMeetsThreshold ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1",
+                isScpEligible && isGaMeetsThreshold
+                  ? "grid-cols-1 sm:grid-cols-2"
+                  : "grid-cols-1",
               )}>
               <button
                 type="button"
@@ -914,7 +927,7 @@ export default function BasicInfoStep() {
                     "text-xs pl-8",
                     !isScpApplication
                       ? "text-primary-foreground/80"
-                      : "text-muted-foreground",
+                      : "text-foreground",
                   )}>
                   Standard Junior High curriculum.
                 </p>
@@ -930,7 +943,7 @@ export default function BasicInfoStep() {
                       ? "border-primary bg-primary text-primary-foreground"
                       : canSelectScpTrack
                         ? "border-border bg-white hover:bg-primary/5"
-                        : "border-border bg-muted/40 text-muted-foreground cursor-not-allowed opacity-70",
+                        : "border-border bg-muted/40 text-foreground cursor-not-allowed opacity-70",
                   )}
                   onClick={selectScpTrack}>
                   <div className="flex items-center gap-3 mb-1">
@@ -954,7 +967,7 @@ export default function BasicInfoStep() {
                       "text-xs pl-8",
                       isScpApplication
                         ? "text-primary-foreground/80"
-                        : "text-muted-foreground",
+                        : "text-foreground",
                     )}>
                     {isLoadingScpConfig
                       ? "Loading available SCP tracks..."
@@ -969,32 +982,35 @@ export default function BasicInfoStep() {
             </div>
 
             {isScpEligible && isGaMeetsThreshold && isLoadingScpConfig && (
-              <p className="font-bold text-xs italic flex items-center gap-1 mt-2 text-muted-foreground">
+              <p className="font-bold text-xs italic flex items-center gap-1 mt-2 text-foreground">
                 <Info className="w-4 h-4" />
                 Loading available SCP programs...
-              </p>
-            )}
-
-            {isScpEligible && isGaMeetsThreshold && !isLoadingScpConfig && scpConfigError && (
-              <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-2">
-                <AlertCircle className="w-3 h-3" />
-                {scpConfigError}
               </p>
             )}
 
             {isScpEligible &&
               isGaMeetsThreshold &&
               !isLoadingScpConfig &&
+              scpConfigError && (
+                <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-2">
+                  <AlertCircle className="w-3 h-3" />
+                  {scpConfigError}
+                </p>
+              )}
+
+            {isScpEligible &&
+              isGaMeetsThreshold &&
+              !isLoadingScpConfig &&
               !scpConfigError &&
               !hasOfferedScpPrograms && (
-                <p className="font-bold text-xs italic flex items-center gap-1 mt-2 text-muted-foreground">
+                <p className="font-bold text-xs italic flex items-center gap-1 mt-2 text-foreground">
                   <Info className="w-4 h-4" />
                   No SCP programs are currently offered for this School Year.
                 </p>
               )}
 
             {!isScpEligible && (
-              <p className="font-bold text-xs italic flex items-center gap-1 mt-2 text-muted-foreground">
+              <p className="font-bold text-xs italic flex items-center gap-1 mt-2 text-foreground">
                 <Info className="w-4 h-4" />
                 SCP is available only for New Enrollees in Grade 7.
               </p>
@@ -1043,7 +1059,7 @@ export default function BasicInfoStep() {
                           "text-xs pl-8 italic",
                           scpType === program.id
                             ? "text-primary-foreground/80"
-                            : "text-muted-foreground",
+                            : "text-foreground",
                         )}>
                         {program.description}
                       </p>
@@ -1129,7 +1145,7 @@ export default function BasicInfoStep() {
                                   </span>
                                 </div>
                                 {requirement.note && (
-                                  <p className="mt-1 text-[0.6875rem] text-muted-foreground">
+                                  <p className="mt-1 text-[0.6875rem] text-foreground">
                                     {requirement.note}
                                   </p>
                                 )}
@@ -1141,7 +1157,7 @@ export default function BasicInfoStep() {
                     </div>
 
                     {selectedScpRequirementCard.note && (
-                      <p className="font-bold text-xs italic flex items-start gap-1 text-muted-foreground">
+                      <p className="font-bold text-xs italic flex items-start gap-1 text-foreground">
                         <Info className="w-4 h-4 shrink-0 mt-[1px]" />
                         <span>{selectedScpRequirementCard.note}</span>
                       </p>

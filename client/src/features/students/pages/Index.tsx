@@ -1,4 +1,10 @@
-import { useState, useEffect, useCallback, useMemo, startTransition } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  startTransition,
+} from "react";
 import { useNavigate } from "react-router";
 import {
   Search,
@@ -62,10 +68,14 @@ import {
 } from "@/shared/ui/dropdown-menu";
 import { Label } from "@/shared/ui/label";
 import { Sheet, SheetContent } from "@/shared/ui/sheet";
+import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
-import { StudentDetailPanel, type StudentDetail as PanelStudentDetail } from "../components/StudentDetailPanel";
+import {
+  StudentDetailPanel,
+  type StudentDetail as PanelStudentDetail,
+} from "../components/StudentDetailPanel";
 import { PaginationBar } from "@/shared/components/PaginationBar";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { useResizablePanel } from "@/features/admission/pages/early-registration/hooks/useResizablePanel";
@@ -261,12 +271,14 @@ export default function Students() {
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [activeTab, setActiveTab] = useState<"active" | "completers" | "inactive">(
+    "active",
+  );
   const [gradeLevelFilter, setGradeLevelFilter] = useState<string>("all");
   const [programFilter, setProgramFilter] = useState<string>("all");
   const [sectionFilter, setSectionFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
-  const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [sortBy, setSortBy] = useState<string>("dateEnrolled");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -276,17 +288,23 @@ export default function Students() {
     [sortBy, sortOrder],
   );
 
-  const onSortingChange = useCallback((updaterOrValue: SortingState | ((old: SortingState) => SortingState)) => {
-    const newSorting = typeof updaterOrValue === "function" ? updaterOrValue(sorting) : updaterOrValue;
-    if (newSorting.length > 0) {
-      setSortBy(newSorting[0].id);
-      setSortOrder(newSorting[0].desc ? "desc" : "asc");
-    } else {
-      setSortBy("dateEnrolled");
-      setSortOrder("desc");
-    }
-    setPage(1);
-  }, [sorting]);
+  const onSortingChange = useCallback(
+    (updaterOrValue: SortingState | ((old: SortingState) => SortingState)) => {
+      const newSorting =
+        typeof updaterOrValue === "function"
+          ? updaterOrValue(sorting)
+          : updaterOrValue;
+      if (newSorting.length > 0) {
+        setSortBy(newSorting[0].id);
+        setSortOrder(newSorting[0].desc ? "desc" : "asc");
+      } else {
+        setSortBy("dateEnrolled");
+        setSortOrder("desc");
+      }
+      setPage(1);
+    },
+    [sorting],
+  );
 
   const [gradeLevels, setGradeLevels] = useState<GradeLevel[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
@@ -419,16 +437,24 @@ export default function Students() {
 
   // Fetch students
   const fetchStudents = useCallback(async () => {
-    if (!ayId) return;
+    if (!ayId && activeTab !== "completers") return;
     setLoading(true);
     try {
       const params: Record<string, string | number> = {
-        schoolYearId: ayId,
         page,
         limit,
         sortBy,
         sortOrder,
       };
+
+      if (activeTab === "active" && ayId) {
+        params.schoolYearId = ayId;
+      } else if (activeTab === "completers") {
+        params.learnerStatus = "JHS_COMPLETER";
+      } else if (activeTab === "inactive") {
+        params.learnerStatus = "DROPPED,TRANSFERRED_OUT";
+      }
+
       if (debouncedSearch) params.search = debouncedSearch;
       if (gradeLevelFilter !== "all") params.gradeLevelId = gradeLevelFilter;
       if (programFilter !== "all") params.programType = programFilter;
@@ -437,16 +463,15 @@ export default function Students() {
       const res = await api.get("/students", { params });
       setStudents(res.data.students || []);
       setTotal(res.data.pagination.total);
-      setTotalPages(res.data.pagination.totalPages);
     } catch (err) {
       toastApiError(err as any);
       setStudents([]);
     } finally {
       setLoading(false);
-      // setInitialLoad(false);
     }
   }, [
     ayId,
+    activeTab,
     page,
     limit,
     debouncedSearch,
@@ -560,7 +585,10 @@ export default function Students() {
 
   const openTransferOutDialog = useCallback(
     (student: Student | PanelStudentDetail) => {
-      const s = "learningProgram" in student ? student : mapPanelDetailToStudent(student);
+      const s =
+        "learningProgram" in student
+          ? student
+          : mapPanelDetailToStudent(student);
       setActionStudent(s);
       setTransferOutDate(toDateInputValue());
       setTransferOutSchoolName("");
@@ -572,7 +600,10 @@ export default function Students() {
 
   const openDropoutDialog = useCallback(
     (student: Student | PanelStudentDetail) => {
-      const s = "learningProgram" in student ? student : mapPanelDetailToStudent(student);
+      const s =
+        "learningProgram" in student
+          ? student
+          : mapPanelDetailToStudent(student);
       setActionStudent(s);
       setDropoutDate(toDateInputValue());
       setDropoutReasonCode("LACK_OF_INTEREST");
@@ -582,67 +613,85 @@ export default function Students() {
     [toDateInputValue],
   );
 
-  const openShiftDialog = useCallback((student: Student | PanelStudentDetail) => {
-    const s = "learningProgram" in student ? student : mapPanelDetailToStudent(student);
-    setActionStudent(s);
-    setShiftTargetSectionId("");
-    setShowShiftDialog(true);
-  }, []);
+  const openShiftDialog = useCallback(
+    (student: Student | PanelStudentDetail) => {
+      const s =
+        "learningProgram" in student
+          ? student
+          : mapPanelDetailToStudent(student);
+      setActionStudent(s);
+      setShiftTargetSectionId("");
+      setShowShiftDialog(true);
+    },
+    [],
+  );
 
-  const openProfileQuickEditDialog = useCallback(async (student: Student | PanelStudentDetail) => {
-    const s = "learningProgram" in student ? student : mapPanelDetailToStudent(student);
-    setActionStudent(s);
+  const openProfileQuickEditDialog = useCallback(
+    async (student: Student | PanelStudentDetail) => {
+      const s =
+        "learningProgram" in student
+          ? student
+          : mapPanelDetailToStudent(student);
+      setActionStudent(s);
 
-    try {
-      const res = await api.get(`/students/${s.id}`);
-      const detail = res.data.student as StudentDetail & {
-        religion?: string | null;
-        motherTongue?: string | null;
-        currentAddress?: {
-          barangay?: string | null;
-          cityMunicipality?: string | null;
-          province?: string | null;
-        } | null;
-      };
+      try {
+        const res = await api.get(`/students/${s.id}`);
+        const detail = res.data.student as StudentDetail & {
+          religion?: string | null;
+          motherTongue?: string | null;
+          currentAddress?: {
+            barangay?: string | null;
+            cityMunicipality?: string | null;
+            province?: string | null;
+          } | null;
+        };
 
-      setProfileForm({
-        emailAddress: detail.emailAddress ?? s.emailAddress ?? "",
-        contactNumber:
-          detail.parentGuardianContact ?? s.parentGuardianContact ?? "",
-        religion: detail.religion ?? "",
-        motherTongue: detail.motherTongue ?? "",
-        currentAddress:
-          [
-            detail.currentAddress?.barangay,
-            detail.currentAddress?.cityMunicipality,
-            detail.currentAddress?.province,
-          ]
-            .filter(Boolean)
-            .join(", ") ||
-          s.address ||
-          "",
+        setProfileForm({
+          emailAddress: detail.emailAddress ?? s.emailAddress ?? "",
+          contactNumber:
+            detail.parentGuardianContact ?? s.parentGuardianContact ?? "",
+          religion: detail.religion ?? "",
+          motherTongue: detail.motherTongue ?? "",
+          currentAddress:
+            [
+              detail.currentAddress?.barangay,
+              detail.currentAddress?.cityMunicipality,
+              detail.currentAddress?.province,
+            ]
+              .filter(Boolean)
+              .join(", ") ||
+            s.address ||
+            "",
+        });
+      } catch {
+        setProfileForm({
+          emailAddress: s.emailAddress ?? "",
+          contactNumber: s.parentGuardianContact ?? "",
+          religion: "",
+          motherTongue: "",
+          currentAddress: s.address || "",
+        });
+      }
+
+      setShowProfileDialog(true);
+    },
+    [],
+  );
+
+  const openAssignLrnDialog = useCallback(
+    (student: Student | PanelStudentDetail) => {
+      const s =
+        "learningProgram" in student
+          ? student
+          : mapPanelDetailToStudent(student);
+      setActionStudent(s);
+      setLrnForm({
+        lrn: /^\d{12}$/.test(s.lrn || "") ? s.lrn : "",
       });
-    } catch {
-      setProfileForm({
-        emailAddress: s.emailAddress ?? "",
-        contactNumber: s.parentGuardianContact ?? "",
-        religion: "",
-        motherTongue: "",
-        currentAddress: s.address || "",
-      });
-    }
-
-    setShowProfileDialog(true);
-  }, []);
-
-  const openAssignLrnDialog = useCallback((student: Student | PanelStudentDetail) => {
-    const s = "learningProgram" in student ? student : mapPanelDetailToStudent(student);
-    setActionStudent(s);
-    setLrnForm({
-      lrn: /^\d{12}$/.test(s.lrn || "") ? s.lrn : "",
-    });
-    setShowLrnDialog(true);
-  }, []);
+      setShowLrnDialog(true);
+    },
+    [],
+  );
 
   const openGoodMoralPreview = useCallback(
     (studentId: number) => {
@@ -876,7 +925,10 @@ export default function Students() {
         id: "lastName",
         accessorKey: "lastName",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Learner" />
+          <DataTableColumnHeader
+            column={column}
+            title="Learner"
+          />
         ),
         cell: ({ row }) => (
           <div className="flex flex-col text-left min-w-[200px] pl-2">
@@ -884,7 +936,7 @@ export default function Students() {
               {row.original.fullName}
             </span>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs font-semibold text-muted-foreground leading-snug">
+              <span className="text-xs font-semibold text-foreground leading-snug">
                 {formatLearningProgramLabel(row.original.learningProgram)}
               </span>
               {row.original.applicantType === "LATE_ENROLLEE" && (
@@ -900,7 +952,10 @@ export default function Students() {
         id: "lrn",
         accessorKey: "lrn",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="LRN" />
+          <DataTableColumnHeader
+            column={column}
+            title="LRN"
+          />
         ),
         cell: ({ row }) => (
           <span className="font-bold text-sm">{row.original.lrn}</span>
@@ -910,7 +965,10 @@ export default function Students() {
         id: "sex",
         accessorKey: "sex",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Gender" />
+          <DataTableColumnHeader
+            column={column}
+            title="Gender"
+          />
         ),
         cell: ({ row }) => {
           const normalized = row.original.sex?.trim().toUpperCase();
@@ -928,7 +986,10 @@ export default function Students() {
         id: "gradeLevel",
         accessorKey: "gradeLevel",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Grade Level" />
+          <DataTableColumnHeader
+            column={column}
+            title="Grade Level"
+          />
         ),
         cell: ({ row }) => (
           <span className="font-bold text-sm">{row.original.gradeLevel}</span>
@@ -938,7 +999,10 @@ export default function Students() {
         id: "section",
         accessorKey: "section",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Section" />
+          <DataTableColumnHeader
+            column={column}
+            title="Section"
+          />
         ),
         cell: ({ row }) => (
           <span className="font-bold text-sm">
@@ -950,7 +1014,10 @@ export default function Students() {
         id: "dateEnrolled",
         accessorKey: "dateEnrolled",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Date Enrolled" />
+          <DataTableColumnHeader
+            column={column}
+            title="Date Enrolled"
+          />
         ),
         cell: ({ row }) => (
           <span className="text-sm font-bold block text-center">
@@ -981,7 +1048,9 @@ export default function Students() {
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 font-semibold">
+              <DropdownMenuContent
+                align="end"
+                className="w-56 font-semibold">
                 <DropdownMenuItem
                   onClick={() => handleOpenProfilePage(row.original.id)}
                   className="cursor-pointer">
@@ -1050,13 +1119,13 @@ export default function Students() {
         <Card className="max-w-md w-full border-dashed shadow-none bg-muted/20">
           <CardContent className="pt-10 pb-10 text-center space-y-3">
             <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-              <CalendarDays className="h-6 w-6 text-muted-foreground" />
+              <CalendarDays className="h-6 w-6 text-foreground" />
             </div>
             <div className="space-y-1">
               <p className="font-bold text-foreground">
                 No School Year Selected
               </p>
-              <p className="text-sm text-muted-foreground leading-relaxed px-4">
+              <p className="text-sm text-foreground leading-relaxed px-4">
                 Please set an active year or choose one from the header switcher
                 to manage records for this period.
               </p>
@@ -1101,9 +1170,9 @@ export default function Students() {
           </CardHeader>
           <CardContent className="pt-0">
             {summaryLoading ? (
-              <div className="text-sm font-bold text-muted-foreground">...</div>
+              <div className="text-sm font-bold text-foreground">...</div>
             ) : !summary ? (
-              <p className="text-xs font-semibold text-muted-foreground">
+              <p className="text-xs font-semibold text-foreground">
                 No enrolled learners yet.
               </p>
             ) : (
@@ -1128,10 +1197,10 @@ export default function Students() {
                 </div>
                 {summary.genderBreakdown.other > 0 && (
                   <div className="rounded-md border border-dashed bg-muted/30 px-2 py-1 flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-bold uppercase text-muted-foreground">
+                    <span className="text-[11px] font-bold uppercase text-foreground">
                       Others
                     </span>
-                    <span className="text-xs font-extrabold text-muted-foreground">
+                    <span className="text-xs font-extrabold text-foreground">
                       {summary.genderBreakdown.other}
                     </span>
                   </div>
@@ -1148,9 +1217,9 @@ export default function Students() {
           </CardHeader>
           <CardContent className="pt-0">
             {summaryLoading ? (
-              <div className="text-sm font-bold text-muted-foreground">...</div>
+              <div className="text-sm font-bold text-foreground">...</div>
             ) : programBreakdownItems.length === 0 ? (
-              <p className="text-xs font-semibold text-muted-foreground">
+              <p className="text-xs font-semibold text-foreground">
                 No enrolled learners yet.
               </p>
             ) : (
@@ -1169,10 +1238,10 @@ export default function Students() {
                 ))}
                 {otherProgramLearnerCount > 0 && (
                   <div className="rounded-md border border-dashed bg-muted/30 px-2 py-1 flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-bold uppercase text-muted-foreground">
+                    <span className="text-[11px] font-bold uppercase text-foreground">
                       Others
                     </span>
-                    <span className="text-xs font-extrabold text-muted-foreground">
+                    <span className="text-xs font-extrabold text-foreground">
                       {otherProgramLearnerCount}
                     </span>
                   </div>
@@ -1182,6 +1251,39 @@ export default function Students() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Tabs */}
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => {
+          setActiveTab(value as any);
+          setPage(1);
+        }}
+        className="w-full">
+        <TabsList className="grid w-full grid-cols-3 h-11 p-1 bg-muted/40">
+          <TabsTrigger
+            value="active"
+            className="text-sm font-bold gap-2 h-9">
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline">Active Enrolled</span>
+            <span className="sm:hidden">Active</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="completers"
+            className="text-sm font-bold gap-2 h-9">
+            <FileCheck2 className="h-4 w-4" />
+            <span className="hidden sm:inline">JHS Completers</span>
+            <span className="sm:hidden">Alumni</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="inactive"
+            className="text-sm font-bold gap-2 h-9">
+            <BadgeAlert className="h-4 w-4" />
+            <span className="hidden sm:inline">Inactive / Out</span>
+            <span className="sm:hidden">Inactive</span>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Search and Filters */}
       <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
@@ -1224,7 +1326,9 @@ export default function Students() {
                     <SelectValue placeholder="All Grades" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all" className="text-sm font-bold">
+                    <SelectItem
+                      value="all"
+                      className="text-sm font-bold">
                       All Grades
                     </SelectItem>
                     {gradeLevels.map((gl) => (
@@ -1254,7 +1358,9 @@ export default function Students() {
                     <SelectValue placeholder="All Programs" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all" className="text-sm font-bold">
+                    <SelectItem
+                      value="all"
+                      className="text-sm font-bold">
                       All Programs
                     </SelectItem>
                     {PROGRAM_FILTER_OPTIONS.map((option) => (
@@ -1284,7 +1390,9 @@ export default function Students() {
                     <SelectValue placeholder="All Sections" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all" className="text-sm font-bold">
+                    <SelectItem
+                      value="all"
+                      className="text-sm font-bold">
                       All Sections
                     </SelectItem>
                     {filteredSections.map((sec) => (
@@ -1375,7 +1483,7 @@ export default function Students() {
                         {student.fullName}
                       </p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <p className="text-xs font-semibold text-muted-foreground leading-snug">
+                        <p className="text-xs font-semibold text-foreground leading-snug">
                           {formatLearningProgramLabel(student.learningProgram)}
                         </p>
                         {student.applicantType === "LATE_ENROLLEE" && (
@@ -1390,13 +1498,13 @@ export default function Students() {
 
                   <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                     <div>
-                      <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+                      <p className="text-[10px] uppercase tracking-wider font-bold text-foreground">
                         LRN
                       </p>
                       <p className="font-bold">{student.lrn}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+                      <p className="text-[10px] uppercase tracking-wider font-bold text-foreground">
                         Gender
                       </p>
                       <p className="font-bold uppercase">
@@ -1408,13 +1516,13 @@ export default function Students() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+                      <p className="text-[10px] uppercase tracking-wider font-bold text-foreground">
                         Grade Level
                       </p>
                       <p className="font-bold">{student.gradeLevel}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+                      <p className="text-[10px] uppercase tracking-wider font-bold text-foreground">
                         Section
                       </p>
                       <p className="font-bold">
@@ -1423,7 +1531,7 @@ export default function Students() {
                     </div>
                   </div>
 
-                  <p className="mt-2 text-[11px] font-bold text-muted-foreground">
+                  <p className="mt-2 text-[11px] font-bold text-foreground">
                     Enrolled{" "}
                     {formatDate(student.dateEnrolled || student.createdAt)}
                   </p>
@@ -1538,9 +1646,7 @@ export default function Students() {
           side="right"
           className="p-0 flex flex-row border-l overflow-visible w-full sm:w-auto sm:max-w-none"
           style={
-            isDesktopViewport
-              ? { width: `${panelPercentage}vw` }
-              : undefined
+            isDesktopViewport ? { width: `${panelPercentage}vw` } : undefined
           }>
           {/* Resize Handle — hidden on mobile */}
           <div
@@ -1628,7 +1734,9 @@ export default function Students() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showDropoutDialog} onOpenChange={setShowDropoutDialog}>
+      <Dialog
+        open={showDropoutDialog}
+        onOpenChange={setShowDropoutDialog}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Mark Learner as Dropped Out</DialogTitle>
@@ -1659,7 +1767,9 @@ export default function Students() {
                 </SelectTrigger>
                 <SelectContent>
                   {DROPOUT_REASON_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}>
                       {option.label}
                     </SelectItem>
                   ))}
@@ -1700,7 +1810,9 @@ export default function Students() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showShiftDialog} onOpenChange={setShowShiftDialog}>
+      <Dialog
+        open={showShiftDialog}
+        onOpenChange={setShowShiftDialog}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Shift Section or Program</DialogTitle>
@@ -1728,7 +1840,9 @@ export default function Students() {
                 </SelectTrigger>
                 <SelectContent>
                   {availableShiftSections.map((section) => (
-                    <SelectItem key={section.id} value={String(section.id)}>
+                    <SelectItem
+                      key={section.id}
+                      value={String(section.id)}>
                       {formatSectionLabel(section.name)} (
                       {formatScpType(section.programType)})
                     </SelectItem>
@@ -1738,7 +1852,7 @@ export default function Students() {
             </div>
 
             {availableShiftSections.length === 0 && (
-              <p className="text-xs text-muted-foreground font-medium">
+              <p className="text-xs text-foreground font-medium">
                 No alternate section is currently available for this learner's
                 grade level.
               </p>
@@ -1763,7 +1877,9 @@ export default function Students() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
+      <Dialog
+        open={showProfileDialog}
+        onOpenChange={setShowProfileDialog}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Quick Update Demographics</DialogTitle>
@@ -1865,7 +1981,9 @@ export default function Students() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showLrnDialog} onOpenChange={setShowLrnDialog}>
+      <Dialog
+        open={showLrnDialog}
+        onOpenChange={setShowLrnDialog}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Assign or Correct LRN</DialogTitle>

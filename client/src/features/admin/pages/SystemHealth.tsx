@@ -174,11 +174,11 @@ export default function SystemHealth() {
             <Monitor className="h-7 w-7 text-primary" />
             System Health
           </h1>
-          <p className="text-sm font-medium text-muted-foreground">
+          <p className="text-sm font-medium text-foreground">
             Monitor runtime status, resource usage, and key operational counts.
           </p>
           {lastUpdated && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-foreground">
               Last updated: {lastUpdated.toLocaleString("en-US")}
             </p>
           )}
@@ -219,7 +219,7 @@ export default function SystemHealth() {
                   className={statusClass(health?.database.status || "DOWN")}>
                   {health?.database.status || "DOWN"}
                 </Badge>
-                <p className="text-muted-foreground">
+                <p className="text-foreground">
                   Avg query: {health?.database.avgQueryMs ?? 0} ms
                 </p>
               </>
@@ -274,7 +274,7 @@ export default function SystemHealth() {
             {showSkeleton ? (
               <Skeleton className="h-4 w-44" />
             ) : (
-              <p className="text-muted-foreground">
+              <p className="text-foreground">
                 {health?.server.platform}/{health?.server.arch} • Node{" "}
                 {health?.server.nodeVersion}
               </p>
@@ -337,7 +337,7 @@ export default function SystemHealth() {
             ) : health ? (
               <div className="space-y-3 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground flex items-center gap-1">
+                  <span className="text-foreground flex items-center gap-1">
                     <Clock3 className="h-4 w-4" /> Uptime
                   </span>
                   <span className="font-semibold">
@@ -345,39 +345,35 @@ export default function SystemHealth() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">RSS Memory</span>
+                  <span className="text-foreground">RSS Memory</span>
                   <span className="font-semibold">
                     {formatBytes(health.server.memory.rss)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Heap Used</span>
+                  <span className="text-foreground">Heap Used</span>
                   <span className="font-semibold">
                     {formatBytes(health.server.memory.heapUsed)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">
-                    Total System Memory
-                  </span>
+                  <span className="text-foreground">Total System Memory</span>
                   <span className="font-semibold">
                     {formatBytes(health.server.totalMemory)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">
-                    Free System Memory
-                  </span>
+                  <span className="text-foreground">Free System Memory</span>
                   <span className="font-semibold">
                     {formatBytes(health.server.freeMemory)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">CPU Cores</span>
+                  <span className="text-foreground">CPU Cores</span>
                   <span className="font-semibold">{health.server.cpus}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Timezone</span>
+                  <span className="text-foreground">Timezone</span>
                   <span className="font-semibold">{health.timezone}</span>
                 </div>
 
@@ -397,7 +393,7 @@ export default function SystemHealth() {
                 )}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-foreground">
                 No health data available.
               </p>
             )}

@@ -144,7 +144,7 @@ export default function PipelineBatchActionDialog({
                       {selectedApplicantNames.join("; ")}
                     </p>
                   ) : (
-                    <p className="text-xs font-bold text-muted-foreground">
+                    <p className="text-xs font-bold text-foreground">
                       No applicants selected.
                     </p>
                   )}
@@ -177,7 +177,9 @@ export default function PipelineBatchActionDialog({
               <div className="space-y-1 max-h-32 overflow-auto">
                 {Object.entries(preflightSummary.reasonGroups).map(
                   ([reason, count]) => (
-                    <p key={reason} className="text-xs font-bold text-red-700">
+                    <p
+                      key={reason}
+                      className="text-xs font-bold text-red-700">
                       {count}x {reason}
                     </p>
                   ),

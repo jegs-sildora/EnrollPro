@@ -158,7 +158,7 @@ export function InsertLateEnrolleeModal({
                 <DialogTitle className="text-lg font-black uppercase ">
                   Insert Late Enrollee
                 </DialogTitle>
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
+                <p className="text-xs font-bold text-foreground uppercase tracking-widest mt-0.5">
                   Target: {gradeLevelName} - {sectionName}
                 </p>
               </div>
@@ -168,10 +168,7 @@ export function InsertLateEnrolleeModal({
                 variant="outline"
                 className="bg-white font-bold text-[10px] uppercase border-border px-2">
                 Classes Started:{" "}
-                {format(
-                  new Date(classOpeningDate),
-                  "MMM d, yyyy",
-                )}
+                {format(new Date(classOpeningDate), "MMM d, yyyy")}
               </Badge>
             )}
           </div>
@@ -181,7 +178,7 @@ export function InsertLateEnrolleeModal({
           {!selectedLearner ? (
             <div className="space-y-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
                 <Input
                   placeholder="Search unsectioned learners by LRN or Last Name..."
                   value={search}
@@ -194,18 +191,18 @@ export function InsertLateEnrolleeModal({
               <div className="border border-border rounded-xl overflow-hidden shadow-sm max-h-[300px] overflow-y-auto bg-card">
                 {loading ? (
                   <div className="py-20 flex flex-col items-center justify-center space-y-3">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground animate-pulse">
+                    <Loader2 className="h-8 w-8 animate-spin text-foreground" />
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground animate-pulse">
                       Scanning LIS Pool...
                     </p>
                   </div>
                 ) : filteredPool.length === 0 ? (
                   <div className="py-16 flex flex-col items-center justify-center text-center px-6">
-                    <AlertCircle className="h-8 w-8 text-muted-foreground/30 mb-2" />
-                    <p className="text-sm font-bold text-muted-foreground">
+                    <AlertCircle className="h-8 w-8 text-foreground/30 mb-2" />
+                    <p className="text-sm font-bold text-foreground">
                       No unsectioned learners found
                     </p>
-                    <p className="text-xs text-muted-foreground/60 mt-1 max-w-[240px]">
+                    <p className="text-xs text-foreground/60 mt-1 max-w-[240px]">
                       Ensure learners have passed verification and are marked
                       "Ready for Sectioning".
                     </p>
@@ -231,7 +228,7 @@ export function InsertLateEnrolleeModal({
                             <span className="font-black text-sm uppercase group-hover:text-primary transition-colors">
                               {learner.lastName}, {learner.firstName}
                             </span>
-                            <span className="text-[10px] font-bold text-muted-foreground ">
+                            <span className="text-[10px] font-bold text-foreground ">
                               LRN: {learner.lrn || "PENDING"}
                             </span>
                           </div>
@@ -270,7 +267,7 @@ export function InsertLateEnrolleeModal({
                     <h3 className="font-black text-lg uppercase leading-none">
                       {selectedLearner.lastName}, {selectedLearner.firstName}
                     </h3>
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">
+                    <p className="text-xs font-bold text-foreground uppercase tracking-widest mt-1">
                       LRN: {selectedLearner.lrn || "PENDING LRN"}
                     </p>
                   </div>
@@ -279,23 +276,23 @@ export function InsertLateEnrolleeModal({
                   variant="ghost"
                   size="sm"
                   onClick={() => setSelectedLearner(null)}
-                  className="text-xs font-bold uppercase text-muted-foreground hover:text-foreground">
+                  className="text-xs font-bold uppercase text-foreground hover:text-foreground">
                   Change
                 </Button>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-xl border border-border bg-muted/20">
-                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">
+                  <p className="text-[10px] font-black text-foreground uppercase tracking-widest mb-1">
                     Target Section
                   </p>
                   <p className="font-black text-sm uppercase">{sectionName}</p>
-                  <p className="text-xs font-bold text-muted-foreground mt-0.5">
+                  <p className="text-xs font-bold text-foreground mt-0.5">
                     {gradeLevelName}
                   </p>
                 </div>
                 <div className="p-4 rounded-xl border border-border bg-muted/20">
-                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">
+                  <p className="text-[10px] font-black text-foreground uppercase tracking-widest mb-1">
                     Section Status
                   </p>
                   <p className="font-black text-sm uppercase">
@@ -341,7 +338,7 @@ export function InsertLateEnrolleeModal({
         </div>
 
         <DialogFooter className="px-6 py-4 bg-muted/30 border-t border-border flex items-center justify-between sm:justify-between">
-          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+          <p className="text-[10px] font-black text-foreground uppercase tracking-widest">
             S.M.A.R.T. Integration Active
           </p>
           <div className="flex items-center gap-2">

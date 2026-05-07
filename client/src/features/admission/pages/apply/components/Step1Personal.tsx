@@ -425,7 +425,7 @@ export default function Step1Personal() {
                 ? "Quick Fill via LRN"
                 : "Learner Reference Number (LRN)"}
             </h3>
-            <p className="text-xs text-muted-foreground font-bold">
+            <p className="text-xs text-foreground font-bold">
               {hasFilledEarlyRegistrationForm
                 ? "Type your 12-digit LRN to automatically fetch your Early Registration information."
                 : "Enter your 12-digit LRN to continue enrollment."}
@@ -470,7 +470,7 @@ export default function Step1Personal() {
           )}
         </div>
 
-        <p className="text-xs font-semibold text-muted-foreground">
+        <p className="text-xs font-semibold text-foreground">
           {hasNoLrn
             ? "No LRN declared. Registrar will process this learner under pending LRN creation."
             : canDeclareNoLrn
@@ -531,7 +531,7 @@ export default function Step1Personal() {
                   : "border-muted-foreground/30 bg-muted/50 hover:border-primary/50 hover:bg-muted/80",
               )}
               fallbackIcon={
-                <div className="flex flex-col items-center text-muted-foreground group-hover:text-primary transition-colors">
+                <div className="flex flex-col items-center text-foreground group-hover:text-primary transition-colors">
                   <Camera className="w-8 h-8 mb-1" />
                   <span className="text-[0.625rem] uppercase font-bold ">
                     Upload 2x2
@@ -691,9 +691,7 @@ export default function Step1Personal() {
                       <CalendarIcon
                         className={cn(
                           "w-5 h-5 transition-colors",
-                          isCalendarOpen
-                            ? "text-primary"
-                            : "text-muted-foreground",
+                          isCalendarOpen ? "text-primary" : "text-foreground",
                         )}
                       />
                     </Button>

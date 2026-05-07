@@ -128,6 +128,7 @@ export async function findStudents(query: {
   sectionId?: number | string;
   programType?: ApplicantType | string;
   status?: ApplicationStatus | string | string[];
+  learnerStatus?: string;
   page?: number | string;
   limit?: number | string;
   sortBy?: string;
@@ -140,39 +141,120 @@ export async function findStudents(query: {
     sectionId,
     programType,
     status,
+    learnerStatus,
     page,
     limit,
     sortBy,
     sortOrder,
   } = query;
   const resolvedSchoolYearId = parsePositiveInt(schoolYearId);
-  if (!resolvedSchoolYearId) {
-    throw new Error("schoolYearId is required");
-  }
-
+  // If schoolYearId is not provided, we might be searching globally (e.g. for Completers)
+  
   const resolvedPage = parsePositiveInt(page) ?? 1;
   const resolvedLimit = Math.min(parsePositiveInt(limit) ?? 15, 100);
   const resolvedGradeLevelId = parsePositiveInt(gradeLevelId);
   const resolvedSectionId = parsePositiveInt(sectionId);
   const resolvedProgramType = normalizeProgramType(programType);
-  const resolvedStatuses = normalizeStatuses(status) ?? ACTIVE_STATUS_DEFAULTS;
+  const resolvedStatuses = normalizeStatuses(status) ?? (resolvedSchoolYearId ? ACTIVE_STATUS_DEFAULTS : undefined);
   const resolvedSortOrder = normalizeSortOrder(sortOrder);
+  
+  const skip = (resolvedPage - 1) * resolvedLimit;
   const orderBy = resolveStudentOrderBy(sortBy, resolvedSortOrder);
 
-  const skip = (resolvedPage - 1) * resolvedLimit;
+  // Global search for learners (Completers, Inactive, etc.)
+  if (learnerStatus && !resolvedSchoolYearId) {
+    const statuses = learnerStatus.split(",");
+    const learnerWhere: Prisma.LearnerWhereInput = {
+      status: statuses.length === 1 ? (statuses[0] as any) : { in: statuses as any[] },
+    };
+
+    if (search) {
+      const s = String(search);
+      learnerWhere.OR = [
+        { lrn: { contains: s, mode: "insensitive" } },
+        { firstName: { contains: s, mode: "insensitive" } },
+        { lastName: { contains: s, mode: "insensitive" } },
+      ];
+    }
+
+    const total = await prisma.learner.count({ where: learnerWhere });
+    const learners = await prisma.learner.findMany({
+      where: learnerWhere,
+      include: {
+        enrollmentApplications: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          include: {
+            gradeLevel: true,
+            programDetail: {
+              select: {
+                scpType: true,
+              },
+            },
+            enrollmentRecord: {
+              include: {
+                section: {
+                  select: {
+                    id: true,
+                    name: true,
+                    programType: true,
+                  },
+                },
+              },
+            },
+            addresses: true,
+            familyMembers: true,
+            earlyRegistration: {
+              select: {
+                email: true,
+              },
+            },
+          },
+        },
+      },
+      skip,
+      take: resolvedLimit,
+      orderBy: sortBy === "lastName" ? { lastName: resolvedSortOrder } : { createdAt: "desc" },
+    });
+
+    const mappedApplications = learners.map((l) => {
+      const latestApp = l.enrollmentApplications[0];
+      return {
+        ...latestApp,
+        learner: l,
+        status: latestApp?.status || (l.status === "JHS_COMPLETER" ? "ALUMNI" : "INACTIVE"),
+        gradeLevel: latestApp?.gradeLevel,
+        enrollmentRecord: latestApp?.enrollmentRecord,
+      };
+    });
+
+    return {
+      applications: mappedApplications,
+      total,
+      page: resolvedPage,
+      limit: resolvedLimit,
+    };
+  }
 
   const where: Prisma.EnrollmentApplicationWhereInput = {
     schoolYearId: resolvedSchoolYearId,
-    status:
-      resolvedStatuses.length === 1
+  };
+  
+  if (resolvedStatuses) {
+    where.status = resolvedStatuses.length === 1
         ? resolvedStatuses[0]
-        : { in: resolvedStatuses },
+        : { in: resolvedStatuses };
+  }
+
+  // Strictly filter for ACTIVE learners by default if searching within a school year
+  where.learner = {
+    status: learnerStatus ? (learnerStatus as any) : "ACTIVE",
   };
 
   const enrollmentRecordFilters: Prisma.EnrollmentRecordWhereInput = {};
-  const shouldExcludeInactiveOutcomes = resolvedStatuses.every(
+  const shouldExcludeInactiveOutcomes = resolvedStatuses?.every(
     (applicationStatus) => ACTIVE_STATUS_DEFAULTS.includes(applicationStatus),
-  );
+  ) ?? false;
 
   if (shouldExcludeInactiveOutcomes) {
     enrollmentRecordFilters.OR = [

@@ -38,9 +38,6 @@ interface TeacherDesignationPayload {
     gradeLevelId: number;
     gradeLevelName: string | null;
   } | null;
-  advisoryEquivalentHoursPerWeek: number;
-  isTic: boolean;
-  isTeachingExempt: boolean;
 }
 
 interface TeacherRecord {
@@ -292,7 +289,7 @@ export default function SampleIntegrationPage() {
             <Database className="h-7 w-7 text-primary" />
             Core API Feed Console
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-foreground">
             Live, API-backed view for teacher, user, and learner data from
             mounted codebase endpoints.
           </p>
@@ -344,7 +341,7 @@ export default function SampleIntegrationPage() {
               key={feed.system}
               className="rounded-md border bg-card p-3 text-sm">
               <div className="font-semibold">{feed.system}</div>
-              <div className="text-muted-foreground">{feed.purpose}</div>
+              <div className="text-foreground">{feed.purpose}</div>
               <div className="mt-1 overflow-x-auto rounded bg-muted px-2 py-1  text-xs">
                 {feed.endpoint}
               </div>
@@ -369,11 +366,11 @@ export default function SampleIntegrationPage() {
               <Skeleton className="h-20 w-full" />
             ) : (
               <div className="space-y-2 text-sm">
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-foreground">
                   {teachers.length} teacher records loaded.
                 </p>
                 {teachers.length === 0 ? (
-                  <p className="text-muted-foreground">
+                  <p className="text-foreground">
                     No teacher records returned by /teachers.
                   </p>
                 ) : (
@@ -384,22 +381,19 @@ export default function SampleIntegrationPage() {
                       <p className="font-semibold">
                         {formatTeacherName(teacher)}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-foreground">
                         Teacher ID: {teacher.id} | Employee ID:{" "}
                         {teacher.employeeId ?? "N/A"}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-foreground">
                         {teacher.specialization ?? "No specialization"} |
                         Subjects: {teacher.subjects.length} | Sections:{" "}
                         {teacher.sectionCount} | Active:{" "}
                         {teacher.isActive ? "Yes" : "No"}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-foreground">
                         Adviser:{" "}
-                        {teacher.designation?.isClassAdviser ? "Yes" : "No"} |
-                        TIC: {teacher.designation?.isTic ? "Yes" : "No"} |
-                        Teaching Exempt:{" "}
-                        {teacher.designation?.isTeachingExempt ? "Yes" : "No"}
+                        {teacher.designation?.isClassAdviser ? "Yes" : "No"}
                       </p>
                       <details className="mt-2">
                         <summary className="cursor-pointer text-xs text-primary">
@@ -432,11 +426,11 @@ export default function SampleIntegrationPage() {
               <Skeleton className="h-20 w-full" />
             ) : (
               <div className="space-y-2 text-sm">
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-foreground">
                   {staffUsers.length} user records loaded.
                 </p>
                 {staffUsers.length === 0 ? (
-                  <p className="text-muted-foreground">
+                  <p className="text-foreground">
                     No user records returned by /admin/users.
                   </p>
                 ) : (
@@ -445,14 +439,14 @@ export default function SampleIntegrationPage() {
                       key={member.id}
                       className="rounded border p-2">
                       <p className="font-semibold">{formatUserName(member)}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-foreground">
                         User ID: {member.id} | Role: {member.role}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-foreground">
                         {member.email} | Active:{" "}
                         {member.isActive ? "Yes" : "No"}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-foreground">
                         Last Login: {formatDate(member.lastLoginAt)}
                       </p>
                       <details className="mt-2">
@@ -486,12 +480,12 @@ export default function SampleIntegrationPage() {
               <Skeleton className="h-20 w-full" />
             ) : (
               <div className="space-y-2 text-sm">
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-foreground">
                   {learners.length} learner records loaded
                   {learnersMeta ? ` (API total: ${learnersMeta.total})` : ""}.
                 </p>
                 {learners.length === 0 ? (
-                  <p className="text-muted-foreground">
+                  <p className="text-foreground">
                     No learner records returned by /students.
                   </p>
                 ) : (
@@ -500,19 +494,19 @@ export default function SampleIntegrationPage() {
                       key={learnerRow.id}
                       className="rounded border p-2">
                       <p className="font-semibold">{learnerRow.fullName}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-foreground">
                         Application ID: {learnerRow.id} | Tracking:{" "}
                         {learnerRow.trackingNumber}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-foreground">
                         LRN: {learnerRow.lrn ?? "N/A"} | {learnerRow.gradeLevel}{" "}
                         | {learnerRow.section ?? "Unsectioned"}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-foreground">
                         Program: {learnerRow.learningProgram} | Enrolled At:{" "}
                         {formatDate(learnerRow.dateEnrolled)}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-foreground">
                         Status: {learnerRow.status}
                       </p>
                       <details className="mt-2">

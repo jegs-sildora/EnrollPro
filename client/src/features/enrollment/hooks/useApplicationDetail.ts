@@ -203,6 +203,8 @@ export interface ApplicantDetail {
   foreignLanguage: string | null;
   trackingNumber: string;
   status: string;
+  learnerStatus: string;
+  learnerId: number;
   rejectionReason: string | null;
   gradeLevelId: number;
   schoolYearId: number;
