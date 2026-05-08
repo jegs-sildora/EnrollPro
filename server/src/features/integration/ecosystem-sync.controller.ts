@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { v4 as uuidv4 } from "uuid";
 import PDFDocument from "pdfkit";
+import bcrypt from "bcryptjs";
 import { Ecosystem, SyncStatus, ApplicationStatus, Prisma } from "../../generated/prisma/index.js";
 
 // In-memory job queue for this prototype
@@ -326,6 +327,57 @@ export async function getSyncJobProgress(req: Request, res: Response): Promise<v
       total: job.total
     }
   });
+}
+
+/**
+ * Provision missing User accounts for Teachers
+ */
+export async function provisionTeacherAccounts(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const teachers = await prisma.teacher.findMany();
+    const defaultPasswordHash = await bcrypt.hash("DepEd2026!", 10);
+    
+    let createdCount = 0;
+    let skippedCount = 0;
+
+    for (const teacher of teachers) {
+      const existingUser = await prisma.user.findUnique({
+        where: { employeeId: teacher.employeeId },
+      });
+
+      if (!existingUser) {
+        await prisma.user.create({
+          data: {
+            firstName: teacher.firstName,
+            lastName: teacher.lastName,
+            middleName: teacher.middleName,
+            email: teacher.email,
+            employeeId: teacher.employeeId,
+            password: defaultPasswordHash,
+            role: "TEACHER",
+            isActive: teacher.isActive,
+            mustChangePassword: true,
+          },
+        });
+        createdCount++;
+      } else {
+        skippedCount++;
+      }
+    }
+
+    res.json({
+      data: {
+        createdCount,
+        skippedCount,
+        totalProcessed: teachers.length,
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 }
 
 /**

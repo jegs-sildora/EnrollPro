@@ -101,9 +101,9 @@ async function main() {
 
   // Generate additional teachers
   for (let i = 21; i <= totalTarget; i++) {
-    // Use modulo to make name generation deterministic based on index
+    // Use modulo and floor to ensure unique name combinations (up to 2,500 before repeating)
     const first = FILIPINO_FIRST_NAMES[i % FILIPINO_FIRST_NAMES.length];
-    const last = FILIPINO_LAST_NAMES[i % FILIPINO_LAST_NAMES.length];
+    const last = FILIPINO_LAST_NAMES[Math.floor(i / FILIPINO_FIRST_NAMES.length) % FILIPINO_LAST_NAMES.length];
     const dept = getRandomFromWeighted(DEPARTMENTS_WEIGHTED);
     
     teachersToSeed.push({
@@ -120,10 +120,10 @@ async function main() {
   for (let i = 0; i < teachersToSeed.length; i++) {
     const faculty = teachersToSeed[i];
     
-    // Format email: firstname.lastname.uniqueid@deped.edu.ph
+    // Format email: firstname.lastname@deped.edu.ph
     const cleanFirst = faculty.first.toLowerCase().replace(/\s/g, '');
     const cleanLast = faculty.last.toLowerCase().replace(/\s/g, '');
-    const email = `${cleanFirst}.${cleanLast}.${faculty.id.toLowerCase()}@deped.edu.ph`;
+    const email = `${cleanFirst}.${cleanLast}@deped.edu.ph`;
 
     const dept = departments.find(d => d.code === faculty.deptCode) || departments[0];
     

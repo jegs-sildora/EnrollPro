@@ -24,6 +24,7 @@
     "db:seed-eosy-grades": "tsx prisma/seed-eosy-grades.ts",
     "db:seed-eosy-grades-incoming": "tsx prisma/seed-eosy-grades-incoming.ts",
     "db:seed-pending-g7": "tsx prisma/seed-pending-g7.ts",
+    "db:backfill-teacher-users": "tsx prisma/backfill-teacher-users.ts",
     "db:wipe": "tsx prisma/wipe.ts",
     "db:wipe-all": "tsx prisma/wipe-everything.ts"
   },

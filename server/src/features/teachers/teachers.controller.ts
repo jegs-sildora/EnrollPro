@@ -271,6 +271,33 @@ export async function store(req: Request, res: Response) {
     const deptCode = normalizeOptionalUpperText(department);
 
     const teacher = await prisma.$transaction(async (tx) => {
+      // 1. Create/Upsert the User record for system login
+      // We use upsert in case a User with the same employeeId already exists
+      const defaultPasswordHash = await bcrypt.hash("DepEd2026!", 10);
+      
+      await tx.user.upsert({
+        where: { employeeId: normalizedEmployeeId },
+        update: {
+          firstName: normalizedFirstName,
+          lastName: normalizedLastName,
+          middleName: normalizeOptionalUpperText(middleName),
+          email: normalizedEmail,
+          isActive: true, // Reactivate user if profile is recreated
+        },
+        create: {
+          firstName: normalizedFirstName,
+          lastName: normalizedLastName,
+          middleName: normalizeOptionalUpperText(middleName),
+          email: normalizedEmail,
+          employeeId: normalizedEmployeeId,
+          password: defaultPasswordHash,
+          role: "TEACHER",
+          isActive: true,
+          mustChangePassword: true,
+        },
+      });
+
+      // 2. Create the Teacher profile
       const t = await tx.teacher.create({
         data: {
           firstName: normalizedFirstName,
@@ -377,6 +404,19 @@ export async function update(req: Request, res: Response) {
     const deptCode = normalizeOptionalUpperText(department);
 
     const updatedTeacher = await prisma.$transaction(async (tx) => {
+      // 1. Update the User record if it exists (linked by employeeId)
+      await tx.user.updateMany({
+        where: { employeeId: existing.employeeId },
+        data: {
+          firstName: normalizedFirstName,
+          lastName: normalizedLastName,
+          middleName: normalizeOptionalUpperText(middleName),
+          email: normalizedEmail,
+          employeeId: normalizedEmployeeId,
+        },
+      });
+
+      // 2. Update the Teacher profile
       const t = await tx.teacher.update({
         where: { id },
         data: {
@@ -471,9 +511,23 @@ export async function deactivate(req: Request, res: Response) {
       });
     }
 
-    const teacher = await prisma.teacher.update({
-      where: { id },
-      data: { isActive: false },
+    const existing = await prisma.teacher.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({ message: "Teacher not found" });
+    }
+
+    const teacher = await prisma.$transaction(async (tx) => {
+      // 1. Deactivate the User record
+      await tx.user.updateMany({
+        where: { employeeId: existing.employeeId },
+        data: { isActive: false },
+      });
+
+      // 2. Deactivate the Teacher profile
+      return await tx.teacher.update({
+        where: { id },
+        data: { isActive: false },
+      });
     });
 
     await auditLog({
@@ -496,9 +550,23 @@ export async function reactivate(req: Request, res: Response) {
   const idStr = String(req.params.id);
   const id = parseInt(idStr);
   try {
-    const teacher = await prisma.teacher.update({
-      where: { id },
-      data: { isActive: true },
+    const existing = await prisma.teacher.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({ message: "Teacher not found" });
+    }
+
+    const teacher = await prisma.$transaction(async (tx) => {
+      // 1. Reactivate the User record
+      await tx.user.updateMany({
+        where: { employeeId: existing.employeeId },
+        data: { isActive: true },
+      });
+
+      // 2. Reactivate the Teacher profile
+      return await tx.teacher.update({
+        where: { id },
+        data: { isActive: true },
+      });
     });
 
     await auditLog({

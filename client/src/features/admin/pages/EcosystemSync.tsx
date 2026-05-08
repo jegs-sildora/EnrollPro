@@ -9,6 +9,7 @@ import {
   MinusCircle,
   ChevronRight,
   Loader2,
+  ShieldCheck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/shared/ui/button";
@@ -80,6 +81,7 @@ export default function EcosystemSync() {
   const [sections, setSections] = useState<any[]>([]);
   const [selectedSectionId, setSelectedSectionId] = useState<string>("");
   const [pendingCount, setPendingCount] = useState(0);
+  const [provisioning, setProvisioning] = useState(false);
 
   // Pagination state
   const [page, setPage] = useState(1);
@@ -137,6 +139,26 @@ export default function EcosystemSync() {
       setSections(res.data.data);
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  const handleProvisionTeachers = async () => {
+    setProvisioning(true);
+    try {
+      const res = await api.post("/integration/v1/ecosystem/provision-teachers");
+      const { createdCount, skippedCount } = res.data.data;
+      sileo.success({
+        title: "Provisioning Complete",
+        description: `Created ${createdCount} accounts. Skipped ${skippedCount} existing users.`,
+      });
+      fetchEntities();
+    } catch (error) {
+      sileo.error({
+        title: "Provisioning Failed",
+        description: "Could not provision teacher login accounts.",
+      });
+    } finally {
+      setProvisioning(false);
     }
   };
 
@@ -394,6 +416,20 @@ export default function EcosystemSync() {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              {view === "teachers" && (
+                <Button
+                  variant="outline"
+                  className="h-10 font-black gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary px-6 uppercase tracking-widest text-xs"
+                  onClick={handleProvisionTeachers}
+                  disabled={provisioning || loading}>
+                  {provisioning ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <ShieldCheck className="size-4" />
+                  )}
+                  Provision Missing Accounts
+                </Button>
+              )}
               <Button
                 className="h-10 font-black gap-2 relative bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg px-6 uppercase tracking-widest text-xs"
                 onClick={handleSync}

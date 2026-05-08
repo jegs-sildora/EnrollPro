@@ -10,6 +10,7 @@ import {
   getEcosystemSyncStatus,
   getSyncJobProgress,
   printSectionCredentials,
+  provisionTeacherAccounts,
   triggerSync,
 } from "./ecosystem-sync.controller.js";
 import { authenticate } from "../../middleware/authenticate.js";
@@ -40,6 +41,13 @@ router.post(
   authenticate,
   authorize(Role.SYSTEM_ADMIN),
   triggerSync,
+);
+
+router.post(
+  "/ecosystem/provision-teachers",
+  authenticate,
+  authorize(Role.SYSTEM_ADMIN),
+  provisionTeacherAccounts,
 );
 
 // Integration feeds are public for teammate testing and ingestion.
