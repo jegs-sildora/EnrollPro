@@ -1,3 +1,4 @@
+// router/index.tsx
 import { createBrowserRouter, Navigate } from "react-router";
 
 import AuthLayout from "@/shared/layouts/AuthLayout";
@@ -16,6 +17,7 @@ import WalkInEncoder from "@/features/enrollment/pages/WalkInEncoder";
 import Students from "@/features/students/pages/Index";
 import Profile from "@/features/students/pages/Profile";
 import LearnerPortal from "@/features/learner/pages/LearnerPortal";
+import { LookupForm as LearnerLogin } from "@/features/learner/pages/LearnerLogin";
 import Sections from "@/features/sections/pages/Index";
 import AuditLogs from "@/features/audit-logs/pages/Index";
 import Settings from "@/features/settings/pages/Index";
@@ -61,6 +63,10 @@ export const router = createBrowserRouter([
       {
         path: "/learner",
         element: <LearnerPortal />,
+      },
+      {
+        path: "/learner/login",
+        element: <LearnerLogin />,
       },
       // Auth routes
       {

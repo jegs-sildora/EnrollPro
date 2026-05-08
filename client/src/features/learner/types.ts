@@ -12,6 +12,8 @@ export interface LearnerProfile {
 	nationality?: string | null;
 	religion?: string | null;
 	status: string;
+	curriculum?: string | null;
+	studentPhoto?: string | null;
 	currentAddress?: {
 		houseNumber?: string | null;
 		street?: string | null;
@@ -20,6 +22,7 @@ export interface LearnerProfile {
 		province?: string | null;
 	} | null;
 	enrollment?: {
+		curriculum?: string | null;
 		section?: {
 			name: string;
 			advisingTeacher?: { firstName: string; lastName: string } | null;

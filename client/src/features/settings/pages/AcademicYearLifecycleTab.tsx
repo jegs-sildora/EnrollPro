@@ -332,7 +332,7 @@ export default function AcademicYearLifecycleTab() {
                 )}
               </CardTitle>
               <CardDescription>
-                Active Academic Year:{" "}
+                Active School Year:{" "}
                 <span className="font-bold text-foreground">
                   {activeSchoolYearLabel}
                 </span>

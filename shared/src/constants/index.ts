@@ -198,9 +198,6 @@ export const LearnerStatusEnum = z.enum([
 ]);
 export type LearnerStatus = z.infer<typeof LearnerStatusEnum>;
 
-export const Sf10RequestStatusEnum = z.enum(["PENDING", "SENT", "CANCELLED"]);
-export type Sf10RequestStatus = z.infer<typeof Sf10RequestStatusEnum>;
-
 export const PortalControlEnum = z.enum([
   "AUTO",
   "FORCE_OPEN_PHASE_1",

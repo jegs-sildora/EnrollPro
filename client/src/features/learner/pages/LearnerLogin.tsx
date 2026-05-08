@@ -12,21 +12,26 @@ import {
 import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useSettingsStore } from "@/store/settings.slice";
+import { useLearnerStore } from "@/store/learner.slice";
+import { useNavigate } from "react-router";
+import api from "@/shared/api/axiosInstance";
+import { isAxiosError } from "axios";
+import { sileo } from "sileo";
 import depedLogo from "@/assets/DepEd-logo.png";
-
-interface LookupFormProps {
-  onLookup: (lrn: string, password: string) => Promise<void>;
-  loading: boolean;
-  error: string | null;
-}
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
-export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
+export function LookupForm() {
+  const navigate = useNavigate();
   const { logoUrl, schoolName } = useSettingsStore();
+  const { setLearner } = useLearnerStore();
+  
   const [lrn, setLrn] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fullLogoUrl = useMemo(() => {
     if (!logoUrl) return depedLogo;
@@ -34,11 +39,37 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
     return `${API_BASE}${logoUrl}`;
   }, [logoUrl]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!lrn || !password) return;
     
-    onLookup(lrn, password);
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const res = await api.post("/learner/lookup", { lrn, password });
+      
+      // 1. Set the global store
+      setLearner(res.data.learner);
+
+      // 2. Show success toast
+      sileo.success({
+        title: "Access Granted",
+        description: `Welcome back, ${res.data.learner.firstName}!`,
+      });
+      
+      // 3. REDIRECT to the portal page
+      navigate("/learner");
+      
+    } catch (err: unknown) {
+      setError(
+        isAxiosError(err)
+          ? err.response?.data?.message || "Invalid credentials. Please try again."
+          : "An error occurred. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const isFormValid = lrn.length >= 12 && password.length >= 6;
@@ -51,7 +82,6 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
         style={{
           background: "hsl(var(--sidebar-background)/0.5)",
         }}>
-        {/* Pixel grid */}
         <svg
           className="absolute inset-0 w-full h-full opacity-[0.08]"
           xmlns="http://www.w3.org/2000/svg">
@@ -63,60 +93,18 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
               width="80"
               height="80"
               patternUnits="userSpaceOnUse">
-              <rect
-                x="2"
-                y="2"
-                width="36"
-                height="36"
-                rx="2"
-                fill="none"
-                stroke="hsl(var(--primary))"
-                strokeWidth="1.5"
-              />
-              <rect
-                x="42"
-                y="2"
-                width="36"
-                height="36"
-                rx="2"
-                fill="none"
-                stroke="hsl(var(--primary))"
-                strokeWidth="1.5"
-              />
-              <rect
-                x="2"
-                y="42"
-                width="36"
-                height="36"
-                rx="2"
-                fill="none"
-                stroke="hsl(var(--primary))"
-                strokeWidth="1.5"
-              />
-              <rect
-                x="42"
-                y="42"
-                width="36"
-                height="36"
-                rx="2"
-                fill="none"
-                stroke="hsl(var(--primary))"
-                strokeWidth="1.5"
-              />
+              <rect x="2" y="2" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+              <rect x="42" y="2" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+              <rect x="2" y="42" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+              <rect x="42" y="42" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
             </pattern>
           </defs>
-          <rect
-            width="100%"
-            height="100%"
-            fill="url(#pixel-grid)"
-          />
+          <rect width="100%" height="100%" fill="url(#pixel-grid)" />
         </svg>
-        {/* Radial glow */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background:
-              "radial-gradient(circle at center, hsl(var(--primary)/0.05) 0%, transparent 70%)",
+            background: "radial-gradient(circle at center, hsl(var(--primary)/0.05) 0%, transparent 70%)",
           }}
         />
       </div>
@@ -143,9 +131,7 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
             onSubmit={handleSubmit}
             className="space-y-6">
             {error && (
-              <Alert
-                variant="destructive"
-                className="py-3 bg-destructive/5 border-destructive/20">
+              <Alert variant="destructive" className="py-3 bg-destructive/5 border-destructive/20">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="text-xs font-medium">
                   {error}
@@ -154,9 +140,7 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
             )}
 
             <div className="space-y-1.5">
-              <Label
-                htmlFor="lrn"
-                className="text-sm font-medium text-foreground ml-1">
+              <Label htmlFor="lrn" className="text-sm font-medium text-foreground ml-1">
                 Learner Reference Number (LRN)
               </Label>
               <Input
@@ -164,18 +148,14 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
                 placeholder="e.g., 101234567890"
                 className="h-11 text-base bg-background/50 border-input focus:bg-background transition-all font-bold"
                 value={lrn}
-                onChange={(e) =>
-                  setLrn(e.target.value.replace(/\D/g, "").slice(0, 12))
-                }
+                onChange={(e) => setLrn(e.target.value.replace(/\D/g, "").slice(0, 12))}
                 maxLength={12}
                 required
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label
-                htmlFor="password"
-                className="text-sm font-medium text-foreground ml-1">
+              <Label htmlFor="password" className="text-sm font-medium text-foreground ml-1">
                 Password
               </Label>
               <div className="relative">
@@ -193,22 +173,14 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   tabIndex={-1}>
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
               <div className="flex justify-end px-1">
                 <button
                   type="button"
                   className="text-[11px] text-muted-foreground hover:text-primary transition-colors"
-                  onClick={() =>
-                    alert(
-                      "Please contact the school registrar to reset your portal password.",
-                    )
-                  }>
+                  onClick={() => alert("Please contact the school registrar to reset your portal password.")}>
                   Forgot Password?
                 </button>
               </div>

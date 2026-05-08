@@ -171,7 +171,7 @@ export default function LearnerProfileStep() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
         <div className="md:col-span-1 flex flex-col items-center justify-center space-y-3">
           <Label className="text-sm font-semibold self-start md:self-center">
-            Student Photo
+            Learner Photo
           </Label>
           <div className="relative group">
             <UserPhoto

@@ -2,11 +2,8 @@ import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import {
   Eye,
-  FileText,
-  FileCheck2,
   UserRoundPen,
   Fingerprint,
-  ArrowRightLeft,
   FileBadge2,
   BadgeAlert,
   CheckCircle2,
@@ -106,11 +103,8 @@ interface Props {
   id: number;
   onClose: () => void;
   onOpenProfilePage: (id: number) => void;
-  onOpenPermanentRecord: (id: number) => void;
-  onOpenGoodMoral: (id: number) => void;
   onQuickEdit: (student: StudentDetail) => void;
   onAssignLrn: (student: StudentDetail) => void;
-  onShift: (student: StudentDetail) => void;
   onTransferOut: (student: StudentDetail) => void;
   onDropout: (student: StudentDetail) => void;
 }
@@ -119,11 +113,8 @@ export function StudentDetailPanel({
   id,
   onClose,
   onOpenProfilePage,
-  onOpenPermanentRecord,
-  onOpenGoodMoral,
   onQuickEdit,
   onAssignLrn,
-  onShift,
   onTransferOut,
   onDropout,
 }: Props) {
@@ -452,63 +443,55 @@ export function StudentDetailPanel({
       </div>
 
       {/* Action Footer */}
-      <div className="p-3 sm:p-4 border-t bg-[hsl(var(--muted)/30)] grid grid-cols-2 gap-2">
+      <div className="p-4 border-t bg-[hsl(var(--muted)/30)] space-y-4">
+        {/* Group 1: Primary Navigation */}
         <Button
-          variant="secondary"
-          className="font-bold text-xs h-9 uppercase tracking-widest border shadow-sm"
+          className="w-full font-black text-xs h-10 uppercase tracking-widest shadow-md bg-primary hover:bg-primary/90 text-primary-foreground"
           onClick={() => onOpenProfilePage(student.id)}>
           <Eye className="mr-2 h-4 w-4" />
-          Full Profile
+          View Full Profile
         </Button>
-        <Button
-          variant="secondary"
-          className="font-bold text-xs h-9 uppercase tracking-widest border shadow-sm"
-          onClick={() => onOpenPermanentRecord(student.id)}>
-          <FileText className="mr-2 h-4 w-4" />
-          Permanent Record
-        </Button>
-        <Button
-          variant="secondary"
-          className="font-bold text-xs h-9 uppercase tracking-widest border shadow-sm"
-          onClick={() => onOpenGoodMoral(student.id)}>
-          <FileCheck2 className="mr-2 h-4 w-4" />
-          Good Moral
-        </Button>
-        <Button
-          variant="secondary"
-          className="font-bold text-xs h-9 uppercase tracking-widest border shadow-sm"
-          onClick={() => onQuickEdit(student)}>
-          <UserRoundPen className="mr-2 h-4 w-4" />
-          Quick Edit
-        </Button>
-        <Button
-          variant="secondary"
-          className="font-bold text-xs h-9 uppercase tracking-widest border shadow-sm"
-          onClick={() => onAssignLrn(student)}>
-          <Fingerprint className="mr-2 h-4 w-4" />
-          Assign LRN
-        </Button>
-        <Button
-          variant="secondary"
-          className="font-bold text-xs h-9 uppercase tracking-widest border shadow-sm"
-          onClick={() => onShift(student)}>
-          <ArrowRightLeft className="mr-2 h-4 w-4" />
-          Shift
-        </Button>
-        <Button
-          variant="outline"
-          className="font-bold text-xs h-9 uppercase tracking-widest text-amber-700 hover:text-amber-700 hover:bg-amber-50 border-amber-200 shadow-sm"
-          onClick={() => onTransferOut(student)}>
-          <FileBadge2 className="mr-2 h-4 w-4" />
-          Transfer
-        </Button>
-        <Button
-          variant="outline"
-          className="font-bold text-xs h-9 uppercase tracking-widest text-rose-700 hover:text-rose-700 hover:bg-rose-50 border-rose-200 shadow-sm"
-          onClick={() => onDropout(student)}>
-          <BadgeAlert className="mr-2 h-4 w-4" />
-          Dropout
-        </Button>
+
+        {/* Group 2: Data & Document Actions */}
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant="outline"
+            className="font-bold text-[10px] sm:text-xs h-9 uppercase tracking-widest border shadow-sm"
+            onClick={() => onAssignLrn(student)}>
+            <Fingerprint className="mr-2 h-4 w-4 shrink-0" />
+            Input Official LRN
+          </Button>
+          <Button
+            variant="outline"
+            className="font-bold text-[10px] sm:text-xs h-9 uppercase tracking-widest border shadow-sm"
+            onClick={() => onQuickEdit(student)}>
+            <UserRoundPen className="mr-2 h-4 w-4 shrink-0" />
+            Quick Edit
+          </Button>
+        </div>
+
+        {/* Group 3: Status Modifiers */}
+        <div className="pt-2 border-t">
+          <p className="text-[9px] uppercase tracking-tighter font-black text-muted-foreground mb-2 px-1">
+            Modify Enrollment Status
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1 font-bold text-[10px] sm:text-xs h-9 uppercase tracking-widest bg-orange-50 text-orange-700 hover:text-orange-800 hover:bg-orange-100 border-orange-200 shadow-sm"
+              onClick={() => onTransferOut(student)}>
+              <FileBadge2 className="mr-2 h-4 w-4 shrink-0" />
+              Transfer
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1 font-bold text-[10px] sm:text-xs h-9 uppercase tracking-widest bg-rose-50 text-rose-700 hover:text-rose-800 hover:bg-rose-100 border-rose-200 shadow-sm"
+              onClick={() => onDropout(student)}>
+              <BadgeAlert className="mr-2 h-4 w-4 shrink-0" />
+              Dropout
+            </Button>
+          </div>
+        </div>
       </div>
 
       {student.studentPhoto && (

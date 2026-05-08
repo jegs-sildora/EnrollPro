@@ -519,7 +519,7 @@ export default function Step1Personal() {
         {/* PHOTO UPLOADER COLUMN */}
         <div className="md:col-span-1 flex flex-col items-center justify-center space-y-3">
           <Label className="text-sm font-semibold self-start md:self-center">
-            Student Photo
+            Learner Photo
           </Label>
           <div className="relative group">
             <UserPhoto

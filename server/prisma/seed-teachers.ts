@@ -8,8 +8,7 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-// 1. EXACT MIRROR OF ATLAS `seed.js` FACULTY
-// This ensures perfect sync between EnrollPro and ATLAS for the demo environment.
+// 1. EXACT MIRROR OF ATLAS `seed.js` FACULTY (The "Golden 20")
 const ATLAS_FACULTY = [
   { id: 'T-0001', first: 'Maria', last: 'Santos', deptCode: 'FIL', subject: 'Filipino' },
   { id: 'T-0002', first: 'Jose', last: 'Reyes', deptCode: 'ENG', subject: 'English' },
@@ -33,8 +32,54 @@ const ATLAS_FACULTY = [
   { id: 'T-0020', first: 'Darren', last: 'Serrano', deptCode: 'ENG', subject: 'English' },
 ];
 
+const FILIPINO_FIRST_NAMES = [
+  'Juan', 'Pedro', 'Leonora', 'Antonio', 'Corazon', 'Ricardo', 'Leticia', 'Benjamen', 'Teresita', 'Diosdado', 
+  'Imelda', 'Ferdinand', 'Cory', 'Ramon', 'Gloria', 'Joseph', 'Rodrigo', 'Sara', 'Bongbong', 'Isko', 
+  'Vico', 'Leni', 'Kiko', 'Manny', 'Ping', 'Bato', 'Bong', 'Alan', 'Pia', 'Loren', 
+  'Chiz', 'Jinggoy', 'Joel', 'Risa', 'Win', 'Sonny', 'Migz', 'Cynthia', 'Nancy', 'Koko', 
+  'Francis', 'Pilo', 'Rafael', 'Ernesto', 'Orlando', 'Salvador', 'Efren', 'Tito', 'Vic', 'Joey'
+];
+
+const FILIPINO_LAST_NAMES = [
+  'Santos', 'Reyes', 'Cruz', 'Bautista', 'Ocampo', 'Garcia', 'Mendoza', 'Torres', 'Tomas', 'Andrada', 
+  'Sarmiento', 'Castillo', 'Villanueva', 'Ramos', 'Castro', 'Luna', 'Agoncillo', 'Silang', 'Mabini', 'Bonifacio', 
+  'Rizal', 'Jacinto', 'del Pilar', 'Aquino', 'Marcos', 'Duterte', 'Robredo', 'Domagoso', 'Sotto', 'Poe', 
+  'Ejercito', 'Hontiveros', 'Gatchalian', 'Angara', 'Villar', 'Zubiri', 'Cayetano', 'Binay', 'Pimentel', 'Pangilinan', 
+  'Lacson', 'Pacquiao', 'Dela Rosa', 'Go', 'Tolentino', 'Recto', 'Escudero', 'Legarda', 'Lapid', 'Revilla'
+];
+
+const DEPARTMENTS_WEIGHTED = [
+  { code: 'ENG', subject: 'English', weight: 15 },
+  { code: 'MATH', subject: 'Mathematics', weight: 15 },
+  { code: 'SCI', subject: 'Science', weight: 15 },
+  { code: 'FIL', subject: 'Filipino', weight: 12 },
+  { code: 'AP', subject: 'Araling Panlipunan', weight: 12 },
+  { code: 'MAPEH', subject: 'MAPEH', weight: 12 },
+  { code: 'TLE', subject: 'TLE', weight: 10 },
+  { code: 'ESP', subject: 'Edukasyon sa Pagpapakatao (EsP)', weight: 8 },
+  { code: 'GUIDANCE', subject: 'Homeroom Guidance', weight: 2 },
+];
+
+const PLANTILLA_POSITIONS = [
+  { title: 'TEACHER I', weight: 40 },
+  { title: 'TEACHER II', weight: 30 },
+  { title: 'TEACHER III', weight: 20 },
+  { title: 'MASTER TEACHER I', weight: 7 },
+  { title: 'MASTER TEACHER II', weight: 3 },
+];
+
+function getRandomFromWeighted(items: any[]) {
+  const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
+  let random = Math.random() * totalWeight;
+  for (const item of items) {
+    if (random < item.weight) return item;
+    random -= item.weight;
+  }
+  return items[0];
+}
+
 async function main() {
-  console.log("🌱 Seeding DepEd Teachers (ATLAS Mirror) & Login Credentials...");
+  console.log("🌱 Scaling Faculty Roster: Generating 140+ DepEd Teachers...");
 
   const activeYear = await prisma.schoolYear.findFirst({
     where: { status: { not: "ARCHIVED" } },
@@ -49,30 +94,52 @@ async function main() {
     orderBy: [{ gradeLevelId: "asc" }, { sortOrder: "asc" }]
   });
 
-  // Default password for all teacher logins during the demo
   const defaultPasswordHash = await bcrypt.hash("DepEd2026!", 10);
 
-  for (let i = 0; i < ATLAS_FACULTY.length; i++) {
-    const faculty = ATLAS_FACULTY[i];
+  const totalTarget = 142; // Around 140+
+  const teachersToSeed = [...ATLAS_FACULTY];
+
+  // Generate additional teachers
+  for (let i = 21; i <= totalTarget; i++) {
+    // Use modulo to make name generation deterministic based on index
+    const first = FILIPINO_FIRST_NAMES[i % FILIPINO_FIRST_NAMES.length];
+    const last = FILIPINO_LAST_NAMES[i % FILIPINO_LAST_NAMES.length];
+    const dept = getRandomFromWeighted(DEPARTMENTS_WEIGHTED);
     
-    // 1. Format DepEd standard email (firstname.lastname@deped.edu.ph)
+    teachersToSeed.push({
+      id: `T-${i.toString().padStart(4, '0')}`,
+      first,
+      last,
+      deptCode: dept.code,
+      subject: dept.subject
+    });
+  }
+
+  console.log(`🚀 Provisioning ${teachersToSeed.length} Faculty accounts...`);
+
+  for (let i = 0; i < teachersToSeed.length; i++) {
+    const faculty = teachersToSeed[i];
+    
+    // Format email: firstname.lastname.uniqueid@deped.edu.ph
     const cleanFirst = faculty.first.toLowerCase().replace(/\s/g, '');
     const cleanLast = faculty.last.toLowerCase().replace(/\s/g, '');
-    const email = `${cleanFirst}.${cleanLast}@deped.edu.ph`;
+    const email = `${cleanFirst}.${cleanLast}.${faculty.id.toLowerCase()}@deped.edu.ph`;
 
-    // Map department code to database ID
     const dept = departments.find(d => d.code === faculty.deptCode) || departments[0];
     
+    // Assign sections based on availability (86 sections)
     const sectionToAdvise = i < sections.length ? sections[i] : null;
     const designation = sectionToAdvise ? "CLASS ADVISER" : "SUBJECT TEACHER";
+    const position = getRandomFromWeighted(PLANTILLA_POSITIONS).title;
 
-    // 2. CREATE SYSTEM LOGIN CREDENTIAL (USERS TABLE)
+    // 1. CREATE SYSTEM LOGIN CREDENTIAL
+    // Use employeeId as the stable identifier for teachers in the User table
     await prisma.user.upsert({
-      where: { email: email },
+      where: { employeeId: faculty.id },
       update: {
         firstName: faculty.first,
         lastName: faculty.last,
-        employeeId: faculty.id,
+        email: email, // Update email in case the generation logic changed
         role: "TEACHER" as Role,
       },
       create: {
@@ -86,7 +153,7 @@ async function main() {
       }
     });
 
-    // 3. CREATE TEACHER PROFILE
+    // 2. CREATE TEACHER PROFILE
     const teacher = await prisma.teacher.upsert({
       where: { employeeId: faculty.id },
       update: {
@@ -96,6 +163,7 @@ async function main() {
         specialization: `MAJOR IN ${dept?.name?.toUpperCase() || faculty.subject.toUpperCase()}`,
         designation: designation,
         departmentId: dept?.id,
+        plantillaPosition: position,
       },
       create: {
         employeeId: faculty.id,
@@ -104,35 +172,33 @@ async function main() {
         email: email,
         specialization: `MAJOR IN ${dept?.name?.toUpperCase() || faculty.subject.toUpperCase()}`,
         isActive: true,
-        plantillaPosition: "TEACHER I",
+        plantillaPosition: position,
         designation: designation,
         departmentId: dept?.id,
       },
     });
 
-    // 4. SEED QUALIFIED SUBJECTS
+    // 3. SEED QUALIFIED SUBJECTS
     await prisma.teacherSubject.deleteMany({ where: { teacherId: teacher.id } });
     await prisma.teacherSubject.create({
       data: { teacherId: teacher.id, subject: faculty.subject }
     });
 
-    // 5. ASSIGN ADVISORY SECTIONS (Required for EOSY UI to function)
+    // 4. ASSIGN ADVISORY SECTIONS
     if (sectionToAdvise) {
-      await prisma.sectionAdviser.upsert({
-        where: { id: -1 }, // Fallback logic
-        create: {
-          sectionId: sectionToAdvise.id,
-          teacherId: teacher.id,
-          schoolYearId: activeYear.id,
-          effectiveFrom: activeYear.classOpeningDate || new Date(),
-          status: "ACTIVE" as SectionAdviserStatus
-        },
-        update: { teacherId: teacher.id, status: "ACTIVE" as SectionAdviserStatus }
-      }).catch(async () => {
-        await prisma.sectionAdviser.updateMany({
-          where: { sectionId: sectionToAdvise.id, schoolYearId: activeYear.id, status: "ACTIVE" },
+      // Find existing active adviser for this section
+      const existingAdviser = await prisma.sectionAdviser.findFirst({
+        where: { sectionId: sectionToAdvise.id, schoolYearId: activeYear.id, status: "ACTIVE" }
+      });
+
+      if (existingAdviser && existingAdviser.teacherId !== teacher.id) {
+        await prisma.sectionAdviser.update({
+          where: { id: existingAdviser.id },
           data: { status: "HANDED_OVER" }
         });
+      }
+
+      if (!existingAdviser || existingAdviser.teacherId !== teacher.id) {
         await prisma.sectionAdviser.create({
           data: {
             sectionId: sectionToAdvise.id,
@@ -142,13 +208,16 @@ async function main() {
             status: "ACTIVE" as SectionAdviserStatus
           }
         });
-      });
+      }
     }
 
-    console.log(`  ✅ Seeded: ${faculty.id} | ${email}`);
+    if ((i + 1) % 20 === 0 || i === teachersToSeed.length - 1) {
+      console.log(`  📊 Progress: ${i + 1}/${teachersToSeed.length} Faculty members seeded.`);
+    }
   }
 
-  console.log(`\n🎉 Successfully synchronized ${ATLAS_FACULTY.length} ATLAS teachers into EnrollPro.`);
+  console.log(`\n🎉 Successfully scaled to ${teachersToSeed.length} teachers.`);
+  console.log(`✅ All 86 sections now have a Class Adviser assigned.`);
   console.log(`🔑 Demo Login Password for all teachers: DepEd2026!`);
 }
 

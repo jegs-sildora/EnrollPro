@@ -4,6 +4,7 @@ import {
   me,
   changePassword,
   logout,
+  verifyCredentials,
 } from "./auth.controller.js";
 import { validate } from "../../middleware/validate.js";
 import { authenticate } from "../../middleware/authenticate.js";
@@ -22,6 +23,7 @@ const loginLimiter = rateLimit({
 });
 
 router.post("/login", loginLimiter, validate(loginSchema), login);
+router.post("/verify", loginLimiter, validate(loginSchema), verifyCredentials);
 router.post("/logout", logout);
 router.get("/me", authenticate, me);
 router.patch(

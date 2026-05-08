@@ -2,12 +2,20 @@ import "dotenv/config";
 import { PrismaClient, Sex, ApplicantType, ReadingProfileLevel, ApplicationStatus } from "../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
+import * as bcrypt from "bcryptjs";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-const PH_FIRST_NAMES_MALE = ["JUAN", "JOSE", "MIGUEL", "CARLO", "RAFAEL", "PAOLO", "ANTONIO", "GABRIEL", "MATEO", "DIEGO"];
+const defaultPinHash = bcrypt.hashSync("123456", 10);
+
+function toUtcNoon(year: number, month: number, day: number): Date {
+  return new Date(Date.UTC(year, month, day, 12, 0, 0, 0));
+}
+
+const PH_FIRST_NAMES_MALE = [
+"JUAN", "JOSE", "MIGUEL", "CARLO", "RAFAEL", "PAOLO", "ANTONIO", "GABRIEL", "MATEO", "DIEGO"];
 const PH_FIRST_NAMES_FEMALE = ["MARIA", "ANGELICA", "PRINCESS", "JASMINE", "NICOLE", "GABRIELA", "SOFIA", "ISABELLA", "LIZA", "BEA"];
 const PH_LAST_NAMES = ["DELA CRUZ", "REYES", "SANTOS", "GARCIA", "MENDOZA", "FERNANDEZ", "NAVARRO", "RAMOS", "BAUTISTA", "GONZALES", "TORRES", "VILLANUEVA"];
 
@@ -56,7 +64,7 @@ async function main() {
         lrn,
         firstName: `${firstName} ${isSTE ? '(STE)' : '(BEC)'}`,
         lastName,
-        birthdate: new Date(`2014-0${(i % 9) + 1}-15`), // valid birthdates
+        birthdate: toUtcNoon(2014, (i % 9), 15), // valid birthdates
         sex,
         isPendingLrnCreation: false,
         previousGenAve: genAve, // Redundant storage for engine robustness
@@ -67,7 +75,9 @@ async function main() {
 
     const application = await prisma.enrollmentApplication.upsert({
       where: { trackingNumber },
-      update: {},
+      update: {
+        portalPin: defaultPinHash,
+      },
       create: {
         learnerId: learner.id,
         schoolYearId: activeYear.id,
@@ -83,40 +93,48 @@ async function main() {
         readingProfileAssessedAt: new Date(),
         readingProfileAssessedById: admin.id,
         intakeMethod: "BEEF_FULL",
+        portalPin: defaultPinHash,
       }
     });
 
     if (isSTE) {
-      const earlyReg = await prisma.earlyRegistrationApplication.create({
-        data: {
-          learnerId: learner.id,
-          schoolYearId: activeYear.id,
-          gradeLevelId: grade7.id,
-          trackingNumber: `ER-${trackingNumber}`,
-          applicantType: "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
-          status: "ASSESSMENT_TAKEN",
-          contactNumber: "09123456789",
-          isPrivacyConsentGiven: true,
-          encodedById: admin.id,
-        }
+      const erTrackingNumber = `ER-${trackingNumber}`;
+      let earlyReg = await prisma.earlyRegistrationApplication.findUnique({
+        where: { trackingNumber: erTrackingNumber }
       });
 
-      await prisma.earlyRegistrationAssessment.createMany({
-        data: [
-          {
-            applicationId: earlyReg.id,
-            type: "QUALIFYING_EXAMINATION",
-            score: 75 + (i % 25),
-            conductedAt: new Date(),
-          },
-          {
-            applicationId: earlyReg.id,
-            type: "INTERVIEW",
-            score: 80 + (i % 20),
-            conductedAt: new Date(),
+      if (!earlyReg) {
+        earlyReg = await prisma.earlyRegistrationApplication.create({
+          data: {
+            learnerId: learner.id,
+            schoolYearId: activeYear.id,
+            gradeLevelId: grade7.id,
+            trackingNumber: erTrackingNumber,
+            applicantType: "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+            status: "ASSESSMENT_TAKEN",
+            contactNumber: "09123456789",
+            isPrivacyConsentGiven: true,
+            encodedById: admin.id,
           }
-        ]
-      });
+        });
+
+        await prisma.earlyRegistrationAssessment.createMany({
+          data: [
+            {
+              applicationId: earlyReg.id,
+              type: "QUALIFYING_EXAMINATION",
+              score: 75 + (i % 25),
+              conductedAt: new Date(),
+            },
+            {
+              applicationId: earlyReg.id,
+              type: "INTERVIEW",
+              score: 80 + (i % 20),
+              conductedAt: new Date(),
+            }
+          ]
+        });
+      }
 
       await prisma.enrollmentApplication.update({
         where: { id: application.id },

@@ -6,7 +6,13 @@ Audience: Entire development team (all roles)
 Scope: Development only (trusted teammates on Tailscale)
 Default API Port: 5000
 Default DB Port: 5432
-Default Tailnet DNS Name: buru-degree.ts.net
+Primary Host (Source of Truth): dev-jegs.buru-degree.ts.net
+
+TEAM TOPOLOGY
+- SERVER HOST: dev-jegs.buru-degree.ts.net (API & DB Owner)
+- CLIENT: njgrm.buru-degree.ts.net
+- CLIENT: tfrog.buru-degree.ts.net
+- CLIENT: laptop-pfvh73qk.buru-degree.ts.net
 
 DEFAULT SERVICE IPS
 - ATLAS: 100.88.55.125
@@ -22,10 +28,9 @@ DEFAULT SERVICE PORTS
 
 OVERVIEW (READ THIS FIRST)
 - This team uses Tailscale as a secure Mesh VPN.
-- Use stable Tailscale hostnames (default: buru-degree.ts.net).
-- Do not rely on changing Wi-Fi IPs.
-- At any time, one teammate acts as SERVER HOST (API + DB owner).
-- Everyone else acts as CLIENT TEAMMATE (connects to current host).
+- "dev-jegs" is the locked-in active SERVER HOST.
+- "njgrm", "tfrog", and "laptop-pfvh73qk" act as CLIENT TEAMMATES.
+- All clients funnel their API and DB requests to dev-jegs.
 
 REPO CONTEXT (SOURCE OF TRUTH)
 - Frontend API env key: VITE_API_URL
@@ -44,20 +49,16 @@ PART A: ONE-TIME SETUP FOR EVERY TEAM MEMBER
 1. Download Tailscale: https://tailscale.com/download
 2. Sign in using your team account.
 3. Confirm status is Connected.
-4. Default team hostname is buru-degree.ts.net.
-5. Keep your Tailscale IPv4 (100.x.x.x) as fallback reference.
 
 2) Confirm Local Project Basics
-1. Ensure backend default port is 5000 in server/.env.
-2. Ensure frontend uses VITE_API_URL in client env files.
-3. Ensure dependencies are installed from repo root:
+1. Ensure dependencies are installed from repo root:
      pnpm install
 
 -----------------------------------------------------
-PART B: SERVER HOST RUNBOOK (API + DB OWNER)
+PART B: SERVER HOST RUNBOOK (DEV-JEGS)
 -----------------------------------------------------
 
-Use this runbook if you are the active team host.
+Use this runbook strictly on the dev-jegs machine.
 
 Step B1: Open Windows Firewall (Run PowerShell as Administrator)
 
@@ -76,14 +77,12 @@ app.listen(PORT as number, "0.0.0.0", () => {
 });
 
 Step B3: Configure Host Backend Env (server/.env)
-Minimum host values:
+Since dev-jegs is serving multiple clients, it MUST allow CORS from their hostnames.
 
 PORT=5000
 CLIENT_URL="http://localhost:5173"
+CLIENT_URLS="http://njgrm.buru-degree.ts.net:5173,http://tfrog.buru-degree.ts.net:5173,http://laptop-pfvh73qk.buru-degree.ts.net:5173"
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/enrollpro"
-
-Optional for expanded origins:
-CLIENT_URLS=""
 
 Step B4: Configure PostgreSQL for Tailscale Access
 1. Open PostgreSQL data directory (example: C:\Program Files\PostgreSQL\<version>\data).
@@ -94,114 +93,46 @@ Step B4: Configure PostgreSQL for Tailscale Access
 4. Restart PostgreSQL service in Windows Services.
 
 Step B5: Start Host Services
-From repo root, run either:
-
-pnpm --filter server dev
-
-or full stack:
-
+From repo root:
 pnpm run dev
 
 Step B6: Publish Host Connection Card to Team Chat
 Copy and send:
 
-ACTIVE HOST: BURU DEGREE (default)
-HOSTNAME: buru-degree.ts.net
-API_URL: http://buru-degree.ts.net:5000/api
-INTEGRATION_BASE_URL: http://buru-degree.ts.net:5000/api/integration/v1
-ATLAS_URL: http://100.88.55.125:5000
-AIMS_URL: http://100.92.245.14:5000
-SMART_URL: http://100.93.66.120:3000
-DB_HOST: buru-degree.ts.net:5432
-STARTED_AT: <YYYY-MM-DD HH:MM>
+ACTIVE HOST: DEV-JEGS
+HOSTNAME: dev-jegs.buru-degree.ts.net
+API_URL: http://dev-jegs.buru-degree.ts.net:5000/api
+INTEGRATION_BASE_URL: http://dev-jegs.buru-degree.ts.net:5000/api/integration/v1
+DB_HOST: dev-jegs.buru-degree.ts.net:5432
 
 -----------------------------------------------------
-PART C: CLIENT TEAMMATE RUNBOOK (CONNECT TO HOST)
+PART C: CLIENT TEAMMATE RUNBOOK (NJGRM, TFROG, LAPTOP)
 -----------------------------------------------------
 
-Use this runbook if you are connecting to the active host.
+Run this on njgrm, tfrog, and laptop-pfvh73qk machines.
 
-Step C1: Frontend to Host API (required)
-Create or update client/.env.local:
+Step C1: Point Frontend to Host API
+Update client/.env.local:
 
-VITE_API_URL="http://buru-degree.ts.net:5000/api"
+VITE_API_URL="http://dev-jegs.buru-degree.ts.net:5000/api"
 
-Step C2: Backend to Host DB (only if needed)
-Create or update server/.env:
+Step C2: Point Local Backend to Host DB (Optional/If Running Backend Locally)
+Update server/.env:
 
-DATABASE_URL="postgresql://user:pass@buru-degree.ts.net:5432/enrollpro"
+DATABASE_URL="postgresql://<YOUR_POSTGRES_USER>:<YOUR_POSTGRES_PASS>@dev-jegs.buru-degree.ts.net:5432/enrollpro"
 
-Step C3: Optional proxy mode
-If frontend should use /api proxy:
-
-VITE_PROXY_TARGET="http://buru-degree.ts.net:5000"
-
-Step C4: Restart local dev processes
-After env updates, restart frontend/backend processes.
-
-Notes:
-- Prefer hostname (.ts.net) first.
-- Use 100.x.x.x only as fallback if DNS resolution fails.
+Step C3: Restart local dev processes
+After env updates, restart Vite / Node processes.
 
 -----------------------------------------------------
-PART D: DAILY TEAM WORKFLOW
+PART D: TEAM VALIDATION CHECKLIST
 -----------------------------------------------------
 
-1) Start of day
-1. Assign one active SERVER HOST.
-2. Host sends Host Connection Card.
-3. All CLIENT TEAMMATES sync their env values.
+From client machines (PowerShell), verify the funnel:
 
-2) Host rotation
-1. New host starts services and validates ports.
-2. New host sends updated Host Connection Card.
-3. Team updates env files and restarts dev servers.
-
-3) End of day
-1. Host notifies team if services are going offline.
-2. Remove temporary access rules if machine will no longer host.
-
------------------------------------------------------
-PART E: TEAM VALIDATION CHECKLIST
------------------------------------------------------
-
-From client machine (PowerShell):
-
-Test-NetConnection buru-degree.ts.net -Port 5000
-Test-NetConnection buru-degree.ts.net -Port 5432
-Invoke-RestMethod http://buru-degree.ts.net:5000/api/health
-Invoke-RestMethod http://buru-degree.ts.net:5000/api/integration/v1/health
+Test-NetConnection dev-jegs.buru-degree.ts.net -Port 5000
+Test-NetConnection dev-jegs.buru-degree.ts.net -Port 5432
+Invoke-RestMethod http://dev-jegs.buru-degree.ts.net:5000/api/health
 
 Expected API response:
 {"ok":true}
-
-Expected integration response (shape):
-{"data":{"status":"ok","db":"connected",...}}
-
------------------------------------------------------
-PART F: TROUBLESHOOTING
------------------------------------------------------
-
-- API unreachable on 5000:
-    Check host firewall rules and backend process state.
-
-- DB unreachable on 5432:
-    Check PostgreSQL service, listen_addresses='*', and pg_hba.conf CIDR line.
-
-- Frontend still using localhost API:
-    Check client/.env.local VITE_API_URL, then restart Vite.
-
-- CORS errors:
-    Check CLIENT_URL and optionally CLIENT_URLS in server/.env, then restart backend.
-
-- Hostname does not resolve:
-    Confirm both devices are connected to Tailscale and MagicDNS is enabled.
-
------------------------------------------------------
-PART G: SECURITY RULES (MANDATORY)
------------------------------------------------------
-
-- This setup is for trusted team development only.
-- Never expose API or PostgreSQL to the public internet.
-- Do not post DB credentials in public channels.
-- Remove temporary firewall rules if hosting is no longer required.

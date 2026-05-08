@@ -110,37 +110,6 @@ async function findStudentOrThrow(
   };
 }
 
-function assertSectionShiftWindowOpen(
-  deps: StudentsControllerDeps,
-  schoolYear: {
-    classOpeningDate: Date | null;
-    sectionShiftWindowDays: number | null;
-  },
-) {
-  const { classOpeningDate, sectionShiftWindowDays } = schoolYear;
-  if (
-    !classOpeningDate ||
-    !sectionShiftWindowDays ||
-    sectionShiftWindowDays <= 0
-  ) {
-    return;
-  }
-
-  const classOpening = deps.normalizeDateToUtcNoon(classOpeningDate);
-  const shiftWindowCutoff = new Date(classOpening.getTime());
-  shiftWindowCutoff.setUTCDate(
-    shiftWindowCutoff.getUTCDate() + sectionShiftWindowDays,
-  );
-
-  const today = deps.normalizeDateToUtcNoon(new Date());
-  if (today.getTime() > shiftWindowCutoff.getTime()) {
-    throw new AppError(
-      422,
-      `Section shifts are closed for this school year. Allowed until ${shiftWindowCutoff.toISOString().slice(0, 10)}.`,
-    );
-  }
-}
-
 export const createStudentsLifecycleController = (
   deps: StudentsControllerDeps = createStudentsControllerDeps(),
 ) => {
@@ -245,158 +214,6 @@ export const createStudentsLifecycleController = (
     }
   };
 
-  const shiftStudentSection = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
-    try {
-      const studentId = parseStudentId(req);
-      const { sectionId } = req.body;
-      const application = await findStudentOrThrow(deps, studentId);
-
-      assertSectionShiftWindowOpen(deps, {
-        classOpeningDate: application.schoolYear.classOpeningDate,
-        sectionShiftWindowDays: application.schoolYear.sectionShiftWindowDays,
-      });
-
-      const targetSection = await deps.prisma.section.findUnique({
-        where: { id: sectionId },
-        include: {
-          gradeLevel: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-      });
-
-      if (!targetSection) {
-        throw new AppError(404, "Target section not found");
-      }
-
-      if (targetSection.schoolYearId !== application.schoolYearId) {
-        throw new AppError(
-          422,
-          "Target section must belong to the same school year as the learner.",
-        );
-      }
-
-      if (targetSection.gradeLevel.id !== application.gradeLevelId) {
-        throw new AppError(
-          422,
-          "Target section must belong to the same grade level as the learner.",
-        );
-      }
-
-      if (targetSection.id !== application.enrollmentRecord.sectionId) {
-        const activeLearnerCount = await deps.prisma.enrollmentRecord.count({
-          where: {
-            sectionId: targetSection.id,
-            NOT: {
-              eosyStatus: {
-                in: [...INACTIVE_OUTCOMES],
-              },
-            },
-          },
-        });
-
-        if (activeLearnerCount >= targetSection.maxCapacity) {
-          throw new AppError(
-            422,
-            "Target section has reached maximum capacity.",
-          );
-        }
-      }
-
-      const previousSectionName = application.enrollmentRecord.section.name;
-      const previousProgramType =
-        application.enrollmentRecord.section.programType;
-      const targetProgramType = targetSection.programType;
-
-      const updatedEnrollmentRecord = await deps.prisma.$transaction(
-        async (tx) => {
-          const updatedRecord = await tx.enrollmentRecord.update({
-            where: { id: application.enrollmentRecord.id },
-            data: {
-              sectionId: targetSection.id,
-              eosyStatus: null,
-              transferOutDate: null,
-              transferOutSchoolName: null,
-              transferOutReason: null,
-              dropOutDate: null,
-              dropOutReason: null,
-            },
-            include: {
-              section: {
-                select: {
-                  id: true,
-                  name: true,
-                  programType: true,
-                },
-              },
-            },
-          });
-
-          await tx.learner.update({
-            where: { id: application.learnerId },
-            data: { status: "ACTIVE" },
-          });
-
-          if (previousProgramType !== targetProgramType) {
-            await tx.enrollmentApplication.update({
-              where: { id: studentId },
-              data: {
-                applicantType: targetProgramType,
-              },
-            });
-
-            if (targetProgramType === "REGULAR") {
-              await tx.enrollmentProgramDetail.deleteMany({
-                where: { applicationId: studentId },
-              });
-            } else {
-              await tx.enrollmentProgramDetail.upsert({
-                where: { applicationId: studentId },
-                update: {
-                  scpType: targetProgramType,
-                },
-                create: {
-                  applicationId: studentId,
-                  scpType: targetProgramType,
-                  sportsList: [],
-                },
-              });
-            }
-          }
-
-          return updatedRecord;
-        },
-      );
-
-      await auditLog({
-        userId: req.user?.userId ?? null,
-        actionType: "LEARNER_SECTION_SHIFTED",
-        description: `Moved ${formatLearnerName(application.learner)} from ${previousSectionName} to ${updatedEnrollmentRecord.section.name}${previousProgramType !== targetProgramType ? ` and changed program from ${previousProgramType} to ${targetProgramType}` : ""}.`,
-        subjectType: "EnrollmentRecord",
-        recordId: updatedEnrollmentRecord.id,
-        req,
-      });
-
-      res.json({
-        message: "Learner section assignment updated.",
-        enrollment: {
-          sectionId: updatedEnrollmentRecord.section.id,
-          sectionName: updatedEnrollmentRecord.section.name,
-          programType: updatedEnrollmentRecord.section.programType,
-        },
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
   const assignStudentLrn = async (
     req: Request,
     res: Response,
@@ -462,7 +279,6 @@ export const createStudentsLifecycleController = (
   return {
     transferOutStudent,
     dropOutStudent,
-    shiftStudentSection,
     assignStudentLrn,
   };
 };
@@ -472,7 +288,6 @@ const studentsLifecycleController = createStudentsLifecycleController();
 export const {
   transferOutStudent,
   dropOutStudent,
-  shiftStudentSection,
   assignStudentLrn,
 } = studentsLifecycleController;
 

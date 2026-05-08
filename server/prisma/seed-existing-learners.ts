@@ -2,12 +2,20 @@ import "dotenv/config";
 import { PrismaClient, Sex, ApplicantType, FamilyRelationship, AddressType, LearnerType, ApplicationStatus, ReadingProfileLevel } from "../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
+import * as bcrypt from "bcryptjs";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-const PH_FIRST_NAMES_MALE = ["JUAN", "JOSE", "MIGUEL", "CARLO", "RAFAEL", "PAOLO", "ANTONIO", "GABRIEL", "MATEO", "DIEGO", "EMMANUEL", "CHRISTIAN", "JOSHUA", "ANGELO", "RICARDO", "FERDINAND", "RODRIGO", "MANUEL", "CORAZON", "BENIGNO", "RAMON", "ELPIDIO", "SERGIO", "DIOSDADO", "JOSEPH"];
+const defaultPinHash = bcrypt.hashSync("DepEd2026!", 10);
+
+function toUtcNoon(year: number, month: number, day: number): Date {
+  return new Date(Date.UTC(year, month, day, 12, 0, 0, 0));
+}
+
+const PH_FIRST_NAMES_MALE = [
+"JUAN", "JOSE", "MIGUEL", "CARLO", "RAFAEL", "PAOLO", "ANTONIO", "GABRIEL", "MATEO", "DIEGO", "EMMANUEL", "CHRISTIAN", "JOSHUA", "ANGELO", "RICARDO", "FERDINAND", "RODRIGO", "MANUEL", "CORAZON", "BENIGNO", "RAMON", "ELPIDIO", "SERGIO", "DIOSDADO", "JOSEPH"];
 const PH_FIRST_NAMES_FEMALE = ["MARIA", "ANGELICA", "PRINCESS", "JASMINE", "NICOLE", "GABRIELA", "SOFIA", "ISABELLA", "LIZA", "BEA", "CRISTINA", "PATRICIA", "ELENA", "ROSA", "TERESA", "IMELDA", "GLORIA", "CORAZON", "LOURDES", "REMEDIOS", "CARMELA", "JOSEFINA", "PERLA", "AURORA", "ESTRELLA"];
 const PH_LAST_NAMES = ["DELA CRUZ", "REYES", "SANTOS", "GARCIA", "MENDOZA", "FERNANDEZ", "NAVARRO", "RAMOS", "BAUTISTA", "GONZALES", "TORRES", "VILLANUEVA", "CRUZ", "PASCUAL", "AQUINO", "MARCOS", "DUTERTE", "ESTRADA", "ARROYO", "MAGSAYSAY", "QUIRINO", "OSMEÑA", "MACAPAGAL", "ROXAS", "QUEZON"];
 const PH_MIDDLE_NAMES = ["SANTIAGO", "DE LEON", "BALTAZAR", "CASTILLO", "SORIANO", "DEL ROSARIO", "VALDEZ", "RODRIGUEZ", "PANGANIBAN", "IBARRA", "LUNA", "SILANG"];
@@ -31,7 +39,7 @@ const PH_ELEMENTARY_SCHOOLS = [
 const PH_BARANGAYS = ["BARANGAY 1", "BARANGAY 2", "SAN ISIDRO", "STA. LUCIA", "SANTO NIÑO", "CONCEPCION", "MALANDAY", "POBLACION", "SAN JOSE", "SAN ROQUE"];
 
 async function main() {
-  console.log("🚀 Seeding Existing Learners (70 STE, 850 BEC per Grade Level G7-G9)...");
+  console.log("🚀 Seeding Existing Learners (Filling all G7-G10 sections to 100% capacity)...");
 
   // 1. Get Context
   const activeYear = await prisma.schoolYear.findFirst({
@@ -42,7 +50,8 @@ async function main() {
   if (!activeYear) throw new Error("No valid school year found.");
 
   const gradeLevels = await prisma.gradeLevel.findMany({
-    where: { name: { in: ["Grade 7", "Grade 8", "Grade 9"] } }
+    where: { name: { in: ["Grade 7", "Grade 8", "Grade 9", "Grade 10"] } },
+    orderBy: { displayOrder: "asc" }
   });
 
   const admin = await prisma.user.findFirst({ where: { role: "SYSTEM_ADMIN" } });
@@ -50,7 +59,10 @@ async function main() {
 
   // 2. Global Section Cleanup (Ensure consistent naming)
   console.log("🧹 Cleaning up section names...");
-  const rawSections = await prisma.section.findMany();
+  const rawSections = await prisma.section.findMany({
+    where: { schoolYearId: activeYear.id }
+  });
+  
   for (const section of rawSections) {
     let newName = section.name.replace(/ - G\d+/g, "").replace(" (BEC)", "").replace(" (STE)", "").trim();
     
@@ -65,61 +77,94 @@ async function main() {
   for (const gradeLevel of gradeLevels) {
     console.log(`\n📦 Processing ${gradeLevel.name}...`);
 
-    const steSections = await prisma.section.findMany({
-      where: { gradeLevelId: gradeLevel.id, schoolYearId: activeYear.id, programType: "SCIENCE_TECHNOLOGY_AND_ENGINEERING" }
+    // Get all sections for this grade level
+    const sections = await prisma.section.findMany({
+      where: { 
+        gradeLevelId: gradeLevel.id, 
+        schoolYearId: activeYear.id 
+      }
     });
 
-    const becSections = await prisma.section.findMany({
-      where: { gradeLevelId: gradeLevel.id, schoolYearId: activeYear.id, programType: "REGULAR" }
-    });
-
-    if (steSections.length === 0 || becSections.length === 0) {
-      console.warn(`⚠️ Missing sections for ${gradeLevel.name}. Skipping...`);
+    if (sections.length === 0) {
+      console.warn(`⚠️ No sections found for ${gradeLevel.name}. Skipping...`);
       continue;
     }
 
-    // Process STE (70)
-    await seedBatch(gradeLevel, "SCIENCE_TECHNOLOGY_AND_ENGINEERING", 70, steSections, activeYear, admin.id);
-    
-    // Process BEC (850)
-    await seedBatch(gradeLevel, "REGULAR", 850, becSections, activeYear, admin.id);
+    for (const section of sections) {
+      // Calculate current enrollment in this section
+      const currentEnrollmentCount = await prisma.enrollmentRecord.count({
+        where: { 
+          sectionId: section.id,
+          schoolYearId: activeYear.id
+        }
+      });
+
+      const needed = section.maxCapacity - currentEnrollmentCount;
+      
+      if (needed <= 0) {
+        console.log(`  ✅ Section ${section.name} is already at full capacity (${section.maxCapacity}).`);
+        continue;
+      }
+
+      console.log(`  - Filling Section: ${section.name} (${currentEnrollmentCount}/${section.maxCapacity}). Adding ${needed} learners...`);
+      
+      await seedSectionBatch(
+        gradeLevel, 
+        section.programType as ApplicantType, 
+        needed, 
+        section, 
+        activeYear, 
+        admin.id,
+        currentEnrollmentCount + 1 // Start index offset to ensure unique tracking numbers/LRNs if re-run
+      );
+    }
   }
 
   console.log("\n✅ Seeding of existing learners completed successfully.");
 }
 
-async function seedBatch(gradeLevel: any, program: ApplicantType, count: number, sections: any[], activeYear: any, adminId: number) {
+async function seedSectionBatch(
+  gradeLevel: any, 
+  program: ApplicantType, 
+  count: number, 
+  section: any, 
+  activeYear: any, 
+  adminId: number,
+  startIndex: number
+) {
   const programLabel = program === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE" : "BEC";
-  console.log(`  - Seeding ${count} ${programLabel} learners...`);
+  const gradeValue = parseInt(gradeLevel.name.split(" ")[1]);
 
-  for (let i = 1; i <= count; i++) {
-    const uniqueId = `${gradeLevel.id}-${programLabel}-${i}`;
-    const sex: Sex = i % 2 === 0 ? "FEMALE" : "MALE";
+  for (let i = 0; i < count; i++) {
+    const sequence = startIndex + i;
+    const sex: Sex = sequence % 2 === 0 ? "FEMALE" : "MALE";
     const firstName = sex === "MALE" 
-      ? PH_FIRST_NAMES_MALE[i % PH_FIRST_NAMES_MALE.length]
-      : PH_FIRST_NAMES_FEMALE[i % PH_FIRST_NAMES_FEMALE.length];
-    const lastName = PH_LAST_NAMES[i % PH_LAST_NAMES.length];
-    const middleName = PH_MIDDLE_NAMES[i % PH_MIDDLE_NAMES.length];
+      ? PH_FIRST_NAMES_MALE[sequence % PH_FIRST_NAMES_MALE.length]
+      : PH_FIRST_NAMES_FEMALE[sequence % PH_FIRST_NAMES_FEMALE.length];
+    const lastName = PH_LAST_NAMES[sequence % PH_LAST_NAMES.length];
+    const middleName = PH_MIDDLE_NAMES[sequence % PH_MIDDLE_NAMES.length];
     
-    // LRN: GradeLevel (2) + Program (1: STE=3, BEC=4) + Index (6)
-    const programDigit = program === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "3" : "4";
-    const lrn = `2026${gradeLevel.id}${programDigit}${String(i).padStart(5, '0')}`;
+    // LRN: Prefix(2026) + SectionId padded to 4 digits + Sequence padded to 4 digits
+    // Total: 4 + 4 + 4 = 12 digits (exactly matching VarChar(12) constraint)
+    const lrn = `2026${section.id.toString().padStart(4, '0')}${sequence.toString().padStart(4, '0')}`;
     
+    // Birthdate offset based on grade (G7 typically 12-13 years old in 2026, so born ~2013-2014)
+    const birthYear = 2026 - (gradeValue + 6); // Approximation for JHS ages
     const learnerData = {
       lrn,
       firstName,
       lastName,
       middleName,
-      extensionName: i % 20 === 0 ? "JR" : null,
+      extensionName: sequence % 30 === 0 ? "JR" : null,
       sex,
-      birthdate: new Date(2013 - (gradeLevel.id - 1), 4, 15 + (i % 15)),
-      placeOfBirth: PH_CITIES[i % PH_CITIES.length],
+      birthdate: toUtcNoon(birthYear, sequence % 12, 15),
+      placeOfBirth: PH_CITIES[sequence % PH_CITIES.length],
       religion: "ROMAN CATHOLIC",
-      motherTongue: PH_MOTHER_TONGUES[i % PH_MOTHER_TONGUES.length],
-      isIpCommunity: i % 50 === 0,
-      is4PsBeneficiary: i % 15 === 0,
-      psaBirthCertNumber: `PSA-BC-${gradeLevel.id}-${programDigit}-${String(i).padStart(6, '0')}`,
-      previousGenAve: program === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? 90 + (i % 8) : 80 + (i % 15),
+      motherTongue: PH_MOTHER_TONGUES[sequence % PH_MOTHER_TONGUES.length],
+      isIpCommunity: sequence % 50 === 0,
+      is4PsBeneficiary: sequence % 15 === 0,
+      psaBirthCertNumber: `PSA-BC-${lrn}`,
+      previousGenAve: program === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? 90 + (sequence % 8) : 80 + (sequence % 15),
       promotionStatus: "PROMOTED",
     };
 
@@ -129,9 +174,9 @@ async function seedBatch(gradeLevel: any, program: ApplicantType, count: number,
       create: learnerData
     });
 
-    const trackingNumber = `EXIST-${gradeLevel.id}-${programLabel}-${String(i).padStart(5, '0')}`;
+    const trackingNumber = `EXIST-${section.id}-${sequence.toString().padStart(5, '0')}`;
     
-    // Ensure relations are handled
+    // Ensure relations are handled for cleanup
     const existingApp = await prisma.enrollmentApplication.findUnique({ where: { trackingNumber } });
     if (existingApp) {
       await prisma.applicationFamilyMember.deleteMany({ where: { enrollmentId: existingApp.id } });
@@ -153,47 +198,7 @@ async function seedBatch(gradeLevel: any, program: ApplicantType, count: number,
             encodedById: adminId,
             readingProfileLevel: "INDEPENDENT" as ReadingProfileLevel,
             guardianRelationship: "MOTHER",
-            familyMembers: {
-              create: [
-                {
-                  relationship: "MOTHER" as FamilyRelationship,
-                  firstName: PH_FIRST_NAMES_FEMALE[(i + 1) % PH_FIRST_NAMES_FEMALE.length],
-                  lastName: PH_LAST_NAMES[i % PH_LAST_NAMES.length],
-                  middleName: PH_MIDDLE_NAMES[(i + 2) % PH_MIDDLE_NAMES.length],
-                  contactNumber: `0917${String(i).padStart(7, '0')}`,
-                  occupation: "HOUSEWIFE"
-                },
-                {
-                  relationship: "FATHER" as FamilyRelationship,
-                  firstName: PH_FIRST_NAMES_MALE[(i + 3) % PH_FIRST_NAMES_MALE.length],
-                  lastName: PH_LAST_NAMES[i % PH_LAST_NAMES.length],
-                  middleName: PH_MIDDLE_NAMES[(i + 4) % PH_MIDDLE_NAMES.length],
-                  contactNumber: `0918${String(i).padStart(7, '0')}`,
-                  occupation: "EMPLOYED"
-                }
-              ]
-            },
-            addresses: {
-              create: [
-                {
-                  addressType: "CURRENT" as AddressType,
-                  houseNoStreet: `${100 + i} Street`,
-                  barangay: PH_BARANGAYS[i % PH_BARANGAYS.length],
-                  cityMunicipality: PH_CITIES[i % PH_CITIES.length],
-                  province: "METRO MANILA",
-                  zipCode: "1100"
-                }
-              ]
-            },
-            previousSchool: {
-              create: {
-                schoolName: PH_ELEMENTARY_SCHOOLS[i % PH_ELEMENTARY_SCHOOLS.length],
-                schoolType: "Public",
-                gradeCompleted: `Grade ${parseInt(gradeLevel.name.split(" ")[1]) - 1}`,
-                schoolYearAttended: "2025-2026",
-                generalAverage: learnerData.previousGenAve
-              }
-            }
+            portalPin: defaultPinHash,
         },
         create: {
             learnerId: learner.id,
@@ -208,23 +213,16 @@ async function seedBatch(gradeLevel: any, program: ApplicantType, count: number,
             encodedById: adminId,
             readingProfileLevel: "INDEPENDENT" as ReadingProfileLevel,
             guardianRelationship: "MOTHER",
+            portalPin: defaultPinHash,
             familyMembers: {
               create: [
                 {
                   relationship: "MOTHER" as FamilyRelationship,
-                  firstName: PH_FIRST_NAMES_FEMALE[(i + 1) % PH_FIRST_NAMES_FEMALE.length],
-                  lastName: PH_LAST_NAMES[i % PH_LAST_NAMES.length],
-                  middleName: PH_MIDDLE_NAMES[(i + 2) % PH_MIDDLE_NAMES.length],
-                  contactNumber: `0917${String(i).padStart(7, '0')}`,
+                  firstName: PH_FIRST_NAMES_FEMALE[(sequence + 1) % PH_FIRST_NAMES_FEMALE.length],
+                  lastName: PH_LAST_NAMES[sequence % PH_LAST_NAMES.length],
+                  middleName: PH_MIDDLE_NAMES[(sequence + 2) % PH_MIDDLE_NAMES.length],
+                  contactNumber: `0917${String(sequence).padStart(7, '0').slice(-7)}`,
                   occupation: "HOUSEWIFE"
-                },
-                {
-                  relationship: "FATHER" as FamilyRelationship,
-                  firstName: PH_FIRST_NAMES_MALE[(i + 3) % PH_FIRST_NAMES_MALE.length],
-                  lastName: PH_LAST_NAMES[i % PH_LAST_NAMES.length],
-                  middleName: PH_MIDDLE_NAMES[(i + 4) % PH_MIDDLE_NAMES.length],
-                  contactNumber: `0918${String(i).padStart(7, '0')}`,
-                  occupation: "EMPLOYED"
                 }
               ]
             },
@@ -232,9 +230,9 @@ async function seedBatch(gradeLevel: any, program: ApplicantType, count: number,
               create: [
                 {
                   addressType: "CURRENT" as AddressType,
-                  houseNoStreet: `${100 + i} Street`,
-                  barangay: PH_BARANGAYS[i % PH_BARANGAYS.length],
-                  cityMunicipality: PH_CITIES[i % PH_CITIES.length],
+                  houseNoStreet: `${100 + (sequence % 900)} Street`,
+                  barangay: PH_BARANGAYS[sequence % PH_BARANGAYS.length],
+                  cityMunicipality: PH_CITIES[sequence % PH_CITIES.length],
                   province: "METRO MANILA",
                   zipCode: "1100"
                 }
@@ -242,9 +240,9 @@ async function seedBatch(gradeLevel: any, program: ApplicantType, count: number,
             },
             previousSchool: {
               create: {
-                schoolName: PH_ELEMENTARY_SCHOOLS[i % PH_ELEMENTARY_SCHOOLS.length],
+                schoolName: PH_ELEMENTARY_SCHOOLS[sequence % PH_ELEMENTARY_SCHOOLS.length],
                 schoolType: "Public",
-                gradeCompleted: `Grade ${parseInt(gradeLevel.name.split(" ")[1]) - 1}`,
+                gradeCompleted: `Grade ${gradeValue - 1}`,
                 schoolYearAttended: "2025-2026",
                 generalAverage: learnerData.previousGenAve
               }
@@ -252,7 +250,6 @@ async function seedBatch(gradeLevel: any, program: ApplicantType, count: number,
         }
     });
 
-    const section = sections[i % sections.length];
     await prisma.enrollmentRecord.upsert({
       where: { enrollmentApplicationId: application.id },
       update: {
@@ -270,7 +267,9 @@ async function seedBatch(gradeLevel: any, program: ApplicantType, count: number,
       }
     });
 
-    if (i % 100 === 0) console.log(`    - Seeded ${i} learners...`);
+    if ((i + 1) % 20 === 0 || (i + 1) === count) {
+       // Log progress within the section
+    }
   }
 }
 

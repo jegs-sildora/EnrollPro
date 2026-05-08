@@ -62,27 +62,20 @@ export const lookupLearnerByLrn = async (req: Request, res: Response) => {
 };
 
 /**
- * Lookup learner records using LRN, Birthdate, and PIN.
+ * Lookup learner records using LRN and Password.
  * POST /api/learner/lookup
  */
 export const lookupLearner = async (req: Request, res: Response) => {
   try {
-    const { lrn, birthDate, pin } = req.body as {
+    const { lrn, password } = req.body as {
       lrn: string;
-      birthDate: string;
-      pin: string;
+      password: string;
     };
-
-    const normalizedBirthDate = normalizeDateToUtcNoon(new Date(birthDate));
-    if (Number.isNaN(normalizedBirthDate.getTime())) {
-      return res.status(401).json({ message: PORTAL_LOOKUP_ERROR });
-    }
 
     const application = await prisma.enrollmentApplication.findFirst({
       where: {
-        status: "ENROLLED",
         portalPin: { not: null },
-        learner: { lrn },
+        OR: [{ learner: { lrn: lrn } }, { trackingNumber: lrn }],
       },
       orderBy: { updatedAt: "desc" },
       include: {
@@ -113,14 +106,8 @@ export const lookupLearner = async (req: Request, res: Response) => {
       return res.status(401).json({ message: PORTAL_LOOKUP_ERROR });
     }
 
-    const inputBirthDate = toDateOnly(normalizedBirthDate);
-    const learnerBirthDate = toDateOnly(application.learner.birthdate);
-    if (learnerBirthDate !== inputBirthDate) {
-      return res.status(401).json({ message: PORTAL_LOOKUP_ERROR });
-    }
-
-    const pinMatch = await verifyPin(pin, application.portalPin);
-    if (!pinMatch) {
+    const passwordMatch = await verifyPin(password, application.portalPin);
+    if (!passwordMatch) {
       return res.status(401).json({ message: PORTAL_LOOKUP_ERROR });
     }
 
@@ -152,6 +139,7 @@ export const lookupLearner = async (req: Request, res: Response) => {
         motherTongue: application.learner.motherTongue,
         religion: application.learner.religion,
         status: application.status,
+        curriculum: application.applicantType, // Ensure this is correctly assigned
         studentPhoto: application.learner.studentPhoto,
         currentAddress: currentAddress
           ? {
@@ -164,6 +152,7 @@ export const lookupLearner = async (req: Request, res: Response) => {
           : null,
         enrollment: application.enrollmentRecord
           ? {
+              curriculum: application.applicantType,
               section: application.enrollmentRecord.section
                 ? {
                     name: application.enrollmentRecord.section.name,

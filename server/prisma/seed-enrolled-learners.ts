@@ -2,15 +2,23 @@ import "dotenv/config";
 import { PrismaClient, Sex, ApplicantType, FamilyRelationship, AddressType, LearnerType, ApplicationStatus, ReadingProfileLevel } from "../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
+import * as bcrypt from "bcryptjs";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-const PH_FIRST_NAMES_MALE = ["JUAN", "JOSE", "MIGUEL", "CARLO", "RAFAEL", "PAOLO", "ANTONIO", "GABRIEL", "MATEO", "DIEGO", "EMMANUEL", "CHRISTIAN", "JOSHUA", "ANGELO", "RICARDO"];
-const PH_FIRST_NAMES_FEMALE = ["MARIA", "ANGELICA", "PRINCESS", "JASMINE", "NICOLE", "GABRIELA", "SOFIA", "ISABELLA", "LIZA", "BEA", "CRISTINA", "PATRICIA", "ELENA", "ROSA", "TERESA"];
-const PH_LAST_NAMES = ["DELA CRUZ", "REYES", "SANTOS", "GARCIA", "MENDOZA", "FERNANDEZ", "NAVARRO", "RAMOS", "BAUTISTA", "GONZALES", "TORRES", "VILLANUEVA", "CRUZ", "PASCUAL", "AQUINO"];
-const PH_MIDDLE_NAMES = ["SANTIAGO", "DE LEON", "BALTAZAR", "CASTILLO", "SORIANO", "DEL ROSARIO", "VALDEZ", "RODRIGUEZ"];
+const defaultPinHash = bcrypt.hashSync("123456", 10);
+
+function toUtcNoon(year: number, month: number, day: number): Date {
+  return new Date(Date.UTC(year, month, day, 12, 0, 0, 0));
+}
+
+const PH_FIRST_NAMES_MALE = [
+"JUAN", "JOSE", "MIGUEL", "CARLO", "RAFAEL", "PAOLO", "ANTONIO", "GABRIEL", "MATEO", "DIEGO", "EMMANUEL", "CHRISTIAN", "JOSHUA", "ANGELO", "RICARDO", "ERNESTO", "ORLANDO", "SALVADOR", "EFREN", "ROLANDO"];
+const PH_FIRST_NAMES_FEMALE = ["MARIA", "ANGELICA", "PRINCESS", "JASMINE", "NICOLE", "GABRIELA", "SOFIA", "ISABELLA", "LIZA", "BEA", "CRISTINA", "PATRICIA", "ELENA", "ROSA", "TERESA", "CORAZON", "LETICIA", "LEONORA", "IMELDA", "GLORIA"];
+const PH_LAST_NAMES = ["DELA CRUZ", "REYES", "SANTOS", "GARCIA", "MENDOZA", "FERNANDEZ", "NAVARRO", "RAMOS", "BAUTISTA", "GONZALES", "TORRES", "VILLANUEVA", "CRUZ", "PASCUAL", "AQUINO", "LUNA", "CASTRO", "BELTRAN", "VILLAR", "ZUBIRI"];
+const PH_MIDDLE_NAMES = ["SANTIAGO", "DE LEON", "BALTAZAR", "CASTILLO", "SORIANO", "DEL ROSARIO", "VALDEZ", "RODRIGUEZ", "MABINI", "PANGANIBAN"];
 
 const PH_CITIES = ["QUEZON CITY", "MANILA", "CALOOCAN", "DAVAO CITY", "CEBU CITY", "ZAMBOANGA CITY", "ANTIPOLO", "PASIG", "TAGUIG", "VALENZUELA"];
 const PH_MOTHER_TONGUES = ["TAGALOG", "CEBUANO", "ILOCANO", "HILIGAYNON", "WARAY", "BIKOL", "KAPAMPANGAN", "PANGASINAN"];
@@ -28,7 +36,7 @@ const PH_ELEMENTARY_SCHOOLS = [
 const PH_BARANGAYS = ["BARANGAY 1", "BARANGAY 2", "SAN ISIDRO", "STA. LUCIA", "SANTO NIÑO", "CONCEPCION", "MALANDAY", "POBLACION"];
 
 async function main() {
-  console.log("🚀 Starting Global Data Cleanup and Learner Seeding...");
+  console.log("🚀 Scaling Enrollment Data: Provisioning 400+ Learners...");
 
   // 1. Get Context
   const activeYear = await prisma.schoolYear.findFirst({
@@ -38,86 +46,47 @@ async function main() {
 
   if (!activeYear) throw new Error("No valid school year found. Run main db:seed first.");
 
-  const grade7 = await prisma.gradeLevel.findFirst({
-    where: { name: "Grade 7" }
+  const gradeLevels = await prisma.gradeLevel.findMany({
+    where: { name: { in: ["Grade 7", "Grade 8", "Grade 9", "Grade 10"] } },
+    orderBy: { displayOrder: "asc" }
   });
-
-  if (!grade7) throw new Error("Grade 7 level not found.");
-
-  // 2. Global Section Cleanup (Remove " - G7", " - G8", etc., and "(BEC/STE)")
-  console.log("🧹 Cleaning up ALL section names...");
-  const rawSections = await prisma.section.findMany();
-  for (const section of rawSections) {
-    let newName = section.name.replace(/ - G\d+/g, "").replace(" (BEC)", "").replace(" (STE)", "").trim();
-    
-    if (newName !== section.name) {
-      await prisma.section.update({
-        where: { id: section.id },
-        data: { name: newName }
-      });
-    }
-  }
-
-  // 3. Global Learner Cleanup (Remove "(BEC/STE)")
-  console.log("🧹 Cleaning up ALL learner names...");
-  const rawLearners = await prisma.learner.findMany({
-    where: {
-      OR: [
-        { firstName: { contains: "(STE)" } },
-        { firstName: { contains: "(BEC)" } },
-        { lastName: { contains: "(STE)" } },
-        { lastName: { contains: "(BEC)" } }
-      ]
-    }
-  });
-
-  for (const l of rawLearners) {
-    await prisma.learner.update({
-      where: { id: l.id },
-      data: {
-        firstName: l.firstName.replace(" (STE)", "").replace(" (BEC)", "").trim(),
-        lastName: l.lastName.replace(" (STE)", "").replace(" (BEC)", "").trim()
-      }
-    });
-  }
-
-  const sections = await prisma.section.findMany({
-    where: { gradeLevelId: grade7.id, schoolYearId: activeYear.id }
-  });
-
-  if (sections.length === 0) throw new Error("No sections found for Grade 7. Run db:seed-sections first.");
 
   const admin = await prisma.user.findFirst({ where: { role: "SYSTEM_ADMIN" } });
   if (!admin) throw new Error("No SYSTEM_ADMIN found.");
 
-  for (let i = 1; i <= 100; i++) {
+  const totalLearners = 420; // Scale to 400+
+
+  for (let i = 1; i <= totalLearners; i++) {
     const sex: Sex = i % 2 === 0 ? "FEMALE" : "MALE";
     const firstName = sex === "MALE" 
       ? PH_FIRST_NAMES_MALE[i % PH_FIRST_NAMES_MALE.length]
       : PH_FIRST_NAMES_FEMALE[i % PH_FIRST_NAMES_FEMALE.length];
     const lastName = PH_LAST_NAMES[i % PH_LAST_NAMES.length];
     const middleName = PH_MIDDLE_NAMES[i % PH_MIDDLE_NAMES.length];
-    const lrn = `202611${String(i).padStart(6, '0')}`;
+    
+    // Distribute across grade levels
+    const gradeLevel = gradeLevels[(i - 1) % gradeLevels.length];
+    const lrn = `2026${gradeLevel.id}${String(i).padStart(6, '0')}`;
     
     const learnerData = {
       lrn,
       firstName,
       lastName,
       middleName,
-      extensionName: i % 15 === 0 ? "JR" : null,
+      extensionName: i % 30 === 0 ? "JR" : null,
       sex,
-      birthdate: new Date(2013, 4, 15 + (i % 15)),
+      birthdate: toUtcNoon(2013 - (parseInt(gradeLevel.name.split(" ")[1]) - 7), 4, 15 + (i % 15)),
       placeOfBirth: PH_CITIES[i % PH_CITIES.length],
       religion: "ROMAN CATHOLIC",
       motherTongue: PH_MOTHER_TONGUES[i % PH_MOTHER_TONGUES.length],
-      isIpCommunity: i % 25 === 0,
-      ipGroupName: i % 25 === 0 ? "TAGALOG" : null,
+      isIpCommunity: i % 50 === 0,
+      ipGroupName: i % 50 === 0 ? "TAGALOG" : null,
       isLearnerWithDisability: false,
       disabilityTypes: [],
-      is4PsBeneficiary: i % 10 === 0,
-      householdId4Ps: i % 10 === 0 ? `HH-ID-${i}` : null,
+      is4PsBeneficiary: i % 20 === 0,
+      householdId4Ps: i % 20 === 0 ? `HH-ID-${i}` : null,
       psaBirthCertNumber: `PSA-BC-${String(i).padStart(8, '0')}`,
-      previousGenAve: 85 + (i % 10),
+      previousGenAve: 85 + (i % 12),
       promotionStatus: "PROMOTED",
     };
 
@@ -131,19 +100,12 @@ async function main() {
     // 5. Create Enrollment Application
     const trackingNumber = `ENR-${activeYear.id}-${String(i).padStart(5, '0')}`;
     
-    // Delete existing related data to ensure fresh seed for these specific learners
-    const existingApp = await prisma.enrollmentApplication.findUnique({ where: { trackingNumber } });
-    if (existingApp) {
-      await prisma.applicationFamilyMember.deleteMany({ where: { enrollmentId: existingApp.id } });
-      await prisma.applicationAddress.deleteMany({ where: { enrollmentId: existingApp.id } });
-      await prisma.enrollmentPreviousSchool.deleteMany({ where: { applicationId: existingApp.id } });
-    }
-
+    // We'll use a transaction or simplified logic for family/address to speed up seeding
     await prisma.enrollmentApplication.upsert({
         where: { trackingNumber },
         update: {
             learnerId: learner.id,
-            gradeLevelId: grade7.id,
+            gradeLevelId: gradeLevel.id,
             schoolYearId: activeYear.id,
             applicantType: "REGULAR" as ApplicantType,
             learnerType: "NEW_ENROLLEE" as LearnerType,
@@ -153,61 +115,11 @@ async function main() {
             encodedById: admin.id,
             readingProfileLevel: "INSTRUCTIONAL" as ReadingProfileLevel,
             guardianRelationship: "MOTHER",
-            hasNoMother: false,
-            hasNoFather: false,
-            familyMembers: {
-              create: [
-                {
-                  relationship: "MOTHER" as FamilyRelationship,
-                  firstName: PH_FIRST_NAMES_FEMALE[(i + 1) % PH_FIRST_NAMES_FEMALE.length],
-                  lastName: PH_LAST_NAMES[i % PH_LAST_NAMES.length],
-                  middleName: PH_MIDDLE_NAMES[(i + 2) % PH_MIDDLE_NAMES.length],
-                  contactNumber: `0917${String(i).padStart(7, '0')}`,
-                  occupation: "HOUSEWIFE"
-                },
-                {
-                  relationship: "FATHER" as FamilyRelationship,
-                  firstName: PH_FIRST_NAMES_MALE[(i + 3) % PH_FIRST_NAMES_MALE.length],
-                  lastName: PH_LAST_NAMES[i % PH_LAST_NAMES.length],
-                  middleName: PH_MIDDLE_NAMES[(i + 4) % PH_MIDDLE_NAMES.length],
-                  contactNumber: `0918${String(i).padStart(7, '0')}`,
-                  occupation: "EMPLOYED"
-                }
-              ]
-            },
-            addresses: {
-              create: [
-                {
-                  addressType: "CURRENT" as AddressType,
-                  houseNoStreet: `${100 + i} Street`,
-                  barangay: PH_BARANGAYS[i % PH_BARANGAYS.length],
-                  cityMunicipality: PH_CITIES[i % PH_CITIES.length],
-                  province: "METRO MANILA",
-                  zipCode: "1100"
-                },
-                {
-                  addressType: "PERMANENT" as AddressType,
-                  houseNoStreet: `${100 + i} Street`,
-                  barangay: PH_BARANGAYS[i % PH_BARANGAYS.length],
-                  cityMunicipality: PH_CITIES[i % PH_CITIES.length],
-                  province: "METRO MANILA",
-                  zipCode: "1100"
-                }
-              ]
-            },
-            previousSchool: {
-              create: {
-                schoolName: PH_ELEMENTARY_SCHOOLS[i % PH_ELEMENTARY_SCHOOLS.length],
-                schoolType: "Public",
-                gradeCompleted: "Grade 6",
-                schoolYearAttended: `${activeYear.yearLabel.split("-")[0].slice(0, 2)}${parseInt(activeYear.yearLabel.split("-")[0].slice(2)) - 1}-${activeYear.yearLabel.split("-")[0]}`,
-                generalAverage: 88.0 + (i % 5)
-              }
-            }
+            portalPin: defaultPinHash,
         },
         create: {
             learnerId: learner.id,
-            gradeLevelId: grade7.id,
+            gradeLevelId: gradeLevel.id,
             schoolYearId: activeYear.id,
             applicantType: "REGULAR" as ApplicantType,
             learnerType: "NEW_ENROLLEE" as LearnerType,
@@ -220,6 +132,7 @@ async function main() {
             guardianRelationship: "MOTHER",
             hasNoMother: false,
             hasNoFather: false,
+            portalPin: defaultPinHash,
             familyMembers: {
               create: [
                 {
@@ -229,14 +142,6 @@ async function main() {
                   middleName: PH_MIDDLE_NAMES[(i + 2) % PH_MIDDLE_NAMES.length],
                   contactNumber: `0917${String(i).padStart(7, '0')}`,
                   occupation: "HOUSEWIFE"
-                },
-                {
-                  relationship: "FATHER" as FamilyRelationship,
-                  firstName: PH_FIRST_NAMES_MALE[(i + 3) % PH_FIRST_NAMES_MALE.length],
-                  lastName: PH_LAST_NAMES[i % PH_LAST_NAMES.length],
-                  middleName: PH_MIDDLE_NAMES[(i + 4) % PH_MIDDLE_NAMES.length],
-                  contactNumber: `0918${String(i).padStart(7, '0')}`,
-                  occupation: "EMPLOYED"
                 }
               ]
             },
@@ -249,25 +154,8 @@ async function main() {
                   cityMunicipality: PH_CITIES[i % PH_CITIES.length],
                   province: "METRO MANILA",
                   zipCode: "1100"
-                },
-                {
-                  addressType: "PERMANENT" as AddressType,
-                  houseNoStreet: `${100 + i} Street`,
-                  barangay: PH_BARANGAYS[i % PH_BARANGAYS.length],
-                  cityMunicipality: PH_CITIES[i % PH_CITIES.length],
-                  province: "METRO MANILA",
-                  zipCode: "1100"
                 }
               ]
-            },
-            previousSchool: {
-              create: {
-                schoolName: PH_ELEMENTARY_SCHOOLS[i % PH_ELEMENTARY_SCHOOLS.length],
-                schoolType: "Public",
-                gradeCompleted: "Grade 6",
-                schoolYearAttended: `${activeYear.yearLabel.split("-")[0].slice(0, 2)}${parseInt(activeYear.yearLabel.split("-")[0].slice(2)) - 1}-${activeYear.yearLabel.split("-")[0]}`,
-                generalAverage: 88.0 + (i % 5)
-              }
             }
         }
     });
@@ -278,28 +166,37 @@ async function main() {
     });
 
     // 6. Create Enrollment Record (Section Assignment)
-    const section = sections[i % sections.length];
-    await prisma.enrollmentRecord.upsert({
-      where: { enrollmentApplicationId: application!.id },
-      update: {
-        schoolYearId: activeYear.id,
-        sectionId: section.id,
-        enrolledById: admin.id,
-      },
-      create: {
-        enrollmentApplicationId: application!.id,
-        schoolYearId: activeYear.id,
-        sectionId: section.id,
-        enrolledById: admin.id,
-        enrolledAt: new Date(),
-        confirmationConsent: true,
-      }
+    // Find sections for this grade level
+    const sections = await prisma.section.findMany({
+      where: { gradeLevelId: gradeLevel.id, schoolYearId: activeYear.id }
     });
 
-    if (i % 20 === 0) console.log(`  - Seeded ${i} enrolled learners...`);
+    if (sections.length > 0) {
+      const section = sections[i % sections.length];
+      await prisma.enrollmentRecord.upsert({
+        where: { enrollmentApplicationId: application!.id },
+        update: {
+          schoolYearId: activeYear.id,
+          sectionId: section.id,
+          enrolledById: admin.id,
+        },
+        create: {
+          enrollmentApplicationId: application!.id,
+          schoolYearId: activeYear.id,
+          sectionId: section.id,
+          enrolledById: admin.id,
+          enrolledAt: new Date(),
+          confirmationConsent: true,
+        }
+      });
+    }
+
+    if (i % 50 === 0 || i === totalLearners) {
+      console.log(`  📊 Progress: ${i}/${totalLearners} Learners enrolled and sectioned.`);
+    }
   }
 
-  console.log("✅ Global cleanup and seeding completed successfully.");
+  console.log(`\n🎉 Successfully scaled to ${totalLearners} enrolled learners across all grades.`);
 }
 
 main()

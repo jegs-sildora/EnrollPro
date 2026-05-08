@@ -155,6 +155,8 @@ model Section {
   isHomogeneous       Boolean              @default(false) @map("is_homogeneous")
   isSnake             Boolean              @default(false) @map("is_snake")
   schoolYearId        Int                  @map("school_year_id")
+  /// The specific TLE major for G9/G10 (e.g., "HE - Cookery"). Null for G7/G8.
+  tleSpecialization   String?              @map("tle_specialization")
   enrollmentRecords   EnrollmentRecord[]
   advisers            SectionAdviser[]
   gradeLevel          GradeLevel           @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)

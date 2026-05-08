@@ -10,7 +10,6 @@ import {
   Search,
   Eye,
   MoreHorizontal,
-  ArrowRightLeft,
   BadgeAlert,
   FileBadge2,
   FileCheck2,
@@ -24,6 +23,7 @@ import {
   ArrowDown,
   CalendarDays,
   RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -60,6 +60,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
+import {
+  Alert,
+  AlertDescription,
+} from "@/shared/ui/alert";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -317,7 +321,6 @@ export default function Students() {
 
   const [showTransferOutDialog, setShowTransferOutDialog] = useState(false);
   const [showDropoutDialog, setShowDropoutDialog] = useState(false);
-  const [showShiftDialog, setShowShiftDialog] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showLrnDialog, setShowLrnDialog] = useState(false);
 
@@ -332,15 +335,20 @@ export default function Students() {
   const [dropoutReasonDetails, setDropoutReasonDetails] = useState("");
   const [dropoutDate, setDropoutDate] = useState("");
 
-  const [shiftTargetSectionId, setShiftTargetSectionId] = useState("");
-
   const [profileForm, setProfileForm] = useState({
     emailAddress: "",
     contactNumber: "",
-    religion: "",
-    motherTongue: "",
-    currentAddress: "",
+    emergencyContactName: "",
+    emergencyContactNumber: "",
+    barangay: "",
+    streetSitio: "",
   });
+
+  const [baselineProfileForm, setBaselineProfileForm] = useState(profileForm);
+
+  const isProfileFormDirty = useMemo(() => {
+    return JSON.stringify(profileForm) !== JSON.stringify(baselineProfileForm);
+  }, [profileForm, baselineProfileForm]);
 
   const [lrnForm, setLrnForm] = useState({
     lrn: "",
@@ -533,13 +541,6 @@ export default function Students() {
     [navigate],
   );
 
-  const handleOpenPermanentRecord = useCallback(
-    (studentId: number) => {
-      navigate(`/students/${studentId}?tab=permanent-record`);
-    },
-    [navigate],
-  );
-
   const toDateInputValue = useCallback((value?: string | null): string => {
     const sourceDate = value ? new Date(value) : new Date();
     if (Number.isNaN(sourceDate.getTime())) {
@@ -613,19 +614,6 @@ export default function Students() {
     [toDateInputValue],
   );
 
-  const openShiftDialog = useCallback(
-    (student: Student | PanelStudentDetail) => {
-      const s =
-        "learningProgram" in student
-          ? student
-          : mapPanelDetailToStudent(student);
-      setActionStudent(s);
-      setShiftTargetSectionId("");
-      setShowShiftDialog(true);
-    },
-    [],
-  );
-
   const openProfileQuickEditDialog = useCallback(
     async (student: Student | PanelStudentDetail) => {
       const s =
@@ -637,40 +625,46 @@ export default function Students() {
       try {
         const res = await api.get(`/students/${s.id}`);
         const detail = res.data.student as StudentDetail & {
-          religion?: string | null;
-          motherTongue?: string | null;
           currentAddress?: {
             barangay?: string | null;
-            cityMunicipality?: string | null;
-            province?: string | null;
+            houseNoStreet?: string | null;
+            sitio?: string | null;
+          } | null;
+          guardianInfo?: {
+            firstName: string;
+            lastName: string;
+            contactNumber?: string | null;
           } | null;
         };
 
-        setProfileForm({
+        const initialForm = {
           emailAddress: detail.emailAddress ?? s.emailAddress ?? "",
           contactNumber:
             detail.parentGuardianContact ?? s.parentGuardianContact ?? "",
-          religion: detail.religion ?? "",
-          motherTongue: detail.motherTongue ?? "",
-          currentAddress:
-            [
-              detail.currentAddress?.barangay,
-              detail.currentAddress?.cityMunicipality,
-              detail.currentAddress?.province,
-            ]
+          emergencyContactName: detail.guardianInfo
+            ? `${detail.guardianInfo.firstName} ${detail.guardianInfo.lastName}`
+            : "",
+          emergencyContactNumber: detail.guardianInfo?.contactNumber ?? "",
+          barangay: detail.currentAddress?.barangay ?? "",
+          streetSitio:
+            [detail.currentAddress?.houseNoStreet, detail.currentAddress?.sitio]
               .filter(Boolean)
-              .join(", ") ||
-            s.address ||
-            "",
-        });
+              .join(", ") || "",
+        };
+
+        setProfileForm(initialForm);
+        setBaselineProfileForm(initialForm);
       } catch {
-        setProfileForm({
+        const fallbackForm = {
           emailAddress: s.emailAddress ?? "",
           contactNumber: s.parentGuardianContact ?? "",
-          religion: "",
-          motherTongue: "",
-          currentAddress: s.address || "",
-        });
+          emergencyContactName: "",
+          emergencyContactNumber: "",
+          barangay: "",
+          streetSitio: "",
+        };
+        setProfileForm(fallbackForm);
+        setBaselineProfileForm(fallbackForm);
       }
 
       setShowProfileDialog(true);
@@ -691,18 +685,6 @@ export default function Students() {
       setShowLrnDialog(true);
     },
     [],
-  );
-
-  const openGoodMoralPreview = useCallback(
-    (studentId: number) => {
-      navigate(`/students/${studentId}?tab=application`);
-      sileo.info({
-        title: "Good Moral Workflow",
-        description:
-          "Open the Application tab to review documentary status and process the request.",
-      });
-    },
-    [navigate],
   );
 
   const submitTransferOut = useCallback(async () => {
@@ -790,36 +772,6 @@ export default function Students() {
     refreshDetailIfOpen,
   ]);
 
-  const submitShiftSection = useCallback(async () => {
-    if (!actionStudent) return;
-    if (!shiftTargetSectionId) {
-      sileo.warning({
-        title: "Target section required",
-        description: "Please select a target section.",
-      });
-      return;
-    }
-
-    setActionSubmitting(true);
-    try {
-      await api.post(`/students/${actionStudent.id}/lifecycle/shift-section`, {
-        sectionId: Number(shiftTargetSectionId),
-      });
-
-      sileo.success({
-        title: "Section assignment updated",
-        description: "Learner was moved to the selected section.",
-      });
-      setShowShiftDialog(false);
-      await refreshTables();
-      await refreshDetailIfOpen(actionStudent.id);
-    } catch (err) {
-      toastApiError(err as never);
-    } finally {
-      setActionSubmitting(false);
-    }
-  }, [actionStudent, shiftTargetSectionId, refreshTables, refreshDetailIfOpen]);
-
   const submitQuickProfileUpdate = useCallback(async () => {
     if (!actionStudent) return;
 
@@ -827,14 +779,22 @@ export default function Students() {
     try {
       const payload: Record<string, unknown> = {
         emailAddress: profileForm.emailAddress.trim() || null,
-        contactNumber: profileForm.contactNumber.trim() || null,
-        religion: profileForm.religion.trim() || null,
-        motherTongue: profileForm.motherTongue.trim() || null,
+        currentAddress: {
+          barangay: profileForm.barangay.trim() || null,
+          sitio: profileForm.streetSitio.trim() || null,
+        },
       };
 
-      if (profileForm.currentAddress.trim()) {
-        payload.currentAddress = {
-          barangay: profileForm.currentAddress.trim(),
+      // Split emergency contact name into first and last
+      const nameParts = profileForm.emergencyContactName.trim().split(" ");
+      const lastName = nameParts.length > 1 ? nameParts.pop() : "";
+      const firstName = nameParts.join(" ") || profileForm.emergencyContactName;
+
+      if (firstName || lastName || profileForm.emergencyContactNumber) {
+        payload.guardianInfo = {
+          firstName: firstName || "Unknown",
+          lastName: lastName || "Unknown",
+          contactNumber: profileForm.emergencyContactNumber.trim() || null,
         };
       }
 
@@ -884,15 +844,6 @@ export default function Students() {
       setActionSubmitting(false);
     }
   }, [actionStudent, lrnForm.lrn, refreshTables, refreshDetailIfOpen]);
-
-  const availableShiftSections = useMemo(() => {
-    if (!actionStudent) return [];
-
-    return sections
-      .filter((section) => section.gradeLevelId === actionStudent.gradeLevelId)
-      .filter((section) => section.id !== actionStudent.sectionId)
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [actionStudent, sections]);
 
   const programBreakdownItems = useMemo(() => {
     if (!summary) return [];
@@ -1058,12 +1009,6 @@ export default function Students() {
                   Open Full Profile
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => openGoodMoralPreview(row.original.id)}
-                  className="cursor-pointer">
-                  <FileCheck2 className="mr-2 h-4 w-4" />
-                  Open Good Moral Workflow
-                </DropdownMenuItem>
-                <DropdownMenuItem
                   onClick={() => void openProfileQuickEditDialog(row.original)}
                   className="cursor-pointer">
                   <UserRoundPen className="mr-2 h-4 w-4" />
@@ -1073,13 +1018,7 @@ export default function Students() {
                   onClick={() => openAssignLrnDialog(row.original)}
                   className="cursor-pointer">
                   <Fingerprint className="mr-2 h-4 w-4" />
-                  Assign or Correct LRN
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => openShiftDialog(row.original)}
-                  className="cursor-pointer">
-                  <ArrowRightLeft className="mr-2 h-4 w-4" />
-                  Shift Section or Program
+                  Input Official LIS LRN
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => openTransferOutDialog(row.original)}
@@ -1104,10 +1043,8 @@ export default function Students() {
       getSortIcon,
       handleViewDetails,
       handleOpenProfilePage,
-      openGoodMoralPreview,
       openProfileQuickEditDialog,
       openAssignLrnDialog,
-      openShiftDialog,
       openTransferOutDialog,
       openDropoutDialog,
     ],
@@ -1565,12 +1502,6 @@ export default function Students() {
                           Open Full Profile
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => openGoodMoralPreview(student.id)}
-                          className="cursor-pointer">
-                          <FileCheck2 className="mr-2 h-4 w-4" />
-                          Open Good Moral Workflow
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
                           onClick={() =>
                             void openProfileQuickEditDialog(student)
                           }
@@ -1582,13 +1513,7 @@ export default function Students() {
                           onClick={() => openAssignLrnDialog(student)}
                           className="cursor-pointer">
                           <Fingerprint className="mr-2 h-4 w-4" />
-                          Assign or Correct LRN
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => openShiftDialog(student)}
-                          className="cursor-pointer">
-                          <ArrowRightLeft className="mr-2 h-4 w-4" />
-                          Shift Section or Program
+                          Input Official LIS LRN
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => openTransferOutDialog(student)}
@@ -1661,11 +1586,8 @@ export default function Students() {
                 id={selectedStudentId}
                 onClose={() => setSelectedStudentId(null)}
                 onOpenProfilePage={handleOpenProfilePage}
-                onOpenPermanentRecord={handleOpenPermanentRecord}
-                onOpenGoodMoral={openGoodMoralPreview}
                 onQuickEdit={openProfileQuickEditDialog}
                 onAssignLrn={openAssignLrnDialog}
-                onShift={openShiftDialog}
                 onTransferOut={openTransferOutDialog}
                 onDropout={openDropoutDialog}
               />
@@ -1684,6 +1606,15 @@ export default function Students() {
               Update transfer-out details for {actionStudent?.fullName}.
             </DialogDescription>
           </DialogHeader>
+
+          <Alert className="bg-amber-50 border-amber-200 text-amber-800 py-2">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-xs font-bold">
+              Warning: This action will permanently alter the student's status
+              on the official School Form 1 (SF1) and School Form 4 (SF4)
+              reports.
+            </AlertDescription>
+          </Alert>
 
           <div className="space-y-4">
             <div className="space-y-2">
@@ -1726,6 +1657,7 @@ export default function Students() {
               Cancel
             </Button>
             <Button
+              className="bg-orange-600 hover:bg-orange-700 text-white font-bold"
               onClick={() => void submitTransferOut()}
               disabled={actionSubmitting}>
               {actionSubmitting ? "Saving..." : "Confirm Transfer Out"}
@@ -1744,6 +1676,15 @@ export default function Students() {
               Update dropout details for {actionStudent?.fullName}.
             </DialogDescription>
           </DialogHeader>
+
+          <Alert className="bg-amber-50 border-amber-200 text-amber-800 py-2">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-xs font-bold">
+              Warning: This action will permanently alter the student's status
+              on the official School Form 1 (SF1) and School Form 4 (SF4)
+              reports.
+            </AlertDescription>
+          </Alert>
 
           <div className="space-y-4">
             <div className="space-y-2">
@@ -1802,76 +1743,10 @@ export default function Students() {
               Cancel
             </Button>
             <Button
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold"
               onClick={() => void submitDropout()}
               disabled={actionSubmitting}>
               {actionSubmitting ? "Saving..." : "Confirm Dropout"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={showShiftDialog}
-        onOpenChange={setShowShiftDialog}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Shift Section or Program</DialogTitle>
-            <DialogDescription>
-              Reassign section for {actionStudent?.fullName}. Program changes
-              are inferred from the selected target section.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Target Section</Label>
-              <Select
-                value={shiftTargetSectionId}
-                onValueChange={setShiftTargetSectionId}
-                disabled={availableShiftSections.length === 0}>
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      availableShiftSections.length === 0
-                        ? "No other eligible sections"
-                        : "Select target section"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableShiftSections.map((section) => (
-                    <SelectItem
-                      key={section.id}
-                      value={String(section.id)}>
-                      {formatSectionLabel(section.name)} (
-                      {formatScpType(section.programType)})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {availableShiftSections.length === 0 && (
-              <p className="text-xs text-foreground font-medium">
-                No alternate section is currently available for this learner's
-                grade level.
-              </p>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowShiftDialog(false)}
-              disabled={actionSubmitting}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => void submitShiftSection()}
-              disabled={
-                actionSubmitting || availableShiftSections.length === 0
-              }>
-              {actionSubmitting ? "Saving..." : "Confirm Shift"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1888,84 +1763,151 @@ export default function Students() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="profileEmail">Email Address</Label>
-              <Input
-                id="profileEmail"
-                type="email"
-                value={profileForm.emailAddress}
-                onChange={(event) =>
-                  setProfileForm((prev) => ({
-                    ...prev,
-                    emailAddress: event.target.value,
-                  }))
-                }
-                placeholder="learner@email.com"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="profileContact">Guardian Contact Number</Label>
-              <Input
-                id="profileContact"
-                value={profileForm.contactNumber}
-                onChange={(event) =>
-                  setProfileForm((prev) => ({
-                    ...prev,
-                    contactNumber: event.target.value,
-                  }))
-                }
-                placeholder="09XXXXXXXXX"
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="profileReligion">Religion</Label>
-                <Input
-                  id="profileReligion"
-                  value={profileForm.religion}
-                  onChange={(event) =>
-                    setProfileForm((prev) => ({
-                      ...prev,
-                      religion: event.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="profileMotherTongue">Mother Tongue</Label>
-                <Input
-                  id="profileMotherTongue"
-                  value={profileForm.motherTongue}
-                  onChange={(event) =>
-                    setProfileForm((prev) => ({
-                      ...prev,
-                      motherTongue: event.target.value,
-                    }))
-                  }
-                />
+          <div className="space-y-6">
+            {/* Group 1: Contact Information */}
+            <div className="space-y-3">
+              <p className="text-[10px] uppercase tracking-widest font-black text-muted-foreground border-b pb-1">
+                Contact Information
+              </p>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="profileContact"
+                    className="font-bold">
+                    Primary Contact No.
+                  </Label>
+                  <Input
+                    id="profileContact"
+                    value={profileForm.contactNumber}
+                    onChange={(event) =>
+                      setProfileForm((prev) => ({
+                        ...prev,
+                        contactNumber: event.target.value,
+                      }))
+                    }
+                    placeholder="e.g., 0917 123 4567"
+                    className="font-medium"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="profileEmail"
+                    className="font-bold">
+                    Learner Email
+                  </Label>
+                  <Input
+                    id="profileEmail"
+                    type="email"
+                    value={profileForm.emailAddress}
+                    onChange={(event) =>
+                      setProfileForm((prev) => ({
+                        ...prev,
+                        emailAddress: event.target.value,
+                      }))
+                    }
+                    placeholder="learner@email.com"
+                    className="font-medium"
+                  />
+                </div>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="profileAddress">
-                Current Address (Quick Entry)
-              </Label>
-              <Textarea
-                id="profileAddress"
-                value={profileForm.currentAddress}
-                onChange={(event) =>
-                  setProfileForm((prev) => ({
-                    ...prev,
-                    currentAddress: event.target.value,
-                  }))
-                }
-                placeholder="Barangay or location note"
-                rows={2}
-              />
+
+            {/* Group 2: Emergency Contact */}
+            <div className="space-y-3">
+              <p className="text-[10px] uppercase tracking-widest font-black text-muted-foreground border-b pb-1">
+                Emergency Contact (Secondary)
+              </p>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="emergencyName"
+                    className="font-bold">
+                    Contact Person
+                  </Label>
+                  <Input
+                    id="emergencyName"
+                    value={profileForm.emergencyContactName}
+                    onChange={(event) =>
+                      setProfileForm((prev) => ({
+                        ...prev,
+                        emergencyContactName: event.target.value,
+                      }))
+                    }
+                    placeholder="Full Name"
+                    className="font-medium"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="emergencyContact"
+                    className="font-bold">
+                    Contact Number
+                  </Label>
+                  <Input
+                    id="emergencyContact"
+                    value={profileForm.emergencyContactNumber}
+                    onChange={(event) =>
+                      setProfileForm((prev) => ({
+                        ...prev,
+                        emergencyContactNumber: event.target.value,
+                      }))
+                    }
+                    placeholder="09XXXXXXXXX"
+                    className="font-medium"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Group 3: Current Location */}
+            <div className="space-y-3">
+              <p className="text-[10px] uppercase tracking-widest font-black text-muted-foreground border-b pb-1">
+                Current Location
+              </p>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="profileBarangay"
+                    className="font-bold">
+                    Barangay
+                  </Label>
+                  <Input
+                    id="profileBarangay"
+                    value={profileForm.barangay}
+                    onChange={(event) =>
+                      setProfileForm((prev) => ({
+                        ...prev,
+                        barangay: event.target.value,
+                      }))
+                    }
+                    placeholder="e.g., Poblacion"
+                    className="font-medium"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="profileStreet"
+                    className="font-bold">
+                    Street / Sitio
+                  </Label>
+                  <Input
+                    id="profileStreet"
+                    value={profileForm.streetSitio}
+                    onChange={(event) =>
+                      setProfileForm((prev) => ({
+                        ...prev,
+                        streetSitio: event.target.value,
+                      }))
+                    }
+                    placeholder="e.g., Purok 1"
+                    className="font-medium"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="pt-4">
             <Button
               variant="outline"
               onClick={() => setShowProfileDialog(false)}
@@ -1973,8 +1915,9 @@ export default function Students() {
               Cancel
             </Button>
             <Button
+              className="bg-primary hover:bg-primary/90 font-bold"
               onClick={() => void submitQuickProfileUpdate()}
-              disabled={actionSubmitting}>
+              disabled={actionSubmitting || !isProfileFormDirty}>
               {actionSubmitting ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
@@ -1986,26 +1929,38 @@ export default function Students() {
         onOpenChange={setShowLrnDialog}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Assign or Correct LRN</DialogTitle>
+            <DialogTitle>Input Official DepEd LRN</DialogTitle>
             <DialogDescription>
-              Enter a valid 12-digit LRN for {actionStudent?.fullName}.
+              Enter the 12-digit Learner Reference Number generated by the
+              national DepEd LIS portal for {actionStudent?.fullName}. This will
+              clear the student's "Pending LRN" status.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-2">
-            <Label htmlFor="assignLrn">Learner Reference Number</Label>
-            <Input
-              id="assignLrn"
-              value={lrnForm.lrn}
-              onChange={(event) =>
-                setLrnForm({
-                  lrn: event.target.value.replace(/[^0-9]/g, "").slice(0, 12),
-                })
-              }
-              placeholder="12-digit LRN"
-              inputMode="numeric"
-              maxLength={12}
-            />
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label
+                htmlFor="assignLrn"
+                className="font-bold">
+                Learner Reference Number (LRN)
+              </Label>
+              <Input
+                id="assignLrn"
+                value={lrnForm.lrn}
+                onChange={(event) =>
+                  setLrnForm({
+                    lrn: event.target.value.replace(/[^0-9]/g, "").slice(0, 12),
+                  })
+                }
+                placeholder="e.g., 101234567890"
+                className="h-12 text-lg font-black tracking-[0.2em] text-center"
+                inputMode="numeric"
+                maxLength={12}
+              />
+              <p className="text-[11px] text-muted-foreground font-medium text-center">
+                Must be exactly 12 digits as found in the DepEd LIS portal.
+              </p>
+            </div>
           </div>
 
           <DialogFooter>
@@ -2016,8 +1971,9 @@ export default function Students() {
               Cancel
             </Button>
             <Button
+              className="bg-primary hover:bg-primary/90 font-bold"
               onClick={() => void submitAssignLrn()}
-              disabled={actionSubmitting}>
+              disabled={actionSubmitting || lrnForm.lrn.length !== 12}>
               {actionSubmitting ? "Saving..." : "Save LRN"}
             </Button>
           </DialogFooter>

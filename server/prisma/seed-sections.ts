@@ -29,8 +29,18 @@ const MINERALS = [
   "QUARTZ", "FELDSPAR", "MICA", "TALC", "GYPSUM", "CALCITE", "APATITE"
 ];
 
+const TLE_TRACKS = [
+  "HE - Cookery",
+  "HE - Bread and Pastry Production",
+  "ICT - Computer Systems Servicing",
+  "ICT - Technical Drafting",
+  "IA - Electrical Installation and Maintenance",
+  "IA - Carpentry",
+  "AFA - Agricultural Crops Production"
+];
+
 async function main() {
-  console.log("🌱 Seeding DepEd Sections for Grades 7-10...");
+  console.log("🌱 Seeding DepEd Sections with TLE Specializations for Grades 9-10...");
 
   const activeYear = await prisma.schoolYear.findFirst({
     where: { status: { not: "ARCHIVED" } },
@@ -53,12 +63,20 @@ async function main() {
     // 1. SCP Sections (2 Stars per grade)
     const gradeStars = STARS.slice((gradeNum - 7) * 2, (gradeNum - 7) * 2 + 2);
     for (const star of gradeStars) {
-      await upsertSection(star, grade.id, activeYear.id, "SCIENCE_TECHNOLOGY_AND_ENGINEERING", currentSortOrder++);
+      await upsertSection(star, grade.id, activeYear.id, "SCIENCE_TECHNOLOGY_AND_ENGINEERING", currentSortOrder++, null);
     }
+
+    // Initialize a counter to cycle through the TLE tracks for regular sections
+    let tleIndex = 0;
 
     // 2. BEC Sections "1" to "5"
     for (let i = 1; i <= 5; i++) {
-      await upsertSection(i.toString(), grade.id, activeYear.id, "REGULAR", currentSortOrder++);
+      const specialization = (gradeNum === 9 || gradeNum === 10) 
+        ? TLE_TRACKS[tleIndex % TLE_TRACKS.length] 
+        : null;
+      
+      await upsertSection(i.toString(), grade.id, activeYear.id, "REGULAR", currentSortOrder++, specialization);
+      if (specialization) tleIndex++;
     }
 
     // 3. Themed BEC Sections
@@ -69,16 +87,21 @@ async function main() {
     else if (gradeNum === 10) themes = MINERALS;
 
     for (const name of themes) {
-      await upsertSection(name, grade.id, activeYear.id, "REGULAR", currentSortOrder++);
+      const specialization = (gradeNum === 9 || gradeNum === 10) 
+        ? TLE_TRACKS[tleIndex % TLE_TRACKS.length] 
+        : null;
+
+      await upsertSection(name, grade.id, activeYear.id, "REGULAR", currentSortOrder++, specialization);
+      if (specialization) tleIndex++;
     }
     
     console.log(`✅ Finished seeding ${currentSortOrder - 1} sections for ${grade.name}.`);
   }
 
-  console.log("\n✅ All sections seeded successfully.");
+  console.log("\n✅ All sections seeded successfully with TLE specializations.");
 }
 
-async function upsertSection(name: string, gradeId: number, syId: number, program: ApplicantType, sortOrder: number) {
+async function upsertSection(name: string, gradeId: number, syId: number, program: ApplicantType, sortOrder: number, tleSpecialization: string | null) {
   await prisma.section.upsert({
     where: {
       uq_sections_name_grade_sy: {
@@ -90,7 +113,8 @@ async function upsertSection(name: string, gradeId: number, syId: number, progra
     update: {
       programType: program,
       sortOrder,
-      maxCapacity: program === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? 35 : 45
+      maxCapacity: program === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? 35 : 45,
+      tleSpecialization
     },
     create: {
       name,
@@ -98,7 +122,8 @@ async function upsertSection(name: string, gradeId: number, syId: number, progra
       schoolYearId: syId,
       programType: program,
       sortOrder,
-      maxCapacity: program === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? 35 : 45
+      maxCapacity: program === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? 35 : 45,
+      tleSpecialization
     },
   });
 }

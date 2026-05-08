@@ -8,7 +8,6 @@ import {
   AlertTriangle,
   UserCog,
   Activity,
-  ShieldCheck,
   FileText,
   FileCheck,
   GitPullRequest,
@@ -17,7 +16,7 @@ import {
 import api from "@/shared/api/axiosInstance";
 import { useAuthStore } from "@/store/auth.slice";
 import { useSettingsStore } from "@/store/settings.slice";
-import { formatUserRole } from "@/shared/lib/utils";
+import { cn } from "@/shared/lib/utils";
 import {
   Card,
   CardContent,
@@ -54,6 +53,17 @@ interface Stats {
     inPipeline?: number;
     total: number;
   };
+  gradeLevelBreakdown?: Array<{
+    id: number;
+    name: string;
+    current: number;
+    target: number;
+    progressPercent: number;
+  }>;
+  capacityAlerts?: Array<{
+    message: string;
+    severity: "WARNING" | "CRITICAL";
+  }>;
 }
 
 interface AdminStats {
@@ -77,12 +87,6 @@ function formatMetric(value: number): string {
 
 function clampProgress(value: number): number {
   return Math.min(100, Math.max(0, value));
-}
-
-function formatFocusMode(mode: FocusMode): string {
-  if (mode === "EARLY") return "Early Registration";
-  if (mode === "ENROLLMENT") return "Enrollment Progress";
-  return "Balanced";
 }
 
 export default function Dashboard() {
@@ -138,6 +142,8 @@ export default function Dashboard() {
             inPipeline: 0,
             total: 0,
           },
+          gradeLevelBreakdown: [],
+          capacityAlerts: [],
         });
       } finally {
         setLoading(false);
@@ -188,11 +194,6 @@ export default function Dashboard() {
   const seatsRemaining =
     stats?.enrollmentTarget?.seatsRemaining ??
     Math.max(enrollmentTarget - enrollmentCurrent, 0);
-
-  const focusStateLabel =
-    focusOverride === "AUTO"
-      ? `Auto | ${formatFocusMode(autoFocus)}`
-      : `Manual | ${formatFocusMode(focusOverride)}`;
 
   const earlyRegCards = [
     {
@@ -264,7 +265,7 @@ export default function Dashboard() {
               <Lock className="h-5 w-5 text-white" />
             </div>
             <div>
-              <p className="text-sm font-black uppercase tracking-widest leading-none">
+              <p className="text-sm font-black uppercase  leading-none">
                 BOSY Locked ({activeSchoolYearLabel})
               </p>
               <p className="text-xs font-bold text-emerald-100 mt-1">
@@ -279,31 +280,25 @@ export default function Dashboard() {
         </motion.div>
       )}
 
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+      {/* ── Header ── */}
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-sm text-foreground">
+          <p className="text-sm text-foreground font-bold">
             Welcome back,{" "}
-            <span className="font-semibold text-primary">
+            <span className="font-bold text-primary">
               {user?.firstName} {user?.lastName}
             </span>
           </p>
         </div>
 
-        <div className="flex flex-col items-start gap-2 md:items-end">
-          <Badge
-            variant="outline"
-            className="h-6 gap-1 border-primary border-opacity-20 bg-sidebar-accent text-primary">
-            <ShieldCheck className="h-3 w-3" />
-            {formatUserRole(user?.role)} Access
-          </Badge>
-
+        <div className="flex flex-col items-start gap-3 md:items-end">
           <div className="flex flex-col items-start gap-1 md:items-end">
-            <p className="text-[0.625rem] font-semibold uppercase tracking-wider text-foreground">
+            <p className="text-xs font-bold uppercase  text-foreground">
               Seasonal Focus
             </p>
             <div
-              className="inline-flex rounded-lg border bg-card p-1"
+              className="inline-flex rounded-lg border bg-card p-1 shadow-sm"
               role="group"
               aria-label="Command center seasonal focus">
               {(["AUTO", "EARLY", "ENROLLMENT"] as const).map((mode) => {
@@ -316,7 +311,10 @@ export default function Dashboard() {
                     size="sm"
                     variant={selected ? "default" : "ghost"}
                     onClick={() => setFocusOverride(mode)}
-                    className="h-7 px-2 text-[11px] font-bold uppercase tracking-wide">
+                    className={cn(
+                      "h-7 px-3 text-xs font-black uppercase  transition-all",
+                      selected ? "shadow-sm" : "text-foreground hover:text-foreground"
+                    )}>
                     {mode}
                   </Button>
                 );
@@ -326,321 +324,339 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {isAdmin && (
-        <section
-          className="space-y-3"
-          aria-label="System oversight">
-          <div className="flex items-center gap-2">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-purple-600 opacity-80">
-              System Oversight
-            </h2>
-            <div className="h-px flex-1 bg-purple-100"></div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            {adminCards.map((stat) => (
-              <Card
-                key={stat.title}
-                className="border-purple-100 bg-white shadow-sm transition-all hover:shadow-md">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-4">
-                  <CardTitle className="text-xs font-bold uppercase tracking-wider text-foreground">
-                    {stat.title}
-                  </CardTitle>
-                  <div className={`${stat.bg} rounded-full p-2.5`}>
-                    <stat.icon className={`h-4 w-4 ${stat.color}`} />
-                  </div>
-                </CardHeader>
-
-                <CardContent className="pb-4 pt-1">
-                  {showSkeleton ? (
-                    <Skeleton className="h-8 w-24" />
-                  ) : (
-                    <>
-                      <div className="text-2xl font-black ">{stat.value}</div>
-                      <p className="mt-1 text-xs font-medium text-foreground">
-                        {stat.description}
-                      </p>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
-      )}
-
+      {/* ── Enrollment Progress (Top Priority) ── */}
       <section
         className="space-y-4"
         aria-label="Enrollment progress">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-emerald-600 opacity-80">
-            Enrollment Progress
+          <h2 className="text-xs font-black uppercase  text-emerald-600">
+            Enrollment Progress ({activeSchoolYearLabel})
           </h2>
-          <div className="h-px flex-1 bg-emerald-100"></div>
+          <div className="h-px flex-1 bg-emerald-100/50"></div>
         </div>
 
         {isEnrollmentExpanded ? (
-          <>
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <Card className="lg:col-span-2 border-emerald-200 bg-gradient-to-br from-white to-emerald-50/30 shadow-sm">
-                <CardHeader className="pb-2">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <CardTitle className="text-xl font-black ">
-                      Total Enrolled
-                    </CardTitle>
-                    <Badge className="bg-emerald-600 text-white hover:bg-emerald-700">
-                      Primary Target
-                    </Badge>
-                  </div>
-                  <CardDescription className="text-sm">
-                    Active school-year enrollment against total section
-                    capacity.
-                  </CardDescription>
-                </CardHeader>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+            <Card className="lg:col-span-4 border-emerald-200 bg-gradient-to-br from-white to-emerald-50/30 shadow-sm border-2">
+              <CardHeader className="pb-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <CardTitle className="text-xs font-black uppercase  text-emerald-900/40">
+                    Global Enrollment Status
+                  </CardTitle>
+                  <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 h-5 px-1.5 text-xs font-black uppercase er">
+                    School-Wide
+                  </Badge>
+                </div>
+              </CardHeader>
 
-                <CardContent className="space-y-6">
-                  {showSkeleton ? (
-                    <>
-                      <Skeleton className="h-10 w-44" />
-                      <Skeleton className="h-3 w-full" />
-                      <Skeleton className="h-4 w-64" />
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex flex-wrap items-end justify-between gap-3">
-                        <div>
-                          <p className="text-5xl font-black leading-none text-emerald-700">
-                            {formatMetric(enrollmentCurrent)}
-                          </p>
-                          <p className="mt-3 text-sm font-bold text-emerald-900/60">
-                            {formatMetric(enrollmentCurrent)} /{" "}
-                            {formatMetric(enrollmentTarget)} seats filled
-                          </p>
-                        </div>
-                        <div className="flex flex-col items-end">
-                          <span className="text-2xl font-black text-emerald-600">
-                            {enrollmentProgress.toFixed(1)}%
-                          </span>
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-900/40">
-                            Completion
-                          </span>
-                        </div>
+              <CardContent className="space-y-6">
+                {showSkeleton ? (
+                  <>
+                    <Skeleton className="h-10 w-44" />
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-4 w-64" />
+                  </>
+                ) : (
+                  <>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-5xl font-black text-emerald-700 tabular-nums">
+                          {formatMetric(enrollmentCurrent)}
+                        </span>
+                        <span className="text-xl font-bold text-emerald-900/30 uppercase er">
+                          / {formatMetric(enrollmentTarget)}
+                        </span>
                       </div>
+                      <p className="text-xs font-bold text-emerald-900/50 uppercase ">
+                        Total Enrollees
+                      </p>
+                    </div>
 
+                    <div className="space-y-2">
                       <div
                         role="progressbar"
                         aria-valuemin={0}
                         aria-valuemax={100}
                         aria-valuenow={Math.round(enrollmentProgressClamped)}
-                        aria-label="Enrollment progress toward section capacity"
-                        className="h-3 w-full rounded-full bg-emerald-100 overflow-hidden shadow-inner">
-                        <div
-                          className="h-3 rounded-full bg-emerald-600 transition-all duration-1000 ease-out"
-                          style={{ width: `${enrollmentProgressClamped}%` }}
+                        className="h-4 w-full rounded-full bg-emerald-100 overflow-hidden shadow-inner border border-emerald-200/50">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${enrollmentProgressClamped}%` }}
+                          transition={{ duration: 1, ease: "easeOut" }}
+                          className="h-full rounded-full bg-emerald-600 shadow-[0_0_12px_rgba(5,150,105,0.3)]"
                         />
                       </div>
-
-                      <div className="rounded-lg bg-white/50 p-3 border border-emerald-100/50">
-                        <p className="text-xs font-medium text-emerald-900/70 leading-relaxed">
-                          {enrollmentTarget === 0
-                            ? "Section capacity target is unavailable until sections are configured."
-                            : seatsRemaining > 0
-                              ? `Strategically, ${formatMetric(seatsRemaining)} seats remain available across all departments before reaching current target capacity.`
-                              : "Capacity target reached. Monitor waitlists or consider opening additional sections if intake continues."}
-                        </p>
+                      <div className="flex justify-between text-xs font-black uppercase  text-emerald-800/60">
+                        <span>BOSY Progress</span>
+                        <span>{enrollmentProgress.toFixed(1)}% Capacity</span>
                       </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
+                    </div>
 
-              <Card className="border-slate-200 bg-white shadow-sm flex flex-col">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-black ">
-                    Focus Mode
-                  </CardTitle>
-                  <CardDescription className="text-xs">
-                    Current administrative viewport.
-                  </CardDescription>
-                </CardHeader>
+                    <div className="rounded-xl bg-white/80 p-3 border border-emerald-100 shadow-sm">
+                      <p className="text-xs font-bold text-emerald-900/70 leading-relaxed">
+                        {enrollmentTarget === 0
+                          ? "Section capacity target is unavailable until sections are configured."
+                          : seatsRemaining > 0
+                            ? `System Forecast: ${formatMetric(seatsRemaining)} slots remain available across all Junior High School grade levels.`
+                            : "Operational Limit Reached: All seats are currently occupied."}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
 
-                <CardContent className="space-y-4 flex-1">
-                  {showSkeleton ? (
-                    <>
-                      <Skeleton className="h-7 w-28" />
-                      <Skeleton className="h-4 w-48" />
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant="outline"
-                          className="font-bold border-primary/20 text-primary bg-primary/5 px-2 py-1">
-                          {focusStateLabel}
-                        </Badge>
-                      </div>
-                      <div className="space-y-3 pt-2">
-                        <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
-                          <div className="h-1.5 w-1.5 rounded-full bg-blue-500"></div>
-                          Phase: {enrollmentPhase.replaceAll("_", " ")}
+            <Card className="lg:col-span-8 border-slate-200 bg-white shadow-sm flex flex-col">
+              <CardHeader className="pb-3 border-b border-slate-50">
+                <CardTitle className="text-xs font-black uppercase  text-foreground">
+                  Capacity by Grade Level
+                </CardTitle>
+              </CardHeader>
+
+              <CardContent className="pt-6 flex-1">
+                {showSkeleton ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div
+                        key={i}
+                        className="space-y-3">
+                        <div className="flex justify-between">
+                          <Skeleton className="h-4 w-24" />
+                          <Skeleton className="h-4 w-16" />
                         </div>
-                        <p className="text-xs leading-relaxed text-foreground italic">
-                          "System adapts dashboards based on the academic
-                          calendar to surface relevant bottlenecks."
+                        <Skeleton className="h-2 w-full" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                    {stats?.gradeLevelBreakdown?.map((gl) => (
+                      <div
+                        key={gl.id}
+                        className="space-y-3">
+                        <div className="flex justify-between items-end">
+                          <span className="text-xs font-black uppercase  text-slate-700">
+                            {gl.name}
+                          </span>
+                          <span className="text-xs font-black text-emerald-700 tabular-nums">
+                            {gl.progressPercent.toFixed(0)}% ({formatMetric(gl.current)} / {formatMetric(gl.target)})
+                          </span>
+                        </div>
+                        <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden shadow-inner border border-slate-200/50">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${gl.progressPercent}%` }}
+                            transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
+                            className="h-full rounded-full bg-emerald-500"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    {(!stats?.gradeLevelBreakdown || stats.gradeLevelBreakdown.length === 0) && (
+                      <div className="col-span-full py-8 text-center">
+                        <p className="text-xs font-bold text-slate-400 uppercase ">
+                          No Grade Level Data Available
                         </p>
                       </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-              <Card
-                className={`shadow-sm transition-all hover:shadow-md ${pendingReviewAlert ? "border-amber-300 bg-amber-50/50" : "border-slate-200 bg-white"}`}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-xs font-bold uppercase tracking-wider text-foreground">
-                      Pending Review
-                    </CardTitle>
-                    <div
-                      className={`rounded-full p-2.5 ${pendingReviewAlert ? "bg-amber-100" : "bg-slate-100"}`}>
-                      <ClipboardList
-                        className={`h-4 w-4 ${pendingReviewAlert ? "text-amber-700" : "text-slate-600"}`}
-                      />
-                    </div>
+                    )}
                   </div>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-                  {showSkeleton ? (
-                    <>
-                      <Skeleton className="h-8 w-24" />
-                      <Skeleton className="h-4 w-44" />
-                    </>
-                  ) : (
-                    <>
-                      <div className="text-4xl font-black">
-                        {formatMetric(pendingReviewCount)}
-                      </div>
-                      <p className="text-xs font-medium text-foreground min-h-[2rem]">
-                        {pendingReviewAlert
-                          ? "Review queue has reached critical volume. Registrar intervention required."
-                          : "Process is stable. Review queue is performing within established parameters."}
-                      </p>
-                    </>
-                  )}
-
-                  <Button
-                    type="button"
-                    className="w-full font-bold"
-                    variant={pendingReviewAlert ? "default" : "outline"}
-                    onClick={() =>
-                      navigate(
-                        "/monitoring/enrollment?workflow=PENDING_VERIFICATION",
-                      )
-                    }>
-                    {pendingReviewCount > 0
-                      ? `Review ${formatMetric(pendingReviewCount)} Applications`
-                      : "Open Verification Queue"}
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card
-                className={`shadow-sm transition-all hover:shadow-md ${sectionsCapacityAlert ? "border-red-300 bg-red-50/50" : "border-slate-200 bg-white"}`}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-xs font-bold uppercase tracking-wider text-foreground">
-                      Capacity Saturation
-                    </CardTitle>
-                    <div
-                      className={`rounded-full p-2.5 ${sectionsCapacityAlert ? "bg-red-100" : "bg-slate-100"}`}>
-                      <AlertTriangle
-                        className={`h-4 w-4 ${sectionsCapacityAlert ? "text-red-700" : "text-slate-600"}`}
-                      />
-                    </div>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-                  {showSkeleton ? (
-                    <>
-                      <Skeleton className="h-8 w-24" />
-                      <Skeleton className="h-4 w-44" />
-                    </>
-                  ) : (
-                    <>
-                      <div className="text-4xl font-black">
-                        {formatMetric(sectionsAtCapacityCount)}
-                      </div>
-                      <p className="text-xs font-medium text-foreground min-h-[2rem]">
-                        {sectionsCapacityAlert
-                          ? "Section saturation detected. Allocation limits nearing maximum thresholds."
-                          : "Section distribution is currently balanced across all grade levels."}
-                      </p>
-                    </>
-                  )}
-
-                  <Button
-                    type="button"
-                    className="w-full font-bold"
-                    variant={sectionsCapacityAlert ? "destructive" : "outline"}
-                    onClick={() => navigate("/sections")}>
-                    {sectionsAtCapacityCount > 0
-                      ? "Balance Sections"
-                      : "Open Section Workspace"}
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         ) : (
-          <Card className="border-slate-200 bg-white shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-black ">
-                Enrollment Summary
-              </CardTitle>
-              <CardDescription>
-                Collapsed while Early Registration focus is active.
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent>
-              {showSkeleton ? (
-                <Skeleton className="h-8 w-44" />
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  <Badge
-                    variant="secondary"
-                    className="font-bold px-3">
-                    Enrolled: {formatMetric(enrollmentCurrent)}
-                  </Badge>
-                  <Badge
-                    variant="secondary"
-                    className="font-bold px-3">
-                    Pending: {formatMetric(pendingReviewCount)}
-                  </Badge>
-                  <Badge
-                    variant="secondary"
-                    className="font-bold px-3">
-                    Saturation Alerts: {formatMetric(sectionsAtCapacityCount)}
-                  </Badge>
+          <Card className="border-slate-200 bg-white shadow-sm border-l-4 border-l-emerald-500">
+            <CardHeader className="py-3 px-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-sm font-black ">
+                    Enrollment Summary
+                  </CardTitle>
+                  <CardDescription className="text-xs font-bold er">
+                    Collapsed for Early Registration Focus
+                  </CardDescription>
                 </div>
-              )}
-            </CardContent>
+                <div className="flex gap-4">
+                   <div className="text-right">
+                      <p className="text-xs font-bold text-slate-400 uppercase">Enrolled</p>
+                      <p className="text-lg font-black text-emerald-600">{formatMetric(enrollmentCurrent)}</p>
+                   </div>
+                   <div className="text-right">
+                      <p className="text-xs font-bold text-slate-400 uppercase">Utilization</p>
+                      <p className="text-lg font-black text-emerald-600">{enrollmentProgress.toFixed(0)}%</p>
+                   </div>
+                </div>
+              </div>
+            </CardHeader>
           </Card>
         )}
       </section>
 
+      {/* ── Action Queues ── */}
+      <section className="space-y-4" aria-label="Action queues">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xs font-black uppercase  text-slate-500/80">
+            Action Queues
+          </h2>
+          <div className="h-px flex-1 bg-slate-100"></div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <Card
+            className={cn(
+              "shadow-sm transition-all hover:shadow-md border-2",
+              pendingReviewAlert ? "border-amber-400 bg-amber-50/30" : "border-slate-200 bg-white"
+            )}>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xs font-black  text-foreground">
+                  {effectiveFocus === "ENROLLMENT"
+                    ? "📋 Pending BOSY Verifications"
+                    : "📋 Pending Review"}
+                </CardTitle>
+                <div
+                  className={cn(
+                    "rounded-lg p-2",
+                    pendingReviewAlert ? "bg-amber-100" : "bg-slate-100"
+                  )}>
+                  <ClipboardList
+                    className={cn(
+                      "h-4 w-4",
+                      pendingReviewAlert ? "text-amber-700" : "text-slate-600"
+                    )}
+                  />
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="space-y-4">
+              {showSkeleton ? (
+                <>
+                  <Skeleton className="h-8 w-24" />
+                  <Skeleton className="h-4 w-44" />
+                </>
+              ) : (
+                <>
+                  <div className="text-5xl font-black tabular-nums">
+                    {formatMetric(pendingReviewCount)}
+                  </div>
+                  <p className="text-xs font-bold text-foreground min-h-[2rem] leading-relaxed">
+                    {effectiveFocus === "ENROLLMENT"
+                      ? "Basic Education Enrollment Forms (BEEF) requiring SF9 and physical PSA validation."
+                      : pendingReviewAlert
+                        ? "Review queue has reached critical volume. Registrar intervention required."
+                        : "Process is stable. Review queue is performing within established parameters."}
+                  </p>
+                </>
+              )}
+
+              <Button
+                type="button"
+                className="w-full font-black uppercase  text-xs h-10"
+                variant={pendingReviewAlert ? "default" : "outline"}
+                onClick={() =>
+                  navigate(
+                    "/monitoring/enrollment?workflow=PENDING_VERIFICATION",
+                  )
+                }>
+                {pendingReviewCount > 0
+                  ? `Review ${formatMetric(pendingReviewCount)} Applications`
+                  : "Open Verification Queue"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card
+            className={cn(
+              "shadow-sm transition-all hover:shadow-md border-2",
+              sectionsCapacityAlert ? "border-red-400 bg-red-50/30" : "border-slate-200 bg-white"
+            )}>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xs font-black  text-foreground">
+                  ⚠️ Section Capacity Alerts
+                </CardTitle>
+                <div
+                  className={cn(
+                    "rounded-lg p-2",
+                    sectionsCapacityAlert ? "bg-red-100" : "bg-slate-100"
+                  )}>
+                  <AlertTriangle
+                    className={cn(
+                      "h-4 w-4",
+                      sectionsCapacityAlert ? "text-red-700" : "text-slate-600"
+                    )}
+                  />
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="space-y-4">
+              {showSkeleton ? (
+                <>
+                  <Skeleton className="h-8 w-24" />
+                  <Skeleton className="h-4 w-44" />
+                </>
+              ) : (
+                <>
+                  <div className="text-5xl font-black tabular-nums">
+                    {stats?.capacityAlerts?.length || 0}
+                  </div>
+                  <div className="text-xs font-bold text-foreground min-h-[2rem] space-y-1.5">
+                    {stats?.capacityAlerts &&
+                    stats.capacityAlerts.length > 0 ? (
+                      stats.capacityAlerts.slice(0, 2).map((alert, i) => (
+                        <p
+                          key={i}
+                          className={cn(
+                            "flex items-start gap-2 leading-snug",
+                            alert.severity === "CRITICAL"
+                              ? "text-red-700 font-black"
+                              : "text-amber-700",
+                          )}>
+                          <span
+                            className={cn(
+                              "h-1.5 w-1.5 rounded-full mt-1 shrink-0",
+                              alert.severity === "CRITICAL"
+                                ? "bg-red-600 animate-pulse"
+                                : "bg-amber-600",
+                            )}
+                          />
+                          {alert.message}
+                        </p>
+                      ))
+                    ) : (
+                      <p>
+                        Distribution is stable. No grade level has currently exceeded the standard 45-learner section threshold.
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
+
+              <Button
+                type="button"
+                className="w-full font-black uppercase  text-xs h-10"
+                variant={sectionsCapacityAlert ? "destructive" : "outline"}
+                onClick={() => navigate("/sections")}>
+                {sectionsAtCapacityCount > 0
+                  ? "Balance Sections"
+                  : "Open Section Workspace"}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* ── Early Registration Section ── */}
       <section
         className="space-y-4"
         aria-label="Early registration">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-amber-600 opacity-80">
-            Early Registration
+          <h2 className="text-xs font-black uppercase  text-amber-600/80">
+            Early Registration Pipeline
           </h2>
-          <div className="h-px flex-1 bg-amber-100"></div>
+          <div className="h-px flex-1 bg-amber-100/50"></div>
         </div>
 
         {isEarlyRegistrationExpanded ? (
@@ -648,12 +664,12 @@ export default function Dashboard() {
             {earlyRegCards.map((stat) => (
               <Card
                 key={stat.title}
-                className="border-amber-100 bg-white shadow-sm transition-all hover:shadow-md">
+                className="border-amber-100 bg-white shadow-sm transition-all hover:shadow-md border-b-2">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-foreground">
+                  <CardTitle className="text-xs font-black uppercase  text-foreground">
                     {stat.title}
                   </CardTitle>
-                  <div className={`${stat.bg} rounded-full p-2`}>
+                  <div className={`${stat.bg} rounded-lg p-2`}>
                     <stat.icon className={`h-3.5 w-3.5 ${stat.color}`} />
                   </div>
                 </CardHeader>
@@ -662,7 +678,7 @@ export default function Dashboard() {
                   {showSkeleton ? (
                     <Skeleton className="h-8 w-20" />
                   ) : (
-                    <div className="text-2xl font-black ">
+                    <div className="text-3xl font-black tabular-nums">
                       {formatMetric(stat.value)}
                     </div>
                   )}
@@ -671,93 +687,84 @@ export default function Dashboard() {
             ))}
           </div>
         ) : (
-          <Card className="border-amber-100 bg-white shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-black ">
-                Early Registration Summary
-              </CardTitle>
-              <CardDescription>
-                Condensed while Enrollment Progress focus is active.
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent>
-              {showSkeleton ? (
-                <Skeleton className="h-8 w-52" />
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  <Badge
-                    variant="secondary"
-                    className="font-bold px-3 border-amber-200">
-                    Submitted:{" "}
-                    {formatMetric(stats?.earlyRegistration?.submitted ?? 0)}
-                  </Badge>
-                  <Badge
-                    variant="secondary"
-                    className="font-bold px-3 border-amber-200">
-                    Exams:{" "}
-                    {formatMetric(stats?.earlyRegistration?.examScheduled ?? 0)}
-                  </Badge>
-                  <Badge
-                    variant="secondary"
-                    className="font-bold px-3 border-amber-200">
-                    Ready:{" "}
-                    {formatMetric(
-                      stats?.earlyRegistration?.readyForEnrollment ?? 0,
-                    )}
-                  </Badge>
+          <Card className="border-amber-100 bg-white shadow-sm border-l-4 border-l-amber-500">
+            <CardHeader className="py-3 px-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-sm font-black ">
+                    Phase 1: Early Registration Summary
+                  </CardTitle>
+                  <CardDescription className="text-xs font-bold er">
+                    Minimized: Dashboard is currently adapting to the Phase 2 (BOSY) operational window.
+                  </CardDescription>
                 </div>
-              )}
-            </CardContent>
+                <div className="flex gap-4">
+                   <div className="text-right">
+                      <p className="text-xs font-bold text-slate-400 uppercase">Verified</p>
+                      <p className="text-lg font-black text-amber-600">{formatMetric(stats?.earlyRegistration?.verified ?? 0)}</p>
+                   </div>
+                   <div className="text-right">
+                      <p className="text-xs font-bold text-slate-400 uppercase">Ready</p>
+                      <p className="text-lg font-black text-amber-600">{formatMetric(stats?.earlyRegistration?.readyForEnrollment ?? 0)}</p>
+                   </div>
+                </div>
+              </div>
+            </CardHeader>
           </Card>
         )}
       </section>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="border-opacity-50 shadow-sm overflow-hidden">
-          <CardHeader className="bg-slate-50/50 border-b border-slate-100">
-            <CardTitle className="text-lg font-bold">Quick Overview</CardTitle>
-            <CardDescription className="text-xs">
-              Trend charts and distribution widgets.
-            </CardDescription>
-          </CardHeader>
+      {/* ── System Oversight (Bottom Priority for Admin) ── */}
+      {isAdmin && (
+        <section className="space-y-4 pt-8" aria-label="System oversight">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xs font-black uppercase  text-slate-400">
+              System Oversight
+            </h2>
+            <div className="h-px flex-1 bg-slate-100"></div>
+          </div>
+          
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {adminCards.map((card) => (
+              <Card key={card.title} className="bg-slate-50/50 border-slate-200 shadow-none hover:bg-white transition-colors">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                  <CardTitle className="text-xs font-black  text-slate-500">
+                    {card.title}
+                  </CardTitle>
+                  <card.icon className={cn("h-3.5 w-3.5", card.color)} />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl font-black tabular-nums">
+                    {card.value}
+                  </div>
+                  <p className="text-xs font-bold text-slate-400 mt-1 uppercase er">
+                    {card.description}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+            
+            <Card className="md:col-span-2 bg-slate-50/50 border-slate-200 shadow-none border-dashed">
+              <CardContent className="h-full flex items-center justify-center py-4">
+                 <div className="flex items-center gap-3 text-slate-400">
+                    <Activity className="h-4 w-4 opacity-50" />
+                    <span className="text-xs font-black ">Administrator Telemetry Active</span>
+                 </div>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+      )}
 
-          <CardContent className="py-10">
-            <div className="flex flex-col items-center justify-center space-y-4 text-center">
-              <div className="rounded-full bg-slate-100 p-4 ring-8 ring-slate-50">
-                <Activity className="h-8 w-8 text-slate-300" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-sm font-bold text-slate-400">
-                  Visualization Engine
-                </h3>
-                <p className="max-w-64 text-xs text-foreground/60 leading-relaxed">
-                  Real-time enrollment trends and forecast models are currently
-                  aggregating data for this period.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-opacity-50 shadow-sm overflow-hidden">
-          <CardHeader className="bg-slate-50/50 border-b border-slate-100">
-            <CardTitle className="text-lg font-bold">System Logs</CardTitle>
-            <CardDescription className="text-xs">
-              Latest administrative actions.
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent className="py-10">
-            <div className="flex flex-col items-center justify-center space-y-4 text-center text-slate-400">
-              <ShieldCheck className="h-10 w-10 opacity-20" />
-              <p className="text-xs font-medium tracking-wide">
-                NO RECENT AUDIT ACTIVITY
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* ── Visual Overlap / Analytics Placeholder (Cleaned up) ── */}
+      {!isAdmin && (
+        <div className="pt-8 border-t border-slate-50">
+          <p className="text-center text-xs font-black text-slate-300 uppercase tracking-[0.2em]">
+            EnrollPro Operational Command Center • {new Date().getFullYear()}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
+

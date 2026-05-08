@@ -46,6 +46,7 @@ async function main() {
   if (!activeYear) throw new Error("No valid school year found.");
 
   // Fetch enrollment records for existing learners (tracking number starts with EXIST-)
+  // This now dynamically covers all students seeded by seed-existing-learners.ts
   const records = await prisma.enrollmentRecord.findMany({
     where: { 
       schoolYearId: activeYear.id,
@@ -63,9 +64,14 @@ async function main() {
     }
   });
 
-  console.log(`📊 Processing ${records.length} existing learner enrollment records...`);
+  if (records.length === 0) {
+    console.warn("⚠️ No 'EXIST-' records found. Did you run db:seed-existing-learners first?");
+    return;
+  }
 
-  const BATCH_SIZE = 200;
+  console.log(`📊 Processing ${records.length} enrollment records across all grade levels...`);
+
+  const BATCH_SIZE = 100;
   let processed = 0;
 
   for (let i = 0; i < records.length; i += BATCH_SIZE) {
@@ -81,7 +87,7 @@ async function main() {
         
         // Edge Case: Conditional (Failing 1-2 subjects but passing average)
         let remarks = `Final Ave: ${grade}`;
-        const isConditional = grade >= 75 && grade < 80 && Math.random() < 0.05; // 5% of low-passing students
+        const isConditional = grade >= 75 && grade < 80 && Math.random() < 0.05; 
         if (isConditional) {
           remarks += " | Conditional: Passed with back subjects (Math/Science)";
         }
@@ -107,12 +113,12 @@ async function main() {
     );
 
     processed += batch.length;
-    if (processed % 1000 === 0 || processed === records.length) {
-      console.log(`  - Updated ${processed}/${records.length} records...`);
+    if (processed % 500 === 0 || processed === records.length) {
+      console.log(`  - Updated ${processed}/${records.length} student records...`);
     }
   }
 
-  console.log("✅ EOSY grades and promotion statuses seeded successfully.");
+  console.log(`\n✅ Successfully seeded EOSY statuses for ${records.length} students.`);
 }
 
 main()

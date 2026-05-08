@@ -222,3 +222,38 @@ export async function changePassword(
 
   res.json({ token, user: toUserResponse(updated) });
 }
+
+export async function verifyCredentials(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const email = String(req.body.email).trim().toLowerCase();
+  const { password } = req.body as { password: string };
+
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      res.status(401).json({ valid: false, message: "User not found" });
+      return;
+    }
+
+    if (!user.isActive) {
+      res.status(401).json({ valid: false, message: "Account is inactive" });
+      return;
+    }
+
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) {
+      res.status(401).json({ valid: false, message: "Invalid password" });
+      return;
+    }
+
+    // Return the user object (excluding password) to allow subsystem to provision its own session
+    res.json({
+      valid: true,
+      user: toUserResponse(user),
+    });
+  } catch (error) {
+    res.status(500).json({ valid: false, message: "Verification error" });
+  }
+}
