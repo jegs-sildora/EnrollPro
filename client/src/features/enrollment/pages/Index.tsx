@@ -552,6 +552,10 @@ export default function Enrollment() {
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [sf1ExportOpen, setSf1ExportOpen] = useState(false);
+  const [selectedExportSection, setSelectedExportSection] = useState<string>("");
+  const [sections, setSections] = useState<any[]>([]);
+  const [loadingSections, setLoadingSections] = useState(false);
 
   // Bulk Actions
   const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false);
@@ -585,21 +589,69 @@ export default function Enrollment() {
     }
   };
 
+  const fetchSections = useCallback(async () => {
+    if (!ayId) return;
+    setLoadingSections(true);
+    try {
+      const res = await api.get(`/sections/${ayId}`);
+      // The API returns { gradeLevels: [ { gradeLevelName: 'Grade 7', sections: [...] }, ... ] }
+      const allSections = res.data.gradeLevels.flatMap((gl: any) =>
+        gl.sections.map((s: any) => ({
+          ...s,
+          gradeLevelName: gl.gradeLevelName,
+        })),
+      );
+      setSections(allSections);
+    } catch (err) {
+      console.error("Failed to load sections for export", err);
+    } finally {
+      setLoadingSections(false);
+    }
+  }, [ayId]);
+
   const handleExportLis = async () => {
     if (!ayId) return;
     setExporting(true);
     try {
-      const response = await api.get("/applications/exports/lis-master", {
+      const response = await api.get("/export/lis-master", {
         params: { schoolYearId: ayId },
         responseType: "blob",
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `LIS-Master-${activeSchoolYearLabel}.csv`);
+      link.setAttribute("download", `LIS-Master-${activeSchoolYearLabel}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
+    } catch (err) {
+      toastApiError(err as any);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportSf1 = async (sectionId: number, sectionName: string) => {
+    setExporting(true);
+    try {
+      const response = await api.get(`/export/sf1/${sectionId}`, {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `SF1_${sectionName.replace(/\s+/g, "_")}.xlsx`,
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      sileo.success({
+        title: "Export Complete",
+        description: `School Form 1 for ${sectionName} generated.`,
+      });
+      setSf1ExportOpen(false);
     } catch (err) {
       toastApiError(err as any);
     } finally {
@@ -1214,31 +1266,50 @@ export default function Enrollment() {
     }
 
     cols.push({
-      id: "student",
-      accessorKey: "lastName",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title="LEARNER"
-        />
-      ),
+      id: "photo",
+      header: "PHOTO",
       cell: ({ row }) => (
-        <div className="flex items-center gap-3 w-auto min-w-max">
+        <div className="flex items-center justify-center">
           <UserPhoto
             photo={row.original.studentPhoto}
             containerClassName="w-10 h-10 rounded-full border shadow-sm shrink-0"
             alt={`${row.original.lastName} photo`}
           />
-          <div className="flex flex-col text-left">
-            <span className="font-bold text-sm uppercase leading-tight">
-              {row.original.lastName}, {row.original.firstName}
-            </span>
-            <span className="text-[11px] font-black text-foreground ">
-              {row.original.lrn ||
-                (row.original.isPendingLrnCreation ? "PENDING" : "NO LRN")}
-            </span>
-          </div>
         </div>
+      ),
+      size: 60,
+    });
+
+    cols.push({
+      id: "name",
+      accessorKey: "lastName",
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title="NAME"
+        />
+      ),
+      cell: ({ row }) => (
+        <span className="font-bold text-sm uppercase leading-tight text-left block min-w-[140px]">
+          {row.original.lastName}, {row.original.firstName}
+        </span>
+      ),
+    });
+
+    cols.push({
+      id: "lrn",
+      accessorKey: "lrn",
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title="LRN"
+        />
+      ),
+      cell: ({ row }) => (
+        <span className="font-bold text-sm block whitespace-nowrap text-center">
+          {row.original.lrn ||
+            (row.original.isPendingLrnCreation ? "PENDING" : "N/A")}
+        </span>
       ),
     });
 
@@ -1263,25 +1334,6 @@ export default function Enrollment() {
       },
       size: 60,
     });
-
-    if (workflowView !== "SECTION_ASSIGNMENT") {
-      cols.push({
-        id: "lrn",
-        accessorKey: "lrn",
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="LRN"
-          />
-        ),
-        cell: ({ row }) => (
-          <span className="font-bold text-sm block whitespace-nowrap">
-            {row.original.lrn ||
-              (row.original.isPendingLrnCreation ? "PENDING" : "N/A")}
-          </span>
-        ),
-      });
-    }
 
     cols.push({
       id: "program",
@@ -1845,7 +1897,10 @@ export default function Enrollment() {
                 <Button
                   variant="default"
                   className="h-10 px-3 text-sm font-bold bg-emerald-600 hover:bg-emerald-700 shrink-0"
-                  onClick={handleExportLis}
+                  onClick={() => {
+                    void fetchSections();
+                    setSf1ExportOpen(true);
+                  }}
                   disabled={exporting || loading}>
                   <Download className="h-4 w-4 mr-2" />
                   Export LIS Batch
@@ -2983,6 +3038,137 @@ export default function Enrollment() {
         learnerName={pinHandover.learnerName}
         pin={pinHandover.pin}
       />
+
+      <Dialog
+        open={sf1ExportOpen}
+        onOpenChange={setSf1ExportOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="bg-emerald-100 p-2 rounded-lg">
+                <Download className="h-5 w-5 text-emerald-600" />
+              </div>
+              <DialogTitle className="text-sm font-bold uppercase tracking-wider">
+                Export LIS Batch / SF1
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-sm font-semibold">
+              Select an export format. School Form 1 (SF1) requires selecting a
+              specific section.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {/* Option 1: Full LIS Master */}
+            <div className="p-4 rounded-xl border-2 border-emerald-100 bg-emerald-50/30 hover:bg-emerald-50 transition-all">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <h4 className="font-bold text-sm text-emerald-800">
+                    LIS Master Extract (XLSX)
+                  </h4>
+                  <p className="text-[10px] font-semibold text-emerald-700 mt-0.5">
+                    Official BOSY/EOSY data extract for all sections in{" "}
+                    {activeSchoolYearLabel}.
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="bg-emerald-600 hover:bg-emerald-700 font-bold h-9"
+                  onClick={handleExportLis}
+                  disabled={exporting}>
+                  {exporting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Export XLSX"
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground font-black tracking-widest">
+                  OR
+                </span>
+              </div>
+            </div>
+
+            {/* Option 2: SF1 by Section */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-black uppercase tracking-widest text-foreground">
+                  School Form 1 (SF1 Excel)
+                </Label>
+                <Badge className="h-4 px-1.5 text-[8px] font-black bg-primary/10 text-primary border-none">
+                  Official Template
+                </Badge>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <Select
+                  value={selectedExportSection}
+                  onValueChange={setSelectedExportSection}>
+                  <SelectTrigger className="h-11 font-bold text-sm bg-muted/30 border-2">
+                    <SelectValue placeholder="Select a section to export..." />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {loadingSections ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      </div>
+                    ) : sections.length === 0 ? (
+                      <div className="text-center py-4 text-xs font-bold text-muted-foreground">
+                        No sections found for this year.
+                      </div>
+                    ) : (
+                      sections.map((s) => (
+                        <SelectItem
+                          key={s.id}
+                          value={String(s.id)}
+                          className="font-bold">
+                          {s.name} ({s.gradeLevelName})
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+
+                <Button
+                  className="w-full h-11 font-bold bg-primary hover:opacity-90"
+                  disabled={exporting || !selectedExportSection}
+                  onClick={() => {
+                    const sec = sections.find(
+                      (s) => String(s.id) === selectedExportSection,
+                    );
+                    if (sec) {
+                      void handleExportSf1(sec.id, sec.name);
+                    }
+                  }}>
+                  {exporting ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Download className="h-4 w-4 mr-2" />
+                  )}
+                  Generate SF1 Excel
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              className="text-xs font-bold uppercase tracking-widest"
+              onClick={() => setSf1ExportOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

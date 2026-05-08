@@ -64,29 +64,39 @@ export function EarlyRegistrationTable({
   const columns = useMemo<ColumnDef<Application>[]>(() => {
     return [
       {
-        id: "applicant",
+        id: "name",
         accessorKey: "lastName",
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="APPLICANT"
+            title="NAME"
           />
         ),
         cell: ({ row: tableRow }) => {
           const app = tableRow.original;
           return (
-            <div className="flex min-w-0 flex-col text-left pl-1">
-              <span
-                className="font-bold text-sm uppercase whitespace-nowrap truncate"
-                title={`${app.lastName}, ${app.firstName}`}>
-                {app.lastName}, {app.firstName}
-              </span>
-              <span className="text-xs text-foreground font-medium whitespace-nowrap">
-                {app.trackingNumber}
-              </span>
-            </div>
+            <span
+              className="font-bold text-sm uppercase text-left block min-w-[140px] truncate"
+              title={`${app.lastName}, ${app.firstName}`}>
+              {app.lastName}, {app.firstName}
+            </span>
           );
         },
+      },
+      {
+        id: "trackingNumber",
+        accessorKey: "trackingNumber",
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="TRACKING #"
+          />
+        ),
+        cell: ({ row: tableRow }) => (
+          <span className="text-xs text-foreground font-bold text-center block">
+            {tableRow.original.trackingNumber}
+          </span>
+        ),
       },
       {
         id: "lrn",

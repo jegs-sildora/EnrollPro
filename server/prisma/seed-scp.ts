@@ -36,9 +36,14 @@ const PH_RELIGIONS = [
   "ROMAN CATHOLIC", "IGLESIA NI CRISTO", "SEVENTH-DAY ADVENTIST", "ISLAM", "BORN AGAIN CHRISTIAN", "JEHOVAH'S WITNESSES"
 ];
 
-const PH_MOTHER_TONGUES = [
-  "TAGALOG", "CEBUANO", "ILOCANO", "HILIGAYNON", "WARAY", "PANGASINAN", "BIKOL", "KAPAMPANGAN"
-];
+const SCP_PREFIXES: Record<string, string> = {
+  "SCIENCE_TECHNOLOGY_AND_ENGINEERING": "STE",
+  "SPECIAL_PROGRAM_IN_THE_ARTS": "SPA",
+  "SPECIAL_PROGRAM_IN_SPORTS": "SPS",
+  "SPECIAL_PROGRAM_IN_JOURNALISM": "SPJ",
+  "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE": "SPFL",
+  "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION": "SPTVE",
+};
 
 async function main() {
   try {
@@ -72,10 +77,18 @@ async function main() {
     // Seed Applications
     for (let i = 1; i <= 30; i++) {
       const scpType = SCP_TYPES[i % SCP_TYPES.length];
-      const firstName = PH_FIRST_NAMES[i % PH_FIRST_NAMES.length];
-      const middleName = PH_MIDDLE_NAMES[i % PH_MIDDLE_NAMES.length];
-      const lastName = PH_LAST_NAMES[i % PH_LAST_NAMES.length];
-      const lrn = `123456${String(i).padStart(6, '0')}`;
+      
+      // Cascading index for unique name combinations
+      const firstIdx = i % PH_FIRST_NAMES.length;
+      const lastIdx = Math.floor(i / PH_FIRST_NAMES.length) % PH_LAST_NAMES.length;
+      const midIdx = Math.floor(i / (PH_FIRST_NAMES.length * PH_LAST_NAMES.length)) % PH_MIDDLE_NAMES.length;
+
+      const firstName = PH_FIRST_NAMES[firstIdx];
+      const middleName = PH_MIDDLE_NAMES[midIdx];
+      const lastName = PH_LAST_NAMES[lastIdx];
+      
+      // LRN: Source(10) + Year(26) + Padding + Index
+      const lrn = `102600${String(i).padStart(6, '0')}`;
       
       const learner = await prisma.learner.upsert({
         where: { lrn },
@@ -96,22 +109,24 @@ async function main() {
           disabilityTypes: i % 15 === 0 ? ["VISUAL IMPAIRMENT"] : [],
           is4PsBeneficiary: i % 5 === 0,
           householdId4Ps: i % 5 === 0 ? `4PS-${String(i).padStart(6, '0')}` : null,
-          psaBirthCertNumber: `PSA-${String(i).padStart(8, '0')}`,
+          psaBirthCertNumber: `PSA-10-${String(i).padStart(8, '0')}`,
         }
       });
 
+      const prefix = SCP_PREFIXES[scpType] || "SCP";
+      const startYear = schoolYear.yearLabel.split("-")[0];
+      const trackingNumber = `${prefix}-${startYear}-${String(i).padStart(5, '0')}`;
       await prisma.earlyRegistrationApplication.upsert({
-        where: { trackingNumber: `E-REG-${schoolYear.id}-${String(i).padStart(5, '0')}` },
+        where: { trackingNumber },
         update: {},
         create: {
           learnerId: learner.id,
           schoolYearId: schoolYear.id,
           gradeLevelId: grade7.id,
-          trackingNumber: `E-REG-${schoolYear.id}-${String(i).padStart(5, '0')}`,
+          trackingNumber,
           applicantType: scpType,
           status: "SUBMITTED_BEERF",
-          contactNumber: `0917${String(i).padStart(7, '0')}`,
-          email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
+          contactNumber: `0910${String(i).padStart(7, '0')}`,
           isPrivacyConsentGiven: true,
           encodedById: admin.id,
         }

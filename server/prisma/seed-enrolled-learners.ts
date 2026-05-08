@@ -58,15 +58,21 @@ async function main() {
 
   for (let i = 1; i <= totalLearners; i++) {
     const sex: Sex = i % 2 === 0 ? "FEMALE" : "MALE";
-    const firstName = sex === "MALE" 
-      ? PH_FIRST_NAMES_MALE[i % PH_FIRST_NAMES_MALE.length]
-      : PH_FIRST_NAMES_FEMALE[i % PH_FIRST_NAMES_FEMALE.length];
-    const lastName = PH_LAST_NAMES[i % PH_LAST_NAMES.length];
-    const middleName = PH_MIDDLE_NAMES[i % PH_MIDDLE_NAMES.length];
+    
+    // Cascading index for unique name combinations
+    const firstPool = sex === "MALE" ? PH_FIRST_NAMES_MALE : PH_FIRST_NAMES_FEMALE;
+    const firstIdx = i % firstPool.length;
+    const lastIdx = Math.floor(i / firstPool.length) % PH_LAST_NAMES.length;
+    const midIdx = Math.floor(i / (firstPool.length * PH_LAST_NAMES.length)) % PH_MIDDLE_NAMES.length;
+
+    const firstName = firstPool[firstIdx];
+    const lastName = PH_LAST_NAMES[lastIdx];
+    const middleName = PH_MIDDLE_NAMES[midIdx];
     
     // Distribute across grade levels
     const gradeLevel = gradeLevels[(i - 1) % gradeLevels.length];
-    const lrn = `2026${gradeLevel.id}${String(i).padStart(6, '0')}`;
+    // LRN: Source(11) + Year(26) + Padding + Index
+    const lrn = `112600${String(i).padStart(6, '0')}`;
     
     const learnerData = {
       lrn,
@@ -84,8 +90,8 @@ async function main() {
       isLearnerWithDisability: false,
       disabilityTypes: [],
       is4PsBeneficiary: i % 20 === 0,
-      householdId4Ps: i % 20 === 0 ? `HH-ID-${i}` : null,
-      psaBirthCertNumber: `PSA-BC-${String(i).padStart(8, '0')}`,
+      householdId4Ps: i % 20 === 0 ? `HH-11-${i}` : null,
+      psaBirthCertNumber: `PSA-11-${String(i).padStart(8, '0')}`,
       previousGenAve: 85 + (i % 12),
       promotionStatus: "PROMOTED",
     };
@@ -98,7 +104,8 @@ async function main() {
     });
 
     // 5. Create Enrollment Application
-    const trackingNumber = `ENR-${activeYear.id}-${String(i).padStart(5, '0')}`;
+    const startYear = activeYear.yearLabel.split("-")[0];
+    const trackingNumber = `REG-${startYear}-${String(i).padStart(5, '0')}`;
     
     // We'll use a transaction or simplified logic for family/address to speed up seeding
     await prisma.enrollmentApplication.upsert({
@@ -137,10 +144,10 @@ async function main() {
               create: [
                 {
                   relationship: "MOTHER" as FamilyRelationship,
-                  firstName: PH_FIRST_NAMES_FEMALE[(i + 1) % PH_FIRST_NAMES_FEMALE.length],
-                  lastName: PH_LAST_NAMES[i % PH_LAST_NAMES.length],
-                  middleName: PH_MIDDLE_NAMES[(i + 2) % PH_MIDDLE_NAMES.length],
-                  contactNumber: `0917${String(i).padStart(7, '0')}`,
+                  firstName: PH_FIRST_NAMES_FEMALE[(i + 1000) % PH_FIRST_NAMES_FEMALE.length],
+                  lastName: PH_LAST_NAMES[(Math.floor((i + 1000) / PH_FIRST_NAMES_FEMALE.length)) % PH_LAST_NAMES.length],
+                  middleName: PH_MIDDLE_NAMES[(Math.floor((i + 1000) / (PH_FIRST_NAMES_FEMALE.length * PH_LAST_NAMES.length))) % PH_MIDDLE_NAMES.length],
+                  contactNumber: `0921${String(i).padStart(7, '0')}`,
                   occupation: "HOUSEWIFE"
                 }
               ]

@@ -330,6 +330,39 @@ export default function Sections() {
   const [roster, setRoster] = useState<RosterLearner[]>([]);
   const [loadingRoster, setLoadingRoster] = useState(false);
   const [classOpeningDate, setClassOpeningDate] = useState<string | null>(null);
+  const [exportingSf1, setExportingSf1] = useState(false);
+
+  const handleDownloadSf1 = async () => {
+    if (!viewRosterSection) return;
+    setExportingSf1(true);
+    try {
+      const response = await api.get(`/export/sf1/${viewRosterSection.id}`, {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `SF1_${viewRosterSection.name.replace(/\s+/g, "_")}.xlsx`,
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      sileo.success({
+        title: "Export Complete",
+        description: `SF1 for ${viewRosterSection.name} downloaded successfully.`,
+      });
+    } catch (err) {
+      console.error(err);
+      sileo.error({
+        title: "Export Failed",
+        description: "Failed to generate SF1 Excel file.",
+      });
+    } finally {
+      setExportingSf1(false);
+    }
+  };
 
   const calculateAge = (birthdate: string) => {
     if (!birthdate) return "-";
@@ -1487,8 +1520,14 @@ export default function Sections() {
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={handleDownloadSf1}
+                  disabled={exportingSf1 || loadingRoster}
                   className="h-10 font-bold uppercase text-[11px] tracking-wider border-border text-foreground hover:bg-muted hover:text-foreground transition-all shadow-sm">
-                  <FileDown className="h-4 w-4 mr-2" />
+                  {exportingSf1 ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <FileDown className="h-4 w-4 mr-2" />
+                  )}
                   Download SF1 (Excel)
                 </Button>
                 <Button

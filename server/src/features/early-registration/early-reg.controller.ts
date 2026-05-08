@@ -2,6 +2,11 @@ import { Request, Response, NextFunction } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { AppError } from "../../lib/AppError.js";
+import {
+  generateTrackingNumber,
+  getTrackingPrefix,
+  extractStartYear,
+} from "../../lib/tracking.js";
 import { normalizeDateToUtcNoon } from "../school-year/school-year.service.js";
 import { getRequiredDocuments } from "../enrollment/enrollment-requirement.service.js";
 import fs from "fs";
@@ -1430,7 +1435,8 @@ async function createRegistration(
       }
 
       // Temporary tracking number
-      const tempTracking = `EREG-${new Date().getFullYear()}-TEMP-${Date.now()}`;
+      const startYear = extractStartYear(activeYear.yearLabel);
+      const tempTracking = `EREG-${startYear}-TEMP-${Date.now()}`;
 
       const application = await tx.earlyRegistrationApplication.create({
         data: {
@@ -1465,30 +1471,11 @@ async function createRegistration(
         select: { id: true, applicantType: true },
       });
 
-      // Update with final tracking number
-      let prefix = "REG";
-      if (application.applicantType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") {
-        prefix = "STE";
-      } else if (application.applicantType === "SPECIAL_PROGRAM_IN_THE_ARTS") {
-        prefix = "SPA";
-      } else if (application.applicantType === "SPECIAL_PROGRAM_IN_SPORTS") {
-        prefix = "SPS";
-      } else if (
-        application.applicantType === "SPECIAL_PROGRAM_IN_JOURNALISM"
-      ) {
-        prefix = "SPJ";
-      } else if (
-        application.applicantType === "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE"
-      ) {
-        prefix = "SPFL";
-      } else if (
-        application.applicantType ===
-        "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION"
-      ) {
-        prefix = "SPTVE";
-      }
-
-      const trackingNumber = `${prefix}-${new Date().getFullYear()}-${String(application.id).padStart(5, "0")}`;
+      const trackingNumber = generateTrackingNumber({
+        prefix: getTrackingPrefix(application.applicantType),
+        schoolYear: activeYear.yearLabel,
+        id: application.id,
+      });
       await tx.earlyRegistrationApplication.update({
         where: { id: application.id },
         data: { trackingNumber },

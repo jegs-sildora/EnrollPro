@@ -138,15 +138,24 @@ async function seedSectionBatch(
   for (let i = 0; i < count; i++) {
     const sequence = startIndex + i;
     const sex: Sex = sequence % 2 === 0 ? "FEMALE" : "MALE";
-    const firstName = sex === "MALE" 
-      ? PH_FIRST_NAMES_MALE[sequence % PH_FIRST_NAMES_MALE.length]
-      : PH_FIRST_NAMES_FEMALE[sequence % PH_FIRST_NAMES_FEMALE.length];
-    const lastName = PH_LAST_NAMES[sequence % PH_LAST_NAMES.length];
-    const middleName = PH_MIDDLE_NAMES[sequence % PH_MIDDLE_NAMES.length];
     
-    // LRN: Prefix(2026) + SectionId padded to 4 digits + Sequence padded to 4 digits
-    // Total: 4 + 4 + 4 = 12 digits (exactly matching VarChar(12) constraint)
-    const lrn = `2026${section.id.toString().padStart(4, '0')}${sequence.toString().padStart(4, '0')}`;
+    // Use section.id to salt the name generation to avoid identical names across sections
+    // This ensures section 1 and section 2 don't start with the same learner names
+    const nameIndex = sequence + (section.id * 31);
+    
+    // Cascading index for unique name combinations
+    const firstPool = sex === "MALE" ? PH_FIRST_NAMES_MALE : PH_FIRST_NAMES_FEMALE;
+    const firstIdx = nameIndex % firstPool.length;
+    const lastIdx = Math.floor(nameIndex / firstPool.length) % PH_LAST_NAMES.length;
+    const midIdx = Math.floor(nameIndex / (firstPool.length * PH_LAST_NAMES.length)) % PH_MIDDLE_NAMES.length;
+
+    const firstName = firstPool[firstIdx];
+    const lastName = PH_LAST_NAMES[lastIdx];
+    const middleName = PH_MIDDLE_NAMES[midIdx];
+    
+    // LRN: Source(12) + Year(26) + Padding + Sequence
+    // Total: 2 + 2 + 3 + 5 = 12 digits
+    const lrn = `1226${section.id.toString().padStart(3, '0')}${sequence.toString().padStart(5, '0')}`;
     
     // Birthdate offset based on grade (G7 typically 12-13 years old in 2026, so born ~2013-2014)
     const birthYear = 2026 - (gradeValue + 6); // Approximation for JHS ages
@@ -163,19 +172,25 @@ async function seedSectionBatch(
       motherTongue: PH_MOTHER_TONGUES[sequence % PH_MOTHER_TONGUES.length],
       isIpCommunity: sequence % 50 === 0,
       is4PsBeneficiary: sequence % 15 === 0,
-      psaBirthCertNumber: `PSA-BC-${lrn}`,
+      psaBirthCertNumber: `PSA-12-${lrn}`,
       previousGenAve: program === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? 90 + (sequence % 8) : 80 + (sequence % 15),
       promotionStatus: "PROMOTED",
     };
 
+    const programPrefix = program === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE" : "REG";
+    const startYear = activeYear.yearLabel.split("-")[0];
+    
+    // Ensure tracking number is unique across all sections by including section.id
+    // Standard format: PREFIX-YYYY-SSSSS where SSSSS is [SECTION_ID (3 digits)][SEQUENCE (2 digits)]
+    const trackingSuffix = `${section.id.toString().padStart(3, '0')}${sequence.toString().padStart(2, '0')}`;
+    const trackingNumber = `${programPrefix}-${startYear}-${trackingSuffix}`;
+    
     const learner = await prisma.learner.upsert({
       where: { lrn },
       update: learnerData,
       create: learnerData
     });
 
-    const trackingNumber = `EXIST-${section.id}-${sequence.toString().padStart(5, '0')}`;
-    
     // Ensure relations are handled for cleanup
     const existingApp = await prisma.enrollmentApplication.findUnique({ where: { trackingNumber } });
     if (existingApp) {
@@ -218,10 +233,10 @@ async function seedSectionBatch(
               create: [
                 {
                   relationship: "MOTHER" as FamilyRelationship,
-                  firstName: PH_FIRST_NAMES_FEMALE[(sequence + 1) % PH_FIRST_NAMES_FEMALE.length],
-                  lastName: PH_LAST_NAMES[sequence % PH_LAST_NAMES.length],
-                  middleName: PH_MIDDLE_NAMES[(sequence + 2) % PH_MIDDLE_NAMES.length],
-                  contactNumber: `0917${String(sequence).padStart(7, '0').slice(-7)}`,
+                  firstName: PH_FIRST_NAMES_FEMALE[(nameIndex + 5000) % PH_FIRST_NAMES_FEMALE.length],
+                  lastName: PH_LAST_NAMES[(Math.floor((nameIndex + 5000) / PH_FIRST_NAMES_FEMALE.length)) % PH_LAST_NAMES.length],
+                  middleName: PH_MIDDLE_NAMES[(Math.floor((nameIndex + 5000) / (PH_FIRST_NAMES_FEMALE.length * PH_LAST_NAMES.length))) % PH_MIDDLE_NAMES.length],
+                  contactNumber: `0922${String(nameIndex + 5000).padStart(7, '0').slice(-7)}`,
                   occupation: "HOUSEWIFE"
                 }
               ]

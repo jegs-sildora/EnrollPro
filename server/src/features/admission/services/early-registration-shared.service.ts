@@ -1,4 +1,8 @@
 import { AppError } from "../../../lib/AppError.js";
+import {
+  generateTrackingNumber,
+  getTrackingPrefix,
+} from "../../../lib/tracking.js";
 import type {
   EnrollmentApplication,
   EarlyRegistrationApplication,
@@ -926,6 +930,7 @@ export function createEarlyRegistrationSharedService(
         addresses: true,
         familyMembers: true,
         gradeLevel: true,
+        schoolYear: true,
       },
     });
 
@@ -958,27 +963,11 @@ export function createEarlyRegistrationSharedService(
             },
           });
 
-          // Generate Phase 2 Tracking Number
-          let prefix = "ENR";
-          if (earlyReg.applicantType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING")
-            prefix = "STE";
-          else if (earlyReg.applicantType === "SPECIAL_PROGRAM_IN_THE_ARTS")
-            prefix = "SPA";
-          else if (earlyReg.applicantType === "SPECIAL_PROGRAM_IN_SPORTS")
-            prefix = "SPS";
-          else if (earlyReg.applicantType === "SPECIAL_PROGRAM_IN_JOURNALISM")
-            prefix = "SPJ";
-          else if (
-            earlyReg.applicantType === "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE"
-          )
-            prefix = "SPFL";
-          else if (
-            earlyReg.applicantType ===
-            "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION"
-          )
-            prefix = "SPTVE";
-
-          const trackingNumber = `${prefix}-${year}-${String(created.id).padStart(5, "0")}`;
+          const trackingNumber = generateTrackingNumber({
+            prefix: getTrackingPrefix(earlyReg.applicantType),
+            schoolYear: earlyReg.schoolYear.yearLabel,
+            id: created.id,
+          });
 
           const finalApp = await ptx.enrollmentApplication.update({
             where: { id: created.id },

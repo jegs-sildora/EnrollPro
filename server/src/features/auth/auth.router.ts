@@ -18,8 +18,13 @@ const router: Router = Router();
 
 const loginLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 20,
-  message: { message: "Too many login attempts. Please try again later." },
+  max: 5,
+  message: {
+    code: "TOO_MANY_LOGIN_ATTEMPTS",
+    message: "Too many login attempts. Please try again after a minute.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 router.post("/login", loginLimiter, validate(loginSchema), login);

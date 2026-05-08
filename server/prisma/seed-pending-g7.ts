@@ -15,9 +15,10 @@ function toUtcNoon(year: number, month: number, day: number): Date {
 }
 
 const PH_FIRST_NAMES_MALE = [
-"JUAN", "JOSE", "MIGUEL", "CARLO", "RAFAEL", "PAOLO", "ANTONIO", "GABRIEL", "MATEO", "DIEGO"];
-const PH_FIRST_NAMES_FEMALE = ["MARIA", "ANGELICA", "PRINCESS", "JASMINE", "NICOLE", "GABRIELA", "SOFIA", "ISABELLA", "LIZA", "BEA"];
-const PH_LAST_NAMES = ["DELA CRUZ", "REYES", "SANTOS", "GARCIA", "MENDOZA", "FERNANDEZ", "NAVARRO", "RAMOS", "BAUTISTA", "GONZALES", "TORRES", "VILLANUEVA"];
+"JUAN", "JOSE", "MIGUEL", "CARLO", "RAFAEL", "PAOLO", "ANTONIO", "GABRIEL", "MATEO", "DIEGO", "EMMANUEL", "CHRISTIAN", "JOSHUA", "ANGELO", "RICARDO", "FERDINAND", "RODRIGO", "MANUEL", "CORAZON", "BENIGNO", "RAMON", "ELPIDIO", "SERGIO", "DIOSDADO", "JOSEPH"];
+const PH_FIRST_NAMES_FEMALE = ["MARIA", "ANGELICA", "PRINCESS", "JASMINE", "NICOLE", "GABRIELA", "SOFIA", "ISABELLA", "LIZA", "BEA", "CRISTINA", "PATRICIA", "ELENA", "ROSA", "TERESA", "IMELDA", "GLORIA", "CORAZON", "LOURDES", "REMEDIOS", "CARMELA", "JOSEFINA", "PERLA", "AURORA", "ESTRELLA"];
+const PH_LAST_NAMES = ["DELA CRUZ", "REYES", "SANTOS", "GARCIA", "MENDOZA", "FERNANDEZ", "NAVARRO", "RAMOS", "BAUTISTA", "GONZALES", "TORRES", "VILLANUEVA", "CRUZ", "PASCUAL", "AQUINO", "MARCOS", "DUTERTE", "ESTRADA", "ARROYO", "MAGSAYSAY", "QUIRINO", "OSMEÑA", "MACAPAGAL", "ROXAS", "QUEZON"];
+const PH_MIDDLE_NAMES = ["SANTIAGO", "DE LEON", "BALTAZAR", "CASTILLO", "SORIANO", "DEL ROSARIO", "VALDEZ", "RODRIGUEZ", "PANGANIBAN", "IBARRA", "LUNA", "SILANG"];
 
 async function main() {
   console.log("🚀 Seeding 875 Pending Grade 7 Learners (70 STE, 805 BEC) without sections...");
@@ -47,12 +48,19 @@ async function main() {
     const applicantType: ApplicantType = isSTE ? "SCIENCE_TECHNOLOGY_AND_ENGINEERING" : "REGULAR";
     
     const sex: Sex = i % 2 === 0 ? "FEMALE" : "MALE";
-    const firstName = sex === "MALE" 
-      ? PH_FIRST_NAMES_MALE[i % PH_FIRST_NAMES_MALE.length]
-      : PH_FIRST_NAMES_FEMALE[i % PH_FIRST_NAMES_FEMALE.length];
-    const lastName = PH_LAST_NAMES[i % PH_LAST_NAMES.length];
-    // Use a specific prefix to avoid colliding with other seeders
-    const lrn = `202633${String(i).padStart(6, '0')}`; 
+    
+    // Cascading index for unique name combinations
+    const firstPool = sex === "MALE" ? PH_FIRST_NAMES_MALE : PH_FIRST_NAMES_FEMALE;
+    const firstIdx = i % firstPool.length;
+    const lastIdx = Math.floor(i / firstPool.length) % PH_LAST_NAMES.length;
+    const midIdx = Math.floor(i / (firstPool.length * PH_LAST_NAMES.length)) % PH_MIDDLE_NAMES.length;
+
+    const firstNameBase = firstPool[firstIdx];
+    const lastName = PH_LAST_NAMES[lastIdx];
+    const middleName = PH_MIDDLE_NAMES[midIdx];
+
+    // LRN: Source(13) + Year(26) + Padding + Index
+    const lrn = `132600${String(i).padStart(6, '0')}`; 
     
     // Ensure general average is not null
     const genAve = isSTE ? (90 + (i % 8)) : (80 + (i % 15));
@@ -62,16 +70,18 @@ async function main() {
       update: {},
       create: {
         lrn,
-        firstName: `${firstName} ${isSTE ? '(STE)' : '(BEC)'}`,
+        firstName: `${firstNameBase} ${isSTE ? '(STE)' : '(BEC)'}`,
         lastName,
-        birthdate: toUtcNoon(2014, (i % 9), 15), // valid birthdates
+        middleName,
+        birthdate: toUtcNoon(2014, (i % 9) + 1, 15), // valid birthdates
         sex,
         isPendingLrnCreation: false,
         previousGenAve: genAve, // Redundant storage for engine robustness
       }
     });
 
-    const trackingNumber = `F2F-ENR-${new Date().getFullYear()}-${String(i + 30000).padStart(5, "0")}`;
+    const startYear = activeYear.yearLabel.split("-")[0];
+    const trackingNumber = `REG-${startYear}-${String(i).padStart(5, "0")}`;
 
     const application = await prisma.enrollmentApplication.upsert({
       where: { trackingNumber },
@@ -112,7 +122,7 @@ async function main() {
             trackingNumber: erTrackingNumber,
             applicantType: "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
             status: "ASSESSMENT_TAKEN",
-            contactNumber: "09123456789",
+            contactNumber: `0923${String(i).padStart(7, '0')}`,
             isPrivacyConsentGiven: true,
             encodedById: admin.id,
           }

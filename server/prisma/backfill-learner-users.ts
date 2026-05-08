@@ -40,7 +40,14 @@ async function main() {
       // STEP 1: Create the User account
       const cleanFirst = learner.firstName.toLowerCase().replace(/[^a-z0-9]/g, "");
       const cleanLast = learner.lastName.toLowerCase().replace(/[^a-z0-9]/g, "");
-      const baseEmail = `${cleanFirst}.${cleanLast}`;
+      const middleInitial = learner.middleName 
+        ? learner.middleName.trim().charAt(0).toLowerCase() 
+        : "";
+      
+      let baseEmail = middleInitial 
+        ? `${cleanFirst}.${middleInitial}.${cleanLast}`
+        : `${cleanFirst}.${cleanLast}`;
+      
       let email = `${baseEmail}@deped.edu.ph`;
 
       // Check for email collision
@@ -75,7 +82,14 @@ async function main() {
       // Sync existing user to match learner profile (Teacher Pattern: Profile is Master)
       const cleanFirst = learner.firstName.toLowerCase().replace(/[^a-z0-9]/g, "");
       const cleanLast = learner.lastName.toLowerCase().replace(/[^a-z0-9]/g, "");
-      const baseEmail = `${cleanFirst}.${cleanLast}`;
+      const middleInitial = learner.middleName 
+        ? learner.middleName.trim().charAt(0).toLowerCase() 
+        : "";
+      
+      let baseEmail = middleInitial 
+        ? `${cleanFirst}.${middleInitial}.${cleanLast}`
+        : `${cleanFirst}.${cleanLast}`;
+      
       let email = `${baseEmail}@deped.edu.ph`;
 
       // Check for email collision (excluding the current user)

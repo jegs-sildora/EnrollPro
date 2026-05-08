@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient, Role } from "../src/generated/prisma/index.js";
+import { PrismaClient, Role, Sex } from "../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 import * as bcrypt from "bcryptjs";
@@ -29,8 +29,10 @@ async function main() {
           firstName: teacher.firstName,
           lastName: teacher.lastName,
           middleName: teacher.middleName,
+          sex: teacher.sex,
           email: teacher.email,
           employeeId: teacher.employeeId,
+          mobileNumber: teacher.contactNumber,
           password: defaultPasswordHash,
           role: "TEACHER" as Role,
           isActive: teacher.isActive,
@@ -39,14 +41,16 @@ async function main() {
       });
       createdCount++;
     } else {
-      // Sync existing user to match teacher profile
+      // Sync existing user to match teacher profile (Master record approach)
       await prisma.user.update({
         where: { id: existingUser.id },
         data: {
           firstName: teacher.firstName,
           lastName: teacher.lastName,
           middleName: teacher.middleName,
+          sex: teacher.sex,
           email: teacher.email,
+          mobileNumber: teacher.contactNumber,
           isActive: teacher.isActive,
         }
       });

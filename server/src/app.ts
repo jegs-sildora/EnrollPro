@@ -21,7 +21,9 @@ import learnerRoutes from "./features/learner/learner.router.js";
 import earlyRegRoutes from "./features/early-registration/early-reg.router.js";
 import eosyRoutes from "./features/enrollment/eosy.router.js";
 import enrollmentRoutes from "./features/enrollment/enrollment.router.js";
+import exportRoutes from "./features/export/export.router.js";
 import integrationRoutes from "./features/integration/integration.router.js";
+import { rateLimit } from "express-rate-limit";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { historicalReadOnlyGuard } from "./middleware/historical-read-only.guard.js";
 
@@ -29,6 +31,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app: express.Express = express();
+
+// Trust proxy for Tailscale Funnel / X-Forwarded-For support
+app.set("trust proxy", 1);
 
 const defaultClientOrigins = [
   "http://localhost:5173",
@@ -63,38 +68,36 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// 2. Manual CORS & Preflight Handler (Before any body parsing or guards)
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  
-  // Always set these headers for every response
-  if (origin) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  } else {
-    // Fallback for cases where origin is not provided but we still want to be safe
-    res.setHeader("Access-Control-Allow-Origin", "*");
-  }
+// 2. Security Middleware
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+      if (allowedClientOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  }),
+);
 
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, x-school-year-context-id, x-requested-with"
-  );
-
-  if (req.method === "OPTIONS") {
-    return res.status(204).end();
-  }
-  next();
-});
-
-// 3. Standard Security & Parsing
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        "img-src": ["'self'", "data:", "blob:", "*"], // Allow images from any source for uploads
+        "script-src": ["'self'", "'unsafe-inline'"], // React needs unsafe-inline for some patterns
+      },
+    },
   }),
 );
+
+// 3. Standard Parsing
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser());
@@ -102,8 +105,24 @@ app.use(cookieParser());
 // 4. Guards & Routes
 app.use(historicalReadOnlyGuard);
 
+const apiRouter = express.Router();
+
+// Global API Rate Limiting: 300 requests per 15 minutes
+const globalApiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  message: {
+    code: "TOO_MANY_REQUESTS",
+    message: "Too many requests from this IP, please try again after 15 minutes",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+apiRouter.use(globalApiLimiter);
+
 // Debug endpoint
-app.get("/api/debug-server", (req, res) => {
+apiRouter.get("/debug-server", (req, res) => {
   res.json({
     ok: true,
     time: new Date().toISOString(),
@@ -114,34 +133,45 @@ app.get("/api/debug-server", (req, res) => {
   });
 });
 
-// Static files for uploads
-app.use("/uploads", express.static(uploadsDir));
-
 // Routes
-app.get("/api/health", (_req, res) => {
+apiRouter.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
-app.get("/api/ping", (_req, res) => {
+apiRouter.get("/ping", (_req, res) => {
   res.send("pong");
 });
-app.use("/api/auth", authRoutes);
-app.use("/api/settings", settingsRoutes);
-app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/school-years", schoolYearRoutes);
+apiRouter.use("/auth", authRoutes);
+apiRouter.use("/settings", settingsRoutes);
+apiRouter.use("/dashboard", dashboardRoutes);
+apiRouter.use("/school-years", schoolYearRoutes);
 // Backward-compatible singular alias used by legacy clients.
-app.use("/api/school-year", schoolYearRoutes);
-app.use("/api/curriculum", curriculumRoutes);
-app.use("/api/sections", sectionsRoutes);
-app.use("/api/students", studentsRoutes);
-app.use("/api/applications", applicationRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api/audit-logs", auditLogRoutes);
-app.use("/api/teachers", teachersRoutes);
-app.use("/api/learner", learnerRoutes);
-app.use("/api/early-registrations", earlyRegRoutes);
-app.use("/api/eosy", eosyRoutes);
-app.use("/api/enrollment", enrollmentRoutes);
-app.use("/api/integration/v1", integrationRoutes);
+apiRouter.use("/school-year", schoolYearRoutes);
+apiRouter.use("/curriculum", curriculumRoutes);
+apiRouter.use("/sections", sectionsRoutes);
+apiRouter.use("/students", studentsRoutes);
+apiRouter.use("/applications", applicationRoutes);
+apiRouter.use("/admin", adminRoutes);
+apiRouter.use("/audit-logs", auditLogRoutes);
+apiRouter.use("/teachers", teachersRoutes);
+apiRouter.use("/learner", learnerRoutes);
+apiRouter.use("/early-registrations", earlyRegRoutes);
+apiRouter.use("/eosy", eosyRoutes);
+apiRouter.use("/enrollment", enrollmentRoutes);
+apiRouter.use("/export", exportRoutes);
+apiRouter.use("/integration/v1", integrationRoutes);
+
+// Catch-all for unmatched API routes (Express 5 regex)
+apiRouter.all(/(.*)/, (req, res) => {
+  res.status(404).json({
+    code: "NOT_FOUND",
+    message: `API endpoint not found: ${req.method} ${req.originalUrl}`
+  });
+});
+
+app.use("/api", apiRouter);
+
+// Static files for uploads
+app.use("/uploads", express.static(uploadsDir));
 
 // Error handler
 app.use(errorHandler);

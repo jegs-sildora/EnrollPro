@@ -17,7 +17,7 @@ type AuthUser = {
 };
 
 const JWT_EXPIRES_IN: jwt.SignOptions["expiresIn"] =
-  (process.env.JWT_EXPIRES_IN as jwt.SignOptions["expiresIn"]) ?? "7d";
+  (process.env.JWT_EXPIRES_IN as jwt.SignOptions["expiresIn"]) ?? "24h";
 const AUTH_COOKIE_NAME = process.env.AUTH_COOKIE_NAME ?? "enrollpro_session";
 
 function parseExpiresInToMs(
@@ -51,7 +51,7 @@ function getCookieOptions(): CookieOptions {
   return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "strict",
     path: "/",
     ...(maxAge ? { maxAge } : {}),
   };

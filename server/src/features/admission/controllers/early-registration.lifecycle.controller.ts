@@ -1,6 +1,11 @@
 import type { Request, Response, NextFunction } from "express";
 import { AppError } from "../../../lib/AppError.js";
 import { Prisma } from "../../../generated/prisma/index.js";
+import {
+  generateTrackingNumber,
+  getTrackingPrefix,
+  extractStartYear,
+} from "../../../lib/tracking.js";
 import type { AdmissionControllerDeps } from "../services/admission-controller.deps.js";
 import { createAdmissionControllerDeps } from "../services/admission-controller.deps.js";
 import { createEarlyRegistrationSharedService } from "../services/early-registration-shared.service.js";
@@ -883,17 +888,18 @@ export function createEarlyRegistrationLifecycleController(
 
       // 2. Get active school year
       const settings = await prisma.schoolSetting.findFirst({
-        select: { activeSchoolYearId: true },
+        include: { activeSchoolYear: true },
       });
-      if (!settings?.activeSchoolYearId) {
+      if (!settings?.activeSchoolYear) {
         throw new AppError(422, "No active school year found.");
       }
-      console.log(`[specialEnrollment] Active School Year ID:`, settings.activeSchoolYearId);
+      const activeSchoolYear = settings.activeSchoolYear;
+      console.log(`[specialEnrollment] Active School Year ID:`, activeSchoolYear.id);
 
       const existingEnrollment = await prisma.enrollmentApplication.findFirst({
         where: {
           learnerId: learner.id,
-          schoolYearId: settings.activeSchoolYearId,
+          schoolYearId: activeSchoolYear.id,
           status: { notIn: ["REJECTED", "WITHDRAWN"] },
         },
         select: {
@@ -919,12 +925,12 @@ export function createEarlyRegistrationLifecycleController(
         console.log(`[specialEnrollment] Requested Enrollment ID:`, requestedEnrollmentId);
         const requestedEnrollment =
           await prisma.enrollmentApplication.findFirst({
-            where: {
-              id: requestedEnrollmentId,
-              learnerId: learner.id,
-              schoolYearId: settings.activeSchoolYearId,
-              status: { notIn: ["REJECTED", "WITHDRAWN"] },
-            },
+              where: {
+                id: requestedEnrollmentId,
+                learnerId: learner.id,
+                schoolYearId: settings.activeSchoolYearId || undefined,
+                status: { notIn: ["REJECTED", "WITHDRAWN"] },
+              },
             select: {
               id: true,
               status: true,
@@ -968,50 +974,50 @@ export function createEarlyRegistrationLifecycleController(
       let persistedApplication;
       try {
         persistedApplication = targetEnrollment
-          ? await prisma.enrollmentApplication.update({
-              where: { id: targetEnrollment.id },
-              data: {
-                gradeLevelId: gradeLevel.id,
-                applicantType: applicantType as any,
-                learnerType: learnerType as any,
-                status: resolvedStatus,
-                intakeMethod: "BEEF_FULL",
-                admissionChannel: "F2F",
-                guardianRelationship: normalizeOptional(
-                  data.guardianRelationship,
-                ),
-                hasNoMother: !motherData,
-                hasNoFather: !fatherData,
-                encodedById: req.user!.userId,
-                isPrivacyConsentGiven: true,
-                isTemporarilyEnrolled: shouldTemporarilyEnroll,
-                isMissingSf9: data.isMissingSf9 || false,
-                hasSf9CertificationLetter:
-                  data.hasSf9CertificationLetter || false,
-                hasUnsettledPrivateAccount:
-                  data.hasUnsettledPrivateAccount || false,
-                originatingSchoolName: normalizeOptional(
-                  data.originatingSchoolName,
-                ),
-              },
-              include: { learner: true },
-            })
-          : await prisma.enrollmentApplication.create({
-              data: {
-                learnerId: learner.id,
-                schoolYearId: settings.activeSchoolYearId,
-                gradeLevelId: gradeLevel.id,
-                applicantType: applicantType as any,
-                learnerType: learnerType as any,
-                status: resolvedStatus,
-                intakeMethod: "BEEF_FULL",
-                admissionChannel: "F2F",
-                guardianRelationship: normalizeOptional(
-                  data.guardianRelationship,
-                ),
-                hasNoMother: !motherData,
-                hasNoFather: !fatherData,
-                encodedById: req.user!.userId,
+            ? await prisma.enrollmentApplication.update({
+                where: { id: targetEnrollment.id },
+                data: {
+                  gradeLevelId: gradeLevel.id,
+                  applicantType: applicantType as any,
+                  learnerType: learnerType as any,
+                  status: resolvedStatus,
+                  intakeMethod: "BEEF_FULL",
+                  admissionChannel: "F2F",
+                  guardianRelationship: normalizeOptional(
+                    data.guardianRelationship,
+                  ),
+                  hasNoMother: !motherData,
+                  hasNoFather: !fatherData,
+                  encodedById: req.user!.userId,
+                  isPrivacyConsentGiven: true,
+                  isTemporarilyEnrolled: shouldTemporarilyEnroll,
+                  isMissingSf9: data.isMissingSf9 || false,
+                  hasSf9CertificationLetter:
+                    data.hasSf9CertificationLetter || false,
+                  hasUnsettledPrivateAccount:
+                    data.hasUnsettledPrivateAccount || false,
+                  originatingSchoolName: normalizeOptional(
+                    data.originatingSchoolName,
+                  ),
+                },
+                include: { learner: true },
+              })
+            : await prisma.enrollmentApplication.create({
+                data: {
+                  learnerId: learner.id,
+                  schoolYearId: settings.activeSchoolYearId!,
+                  gradeLevelId: gradeLevel.id,
+                  applicantType: applicantType as any,
+                  learnerType: learnerType as any,
+                  status: resolvedStatus,
+                  intakeMethod: "BEEF_FULL",
+                  admissionChannel: "F2F",
+                  guardianRelationship: normalizeOptional(
+                    data.guardianRelationship,
+                  ),
+                  hasNoMother: !motherData,
+                  hasNoFather: !fatherData,
+                  encodedById: req.user!.userId,
                 isPrivacyConsentGiven: true,
                 isTemporarilyEnrolled: shouldTemporarilyEnroll,
                 isMissingSf9: data.isMissingSf9 || false,
@@ -1113,10 +1119,13 @@ export function createEarlyRegistrationLifecycleController(
       }
 
       console.log(`[specialEnrollment] Finalizing Tracking Number and Checklist...`);
-      const year = new Date().getFullYear();
       const trackingNumber =
         targetEnrollment?.trackingNumber ??
-        `F2F-ENR-${year}-${String(persistedApplication.id).padStart(5, "0")}`;
+        generateTrackingNumber({
+          prefix: getTrackingPrefix(persistedApplication.applicantType),
+          schoolYear: activeSchoolYear.yearLabel,
+          id: persistedApplication.id,
+        });
 
       const updated = await prisma.enrollmentApplication.update({
         where: { id: persistedApplication.id },

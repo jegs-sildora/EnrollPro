@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient, SectionAdviserStatus, Role } from "../src/generated/prisma/index.js";
+import { PrismaClient, SectionAdviserStatus, Role, Sex } from "../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 import * as bcrypt from "bcryptjs";
@@ -9,44 +9,43 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 // 1. EXACT MIRROR OF ATLAS `seed.js` FACULTY (The "Golden 20")
-const ATLAS_FACULTY = [
-  { id: 'T-0001', first: 'Maria', last: 'Santos', deptCode: 'FIL', subject: 'Filipino' },
-  { id: 'T-0002', first: 'Jose', last: 'Reyes', deptCode: 'ENG', subject: 'English' },
-  { id: 'T-0003', first: 'Ana', last: 'Dela Cruz', deptCode: 'MATH', subject: 'Mathematics' },
-  { id: 'T-0004', first: 'Mark', last: 'Villanueva', deptCode: 'SCI', subject: 'Science' },
-  { id: 'T-0005', first: 'Liza', last: 'Garcia', deptCode: 'AP', subject: 'Araling Panlipunan' },
-  { id: 'T-0006', first: 'Paolo', last: 'Castro', deptCode: 'MAPEH', subject: 'MAPEH' },
-  { id: 'T-0007', first: 'Rica', last: 'Mendoza', deptCode: 'ESP', subject: 'Edukasyon sa Pagpapakatao (EsP)' },
-  { id: 'T-0008', first: 'Neil', last: 'Torres', deptCode: 'TLE', subject: 'Information and Communications Technology (ICT)' },
-  { id: 'T-0009', first: 'Grace', last: 'Aquino', deptCode: 'GUIDANCE', subject: 'Homeroom Guidance' },
-  { id: 'T-0010', first: 'Ivy', last: 'Flores', deptCode: 'MATH', subject: 'Mathematics' },
-  { id: 'T-0011', first: 'Jomar', last: 'Navarro', deptCode: 'SCI', subject: 'Science' },
-  { id: 'T-0012', first: 'Celia', last: 'Pascual', deptCode: 'ENG', subject: 'English' },
-  { id: 'T-0013', first: 'Ramon', last: 'Lopez', deptCode: 'FIL', subject: 'Filipino' },
-  { id: 'T-0014', first: 'Katrina', last: 'Salazar', deptCode: 'AP', subject: 'Araling Panlipunan' },
-  { id: 'T-0015', first: 'Lourdes', last: 'Valdez', deptCode: 'MAPEH', subject: 'MAPEH' },
-  { id: 'T-0016', first: 'Harold', last: 'Bautista', deptCode: 'ESP', subject: 'Edukasyon sa Pagpapakatao (EsP)' },
-  { id: 'T-0017', first: 'Mika', last: 'Ramos', deptCode: 'TLE', subject: 'Home Economics' },
-  { id: 'T-0018', first: 'Jonas', last: 'Domingo', deptCode: 'MATH', subject: 'Mathematics' },
-  { id: 'T-0019', first: 'Ella', last: 'Rivera', deptCode: 'SCI', subject: 'Science' },
-  { id: 'T-0020', first: 'Darren', last: 'Serrano', deptCode: 'ENG', subject: 'English' },
+interface Faculty {
+  employeeId: string;
+  firstName: string;
+  lastName: string;
+  middleName: string | null;
+  deptCode: string;
+  subject: string;
+  sex: Sex;
+}
+
+const ATLAS_FACULTY: Faculty[] = [
+  { employeeId: 'T-0001', firstName: 'Maria', lastName: 'Santos', middleName: null, deptCode: 'FIL', subject: 'Filipino', sex: 'FEMALE' },
+  { employeeId: 'T-0002', firstName: 'Jose', lastName: 'Reyes', middleName: null, deptCode: 'ENG', subject: 'English', sex: 'MALE' },
+  { employeeId: 'T-0003', firstName: 'Ana', lastName: 'Dela Cruz', middleName: null, deptCode: 'MATH', subject: 'Mathematics', sex: 'FEMALE' },
+  { employeeId: 'T-0004', firstName: 'Mark', lastName: 'Villanueva', middleName: null, deptCode: 'SCI', subject: 'Science', sex: 'MALE' },
+  { employeeId: 'T-0005', firstName: 'Liza', lastName: 'Garcia', middleName: null, deptCode: 'AP', subject: 'Araling Panlipunan', sex: 'FEMALE' },
+  { employeeId: 'T-0006', firstName: 'Paolo', lastName: 'Castro', middleName: null, deptCode: 'MAPEH', subject: 'MAPEH', sex: 'MALE' },
+  { employeeId: 'T-0007', firstName: 'Rica', lastName: 'Mendoza', middleName: null, deptCode: 'ESP', subject: 'Edukasyon sa Pagpapakatao (EsP)', sex: 'FEMALE' },
+  { employeeId: 'T-0008', firstName: 'Neil', lastName: 'Torres', middleName: null, deptCode: 'TLE', subject: 'Information and Communications Technology (ICT)', sex: 'MALE' },
+  { employeeId: 'T-0009', firstName: 'Grace', lastName: 'Aquino', middleName: null, deptCode: 'GUIDANCE', subject: 'Homeroom Guidance', sex: 'FEMALE' },
+  { employeeId: 'T-0010', firstName: 'Ivy', lastName: 'Flores', middleName: null, deptCode: 'MATH', subject: 'Mathematics', sex: 'FEMALE' },
+  { employeeId: 'T-0011', firstName: 'Jomar', lastName: 'Navarro', middleName: null, deptCode: 'SCI', subject: 'Science', sex: 'MALE' },
+  { employeeId: 'T-0012', firstName: 'Celia', lastName: 'Pascual', middleName: null, deptCode: 'ENG', subject: 'English', sex: 'FEMALE' },
+  { employeeId: 'T-0013', firstName: 'Ramon', lastName: 'Lopez', middleName: null, deptCode: 'FIL', subject: 'Filipino', sex: 'MALE' },
+  { employeeId: 'T-0014', firstName: 'Katrina', lastName: 'Salazar', middleName: null, deptCode: 'AP', subject: 'Araling Panlipunan', sex: 'FEMALE' },
+  { employeeId: 'T-0015', firstName: 'Lourdes', lastName: 'Valdez', middleName: null, deptCode: 'MAPEH', subject: 'MAPEH', sex: 'FEMALE' },
+  { employeeId: 'T-0016', firstName: 'Harold', lastName: 'Bautista', middleName: null, deptCode: 'ESP', subject: 'Edukasyon sa Pagpapakatao (EsP)', sex: 'MALE' },
+  { employeeId: 'T-0017', firstName: 'Mika', lastName: 'Ramos', middleName: null, deptCode: 'TLE', subject: 'Home Economics', sex: 'FEMALE' },
+  { employeeId: 'T-0018', firstName: 'Jonas', lastName: 'Domingo', middleName: null, deptCode: 'MATH', subject: 'Mathematics', sex: 'MALE' },
+  { employeeId: 'T-0019', firstName: 'Ella', lastName: 'Rivera', middleName: null, deptCode: 'SCI', subject: 'Science', sex: 'FEMALE' },
+  { employeeId: 'T-0020', firstName: 'Darren', lastName: 'Serrano', middleName: null, deptCode: 'ENG', subject: 'English', sex: 'MALE' },
 ];
 
-const FILIPINO_FIRST_NAMES = [
-  'Juan', 'Pedro', 'Leonora', 'Antonio', 'Corazon', 'Ricardo', 'Leticia', 'Benjamen', 'Teresita', 'Diosdado', 
-  'Imelda', 'Ferdinand', 'Cory', 'Ramon', 'Gloria', 'Joseph', 'Rodrigo', 'Sara', 'Bongbong', 'Isko', 
-  'Vico', 'Leni', 'Kiko', 'Manny', 'Ping', 'Bato', 'Bong', 'Alan', 'Pia', 'Loren', 
-  'Chiz', 'Jinggoy', 'Joel', 'Risa', 'Win', 'Sonny', 'Migz', 'Cynthia', 'Nancy', 'Koko', 
-  'Francis', 'Pilo', 'Rafael', 'Ernesto', 'Orlando', 'Salvador', 'Efren', 'Tito', 'Vic', 'Joey'
-];
-
-const FILIPINO_LAST_NAMES = [
-  'Santos', 'Reyes', 'Cruz', 'Bautista', 'Ocampo', 'Garcia', 'Mendoza', 'Torres', 'Tomas', 'Andrada', 
-  'Sarmiento', 'Castillo', 'Villanueva', 'Ramos', 'Castro', 'Luna', 'Agoncillo', 'Silang', 'Mabini', 'Bonifacio', 
-  'Rizal', 'Jacinto', 'del Pilar', 'Aquino', 'Marcos', 'Duterte', 'Robredo', 'Domagoso', 'Sotto', 'Poe', 
-  'Ejercito', 'Hontiveros', 'Gatchalian', 'Angara', 'Villar', 'Zubiri', 'Cayetano', 'Binay', 'Pimentel', 'Pangilinan', 
-  'Lacson', 'Pacquiao', 'Dela Rosa', 'Go', 'Tolentino', 'Recto', 'Escudero', 'Legarda', 'Lapid', 'Revilla'
-];
+const PH_FIRST_NAMES_MALE = ["JUAN", "JOSE", "MIGUEL", "CARLO", "RAFAEL", "PAOLO", "ANTONIO", "GABRIEL", "MATEO", "DIEGO", "EMMANUEL", "CHRISTIAN", "JOSHUA", "ANGELO", "RICARDO", "FERDINAND", "RODRIGO", "MANUEL", "CORAZON", "BENIGNO", "RAMON", "ELPIDIO", "SERGIO", "DIOSDADO", "JOSEPH"];
+const PH_FIRST_NAMES_FEMALE = ["MARIA", "ANGELICA", "PRINCESS", "JASMINE", "NICOLE", "GABRIELA", "SOFIA", "ISABELLA", "LIZA", "BEA", "CRISTINA", "PATRICIA", "ELENA", "ROSA", "TERESA", "IMELDA", "GLORIA", "CORAZON", "LOURDES", "REMEDIOS", "CARMELA", "JOSEFINA", "PERLA", "AURORA", "ESTRELLA"];
+const PH_LAST_NAMES = ["DELA CRUZ", "REYES", "SANTOS", "GARCIA", "MENDOZA", "FERNANDEZ", "NAVARRO", "RAMOS", "BAUTISTA", "GONZALES", "TORRES", "VILLANUEVA", "CRUZ", "PASCUAL", "AQUINO", "MARCOS", "DUTERTE", "ESTRADA", "ARROYO", "MAGSAYSAY", "QUIRINO", "OSMEÑA", "MACAPAGAL", "ROXAS", "QUEZON"];
+const PH_MIDDLE_NAMES = ["SANTIAGO", "DE LEON", "BALTAZAR", "CASTILLO", "SORIANO", "DEL ROSARIO", "VALDEZ", "RODRIGUEZ", "PANGANIBAN", "IBARRA", "LUNA", "SILANG"];
 
 const DEPARTMENTS_WEIGHTED = [
   { code: 'ENG', subject: 'English', weight: 15 },
@@ -81,6 +80,7 @@ function getRandomFromWeighted(items: any[]) {
 async function main() {
   console.log("🌱 Scaling Faculty Roster: Generating 140+ DepEd Teachers...");
 
+  // 1. Get Context (Similar to Learner Process)
   const activeYear = await prisma.schoolYear.findFirst({
     where: { status: { not: "ARCHIVED" } },
     orderBy: { id: "desc" }
@@ -99,19 +99,29 @@ async function main() {
   const totalTarget = 142; // Around 140+
   const teachersToSeed = [...ATLAS_FACULTY];
 
-  // Generate additional teachers
+  // 2. Generate additional teachers (Similar to Learner Randomization)
   for (let i = 21; i <= totalTarget; i++) {
-    // Use modulo and floor to ensure unique name combinations (up to 2,500 before repeating)
-    const first = FILIPINO_FIRST_NAMES[i % FILIPINO_FIRST_NAMES.length];
-    const last = FILIPINO_LAST_NAMES[Math.floor(i / FILIPINO_FIRST_NAMES.length) % FILIPINO_LAST_NAMES.length];
+    const sex = Math.random() > 0.5 ? "MALE" as Sex : "FEMALE" as Sex;
+    const firstNames = sex === "MALE" ? PH_FIRST_NAMES_MALE : PH_FIRST_NAMES_FEMALE;
+    
+    // Cascading index for unique names
+    const firstIdx = i % firstNames.length;
+    const lastIdx = Math.floor(i / firstNames.length) % PH_LAST_NAMES.length;
+    const midIdx = Math.floor(i / (firstNames.length * PH_LAST_NAMES.length)) % PH_MIDDLE_NAMES.length;
+
+    const firstName = firstNames[firstIdx];
+    const lastName = PH_LAST_NAMES[lastIdx];
+    const middleName = PH_MIDDLE_NAMES[midIdx];
     const dept = getRandomFromWeighted(DEPARTMENTS_WEIGHTED);
     
     teachersToSeed.push({
-      id: `T-${i.toString().padStart(4, '0')}`,
-      first,
-      last,
+      employeeId: `T-${i.toString().padStart(4, '0')}`,
+      firstName,
+      lastName,
+      middleName,
       deptCode: dept.code,
-      subject: dept.subject
+      subject: dept.subject,
+      sex: sex
     });
   }
 
@@ -121,74 +131,82 @@ async function main() {
     const faculty = teachersToSeed[i];
     
     // Format email: firstname.lastname@deped.edu.ph
-    const cleanFirst = faculty.first.toLowerCase().replace(/\s/g, '');
-    const cleanLast = faculty.last.toLowerCase().replace(/\s/g, '');
-    const email = `${cleanFirst}.${cleanLast}@deped.edu.ph`;
+    // Add index to email for absolute uniqueness
+    const cleanFirst = faculty.firstName.toLowerCase().replace(/\s/g, '');
+    const cleanLast = faculty.lastName.toLowerCase().replace(/\s/g, '');
+    const email = i < 20 
+      ? `${cleanFirst}.${cleanLast}@deped.edu.ph`
+      : `${cleanFirst}.${cleanLast}.${i}@deped.edu.ph`;
 
     const dept = departments.find(d => d.code === faculty.deptCode) || departments[0];
-    
-    // Assign sections based on availability (86 sections)
-    const sectionToAdvise = i < sections.length ? sections[i] : null;
-    const designation = sectionToAdvise ? "CLASS ADVISER" : "SUBJECT TEACHER";
+    const designation = i < sections.length ? "CLASS ADVISER" : "SUBJECT TEACHER";
     const position = getRandomFromWeighted(PLANTILLA_POSITIONS).title;
 
-    // 1. CREATE SYSTEM LOGIN CREDENTIAL
-    // Use employeeId as the stable identifier for teachers in the User table
-    await prisma.user.upsert({
-      where: { employeeId: faculty.id },
+    // STEP 1: CREATE TEACHER PROFILE (Primary Identity, like Learner)
+    const teacher = await prisma.teacher.upsert({
+      where: { employeeId: faculty.employeeId },
       update: {
-        firstName: faculty.first,
-        lastName: faculty.last,
-        email: email, // Update email in case the generation logic changed
+        firstName: faculty.firstName,
+        lastName: faculty.lastName,
+        middleName: faculty.middleName,
+        email: email,
+        sex: faculty.sex,
+        specialization: `MAJOR IN ${dept?.name?.toUpperCase() || faculty.subject.toUpperCase()}`,
+        designation: designation,
+        departmentId: dept?.id,
+        plantillaPosition: position,
+      },
+      create: {
+        employeeId: faculty.employeeId,
+        firstName: faculty.firstName,
+        lastName: faculty.lastName,
+        middleName: faculty.middleName,
+        email: email,
+        sex: faculty.sex,
+        specialization: `MAJOR IN ${dept?.name?.toUpperCase() || faculty.subject.toUpperCase()}`,
+        isActive: true,
+        plantillaPosition: position,
+        designation: designation,
+        departmentId: dept?.id,
+      },
+    });
+
+    // STEP 2: PROVISION LOGIN ACCOUNT (Attachment, derived from Teacher Profile)
+    await prisma.user.upsert({
+      where: { employeeId: teacher.employeeId },
+      update: {
+        firstName: teacher.firstName,
+        lastName: teacher.lastName,
+        middleName: teacher.middleName,
+        email: teacher.email,
+        sex: teacher.sex,
         role: "TEACHER" as Role,
       },
       create: {
-        firstName: faculty.first,
-        lastName: faculty.last,
-        email: email,
+        firstName: teacher.firstName,
+        lastName: teacher.lastName,
+        middleName: teacher.middleName,
+        email: teacher.email,
         password: defaultPasswordHash,
-        employeeId: faculty.id,
+        employeeId: teacher.employeeId,
         role: "TEACHER" as Role,
+        sex: teacher.sex,
         isActive: true,
       }
     });
 
-    // 2. CREATE TEACHER PROFILE
-    const teacher = await prisma.teacher.upsert({
-      where: { employeeId: faculty.id },
-      update: {
-        firstName: faculty.first,
-        lastName: faculty.last,
-        email: email,
-        specialization: `MAJOR IN ${dept?.name?.toUpperCase() || faculty.subject.toUpperCase()}`,
-        designation: designation,
-        departmentId: dept?.id,
-        plantillaPosition: position,
-      },
-      create: {
-        employeeId: faculty.id,
-        firstName: faculty.first,
-        lastName: faculty.last,
-        email: email,
-        specialization: `MAJOR IN ${dept?.name?.toUpperCase() || faculty.subject.toUpperCase()}`,
-        isActive: true,
-        plantillaPosition: position,
-        designation: designation,
-        departmentId: dept?.id,
-      },
-    });
-
-    // 3. SEED QUALIFIED SUBJECTS
+    // STEP 3: SEED QUALIFIED SUBJECTS
     await prisma.teacherSubject.deleteMany({ where: { teacherId: teacher.id } });
     await prisma.teacherSubject.create({
       data: { teacherId: teacher.id, subject: faculty.subject }
     });
 
-    // 4. ASSIGN ADVISORY SECTIONS
-    if (sectionToAdvise) {
-      // Find existing active adviser for this section
+    // STEP 4: ASSIGN ADVISORY SECTIONS
+    if (i < sections.length) {
+      const section = sections[i];
+      
       const existingAdviser = await prisma.sectionAdviser.findFirst({
-        where: { sectionId: sectionToAdvise.id, schoolYearId: activeYear.id, status: "ACTIVE" }
+        where: { sectionId: section.id, schoolYearId: activeYear.id, status: "ACTIVE" }
       });
 
       if (existingAdviser && existingAdviser.teacherId !== teacher.id) {
@@ -201,7 +219,7 @@ async function main() {
       if (!existingAdviser || existingAdviser.teacherId !== teacher.id) {
         await prisma.sectionAdviser.create({
           data: {
-            sectionId: sectionToAdvise.id,
+            sectionId: section.id,
             teacherId: teacher.id,
             schoolYearId: activeYear.id,
             effectiveFrom: activeYear.classOpeningDate || new Date(),

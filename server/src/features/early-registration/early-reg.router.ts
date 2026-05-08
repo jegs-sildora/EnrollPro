@@ -18,28 +18,9 @@ import {
 } from "@enrollpro/shared";
 import * as ctrl from "./early-reg.controller.js";
 import rateLimit from "express-rate-limit";
-import multer from "multer";
-import path from "path";
+import { secureUpload } from "../../lib/multer.js";
 
 const router: Router = Router();
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.resolve("uploads"));
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(
-      null,
-      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname),
-    );
-  },
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-});
 
 // Rate-limit public submission (15 per 15-min window per IP)
 const submitLimiter = rateLimit({
@@ -97,7 +78,7 @@ router.post(
   "/:id/documents",
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
-  upload.single("document"),
+  secureUpload.single("document"),
   ctrl.uploadDocument,
 );
 

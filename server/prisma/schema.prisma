@@ -43,6 +43,7 @@ model User {
   ecosystemSyncStatuses                EcosystemSyncStatus[]
   createdBy                            User?                          @relation("UserCreatedBy", fields: [createdById], references: [id])
   createdUsers                         User[]                         @relation("UserCreatedBy")
+  learnerProfile                       Learner?                       @relation("UserLearnerProfile")
 
   @@map("users")
 }
@@ -54,6 +55,7 @@ model Teacher {
   firstName             String                @map("first_name")
   lastName              String                @map("last_name")
   middleName            String?               @map("middle_name")
+  sex                   Sex                   @default(FEMALE)
   email                 String                @unique(map: "uq_teachers_email") @map("email")
   contactNumber         String?               @map("contact_number")
   specialization        String?
@@ -194,6 +196,7 @@ model SectionAdviser {
 /// Core learner demographics shared between early registration and enrollment
 model Learner {
   id                            Int                            @id @default(autoincrement())
+  userId                        Int?                           @unique(map: "uq_learners_user_id") @map("user_id")
   lrn                           String?                        @unique(map: "uq_learners_lrn") @db.VarChar(12)
   firstName                     String                         @map("first_name")
   lastName                      String                         @map("last_name")
@@ -229,6 +232,7 @@ model Learner {
   birthCertificateVerifiedDate  DateTime?                      @map("birth_certificate_verified_date") @db.Timestamptz(6)
   hasPsaBirthCertificate        Boolean                        @default(false) @map("has_psa_birth_certificate")
   status                        LearnerStatus                  @default(ACTIVE)
+  user                          User?                          @relation("UserLearnerProfile", fields: [userId], references: [id], onDelete: SetNull)
   earlyRegistrationApplications EarlyRegistrationApplication[]
   enrollmentApplications        EnrollmentApplication[]
   healthRecords                 HealthRecord[]
@@ -733,6 +737,7 @@ enum Role {
   GRADE_LEVEL_COORDINATOR
   CLASS_ADVISER
   TEACHER
+  LEARNER
 
   @@map("user_role")
 }

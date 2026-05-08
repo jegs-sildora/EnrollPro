@@ -50,7 +50,7 @@ function buildEnrollmentTrackingNumber(
   startYear: number,
   enrollmentApplicationId: number,
 ): string {
-  return `F2F-ENR-${startYear}-${String(enrollmentApplicationId).padStart(5, "0")}`;
+  return `REG-${startYear}-${String(enrollmentApplicationId).padStart(5, "0")}`;
 }
 
 async function carryOverEligibleLearners(

@@ -8,6 +8,11 @@ import {
   type FamilyRelationship,
   type AdmissionChannel,
 } from "../../../generated/prisma/index.js";
+import {
+  generateTrackingNumber,
+  getTrackingPrefix,
+  extractStartYear,
+} from "../../../lib/tracking.js";
 import type { AdmissionControllerDeps } from "../services/admission-controller.deps.js";
 import { createAdmissionControllerDeps } from "../services/admission-controller.deps.js";
 import {
@@ -852,8 +857,8 @@ export function createEarlyRegistrationBaseController(
     // Save student photo
     const studentPhotoUrl = await saveBase64Image(body.studentPhoto, "photo");
 
-    const year = new Date().getFullYear();
-    const tempTracking = `${options.trackingPrefix}-${year}-TEMP-${Date.now()}`;
+    const startYear = extractStartYear(activeYear.yearLabel);
+    const tempTracking = `${options.trackingPrefix}-${startYear}-TEMP-${Date.now()}`;
     const initialTrackingNumber =
       linkedEarlyRegistrationTrackingNumber ?? tempTracking;
 
@@ -1044,31 +1049,16 @@ export function createEarlyRegistrationBaseController(
       return createdApplication;
     });
 
-    // Generate proper tracking number from ID
-    let prefix = "REG";
-    if (application.applicantType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") {
-      prefix = "STE";
-    } else if (application.applicantType === "SPECIAL_PROGRAM_IN_THE_ARTS") {
-      prefix = "SPA";
-    } else if (application.applicantType === "SPECIAL_PROGRAM_IN_SPORTS") {
-      prefix = "SPS";
-    } else if (application.applicantType === "SPECIAL_PROGRAM_IN_JOURNALISM") {
-      prefix = "SPJ";
-    } else if (
-      application.applicantType === "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE"
-    ) {
-      prefix = "SPFL";
-    } else if (
-      application.applicantType ===
-      "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION"
-    ) {
-      prefix = "SPTVE";
-    }
-
     const shouldReuseLinkedTracking =
       Boolean(linkedEarlyRegistrationId) &&
       Boolean(linkedEarlyRegistrationTrackingNumber);
-    const generatedTrackingNumber = `${prefix}-${year}-${String(application.id).padStart(5, "0")}`;
+
+    const generatedTrackingNumber = generateTrackingNumber({
+      prefix: getTrackingPrefix(application.applicantType),
+      schoolYear: activeYear.yearLabel,
+      id: application.id,
+    });
+
     const trackingNumber = shouldReuseLinkedTracking
       ? (application.trackingNumber ??
         linkedEarlyRegistrationTrackingNumber ??
@@ -1172,7 +1162,7 @@ export function createEarlyRegistrationBaseController(
     try {
       const submission = await submitApplication(req, {
         channel: "ONLINE",
-        trackingPrefix: "ENR",
+        trackingPrefix: "REG",
         encodedById: null,
       });
       res.status(201).json(submission);
@@ -1190,7 +1180,7 @@ export function createEarlyRegistrationBaseController(
     try {
       const submission = await submitApplication(req, {
         channel: "F2F",
-        trackingPrefix: "F2F-ENR",
+        trackingPrefix: "REG",
         encodedById: req.user!.userId,
       });
       res.status(201).json(submission);

@@ -61,6 +61,8 @@ EnrollPro is a comprehensive enrollment management system designed for public sc
 - **API Design:** Follow REST conventions. Routes are modularized under `server/src/features/`.
 - **Frontend:** Use the `@/` alias for imports. Components should be atomic and utilize Shadcn UI where applicable.
 - **Prisma:** Generated client is located at `server/src/generated/prisma`.
+- **Express 5 Routing:** Wildcards like `*` are no longer supported in path strings. Use regular expressions (e.g., `app.get(/^(?!\/api).+/, ...)` for SPA catch-alls) or named parameters.
+- **Relative Routing:** In the production monolith setup, always use `VITE_API_URL="/api"` in the frontend `.env` to ensure connectivity across different domains and secure funnels.
 
 ## Module Index (Implementation Specs)
 
