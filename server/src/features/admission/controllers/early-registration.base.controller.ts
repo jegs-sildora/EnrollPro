@@ -147,6 +147,7 @@ export function createEarlyRegistrationBaseController(
         gradeLevelId,
         status,
         applicantType,
+        learnerType, // Added
         schoolYearId,
         withoutLrn,
         withoutSection,
@@ -246,6 +247,7 @@ export function createEarlyRegistrationBaseController(
             'ENROLLMENT'::text as source,
             ea.status,
             ea.applicant_type,
+            ea.learner_type,
             ea.grade_level_id,
             ea.school_year_id,
             ea.tracking_number,
@@ -256,6 +258,7 @@ export function createEarlyRegistrationBaseController(
             ${gradeId ? Prisma.sql`AND ea.grade_level_id = ${gradeId}` : Prisma.empty}
             ${statusFilters.length > 0 ? Prisma.sql`AND ea.status::text = ANY(${statusFilters})` : Prisma.empty}
             ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND ea.applicant_type::text = ${applicantType}` : Prisma.empty}
+            ${learnerType && learnerType !== "ALL" ? Prisma.sql`AND ea.learner_type::text = ${learnerType}` : Prisma.empty}
             ${isTruthyQuery(withoutSection) ? Prisma.sql`AND NOT EXISTS (SELECT 1 FROM enrollment_records er WHERE er.enrollment_application_id = ea.id)` : Prisma.empty}
             ${isTruthyQuery(withSection) || requiresSectionAssignment ? Prisma.sql`AND EXISTS (SELECT 1 FROM enrollment_records er WHERE er.enrollment_application_id = ea.id)` : Prisma.empty}
 
@@ -269,6 +272,7 @@ export function createEarlyRegistrationBaseController(
             'EARLY_REGISTRATION'::text as source,
             era.status,
             era.applicant_type,
+            era.learner_type,
             era.grade_level_id,
             era.school_year_id,
             era.tracking_number,
@@ -280,6 +284,7 @@ export function createEarlyRegistrationBaseController(
             ${gradeId ? Prisma.sql`AND era.grade_level_id = ${gradeId}` : Prisma.empty}
             ${statusFilters.length > 0 ? Prisma.sql`AND era.status::text = ANY(${statusFilters})` : Prisma.empty}
             ${applicantType && applicantType !== "ALL" ? Prisma.sql`AND era.applicant_type::text = ${applicantType}` : Prisma.empty}
+            ${learnerType && learnerType !== "ALL" ? Prisma.sql`AND era.learner_type::text = ${learnerType}` : Prisma.empty}
             -- Early reg apps NEVER have enrollment records (Phase 2 only)
             ${isTruthyQuery(withSection) || requiresSectionAssignment ? Prisma.sql`AND 1=0` : Prisma.empty}
         ),

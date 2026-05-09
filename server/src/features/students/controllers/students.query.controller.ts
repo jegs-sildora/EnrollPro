@@ -288,6 +288,7 @@ export const createStudentsQueryController = (
         return res.status(400).json({ message: "Invalid student id" });
       }
 
+      console.log(`[getStudentById] Fetching application ID: ${parsedId}`);
       const applicant = await deps.prisma.enrollmentApplication.findUnique({
         where: { id: parsedId },
         include: {
@@ -331,14 +332,17 @@ export const createStudentsQueryController = (
       });
 
       if (!applicant) {
+        console.log(`[getStudentById] Application ID ${parsedId} NOT FOUND`);
         return res.status(404).json({ message: "Student not found" });
       }
+
+      console.log(`[getStudentById] Found applicant: ${applicant.learner?.lastName}, ${applicant.learner?.firstName}`);
 
       const activeAdviser =
         applicant.enrollmentRecord?.section.advisers[0]?.teacher ?? null;
 
-      const addresses = applicant.addresses as AddressLike[];
-      const familyMembers = applicant.familyMembers as FamilyMemberLike[];
+      const addresses = (applicant.addresses || []) as AddressLike[];
+      const familyMembers = (applicant.familyMembers || []) as FamilyMemberLike[];
       const currentAddr = addresses.find((a) => a.addressType === "CURRENT");
       const permanentAddr = addresses.find(
         (a) => a.addressType === "PERMANENT",
@@ -347,6 +351,8 @@ export const createStudentsQueryController = (
       const father = familyMembers.find((f) => f.relationship === "FATHER");
       const guardian = familyMembers.find((f) => f.relationship === "GUARDIAN");
       const parentOrGuardian = pickParentOrGuardian(familyMembers);
+
+      console.log(`[getStudentById] Building student object for ID: ${applicant.id}`);
 
       const student = {
         id: applicant.id,
@@ -367,15 +373,17 @@ export const createStudentsQueryController = (
         parentGuardianName: parentOrGuardian.name,
         parentGuardianContact: parentOrGuardian.contact,
         emailAddress: applicant.earlyRegistration?.email ?? null,
+        contactNumber: applicant.contactNumber,
+        religion: applicant.learner?.religion,
         learnerStatus: applicant.learner?.status || "ACTIVE",
         trackingNumber: applicant.trackingNumber,
         status: applicant.status,
         applicantType: applicant.applicantType,
         rejectionReason: applicant.rejectionReason,
-        gradeLevel: applicant.gradeLevel.name,
+        gradeLevel: applicant.gradeLevel?.name || "Unknown",
         gradeLevelId: applicant.gradeLevelId,
         studentPhoto: applicant.learner?.studentPhoto || null,
-        schoolYear: applicant.schoolYear.yearLabel,
+        schoolYear: applicant.schoolYear?.yearLabel || "Unknown",
         schoolYearId: applicant.schoolYearId,
         enrollment: applicant.enrollmentRecord
           ? {
@@ -395,8 +403,11 @@ export const createStudentsQueryController = (
 
       res.json({ student });
     } catch (error) {
-      console.error("Error fetching student:", error);
-      res.status(500).json({ message: "Failed to fetch student details" });
+      console.error("[getStudentById] Error:", error);
+      res.status(500).json({ 
+        message: "Failed to fetch student details",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   };
 

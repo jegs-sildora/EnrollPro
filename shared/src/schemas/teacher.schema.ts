@@ -114,6 +114,16 @@ export const teacherSchema = z
         z.union([teacherPlantillaPositionSchema, z.null()]),
       )
       .optional(),
+    subjects: z
+      .array(
+        z
+          .string()
+          .trim()
+          .min(1)
+          .transform((v) => v.toUpperCase()),
+      )
+      .optional()
+      .default([]),
   })
   .strict();
 

@@ -810,3 +810,59 @@ export async function handoverAdviser(req: Request, res: Response) {
     res.status(500).json({ message: error.message });
   }
 }
+
+export async function transferLearner(req: Request, res: Response) {
+  const { enrollmentApplicationId, targetSectionId, reason } = req.body;
+
+  try {
+    const targetSection = await prisma.section.findUnique({
+      where: { id: targetSectionId },
+    });
+
+    if (!targetSection) {
+      return res.status(404).json({ message: "Target section not found" });
+    }
+
+    const application = await prisma.enrollmentApplication.findUnique({
+      where: { id: enrollmentApplicationId },
+      include: { 
+        enrollmentRecord: {
+          include: { section: true }
+        }
+      },
+    });
+
+    if (!application?.enrollmentRecord) {
+      return res.status(422).json({ message: "Learner is not currently enrolled in any section" });
+    }
+
+    const oldSectionName = application.enrollmentRecord.section.name;
+
+    const updatedRecord = await prisma.enrollmentRecord.update({
+      where: { id: application.enrollmentRecord.id },
+      data: {
+        sectionId: targetSectionId,
+        sectioningMethod: SectioningMethod.TRANSFER,
+      },
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "LEARNER_SECTION_TRANSFER",
+      description: `Transferred learner app ID ${enrollmentApplicationId} from ${oldSectionName} to ${targetSection.name}. Reason: ${reason || "Not specified"}`,
+      subjectType: "Section",
+      recordId: targetSectionId,
+      req,
+    });
+
+    // Immediate Delta Sync
+    await queueEcosystemSync(application.learnerId, 'LEARNER', true);
+
+    res.json({ 
+      message: "Learner transferred successfully",
+      record: updatedRecord
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+}

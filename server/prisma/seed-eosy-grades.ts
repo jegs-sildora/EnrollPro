@@ -26,13 +26,14 @@ function generateGrade(isSTE: boolean): number {
   const mean = isSTE ? 89 : 83;
   const stdDev = isSTE ? 4 : 6;
   
-  let grade = Math.round(generateNormalRandom(mean, stdDev));
+  let grade = generateNormalRandom(mean, stdDev);
   
   // Clamp values
   if (grade < 60) grade = 60;
   if (grade > 100) grade = 100;
   
-  return grade;
+  // Return with 2 decimal places
+  return parseFloat(grade.toFixed(2));
 }
 
 async function main() {
@@ -45,13 +46,16 @@ async function main() {
 
   if (!activeYear) throw new Error("No valid school year found.");
 
-  // Fetch enrollment records for existing learners (tracking number starts with EXIST-)
+  // Fetch enrollment records for existing learners (tracking number starts with STE- or REG-)
   // This now dynamically covers all students seeded by seed-existing-learners.ts
   const records = await prisma.enrollmentRecord.findMany({
     where: { 
       schoolYearId: activeYear.id,
       enrollmentApplication: {
-        trackingNumber: { startsWith: "EXIST-" }
+        OR: [
+          { trackingNumber: { startsWith: "STE-" } },
+          { trackingNumber: { startsWith: "REG-" } }
+        ]
       }
     },
     include: {
@@ -65,7 +69,7 @@ async function main() {
   });
 
   if (records.length === 0) {
-    console.warn("⚠️ No 'EXIST-' records found. Did you run db:seed-existing-learners first?");
+    console.warn("⚠️ No 'STE-' or 'REG-' records found. Did you run db:seed-existing-learners first?");
     return;
   }
 
@@ -86,7 +90,7 @@ async function main() {
         let eosyStatus: EosyStatus = grade >= 75 ? "PROMOTED" : "RETAINED";
         
         // Edge Case: Conditional (Failing 1-2 subjects but passing average)
-        let remarks = `Final Ave: ${grade}`;
+        let remarks = `Final Ave: ${grade.toFixed(2)}`;
         const isConditional = grade >= 75 && grade < 80 && Math.random() < 0.05; 
         if (isConditional) {
           remarks += " | Conditional: Passed with back subjects (Math/Science)";
@@ -97,11 +101,11 @@ async function main() {
           data: {
             eosyStatus,
             sf1Remarks: remarks,
+            finalAverage: grade,
             enrollmentApplication: {
               update: {
                 learner: {
                   update: {
-                    previousGenAve: grade,
                     promotionStatus: eosyStatus === "PROMOTED" ? "PROMOTED" : "RETAINED"
                   }
                 }

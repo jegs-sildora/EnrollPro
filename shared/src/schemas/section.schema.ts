@@ -5,6 +5,7 @@ export const createSectionSchema = z.object({
   name: z.string().min(1, "Section name is required"),
   sortOrder: z.number().int().positive().optional(),
   gradeLevelId: z.number().int().positive(),
+  schoolYearId: z.number().int().positive(),
   programType: ApplicantTypeEnum.default("REGULAR"),
   advisingTeacherId: z.number().int().positive().optional().nullable(),
   maxCapacity: z.number().int().positive().default(40),

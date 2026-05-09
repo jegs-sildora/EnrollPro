@@ -12,6 +12,7 @@ import {
   runBatchSectioning,
   commitBatchSectioning,
   handoverAdviser,
+  transferLearner,
 } from "./sections.controller.js";
 import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
@@ -116,6 +117,13 @@ router.post(
 	authenticate,
 	authorize('HEAD_REGISTRAR', 'SYSTEM_ADMIN'),
 	inlineSlotLearner,
+);
+
+router.post(
+  "/transfer-learner",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  transferLearner,
 );
 
 export default router;

@@ -148,24 +148,14 @@ export async function getSectionRecords(
       ],
     });
 
-    // Map to include a computed finalAverage for the UI
+    // Return records with their real finalAverage from the current year
     const mappedRecords = records.map((record) => {
-      const app = record.enrollmentApplication;
-      const isGrade7 =
-        app.gradeLevel?.name?.includes("7") || app.gradeLevel?.displayOrder === 7;
-
-      let rawAve: number | null | undefined = null;
-      if (isGrade7) {
-        rawAve = app.previousSchool?.generalAverage ?? app.learner?.previousGenAve;
-      } else {
-        rawAve = app.learner?.previousGenAve ?? app.previousSchool?.generalAverage;
-      }
-
-      const finalAverage = rawAve !== null && rawAve !== undefined ? parseFloat(String(rawAve)) : null;
-
       return {
         ...record,
-        finalAverage: isNaN(finalAverage as number) ? null : finalAverage,
+        // Ensure finalAverage is correctly typed as number or null
+        finalAverage: record.finalAverage !== null && record.finalAverage !== undefined 
+          ? parseFloat(String(record.finalAverage)) 
+          : null,
       };
     });
 
@@ -183,7 +173,7 @@ export async function updateEosyRecord(
   try {
     const { id } = req.params;
     const recordId = parseInt(String(id), 10);
-    const { eosyStatus, dropOutReason, transferOutDate } = req.body;
+    const { eosyStatus, dropOutReason, transferOutDate, finalAverage } = req.body;
 
     const record = await prisma.enrollmentRecord.findUnique({
       where: { id: recordId },
@@ -225,6 +215,7 @@ export async function updateEosyRecord(
               ? new Date(transferOutDate)
               : null
             : null,
+        finalAverage: finalAverage !== undefined ? parseFloat(String(finalAverage)) : undefined,
       },
     });
 
@@ -575,6 +566,7 @@ export async function downloadFinalLisExport(
       "BIRTHDATE",
       "GRADE_LEVEL",
       "SECTION",
+      "FINAL_AVERAGE",
       "EOSY_STATUS",
       "DROPOUT_REASON",
       "TRANSFER_OUT_DATE",
@@ -594,6 +586,7 @@ export async function downloadFinalLisExport(
       toDateOnly(record.enrollmentApplication.learner.birthdate),
       record.section.gradeLevel.name,
       record.section.name,
+      record.finalAverage?.toFixed(2) || "0.00",
       record.eosyStatus ?? "PROMOTED",
       record.dropOutReason,
       toDateOnly(record.transferOutDate),

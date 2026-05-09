@@ -23,26 +23,16 @@ import {
 } from "@enrollpro/shared";
 import * as ctrl from "./early-registration.controller.js";
 import * as docCtrl from "./document.controller.js";
-import rateLimit from "express-rate-limit";
 import { secureUpload } from "../../lib/multer.js";
 
 const router: Router = Router();
 
-// Rate-limit public submission endpoint (15 submissions per 15-min window per IP)
-const submitLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 15,
-  message: { message: "Too many submissions. Please try again later." },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
 // Public routes
-router.post("/", submitLimiter, validate(applicationSubmitSchema), ctrl.store);
+router.post("/", validate(applicationSubmitSchema), ctrl.store);
 router.get("/track/:trackingNumber", ctrl.track);
-router.get("/lookup-lrn/:lrn", submitLimiter, ctrl.lookupByLrn);
+router.get("/lookup-lrn/:lrn", ctrl.lookupByLrn);
 // Backward-compatible alias used by existing client callers
-router.get("/lookup-by-lrn/:lrn", submitLimiter, ctrl.lookupByLrn);
+router.get("/lookup-by-lrn/:lrn", ctrl.lookupByLrn);
 
 // F2F Walk-in EARLY REGISTRATION - REGISTRAR + SYSTEM_ADMIN (authenticated)
 router.post(

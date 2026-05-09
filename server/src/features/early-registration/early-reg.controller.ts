@@ -190,9 +190,13 @@ function resolveAllowedTransitionsForApplication(
     .trim()
     .toUpperCase();
 
-  return current === "SUBMITTED_BEERF" && normalizedApplicantType === "REGULAR"
-    ? (["READY_FOR_ENROLLMENT"] as ApplicationStatus[])
-    : (EARLY_REG_TRANSITIONS[current] ?? []);
+  const transitions = EARLY_REG_TRANSITIONS[current] ?? [];
+
+  if (current === "SUBMITTED_BEERF" && normalizedApplicantType === "REGULAR") {
+    return Array.from(new Set([...transitions, "READY_FOR_ENROLLMENT"])) as ApplicationStatus[];
+  }
+
+  return transitions;
 }
 
 function assertEarlyRegTransition(

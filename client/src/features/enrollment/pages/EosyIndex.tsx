@@ -239,21 +239,21 @@ export default function EosyUpdating() {
   }, [selectedSectionId, fetchRecords]);
 
   const handleStatusChange = useCallback(
-    async (recordId: number, status: string) => {
+    async (recordId: number, status: string, finalAverage?: number | null) => {
       if (exportLock?.schoolYearFinalized) {
         sileo.error({
           title: "School Year Locked",
           description:
-            "School year EOSY is finalized. Status updates are no longer allowed.",
+            "School year EOSY is finalized. Updates are no longer allowed.",
         });
         return;
       }
 
-      if (status === "DROPPED_OUT") {
+      if (status === "DROPPED_OUT" && !finalAverage) {
         setDropoutModal({ open: true, recordId, reason: "" });
         return;
       }
-      if (status === "TRANSFERRED_OUT") {
+      if (status === "TRANSFERRED_OUT" && !finalAverage) {
         setTransferModal({
           open: true,
           recordId,
@@ -263,16 +263,29 @@ export default function EosyUpdating() {
       }
 
       try {
-        await api.patch(`/eosy/records/${recordId}`, { eosyStatus: status });
+        const payload: any = { eosyStatus: status };
+        if (finalAverage !== undefined) payload.finalAverage = finalAverage;
+
+        await api.patch(`/eosy/records/${recordId}`, payload);
+        
         setRecords((prev) =>
           prev.map((r) =>
-            r.id === recordId ? { ...r, eosyStatus: status as EosyStatus } : r,
+            r.id === recordId 
+              ? { 
+                  ...r, 
+                  eosyStatus: status as EosyStatus,
+                  finalAverage: finalAverage !== undefined ? finalAverage : r.finalAverage
+                } 
+              : r,
           ),
         );
-        sileo.success({
-          title: "Status Updated",
-          description: "Learner status saved successfully.",
-        });
+        
+        if (finalAverage === undefined) {
+          sileo.success({
+            title: "Status Updated",
+            description: "Learner status saved successfully.",
+          });
+        }
       } catch (err) {
         toastApiError(err as any);
       }
@@ -630,6 +643,7 @@ export default function EosyUpdating() {
         cell: ({ row }) => {
           const ave = row.original.finalAverage;
           const isFailing = ave !== null && ave < 75;
+
           return (
             <span
               className={cn(
@@ -640,7 +654,7 @@ export default function EosyUpdating() {
             </span>
           );
         },
-        size: 80,
+        size: 100,
       },
       {
         id: "remarks",
@@ -658,7 +672,7 @@ export default function EosyUpdating() {
             return (
               <div className="text-center">
                 <span className="text-xs font-bold text-amber-600 uppercase bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">
-                  {row.original.dropOutReason || "Dropped"}
+                  Dropped
                 </span>
               </div>
             );
@@ -671,11 +685,16 @@ export default function EosyUpdating() {
               </div>
             );
 
-          if (ave !== null && ave < 75) {
+          if (ave !== null) {
+            const isPassed = ave >= 75;
             return (
               <div className="text-center">
-                <span className="text-xs font-bold text-red-600 uppercase italic">
-                  Remediation
+                <span
+                  className={cn(
+                    "text-xs font-black uppercase tracking-tighter",
+                    isPassed ? "text-emerald-600" : "text-red-600",
+                  )}>
+                  {isPassed ? "PASSED" : "FAILED"}
                 </span>
               </div>
             );
@@ -684,7 +703,7 @@ export default function EosyUpdating() {
           return (
             <div className="text-center">
               <span className="text-xs font-bold text-foreground uppercase opacity-40">
-                None
+                —
               </span>
             </div>
           );
@@ -1108,7 +1127,7 @@ export default function EosyUpdating() {
           )}
 
           <CardContent className="p-0 flex-1 overflow-hidden flex flex-col relative min-h-0">
-            <div className="flex-1 overflow-auto bg-muted/5 relative">
+            <div className="flex-1 bg-muted/5 relative min-h-0 overflow-hidden">
               <DataTable<EnrollmentRecord, unknown>
                 columns={columns}
                 data={visibleRecords}
@@ -1125,10 +1144,10 @@ export default function EosyUpdating() {
                       : "No students found."
                     : "Please select a section from the Class Tracker sidebar."
                 }
-                className="border-none rounded-none h-full"
-                tableClassName="border-separate border-spacing-0"
+                className="border-none rounded-none absolute inset-0"
+                tableClassName="border-separate border-spacing-0 w-full"
                 containerHeight="100%"
-                estimatedRowHeight={50}
+                virtualize={false}
               />
             </div>
 

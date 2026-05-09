@@ -17,29 +17,15 @@ import {
   updateChecklistSchema,
 } from "@enrollpro/shared";
 import * as ctrl from "./early-reg.controller.js";
-import rateLimit from "express-rate-limit";
 import { secureUpload } from "../../lib/multer.js";
 
 const router: Router = Router();
-
-// Rate-limit public submission (15 per 15-min window per IP)
-const submitLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 15,
-  message: {
-    message:
-      "Too many submissions right now. Please try again in a few minutes.",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 
 // ── Public ──
 router.get("/check-lrn/:lrn", ctrl.checkLrn);
 
 router.post(
   "/",
-  submitLimiter,
   validate(earlyRegistrationSubmitSchema),
   ctrl.store,
 );

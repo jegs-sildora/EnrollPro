@@ -32,6 +32,8 @@ export const createStudentsProfileController = (
         fatherName,
         guardianInfo,
         emailAddress,
+        contactNumber, // Added
+        religion,      // Added
       } = req.body;
 
       const applicant = await deps.prisma.enrollmentApplication.findUnique({
@@ -44,6 +46,14 @@ export const createStudentsProfileController = (
       }
 
       const updated = await deps.prisma.$transaction(async (tx) => {
+        // Update EnrollmentApplication fields
+        await tx.enrollmentApplication.update({
+          where: { id: parsedId },
+          data: {
+            contactNumber: contactNumber || undefined,
+          }
+        });
+
         if (currentAddress) {
           await tx.applicationAddress.upsert({
             where: {

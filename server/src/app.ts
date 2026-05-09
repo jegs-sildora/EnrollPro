@@ -23,7 +23,6 @@ import eosyRoutes from "./features/enrollment/eosy.router.js";
 import enrollmentRoutes from "./features/enrollment/enrollment.router.js";
 import exportRoutes from "./features/export/export.router.js";
 import integrationRoutes from "./features/integration/integration.router.js";
-import { rateLimit } from "express-rate-limit";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { historicalReadOnlyGuard } from "./middleware/historical-read-only.guard.js";
 
@@ -106,20 +105,6 @@ app.use(cookieParser());
 app.use(historicalReadOnlyGuard);
 
 const apiRouter = express.Router();
-
-// Global API Rate Limiting: 300 requests per 15 minutes
-const globalApiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 300,
-  message: {
-    code: "TOO_MANY_REQUESTS",
-    message: "Too many requests from this IP, please try again after 15 minutes",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-apiRouter.use(globalApiLimiter);
 
 // Debug endpoint
 apiRouter.get("/debug-server", (req, res) => {

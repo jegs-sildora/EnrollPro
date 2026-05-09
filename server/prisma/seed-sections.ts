@@ -61,44 +61,41 @@ async function main() {
     let currentSortOrder = 1;
 
     // 1. SCP Sections (2 Stars per grade)
+    // Format: STE [gradelevel]-[theme]
     const gradeStars = STARS.slice((gradeNum - 7) * 2, (gradeNum - 7) * 2 + 2);
     for (const star of gradeStars) {
-      await upsertSection(star, grade.id, activeYear.id, "SCIENCE_TECHNOLOGY_AND_ENGINEERING", currentSortOrder++, null);
+      const scpName = `STE ${gradeNum}-${star}`;
+      await upsertSection(scpName, grade.id, activeYear.id, "SCIENCE_TECHNOLOGY_AND_ENGINEERING", currentSortOrder++, null);
     }
 
     // Initialize a counter to cycle through the TLE tracks for regular sections
     let tleIndex = 0;
 
-    // 2. BEC Sections "1" to "5"
-    for (let i = 1; i <= 5; i++) {
-      const specialization = (gradeNum === 9 || gradeNum === 10) 
-        ? TLE_TRACKS[tleIndex % TLE_TRACKS.length] 
-        : null;
-      
-      await upsertSection(i.toString(), grade.id, activeYear.id, "REGULAR", currentSortOrder++, specialization);
-      if (specialization) tleIndex++;
-    }
-
-    // 3. Themed BEC Sections
+    // 2. BEC (Regular) Sections
+    // Format: BEC [gradelevel]-[sectionnumber]. [theme]
     let themes: string[] = [];
     if (gradeNum === 7) themes = HEROES;
     else if (gradeNum === 8) themes = CORE_VALUES;
     else if (gradeNum === 9) themes = FLOWERS;
     else if (gradeNum === 10) themes = MINERALS;
 
-    for (const name of themes) {
+    for (let i = 0; i < themes.length; i++) {
+      const theme = themes[i];
+      const becNumber = i + 1;
+      const becName = `BEC ${gradeNum}-${becNumber}. ${theme}`;
+      
       const specialization = (gradeNum === 9 || gradeNum === 10) 
         ? TLE_TRACKS[tleIndex % TLE_TRACKS.length] 
         : null;
 
-      await upsertSection(name, grade.id, activeYear.id, "REGULAR", currentSortOrder++, specialization);
+      await upsertSection(becName, grade.id, activeYear.id, "REGULAR", currentSortOrder++, specialization);
       if (specialization) tleIndex++;
     }
     
     console.log(`✅ Finished seeding ${currentSortOrder - 1} sections for ${grade.name}.`);
   }
 
-  console.log("\n✅ All sections seeded successfully with TLE specializations.");
+  console.log("\n✅ All sections seeded successfully with the new STE/BEC naming format.");
 }
 
 async function upsertSection(name: string, gradeId: number, syId: number, program: ApplicantType, sortOrder: number, tleSpecialization: string | null) {

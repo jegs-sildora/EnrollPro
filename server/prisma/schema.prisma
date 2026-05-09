@@ -478,6 +478,7 @@ model ApplicationChecklist {
   updatedById                  Int?                          @map("updated_by_id")
   academicStatus               AcademicStatus                @default(PROMOTED) @map("academic_status")
   isSecondaryBirthDocPresented Boolean                       @default(false) @map("is_secondary_birth_doc_presented")
+  isRemedialRequired           Boolean                       @default(false) @map("is_remedial_required")
   earlyRegistration            EarlyRegistrationApplication? @relation(fields: [earlyRegistrationId], references: [id], onDelete: Cascade)
   enrollment                   EnrollmentApplication?        @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
   updatedBy                    User?                         @relation("ChecklistUpdatedBy", fields: [updatedById], references: [id])
@@ -506,6 +507,7 @@ model EnrollmentRecord {
   guardianName            String?               @map("guardian_name")
   sectioningMethod        SectioningMethod      @default(BATCH_ALGORITHM) @map("sectioning_method")
   sf1Remarks              String?               @map("sf1_remarks")
+  finalAverage            Float?                @map("final_average")
   enrolledBy              User                  @relation(fields: [enrolledById], references: [id])
   enrollmentApplication   EnrollmentApplication @relation(fields: [enrollmentApplicationId], references: [id], onDelete: Cascade)
   schoolYear              SchoolYear            @relation(fields: [schoolYearId], references: [id])
@@ -893,6 +895,7 @@ enum AtlasSyncStatus {
 enum AcademicStatus {
   PROMOTED
   RETAINED
+  CONDITIONALLY_PROMOTED
 
   @@map("academic_status")
 }
@@ -950,6 +953,8 @@ enum IntakeMethod {
 enum SectioningMethod {
   BATCH_ALGORITHM
   INLINE_SLOTTING
+  MANUAL_REASSIGNMENT
+  TRANSFER
 
   @@map("sectioning_method")
 }

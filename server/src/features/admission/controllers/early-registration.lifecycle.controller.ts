@@ -1074,14 +1074,17 @@ export function createEarlyRegistrationLifecycleController(
         typeof data.checklist?.finalGeneralAverage === "number" ||
         typeof data.generalAverage === "number";
 
+      console.log(`[specialEnrollment] hasPreviousSchoolPayload: ${hasPreviousSchoolPayload}`);
+
       if (hasPreviousSchoolPayload) {
         try {
+          console.log(`[specialEnrollment] Upserting previous school for App ID: ${persistedApplication.id}`);
           await prisma.enrollmentPreviousSchool.upsert({
             where: { applicationId: persistedApplication.id },
             update: {
               schoolName: normalizeOptional(
                 data.lastSchoolName || data.originSchoolName,
-              ),
+              ) || "UNKNOWN SCHOOL",
               schoolDepedId: normalizeOptional(data.lastSchoolId),
               gradeCompleted: normalizeOptional(data.lastGradeCompleted),
               schoolYearAttended: normalizeOptional(data.schoolYearLastAttended),
@@ -1098,7 +1101,7 @@ export function createEarlyRegistrationLifecycleController(
               applicationId: persistedApplication.id,
               schoolName: normalizeOptional(
                 data.lastSchoolName || data.originSchoolName,
-              ),
+              ) || "UNKNOWN SCHOOL",
               schoolDepedId: normalizeOptional(data.lastSchoolId),
               gradeCompleted: normalizeOptional(data.lastGradeCompleted),
               schoolYearAttended: normalizeOptional(data.schoolYearLastAttended),
@@ -1112,6 +1115,7 @@ export function createEarlyRegistrationLifecycleController(
                     : null,
             },
           });
+          console.log(`[specialEnrollment] Previous school upsert SUCCESS`);
         } catch (prevSchoolError) {
           console.error(`[specialEnrollment] FAILED to update previous school:`, prevSchoolError);
           throw prevSchoolError;

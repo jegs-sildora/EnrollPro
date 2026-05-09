@@ -151,7 +151,9 @@ async function carryOverEligibleLearners(
 
     const sourceDisplayOrder = record.section.gradeLevel.displayOrder;
     const targetDisplayOrder =
-      eosyStatus === "PROMOTED" ? sourceDisplayOrder + 1 : sourceDisplayOrder;
+      eosyStatus === "PROMOTED" || eosyStatus === "IRREGULAR"
+        ? sourceDisplayOrder + 1
+        : sourceDisplayOrder;
     const targetGradeLevel =
       targetGradeLevelByDisplayOrder.get(targetDisplayOrder) ?? null;
 
@@ -167,7 +169,7 @@ async function carryOverEligibleLearners(
         gradeLevelId: targetGradeLevel.id,
         applicantType: record.enrollmentApplication.applicantType,
         learnerType: "CONTINUING",
-        status: "READY_FOR_ENROLLMENT",
+        status: "READY_FOR_SECTIONING",
         admissionChannel: "F2F",
         isPrivacyConsentGiven:
           record.enrollmentApplication.isPrivacyConsentGiven,
@@ -191,12 +193,16 @@ async function carryOverEligibleLearners(
       data: { trackingNumber },
     });
 
+    const resolvedAcademicStatus = 
+        eosyStatus === "PROMOTED" ? "PROMOTED" : 
+        eosyStatus === "RETAINED" ? "RETAINED" : 
+        "CONDITIONALLY_PROMOTED";
+
     await deps.prisma.applicationChecklist.create({
       data: {
         enrollmentId: createdApplication.id,
-        academicStatus: EOSY_RETAINED_OUTCOMES.has(eosyStatus)
-          ? "RETAINED"
-          : "PROMOTED",
+        academicStatus: resolvedAcademicStatus,
+        isRemedialRequired: eosyStatus === "IRREGULAR",
         updatedById: actingUserId,
       },
     });

@@ -691,7 +691,14 @@ export const ScpTypeEnum = z.enum([
   "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
 ]);
 
-// ─── Types derived from enums ───────────────────────────
+export const SectioningMethodEnum = z.enum([
+  "BATCH_ALGORITHM",
+  "INLINE_SLOTTING",
+  "MANUAL_REASSIGNMENT",
+  "TRANSFER",
+]);
+
+// â"€â"€â"€ Types derived from enums â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 export type AssessmentKind = z.infer<typeof AssessmentKindEnum>;
 export type ScpType = z.infer<typeof ScpTypeEnum>;
 export type ApplicationStatus = z.infer<typeof ApplicationStatusEnum>;
@@ -701,6 +708,7 @@ export type EarlyRegistrationStatus = z.infer<
   typeof EarlyRegistrationStatusEnum
 >;
 export type ReadingProfileLevel = z.infer<typeof ReadingProfileLevelEnum>;
+export type SectioningMethod = z.infer<typeof SectioningMethodEnum>;
 export type TrackingProgramType = z.infer<typeof TrackingProgramTypeEnum>;
 export type TrackingStatus = z.infer<typeof TrackingStatusEnum>;
 export type TrackingCurrentStep = z.infer<typeof TrackingCurrentStepEnum>;

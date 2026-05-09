@@ -80,6 +80,7 @@ import {
   ENROLLMENT_SUB_MENU_DESCRIPTIONS,
   ENROLLMENT_SUB_MENU_OPTIONS,
   PENDING_VERIFICATION_STATUSES,
+  ROLLOVER_ELIGIBLE_STATUSES,
   SECTION_ASSIGNMENT_STATUSES,
   OFFICIAL_ROSTER_STATUSES,
   type EnrollmentSubMenu,
@@ -109,6 +110,8 @@ interface Application {
   readingProfileNotes?: string | null;
   readingProfileAssessedAt?: string | null;
   readingProfileAssessedById?: number | null;
+  academicStatus?: string | null;
+  isRemedialRequired?: boolean;
   enrollmentRecord?: {
     sectionId: number;
     section?: { id: number; name: string } | null;
@@ -158,6 +161,7 @@ const PENDING_QUEUE_FILTER_OPTIONS: Array<{
 
 const TABLE_NO_RESULTS_MESSAGES: Record<EnrollmentSubMenu, string> = {
   PENDING_VERIFICATION: "No learners awaiting verification.",
+  ROLLOVER_ELIGIBLE: "No continuing learners found for rollover.",
   SECTION_ASSIGNMENT: "No learners ready for section assignment.",
   OFFICIAL_ROSTER: "No enrolled learners in official roster.",
 };
@@ -969,8 +973,20 @@ export default function Enrollment() {
         params.append("withoutSection", "true");
       }
 
+      if (workflowView === "ROLLOVER_ELIGIBLE") {
+        params.append(
+          "status",
+          Array.from(ROLLOVER_ELIGIBLE_STATUSES).join(","),
+        );
+        params.append("learnerType", "CONTINUING");
+        params.append("withoutSection", "true");
+      }
+
       if (workflowView === "SECTION_ASSIGNMENT") {
-        params.append("status", "VERIFIED");
+        params.append(
+          "status",
+          Array.from(SECTION_ASSIGNMENT_STATUSES).join(","),
+        );
         params.append("withoutSection", "true");
         if (applicantTypeTab !== "ALL") {
           params.append("applicantType", applicantTypeTab);
@@ -1371,7 +1387,46 @@ export default function Enrollment() {
       ),
     });
 
-    if (workflowView !== "SECTION_ASSIGNMENT") {
+    if (workflowView === "ROLLOVER_ELIGIBLE") {
+      cols.push({
+        id: "academicStatus",
+        accessorKey: "academicStatus",
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="PROMOTION"
+          />
+        ),
+        cell: ({ row }) => {
+          const status = row.original.academicStatus;
+          const isRemedial = row.original.isRemedialRequired;
+          
+          let variant: "default" | "secondary" | "destructive" | "outline" = "outline";
+          let label = status || "Unknown";
+
+          if (status === "PROMOTED") variant = "secondary";
+          if (status === "RETAINED") variant = "destructive";
+          if (status === "CONDITIONALLY_PROMOTED") variant = "default";
+
+          return (
+            <div className="flex flex-col items-center gap-1">
+              <Badge
+                variant={variant}
+                className="font-bold px-2 py-0.5 h-auto text-[10px] leading-tight text-center uppercase">
+                {label.replace(/_/g, " ")}
+              </Badge>
+              {isRemedial && (
+                <Badge variant="destructive" className="text-[8px] h-4 px-1 font-black animate-pulse">
+                  REMEDIAL REQ.
+                </Badge>
+              )}
+            </div>
+          );
+        },
+      });
+    }
+
+    if (workflowView !== "SECTION_ASSIGNMENT" && workflowView !== "ROLLOVER_ELIGIBLE") {
       cols.push({
         id: "gradeLevel",
         accessorKey: "gradeLevelId",
@@ -1389,7 +1444,7 @@ export default function Enrollment() {
       });
     }
 
-    if (workflowView === "SECTION_ASSIGNMENT") {
+    if (workflowView === "SECTION_ASSIGNMENT" || workflowView === "ROLLOVER_ELIGIBLE") {
       cols.push({
         id: "readingProfile",
         accessorKey: "readingProfileLevel",
@@ -1440,7 +1495,7 @@ export default function Enrollment() {
         const sectionName = resolveApplicationSectionName(app);
         const hasSection = Boolean(sectionName);
         const isPendingVerification = workflowView === "PENDING_VERIFICATION";
-        const isSectionAssignment = workflowView === "SECTION_ASSIGNMENT";
+        const isSectionAssignment = workflowView === "SECTION_ASSIGNMENT" || workflowView === "ROLLOVER_ELIGIBLE";
         const selectedSectionId = sectionSelectionByApplicationId[app.id] ?? "";
         const sectionOptions = sectionOptionsByApplicationId[app.id] ?? [];
         const isLoadingOptions =
@@ -1557,7 +1612,7 @@ export default function Enrollment() {
       },
     });
 
-    if (workflowView !== "SECTION_ASSIGNMENT") {
+    if (workflowView !== "SECTION_ASSIGNMENT" && workflowView !== "ROLLOVER_ELIGIBLE") {
       cols.push({
         id: "status",
         accessorKey: "status",
@@ -1578,7 +1633,7 @@ export default function Enrollment() {
       });
     }
 
-    if (workflowView !== "SECTION_ASSIGNMENT") {
+    if (workflowView !== "SECTION_ASSIGNMENT" && workflowView !== "ROLLOVER_ELIGIBLE") {
       cols.push({
         id: "createdAt",
         accessorKey: "createdAt",
@@ -1602,7 +1657,7 @@ export default function Enrollment() {
       cell: ({ row }) => {
         const app = row.original;
         const isPendingVerification = workflowView === "PENDING_VERIFICATION";
-        const isSectionAssignment = workflowView === "SECTION_ASSIGNMENT";
+        const isSectionAssignment = workflowView === "SECTION_ASSIGNMENT" || workflowView === "ROLLOVER_ELIGIBLE";
         const hasReadingProfile = Boolean(app.readingProfileLevel);
         const isPendingBeefStatus =
           app.status === "PENDING_BEEF" ||
@@ -1704,7 +1759,7 @@ export default function Enrollment() {
                 ) : (
                   <>
                     <School className="h-3.5 w-3.5 mr-1" />
-                    Finalize + Assign
+                    {workflowView === "ROLLOVER_ELIGIBLE" ? "Finalize Rollover" : "Finalize + Assign"}
                   </>
                 )
               ) : (

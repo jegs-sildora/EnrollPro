@@ -19,7 +19,6 @@ import {
 } from "@/shared/ui/table";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { cn } from "@/shared/lib/utils";
-import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 
 export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -109,9 +108,6 @@ export function DataTable<TData, TValue>({
   const [internalRowSelection, setInternalRowSelection] = useState({});
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Apply skeleton loading with default delay and min-display
-  const showSkeleton = useDelayedLoading(loading);
-
   const table = useReactTable({
     data,
     columns,
@@ -137,21 +133,21 @@ export function DataTable<TData, TValue>({
   const virtualItems = rowVirtualizer.getVirtualItems();
 
   return (
-    <div className={cn("rounded-md border overflow-hidden max-w-full", className)}>
+    <div className={cn("rounded-md border overflow-hidden max-w-full flex flex-col h-full", className)}>
       <div 
         ref={containerRef} 
-        className="overflow-auto relative" 
+        className="overflow-y-auto relative flex-1 min-h-0 w-full" 
         style={virtualize ? { maxHeight: containerHeight } : undefined}
       >
-        <Table className={tableClassName}>
-          <TableHeader className="bg-[hsl(var(--primary))] sticky top-0 z-20 shadow-sm">
+        <Table className={cn("w-full", tableClassName)}>
+          <TableHeader className="bg-[hsl(var(--primary))] border-none">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent border-none">
                 {headerGroup.headers.map((header) => {
                   return (
                     <TableHead
                       key={header.id}
-                      className="text-center font-bold text-primary-foreground text-xs h-11 px-3"
+                      className="text-center font-bold text-primary-foreground text-xs h-11 px-3 sticky top-0 z-20 shadow-sm bg-[hsl(var(--primary))]"
                       style={{ 
                         width: header.column.getSize(),
                         minWidth: header.column.columnDef.minSize,
@@ -171,8 +167,8 @@ export function DataTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody className="relative">
-            <AnimatePresence mode="popLayout" initial={false}>
-              {showSkeleton ? (
+            <AnimatePresence mode="wait" initial={false}>
+              {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <MotionTableRow
                     key={`skeleton-${i}`}
@@ -180,11 +176,14 @@ export function DataTable<TData, TValue>({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}>
-                    {columns.map((_, index) => (
-                      <TableCell key={index} className="p-4">
-                        <Skeleton className="h-5 w-full" />
-                      </TableCell>
-                    ))}
+                    {columns.map((column, index) => {
+                      const meta = column.meta as { skeletonClassName?: string } | undefined;
+                      return (
+                        <TableCell key={index} className="p-4">
+                          <Skeleton className={cn("h-5 w-full", meta?.skeletonClassName)} />
+                        </TableCell>
+                      );
+                    })}
                   </MotionTableRow>
                 ))
               ) : rows.length > 0 ? (
@@ -231,12 +230,6 @@ export function DataTable<TData, TValue>({
                     />
                   ))
                 )
-              ) : loading ? (
-                // During the delay window (showSkeleton=false but loading=true), 
-                // render empty space instead of "No results" to avoid flickering
-                <TableRow className="hover:bg-transparent border-none">
-                  <TableCell colSpan={columns.length} className="h-24" />
-                </TableRow>
               ) : (
                 <MotionTableRow
                   key="no-results"
