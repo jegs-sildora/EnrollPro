@@ -1,79 +1,31 @@
-import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { useState, useEffect } from 'react';
 
 /**
  * Hook to manage delayed loading states to prevent "flickering" of skeletons.
- *
- * Defaults to 0ms delay to ensure the skeleton is shown immediately.
- * Defaults to 300ms min display to ensure the skeleton is readable if shown.
+ * 
+ * Only returns 'true' if the loading state persists past the delay threshold.
+ * Standard Enterprise Delay: 200ms
+ * 
+ * Logic:
+ * 1. If loading finishes before 200ms (Fast Network) -> returns false (No skeleton).
+ * 2. If loading exceeds 200ms (Slow Network) -> returns true (Show skeleton).
  */
-export function useDelayedLoading(
-  isLoading: boolean,
-  delay: number = 0,
-  minDisplay: number = 300,
-): boolean {
-  // Initialize state immediately if delay is 0
-  const [showLoading, setShowLoading] = useState(isLoading && delay === 0);
-  const showStartTimeRef = useRef<number>(0);
-  const delayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const minDisplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useLayoutEffect(() => {
-    if (isLoading && delay === 0) {
-      showStartTimeRef.current = Date.now();
-    }
-  }, [isLoading, delay]);
+export function useDelayedLoading(isLoading: boolean, delayMs = 200) {
+  const [showLoading, setShowLoading] = useState(false);
 
   useEffect(() => {
-    // If we are starting to load
+    let timeout: ReturnType<typeof setTimeout>;
+
     if (isLoading) {
-      // Clear any pending exit timers since we're loading again
-      if (minDisplayTimerRef.current) {
-        clearTimeout(minDisplayTimerRef.current);
-        minDisplayTimerRef.current = null;
-      }
-
-      // If not already showing, start the delay timer
-      if (!showLoading && !delayTimerRef.current) {
-        if (delay === 0) {
-          queueMicrotask(() => setShowLoading(true));
-          showStartTimeRef.current = Date.now();
-        } else {
-          delayTimerRef.current = setTimeout(() => {
-            setShowLoading(true);
-            showStartTimeRef.current = Date.now();
-            delayTimerRef.current = null;
-          }, delay);
-        }
-      }
-    } 
-    // If we stopped loading
-    else {
-      // Clear any pending entry timers
-      if (delayTimerRef.current) {
-        clearTimeout(delayTimerRef.current);
-        delayTimerRef.current = null;
-      }
-
-      // If we are currently showing, enforce minimum display time
-      if (showLoading && !minDisplayTimerRef.current) {
-        const elapsed = Date.now() - showStartTimeRef.current;
-        const remaining = Math.max(0, minDisplay - elapsed);
-
-        minDisplayTimerRef.current = setTimeout(() => {
-          setShowLoading(false);
-          minDisplayTimerRef.current = null;
-        }, remaining);
-      } else if (!showLoading) {
-        // Just in case we're not showing and loading stopped
-        showStartTimeRef.current = 0;
-      }
+      timeout = setTimeout(() => setShowLoading(true), delayMs);
+    } else {
+      setShowLoading(false);
     }
 
     return () => {
-      if (delayTimerRef.current) clearTimeout(delayTimerRef.current);
-      if (minDisplayTimerRef.current) clearTimeout(minDisplayTimerRef.current);
+      if (timeout) clearTimeout(timeout);
     };
-  }, [isLoading, delay, minDisplay, showLoading]);
+  }, [isLoading, delayMs]);
 
   return showLoading;
 }

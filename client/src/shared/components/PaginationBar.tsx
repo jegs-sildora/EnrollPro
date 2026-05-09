@@ -35,8 +35,12 @@ export function PaginationBar({
   className,
 }: PaginationBarProps) {
   const totalPages = Math.ceil(total / limit) || 1;
-  const start = total === 0 ? 0 : (page - 1) * limit + 1;
-  const end = Math.min(page * limit, total);
+  
+  // Use a clamped page number for display calculation to handle stale state during limit changes
+  const displayPage = Math.min(Math.max(1, page), totalPages);
+  
+  const start = total === 0 ? 0 : (displayPage - 1) * limit + 1;
+  const end = Math.min(displayPage * limit, total);
 
   // Generate page numbers to show (max 5 visible pages)
   const getVisiblePages = () => {

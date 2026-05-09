@@ -35,6 +35,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/shared/ui/tooltip";
+import { cn } from "@/shared/lib/utils";
 import type {
   Teacher,
   TeacherDesignationFilter,
@@ -68,6 +69,7 @@ const SUBJECT_ACRONYMS: Record<string, string> = {
 
 interface TeacherDirectoryCardProps {
   loading: boolean;
+  isRefetching: boolean;
   showSkeleton: boolean;
   filteredTeachers: Teacher[];
   paginatedTeachers: Teacher[];
@@ -95,6 +97,7 @@ interface TeacherDirectoryCardProps {
 
 export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
   loading,
+  isRefetching,
   showSkeleton,
   filteredTeachers,
   paginatedTeachers,
@@ -240,7 +243,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
           <span className="font-bold text-sm uppercase leading-tight">
             {formatTeacherName(row.original)}
           </span>
-          <span className="text-xs text-foreground truncate font-medium">
+          <span className="text-xs text-foreground truncate font-bold">
             {row.original.email ||
               row.original.contactNumber ||
               "No contact info"}
@@ -519,7 +522,11 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
         </div>
       </CardHeader>
       <CardContent className="p-0 min-w-0">
-        <div className="min-w-0">
+        <div
+          className={cn(
+            "min-w-0 transition-opacity duration-200",
+            isRefetching ? "opacity-50 pointer-events-none" : "opacity-100",
+          )}>
           <div className="md:hidden space-y-3">
             {showSkeleton ? (
               Array.from({ length: 3 }).map((_, index) => (

@@ -48,7 +48,7 @@ import {
 } from "../utils";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { SCP_ACRONYMS } from "@/shared/lib/utils";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 interface TeacherDesignationSheetProps {
   open: boolean;
@@ -91,6 +91,8 @@ export function TeacherDesignationSheet({
   onClose,
   onSave,
 }: TeacherDesignationSheetProps) {
+  const [showAllSections, setShowAllSections] = useState(false);
+
   const teacherDisplayName = designationOpenFor
     ? formatTeacherName(designationOpenFor)
     : "Teacher";
@@ -100,16 +102,22 @@ export function TeacherDesignationSheet({
   // Group sections by Grade Level for categorized dropdown
   const groupedSections = useMemo(() => {
     const groups: Record<string, AdvisorySectionOption[]> = {};
-    advisorySections
-      .filter(
-        (s) =>
-          !s.currentAdviserId || s.currentAdviserId === designationOpenFor?.id,
-      )
-      .forEach((section) => {
-        const gl = section.gradeLevelName;
-        if (!groups[gl]) groups[gl] = [];
-        groups[gl].push(section);
-      });
+
+    const filtered = advisorySections.filter((s) => {
+      if (showAllSections) return true;
+      // Keep unassigned sections
+      if (!s.currentAdviserId) return true;
+      // Keep if it's the section already assigned to THIS teacher
+      if (s.currentAdviserId === designationOpenFor?.id) return true;
+      // Filter out sections assigned to other teachers by default
+      return false;
+    });
+
+    filtered.forEach((section) => {
+      const gl = section.gradeLevelName;
+      if (!groups[gl]) groups[gl] = [];
+      groups[gl].push(section);
+    });
 
     // Sort sections within each group: SCP -> Homogeneous/Pilot -> Heterogeneous/Regular
     Object.keys(groups).forEach((gl) => {
@@ -129,7 +137,7 @@ export function TeacherDesignationSheet({
     });
 
     return groups;
-  }, [advisorySections]);
+  }, [advisorySections, designationOpenFor?.id, showAllSections]);
 
   const sortedGradeLevels = useMemo(() => {
     return Object.keys(groupedSections).sort((a, b) => {
@@ -139,7 +147,7 @@ export function TeacherDesignationSheet({
     });
   }, [groupedSections]);
 
-  const formatSectionNameForDropdown = (section: AdvisorySectionOption) => {
+  const getSectionLabel = (section: AdvisorySectionOption) => {
     // Remove redundant "- G10" or similar suffixes
     const baseName = section.sectionName.replace(/\s*-\s*G\d+$/i, "").trim();
     const acronym = SCP_ACRONYMS[section.programType] || section.programType;
@@ -149,10 +157,18 @@ export function TeacherDesignationSheet({
       section.programType !== "REGULAR"
         ? acronym
         : section.isHomogeneous
-          ? "Pilot"
-          : "Regular";
+          ? "BEC"
+          : "BEC";
 
-    return `${baseName} (${typeLabel})`;
+    const isCurrent = section.currentAdviserId === designationOpenFor?.id;
+    const isOccupied = section.currentAdviserId && !isCurrent;
+
+    let label = `${baseName} (${typeLabel})`;
+    if (isCurrent) label;
+    else if (isOccupied) label += ` • [ ${section.currentAdviserName} ]`;
+    else label;
+
+    return label;
   };
 
   return (
@@ -195,7 +211,7 @@ export function TeacherDesignationSheet({
                   alt={teacherDisplayName}
                 />
                 <div>
-                  <p className="text-xs uppercase  text-foreground">
+                  <p className="text-xs uppercase text-foreground">
                     Teacher
                   </p>
                   <h3 className="font-black text-base sm:text-lg uppercase break-words">
@@ -210,7 +226,7 @@ export function TeacherDesignationSheet({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-0 border-t pt-3 mt-3 text-xs">
               <div>
-                <p className="text-xs uppercase  text-foreground">
+                <p className="text-xs uppercase text-foreground">
                   Last Updated By
                 </p>
                 <p className="text-sm">
@@ -218,7 +234,7 @@ export function TeacherDesignationSheet({
                 </p>
               </div>
               <div className="text-left sm:text-right">
-                <p className="text-xs uppercase  text-foreground">
+                <p className="text-xs uppercase text-foreground">
                   Last Updated At
                 </p>
                 <p className="text-sm">
@@ -289,7 +305,7 @@ export function TeacherDesignationSheet({
                     <div className="flex items-center justify-between gap-3">
                       <Label
                         htmlFor="isClassAdviser"
-                        className="uppercase ">
+                        className="uppercase">
                         Class Adviser
                       </Label>
                       <Switch
@@ -307,9 +323,20 @@ export function TeacherDesignationSheet({
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="uppercase text-foreground">
-                        Advisory Section
-                      </Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="uppercase text-foreground">
+                          Advisory Section
+                        </Label>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] font-black uppercase text-muted-foreground">
+                            Show All
+                          </span>
+                          <Switch 
+                             checked={showAllSections}
+                             onCheckedChange={setShowAllSections}
+                          />
+                        </div>
+                      </div>
                       <Select
                         value={designationForm.advisorySectionId || "__none__"}
                         onValueChange={(value) => {
@@ -340,9 +367,14 @@ export function TeacherDesignationSheet({
                             className="font-bold">
                             No section selected
                           </SelectItem>
+                          {sortedGradeLevels.length === 0 && !advisorySectionsLoading && (
+                            <SelectItem value="__none_found__" disabled className="text-xs italic text-muted-foreground">
+                              No unassigned sections found.
+                            </SelectItem>
+                          )}
                           {sortedGradeLevels.map((gl) => (
                             <SelectGroup key={gl}>
-                              <SelectLabel className="font-black uppercase py-1 px-2 mb-1 rounded-sm">
+                              <SelectLabel className="font-black uppercase py-1 px-2 mb-1 rounded-sm text-[10px] bg-muted/50">
                                 {gl}
                               </SelectLabel>
                               {groupedSections[gl].map((section) => (
@@ -350,11 +382,7 @@ export function TeacherDesignationSheet({
                                   key={section.id}
                                   value={section.id.toString()}
                                   className="font-bold">
-                                  <div className="flex items-center justify-between w-full gap-8">
-                                    <span className="uppercase">
-                                      {formatSectionNameForDropdown(section)}
-                                    </span>
-                                  </div>
+                                  {getSectionLabel(section)}
                                 </SelectItem>
                               ))}
                             </SelectGroup>
@@ -375,7 +403,7 @@ export function TeacherDesignationSheet({
 
                   <div className="rounded-md border bg-card p-3 sm:p-4 space-y-3">
                     <div className="space-y-3">
-                      <Label className="text-xs uppercase  text-primary font-black">
+                      <Label className="text-xs uppercase text-primary font-black">
                         Ancillary Designations
                       </Label>
                       <div className="grid gap-2 pt-1 max-h-48 overflow-y-auto pr-1">
@@ -426,7 +454,7 @@ export function TeacherDesignationSheet({
                     <div className="space-y-0.5">
                       <Label
                         htmlFor="isCustomPeriod"
-                        className="text-xs uppercase  font-black">
+                        className="text-xs uppercase font-black">
                         Custom Designation Period
                       </Label>
                       <p className="text-xs text-foreground font-medium uppercase">
@@ -447,7 +475,7 @@ export function TeacherDesignationSheet({
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label className="text-xs uppercase  flex items-center gap-1.5">
+                      <Label className="text-xs uppercase flex items-center gap-1.5">
                         Effective From
                         {!designationForm.isCustomPeriod && (
                           <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black italic">
@@ -475,7 +503,7 @@ export function TeacherDesignationSheet({
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-xs uppercase  flex items-center gap-1.5">
+                      <Label className="text-xs uppercase flex items-center gap-1.5">
                         Effective To
                         {!designationForm.isCustomPeriod && (
                           <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black italic">
@@ -507,7 +535,7 @@ export function TeacherDesignationSheet({
 
                 <div className="rounded-md border bg-card p-3 sm:p-4 space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-xs uppercase ">
+                    <Label className="text-xs uppercase">
                       Designation Notes
                     </Label>
                     <Textarea
@@ -524,7 +552,7 @@ export function TeacherDesignationSheet({
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs uppercase ">
+                    <Label className="text-xs uppercase">
                       Reason for Change
                     </Label>
                     <Textarea
@@ -553,7 +581,7 @@ export function TeacherDesignationSheet({
                 className="space-y-4">
                 <div className="rounded-md border bg-card overflow-hidden">
                   <div className="bg-primary/5 px-4 py-3 border-b space-y-1">
-                    <h4 className="text-xs font-black uppercase text-primary ">
+                    <h4 className="text-xs font-black uppercase text-primary">
                       Designation Summary: {designationOpenFor?.lastName},{" "}
                       {designationOpenFor?.firstName}
                     </h4>
@@ -576,9 +604,7 @@ export function TeacherDesignationSheet({
                       <span className="font-black">
                         {designationForm.isClassAdviser
                           ? selectedAdvisorySection
-                            ? formatSectionNameForDropdown(
-                                selectedAdvisorySection,
-                              )
+                            ? selectedAdvisorySection.sectionName
                             : "YES"
                           : "NO"}
                       </span>
@@ -645,7 +671,7 @@ export function TeacherDesignationSheet({
                     setDesignationDrawerTab("designation");
                 }}
                 disabled={submitting}
-                className="w-full sm:w-auto font-black uppercase text-xs  gap-2">
+                className="w-full sm:w-auto font-black uppercase text-xs gap-2">
                 <ArrowLeft className="h-4 w-4" /> Back
               </Button>
             )}
@@ -656,7 +682,7 @@ export function TeacherDesignationSheet({
               variant="outline"
               onClick={onClose}
               disabled={submitting}
-              className="w-full sm:w-auto font-black uppercase text-xs ">
+              className="w-full sm:w-auto font-black uppercase text-xs">
               Cancel
             </Button>
 
@@ -664,7 +690,7 @@ export function TeacherDesignationSheet({
               <Button
                 onClick={onSave}
                 disabled={submitting || !ayId}
-                className="w-full sm:w-auto font-black uppercase text-xs  gap-2">
+                className="w-full sm:w-auto font-black uppercase text-xs gap-2">
                 {submitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" /> Saving...
@@ -684,7 +710,7 @@ export function TeacherDesignationSheet({
                     setDesignationDrawerTab("review");
                 }}
                 disabled={submitting}
-                className="w-full sm:w-auto font-black uppercase text-xs  gap-2">
+                className="w-full sm:w-auto font-black uppercase text-xs gap-2">
                 Next Step <ArrowRight className="h-4 w-4" />
               </Button>
             )}

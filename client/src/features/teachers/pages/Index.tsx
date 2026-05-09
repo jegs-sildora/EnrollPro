@@ -33,7 +33,6 @@ import type {
   AdvisorySectionOption,
   DesignationCollision,
   DesignationFormState,
-  SectionsApiResponse,
   Teacher,
   TeacherDesignationFilter,
   TeacherFormState,
@@ -148,11 +147,18 @@ export default function Teachers() {
 
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [ayLabel, setAyLabel] = useState<string | null>(null);
   const [bosyDate, setBosyDate] = useState<string | null>(null);
   const [eosyDate, setEosyDate] = useState<string | null>(null);
 
-  const showSkeleton = useDelayedLoading(loading);
+  // Enterprise Standard: Delayed Skeleton for Initial Load (200ms delay)
+  // Only show skeleton if the INITIAL load takes longer than 200ms.
+  const showSkeleton = useDelayedLoading(loading && isInitialLoad, 200);
+
+  // Enterprise Standard: Stale-While-Revalidate for Pagination/Refetch
+  // Keep previous data visible but dim it while loading.
+  const isRefetching = loading && !isInitialLoad;
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -199,10 +205,10 @@ export default function Teachers() {
     createEmptyDesignationForm,
   );
 
-  // Reset page when filters change
+  // Reset page when filters or limit change
   useEffect(() => {
     setPage(1);
-  }, [searchQuery, statusFilter, designationFilter, subjectFilter]);
+  }, [searchQuery, statusFilter, designationFilter, subjectFilter, limit]);
 
   const handleFieldChange = useCallback(
     (field: TeacherFormField, value: string | string[]) => {
@@ -292,6 +298,7 @@ export default function Teachers() {
       setAyLabel(res.data.scope?.yearLabel || null);
       setBosyDate(res.data.scope?.classOpeningDate || null);
       setEosyDate(res.data.scope?.classEndDate || null);
+      setIsInitialLoad(false); // First successful load marks end of initial load
     } catch (err) {
       toastApiError(err as never);
     } finally {
@@ -312,13 +319,15 @@ export default function Teachers() {
     setAdvisorySectionsLoading(true);
     try {
       const res = await api.get(`/sections/${ayId}`);
-      const response = res.data as SectionsApiResponse;
-      const options: AdvisorySectionOption[] = (response.gradeLevels ?? [])
-        .flatMap((gradeLevel) =>
-          (gradeLevel.sections ?? []).map((section) => ({
+      // The backend returns { gradeLevels: [...] }
+      const gradeLevels = res.data.gradeLevels || [];
+
+      const options: AdvisorySectionOption[] = gradeLevels
+        .flatMap((gl: any) =>
+          (gl.sections || []).map((section: any) => ({
             id: section.id,
-            label: `${gradeLevel.gradeLevelName} - ${section.name} (${section.enrolledCount}/${section.maxCapacity} Learners)`,
-            gradeLevelName: gradeLevel.gradeLevelName,
+            label: `${gl.gradeLevelName} - ${section.name}`,
+            gradeLevelName: gl.gradeLevelName,
             sectionName: section.name,
             maxCapacity: section.maxCapacity,
             enrolledCount: section.enrolledCount,
@@ -328,10 +337,11 @@ export default function Teachers() {
             currentAdviserName: section.advisingTeacher?.name ?? null,
           })),
         )
-        .sort((a, b) => a.label.localeCompare(b.label));
+        .sort((a: AdvisorySectionOption, b: AdvisorySectionOption) => a.label.localeCompare(b.label));
 
       setAdvisorySections(options);
     } catch (err) {
+      console.error("[fetchAdvisorySections Error]", err);
       toastApiError(err as never);
       setAdvisorySections([]);
     } finally {
@@ -576,6 +586,7 @@ export default function Teachers() {
   const openDesignationEditor = (teacher: Teacher) => {
     setDesignationOpenFor(teacher);
     setDesignationDrawerTab("designation");
+    void fetchAdvisorySections(); // Refresh sections list on open
 
     const bosy = bosyDate?.split("T")[0] || null;
     const eosy = eosyDate?.split("T")[0] || null;
@@ -676,6 +687,7 @@ export default function Teachers() {
       });
       closeDesignationEditor();
       fetchTeachers();
+      void fetchAdvisorySections(); // Refresh sections availability after save
     } catch (err) {
       toastApiError(err as never);
     } finally {
@@ -718,6 +730,7 @@ export default function Teachers() {
     () => (
       <TeacherDirectoryCard
         loading={loading}
+        isRefetching={isRefetching}
         showSkeleton={showSkeleton}
         filteredTeachers={filteredTeachers}
         paginatedTeachers={paginatedTeachers}
@@ -756,6 +769,7 @@ export default function Teachers() {
     ),
     [
       loading,
+      isRefetching,
       showSkeleton,
       teachers,
       filteredTeachers,
