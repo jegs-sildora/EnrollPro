@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../lib/AppError.js";
 import axios from "axios";
+import { queueEcosystemSync } from "../integration/ecosystem-sync.service.js";
 
 /**
  * POST /api/enrollment/confirm-slip
@@ -61,6 +62,12 @@ export async function confirmConfirmationSlip(req: Request, res: Response) {
         gradeLevel: true,
       },
     });
+
+    // Process 1.1: Event-Driven Delta Sync (Automated)
+    // Officially enrolling a single late-enrollee/returning student triggers immediate sync
+    if (application.status === "READY_FOR_SECTIONING") {
+      await queueEcosystemSync(learnerId, "LEARNER", true);
+    }
 
     return res.json({
       success: true,

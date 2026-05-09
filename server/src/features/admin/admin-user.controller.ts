@@ -30,6 +30,10 @@ export async function index(req: Request, res: Response) {
 			sortOrder = 'desc',
 			page = '1',
 			limit = '20',
+			gradeLevelId,
+			sectionId,
+			learnerStatus,
+			tab, // Support explicit tab parameter
 		} = req.query;
 
 		const pageNumber = Math.max(1, parseInt(String(page), 10) || 1);
@@ -40,6 +44,110 @@ export async function index(req: Request, res: Response) {
 		const skip = (pageNumber - 1) * pageSize;
 
 		const normalizedSearch = String(search ?? '').trim();
+		const safeSortOrder = String(sortOrder) === 'asc' ? 'asc' : 'desc';
+		
+		// Priority 1: Check if we are explicitly in Learner Mode
+		const isLearnerMode = String(role).toUpperCase() === 'LEARNER' || tab === 'learners';
+
+		if (isLearnerMode) {
+			const learnerWhere: any = {};
+			
+			if (learnerStatus && learnerStatus !== 'all') {
+				learnerWhere.status = learnerStatus;
+			}
+
+			if (gradeLevelId && gradeLevelId !== 'all') {
+				learnerWhere.enrollmentApplications = {
+					some: { gradeLevelId: parseInt(String(gradeLevelId), 10) }
+				};
+			}
+
+			if (sectionId && sectionId !== 'all') {
+				learnerWhere.enrollmentApplications = {
+					some: { enrollmentRecord: { sectionId: parseInt(String(sectionId), 10) } }
+				};
+			}
+
+			if (normalizedSearch) {
+				learnerWhere.OR = [
+					{ firstName: { contains: normalizedSearch, mode: 'insensitive' } },
+					{ lastName: { contains: normalizedSearch, mode: 'insensitive' } },
+					{ lrn: { contains: normalizedSearch, mode: 'insensitive' } },
+				];
+			}
+
+			const [learners, total] = await Promise.all([
+				prisma.learner.findMany({
+					where: learnerWhere,
+					include: {
+						user: {
+							select: {
+								id: true,
+								email: true,
+								isActive: true,
+								lastLoginAt: true,
+							}
+						},
+						enrollmentApplications: {
+							take: 1,
+							orderBy: { createdAt: 'desc' },
+							include: {
+								gradeLevel: true,
+								enrollmentRecord: {
+									include: { section: true }
+								}
+							}
+						}
+					},
+					orderBy: { 
+						lastName: safeSortOrder 
+					},
+					skip,
+					take: pageSize,
+				}),
+				prisma.learner.count({ where: learnerWhere }),
+			]);
+
+			// Map Learners to a User-compatible structure for the frontend
+			const mappedUsers = learners.map(l => {
+				const currentApp = l.enrollmentApplications?.[0];
+				return {
+					id: l.user?.id || -(l.id),
+					firstName: l.firstName,
+					lastName: l.lastName,
+					middleName: l.middleName || null,
+					suffix: l.extensionName || null,
+					sex: l.sex,
+					email: l.user?.email || `(No Portal Account)`,
+					role: 'LEARNER',
+					isActive: l.user?.isActive ?? false,
+					lastLoginAt: l.user?.lastLoginAt || null,
+					createdAt: l.createdAt.toISOString(),
+					learnerProfile: {
+						lrn: l.lrn,
+						status: l.status,
+						enrollmentApplications: l.enrollmentApplications.map(app => ({
+							gradeLevel: app.gradeLevel,
+							enrollmentRecord: app.enrollmentRecord,
+							portalPin: app.portalPin, // EXPOSE PORTAL PIN
+							isPinPersonalized: !!app.portalPinChangedAt // Add this
+						}))
+					}
+				};
+			});
+
+			return res.json({
+				users: mappedUsers,
+				total,
+				page: pageNumber,
+				limit: pageSize,
+				totalPages: Math.max(1, Math.ceil(total / pageSize)),
+				sortBy: 'lastName',
+				sortOrder: safeSortOrder,
+			});
+		}
+
+		// Staff Mode: Query User table primarily
 		const allowedSortFields = new Set([
 			'lastName',
 			'designation',
@@ -52,13 +160,17 @@ export async function index(req: Request, res: Response) {
 		const safeSortBy = allowedSortFields.has(String(sortBy))
 			? String(sortBy)
 			: 'createdAt';
-		const safeSortOrder = String(sortOrder) === 'asc' ? 'asc' : 'desc';
 
 		const where: any = {};
-		if (role) {
-			where.role = role;
+		if (role && role !== 'all') {
+			where.role = String(role).toUpperCase();
+		} else {
+			// Exclude learners when fetching "all staff"
+			where.role = { not: 'LEARNER' };
 		}
+		
 		if (isActive !== undefined) where.isActive = String(isActive) === 'true';
+
 		if (normalizedSearch) {
 			where.OR = [
 				{ firstName: { contains: normalizedSearch, mode: 'insensitive' } },
@@ -340,13 +452,24 @@ export async function metrics(_req: Request, res: Response) {
 	try {
 		const [totalActiveStaff, pendingUnverified, lockedDeactivated] =
 			await Promise.all([
-				prisma.user.count({ where: { isActive: true } }),
 				prisma.user.count({
 					where: {
+						isActive: true,
+						role: { not: 'LEARNER' },
+					},
+				}),
+				prisma.user.count({
+					where: {
+						role: { not: 'LEARNER' },
 						OR: [{ mustChangePassword: true }, { lastLoginAt: null }],
 					},
 				}),
-				prisma.user.count({ where: { isActive: false } }),
+				prisma.user.count({
+					where: {
+						isActive: false,
+						role: { not: 'LEARNER' },
+					},
+				}),
 			]);
 
 		res.json({

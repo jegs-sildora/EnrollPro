@@ -193,7 +193,7 @@ function SYSwitcher() {
               className="h-8 gap-1.5 text-xs font-bold transition-all duration-200"
               onClick={() => setOpen(!open)}>
               <Calendar className="size-3.5" />
-              <span className={isOverride ? "text-destructive" : ""}>
+              <span className={isOverride ? "text-primary" : ""}>
                 {currentLabel}
               </span>
               <ChevronsUpDown className="size-3 opacity-50" />

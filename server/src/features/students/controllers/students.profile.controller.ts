@@ -191,13 +191,13 @@ export const createStudentsProfileController = (
         return res.status(400).json({ message: "Invalid student id" });
       }
 
-      const { raw: newPin, hash: hashedPin } = deps.generatePortalPin();
+      const { raw: newPin } = deps.generatePortalPin();
 
       const applicant = await deps.prisma.enrollmentApplication.update({
         where: { id: parsedId },
         data: {
-          portalPin: hashedPin,
-          portalPinChangedAt: new Date(),
+          portalPin: newPin,
+          portalPinChangedAt: null, // Phase A: Reset PIN is unhashed/null changedAt
         },
         include: { learner: true },
       });

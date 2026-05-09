@@ -9,6 +9,7 @@ import {
 import { SectioningEngine } from "../enrollment/services/sectioning-engine.service.js";
 import { DEFAULT_SECTIONING_PARAMS } from "@enrollpro/shared";
 import type { SectioningParams } from "@enrollpro/shared";
+import { queueEcosystemSync } from "../integration/ecosystem-sync.service.js";
 
 const sectioningEngine = new SectioningEngine(prisma);
 
@@ -97,6 +98,18 @@ export async function commitBatchSectioning(req: Request, res: Response) {
     recordId: gradeLevelId,
     req,
   });
+
+  // Process 1.1: Event-Driven Delta Sync (Automated)
+  // When a batch of students is sectioned, trigger sync for all of them
+  const assignmentsArray = assignments as any[];
+  const learnerIds = await prisma.enrollmentApplication.findMany({
+    where: { id: { in: assignmentsArray.map(a => a.applicationId) } },
+    select: { learnerId: true }
+  });
+
+  for (const l of learnerIds) {
+    queueEcosystemSync(l.learnerId, 'LEARNER', true).catch(console.error);
+  }
 
   res.json({
     message: "Batch sectioning committed successfully",
@@ -681,6 +694,16 @@ export async function inlineSlotLearner(
     recordId: sectionId,
     req,
   });
+
+  // Process 1.1: Event-Driven Delta Sync (Automated)
+  // When a learner is sectioned inline, trigger immediate sync
+  const app = await prisma.enrollmentApplication.findUnique({
+    where: { id: enrollmentApplicationId },
+    select: { learnerId: true }
+  });
+  if (app) {
+    await queueEcosystemSync(app.learnerId, 'LEARNER', true);
+  }
 
   res.json({ record });
 }

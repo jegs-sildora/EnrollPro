@@ -618,7 +618,7 @@ export function createEarlyRegistrationLifecycleController(
 
       const { generatePortalPin } =
         await import("../../learner/portal-pin.service.js");
-      const { raw: rawPin, hash: pinHash } = generatePortalPin();
+      const { raw: rawPin } = generatePortalPin();
 
       const updated = await prisma.$transaction(async (tx) => {
         const enrollment = await tx.enrollmentApplication.update({
@@ -626,8 +626,8 @@ export function createEarlyRegistrationLifecycleController(
           data: {
             status: "ENROLLED",
             isTemporarilyEnrolled: false,
-            portalPin: pinHash,
-            portalPinChangedAt: new Date(),
+            portalPin: rawPin,
+            portalPinChangedAt: null, // Phase A: Temporary PIN is unhashed/null changedAt
             isProfileLocked: true,
             profileLockedAt: new Date(),
             profileLockedById: req.user!.userId,
@@ -1759,14 +1759,14 @@ export function createEarlyRegistrationLifecycleController(
           });
 
           // Enroll
-          const { hash: pinHash } = generatePortalPin();
+          const { raw: rawPin } = generatePortalPin();
 
           await tx.enrollmentApplication.update({
             where: { id: applicantId },
             data: {
               status: "ENROLLED",
-              portalPin: pinHash,
-              portalPinChangedAt: new Date(),
+              portalPin: rawPin,
+              portalPinChangedAt: null, // Phase A: Temporary PIN is unhashed/null changedAt
               isProfileLocked: true,
               profileLockedAt: new Date(),
               profileLockedById: req.user!.userId,

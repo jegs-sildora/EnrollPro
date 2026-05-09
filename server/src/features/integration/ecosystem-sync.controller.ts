@@ -192,11 +192,26 @@ export async function getEcosystemSyncStatus(req: Request, res: Response): Promi
  * Trigger sync for selected entities
  */
 export async function triggerSync(req: Request, res: Response): Promise<void> {
-  const { ids, type, deltaOnly } = req.body; // ids: number[], type: 'LEARNER' | 'TEACHER', deltaOnly: boolean
+  const { ids, type, deltaOnly, fullSync } = req.body; // ids: number[], type: 'LEARNER' | 'TEACHER', deltaOnly: boolean, fullSync: boolean
   
   let targetIds = ids;
 
-  if (deltaOnly) {
+  if (fullSync) {
+    if (type === "LEARNER") {
+      const learners = await prisma.learner.findMany({
+        where: {
+          enrollmentApplications: { some: { status: { in: [ApplicationStatus.ENROLLED, ApplicationStatus.OFFICIALLY_ENROLLED] } } }
+        },
+        select: { id: true }
+      });
+      targetIds = learners.map(l => l.id);
+    } else if (type === "TEACHER") {
+      const teachers = await prisma.teacher.findMany({
+        select: { id: true }
+      });
+      targetIds = teachers.map(t => t.id);
+    }
+  } else if (deltaOnly) {
     const ecosystems: Ecosystem[] = type === "LEARNER" 
       ? [Ecosystem.SMART, Ecosystem.AIMS] 
       : [Ecosystem.ATLAS, Ecosystem.SMART, Ecosystem.AIMS];
@@ -261,23 +276,92 @@ async function processSyncJob(job: SyncJob, ids: number[], type: string) {
   
   const ecosystems: Ecosystem[] = [Ecosystem.ATLAS, Ecosystem.SMART, Ecosystem.AIMS];
 
+  // Load authoritative data once to optimize serialization (Batching)
+  const masterRecords = type === "LEARNER" 
+    ? await prisma.learner.findMany({
+        where: { id: { in: ids } },
+        include: {
+          enrollmentApplications: {
+            where: { status: { in: [ApplicationStatus.ENROLLED, ApplicationStatus.OFFICIALLY_ENROLLED] } },
+            include: {
+              gradeLevel: true,
+              enrollmentRecord: { include: { section: true } }
+            },
+            take: 1
+          }
+        }
+      })
+    : await prisma.teacher.findMany({
+        where: { id: { in: ids } },
+        include: { teacherDesignations: { orderBy: { createdAt: "desc" }, take: 1 } }
+      });
+
+  const recordMap = new Map(masterRecords.map(r => [r.id, r]));
+
   for (const id of ids) {
+    const record = recordMap.get(id);
+    if (!record) continue;
+
     for (const ecosystem of ecosystems) {
-      // Skip ATLAS for Learners (as per spec)
+      // Process 2: Payload Serialization (Principle of Least Privilege)
+      // Learners do not sync to ATLAS (Grade Encoding Subsystem) directly from here
       if (type === "LEARNER" && ecosystem === Ecosystem.ATLAS) {
         job.processed++;
         continue;
       }
 
       try {
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 100));
+        let payload: any = {};
+        
+        if (type === "LEARNER") {
+          const l = record as any;
+          const app = l.enrollmentApplications[0];
+          // Process 2.1: Learner Payload Generation (SSOT Essentials)
+          payload = {
+            lrn: l.lrn,
+            firstName: l.firstName,
+            lastName: l.lastName,
+            sex: l.sex,
+            gradeLevel: app?.gradeLevel?.name,
+            section: app?.enrollmentRecord?.section?.name,
+            adviserId: app?.enrollmentRecord?.section?.adviserId,
+            status: l.status === "ACTIVE" ? "ENROLLED" : l.status,
+            dpaConsent: true // Enrollment implies consent per policy
+          };
+        } else {
+          const t = record as any;
+          // Process 2.2: Faculty Payload Generation
+          payload = {
+            employeeId: t.employeeId,
+            email: t.email,
+            firstName: t.firstName,
+            lastName: t.lastName,
+            designation: t.designation,
+            role: t.teacherDesignations[0]?.isClassAdviser ? "CLASS_ADVISER" : "TEACHER"
+          };
+        }
 
-        // Update database
+        // Process 3: Mesh Authentication & Handshake (Tailscale Tunneling)
+        const endpoints: Record<string, string> = {
+          ATLAS: "http://njgrm.buru-degree.ts.net:5001/api/v1/ingest",
+          SMART: "http://laptop-pfvh73qk.buru-degree.ts.net:5002/api/v1/sync",
+          AIMS: "http://tfrog.buru-degree.ts.net:5003/api/v1/federate"
+        };
+
+        const targetUrl = endpoints[ecosystem];
+        const apiKey = process.env[`${ecosystem}_API_KEY`] || "SYSTEM_SSOT_KEY_2026";
+
+        // Process 5.1: Graceful Degradation & Queueing
+        // In a real environment, we'd use axios here. 
+        // For this demo, we simulate the network handshake and upsert result.
+        await new Promise(resolve => setTimeout(resolve, 50)); // Fast processing simulation
+
+        // Process 4: The Upsert Execution (Simulated)
+        // Update local sync status reflecting successful federation
         const syncData = {
           status: SyncStatus.SYNCED,
           lastSyncedAt: new Date(),
-          externalId: `EXT-${ecosystem}-${id}`
+          externalId: `FED-${ecosystem}-${uuidv4().substring(0, 8)}`
         };
 
         if (type === "LEARNER") {
@@ -296,7 +380,29 @@ async function processSyncJob(job: SyncJob, ids: number[], type: string) {
 
         job.results.push({ id, type, success: true });
       } catch (error: any) {
+        // Process 5.1: Dead Letter Queue (simplified for demo)
         job.results.push({ id, type, success: false, error: error.message });
+        
+        // Log failure locally for resolution reporting
+        const failData = {
+          status: SyncStatus.FAILED,
+          errorMessage: error.message,
+          lastSyncedAt: new Date()
+        };
+
+        if (type === "LEARNER") {
+          await prisma.ecosystemSyncStatus.upsert({
+            where: { learnerId_ecosystem: { learnerId: id, ecosystem } },
+            update: failData,
+            create: { ...failData, learnerId: id, ecosystem }
+          });
+        } else if (type === "TEACHER") {
+          await prisma.ecosystemSyncStatus.upsert({
+            where: { teacherId_ecosystem: { teacherId: id, ecosystem } },
+            update: failData,
+            create: { ...failData, teacherId: id, ecosystem }
+          });
+        }
       }
       
       job.processed++;
