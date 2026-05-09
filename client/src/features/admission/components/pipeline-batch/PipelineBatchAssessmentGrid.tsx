@@ -83,7 +83,7 @@ export default function PipelineBatchAssessmentGrid({
         header: () => (
           <div className="flex flex-col items-center gap-0.5 mx-auto">
             <span className="leading-tight">{component.label}</span>
-            <span className="text-[10px] opacity-90">
+            <span className="text-xs opacity-90">
               Weight: {component.weight}
             </span>
           </div>

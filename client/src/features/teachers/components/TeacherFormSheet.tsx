@@ -389,10 +389,10 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
 
         <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
           <SheetHeader className="space-y-1 border-b bg-primary px-6 py-4 pr-14 shrink-0">
-            <SheetTitle className="text-base sm:text-lg text-primary-foreground font-black uppercase">
+            <SheetTitle className="text-2xl text-primary-foreground font-black uppercase">
               {title}
             </SheetTitle>
-            <SheetDescription className="text-[11px] sm:text-xs text-primary-foreground/90 font-medium">
+            <SheetDescription className="text-primary-foreground font-bold">
               {description}
             </SheetDescription>
           </SheetHeader>
@@ -400,17 +400,17 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
           <div className="flex-1 space-y-4 overflow-y-auto p-3 sm:p-4">
             <section className="space-y-4 rounded-md border p-4 sm:p-5">
               <header className="space-y-1">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-foreground">
+                <h3 className="text-sm font-bold uppercase  text-foreground">
                   Personal Details
                 </h3>
-                <p className="text-xs text-foreground">
+                <p className="text-xs text-foreground font-bold">
                   Basic profile details for the faculty directory.
                 </p>
               </header>
 
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase tracking-tight">
+                  <Label className="font-bold text-xs uppercase ">
                     First Name *
                   </Label>
                   <Input
@@ -419,12 +419,12 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                     onChange={(event) =>
                       onFieldChange("firstName", event.target.value)
                     }
-                    className="font-bold"
+                    className="font-bold placeholder:text-foreground/50"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase tracking-tight">
+                  <Label className="font-bold text-xs uppercase">
                     Middle Name
                   </Label>
                   <Input
@@ -433,12 +433,12 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                     onChange={(event) =>
                       onFieldChange("middleName", event.target.value)
                     }
-                    className="font-bold"
+                    className="font-bold placeholder:text-foreground/50"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase tracking-tight">
+                  <Label className="font-bold text-xs uppercase ">
                     Last Name *
                   </Label>
                   <Input
@@ -447,29 +447,29 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                     onChange={(event) =>
                       onFieldChange("lastName", event.target.value)
                     }
-                    className="font-bold"
+                    className="font-bold placeholder:text-foreground/50"
                   />
                 </div>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase tracking-tight">
+                  <Label className="font-bold text-xs uppercase">
                     DepEd Email Address *
                   </Label>
                   <Input
                     type="email"
-                    placeholder="firstname.lastname"
+                    placeholder="firstname.lastname@deped.edu.ph"
                     value={formData.email}
                     onChange={(event) =>
                       onFieldChange("email", event.target.value)
                     }
-                    className="font-bold"
+                    className="font-bold placeholder:text-foreground/50"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase tracking-tight">
+                  <Label className="font-bold text-xs uppercase ">
                     Contact Number
                   </Label>
                   <Input
@@ -482,7 +482,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                     onChange={(event) =>
                       onFieldChange("contactNumber", event.target.value)
                     }
-                    className="font-bold"
+                    className="font-bold placeholder:text-foreground/50"
                   />
                 </div>
               </div>
@@ -490,7 +490,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
 
             <section className="space-y-4 rounded-md border p-4 sm:p-5">
               <header className="space-y-1">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-foreground">
+                <h3 className="text-sm font-bold uppercase  text-foreground">
                   DepEd Employment
                 </h3>
                 <p className="text-xs text-foreground">
@@ -500,21 +500,26 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase tracking-tight">
-                    Employee ID / T.I.N. *
+                  <Label className="font-bold text-xs uppercase ">
+                    Employee ID No. *
                   </Label>
                   <Input
-                    placeholder="e.g., 1234567 (DepEd ID)"
+                    placeholder="e.g., 123456 (DepEd ID)"
+                    inputMode="numeric"
+                    maxLength={6}
                     value={formData.employeeId}
                     onChange={(event) =>
-                      onFieldChange("employeeId", event.target.value)
+                      onFieldChange(
+                        "employeeId",
+                        event.target.value.replace(/\D/g, ""),
+                      )
                     }
-                    className="font-bold"
+                    className="font-bold placeholder:text-foreground/50"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase tracking-tight">
+                  <Label className="font-bold text-xs uppercase ">
                     Plantilla Position
                   </Label>
                   <Select
@@ -525,13 +530,13 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                         value === EMPTY_PLANTILLA_POSITION_VALUE ? "" : value,
                       )
                     }>
-                    <SelectTrigger className="font-bold">
+                    <SelectTrigger className="font-bold placeholder:text-foreground/50">
                       <SelectValue placeholder="Not set" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem
                         value={EMPTY_PLANTILLA_POSITION_VALUE}
-                        className="font-bold">
+                        className="font-bold placeholder:text-foreground/50">
                         Not set
                       </SelectItem>
                       {TEACHER_PLANTILLA_POSITION_OPTIONS.map((option) => (
@@ -549,7 +554,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase tracking-tight">
+                  <Label className="font-bold text-xs uppercase ">
                     Department
                   </Label>
                   <Select
@@ -560,13 +565,13 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                         value === EMPTY_DEPARTMENT_VALUE ? "" : value,
                       )
                     }>
-                    <SelectTrigger className="font-bold">
+                    <SelectTrigger className="font-bold placeholder:text-foreground/50">
                       <SelectValue placeholder="Not set" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem
                         value={EMPTY_DEPARTMENT_VALUE}
-                        className="font-bold">
+                        className="font-bold placeholder:text-foreground/50">
                         Not set
                       </SelectItem>
                       {TEACHER_DEPARTMENT_OPTIONS.map((option) => (
@@ -582,7 +587,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase tracking-tight">
+                  <Label className="font-bold text-xs uppercase ">
                     Specialization / Major
                   </Label>
                   <Popover
@@ -619,7 +624,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                             }
                             onKeyDown={handleSpecializationSearchKeyDown}
                             placeholder="Search specialization / major"
-                            className="pl-8 pr-8 font-semibold"
+                            className="pl-8 pr-8 font-bold"
                           />
                           {specializationSearchTerm.trim().length > 0 ? (
                             <button
@@ -645,7 +650,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                               EMPTY_SPECIALIZATION_VALUE,
                             )
                           }
-                          className="mb-2 flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm font-semibold transition hover:bg-muted">
+                          className="mb-2 flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm font-bold transition hover:bg-muted">
                           <span>Not set</span>
                           {selectedSpecializationValue ===
                           EMPTY_SPECIALIZATION_VALUE ? (
@@ -655,7 +660,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
 
                         {flatSpecializationOptions.length === 0 ? (
                           <div className="rounded-md border border-dashed bg-muted/40 px-3 py-4 text-center">
-                            <p className="text-sm font-semibold text-foreground">
+                            <p className="text-sm font-bold text-foreground">
                               No specializations found matching
                               {` "${specializationSearchTerm}"`}.
                             </p>
@@ -668,7 +673,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                             <div
                               key={group.group}
                               className="mt-2 first:mt-0">
-                              <p className="px-2 py-1 text-[10px] font-black uppercase tracking-widest text-primary/80">
+                              <p className="px-2 py-1 text-xs font-black uppercase st text-primary/80">
                                 {group.group}
                               </p>
                               <div className="space-y-0.5">
@@ -696,7 +701,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                                       onClick={() =>
                                         handleSpecializationSelect(option.value)
                                       }
-                                      className={`flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm font-semibold transition ${
+                                      className={`flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm font-bold transition ${
                                         isActive
                                           ? "bg-primary/10 text-foreground"
                                           : "hover:bg-muted"
@@ -723,10 +728,10 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
 
             <section className="space-y-4 rounded-md border p-4 sm:p-5">
               <header className="space-y-1">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-foreground">
+                <h3 className="text-sm font-bold uppercase  text-foreground">
                   Qualified Subjects
                 </h3>
-                <p className="text-[10px] font-bold uppercase text-foreground">
+                <p className="text-xs font-bold uppercase text-foreground">
                   Subjects the teacher is licensed or certified to teach.
                 </p>
               </header>
@@ -736,7 +741,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                   <Badge
                     key={sub}
                     variant="default"
-                    className="gap-1 px-2 py-1 text-[10px] font-black uppercase shadow-sm">
+                    className="gap-1 px-2 py-1 text-xs font-black uppercase shadow-sm">
                     {sub}
                     <button
                       type="button"
@@ -776,7 +781,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                         <div
                           key={group.group}
                           className="space-y-1">
-                          <p className="px-2 text-[10px] font-black uppercase tracking-widest text-primary/70">
+                          <p className="px-2 text-xs font-black uppercase st text-primary/70">
                             {group.group}
                           </p>
                           <div className="grid grid-cols-1 gap-0.5">

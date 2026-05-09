@@ -82,13 +82,13 @@ export default function PipelineBatchRegularSectionAssignment({
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           <div className="rounded border bg-muted/30 px-3 py-2">
-            <p className="text-[10px] font-bold uppercase text-foreground">
+            <p className="text-xs font-bold uppercase text-foreground">
               Requested
             </p>
             <p className="text-sm font-bold">{requiredSlots}</p>
           </div>
           <div className="rounded border bg-emerald-50 px-3 py-2">
-            <p className="text-[10px] font-bold uppercase text-emerald-700">
+            <p className="text-xs font-bold uppercase text-emerald-700">
               Assignable
             </p>
             <p className="text-sm font-bold text-emerald-700">
@@ -96,15 +96,13 @@ export default function PipelineBatchRegularSectionAssignment({
             </p>
           </div>
           <div className="rounded border bg-red-50 px-3 py-2">
-            <p className="text-[10px] font-bold uppercase text-red-700">
-              Blocked
-            </p>
+            <p className="text-xs font-bold uppercase text-red-700">Blocked</p>
             <p className="text-sm font-bold text-red-700">
               {summary?.blockedCount ?? 0}
             </p>
           </div>
           <div className="rounded border bg-amber-50 px-3 py-2">
-            <p className="text-[10px] font-bold uppercase text-amber-700">
+            <p className="text-xs font-bold uppercase text-amber-700">
               Unassigned
             </p>
             <p className="text-sm font-bold text-amber-700">
@@ -136,14 +134,14 @@ export default function PipelineBatchRegularSectionAssignment({
                   <div className="flex items-center gap-2">
                     <Badge
                       variant="outline"
-                      className="text-[10px]">
+                      className="text-xs">
                       Order {section.sortOrder}
                     </Badge>
                     <Badge
                       variant={
                         section.lane === "HOMOGENEOUS" ? "secondary" : "outline"
                       }
-                      className="text-[10px]">
+                      className="text-xs">
                       {section.lane === "HOMOGENEOUS" ? "Homogeneous" : "Snake"}
                     </Badge>
                   </div>

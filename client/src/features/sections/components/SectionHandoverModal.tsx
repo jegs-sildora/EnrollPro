@@ -165,7 +165,7 @@ export function SectionHandoverModal({
           {/* Current Adviser Section */}
           <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground">
+              <Label className="text-xs font-black uppercase tracking-[0.2em] text-foreground">
                 Current Adviser (To be relieved)
               </Label>
               <Badge
@@ -193,7 +193,7 @@ export function SectionHandoverModal({
             {/* Reason Section */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest">
+                <Label className="text-xs font-black uppercase tracking-widest">
                   Reason for Handover (Audit Required)
                 </Label>
                 <Select
@@ -222,7 +222,7 @@ export function SectionHandoverModal({
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
                     className="space-y-2 overflow-hidden">
-                    <Label className="text-[10px] font-black uppercase tracking-widest">
+                    <Label className="text-xs font-black uppercase tracking-widest">
                       Specify Reason
                     </Label>
                     <Textarea
@@ -236,7 +236,7 @@ export function SectionHandoverModal({
               </AnimatePresence>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest">
+                <Label className="text-xs font-black uppercase tracking-widest">
                   Effective Handover Date
                 </Label>
                 <Input
@@ -245,7 +245,7 @@ export function SectionHandoverModal({
                   onChange={(e) => setHandoverDate(e.target.value)}
                   className="h-11 font-bold"
                 />
-                <p className="text-[10px] text-foreground font-bold italic leading-tight">
+                <p className="text-xs text-foreground font-bold italic leading-tight">
                   The current adviser remains the signatory until this date. The
                   new adviser assumes authority the following day.
                 </p>
@@ -255,7 +255,7 @@ export function SectionHandoverModal({
             {/* New Adviser Section */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest">
+                <Label className="text-xs font-black uppercase tracking-widest">
                   New Designated Adviser (Substitute)
                 </Label>
                 <div className="relative">
@@ -298,7 +298,7 @@ export function SectionHandoverModal({
                             )}>
                             {teacher.name}
                           </p>
-                          <p className="text-[10px] font-bold text-foreground">
+                          <p className="text-xs font-bold text-foreground">
                             ID: {teacher.employeeId || "N/A"}
                           </p>
                         </div>
@@ -322,7 +322,7 @@ export function SectionHandoverModal({
               <p className="text-[11px] font-black uppercase text-amber-800 tracking-wider leading-none">
                 Official DepEd Compliance Notice
               </p>
-              <p className="text-[10px] font-bold text-amber-700 leading-relaxed">
+              <p className="text-xs font-bold text-amber-700 leading-relaxed">
                 Advisory history is preserved in the ledger for legal audit.
                 Past grading periods will remain officially signed by{" "}
                 <span className="underline">

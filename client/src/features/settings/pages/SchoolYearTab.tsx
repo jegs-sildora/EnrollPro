@@ -1097,7 +1097,7 @@ export default function SchoolYearTab() {
                       </span>
                       <Badge
                         variant="outline"
-                        className="bg-blue-50 text-blue-700 border-blue-200 uppercase font-black tracking-tighter text-[10px]">
+                        className="bg-blue-50 text-blue-700 border-blue-200 uppercase font-black tracking-tighter text-xs">
                         Draft
                       </Badge>
                     </div>
@@ -1279,7 +1279,7 @@ export default function SchoolYearTab() {
                   />
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground opacity-50" />
                 </div>
-                <p className="text-[10px] text-foreground font-semibold">
+                <p className="text-xs text-foreground font-semibold">
                   Auto-generated based on selected dates
                 </p>
                 {isLabelTaken && (

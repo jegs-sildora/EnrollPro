@@ -315,7 +315,7 @@ export function StudentDetailPanel({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-0 border-t pt-4">
             <div>
-              <p className="text-[10px] sm:text-[0.625rem] uppercase tracking-widest text-foreground">
+              <p className="text-xs sm:text-[0.625rem] uppercase tracking-widest text-foreground">
                 Grade Level & Section
               </p>
               <p className="text-xs sm:text-sm">
@@ -325,7 +325,7 @@ export function StudentDetailPanel({
               </p>
             </div>
             <div className="text-left sm:text-right">
-              <p className="text-[10px] sm:text-[0.625rem] uppercase tracking-widest text-foreground">
+              <p className="text-xs sm:text-[0.625rem] uppercase tracking-widest text-foreground">
                 Learner Reference Number
               </p>
               <p className="text-xs sm:text-sm tabular-nums">
@@ -430,7 +430,7 @@ export function StudentDetailPanel({
         </div>
 
         {/* Quick Metadata */}
-        <div className="pt-4 border-t text-[10px] uppercase tracking-widest text-foreground flex flex-col gap-1">
+        <div className="pt-4 border-t text-xs uppercase tracking-widest text-foreground flex flex-col gap-1">
           <div className="flex items-center gap-1.5">
             <Clock className="h-3 w-3" />
             Record Created: {formatDate(student.createdAt)}
@@ -456,14 +456,14 @@ export function StudentDetailPanel({
         <div className="grid grid-cols-2 gap-2">
           <Button
             variant="outline"
-            className="font-bold text-[10px] sm:text-xs h-9 uppercase tracking-widest border shadow-sm"
+            className="font-bold text-xs sm:text-xs h-9 uppercase tracking-widest border shadow-sm"
             onClick={() => onAssignLrn(student)}>
             <Fingerprint className="mr-2 h-4 w-4 shrink-0" />
             Input Official LRN
           </Button>
           <Button
             variant="outline"
-            className="font-bold text-[10px] sm:text-xs h-9 uppercase tracking-widest border shadow-sm"
+            className="font-bold text-xs sm:text-xs h-9 uppercase tracking-widest border shadow-sm"
             onClick={() => onQuickEdit(student)}>
             <UserRoundPen className="mr-2 h-4 w-4 shrink-0" />
             Quick Edit
@@ -472,20 +472,20 @@ export function StudentDetailPanel({
 
         {/* Group 3: Status Modifiers */}
         <div className="pt-2 border-t">
-          <p className="text-[9px] uppercase tracking-tighter font-black text-muted-foreground mb-2 px-1">
+          <p className="text-[9px] uppercase tracking-tighter font-black text-foreground mb-2 px-1">
             Modify Enrollment Status
           </p>
           <div className="flex gap-2">
             <Button
               variant="outline"
-              className="flex-1 font-bold text-[10px] sm:text-xs h-9 uppercase tracking-widest bg-orange-50 text-orange-700 hover:text-orange-800 hover:bg-orange-100 border-orange-200 shadow-sm"
+              className="flex-1 font-bold text-xs sm:text-xs h-9 uppercase tracking-widest bg-orange-50 text-orange-700 hover:text-orange-800 hover:bg-orange-100 border-orange-200 shadow-sm"
               onClick={() => onTransferOut(student)}>
               <FileBadge2 className="mr-2 h-4 w-4 shrink-0" />
               Transfer
             </Button>
             <Button
               variant="outline"
-              className="flex-1 font-bold text-[10px] sm:text-xs h-9 uppercase tracking-widest bg-rose-50 text-rose-700 hover:text-rose-800 hover:bg-rose-100 border-rose-200 shadow-sm"
+              className="flex-1 font-bold text-xs sm:text-xs h-9 uppercase tracking-widest bg-rose-50 text-rose-700 hover:text-rose-800 hover:bg-rose-100 border-rose-200 shadow-sm"
               onClick={() => onDropout(student)}>
               <BadgeAlert className="mr-2 h-4 w-4 shrink-0" />
               Dropout

@@ -276,7 +276,7 @@ export default function SchoolProfileTab() {
               <Label htmlFor="depedEmail">Official DepEd Email Address</Label>
               <Input
                 id="depedEmail"
-                placeholder="school.id@deped.gov.ph"
+                placeholder="school.id@deped.edu.ph"
                 value={formData.depedEmail}
                 onChange={(e) =>
                   setFormData((prev) => ({

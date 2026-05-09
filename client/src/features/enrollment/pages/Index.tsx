@@ -328,7 +328,7 @@ function SectionListForBulk({
               <span className="font-bold text-sm uppercase">
                 {section.name.replace(/\s*-\s*G\d+$/i, "")}
               </span>
-              <span className="text-[10px] font-black text-foreground uppercase tracking-wider">
+              <span className="text-xs font-black text-foreground uppercase tracking-wider">
                 {formatScpType(section.programType)}
               </span>
             </div>
@@ -557,7 +557,8 @@ export default function Enrollment() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [exporting, setExporting] = useState(false);
   const [sf1ExportOpen, setSf1ExportOpen] = useState(false);
-  const [selectedExportSection, setSelectedExportSection] = useState<string>("");
+  const [selectedExportSection, setSelectedExportSection] =
+    useState<string>("");
   const [sections, setSections] = useState<any[]>([]);
   const [loadingSections, setLoadingSections] = useState(false);
 
@@ -1400,8 +1401,9 @@ export default function Enrollment() {
         cell: ({ row }) => {
           const status = row.original.academicStatus;
           const isRemedial = row.original.isRemedialRequired;
-          
-          let variant: "default" | "secondary" | "destructive" | "outline" = "outline";
+
+          let variant: "default" | "secondary" | "destructive" | "outline" =
+            "outline";
           let label = status || "Unknown";
 
           if (status === "PROMOTED") variant = "secondary";
@@ -1412,11 +1414,13 @@ export default function Enrollment() {
             <div className="flex flex-col items-center gap-1">
               <Badge
                 variant={variant}
-                className="font-bold px-2 py-0.5 h-auto text-[10px] leading-tight text-center uppercase">
+                className="font-bold px-2 py-0.5 h-auto text-xs leading-tight text-center uppercase">
                 {label.replace(/_/g, " ")}
               </Badge>
               {isRemedial && (
-                <Badge variant="destructive" className="text-[8px] h-4 px-1 font-black animate-pulse">
+                <Badge
+                  variant="destructive"
+                  className="text-[8px] h-4 px-1 font-black animate-pulse">
                   REMEDIAL REQ.
                 </Badge>
               )}
@@ -1426,7 +1430,10 @@ export default function Enrollment() {
       });
     }
 
-    if (workflowView !== "SECTION_ASSIGNMENT" && workflowView !== "ROLLOVER_ELIGIBLE") {
+    if (
+      workflowView !== "SECTION_ASSIGNMENT" &&
+      workflowView !== "ROLLOVER_ELIGIBLE"
+    ) {
       cols.push({
         id: "gradeLevel",
         accessorKey: "gradeLevelId",
@@ -1444,7 +1451,10 @@ export default function Enrollment() {
       });
     }
 
-    if (workflowView === "SECTION_ASSIGNMENT" || workflowView === "ROLLOVER_ELIGIBLE") {
+    if (
+      workflowView === "SECTION_ASSIGNMENT" ||
+      workflowView === "ROLLOVER_ELIGIBLE"
+    ) {
       cols.push({
         id: "readingProfile",
         accessorKey: "readingProfileLevel",
@@ -1495,7 +1505,9 @@ export default function Enrollment() {
         const sectionName = resolveApplicationSectionName(app);
         const hasSection = Boolean(sectionName);
         const isPendingVerification = workflowView === "PENDING_VERIFICATION";
-        const isSectionAssignment = workflowView === "SECTION_ASSIGNMENT" || workflowView === "ROLLOVER_ELIGIBLE";
+        const isSectionAssignment =
+          workflowView === "SECTION_ASSIGNMENT" ||
+          workflowView === "ROLLOVER_ELIGIBLE";
         const selectedSectionId = sectionSelectionByApplicationId[app.id] ?? "";
         const sectionOptions = sectionOptionsByApplicationId[app.id] ?? [];
         const isLoadingOptions =
@@ -1584,7 +1596,7 @@ export default function Enrollment() {
                             </span>
                             <span
                               className={cn(
-                                "text-[10px] font-black tabular-nums flex items-center gap-1.5",
+                                "text-xs font-black tabular-nums flex items-center gap-1.5",
                                 capacityColor,
                               )}>
                               ({section.enrolledCount}/{section.maxCapacity})
@@ -1612,7 +1624,10 @@ export default function Enrollment() {
       },
     });
 
-    if (workflowView !== "SECTION_ASSIGNMENT" && workflowView !== "ROLLOVER_ELIGIBLE") {
+    if (
+      workflowView !== "SECTION_ASSIGNMENT" &&
+      workflowView !== "ROLLOVER_ELIGIBLE"
+    ) {
       cols.push({
         id: "status",
         accessorKey: "status",
@@ -1633,7 +1648,10 @@ export default function Enrollment() {
       });
     }
 
-    if (workflowView !== "SECTION_ASSIGNMENT" && workflowView !== "ROLLOVER_ELIGIBLE") {
+    if (
+      workflowView !== "SECTION_ASSIGNMENT" &&
+      workflowView !== "ROLLOVER_ELIGIBLE"
+    ) {
       cols.push({
         id: "createdAt",
         accessorKey: "createdAt",
@@ -1657,7 +1675,9 @@ export default function Enrollment() {
       cell: ({ row }) => {
         const app = row.original;
         const isPendingVerification = workflowView === "PENDING_VERIFICATION";
-        const isSectionAssignment = workflowView === "SECTION_ASSIGNMENT" || workflowView === "ROLLOVER_ELIGIBLE";
+        const isSectionAssignment =
+          workflowView === "SECTION_ASSIGNMENT" ||
+          workflowView === "ROLLOVER_ELIGIBLE";
         const hasReadingProfile = Boolean(app.readingProfileLevel);
         const isPendingBeefStatus =
           app.status === "PENDING_BEEF" ||
@@ -1759,7 +1779,9 @@ export default function Enrollment() {
                 ) : (
                   <>
                     <School className="h-3.5 w-3.5 mr-1" />
-                    {workflowView === "ROLLOVER_ELIGIBLE" ? "Finalize Rollover" : "Finalize + Assign"}
+                    {workflowView === "ROLLOVER_ELIGIBLE"
+                      ? "Finalize Rollover"
+                      : "Finalize + Assign"}
                   </>
                 )
               ) : (
@@ -2064,7 +2086,7 @@ export default function Enrollment() {
                                 ? "secondary"
                                 : "outline"
                             }
-                            className="h-5 px-1.5 text-[10px] font-bold">
+                            className="h-5 px-1.5 text-xs font-bold">
                             {tabCounts[tab.key] ?? 0}
                           </Badge>
                         </span>
@@ -2112,7 +2134,7 @@ export default function Enrollment() {
                               ? "secondary"
                               : "outline"
                           }
-                          className="h-5 px-1.5 text-[10px] font-bold">
+                          className="h-5 px-1.5 text-xs font-bold">
                           {tabCounts[tab.key] ?? 0}
                         </Badge>
                       </span>
@@ -2145,7 +2167,7 @@ export default function Enrollment() {
                 <div className="flex flex-wrap items-center justify-center gap-4 shrink-0">
                   {workflowView === "SECTION_ASSIGNMENT" && (
                     <div className="flex items-center gap-2 bg-muted/30 p-1 rounded-lg border">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-foreground ml-2 mr-1">
+                      <span className="text-xs font-black uppercase tracking-widest text-foreground ml-2 mr-1">
                         Gender:
                       </span>
                       {(["ALL", "MALE", "FEMALE"] as const).map((g) => (
@@ -2154,7 +2176,7 @@ export default function Enrollment() {
                           variant={genderFilter === g ? "secondary" : "ghost"}
                           size="sm"
                           className={cn(
-                            "h-7 px-3 text-[10px] font-black uppercase rounded-md tracking-wider transition-all",
+                            "h-7 px-3 text-xs font-black uppercase rounded-md tracking-wider transition-all",
                             genderFilter === g
                               ? "bg-white shadow-sm text-primary"
                               : "text-foreground hover:text-primary",
@@ -2175,7 +2197,7 @@ export default function Enrollment() {
 
                   {workflowView === "PENDING_VERIFICATION" && (
                     <div className="flex items-center gap-2 bg-muted/30 p-1 rounded-lg border">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-foreground ml-2 mr-1">
+                      <span className="text-xs font-black uppercase tracking-widest text-foreground ml-2 mr-1">
                         Filter:
                       </span>
                       {PENDING_QUEUE_FILTER_OPTIONS.map((option) => (
@@ -2188,7 +2210,7 @@ export default function Enrollment() {
                           }
                           size="sm"
                           className={cn(
-                            "h-7 px-3 text-[10px] font-black uppercase rounded-md tracking-wider transition-all",
+                            "h-7 px-3 text-xs font-black uppercase rounded-md tracking-wider transition-all",
                             pendingQueueFilter === option.value
                               ? "bg-white shadow-sm text-primary"
                               : "text-foreground hover:text-primary",
@@ -2996,7 +3018,7 @@ export default function Enrollment() {
                           <p className="font-bold text-sm">
                             {formatGradeLevelLabel(gl.name)}
                           </p>
-                          <p className="text-[10px] text-foreground uppercase font-black ">
+                          <p className="text-xs text-foreground uppercase font-black ">
                             {isG7
                               ? "Uses Early Reg Assessment Score"
                               : isSynced
@@ -3020,7 +3042,7 @@ export default function Enrollment() {
                             variant="outline"
                             size="sm"
                             disabled={isSyncing}
-                            className="h-9 px-4 font-black text-[10px] uppercase tracking-widest border-2 border-primary/20 text-primary hover:bg-primary/5"
+                            className="h-9 px-4 font-black text-xs uppercase tracking-widest border-2 border-primary/20 text-primary hover:bg-primary/5"
                             onClick={() => handleSmartSync(gl.id)}>
                             {isSyncing ? (
                               <>
@@ -3121,7 +3143,7 @@ export default function Enrollment() {
                   <h4 className="font-bold text-sm text-emerald-800">
                     LIS Master Extract (XLSX)
                   </h4>
-                  <p className="text-[10px] font-semibold text-emerald-700 mt-0.5">
+                  <p className="text-xs font-semibold text-emerald-700 mt-0.5">
                     Official BOSY/EOSY data extract for all sections in{" "}
                     {activeSchoolYearLabel}.
                   </p>
@@ -3146,7 +3168,7 @@ export default function Enrollment() {
                 <span className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground font-black tracking-widest">
+                <span className="bg-background px-2 text-foreground font-black tracking-widest">
                   OR
                 </span>
               </div>
@@ -3176,7 +3198,7 @@ export default function Enrollment() {
                         <Loader2 className="h-4 w-4 animate-spin text-primary" />
                       </div>
                     ) : sections.length === 0 ? (
-                      <div className="text-center py-4 text-xs font-bold text-muted-foreground">
+                      <div className="text-center py-4 text-xs font-bold text-foreground">
                         No sections found for this year.
                       </div>
                     ) : (

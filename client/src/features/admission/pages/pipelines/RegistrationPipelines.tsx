@@ -222,7 +222,7 @@ export default function RegistrationPipelines() {
                   {tab.label}
                   <Badge
                     variant={activeTab === tab.key ? "secondary" : "outline"}
-                    className="h-5 px-1.5 text-[10px] font-bold">
+                    className="h-5 px-1.5 text-xs font-bold">
                     {tabCounts[tab.key] ?? 0}
                   </Badge>
                 </span>

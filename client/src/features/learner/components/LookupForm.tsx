@@ -37,7 +37,7 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!lrn || !password) return;
-    
+
     onLookup(lrn, password);
   };
 
@@ -133,7 +133,7 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
           <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
             {schoolName ? `${schoolName} Learner Portal` : "Learner Portal"}
           </CardTitle>
-          <CardDescription className="text-sm leading-relaxed text-muted-foreground mt-2">
+          <CardDescription className="text-sm leading-relaxed text-foreground mt-2">
             Log in to view your official class section, adviser details, and
             digital school records.
           </CardDescription>
@@ -191,7 +191,7 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground hover:text-foreground transition-colors"
                   tabIndex={-1}>
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -203,7 +203,7 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
               <div className="flex justify-end px-1">
                 <button
                   type="button"
-                  className="text-[11px] text-muted-foreground hover:text-primary transition-colors"
+                  className="text-[11px] text-foreground hover:text-primary transition-colors"
                   onClick={() =>
                     alert(
                       "Please contact the school registrar to reset your portal password.",

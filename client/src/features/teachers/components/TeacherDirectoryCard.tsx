@@ -5,7 +5,6 @@ import {
   MoreHorizontal,
   RefreshCw,
   UserCheck,
-  UserMinus,
 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
@@ -187,12 +186,11 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align={compact ? "start" : "end"}
-          className="w-48">
+          className="w-18">
           {teacher.isActive ? (
             <DropdownMenuItem
               onClick={() => onDeactivateTeacher(teacher)}
-              className="cursor-pointer text-destructive focus:text-destructive font-bold">
-              <UserMinus className="mr-2 h-4 w-4" />
+              className="cursor-pointer text-primary focus:text-primary-foreground font-bold hover:text-foreground">
               Deactivate
             </DropdownMenuItem>
           ) : (
@@ -269,22 +267,6 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       ),
     },
     {
-      id: "designationTitle",
-      accessorKey: "designationTitle",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title="DESIGNATION"
-          className="font-bold"
-        />
-      ),
-      cell: ({ row }) => (
-        <span className="text-xs font-bold block text-center uppercase text-foreground">
-          {row.original.designationTitle || "-"}
-        </span>
-      ),
-    },
-    {
       id: "department",
       accessorKey: "department",
       size: 200,
@@ -333,13 +315,13 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                   </TooltipTrigger>
                   <TooltipContent
                     side="top"
-                    className="text-[10px] font-bold uppercase">
+                    className="text-xs font-bold uppercase">
                     {sub}
                   </TooltipContent>
                 </Tooltip>
               ))
             ) : (
-              <span className="text-[10px] text-foreground font-medium">-</span>
+              <span className="text-xs text-foreground font-medium">-</span>
             )}
           </TooltipProvider>
         </div>
@@ -381,7 +363,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
           return (
             <Badge
               variant="outline"
-              className="text-[10px] font-bold uppercase">
+              className="text-xs font-bold uppercase">
               None
             </Badge>
           );
@@ -395,7 +377,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
           return (
             <Badge
               variant="outline"
-              className="text-[10px] font-bold uppercase">
+              className="text-xs font-bold uppercase">
               None
             </Badge>
           );
@@ -406,7 +388,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
             {designation.isClassAdviser ? (
               <Badge
                 variant="success"
-                className="text-[10px] font-black uppercase">
+                className="text-xs font-black uppercase">
                 Class Adviser
               </Badge>
             ) : null}
@@ -414,7 +396,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
               <Badge
                 key={`${row.original.id}-${role}`}
                 variant="outline"
-                className="text-[10px] font-bold uppercase">
+                className="text-xs font-bold uppercase">
                 {role}
               </Badge>
             ))}
@@ -443,7 +425,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
 
   return (
     <Card className="w-full min-w-0 overflow-hidden shadow-sm border-2">
-      <CardHeader className="pb-3 px-4 md:px-6 border-b bg-muted/10">
+      <CardHeader className="border-b bg-muted/10">
         <div className="space-y-3">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <CardTitle className="text-lg font-bold uppercase">
@@ -537,7 +519,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
         </div>
       </CardHeader>
       <CardContent className="p-0 min-w-0">
-        <div className="p-4 md:p-6 min-w-0">
+        <div className="min-w-0">
           <div className="md:hidden space-y-3">
             {showSkeleton ? (
               Array.from({ length: 3 }).map((_, index) => (

@@ -42,7 +42,7 @@ function CollapsibleSection({ title, icon, children }: SectionProps) {
           <span>{title}</span>
         </div>
         <span
-          className={`text-[10px] uppercase tracking-widest text-foreground ${isOpen ? "opacity-60" : ""}`}>
+          className={`text-xs uppercase tracking-widest text-foreground ${isOpen ? "opacity-60" : ""}`}>
           {isOpen ? "Hide" : "Show"}
         </span>
       </button>
@@ -282,7 +282,7 @@ export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
         <span className="text-foreground flex items-center gap-1.5">
           {c.label}:
           {c.isPrimary && (
-            <span className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded leading-none">
+            <span className="text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded leading-none">
               PRIMARY
             </span>
           )}
@@ -441,7 +441,7 @@ export function Classifications({ applicant }: { applicant: ApplicantDetail }) {
                   <Badge
                     key={t}
                     variant="outline"
-                    className="border-rose-200 text-rose-700 h-5 px-1.5 text-[10px]">
+                    className="border-rose-200 text-rose-700 h-5 px-1.5 text-xs">
                     {t}
                   </Badge>
                 ))}

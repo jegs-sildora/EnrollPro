@@ -53,7 +53,7 @@ export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
           </CardHeader>
           <CardContent className="space-y-6 flex-1 flex flex-col justify-between">
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-3">
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-foreground">
+              <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-foreground">
                 <FileCheck className="h-3 w-3" />
                 Please prepare the following:
               </div>
@@ -97,7 +97,7 @@ export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
           </CardHeader>
           <CardContent className="space-y-6 flex-1 flex flex-col justify-between">
             <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-100 space-y-3">
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-600/70">
+              <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-emerald-600/70">
                 <ClipboardList className="h-3 w-3" />
                 Please prepare the following:
               </div>
@@ -143,7 +143,7 @@ export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
                         .
                       </p>
                       <div className="pt-3 border-t space-y-2">
-                        <p className="text-[10px] font-black uppercase text-foreground tracking-widest">
+                        <p className="text-xs font-black uppercase text-foreground tracking-widest">
                           Still lost?
                         </p>
                         <p className="text-xs font-bold text-foreground leading-normal">

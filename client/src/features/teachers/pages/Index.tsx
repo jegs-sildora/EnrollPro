@@ -57,7 +57,7 @@ import { TEACHER_DEACTIVATION_REASONS } from "@enrollpro/shared";
 
 type TeacherFormField = keyof TeacherFormState;
 
-const DEPED_EMAIL_DOMAIN = "deped.gov.ph";
+const DEPED_EMAIL_DOMAIN = "deped.edu.ph";
 
 interface TeacherUpsertPayload {
   firstName: string;
@@ -148,6 +148,7 @@ export default function Teachers() {
 
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ayLabel, setAyLabel] = useState<string | null>(null);
   const [bosyDate, setBosyDate] = useState<string | null>(null);
   const [eosyDate, setEosyDate] = useState<string | null>(null);
 
@@ -288,6 +289,7 @@ export default function Teachers() {
         params: ayId ? { schoolYearId: ayId } : undefined,
       });
       setTeachers(res.data.teachers || []);
+      setAyLabel(res.data.scope?.yearLabel || null);
       setBosyDate(res.data.scope?.classOpeningDate || null);
       setEosyDate(res.data.scope?.classEndDate || null);
     } catch (err) {
@@ -850,6 +852,7 @@ export default function Teachers() {
       <TeacherDesignationSheet
         open={Boolean(designationOpenFor)}
         ayId={ayId}
+        ayLabel={ayLabel}
         submitting={submitting}
         designationOpenFor={designationOpenFor}
         designationDrawerTab={designationDrawerTab}
@@ -870,6 +873,7 @@ export default function Teachers() {
     [
       designationOpenFor,
       ayId,
+      ayLabel,
       submitting,
       designationDrawerTab,
       designationForm,
@@ -992,7 +996,7 @@ export default function Teachers() {
                   <p className="text-[11px] font-black uppercase text-amber-800 tracking-wider leading-none">
                     Deactivation Blocked
                   </p>
-                  <p className="text-[10px] font-bold text-amber-700 leading-relaxed">
+                  <p className="text-xs font-bold text-amber-700 leading-relaxed">
                     ⚠️ Cannot Deactivate: This teacher has an active advisory
                     assignment. Reassign the advisory section before
                     deactivating this account.
@@ -1002,7 +1006,7 @@ export default function Teachers() {
             ) : (
               <>
                 <div className="rounded-xl border bg-muted/30 p-4 space-y-1">
-                  <p className="text-[10px] font-bold text-foreground leading-relaxed uppercase tracking-tight">
+                  <p className="text-xs font-bold text-foreground leading-relaxed uppercase tracking-tight">
                     This teacher currently has{" "}
                     <span className="text-foreground font-black">
                       NO ACTIVE ADVISORY ASSIGNMENT
@@ -1014,7 +1018,7 @@ export default function Teachers() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest">
+                  <Label className="text-xs font-black uppercase tracking-widest">
                     Reason for Deactivation (Required for Audit Log)
                   </Label>
                   <Select

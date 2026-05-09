@@ -155,7 +155,9 @@ export default function EcosystemSync() {
   const handleProvisionTeachers = async () => {
     setProvisioning(true);
     try {
-      const res = await api.post("/integration/v1/ecosystem/provision-teachers");
+      const res = await api.post(
+        "/integration/v1/ecosystem/provision-teachers",
+      );
       const { createdCount, skippedCount } = res.data.data;
       sileo.success({
         title: "Provisioning Complete",
@@ -290,7 +292,7 @@ export default function EcosystemSync() {
         <Card className="shadow-none border bg-card/50">
           <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0 pb-2">
             <div className="flex flex-col">
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+              <span className="text-xs font-black uppercase tracking-widest text-foreground">
                 A.T.L.A.S.
               </span>
               <CardTitle className="text-sm font-black">
@@ -315,7 +317,7 @@ export default function EcosystemSync() {
               )}
               %
             </div>
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
+            <p className="text-xs font-bold text-foreground uppercase tracking-tight">
               {
                 entities.filter((e) =>
                   e.syncStatuses.some(
@@ -331,7 +333,7 @@ export default function EcosystemSync() {
         <Card className="shadow-none border bg-card/50">
           <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0 pb-2">
             <div className="flex flex-col">
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+              <span className="text-xs font-black uppercase tracking-widest text-foreground">
                 S.M.A.R.T.
               </span>
               <CardTitle className="text-sm font-black">
@@ -356,7 +358,7 @@ export default function EcosystemSync() {
               )}
               %
             </div>
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
+            <p className="text-xs font-bold text-foreground uppercase tracking-tight">
               {
                 entities.filter((e) =>
                   e.syncStatuses.some(
@@ -372,7 +374,7 @@ export default function EcosystemSync() {
         <Card className="shadow-none border bg-card/50">
           <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0 pb-2">
             <div className="flex flex-col">
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+              <span className="text-xs font-black uppercase tracking-widest text-foreground">
                 A.I.M.S.
               </span>
               <CardTitle className="text-sm font-black">
@@ -397,7 +399,7 @@ export default function EcosystemSync() {
               )}
               %
             </div>
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
+            <p className="text-xs font-bold text-foreground uppercase tracking-tight">
               {
                 entities.filter((e) =>
                   e.syncStatuses.some(
@@ -419,7 +421,7 @@ export default function EcosystemSync() {
               <h1 className="text-2xl font-black text-foreground uppercase tracking-tight">
                 Master Roster Synchronization
               </h1>
-              <p className="text-xs text-muted-foreground font-bold">
+              <p className="text-xs text-foreground font-bold">
                 Propagate identity and enrollment data from EnrollPro (IdP) to
                 downstream subsystems.
               </p>
@@ -453,24 +455,36 @@ export default function EcosystemSync() {
                       ? `Syncing... ${syncJob.progress}%`
                       : "Trigger Sync Pipeline"}
                     {!syncJob && pendingCount > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 size-5 bg-red-600 text-white rounded-full flex items-center justify-center text-[10px] font-black border-2 border-background shadow-sm">
+                      <span className="absolute -top-1.5 -right-1.5 size-5 bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-black border-2 border-background shadow-sm">
                         {pendingCount}
                       </span>
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 font-bold">
-                  <DropdownMenuLabel className="text-[10px] uppercase tracking-widest opacity-50 px-2 py-1.5">Sync Strategies</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => handleSync(false)} className="cursor-pointer gap-2 py-2">
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 font-bold">
+                  <DropdownMenuLabel className="text-xs uppercase tracking-widest opacity-50 px-2 py-1.5">
+                    Sync Strategies
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={() => handleSync(false)}
+                    className="cursor-pointer gap-2 py-2">
                     <div className="flex flex-col">
                       <span className="text-xs">Delta Sync (Pending Only)</span>
-                      <span className="text-[10px] text-muted-foreground font-normal">Push only unsynced/updated records.</span>
+                      <span className="text-xs text-foreground font-normal">
+                        Push only unsynced/updated records.
+                      </span>
                     </div>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleSync(true)} className="cursor-pointer gap-2 py-2">
+                  <DropdownMenuItem
+                    onClick={() => handleSync(true)}
+                    className="cursor-pointer gap-2 py-2">
                     <div className="flex flex-col">
                       <span className="text-xs">Big Bang BOSY Sync</span>
-                      <span className="text-[10px] text-muted-foreground font-normal">Force-push all {total} records.</span>
+                      <span className="text-xs text-foreground font-normal">
+                        Force-push all {total} records.
+                      </span>
                     </div>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -501,32 +515,63 @@ export default function EcosystemSync() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-1 bg-background/50 px-2 py-0.5 rounded-full border border-primary/10">
-                        <div className={cn("size-2 rounded-full", syncJob.progress > 0 ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" : "bg-muted animate-pulse")} />
-                        <span className="text-[9px] font-black uppercase tracking-tighter">ATLAS</span>
+                        <div
+                          className={cn(
+                            "size-2 rounded-full",
+                            syncJob.progress > 0
+                              ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"
+                              : "bg-muted animate-pulse",
+                          )}
+                        />
+                        <span className="text-[9px] font-black uppercase tracking-tighter">
+                          ATLAS
+                        </span>
                       </div>
                       <div className="flex items-center gap-1 bg-background/50 px-2 py-0.5 rounded-full border border-primary/10">
-                        <div className={cn("size-2 rounded-full", syncJob.progress > 40 ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" : "bg-muted animate-pulse")} />
-                        <span className="text-[9px] font-black uppercase tracking-tighter">SMART</span>
+                        <div
+                          className={cn(
+                            "size-2 rounded-full",
+                            syncJob.progress > 40
+                              ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"
+                              : "bg-muted animate-pulse",
+                          )}
+                        />
+                        <span className="text-[9px] font-black uppercase tracking-tighter">
+                          SMART
+                        </span>
                       </div>
                       <div className="flex items-center gap-1 bg-background/50 px-2 py-0.5 rounded-full border border-primary/10">
-                        <div className={cn("size-2 rounded-full", syncJob.progress > 80 ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" : "bg-muted animate-pulse")} />
-                        <span className="text-[9px] font-black uppercase tracking-tighter">AIMS</span>
+                        <div
+                          className={cn(
+                            "size-2 rounded-full",
+                            syncJob.progress > 80
+                              ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"
+                              : "bg-muted animate-pulse",
+                          )}
+                        />
+                        <span className="text-[9px] font-black uppercase tracking-tighter">
+                          AIMS
+                        </span>
                       </div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-primary ml-2 animate-pulse">
+                      <span className="text-xs font-black uppercase tracking-widest text-primary ml-2 animate-pulse">
                         Identity Federation: Propagating SSOT Identity...
                       </span>
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       <div className="flex items-center gap-4">
-                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 font-black text-[10px] py-0 px-2">
+                        <Badge
+                          variant="outline"
+                          className="bg-primary/10 text-primary border-primary/20 font-black text-xs py-0 px-2">
                           MODE: IDENTITY UPSERT (SAFE)
                         </Badge>
                         <span className="text-xs font-black text-primary">
                           {syncJob.progress}%
                         </span>
                       </div>
-                      <p className="text-[9px] font-bold text-muted-foreground italic text-right max-w-[280px] leading-tight">
-                        Synchronizes demographics and section assignments. Will not overwrite or delete existing grades, clinic records, or clearance data in target systems.
+                      <p className="text-[9px] font-bold text-foreground italic text-right max-w-[280px] leading-tight">
+                        Synchronizes demographics and section assignments. Will
+                        not overwrite or delete existing grades, clinic records,
+                        or clearance data in target systems.
                       </p>
                     </div>
                   </div>
@@ -553,7 +598,7 @@ export default function EcosystemSync() {
                   setView(val);
                   setPage(1);
                 }}>
-                <SelectTrigger className="h-9 font-black text-[10px] uppercase tracking-wider w-32">
+                <SelectTrigger className="h-9 font-black text-xs uppercase tracking-wider w-32">
                   <SelectValue placeholder="View Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -579,7 +624,7 @@ export default function EcosystemSync() {
                     setGradeFilter(val);
                     setPage(1);
                   }}>
-                  <SelectTrigger className="h-9 font-bold text-[10px] uppercase tracking-wider w-32">
+                  <SelectTrigger className="h-9 font-bold text-xs uppercase tracking-wider w-32">
                     <SelectValue placeholder="Grade" />
                   </SelectTrigger>
                   <SelectContent>
@@ -617,7 +662,7 @@ export default function EcosystemSync() {
               <Select
                 value={statusFilter}
                 onValueChange={setStatusFilter}>
-                <SelectTrigger className="h-9 font-bold text-[10px] uppercase tracking-wider w-32">
+                <SelectTrigger className="h-9 font-bold text-xs uppercase tracking-wider w-32">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -646,7 +691,7 @@ export default function EcosystemSync() {
             </div>
 
             <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-foreground" />
               <Input
                 placeholder="Search identifier or name..."
                 className="h-9 pl-9 font-bold text-xs"
@@ -672,19 +717,19 @@ export default function EcosystemSync() {
           <Table>
             <TableHeader>
               <TableRow className="bg-primary/5 hover:bg-primary/5 border-b">
-                <TableHead className="w-[300px] font-black uppercase text-[10px] tracking-widest py-4">
+                <TableHead className="w-[300px] font-black uppercase text-xs tracking-widest py-4">
                   Master Entity Details
                 </TableHead>
-                <TableHead className="font-black uppercase text-[10px] tracking-widest text-center border-r border-dashed">
+                <TableHead className="font-black uppercase text-xs tracking-widest text-center border-r border-dashed">
                   Source (EnrollPro)
                 </TableHead>
-                <TableHead className="font-black uppercase text-[10px] tracking-widest text-center">
+                <TableHead className="font-black uppercase text-xs tracking-widest text-center">
                   A.T.L.A.S.
                 </TableHead>
-                <TableHead className="font-black uppercase text-[10px] tracking-widest text-center">
+                <TableHead className="font-black uppercase text-xs tracking-widest text-center">
                   S.M.A.R.T.
                 </TableHead>
-                <TableHead className="font-black uppercase text-[10px] tracking-widest text-center">
+                <TableHead className="font-black uppercase text-xs tracking-widest text-center">
                   A.I.M.S.
                 </TableHead>
                 <TableHead className="w-[80px]"></TableHead>
@@ -695,7 +740,7 @@ export default function EcosystemSync() {
                 <TableRow>
                   <TableCell
                     colSpan={6}
-                    className="h-80 text-center align-middle text-muted-foreground font-black uppercase text-[10px] tracking-tighter">
+                    className="h-80 text-center align-middle text-foreground font-black uppercase text-xs tracking-tighter">
                     <Loader2 className="size-6 animate-spin mx-auto mb-2 opacity-30" />
                     Querying Ledger...
                   </TableCell>
@@ -704,7 +749,7 @@ export default function EcosystemSync() {
                 <TableRow>
                   <TableCell
                     colSpan={6}
-                    className="h-80 text-center align-middle text-muted-foreground font-black uppercase text-[10px] tracking-tighter">
+                    className="h-80 text-center align-middle text-foreground font-black uppercase text-xs tracking-tighter">
                     No matching records in the Identity Ledger.
                   </TableCell>
                 </TableRow>
@@ -715,7 +760,7 @@ export default function EcosystemSync() {
                     className="group hover:bg-muted/30 transition-colors">
                     <TableCell className="py-3">
                       <div className="flex items-center gap-3">
-                        <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center font-black text-primary text-[10px] shrink-0 uppercase">
+                        <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center font-black text-primary text-xs shrink-0 uppercase">
                           {entity.name.split(",")[0].substring(0, 1)}
                           {entity.name.split(" ")[1]?.substring(0, 1)}
                         </div>
@@ -723,7 +768,7 @@ export default function EcosystemSync() {
                           <span className="font-bold text-xs uppercase">
                             {entity.name}
                           </span>
-                          <span className="text-[9px] font-black text-muted-foreground uppercase tracking-tighter">
+                          <span className="text-[9px] font-black text-foreground uppercase tracking-tighter">
                             {entity.type === "LEARNER" ? "LRN" : "EMP"}:{" "}
                             <span className="text-foreground">
                               {entity.identifier}
@@ -740,7 +785,7 @@ export default function EcosystemSync() {
                           <CheckCircle2 className="size-2.5" />
                           AUTHORITATIVE
                         </Badge>
-                        <ChevronRight className="size-3 text-muted-foreground/30" />
+                        <ChevronRight className="size-3 text-foreground/30" />
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
@@ -775,7 +820,7 @@ export default function EcosystemSync() {
                         variant="ghost"
                         size="icon"
                         className="size-7 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <ChevronRight className="size-3.5 text-muted-foreground" />
+                        <ChevronRight className="size-3.5 text-foreground" />
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -856,7 +901,9 @@ export default function EcosystemSync() {
       </Dialog>
 
       {/* ── Resolution Report Modal ── */}
-      <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
+      <Dialog
+        open={isReportOpen}
+        onOpenChange={setIsReportOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle className="font-black uppercase flex items-center gap-2">
@@ -864,20 +911,30 @@ export default function EcosystemSync() {
               Sync Resolution Report
             </DialogTitle>
             <DialogDescription className="font-bold text-xs">
-              Federation pipeline execution results for job {lastJobResults?.id.substring(0, 8)}.
+              Federation pipeline execution results for job{" "}
+              {lastJobResults?.id.substring(0, 8)}.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="py-4 space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="p-3 rounded-lg bg-green-50 border border-green-100">
-                <div className="text-[10px] font-black uppercase text-green-600 mb-1">Success Rate</div>
+                <div className="text-xs font-black uppercase text-green-600 mb-1">
+                  Success Rate
+                </div>
                 <div className="text-2xl font-black text-green-700">
-                  {lastJobResults?.total > 0 ? Math.round((lastJobResults.processed / lastJobResults.total) * 100) : 0}%
+                  {lastJobResults?.total > 0
+                    ? Math.round(
+                        (lastJobResults.processed / lastJobResults.total) * 100,
+                      )
+                    : 0}
+                  %
                 </div>
               </div>
               <div className="p-3 rounded-lg bg-primary/5 border border-primary/10">
-                <div className="text-[10px] font-black uppercase text-primary mb-1">Operations</div>
+                <div className="text-xs font-black uppercase text-primary mb-1">
+                  Operations
+                </div>
                 <div className="text-2xl font-black text-primary">
                   {lastJobResults?.processed} / {lastJobResults?.total}
                 </div>
@@ -885,10 +942,14 @@ export default function EcosystemSync() {
             </div>
 
             <div className="space-y-2">
-              <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-1">Subsystem Handshakes</h4>
+              <h4 className="text-xs font-black uppercase tracking-widest text-foreground px-1">
+                Subsystem Handshakes
+              </h4>
               <div className="space-y-1">
-                {["ATLAS", "SMART", "AIMS"].map(sub => (
-                  <div key={sub} className="flex items-center justify-between p-2 rounded border text-xs font-bold">
+                {["ATLAS", "SMART", "AIMS"].map((sub) => (
+                  <div
+                    key={sub}
+                    className="flex items-center justify-between p-2 rounded border text-xs font-bold">
                     <span className="uppercase">{sub} Subsystem</span>
                     <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none font-black text-[9px] px-1.5 py-0">
                       SUCCESSFUL
@@ -898,13 +959,17 @@ export default function EcosystemSync() {
               </div>
             </div>
 
-            <div className="p-3 rounded bg-muted/30 text-[10px] font-bold text-muted-foreground leading-relaxed italic border-l-2 border-primary">
-              "Master Roster remains in sync. Downstream subsystems have been notified of identity federation updates. Graceful degradation mechanisms are standing by for mesh fluctuations."
+            <div className="p-3 rounded bg-muted/30 text-xs font-bold text-foreground leading-relaxed italic border-l-2 border-primary">
+              "Master Roster remains in sync. Downstream subsystems have been
+              notified of identity federation updates. Graceful degradation
+              mechanisms are standing by for mesh fluctuations."
             </div>
           </div>
 
           <DialogFooter>
-            <Button onClick={() => setIsReportOpen(false)} className="w-full font-black uppercase text-xs tracking-widest h-10">
+            <Button
+              onClick={() => setIsReportOpen(false)}
+              className="w-full font-black uppercase text-xs tracking-widest h-10">
               Acknowledge & Close
             </Button>
           </DialogFooter>

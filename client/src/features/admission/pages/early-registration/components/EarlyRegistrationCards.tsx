@@ -122,14 +122,14 @@ export function EarlyRegistrationCards({
                 {isLockedHandoff ? (
                   <Badge
                     variant="outline"
-                    className="h-auto shrink-0 whitespace-normal border-slate-500 bg-slate-100 px-2 py-0.5 text-[10px] font-bold leading-tight text-slate-700">
+                    className="h-auto shrink-0 whitespace-normal border-slate-500 bg-slate-100 px-2 py-0.5 text-xs font-bold leading-tight text-slate-700">
                     <Lock className="mr-1 h-3 w-3" />
                     Locked: Sent to Enrollment
                   </Badge>
                 ) : (
                   <StatusBadge
                     status={app.status}
-                    className="text-[10px] px-2 py-0.5 shrink-0"
+                    className="text-xs px-2 py-0.5 shrink-0"
                   />
                 )}
               </div>
@@ -146,7 +146,7 @@ export function EarlyRegistrationCards({
                     </p>
                   )}
                 </div>
-                <p className="text-[10px] font-bold shrink-0 text-right">
+                <p className="text-xs font-bold shrink-0 text-right">
                   {getNextAction(app.status, app.applicantType)}
                 </p>
               </div>

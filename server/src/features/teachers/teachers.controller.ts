@@ -169,10 +169,15 @@ export async function index(req: Request, res: Response) {
     if (schoolYearId) {
       const sy = await prisma.schoolYear.findUnique({
         where: { id: schoolYearId },
-        select: { classOpeningDate: true, classEndDate: true },
+        select: {
+          yearLabel: true,
+          classOpeningDate: true,
+          classEndDate: true,
+        },
       });
       if (sy) {
         scopeData = {
+          yearLabel: sy.yearLabel,
           classOpeningDate: sy.classOpeningDate,
           classEndDate: sy.classEndDate,
         };

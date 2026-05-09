@@ -195,14 +195,14 @@ export function ReturningLearnerFlow({
               <div className="p-6 rounded-2xl bg-emerald-50 border-2 border-emerald-100 space-y-4">
                 <div className="flex justify-between items-start">
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 opacity-70">
+                    <span className="text-xs font-black uppercase tracking-widest text-emerald-700 opacity-70">
                       Learner Profile Found
                     </span>
                     <h3 className="text-2xl font-black text-foreground uppercase leading-none mt-1">
                       {learner.lastName}, {learner.firstName}
                     </h3>
                   </div>
-                  <Badge className="bg-emerald-600 text-white font-bold uppercase text-[10px]">
+                  <Badge className="bg-emerald-600 text-white font-bold uppercase text-xs">
                     {learner.promotionStatus}
                   </Badge>
                 </div>
@@ -229,7 +229,7 @@ export function ReturningLearnerFlow({
                 {learner.hasPsaBirthCertificate && (
                   <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-100/50 border border-emerald-200">
                     <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                    <p className="text-[10px] font-bold text-emerald-800">
+                    <p className="text-xs font-bold text-emerald-800">
                       PSA Birth Certificate already on file and verified.
                     </p>
                   </div>

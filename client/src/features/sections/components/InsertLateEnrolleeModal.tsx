@@ -166,7 +166,7 @@ export function InsertLateEnrolleeModal({
             {classOpeningDate && (
               <Badge
                 variant="outline"
-                className="bg-white font-bold text-[10px] uppercase border-border px-2">
+                className="bg-white font-bold text-xs uppercase border-border px-2">
                 Classes Started:{" "}
                 {format(new Date(classOpeningDate), "MMM d, yyyy")}
               </Badge>
@@ -192,7 +192,7 @@ export function InsertLateEnrolleeModal({
                 {loading ? (
                   <div className="py-20 flex flex-col items-center justify-center space-y-3">
                     <Loader2 className="h-8 w-8 animate-spin text-foreground" />
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground animate-pulse">
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-foreground animate-pulse">
                       Scanning LIS Pool...
                     </p>
                   </div>
@@ -228,7 +228,7 @@ export function InsertLateEnrolleeModal({
                             <span className="font-black text-sm uppercase group-hover:text-primary transition-colors">
                               {learner.lastName}, {learner.firstName}
                             </span>
-                            <span className="text-[10px] font-bold text-foreground ">
+                            <span className="text-xs font-bold text-foreground ">
                               LRN: {learner.lrn || "PENDING"}
                             </span>
                           </div>
@@ -283,7 +283,7 @@ export function InsertLateEnrolleeModal({
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-xl border border-border bg-muted/20">
-                  <p className="text-[10px] font-black text-foreground uppercase tracking-widest mb-1">
+                  <p className="text-xs font-black text-foreground uppercase tracking-widest mb-1">
                     Target Section
                   </p>
                   <p className="font-black text-sm uppercase">{sectionName}</p>
@@ -292,7 +292,7 @@ export function InsertLateEnrolleeModal({
                   </p>
                 </div>
                 <div className="p-4 rounded-xl border border-border bg-muted/20">
-                  <p className="text-[10px] font-black text-foreground uppercase tracking-widest mb-1">
+                  <p className="text-xs font-black text-foreground uppercase tracking-widest mb-1">
                     Section Status
                   </p>
                   <p className="font-black text-sm uppercase">
@@ -338,7 +338,7 @@ export function InsertLateEnrolleeModal({
         </div>
 
         <DialogFooter className="px-6 py-4 bg-muted/30 border-t border-border flex items-center justify-between sm:justify-between">
-          <p className="text-[10px] font-black text-foreground uppercase tracking-widest">
+          <p className="text-xs font-black text-foreground uppercase tracking-widest">
             S.M.A.R.T. Integration Active
           </p>
           <div className="flex items-center gap-2">

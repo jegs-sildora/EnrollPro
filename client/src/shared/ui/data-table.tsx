@@ -169,23 +169,33 @@ export function DataTable<TData, TValue>({
           <TableBody className="relative">
             <AnimatePresence mode="wait" initial={false}>
               {loading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <MotionTableRow
-                    key={`skeleton-${i}`}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}>
-                    {columns.map((column, index) => {
-                      const meta = column.meta as { skeletonClassName?: string } | undefined;
-                      return (
-                        <TableCell key={index} className="p-4">
-                          <Skeleton className={cn("h-5 w-full", meta?.skeletonClassName)} />
-                        </TableCell>
-                      );
-                    })}
-                  </MotionTableRow>
-                ))
+                <motion.div
+                  key="skeleton-container"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="contents"
+                >
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <MotionTableRow key={`skeleton-${i}`}>
+                      {columns.map((column, index) => {
+                        const meta = column.meta as {
+                          skeletonClassName?: string;
+                        } | undefined;
+                        return (
+                          <TableCell key={index} className="p-4">
+                            <Skeleton
+                              className={cn(
+                                "h-5 w-full",
+                                meta?.skeletonClassName,
+                              )}
+                            />
+                          </TableCell>
+                        );
+                      })}
+                    </MotionTableRow>
+                  ))}
+                </motion.div>
               ) : rows.length > 0 ? (
                 virtualize ? (
                   [

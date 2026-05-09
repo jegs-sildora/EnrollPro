@@ -1561,13 +1561,13 @@ export default function Students() {
 
                               <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                                 <div>
-                                  <p className="text-[10px] uppercase tracking-wider font-bold text-foreground">
+                                  <p className="text-xs uppercase tracking-wider font-bold text-foreground">
                                     LRN
                                   </p>
                                   <p className="font-bold">{student.lrn}</p>
                                 </div>
                                 <div>
-                                  <p className="text-[10px] uppercase tracking-wider font-bold text-foreground">
+                                  <p className="text-xs uppercase tracking-wider font-bold text-foreground">
                                     Gender
                                   </p>
                                   <p className="font-bold uppercase">
@@ -1581,7 +1581,7 @@ export default function Students() {
                                   </p>
                                 </div>
                                 <div>
-                                  <p className="text-[10px] uppercase tracking-wider font-bold text-foreground">
+                                  <p className="text-xs uppercase tracking-wider font-bold text-foreground">
                                     Grade Level
                                   </p>
                                   <p className="font-bold">
@@ -1589,7 +1589,7 @@ export default function Students() {
                                   </p>
                                 </div>
                                 <div>
-                                  <p className="text-[10px] uppercase tracking-wider font-bold text-foreground">
+                                  <p className="text-xs uppercase tracking-wider font-bold text-foreground">
                                     Section
                                   </p>
                                   <p className="font-bold">
@@ -1912,7 +1912,7 @@ export default function Students() {
           <div className="space-y-6">
             {/* Group 1: Contact Information */}
             <div className="space-y-3">
-              <p className="text-[10px] uppercase tracking-widest font-black text-muted-foreground border-b pb-1">
+              <p className="text-xs uppercase tracking-widest font-black text-foreground border-b pb-1">
                 Contact Information
               </p>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -1960,7 +1960,7 @@ export default function Students() {
 
             {/* Group 2: Emergency Contact */}
             <div className="space-y-3">
-              <p className="text-[10px] uppercase tracking-widest font-black text-muted-foreground border-b pb-1">
+              <p className="text-xs uppercase tracking-widest font-black text-foreground border-b pb-1">
                 Emergency Contact (Secondary)
               </p>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -2007,7 +2007,7 @@ export default function Students() {
 
             {/* Group 3: Current Location */}
             <div className="space-y-3">
-              <p className="text-[10px] uppercase tracking-widest font-black text-muted-foreground border-b pb-1">
+              <p className="text-xs uppercase tracking-widest font-black text-foreground border-b pb-1">
                 Current Location
               </p>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -2103,7 +2103,7 @@ export default function Students() {
                 inputMode="numeric"
                 maxLength={12}
               />
-              <p className="text-[11px] text-muted-foreground font-medium text-center">
+              <p className="text-[11px] text-foreground font-medium text-center">
                 Must be exactly 12 digits as found in the DepEd LIS portal.
               </p>
             </div>

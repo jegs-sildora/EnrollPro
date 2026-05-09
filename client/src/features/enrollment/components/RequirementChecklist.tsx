@@ -486,7 +486,7 @@ export function RequirementChecklist({
               {currentAcademicStatus === "RETAINED" && (
                 <Badge
                   variant="destructive"
-                  className="text-[10px] font-bold">
+                  className="text-xs font-bold">
                   Retained blocks verification/enrollment
                 </Badge>
               )}
@@ -560,7 +560,7 @@ export function RequirementChecklist({
                       </TooltipProvider>
                     </div>
                     {!req.checklistKey && (
-                      <p className="text-[10px] text-foreground">
+                      <p className="text-xs text-foreground">
                         Tracked through uploaded documents.
                       </p>
                     )}

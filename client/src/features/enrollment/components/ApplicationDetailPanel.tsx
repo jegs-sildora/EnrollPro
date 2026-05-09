@@ -224,7 +224,7 @@ export function ApplicationDetailPanel({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-0 border-t pt-4">
             <div>
-              <p className="text-[10px] sm:text-[0.625rem] uppercase tracking-widest">
+              <p className="text-xs sm:text-[0.625rem] uppercase tracking-widest">
                 Grade Level (Applicant Type)
               </p>
               <p className="text-xs sm:text-sm">
@@ -233,12 +233,12 @@ export function ApplicationDetailPanel({
               </p>
             </div>
             <div className="text-left sm:text-right">
-              <p className="text-[10px] sm:text-[0.625rem] uppercase tracking-widest">
+              <p className="text-xs sm:text-[0.625rem] uppercase tracking-widest">
                 Learner Reference Number
               </p>
               <p className="text-xs sm:text-sm ">{applicant.lrn || "N/A"}</p>
               {applicant.isPendingLrnCreation && (
-                <p className="text-[10px] sm:text-xs font-bold text-amber-700">
+                <p className="text-xs sm:text-xs font-bold text-amber-700">
                   Pending LRN Creation
                 </p>
               )}

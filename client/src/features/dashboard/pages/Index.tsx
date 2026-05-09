@@ -511,8 +511,8 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xs font-black  text-foreground">
                   {effectiveFocus === "ENROLLMENT"
-                    ? "📋 Pending BOSY Verifications"
-                    : "📋 Pending Review"}
+                    ? "Pending BOSY Verifications"
+                    : "Pending Review"}
                 </CardTitle>
                 <div
                   className={cn(
@@ -574,7 +574,7 @@ export default function Dashboard() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xs font-black  text-foreground">
-                  ⚠️ Section Capacity Alerts
+                  Section Capacity Alerts
                 </CardTitle>
                 <div
                   className={cn(

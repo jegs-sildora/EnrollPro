@@ -237,28 +237,9 @@ model Learner {
   enrollmentApplications        EnrollmentApplication[]
   healthRecords                 HealthRecord[]
   ecosystemSyncStatuses         EcosystemSyncStatus[]
-  sf10Requests                  Sf10Request[]
 
   @@index([lastName, firstName, birthdate], map: "idx_learners_dedup")
   @@map("learners")
-}
-
-/// Tracking of SF10 (Learner's Permanent Academic Record) requests from other schools
-model Sf10Request {
-  id                      Int                 @id @default(autoincrement())
-  learnerId               Int                 @map("learner_id")
-  requestingSchoolName    String              @map("requesting_school_name")
-  requestingSchoolDepedId String?             @map("requesting_school_deped_id")
-  requestDate             DateTime            @default(now()) @map("request_date") @db.Timestamptz(6)
-  status                  Sf10RequestStatus   @default(PENDING)
-  sentDate                DateTime?           @map("sent_date") @db.Timestamptz(6)
-  notes                   String?
-  createdAt               DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt               DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
-  learner                 Learner             @relation(fields: [learnerId], references: [id], onDelete: Cascade)
-
-  @@index([learnerId], map: "idx_sf10_requests_learner_id")
-  @@map("sf10_requests")
 }
 
 /// One registration record per learner per school year (Phase 1: Jan–May)
@@ -468,7 +449,6 @@ model ApplicationChecklist {
   isPsaBirthCertPresented      Boolean                       @default(false) @map("is_psa_birth_cert_presented")
   isOriginalPsaBcCollected     Boolean                       @default(false) @map("is_original_psa_bc_collected")
   isSf9Submitted               Boolean                       @default(false) @map("is_sf9_submitted")
-  isSf10Requested              Boolean                       @default(false) @map("is_sf10_requested")
   isGoodMoralPresented         Boolean                       @default(false) @map("is_good_moral_presented")
   isMedicalEvalSubmitted       Boolean                       @default(false) @map("is_medical_eval_submitted")
   isCertOfRecognitionPresented Boolean                       @default(false) @map("is_cert_of_recognition_presented")
@@ -966,14 +946,6 @@ enum LearnerStatus {
   TRANSFERRED_OUT
 
   @@map("learner_status")
-}
-
-enum Sf10RequestStatus {
-  PENDING
-  SENT
-  CANCELLED
-
-  @@map("sf10_request_status")
 }
 
 enum PortalControl {

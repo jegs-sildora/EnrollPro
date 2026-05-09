@@ -292,7 +292,7 @@ export function BatchConfirmationModal({
             <TabsList className="bg-muted/50 h-auto p-1.5 gap-1.5 justify-start border border-border/60 relative rounded-xl w-full sm:w-auto">
               <TabsTrigger
                 value="scan"
-                className="flex-1 sm:flex-none py-2 px-6 gap-2 font-black uppercase text-[10px] tracking-widest relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-all">
+                className="flex-1 sm:flex-none py-2 px-6 gap-2 font-black uppercase text-xs tracking-widest relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-all">
                 {activeTab === "scan" && (
                   <motion.div
                     layoutId="batch-tab-pill"
@@ -312,7 +312,7 @@ export function BatchConfirmationModal({
               </TabsTrigger>
               <TabsTrigger
                 value="csv"
-                className="flex-1 sm:flex-none py-2 px-6 gap-2 font-black uppercase text-[10px] tracking-widest relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-all">
+                className="flex-1 sm:flex-none py-2 px-6 gap-2 font-black uppercase text-xs tracking-widest relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-all">
                 {activeTab === "csv" && (
                   <motion.div
                     layoutId="batch-tab-pill"
@@ -338,7 +338,7 @@ export function BatchConfirmationModal({
               value="scan"
               className="m-0 space-y-6">
               <div className="space-y-3">
-                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground flex justify-between items-center ml-1">
+                <Label className="text-xs font-black uppercase tracking-[0.2em] text-foreground flex justify-between items-center ml-1">
                   <span>1. Scan or Type LRN & Hit Enter</span>
                   {loading && (
                     <div className="flex items-center gap-2 text-primary animate-pulse">
@@ -392,7 +392,7 @@ export function BatchConfirmationModal({
                 </div>
                 <Button
                   variant="outline"
-                  className="font-black uppercase text-[10px] tracking-widest px-8 shadow-sm">
+                  className="font-black uppercase text-xs tracking-widest px-8 shadow-sm">
                   Browse Files
                 </Button>
               </div>
@@ -401,7 +401,7 @@ export function BatchConfirmationModal({
             {/* Staging Queue Table (SF1 Style) */}
             <div className="space-y-4 mt-6">
               <div className="flex items-center justify-between px-1">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-foreground flex items-center gap-3">
+                <h3 className="text-xs font-black uppercase tracking-[0.25em] text-foreground flex items-center gap-3">
                   Staging Queue
                   <div className="h-5 px-2 bg-primary/10 text-primary rounded border border-primary/20 flex items-center justify-center font-black">
                     {stagingList.length}
@@ -412,7 +412,7 @@ export function BatchConfirmationModal({
                     variant="ghost"
                     size="sm"
                     onClick={() => setStagingList([])}
-                    className="h-7 px-3 text-[10px] font-black uppercase tracking-widest text-foreground hover:text-destructive hover:bg-destructive/5">
+                    className="h-7 px-3 text-xs font-black uppercase tracking-widest text-foreground hover:text-destructive hover:bg-destructive/5">
                     <Trash2 className="h-3.5 w-3.5 mr-2" /> Clear Queue
                   </Button>
                 )}
@@ -438,16 +438,16 @@ export function BatchConfirmationModal({
                     <table className="w-full text-left border-collapse">
                       <thead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-md border-b border-border">
                         <tr>
-                          <th className="px-5 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-foreground">
+                          <th className="px-5 py-4 text-xs font-black uppercase tracking-[0.15em] text-foreground">
                             Learner / Profile
                           </th>
-                          <th className="px-5 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-foreground">
+                          <th className="px-5 py-4 text-xs font-black uppercase tracking-[0.15em] text-foreground">
                             Guardian Name
                           </th>
-                          <th className="px-5 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-foreground">
+                          <th className="px-5 py-4 text-xs font-black uppercase tracking-[0.15em] text-foreground">
                             Contact
                           </th>
-                          <th className="px-5 py-4 text-center text-[10px] font-black uppercase tracking-[0.15em] text-foreground w-[100px]">
+                          <th className="px-5 py-4 text-center text-xs font-black uppercase tracking-[0.15em] text-foreground w-[100px]">
                             Consent
                           </th>
                           <th className="px-5 py-4 w-[60px]"></th>
@@ -469,7 +469,7 @@ export function BatchConfirmationModal({
                                   {s.lastName}, {s.firstName}
                                 </span>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-[10px] font-black text-foreground  tabular-nums bg-muted/50 px-1.5 py-0.5 rounded border border-border/50">
+                                  <span className="text-xs font-black text-foreground  tabular-nums bg-muted/50 px-1.5 py-0.5 rounded border border-border/50">
                                     {s.lrn}
                                   </span>
                                   <Badge
@@ -551,19 +551,19 @@ export function BatchConfirmationModal({
 
         <DialogFooter className="px-8 py-6 bg-muted/20 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-0">
           <div className="flex flex-col sm:items-start items-center">
-            <p className="text-[10px] font-black text-foreground uppercase tracking-widest mb-2">
+            <p className="text-xs font-black text-foreground uppercase tracking-widest mb-2">
               Deployment Dashboard
             </p>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-lg border border-emerald-100">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-black uppercase text-emerald-800 ">
+                <span className="text-xs font-black uppercase text-emerald-800 ">
                   Confirmed: {stagingList.filter((s) => s.isEnrolling).length}
                 </span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg border border-border/50">
                 <div className="w-2 h-2 rounded-full bg-muted-foreground" />
-                <span className="text-[10px] font-black uppercase text-foreground ">
+                <span className="text-xs font-black uppercase text-foreground ">
                   Transfers: {stagingList.filter((s) => !s.isEnrolling).length}
                 </span>
               </div>
@@ -574,7 +574,7 @@ export function BatchConfirmationModal({
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="flex-1 sm:flex-none font-black uppercase text-[10px] tracking-widest h-12 px-8 hover:bg-muted/50">
+              className="flex-1 sm:flex-none font-black uppercase text-xs tracking-widest h-12 px-8 hover:bg-muted/50">
               Cancel
             </Button>
             <Button

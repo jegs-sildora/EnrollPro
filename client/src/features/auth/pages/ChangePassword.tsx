@@ -72,7 +72,7 @@ const SecurityRequirements = memo(function SecurityRequirements({
 
   return (
     <div className="rounded-xl bg-muted/50 p-4 border border-muted-foreground/10 space-y-3">
-      <p className="font-bold uppercase tracking-widest text-foreground/70 text-[10px]">
+      <p className="font-bold uppercase tracking-widest text-foreground/70 text-xs">
         Security Requirements
       </p>
       <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
@@ -281,7 +281,7 @@ export default function ChangePassword() {
                   </button>
                 </div>
                 {errors.newPassword && (
-                  <p className="text-[10px] font-bold text-destructive uppercase ml-1">
+                  <p className="text-xs font-bold text-destructive uppercase ml-1">
                     {errors.newPassword.message}
                   </p>
                 )}
@@ -304,7 +304,7 @@ export default function ChangePassword() {
                   />
                 </div>
                 {errors.confirmPassword && (
-                  <p className="text-[10px] font-bold text-destructive uppercase ml-1">
+                  <p className="text-xs font-bold text-destructive uppercase ml-1">
                     {errors.confirmPassword.message}
                   </p>
                 )}

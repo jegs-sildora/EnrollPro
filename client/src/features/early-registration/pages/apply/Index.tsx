@@ -189,7 +189,7 @@ export default function EarlyRegistrationApply() {
                     <h2 className="text-2xl sm:text-3xl font-black uppercase text-black">
                       {schoolName}
                     </h2>
-                    <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black tracking-[0.2em] uppercase border border-slate-200">
+                    <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-black tracking-[0.2em] uppercase border border-slate-200">
                       {isBosyLocked
                         ? "ENROLLMENT FINALIZED"
                         : isRegularEnrollment
@@ -307,7 +307,7 @@ export default function EarlyRegistrationApply() {
                           </div>
                           <div className="flex items-start gap-2 text-blue-900/80 text-xs leading-relaxed">
                             <p className="font-medium">
-                              <span className="font-black uppercase text-[10px] tracking-tight mr-1">
+                              <span className="font-black uppercase text-xs tracking-tight mr-1">
                                 Note:
                               </span>
                               Early Registration is{" "}

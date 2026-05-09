@@ -100,7 +100,7 @@ function UserNav() {
             variant="ghost"
             className="relative h-9 w-fit gap-2 px-2 rounded-lg border border-transparent transition-all">
             <Avatar className="h-7 w-7 border shadow-sm">
-              <AvatarFallback className="text-[10px] font-bold bg-primary/10 text-primary">
+              <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
                 {initials}
               </AvatarFallback>
             </Avatar>

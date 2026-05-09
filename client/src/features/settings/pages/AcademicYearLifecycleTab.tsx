@@ -360,7 +360,7 @@ export default function AcademicYearLifecycleTab() {
                 synchronized with A.T.L.A.S. and S.M.A.R.T. New registrations
                 are now classified as "Late Enrollees".
                 {bosyLockedAt && (
-                  <div className="mt-2 flex items-center gap-1.5 text-[10px] uppercase font-black opacity-70">
+                  <div className="mt-2 flex items-center gap-1.5 text-xs uppercase font-black opacity-70">
                     <History className="h-3 w-3" />
                     Locked on {format(new Date(bosyLockedAt), "PPP p")}
                   </div>
@@ -571,7 +571,7 @@ export default function AcademicYearLifecycleTab() {
                                 )}
                             </div>
                             {lockConfirmTouched && !isLockConfirmValid && (
-                              <p className="text-[10px] text-primary font-bold uppercase animate-in fade-in slide-in-from-top-1 duration-200">
+                              <p className="text-xs text-primary font-bold uppercase animate-in fade-in slide-in-from-top-1 duration-200">
                                 School Year label does not match
                               </p>
                             )}
@@ -611,7 +611,7 @@ export default function AcademicYearLifecycleTab() {
                               ))}
                             </div>
                             {pinTouched && !isPinValid && (
-                              <p className="text-[10px] text-primary font-bold uppercase animate-in fade-in slide-in-from-top-1 duration-200">
+                              <p className="text-xs text-primary font-bold uppercase animate-in fade-in slide-in-from-top-1 duration-200">
                                 Valid 6-digit administrative PIN required
                               </p>
                             )}
@@ -770,7 +770,7 @@ export default function AcademicYearLifecycleTab() {
                         ))}
                       </div>
                       {unlockPinTouched && !isUnlockPinValid && (
-                        <p className="text-[10px] text-primary font-bold uppercase animate-in fade-in slide-in-from-top-1 duration-200">
+                        <p className="text-xs text-primary font-bold uppercase animate-in fade-in slide-in-from-top-1 duration-200">
                           Valid 6-digit administrative PIN required
                         </p>
                       )}

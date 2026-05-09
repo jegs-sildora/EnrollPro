@@ -273,7 +273,7 @@ export default function StudentProfile() {
             {student.status === "TEMPORARILY_ENROLLED" && (
               <div className="flex items-center gap-2 mt-1 px-3 py-1 rounded-lg bg-amber-50 border border-amber-100 animate-in fade-in slide-in-from-left-2 duration-500">
                 <ShieldCheck className="h-3 w-3 text-amber-600" />
-                <p className="text-[10px] font-black uppercase tracking-wider text-amber-700">
+                <p className="text-xs font-black uppercase tracking-wider text-amber-700">
                   Deficiency:{" "}
                   {student.isMissingSf9 && "Missing SF9 (Report Card)"}
                   {student.isMissingSf9 &&
@@ -782,7 +782,7 @@ export default function StudentProfile() {
                           <CardTitle className="text-lg font-black uppercase text-amber-900 leading-none">
                             Deficiency Resolution
                           </CardTitle>
-                          <p className="text-[10px] font-bold text-amber-700/70 mt-1 uppercase tracking-widest">
+                          <p className="text-xs font-bold text-amber-700/70 mt-1 uppercase tracking-widest">
                             DepEd Order 017, s. 2025 Compliance
                           </p>
                         </div>
@@ -1132,7 +1132,7 @@ export default function StudentProfile() {
                             </h3>
                             <p
                               className={cn(
-                                "text-[10px] font-bold mt-1 uppercase tracking-widest",
+                                "text-xs font-bold mt-1 uppercase tracking-widest",
                                 student.hasPsaBirthCertificate ||
                                   student.birthCertificateType === "PSA"
                                   ? "text-emerald-600"
@@ -1156,7 +1156,7 @@ export default function StudentProfile() {
                           )}>
                           <p
                             className={cn(
-                              "text-[10px] font-black uppercase ",
+                              "text-xs font-black uppercase ",
                               student.hasPsaBirthCertificate ||
                                 student.birthCertificateType === "PSA"
                                 ? "text-foreground/60"
@@ -1218,7 +1218,7 @@ export default function StudentProfile() {
                         student.birthCertificateType === "PSA" ? (
                           <div className="flex items-center gap-2 bg-primary/10 p-3 rounded-lg border border-primary/20 mt-2">
                             <Lock className="h-4 w-4 text-primary" />
-                            <p className="text-[10px] font-black uppercase tracking-widest text-primary">
+                            <p className="text-xs font-black uppercase tracking-widest text-primary">
                               Vault Locked - DepEd "Once Only" Rule Satisfied
                             </p>
                           </div>
@@ -1230,7 +1230,7 @@ export default function StudentProfile() {
                                 October 31, 2026
                               </span>
                             </p>
-                            <p className="text-[10px] font-medium text-amber-700 mt-1 leading-tight">
+                            <p className="text-xs font-medium text-amber-700 mt-1 leading-tight">
                               Secondary proof accepted. PSA must be submitted by
                               the deadline to finalize the permanent record.
                             </p>
@@ -1247,7 +1247,7 @@ export default function StudentProfile() {
                           )}>
                           <p
                             className={cn(
-                              "text-[10px] font-medium leading-relaxed italic",
+                              "text-xs font-medium leading-relaxed italic",
                               student.hasPsaBirthCertificate ||
                                 student.birthCertificateType === "PSA"
                                 ? "text-emerald-800"
@@ -1266,7 +1266,7 @@ export default function StudentProfile() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full border-amber-300 text-amber-800 hover:bg-amber-100 font-bold uppercase text-[10px] tracking-widest h-8 mt-2"
+                            className="w-full border-amber-300 text-amber-800 hover:bg-amber-100 font-bold uppercase text-xs tracking-widest h-8 mt-2"
                             onClick={() => setIsAuthModalOpen(true)}>
                             Update to PSA Original
                           </Button>
@@ -1282,7 +1282,7 @@ export default function StudentProfile() {
                             <h3 className="font-black text-rose-900 uppercase leading-none">
                               PSA Birth Certificate
                             </h3>
-                            <p className="text-[10px] font-bold mt-1 uppercase tracking-widest text-rose-600">
+                            <p className="text-xs font-bold mt-1 uppercase tracking-widest text-rose-600">
                               Missing from Vault
                             </p>
                           </div>
@@ -1315,12 +1315,12 @@ export default function StudentProfile() {
                           <h3 className="font-black text-slate-900 uppercase leading-none">
                             SF10 (Permanent Record)
                           </h3>
-                          <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest">
+                          <p className="text-xs font-bold text-slate-500 mt-1 uppercase tracking-widest">
                             Awaiting Graduation / Transfer
                           </p>
                         </div>
                       </div>
-                      <p className="text-[10px] font-medium text-slate-500 leading-relaxed italic">
+                      <p className="text-xs font-medium text-slate-500 leading-relaxed italic">
                         "Original SF10 is held by the school until formal
                         transfer out or completion of JHS."
                       </p>

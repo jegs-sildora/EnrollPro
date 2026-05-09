@@ -633,7 +633,7 @@ export default function AdminUsers() {
         header: () => (
           <button
             onClick={() => handleSort("lastName")}
-            className="flex h-11 w-full items-center justify-start gap-1 px-4 text-[10px] font-extrabold uppercase tracking-widest text-maroon-900 bg-maroon-50/50 hover:bg-maroon-100/50 transition-colors">
+            className="flex h-11 w-full items-center justify-start gap-1 px-4 text-xs font-extrabold uppercase tracking-widest text-maroon-900 bg-maroon-50/50 hover:bg-maroon-100/50 transition-colors">
             {activeTab === "staff" ? "Personnel Identity" : "Learner Identity"}
             {getSortIcon("lastName")}
           </button>
@@ -645,7 +645,7 @@ export default function AdminUsers() {
           return (
             <div className="flex items-center gap-3 text-left min-w-[240px] pl-2 py-1">
               <Avatar className="h-9 w-9 border-2 border-primary/10 shadow-sm">
-                <AvatarFallback className="text-[10px] font-bold bg-primary/5 text-primary">
+                <AvatarFallback className="text-xs font-bold bg-primary/5 text-primary">
                   {initials}
                 </AvatarFallback>
               </Avatar>
@@ -653,16 +653,16 @@ export default function AdminUsers() {
                 <span className="font-bold text-sm uppercase leading-tight text-foreground truncate">
                   {user.lastName}, {user.firstName}
                 </span>
-                <span className="text-[11px] font-bold text-muted-foreground truncate">
+                <span className="text-[11px] font-bold text-foreground truncate">
                   {user.email}
                 </span>
                 {activeTab === "staff" && user.employeeId && (
-                  <span className="text-[10px] font-black text-primary uppercase mt-0.5 flex items-center gap-1">
+                  <span className="text-xs font-black text-primary uppercase mt-0.5 flex items-center gap-1">
                     <IdCard className="h-2.5 w-2.5" /> ID: {user.employeeId}
                   </span>
                 )}
                 {activeTab === "learners" && (
-                  <span className="text-[10px] font-extrabold text-foreground flex items-center gap-1 mt-0.5 shrink-0">
+                  <span className="text-xs font-extrabold text-foreground flex items-center gap-1 mt-0.5 shrink-0">
                     <Fingerprint className="h-2.5 w-2.5" />
                     {user.learnerProfile?.lrn || "NO LRN"}
                   </span>
@@ -675,7 +675,7 @@ export default function AdminUsers() {
       {
         id: "context",
         header: () => (
-          <div className="flex h-11 w-full items-center justify-center text-[10px] font-extrabold uppercase tracking-widest text-maroon-900 bg-maroon-50/50">
+          <div className="flex h-11 w-full items-center justify-center text-xs font-extrabold uppercase tracking-widest text-maroon-900 bg-maroon-50/50">
             {activeTab === "staff" ? "Designation / Role" : "Class Context"}
           </div>
         ),
@@ -689,7 +689,7 @@ export default function AdminUsers() {
                   <div className="text-[11px] font-black text-primary uppercase leading-none">
                     {currentApp?.gradeLevel?.name || "—"}
                   </div>
-                  <div className="text-[10px] font-bold text-muted-foreground uppercase">
+                  <div className="text-xs font-bold text-foreground uppercase">
                     {currentApp?.enrollmentRecord?.section?.name ||
                       "UNSECTIONED"}
                   </div>
@@ -738,7 +738,7 @@ export default function AdminUsers() {
         header: () => (
           <button
             onClick={() => handleSort("isActive")}
-            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-[10px] font-extrabold uppercase tracking-widest text-maroon-900 bg-maroon-50/50">
+            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-extrabold uppercase tracking-widest text-maroon-900 bg-maroon-50/50">
             Account Status{getSortIcon("isActive")}
           </button>
         ),
@@ -763,7 +763,7 @@ export default function AdminUsers() {
                           : "bg-green-500 ring-green-100",
                     )}
                   />
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider">
+                  <span className="text-xs font-extrabold uppercase tracking-wider">
                     {isDropped || !user.isActive
                       ? "LOCKED"
                       : !isActivated
@@ -789,7 +789,7 @@ export default function AdminUsers() {
                         : "bg-green-500 ring-green-100",
                   )}
                 />
-                <span className="text-[10px] font-extrabold uppercase tracking-wider">
+                <span className="text-xs font-extrabold uppercase tracking-wider">
                   {!user.isActive
                     ? "LOCKED"
                     : isPending
@@ -804,7 +804,7 @@ export default function AdminUsers() {
       {
         id: "actions",
         header: () => (
-          <div className="flex h-11 w-full items-center justify-center px-3 text-[10px] font-extrabold uppercase tracking-widest text-maroon-900 bg-maroon-50/50 rounded-tr-lg">
+          <div className="flex h-11 w-full items-center justify-center px-3 text-xs font-extrabold uppercase tracking-widest text-maroon-900 bg-maroon-50/50 rounded-tr-lg">
             Actions
           </div>
         ),
@@ -816,7 +816,7 @@ export default function AdminUsers() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 px-3 font-black text-[10px] uppercase tracking-widest gap-1.5 border-orange-100 hover:bg-orange-50 hover:text-orange-600 transition-all"
+                  className="h-8 px-3 font-black text-xs uppercase tracking-widest gap-1.5 border-orange-100 hover:bg-orange-50 hover:text-orange-600 transition-all"
                   title="Reset to Default Password"
                   onClick={() => {
                     setSelectedUser(user);
@@ -863,7 +863,7 @@ export default function AdminUsers() {
                 <DropdownMenuContent
                   align="end"
                   className="w-48">
-                  <DropdownMenuLabel className="text-[10px] font-extrabold uppercase tracking-widest opacity-50">
+                  <DropdownMenuLabel className="text-xs font-extrabold uppercase tracking-widest opacity-50">
                     Account Control
                   </DropdownMenuLabel>
                   {user.role === "LEARNER" && (
@@ -971,7 +971,7 @@ export default function AdminUsers() {
                     ? "Personnel Filter"
                     : "Learner Filter"}
                 </span>
-                <div className="hidden sm:flex items-center gap-1 px-1.5 py-0.5 bg-muted/50 rounded border text-[10px] text-muted-foreground font-extrabold">
+                <div className="hidden sm:flex items-center gap-1 px-1.5 py-0.5 bg-muted/50 rounded border text-xs text-foreground font-extrabold">
                   <Command className="h-2.5 w-2.5" /> F or /
                 </div>
               </Label>
@@ -1163,7 +1163,7 @@ export default function AdminUsers() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3 min-w-0">
                       <Avatar className="h-8 w-8 border shrink-0">
-                        <AvatarFallback className="text-[10px] font-bold">
+                        <AvatarFallback className="text-xs font-bold">
                           {user.firstName.charAt(0)}
                           {user.lastName.charAt(0)}
                         </AvatarFallback>
@@ -1172,7 +1172,7 @@ export default function AdminUsers() {
                         <p className="font-bold text-sm uppercase leading-tight break-words">
                           {user.lastName}, {user.firstName}
                         </p>
-                        <p className="text-xs font-bold text-muted-foreground truncate">
+                        <p className="text-xs font-bold text-foreground truncate">
                           {user.email}
                         </p>
                       </div>
@@ -1180,7 +1180,7 @@ export default function AdminUsers() {
                     <Badge
                       variant="outline"
                       className={cn(
-                        "text-[10px] font-bold uppercase shrink-0",
+                        "text-xs font-bold uppercase shrink-0",
                         user.role === "LEARNER"
                           ? "bg-blue-50 text-blue-700"
                           : "bg-purple-50 text-purple-700",
@@ -1225,7 +1225,7 @@ export default function AdminUsers() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-8 text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 text-white"
+                          className="h-8 text-xs font-bold uppercase tracking-widest hover:bg-white/10 text-white"
                           onClick={() =>
                             sileo.info({
                               title: "Bulk Action",
@@ -1238,7 +1238,7 @@ export default function AdminUsers() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-8 text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 text-white"
+                          className="h-8 text-xs font-bold uppercase tracking-widest hover:bg-white/10 text-white"
                           onClick={() =>
                             sileo.info({
                               title: "Bulk Action",
@@ -1254,7 +1254,7 @@ export default function AdminUsers() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-8 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 text-white"
+                          className="h-8 text-xs font-black uppercase tracking-widest hover:bg-white/10 text-white"
                           onClick={() =>
                             sileo.info({
                               title: "Bulk Action",
@@ -1271,7 +1271,7 @@ export default function AdminUsers() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 text-[10px] font-bold uppercase tracking-widest hover:bg-red-500/20 text-red-200 hover:text-red-100"
+                      className="h-8 text-xs font-bold uppercase tracking-widest hover:bg-red-500/20 text-red-200 hover:text-red-100"
                       onClick={() =>
                         sileo.info({
                           title: "Bulk Action",
@@ -1452,7 +1452,6 @@ export default function AdminUsers() {
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto scrollbar-thin">
           <SheetHeader className="pb-6 border-b">
             <SheetTitle className="text-2xl font-bold flex items-center gap-2 text-maroon-900">
-              <UserCogIcon className="h-6 w-6 text-primary" />
               Add Staff Account
             </SheetTitle>
             <SheetDescription className="font-bold text-foreground">
@@ -1488,7 +1487,7 @@ export default function AdminUsers() {
                     )}
                   />
                   {createErrors.firstName && (
-                    <p className="text-[10px] font-bold text-destructive uppercase">
+                    <p className="text-xs font-bold text-destructive uppercase">
                       {createErrors.firstName}
                     </p>
                   )}
@@ -1515,7 +1514,7 @@ export default function AdminUsers() {
                     )}
                   />
                   {createErrors.lastName && (
-                    <p className="text-[10px] font-bold text-destructive uppercase">
+                    <p className="text-xs font-bold text-destructive uppercase">
                       {createErrors.lastName}
                     </p>
                   )}
@@ -1623,14 +1622,14 @@ export default function AdminUsers() {
                         className="text-[11px] font-black uppercase leading-none cursor-pointer">
                         {sys.label}
                       </label>
-                      <p className="text-[9px] font-bold text-muted-foreground uppercase">
+                      <p className="text-[9px] font-bold text-foreground uppercase">
                         {sys.desc}
                       </p>
                     </div>
                   </div>
                 ))}
               </div>
-              <p className="text-[10px] font-bold text-muted-foreground italic px-1">
+              <p className="text-xs font-bold text-foreground italic px-1">
                 Permissions are instantly broadcasted to sibling subsystems via
                 SSO.
               </p>

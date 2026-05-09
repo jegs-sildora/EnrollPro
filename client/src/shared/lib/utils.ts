@@ -221,8 +221,8 @@ export function getImageUrl(photo: string | null | undefined): string | null {
 
   if (!apiUrl || apiUrl === "/api") {
     // Fallback for relative proxy or missing env in development
-    // Assuming backend is on port 5000 if not specified
-    apiUrl = window.location.origin.replace(/:\d+$/, ":5000") + "/api";
+    // Assuming backend is on port 5001 if not specified
+    apiUrl = window.location.origin.replace(/:\d+$/, ":5001") + "/api";
   }
 
   const origin = apiUrl.replace(/\/api$/, "");

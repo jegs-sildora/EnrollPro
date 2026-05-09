@@ -159,7 +159,7 @@ function InterviewRubricCard({
           <div
             key={group.group}
             className="space-y-3">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-violet-700 opacity-70">
+            <h4 className="text-xs font-black uppercase tracking-widest text-violet-700 opacity-70">
               {group.group}
             </h4>
             {group.items.map((item) => (
@@ -168,7 +168,7 @@ function InterviewRubricCard({
                 className="space-y-1">
                 <div className="flex justify-between items-center">
                   <Label className="text-xs font-bold">{item.label}</Label>
-                  <span className="text-[10px] font-bold opacity-50">
+                  <span className="text-xs font-bold opacity-50">
                     Max {item.max}
                   </span>
                 </div>
@@ -200,7 +200,7 @@ function InterviewRubricCard({
       </Button>
 
       {currentScore !== null && (
-        <p className="text-[10px] text-center font-bold text-violet-600 italic">
+        <p className="text-xs text-center font-bold text-violet-600 italic">
           Last recorded score: {currentScore} / 100
         </p>
       )}

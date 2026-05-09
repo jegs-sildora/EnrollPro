@@ -143,7 +143,7 @@ function RubricBuilder({
             variant="outline"
             size="sm"
             onClick={onReset}
-            className="h-7 gap-1.5 border-primary/20 text-[10px] font-bold text-primary hover:bg-primary/5">
+            className="h-7 gap-1.5 border-primary/20 text-xs font-bold text-primary hover:bg-primary/5">
             <RotateCcw className="h-3 w-3" />
             RESET TO OFFICIAL STE RUBRIC
           </Button>

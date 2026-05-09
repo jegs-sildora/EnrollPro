@@ -53,6 +53,7 @@ import { useMemo } from "react";
 interface TeacherDesignationSheetProps {
   open: boolean;
   ayId: number | null;
+  ayLabel: string | null;
   submitting: boolean;
   designationOpenFor: Teacher | null;
   designationDrawerTab: DesignationDrawerTab;
@@ -73,6 +74,7 @@ interface TeacherDesignationSheetProps {
 export function TeacherDesignationSheet({
   open,
   ayId,
+  ayLabel,
   submitting,
   designationOpenFor,
   designationDrawerTab,
@@ -98,11 +100,16 @@ export function TeacherDesignationSheet({
   // Group sections by Grade Level for categorized dropdown
   const groupedSections = useMemo(() => {
     const groups: Record<string, AdvisorySectionOption[]> = {};
-    advisorySections.forEach((section) => {
-      const gl = section.gradeLevelName;
-      if (!groups[gl]) groups[gl] = [];
-      groups[gl].push(section);
-    });
+    advisorySections
+      .filter(
+        (s) =>
+          !s.currentAdviserId || s.currentAdviserId === designationOpenFor?.id,
+      )
+      .forEach((section) => {
+        const gl = section.gradeLevelName;
+        if (!groups[gl]) groups[gl] = [];
+        groups[gl].push(section);
+      });
 
     // Sort sections within each group: SCP -> Homogeneous/Pilot -> Heterogeneous/Regular
     Object.keys(groups).forEach((gl) => {
@@ -160,14 +167,14 @@ export function TeacherDesignationSheet({
         side="right"
         className="w-full p-0 sm:max-w-3xl flex flex-col overflow-hidden bg-background">
         <SheetHeader className="space-y-1 border-b p-3 sm:p-4 pr-14 shrink-0 bg-primary font-black">
-          <SheetTitle className="text-base sm:text-lg text-primary-foreground font-black uppercase">
+          <SheetTitle className="text-2xl text-primary-foreground font-black uppercase">
             Teacher Designation
           </SheetTitle>
-          <SheetDescription className="text-[11px] sm:text-xs text-primary-foreground flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+          <SheetDescription className="text-primary-foreground flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
             <span>{teacherDisplayName}</span>
             <span className="hidden sm:inline">|</span>
             <span>
-              {ayId ? `School Year #${ayId}` : "No Active School Year"}
+              {ayLabel ? `S.Y. ${ayLabel}` : "No Active School Year"}
             </span>
             {designationLastUpdated ? (
               <>
@@ -188,7 +195,7 @@ export function TeacherDesignationSheet({
                   alt={teacherDisplayName}
                 />
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-foreground">
+                  <p className="text-xs uppercase  text-foreground">
                     Teacher
                   </p>
                   <h3 className="font-black text-base sm:text-lg uppercase break-words">
@@ -203,7 +210,7 @@ export function TeacherDesignationSheet({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-0 border-t pt-3 mt-3 text-xs">
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-foreground">
+                <p className="text-xs uppercase  text-foreground">
                   Last Updated By
                 </p>
                 <p className="text-sm">
@@ -211,7 +218,7 @@ export function TeacherDesignationSheet({
                 </p>
               </div>
               <div className="text-left sm:text-right">
-                <p className="text-[10px] uppercase tracking-wider text-foreground">
+                <p className="text-xs uppercase  text-foreground">
                   Last Updated At
                 </p>
                 <p className="text-sm">
@@ -282,7 +289,7 @@ export function TeacherDesignationSheet({
                     <div className="flex items-center justify-between gap-3">
                       <Label
                         htmlFor="isClassAdviser"
-                        className="text-xs uppercase tracking-wider">
+                        className="uppercase ">
                         Class Adviser
                       </Label>
                       <Switch
@@ -300,7 +307,7 @@ export function TeacherDesignationSheet({
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-xs uppercase tracking-wider text-foreground">
+                      <Label className="uppercase text-foreground">
                         Advisory Section
                       </Label>
                       <Select
@@ -335,7 +342,7 @@ export function TeacherDesignationSheet({
                           </SelectItem>
                           {sortedGradeLevels.map((gl) => (
                             <SelectGroup key={gl}>
-                              <SelectLabel className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/70 bg-muted/40 py-1 px-2 mb-1 rounded-sm">
+                              <SelectLabel className="font-black uppercase py-1 px-2 mb-1 rounded-sm">
                                 {gl}
                               </SelectLabel>
                               {groupedSections[gl].map((section) => (
@@ -344,12 +351,8 @@ export function TeacherDesignationSheet({
                                   value={section.id.toString()}
                                   className="font-bold">
                                   <div className="flex items-center justify-between w-full gap-8">
-                                    <span className="uppercase text-xs tracking-tight">
+                                    <span className="uppercase">
                                       {formatSectionNameForDropdown(section)}
-                                    </span>
-                                    <span className="text-[9px] font-black text-foreground bg-muted px-1.5 py-0.5 rounded tabular-nums">
-                                      {section.enrolledCount}/
-                                      {section.maxCapacity}
                                     </span>
                                   </div>
                                 </SelectItem>
@@ -372,7 +375,7 @@ export function TeacherDesignationSheet({
 
                   <div className="rounded-md border bg-card p-3 sm:p-4 space-y-3">
                     <div className="space-y-3">
-                      <Label className="text-xs uppercase tracking-wider text-primary font-black">
+                      <Label className="text-xs uppercase  text-primary font-black">
                         Ancillary Designations
                       </Label>
                       <div className="grid gap-2 pt-1 max-h-48 overflow-y-auto pr-1">
@@ -398,7 +401,7 @@ export function TeacherDesignationSheet({
                             />
                             <label
                               htmlFor={`ancillary-${option.value}`}
-                              className="text-[10px] font-bold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 uppercase">
+                              className="text-xs font-bold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 uppercase">
                               {option.label}
                             </label>
                           </div>
@@ -423,10 +426,10 @@ export function TeacherDesignationSheet({
                     <div className="space-y-0.5">
                       <Label
                         htmlFor="isCustomPeriod"
-                        className="text-xs uppercase tracking-wider font-black">
+                        className="text-xs uppercase  font-black">
                         Custom Designation Period
                       </Label>
-                      <p className="text-[10px] text-foreground font-medium uppercase">
+                      <p className="text-xs text-foreground font-medium uppercase">
                         Enable for mid-year replacements or leave of absence
                       </p>
                     </div>
@@ -444,10 +447,10 @@ export function TeacherDesignationSheet({
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label className="text-xs uppercase tracking-wider flex items-center gap-1.5">
+                      <Label className="text-xs uppercase  flex items-center gap-1.5">
                         Effective From
                         {!designationForm.isCustomPeriod && (
-                          <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black italic">
+                          <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black italic">
                             AUTO (BOSY)
                           </span>
                         )}
@@ -472,10 +475,10 @@ export function TeacherDesignationSheet({
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-xs uppercase tracking-wider flex items-center gap-1.5">
+                      <Label className="text-xs uppercase  flex items-center gap-1.5">
                         Effective To
                         {!designationForm.isCustomPeriod && (
-                          <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black italic">
+                          <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black italic">
                             AUTO (EOSY)
                           </span>
                         )}
@@ -504,7 +507,7 @@ export function TeacherDesignationSheet({
 
                 <div className="rounded-md border bg-card p-3 sm:p-4 space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-xs uppercase tracking-wider">
+                    <Label className="text-xs uppercase ">
                       Designation Notes
                     </Label>
                     <Textarea
@@ -521,7 +524,7 @@ export function TeacherDesignationSheet({
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs uppercase tracking-wider">
+                    <Label className="text-xs uppercase ">
                       Reason for Change
                     </Label>
                     <Textarea
@@ -550,11 +553,11 @@ export function TeacherDesignationSheet({
                 className="space-y-4">
                 <div className="rounded-md border bg-card overflow-hidden">
                   <div className="bg-primary/5 px-4 py-3 border-b space-y-1">
-                    <h4 className="text-xs font-black uppercase text-primary tracking-wider">
+                    <h4 className="text-xs font-black uppercase text-primary ">
                       Designation Summary: {designationOpenFor?.lastName},{" "}
                       {designationOpenFor?.firstName}
                     </h4>
-                    <p className="text-[10px] text-foreground font-black uppercase flex items-center gap-1.5">
+                    <p className="text-xs text-foreground font-black uppercase flex items-center gap-1.5">
                       <Calendar className="h-3 w-3" />
                       Effective:{" "}
                       {designationForm.isCustomPeriod ? (
@@ -642,7 +645,7 @@ export function TeacherDesignationSheet({
                     setDesignationDrawerTab("designation");
                 }}
                 disabled={submitting}
-                className="w-full sm:w-auto font-black uppercase text-xs tracking-wider gap-2">
+                className="w-full sm:w-auto font-black uppercase text-xs  gap-2">
                 <ArrowLeft className="h-4 w-4" /> Back
               </Button>
             )}
@@ -653,7 +656,7 @@ export function TeacherDesignationSheet({
               variant="outline"
               onClick={onClose}
               disabled={submitting}
-              className="w-full sm:w-auto font-black uppercase text-xs tracking-wider">
+              className="w-full sm:w-auto font-black uppercase text-xs ">
               Cancel
             </Button>
 
@@ -661,7 +664,7 @@ export function TeacherDesignationSheet({
               <Button
                 onClick={onSave}
                 disabled={submitting || !ayId}
-                className="w-full sm:w-auto font-black uppercase text-xs tracking-wider gap-2">
+                className="w-full sm:w-auto font-black uppercase text-xs  gap-2">
                 {submitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" /> Saving...
@@ -681,7 +684,7 @@ export function TeacherDesignationSheet({
                     setDesignationDrawerTab("review");
                 }}
                 disabled={submitting}
-                className="w-full sm:w-auto font-black uppercase text-xs tracking-wider gap-2">
+                className="w-full sm:w-auto font-black uppercase text-xs  gap-2">
                 Next Step <ArrowRight className="h-4 w-4" />
               </Button>
             )}

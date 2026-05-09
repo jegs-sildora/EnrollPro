@@ -5,8 +5,6 @@ import {
   Plus,
   Trash2,
   Grid3X3,
-  X,
-  Check,
   Edit2,
   CalendarDays,
   ListFilter,
@@ -23,10 +21,10 @@ import {
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
+import { CreateSectionModal } from "../components/CreateSectionModal";
 import { InsertLateEnrolleeModal } from "../components/InsertLateEnrolleeModal";
 import { SectionHandoverModal } from "../components/SectionHandoverModal";
+import { EditSectionModal } from "../components/EditSectionModal";
 import {
   Card,
   CardContent,
@@ -35,13 +33,6 @@ import {
   CardTitle,
 } from "@/shared/ui/card";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -277,25 +268,13 @@ export default function Sections() {
   // Rule A & B: Delayed loading
   const showSkeleton = useDelayedLoading(loading);
 
-  // Inline add section state
-  const [addGlId, setAddGlId] = useState<number | null>(null);
-  const [sectionName, setSectionName] = useState("");
-  const [sectionSortOrder, setSectionSortOrder] = useState("");
-  const [sectionCap, setSectionCap] = useState("40");
-  const [sectionProgramType, setSectionProgramType] =
-    useState<string>("REGULAR");
-  const [advisingTeacherId, setAdvisingTeacherId] = useState<string>("none");
-  const [adding, setAdding] = useState(false);
+  // Add section modal state
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createGlId, setCreateGlId] = useState<number | null>(null);
+  const [createGlName, setCreateGlName] = useState("");
 
   // Edit section state
   const [editSection, setEditSection] = useState<SectionItem | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editSortOrder, setEditSortOrder] = useState("");
-  const [editCap, setEditCap] = useState("40");
-  const [editProgramType, setEditProgramType] = useState<string>("REGULAR");
-  const [editAdvisingTeacherId, setEditAdvisingTeacherId] =
-    useState<string>("none");
-  const [editing, setEditing] = useState(false);
 
   // Delete confirmation
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -419,7 +398,7 @@ export default function Sections() {
       remarks.push(
         <span
           key="transferee"
-          className="text-[10px] font-bold text-foreground uppercase  ml-1">
+          className="text-xs font-bold text-foreground uppercase  ml-1">
           [ Transferee ]
         </span>,
       );
@@ -429,7 +408,7 @@ export default function Sections() {
       remarks.push(
         <span
           key="returning"
-          className="text-[10px] font-bold text-foreground uppercase  ml-1">
+          className="text-xs font-bold text-foreground uppercase  ml-1">
           [ Balik-Aral ]
         </span>,
       );
@@ -492,7 +471,7 @@ export default function Sections() {
     try {
       const [res, teachersRes] = await Promise.all([
         api.get(`/sections/${ayId}`),
-        api.get("/sections/teachers"),
+        api.get(`/sections/teachers?schoolYearId=${ayId}`),
       ]);
       setGroups(res.data.gradeLevels);
       setTeachers(teachersRes.data.teachers);
@@ -562,85 +541,10 @@ export default function Sections() {
     );
   }, [heatmapGradeFilter, heatmapGradeOptions]);
 
-  const toggleAddMode = (glId: number) => {
-    if (addGlId === glId) {
-      setAddGlId(null);
-    } else {
-      setAddGlId(glId);
-      setSectionName("");
-      setSectionSortOrder("");
-      setSectionCap("40");
-      setSectionProgramType("REGULAR");
-      setAdvisingTeacherId("none");
-    }
-  };
-
-  const handleAdd = async () => {
-    if (!addGlId || !sectionName.trim()) return;
-    setAdding(true);
-    try {
-      await api.post("/sections", {
-        name: sectionName.trim(),
-        sortOrder: sectionSortOrder.trim()
-          ? parseInt(sectionSortOrder, 10)
-          : undefined,
-        maxCapacity: parseInt(sectionCap) || 40,
-        gradeLevelId: addGlId,
-        programType: sectionProgramType,
-        advisingTeacherId:
-          advisingTeacherId === "none" ? null : parseInt(advisingTeacherId),
-      });
-      sileo.success({
-        title: "Section created",
-        description: `${sectionName.trim()} is now available in this grade level.`,
-      });
-      setAddGlId(null);
-      fetchData();
-    } catch (err) {
-      showSectionsErrorToast("create", err);
-    } finally {
-      setAdding(false);
-    }
-  };
-
-  const openEdit = (section: SectionItem) => {
-    setEditSection(section);
-    setEditName(formatSectionLabel(section.name));
-    setEditSortOrder(String(section.sortOrder ?? ""));
-    setEditCap(section.maxCapacity.toString());
-    setEditProgramType(section.programType ?? "REGULAR");
-    setEditAdvisingTeacherId(
-      section.advisingTeacher ? section.advisingTeacher.id.toString() : "none",
-    );
-  };
-
-  const handleEdit = async () => {
-    if (!editSection || !editName.trim()) return;
-    setEditing(true);
-    try {
-      await api.put(`/sections/${editSection.id}`, {
-        name: editName.trim(),
-        sortOrder: editSortOrder.trim()
-          ? parseInt(editSortOrder, 10)
-          : undefined,
-        maxCapacity: parseInt(editCap) || 40,
-        programType: editProgramType,
-        advisingTeacherId:
-          editAdvisingTeacherId === "none"
-            ? null
-            : parseInt(editAdvisingTeacherId),
-      });
-      sileo.success({
-        title: "Section details updated",
-        description: `Saved changes for ${editName.trim()}.`,
-      });
-      setEditSection(null);
-      fetchData();
-    } catch (err) {
-      showSectionsErrorToast("update", err);
-    } finally {
-      setEditing(false);
-    }
+  const openCreateModal = (glId: number, glName: string) => {
+    setCreateGlId(glId);
+    setCreateGlName(glName);
+    setIsCreateModalOpen(true);
   };
 
   const handleDelete = async () => {
@@ -726,7 +630,7 @@ export default function Sections() {
                           </span>
                         ) : (
                           <span className="font-bold text-amber-600 flex items-center gap-1 bg-amber-50 px-1.5 py-0.5 rounded-md">
-                            <AlertTriangle className="h-3 w-3" /> Unassigned
+                            Unassigned
                           </span>
                         )}
                       </div>
@@ -775,7 +679,7 @@ export default function Sections() {
                     variant="outline"
                     size="sm"
                     className="h-8 font-bold"
-                    onClick={() => openEdit(s)}>
+                    onClick={() => setEditSection(s)}>
                     <Edit2 className="h-3.5 w-3.5 mr-2" /> Edit
                   </Button>
                   <Button
@@ -1141,133 +1045,15 @@ export default function Sections() {
                         <Button
                           size="sm"
                           className="font-bold h-10 px-4"
-                          variant={
-                            addGlId === g.gradeLevelId ? "outline" : "default"
-                          }
-                          onClick={() => toggleAddMode(g.gradeLevelId)}>
-                          {addGlId === g.gradeLevelId ? (
-                            <>
-                              <X className="mr-2 h-4 w-4" /> Cancel Entry
-                            </>
-                          ) : (
-                            <>
-                              <Plus className="mr-2 h-4 w-4" /> Add{" "}
-                              {g.gradeLevelName} Section
-                            </>
-                          )}
+                          variant="default"
+                          onClick={() =>
+                            openCreateModal(g.gradeLevelId, g.gradeLevelName)
+                          }>
+                          <Plus className="mr-2 h-4 w-4" /> Add{" "}
+                          {g.gradeLevelName} Section
                         </Button>
                       </CardHeader>
                       <CardContent className="space-y-6">
-                        {addGlId === g.gradeLevelId && (
-                          <div className="space-y-4 bg-muted/20 p-6 rounded-xl border border-primary/20 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                              <div className="space-y-2 lg:col-span-2">
-                                <Label className="text-xs font-bold uppercase">
-                                  Section Name
-                                </Label>
-                                <Input
-                                  placeholder="e.g. Section A"
-                                  value={sectionName}
-                                  onChange={(e) =>
-                                    setSectionName(e.target.value)
-                                  }
-                                  className="h-10 font-bold"
-                                  autoFocus
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label className="text-xs font-bold uppercase">
-                                  Sort Order
-                                </Label>
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  placeholder="Auto"
-                                  value={sectionSortOrder}
-                                  onChange={(e) =>
-                                    setSectionSortOrder(e.target.value)
-                                  }
-                                  className="h-10 font-bold"
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label className="text-xs font-bold uppercase">
-                                  Max Capacity
-                                </Label>
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  value={sectionCap}
-                                  onChange={(e) =>
-                                    setSectionCap(e.target.value)
-                                  }
-                                  className="h-10 font-bold"
-                                />
-                              </div>
-                              <div className="space-y-2 lg:col-span-2">
-                                <Label className="text-xs font-bold uppercase">
-                                  Program Type
-                                </Label>
-                                <Select
-                                  value={sectionProgramType}
-                                  onValueChange={setSectionProgramType}>
-                                  <SelectTrigger className="h-10 font-bold">
-                                    <SelectValue placeholder="Select program" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {PROGRAM_TYPE_OPTIONS.map((option) => (
-                                      <SelectItem
-                                        key={option.value}
-                                        value={option.value}>
-                                        {option.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="space-y-2 lg:col-span-2">
-                                <Label className="text-xs font-bold uppercase">
-                                  Advising Teacher (Optional)
-                                </Label>
-                                <Select
-                                  value={advisingTeacherId}
-                                  onValueChange={setAdvisingTeacherId}>
-                                  <SelectTrigger className="h-10 font-bold">
-                                    <SelectValue placeholder="Select teacher" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="none">
-                                      No Advising Teacher
-                                    </SelectItem>
-                                    {teachers.map((t) => (
-                                      <SelectItem
-                                        key={t.id}
-                                        value={t.id.toString()}>
-                                        {t.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                            <div className="flex justify-end pt-2">
-                              <Button
-                                className="h-10 px-8 font-bold"
-                                onClick={handleAdd}
-                                disabled={adding || !sectionName.trim()}>
-                                {adding ? (
-                                  "Adding..."
-                                ) : (
-                                  <>
-                                    <Check className="mr-2 h-4 w-4" /> Save
-                                    Section
-                                  </>
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-
                         {g.sections.length === 0 ? (
                           <div className="flex flex-col items-center justify-center py-12 text-center text-foreground bg-muted/10 rounded-xl border border-dashed">
                             <Grid3X3 className="h-10 w-10 mb-3 opacity-20" />
@@ -1315,120 +1101,22 @@ export default function Sections() {
         </Tabs>
       )}
 
-      {/* Edit Section Dialog */}
-      <Dialog
-        open={!!editSection}
-        onOpenChange={(open) => !open && setEditSection(null)}>
-        <DialogContent className="max-w-md border-2">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold uppercase ">
-              Edit Section
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2 col-span-2">
-                <Label className="text-xs font-bold uppercase">
-                  Section Name
-                </Label>
-                <Input
-                  placeholder="e.g. Section A"
-                  value={editName}
-                  className="font-bold"
-                  onChange={(e) => setEditName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase">
-                  Sort Order
-                </Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={editSortOrder}
-                  className="font-bold"
-                  onChange={(e) => setEditSortOrder(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase">
-                  Max Capacity
-                </Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={editCap}
-                  className="font-bold"
-                  onChange={(e) => setEditCap(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2 col-span-2">
-                <Label className="text-xs font-bold uppercase">
-                  Program Type
-                </Label>
-                <Select
-                  value={editProgramType}
-                  onValueChange={setEditProgramType}>
-                  <SelectTrigger className="font-bold">
-                    <SelectValue placeholder="Select program" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PROGRAM_TYPE_OPTIONS.map((option) => (
-                      <SelectItem
-                        key={option.value}
-                        value={option.value}
-                        className="font-bold uppercase text-xs">
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2 col-span-2">
-                <Label className="text-xs font-bold uppercase">
-                  Advising Teacher
-                </Label>
-                <Select
-                  value={editAdvisingTeacherId}
-                  onValueChange={setEditAdvisingTeacherId}>
-                  <SelectTrigger className="font-bold">
-                    <SelectValue placeholder="Select teacher" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem
-                      value="none"
-                      className="font-bold uppercase text-xs text-foreground">
-                      No Advising Teacher
-                    </SelectItem>
-                    {teachers.map((t) => (
-                      <SelectItem
-                        key={t.id}
-                        value={t.id.toString()}
-                        className="font-bold text-sm">
-                        {t.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setEditSection(null)}
-              className="font-bold">
-              Cancel
-            </Button>
-            <Button
-              onClick={handleEdit}
-              disabled={editing || !editName.trim()}
-              className="font-bold">
-              {editing ? "Saving..." : "Save Changes"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <EditSectionModal
+        section={editSection}
+        onOpenChange={(open) => !open && setEditSection(null)}
+        schoolYearId={ayId!}
+        onSuccess={fetchData}
+      />
+
+      <CreateSectionModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        gradeLevelId={createGlId!}
+        gradeLevelName={createGlName}
+        schoolYearId={ayId!}
+        teachers={teachers}
+        onSuccess={fetchData}
+      />
 
       <ConfirmationModal
         open={!!deleteId}
@@ -1506,7 +1194,7 @@ export default function Sections() {
                     </TooltipTrigger>
                     {(viewRosterSection?.enrolledCount ?? 0) >=
                       (viewRosterSection?.maxCapacity ?? 0) && (
-                      <TooltipContent className="bg-slate-900 text-white border-none text-[10px] font-bold uppercase tracking-widest p-3 shadow-xl">
+                      <TooltipContent className="bg-slate-900 text-white border-none text-xs font-bold uppercase tracking-widest p-3 shadow-xl">
                         <div className="flex items-center gap-2">
                           <AlertTriangle className="h-4 w-4 text-amber-400" />
                           Maximum capacity reached. Override requires
@@ -1545,7 +1233,7 @@ export default function Sections() {
           {!loadingRoster && roster.length > 0 && (
             <div className="bg-muted/10 border-b border-border/60 px-8 py-2.5 flex items-center justify-center gap-12 select-none">
               <div className="flex items-center gap-3">
-                <p className="text-[10px] font-black text-foreground uppercase tracking-[0.2em]">
+                <p className="text-xs font-black text-foreground uppercase tracking-[0.2em]">
                   Total Learners
                 </p>
                 <p className="text-base font-black text-foreground">
@@ -1554,7 +1242,7 @@ export default function Sections() {
               </div>
               <div className="w-px h-4 bg-border" />
               <div className="flex items-center gap-3">
-                <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] flex items-center gap-1.5">
+                <p className="text-xs font-black text-blue-400 uppercase tracking-[0.2em] flex items-center gap-1.5">
                   <Mars className="h-4 w-4" /> Male
                 </p>
                 <p className="text-base font-black text-blue-700">
@@ -1563,7 +1251,7 @@ export default function Sections() {
               </div>
               <div className="w-px h-4 bg-border" />
               <div className="flex items-center gap-3">
-                <p className="text-[10px] font-black text-pink-400 uppercase tracking-[0.2em] flex items-center gap-1.5">
+                <p className="text-xs font-black text-pink-400 uppercase tracking-[0.2em] flex items-center gap-1.5">
                   <Venus className="h-4 w-4" /> Female
                 </p>
                 <p className="text-base font-black text-pink-700">
@@ -1598,19 +1286,19 @@ export default function Sections() {
                   <Table>
                     <TableHeader>
                       <TableRow className="hover:bg-transparent border-none">
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-[10px] font-black uppercase h-11 px-5 text-foreground tracking-wider w-[50px] border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs font-black uppercase h-11 px-5 text-foreground tracking-wider w-[50px] border-b border-border">
                           #
                         </TableHead>
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-[10px] font-black uppercase h-11 px-5 text-foreground tracking-wider w-[140px] border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs font-black uppercase h-11 px-5 text-foreground tracking-wider w-[140px] border-b border-border">
                           LRN
                         </TableHead>
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-[10px] font-black uppercase h-11 px-5 text-foreground tracking-wider border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs font-black uppercase h-11 px-5 text-foreground tracking-wider border-b border-border">
                           Learner Name (Last, First)
                         </TableHead>
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-[10px] font-black uppercase h-11 px-5 text-center text-foreground tracking-wider w-[70px] border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs font-black uppercase h-11 px-5 text-center text-foreground tracking-wider w-[70px] border-b border-border">
                           Age
                         </TableHead>
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-[10px] font-black uppercase h-11 px-5 text-center text-foreground tracking-wider w-[160px] border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs font-black uppercase h-11 px-5 text-center text-foreground tracking-wider w-[160px] border-b border-border">
                           Remarks
                         </TableHead>
                       </TableRow>
@@ -1716,7 +1404,7 @@ export default function Sections() {
 
           <DialogFooter className="bg-muted/20 border-t border-border px-8 py-5 flex flex-row items-center justify-between">
             <div className="flex items-center gap-4">
-              <p className="text-[10px] font-black text-foreground uppercase tracking-widest">
+              <p className="text-xs font-black text-foreground uppercase tracking-widest">
                 DepEd Order No. 017, s. 2025 Compliant
               </p>
             </div>

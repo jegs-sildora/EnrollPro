@@ -46,7 +46,7 @@ Open `.env` and configure the following:
 
 - `DATABASE_URL`: Set your PostgreSQL connection string (e.g., `postgresql://user:password@localhost:5432/enrollpro`).
 - `JWT_SECRET`: A secure random string for authentication.
-- `PORT`: Default is `5000`.
+- `PORT`: Default is `5001`.
 - `CLIENT_URL`: Default is `http://localhost:5173`.
 
 ### 3.2 Database Initialization
@@ -91,7 +91,7 @@ cp .env.example .env.local
 Set `VITE_API_URL` as needed:
 
 - Default shared backend (Tailnet): `VITE_API_URL="http://buru-degree.ts.net:5000/api"`
-- Local backend override: `VITE_API_URL="http://localhost:5000/api"`
+- Local backend override: `VITE_API_URL="http://localhost:5001/api"`
 
 If `VITE_API_URL` is not set, the client falls back to `/api` and uses the Vite proxy target.
 
@@ -112,7 +112,7 @@ pnpm run dev
 
 This will start:
 
-- **Server:** `http://localhost:5000`
+- **Server:** `http://localhost:5001`
 - **Client:** `http://localhost:5173`
 
 ## 6. Accessing the System

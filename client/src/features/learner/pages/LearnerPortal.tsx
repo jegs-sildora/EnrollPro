@@ -40,7 +40,12 @@ export default function LearnerPortal() {
 
   // If no learner session, REDIRECT to login
   if (!learner) {
-    return <Navigate to="/learner/login" replace />;
+    return (
+      <Navigate
+        to="/learner/login"
+        replace
+      />
+    );
   }
 
   return (
@@ -72,19 +77,60 @@ export default function LearnerPortal() {
               width="80"
               height="80"
               patternUnits="userSpaceOnUse">
-              <rect x="2" y="2" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
-              <rect x="42" y="2" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
-              <rect x="2" y="42" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
-              <rect x="42" y="42" width="36" height="36" rx="2" fill="none" stroke="hsl(var(--primary))" strokeWidth="1.5" />
+              <rect
+                x="2"
+                y="2"
+                width="36"
+                height="36"
+                rx="2"
+                fill="none"
+                stroke="hsl(var(--primary))"
+                strokeWidth="1.5"
+              />
+              <rect
+                x="42"
+                y="2"
+                width="36"
+                height="36"
+                rx="2"
+                fill="none"
+                stroke="hsl(var(--primary))"
+                strokeWidth="1.5"
+              />
+              <rect
+                x="2"
+                y="42"
+                width="36"
+                height="36"
+                rx="2"
+                fill="none"
+                stroke="hsl(var(--primary))"
+                strokeWidth="1.5"
+              />
+              <rect
+                x="42"
+                y="42"
+                width="36"
+                height="36"
+                rx="2"
+                fill="none"
+                stroke="hsl(var(--primary))"
+                strokeWidth="1.5"
+              />
             </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#pixel-grid)" />
+          <rect
+            width="100%"
+            height="100%"
+            fill="url(#pixel-grid)"
+          />
         </svg>
         {/* Radial glow */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: "radial-gradient(circle at center, hsl(var(--primary)/0.05) 0%, transparent 70%)",
+            background:
+              "radial-gradient(circle at center, hsl(var(--primary)/0.05) 0%, transparent 70%)",
           }}
         />
       </div>
@@ -160,7 +206,7 @@ export default function LearnerPortal() {
 
             {/* Footer */}
             <div className="text-center pb-12 print:hidden">
-              <p className="text-[10px] text-foreground font-black uppercase tracking-[0.2em] opacity-50">
+              <p className="text-xs text-foreground font-black uppercase tracking-[0.2em] opacity-50">
                 EnrollPro Learner Portal • Official School Record Access
               </p>
             </div>

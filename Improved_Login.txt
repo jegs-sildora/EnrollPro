@@ -365,14 +365,14 @@ export default function LoginPage() {
                       onClick={() => { setUsername(demo.user); setPassword(demo.pass); }}
                     >
                       <p className="font-bold text-xs" style={{ color: colors.primary }}>{demo.role}</p>
-                      <p className="text-gray-500 text-[10px] mt-0.5 ">{demo.user}</p>
+                      <p className="text-gray-500 text-xs mt-0.5 ">{demo.user}</p>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Footer */}
-              <p className="text-[10px] text-gray-400 text-center mt-4 leading-relaxed">
+              <p className="text-xs text-gray-400 text-center mt-4 leading-relaxed">
                 By signing in, you agree to our{' '}
                 <a href="#" className="hover:underline" style={{ color: colors.primary }}>Terms</a>
                 {' '}and{' '}

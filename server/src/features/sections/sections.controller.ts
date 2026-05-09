@@ -145,11 +145,15 @@ export async function listSections(req: Request, res: Response): Promise<void> {
   const { gradeLevelId, programType } = req.query;
 
   if (gradeLevelId) {
-    const where: Record<string, any> = {
+    const where: {
+      gradeLevelId: number;
+      schoolYearId?: number;
+      programType?: ApplicantType;
+    } = {
       gradeLevelId: parseInt(String(gradeLevelId)),
     };
     if (ayId) where.schoolYearId = ayId;
-    if (programType) where.programType = programType;
+    if (programType) where.programType = programType as ApplicantType;
 
     const sections = await prisma.section.findMany({
       where,
@@ -242,8 +246,36 @@ export async function listSections(req: Request, res: Response): Promise<void> {
 }
 
 export async function listEligibleAdvisers(req: Request, res: Response) {
+  const schoolYearId = req.query.schoolYearId
+    ? parseInt(String(req.query.schoolYearId))
+    : null;
+  const excludeSectionId = req.query.excludeSectionId
+    ? parseInt(String(req.query.excludeSectionId))
+    : null;
+
   const teachers = await prisma.teacher.findMany({
-    where: { isActive: true },
+    where: {
+      isActive: true,
+      designation: {
+        equals: "CLASS ADVISER",
+        mode: "insensitive",
+      },
+      ...(schoolYearId
+        ? {
+            advisoryHistory: {
+              none: {
+                schoolYearId,
+                status: SectionAdviserStatus.ACTIVE,
+                ...(excludeSectionId
+                  ? {
+                      NOT: { sectionId: excludeSectionId },
+                    }
+                  : {}),
+              },
+            },
+          }
+        : {}),
+    },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     select: {
       id: true,
@@ -365,12 +397,9 @@ export async function createSection(
   } catch (error: any) {
     console.error("[createSection Error]", error);
     if (error.code === "P2002") {
-      res
-        .status(409)
-        .json({
-          message:
-            "A section with this name already exists in this grade level.",
-        });
+      res.status(409).json({
+        message: "A section with this name already exists in this grade level.",
+      });
       return;
     }
     res
@@ -385,8 +414,13 @@ export async function updateSection(
 ): Promise<void> {
   try {
     const id = parseInt(String(req.params.id));
-    const { name, sortOrder, maxCapacity, advisingTeacherId, programType } =
-      req.body;
+    const {
+      name,
+      sortOrder,
+      maxCapacity,
+      advisingTeacherId,
+      programType,
+    } = req.body;
 
     const existing = await prisma.section.findUnique({
       where: { id },
@@ -494,13 +528,22 @@ export async function updateSection(
 
     res.json({ section });
   } catch (error: any) {
-    console.error("[updateSection Error]", error);
+    console.error("[updateSection Error] Details:", {
+      code: error.code,
+      meta: error.meta,
+      message: error.message,
+      stack: error.stack
+    });
     if (error.code === "P2002") {
+      const target = Array.isArray(error.meta?.target) 
+        ? error.meta.target.join(", ") 
+        : (error.meta?.target || "unknown fields");
+      
       res
         .status(409)
         .json({
           message:
-            "A section with this name already exists in this grade level.",
+            `Conflict detected on [${target}]. This value already exists for another record in this context.`,
         });
       return;
     }

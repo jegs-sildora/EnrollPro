@@ -127,7 +127,7 @@ export function EarlyRegistrationFilters({
                 {stage.label}
                 <Badge
                   variant="secondary"
-                  className="ml-2 h-5 px-1.5 text-[10px] shrink-0">
+                  className="ml-2 h-5 px-1.5 text-xs shrink-0">
                   {stageCounts[stage.value] ?? 0}
                 </Badge>
               </Button>

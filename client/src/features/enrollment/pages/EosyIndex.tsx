@@ -267,19 +267,20 @@ export default function EosyUpdating() {
         if (finalAverage !== undefined) payload.finalAverage = finalAverage;
 
         await api.patch(`/eosy/records/${recordId}`, payload);
-        
+
         setRecords((prev) =>
           prev.map((r) =>
-            r.id === recordId 
-              ? { 
-                  ...r, 
+            r.id === recordId
+              ? {
+                  ...r,
                   eosyStatus: status as EosyStatus,
-                  finalAverage: finalAverage !== undefined ? finalAverage : r.finalAverage
-                } 
+                  finalAverage:
+                    finalAverage !== undefined ? finalAverage : r.finalAverage,
+                }
               : r,
           ),
         );
-        
+
         if (finalAverage === undefined) {
           sileo.success({
             title: "Status Updated",
@@ -1189,7 +1190,7 @@ export default function EosyUpdating() {
                                 {emptyRowsCount} learners require an EOSY Status
                               </span>
                             </div>
-                            <p className="text-[10px] font-bold text-foreground uppercase mt-1">
+                            <p className="text-xs font-bold text-foreground uppercase mt-1">
                               Please use 'Bulk Mark' or assign statuses manually
                               to activate lock.
                             </p>
@@ -1202,7 +1203,7 @@ export default function EosyUpdating() {
                                 Ready for Finalization
                               </span>
                             </div>
-                            <p className="text-[10px] font-bold text-foreground uppercase mt-1">
+                            <p className="text-xs font-bold text-foreground uppercase mt-1">
                               All {records.length} learners have been assigned
                               an EOSY status.
                             </p>
@@ -1213,7 +1214,7 @@ export default function EosyUpdating() {
                       <div className="hidden lg:block h-10 w-px bg-border" />
 
                       <div className="hidden lg:flex flex-col">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-foreground">
+                        <span className="text-xs font-black uppercase tracking-widest text-foreground">
                           Roster Metrics
                         </span>
                         <span className="text-sm font-bold text-primary mt-0.5">

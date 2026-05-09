@@ -147,7 +147,7 @@ export default function PipelineBatchVerifyGrid({
                     <Pencil className="size-3.5" />
                   </Button>
                   {applicant.isPendingLrnCreation && (
-                    <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
+                    <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-bold text-amber-800">
                       Pending LRN
                     </span>
                   )}
@@ -168,7 +168,7 @@ export default function PipelineBatchVerifyGrid({
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="h-7 px-2 text-[10px] font-bold"
+                    className="h-7 px-2 text-xs font-bold"
                     disabled={
                       isBatchProcessing ||
                       savingLrnId === applicant.id ||
@@ -194,7 +194,7 @@ export default function PipelineBatchVerifyGrid({
                 </div>
               )}
 
-              <div className="flex items-center gap-1.5 text-[10px] leading-none">
+              <div className="flex items-center gap-1.5 text-xs leading-none">
                 {!disableDocumentChecks && (
                   <>
                     <Checkbox

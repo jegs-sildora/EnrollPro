@@ -169,7 +169,7 @@ export function ConfirmationSlipModal({
 
         <div className="p-6 space-y-6">
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-foreground flex justify-between">
+            <label className="text-xs font-black uppercase tracking-widest text-foreground flex justify-between">
               1. Scan or Type 12-Digit LRN
               {loading && (
                 <Loader2 className="h-3 w-3 animate-spin text-primary" />
@@ -197,7 +197,7 @@ export function ConfirmationSlipModal({
           {learner && (
             <Card className="border-2 border-emerald-100 bg-emerald-50/30 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
               <div className="bg-emerald-100/50 px-4 py-2 border-b border-emerald-100 flex justify-between items-center">
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800">
+                <span className="text-xs font-black uppercase tracking-wider text-emerald-800">
                   Learner Found
                 </span>
                 <Badge
