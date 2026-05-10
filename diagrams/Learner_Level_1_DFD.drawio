@@ -1,0 +1,117 @@
+<mxfile host="Electron" modified="2026-05-10T00:00:00.000Z" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.3.7 Chrome/112.0.5615.204 Electron/24.5.0 Safari/537.36" etag="EnrollPro-Learner-DFD" version="21.3.7" type="device">
+  <diagram id="Learner-DFD-L1" name="Learner Level 1 DFD">
+    <mxGraphModel dx="1422" dy="791" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Actor: Learner / Guardian -->
+        <mxCell id="L1" value="Learner / Guardian" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.externalEntity" vertex="1" parent="1">
+          <mxGeometry x="40" y="240" width="140" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Process 4.0: Submit Early Registration -->
+        <mxCell id="P4" value="P4.0&#xa;Submit Early&#xa;Registration" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="320" y="60" width="100" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Process 5.0: Submit Official Enrollment -->
+        <mxCell id="P5" value="P5.0&#xa;Submit Official&#xa;Enrollment" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="320" y="240" width="100" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Process 5.1: Submit Continuing Learner Confirmation -->
+        <mxCell id="P5_1" value="P5.1&#xa;Submit Continuing&#xa;Learner&#xa;Confirmation" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="320" y="420" width="100" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Data Stores -->
+        <mxCell id="D1" value="D1: learners" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.dataStore" vertex="1" parent="1">
+          <mxGeometry x="600" y="20" width="220" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="D2" value="D2: early_registration_applications" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.dataStore" vertex="1" parent="1">
+          <mxGeometry x="600" y="70" width="220" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="D3" value="D3: application_addresses" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.dataStore" vertex="1" parent="1">
+          <mxGeometry x="600" y="120" width="220" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="D4" value="D4: application_family_members" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.dataStore" vertex="1" parent="1">
+          <mxGeometry x="600" y="170" width="220" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="D5" value="D5: enrollment_applications" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.dataStore" vertex="1" parent="1">
+          <mxGeometry x="600" y="270" width="220" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="D6" value="D6: enrollment_previous_schools" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.dataStore" vertex="1" parent="1">
+          <mxGeometry x="600" y="320" width="220" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="D7" value="D7: enrollment_program_details" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.dataStore" vertex="1" parent="1">
+          <mxGeometry x="600" y="370" width="220" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Flows: P4.0 -->
+        <mxCell id="f1" value="Demographics, LRN, Socio-Econ, Family Data" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=9;" edge="1" parent="1" source="L1" target="P4">
+          <mxGeometry x="-0.3" y="20" width="50" height="50" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="110" y="110" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f2" value="Tracking Number" style="endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.7;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;fontSize=10;" edge="1" parent="1" source="P4" target="L1">
+          <mxGeometry x="-0.1" y="-10" width="50" height="50" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="145" y="130" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f3" value="LRN, Profile Data" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=9;" edge="1" parent="1" source="P4" target="D1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f4" value="App Metadata, Status" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=9;" edge="1" parent="1" source="P4" target="D2">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f5" value="Address Details" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.6;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=9;" edge="1" parent="1" source="P4" target="D3">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f4a" value="Family Member Info" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.9;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=9;" edge="1" parent="1" source="P4" target="D4">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Flows: P5.0 -->
+        <mxCell id="f6" value="Tracking No, Modalities, Academic History" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=9;" edge="1" parent="1" source="L1" target="P5">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f7" value="Enrollment Status" style="endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;fontSize=10;" edge="1" parent="1" source="P5" target="L1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f8" value="Fetch Profile (D1-D4)" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.25;entryY=1;entryDx=0;entryDy=0;fontSize=9;" edge="1" parent="1" source="P5" target="D1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="370" y="210" /><mxPoint x="655" y="210" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f9" value="Enrollment Details, Status" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=9;" edge="1" parent="1" source="P5" target="D5">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f10" value="Prev School Data" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.6;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=9;" edge="1" parent="1" source="P5" target="D6">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f11" value="Program Specialization" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.9;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=9;" edge="1" parent="1" source="P5" target="D7">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Flows: P5.1 -->
+        <mxCell id="f12" value="Existing LRN/ID, Confirmation Intent" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=10;" edge="1" parent="1" source="L1" target="P5_1">
+          <mxGeometry x="-0.3" y="-20" width="50" height="50" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="110" y="470" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f13" value="Confirmation Status" style="endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.7;exitDx=0;exitDy=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;fontSize=10;" edge="1" parent="1" source="P5_1" target="L1">
+          <mxGeometry x="0.1" y="10" width="50" height="50" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="145" y="450" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f14" value="Confirmation Status" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.25;entryY=1;entryDx=0;entryDy=0;fontSize=9;" edge="1" parent="1" source="P5_1" target="D5">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="655" y="470" /></Array>
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

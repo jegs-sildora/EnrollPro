@@ -24,7 +24,6 @@ import {
 } from "@/shared/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Skeleton } from "@/shared/ui/skeleton";
-import { UserPhoto } from "@/shared/components/UserPhoto";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
@@ -216,15 +215,17 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       size: 60,
       minSize: 60,
       maxSize: 60,
-      cell: ({ row }) => (
-        <div className="flex justify-center">
-          <UserPhoto
-            photo={row.original.photoPath}
-            containerClassName="h-9 w-9 rounded-full border shadow-sm"
-            alt={formatTeacherName(row.original)}
-          />
-        </div>
-      ),
+      cell: ({ row }) => {
+        const teacher = row.original;
+        const initials = `${teacher.firstName.charAt(0)}${teacher.lastName.charAt(0)}`.toUpperCase();
+        return (
+          <div className="flex justify-center ml-6">
+            <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center font-black text-primary text-xs shrink-0 uppercase">
+                {initials}
+            </div>
+          </div>
+        );
+      },
     },
     {
       id: "teacher",
@@ -552,11 +553,10 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                   className={`rounded-xl border-2 p-3 space-y-3 ${!teacher.isActive ? "bg-muted/20" : "bg-background shadow-sm"}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <UserPhoto
-                        photo={teacher.photoPath}
-                        containerClassName="h-10 w-10 rounded-full border-2 shadow-sm"
-                        alt={formatTeacherName(teacher)}
-                      />
+                      <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center font-black text-primary text-xs shrink-0 uppercase">
+                        {teacher.firstName.charAt(0)}
+                        {teacher.lastName.charAt(0)}
+                      </div>
                       <div>
                         <p className="font-black text-sm uppercase leading-tight">
                           {formatTeacherName(teacher)}

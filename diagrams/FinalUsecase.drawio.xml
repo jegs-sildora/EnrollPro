@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="4sJaZeO7cCyudeHoVUFT">
+    <mxGraphModel dx="1288" dy="1169" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <!-- System Boundary -->
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-38" parent="1" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=light-dark(#000000,#000000);fillColor=none;" value="" vertex="1">
+          <mxGeometry height="1020" width="493" x="273" y="-293" as="geometry" />
+        </mxCell>
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-39" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontColor=light-dark(#000000,#000000);" value="&lt;b style=&quot;line-height: 90%;&quot;&gt;EnrollPro: An &lt;br&gt;Academic Institution’s Digital Platform for Optimized Admission and Enrollment.&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="428" x="305.5" y="-266" as="geometry" />
+        </mxCell>
+
+        <!-- Use Cases: Learner -->
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-40" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeColor=light-dark(#000000,#000000);fillColor=light-dark(#FFFFFF,transparent);" value="Submit Early Registration Application (BEEF Annex 1)" vertex="1">
+          <mxGeometry height="59" width="406" x="316.5" y="-210" as="geometry" />
+        </mxCell>
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-42" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeColor=light-dark(#000000,#000000);fillColor=light-dark(#FFFFFF,transparent);" value="Submit Official Enrollment Form" vertex="1">
+          <mxGeometry height="59" width="406" x="316.5" y="-140" as="geometry" />
+        </mxCell>
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-43" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeColor=light-dark(#000000,#000000);fillColor=light-dark(#FFFFFF,transparent);" value="Submit Continuing Learner Confirmation" vertex="1">
+          <mxGeometry height="59" width="406" x="316.5" y="-70" as="geometry" />
+        </mxCell>
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-44" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeColor=light-dark(#000000,#000000);fillColor=light-dark(#FFFFFF,transparent);" value="Monitor Application Status" vertex="1">
+          <mxGeometry height="59" width="406" x="316.5" y="0" as="geometry" />
+        </mxCell>
+
+        <!-- Use Cases: Registrar -->
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-45" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeColor=light-dark(#000000,#000000);fillColor=light-dark(#FFFFFF,transparent);" value="Verify Physical Documents &amp; Application" vertex="1">
+          <mxGeometry height="59" width="406" x="316.5" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-46" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeColor=light-dark(#000000,#000000);fillColor=light-dark(#FFFFFF,transparent);" value="Encode SCP Assessment Scores" vertex="1">
+          <mxGeometry height="59" width="406" x="316.5" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-47" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeColor=light-dark(#000000,#000000);fillColor=light-dark(#FFFFFF,transparent);" value="Assign Learners to Sections (BOSY Placement)" vertex="1">
+          <mxGeometry height="59" width="406" x="316.5" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="UC-REG-8" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeColor=light-dark(#000000,#000000);fillColor=light-dark(#FFFFFF,transparent);" value="Finalize EOSY Promotional Status" vertex="1">
+          <mxGeometry height="59" width="406" x="316.5" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="UC-REG-9" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeColor=light-dark(#000000,#000000);fillColor=light-dark(#FFFFFF,transparent);" value="Generate School Forms (SF1, SF5)" vertex="1">
+          <mxGeometry height="59" width="406" x="316.5" y="360" as="geometry" />
+        </mxCell>
+
+        <!-- Use Cases: Admin -->
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-48" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeColor=light-dark(#000000,#000000);fillColor=light-dark(#FFFFFF,transparent);" value="Configure Special Curricular Programs (SCP)" vertex="1">
+          <mxGeometry height="59" width="406" x="316.5" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-49" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeColor=light-dark(#000000,#000000);fillColor=light-dark(#FFFFFF,transparent);" value="Configure School Year &amp; Portal Windows" vertex="1">
+          <mxGeometry height="59" width="406" x="316.5" y="510" as="geometry" />
+        </mxCell>
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-50" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeColor=light-dark(#000000,#000000);fillColor=light-dark(#FFFFFF,transparent);" value="Manage Personnel Access Control (RBAC)" vertex="1">
+          <mxGeometry height="59" width="406" x="316.5" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-51" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeColor=light-dark(#000000,#000000);fillColor=light-dark(#FFFFFF,transparent);" value="Audit System Activity Logs" vertex="1">
+          <mxGeometry height="59" width="406" x="316.5" y="650" as="geometry" />
+        </mxCell>
+
+        <!-- Actors -->
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-52" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;strokeColor=light-dark(#000000,#000000);fillColor=light-dark(#FFFFFF,transparent);" value="Learner / Parent" vertex="1">
+          <mxGeometry height="75" width="61" x="76" y="-110" as="geometry" />
+        </mxCell>
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-54" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;strokeColor=light-dark(#000000,#000000);fillColor=light-dark(#FFFFFF,transparent);" value="Registrar" vertex="1">
+          <mxGeometry height="75" width="61" x="861" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-53" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;strokeColor=light-dark(#000000,#000000);fillColor=light-dark(#FFFFFF,transparent);" value="System Administrator" vertex="1">
+          <mxGeometry height="75" width="61" x="95" y="500" as="geometry" />
+        </mxCell>
+
+        <!-- Connections: Learner -->
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-65" edge="1" parent="1" source="IJ_dVJHqpLMYaDDmuu7n-52" style="endArrow=none;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="IJ_dVJHqpLMYaDDmuu7n-40" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-66" edge="1" parent="1" source="IJ_dVJHqpLMYaDDmuu7n-52" style="endArrow=none;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="IJ_dVJHqpLMYaDDmuu7n-42" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-67" edge="1" parent="1" source="IJ_dVJHqpLMYaDDmuu7n-52" style="endArrow=none;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="IJ_dVJHqpLMYaDDmuu7n-43" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-68" edge="1" parent="1" source="IJ_dVJHqpLMYaDDmuu7n-52" style="endArrow=none;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="IJ_dVJHqpLMYaDDmuu7n-44" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+
+        <!-- Connections: Registrar -->
+        <mxCell id="CONN-REG-5" edge="1" parent="1" source="IJ_dVJHqpLMYaDDmuu7n-54" style="endArrow=none;html=1;rounded=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="IJ_dVJHqpLMYaDDmuu7n-45" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="CONN-REG-6" edge="1" parent="1" source="IJ_dVJHqpLMYaDDmuu7n-54" style="endArrow=none;html=1;rounded=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="IJ_dVJHqpLMYaDDmuu7n-46" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="CONN-REG-7" edge="1" parent="1" source="IJ_dVJHqpLMYaDDmuu7n-54" style="endArrow=none;html=1;rounded=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="IJ_dVJHqpLMYaDDmuu7n-47" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="CONN-REG-8" edge="1" parent="1" source="IJ_dVJHqpLMYaDDmuu7n-54" style="endArrow=none;html=1;rounded=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="UC-REG-8" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="CONN-REG-9" edge="1" parent="1" source="IJ_dVJHqpLMYaDDmuu7n-54" style="endArrow=none;html=1;rounded=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="UC-REG-9" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+
+        <!-- Connections: Admin -->
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-72" edge="1" parent="1" source="IJ_dVJHqpLMYaDDmuu7n-53" style="endArrow=none;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="IJ_dVJHqpLMYaDDmuu7n-48" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-73" edge="1" parent="1" source="IJ_dVJHqpLMYaDDmuu7n-53" style="endArrow=none;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="IJ_dVJHqpLMYaDDmuu7n-49" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-74" edge="1" parent="1" source="IJ_dVJHqpLMYaDDmuu7n-53" style="endArrow=none;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="IJ_dVJHqpLMYaDDmuu7n-50" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+        <mxCell id="IJ_dVJHqpLMYaDDmuu7n-75" edge="1" parent="1" source="IJ_dVJHqpLMYaDDmuu7n-53" style="endArrow=none;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="IJ_dVJHqpLMYaDDmuu7n-51" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

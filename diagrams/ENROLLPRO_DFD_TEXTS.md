@@ -1,0 +1,93 @@
+# EnrollPro - Data Flow Diagram (DFD) Guide
+
+This document outlines the logical flow of information through the EnrollPro system. It maps the conceptual data stores to physical database models and describes the core processes for learners, registrars, and administrators within the Hinigaran National High School (HNHS) ecosystem.
+
+---
+
+## 1. Data Stores to Database Mapping
+
+The system utilizes the following data stores, which map directly to our physical Prisma ORM models:
+
+| ID | Data Store Name | Physical Database Tables (Prisma Models) | Description |
+| :--- | :--- | :--- | :--- |
+| **D1** | **Learner Profiles** | `learners` | Permanent demographic records (Name, LRN, Birthdate, Mother Tongue). |
+| **D2** | **Early Reg Apps** | `early_registration_applications` | Phase 1 Early Registration SY-specific metadata and tracking. |
+| **D3** | **Address Data** | `application_addresses` | Current and Permanent geographic locations of applicants. |
+| **D4** | **Family Data** | `application_family_members` | Parent and Guardian profiles and contact details. |
+| **D5** | **Enrollment Apps** | `enrollment_applications` | Phase 2 Official Enrollment (BEEF) intent and modalities. |
+| **D6** | **Academic History** | `enrollment_previous_schools` | Previous school credentials for SF10 preparation. |
+| **D7** | **Program Details** | `enrollment_program_details` | Specialization tracks for SCP applicants (Art field, Sports, etc.). |
+| **D8** | **School Settings** | `school_settings` | Global UI identity (School Name, Logo, Accent Color). |
+| **D9** | **Academic Calendar** | `school_years` | SY portal window dates and lifecycle statuses. |
+| **D10** | **Audit Records** | `audit_logs` | Immutable trail of administrative and registrar actions. |
+| **D11** | **Checklists** | `application_checklists` | Boolean flags for physical document submission (PSA, SF9). |
+| **D12** | **Assessments** | `early_registration_assessments` | Qualitative and quantitative results from SCP screening. |
+| **D13** | **Enrollment Records** | `enrollment_records` | The link between students, sections, and promotional results. |
+| **D14** | **Sections** | `sections` | Grade-level classes and capacity monitoring. |
+| **D15** | **Health Records** | `health_records` | SF8 physical measurements (BMI, Height, Weight). |
+| **D16** | **Program Configs** | `scp_program_configs`, `scp_program_steps`, `scp_interview_rubric_categories` | Admission criteria and assessment pipelines for SCP. |
+
+---
+
+## 2. Level 1 DFD: Sequential Lifecycle Processes (P1.0 - P9.0)
+
+### Phase A: System Initialization (Admin)
+*   **P1.0 Configure School Settings:** Setup identity (Name, Logo) and SY windows (D8, D9).
+*   **P2.0 Manage Users & Access:** Setup RBAC accounts and Faculty master lists (D11, D12, D13).
+*   **P3.0 Configure Special Programs:** Define admission pipelines and rubrics for STE/SPA (D16).
+
+### Phase B: Admission & Enrollment (Learner)
+*   **P4.0 Submit Early Registration:** Provides LRN, Demographics, Address, and Family Info (D1, D2, D3, D4).
+*   **P5.0 Submit Official Enrollment:** Provides Modalities, Academic History, and Consent (D5, D6, D7).
+*   **P5.1 Submit Continuing Learner Confirmation:** Existing students confirm intent using previous data (D5).
+
+### Phase C: Verification & Placement (Registrar)
+*   **P6.0 Verify & Screen Applications:** Physically verify documents and encode assessment scores (D11, D2, D12). **Audit Log Required (D10).**
+*   **P7.0 Manage Sectioning & Enrollment:** Assign learners to sections based on capacity and program (D13, D5, D14). **Audit Log Required (D10).**
+
+### Phase D: EOSY Finalization (Registrar/Admin)
+*   **P8.0 Finalize EOSY Promotional Status:** Encode Final Average and set Promoted/Retained status manually (D13, D14, D15). **Audit Log Required (D10).**
+*   **P9.0 Finalize School Year:** Admin sets SY to Archived and exports LIS-ready CSV reports (D9, D17). **Audit Log Required (D10).**
+
+---
+
+## 3. Visual DFD Level 1 (Standalone Overview)
+
+```mermaid
+flowchart TD
+    %% Entities
+    Admin["System Administrator"]
+    Reg["School Registrar"]
+    Learner["Learner / Guardian"]
+
+    %% Processes
+    subgraph Initialization
+        P1["P1.0 Configure Settings"]
+        P2["P2.0 Manage Access"]
+        P3["P3.0 Configure Programs"]
+    end
+
+    subgraph Admission
+        P4["P4.0 Early Registration"]
+        P5["P5.0 Official Enrollment"]
+        P5_1["P5.1 Continuing Learner"]
+    end
+
+    subgraph Placement
+        P6["P6.0 Verify & Screen"]
+        P7["P7.0 Sectioning"]
+    end
+
+    subgraph Finalization
+        P8["P8.0 Finalize EOSY"]
+        P9["P9.0 Finalize SY"]
+    end
+
+    %% Main Actor Flows
+    Admin --> P1 & P2 & P3 & P9
+    Learner --> P4 & P5 & P5_1
+    Reg --> P6 & P7 & P8
+
+    %% Data Store Sync (Audit)
+    P6 & P7 & P8 & P9 -.-> D10[("D10: Audit Logs")]
+```

@@ -1,0 +1,82 @@
+================================================================================
+       LEVEL 1 DATA FLOW DIAGRAM: SCHOOL HEAD / SYSTEM ADMIN OPERATIONS
+================================================================================
+ACTOR                             PROCESS (From Processes.txt)             DATA STORES (From Data Dictionary)
+================================================================================
+
+                                +----------------------------------+
+[ School Identity & School Year          |                                  |----( School Branding )-------> [ D8: school_settings ]
+  Lifecycle Parameters ] ------>| P1.0 Configure School Settings   |
+                                |                                  |----( School Year Window Metadata )----> [ D9: school_years ]
+<--[ Active School Year Lifecycle        |                                  |
+     Status ] ------------------|                                  |----( Config Audit Event )----> [ D10: audit_logs ]
+                                +----------------------------------+
+
+
+                                +----------------------------------+
+[ Personnel Credentials &       |                                  |----( RBAC Credentials )------> [ D11: users ]
+  Role Assignments ] ---------->| P2.0 Manage Users & Access       |
+                                |                                  |----( Faculty Master Data )---> [ D12: teachers ]
+<--[ Active User/Faculty        |                                  |
+     Roster ] ------------------|                                  |----( Role Mapping )----------> [ D13: teacher_designations ]
+                                |                                  |
+                                |                                  |----( Security Audit Event )--> [ D10: audit_logs ]
+                                +----------------------------------+
+
+
+                                +----------------------------------+
+[ SCP Criteria, Assessment      |                                  |----( Program Eligibility )---> [ D14: scp_program_configs ]
+  Steps & Rubrics ] ---------->| P3.0 Configure Special Programs  |
+                                |                                  |----( Pipeline Definitions )--> [ D15: scp_program_steps ]
+<--[ Active Admission           |                                  |
+     Pipelines ] ---------------|                                  |----( Rubric Schema )---------> [ D16: scp_interview_rubric_categories ]
+                                |                                  |
+                                |                                  |----( Program Audit Event )---> [ D10: audit_logs ]
+                                +----------------------------------+
+
+
+                                +----------------------------------+
+[ School Year Closing Command &          |                                  |----( School Year Lock & Status )------> [ D9: school_years ]
+  Export Format ] ------------->| P9.0 Finalize School Year        |
+[ D17: Promotional Records ] -->|                                  |
+<--[ Master DepEd LIS CSV &     |                                  |----( School Year Finalization Event )-> [ D10: audit_logs ]
+     Completion Report ] -------|                                  |
+                                +----------------------------------+
+
+================================================================================
+DATA FLOW DICTIONARY & TABLE MAPPING
+================================================================================
+
+PROCESS: P1.0 Configure School Settings
+-> Inbound from Admin: [School Identity & School Year Lifecycle Parameters] (Branding, Logo, School Year Labels, Portal Dates)
+<- Outbound to Admin: [Active School Year Lifecycle Status] (Current system state: DRAFT/ACTIVE)
+-> Outbound to DB:
+   - D8: school_settings (Persists singleton UI and school metadata)
+   - D9: school_years (Persists academic calendar and portal control flags)
+   - D10: audit_logs (Strict DPA trail for configuration changes)
+
+PROCESS: P2.0 Manage Users & Access
+-> Inbound from Admin: [Personnel Credentials & Role Assignments] (Emails, RBAC roles, Advisory tasks)
+<- Outbound to Admin: [Active User/Faculty Roster] (Searchable directory of accounts and faculty)
+-> Outbound to DB:
+   - D11: users (Persists system login accounts and status)
+   - D12: teachers (Persists physical identity of section advisers)
+   - D13: teacher_designations (Persists School Year-scoped role and section mappings)
+   - D10: audit_logs (Strict trail for account creation and privilege updates)
+
+PROCESS: P3.0 Configure Special Programs (SCP)
+-> Inbound from Admin: [SCP Criteria, Assessment Steps & Rubrics] (STE/SPA tracks, Formula, Screening Timeline)
+<- Outbound to Admin: [Active Admission Pipelines] (Validated program tracks ready for applicant screening)
+-> Outbound to DB:
+   - D14: scp_program_configs (Persists program-wide cutoff and formula metadata)
+   - D15: scp_program_steps (Persists the sequential screening steps: Exam, Interview, etc.)
+   - D16: scp_interview_rubric_categories (Persists the structured scoring metrics)
+   - D10: audit_logs (Strict trail for curriculum-track eligibility changes)
+
+PROCESS: P9.0 Finalize School Year
+-> Inbound from Admin: [School Year Closing Command & Export Format] (Global lock trigger and LIS template selection)
+-> Inbound from DB: [D17: Promotional Records] (Reads EOSY results: General Average, Status, Remarks)
+<- Outbound to Admin: [Master DepEd LIS CSV & Completion Report] (LIS-ready CSV and School Year closure summary)
+-> Outbound to DB:
+   - D9: school_years (Updates School Year status to ARCHIVED and sets isEosyFinalized lock)
+   - D10: audit_logs (Strict trail for the final system-wide archival event)

@@ -1,0 +1,59 @@
+================================================================================
+       LEVEL 1 DATA FLOW DIAGRAM: LEARNER / GUARDIAN OPERATIONS
+================================================================================
+ACTOR                             PROCESS (From Processes.txt)             DATA STORES (Actual Table Names)
+================================================================================
+
+                                +----------------------------------+
+[ BEEF Annex 1 Profile ] ------>|                                  |----( Permanent LIS Attributes )--> [ D1: learners ]
+                                |                                  |
+                                |  P4.0 Submit Early Registration  |----( Early Reg SY-Metadata )-----> [ D2: early_registration_applications ]
+                                |                                  |----( Residence Data )------------> [ D3: application_addresses ]
+<--[ Phase 1 Tracking No. ]-----|                                  |----( Family Masterlist )---------> [ D4: application_family_members ]
+                                +----------------------------------+
+
+
+                                +----------------------------------+
+[ BEEF Annex 2 Modalities ] --->|                                  |<---( Pre-populated Profile )------ [ D1-D4: Learners & Family ]
+                                |                                  |
+                                |  P5.0 Submit Official Enrollment |----( Official BOSY Intent )------> [ D5: enrollment_applications ]
+                                |                                  |----( SF10 Academic History )-----> [ D6: enrollment_previous_schools ]
+<--[ Official Enrollment        |                                  |----( Specialized Track )---------> [ D7: enrollment_program_details ]
+     Status ] ------------------|                                  |
+                                +----------------------------------+
+
+
+                                +----------------------------------+
+[ Existing Student ID &         |                                  |
+  Return Intent ] ------------->|  P5.1 Submit Continuing Learner  |----( SY-Intake Confirmation )---> [ D5: enrollment_applications ]
+                                |       Confirmation               |
+<--[ Confirmation Status ]------|                                  |
+                                +----------------------------------+
+
+================================================================================
+DATA FLOW DICTIONARY & TABLE MAPPING (DEPED CONCISE)
+================================================================================
+
+PROCESS: P4.0 Submit Early Registration
+-> Inbound from Actor: [IN] BEEF Annex 1 Profile (LRN, demographics, and contact info)
+<- Outbound to Actor: [OUT] Phase 1 Tracking No. (10-digit monitoring key)
+-> Outbound to DB:
+   - D1: learners (Persists permanent identity attributes)
+   - D2: early_registration_applications (Persists Phase 1 metadata and SY-status)
+   - D3: application_addresses (Persists current/permanent geographic data)
+   - D4: application_family_members (Persists parent and guardian profiles)
+
+PROCESS: P5.0 Submit Official Enrollment
+-> Inbound from Actor: [IN] BEEF Annex 2 Modalities (Modality selection, history, and tracks)
+-> Inbound from DB: [OUT from DB] Pre-populated Profile (Retrieves D1-D4 to prevent re-entry)
+<- Outbound to Actor: [OUT] Official Enrollment Status (Placement results notification)
+-> Outbound to DB:
+   - D5: enrollment_applications (Persists official Phase 2 intent and modalities)
+   - D6: enrollment_previous_schools (Persists SF10 academic history for records)
+   - D7: enrollment_program_details (Persists SCP-specific track specializations)
+
+PROCESS: P5.1 Submit Continuing Learner Confirmation
+-> Inbound from Actor: [IN] Existing Student ID & Return Intent (Continuing learner consent slip)
+<- Outbound to Actor: [OUT] Confirmation Status (Immediate system feedback)
+-> Outbound to DB:
+   - D5: enrollment_applications (Inserts record via intakeMethod='CONFIRMATION_SLIP')

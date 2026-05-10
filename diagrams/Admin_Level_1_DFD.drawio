@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net">
+  <diagram name="School Head DFD Level 1" id="Admin-L1-DFD">
+    <mxGraphModel dx="1373" dy="820" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- EXTERNAL ENTITY -->
+        <mxCell id="A-Actor" value="System Administrator" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.externalEntity;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="320" width="140" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- PROCESSES -->
+        <mxCell id="P1-0" value="P1.0&#xa;Configure School&#xa;Settings" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="400" y="40" width="100" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="P2-0" value="P2.0&#xa;Manage Users&#xa;&amp; Access" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="400" y="240" width="100" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="P3-0" value="P3.0&#xa;Configure Special&#xa;Programs" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="400" y="440" width="100" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="P9-0" value="P9.0&#xa;Finalize School&#xa;Year" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="400" y="640" width="100" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- DATA STORES -->
+        <mxCell id="D10" value="D10: audit_logs" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.dataStore" vertex="1" parent="1">
+          <mxGeometry x="780" y="335" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="D8" value="D8: school_settings" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.dataStore" vertex="1" parent="1">
+          <mxGeometry x="780" y="40" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="D9" value="D9: school_years" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.dataStore" vertex="1" parent="1">
+          <mxGeometry x="780" y="80" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="D11" value="D11: users" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.dataStore" vertex="1" parent="1">
+          <mxGeometry x="780" y="220" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="D12" value="D12: teachers" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.dataStore" vertex="1" parent="1">
+          <mxGeometry x="780" y="260" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="D13" value="D13: teacher_designations" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.dataStore" vertex="1" parent="1">
+          <mxGeometry x="780" y="300" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="D14" value="D14: scp_program_configs" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.dataStore" vertex="1" parent="1">
+          <mxGeometry x="780" y="440" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="D15" value="D15: scp_program_steps" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.dataStore" vertex="1" parent="1">
+          <mxGeometry x="780" y="480" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="D16" value="D16: scp_interview_rubrics" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.dataStore" vertex="1" parent="1">
+          <mxGeometry x="780" y="520" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="D17" value="D17: enrollment_records" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.dataStore" vertex="1" parent="1">
+          <mxGeometry x="780" y="640" width="220" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- P1.0 FLOWS -->
+        <mxCell id="f1" value="[IN] School Identity &amp; SY Params" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=0;entryX=0;entryY=0.5;fontSize=9;" edge="1" parent="1" source="A-Actor" target="P1-0">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="110" y="90" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f2" value="[OUT] Active SY Status" style="endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.75;entryX=0.75;entryY=0;fontSize=10;fontColor=#FF0000;fontStyle=1" edge="1" parent="1" source="P1-0" target="A-Actor">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="145" y="115" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f3" value="[IN to DB] UI &amp; Identity Config" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.25;entryX=0;entryY=0.5;fontSize=9;" edge="1" parent="1" source="P1-0" target="D8">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f4" value="[IN to DB] Portal Window Metadata" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=9;" edge="1" parent="1" source="P1-0" target="D9">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f5" value="[IN to DB] Config Change Audit" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.75;entryX=0;entryY=0.25;fontSize=9;" edge="1" parent="1" source="P1-0" target="D10">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="650" y="115" /><mxPoint x="650" y="343" /></Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- P2.0 FLOWS -->
+        <mxCell id="f6" value="[IN] User Accounts &amp; Faculty Profiles" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.25;entryX=0;entryY=0.5;fontSize=9;" edge="1" parent="1" source="A-Actor" target="P2-0">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="250" y="335" /><mxPoint x="250" y="290" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f7" value="[OUT] Active Personnel Roster" style="endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.75;entryX=1;entryY=0.5;fontSize=10;fontColor=#FF0000;fontStyle=1" edge="1" parent="1" source="P2-0" target="A-Actor">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="230" y="315" /><mxPoint x="230" y="350" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f8" value="[IN to DB] RBAC Credentials" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.15;entryX=0;entryY=0.5;fontSize=9;" edge="1" parent="1" source="P2-0" target="D11">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f9" value="[IN to DB] Faculty Master Data" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.45;entryX=0;entryY=0.5;fontSize=9;" edge="1" parent="1" source="P2-0" target="D12">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f10" value="[IN to DB] Role &amp; Section Mappings" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.75;entryX=0;entryY=0.5;fontSize=9;" edge="1" parent="1" source="P2-0" target="D13">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f11" value="[IN to DB] Security Audit Event" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=1;entryX=0;entryY=0.5;fontSize=9;" edge="1" parent="1" source="P2-0" target="D10">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- P3.0 FLOWS -->
+        <mxCell id="f12" value="[IN] SCP Tracks &amp; Screening Rubrics" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.75;entryX=0;entryY=0.5;fontSize=9;" edge="1" parent="1" source="A-Actor" target="P3-0">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="250" y="365" /><mxPoint x="250" y="490" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f13" value="[OUT] Active Admission Pipelines" style="endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.75;entryX=1;entryY=0.75;fontSize=10;fontColor=#FF0000;fontStyle=1" edge="1" parent="1" source="P3-0" target="A-Actor">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="230" y="515" /><mxPoint x="230" y="365" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f14" value="[IN to DB] SCP Config &amp; Formula" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.25;entryX=0;entryY=0.5;fontSize=9;" edge="1" parent="1" source="P3-0" target="D14">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f15" value="[IN to DB] Screening Protocols" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=9;" edge="1" parent="1" source="P3-0" target="D15">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f16" value="[IN to DB] Rubric Schema Master" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.75;entryX=0;entryY=0.5;fontSize=9;" edge="1" parent="1" source="P3-0" target="D16">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f17" value="[IN to DB] Program Setup Audit" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=1;entryX=0;entryY=0.75;fontSize=9;" edge="1" parent="1" source="P3-0" target="D10">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="650" y="540" /><mxPoint x="650" y="358" /></Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- P9.0 FLOWS -->
+        <mxCell id="f18" value="[IN] SY Closing &amp; Export Trigger" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;entryX=0;entryY=0.5;fontSize=9;" edge="1" parent="1" source="A-Actor" target="P9-0">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="110" y="690" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f19" value="[OUT] DepEd LIS CSV &amp; Summary" style="endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.75;entryX=0.75;entryY=1;fontSize=10;fontColor=#FF0000;fontStyle=1" edge="1" parent="1" source="P9-0" target="A-Actor">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="145" y="715" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f20" value="[OUT from DB] Promotional Records" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=0;entryX=1;entryY=0.5;fontSize=9;fontColor=#0000FF;fontStyle=2" edge="1" parent="1" source="D17" target="P9-0">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="890" y="600" /><mxPoint x="550" y="600" /><mxPoint x="550" y="690" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f21" value="[IN to DB] SY Archive &amp; Lock" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.15;entryX=1;entryY=0.5;fontSize=9;" edge="1" parent="1" source="P9-0" target="D9">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="1100" y="655" /><mxPoint x="1100" y="95" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f22" value="[IN to DB] Year-End Audit Event" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.85;entryX=0.5;entryY=1;fontSize=9;" edge="1" parent="1" source="P9-0" target="D10">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="890" y="725" /></Array>
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

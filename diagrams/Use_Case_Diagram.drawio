@@ -1,0 +1,122 @@
+<mxfile host="Electron" modified="2026-05-10T00:00:00.000Z" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.3.7 Chrome/112.0.5615.204 Electron/24.5.0 Safari/537.36" etag="EnrollPro-UC" version="21.3.7" type="device">
+  <diagram id="EnrollPro-UseCase" name="EnrollPro Use Case Diagram">
+    <mxGraphModel dx="1422" dy="791" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- System Boundary -->
+        <mxCell id="2" value="EnrollPro System" style="swimlane;whiteSpace=wrap;html=1;startSize=23;" vertex="1" parent="1">
+          <mxGeometry x="240" y="40" width="370" height="740" as="geometry" />
+        </mxCell>
+
+        <!-- Actors -->
+        <mxCell id="3" value="Learner / Parent" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="80" y="240" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="Registrar" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="720" y="240" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="System Administrator" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="720" y="520" width="30" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Use Cases: Learner -->
+        <mxCell id="UC1" value="Submit Early Registration Application&#xa;(BEEF Annex 1)" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+          <mxGeometry x="85" y="40" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="UC2" value="Submit Official Enrollment Form" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+          <mxGeometry x="85" y="110" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="UC3" value="Submit Continuing Learner Confirmation" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+          <mxGeometry x="85" y="180" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="UC4" value="Monitor Application Status" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+          <mxGeometry x="85" y="250" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Use Cases: Registrar -->
+        <mxCell id="UC5" value="Verify Physical Documents &amp; Application" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+          <mxGeometry x="85" y="320" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="UC6" value="Encode SCP Assessment Scores" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+          <mxGeometry x="85" y="390" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="UC7" value="Assign Learners to Sections (BOSY)" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+          <mxGeometry x="85" y="460" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="UC8" value="Finalize EOSY Promotional Status" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+          <mxGeometry x="85" y="530" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="UC9" value="Generate School Forms (SF1, SF5)" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+          <mxGeometry x="85" y="600" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Use Cases: Admin -->
+        <mxCell id="UC10" value="Configure Special Curricular Programs" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+          <mxGeometry x="110" y="670" width="160" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="UC11" value="Configure SY &amp; Portal Windows" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+          <mxGeometry x="110" y="730" width="160" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="UC12" value="Manage Personnel Access (RBAC)" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+          <mxGeometry x="110" y="790" width="160" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="UC13" value="Audit System Activity Logs" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+          <mxGeometry x="110" y="850" width="160" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Adjustment to Boundary Height for all cases -->
+        <mxCell id="2_mod" parent="1" vertex="1">
+           <mxGeometry x="240" y="40" width="370" height="920" as="geometry" />
+        </mxCell>
+
+        <!-- Connections: Learner -->
+        <mxCell id="e1" style="endArrow=none;html=1;exitX=1;exitY=0.33;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="3" target="UC1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" style="endArrow=none;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="3" target="UC2">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" style="endArrow=none;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="3" target="UC3">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" style="endArrow=none;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="3" target="UC4">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Connections: Registrar -->
+        <mxCell id="e5" style="endArrow=none;html=1;exitX=0;exitY=0.33;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="4" target="UC5">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" style="endArrow=none;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="4" target="UC6">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" style="endArrow=none;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="4" target="UC7">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" style="endArrow=none;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="4" target="UC8">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" style="endArrow=none;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="4" target="UC9">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Connections: Admin -->
+        <mxCell id="e10" style="endArrow=none;html=1;exitX=0;exitY=0.33;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="5" target="UC10">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" style="endArrow=none;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="5" target="UC11">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" style="endArrow=none;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="5" target="UC12">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" style="endArrow=none;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="5" target="UC13">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
