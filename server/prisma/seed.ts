@@ -11,37 +11,44 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log("Starting Base Seed...");
 
-  // 1. Create an Active School Year
-  const yearLabel = "2026-2027";
-  let activeSy = await prisma.schoolYear.findUnique({
-    where: { yearLabel },
+  // 1. Create School Years for the Demo Timeline
+  const years = [
+    {
+      yearLabel: "2025-2026",
+      status: "ACTIVE" as SchoolYearStatus, // The "Current" year at the start of demo
+      classOpeningDate: new Date("2025-06-01T00:00:00Z"),
+      classEndDate: new Date("2026-03-31T00:00:00Z"),
+      earlyRegOpenDate: new Date("2025-01-15T00:00:00Z"),
+      earlyRegCloseDate: new Date("2025-02-28T00:00:00Z"),
+      enrollOpenDate: new Date("2025-05-01T00:00:00Z"),
+      enrollCloseDate: new Date("2025-05-31T00:00:00Z"),
+    },
+    {
+      yearLabel: "2026-2027",
+      status: "UPCOMING" as SchoolYearStatus, // The target year for Rollover
+      classOpeningDate: new Date("2026-06-01T00:00:00Z"),
+      classEndDate: new Date("2027-03-31T00:00:00Z"),
+      earlyRegOpenDate: new Date("2026-01-15T00:00:00Z"),
+      earlyRegCloseDate: new Date("2026-02-28T00:00:00Z"),
+      enrollOpenDate: new Date("2026-05-01T00:00:00Z"),
+      enrollCloseDate: new Date("2026-05-31T00:00:00Z"),
+    }
+  ];
+
+  for (const y of years) {
+    await prisma.schoolYear.upsert({
+      where: { yearLabel: y.yearLabel },
+      update: { status: y.status },
+      create: { ...y, portalControl: "AUTO" as PortalControl },
+    });
+    console.log(`✅ Verified School Year: ${y.yearLabel} (${y.status})`);
+  }
+
+  const activeSy = await prisma.schoolYear.findFirst({
+    where: { yearLabel: "2025-2026" }
   });
 
-  if (!activeSy) {
-    activeSy = await prisma.schoolYear.create({
-      data: {
-        yearLabel,
-        status: "ACTIVE" as SchoolYearStatus,
-        classOpeningDate: new Date("2026-06-01T00:00:00Z"),
-        classEndDate: new Date("2027-03-31T00:00:00Z"),
-        earlyRegOpenDate: new Date("2026-01-15T00:00:00Z"),
-        earlyRegCloseDate: new Date("2026-02-28T00:00:00Z"),
-        enrollOpenDate: new Date("2026-05-01T00:00:00Z"),
-        enrollCloseDate: new Date("2026-05-31T00:00:00Z"),
-        portalControl: "AUTO" as PortalControl,
-      },
-    });
-    console.log(`✅ Created Active School Year: ${yearLabel}`);
-  } else {
-    // If it exists, ensure it's not archived so other seeds can find it
-    if (activeSy.status === "ARCHIVED" as SchoolYearStatus) {
-        await prisma.schoolYear.update({
-            where: { id: activeSy.id },
-            data: { status: "ACTIVE" as SchoolYearStatus }
-        });
-    }
-    console.log(`✅ Active School Year already exists: ${yearLabel}`);
-  }
+  if (!activeSy) throw new Error("Timeline failure: 2025-2026 not found.");
 
   // 2. Ensure school settings row exists with DepEd details
   const defaultSettings = {
@@ -135,6 +142,37 @@ async function main() {
     });
     console.log(`✅ System Admin created: ${email}`);
     console.log(`   Temporary password:   ${password}`);
+  }
+
+  // 6. Create default HEAD_REGISTRAR account
+  const regEmail = process.env.REGISTRAR_EMAIL ?? "registrar@deped.edu.ph";
+  const regPassword = process.env.REGISTRAR_PASSWORD ?? "Registrar2026!";
+  const regFirstName = process.env.REGISTRAR_FIRST_NAME ?? "HEAD";
+  const regLastName = process.env.REGISTRAR_LAST_NAME ?? "REGISTRAR";
+
+  const existingRegistrar = await prisma.user.findUnique({
+    where: { email: regEmail },
+  });
+  if (existingRegistrar) {
+    console.log(`✅ Registrar account already exists: ${regEmail}`);
+  } else {
+    const hashedRegPassword = await bcrypt.hash(regPassword, 12);
+    await prisma.user.create({
+      data: {
+        firstName: regFirstName,
+        lastName: regLastName,
+        email: regEmail,
+        password: hashedRegPassword,
+        role: "HEAD_REGISTRAR" as Role,
+        isActive: true,
+        mustChangePassword: true,
+        sex: "FEMALE" as Sex,
+        designation: "HEAD REGISTRAR",
+        employeeId: "REG-001",
+      },
+    });
+    console.log(`✅ Head Registrar created: ${regEmail}`);
+    console.log(`   Temporary password:   ${regPassword}`);
   }
 }
 

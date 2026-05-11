@@ -33,19 +33,19 @@ See [Subsystem API Quick Start](./SUBSYSTEM_API_QUICK_START.md) for shared start
 ## Connection Model (Host and Team)
 
 - Host machine only: Node connects to PostgreSQL at `localhost:5432`.
-- Team machines: fetch API from host at `http://100.120.169.123:5000`.
+- Team machines: fetch API from host at `https://dev-jegs.buru-degree.ts.net`.
 
 API endpoint bases for this system:
 
-- Main API base: `http://100.120.169.123:5000/api`
-- Integration API base: `http://100.120.169.123:5000/api/integration/v1`
+- Main API base: `https://dev-jegs.buru-degree.ts.net/api`
+- Integration API base: `https://dev-jegs.buru-degree.ts.net/api/integration/v1`
 
 ## 1. Environment Values
 
 ```env
-ENROLLPRO_BASE_URL="http://100.120.169.123:5000"
-ENROLLPRO_API_BASE_URL="http://100.120.169.123:5000/api"
-ENROLLPRO_INTEGRATION_BASE_URL="http://100.120.169.123:5000/api/integration/v1"
+ENROLLPRO_BASE_URL="https://dev-jegs.buru-degree.ts.net"
+ENROLLPRO_API_BASE_URL="https://dev-jegs.buru-degree.ts.net/api"
+ENROLLPRO_INTEGRATION_BASE_URL="https://dev-jegs.buru-degree.ts.net/api/integration/v1"
 ```
 
 ## 2. Health Checks Before Fetch
@@ -53,25 +53,25 @@ ENROLLPRO_INTEGRATION_BASE_URL="http://100.120.169.123:5000/api/integration/v1"
 ### Public health
 
 ```bash
-curl http://100.120.169.123:5000/api/health
+curl https://dev-jegs.buru-degree.ts.net/api/health
 ```
 
 ### Integration health
 
 ```bash
-curl http://100.120.169.123:5000/api/integration/v1/health
+curl https://dev-jegs.buru-degree.ts.net/api/integration/v1/health
 ```
 
 ## 3. Fetch SMART Default Feed
 
 ```bash
-curl http://100.120.169.123:5000/api/integration/v1/default/smart/students
+curl https://dev-jegs.buru-degree.ts.net/api/integration/v1/default/smart/students
 ```
 
 Optional school year override:
 
 ```bash
-curl "http://100.120.169.123:5000/api/integration/v1/default/smart/students?schoolYearId=12"
+curl "https://dev-jegs.buru-degree.ts.net/api/integration/v1/default/smart/students?schoolYearId=12"
 ```
 
 If `schoolYearId` is not provided, EnrollPro uses active school year.
@@ -79,7 +79,7 @@ If `schoolYearId` is not provided, EnrollPro uses active school year.
 ## 4. Fetch Sample Students Feed (No Key)
 
 ```bash
-curl http://100.120.169.123:5000/api/integration/v1/sample/students
+curl https://dev-jegs.buru-degree.ts.net/api/integration/v1/sample/students
 ```
 
 Use sample feed for:
@@ -118,7 +118,7 @@ Meta fields to keep for logging:
 async function fetchSmartStudents() {
   const integrationBase =
     process.env.ENROLLPRO_INTEGRATION_BASE_URL ||
-    "http://100.120.169.123:5000/api/integration/v1";
+    "https://dev-jegs.buru-degree.ts.net/api/integration/v1";
 
   const defaultRes = await fetch(`${integrationBase}/default/smart/students`);
 

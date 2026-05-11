@@ -49,7 +49,7 @@
 
 - Client API source of truth is `VITE_API_URL` (see `client/.env.example`).
 - If `VITE_API_URL` is absent, client falls back to `/api` and relies on Vite proxy.
-- Vite proxy backend override uses `VITE_PROXY_TARGET` (default `http://127.0.0.1:5000`).
+- Vite proxy backend override uses `VITE_PROXY_TARGET` (default `http://127.0.0.1:5002`).
 
 ## High-level architecture
 

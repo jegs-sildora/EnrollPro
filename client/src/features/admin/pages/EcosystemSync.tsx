@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   RefreshCcw,
   Printer,
@@ -926,7 +926,7 @@ export default function EcosystemSync() {
                   Success Rate
                 </div>
                 <div className="text-2xl font-black text-green-700">
-                  {lastJobResults?.total > 0
+                  {lastJobResults && lastJobResults.total > 0
                     ? Math.round(
                         (lastJobResults.processed / lastJobResults.total) * 100,
                       )

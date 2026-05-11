@@ -21,8 +21,8 @@ their app should wait for EnrollPro API health before any fetch job runs.
 Set these values in your subsystem environment file.
 
 ```env
-ENROLLPRO_BASE_URL="http://100.120.169.123:5000"
-ENROLLPRO_INTEGRATION_BASE_URL="http://100.120.169.123:5000/api/integration/v1"
+ENROLLPRO_BASE_URL="https://dev-jegs.buru-degree.ts.net"
+ENROLLPRO_INTEGRATION_BASE_URL="https://dev-jegs.buru-degree.ts.net/api/integration/v1"
 ```
 
 Notes:
@@ -31,19 +31,19 @@ Notes:
 
 ## 1.1 Connection Map (Host as Gatekeeper)
 
-With standard ports (PostgreSQL 5432 and Node 5000), only the host machine needs database access.
+With standard ports (PostgreSQL 5432 and Node 5002), only the host machine needs database access.
 Teammate devices should call API endpoints only.
 
 | Device       | Action                    | Address/Port                |
 | ------------ | ------------------------- | --------------------------- |
 | Host Machine | Node connects to local DB | localhost:5432              |
-| Host Machine | Node listens for team     | 0.0.0.0:5000                |
-| Team Machine | React/frontend fetches    | http://100.120.169.123:5000 |
+| Host Machine | Node listens for team     | 0.0.0.0:5002                |
+| Team Machine | React/frontend fetches    | https://dev-jegs.buru-degree.ts.net |
 
 API endpoint bases for this system:
 
-- Main API base: `http://100.120.169.123:5000/api`
-- Integration API base: `http://100.120.169.123:5000/api/integration/v1`
+- Main API base: `https://dev-jegs.buru-degree.ts.net/api`
+- Integration API base: `https://dev-jegs.buru-degree.ts.net/api/integration/v1`
 
 ## 2. Start Order (Must Follow)
 
@@ -74,16 +74,16 @@ const pool = new Pool({
 });
 
 // Express config (external to teammates)
-const PORT = 5000;
+const PORT = 5002;
 app.listen(PORT, "0.0.0.0", () => {
-  console.log("Team can now connect at http://100.120.169.123:5000");
+  console.log("Team can now connect at https://dev-jegs.buru-degree.ts.net");
 });
 ```
 
-Open host firewall for port 5000:
+Open host firewall for port 5002:
 
-- Windows: Firewall and Network Protection -> Advanced Settings -> Inbound Rules -> New Rule -> Allow TCP 5000.
-- Linux (ufw): `sudo ufw allow 5000/tcp`
+- Windows: Firewall and Network Protection -> Advanced Settings -> Inbound Rules -> New Rule -> Allow TCP 5002.
+- Linux (ufw): `sudo ufw allow 5002/tcp`
 
 ### Step B: Start your subsystem app (your machine)
 
@@ -125,7 +125,7 @@ Example `package.json` script pattern:
 Example `scripts/wait-for-enrollpro-api.mjs`:
 
 ```js
-const base = process.env.ENROLLPRO_BASE_URL || "http://100.120.169.123:5000";
+const base = process.env.ENROLLPRO_BASE_URL || "https://dev-jegs.buru-degree.ts.net";
 
 async function wait(url, headers = {}) {
   for (let i = 0; i < 30; i++) {
@@ -151,7 +151,7 @@ Run these checks from your machine.
 #### Public health check
 
 ```bash
-curl http://100.120.169.123:5000/api/health
+curl https://dev-jegs.buru-degree.ts.net/api/health
 ```
 
 Expected:
@@ -163,7 +163,7 @@ Expected:
 #### Integration health check (public)
 
 ```bash
-curl http://100.120.169.123:5000/api/integration/v1/health
+curl https://dev-jegs.buru-degree.ts.net/api/integration/v1/health
 ```
 
 Expected `data.status` is `ok`.
@@ -171,7 +171,7 @@ Expected `data.status` is `ok`.
 #### Sample endpoint check (keyless)
 
 ```bash
-curl http://100.120.169.123:5000/api/integration/v1/sample/teachers
+curl https://dev-jegs.buru-degree.ts.net/api/integration/v1/sample/teachers
 ```
 
 Expected HTTP 200.
@@ -233,8 +233,8 @@ Teammate apps should use the host Tailnet API endpoint base, not `localhost`.
 
 ```js
 // Use this system's Tailnet API endpoint base
-const API_BASE_URL = "http://100.120.169.123:5000/api";
-const INTEGRATION_BASE_URL = "http://100.120.169.123:5000/api/integration/v1";
+const API_BASE_URL = "https://dev-jegs.buru-degree.ts.net/api";
+const INTEGRATION_BASE_URL = "https://dev-jegs.buru-degree.ts.net/api/integration/v1";
 
 // Example: main API route
 const usersUrl = `${API_BASE_URL}/users`;
@@ -263,7 +263,7 @@ fetchData(staffFeedUrl);
 1. API health fails:
 
 - Confirm EnrollPro server is running.
-- Confirm port `5000` is open.
+- Confirm port `5002` is open.
 
 2. Integration health fails:
 
@@ -280,12 +280,12 @@ fetchData(staffFeedUrl);
 
 5. Ping works but API still fails:
 
-- Usually CORS policy in Express or host firewall blocking port 5000.
+- Usually CORS policy in Express or host firewall blocking port 5002.
 
 6. Team needs host details quickly:
 
 - Host Tailscale IPv4 from `tailscale ip -4`
-- API Port: `5000`
+- API Port: `5002`
 - Team members must be in the same Tailnet (or have shared access)
 
 ## 7. Next Guides

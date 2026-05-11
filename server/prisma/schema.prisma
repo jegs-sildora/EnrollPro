@@ -449,6 +449,7 @@ model ApplicationChecklist {
   isPsaBirthCertPresented      Boolean                       @default(false) @map("is_psa_birth_cert_presented")
   isOriginalPsaBcCollected     Boolean                       @default(false) @map("is_original_psa_bc_collected")
   isSf9Submitted               Boolean                       @default(false) @map("is_sf9_submitted")
+  isSf10Requested              Boolean                       @default(false) @map("is_sf10_requested")
   isGoodMoralPresented         Boolean                       @default(false) @map("is_good_moral_presented")
   isMedicalEvalSubmitted       Boolean                       @default(false) @map("is_medical_eval_submitted")
   isCertOfRecognitionPresented Boolean                       @default(false) @map("is_cert_of_recognition_presented")

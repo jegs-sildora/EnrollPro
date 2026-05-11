@@ -14,8 +14,7 @@ function toUtcNoon(year: number, month: number, day: number): Date {
   return new Date(Date.UTC(year, month, day, 12, 0, 0, 0));
 }
 
-const PH_FIRST_NAMES_MALE = [
-"JUAN", "JOSE", "MIGUEL", "CARLO", "RAFAEL", "PAOLO", "ANTONIO", "GABRIEL", "MATEO", "DIEGO", "EMMANUEL", "CHRISTIAN", "JOSHUA", "ANGELO", "RICARDO", "FERDINAND", "RODRIGO", "MANUEL", "CORAZON", "BENIGNO", "RAMON", "ELPIDIO", "SERGIO", "DIOSDADO", "JOSEPH"];
+const PH_FIRST_NAMES_MALE = ["JUAN", "JOSE", "MIGUEL", "CARLO", "RAFAEL", "PAOLO", "ANTONIO", "GABRIEL", "MATEO", "DIEGO", "EMMANUEL", "CHRISTIAN", "JOSHUA", "ANGELO", "RICARDO", "FERDINAND", "RODRIGO", "MANUEL", "CORAZON", "BENIGNO", "RAMON", "ELPIDIO", "SERGIO", "DIOSDADO", "JOSEPH"];
 const PH_FIRST_NAMES_FEMALE = ["MARIA", "ANGELICA", "PRINCESS", "JASMINE", "NICOLE", "GABRIELA", "SOFIA", "ISABELLA", "LIZA", "BEA", "CRISTINA", "PATRICIA", "ELENA", "ROSA", "TERESA", "IMELDA", "GLORIA", "CORAZON", "LOURDES", "REMEDIOS", "CARMELA", "JOSEFINA", "PERLA", "AURORA", "ESTRELLA"];
 const PH_LAST_NAMES = ["DELA CRUZ", "REYES", "SANTOS", "GARCIA", "MENDOZA", "FERNANDEZ", "NAVARRO", "RAMOS", "BAUTISTA", "GONZALES", "TORRES", "VILLANUEVA", "CRUZ", "PASCUAL", "AQUINO", "MARCOS", "DUTERTE", "ESTRADA", "ARROYO", "MAGSAYSAY", "QUIRINO", "OSMEÑA", "MACAPAGAL", "ROXAS", "QUEZON"];
 const PH_MIDDLE_NAMES = ["SANTIAGO", "DE LEON", "BALTAZAR", "CASTILLO", "SORIANO", "DEL ROSARIO", "VALDEZ", "RODRIGUEZ", "PANGANIBAN", "IBARRA", "LUNA", "SILANG"];
@@ -39,15 +38,13 @@ const PH_ELEMENTARY_SCHOOLS = [
 const PH_BARANGAYS = ["BARANGAY 1", "BARANGAY 2", "SAN ISIDRO", "STA. LUCIA", "SANTO NIÑO", "CONCEPCION", "MALANDAY", "POBLACION", "SAN JOSE", "SAN ROQUE"];
 
 async function main() {
-  console.log("🚀 Seeding Existing Learners (Filling all G7-G10 sections to 100% capacity)...");
+  console.log("🚀 Seeding Existing Learners for 2025-2026 (Demo Data)...");
 
-  // 1. Get Context
-  const activeYear = await prisma.schoolYear.findFirst({
-    where: { status: { not: "ARCHIVED" } },
-    orderBy: { id: "desc" }
+  const targetYear = await prisma.schoolYear.findUnique({
+    where: { yearLabel: "2025-2026" }
   });
 
-  if (!activeYear) throw new Error("No valid school year found.");
+  if (!targetYear) throw new Error("Timeline failure: 2025-2026 not found.");
 
   const gradeLevels = await prisma.gradeLevel.findMany({
     where: { name: { in: ["Grade 7", "Grade 8", "Grade 9", "Grade 10"] } },
@@ -57,108 +54,54 @@ async function main() {
   const admin = await prisma.user.findFirst({ where: { role: "SYSTEM_ADMIN" } });
   if (!admin) throw new Error("No SYSTEM_ADMIN found.");
 
-  // 2. Global Section Cleanup (Ensure consistent naming)
-  console.log("🧹 Cleaning up section names...");
-  const rawSections = await prisma.section.findMany({
-    where: { schoolYearId: activeYear.id }
-  });
-  
-  for (const section of rawSections) {
-    let newName = section.name.replace(/ - G\d+/g, "").replace(" (BEC)", "").replace(" (STE)", "").trim();
-    
-    if (newName !== section.name) {
-      await prisma.section.update({
-        where: { id: section.id },
-        data: { name: newName }
-      });
-    }
-  }
-
   for (const gradeLevel of gradeLevels) {
     console.log(`\n📦 Processing ${gradeLevel.name}...`);
 
-    // Get all sections for this grade level
     const sections = await prisma.section.findMany({
       where: { 
         gradeLevelId: gradeLevel.id, 
-        schoolYearId: activeYear.id 
+        schoolYearId: targetYear.id 
       }
     });
 
     if (sections.length === 0) {
-      console.warn(`⚠️ No sections found for ${gradeLevel.name}. Skipping...`);
+      console.warn(`⚠️ No sections found for ${gradeLevel.name} in 2025-2026.`);
       continue;
     }
 
     for (const section of sections) {
-      // Calculate current enrollment in this section
       const currentEnrollmentCount = await prisma.enrollmentRecord.count({
-        where: { 
-          sectionId: section.id,
-          schoolYearId: activeYear.id
-        }
+        where: { sectionId: section.id, schoolYearId: targetYear.id }
       });
 
       const needed = section.maxCapacity - currentEnrollmentCount;
-      
-      if (needed <= 0) {
-        console.log(`  ✅ Section ${section.name} is already at full capacity (${section.maxCapacity}).`);
-        continue;
-      }
+      if (needed <= 0) continue;
 
-      console.log(`  - Filling Section: ${section.name} (${currentEnrollmentCount}/${section.maxCapacity}). Adding ${needed} learners...`);
+      console.log(`  - Filling ${section.name}: Adding ${needed} learners...`);
       
-      await seedSectionBatch(
-        gradeLevel, 
-        section.programType as ApplicantType, 
-        needed, 
-        section, 
-        activeYear, 
-        admin.id,
-        currentEnrollmentCount + 1 // Start index offset to ensure unique tracking numbers/LRNs if re-run
-      );
+      await seedSectionBatch(gradeLevel, section.programType as ApplicantType, needed, section, targetYear, admin.id, currentEnrollmentCount + 1);
     }
   }
 
-  console.log("\n✅ Seeding of existing learners completed successfully.");
+  console.log("\n✅ Seeding of existing learners for 2025-2026 completed.");
 }
 
-async function seedSectionBatch(
-  gradeLevel: any, 
-  program: ApplicantType, 
-  count: number, 
-  section: any, 
-  activeYear: any, 
-  adminId: number,
-  startIndex: number
-) {
-  const programLabel = program === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE" : "BEC";
+async function seedSectionBatch(gradeLevel: any, program: ApplicantType, count: number, section: any, targetYear: any, adminId: number, startIndex: number) {
   const gradeValue = parseInt(gradeLevel.name.split(" ")[1]);
 
   for (let i = 0; i < count; i++) {
     const sequence = startIndex + i;
     const sex: Sex = sequence % 2 === 0 ? "FEMALE" : "MALE";
-    
-    // Use section.id to salt the name generation to avoid identical names across sections
-    // This ensures section 1 and section 2 don't start with the same learner names
     const nameIndex = sequence + (section.id * 31);
-    
-    // Cascading index for unique name combinations
     const firstPool = sex === "MALE" ? PH_FIRST_NAMES_MALE : PH_FIRST_NAMES_FEMALE;
-    const firstIdx = nameIndex % firstPool.length;
-    const lastIdx = Math.floor(nameIndex / firstPool.length) % PH_LAST_NAMES.length;
-    const midIdx = Math.floor(nameIndex / (firstPool.length * PH_LAST_NAMES.length)) % PH_MIDDLE_NAMES.length;
+    
+    const firstName = firstPool[nameIndex % firstPool.length];
+    const lastName = PH_LAST_NAMES[Math.floor(nameIndex / firstPool.length) % PH_LAST_NAMES.length];
+    const middleName = PH_MIDDLE_NAMES[Math.floor(nameIndex / (firstPool.length * PH_LAST_NAMES.length)) % PH_MIDDLE_NAMES.length];
+    
+    const lrn = `1225${section.id.toString().padStart(3, '0')}${sequence.toString().padStart(5, '0')}`;
+    const birthYear = 2025 - (gradeValue + 6);
 
-    const firstName = firstPool[firstIdx];
-    const lastName = PH_LAST_NAMES[lastIdx];
-    const middleName = PH_MIDDLE_NAMES[midIdx];
-    
-    // LRN: Source(12) + Year(26) + Padding + Sequence
-    // Total: 2 + 2 + 3 + 5 = 12 digits
-    const lrn = `1226${section.id.toString().padStart(3, '0')}${sequence.toString().padStart(5, '0')}`;
-    
-    // Birthdate offset based on grade (G7 typically 12-13 years old in 2026, so born ~2013-2014)
-    const birthYear = 2026 - (gradeValue + 6); // Approximation for JHS ages
     const learnerData = {
       lrn,
       firstName,
@@ -178,12 +121,8 @@ async function seedSectionBatch(
     };
 
     const programPrefix = program === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE" : "REG";
-    const startYear = activeYear.yearLabel.split("-")[0];
-    
-    // Ensure tracking number is unique across all sections by including section.id
-    // Standard format: PREFIX-YYYY-SSSSS where SSSSS is [SECTION_ID (3 digits)][SEQUENCE (2 digits)]
-    const trackingSuffix = `${section.id.toString().padStart(3, '0')}${sequence.toString().padStart(2, '0')}`;
-    const trackingNumber = `${programPrefix}-${startYear}-${trackingSuffix}`;
+    const startYear = targetYear.yearLabel.split("-")[0];
+    const trackingNumber = `${programPrefix}-${startYear}-${section.id.toString().padStart(3, '0')}${sequence.toString().padStart(2, '0')}`;
     
     const learner = await prisma.learner.upsert({
       where: { lrn },
@@ -191,34 +130,21 @@ async function seedSectionBatch(
       create: learnerData
     });
 
-    // Ensure relations are handled for cleanup
-    const existingApp = await prisma.enrollmentApplication.findUnique({ where: { trackingNumber } });
-    if (existingApp) {
-      await prisma.applicationFamilyMember.deleteMany({ where: { enrollmentId: existingApp.id } });
-      await prisma.applicationAddress.deleteMany({ where: { enrollmentId: existingApp.id } });
-      await prisma.enrollmentPreviousSchool.deleteMany({ where: { applicationId: existingApp.id } });
-    }
-
     const application = await prisma.enrollmentApplication.upsert({
         where: { trackingNumber },
         update: {
             learnerId: learner.id,
             gradeLevelId: gradeLevel.id,
-            schoolYearId: activeYear.id,
+            schoolYearId: targetYear.id,
             applicantType: program,
             learnerType: "CONTINUING" as LearnerType,
             status: "OFFICIALLY_ENROLLED" as ApplicationStatus,
-            isPrivacyConsentGiven: true,
-            admissionChannel: "F2F",
-            encodedById: adminId,
-            readingProfileLevel: "INDEPENDENT" as ReadingProfileLevel,
-            guardianRelationship: "MOTHER",
             portalPin: defaultPinHash,
         },
         create: {
             learnerId: learner.id,
             gradeLevelId: gradeLevel.id,
-            schoolYearId: activeYear.id,
+            schoolYearId: targetYear.id,
             applicantType: program,
             learnerType: "CONTINUING" as LearnerType,
             status: "OFFICIALLY_ENROLLED" as ApplicationStatus,
@@ -252,15 +178,6 @@ async function seedSectionBatch(
                   zipCode: "1100"
                 }
               ]
-            },
-            previousSchool: {
-              create: {
-                schoolName: PH_ELEMENTARY_SCHOOLS[sequence % PH_ELEMENTARY_SCHOOLS.length],
-                schoolType: "Public",
-                gradeCompleted: `Grade ${gradeValue - 1}`,
-                schoolYearAttended: "2025-2026",
-                generalAverage: learnerData.previousGenAve
-              }
             }
         }
     });
@@ -268,23 +185,19 @@ async function seedSectionBatch(
     await prisma.enrollmentRecord.upsert({
       where: { enrollmentApplicationId: application.id },
       update: {
-        schoolYearId: activeYear.id,
+        schoolYearId: targetYear.id,
         sectionId: section.id,
         enrolledById: adminId,
       },
       create: {
         enrollmentApplicationId: application.id,
-        schoolYearId: activeYear.id,
+        schoolYearId: targetYear.id,
         sectionId: section.id,
         enrolledById: adminId,
         enrolledAt: new Date(),
         confirmationConsent: true,
       }
     });
-
-    if ((i + 1) % 20 === 0 || (i + 1) === count) {
-       // Log progress within the section
-    }
   }
 }
 

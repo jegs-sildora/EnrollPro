@@ -1,0 +1,68 @@
+- generic [ref=e5]:
+  - generic [ref=e6]:
+    - generic [ref=e14]:
+      - generic [ref=e16]:
+        - heading "ENR" [level=1] [ref=e17]
+        - paragraph [ref=e18]: Digital Platform for Optimized Early Registration and Enrollment
+      - generic [ref=e19]:
+        - heading "EnrollPro" [level=2] [ref=e20]
+        - paragraph [ref=e21]: Junior High School (Grades 7-10)
+        - paragraph [ref=e23]: DepEd Public School Early Registration and Enrollment Portal
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - img [ref=e27]
+          - generic [ref=e29]:
+            - heading "Phase 1 Automation" [level=3] [ref=e30]
+            - paragraph [ref=e31]: Early registration intake with dynamic SCP screening
+        - generic [ref=e32]:
+          - img [ref=e34]
+          - generic [ref=e36]:
+            - heading "Phase 2 Validation" [level=3] [ref=e37]
+            - paragraph [ref=e38]: BEEF, SF9 checks, and enrollment finalization
+        - generic [ref=e39]:
+          - img [ref=e41]
+          - generic [ref=e43]:
+            - heading "Priority Sectioning Engine" [level=3] [ref=e44]
+            - paragraph [ref=e45]: SCP hard caps with BEC star and heterogeneous sorting
+    - generic [ref=e46]:
+      - img [ref=e48]
+      - generic [ref=e50]: "EnrollPro: Digital Platform for Optimized Early Registration and Enrollment"
+  - generic [ref=e51]:
+    - generic:
+      - img
+    - generic [ref=e53]:
+      - generic [ref=e54]:
+        - img [ref=e56]
+        - generic [ref=e59]: Welcome Back
+        - generic [ref=e60]: Sign in to continue to EnrollPro
+      - generic [ref=e62]:
+        - generic [ref=e63]:
+          - text: Email
+          - generic [ref=e64]:
+            - generic:
+              - generic:
+                - img
+            - textbox "Email" [ref=e65]:
+              - /placeholder: Enter your email
+        - generic [ref=e66]:
+          - text: Password
+          - generic [ref=e67]:
+            - generic:
+              - generic:
+                - img
+            - textbox "Password" [ref=e68]:
+              - /placeholder: Enter your password
+            - button "Show password" [ref=e69]:
+              - img [ref=e70]
+        - generic [ref=e73]:
+          - generic [ref=e74] [cursor=pointer]:
+            - generic [ref=e75]:
+              - checkbox "Remember me" [ref=e76]
+              - checkbox
+            - generic [ref=e77]: Remember me
+          - link "Forgot password?" [ref=e78] [cursor=pointer]:
+            - /url: "#"
+        - button "Sign In" [ref=e79]:
+          - generic [ref=e80]:
+            - img
+            - text: Sign In

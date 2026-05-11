@@ -22,29 +22,17 @@ const PH_MIDDLE_NAMES = ["SANTIAGO", "DE LEON", "BALTAZAR", "CASTILLO", "SORIANO
 
 const PH_CITIES = ["QUEZON CITY", "MANILA", "CALOOCAN", "DAVAO CITY", "CEBU CITY", "ZAMBOANGA CITY", "ANTIPOLO", "PASIG", "TAGUIG", "VALENZUELA"];
 const PH_MOTHER_TONGUES = ["TAGALOG", "CEBUANO", "ILOCANO", "HILIGAYNON", "WARAY", "BIKOL", "KAPAMPANGAN", "PANGASINAN"];
-const PH_ELEMENTARY_SCHOOLS = [
-  "CENTRAL ELEMENTARY SCHOOL",
-  "SAN JOSE ELEMENTARY SCHOOL",
-  "STA. MARIA ELEMENTARY SCHOOL",
-  "STO. NIÑO ELEMENTARY SCHOOL",
-  "BAGONG PAG-ASA ELEMENTARY SCHOOL",
-  "MALIGAYA ELEMENTARY SCHOOL",
-  "MAHABANG PARANG ELEMENTARY SCHOOL",
-  "SAN ROQUE ELEMENTARY SCHOOL"
-];
-
 const PH_BARANGAYS = ["BARANGAY 1", "BARANGAY 2", "SAN ISIDRO", "STA. LUCIA", "SANTO NIÑO", "CONCEPCION", "MALANDAY", "POBLACION"];
 
 async function main() {
-  console.log("🚀 Scaling Enrollment Data: Provisioning 400+ Learners...");
+  console.log("🚀 Scaling Enrollment Data: Provisioning 400+ Learners for 2025-2026...");
 
   // 1. Get Context
-  const activeYear = await prisma.schoolYear.findFirst({
-    where: { status: { not: "ARCHIVED" } },
-    orderBy: { id: "desc" }
+  const targetYear = await prisma.schoolYear.findUnique({
+    where: { yearLabel: "2025-2026" }
   });
 
-  if (!activeYear) throw new Error("No valid school year found. Run main db:seed first.");
+  if (!targetYear) throw new Error("Timeline failure: 2025-2026 not found. Run base seed first.");
 
   const gradeLevels = await prisma.gradeLevel.findMany({
     where: { name: { in: ["Grade 7", "Grade 8", "Grade 9", "Grade 10"] } },
@@ -54,12 +42,11 @@ async function main() {
   const admin = await prisma.user.findFirst({ where: { role: "SYSTEM_ADMIN" } });
   if (!admin) throw new Error("No SYSTEM_ADMIN found.");
 
-  const totalLearners = 420; // Scale to 400+
+  const totalLearners = 420;
 
   for (let i = 1; i <= totalLearners; i++) {
     const sex: Sex = i % 2 === 0 ? "FEMALE" : "MALE";
     
-    // Cascading index for unique name combinations
     const firstPool = sex === "MALE" ? PH_FIRST_NAMES_MALE : PH_FIRST_NAMES_FEMALE;
     const firstIdx = i % firstPool.length;
     const lastIdx = Math.floor(i / firstPool.length) % PH_LAST_NAMES.length;
@@ -69,10 +56,8 @@ async function main() {
     const lastName = PH_LAST_NAMES[lastIdx];
     const middleName = PH_MIDDLE_NAMES[midIdx];
     
-    // Distribute across grade levels
     const gradeLevel = gradeLevels[(i - 1) % gradeLevels.length];
-    // LRN: Source(11) + Year(26) + Padding + Index
-    const lrn = `112600${String(i).padStart(6, '0')}`;
+    const lrn = `112500${String(i).padStart(6, '0')}`; // Updated for 2025
     
     const learnerData = {
       lrn,
@@ -96,24 +81,21 @@ async function main() {
       promotionStatus: "PROMOTED",
     };
 
-    // 4. Create/Update Learner
     const learner = await prisma.learner.upsert({
       where: { lrn },
       update: learnerData,
       create: learnerData
     });
 
-    // 5. Create Enrollment Application
-    const startYear = activeYear.yearLabel.split("-")[0];
+    const startYear = targetYear.yearLabel.split("-")[0];
     const trackingNumber = `REG-${startYear}-${String(i).padStart(5, '0')}`;
     
-    // We'll use a transaction or simplified logic for family/address to speed up seeding
     await prisma.enrollmentApplication.upsert({
         where: { trackingNumber },
         update: {
             learnerId: learner.id,
             gradeLevelId: gradeLevel.id,
-            schoolYearId: activeYear.id,
+            schoolYearId: targetYear.id,
             applicantType: "REGULAR" as ApplicantType,
             learnerType: "NEW_ENROLLEE" as LearnerType,
             status: "ENROLLED" as ApplicationStatus,
@@ -127,7 +109,7 @@ async function main() {
         create: {
             learnerId: learner.id,
             gradeLevelId: gradeLevel.id,
-            schoolYearId: activeYear.id,
+            schoolYearId: targetYear.id,
             applicantType: "REGULAR" as ApplicantType,
             learnerType: "NEW_ENROLLEE" as LearnerType,
             status: "ENROLLED" as ApplicationStatus,
@@ -172,10 +154,8 @@ async function main() {
         select: { id: true }
     });
 
-    // 6. Create Enrollment Record (Section Assignment)
-    // Find sections for this grade level
     const sections = await prisma.section.findMany({
-      where: { gradeLevelId: gradeLevel.id, schoolYearId: activeYear.id }
+      where: { gradeLevelId: gradeLevel.id, schoolYearId: targetYear.id }
     });
 
     if (sections.length > 0) {
@@ -183,13 +163,13 @@ async function main() {
       await prisma.enrollmentRecord.upsert({
         where: { enrollmentApplicationId: application!.id },
         update: {
-          schoolYearId: activeYear.id,
+          schoolYearId: targetYear.id,
           sectionId: section.id,
           enrolledById: admin.id,
         },
         create: {
           enrollmentApplicationId: application!.id,
-          schoolYearId: activeYear.id,
+          schoolYearId: targetYear.id,
           sectionId: section.id,
           enrolledById: admin.id,
           enrolledAt: new Date(),
@@ -199,11 +179,11 @@ async function main() {
     }
 
     if (i % 50 === 0 || i === totalLearners) {
-      console.log(`  📊 Progress: ${i}/${totalLearners} Learners enrolled and sectioned.`);
+      console.log(`  📊 Progress: ${i}/${totalLearners} Learners enrolled for 2025-2026.`);
     }
   }
 
-  console.log(`\n🎉 Successfully scaled to ${totalLearners} enrolled learners across all grades.`);
+  console.log(`\n🎉 Successfully scaled to ${totalLearners} enrolled learners for 2025-2026.`);
 }
 
 main()

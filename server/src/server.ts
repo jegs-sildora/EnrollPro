@@ -24,7 +24,7 @@ app.all("/api/", (req, res) => {
 });
 // -----------------------------------------------
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5002;
 
 app.listen(PORT as number, "0.0.0.0", () => {
   console.log(`[Server] Running on http://localhost:${PORT}`);

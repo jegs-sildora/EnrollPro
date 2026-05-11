@@ -21,14 +21,13 @@ const PH_LAST_NAMES = ["DELA CRUZ", "REYES", "SANTOS", "GARCIA", "MENDOZA", "FER
 const PH_MIDDLE_NAMES = ["SANTIAGO", "DE LEON", "BALTAZAR", "CASTILLO", "SORIANO", "DEL ROSARIO", "VALDEZ", "RODRIGUEZ", "PANGANIBAN", "IBARRA", "LUNA", "SILANG"];
 
 async function main() {
-  console.log("🚀 Seeding 875 Pending Grade 7 Learners (70 STE, 805 BEC) without sections...");
+  console.log("🚀 Seeding 875 Pending Grade 7 Learners for 2026-2027 (Phase 1 Demo)...");
 
-  const activeYear = await prisma.schoolYear.findFirst({
-    where: { status: { not: "ARCHIVED" } },
-    orderBy: { id: "desc" }
+  const targetYear = await prisma.schoolYear.findUnique({
+    where: { yearLabel: "2026-2027" }
   });
 
-  if (!activeYear) throw new Error("No valid school year found. Run main db:seed first.");
+  if (!targetYear) throw new Error("Timeline failure: 2026-2027 not found.");
 
   const grade7 = await prisma.gradeLevel.findFirst({
     where: { name: "Grade 7" }
@@ -49,7 +48,6 @@ async function main() {
     
     const sex: Sex = i % 2 === 0 ? "FEMALE" : "MALE";
     
-    // Cascading index for unique name combinations
     const firstPool = sex === "MALE" ? PH_FIRST_NAMES_MALE : PH_FIRST_NAMES_FEMALE;
     const firstIdx = i % firstPool.length;
     const lastIdx = Math.floor(i / firstPool.length) % PH_LAST_NAMES.length;
@@ -59,10 +57,7 @@ async function main() {
     const lastName = PH_LAST_NAMES[lastIdx];
     const middleName = PH_MIDDLE_NAMES[midIdx];
 
-    // LRN: Source(13) + Year(26) + Padding + Index
     const lrn = `132600${String(i).padStart(6, '0')}`; 
-    
-    // Ensure general average is not null
     const genAve = isSTE ? (90 + (i % 8)) : (80 + (i % 15));
 
     const learner = await prisma.learner.upsert({
@@ -73,14 +68,14 @@ async function main() {
         firstName: `${firstNameBase} ${isSTE ? '(STE)' : '(BEC)'}`,
         lastName,
         middleName,
-        birthdate: toUtcNoon(2014, (i % 9) + 1, 15), // valid birthdates
+        birthdate: toUtcNoon(2014, (i % 9) + 1, 15),
         sex,
         isPendingLrnCreation: false,
-        previousGenAve: genAve, // Redundant storage for engine robustness
+        previousGenAve: genAve,
       }
     });
 
-    const startYear = activeYear.yearLabel.split("-")[0];
+    const startYear = targetYear.yearLabel.split("-")[0];
     const trackingNumber = `REG-${startYear}-${String(i).padStart(5, "0")}`;
 
     const application = await prisma.enrollmentApplication.upsert({
@@ -90,7 +85,7 @@ async function main() {
       },
       create: {
         learnerId: learner.id,
-        schoolYearId: activeYear.id,
+        schoolYearId: targetYear.id,
         gradeLevelId: grade7.id,
         applicantType,
         learnerType: "NEW_ENROLLEE",
@@ -117,7 +112,7 @@ async function main() {
         earlyReg = await prisma.earlyRegistrationApplication.create({
           data: {
             learnerId: learner.id,
-            schoolYearId: activeYear.id,
+            schoolYearId: targetYear.id,
             gradeLevelId: grade7.id,
             trackingNumber: erTrackingNumber,
             applicantType: "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
@@ -174,11 +169,11 @@ async function main() {
     });
 
     if (i % 100 === 0) {
-      console.log(`Seeded ${i} / ${total} learners...`);
+      console.log(`Seeded ${i} / ${total} incoming learners...`);
     }
   }
 
-  console.log("✅ Successfully seeded 875 pending Grade 7 learners.");
+  console.log("✅ Successfully seeded 875 pending Grade 7 learners for 2026-2027.");
 }
 
 main()

@@ -1,5 +1,5 @@
-import { motion } from "motion/react";
-import { ReactNode, ComponentProps } from "react";
+import { motion, type Easing } from "motion/react";
+import type { ReactNode, ComponentProps } from "react";
 
 export const pageVariants = {
   initial: {
@@ -18,7 +18,7 @@ export const pageVariants = {
 
 export const pageTransition = {
   duration: 0.2,
-  ease: "easeOut",
+  ease: "easeOut" as Easing,
 };
 
 interface PageTransitionProps extends ComponentProps<typeof motion.div> {

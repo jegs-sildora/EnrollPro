@@ -117,19 +117,6 @@ export default function AuditLogs() {
     updateUrlParams({ page: newPage });
   };
 
-  const handleFilterChange = (key: string, value: string) => {
-    setPage(1);
-    const update: any = { page: 1 };
-    update[key] = value;
-    
-    if (key === "actionType") setActionType(value);
-    if (key === "actorId") setActorId(value);
-    if (key === "dateFrom") setDateFrom(value);
-    if (key === "dateTo") setDateTo(value);
-    
-    updateUrlParams(update);
-  };
-
   const [filterMeta, setFilterMeta] = useState<FilterMetadata>({
     actionTypes: [],
     actors: [],

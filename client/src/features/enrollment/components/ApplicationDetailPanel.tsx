@@ -116,7 +116,7 @@ export function ApplicationDetailPanel({
   const persistedMandatoryMet = applicant
     ? isMandatoryDocumentsMet(
         applicant.learnerType,
-        applicant.checklist as Record<string, unknown>,
+        applicant.checklist as unknown as Record<string, unknown>,
       )
     : false;
 

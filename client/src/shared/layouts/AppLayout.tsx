@@ -567,7 +567,7 @@ function AppSidebar() {
   );
 }
 
-export default function AppLayout({ children }: { children: ReactNode }) {
+export default function AppLayout({ children }: { children?: ReactNode }) {
   const {
     selectedAccentHsl,
     colorScheme,

@@ -4,7 +4,7 @@ TAILSCALE BACKEND + DATABASE SHARED DEVELOPMENT SETUP
 =====================================================
 Audience: Entire development team (all roles)
 Scope: Development only (trusted teammates on Tailscale)
-Default API Port: 5000
+Default API Port: 5002
 Default DB Port: 5432
 Primary Host (Source of Truth): dev-jegs.buru-degree.ts.net
 
@@ -20,10 +20,10 @@ DEFAULT SERVICE IPS
 - SMART: 100.93.66.120
 
 DEFAULT SERVICE PORTS
-- ATLAS: 5000
-- AIMS: 5000
+- ATLAS: 5002
+- AIMS: 5002
 - SMART: 3000
-- ENROLLPRO: 5000
+- ENROLLPRO: 5002
 =====================================================
 
 OVERVIEW (READ THIS FIRST)
@@ -62,8 +62,8 @@ Use this runbook strictly on the dev-jegs machine.
 
 Step B1: Open Windows Firewall (Run PowerShell as Administrator)
 
-# Allow API traffic on port 5000
-New-NetFirewallRule -DisplayName "Tailscale_Node_5000" -Direction Inbound -LocalPort 5000 -Protocol TCP -Action Allow -Profile Any
+# Allow API traffic on port 5002
+New-NetFirewallRule -DisplayName "Tailscale_Node_5002" -Direction Inbound -LocalPort 5002 -Protocol TCP -Action Allow -Profile Any
 
 # Allow PostgreSQL traffic on port 5432
 New-NetFirewallRule -DisplayName "Tailscale_Postgres_5432" -Direction Inbound -LocalPort 5432 -Protocol TCP -Action Allow -Profile Any
@@ -71,7 +71,7 @@ New-NetFirewallRule -DisplayName "Tailscale_Postgres_5432" -Direction Inbound -L
 Step B2: Confirm Backend Listener
 Backend must listen on all interfaces:
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5002;
 app.listen(PORT as number, "0.0.0.0", () => {
     console.log(`[Server] Running on http://localhost:${PORT}`);
 });
@@ -79,7 +79,7 @@ app.listen(PORT as number, "0.0.0.0", () => {
 Step B3: Configure Host Backend Env (server/.env)
 Since dev-jegs is serving multiple clients, it MUST allow CORS from their hostnames.
 
-PORT=5000
+PORT=5002
 CLIENT_URL="http://localhost:5173"
 CLIENT_URLS="http://njgrm.buru-degree.ts.net:5173,http://tfrog.buru-degree.ts.net:5173,http://laptop-pfvh73qk.buru-degree.ts.net:5173"
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/enrollpro"
@@ -101,8 +101,8 @@ Copy and send:
 
 ACTIVE HOST: DEV-JEGS
 HOSTNAME: dev-jegs.buru-degree.ts.net
-API_URL: http://dev-jegs.buru-degree.ts.net:5000/api
-INTEGRATION_BASE_URL: http://dev-jegs.buru-degree.ts.net:5000/api/integration/v1
+API_URL: http://dev-jegs.buru-degree.ts.net:5002/api
+INTEGRATION_BASE_URL: http://dev-jegs.buru-degree.ts.net:5002/api/integration/v1
 DB_HOST: dev-jegs.buru-degree.ts.net:5432
 
 -----------------------------------------------------
@@ -114,7 +114,7 @@ Run this on njgrm, tfrog, and laptop-pfvh73qk machines.
 Step C1: Point Frontend to Host API
 Update client/.env.local:
 
-VITE_API_URL="http://dev-jegs.buru-degree.ts.net:5000/api"
+VITE_API_URL="http://dev-jegs.buru-degree.ts.net:5002/api"
 
 Step C2: Point Local Backend to Host DB (Optional/If Running Backend Locally)
 Update server/.env:
@@ -130,9 +130,9 @@ PART D: TEAM VALIDATION CHECKLIST
 
 From client machines (PowerShell), verify the funnel:
 
-Test-NetConnection dev-jegs.buru-degree.ts.net -Port 5000
+Test-NetConnection dev-jegs.buru-degree.ts.net -Port 5002
 Test-NetConnection dev-jegs.buru-degree.ts.net -Port 5432
-Invoke-RestMethod http://dev-jegs.buru-degree.ts.net:5000/api/health
+Invoke-RestMethod http://dev-jegs.buru-degree.ts.net:5002/api/health
 
 Expected API response:
 {"ok":true}

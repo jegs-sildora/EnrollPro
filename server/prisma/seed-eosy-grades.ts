@@ -7,10 +7,6 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-/**
- * Generates a random number following a normal distribution (bell curve).
- * Uses the Box-Muller transform.
- */
 function generateNormalRandom(mean: number, stdDev: number): number {
   const u1 = Math.random();
   const u2 = Math.random();
@@ -18,39 +14,27 @@ function generateNormalRandom(mean: number, stdDev: number): number {
   return mean + z * stdDev;
 }
 
-/**
- * Generates a DepEd compliant integer grade (60-100).
- */
 function generateGrade(isSTE: boolean): number {
-  // STE students generally have higher averages
   const mean = isSTE ? 89 : 83;
   const stdDev = isSTE ? 4 : 6;
-  
   let grade = generateNormalRandom(mean, stdDev);
-  
-  // Clamp values
   if (grade < 60) grade = 60;
   if (grade > 100) grade = 100;
-  
-  // Return with 2 decimal places
   return parseFloat(grade.toFixed(2));
 }
 
 async function main() {
-  console.log("🚀 Seeding End-of-School-Year (EOSY) Grades and Transition Status...");
+  console.log("🚀 Seeding End-of-School-Year (EOSY) Grades for 2025-2026 (Mock SMART Data)...");
 
-  const activeYear = await prisma.schoolYear.findFirst({
-    where: { status: { not: "ARCHIVED" } },
-    orderBy: { id: "desc" }
+  const targetYear = await prisma.schoolYear.findUnique({
+    where: { yearLabel: "2025-2026" }
   });
 
-  if (!activeYear) throw new Error("No valid school year found.");
+  if (!targetYear) throw new Error("Timeline failure: 2025-2026 not found.");
 
-  // Fetch enrollment records for existing learners (tracking number starts with STE- or REG-)
-  // This now dynamically covers all students seeded by seed-existing-learners.ts
   const records = await prisma.enrollmentRecord.findMany({
     where: { 
-      schoolYearId: activeYear.id,
+      schoolYearId: targetYear.id,
       enrollmentApplication: {
         OR: [
           { trackingNumber: { startsWith: "STE-" } },
@@ -69,11 +53,11 @@ async function main() {
   });
 
   if (records.length === 0) {
-    console.warn("⚠️ No 'STE-' or 'REG-' records found. Did you run db:seed-existing-learners first?");
+    console.warn("⚠️ No 'STE-' or 'REG-' records found in 2025-2026. Run db:seed-enrolled-learners first.");
     return;
   }
 
-  console.log(`📊 Processing ${records.length} enrollment records across all grade levels...`);
+  console.log(`📊 Processing ${records.length} enrollment records for 2025-2026...`);
 
   const BATCH_SIZE = 100;
   let processed = 0;
@@ -85,17 +69,9 @@ async function main() {
       batch.map((record) => {
         const isSTE = record.enrollmentApplication.applicantType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING";
         const grade = generateGrade(isSTE);
-        
-        // Promotion Logic
         let eosyStatus: EosyStatus = grade >= 75 ? "PROMOTED" : "RETAINED";
-        
-        // Edge Case: Conditional (Failing 1-2 subjects but passing average)
         let remarks = `Final Ave: ${grade.toFixed(2)}`;
-        const isConditional = grade >= 75 && grade < 80 && Math.random() < 0.05; 
-        if (isConditional) {
-          remarks += " | Conditional: Passed with back subjects (Math/Science)";
-        }
-
+        
         return prisma.enrollmentRecord.update({
           where: { id: record.id },
           data: {
@@ -122,7 +98,7 @@ async function main() {
     }
   }
 
-  console.log(`\n✅ Successfully seeded EOSY statuses for ${records.length} students.`);
+  console.log(`\n✅ Successfully seeded EOSY statuses for 2025-2026.`);
 }
 
 main()

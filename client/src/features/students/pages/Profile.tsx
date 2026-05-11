@@ -145,7 +145,7 @@ export default function StudentProfile() {
   const [recordHistoryLoading, setRecordHistoryLoading] = useState(false);
   const [recordHistoryLoaded, setRecordHistoryLoaded] = useState(false);
 
-  const [sf10Requests, setSf10Requests] = useState<Record<string, unknown>[]>([]);
+  const [sf10Requests, setSf10Requests] = useState<any[]>([]);
 
   const {
     data: student,

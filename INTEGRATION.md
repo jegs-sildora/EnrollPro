@@ -10,7 +10,7 @@ All subsystems must use these static addresses for cross-module communication.
 
 | System    | Role                   | Tailscale IP    | API Port | Base URL                                     |
 | --------- | ---------------------- | --------------- | -------- | -------------------------------------------- |
-| EnrollPro | Core Data Provider     | 100.120.169.123 | 5001     | http://enrollpro.buru-degree.ts.net:5001/api |
+| EnrollPro | Core Data Provider     | 100.120.169.123 | 5002     | http://enrollpro.buru-degree.ts.net:5002/api |
 | ATLAS     | Timetabling            | 100.88.55.125   | 5001     | http://atlas.buru-degree.ts.net:5001/api     |
 | AIMS      | LMS and AI Remediation | 100.92.245.14   | 5001     | http://aims.buru-degree.ts.net:5001/api      |
 | SMART     | Academic Records       | 100.93.66.120   | 3000     | http://smart.buru-degree.ts.net:3000/api     |
@@ -20,7 +20,7 @@ All subsystems must use these static addresses for cross-module communication.
 ### A. Connectivity Prerequisites
 
 - MagicDNS: Ensure Tailscale is connected. Always prefer the .ts.net hostname over raw IP.
-- Firewall: The EnrollPro host must allow port 5001 for teammate API access.
+- Firewall: The EnrollPro host must allow port 5002 for teammate API access.
 - Vite: Run frontend dev servers with --host for cross-device testing.
 
 ### B. Host-Only Database Access (PostgreSQL)
@@ -41,16 +41,16 @@ Because teammate systems only consume API feeds, the Node/Express server is the 
 | Device       | Action                    | Address/Port                |
 | ------------ | ------------------------- | --------------------------- |
 | Host Machine | Node connects to local DB | localhost:5432              |
-| Host Machine | Node listens for team     | 0.0.0.0:5001                |
-| Team Machine | React/frontend fetches    | http://100.120.169.123:5001 |
+| Host Machine | Node listens for team     | 0.0.0.0:5002                |
+| Team Machine | React/frontend fetches    | http://100.120.169.123:5002 |
 
 API endpoint bases for this system:
 
-- Main API base: http://100.120.169.123:5001/api
-- Integration API base: http://100.120.169.123:5001/api/integration/v1
+- Main API base: http://100.120.169.123:5002/api
+- Integration API base: http://100.120.169.123:5002/api/integration/v1
 - Health endpoints:
-  - http://100.120.169.123:5001/api/health
-  - http://100.120.169.123:5001/api/integration/v1/health
+  - http://100.120.169.123:5002/api/health
+  - http://100.120.169.123:5002/api/integration/v1/health
 
 ### D. Host Implementation Steps
 
@@ -65,16 +65,16 @@ const pool = new Pool({
 });
 
 // Express config (external to teammates)
-const PORT = 5001;
+const PORT = 5002;
 app.listen(PORT, "0.0.0.0", () => {
-  console.log("Team can now connect at http://100.120.169.123:5001");
+  console.log("Team can now connect at http://100.120.169.123:5002");
 });
 ```
 
-Open host firewall for port 5001:
+Open host firewall for port 5002:
 
-- Windows: Firewall and Network Protection -> Advanced Settings -> Inbound Rules -> New Rule -> Allow TCP 5001.
-- Linux (ufw): `sudo ufw allow 5001/tcp`
+- Windows: Firewall and Network Protection -> Advanced Settings -> Inbound Rules -> New Rule -> Allow TCP 5002.
+- Linux (ufw): `sudo ufw allow 5002/tcp`
 
 ### E. Authorized Data Scope
 
@@ -108,8 +108,8 @@ Operational boundary:
 Teammate apps should call the host Tailnet API endpoint base, not localhost.
 
 ```js
-const API_BASE_URL = "http://100.120.169.123:5001/api";
-const INTEGRATION_BASE_URL = "http://100.120.169.123:5001/api/integration/v1";
+const API_BASE_URL = "http://100.120.169.123:5002/api";
+const INTEGRATION_BASE_URL = "http://100.120.169.123:5002/api/integration/v1";
 
 const usersUrl = `${API_BASE_URL}/users`;
 const staffFeedUrl = `${INTEGRATION_BASE_URL}/staff`;
@@ -144,7 +144,7 @@ fetchData(staffFeedUrl);
 - CORS error: Update CLIENT_URLS in server .env to include requester Tailscale hostname.
 - DNS fail: Use fallback host 100.120.169.123 temporarily.
 - Data not found: Ensure learner status is ENROLLED or COMPLETED as required by consumer flow.
-- Ping works but API fails: Usually CORS config in Express or firewall block on port 5001.
+- Ping works but API fails: Usually CORS config in Express or firewall block on port 5002.
 
 ## 7. Security Rule (Mandatory)
 
@@ -193,7 +193,7 @@ Use these files for teammate setup and API fetch flow.
 
 ```bash
 ping 100.120.169.123
-curl http://100.120.169.123:5001/api/health
+curl http://100.120.169.123:5002/api/health
 ```
 
 If ping works but API calls fail, check CORS and host firewall rules.

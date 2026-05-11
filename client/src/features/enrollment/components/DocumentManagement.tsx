@@ -15,7 +15,7 @@ import { sileo } from "sileo";
 import { useAuthStore } from "@/store/auth.slice";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
-import { formatUserRole, getRoleColorClasses } from "@/shared/lib/utils";
+import { cn, formatUserRole, getRoleColorClasses } from "@/shared/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import {
   Select,

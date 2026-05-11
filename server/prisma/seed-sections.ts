@@ -40,14 +40,13 @@ const TLE_TRACKS = [
 ];
 
 async function main() {
-  console.log("🌱 Seeding DepEd Sections with TLE Specializations for Grades 9-10...");
+  console.log("🌱 Seeding DepEd Sections for 2025-2026 (Start of Demo Timeline)...");
 
-  const activeYear = await prisma.schoolYear.findFirst({
-    where: { status: { not: "ARCHIVED" } },
-    orderBy: { id: "desc" }
+  const targetYear = await prisma.schoolYear.findUnique({
+    where: { yearLabel: "2025-2026" }
   });
 
-  if (!activeYear) throw new Error("No valid school year found.");
+  if (!targetYear) throw new Error("Timeline failure: 2025-2026 not found. Run base seed first.");
 
   const gradeLevels = await prisma.gradeLevel.findMany({
     where: { name: { in: ["Grade 7", "Grade 8", "Grade 9", "Grade 10"] } },
@@ -65,7 +64,7 @@ async function main() {
     const gradeStars = STARS.slice((gradeNum - 7) * 2, (gradeNum - 7) * 2 + 2);
     for (const star of gradeStars) {
       const scpName = `STE ${gradeNum}-${star}`;
-      await upsertSection(scpName, grade.id, activeYear.id, "SCIENCE_TECHNOLOGY_AND_ENGINEERING", currentSortOrder++, null);
+      await upsertSection(scpName, grade.id, targetYear.id, "SCIENCE_TECHNOLOGY_AND_ENGINEERING", currentSortOrder++, null);
     }
 
     // Initialize a counter to cycle through the TLE tracks for regular sections
@@ -88,7 +87,7 @@ async function main() {
         ? TLE_TRACKS[tleIndex % TLE_TRACKS.length] 
         : null;
 
-      await upsertSection(becName, grade.id, activeYear.id, "REGULAR", currentSortOrder++, specialization);
+      await upsertSection(becName, grade.id, targetYear.id, "REGULAR", currentSortOrder++, specialization);
       if (specialization) tleIndex++;
     }
     

@@ -13,14 +13,14 @@ This document defines the external read-only integration surface for partner sys
 
 For this EnrollPro deployment, use these base endpoints:
 
-- Host base: `http://100.120.169.123:5000`
-- Main API base: `http://100.120.169.123:5000/api`
-- Integration API base: `http://100.120.169.123:5000/api/integration/v1`
+- Host base: `https://dev-jegs.buru-degree.ts.net`
+- Main API base: `https://dev-jegs.buru-degree.ts.net/api`
+- Integration API base: `https://dev-jegs.buru-degree.ts.net/api/integration/v1`
 
 Connection model:
 
 - Host machine only: Node -> PostgreSQL on `localhost:5432`.
-- Team machines: API calls to host on `http://100.120.169.123:5000`.
+- Team machines: API calls to host on `https://dev-jegs.buru-degree.ts.net`.
 - Team machines do not connect directly to PostgreSQL.
 
 ## Companion Guides (Simple English)
