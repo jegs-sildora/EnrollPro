@@ -52,14 +52,14 @@ ACTOR 3: PARENT / GUARDIAN
 1. Application & Consent
    - Submit Early Registration Application (Online submission for Grade 7/Transferees).
    - Submit Enrollment Confirmation (Provide physical consent via Drop-Box for returning Grades 8-10).
-   - Monitor Application Status (Track enrollment progress via the Learner Portal).
+   - P5.2 Monitor Application Status (Track enrollment progress via the Learner Portal).
 
 --------------------------------------------------------------------------------
 ACTOR 4: LEARNER
 --------------------------------------------------------------------------------
 1. Portal Access
    - Access Learner Portal (Login using LRN and PIN).
-   - View Academic Placement (View finalized Grade Level, Section, and Class Adviser).
+   - P5.2 View Academic Placement (View finalized Grade Level, Section, and Class Adviser).
 
 --------------------------------------------------------------------------------
 SYSTEM (AUTONOMOUS PROCESSES)

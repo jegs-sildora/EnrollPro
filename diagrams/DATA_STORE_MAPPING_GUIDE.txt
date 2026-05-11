@@ -1,0 +1,75 @@
+================================================================================
+          ENROLLPRO DATA STORE DIRECTORY & DFD SCOPE MAPPING
+================================================================================
+This directory identifies all standardized data stores (D1-D22), their 
+physical table counterparts, and their participation in specific DFDs.
+================================================================================
+
+ID  | DATA STORE NAME          | PHYSICAL TABLES          | DFD SCOPE / PROCESSES
+----|--------------------------|--------------------------|-------------------------
+D1  | Learner Profiles         | learners                 | Learner (P4, P5)
+    |                          |                          | Registrar (P7, P8)
+    |                          |                          | Admin (P9)
+----|--------------------------|--------------------------|-------------------------
+D2  | Early Reg Apps           | early_registration_      | Learner (P4, P5.2)
+    |                          | applications             | Registrar (P6)
+----|--------------------------|--------------------------|-------------------------
+D3  | Address Data             | application_addresses    | Learner (P4, P5)
+----|--------------------------|--------------------------|-------------------------
+D4  | Family Data              | application_family_      | Learner (P4, P5)
+    |                          | members                  | 
+----|--------------------------|--------------------------|-------------------------
+D5  | Enrollment Apps          | enrollment_applications  | Learner (P5, P5.1, P5.2)
+    |                          |                          | Registrar (P7)
+----|--------------------------|--------------------------|-------------------------
+D6  | Academic History         | enrollment_previous_     | Learner (P5)
+    |                          | schools                  | 
+----|--------------------------|--------------------------|-------------------------
+D7  | Program Details          | enrollment_program_      | Learner (P5)
+    |                          | details                  | 
+----|--------------------------|--------------------------|-------------------------
+D8  | School Settings          | school_settings          | Admin (P1)
+----|--------------------------|--------------------------|-------------------------
+D9  | Academic Calendar        | school_years             | Admin (P1, P9)
+    |                          |                          | Learner (P4, P5)
+    |                          |                          | Registrar (P7)
+----|--------------------------|--------------------------|-------------------------
+D10 | Audit Records            | audit_logs               | ALL SCOPES (P1 - P9)
+----|--------------------------|--------------------------|-------------------------
+D11 | User Accounts            | users                    | Admin (P2)
+----|--------------------------|--------------------------|-------------------------
+D12 | Faculty Roster           | teachers,                | Admin (P2, P9)
+    |                          | teacher_subjects         | Learner (P5.2)
+----|--------------------------|--------------------------|-------------------------
+D13 | Teacher Designations     | teacher_designations     | Admin (P2)
+----|--------------------------|--------------------------|-------------------------
+D14 | SCP Configurations       | scp_program_configs,     | Admin (P3)
+    |                          | scp_program_steps, etc.  | Registrar (P6)
+----|--------------------------|--------------------------|-------------------------
+D15 | App Checklists           | application_checklists   | Registrar (P6)
+----|--------------------------|--------------------------|-------------------------
+D16 | Assessments              | early_registration_      | Registrar (P6)
+    |                          | assessments              | 
+----|--------------------------|--------------------------|-------------------------
+D17 | Enrollment Records       | enrollment_records       | Learner (P5.2)
+    |                          |                          | Registrar (P7, P8)
+    |                          |                          | Admin (P9)
+----|--------------------------|--------------------------|-------------------------
+D18 | Sections                 | sections                 | Learner (P5.2)
+    |                          |                          | Registrar (P7, P8)
+    |                          |                          | Admin (P9)
+----|--------------------------|--------------------------|-------------------------
+D19 | Health Records           | health_records           | Registrar (P8)
+----|--------------------------|--------------------------|-------------------------
+D20 | Grade Levels             | grade_levels             | Learner (P4)
+----|--------------------------|--------------------------|-------------------------
+D21 | Departments              | departments              | Admin (P2)
+----|--------------------------|--------------------------|-------------------------
+D22 | Adviser Ledger           | section_advisers         | Registrar (P7)
+================================================================================
+
+DFD SCOPE DEFINITIONS:
+----------------------
+[Admin]     : System Initialization & Yearly Finalization (P1, P2, P3, P9)
+[Learner]   : Admission, Enrollment & Portal Monitoring (P4, P5, P5.1, P5.2)
+[Registrar] : Verification, Screening & Sectioning (P6, P7, P8)

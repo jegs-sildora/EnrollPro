@@ -5,24 +5,26 @@ ACTOR                             PROCESS (From Processes.txt)             DATA 
 ================================================================================
 
                                 +----------------------------------+
-[ Doc Verifications &           |                                  |----( Compliance State )--------> [ D15: application_checklists ]
-  Assess. Scores ] ------------>| P6.0 Verify & Screen             |<---( Pending Application Data )-- [ D2 ]
-                                |      Applications                |<---( Rubric Criteria )---------- [ D14 ]
-<--[ Verified Roster &          |                                  |----( Eligibility State )-------> [ D2: early_registration_applications ]
-     Compliance Alerts ] -------|                                  |----( Screening Results )-------> [ D16: early_registration_assessments ]
-                                |                                  |----( Security Audit Events )---> [ D10 ]
+[ Document Compliance           |                                  |----( Compliance State )--------> [ D15: application_checklists ]
+  Submission & Assessment       | P6.0 Verify & Screen             |<---( Pending Application Data )-- [ D2 ]
+  Scores ] -------------------->|      Applications                |<---( Rubric Criteria )---------- [ D14 ]
+                                |                                  |<---( Prior Compliance Data )---- [ D15, D16 ]
+<--[ Compliance Verification    |                                  |----( Eligibility State )-------> [ D2: early_registration_applications ]
+     Report ] ------------------|                                  |----( Assessment Results )------> [ D16: early_registration_assessments ]
+                                |                                  |----( Audit Log Entry )---------> [ D10 ]
                                 +----------------------------------+
 
 
                                 +----------------------------------+
-[ BOSY Sectioning Plan ] ------>|                                  |----( Section Linkage )---------> [ D17: enrollment_records ]
-                                | P7.0 Manage Sectioning &         |<---( Pending Enrollment Data )-- [ D5 ]
+[ Beginning of School Year      |                                  |----( Enrollment Record )-------> [ D17: enrollment_records ]
+  Sectioning Plan ] ----------->| P7.0 Manage Sectioning &         |<---( Pending Enrollment Data )-- [ D5 ]
                                 |      Enrollment                  |<---( Learner Data )------------- [ D1 ]
-<--[ Official Class Rosters     |                                  |<---( Section Capacities )------- [ D18 ]
-     & SF1 Data ] --------------|                                  |----( Enrolled Status )---------> [ D5: enrollment_applications ]
-                                |                                  |----( Capacity Metrics )--------> [ D18: sections ]
-                                |                                  |----( Adviser Linkage )---------> [ D22: section_advisers ]
-                                |                                  |----( Security Audit Events )---> [ D10 ]
+<--[ Official Class Roster &    |                                  |<---( Section Capacities )------- [ D18 ]
+     SF1 Report ] --------------|                                  |<---( Enrollment Window Status )-- [ D9 ]
+                                |                                  |----( Enrollment Application Status Update )-> [ D5: enrollment_applications ]
+                                |                                  |----( Section Capacity Update )--> [ D18: sections ]
+                                |                                  |----( Section Adviser Record )--> [ D22: section_advisers ]
+                                |                                  |----( Audit Log Entry )---------> [ D10 ]
                                 +----------------------------------+
 
 
@@ -31,8 +33,8 @@ ACTOR                             PROCESS (From Processes.txt)             DATA 
                                 | P8.0 Finalize EOSY Promotional   |<---( Learner Profile )---------- [ D1 ]
                                 |      Status                      |<---( Active Class Roster )------ [ D17, D18 ]
 <--[ SF1 Register & SF5         |                                  |----( Section Finality Lock )---> [ D18: sections ]
-     Promotion Master ] --------|                                  |----( Health Metrics )----------> [ D19: health_records ]
-                                |                                  |----( Security Audit Events )---> [ D10 ]
+     Promotion Master ] --------|                                  |----( Student Health Record )---> [ D19: health_records ]
+                                |                                  |----( Audit Log Entry )---------> [ D10 ]
                                 +----------------------------------+
 
 ================================================================================
@@ -40,36 +42,38 @@ DATA FLOW DICTIONARY & TABLE MAPPING (SENIOR ARCHITECT AUDIT)
 ================================================================================
 
 PROCESS: P6.0 Verify & Screen Applications
--> Inbound from Registrar: [Doc Verifications & Assess. Scores] (Noun: Checklist flags and numerical score packet)
-<- Inbound from DB: [Pending Application Data] (Reads D2 to identify targets for verification)
-<- Inbound from DB: [Rubric Criteria] (Reads D14 to validate scores against program logic)
-<- Outbound to Registrar: [Verified Roster & Compliance Alerts] (Noun: List of qualified students and missing document notifications)
+-> Inbound from Registrar: [Document Compliance Submission & Assessment Scores] (Noun: Packet of compliance flags (PSA, SF9, Good Moral Certificate) and numerical SCP assessment scores)
+<- Inbound from DB: [Pending Application Data] (Reads D2 early_registration_applications to identify the applicant pool awaiting verification)
+<- Inbound from DB: [Rubric Criteria] (Reads D14 scp_program_configs to validate submitted scores against active program admission logic)
+<- Inbound from DB: [Prior Compliance Data] (Reads D15 application_checklists and D16 early_registration_assessments to compile the summary report)
+<- Outbound to Registrar: [Compliance Verification Report] (Noun: Roster of qualified applicants and list of missing document notifications)
 -> Outbound to DB:
-   - D15: application_checklists (Persists compliance booleans)
-   - D2: early_registration_applications (Updates eligibilityState)
-   - D16: early_registration_assessments (Persists screening results)
-   - D10: audit_logs (Security trail)
+   - D15: application_checklists (Persists boolean compliance flags for each required document)
+   - D2: early_registration_applications (Updates eligibility status to QUALIFIED or NOT_QUALIFIED)
+   - D16: early_registration_assessments (Persists SCP screening exam and interview results)
+   - D10: audit_logs (Audit Log Entry: security trail)
 
 PROCESS: P7.0 Manage Sectioning & Enrollment
--> Inbound from Registrar: [BOSY Sectioning Plan] (Noun: Assignments of students to specific sections)
-<- Inbound from DB: [Pending Enrollment Data] (Reads D5 to get approved enrollment pool)
-<- Inbound from DB: [Learner Data] (Reads D1 for demographic verification during sectioning)
-<- Inbound from DB: [Section Capacities] (Reads D18 to prevent over-enrollment)
-<- Outbound to Registrar: [Official Class Rosters & SF1 Data] (Noun: Finalized section lists and preliminary SF1)
+-> Inbound from Registrar: [Beginning of School Year Sectioning Plan] (Noun: Structured assignment map of approved learners to specific sections and advisers)
+<- Inbound from DB: [Pending Enrollment Data] (Reads D5 enrollment_applications to retrieve the QUALIFIED or READY_FOR_SECTIONING learner pool)
+<- Inbound from DB: [Learner Data] (Reads D1 learners for demographic verification during section assignment)
+<- Inbound from DB: [Section Capacities] (Reads D18 sections to enforce maximum slot limits and prevent over-enrollment)
+<- Inbound from DB: [Enrollment Window Status] (Reads D9 school_years to verify BOSY enrollment window is active before processing assignments)
+<- Outbound to Registrar: [Official Class Roster & SF1 Report] (Noun: Finalized section class lists and preliminary School Form 1 data)
 -> Outbound to DB:
-   - D17: enrollment_records (Persists definitive section linkage)
-   - D5: enrollment_applications (Updates status to ENROLLED)
-   - D18: sections (Updates real-time capacity metrics)
-   - D22: section_advisers (Persists historical advisory ledger)
-   - D10: audit_logs (Security trail)
+   - D17: enrollment_records (Persists definitive learner-to-section linkage: the Enrollment Record)
+   - D5: enrollment_applications (Updates application status to ENROLLED)
+   - D18: sections (Updates real-time section capacity metrics)
+   - D22: section_advisers (Persists historical section adviser ledger entry)
+   - D10: audit_logs (Audit Log Entry: security trail)
 
 PROCESS: P8.0 Finalize EOSY Promotional Status
--> Inbound from Registrar: [EOSY Finalization Data] (Noun: Packet with general average and promotion status)
-<- Inbound from DB: [Learner Profile] (Reads D1 for student identity validation)
-<- Inbound from DB: [Active Class Roster] (Reads D17 and D18 for final grading context)
-<- Outbound to Registrar: [SF1 Register & SF5 Promotion Master] (Noun: Finalized School Forms for DepEd compliance)
+-> Inbound from Registrar: [EOSY Finalization Data] (Noun: Packet containing general average, academic status (PROMOTED / RETAINED / CONDITIONALLY_PROMOTED), and end-of-year health measurements)
+<- Inbound from DB: [Learner Profile] (Reads D1 learners for student identity validation)
+<- Inbound from DB: [Active Class Roster] (Reads D17 enrollment_records and D18 sections for final grading context and section lock eligibility)
+<- Outbound to Registrar: [SF1 Register & SF5 Promotion Master] (Noun: Finalized School Form 1 class register and School Form 5 promotion master list for DepEd compliance)
 -> Outbound to DB:
-   - D17: enrollment_records (Persists final promotional data)
-   - D18: sections (Applies finality lock to prevent further changes)
-   - D19: health_records (Persists basic BMI/health measurements)
-   - D10: audit_logs (Security trail)
+   - D17: enrollment_records (Persists final promotional data: general average and academic status)
+   - D18: sections (Applies isEosyFinalized lock to prevent further enrollment changes)
+   - D19: health_records (Persists end-of-year student health measurements: height, weight, BMI)
+   - D10: audit_logs (Audit Log Entry: security trail)

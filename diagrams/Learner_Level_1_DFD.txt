@@ -5,29 +5,38 @@ ACTOR                             PROCESS (From Processes.txt)             DATA 
 ================================================================================
 
                                 +----------------------------------+
-[ BEEF Annex 1 Profile ] ------>|                                  |----( Profile Data )------------> [ D1, D3, D4 ]
-                                |                                  |<---( Active Window Check )------ [ D9 ]
-                                |  P4.0 Submit Early Registration  |<---( Valid Grade Levels )------- [ D20 ]
-                                |                                  |----( Application Metadata )----> [ D2: early_registration_applications ]
-<--[ Phase 1 Tracking Number ]--|                                  |----( Security Audit Events )---> [ D10 ]
+[ BEEF Annex 1                  |                                  |----( Learner Profile Data )-----> [ D1, D3, D4 ]
+  Registration Packet ] ------->|                                  |<---( Enrollment Window Status )-- [ D9 ]
+                                |  P4.0 Submit Early Registration  |<---( Grade Level Reference Data ) [ D20 ]
+                                |                                  |----( Early Registration Application )-> [ D2: early_registration_applications ]
+<--[ Phase 1 Tracking Number ] -|                                  |----( Audit Log Entry )---------> [ D10 ]
                                 +----------------------------------+
 
 
                                 +----------------------------------+
-[ BEEF Annex 2 Modalities ] --->|                                  |<---( Active Window Check )------ [ D9 ]
-                                |                                  |<---( Pre-populated Profile )---- [ D1, D3, D4 ]
-                                |  P5.0 Submit Official Enrollment |----( Official Intent )---------> [ D5: enrollment_applications ]
-                                |                                  |----( Academic History )--------> [ D6: enrollment_previous_schools ]
-<--[ Enrollment Status ] -------|                                  |----( Program Details )---------> [ D7: enrollment_program_details ]
-                                |                                  |----( Security Audit Events )---> [ D10 ]
+[ BEEF Annex 2                  |                                  |<---( Enrollment Window Status )-- [ D9 ]
+  Enrollment Packet ] --------->|                                  |<---( Pre-populated Profile )---- [ D1, D3, D4 ]
+                                |  P5.0 Submit Official Enrollment |----( Enrollment Application )---> [ D5: enrollment_applications ]
+                                |                                  |----( Previous School Records )--> [ D6: enrollment_previous_schools ]
+<--[ Enrollment Application     |                                  |----( SCP Track Details )--------> [ D7: enrollment_program_details ]
+     Status ] ------------------|                                  |----( Audit Log Entry )---------> [ D10 ]
                                 +----------------------------------+
 
 
                                 +----------------------------------+
-[ Return Intent ] ------------->|                                  |<---( Existing Application )----- [ D5 ]
+[ Return Intent Packet ] ------>|                                  |<---( Existing Application )----- [ D5 ]
                                 |  P5.1 Submit Continuing Learner  |
-                                |       Confirmation               |----( Confirmation Status )-----> [ D5: enrollment_applications ]
-<--[ Confirmation Slip ] -------|                                  |----( Security Audit Events )---> [ D10 ]
+                                |       Confirmation               |----( Intake Method Status Update )-> [ D5: enrollment_applications ]
+<--[ Printed Confirmation       |                                  |----( Audit Log Entry )---------> [ D10 ]
+     Slip ] --------------------|                                  |
+                                +----------------------------------+
+
+
+                                +----------------------------------+
+[ Portal Credentials ] -------->|                                  |<---( Application Status )------- [ D2, D5 ]
+                                |  P5.2 Monitor Application Status |<---( Section/Adviser Data )----- [ D17, D18, D12 ]
+                                |       & View Placement           |----( Audit Log Entry )---------> [ D10 ]
+<--[ Portal Dashboard View ] ---|                                  |
                                 +----------------------------------+
 
 ================================================================================
@@ -35,32 +44,40 @@ DATA FLOW DICTIONARY & TABLE MAPPING (SENIOR ARCHITECT AUDIT)
 ================================================================================
 
 PROCESS: P4.0 Submit Early Registration
--> Inbound from Learner: [BEEF Annex 1 Profile] (Noun: Demographics, LRN, contact info packet)
-<- Inbound from DB: [Active Window Check] (Reads D9 to verify Phase 1 is open)
-<- Inbound from DB: [Valid Grade Levels] (Reads D20 for JHS hierarchy validation)
-<- Outbound to Learner: [Phase 1 Tracking Number] (Noun: 10-digit monitoring identifier)
+-> Inbound from Learner: [BEEF Annex 1 Registration Packet] (Noun: DepEd BEEF Annex 1 form data: LRN, full name, birthdate, contact info, and mother tongue)
+<- Inbound from DB: [Enrollment Window Status] (Reads D9 school_years to verify Phase 1 Early Registration window is open)
+<- Inbound from DB: [Grade Level Reference Data] (Reads D20 grade_levels for JHS hierarchy validation)
+<- Outbound to Learner: [Phase 1 Tracking Number] (Noun: 10-digit alphanumeric monitoring identifier assigned to the Early Registration Application)
 -> Outbound to DB:
-   - D1: learners (Persists permanent identity)
-   - D2: early_registration_applications (Persists Phase 1 metadata)
-   - D3: application_addresses (Persists geographic data)
-   - D4: application_family_members (Persists parent/guardian profiles)
-   - D10: audit_logs (Security trail)
+   - D1: learners (Persists permanent learner identity: LRN, name, birthdate, mother tongue)
+   - D2: early_registration_applications (Persists Phase 1 Early Registration metadata)
+   - D3: application_addresses (Persists current and permanent geographic data)
+   - D4: application_family_members (Persists parent and guardian profiles)
+   - D10: audit_logs (Audit Log Entry: security trail)
 
 PROCESS: P5.0 Submit Official Enrollment
--> Inbound from Learner: [BEEF Annex 2 Modalities] (Noun: Learning modality and track specialization packet)
-<- Inbound from DB: [Active Window Check] (Reads D9 to verify Phase 2 is open)
-<- Inbound from DB: [Pre-populated Profile] (Reads D1, D3, D4 to eliminate redundant entry)
-<- Outbound to Learner: [Enrollment Status] (Noun: Notification of official placement state)
+-> Inbound from Learner: [BEEF Annex 2 Enrollment Packet] (Noun: DepEd BEEF Annex 2 form data: learning modality, intake method, and SCP track specialization)
+<- Inbound from DB: [Enrollment Window Status] (Reads D9 school_years to verify Phase 2 Official Enrollment window is open)
+<- Inbound from DB: [Pre-populated Profile] (Reads D1 learners, D3 application_addresses, D4 application_family_members to eliminate redundant data entry)
+<- Outbound to Learner: [Enrollment Application Status] (Noun: Notification of official enrollment placement state: PENDING_REVIEW or QUALIFIED)
 -> Outbound to DB:
-   - D5: enrollment_applications (Persists official BOSY intent)
-   - D6: enrollment_previous_schools (Persists SF10 history)
-   - D7: enrollment_program_details (Persists SCP track specifics)
-   - D10: audit_logs (Security trail)
+   - D5: enrollment_applications (Persists official BOSY enrollment intent and intake method)
+   - D6: enrollment_previous_schools (Persists SF10 previous school history)
+   - D7: enrollment_program_details (Persists SCP track and strand specifics)
+   - D10: audit_logs (Audit Log Entry: security trail)
 
 PROCESS: P5.1 Submit Continuing Learner Confirmation
--> Inbound from Learner: [Return Intent] (Noun: Consent packet for returning students)
-<- Inbound from DB: [Existing Application] (Reads D5 to link confirmation to previous profile)
-<- Outbound to Learner: [Confirmation Slip] (Noun: Printable verification of return intent)
+-> Inbound from Learner: [Return Intent Packet] (Noun: Returning Grade 8-10 learner consent submission for BOSY re-enrollment)
+<- Inbound from DB: [Existing Application] (Reads D5 enrollment_applications to link the confirmation to the learner's prior profile)
+<- Outbound to Learner: [Printed Confirmation Slip] (Noun: Printable verification document confirming return intent with intakeMethod = CONFIRMATION_SLIP)
 -> Outbound to DB:
-   - D5: enrollment_applications (Updates intent with intakeMethod='CONFIRMATION_SLIP')
-   - D10: audit_logs (Security trail)
+   - D5: enrollment_applications (Updates intake method to CONFIRMATION_SLIP and sets status to PENDING_REVIEW)
+   - D10: audit_logs (Audit Log Entry: security trail)
+
+PROCESS: P5.2 Monitor Application Status & View Placement
+-> Inbound from Learner: [Portal Credentials] (Noun: LRN and PIN, or Tracking Number for Phase 1 status checks)
+<- Inbound from DB: [Application Status] (Reads D2 early_registration_applications or D5 enrollment_applications to retrieve current state)
+<- Inbound from DB: [Section/Adviser Data] (Reads D17 enrollment_records, D18 sections, and D12 teachers to show finalized placement)
+<- Outbound to Learner: [Portal Dashboard View] (Noun: Digital display of enrollment status, document compliance flags, and class adviser info)
+-> Outbound to DB:
+   - D10: audit_logs (Audit Log Entry: records portal access for security monitoring)

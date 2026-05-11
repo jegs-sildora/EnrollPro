@@ -6,38 +6,38 @@ ACTOR                             PROCESS (From Processes.txt)             DATA 
 
                                 +----------------------------------+
 [ School Identity & School Year          |                                  |----( Branding Config )---------> [ D8: school_settings ]
-  Lifecycle Parameters ] ------>| P1.0 Configure School Settings   |
-                                |                                  |----( SY Window Metadata )------> [ D9: school_years ]
+  Lifecycle Parameters ] ------>| P1.0 Configure School Settings   |<---( Active Configuration )---- [ D8, D9 ]
+                                |                                  |----( School Year Window Metadata )---> [ D9: school_years ]
 <--[ Active School Year Lifecycle        |                                  |
-     Status Summary ] ----------|                                  |----( Security Audit Events )---> [ D10: audit_logs ]
+     Status Summary ] ----------|                                  |----( Audit Log Entry )---------> [ D10: audit_logs ]
                                 +----------------------------------+
 
 
                                 +----------------------------------+
 [ Personnel Credentials &       |                                  |----( User Accounts )-----------> [ D11: users ]
   Role Assignments ] ---------->| P2.0 Manage Users & Access       |
-                                |                                  |----( Faculty Master Data )-----> [ D12: teachers ]
+                                |                                  |----( Teacher Profile Data )----> [ D12: teachers ]
 <--[ Personnel Directory ]------|                                  |<---( Existing Personnel Data )-- [ D11, D12, D21 ]
-                                |                                  |----( Role Linkages )-----------> [ D13: teacher_designations ]
+                                |                                  |----( Teacher Designation Records )-> [ D13: teacher_designations ]
                                 |                                  |
-                                |                                  |----( Security Audit Events )---> [ D10: audit_logs ]
+                                |                                  |----( Audit Log Entry )---------> [ D10: audit_logs ]
                                 +----------------------------------+
 
 
                                 +----------------------------------+
-[ SCP Criteria & Rubrics ] ---->|                                  |----( Admission Pipelines )-----> [ D14: scp_program_configs ]
-                                | P3.0 Configure Special Programs  |
-<--[ Configured Admission       |                                  |----( Security Audit Events )---> [ D10: audit_logs ]
+[ SCP Criteria & Rubrics ] ---->|                                  |----( SCP Admission Pipelines )--> [ D14: scp_program_configs ]
+                                | P3.0 Configure Special Programs  |<---( Current Program Logic )---- [ D14: scp_program_configs ]
+<--[ Configured Admission       |                                  |----( Audit Log Entry )---------> [ D10: audit_logs ]
      Pipelines ] ---------------|                                  |
                                 +----------------------------------+
 
 
                                 +----------------------------------+
-[ SY Closing Parameters ] ----->|                                  |----( SY Archival Status )------> [ D9: school_years ]
-                                | P9.0 Finalize School Year        |
-<--[ Master DepEd LIS CSV &     |                                  |<---( Promotional Records )------ [ D17: enrollment_records ]
-     Completion Report ] -------|                                  |<---( System Context Data )------ [ D1, D12, D18 ]
-                                |                                  |----( Security Audit Events )---> [ D10: audit_logs ]
+[ School Year Closing           |                                  |----( School Year Archival Status )---> [ D9: school_years ]
+  Parameters ] ---------------->| P9.0 Finalize School Year        |
+<--[ LIS Export Package &       |                                  |<---( Promotional Records )------ [ D17: enrollment_records ]
+     Completion Report ] -------|                                  |<---( School Year Context Data )- [ D1, D12, D18 ]
+                                |                                  |----( Audit Log Entry )---------> [ D10: audit_logs ]
                                 +----------------------------------+
 
 ================================================================================
@@ -45,35 +45,37 @@ DATA FLOW DICTIONARY & TABLE MAPPING (SENIOR ARCHITECT AUDIT)
 ================================================================================
 
 PROCESS: P1.0 Configure School Settings
--> Inbound from Admin: [School Identity & School Year Lifecycle Parameters] (Noun: Metadata packet containing school name, logo, and active year dates)
-<- Outbound to Admin: [Active School Year Lifecycle Status Summary] (Noun: Report confirming current system state)
+-> Inbound from Admin: [School Identity & School Year Lifecycle Parameters] (Noun: Metadata packet containing school name, logo, accent color, and academic year window dates)
+<- Inbound from DB: [Active Configuration] (Reads D8 school_settings and D9 school_years to populate current state for the status report)
+<- Outbound to Admin: [Active School Year Lifecycle Status Summary] (Noun: Report confirming current branding identity and enrollment window state)
 -> Outbound to DB:
-   - D8: school_settings (Persists singleton UI and school identity)
-   - D9: school_years (Persists academic calendar and enrollment windows)
-   - D10: audit_logs (Immutable security trail)
+   - D8: school_settings (Persists singleton school identity: name, logo, accent color)
+   - D9: school_years (Persists academic calendar windows and enrollment phase dates)
+   - D10: audit_logs (Audit Log Entry: immutable security trail)
 
 PROCESS: P2.0 Manage Users & Access
--> Inbound from Admin: [Personnel Credentials & Role Assignments] (Noun: Security packet with email, role, and department)
-<- Inbound from DB: [Existing Personnel Data] (Reads from D11 Users, D12 Teachers, and D21 Departments to prevent duplicates)
-<- Outbound to Admin: [Personnel Directory] (Noun: Searchable collection of system accounts)
+-> Inbound from Admin: [Personnel Credentials & Role Assignments] (Noun: Security packet with email, employee ID, role, and department assignment)
+<- Inbound from DB: [Existing Personnel Data] (Reads from D11 users, D12 teachers, and D21 departments to enforce uniqueness and prevent duplicates)
+<- Outbound to Admin: [Personnel Directory] (Noun: Searchable collection of system user accounts and linked teacher profiles)
 -> Outbound to DB:
-   - D11: users (Persists system accounts)
-   - D12: teachers (Persists faculty demographics)
-   - D13: teacher_designations (Persists advisory and ancillary role mappings)
-   - D10: audit_logs (Security trail for RBAC changes)
+   - D11: users (Persists system account credentials and RBAC role assignments)
+   - D12: teachers (Persists teacher profile demographics and contact data)
+   - D13: teacher_designations (Persists SY-scoped advisory and ancillary role assignments)
+   - D10: audit_logs (Audit Log Entry: security trail for RBAC changes)
 
 PROCESS: P3.0 Configure Special Programs (SCP)
--> Inbound from Admin: [SCP Criteria & Rubrics] (Noun: Config packet for STE/SPA admission logic)
-<- Outbound to Admin: [Configured Admission Pipelines] (Noun: Validation summary of active tracks)
+-> Inbound from Admin: [SCP Criteria & Rubrics] (Noun: Configuration packet for STE/SPA admission logic, assessment steps, and scoring rubric criteria)
+<- Inbound from DB: [Current Program Logic] (Reads D14 scp_program_configs to retrieve existing pipeline state before applying updates)
+<- Outbound to Admin: [Configured Admission Pipelines] (Noun: Confirmation summary of active SCP admission tracks, steps, and rubric weights)
 -> Outbound to DB:
-   - D14: scp_program_configs (Persists formula, steps, and rubric criteria models)
-   - D10: audit_logs (Security trail for eligibility logic changes)
+   - D14: scp_program_configs (Persists SCP pipeline formula, steps, rubric categories, and admission options)
+   - D10: audit_logs (Audit Log Entry: security trail for eligibility logic changes)
 
 PROCESS: P9.0 Finalize School Year
--> Inbound from Admin: [SY Closing Parameters] (Noun: Trigger parameters for global archival)
-<- Inbound from DB: [Promotional Records] (Reads D17 for final grades and promotion status)
-<- Inbound from DB: [System Context Data] (Reads D1 Learners, D12 Teachers, and D18 Sections for LIS compliance)
-<- Outbound to Admin: [Master DepEd LIS CSV & Completion Report] (Noun: Final archival package and statutory reports)
+-> Inbound from Admin: [School Year Closing Parameters] (Noun: Trigger parameters for global school year archival and LIS export generation)
+<- Inbound from DB: [Promotional Records] (Reads D17 enrollment_records for final promotion status and general averages)
+<- Inbound from DB: [School Year Context Data] (Reads D1 learners, D12 teachers, and D18 sections for DepEd LIS compliance)
+<- Outbound to Admin: [LIS Export Package & Completion Report] (Noun: Final DepEd LIS CSV export package and statutory school year completion report)
 -> Outbound to DB:
-   - D9: school_years (Updates status to ARCHIVED)
-   - D10: audit_logs (Security trail for year-end archival)
+   - D9: school_years (Updates school year status to ARCHIVED; isEosyFinalized = true)
+   - D10: audit_logs (Audit Log Entry: security trail for year-end archival)
