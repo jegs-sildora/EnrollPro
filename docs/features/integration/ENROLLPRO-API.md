@@ -311,7 +311,6 @@ Public read-only feeds for companion systems (ATLAS, SMART, AIMS).
 | GET | `/api/integration/v1/faculty` | None | List of all faculty members. Defaults to active school year if `schoolYearId` is omitted. |
 | GET | `/api/integration/v1/sections` | None | List of sections with occupancy. Defaults to active school year if `schoolYearId` is omitted. |
 | GET | `/api/integration/v1/sections/:sectionId/learners` | None | Paginated roster for a specific section. Supports `page`/`limit`. |
-| GET | `/api/integration/v1/ecosystem/status`| None | Status of cross-system sync jobs. |
 
 ### Sample: `GET /api/integration/v1/health`
 ```json
@@ -421,32 +420,6 @@ Public read-only feeds for companion systems (ATLAS, SMART, AIMS).
     "page": 1,
     "limit": 50,
     "totalPages": 1
-  }
-}
-```
-
-### Sample: `GET /api/integration/v1/ecosystem/status?type=LEARNER`
-```json
-{
-  "data": [
-    {
-      "id": 101,
-      "name": "DELA CRUZ, JUAN",
-      "identifier": "123456789012",
-      "type": "LEARNER",
-      "grade": "Grade 7",
-      "section": "7-A",
-      "syncStatuses": [
-        { "ecosystem": "AIMS", "status": "SYNCED", "lastSyncedAt": "2026-05-11T12:00:00Z" }
-      ]
-    }
-  ],
-  "meta": {
-    "total": 1240,
-    "page": 1,
-    "limit": 50,
-    "totalPages": 25,
-    "pendingCount": 12
   }
 }
 ```

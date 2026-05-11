@@ -113,7 +113,7 @@ export async function login(req: Request, res: Response): Promise<void> {
 
   const user = await prisma.user.findUnique({ where: { accountName } });
   if (!user) {
-    res.status(401).json({ message: "Invalid account name or password" });
+    res.status(401).json({ message: "Invalid employee ID or password" });
     return;
   }
 
@@ -127,7 +127,7 @@ export async function login(req: Request, res: Response): Promise<void> {
 
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) {
-    res.status(401).json({ message: "Invalid account name or password" });
+    res.status(401).json({ message: "Invalid employee ID or password" });
     return;
   }
 

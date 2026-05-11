@@ -20,34 +20,42 @@ The system utilizes the following data stores, which map directly to our physica
 | **D8** | **School Settings** | `school_settings` | Global UI identity (School Name, Logo, Accent Color). |
 | **D9** | **Academic Calendar** | `school_years` | SY portal window dates and lifecycle statuses. |
 | **D10** | **Audit Records** | `audit_logs` | Immutable trail of administrative and registrar actions. |
-| **D11** | **Checklists** | `application_checklists` | Boolean flags for physical document submission (PSA, SF9). |
-| **D12** | **Assessments** | `early_registration_assessments` | Qualitative and quantitative results from SCP screening. |
-| **D13** | **Enrollment Records** | `enrollment_records` | The link between students, sections, and promotional results. |
-| **D14** | **Sections** | `sections` | Grade-level classes and capacity monitoring. |
-| **D15** | **Health Records** | `health_records` | SF8 physical measurements (BMI, Height, Weight). |
-| **D16** | **Program Configs** | `scp_program_configs`, `scp_program_steps`, `scp_interview_rubric_categories` | Admission criteria and assessment pipelines for SCP. |
+| **D11** | **User Accounts** | `users` | System login credentials and RBAC assignments. |
+| **D12** | **Faculty Roster** | `teachers`, `teacher_subjects` | Teacher demographics, contact, and specialization data. |
+| **D13** | **Teacher Designations**| `teacher_designations` | SY-scoped advisory assignments and ancillary roles. |
+| **D14** | **SCP Configurations** | `scp_program_configs`, `scp_program_steps`, `scp_interview_rubric_categories`, `scp_interview_rubric_criteria`, `scp_program_options` | Admission criteria and assessment pipelines for Special Curricular Programs. |
+| **D15** | **App Checklists** | `application_checklists` | Boolean flags for physical document submission (PSA, SF9, Good Moral). |
+| **D16** | **Assessments** | `early_registration_assessments` | Qualitative and quantitative results from SCP screening exams and interviews. |
+| **D17** | **Enrollment Records** | `enrollment_records` | The definitive link between students, sections, and EOSY promotional results. |
+| **D18** | **Sections** | `sections` | Grade-level classes, capacities, and program typing. |
+| **D19** | **Health Records** | `health_records` | SF8 physical measurements (BMI, Height, Weight). |
+| **D20** | **Grade Levels** | `grade_levels` | Permanent global records defining JHS hierarchy. |
+| **D21** | **Departments** | `departments` | Academic departments linked to faculty members. |
+| **D22** | **Adviser Ledger** | `section_advisers` | Historical ledger of section adviserships for audit compliance. |
 
 ---
 
 ## 2. Level 1 DFD: Sequential Lifecycle Processes (P1.0 - P9.0)
 
 ### Phase A: System Initialization (Admin)
-*   **P1.0 Configure School Settings:** Setup identity (Name, Logo) and SY windows (D8, D9).
-*   **P2.0 Manage Users & Access:** Setup RBAC accounts and Faculty master lists (D11, D12, D13).
-*   **P3.0 Configure Special Programs:** Define admission pipelines and rubrics for STE/SPA (D16).
+*   **P1.0 Configure School Settings:** Receives `[School Identity Parameters]` from Admin. Outputs `[Branding Config]` to D8 and `[SY Window Metadata]` to D9.
+*   **P2.0 Manage Users & Access:** Receives `[Personnel Credentials]` and `[Role Assignments]` from Admin. Reads `[Existing Personnel Data]` from D11, D12, and D21. Outputs `[User Accounts]` to D11, `[Faculty Data]` to D12, and `[Role Linkages]` to D13.
+*   **P3.0 Configure Special Programs:** Receives `[SCP Criteria & Rubrics]` from Admin. Outputs `[Admission Pipelines]` to D14.
 
 ### Phase B: Admission & Enrollment (Learner)
-*   **P4.0 Submit Early Registration:** Provides LRN, Demographics, Address, and Family Info (D1, D2, D3, D4).
-*   **P5.0 Submit Official Enrollment:** Provides Modalities, Academic History, and Consent (D5, D6, D7).
-*   **P5.1 Submit Continuing Learner Confirmation:** Existing students confirm intent using previous data (D5).
+*   **P4.0 Submit Early Registration:** Learner submits `[BEEF Annex 1 Profile]`. Process reads `[Active Window Check]` from D9 and `[Valid Grades]` from D20. Outputs `[Profile Data]` to D1, D3, and D4, and `[Application Metadata]` to D2.
+*   **P5.0 Submit Official Enrollment:** Learner submits `[BEEF Annex 2 Modalities]`. Process reads `[Active Window Check]` from D9 and `[Pre-populated Profile]` from D1, D3, D4. Outputs `[Official Intent]` to D5, `[Academic History]` to D6, and `[Program Details]` to D7.
+*   **P5.1 Submit Continuing Learner Confirmation:** Learner submits `[Return Intent]`. Process reads `[Existing Application]` from D5 and outputs `[Confirmation Status]` to D5.
 
 ### Phase C: Verification & Placement (Registrar)
-*   **P6.0 Verify & Screen Applications:** Physically verify documents and encode assessment scores (D11, D2, D12). **Audit Log Required (D10).**
-*   **P7.0 Manage Sectioning & Enrollment:** Assign learners to sections based on capacity and program (D13, D5, D14). **Audit Log Required (D10).**
+*   **P6.0 Verify & Screen Applications:** Registrar inputs `[Doc Verifications & Assess. Scores]`. Process reads `[Pending Application Data]` from D2 and `[Rubric Criteria]` from D14. Outputs `[Compliance State]` to D15, `[Eligibility State]` to D2, and `[Screening Results]` to D16.
+*   **P7.0 Manage Sectioning & Enrollment:** Registrar inputs `[BOSY Sectioning Plan]`. Process reads `[Pending Enrollment Data]` from D5, `[Learner Data]` from D1, and `[Section Capacities]` from D18. Outputs `[Section Linkage]` to D17, `[Enrolled Status]` to D5, `[Capacity Metrics]` to D18, and `[Adviser Linkage]` to D22.
 
 ### Phase D: EOSY Finalization (Registrar/Admin)
-*   **P8.0 Finalize EOSY Promotional Status:** Encode Final Average and set Promoted/Retained status manually (D13, D14, D15). **Audit Log Required (D10).**
-*   **P9.0 Finalize School Year:** Admin sets SY to Archived and exports LIS-ready CSV reports (D9, D17). **Audit Log Required (D10).**
+*   **P8.0 Finalize EOSY Promotional Status:** Registrar inputs `[EOSY Finalization Data]`. Process reads `[Learner Profile]` from D1 and `[Active Class Roster]` from D17/D18. Outputs `[Promotional Data]` to D17, `[Section Finality Lock]` to D18, and `[Health Metrics]` to D19.
+*   **P9.0 Finalize School Year:** Admin inputs `[SY Closing Parameters]`. Process reads `[Promotional Records]` from D17, `[Section Data]` from D18, `[Faculty Data]` from D12, and `[Learner Profile]` from D1. Outputs `[SY Archival Status]` to D9 and `[LIS CSV Report]` to the Admin.
+
+*Note: All processes (P1.0 - P9.0) output `[Security Audit Events]` to D10 (audit_logs).*
 
 ---
 
@@ -59,6 +67,10 @@ flowchart TD
     Admin["System Administrator"]
     Reg["School Registrar"]
     Learner["Learner / Guardian"]
+
+    %% Data Stores (Simplified for Level 1 Diagram to avoid clutter, audit logs separated)
+    D10[("D10: Audit Logs")]
+    DB[("D1-D22: System Data Stores")]
 
     %% Processes
     subgraph Initialization
@@ -83,11 +95,27 @@ flowchart TD
         P9["P9.0 Finalize SY"]
     end
 
-    %% Main Actor Flows
-    Admin --> P1 & P2 & P3 & P9
-    Learner --> P4 & P5 & P5_1
-    Reg --> P6 & P7 & P8
+    %% Admin Data Flows (Noun-only)
+    Admin -- "[School Identity Parameters]" --> P1
+    Admin -- "[Personnel Credentials]" --> P2
+    Admin -- "[SCP Criteria & Rubrics]" --> P3
+    Admin -- "[SY Closing Parameters]" --> P9
+    P9 -- "[LIS CSV Report]" --> Admin
 
-    %% Data Store Sync (Audit)
-    P6 & P7 & P8 & P9 -.-> D10[("D10: Audit Logs")]
+    %% Learner Data Flows (Noun-only)
+    Learner -- "[BEEF Annex 1 Profile]" --> P4
+    Learner -- "[BEEF Annex 2 Modalities]" --> P5
+    Learner -- "[Return Intent]" --> P5_1
+
+    %% Registrar Data Flows (Noun-only)
+    Reg -- "[Doc Verifications & Assess. Scores]" --> P6
+    Reg -- "[BOSY Sectioning Plan]" --> P7
+    Reg -- "[EOSY Finalization Data]" --> P8
+
+    %% System Data Flows mapping
+    P1 & P2 & P3 & P4 & P5 & P5_1 & P6 & P7 & P8 & P9 -- "[Data Transactions]" --> DB
+    DB -- "[Requested Records]" --> P2 & P4 & P5 & P5_1 & P6 & P7 & P8 & P9
+
+    %% Audit Log Data Flows (Noun-only)
+    P1 & P2 & P3 & P4 & P5 & P5_1 & P6 & P7 & P8 & P9 -. "[Security Audit Events]" .-> D10
 ```

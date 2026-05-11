@@ -19,7 +19,6 @@ import {
   Activity,
   ArrowUpRightSquare,
   UserPlus,
-  Network,
   School,
 } from "lucide-react";
 
@@ -201,15 +200,30 @@ function SYSwitcher() {
               size="sm"
               className={cn(
                 "h-8 gap-1.5 text-xs font-bold transition-all duration-200 border-2",
-                currentYear?.status === "ARCHIVED" ? "border-slate-300 bg-slate-50" : "border-border"
+                currentYear?.status === "ARCHIVED"
+                  ? "border-slate-300 bg-slate-50"
+                  : "border-border",
               )}
               onClick={() => setOpen(!open)}>
-              <Calendar className={cn("size-3.5", currentYear?.status === "ARCHIVED" ? "text-slate-500" : "text-primary")} />
-              <span className={cn(isOverride ? "text-primary" : "", currentYear?.status === "ARCHIVED" ? "text-slate-600" : "")}>
+              <Calendar
+                className={cn(
+                  "size-3.5",
+                  currentYear?.status === "ARCHIVED"
+                    ? "text-slate-500"
+                    : "text-primary",
+                )}
+              />
+              <span
+                className={cn(
+                  isOverride ? "text-primary" : "",
+                  currentYear?.status === "ARCHIVED" ? "text-slate-600" : "",
+                )}>
                 {currentLabel}
               </span>
               {currentYear?.status === "ARCHIVED" && (
-                <Badge variant="outline" className="h-4 px-1 text-[8px] font-black uppercase bg-slate-200 text-slate-700 border-slate-300">
+                <Badge
+                  variant="outline"
+                  className="h-4 px-1 text-[8px] font-black uppercase bg-slate-200 text-slate-700 border-slate-300">
                   ARCHIVED
                 </Badge>
               )}
@@ -236,7 +250,7 @@ function SYSwitcher() {
                   onClick={() => {
                     setViewingSY(y.id === activeSchoolYearId ? null : y.id);
                     setOpen(false);
-                    // Trigger a full reload to ensure all components re-fetch data 
+                    // Trigger a full reload to ensure all components re-fetch data
                     // using the new school year context header.
                     setTimeout(() => window.location.reload(), 50);
                   }}
@@ -255,9 +269,10 @@ function SYSwitcher() {
                           ? "bg-blue-100 text-blue-800 border border-blue-200"
                           : y.status === "DRAFT"
                             ? "bg-amber-100 text-amber-800 border border-amber-200"
-                            : y.status === "ARCHIVED" || y.status === "BOSY_LOCKED"
+                            : y.status === "ARCHIVED" ||
+                                y.status === "BOSY_LOCKED"
                               ? "bg-slate-200 text-slate-800 border border-slate-300"
-                              : "bg-gray-100 text-gray-800 border border-gray-200"
+                              : "bg-gray-100 text-gray-800 border border-gray-200",
                     )}>
                     {y.status === "BOSY_LOCKED" ? "BOSY LOCKED" : y.status}
                   </span>
@@ -539,12 +554,6 @@ function AppSidebar() {
                       pathname={pathname}
                     />
                     <NavItem
-                      to="/admin/ecosystem"
-                      icon={Network}
-                      label="Ecosystem Sync"
-                      pathname={pathname}
-                    />
-                    <NavItem
                       to="/audit-logs"
                       icon={History}
                       label="Audit Logs"
@@ -730,7 +739,11 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
           <PageTransition
             routeKey={location.pathname}
             className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden py-3 px-6 scrollbar-thin">
-            {shouldShowNoSchoolYearState ? <NoSchoolYearState /> : (children || <Outlet />)}
+            {shouldShowNoSchoolYearState ? (
+              <NoSchoolYearState />
+            ) : (
+              children || <Outlet />
+            )}
           </PageTransition>
         </AnimatePresence>
       </SidebarInset>

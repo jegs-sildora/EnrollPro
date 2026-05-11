@@ -41,7 +41,6 @@ model User {
   recordedHealthRecords                HealthRecord[]                 @relation("HealthRecordRecordedBy")
   lockedSchoolYears                    SchoolYear[]                   @relation("SchoolYearLockedBy")
   updatedTeacherDesignations           TeacherDesignation[]           @relation("TeacherDesignationUpdatedBy")
-  ecosystemSyncStatuses                EcosystemSyncStatus[]
   createdBy                            User?                          @relation("UserCreatedBy", fields: [createdById], references: [id])
   createdUsers                         User[]                         @relation("UserCreatedBy")
   learnerProfile                       Learner?                       @relation("UserLearnerProfile")
@@ -67,13 +66,11 @@ model Teacher {
   plantillaPosition     String?               @map("plantilla_position")
   designation           String?
   departmentId          Int?                  @map("department_id")
-  atlasSyncEvents       AtlasSyncEvent[]
   headedDepartment      Department?           @relation("DepartmentHead")
   advisoryHistory       SectionAdviser[]
   teacherDesignations   TeacherDesignation[]
   subjects              TeacherSubject[]
   department            Department?           @relation("DepartmentTeachers", fields: [departmentId], references: [id])
-  ecosystemSyncStatuses EcosystemSyncStatus[]
 
   @@map("teachers")
 }
@@ -114,7 +111,6 @@ model SchoolYear {
   bosyLockedAt                  DateTime?                      @map("bosy_locked_at") @db.Timestamptz(6)
   bosyLockedById                Int?                           @map("bosy_locked_by_id")
   portalControl                 PortalControl                  @default(AUTO) @map("portal_control")
-  atlasSyncEvents               AtlasSyncEvent[]
   earlyRegistrationApplications EarlyRegistrationApplication[]
   enrollmentApplications        EnrollmentApplication[]
   enrollmentRecords             EnrollmentRecord[]
@@ -160,16 +156,19 @@ model Section {
   schoolYearId        Int                  @map("school_year_id")
   /// The specific TLE major for G9/G10 (e.g., "HE - Cookery"). Null for G7/G8.
   tleSpecialization   String?              @map("tle_specialization")
+  scpProgramConfigId  Int?                 @map("scp_program_config_id")
   enrollmentRecords   EnrollmentRecord[]
   advisers            SectionAdviser[]
   gradeLevel          GradeLevel           @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
   schoolYear          SchoolYear           @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+  scpProgramConfig    ScpProgramConfig?    @relation(fields: [scpProgramConfigId], references: [id], onDelete: SetNull)
   teacherDesignations TeacherDesignation[] @relation("TeacherDesignationAdvisorySection")
 
   @@unique([name, gradeLevelId, schoolYearId], name: "uq_sections_name_grade_sy")
   @@index([gradeLevelId], map: "idx_sections_grade_level_id")
   @@index([schoolYearId], map: "idx_sections_school_year_id")
   @@index([gradeLevelId, programType], map: "idx_sections_grade_level_program_type")
+  @@index([scpProgramConfigId], map: "idx_sections_scp_program_config_id")
   @@map("sections")
 }
 
@@ -236,8 +235,8 @@ model Learner {
   user                          User?                          @relation("UserLearnerProfile", fields: [userId], references: [id], onDelete: SetNull)
   earlyRegistrationApplications EarlyRegistrationApplication[]
   enrollmentApplications        EnrollmentApplication[]
+  enrollmentRecords             EnrollmentRecord[]
   healthRecords                 HealthRecord[]
-  ecosystemSyncStatuses         EcosystemSyncStatus[]
 
   @@index([lastName, firstName, birthdate], map: "idx_learners_dedup")
   @@map("learners")
@@ -300,11 +299,14 @@ model EarlyRegistrationAssessment {
   score         Float?
   result        String?
   notes         String?
-  conductedAt   DateTime?                    @map("conducted_at") @db.Timestamptz(6)
-  createdAt     DateTime                     @default(now()) @map("created_at") @db.Timestamptz(6)
-  application   EarlyRegistrationApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  conductedAt      DateTime?                    @map("conducted_at") @db.Timestamptz(6)
+  createdAt        DateTime                     @default(now()) @map("created_at") @db.Timestamptz(6)
+  scpProgramStepId Int?                         @map("scp_program_step_id")
+  application      EarlyRegistrationApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  scpProgramStep   ScpProgramStep?              @relation(fields: [scpProgramStepId], references: [id], onDelete: SetNull)
 
   @@index([applicationId], map: "idx_early_reg_assessments_app_id")
+  @@index([scpProgramStepId], map: "idx_early_reg_assessments_step_id")
   @@map("early_registration_assessments")
 }
 
@@ -393,9 +395,12 @@ model EnrollmentProgramDetail {
   scpType         ApplicantType         @map("scp_type")
   artField        String?               @map("art_field")
   foreignLanguage String?               @map("foreign_language")
-  sportsList      String[]              @map("sports_list")
-  application     EnrollmentApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  sportsList         String[]              @map("sports_list")
+  scpProgramConfigId Int?                  @map("scp_program_config_id")
+  application        EnrollmentApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  scpProgramConfig   ScpProgramConfig?     @relation(fields: [scpProgramConfigId], references: [id], onDelete: SetNull)
 
+  @@index([scpProgramConfigId], map: "idx_enrollment_prog_details_config_id")
   @@map("enrollment_program_details")
 }
 
@@ -490,12 +495,15 @@ model EnrollmentRecord {
   sectioningMethod        SectioningMethod      @default(BATCH_ALGORITHM) @map("sectioning_method")
   sf1Remarks              String?               @map("sf1_remarks")
   finalAverage            Float?                @map("final_average")
+  learnerId               Int                   @map("learner_id")
   enrolledBy              User                  @relation(fields: [enrolledById], references: [id])
   enrollmentApplication   EnrollmentApplication @relation(fields: [enrollmentApplicationId], references: [id], onDelete: Cascade)
+  learner                 Learner               @relation(fields: [learnerId], references: [id], onDelete: Restrict)
   schoolYear              SchoolYear            @relation(fields: [schoolYearId], references: [id])
   section                 Section               @relation(fields: [sectionId], references: [id])
 
   @@index([sectionId], map: "idx_enroll_records_section_id")
+  @@index([learnerId], map: "idx_enrollment_records_learner_id")
   @@map("enrollment_records")
 }
 
@@ -566,8 +574,10 @@ model ScpProgramConfig {
   gradeRequirements Json?              @map("grade_requirements")
   rankingFormula    Json?              @map("ranking_formula")
   notes             String?
-  schoolYear        SchoolYear         @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+  schoolYear        SchoolYear                @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
   options           ScpProgramOption[]
+  programDetails    EnrollmentProgramDetail[]
+  sections          Section[]
   steps             ScpProgramStep[]
 
   @@unique([schoolYearId, scpType], name: "uq_scp_program_configs_type")
@@ -589,6 +599,7 @@ model ScpProgramStep {
   notes              String?
   cutoffScore        Float?                       @map("cutoff_score")
   rubric             Json?
+  assessments        EarlyRegistrationAssessment[]
   rubricCategories   ScpInterviewRubricCategory[]
   scpProgramConfig   ScpProgramConfig             @relation(fields: [scpProgramConfigId], references: [id], onDelete: Cascade)
 
@@ -674,37 +685,6 @@ model TeacherDesignation {
   @@index([advisorySectionId], map: "idx_teacher_designations_advisory_section_id")
   @@index([updatedById], map: "idx_teacher_designations_updated_by_id")
   @@map("teacher_designations")
-}
-
-/// Outbound EnrollPro -> ATLAS synchronization events for observability and retries
-model AtlasSyncEvent {
-  id             Int             @id @default(autoincrement())
-  eventId        String          @unique(map: "uq_atlas_sync_events_event_id") @map("event_id")
-  eventType      String          @map("event_type")
-  teacherId      Int?            @map("teacher_id")
-  schoolYearId   Int?            @map("school_year_id")
-  payload        Json
-  requestUrl     String          @map("request_url")
-  status         AtlasSyncStatus @default(PENDING)
-  httpStatus     Int?            @map("http_status")
-  responseBody   Json?           @map("response_body")
-  errorMessage   String?         @map("error_message")
-  attemptCount   Int             @default(0) @map("attempt_count")
-  maxAttempts    Int             @default(5) @map("max_attempts")
-  durationMs     Int?            @map("duration_ms")
-  lastAttemptAt  DateTime?       @map("last_attempt_at") @db.Timestamptz(6)
-  nextRetryAt    DateTime?       @map("next_retry_at") @db.Timestamptz(6)
-  acknowledgedAt DateTime?       @map("acknowledged_at") @db.Timestamptz(6)
-  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
-  schoolYear     SchoolYear?     @relation(fields: [schoolYearId], references: [id])
-  teacher        Teacher?        @relation(fields: [teacherId], references: [id])
-
-  @@index([status, nextRetryAt], map: "idx_atlas_sync_events_status_retry")
-  @@index([teacherId, createdAt], map: "idx_atlas_sync_events_teacher_created_at")
-  @@index([schoolYearId, createdAt], map: "idx_atlas_sync_events_sy_created_at")
-  @@index([createdAt], map: "idx_atlas_sync_events_created_at")
-  @@map("atlas_sync_events")
 }
 
 enum SectionAdviserStatus {
@@ -865,14 +845,6 @@ enum AddressType {
   @@map("address_type")
 }
 
-enum AtlasSyncStatus {
-  PENDING
-  SYNCED
-  FAILED
-
-  @@map("atlas_sync_status")
-}
-
 enum AcademicStatus {
   PROMOTED
   RETAINED
@@ -958,43 +930,3 @@ enum PortalControl {
   @@map("portal_control")
 }
 
-/// Tracking synchronization status for a user/learner/teacher across various school subsystems
-model EcosystemSyncStatus {
-  id           Int        @id @default(autoincrement())
-  userId       Int?       @map("user_id")
-  learnerId    Int?       @map("learner_id")
-  teacherId    Int?       @map("teacher_id")
-  ecosystem    Ecosystem
-  status       SyncStatus @default(PENDING)
-  externalId   String?    @map("external_id")
-  lastSyncedAt DateTime?  @map("last_synced_at") @db.Timestamptz(6)
-  errorMessage String?    @map("error_message")
-  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
-  user         User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  learner      Learner?   @relation(fields: [learnerId], references: [id], onDelete: Cascade)
-  teacher      Teacher?   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, ecosystem])
-  @@unique([learnerId, ecosystem])
-  @@unique([teacherId, ecosystem])
-  @@map("ecosystem_sync_statuses")
-}
-
-enum Ecosystem {
-  ENROLLPRO
-  ATLAS
-  SMART
-  AIMS
-
-  @@map("ecosystem_type")
-}
-
-enum SyncStatus {
-  PENDING
-  SYNCED
-  FAILED
-  NOT_APPLICABLE
-
-  @@map("sync_status")
-}

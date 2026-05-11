@@ -29,7 +29,6 @@ import {
   GraduationCap,
   Command,
   Fingerprint,
-  Network,
   Lock as LockIcon,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
@@ -1643,53 +1642,6 @@ export default function AdminUsers() {
                   ))}
                 </div>
               </div>
-            </div>
-
-            <div className="space-y-4 pt-4 border-t">
-              <div className="flex items-center gap-2 text-xs font-extrabold uppercase  text-foreground">
-                <Network className="h-3.5 w-3.5" />
-                Ecosystem RBAC Matrix
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-muted/30 rounded-xl border border-dashed">
-                {[
-                  {
-                    id: "enrollpro",
-                    label: "EnrollPro (Core)",
-                    desc: "Admission & Enrollment",
-                  },
-                  { id: "atlas", label: "ATLAS", desc: "Grade Encoding & SFs" },
-                  {
-                    id: "smart",
-                    label: "S.M.A.R.T.",
-                    desc: "Clinic & Health Records",
-                  },
-                  { id: "aims", label: "AIMS", desc: "Inventory & Assets" },
-                ].map((sys) => (
-                  <div
-                    key={sys.id}
-                    className="flex items-start gap-3 p-2 rounded-lg bg-background border shadow-sm">
-                    <Checkbox
-                      id={`sys-${sys.id}`}
-                      className="mt-1"
-                      defaultChecked={sys.id === "enrollpro"}
-                    />
-                    <div className="grid gap-0.5 leading-none">
-                      <label
-                        htmlFor={`sys-${sys.id}`}
-                        className="text-[11px] font-black uppercase leading-none cursor-pointer">
-                        {sys.label}
-                      </label>
-                      <p className="text-[9px] font-bold text-foreground uppercase">
-                        {sys.desc}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs font-bold text-foreground italic px-1">
-                Permissions are instantly broadcasted to sibling subsystems via
-                SSO.
-              </p>
             </div>
 
             <div className="space-y-4 pt-4 border-t">

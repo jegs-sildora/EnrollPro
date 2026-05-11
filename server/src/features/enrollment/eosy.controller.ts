@@ -3,7 +3,6 @@ import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../lib/AppError.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { EosyStatus } from "../../generated/prisma/index.js";
-import { queueSectionSync, queueSchoolYearSync, queueEcosystemSync } from "../integration/ecosystem-sync.service.js";
 
 function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return "";
@@ -52,8 +51,7 @@ async function getSchoolYearExportLockState(schoolYearId: number) {
 
   let lockReason: string | null = null;
   if (schoolYearFinalized) {
-    lockReason =
-      `School year ${schoolYear.yearLabel} EOSY is permanently finalized and archived. Class reopening and status updates are globally locked.`;
+    lockReason = `School year ${schoolYear.yearLabel} EOSY is permanently finalized and archived. Class reopening and status updates are globally locked.`;
   } else if (totalSections === 0) {
     lockReason =
       "No sections found for this school year. Add sections before school-level finalization.";
@@ -153,9 +151,10 @@ export async function getSectionRecords(
       return {
         ...record,
         // Ensure finalAverage is correctly typed as number or null
-        finalAverage: record.finalAverage !== null && record.finalAverage !== undefined 
-          ? parseFloat(String(record.finalAverage)) 
-          : null,
+        finalAverage:
+          record.finalAverage !== null && record.finalAverage !== undefined
+            ? parseFloat(String(record.finalAverage))
+            : null,
       };
     });
 
@@ -173,7 +172,8 @@ export async function updateEosyRecord(
   try {
     const { id } = req.params;
     const recordId = parseInt(String(id), 10);
-    const { eosyStatus, dropOutReason, transferOutDate, finalAverage } = req.body;
+    const { eosyStatus, dropOutReason, transferOutDate, finalAverage } =
+      req.body;
 
     const record = await prisma.enrollmentRecord.findUnique({
       where: { id: recordId },
@@ -215,7 +215,10 @@ export async function updateEosyRecord(
               ? new Date(transferOutDate)
               : null
             : null,
-        finalAverage: finalAverage !== undefined ? parseFloat(String(finalAverage)) : undefined,
+        finalAverage:
+          finalAverage !== undefined
+            ? parseFloat(String(finalAverage))
+            : undefined,
       },
     });
 
@@ -263,7 +266,10 @@ export async function finalizeSection(
 
     // Hook: Grade 10 Completers Transition
     // Grade 10 is the end of JHS; promoted learners become Completers
-    if (section.gradeLevel.displayOrder === 10 || section.gradeLevel.name.includes("10")) {
+    if (
+      section.gradeLevel.displayOrder === 10 ||
+      section.gradeLevel.name.includes("10")
+    ) {
       const promotedRecords = await prisma.enrollmentRecord.findMany({
         where: {
           sectionId: sectionId,
@@ -290,7 +296,6 @@ export async function finalizeSection(
 
         // Trigger Ecosystem Sync for status update/revocation
         for (const learnerId of learnerIds) {
-          await queueEcosystemSync(learnerId, "LEARNER").catch(console.error);
         }
 
         await auditLog({
@@ -305,7 +310,6 @@ export async function finalizeSection(
     }
 
     // Hook: Queue Ecosystem Sync for section
-    await queueSectionSync(sectionId).catch(console.error);
 
     await auditLog({
       userId: req.user!.userId,
@@ -453,7 +457,6 @@ export async function finalizeSchoolYear(
     });
 
     // Hook: Queue Ecosystem Sync for entire school year
-    await queueSchoolYearSync(syId).catch(console.error);
 
     await auditLog({
       userId: req.user!.userId,

@@ -9,7 +9,6 @@ import {
 import { SectioningEngine } from "../enrollment/services/sectioning-engine.service.js";
 import { DEFAULT_SECTIONING_PARAMS } from "@enrollpro/shared";
 import type { SectioningParams } from "@enrollpro/shared";
-import { queueEcosystemSync } from "../integration/ecosystem-sync.service.js";
 
 const sectioningEngine = new SectioningEngine(prisma);
 
@@ -103,12 +102,11 @@ export async function commitBatchSectioning(req: Request, res: Response) {
   // When a batch of students is sectioned, trigger sync for all of them
   const assignmentsArray = assignments as any[];
   const learnerIds = await prisma.enrollmentApplication.findMany({
-    where: { id: { in: assignmentsArray.map(a => a.applicationId) } },
-    select: { learnerId: true }
+    where: { id: { in: assignmentsArray.map((a) => a.applicationId) } },
+    select: { learnerId: true },
   });
 
   for (const l of learnerIds) {
-    queueEcosystemSync(l.learnerId, 'LEARNER', true).catch(console.error);
   }
 
   res.json({
@@ -564,19 +562,16 @@ export async function updateSection(
       code: error.code,
       meta: error.meta,
       message: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
     if (error.code === "P2002") {
-      const target = Array.isArray(error.meta?.target) 
-        ? error.meta.target.join(", ") 
-        : (error.meta?.target || "unknown fields");
-      
-      res
-        .status(409)
-        .json({
-          message:
-            `Conflict detected on [${target}]. This value already exists for another record in this context.`,
-        });
+      const target = Array.isArray(error.meta?.target)
+        ? error.meta.target.join(", ")
+        : error.meta?.target || "unknown fields";
+
+      res.status(409).json({
+        message: `Conflict detected on [${target}]. This value already exists for another record in this context.`,
+      });
       return;
     }
     res
@@ -774,10 +769,9 @@ export async function inlineSlotLearner(
   // When a learner is sectioned inline, trigger immediate sync
   const app = await prisma.enrollmentApplication.findUnique({
     where: { id: enrollmentApplicationId },
-    select: { learnerId: true }
+    select: { learnerId: true },
   });
   if (app) {
-    await queueEcosystemSync(app.learnerId, 'LEARNER', true);
   }
 
   res.json({ record });
@@ -900,15 +894,17 @@ export async function transferLearner(req: Request, res: Response) {
 
     const application = await prisma.enrollmentApplication.findUnique({
       where: { id: enrollmentApplicationId },
-      include: { 
+      include: {
         enrollmentRecord: {
-          include: { section: true }
-        }
+          include: { section: true },
+        },
       },
     });
 
     if (!application?.enrollmentRecord) {
-      return res.status(422).json({ message: "Learner is not currently enrolled in any section" });
+      return res
+        .status(422)
+        .json({ message: "Learner is not currently enrolled in any section" });
     }
 
     const oldSectionName = application.enrollmentRecord.section.name;
@@ -931,11 +927,10 @@ export async function transferLearner(req: Request, res: Response) {
     });
 
     // Immediate Delta Sync
-    await queueEcosystemSync(application.learnerId, 'LEARNER', true);
 
-    res.json({ 
+    res.json({
       message: "Learner transferred successfully",
-      record: updatedRecord
+      record: updatedRecord,
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });

@@ -26,7 +26,6 @@ import NotFound from "@/shared/components/NotFound";
 
 // Admin Pages
 import AdminUsers from "@/features/admin/pages/Users";
-import EcosystemSync from "@/features/admin/pages/EcosystemSync";
 import SystemHealth from "@/features/admin/pages/SystemHealth";
 import Teachers from "@/features/teachers/pages/Index";
 
@@ -220,10 +219,6 @@ export const router = createBrowserRouter([
                   {
                     path: "/admin/users",
                     element: <AdminUsers />,
-                  },
-                  {
-                    path: "/admin/ecosystem",
-                    element: <EcosystemSync />,
                   },
                   {
                     path: "/admin/system",

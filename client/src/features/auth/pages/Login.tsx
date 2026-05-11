@@ -359,7 +359,7 @@ export default function Login() {
       completeLogin(response.data);
     } catch (err: unknown) {
       if (isAxiosError(err) && err.response?.status === 401) {
-        setError("Invalid account name or password");
+        setError("Invalid Employee ID or password");
       } else {
         toastApiError(err as never);
       }
@@ -571,7 +571,7 @@ export default function Login() {
                   <Label
                     htmlFor="accountName"
                     className="text-gray-800 font-semibold text-sm pl-1">
-                    Account Name
+                    Employee ID
                   </Label>
                   <div className="relative group">
                     <div className="absolute left-0 top-0 bottom-0 w-11 flex items-center justify-center pointer-events-none z-10">

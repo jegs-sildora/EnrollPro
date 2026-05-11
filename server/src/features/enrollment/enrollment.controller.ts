@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../lib/AppError.js";
 import axios from "axios";
-import { queueEcosystemSync } from "../integration/ecosystem-sync.service.js";
 
 /**
  * POST /api/enrollment/confirm-slip
@@ -30,7 +29,9 @@ export async function confirmConfirmationSlip(req: Request, res: Response) {
       throw new AppError(404, "Learner not found.");
     }
 
-    const isTemporary = (isMissingSf9 && !hasSf9CertificationLetter) || hasUnsettledPrivateAccount;
+    const isTemporary =
+      (isMissingSf9 && !hasSf9CertificationLetter) ||
+      hasUnsettledPrivateAccount;
 
     // 2. Create the EnrollmentApplication directly
     const application = await prisma.enrollmentApplication.create({
@@ -66,7 +67,6 @@ export async function confirmConfirmationSlip(req: Request, res: Response) {
     // Process 1.1: Event-Driven Delta Sync (Automated)
     // Officially enrolling a single late-enrollee/returning student triggers immediate sync
     if (application.status === "READY_FOR_SECTIONING") {
-      await queueEcosystemSync(learnerId, "LEARNER", true);
     }
 
     return res.json({
@@ -316,9 +316,6 @@ export async function syncSmartGrades(req: Request, res: Response) {
     });
   } catch (error) {
     console.error("Database Update Error:", error);
-    throw new AppError(
-      500,
-      "Failed to persist academic synchronization data.",
-    );
+    throw new AppError(500, "Failed to persist academic synchronization data.");
   }
 }

@@ -7,16 +7,6 @@ import {
   listSectionLearners,
 } from "./integration.controller.js";
 import {
-  getEcosystemSyncStatus,
-  getSyncJobProgress,
-  printSectionCredentials,
-  provisionTeacherAccounts,
-  triggerSync,
-} from "./ecosystem-sync.controller.js";
-import { authenticate } from "../../middleware/authenticate.js";
-import { authorize } from "../../middleware/authorize.js";
-import { Role } from "../../generated/prisma/index.js";
-import {
   listDefaultAimsContext,
   listDefaultFaculty,
   listDefaultSmartStudents,
@@ -29,26 +19,6 @@ import {
 } from "./integration.sample.controller.js";
 
 const router: Router = Router();
-
-// Ecosystem Sync (Public Read-Only)
-router.get("/ecosystem/status", getEcosystemSyncStatus);
-router.get("/ecosystem/jobs/:jobId", getSyncJobProgress);
-router.get("/ecosystem/credentials/print/:sectionId", printSectionCredentials);
-
-// Ecosystem Sync (Protected Mutations)
-router.post(
-  "/ecosystem/sync",
-  authenticate,
-  authorize(Role.SYSTEM_ADMIN),
-  triggerSync,
-);
-
-router.post(
-  "/ecosystem/provision-teachers",
-  authenticate,
-  authorize(Role.SYSTEM_ADMIN),
-  provisionTeacherAccounts,
-);
 
 // Integration feeds are public for teammate testing and ingestion.
 router.get("/sample/teachers", listSampleTeachers);

@@ -29,16 +29,6 @@ async function main() {
       enrollOpenDate: new Date("2025-05-01T00:00:00Z"),
       enrollCloseDate: new Date("2025-05-31T00:00:00Z"),
     },
-    {
-      yearLabel: "2026-2027",
-      status: "UPCOMING" as SchoolYearStatus, // The target year for Rollover
-      classOpeningDate: new Date("2026-06-01T00:00:00Z"),
-      classEndDate: new Date("2027-03-31T00:00:00Z"),
-      earlyRegOpenDate: new Date("2026-01-15T00:00:00Z"),
-      earlyRegCloseDate: new Date("2026-02-28T00:00:00Z"),
-      enrollOpenDate: new Date("2026-05-01T00:00:00Z"),
-      enrollCloseDate: new Date("2026-05-31T00:00:00Z"),
-    },
   ];
 
   for (const y of years) {

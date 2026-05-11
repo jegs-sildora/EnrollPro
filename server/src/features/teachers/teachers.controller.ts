@@ -230,6 +230,7 @@ interface TeacherUpsertPayload {
   email: string;
   employeeId: string;
   contactNumber?: string | null;
+  sex: "MALE" | "FEMALE";
   specialization?: string | null;
   departmentCode?: string | null;
   plantillaPosition?: string | null;
@@ -377,6 +378,7 @@ export async function update(req: Request, res: Response) {
       email,
       employeeId,
       contactNumber,
+      sex,
       specialization,
       department,
       plantillaPosition,
@@ -423,7 +425,7 @@ export async function update(req: Request, res: Response) {
           lastName: normalizedLastName,
           middleName: normalizeOptionalUpperText(middleName),
           email: normalizedEmail,
-          sex: sex === "MALE" ? "MALE" : "FEMALE",
+          sex: req.body.sex === "MALE" ? "MALE" : "FEMALE",
           employeeId: normalizedEmployeeId,
         },
       });
@@ -438,7 +440,7 @@ export async function update(req: Request, res: Response) {
           email: normalizedEmail,
           employeeId: normalizedEmployeeId,
           contactNumber: normalizedContactNumber,
-          sex: sex === "MALE" ? "MALE" : "FEMALE",
+          sex: req.body.sex === "MALE" ? "MALE" : "FEMALE",
           specialization: normalizeOptionalUpperText(specialization),
           department: deptCode
             ? { connect: { code: deptCode } }
