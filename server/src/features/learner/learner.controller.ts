@@ -16,7 +16,9 @@ export const lookupLearnerByLrn = async (req: Request, res: Response) => {
     const { lrn } = req.query as { lrn: string };
 
     if (!lrn || lrn.length !== 12) {
-      return res.status(400).json({ message: "Invalid LRN format. Exactly 12 digits required." });
+      return res
+        .status(400)
+        .json({ message: "Invalid LRN format. Exactly 12 digits required." });
     }
 
     const learner = await prisma.learner.findUnique({
@@ -57,7 +59,9 @@ export const lookupLearnerByLrn = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Registrar learner lookup failed:", error);
-    return res.status(500).json({ message: "Error performing learner lookup." });
+    return res
+      .status(500)
+      .json({ message: "Error performing learner lookup." });
   }
 };
 
@@ -124,7 +128,9 @@ export const lookupLearner = async (req: Request, res: Response) => {
       orderBy: [{ assessmentDate: "desc" }, { assessmentPeriod: "asc" }],
     });
 
-    const activeAdviser = (application.enrollmentRecord?.section as any)?.advisers?.[0]?.teacher ?? null;
+    const activeAdviser =
+      (application.enrollmentRecord?.section as any)?.advisers?.[0]?.teacher ??
+      null;
 
     return res.json({
       learner: {
@@ -177,6 +183,10 @@ export const lookupLearner = async (req: Request, res: Response) => {
           heightCm: record.heightCm,
           notes: record.notes,
         })),
+        pendingConfirmation:
+          application.status === "PENDING_CONFIRMATION"
+            ? { applicationId: application.id, status: application.status }
+            : null,
       },
     });
   } catch (error) {
@@ -184,5 +194,49 @@ export const lookupLearner = async (req: Request, res: Response) => {
     return res
       .status(500)
       .json({ message: "Unable to process learner lookup right now." });
+  }
+};
+
+/**
+ * Learner self-confirms return for BOSY.
+ * POST /api/learner/confirm-return
+ * Body: { applicationId: number }
+ */
+export const learnerConfirmReturn = async (req: Request, res: Response) => {
+  try {
+    const { applicationId } = req.body as { applicationId: unknown };
+
+    const id = Number(applicationId);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ message: "Invalid applicationId." });
+    }
+
+    const app = await prisma.enrollmentApplication.findUnique({
+      where: { id },
+      select: { id: true, status: true, learnerId: true },
+    });
+
+    if (!app) {
+      return res.status(404).json({ message: "Application not found." });
+    }
+
+    if (app.status !== "PENDING_CONFIRMATION") {
+      return res.status(409).json({
+        message: `Application is already in status '${app.status}'.`,
+      });
+    }
+
+    await prisma.enrollmentApplication.update({
+      where: { id },
+      data: {
+        status: "READY_FOR_SECTIONING",
+        confirmationConsent: true,
+      },
+    });
+
+    return res.json({ applicationId: id, status: "READY_FOR_SECTIONING" });
+  } catch (error) {
+    console.error("Learner confirm-return failed:", error);
+    return res.status(500).json({ message: "Could not confirm return." });
   }
 };

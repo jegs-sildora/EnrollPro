@@ -287,7 +287,12 @@ export async function listIntegrationFaculty(
       schoolName: scope.schoolName,
       schoolYearId: scope.schoolYearId,
       schoolYearLabel: scope.schoolYearLabel,
+      ancillaryRoles: designation?.ancillaryRoles ?? [],
       isClassAdviser: designation?.isClassAdviser ?? false,
+      isTic: designation?.isTic ?? false,
+      isTeachingExempt: designation?.isTeachingExempt ?? false,
+      advisoryEquivalentHoursPerWeek:
+        designation?.advisoryEquivalentHoursPerWeek ?? null,
       advisorySectionId: designation?.advisorySectionId ?? null,
       advisorySectionName: designation?.advisorySection?.name ?? null,
       advisorySectionGradeLevelId:

@@ -505,11 +505,20 @@ function AppSidebar() {
                     <NavItemParent
                       icon={ClipboardCheck}
                       label="Enrollment Operations"
-                      isActive={false}>
+                      isActive={
+                        pathname.startsWith("/bosy") ||
+                        pathname.startsWith("/monitoring/enrollment")
+                      }>
                       <NavItemChild
-                        to="/monitoring/enrollment"
+                        to="/bosy"
                         icon={UserPlus}
                         label="BOSY Registration"
+                        pathname={pathname}
+                      />
+                      <NavItemChild
+                        to="/monitoring/enrollment"
+                        icon={Calendar}
+                        label="Enrollment"
                         pathname={pathname}
                       />
                       <NavItemChild

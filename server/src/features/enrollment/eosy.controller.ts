@@ -20,6 +20,27 @@ function toDateOnly(value: Date | string | null | undefined): string {
   return date.toISOString().slice(0, 10);
 }
 
+/**
+ * Maps an internal EosyStatus value to the DepEd-canonical SF5 "Remarks"
+ * label. IRREGULAR is an internal state for conditionally promoted learners
+ * pending remedial resolution — DepEd SF5 only recognises four outcomes.
+ */
+function toSf5Remarks(status: EosyStatus | null): string {
+  switch (status) {
+    case "PROMOTED":
+      return "Promoted";
+    case "RETAINED":
+    case "IRREGULAR":
+      return "Not Promoted";
+    case "TRANSFERRED_OUT":
+      return "Transferred Out";
+    case "DROPPED_OUT":
+      return "Dropped Out";
+    default:
+      return "";
+  }
+}
+
 async function getSchoolYearExportLockState(schoolYearId: number) {
   const [schoolYear, totalSections, finalizedSections] = await Promise.all([
     prisma.schoolYear.findUnique({
@@ -680,6 +701,260 @@ export async function downloadFinalLisExport(
     );
 
     res.status(200).send(`\uFEFF${csvBody}`);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * GET /api/eosy/sections/:id/exports/sf5
+ * School Form 5 — Section-scoped learner promotion and proficiency report (JSON).
+ * Includes section metadata and per-learner EOSY outcome data.
+ * Roles: HEAD_REGISTRAR, SYSTEM_ADMIN
+ */
+export async function exportSF5(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const sectionId = Number.parseInt(String(req.params.id), 10);
+    if (!Number.isFinite(sectionId) || sectionId <= 0) {
+      res.status(400).json({ message: "Invalid section id." });
+      return;
+    }
+
+    const section = await prisma.section.findUnique({
+      where: { id: sectionId },
+      include: {
+        gradeLevel: { select: { id: true, name: true } },
+        schoolYear: { select: { id: true, yearLabel: true } },
+        advisers: {
+          where: { status: "ACTIVE" },
+          include: {
+            teacher: { select: { firstName: true, lastName: true } },
+          },
+          take: 1,
+        },
+      },
+    });
+
+    if (!section) {
+      res.status(404).json({ message: "Section not found." });
+      return;
+    }
+
+    const records = await prisma.enrollmentRecord.findMany({
+      where: { sectionId },
+      orderBy: [
+        { enrollmentApplication: { learner: { lastName: "asc" } } },
+        { enrollmentApplication: { learner: { firstName: "asc" } } },
+      ],
+      include: {
+        enrollmentApplication: {
+          include: {
+            learner: {
+              select: {
+                id: true,
+                lrn: true,
+                firstName: true,
+                lastName: true,
+                middleName: true,
+                extensionName: true,
+                sex: true,
+                birthdate: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const adviser = section.advisers[0]?.teacher ?? null;
+
+    res.json({
+      generatedAt: new Date().toISOString(),
+      section: {
+        id: section.id,
+        name: section.name,
+        gradeLevel: section.gradeLevel,
+        schoolYear: section.schoolYear,
+        adviser: adviser
+          ? { firstName: adviser.firstName, lastName: adviser.lastName }
+          : null,
+        isEosyFinalized: section.isEosyFinalized,
+      },
+      totalLearners: records.length,
+      learners: records.map((r, idx) => ({
+        no: idx + 1,
+        learnerId: r.learnerId,
+        lrn: r.enrollmentApplication.learner.lrn,
+        lastName: r.enrollmentApplication.learner.lastName,
+        firstName: r.enrollmentApplication.learner.firstName,
+        middleName: r.enrollmentApplication.learner.middleName,
+        extensionName: r.enrollmentApplication.learner.extensionName,
+        sex: r.enrollmentApplication.learner.sex,
+        birthdate: toDateOnly(r.enrollmentApplication.learner.birthdate),
+        finalAverage:
+          r.finalAverage !== null
+            ? parseFloat(r.finalAverage.toFixed(2))
+            : null,
+        eosyStatus: r.eosyStatus ?? null,
+        // SF5 "Remarks" column uses DepEd-canonical labels only.
+        // IRREGULAR is an internal status meaning conditionally promoted /
+        // pending remedial — it maps to "Not Promoted" on the official form.
+        sf5Remarks: toSf5Remarks(r.eosyStatus ?? null),
+      })),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * GET /api/eosy/exports/sf6
+ * School Form 6 — School-wide enrollment summary by grade level (JSON).
+ * Rows: per-grade counts for initial enrollment, transfer-in, transfer-out,
+ *       drop-out, promoted, retained, and totals by sex.
+ * Query params: schoolYearId (required)
+ * Roles: HEAD_REGISTRAR, SYSTEM_ADMIN
+ */
+export async function exportSF6(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const schoolYearId = Number.parseInt(String(req.query.schoolYearId ?? ""), 10);
+    if (!Number.isFinite(schoolYearId) || schoolYearId <= 0) {
+      res.status(400).json({ message: "schoolYearId query param is required." });
+      return;
+    }
+
+    const schoolYear = await prisma.schoolYear.findUnique({
+      where: { id: schoolYearId },
+      select: { id: true, yearLabel: true },
+    });
+    if (!schoolYear) {
+      res.status(404).json({ message: "School year not found." });
+      return;
+    }
+
+    // Fetch all enrollment records for this school year with gradeLevel + sex + eosyStatus
+    const records = await prisma.enrollmentRecord.findMany({
+      where: { schoolYearId },
+      include: {
+        enrollmentApplication: {
+          include: {
+            learner: { select: { sex: true } },
+            gradeLevel: { select: { id: true, name: true, displayOrder: true } },
+          },
+        },
+      },
+    });
+
+    // Group by gradeLevel
+    const gradeMap = new Map<
+      number,
+      {
+        gradeId: number;
+        gradeName: string;
+        displayOrder: number | null;
+        male: number;
+        female: number;
+        promoted: { male: number; female: number };
+        retained: { male: number; female: number };
+        dropOut: { male: number; female: number };
+        transferOut: { male: number; female: number };
+        irregular: { male: number; female: number };
+        noStatus: { male: number; female: number };
+      }
+    >();
+
+    for (const record of records) {
+      const gl = record.enrollmentApplication.gradeLevel;
+      if (!gradeMap.has(gl.id)) {
+        gradeMap.set(gl.id, {
+          gradeId: gl.id,
+          gradeName: gl.name,
+          displayOrder: gl.displayOrder ?? null,
+          male: 0,
+          female: 0,
+          promoted: { male: 0, female: 0 },
+          retained: { male: 0, female: 0 },
+          dropOut: { male: 0, female: 0 },
+          transferOut: { male: 0, female: 0 },
+          irregular: { male: 0, female: 0 },
+          noStatus: { male: 0, female: 0 },
+        });
+      }
+
+      const row = gradeMap.get(gl.id)!;
+      const isMale = record.enrollmentApplication.learner.sex === "MALE";
+      const sexKey = isMale ? "male" : "female";
+
+      if (isMale) row.male += 1;
+      else row.female += 1;
+
+      switch (record.eosyStatus) {
+        case "PROMOTED":
+          row.promoted[sexKey] += 1;
+          break;
+        case "RETAINED":
+          row.retained[sexKey] += 1;
+          break;
+        case "DROPPED_OUT":
+          row.dropOut[sexKey] += 1;
+          break;
+        case "TRANSFERRED_OUT":
+          row.transferOut[sexKey] += 1;
+          break;
+        case "IRREGULAR":
+          row.irregular[sexKey] += 1;
+          break;
+        default:
+          row.noStatus[sexKey] += 1;
+      }
+    }
+
+    const rows = Array.from(gradeMap.values())
+      .sort(
+        (a, b) =>
+          (a.displayOrder ?? 999) - (b.displayOrder ?? 999) ||
+          a.gradeName.localeCompare(b.gradeName),
+      )
+      .map((row) => ({
+        gradeId: row.gradeId,
+        gradeName: row.gradeName,
+        initialEnrollment: { male: row.male, female: row.female, total: row.male + row.female },
+        promoted: { ...row.promoted, total: row.promoted.male + row.promoted.female },
+        retained: { ...row.retained, total: row.retained.male + row.retained.female },
+        dropOut: { ...row.dropOut, total: row.dropOut.male + row.dropOut.female },
+        transferOut: { ...row.transferOut, total: row.transferOut.male + row.transferOut.female },
+        irregular: { ...row.irregular, total: row.irregular.male + row.irregular.female },
+        noStatus: { ...row.noStatus, total: row.noStatus.male + row.noStatus.female },
+      }));
+
+    const grandTotal = rows.reduce(
+      (acc, r) => {
+        acc.male += r.initialEnrollment.male;
+        acc.female += r.initialEnrollment.female;
+        acc.total += r.initialEnrollment.total;
+        acc.promoted += r.promoted.total;
+        acc.retained += r.retained.total;
+        acc.dropOut += r.dropOut.total;
+        acc.transferOut += r.transferOut.total;
+        return acc;
+      },
+      { male: 0, female: 0, total: 0, promoted: 0, retained: 0, dropOut: 0, transferOut: 0 },
+    );
+
+    res.json({
+      generatedAt: new Date().toISOString(),
+      schoolYear: { id: schoolYear.id, yearLabel: schoolYear.yearLabel },
+      rows,
+      grandTotal,
+    });
   } catch (error) {
     next(error);
   }

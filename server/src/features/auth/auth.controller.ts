@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { AppError } from "../../lib/AppError.js";
+import { verifyPin } from "../learner/portal-pin.service.js";
 
 type AuthUser = {
   id: number;
@@ -263,5 +264,100 @@ export async function verifyCredentials(
     });
   } catch (error) {
     res.status(500).json({ valid: false, message: "Verification error" });
+  }
+}
+
+/**
+ * POST /api/auth/learner-login
+ * Issues a short-lived JWT for a returning learner identified by LRN + portal PIN.
+ * The PIN is verified against the bcrypt hash stored on the EnrollmentApplication.
+ * No User record is required — this auth chain is separate from staff auth.
+ */
+export async function learnerLogin(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const lrn = String(req.body.lrn ?? "").trim();
+  const pin = String(req.body.pin ?? "");
+
+  if (!lrn || lrn.length !== 12) {
+    res.status(400).json({ message: "LRN must be exactly 12 characters." });
+    return;
+  }
+  if (!pin) {
+    res.status(400).json({ message: "pin is required." });
+    return;
+  }
+
+  const INVALID_MSG = "Invalid LRN or PIN.";
+
+  try {
+    const application = await prisma.enrollmentApplication.findFirst({
+      where: {
+        portalPin: { not: null },
+        learner: { lrn },
+      },
+      orderBy: { schoolYearId: "desc" },
+      include: {
+        learner: {
+          select: {
+            id: true,
+            lrn: true,
+            firstName: true,
+            lastName: true,
+            middleName: true,
+          },
+        },
+        schoolYear: { select: { id: true, yearLabel: true } },
+        gradeLevel: { select: { name: true } },
+      },
+    });
+
+    if (!application || !application.portalPin) {
+      res.status(401).json({ message: INVALID_MSG });
+      return;
+    }
+
+    const pinValid = await verifyPin(pin, application.portalPin);
+    if (!pinValid) {
+      res.status(401).json({ message: INVALID_MSG });
+      return;
+    }
+
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      throw new AppError(500, "JWT secret is not configured.", "JWT_SECRET_MISSING");
+    }
+
+    const token = jwt.sign(
+      {
+        learnerId: application.learnerId,
+        enrollmentApplicationId: application.id,
+        role: "LEARNER",
+      },
+      jwtSecret,
+      { expiresIn: "8h" },
+    );
+
+    res.json({
+      token,
+      learner: {
+        id: application.learner.id,
+        lrn: application.learner.lrn,
+        firstName: application.learner.firstName,
+        lastName: application.learner.lastName,
+        middleName: application.learner.middleName,
+        enrollmentApplicationId: application.id,
+        schoolYear: application.schoolYear,
+        gradeLevel: application.gradeLevel,
+        applicationStatus: application.status,
+      },
+    });
+  } catch (error) {
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({ message: error.message });
+      return;
+    }
+    res.status(500).json({ message: "Learner authentication failed." });
   }
 }

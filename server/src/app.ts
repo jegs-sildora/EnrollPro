@@ -22,6 +22,9 @@ import earlyRegRoutes from "./features/early-registration/early-reg.router.js";
 import eosyRoutes from "./features/enrollment/eosy.router.js";
 import enrollmentRoutes from "./features/enrollment/enrollment.router.js";
 import exportRoutes from "./features/export/export.router.js";
+import bosyRoutes from "./features/bosy/bosy.router.js";
+import remedialRoutes from "./features/remedial/remedial.router.js";
+import integrationTriggerRoutes from "./features/integration/integration-trigger.router.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { historicalReadOnlyGuard } from "./middleware/historical-read-only.guard.js";
 import { schoolYearContext } from "./middleware/school-year-context.middleware.js";
@@ -149,6 +152,9 @@ apiRouter.use("/early-registrations", earlyRegRoutes);
 apiRouter.use("/eosy", eosyRoutes);
 apiRouter.use("/enrollment", enrollmentRoutes);
 apiRouter.use("/export", exportRoutes);
+apiRouter.use("/bosy", bosyRoutes);
+apiRouter.use("/remedial", remedialRoutes);
+apiRouter.use("/integration", integrationTriggerRoutes);
 
 // Catch-all for unmatched API routes (Express 5 regex)
 apiRouter.all(/(.*)/, (req, res) => {

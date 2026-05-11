@@ -201,10 +201,10 @@ export function createInitialTrackingPayload(
   };
 }
 
-export const VALID_TRANSITIONS = APPLICATION_VALID_TRANSITIONS as Record<
-  string,
-  ApplicationStatus[]
->;
+export const VALID_TRANSITIONS: Record<string, ApplicationStatus[]> = {
+  ...(APPLICATION_VALID_TRANSITIONS as Record<string, ApplicationStatus[]>),
+  PENDING_CONFIRMATION: ["READY_FOR_SECTIONING", "WITHDRAWN"],
+};
 
 function isRegularApplicant(applicantType: string | null | undefined): boolean {
   return (

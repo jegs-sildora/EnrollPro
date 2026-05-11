@@ -662,19 +662,25 @@ model TeacherSubject {
 
 /// School-year scoped faculty designation and advisory assignment metadata
 model TeacherDesignation {
-  id                Int        @id @default(autoincrement())
-  teacherId         Int        @map("teacher_id")
-  schoolYearId      Int        @map("school_year_id")
-  isClassAdviser    Boolean    @default(false) @map("is_class_adviser")
-  designationNotes  String?    @map("designation_notes")
-  effectiveFrom     DateTime?  @map("effective_from") @db.Date
-  effectiveTo       DateTime?  @map("effective_to") @db.Date
-  updateReason      String?    @map("update_reason")
-  updatedById       Int?       @map("updated_by_id")
-  createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
-  advisorySectionId Int?       @map("advisory_section_id")
-  ancillaryRoles    String[]   @default([]) @map("ancillary_roles")
+  id                             Int        @id @default(autoincrement())
+  teacherId                      Int        @map("teacher_id")
+  schoolYearId                   Int        @map("school_year_id")
+  isClassAdviser                 Boolean    @default(false) @map("is_class_adviser")
+  /// ATLAS-FR-003: Teacher-in-charge flag for schedule timetabling
+  isTic                          Boolean    @default(false) @map("is_tic")
+  /// ATLAS-FR-003: Marks teacher as exempt from full teaching load (e.g., department head)
+  isTeachingExempt               Boolean    @default(false) @map("is_teaching_exempt")
+  /// ATLAS-FR-003: Hours/week credited to advisory for load computation
+  advisoryEquivalentHoursPerWeek Float?     @map("advisory_equivalent_hours_per_week")
+  designationNotes               String?    @map("designation_notes")
+  effectiveFrom                  DateTime?  @map("effective_from") @db.Date
+  effectiveTo                    DateTime?  @map("effective_to") @db.Date
+  updateReason                   String?    @map("update_reason")
+  updatedById                    Int?       @map("updated_by_id")
+  createdAt                      DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                      DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+  advisorySectionId              Int?       @map("advisory_section_id")
+  ancillaryRoles                 String[]   @default([]) @map("ancillary_roles")
   advisorySection   Section?   @relation("TeacherDesignationAdvisorySection", fields: [advisorySectionId], references: [id])
   schoolYear        SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
   teacher           Teacher    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
@@ -747,6 +753,7 @@ enum ApplicationStatus {
   PASSED
   INTERVIEW_SCHEDULED
   READY_FOR_ENROLLMENT
+  PENDING_CONFIRMATION
   TEMPORARILY_ENROLLED
   FAILED_ASSESSMENT
   ENROLLED

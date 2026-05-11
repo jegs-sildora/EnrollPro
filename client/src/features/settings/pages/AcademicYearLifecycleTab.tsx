@@ -356,9 +356,8 @@ export default function AcademicYearLifecycleTab() {
                 Academic Phase Active
               </AlertTitle>
               <AlertDescription className="text-sm font-medium">
-                Official enrollment has ended. SF1 rosters are finalized and
-                synchronized with A.T.L.A.S. and S.M.A.R.T. New registrations
-                are now classified as "Late Enrollees".
+                Official enrollment has ended. SF1 rosters are finalized. New
+                registrations are now classified as "Late Enrollees".
                 {bosyLockedAt && (
                   <div className="mt-2 flex items-center gap-1.5 text-xs uppercase font-black opacity-70">
                     <History className="h-3 w-3" />
@@ -500,10 +499,6 @@ export default function AcademicYearLifecycleTab() {
                       <ul className="text-xs font-medium space-y-1 list-disc pl-4 text-primary/80">
                         <li>
                           Mass batch sectioning will be disabled immediately.
-                        </li>
-                        <li>
-                          SF1 learner rosters will be finalized and sent to
-                          A.T.L.A.S. and S.M.A.R.T.
                         </li>
                         <li>
                           Registrars will transition to Late Enrollment
@@ -691,9 +686,8 @@ export default function AcademicYearLifecycleTab() {
                     </p>
                     <p className="text-[11px] font-bold leading-relaxed opacity-90">
                       Unlocking the system will immediately invalidate the
-                      current SF1 rosters and pause synchronization with the
-                      Grading and Scheduling engines until the system is locked
-                      again.
+                      current SF1 rosters. Batch operations will be re-enabled
+                      until the system is locked again.
                     </p>
                   </div>
 

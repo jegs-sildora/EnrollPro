@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import {
   ClipboardList,
   Users,
@@ -304,7 +304,7 @@ export default function Dashboard() {
               Seasonal Focus
             </p>
             <div
-              className="inline-flex rounded-lg border bg-card p-1 shadow-sm"
+              className="inline-flex rounded-lg border bg-card p-1 shadow-sm relative"
               role="group"
               aria-label="Command center seasonal focus">
               {(["AUTO", "EARLY", "ENROLLMENT"] as const).map((mode) => {
@@ -315,13 +315,22 @@ export default function Dashboard() {
                     key={mode}
                     type="button"
                     size="sm"
-                    variant={selected ? "default" : "ghost"}
+                    variant="ghost"
                     onClick={() => setFocusOverride(mode)}
                     className={cn(
-                      "h-7 px-3 text-xs font-black uppercase  transition-all",
-                      selected ? "shadow-sm" : "text-foreground hover:text-foreground"
+                      "relative h-7 px-3 text-xs font-black uppercase transition-all z-10",
+                      selected 
+                        ? "text-primary-foreground hover:text-primary-foreground hover:bg-transparent" 
+                        : "text-foreground hover:text-foreground"
                     )}>
-                    {mode}
+                    {selected && (
+                      <motion.div
+                        layoutId="dashboard-seasonal-focus-pill"
+                        className="absolute inset-0 bg-primary rounded-md"
+                        transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                      />
+                    )}
+                    <span className="relative z-20">{mode}</span>
                   </Button>
                 );
               })}
@@ -341,161 +350,176 @@ export default function Dashboard() {
           <div className="h-px flex-1 bg-emerald-100/50"></div>
         </div>
 
-        {isEnrollmentExpanded ? (
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-            <Card className="lg:col-span-4 border-emerald-200 bg-gradient-to-br from-white to-emerald-50/30 shadow-sm border-2">
-              <CardHeader className="pb-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <CardTitle className="text-xs font-black uppercase  text-emerald-900/40">
-                    Global Enrollment Status
-                  </CardTitle>
-                  <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 h-5 px-1.5 text-xs font-black uppercase er">
-                    School-Wide
-                  </Badge>
-                </div>
-              </CardHeader>
-
-              <CardContent className="space-y-6">
-                {showSkeleton ? (
-                  <>
-                    <Skeleton className="h-10 w-44" />
-                    <Skeleton className="h-3 w-full" />
-                    <Skeleton className="h-4 w-64" />
-                  </>
-                ) : (
-                  <>
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-5xl font-black text-emerald-700 tabular-nums">
-                          {formatMetric(enrollmentCurrent)}
-                        </span>
-                        <span className="text-xl font-bold text-emerald-900/30 uppercase er">
-                          / {formatMetric(enrollmentTarget)}
-                        </span>
-                      </div>
-                      <p className="text-xs font-bold text-emerald-900/50 uppercase ">
-                        Total Enrollees
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div
-                        role="progressbar"
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                        aria-valuenow={Math.round(enrollmentProgressClamped)}
-                        className="h-4 w-full rounded-full bg-emerald-100 overflow-hidden shadow-inner border border-emerald-200/50">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${enrollmentProgressClamped}%` }}
-                          transition={{ duration: 1, ease: "easeOut" }}
-                          className="h-full rounded-full bg-emerald-600 shadow-[0_0_12px_rgba(5,150,105,0.3)]"
-                        />
-                      </div>
-                      <div className="flex justify-between text-xs font-black uppercase  text-emerald-800/60">
-                        <span>BOSY Progress</span>
-                        <span>{enrollmentProgress.toFixed(1)}% Capacity</span>
-                      </div>
-                    </div>
-
-                    <div className="rounded-xl bg-white/80 p-3 border border-emerald-100 shadow-sm">
-                      <p className="text-xs font-bold text-emerald-900/70 leading-relaxed">
-                        {enrollmentTarget === 0
-                          ? "Section capacity target is unavailable until sections are configured."
-                          : seatsRemaining > 0
-                            ? `System Forecast: ${formatMetric(seatsRemaining)} slots remain available across all Junior High School grade levels.`
-                            : "Operational Limit Reached: All seats are currently occupied."}
-                      </p>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="lg:col-span-8 border-slate-200 bg-white shadow-sm flex flex-col">
-              <CardHeader className="pb-3 border-b border-slate-50">
-                <CardTitle className="text-xs font-black uppercase  text-foreground">
-                  Capacity by Grade Level
-                </CardTitle>
-              </CardHeader>
-
-              <CardContent className="pt-6 flex-1">
-                {showSkeleton ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div
-                        key={i}
-                        className="space-y-3">
-                        <div className="flex justify-between">
-                          <Skeleton className="h-4 w-24" />
-                          <Skeleton className="h-4 w-16" />
-                        </div>
-                        <Skeleton className="h-2 w-full" />
-                      </div>
-                    ))}
+        <AnimatePresence mode="wait">
+          {isEnrollmentExpanded ? (
+            <motion.div
+              key="enrollment-expanded"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+              <Card className="lg:col-span-4 border-emerald-200 bg-gradient-to-br from-white to-emerald-50/30 shadow-sm border-2">
+                <CardHeader className="pb-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <CardTitle className="text-xs font-black uppercase  text-emerald-900/40">
+                      Global Enrollment Status
+                    </CardTitle>
+                    <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 h-5 px-1.5 text-xs font-black uppercase er">
+                      School-Wide
+                    </Badge>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-                    {stats?.gradeLevelBreakdown?.map((gl) => (
-                      <div
-                        key={gl.id}
-                        className="space-y-3">
-                        <div className="flex justify-between items-end">
-                          <span className="text-xs font-black uppercase  text-slate-700">
-                            {gl.name}
+                </CardHeader>
+
+                <CardContent className="space-y-6">
+                  {showSkeleton ? (
+                    <>
+                      <Skeleton className="h-10 w-44" />
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-4 w-64" />
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-5xl font-black text-emerald-700 tabular-nums">
+                            {formatMetric(enrollmentCurrent)}
                           </span>
-                          <span className="text-xs font-black text-emerald-700 tabular-nums">
-                            {gl.progressPercent.toFixed(0)}% ({formatMetric(gl.current)} / {formatMetric(gl.target)})
+                          <span className="text-xl font-bold text-emerald-900/30 uppercase er">
+                            / {formatMetric(enrollmentTarget)}
                           </span>
                         </div>
-                        <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden shadow-inner border border-slate-200/50">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${gl.progressPercent}%` }}
-                            transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-                            className="h-full rounded-full bg-emerald-500"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                    {(!stats?.gradeLevelBreakdown || stats.gradeLevelBreakdown.length === 0) && (
-                      <div className="col-span-full py-8 text-center">
-                        <p className="text-xs font-bold text-slate-400 uppercase ">
-                          No Grade Level Data Available
+                        <p className="text-xs font-bold text-emerald-900/50 uppercase ">
+                          Total Enrollees
                         </p>
                       </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
-          <Card className="border-slate-200 bg-white shadow-sm border-l-4 border-l-emerald-500">
-            <CardHeader className="py-3 px-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-sm font-black ">
-                    Enrollment Summary
+
+                      <div className="space-y-2">
+                        <div
+                          role="progressbar"
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-valuenow={Math.round(enrollmentProgressClamped)}
+                          className="h-4 w-full rounded-full bg-emerald-100 overflow-hidden shadow-inner border border-emerald-200/50">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${enrollmentProgressClamped}%` }}
+                            transition={{ duration: 1, ease: "easeOut" }}
+                            className="h-full rounded-full bg-emerald-600 shadow-[0_0_12px_rgba(5,150,105,0.3)]"
+                          />
+                        </div>
+                        <div className="flex justify-between text-xs font-black uppercase  text-emerald-800/60">
+                          <span>BOSY Progress</span>
+                          <span>{enrollmentProgress.toFixed(1)}% Capacity</span>
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl bg-white/80 p-3 border border-emerald-100 shadow-sm">
+                        <p className="text-xs font-bold text-emerald-900/70 leading-relaxed">
+                          {enrollmentTarget === 0
+                            ? "Section capacity target is unavailable until sections are configured."
+                            : seatsRemaining > 0
+                              ? `System Forecast: ${formatMetric(seatsRemaining)} slots remain available across all Junior High School grade levels.`
+                              : "Operational Limit Reached: All seats are currently occupied."}
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="lg:col-span-8 border-slate-200 bg-white shadow-sm flex flex-col">
+                <CardHeader className="pb-3 border-b border-slate-50">
+                  <CardTitle className="text-xs font-black uppercase  text-foreground">
+                    Capacity by Grade Level
                   </CardTitle>
-                  <CardDescription className="text-xs font-bold er">
-                    Collapsed for Early Registration Focus
-                  </CardDescription>
-                </div>
-                <div className="flex gap-4">
-                   <div className="text-right">
-                      <p className="text-xs font-bold text-slate-400 uppercase">Enrolled</p>
-                      <p className="text-lg font-black text-emerald-600">{formatMetric(enrollmentCurrent)}</p>
-                   </div>
-                   <div className="text-right">
-                      <p className="text-xs font-bold text-slate-400 uppercase">Utilization</p>
-                      <p className="text-lg font-black text-emerald-600">{enrollmentProgress.toFixed(0)}%</p>
-                   </div>
-                </div>
-              </div>
-            </CardHeader>
-          </Card>
-        )}
+                </CardHeader>
+
+                <CardContent className="pt-6 flex-1">
+                  {showSkeleton ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div
+                          key={i}
+                          className="space-y-3">
+                          <div className="flex justify-between">
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-4 w-16" />
+                          </div>
+                          <Skeleton className="h-2 w-full" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                      {stats?.gradeLevelBreakdown?.map((gl) => (
+                        <div
+                          key={gl.id}
+                          className="space-y-3">
+                          <div className="flex justify-between items-end">
+                            <span className="text-xs font-black uppercase  text-slate-700">
+                              {gl.name}
+                            </span>
+                            <span className="text-xs font-black text-emerald-700 tabular-nums">
+                              {gl.progressPercent.toFixed(0)}% ({formatMetric(gl.current)} / {formatMetric(gl.target)})
+                            </span>
+                          </div>
+                          <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden shadow-inner border border-slate-200/50">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${gl.progressPercent}%` }}
+                              transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
+                              className="h-full rounded-full bg-emerald-500"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                      {(!stats?.gradeLevelBreakdown || stats.gradeLevelBreakdown.length === 0) && (
+                        <div className="col-span-full py-8 text-center">
+                          <p className="text-xs font-bold text-slate-400 uppercase ">
+                            No Grade Level Data Available
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="enrollment-collapsed"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}>
+              <Card className="border-slate-200 bg-white shadow-sm border-l-4 border-l-emerald-500">
+                <CardHeader className="py-3 px-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-sm font-black ">
+                        Enrollment Summary
+                      </CardTitle>
+                      <CardDescription className="text-xs font-bold er">
+                        Collapsed for Early Registration Focus
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-4">
+                       <div className="text-right">
+                          <p className="text-xs font-bold text-slate-400 uppercase">Enrolled</p>
+                          <p className="text-lg font-black text-emerald-600">{formatMetric(enrollmentCurrent)}</p>
+                       </div>
+                       <div className="text-right">
+                          <p className="text-xs font-bold text-slate-400 uppercase">Utilization</p>
+                          <p className="text-lg font-black text-emerald-600">{enrollmentProgress.toFixed(0)}%</p>
+                       </div>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </section>
 
       {/* ── Action Queues ── */}
@@ -665,59 +689,74 @@ export default function Dashboard() {
           <div className="h-px flex-1 bg-amber-100/50"></div>
         </div>
 
-        {isEarlyRegistrationExpanded ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-            {earlyRegCards.map((stat) => (
-              <Card
-                key={stat.title}
-                className="border-amber-100 bg-white shadow-sm transition-all hover:shadow-md border-b-2">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs font-black uppercase  text-foreground">
-                    {stat.title}
-                  </CardTitle>
-                  <div className={`${stat.bg} rounded-lg p-2`}>
-                    <stat.icon className={`h-3.5 w-3.5 ${stat.color}`} />
+        <AnimatePresence mode="wait">
+          {isEarlyRegistrationExpanded ? (
+            <motion.div
+              key="early-reg-expanded"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+              {earlyRegCards.map((stat) => (
+                <Card
+                  key={stat.title}
+                  className="border-amber-100 bg-white shadow-sm transition-all hover:shadow-md border-b-2">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-xs font-black uppercase  text-foreground">
+                      {stat.title}
+                    </CardTitle>
+                    <div className={`${stat.bg} rounded-lg p-2`}>
+                      <stat.icon className={`h-3.5 w-3.5 ${stat.color}`} />
+                    </div>
+                  </CardHeader>
+
+                  <CardContent>
+                    {showSkeleton ? (
+                      <Skeleton className="h-8 w-20" />
+                    ) : (
+                      <div className="text-3xl font-black tabular-nums">
+                        {formatMetric(stat.value)}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="early-reg-collapsed"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}>
+              <Card className="border-amber-100 bg-white shadow-sm border-l-4 border-l-amber-500">
+                <CardHeader className="py-3 px-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-sm font-black ">
+                        Phase 1: Early Registration Summary
+                      </CardTitle>
+                      <CardDescription className="text-xs font-bold er">
+                        Minimized: Dashboard is currently adapting to the Phase 2 (BOSY) operational window.
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-4">
+                       <div className="text-right">
+                          <p className="text-xs font-bold text-slate-400 uppercase">Verified</p>
+                          <p className="text-lg font-black text-amber-600">{formatMetric(stats?.earlyRegistration?.verified ?? 0)}</p>
+                       </div>
+                       <div className="text-right">
+                          <p className="text-xs font-bold text-slate-400 uppercase">Ready</p>
+                          <p className="text-lg font-black text-amber-600">{formatMetric(stats?.earlyRegistration?.readyForEnrollment ?? 0)}</p>
+                       </div>
+                    </div>
                   </div>
                 </CardHeader>
-
-                <CardContent>
-                  {showSkeleton ? (
-                    <Skeleton className="h-8 w-20" />
-                  ) : (
-                    <div className="text-3xl font-black tabular-nums">
-                      {formatMetric(stat.value)}
-                    </div>
-                  )}
-                </CardContent>
               </Card>
-            ))}
-          </div>
-        ) : (
-          <Card className="border-amber-100 bg-white shadow-sm border-l-4 border-l-amber-500">
-            <CardHeader className="py-3 px-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-sm font-black ">
-                    Phase 1: Early Registration Summary
-                  </CardTitle>
-                  <CardDescription className="text-xs font-bold er">
-                    Minimized: Dashboard is currently adapting to the Phase 2 (BOSY) operational window.
-                  </CardDescription>
-                </div>
-                <div className="flex gap-4">
-                   <div className="text-right">
-                      <p className="text-xs font-bold text-slate-400 uppercase">Verified</p>
-                      <p className="text-lg font-black text-amber-600">{formatMetric(stats?.earlyRegistration?.verified ?? 0)}</p>
-                   </div>
-                   <div className="text-right">
-                      <p className="text-xs font-bold text-slate-400 uppercase">Ready</p>
-                      <p className="text-lg font-black text-amber-600">{formatMetric(stats?.earlyRegistration?.readyForEnrollment ?? 0)}</p>
-                   </div>
-                </div>
-              </div>
-            </CardHeader>
-          </Card>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </section>
 
       {/* ── System Oversight (Bottom Priority for Admin) ── */}

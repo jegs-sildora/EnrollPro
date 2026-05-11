@@ -4,13 +4,21 @@ import { EnrollmentSection } from "@/features/learner/components/EnrollmentSecti
 import { HealthSection } from "@/features/learner/components/HealthSection";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
-import { Printer, LogOut } from "lucide-react";
+import {
+  Printer,
+  LogOut,
+  CheckCircle2,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useLearnerStore } from "@/store/learner.slice";
 import { motion, AnimatePresence } from "motion/react";
 import { Navigate } from "react-router";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { sileo } from "sileo";
+import { toastApiError } from "@/shared/hooks/useApiToast";
+import api from "@/shared/api/axiosInstance";
 import depedLogo from "@/assets/DepEd-logo.png";
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
@@ -19,6 +27,8 @@ export default function LearnerPortal() {
   const { logoUrl, schoolName } = useSettingsStore();
   const { learner, logout } = useLearnerStore();
   const [showExitModal, setShowExitModal] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
 
   const fullLogoUrl = useMemo(() => {
     if (!logoUrl) return depedLogo;
@@ -36,6 +46,25 @@ export default function LearnerPortal() {
       title: "Signed Out",
       description: "You have successfully exited the Learner Portal.",
     });
+  };
+
+  const handleConfirmReturn = async () => {
+    const appId = learner?.pendingConfirmation?.applicationId;
+    if (!appId) return;
+    setConfirmLoading(true);
+    try {
+      await api.post("/learner/confirm-return", { applicationId: appId });
+      setConfirmed(true);
+      sileo.success({
+        title: "Return Confirmed!",
+        description:
+          "Your enrollment return has been confirmed. You are now queued for section assignment.",
+      });
+    } catch (e) {
+      toastApiError(e);
+    } finally {
+      setConfirmLoading(false);
+    }
   };
 
   // If no learner session, REDIRECT to login
@@ -182,6 +211,54 @@ export default function LearnerPortal() {
 
             {/* Layout Grid: 3 Main Cards */}
             <div className="grid grid-cols-1 gap-8">
+              {/* BOSY Confirm Return Banner */}
+              {learner.pendingConfirmation && !confirmed && (
+                <Card className="shadow-xl border-2 border-orange-300 bg-orange-50 rounded-lg overflow-hidden print:hidden">
+                  <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                    <AlertCircle className="h-8 w-8 text-orange-500 shrink-0" />
+                    <div className="flex-1">
+                      <p className="font-black uppercase text-sm text-orange-800">
+                        Action Required: Confirm Your Return
+                      </p>
+                      <p className="text-sm text-orange-700 mt-1">
+                        Your enrollment for the upcoming school year is pending
+                        your confirmation. Please confirm your intent to return
+                        to confirm your slot and proceed to section assignment.
+                      </p>
+                    </div>
+                    <Button
+                      className="shrink-0 bg-orange-600 hover:bg-orange-700 text-white font-black uppercase text-xs"
+                      disabled={confirmLoading}
+                      onClick={() => void handleConfirmReturn()}>
+                      {confirmLoading ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                      )}
+                      Confirm Return
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {confirmed && (
+                <Card className="shadow-xl border-2 border-emerald-300 bg-emerald-50 rounded-lg overflow-hidden print:hidden">
+                  <CardContent className="p-6 flex items-center gap-4">
+                    <CheckCircle2 className="h-8 w-8 text-emerald-500 shrink-0" />
+                    <div>
+                      <p className="font-black uppercase text-sm text-emerald-800">
+                        Return Confirmed
+                      </p>
+                      <p className="text-sm text-emerald-700 mt-0.5">
+                        Your return for the upcoming school year has been
+                        confirmed. You will be notified once your section is
+                        assigned.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Card 1: Identity & Demographics */}
               <Card className="shadow-xl border-primary/5 bg-white/90 backdrop-blur-xl rounded-lg overflow-hidden print:border-0 print:shadow-none">
                 <CardContent className="p-8 md:p-10">

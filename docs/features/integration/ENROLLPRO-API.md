@@ -11,11 +11,12 @@ This document provides a comprehensive reference for the EnrollPro backend API. 
 ## Auth Model
 
 - **Protected Endpoints:** Require an `Authorization: Bearer <jwt>` header.
-- **JWT Issuance:** Obtained via `POST /api/auth/login`.
+- **JWT Issuance:** Staff JWT obtained via `POST /api/auth/login`. Learner JWT obtained via `POST /api/auth/learner-login`.
 - **Role-Based Access Control (RBAC):** Enforced at the router/route level using the following roles:
   - `SYSTEM_ADMIN`: Full system access, management of users, settings, and school years.
   - `HEAD_REGISTRAR`: Management of admissions, enrollments, sections, and reports.
   - `TEACHER`: Read-only access to relevant stats, student lists, and school year data.
+  - `LEARNER`: Limited self-service access (confirm BOSY intent). Isolated JWT payload — no `userId`, uses `learnerId` + `enrollmentApplicationId`.
 
 ## Response Conventions
 
@@ -41,11 +42,12 @@ This document provides a comprehensive reference for the EnrollPro backend API. 
 
 | Method | Path | Auth | Roles | Description |
 | :--- | :--- | :--- | :--- | :--- |
-| POST | `/api/auth/login` | None | - | Authenticates user and returns JWT + profile. |
+| POST | `/api/auth/login` | None | - | Authenticates staff user and returns JWT + profile. |
+| POST | `/api/auth/learner-login` | None | - | Authenticates a returning learner by LRN + portal PIN. Returns a `LEARNER`-role JWT. |
 | POST | `/api/auth/verify` | None | - | Verifies credentials without establishing a session. |
 | POST | `/api/auth/logout` | None | - | Invalides current session (if applicable). |
-| GET | `/api/auth/me` | Required | All | Returns current user profile from JWT. |
-| PATCH | `/api/auth/change-password` | Required | All | Updates user password. |
+| GET | `/api/auth/me` | Required | All Staff | Returns current user profile from JWT. |
+| PATCH | `/api/auth/change-password` | Required | All Staff | Updates user password. |
 
 ### Sample: `POST /api/auth/login`
 ```json
@@ -63,6 +65,33 @@ This document provides a comprehensive reference for the EnrollPro backend API. 
   }
 }
 ```
+
+### Sample: `POST /api/auth/learner-login`
+
+**Request body:**
+```json
+{ "lrn": "123456789012", "pin": "082915" }
+```
+
+**Response:**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "learner": {
+    "id": 101,
+    "lrn": "123456789012",
+    "firstName": "JUAN",
+    "lastName": "DELA CRUZ",
+    "middleName": "SAMSON",
+    "enrollmentApplicationId": 45,
+    "schoolYear": { "id": 2, "yearLabel": "2026-2027" },
+    "gradeLevel": { "name": "Grade 8" },
+    "applicationStatus": "PENDING_CONFIRMATION"
+  }
+}
+```
+
+> **PIN dual-state:** Admin-reset PINs are stored as plain text and must match exactly. Learner-personalized PINs are bcrypt-hashed. The login handler uses `verifyPin()` for bcrypt hashes automatically.
 
 ---
 
@@ -277,6 +306,52 @@ Manages Phase 1 (BEERF submission and screening).
 | PATCH | `/api/eosy/records/:id` | Required | REGISTRAR | Update learner's final EOSY status. |
 | POST | `/api/eosy/sections/:id/finalize`| Required | REGISTRAR | Lock section records for the year. |
 | POST | `/api/eosy/school-year/finalize` | Required | ADMIN | Close academic year and promote all. |
+| GET | `/api/eosy/sections/:id/exports/sf5` | Required | REGISTRAR | **SF5** — Section-scoped learner promotion & proficiency report (JSON). |
+| GET | `/api/eosy/exports/sf6` | Required | REGISTRAR | **SF6** — School-wide enrollment summary by grade level (JSON). Requires `?schoolYearId=`. |
+
+### Sample: `GET /api/eosy/sections/10/exports/sf5`
+```json
+{
+  "generatedAt": "2026-04-01T08:00:00Z",
+  "section": {
+    "id": 10, "name": "8-A",
+    "gradeLevel": { "id": 8, "name": "Grade 8" },
+    "schoolYear": { "id": 2, "yearLabel": "2026-2027" },
+    "adviser": { "firstName": "MARIA", "lastName": "SANTOS" },
+    "isEosyFinalized": true
+  },
+  "totalLearners": 40,
+  "learners": [
+    {
+      "no": 1, "learnerId": 101, "lrn": "123456789012",
+      "lastName": "DELA CRUZ", "firstName": "JUAN", "middleName": "SAMSON",
+      "sex": "MALE", "birthdate": "2013-05-20",
+      "finalAverage": 88.5, "eosyStatus": "PROMOTED"
+    }
+  ]
+}
+```
+
+### Sample: `GET /api/eosy/exports/sf6?schoolYearId=2`
+```json
+{
+  "generatedAt": "2026-04-01T08:00:00Z",
+  "schoolYear": { "id": 2, "yearLabel": "2026-2027" },
+  "rows": [
+    {
+      "gradeId": 7, "gradeName": "Grade 7",
+      "initialEnrollment": { "male": 80, "female": 70, "total": 150 },
+      "promoted": { "male": 78, "female": 69, "total": 147 },
+      "retained": { "male": 2, "female": 1, "total": 3 },
+      "dropOut": { "male": 0, "female": 0, "total": 0 },
+      "transferOut": { "male": 0, "female": 0, "total": 0 },
+      "irregular": { "male": 0, "female": 0, "total": 0 },
+      "noStatus": { "male": 0, "female": 0, "total": 0 }
+    }
+  ],
+  "grandTotal": { "male": 320, "female": 290, "total": 610, "promoted": 595, "retained": 10, "dropOut": 3, "transferOut": 2 }
+}
+```
 
 ---
 
@@ -432,5 +507,170 @@ Public read-only feeds for companion systems (ATLAS, SMART, AIMS).
 2. **Numeric IDs:** Primary keys are autoincrementing integers.
 3. **Upper Case Names:** Learner and Teacher names (First, Middle, Last) are strictly stored and returned in UPPERCASE as per DepEd standards.
 4. **Rate Limiting:** Public endpoints (Tracking, Submission) are subject to rate limiting (typically 100 requests per 15 minutes per IP).
+
+---
+
+## 16) BOSY — Beginning of School Year (`/api/bosy`)
+
+| Method | Path | Auth | Roles | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| GET | `/api/bosy/readiness` | Required | REGISTRAR | BOSY readiness checklist for a given SY. |
+| GET | `/api/bosy/queue` | Required | REGISTRAR | Learners in the PENDING_CONFIRMATION queue. |
+| POST | `/api/bosy/confirm-return/:applicationId` | Required | REGISTRAR | Staff confirms a single learner's return. |
+| POST | `/api/bosy/bulk-confirm` | Required | REGISTRAR | Staff bulk-confirms a batch of returns. |
+| GET | `/api/bosy/completers` | Required | REGISTRAR | JHS completers ready for SHS transition. |
+| **POST** | **`/api/bosy/confirm-intent`** | **Learner JWT** | **LEARNER** | **Self-service: learner signals intent to return.** |
+| **GET** | **`/api/bosy/expected-queue`** | **Required** | **REGISTRAR** | **Prior-year PROMOTED learners not yet in current SY pipeline.** |
+
+### Sample: `POST /api/bosy/confirm-intent`
+
+**Authorization:** `Bearer <learner-jwt>` (from `POST /api/auth/learner-login`)
+
+**Request body:**
+```json
+{ "schoolYearId": 2 }
+```
+
+**Response:**
+```json
+{
+  "message": "Intent to return confirmed successfully.",
+  "enrollmentApplicationId": 45
+}
+```
+
+### Sample: `GET /api/bosy/expected-queue?priorSchoolYearId=1&currentSchoolYearId=2`
+```json
+{
+  "items": [
+    {
+      "enrollmentRecordId": 500,
+      "learnerId": 101,
+      "lrn": "123456789012",
+      "firstName": "JUAN",
+      "lastName": "DELA CRUZ",
+      "sex": "MALE",
+      "priorGradeLevel": { "id": 7, "name": "Grade 7" },
+      "priorSection": { "id": 10, "name": "7-A" },
+      "priorSchoolYear": { "id": 1, "yearLabel": "2025-2026" },
+      "finalAverage": 88.5
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 20,
+  "totalPages": 1
+}
+```
+
+---
+
+## 17) Remedial Processing (`/api/remedial`)
+
+Handles learners flagged as `CONDITIONALLY_PROMOTED` who must pass a summer remedial exam before the new school year.
+
+| Method | Path | Auth | Roles | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| **GET** | **`/api/remedial/pending`** | **Required** | **REGISTRAR** | **List all applications with remedial pending.** |
+| **PATCH** | **`/api/remedial/:learnerId/resolve`** | **Required** | **REGISTRAR** | **Mark remedial as passed; set final average and EOSY status.** |
+
+### Sample: `GET /api/remedial/pending?schoolYearId=1`
+```json
+{
+  "items": [
+    {
+      "checklistId": 77,
+      "enrollmentApplicationId": 45,
+      "learnerId": 101,
+      "lrn": "123456789012",
+      "firstName": "JUAN",
+      "lastName": "DELA CRUZ",
+      "sex": "MALE",
+      "gradeLevel": { "id": 7, "name": "Grade 7" },
+      "schoolYear": { "id": 1, "yearLabel": "2025-2026" },
+      "academicStatus": "CONDITIONALLY_PROMOTED",
+      "isRemedialRequired": true,
+      "currentFinalAverage": 73.5,
+      "eosyStatus": null
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 20,
+  "totalPages": 1
+}
+```
+
+### Sample: `PATCH /api/remedial/101/resolve`
+
+**Request body:**
+```json
+{ "schoolYearId": 1, "summerGrade": 78.0 }
+```
+
+**Response:**
+```json
+{
+  "message": "Remedial case resolved successfully.",
+  "checklistId": 77,
+  "enrollmentRecordId": 500,
+  "finalAverage": 78,
+  "eosyStatus": "PROMOTED"
+}
+```
+
+---
+
+## 18) Integration Triggers (`/api/integration`)
+
+Staff-initiated pull/push triggers for external companion systems. These complement the read-only Integration v1 feeds (Section 15).
+
+**All endpoints require `SYSTEM_ADMIN` role.**
+
+| Method | Path | Auth | Roles | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| **POST** | **`/api/integration/smart/sections/:id/sync-grades`** | **Required** | **SYSTEM_ADMIN** | **Pull final averages from S.M.A.R.T. for a section; persist to `EnrollmentRecord.finalAverage`.** |
+| **POST** | **`/api/integration/atlas/sync-faculty`** | **Required** | **SYSTEM_ADMIN** | **Pull faculty list from ATLAS and upsert `Teacher` records by `employeeId`.** |
+
+### Environment Variables
+
+| Variable | Required for | Description |
+| :--- | :--- | :--- |
+| `SMART_API_BASE_URL` | SMART sync | Base URL of the S.M.A.R.T. Tailscale node. |
+| `SMART_API_KEY` | SMART sync | API key sent in `X-API-KEY` header. |
+| `SMART_SYNC_FALLBACK_ENABLED` | SMART sync | Set `true` to use mock data when SMART is unreachable (demo/offline mode). |
+| `ATLAS_API_BASE_URL` | ATLAS sync | Base URL of the ATLAS teacher data endpoint. |
+| `ATLAS_API_KEY` | ATLAS sync | API key sent in `X-API-KEY` header. |
+
+### Sample: `POST /api/integration/smart/sections/10/sync-grades`
+
+**Response:**
+```json
+{
+  "success": true,
+  "sectionId": 10,
+  "sectionName": "8-A",
+  "syncedCount": 38,
+  "missingCount": 2,
+  "missingLrns": ["999999999901", "999999999902"],
+  "isFallbackEngaged": false,
+  "message": "Synced 38 grade(s) from S.M.A.R.T."
+}
+```
+
+### Sample: `POST /api/integration/atlas/sync-faculty`
+
+**Response:**
+```json
+{
+  "success": true,
+  "synced": 45,
+  "skipped": 1,
+  "errors": [
+    { "employeeId": "BADID99", "error": "Missing email." }
+  ],
+  "message": "Synced 45 faculty record(s) from ATLAS."
+}
+```
 
 

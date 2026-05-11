@@ -15,8 +15,12 @@ function parseSchoolYearId(req: Request): number {
   return Number.parseInt(String(req.params.id ?? ""), 10);
 }
 
-const EOSY_SKIP_OUTCOMES = new Set(["DROPPED_OUT", "TRANSFERRED_OUT"]);
-const EOSY_RETAINED_OUTCOMES = new Set(["RETAINED", "IRREGULAR"]);
+const EOSY_SKIP_OUTCOMES = new Set([
+  "DROPPED_OUT",
+  "TRANSFERRED_OUT",
+  "IRREGULAR",
+]);
+const EOSY_RETAINED_OUTCOMES = new Set(["RETAINED"]);
 const MIN_ACTIVE_CALENDAR_SPAN_DAYS = 240;
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
@@ -24,6 +28,7 @@ interface RolloverSummary {
   processedRecords: number;
   createdApplications: number;
   skippedByEosyOutcome: number;
+  skippedIrregular: number;
   skippedNoTargetGrade: number;
   skippedExistingApplications: number;
   skippedDuplicateRecords: number;
@@ -124,6 +129,7 @@ async function carryOverEligibleLearners(
     processedRecords: sourceRecords.length,
     createdApplications: 0,
     skippedByEosyOutcome: 0,
+    skippedIrregular: 0,
     skippedNoTargetGrade: 0,
     skippedExistingApplications: 0,
     skippedDuplicateRecords: 0,
@@ -144,6 +150,10 @@ async function carryOverEligibleLearners(
     }
 
     const eosyStatus = record.eosyStatus ?? "PROMOTED";
+    if (eosyStatus === "IRREGULAR") {
+      summary.skippedIrregular += 1;
+      continue;
+    }
     if (EOSY_SKIP_OUTCOMES.has(eosyStatus)) {
       summary.skippedByEosyOutcome += 1;
       continue;
@@ -151,9 +161,7 @@ async function carryOverEligibleLearners(
 
     const sourceDisplayOrder = record.section.gradeLevel.displayOrder;
     const targetDisplayOrder =
-      eosyStatus === "PROMOTED" || eosyStatus === "IRREGULAR"
-        ? sourceDisplayOrder + 1
-        : sourceDisplayOrder;
+      eosyStatus === "PROMOTED" ? sourceDisplayOrder + 1 : sourceDisplayOrder;
     const targetGradeLevel =
       targetGradeLevelByDisplayOrder.get(targetDisplayOrder) ?? null;
 
@@ -169,7 +177,7 @@ async function carryOverEligibleLearners(
         gradeLevelId: targetGradeLevel.id,
         applicantType: record.enrollmentApplication.applicantType,
         learnerType: "CONTINUING",
-        status: "READY_FOR_SECTIONING",
+        status: "PENDING_CONFIRMATION",
         admissionChannel: "F2F",
         isPrivacyConsentGiven:
           record.enrollmentApplication.isPrivacyConsentGiven,
@@ -193,10 +201,13 @@ async function carryOverEligibleLearners(
       data: { trackingNumber },
     });
 
-    const resolvedAcademicStatus = 
-        eosyStatus === "PROMOTED" ? "PROMOTED" : 
-        eosyStatus === "RETAINED" ? "RETAINED" : 
-        "CONDITIONALLY_PROMOTED";
+    await deps.prisma.learner.update({
+      where: { id: learnerId },
+      data: { promotionStatus: eosyStatus },
+    });
+
+    const resolvedAcademicStatus =
+      eosyStatus === "PROMOTED" ? "PROMOTED" : "RETAINED";
 
     await deps.prisma.applicationChecklist.create({
       data: {
@@ -444,6 +455,20 @@ export function createSchoolYearAdminController(
       res.status(422).json({
         message:
           "Active school year must be EOSY-finalized before rollover can proceed.",
+      });
+      return;
+    }
+
+    const irregularBlockerCount = await deps.prisma.enrollmentRecord.count({
+      where: {
+        schoolYearId: activeYear.id,
+        eosyStatus: "IRREGULAR",
+      },
+    });
+
+    if (irregularBlockerCount > 0) {
+      res.status(422).json({
+        message: `Cannot roll over: ${irregularBlockerCount} learner(s) remain CONDITIONALLY_PROMOTED. Resolve their remedial results in the EOSY module first.`,
       });
       return;
     }

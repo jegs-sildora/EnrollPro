@@ -38,6 +38,7 @@ import SampleIntegrationPage from "@/features/sample-integration/pages/Index";
 
 // DO 017 s.2025 — Standalone Early Registration Module (Grades 7–10)
 import EarlyRegistrationApply from "@/features/early-registration/pages/apply/Index";
+import BOSYPage from "@/features/bosy/pages/BOSYPage";
 
 export const router = createBrowserRouter([
   {
@@ -173,6 +174,10 @@ export const router = createBrowserRouter([
               {
                 path: "/monitoring/enrollment/eosy",
                 element: <EosyUpdating />,
+              },
+              {
+                path: "/bosy",
+                element: <BOSYPage />,
               },
               {
                 path: "/students",

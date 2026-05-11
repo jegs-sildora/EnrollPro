@@ -60,6 +60,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
+import { RemedialResolutionModal } from "../components/RemedialResolutionModal";
 
 type EosyStatus =
   | "PROMOTED"
@@ -175,6 +176,12 @@ export default function EosyUpdating() {
     loading: false,
   });
   const [batchPromoteConfirmOpen, setBatchPromoteConfirmOpen] = useState(false);
+  const [remedialModal, setRemedialModal] = useState<{
+    open: boolean;
+    recordId: number | null;
+    learnerName: string;
+    lrn: string | null;
+  }>({ open: false, recordId: null, learnerName: "", lrn: null });
 
   const fetchSections = useCallback(async () => {
     if (!ayId) return;
@@ -485,6 +492,9 @@ export default function EosyUpdating() {
     selectedSection?.isEosyFinalized || isSchoolYearFinalized,
   );
   const emptyRowsCount = records.filter((r) => !r.eosyStatus).length;
+  const irregularCount = records.filter(
+    (r) => r.eosyStatus === "IRREGULAR",
+  ).length;
 
   const handleMarkAllPromoted = async () => {
     const targetRows = records.filter(
@@ -743,7 +753,9 @@ export default function EosyUpdating() {
               table.getIsAllPageRowsSelected() ||
               (table.getIsSomePageRowsSelected() && "indeterminate")
             }
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
             aria-label="Select all"
             className="translate-y-[2px] border-white data-[state=checked]:bg-white data-[state=checked]:text-primary"
           />
@@ -904,7 +916,7 @@ export default function EosyUpdating() {
           }
 
           return (
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center gap-1">
               <Select
                 value={resolvedStatus}
                 onValueChange={(val) => handleStatusChange(r.id, val)}
@@ -928,12 +940,26 @@ export default function EosyUpdating() {
                   <SelectItem value="DROPPED_OUT">Dropped Out</SelectItem>
                 </SelectContent>
               </Select>
+              {r.eosyStatus === "IRREGULAR" && !isFinalized && (
+                <button
+                  className="text-[10px] font-black uppercase text-orange-600 hover:underline cursor-pointer"
+                  onClick={() =>
+                    setRemedialModal({
+                      open: true,
+                      recordId: r.id,
+                      learnerName: `${r.enrollmentApplication.learner.lastName}, ${r.enrollmentApplication.learner.firstName}`,
+                      lrn: r.enrollmentApplication.learner.lrn,
+                    })
+                  }>
+                  Resolve Remedial
+                </button>
+              )}
             </div>
           );
         },
       },
     ],
-    [isFinalized, handleStatusChange],
+    [isFinalized, handleStatusChange, setRemedialModal],
   );
 
   const groupedSections = useMemo(() => {
@@ -1077,12 +1103,33 @@ export default function EosyUpdating() {
             <p className="font-black uppercase text-xs r">Operational Status</p>
             <p className="font-bold text-sm mt-0.5">{exportLock.lockReason}</p>
             {isSchoolYearFinalized && isAdmin && (
-              <button 
-                onClick={() => setUnlockModal(p => ({ ...p, open: true }))}
+              <button
+                onClick={() => setUnlockModal((p) => ({ ...p, open: true }))}
                 className="mt-2 text-xs font-black uppercase text-red-600 hover:underline cursor-pointer block">
-                Requires emergency class unlock? Click here to authorize override.
+                Requires emergency class unlock? Click here to authorize
+                override.
               </button>
             )}
+          </div>
+        </motion.div>
+      )}
+
+      {irregularCount > 0 && !isSchoolYearFinalized && (
+        <motion.div
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="flex items-start gap-3 rounded-xl border-2 border-orange-300 bg-orange-50 text-orange-800 px-4 py-3 shadow-sm flex-shrink-0">
+          <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
+          <div className="flex-1">
+            <p className="font-black uppercase text-xs">
+              Remedial Processing Required
+            </p>
+            <p className="font-bold text-sm mt-0.5">
+              {irregularCount} learner{irregularCount !== 1 ? "s" : ""} in this
+              section {irregularCount !== 1 ? "have" : "has"} CONDITIONALLY
+              PROMOTED status. Resolve their remedial grades before initiating
+              year rollover.
+            </p>
           </div>
         </motion.div>
       )}
@@ -1432,7 +1479,8 @@ export default function EosyUpdating() {
                             </p>
                             <div className="flex items-center gap-1.5 mt-2 text-[10px] font-black uppercase text-emerald-600/70">
                               <CheckCircle2 className="h-3 w-3" />
-                              System Check: No learner with Gen Ave &lt; 75 is marked as PROMOTED.
+                              System Check: No learner with Gen Ave &lt; 75 is
+                              marked as PROMOTED.
                             </div>
                           </>
                         )}
@@ -1486,7 +1534,8 @@ export default function EosyUpdating() {
               Emergency Archive Unlock
             </DialogTitle>
             <DialogDescription className="font-semibold text-sm">
-              This action will breach the terminal lock for the entire school year. This is only permitted for critical record corrections.
+              This action will breach the terminal lock for the entire school
+              year. This is only permitted for critical record corrections.
             </DialogDescription>
           </DialogHeader>
           <div className="py-6 space-y-4">
@@ -1498,7 +1547,9 @@ export default function EosyUpdating() {
                 type="password"
                 placeholder="Enter Admin Security PIN"
                 value={unlockModal.pin}
-                onChange={(e) => setUnlockModal(p => ({ ...p, pin: e.target.value }))}
+                onChange={(e) =>
+                  setUnlockModal((p) => ({ ...p, pin: e.target.value }))
+                }
                 className="h-11 font-bold border-2"
               />
             </div>
@@ -1509,29 +1560,43 @@ export default function EosyUpdating() {
               <textarea
                 placeholder="Describe the reason for unlocking this archive..."
                 value={unlockModal.justification}
-                onChange={(e) => setUnlockModal(p => ({ ...p, justification: e.target.value }))}
+                onChange={(e) =>
+                  setUnlockModal((p) => ({
+                    ...p,
+                    justification: e.target.value,
+                  }))
+                }
                 className="w-full h-24 p-3 rounded-lg border-2 font-bold text-sm bg-background focus:ring-2 focus:ring-primary focus:outline-none"
               />
             </div>
             <div className="flex items-start gap-3 p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-900">
               <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
               <p className="text-xs font-bold leading-relaxed">
-                All unlock events are recorded in the permanent system audit logs. The system status will revert to BOSY_LOCKED.
+                All unlock events are recorded in the permanent system audit
+                logs. The system status will revert to BOSY_LOCKED.
               </p>
             </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
               variant="ghost"
-              onClick={() => setUnlockModal(p => ({ ...p, open: false }))}
+              onClick={() => setUnlockModal((p) => ({ ...p, open: false }))}
               className="font-bold">
               Cancel
             </Button>
             <Button
               onClick={handleUnlockSchoolYear}
-              disabled={unlockModal.pin.length < 4 || unlockModal.justification.length < 10 || unlockModal.loading}
+              disabled={
+                unlockModal.pin.length < 4 ||
+                unlockModal.justification.length < 10 ||
+                unlockModal.loading
+              }
               className="bg-red-600 hover:bg-red-700 text-white font-black uppercase  px-8">
-              {unlockModal.loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Authorize Override"}
+              {unlockModal.loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Authorize Override"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1743,6 +1808,28 @@ export default function EosyUpdating() {
         confirmText="Yes, Finalize & Lock School Year"
         onConfirm={handleSchoolFinalize}
         variant="danger"
+      />
+
+      <RemedialResolutionModal
+        open={remedialModal.open}
+        recordId={remedialModal.recordId}
+        learnerName={remedialModal.learnerName}
+        lrn={remedialModal.lrn}
+        onClose={() =>
+          setRemedialModal({
+            open: false,
+            recordId: null,
+            learnerName: "",
+            lrn: null,
+          })
+        }
+        onResolved={(recordId, newStatus) => {
+          setRecords((prev) =>
+            prev.map((r) =>
+              r.id === recordId ? { ...r, eosyStatus: newStatus } : r,
+            ),
+          );
+        }}
       />
     </div>
   );

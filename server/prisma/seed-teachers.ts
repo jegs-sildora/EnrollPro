@@ -32,7 +32,7 @@ interface Faculty {
 
 const ATLAS_FACULTY: Faculty[] = [
   {
-    employeeId: "100001",
+    employeeId: "2000001",
     firstName: "MARIA",
     lastName: "SANTOS",
     middleName: "SANTIAGO",
@@ -43,7 +43,7 @@ const ATLAS_FACULTY: Faculty[] = [
     specialization: "MAJOR IN FILIPINO",
   },
   {
-    employeeId: "100002",
+    employeeId: "2000002",
     firstName: "JOSE",
     lastName: "REYES",
     middleName: "DE LEON",
@@ -54,7 +54,7 @@ const ATLAS_FACULTY: Faculty[] = [
     specialization: "MAJOR IN ENGLISH / APPLIED LINGUISTICS",
   },
   {
-    employeeId: "100003",
+    employeeId: "2000003",
     firstName: "ANA",
     lastName: "DELA CRUZ",
     middleName: "BALTAZAR",
@@ -65,7 +65,7 @@ const ATLAS_FACULTY: Faculty[] = [
     specialization: "MAJOR IN MATHEMATICS",
   },
   {
-    employeeId: "100004",
+    employeeId: "2000004",
     firstName: "MARK",
     lastName: "VILLANUEVA",
     middleName: "CASTILLO",
@@ -76,7 +76,7 @@ const ATLAS_FACULTY: Faculty[] = [
     specialization: "MAJOR IN GENERAL SCIENCE / BIOLOGY / CHEMISTRY / PHYSICS",
   },
   {
-    employeeId: "100005",
+    employeeId: "2000005",
     firstName: "LIZA",
     lastName: "GARCIA",
     middleName: "SORIANO",
@@ -87,7 +87,7 @@ const ATLAS_FACULTY: Faculty[] = [
     specialization: "MAJOR IN SOCIAL STUDIES / HISTORY",
   },
   {
-    employeeId: "100006",
+    employeeId: "2000006",
     firstName: "PAOLO",
     lastName: "CASTRO",
     middleName: "DEL ROSARIO",
@@ -98,7 +98,7 @@ const ATLAS_FACULTY: Faculty[] = [
     specialization: "MAJOR IN MAPEH",
   },
   {
-    employeeId: "100007",
+    employeeId: "2000007",
     firstName: "RICA",
     lastName: "MENDOZA",
     middleName: "VALDEZ",
@@ -109,7 +109,7 @@ const ATLAS_FACULTY: Faculty[] = [
     specialization: "MAJOR IN VALUES EDUCATION",
   },
   {
-    employeeId: "100008",
+    employeeId: "2000008",
     firstName: "NEIL",
     lastName: "TORRES",
     middleName: "RODRIGUEZ",
@@ -120,7 +120,7 @@ const ATLAS_FACULTY: Faculty[] = [
     specialization: "MAJOR IN ICT",
   },
   {
-    employeeId: "100009",
+    employeeId: "2000009",
     firstName: "GRACE",
     lastName: "AQUINO",
     middleName: "PANGANIBAN",
@@ -131,7 +131,7 @@ const ATLAS_FACULTY: Faculty[] = [
     specialization: "MAJOR IN VALUES EDUCATION",
   },
   {
-    employeeId: "100010",
+    employeeId: "2000010",
     firstName: "IVY",
     lastName: "FLORES",
     middleName: "IBARRA",
@@ -142,7 +142,7 @@ const ATLAS_FACULTY: Faculty[] = [
     specialization: "MAJOR IN MATHEMATICS",
   },
   {
-    employeeId: "100011",
+    employeeId: "2000011",
     firstName: "JOMAR",
     lastName: "NAVARRO",
     middleName: "LUNA",
@@ -153,7 +153,7 @@ const ATLAS_FACULTY: Faculty[] = [
     specialization: "MAJOR IN BIOLOGY",
   },
   {
-    employeeId: "100012",
+    employeeId: "2000012",
     firstName: "CELIA",
     lastName: "PASCUAL",
     middleName: "SILANG",
@@ -164,7 +164,7 @@ const ATLAS_FACULTY: Faculty[] = [
     specialization: "LITERATURE / CREATIVE WRITING",
   },
   {
-    employeeId: "100013",
+    employeeId: "2000013",
     firstName: "RAMON",
     lastName: "LOPEZ",
     middleName: "MABINI",
@@ -175,7 +175,7 @@ const ATLAS_FACULTY: Faculty[] = [
     specialization: "MAJOR IN FILIPINO",
   },
   {
-    employeeId: "100014",
+    employeeId: "2000014",
     firstName: "KATRINA",
     lastName: "SALAZAR",
     middleName: "BONIFACIO",
@@ -186,7 +186,7 @@ const ATLAS_FACULTY: Faculty[] = [
     specialization: "MAJOR IN SOCIAL STUDIES / HISTORY",
   },
   {
-    employeeId: "100015",
+    employeeId: "2000015",
     firstName: "LOURDES",
     lastName: "VALDEZ",
     middleName: "JACINTO",
@@ -197,7 +197,7 @@ const ATLAS_FACULTY: Faculty[] = [
     specialization: "MAJOR IN MUSIC EDUCATION",
   },
   {
-    employeeId: "100016",
+    employeeId: "2000016",
     firstName: "HAROLD",
     lastName: "BAUTISTA",
     middleName: "DAGOHOY",
@@ -208,7 +208,7 @@ const ATLAS_FACULTY: Faculty[] = [
     specialization: "MAJOR IN VALUES EDUCATION",
   },
   {
-    employeeId: "100017",
+    employeeId: "2000017",
     firstName: "MIKA",
     lastName: "RAMOS",
     middleName: "MALVAR",
@@ -219,7 +219,7 @@ const ATLAS_FACULTY: Faculty[] = [
     specialization: "MAJOR IN HOME ECONOMICS",
   },
   {
-    employeeId: "100018",
+    employeeId: "2000018",
     firstName: "JONAS",
     lastName: "DOMINGO",
     middleName: "RECTO",
@@ -230,7 +230,7 @@ const ATLAS_FACULTY: Faculty[] = [
     specialization: "MAJOR IN MATHEMATICS (WITH STATISTICS BACKGROUND)",
   },
   {
-    employeeId: "100019",
+    employeeId: "2000019",
     firstName: "ELLA",
     lastName: "RIVERA",
     middleName: "LAUREL",
@@ -241,7 +241,7 @@ const ATLAS_FACULTY: Faculty[] = [
     specialization: "MAJOR IN PHYSICS",
   },
   {
-    employeeId: "100020",
+    employeeId: "2000020",
     firstName: "DARREN",
     lastName: "SERRANO",
     middleName: "ROXAS",
@@ -477,7 +477,9 @@ function getRandomFromWeighted(items: any[]) {
 function generateRandomEmployeeId(usedIds: Set<string>): string {
   let id = "";
   do {
-    id = Math.floor(1000000 + Math.random() * 9000000).toString();
+    // Generate a 7-digit ID (1,000,000 to 9,999,999)
+    // DepEd employee IDs are strictly 7 digits
+    id = Math.floor(2000000 + Math.random() * 7999999).toString();
   } while (usedIds.has(id));
   usedIds.add(id);
   return id;
@@ -814,7 +816,7 @@ async function main() {
     `\n🎉 Successfully scaled and synced ${teachersToSeed.length} UNIQUE teachers.`,
   );
   console.log(
-    `✅ No repeating names or numbers in emails. Employee IDs are 6-digit numeric.`,
+    `✅ No repeating names or numbers in emails. Employee IDs are 7-digit numeric.`,
   );
   console.log(`🔑 Demo Login Password for all teachers: DepEd2026!`);
 }

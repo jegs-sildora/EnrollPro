@@ -23,7 +23,16 @@ export function createSchoolYearLifecycleController(
     const id = parseSchoolYearId(req);
     const { status } = req.body;
 
-    const validStatuses = ["DRAFT", "UPCOMING", "ACTIVE", "ARCHIVED"];
+    const validStatuses = [
+      "DRAFT",
+      "UPCOMING",
+      "PREPARATION",
+      "ENROLLMENT_OPEN",
+      "BOSY_LOCKED",
+      "EOSY_PROCESSING",
+      "ACTIVE",
+      "ARCHIVED",
+    ];
     if (!validStatuses.includes(status)) {
       res.status(400).json({
         message: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
@@ -50,6 +59,15 @@ export function createSchoolYearLifecycleController(
 
       await ensureDefaultGradeLevels(deps);
       await setActiveSchoolYear(deps, id);
+    } else if (status === "BOSY_LOCKED") {
+      await deps.prisma.schoolYear.update({
+        where: { id },
+        data: {
+          status: "BOSY_LOCKED",
+          bosyLockedAt: new Date(),
+          bosyLockedById: req.user?.userId ?? null,
+        },
+      });
     } else {
       await deps.prisma.schoolYear.update({
         where: { id },

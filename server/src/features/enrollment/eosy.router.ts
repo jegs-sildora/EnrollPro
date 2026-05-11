@@ -68,4 +68,18 @@ router.post(
   ctrl.unlockSchoolYearEosy,
 );
 
+router.get(
+  "/sections/:id/exports/sf5",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.exportSF5,
+);
+
+router.get(
+  "/exports/sf6",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.exportSF6,
+);
+
 export default router;

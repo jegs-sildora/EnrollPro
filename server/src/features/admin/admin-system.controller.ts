@@ -98,9 +98,6 @@ export async function lockBosy(req: Request, res: Response) {
       req,
     });
 
-    // Fire non-blocking webhooks
-    void dispatchBosyReadyWebhooks(updated.id, lockedAt);
-
     res.json({
       message: "BOSY successfully locked. SF1 rosters finalized.",
       status: updated.status,
@@ -160,30 +157,6 @@ export async function unlockBosy(req: Request, res: Response) {
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
-  }
-}
-
-async function dispatchBosyReadyWebhooks(schoolYearId: number, lockedAt: Date) {
-  const payload = {
-    schoolYearId,
-    lockedAt: lockedAt.toISOString(),
-    status: "BOSY_LOCKED",
-  };
-
-  const targets = [
-    "https://atlas.local/api/webhooks/bosy-ready",
-    "https://smart.local/api/webhooks/bosy-ready",
-  ];
-
-  for (const url of targets) {
-    fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    }).catch(() => {
-      // Log failure but don't block
-      console.warn(`Failed to dispatch BOSY webhook to ${url}`);
-    });
   }
 }
 
