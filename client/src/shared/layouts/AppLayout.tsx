@@ -1,6 +1,6 @@
 import { useEffect, useState, memo, type ReactNode } from "react";
 import type React from "react";
-import { useNavigate, useLocation, Link } from "react-router";
+import { useNavigate, useLocation, Link, Outlet } from "react-router";
 import { Toaster } from "sileo";
 import {
   LayoutDashboard,
@@ -55,8 +55,9 @@ import { Skeleton } from "@/shared/ui/skeleton";
 import { useAuthStore } from "@/store/auth.slice";
 import { useSettingsStore } from "@/store/settings.slice";
 import api from "@/shared/api/axiosInstance";
-import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
+import { PageTransition } from "@/shared/components/PageTransition";
 import { motion, AnimatePresence } from "motion/react";
+import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 
 import { useWindowSize } from "react-use";
 
@@ -710,15 +711,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
         {/* Page content */}
         <AnimatePresence mode="wait">
-          <motion.main
-            key={location.pathname}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
+          <PageTransition
+            routeKey={location.pathname}
             className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden py-3 px-6 scrollbar-thin">
-            {shouldShowNoSchoolYearState ? <NoSchoolYearState /> : children}
-          </motion.main>
+            {shouldShowNoSchoolYearState ? <NoSchoolYearState /> : (children || <Outlet />)}
+          </PageTransition>
         </AnimatePresence>
       </SidebarInset>
     </SidebarProvider>

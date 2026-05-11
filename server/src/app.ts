@@ -50,6 +50,8 @@ const defaultClientOrigins = [
   "http://buru-degree.ts.net:5173",
   "http://buru-degree.ts.net:5174",
   "http://buru-degree.ts.net:5175",
+  "https://dev-jegs.buru-degree.ts.net",
+  "https://buru-degree.ts.net",
 ];
 const configuredClientOrigins = [
   process.env.CLIENT_URL,

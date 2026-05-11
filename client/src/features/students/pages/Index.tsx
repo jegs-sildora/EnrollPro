@@ -41,6 +41,7 @@ import {
   formatScpType,
   getLearnerStatusColorClasses,
   SCP_ACRONYMS,
+  cn,
 } from "@/shared/lib/utils";
 import {
   Select,
@@ -66,7 +67,7 @@ import {
 } from "@/shared/ui/dropdown-menu";
 import { Label } from "@/shared/ui/label";
 import { Sheet, SheetContent } from "@/shared/ui/sheet";
-import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { Skeleton } from "@/shared/ui/skeleton";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
@@ -516,17 +517,6 @@ export default function Students() {
       </Badge>
     );
   };
-
-  const getEnrolledBadge = () => (
-    <Badge
-      variant="outline"
-      className={cn(
-        "text-[10px] font-black uppercase px-2 h-5 border-none",
-        getLearnerStatusColorClasses("ACTIVE"),
-      )}>
-      Enrolled
-    </Badge>
-  );
 
   const formatDate = (dateString: string) => {
     return formatManilaDate(dateString, {
@@ -1077,6 +1067,430 @@ export default function Students() {
     ],
   );
 
+  const renderContent = () => (
+    <div className="space-y-6">
+      {/* Search and Filters */}
+      <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
+        <CardHeader className="px-3 sm:px-6 pb-3">
+          <div className="flex flex-col md:flex-row gap-3 md:gap-4 items-stretch md:items-end">
+            <div className="flex-1 space-y-2 w-full">
+              <Label className="text-xs sm:text-sm uppercase  font-bold">
+                Search Learner
+              </Label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4" />
+                <Input
+                  placeholder="LRN, first name, last name..."
+                  className="pl-9 h-10 text-sm font-bold"
+                  value={search}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSearch(val);
+                    startTransition(() => {
+                      setPage(1);
+                    });
+                  }}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:flex gap-3 md:gap-4 w-full md:w-auto">
+              <div className="space-y-2">
+                <Label className="text-xs sm:text-sm uppercase  font-bold">
+                  Grade Level
+                </Label>
+                <Select
+                  value={gradeLevelFilter}
+                  onValueChange={(value) => {
+                    startTransition(() => {
+                      setGradeLevelFilter(value);
+                      setPage(1);
+                    });
+                  }}>
+                  <SelectTrigger className="h-10 w-full md:w-52 text-sm font-bold">
+                    <SelectValue placeholder="All Grades" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem
+                      value="all"
+                      className="text-sm font-bold">
+                      All Grades
+                    </SelectItem>
+                    {gradeLevels.map((gl) => (
+                      <SelectItem
+                        key={gl.id}
+                        value={gl.id.toString()}
+                        className="text-sm font-bold">
+                        {gl.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs sm:text-sm uppercase  font-bold">
+                  Program
+                </Label>
+                <Select
+                  value={programFilter}
+                  onValueChange={(value) => {
+                    startTransition(() => {
+                      setProgramFilter(value);
+                      setPage(1);
+                    });
+                  }}>
+                  <SelectTrigger className="h-10 w-full md:w-52 text-sm font-bold">
+                    <SelectValue placeholder="All Programs" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem
+                      value="all"
+                      className="text-sm font-bold">
+                      All Programs
+                    </SelectItem>
+                    {PROGRAM_FILTER_OPTIONS.map((option) => (
+                      <SelectItem
+                        key={option.value}
+                        value={option.value}
+                        className="text-sm font-bold">
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs sm:text-sm uppercase  font-bold">
+                  Section
+                </Label>
+                <Select
+                  value={sectionFilter}
+                  onValueChange={(value) => {
+                    startTransition(() => {
+                      setSectionFilter(value);
+                      setPage(1);
+                    });
+                  }}>
+                  <SelectTrigger className="h-10 w-full md:w-52 text-sm font-bold">
+                    <SelectValue placeholder="All Sections" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem
+                      value="all"
+                      className="text-sm font-bold">
+                      All Sections
+                    </SelectItem>
+                    {filteredSections.map((sec) => (
+                      <SelectItem
+                        key={sec.id}
+                        value={sec.id.toString()}
+                        className="text-sm font-bold">
+                        {formatSectionLabel(sec.name)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex w-full md:w-auto items-center gap-2">
+              <Button
+                variant="outline"
+                className="h-10 px-3 text-sm font-bold w-full md:w-auto"
+                onClick={() => {
+                  void Promise.all([fetchStudents(), fetchSummary()]);
+                }}
+                disabled={loading || !ayId}>
+                <RefreshCw
+                  className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+                />
+                Refresh
+              </Button>
+
+              <Button
+                variant="outline"
+                className="h-10 px-3 text-sm font-bold w-full md:w-auto"
+                onClick={() => {
+                  startTransition(() => {
+                    setSearch("");
+                    setGradeLevelFilter("all");
+                    setProgramFilter("all");
+                    setSectionFilter("all");
+                    setSortBy("dateEnrolled");
+                    setSortOrder("desc");
+                    setPage(1);
+                  });
+                }}>
+                Reset
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+
+      {/* Student List */}
+      <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
+        <CardHeader className="px-3 sm:px-6 pb-2">
+          <CardTitle className="text-base sm:text-lg font-extrabold">
+            {activeTab === "active"
+              ? "Enrolled Learner Records"
+              : activeTab === "completers"
+                ? "JHS Completer Records"
+                : "Inactive / Transferred Records"}
+          </CardTitle>
+          <CardDescription className="text-xs sm:text-sm font-semibold">
+            Showing {students.length} of {total} learners
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0 flex-1 overflow-hidden flex flex-col min-h-0">
+          <AnimatePresence mode="wait">
+            {loading ? (
+              <motion.div
+                key="skeleton"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex-1 flex flex-col overflow-hidden">
+                <div className="md:hidden space-y-3 p-3 overflow-y-auto flex-1 bg-muted/5">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="rounded-xl border bg-[hsl(var(--card))] p-3 space-y-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1 space-y-2">
+                          <Skeleton className="h-4 w-3/4" />
+                          <Skeleton className="h-3 w-1/2" />
+                        </div>
+                        <Skeleton className="h-5 w-20 rounded-full" />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <div className="h-2 w-10 bg-muted/50 rounded" />
+                          <Skeleton className="h-3 w-24" />
+                        </div>
+                        <div className="space-y-1">
+                          <div className="h-2 w-10 bg-muted/50 rounded" />
+                          <Skeleton className="h-3 w-12" />
+                        </div>
+                        <div className="space-y-1">
+                          <div className="h-2 w-10 bg-muted/50 rounded" />
+                          <Skeleton className="h-3 w-16" />
+                        </div>
+                        <div className="space-y-1">
+                          <div className="h-2 w-10 bg-muted/50 rounded" />
+                          <Skeleton className="h-3 w-20" />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-2">
+                        <Skeleton className="h-9 flex-1 rounded-md" />
+                        <Skeleton className="h-9 w-10 rounded-md" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="hidden md:block flex-1 overflow-auto bg-muted/5 relative">
+                  <DataTable<Student, unknown>
+                    columns={columns}
+                    data={[]}
+                    loading={true}
+                    virtualize={true}
+                    estimatedRowHeight={60}
+                    className="border-none rounded-none h-full"
+                    containerHeight="100%"
+                    sorting={sorting}
+                    onSortingChange={onSortingChange}
+                  />
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="data"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex-1 flex flex-col overflow-hidden">
+                <div className="md:hidden space-y-3 p-3 overflow-y-auto flex-1 bg-muted/5">
+                  {students.length === 0 ? (
+                    <div className="rounded-xl border p-6 text-center text-sm font-bold">
+                      No learners found for the selected filters.
+                    </div>
+                  ) : (
+                    students.map((student) => (
+                      <div
+                        key={student.id}
+                        className="rounded-xl border bg-[hsl(var(--card))] p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-bold text-sm uppercase leading-tight break-words">
+                              {student.fullName}
+                            </p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <p className="text-xs font-semibold text-foreground leading-snug">
+                                {formatLearningProgramLabel(
+                                  student.learningProgram,
+                                )}
+                              </p>
+                              {student.applicantType ===
+                                "LATE_ENROLLEE" && (
+                                <Badge className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-black">
+                                  Late Enrolled
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          {renderLearnerStatus(student)}
+                        </div>
+
+                        <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <p className="text-xs uppercase  font-bold text-foreground">
+                              LRN
+                            </p>
+                            <p className="font-bold">{student.lrn}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase  font-bold text-foreground">
+                              Gender
+                            </p>
+                            <p className="font-bold uppercase">
+                              {student.sex === "MALE" ||
+                              student.sex === "M"
+                                ? "M"
+                                : student.sex === "FEMALE" ||
+                                    student.sex === "F"
+                                  ? "F"
+                                  : student.sex || "—"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase  font-bold text-foreground">
+                              Grade Level
+                            </p>
+                            <p className="font-bold">
+                              {student.gradeLevel}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase  font-bold text-foreground">
+                              Section
+                            </p>
+                            <p className="font-bold">
+                              {formatSectionLabel(student.section)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <p className="mt-2 text-[11px] font-bold text-foreground">
+                          {activeTab === "active"
+                            ? "Enrolled "
+                            : "Updated "}
+                          {formatDate(
+                            student.dateEnrolled || student.createdAt,
+                          )}
+                        </p>
+
+                        <div className="mt-3 flex items-center gap-2">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="h-9 flex-1 text-xs font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
+                            onClick={() => handleViewDetails(student.id)}>
+                            <Eye className="h-3.5 w-3.5 mr-1.5" />
+                            View
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                className="h-9 w-10 px-0 text-xs font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
+                                aria-label={`Open actions for ${student.fullName}`}>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="end"
+                              className="w-56 font-semibold">
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleOpenProfilePage(student.id)
+                                }
+                                className="cursor-pointer">
+                                <Eye className="mr-2 h-4 w-4" />
+                                Open Full Profile
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  void openProfileQuickEditDialog(student)
+                                }
+                                className="cursor-pointer">
+                                <UserRoundPen className="mr-2 h-4 w-4" />
+                                Quick Update Demographics
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  openAssignLrnDialog(student)
+                                }
+                                className="cursor-pointer">
+                                <Fingerprint className="mr-2 h-4 w-4" />
+                                Input Official LIS LRN
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  openTransferOutDialog(student)
+                                }
+                                className="cursor-pointer text-amber-700 focus:text-amber-700">
+                                <FileBadge2 className="mr-2 h-4 w-4" />
+                                Mark as Transferred Out
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => openDropoutDialog(student)}
+                                className="cursor-pointer text-rose-700 focus:text-rose-700">
+                                <BadgeAlert className="mr-2 h-4 w-4" />
+                                Mark as Dropped Out
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="hidden md:block flex-1 overflow-auto bg-muted/5 relative">
+                  <DataTable<Student, unknown>
+                    columns={columns}
+                    data={students}
+                    loading={false}
+                    virtualize={true}
+                    estimatedRowHeight={60}
+                    className="border-none rounded-none h-full"
+                    containerHeight="100%"
+                    noResultsMessage="No learners found for the selected filters."
+                    sorting={sorting}
+                    onSortingChange={onSortingChange}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <PaginationBar
+            page={page}
+            total={total}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+            itemName="Learners"
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   if (!ayId) {
     return (
       <div className="flex h-[calc(100vh-12rem)] w-full items-center justify-center">
@@ -1224,7 +1638,7 @@ export default function Students() {
         <TabsList className="w-full flex flex-wrap h-auto gap-1 mb-6 p-1 bg-white border-border relative">
           <TabsTrigger
             value="active"
-            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none h-8">
+            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
             {activeTab === "active" && (
               <motion.div
                 layoutId="students-active-pill"
@@ -1232,15 +1646,14 @@ export default function Students() {
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
-            <div
-              className={`relative z-20 flex items-center justify-center gap-2 ${activeTab === "active" ? "text-primary-foreground" : ""}`}>
+            <span className="relative z-20">
               <span className="hidden sm:inline">Active Enrolled</span>
               <span className="sm:hidden">Active</span>
-            </div>
+            </span>
           </TabsTrigger>
           <TabsTrigger
             value="completers"
-            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none h-8">
+            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
             {activeTab === "completers" && (
               <motion.div
                 layoutId="students-active-pill"
@@ -1248,15 +1661,14 @@ export default function Students() {
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
-            <div
-              className={`relative z-20 flex items-center justify-center gap-2 ${activeTab === "completers" ? "text-primary-foreground" : ""}`}>
+            <span className="relative z-20">
               <span className="hidden sm:inline">JHS Completers</span>
               <span className="sm:hidden">Alumni</span>
-            </div>
+            </span>
           </TabsTrigger>
           <TabsTrigger
             value="inactive"
-            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none h-8">
+            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
             {activeTab === "inactive" && (
               <motion.div
                 layoutId="students-active-pill"
@@ -1264,442 +1676,62 @@ export default function Students() {
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
             )}
-            <div
-              className={`relative z-20 flex items-center justify-center gap-2 ${activeTab === "inactive" ? "text-primary-foreground" : ""}`}>
+            <span className="relative z-20">
               <span className="hidden sm:inline">Inactive / Out</span>
               <span className="sm:hidden">Inactive</span>
-            </div>
+            </span>
           </TabsTrigger>
         </TabsList>
 
         <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="space-y-6">
-            {/* Search and Filters */}
-            <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
-              <CardHeader className="px-3 sm:px-6 pb-3">
-                <div className="flex flex-col md:flex-row gap-3 md:gap-4 items-stretch md:items-end">
-                  <div className="flex-1 space-y-2 w-full">
-                    <Label className="text-xs sm:text-sm uppercase  font-bold">
-                      Search Learner
-                    </Label>
-                    <div className="relative">
-                      <Search className="absolute left-2.5 top-2.5 h-4 w-4" />
-                      <Input
-                        placeholder="LRN, first name, last name..."
-                        className="pl-9 h-10 text-sm font-bold"
-                        value={search}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setSearch(val);
-                          startTransition(() => {
-                            setPage(1);
-                          });
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:flex gap-3 md:gap-4 w-full md:w-auto">
-                    <div className="space-y-2">
-                      <Label className="text-xs sm:text-sm uppercase  font-bold">
-                        Grade Level
-                      </Label>
-                      <Select
-                        value={gradeLevelFilter}
-                        onValueChange={(value) => {
-                          startTransition(() => {
-                            setGradeLevelFilter(value);
-                            setPage(1);
-                          });
-                        }}>
-                        <SelectTrigger className="h-10 w-full md:w-52 text-sm font-bold">
-                          <SelectValue placeholder="All Grades" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem
-                            value="all"
-                            className="text-sm font-bold">
-                            All Grades
-                          </SelectItem>
-                          {gradeLevels.map((gl) => (
-                            <SelectItem
-                              key={gl.id}
-                              value={gl.id.toString()}
-                              className="text-sm font-bold">
-                              {gl.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs sm:text-sm uppercase  font-bold">
-                        Program
-                      </Label>
-                      <Select
-                        value={programFilter}
-                        onValueChange={(value) => {
-                          startTransition(() => {
-                            setProgramFilter(value);
-                            setPage(1);
-                          });
-                        }}>
-                        <SelectTrigger className="h-10 w-full md:w-52 text-sm font-bold">
-                          <SelectValue placeholder="All Programs" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem
-                            value="all"
-                            className="text-sm font-bold">
-                            All Programs
-                          </SelectItem>
-                          {PROGRAM_FILTER_OPTIONS.map((option) => (
-                            <SelectItem
-                              key={option.value}
-                              value={option.value}
-                              className="text-sm font-bold">
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs sm:text-sm uppercase  font-bold">
-                        Section
-                      </Label>
-                      <Select
-                        value={sectionFilter}
-                        onValueChange={(value) => {
-                          startTransition(() => {
-                            setSectionFilter(value);
-                            setPage(1);
-                          });
-                        }}>
-                        <SelectTrigger className="h-10 w-full md:w-52 text-sm font-bold">
-                          <SelectValue placeholder="All Sections" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem
-                            value="all"
-                            className="text-sm font-bold">
-                            All Sections
-                          </SelectItem>
-                          {filteredSections.map((sec) => (
-                            <SelectItem
-                              key={sec.id}
-                              value={sec.id.toString()}
-                              className="text-sm font-bold">
-                              {formatSectionLabel(sec.name)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="flex w-full md:w-auto items-center gap-2">
-                    <Button
-                      variant="outline"
-                      className="h-10 px-3 text-sm font-bold w-full md:w-auto"
-                      onClick={() => {
-                        void Promise.all([fetchStudents(), fetchSummary()]);
-                      }}
-                      disabled={loading || !ayId}>
-                      <RefreshCw
-                        className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
-                      />
-                      Refresh
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      className="h-10 px-3 text-sm font-bold w-full md:w-auto"
-                      onClick={() => {
-                        startTransition(() => {
-                          setSearch("");
-                          setGradeLevelFilter("all");
-                          setProgramFilter("all");
-                          setSectionFilter("all");
-                          setSortBy("dateEnrolled");
-                          setSortOrder("desc");
-                          setPage(1);
-                        });
-                      }}>
-                      Reset
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
-
-            {/* Student List */}
-            <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
-              <CardHeader className="px-3 sm:px-6 pb-2">
-                <CardTitle className="text-base sm:text-lg font-extrabold">
-                  {activeTab === "active"
-                    ? "Enrolled Learner Records"
-                    : activeTab === "completers"
-                      ? "JHS Completer Records"
-                      : "Inactive / Transferred Records"}
-                </CardTitle>
-                <CardDescription className="text-xs sm:text-sm font-semibold">
-                  Showing {students.length} of {total} learners
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-0 flex-1 overflow-hidden flex flex-col min-h-0">
-                <AnimatePresence mode="wait">
-                  {loading ? (
-                    <motion.div
-                      key="skeleton"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="flex-1 flex flex-col overflow-hidden">
-                      <div className="md:hidden space-y-3 p-3 overflow-y-auto flex-1 bg-muted/5">
-                        {Array.from({ length: 4 }).map((_, index) => (
-                          <div
-                            key={index}
-                            className="rounded-xl border bg-[hsl(var(--card))] p-3 space-y-4">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0 flex-1 space-y-2">
-                                <Skeleton className="h-4 w-3/4" />
-                                <Skeleton className="h-3 w-1/2" />
-                              </div>
-                              <Skeleton className="h-5 w-20 rounded-full" />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                              <div className="space-y-1">
-                                <div className="h-2 w-10 bg-muted/50 rounded" />
-                                <Skeleton className="h-3 w-24" />
-                              </div>
-                              <div className="space-y-1">
-                                <div className="h-2 w-10 bg-muted/50 rounded" />
-                                <Skeleton className="h-3 w-12" />
-                              </div>
-                              <div className="space-y-1">
-                                <div className="h-2 w-10 bg-muted/50 rounded" />
-                                <Skeleton className="h-3 w-16" />
-                              </div>
-                              <div className="space-y-1">
-                                <div className="h-2 w-10 bg-muted/50 rounded" />
-                                <Skeleton className="h-3 w-20" />
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2 pt-2">
-                              <Skeleton className="h-9 flex-1 rounded-md" />
-                              <Skeleton className="h-9 w-10 rounded-md" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="hidden md:block flex-1 overflow-auto bg-muted/5 relative">
-                        <DataTable<Student, unknown>
-                          columns={columns}
-                          data={[]}
-                          loading={true}
-                          virtualize={true}
-                          estimatedRowHeight={60}
-                          className="border-none rounded-none h-full"
-                          containerHeight="100%"
-                          sorting={sorting}
-                          onSortingChange={onSortingChange}
-                        />
-                      </div>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="data"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="flex-1 flex flex-col overflow-hidden">
-                      <div className="md:hidden space-y-3 p-3 overflow-y-auto flex-1 bg-muted/5">
-                        {students.length === 0 ? (
-                          <div className="rounded-xl border p-6 text-center text-sm font-bold">
-                            No learners found for the selected filters.
-                          </div>
-                        ) : (
-                          students.map((student) => (
-                            <div
-                              key={student.id}
-                              className="rounded-xl border bg-[hsl(var(--card))] p-3">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                  <p className="font-bold text-sm uppercase leading-tight break-words">
-                                    {student.fullName}
-                                  </p>
-                                  <div className="flex items-center gap-2 mt-0.5">
-                                    <p className="text-xs font-semibold text-foreground leading-snug">
-                                      {formatLearningProgramLabel(
-                                        student.learningProgram,
-                                      )}
-                                    </p>
-                                    {student.applicantType ===
-                                      "LATE_ENROLLEE" && (
-                                      <Badge className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-black">
-                                        Late Enrolled
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </div>
-                                {renderLearnerStatus(student)}
-                              </div>
-
-                              <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-                                <div>
-                                  <p className="text-xs uppercase  font-bold text-foreground">
-                                    LRN
-                                  </p>
-                                  <p className="font-bold">{student.lrn}</p>
-                                </div>
-                                <div>
-                                  <p className="text-xs uppercase  font-bold text-foreground">
-                                    Gender
-                                  </p>
-                                  <p className="font-bold uppercase">
-                                    {student.sex === "MALE" ||
-                                    student.sex === "M"
-                                      ? "M"
-                                      : student.sex === "FEMALE" ||
-                                          student.sex === "F"
-                                        ? "F"
-                                        : student.sex || "—"}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-xs uppercase  font-bold text-foreground">
-                                    Grade Level
-                                  </p>
-                                  <p className="font-bold">
-                                    {student.gradeLevel}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-xs uppercase  font-bold text-foreground">
-                                    Section
-                                  </p>
-                                  <p className="font-bold">
-                                    {formatSectionLabel(student.section)}
-                                  </p>
-                                </div>
-                              </div>
-
-                              <p className="mt-2 text-[11px] font-bold text-foreground">
-                                {activeTab === "active"
-                                  ? "Enrolled "
-                                  : "Updated "}
-                                {formatDate(
-                                  student.dateEnrolled || student.createdAt,
-                                )}
-                              </p>
-
-                              <div className="mt-3 flex items-center gap-2">
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  className="h-9 flex-1 text-xs font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
-                                  onClick={() => handleViewDetails(student.id)}>
-                                  <Eye className="h-3.5 w-3.5 mr-1.5" />
-                                  View
-                                </Button>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button
-                                      variant="secondary"
-                                      size="sm"
-                                      className="h-9 w-10 px-0 text-xs font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
-                                      aria-label={`Open actions for ${student.fullName}`}>
-                                      <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent
-                                    align="end"
-                                    className="w-56 font-semibold">
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        handleOpenProfilePage(student.id)
-                                      }
-                                      className="cursor-pointer">
-                                      <Eye className="mr-2 h-4 w-4" />
-                                      Open Full Profile
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        void openProfileQuickEditDialog(student)
-                                      }
-                                      className="cursor-pointer">
-                                      <UserRoundPen className="mr-2 h-4 w-4" />
-                                      Quick Update Demographics
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        openAssignLrnDialog(student)
-                                      }
-                                      className="cursor-pointer">
-                                      <Fingerprint className="mr-2 h-4 w-4" />
-                                      Input Official LIS LRN
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        openTransferOutDialog(student)
-                                      }
-                                      className="cursor-pointer text-amber-700 focus:text-amber-700">
-                                      <FileBadge2 className="mr-2 h-4 w-4" />
-                                      Mark as Transferred Out
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => openDropoutDialog(student)}
-                                      className="cursor-pointer text-rose-700 focus:text-rose-700">
-                                      <BadgeAlert className="mr-2 h-4 w-4" />
-                                      Mark as Dropped Out
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-
-                      <div className="hidden md:block flex-1 overflow-auto bg-muted/5 relative">
-                        <DataTable<Student, unknown>
-                          columns={columns}
-                          data={students}
-                          loading={false}
-                          virtualize={true}
-                          estimatedRowHeight={60}
-                          className="border-none rounded-none h-full"
-                          containerHeight="100%"
-                          noResultsMessage="No learners found for the selected filters."
-                          sorting={sorting}
-                          onSortingChange={onSortingChange}
-                        />
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <PaginationBar
-                  page={page}
-                  total={total}
-                  limit={limit}
-                  onPageChange={setPage}
-                  onLimitChange={setLimit}
-                  itemName="Learners"
-                />
-              </CardContent>
-            </Card>
-          </motion.div>
+          {activeTab === "active" && (
+            <motion.div
+              key="active"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="w-full">
+              <TabsContent
+                value="active"
+                forceMount
+                className="mt-0 focus-visible:outline-none ring-0">
+                {renderContent()}
+              </TabsContent>
+            </motion.div>
+          )}
+          {activeTab === "completers" && (
+            <motion.div
+              key="completers"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="w-full">
+              <TabsContent
+                value="completers"
+                forceMount
+                className="mt-0 focus-visible:outline-none ring-0">
+                {renderContent()}
+              </TabsContent>
+            </motion.div>
+          )}
+          {activeTab === "inactive" && (
+            <motion.div
+              key="inactive"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="w-full">
+              <TabsContent
+                value="inactive"
+                forceMount
+                className="mt-0 focus-visible:outline-none ring-0">
+                {renderContent()}
+              </TabsContent>
+            </motion.div>
+          )}
         </AnimatePresence>
       </Tabs>
 

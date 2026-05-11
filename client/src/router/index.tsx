@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate } from "react-router";
 
 import AuthLayout from "@/shared/layouts/AuthLayout";
 import AppLayout from "@/shared/layouts/AppLayout";
+import PublicLayout from "@/shared/layouts/PublicLayout";
 import RootLayout from "@/shared/layouts/RootLayout";
 import ProtectedRoute from "@/shared/components/ProtectedRoute";
 
@@ -45,41 +46,49 @@ export const router = createBrowserRouter([
     children: [
       // Public routes
       {
-        path: "/enrollment",
-        element: <Apply />,
-      },
-      {
-        path: "/early-registration",
-        element: <EarlyRegistrationApply />,
-      },
-      {
-        path: "/monitor",
-        element: <Monitor />,
-      },
-      {
-        path: "/sample-integration",
-        element: <SampleIntegrationPage />,
-      },
-      {
-        path: "/learner",
-        element: <LearnerPortal />,
-      },
-      {
-        path: "/learner/login",
-        element: <LearnerLogin />,
+        element: <PublicLayout />,
+        children: [
+          {
+            path: "/enrollment",
+            element: <Apply />,
+          },
+          {
+            path: "/early-registration",
+            element: <EarlyRegistrationApply />,
+          },
+          {
+            path: "/monitor",
+            element: <Monitor />,
+          },
+          {
+            path: "/sample-integration",
+            element: <SampleIntegrationPage />,
+          },
+          {
+            path: "/learner",
+            element: <LearnerPortal />,
+          },
+          {
+            path: "/learner/login",
+            element: <LearnerLogin />,
+          },
+          // Fallback
+          { path: "*", element: <NotFound /> },
+        ],
       },
       // Auth routes
       {
-        path: "/login",
-        element: (
-          <AuthLayout>
-            <Login />
-          </AuthLayout>
-        ),
-      },
-      {
-        path: "/change-password",
-        element: <ChangePassword />,
+        element: <AuthLayout />,
+        children: [
+          {
+            path: "/login",
+            element: <Login />,
+          },
+          {
+            path: "/change-password",
+            element: <ChangePassword />,
+          },
+        ],
       },
 
       // Protected routes for Head Registrar and System Admin
@@ -91,202 +100,142 @@ export const router = createBrowserRouter([
         ),
         children: [
           {
-            path: "/dashboard",
-            element: (
-              <AppLayout>
-                <Dashboard />
-              </AppLayout>
-            ),
-          },
-          {
-            path: "/monitoring/f2f-early-registration",
-            element: (
-              <AppLayout>
-                <F2FEarlyRegistration />
-              </AppLayout>
-            ),
-          },
-          {
-            path: "/applications",
-            element: (
-              <Navigate
-                to="/monitoring/early-registration"
-                replace
-              />
-            ),
-          },
-          {
-            path: "/applications/early-registration",
-            element: (
-              <Navigate
-                to="/monitoring/early-registration"
-                replace
-              />
-            ),
-          },
-          {
-            path: "/applications/enrollment",
-            element: (
-              <Navigate
-                to="/monitoring/enrollment"
-                replace
-              />
-            ),
-          },
-          {
-            path: "/applications/admission/:id",
-            element: (
-              <Navigate
-                to="/monitoring/early-registration"
-                replace
-              />
-            ),
-          },
-          {
-            path: "/monitoring/early-registration",
-            element: (
-              <AppLayout>
-                <EarlyRegistrationWorkspace />
-              </AppLayout>
-            ),
-          },
-          {
-            path: "/monitoring/early-registration/pipelines",
-            element: (
-              <Navigate
-                to="/monitoring/early-registration?view=batch"
-                replace
-              />
-            ),
-          },
-          {
-            path: "/monitoring/early-registration/:id",
-            element: (
-              <AppLayout>
-                <EarlyRegistrationDetail />
-              </AppLayout>
-            ),
-          },
-          {
-            path: "/monitoring/enrollment",
-            element: (
-              <AppLayout>
-                <Enrollment />
-              </AppLayout>
-            ),
-          },
-          {
-            path: "/monitoring/enrollment/walk-in",
-            element: (
-              <AppLayout>
-                <WalkInEncoder />
-              </AppLayout>
-            ),
-          },
-          {
-            path: "/monitoring/enrollment/eosy",
-            element: (
-              <AppLayout>
-                <EosyUpdating />
-              </AppLayout>
-            ),
-          },
-          {
-            path: "/students",
-            element: (
-              <AppLayout>
-                <Students />
-              </AppLayout>
-            ),
-          },
-          {
-            path: "/students/:id",
-            element: (
-              <AppLayout>
-                <Profile />
-              </AppLayout>
-            ),
-          },
-          {
-            path: "/sections",
-            element: (
-              <AppLayout>
-                <Sections />
-              </AppLayout>
-            ),
-          },
-          {
-            path: "/monitoring/enrollment/requirements",
-            element: (
-              <Navigate
-                to="/settings"
-                replace
-              />
-            ),
-          },
-          {
-            path: "/enrollment/requirements",
-            element: (
-              <Navigate
-                to="/settings"
-                replace
-              />
-            ),
-          },
-          {
-            path: "/settings",
-            element: (
-              <AppLayout>
-                <Settings />
-              </AppLayout>
-            ),
-          },
-        ],
-      },
-
-      // Protected routes for System Admin Only
-      {
-        element: <ProtectedRoute allowedRoles={["SYSTEM_ADMIN"]} />,
-        children: [
-          {
-            path: "/teachers",
-            element: (
-              <AppLayout>
-                <Teachers />
-              </AppLayout>
-            ),
-          },
-          {
-            path: "/admin/users",
-            element: (
-              <AppLayout>
-                <AdminUsers />
-              </AppLayout>
-            ),
-          },
-          {
-            path: "/admin/ecosystem",
-            element: (
-              <AppLayout>
-                <EcosystemSync />
-              </AppLayout>
-            ),
-          },
-          {
-            path: "/admin/system",
-            element: (
-              <AppLayout>
-                <SystemHealth />
-              </AppLayout>
-            ),
-          },
-          {
-            path: "/audit-logs",
-            element: (
-              <AppLayout>
-                <AuditLogs />
-              </AppLayout>
-            ),
+            element: <AppLayout />,
+            children: [
+              {
+                path: "/dashboard",
+                element: <Dashboard />,
+              },
+              {
+                path: "/monitoring/f2f-early-registration",
+                element: <F2FEarlyRegistration />,
+              },
+              {
+                path: "/applications",
+                element: (
+                  <Navigate
+                    to="/monitoring/early-registration"
+                    replace
+                  />
+                ),
+              },
+              {
+                path: "/applications/early-registration",
+                element: (
+                  <Navigate
+                    to="/monitoring/early-registration"
+                    replace
+                  />
+                ),
+              },
+              {
+                path: "/applications/enrollment",
+                element: (
+                  <Navigate
+                    to="/monitoring/enrollment"
+                    replace
+                  />
+                ),
+              },
+              {
+                path: "/applications/admission/:id",
+                element: (
+                  <Navigate
+                    to="/monitoring/early-registration"
+                    replace
+                  />
+                ),
+              },
+              {
+                path: "/monitoring/early-registration",
+                element: <EarlyRegistrationWorkspace />,
+              },
+              {
+                path: "/monitoring/early-registration/pipelines",
+                element: (
+                  <Navigate
+                    to="/monitoring/early-registration?view=batch"
+                    replace
+                  />
+                ),
+              },
+              {
+                path: "/monitoring/early-registration/:id",
+                element: <EarlyRegistrationDetail />,
+              },
+              {
+                path: "/monitoring/enrollment",
+                element: <Enrollment />,
+              },
+              {
+                path: "/monitoring/enrollment/walk-in",
+                element: <WalkInEncoder />,
+              },
+              {
+                path: "/monitoring/enrollment/eosy",
+                element: <EosyUpdating />,
+              },
+              {
+                path: "/students",
+                element: <Students />,
+              },
+              {
+                path: "/students/:id",
+                element: <Profile />,
+              },
+              {
+                path: "/sections",
+                element: <Sections />,
+              },
+              {
+                path: "/monitoring/enrollment/requirements",
+                element: (
+                  <Navigate
+                    to="/settings"
+                    replace
+                  />
+                ),
+              },
+              {
+                path: "/enrollment/requirements",
+                element: (
+                  <Navigate
+                    to="/settings"
+                    replace
+                  />
+                ),
+              },
+              {
+                path: "/settings",
+                element: <Settings />,
+              },
+              // Protected routes for System Admin Only
+              {
+                element: <ProtectedRoute allowedRoles={["SYSTEM_ADMIN"]} />,
+                children: [
+                  {
+                    path: "/teachers",
+                    element: <Teachers />,
+                  },
+                  {
+                    path: "/admin/users",
+                    element: <AdminUsers />,
+                  },
+                  {
+                    path: "/admin/ecosystem",
+                    element: <EcosystemSync />,
+                  },
+                  {
+                    path: "/admin/system",
+                    element: <SystemHealth />,
+                  },
+                  {
+                    path: "/audit-logs",
+                    element: <AuditLogs />,
+                  },
+                ],
+              },
+            ],
           },
         ],
       },
@@ -301,9 +250,6 @@ export const router = createBrowserRouter([
           />
         ),
       },
-
-      // Fallback
-      { path: "*", element: <NotFound /> },
     ],
   },
 ]);

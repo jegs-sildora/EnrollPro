@@ -186,9 +186,7 @@ export function TeacherDesignationSheet({
           <SheetDescription className="text-primary-foreground flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
             <span>{teacherDisplayName}</span>
             <span className="hidden sm:inline">|</span>
-            <span>
-              {ayLabel ? `S.Y. ${ayLabel}` : "No Active School Year"}
-            </span>
+            <span>{ayLabel ? `S.Y. ${ayLabel}` : "No Active School Year"}</span>
             {designationLastUpdated ? (
               <>
                 <span className="hidden sm:inline">|</span>
@@ -208,9 +206,7 @@ export function TeacherDesignationSheet({
                   alt={teacherDisplayName}
                 />
                 <div>
-                  <p className="text-xs uppercase text-foreground">
-                    Teacher
-                  </p>
+                  <p className="text-xs uppercase text-foreground">Teacher</p>
                   <h3 className="font-black text-base sm:text-lg uppercase break-words">
                     {teacherDisplayName}
                   </h3>
@@ -355,11 +351,15 @@ export function TeacherDesignationSheet({
                             className="font-bold">
                             No section selected
                           </SelectItem>
-                          {sortedGradeLevels.length === 0 && !advisorySectionsLoading && (
-                            <SelectItem value="__none_found__" disabled className="text-xs italic text-muted-foreground">
-                              No unassigned sections found.
-                            </SelectItem>
-                          )}
+                          {sortedGradeLevels.length === 0 &&
+                            !advisorySectionsLoading && (
+                              <SelectItem
+                                value="__none_found__"
+                                disabled
+                                className="text-xs italic text-foreground">
+                                No unassigned sections found.
+                              </SelectItem>
+                            )}
                           {sortedGradeLevels.map((gl) => (
                             <SelectGroup key={gl}>
                               <SelectLabel className="font-black uppercase py-1 px-2 mb-1 rounded-sm text-[10px] bg-muted/50">
