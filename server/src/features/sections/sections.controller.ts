@@ -306,6 +306,9 @@ export async function createSection(
       schoolYearId,
       programType,
       advisingTeacherId,
+      isHomogeneous,
+      isSnake,
+      tleSpecialization,
     } = req.body;
 
     const normalizedName = typeof name === "string" ? name.trim() : "";
@@ -340,10 +343,13 @@ export async function createSection(
         data: {
           name: normalizedName,
           sortOrder: resolvedSortOrder,
-          maxCapacity: maxCapacity ?? 40,
+          maxCapacity: maxCapacity ?? 45,
           gradeLevelId,
           schoolYearId,
           programType: normalizedProgramType as ApplicantType,
+          isHomogeneous: Boolean(isHomogeneous),
+          isSnake: Boolean(isSnake),
+          tleSpecialization: tleSpecialization || null,
         },
       });
 
@@ -420,6 +426,9 @@ export async function updateSection(
       maxCapacity,
       advisingTeacherId,
       programType,
+      isHomogeneous,
+      isSnake,
+      tleSpecialization,
     } = req.body;
 
     const existing = await prisma.section.findUnique({
@@ -447,6 +456,13 @@ export async function updateSection(
             : {}),
           ...(programType !== undefined
             ? { programType: programType as ApplicantType }
+            : {}),
+          ...(isHomogeneous !== undefined
+            ? { isHomogeneous: Boolean(isHomogeneous) }
+            : {}),
+          ...(isSnake !== undefined ? { isSnake: Boolean(isSnake) } : {}),
+          ...(tleSpecialization !== undefined
+            ? { tleSpecialization: tleSpecialization || null }
             : {}),
         },
       });
@@ -480,6 +496,22 @@ export async function updateSection(
           }
 
           if (advisingTeacherId) {
+            // Data Integrity: Terminate any existing active advisory for this teacher in this school year
+            // before creating the new one. This prevents a teacher from having multiple active sections.
+            await tx.sectionAdviser.updateMany({
+              where: {
+                teacherId: advisingTeacherId,
+                schoolYearId: s.schoolYearId,
+                status: SectionAdviserStatus.ACTIVE,
+                NOT: { sectionId: s.id },
+              },
+              data: {
+                status: SectionAdviserStatus.HANDED_OVER,
+                effectiveTo: new Date(),
+                handoverReason: "Reassigned to another section",
+              },
+            });
+
             const sy = await tx.schoolYear.findUnique({
               where: { id: s.schoolYearId },
             });

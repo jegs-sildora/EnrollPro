@@ -9,7 +9,9 @@ type AuthUser = {
   id: number;
   firstName: string;
   lastName: string;
-  email: string;
+  email: string | null;
+  employeeId: string | null;
+  accountName: string | null;
   role: string;
   mustChangePassword: boolean;
   isActive: boolean;
@@ -77,6 +79,8 @@ function toUserResponse(user: AuthUser) {
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
+    employeeId: user.employeeId,
+    accountName: user.accountName,
     role: user.role,
     mustChangePassword: user.mustChangePassword,
   };
@@ -104,12 +108,12 @@ function createAuthToken(user: AuthUser): string {
 }
 
 export async function login(req: Request, res: Response): Promise<void> {
-  const email = String(req.body.email).trim().toLowerCase();
+  const accountName = String(req.body.accountName).trim();
   const { password } = req.body as { password: string };
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({ where: { accountName } });
   if (!user) {
-    res.status(401).json({ message: "Invalid email or password" });
+    res.status(401).json({ message: "Invalid account name or password" });
     return;
   }
 
@@ -123,7 +127,7 @@ export async function login(req: Request, res: Response): Promise<void> {
 
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) {
-    res.status(401).json({ message: "Invalid email or password" });
+    res.status(401).json({ message: "Invalid account name or password" });
     return;
   }
 
@@ -136,7 +140,7 @@ export async function login(req: Request, res: Response): Promise<void> {
   await auditLog({
     userId: updatedUser.id,
     actionType: "USER_LOGIN",
-    description: `User ${updatedUser.email} logged in from ${req.ip}`,
+    description: `User ${updatedUser.accountName || updatedUser.email} logged in from ${req.ip}`,
     req,
   });
 
@@ -162,6 +166,8 @@ export async function me(req: Request, res: Response): Promise<void> {
       firstName: true,
       lastName: true,
       email: true,
+      employeeId: true,
+      accountName: true,
       role: true,
       mustChangePassword: true,
     },
@@ -210,6 +216,8 @@ export async function changePassword(
       firstName: true,
       lastName: true,
       email: true,
+      employeeId: true,
+      accountName: true,
       role: true,
       mustChangePassword: true,
       isActive: true,
@@ -227,11 +235,11 @@ export async function verifyCredentials(
   req: Request,
   res: Response,
 ): Promise<void> {
-  const email = String(req.body.email).trim().toLowerCase();
+  const accountName = String(req.body.accountName).trim();
   const { password } = req.body as { password: string };
 
   try {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { accountName } });
     if (!user) {
       res.status(401).json({ valid: false, message: "User not found" });
       return;

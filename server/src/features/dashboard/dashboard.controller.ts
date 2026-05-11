@@ -2,8 +2,7 @@ import type { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 
 export async function getStats(req: Request, res: Response): Promise<void> {
-  const settings = await prisma.schoolSetting.findFirst();
-  const schoolYearId = settings?.activeSchoolYearId;
+  const schoolYearId = req.schoolYearId;
 
   const [
     totalPending,

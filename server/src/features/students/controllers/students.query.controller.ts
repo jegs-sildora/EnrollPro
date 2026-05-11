@@ -519,11 +519,50 @@ export const createStudentsQueryController = (
     }
   };
 
+  const getStudentApplicationIdBySY = async (req: Request, res: Response) => {
+    try {
+      const learnerId = parsePositiveInt(req.params.learnerId);
+      const schoolYearId = parsePositiveInt(req.query.schoolYearId);
+
+      if (!learnerId || !schoolYearId) {
+        return res.status(400).json({ message: "learnerId and schoolYearId are required" });
+      }
+
+      // Try enrollment application first
+      const enrollmentApp = await deps.prisma.enrollmentApplication.findFirst({
+        where: { learnerId, schoolYearId },
+        select: { id: true },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (enrollmentApp) {
+        return res.json({ id: enrollmentApp.id });
+      }
+
+      // Fallback to early registration application
+      const earlyRegApp = await deps.prisma.earlyRegistrationApplication.findFirst({
+        where: { learnerId, schoolYearId },
+        select: { id: true },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (earlyRegApp) {
+        return res.json({ id: earlyRegApp.id });
+      }
+
+      return res.status(404).json({ message: "No record found for this student in the specified school year" });
+    } catch (error) {
+      console.error("[getStudentApplicationIdBySY] Error:", error);
+      res.status(500).json({ message: "Failed to look up student record" });
+    }
+  };
+
   return {
     getStudents,
     getStudentsSummary,
     getStudentById,
     getStudentRecordHistory,
+    getStudentApplicationIdBySY,
   };
 };
 
@@ -534,4 +573,5 @@ export const {
   getStudentsSummary,
   getStudentById,
   getStudentRecordHistory,
+  getStudentApplicationIdBySY,
 } = studentsQueryController;

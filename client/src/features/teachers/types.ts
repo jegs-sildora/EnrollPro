@@ -68,6 +68,7 @@ export interface Teacher {
   middleName: string | null;
   email: string | null;
   contactNumber: string | null;
+  sex: "MALE" | "FEMALE";
   designationTitle: string | null;
   specialization: string | null;
   department: string | null;
@@ -87,6 +88,7 @@ export interface TeacherFormState {
   email: string;
   employeeId: string;
   contactNumber: string;
+  sex: "MALE" | "FEMALE";
   specialization: string;
   department: string;
   plantillaPosition: string;

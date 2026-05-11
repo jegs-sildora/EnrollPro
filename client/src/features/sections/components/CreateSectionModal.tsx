@@ -19,6 +19,10 @@ import {
 import { Plus, Minus, Check } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
+import { 
+  DEFAULT_MAX_CAPACITY_REGULAR, 
+  DEFAULT_MAX_CAPACITY_SCP 
+} from "@enrollpro/shared/constants";
 
 interface Teacher {
   id: number;
@@ -63,7 +67,7 @@ export function CreateSectionModal({
   const [name, setName] = useState("");
   const [programType, setProgramType] = useState("REGULAR");
   const [adviserId, setAdviserId] = useState<string>("none");
-  const [capacity, setCapacity] = useState(45);
+  const [capacity, setCapacity] = useState(DEFAULT_MAX_CAPACITY_REGULAR);
   const [adding, setAdding] = useState(false);
   const [programOptions, setProgramOptions] = useState<
     { value: string; label: string }[]
@@ -75,7 +79,7 @@ export function CreateSectionModal({
       setName("");
       setProgramType("REGULAR");
       setAdviserId("none");
-      setCapacity(45);
+      setCapacity(DEFAULT_MAX_CAPACITY_REGULAR);
 
       const fetchOfferedScps = async () => {
         try {
@@ -104,6 +108,15 @@ export function CreateSectionModal({
       }
     }
   }, [open, schoolYearId]);
+
+  const handleProgramChange = (value: string) => {
+    setProgramType(value);
+    setCapacity(
+      value === "REGULAR" 
+        ? DEFAULT_MAX_CAPACITY_REGULAR 
+        : DEFAULT_MAX_CAPACITY_SCP
+    );
+  };
 
   const handleAdd = async () => {
     if (!name.trim()) return;
@@ -174,7 +187,7 @@ export function CreateSectionModal({
                 </Label>
                 <Select
                   value={programType}
-                  onValueChange={setProgramType}>
+                  onValueChange={handleProgramChange}>
                   <SelectTrigger className="h-10 font-bold">
                     <SelectValue />
                   </SelectTrigger>

@@ -1,5 +1,11 @@
 import "dotenv/config";
-import { PrismaClient, Role, SchoolYearStatus, Sex, PortalControl } from "../src/generated/prisma/index.js";
+import {
+  PrismaClient,
+  Role,
+  SchoolYearStatus,
+  Sex,
+  PortalControl,
+} from "../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 import * as bcrypt from "bcryptjs";
@@ -32,7 +38,7 @@ async function main() {
       earlyRegCloseDate: new Date("2026-02-28T00:00:00Z"),
       enrollOpenDate: new Date("2026-05-01T00:00:00Z"),
       enrollCloseDate: new Date("2026-05-31T00:00:00Z"),
-    }
+    },
   ];
 
   for (const y of years) {
@@ -45,7 +51,7 @@ async function main() {
   }
 
   const activeSy = await prisma.schoolYear.findFirst({
-    where: { yearLabel: "2025-2026" }
+    where: { yearLabel: "2025-2026" },
   });
 
   if (!activeSy) throw new Error("Timeline failure: 2025-2026 not found.");
@@ -69,9 +75,11 @@ async function main() {
   } else {
     await prisma.schoolSetting.update({
       where: { id: settings.id },
-      data: defaultSettings
+      data: defaultSettings,
     });
-    console.log("✅ SchoolSettings already exists, updated with default values and active SY.");
+    console.log(
+      "✅ SchoolSettings already exists, updated with default values and active SY.",
+    );
   }
 
   // 3. Ensure Grade Levels Grade 7-Grade 10 exist permanently
@@ -84,46 +92,73 @@ async function main() {
 
   for (const grade of grades) {
     await prisma.gradeLevel.upsert({
-        where: { name: grade.name },
-        update: { displayOrder: grade.displayOrder },
-        create: {
-            name: grade.name,
-            displayOrder: grade.displayOrder,
-        }
+      where: { name: grade.name },
+      update: { displayOrder: grade.displayOrder },
+      create: {
+        name: grade.name,
+        displayOrder: grade.displayOrder,
+      },
     });
     console.log(`✅ Verified Permanent Grade Level: ${grade.name}`);
   }
 
   // 4. Seed Standard DepEd JHS Departments
   const departments = [
-    { name: "Mathematics", code: "MATH", description: "Mathematics Department" },
+    {
+      name: "Mathematics",
+      code: "MATH",
+      description: "Mathematics Department",
+    },
     { name: "Science", code: "SCI", description: "Science Department" },
     { name: "English", code: "ENG", description: "English Department" },
     { name: "Filipino", code: "FIL", description: "Filipino Department" },
-    { name: "Araling Panlipunan", code: "AP", description: "Araling Panlipunan Department" },
-    { name: "Edukasyon sa Pagpapakatao", code: "ESP", description: "EsP Department" },
-    { name: "MAPEH", code: "MAPEH", description: "Music, Arts, Physical Education, and Health" },
-    { name: "Technology and Livelihood Education", code: "TLE", description: "TLE Department" }
+    {
+      name: "Araling Panlipunan",
+      code: "AP",
+      description: "Araling Panlipunan Department",
+    },
+    {
+      name: "Edukasyon sa Pagpapakatao",
+      code: "ESP",
+      description: "EsP Department",
+    },
+    {
+      name: "MAPEH",
+      code: "MAPEH",
+      description: "Music, Arts, Physical Education, and Health",
+    },
+    {
+      name: "Technology and Livelihood Education",
+      code: "TLE",
+      description: "TLE Department",
+    },
   ];
 
   for (const dept of departments) {
     await prisma.department.upsert({
       where: { code: dept.code },
       update: { name: dept.name, description: dept.description },
-      create: { name: dept.name, code: dept.code, description: dept.description },
+      create: {
+        name: dept.name,
+        code: dept.code,
+        description: dept.description,
+      },
     });
   }
   console.log("✅ Verified Standard DepEd Departments");
 
   // 5. Create first SYSTEM_ADMIN account
+  const adminId = process.env.ADMIN_EMPLOYEE_ID ?? "1000001";
   const email = process.env.ADMIN_EMAIL ?? "admin@deped.edu.ph";
   const password = process.env.ADMIN_PASSWORD ?? "Admin2026!";
   const firstName = process.env.ADMIN_FIRST_NAME ?? "SYSTEM";
   const lastName = process.env.ADMIN_LAST_NAME ?? "ADMINISTRATOR";
 
-  const existingAdmin = await prisma.user.findUnique({ where: { email } });
+  const existingAdmin = await prisma.user.findUnique({
+    where: { employeeId: adminId },
+  });
   if (existingAdmin) {
-    console.log(`✅ Admin account already exists: ${email}`);
+    console.log(`✅ Admin account already exists: ${adminId} (${email})`);
   } else {
     const hashedPassword = await bcrypt.hash(password, 12);
     await prisma.user.create({
@@ -131,30 +166,32 @@ async function main() {
         firstName,
         lastName,
         email,
+        employeeId: adminId,
+        accountName: adminId,
         password: hashedPassword,
         role: "SYSTEM_ADMIN" as Role,
         isActive: true,
         mustChangePassword: true,
         sex: "MALE" as Sex,
         designation: "SYSTEM ADMINISTRATOR",
-        employeeId: "SYSADMIN-001",
       },
     });
-    console.log(`✅ System Admin created: ${email}`);
+    console.log(`✅ System Admin created: ${adminId} (${email})`);
     console.log(`   Temporary password:   ${password}`);
   }
 
   // 6. Create default HEAD_REGISTRAR account
+  const regId = process.env.REGISTRAR_EMPLOYEE_ID ?? "1000002";
   const regEmail = process.env.REGISTRAR_EMAIL ?? "registrar@deped.edu.ph";
   const regPassword = process.env.REGISTRAR_PASSWORD ?? "Registrar2026!";
   const regFirstName = process.env.REGISTRAR_FIRST_NAME ?? "HEAD";
   const regLastName = process.env.REGISTRAR_LAST_NAME ?? "REGISTRAR";
 
   const existingRegistrar = await prisma.user.findUnique({
-    where: { email: regEmail },
+    where: { employeeId: regId },
   });
   if (existingRegistrar) {
-    console.log(`✅ Registrar account already exists: ${regEmail}`);
+    console.log(`✅ Registrar account already exists: ${regId} (${regEmail})`);
   } else {
     const hashedRegPassword = await bcrypt.hash(regPassword, 12);
     await prisma.user.create({
@@ -162,16 +199,17 @@ async function main() {
         firstName: regFirstName,
         lastName: regLastName,
         email: regEmail,
+        employeeId: regId,
+        accountName: regId,
         password: hashedRegPassword,
         role: "HEAD_REGISTRAR" as Role,
         isActive: true,
         mustChangePassword: true,
         sex: "FEMALE" as Sex,
         designation: "HEAD REGISTRAR",
-        employeeId: "REG-001",
       },
     });
-    console.log(`✅ Head Registrar created: ${regEmail}`);
+    console.log(`✅ Head Registrar created: ${regId} (${regEmail})`);
     console.log(`   Temporary password:   ${regPassword}`);
   }
 }

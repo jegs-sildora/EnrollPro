@@ -17,10 +17,11 @@ model User {
   middleName                           String?                        @map("middle_name")
   suffix                               String?
   sex                                  Sex                            @default(FEMALE)
-  employeeId                           String?                        @unique(map: "uq_users_employee_id") @map("employee_id")
+  employeeId                           String?                        @unique(map: "uq_users_employee_id") @map("employee_id") @db.VarChar(7)
+  accountName                          String?                        @unique(map: "uq_users_account_name") @map("account_name")
   designation                          String?
   mobileNumber                         String?                        @map("mobile_number")
-  email                                String                         @unique(map: "uq_users_email")
+  email                                String?                        @unique(map: "uq_users_email")
   password                             String
   role                                 Role
   isActive                             Boolean                        @default(true) @map("is_active")
@@ -51,7 +52,7 @@ model User {
 /// Faculty members who serve as section advisers; not login users
 model Teacher {
   id                    Int                   @id @default(autoincrement())
-  employeeId            String                @unique(map: "uq_teachers_employee_id") @map("employee_id")
+  employeeId            String                @unique(map: "uq_teachers_employee_id") @map("employee_id") @db.VarChar(7)
   firstName             String                @map("first_name")
   lastName              String                @map("last_name")
   middleName            String?               @map("middle_name")

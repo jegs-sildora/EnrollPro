@@ -51,6 +51,48 @@
       "sourceType": "github",
       "computedHash": "1597a649a5100015a30462cfba9b89b0fa8daa65e7e84d0e8556d8fb5ec26e63"
     },
+    "alloydb-postgres-access-management": {
+      "source": "gemini-cli-extensions/alloydb",
+      "sourceType": "github",
+      "skillPath": "skills/alloydb-postgres-access-management/SKILL.md",
+      "computedHash": "83e2da0d5582e3fb4a6b129e21620f93461d18c743b462612318c6442c80455e"
+    },
+    "alloydb-postgres-admin": {
+      "source": "gemini-cli-extensions/alloydb",
+      "sourceType": "github",
+      "skillPath": "skills/alloydb-postgres-admin/SKILL.md",
+      "computedHash": "8dfc26ed1ab23503684f8776c5cce20ca973b4f69919a5e5cb6e380c7fb4b8eb"
+    },
+    "alloydb-postgres-data": {
+      "source": "gemini-cli-extensions/alloydb",
+      "sourceType": "github",
+      "skillPath": "skills/alloydb-postgres-data/SKILL.md",
+      "computedHash": "153eea5ac6ccfacadaf04d18770b88919794e5068a19351b94e96a3bcd4a602c"
+    },
+    "alloydb-postgres-health": {
+      "source": "gemini-cli-extensions/alloydb",
+      "sourceType": "github",
+      "skillPath": "skills/alloydb-postgres-health/SKILL.md",
+      "computedHash": "d437cc81edae7b35ece3efe2a6576ad8849da940a108f5622d295127038c217b"
+    },
+    "alloydb-postgres-monitor": {
+      "source": "gemini-cli-extensions/alloydb",
+      "sourceType": "github",
+      "skillPath": "skills/alloydb-postgres-monitor/SKILL.md",
+      "computedHash": "07c09d3ac3879cfa699bba1634f7a4b60568814806ca773d0ace37d04f5b858d"
+    },
+    "alloydb-postgres-optimize": {
+      "source": "gemini-cli-extensions/alloydb",
+      "sourceType": "github",
+      "skillPath": "skills/alloydb-postgres-optimize/SKILL.md",
+      "computedHash": "921c3694d8bd05876f1329bb4fd8cac1fdf39f230b9879f54b299fcd207e9005"
+    },
+    "alloydb-postgres-replication": {
+      "source": "gemini-cli-extensions/alloydb",
+      "sourceType": "github",
+      "skillPath": "skills/alloydb-postgres-replication/SKILL.md",
+      "computedHash": "65891c4a04631a12bcb427efca724a4875f083d6a370cf517fc8b6c73fad96ee"
+    },
     "android-clean-architecture": {
       "source": "affaan-m/everything-claude-code",
       "sourceType": "github",
@@ -430,6 +472,12 @@
       "source": "google-gemini/gemini-skills",
       "sourceType": "github",
       "computedHash": "d521744b97bfe7847e7abc7b80e447fb1a5edc30d49f94b390db41318e1bdc4b"
+    },
+    "gemini-cli": {
+      "source": "forayconsulting/gemini_cli_skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "e1edd45be44cc0a19236817dfabfd46e2496c17cdc96f52dad57eb050dcbeeac"
     },
     "git-workflow": {
       "source": "affaan-m/everything-claude-code",

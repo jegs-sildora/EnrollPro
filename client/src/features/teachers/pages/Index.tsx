@@ -65,6 +65,7 @@ interface TeacherUpsertPayload {
   email: string;
   employeeId: string;
   contactNumber: string | null;
+  sex: "MALE" | "FEMALE";
   specialization: string | null;
   department: string | null;
   plantillaPosition: string | null;
@@ -88,12 +89,13 @@ function normalizeTeacherFieldValue(
     return [firstPart, secondPart, thirdPart].filter(Boolean).join("-");
   }
 
-  // Preserve case for select-based fields and emails
+  // Preserve case for select-based fields, emails, and sex
   if (
     field === "email" ||
     field === "department" ||
     field === "plantillaPosition" ||
-    field === "specialization"
+    field === "specialization" ||
+    field === "sex"
   ) {
     return value;
   }
@@ -416,6 +418,7 @@ export default function Teachers() {
         "contactNumber",
         teacher.contactNumber || "",
       ),
+      sex: teacher.sex,
       specialization: (teacher.specialization || "").toUpperCase(),
       department: (teacher.department || "").toUpperCase(),
       plantillaPosition: (teacher.plantillaPosition || "").toUpperCase(),

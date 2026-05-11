@@ -7,12 +7,21 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { Check, ChevronsUpDown, Search, X, Plus } from "lucide-react";
+import {
+  Check,
+  ChevronsUpDown,
+  Search,
+  X,
+  Plus,
+  Mars,
+  Venus,
+} from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { Badge } from "@/shared/ui/badge";
+import { cn } from "@/shared/lib/utils";
 import {
   Select,
   SelectContent,
@@ -486,6 +495,41 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                   />
                 </div>
               </div>
+
+              <div className="space-y-3">
+                <Label className="font-bold text-xs uppercase">
+                  Sex at Birth *
+                </Label>
+                <div className="flex gap-4">
+                  {(
+                    [
+                      { val: "MALE", icon: Mars },
+                      { val: "FEMALE", icon: Venus },
+                    ] as const
+                  ).map((s) => (
+                    <button
+                      key={s.val}
+                      type="button"
+                      onClick={() => onFieldChange("sex", s.val)}
+                      className={cn(
+                        "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-sm font-bold uppercase",
+                        formData.sex === s.val
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-border hover:bg-muted/50 text-muted-foreground",
+                      )}>
+                      <s.icon
+                        className={cn(
+                          "w-4 h-4",
+                          formData.sex === s.val
+                            ? "text-primary"
+                            : "text-muted-foreground",
+                        )}
+                      />
+                      {s.val}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </section>
 
             <section className="space-y-4 rounded-md border p-4 sm:p-5">
@@ -504,9 +548,9 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                     Employee ID No. *
                   </Label>
                   <Input
-                    placeholder="e.g., 123456 (DepEd ID)"
+                    placeholder="e.g., 4270043"
                     inputMode="numeric"
-                    maxLength={6}
+                    maxLength={7}
                     value={formData.employeeId}
                     onChange={(event) =>
                       onFieldChange(

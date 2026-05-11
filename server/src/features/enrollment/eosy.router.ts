@@ -61,4 +61,11 @@ router.post(
   ctrl.finalizeSchoolYear,
 );
 
+router.post(
+  "/school-year/unlock",
+  authenticate,
+  authorize("SYSTEM_ADMIN"),
+  ctrl.unlockSchoolYearEosy,
+);
+
 export default router;

@@ -184,8 +184,8 @@ function SYSwitcher() {
   }, []);
 
   const currentId = viewingSchoolYearId ?? activeSchoolYearId;
-  const currentLabel =
-    years.find((y) => y.id === currentId)?.yearLabel ?? "No School Year Set";
+  const currentYear = years.find((y) => y.id === currentId);
+  const currentLabel = currentYear?.yearLabel ?? "No School Year Set";
   const isOverride =
     viewingSchoolYearId && viewingSchoolYearId !== activeSchoolYearId;
 
@@ -199,12 +199,20 @@ function SYSwitcher() {
             <Button
               variant="outline"
               size="sm"
-              className="h-8 gap-1.5 text-xs font-bold transition-all duration-200"
+              className={cn(
+                "h-8 gap-1.5 text-xs font-bold transition-all duration-200 border-2",
+                currentYear?.status === "ARCHIVED" ? "border-slate-300 bg-slate-50" : "border-border"
+              )}
               onClick={() => setOpen(!open)}>
-              <Calendar className="size-3.5" />
-              <span className={isOverride ? "text-primary" : ""}>
+              <Calendar className={cn("size-3.5", currentYear?.status === "ARCHIVED" ? "text-slate-500" : "text-primary")} />
+              <span className={cn(isOverride ? "text-primary" : "", currentYear?.status === "ARCHIVED" ? "text-slate-600" : "")}>
                 {currentLabel}
               </span>
+              {currentYear?.status === "ARCHIVED" && (
+                <Badge variant="outline" className="h-4 px-1 text-[8px] font-black uppercase bg-slate-200 text-slate-700 border-slate-300">
+                  ARCHIVED
+                </Badge>
+              )}
               <ChevronsUpDown className="size-3 opacity-50" />
             </Button>
           </TooltipTrigger>
@@ -220,34 +228,42 @@ function SYSwitcher() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute right-0 top-full z-50 mt-1 min-w-45 rounded-md border border-border bg-popover font-bold shadow-lg">
-            {years.map((y) => (
-              <button
-                key={y.id}
-                onClick={() => {
-                  setViewingSY(y.id === activeSchoolYearId ? null : y.id);
-                  setOpen(false);
-                }}
-                className={`flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs transition-colors ${
-                  y.id === currentId
-                    ? "bg-accent text-accent-foreground"
-                    : "hover:bg-sidebar-accent hover:text-accent-foreground"
-                }`}>
-                <span className="flex-1 text-left">{y.yearLabel}</span>
-                <span
-                  className={`rounded px-1 py-0.5 text-[0.625rem] font-bold ${
-                    y.status === "ACTIVE"
-                      ? "bg-green-100 text-green-800"
-                      : y.status === "UPCOMING"
-                        ? "bg-blue-100 text-blue-800"
-                        : y.status === "DRAFT"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-gray-100 text-gray-800"
+            className="absolute right-0 top-full z-50 mt-1 min-w-45 rounded-md border border-border bg-popover font-bold shadow-lg overflow-hidden">
+            <div className="py-1">
+              {years.map((y) => (
+                <button
+                  key={y.id}
+                  onClick={() => {
+                    setViewingSY(y.id === activeSchoolYearId ? null : y.id);
+                    setOpen(false);
+                    // Trigger a full reload to ensure all components re-fetch data 
+                    // using the new school year context header.
+                    setTimeout(() => window.location.reload(), 50);
+                  }}
+                  className={`flex w-full items-center gap-2 px-3 py-2 text-xs transition-colors ${
+                    y.id === currentId
+                      ? "bg-accent text-accent-foreground"
+                      : "hover:bg-sidebar-accent hover:text-accent-foreground"
                   }`}>
-                  {y.status}
-                </span>
-              </button>
-            ))}
+                  <span className="flex-1 text-left">{y.yearLabel}</span>
+                  <span
+                    className={cn(
+                      "rounded px-1.5 py-0.5 text-[0.625rem] font-black uppercase",
+                      y.status === "ACTIVE"
+                        ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                        : y.status === "UPCOMING"
+                          ? "bg-blue-100 text-blue-800 border border-blue-200"
+                          : y.status === "DRAFT"
+                            ? "bg-amber-100 text-amber-800 border border-amber-200"
+                            : y.status === "ARCHIVED" || y.status === "BOSY_LOCKED"
+                              ? "bg-slate-200 text-slate-800 border border-slate-300"
+                              : "bg-gray-100 text-gray-800 border border-gray-200"
+                    )}>
+                    {y.status === "BOSY_LOCKED" ? "BOSY LOCKED" : y.status}
+                  </span>
+                </button>
+              ))}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

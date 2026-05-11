@@ -143,6 +143,7 @@ interface Section {
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MOBILE_PATTERN = /^09\d{9}$/;
 const PASSWORD_PATTERN = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+const EMPLOYEE_ID_PATTERN = /^[0-9]{7}$/;
 
 function generatePassword() {
   const length = 12;
@@ -182,19 +183,37 @@ export default function AdminUsers() {
   const showSkeleton = useDelayedLoading(loading);
 
   const [page, setPage] = useState(() => Number(searchParams.get("page")) || 1);
-  const [limit, setLimit] = useState(() => Number(searchParams.get("limit")) || 25);
+  const [limit, setLimit] = useState(
+    () => Number(searchParams.get("limit")) || 25,
+  );
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState(() => searchParams.get("search") || "");
-  const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get("search") || "");
+  const [debouncedSearch, setDebouncedSearch] = useState(
+    () => searchParams.get("search") || "",
+  );
 
-  const [roleFilter, setRoleFilter] = useState<string>(() => searchParams.get("role") || "all");
-  const [statusFilter, setStatusFilter] = useState<string>(() => searchParams.get("status") || "all");
-  const [gradeLevelFilter, setGradeLevelFilter] = useState<string>(() => searchParams.get("gradeLevelId") || "all");
-  const [sectionFilter, setSectionFilter] = useState<string>(() => searchParams.get("sectionId") || "all");
-  const [learnerStatusFilter, setLearnerStatusFilter] = useState<string>(() => searchParams.get("learnerStatus") || "all");
+  const [roleFilter, setRoleFilter] = useState<string>(
+    () => searchParams.get("role") || "all",
+  );
+  const [statusFilter, setStatusFilter] = useState<string>(
+    () => searchParams.get("status") || "all",
+  );
+  const [gradeLevelFilter, setGradeLevelFilter] = useState<string>(
+    () => searchParams.get("gradeLevelId") || "all",
+  );
+  const [sectionFilter, setSectionFilter] = useState<string>(
+    () => searchParams.get("sectionId") || "all",
+  );
+  const [learnerStatusFilter, setLearnerStatusFilter] = useState<string>(
+    () => searchParams.get("learnerStatus") || "all",
+  );
 
-  const [sortBy, setSortBy] = useState<string>(() => searchParams.get("sortBy") || "createdAt");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">(() => (searchParams.get("sortOrder") as "asc" | "desc") || "desc");
+  const [sortBy, setSortBy] = useState<string>(
+    () => searchParams.get("sortBy") || "createdAt",
+  );
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
+    () => (searchParams.get("sortOrder") as "asc" | "desc") || "desc",
+  );
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
 
   const updateUrlParams = useCallback(
@@ -205,9 +224,9 @@ export default function AdminUsers() {
       // Remove undefined, nulls, empty strings, and defaults
       Object.keys(updated).forEach((key) => {
         if (
-          updated[key] === undefined || 
-          updated[key] === null || 
-          updated[key] === "" || 
+          updated[key] === undefined ||
+          updated[key] === null ||
+          updated[key] === "" ||
           updated[key] === "all"
         ) {
           delete updated[key];
@@ -296,7 +315,8 @@ export default function AdminUsers() {
         try {
           const res = await api.get(`/sections/${activeSchoolYearId}`);
           const gl = res.data.gradeLevels.find(
-            (g: { gradeLevelId: number }) => g.gradeLevelId === parseInt(gradeLevelFilter),
+            (g: { gradeLevelId: number }) =>
+              g.gradeLevelId === parseInt(gradeLevelFilter),
           );
           setSections(gl?.sections || []);
         } catch (err) {
@@ -368,6 +388,11 @@ export default function AdminUsers() {
       !formData.employeeId.trim()
     ) {
       nextErrors.employeeId = "Employee ID is mandatory for this role.";
+    } else if (
+      formData.employeeId.trim() &&
+      !EMPLOYEE_ID_PATTERN.test(formData.employeeId.trim())
+    ) {
+      nextErrors.employeeId = "Employee ID must be exactly 7 numeric digits.";
     }
     if (!formData.mobileNumber.trim()) {
       nextErrors.mobileNumber = "Contact Number is required.";
@@ -400,6 +425,11 @@ export default function AdminUsers() {
       !profileFormData.employeeId.trim()
     ) {
       nextErrors.employeeId = "Employee ID is mandatory for this role.";
+    } else if (
+      profileFormData.employeeId.trim() &&
+      !EMPLOYEE_ID_PATTERN.test(profileFormData.employeeId.trim())
+    ) {
+      nextErrors.employeeId = "Employee ID must be exactly 7 numeric digits.";
     }
     if (
       profileFormData.mobileNumber.trim() &&
@@ -411,7 +441,14 @@ export default function AdminUsers() {
   };
 
   const getDuplicateEmailMessage = (err: unknown): string | null => {
-    const response = (err as { response?: { status?: number; data?: { field?: string; code?: string; message?: string } } }).response;
+    const response = (
+      err as {
+        response?: {
+          status?: number;
+          data?: { field?: string; code?: string; message?: string };
+        };
+      }
+    ).response;
     if (response?.status !== 409) return null;
     const field = response.data?.field;
     const code = response.data?.code;

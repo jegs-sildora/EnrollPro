@@ -53,7 +53,7 @@ async function getSchoolYearExportLockState(schoolYearId: number) {
   let lockReason: string | null = null;
   if (schoolYearFinalized) {
     lockReason =
-      "School year EOSY is finalized. Class reopening and status updates are locked.";
+      `School year ${schoolYear.yearLabel} EOSY is permanently finalized and archived. Class reopening and status updates are globally locked.`;
   } else if (totalSections === 0) {
     lockReason =
       "No sections found for this school year. Add sections before school-level finalization.";
@@ -446,7 +446,10 @@ export async function finalizeSchoolYear(
 
     const updated = await prisma.schoolYear.update({
       where: { id: syId },
-      data: { isEosyFinalized: true },
+      data: {
+        isEosyFinalized: true,
+        status: "ARCHIVED",
+      },
     });
 
     // Hook: Queue Ecosystem Sync for entire school year
@@ -455,7 +458,69 @@ export async function finalizeSchoolYear(
     await auditLog({
       userId: req.user!.userId,
       actionType: "SCHOOL_YEAR_FINALIZED",
-      description: `Master Finalized EOSY for school year ${updated.yearLabel}`,
+      description: `Master Finalized EOSY for school year ${updated.yearLabel} - System transitioned to ARCHIVED status`,
+      subjectType: "SchoolYear",
+      recordId: syId,
+      req,
+    });
+
+    const state = await getSchoolYearExportLockState(syId);
+    res.json({ schoolYear: updated, exportLock: state });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function unlockSchoolYearEosy(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { schoolYearId, pin, justification } = req.body;
+    const syId = parseInt(String(schoolYearId));
+
+    if (!Number.isInteger(syId)) {
+      throw new AppError(400, "A valid schoolYearId is required.");
+    }
+
+    const adminPin = process.env.ADMIN_BOSY_LOCK_PIN || "123456";
+    if (pin !== adminPin) {
+      throw new AppError(403, "Invalid Security PIN for emergency unlock.");
+    }
+
+    if (!justification || justification.length < 10) {
+      throw new AppError(
+        400,
+        "A valid justification (min 10 characters) is required for emergency archive unlock.",
+      );
+    }
+
+    const schoolYear = await prisma.schoolYear.findUnique({
+      where: { id: syId },
+      select: { id: true, yearLabel: true, isEosyFinalized: true },
+    });
+
+    if (!schoolYear) {
+      throw new AppError(404, "School year not found.");
+    }
+
+    if (!schoolYear.isEosyFinalized) {
+      throw new AppError(400, "School year is not finalized.");
+    }
+
+    const updated = await prisma.schoolYear.update({
+      where: { id: syId },
+      data: {
+        isEosyFinalized: false,
+        status: "BOSY_LOCKED", // Revert to BOSY_LOCKED so teachers can correct records
+      },
+    });
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "SCHOOL_YEAR_EMERGENCY_UNLOCK",
+      description: `Admin triggered EMERGENCY EOSY UNLOCK for S.Y. ${updated.yearLabel}. Justification: ${justification}`,
       subjectType: "SchoolYear",
       recordId: syId,
       req,

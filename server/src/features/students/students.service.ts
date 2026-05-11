@@ -123,6 +123,7 @@ const resolveStudentOrderBy = (
 
 export async function findStudents(query: {
   schoolYearId?: number | string;
+  learnerId?: number | string;
   search?: string;
   gradeLevelId?: number | string;
   sectionId?: number | string;
@@ -136,6 +137,7 @@ export async function findStudents(query: {
 }) {
   const {
     schoolYearId,
+    learnerId,
     search,
     gradeLevelId,
     sectionId,
@@ -148,6 +150,7 @@ export async function findStudents(query: {
     sortOrder,
   } = query;
   const resolvedSchoolYearId = parsePositiveInt(schoolYearId);
+  const resolvedLearnerId = parsePositiveInt(learnerId);
   // If schoolYearId is not provided, we might be searching globally (e.g. for Completers)
   
   const resolvedPage = parsePositiveInt(page) ?? 1;
@@ -239,6 +242,10 @@ export async function findStudents(query: {
   const where: Prisma.EnrollmentApplicationWhereInput = {
     schoolYearId: resolvedSchoolYearId,
   };
+
+  if (resolvedLearnerId) {
+    where.learnerId = resolvedLearnerId;
+  }
   
   if (resolvedStatuses) {
     where.status = resolvedStatuses.length === 1

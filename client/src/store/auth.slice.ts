@@ -8,7 +8,9 @@ interface User {
   id: number;
   firstName: string;
   lastName: string;
-  email: string;
+  email: string | null;
+  employeeId: string | null;
+  accountName: string | null;
   role: AuthRole;
   mustChangePassword?: boolean;
 }

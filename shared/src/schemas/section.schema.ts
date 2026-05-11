@@ -7,8 +7,11 @@ export const createSectionSchema = z.object({
   gradeLevelId: z.number().int().positive(),
   schoolYearId: z.number().int().positive(),
   programType: ApplicantTypeEnum.default("REGULAR"),
+  isHomogeneous: z.boolean().default(false),
+  isSnake: z.boolean().default(false),
+  tleSpecialization: z.string().nullable().optional(),
   advisingTeacherId: z.number().int().positive().optional().nullable(),
-  maxCapacity: z.number().int().positive().default(40),
+  maxCapacity: z.number().int().positive().default(45),
 });
 
 export const updateSectionSchema = createSectionSchema.partial();
@@ -26,7 +29,7 @@ export const DEFAULT_SECTIONING_PARAMS: SectioningParams = {
   steQuota: 70,
   steSections: 2,
   pilotSectionCount: 5,
-  sectionCapacity: 40,
+  sectionCapacity: 45,
 };
 
 export const batchSectioningSchema = z.object({

@@ -7,7 +7,11 @@ export const createUserSchema = z.object({
   middleName: z.string().optional().nullable(),
   suffix: z.string().optional().nullable(),
   sex: SexEnum.optional().nullable(),
-  employeeId: z.string().optional().nullable(),
+  employeeId: z
+    .string()
+    .regex(/^[0-9]{7}$/, "Employee ID must be exactly 7 numeric digits")
+    .optional()
+    .nullable(),
   designation: z.string().optional().nullable(),
   mobileNumber: z.string().optional().nullable(),
   email: z.string().email(),

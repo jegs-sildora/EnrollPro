@@ -40,7 +40,9 @@ type AuthResponseUser = {
   id: number;
   firstName: string;
   lastName: string;
-  email: string;
+  email: string | null;
+  employeeId: string | null;
+  accountName: string | null;
   role: string;
   mustChangePassword?: boolean;
 };
@@ -249,7 +251,7 @@ export default function Login() {
   const acronym = useMemo(() => getAcronym(schoolName), [schoolName]);
 
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
+  const [accountName, setAccountName] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -260,9 +262,12 @@ export default function Login() {
 
   // Hydrate from localStorage
   useEffect(() => {
-    const savedEmail = localStorage.getItem("rememberedEmail");
-    if (savedEmail) {
-      setEmail(savedEmail);
+    const savedId =
+      localStorage.getItem("rememberedAccountName") ||
+      localStorage.getItem("rememberedEmployeeId") ||
+      localStorage.getItem("rememberedEmail");
+    if (savedId) {
+      setAccountName(savedId);
       setRememberMe(true);
     }
   }, []);
@@ -317,9 +322,12 @@ export default function Login() {
 
       // Persistence logic
       if (rememberMe) {
-        localStorage.setItem("rememberedEmail", payload.user.email);
+        localStorage.setItem(
+          "rememberedAccountName",
+          payload.user.accountName || "",
+        );
       } else {
-        localStorage.removeItem("rememberedEmail");
+        localStorage.removeItem("rememberedAccountName");
       }
 
       setError(null);
@@ -345,13 +353,13 @@ export default function Login() {
 
     try {
       const response = await api.post<AuthResponsePayload>("/auth/login", {
-        email: email.trim(),
+        accountName: accountName.trim(),
         password,
       });
       completeLogin(response.data);
     } catch (err: unknown) {
       if (isAxiosError(err) && err.response?.status === 401) {
-        setError("Invalid email or password");
+        setError("Invalid account name or password");
       } else {
         toastApiError(err as never);
       }
@@ -561,9 +569,9 @@ export default function Login() {
                 className="space-y-3">
                 <div className="space-y-1.5">
                   <Label
-                    htmlFor="email"
+                    htmlFor="accountName"
                     className="text-gray-800 font-semibold text-sm pl-1">
-                    Email
+                    Account Name
                   </Label>
                   <div className="relative group">
                     <div className="absolute left-0 top-0 bottom-0 w-11 flex items-center justify-center pointer-events-none z-10">
@@ -572,18 +580,18 @@ export default function Login() {
                       </div>
                     </div>
                     <Input
-                      id="email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={email}
+                      id="accountName"
+                      type="text"
+                      placeholder="Employee ID or LR#"
+                      value={accountName}
                       onChange={(event) => {
-                        setEmail(event.target.value);
+                        setAccountName(event.target.value);
                         if (error) {
                           setError(null);
                         }
                       }}
                       className="pl-12 h-11 bg-gray-50 border-gray-200 hover:border-gray-300 focus:ring-4 focus:ring-primary/15 rounded-xl transition-all duration-200 placeholder:text-gray-400 text-gray-900 font-bold"
-                      autoComplete="email"
+                      autoComplete="username"
                       required
                     />
                   </div>

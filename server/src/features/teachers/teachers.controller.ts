@@ -141,6 +141,7 @@ export async function index(req: Request, res: Response) {
         department: teacher.department?.code || null,
         plantillaPosition: teacher.plantillaPosition,
         photoPath: teacher.photoPath,
+        sex: teacher.sex,
         subjects: teacher.subjects.map((s) => s.subject),
         isActive: teacher.isActive,
         createdAt: teacher.createdAt,
@@ -244,6 +245,7 @@ export async function store(req: Request, res: Response) {
       email,
       employeeId,
       contactNumber,
+      sex,
       specialization,
       department,
       plantillaPosition,
@@ -288,6 +290,7 @@ export async function store(req: Request, res: Response) {
           lastName: normalizedLastName,
           middleName: normalizeOptionalUpperText(middleName),
           email: normalizedEmail,
+          sex: sex === "MALE" ? "MALE" : "FEMALE",
           isActive: true, // Reactivate user if profile is recreated
         },
         create: {
@@ -298,6 +301,7 @@ export async function store(req: Request, res: Response) {
           employeeId: normalizedEmployeeId,
           password: defaultPasswordHash,
           role: "TEACHER",
+          sex: sex === "MALE" ? "MALE" : "FEMALE",
           isActive: true,
           mustChangePassword: true,
         },
@@ -312,6 +316,7 @@ export async function store(req: Request, res: Response) {
           email: normalizedEmail,
           employeeId: normalizedEmployeeId,
           contactNumber: normalizedContactNumber,
+          sex: sex === "MALE" ? "MALE" : "FEMALE",
           specialization: normalizeOptionalUpperText(specialization),
           department: deptCode ? { connect: { code: deptCode } } : undefined,
           plantillaPosition: normalizeOptionalUpperText(plantillaPosition),
@@ -418,6 +423,7 @@ export async function update(req: Request, res: Response) {
           lastName: normalizedLastName,
           middleName: normalizeOptionalUpperText(middleName),
           email: normalizedEmail,
+          sex: sex === "MALE" ? "MALE" : "FEMALE",
           employeeId: normalizedEmployeeId,
         },
       });
@@ -432,6 +438,7 @@ export async function update(req: Request, res: Response) {
           email: normalizedEmail,
           employeeId: normalizedEmployeeId,
           contactNumber: normalizedContactNumber,
+          sex: sex === "MALE" ? "MALE" : "FEMALE",
           specialization: normalizeOptionalUpperText(specialization),
           department: deptCode
             ? { connect: { code: deptCode } }

@@ -696,6 +696,10 @@ export const SectioningMethodEnum = z.enum([
   "TRANSFER",
 ]);
 
+// ─── Capacity Defaults ──────────────────────────────────
+export const DEFAULT_MAX_CAPACITY_REGULAR = 45;
+export const DEFAULT_MAX_CAPACITY_SCP = 35;
+
 // â"€â"€â"€ Types derived from enums â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 export type AssessmentKind = z.infer<typeof AssessmentKindEnum>;
 export type ScpType = z.infer<typeof ScpTypeEnum>;

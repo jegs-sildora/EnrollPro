@@ -19,6 +19,10 @@ import {
 import { Plus, Minus, Check } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
+import { 
+  DEFAULT_MAX_CAPACITY_REGULAR, 
+  DEFAULT_MAX_CAPACITY_SCP 
+} from "@enrollpro/shared/constants";
 
 interface Teacher {
   id: number;
@@ -44,18 +48,20 @@ interface EditSectionModalProps {
   onSuccess: () => void;
 }
 
-const PROGRAM_TYPE_OPTIONS = [
-  { value: "REGULAR", label: "Regular" },
-  { value: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "STE" },
-  { value: "SPECIAL_PROGRAM_IN_THE_ARTS", label: "SPA" },
-  { value: "SPECIAL_PROGRAM_IN_SPORTS", label: "SPS" },
-  { value: "SPECIAL_PROGRAM_IN_JOURNALISM", label: "SPJ" },
-  { value: "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE", label: "SPFL" },
-  {
-    value: "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
-    label: "SPTVE",
-  },
-];
+interface ScpConfig {
+  scpType: string;
+  isOffered: boolean;
+}
+
+const SCP_LABELS: Record<string, string> = {
+  REGULAR: "Regular (BEC)",
+  SCIENCE_TECHNOLOGY_AND_ENGINEERING: "STE",
+  SPECIAL_PROGRAM_IN_THE_ARTS: "SPA",
+  SPECIAL_PROGRAM_IN_SPORTS: "SPS",
+  SPECIAL_PROGRAM_IN_JOURNALISM: "SPJ",
+  SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: "SPFL",
+  SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION: "SPTVE",
+};
 
 const SECTION_ACRONYMS = new Set(["STE", "SPA", "SPS", "SPJ", "SPFL", "SPTVE"]);
 
@@ -94,6 +100,27 @@ function formatSectionLabel(rawSection: string | null | undefined): string {
     .join("");
 }
 
+function resolveApiErrorMessage(error: unknown): string | null {
+  const apiError = error as {
+    response?: {
+      data?: {
+        message?: string;
+        errors?: Record<string, string[]>;
+      };
+    };
+  };
+
+  const data = apiError.response?.data;
+  if (data?.errors) {
+    const firstValidationMessage = Object.values(data.errors).flat()[0];
+    if (firstValidationMessage) {
+      return firstValidationMessage;
+    }
+  }
+
+  return data?.message ?? null;
+}
+
 export function EditSectionModal({
   section,
   onOpenChange,
@@ -101,43 +128,68 @@ export function EditSectionModal({
   onSuccess,
 }: EditSectionModalProps) {
   const [name, setName] = useState("");
-  const [sortOrder, setSortOrder] = useState("");
-  const [capacity, setCapacity] = useState("40");
+  const [capacity, setCapacity] = useState(45);
   const [programType, setProgramType] = useState<string>("REGULAR");
   const [adviserId, setAdviserId] = useState<string>("none");
   const [submitting, setSubmitting] = useState(false);
   const [availableTeachers, setAvailableTeachers] = useState<Teacher[]>([]);
   const [loadingTeachers, setLoadingTeachers] = useState(false);
+  const [programOptions, setProgramOptions] = useState<
+    { value: string; label: string }[]
+  >([{ value: "REGULAR", label: "Regular (BEC)" }]);
 
   useEffect(() => {
-    const fetchAvailableTeachers = async () => {
+    const fetchInitialData = async () => {
       if (!section || !schoolYearId) return;
       setLoadingTeachers(true);
       try {
-        const res = await api.get(
-          `/sections/teachers?schoolYearId=${schoolYearId}&excludeSectionId=${section.id}`,
-        );
-        setAvailableTeachers(res.data.teachers);
+        const [teachersRes, scpsRes] = await Promise.all([
+          api.get(`/sections/teachers?schoolYearId=${schoolYearId}&excludeSectionId=${section.id}`),
+          api.get<{ scpProgramConfigs: ScpConfig[] }>(`/curriculum/${schoolYearId}/scp-config`),
+        ]);
+        
+        setAvailableTeachers(teachersRes.data.teachers);
+        
+        const configs = scpsRes.data.scpProgramConfigs || [];
+        const offeredScps = configs
+          .filter((cfg) => cfg.isOffered)
+          .map((cfg) => ({
+            value: cfg.scpType,
+            label: SCP_LABELS[cfg.scpType] || cfg.scpType,
+          }));
+
+        setProgramOptions([
+          { value: "REGULAR", label: "Regular (BEC)" },
+          ...offeredScps,
+        ]);
       } catch (err) {
-        console.error("Failed to fetch available teachers", err);
+        console.error("Failed to fetch initial data", err);
       } finally {
         setLoadingTeachers(false);
       }
     };
 
     if (section) {
-      setName(section.name); // Use raw name to preserve prefixes
-      setSortOrder(String(section.sortOrder ?? ""));
-      setCapacity(section.maxCapacity.toString());
+      setName(section.name);
+      setCapacity(section.maxCapacity);
       setProgramType(section.programType ?? "REGULAR");
       setAdviserId(
         section.advisingTeacher
           ? section.advisingTeacher.id.toString()
           : "none",
       );
-      void fetchAvailableTeachers();
+      void fetchInitialData();
     }
   }, [section, schoolYearId]);
+
+  const handleProgramChange = (value: string) => {
+    setProgramType(value);
+    setCapacity(
+      value === "REGULAR" 
+        ? DEFAULT_MAX_CAPACITY_REGULAR 
+        : DEFAULT_MAX_CAPACITY_SCP
+    );
+  };
 
   const handleEdit = async () => {
     if (!section || !name.trim()) return;
@@ -149,11 +201,10 @@ export function EditSectionModal({
         maxCapacity: number;
         programType: string;
         advisingTeacherId: number | null;
-        sortOrder: number;
       }> = {};
+      
       if (name.trim() !== section.name) payload.name = name.trim();
-      if (parseInt(capacity) !== section.maxCapacity)
-        payload.maxCapacity = parseInt(capacity);
+      if (capacity !== section.maxCapacity) payload.maxCapacity = capacity;
       if (programType !== section.programType) payload.programType = programType;
 
       const currentAdviserId = section.advisingTeacher
@@ -162,11 +213,6 @@ export function EditSectionModal({
       if (adviserId !== currentAdviserId) {
         payload.advisingTeacherId =
           adviserId === "none" ? null : parseInt(adviserId);
-      }
-
-      const orderNum = parseInt(sortOrder, 10);
-      if (!isNaN(orderNum) && orderNum !== section.sortOrder) {
-        payload.sortOrder = orderNum;
       }
 
       // If nothing changed, just close
@@ -183,12 +229,10 @@ export function EditSectionModal({
       onOpenChange(false);
       onSuccess();
     } catch (err) {
-      const apiError = err as { response?: { data?: { message?: string } } };
+      const message = resolveApiErrorMessage(err);
       sileo.error({
         title: "Section update failed",
-        description:
-          apiError.response?.data?.message ||
-          "Your changes were not saved. Please try again.",
+        description: message || "Your changes were not saved. Please try again.",
       });
     } finally {
       setSubmitting(false);
@@ -234,12 +278,12 @@ export function EditSectionModal({
                 </Label>
                 <Select
                   value={programType}
-                  onValueChange={setProgramType}>
+                  onValueChange={handleProgramChange}>
                   <SelectTrigger className="h-10 font-bold">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    {PROGRAM_TYPE_OPTIONS.map((opt) => (
+                  <SelectContent className="font-bold">
+                    {programOptions.map((opt) => (
                       <SelectItem
                         key={opt.value}
                         value={opt.value}>
@@ -299,17 +343,13 @@ export function EditSectionModal({
                     variant="outline"
                     size="icon"
                     className="h-10 w-10 rounded-r-none border-r-0"
-                    onClick={() =>
-                      setCapacity(
-                        String(Math.max(1, (parseInt(capacity) || 0) - 1)),
-                      )
-                    }>
+                    onClick={() => setCapacity(Math.max(1, capacity - 1))}>
                     <Minus className="h-4 w-4" />
                   </Button>
                   <Input
                     type="number"
                     value={capacity}
-                    onChange={(e) => setCapacity(e.target.value)}
+                    onChange={(e) => setCapacity(parseInt(e.target.value) || 0)}
                     className="h-10 w-full rounded-none text-center font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <Button
@@ -317,9 +357,7 @@ export function EditSectionModal({
                     variant="outline"
                     size="icon"
                     className="h-10 w-10 rounded-l-none border-l-0"
-                    onClick={() =>
-                      setCapacity(String((parseInt(capacity) || 0) + 1))
-                    }>
+                    onClick={() => setCapacity(capacity + 1)}>
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>

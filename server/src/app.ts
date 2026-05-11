@@ -25,6 +25,7 @@ import exportRoutes from "./features/export/export.router.js";
 import integrationRoutes from "./features/integration/integration.router.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { historicalReadOnlyGuard } from "./middleware/historical-read-only.guard.js";
+import { schoolYearContext } from "./middleware/school-year-context.middleware.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -107,6 +108,10 @@ app.use(cookieParser());
 app.use(historicalReadOnlyGuard);
 
 const apiRouter = express.Router();
+
+// 5. School Year Context
+// Resolve the school year ID for all API requests (from header or active settings)
+apiRouter.use(schoolYearContext);
 
 // Debug endpoint
 apiRouter.get("/debug-server", (req, res) => {

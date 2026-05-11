@@ -92,8 +92,14 @@ function clampProgress(value: number): number {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { enrollmentPhase, systemStatus, activeSchoolYearLabel } =
-    useSettingsStore();
+  const {
+    enrollmentPhase,
+    systemStatus,
+    activeSchoolYearLabel,
+    activeSchoolYearId,
+    viewingSchoolYearId,
+  } = useSettingsStore();
+  const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const isAdmin = user?.role === "SYSTEM_ADMIN";
   const isBosyLocked = systemStatus === "BOSY_LOCKED";
 
@@ -151,7 +157,7 @@ export default function Dashboard() {
     };
 
     fetchData();
-  }, [isAdmin]);
+  }, [isAdmin, ayId]);
 
   const autoFocus = useMemo<FocusMode>(() => {
     if (enrollmentPhase === "EARLY_REGISTRATION") {

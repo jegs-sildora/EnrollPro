@@ -307,18 +307,147 @@ Public read-only feeds for companion systems (ATLAS, SMART, AIMS).
 | Method | Path | Auth | Description |
 | :--- | :--- | :--- | :--- |
 | GET | `/api/integration/v1/health` | None | Connectivity and DB health check. |
-| GET | `/api/integration/v1/learners` | None | List of all learners in the system. |
-| GET | `/api/integration/v1/faculty` | None | List of all faculty members. |
-| GET | `/api/integration/v1/sections` | None | List of active sections with occupancy. |
+| GET | `/api/integration/v1/learners` | None | Paginated list of learners. **Requires `schoolYearId`**. Supports `page`/`limit`. |
+| GET | `/api/integration/v1/faculty` | None | List of all faculty members. Defaults to active school year if `schoolYearId` is omitted. |
+| GET | `/api/integration/v1/sections` | None | List of sections with occupancy. Defaults to active school year if `schoolYearId` is omitted. |
+| GET | `/api/integration/v1/sections/:sectionId/learners` | None | Paginated roster for a specific section. Supports `page`/`limit`. |
 | GET | `/api/integration/v1/ecosystem/status`| None | Status of cross-system sync jobs. |
 
 ### Sample: `GET /api/integration/v1/health`
 ```json
 {
-  "status": "UP",
-  "timestamp": "2026-05-11T12:00:00Z",
-  "database": "CONNECTED",
-  "activeSchoolYear": "2026-2027"
+  "data": {
+    "status": "ok",
+    "db": "connected",
+    "dbLatencyMs": 12,
+    "timestamp": "2026-05-11T12:00:00Z"
+  }
+}
+```
+
+### Sample: `GET /api/integration/v1/learners?schoolYearId=1&page=1&limit=50`
+```json
+{
+  "data": [
+    {
+      "enrollmentApplicationId": 45,
+      "status": "ENROLLED",
+      "learnerType": "NEW_ENROLLEE",
+      "applicantType": "REGULAR",
+      "learner": {
+        "id": 101,
+        "externalId": "550e8400-e29b-41d4-a716-446655440000",
+        "lrn": "123456789012",
+        "firstName": "JUAN",
+        "lastName": "DELA CRUZ",
+        "middleName": "SAMSON",
+        "extensionName": null,
+        "birthdate": "2013-05-20",
+        "sex": "MALE"
+      },
+      "schoolYear": { "id": 1, "yearLabel": "2025-2026" },
+      "gradeLevel": { "id": 7, "name": "Grade 7", "displayOrder": 1 },
+      "section": { "id": 10, "name": "7-A", "programType": "REGULAR" },
+      "enrolledAt": "2025-05-15T08:30:00Z"
+    }
+  ],
+  "meta": {
+    "schoolYearId": 1,
+    "total": 1240,
+    "page": 1,
+    "limit": 50,
+    "totalPages": 25
+  }
+}
+```
+
+### Sample: `GET /api/integration/v1/faculty`
+```json
+{
+  "data": [
+    {
+      "teacherId": 1,
+      "employeeId": "100001",
+      "firstName": "MARIA",
+      "lastName": "SANTOS",
+      "middleName": "SOLIS",
+      "fullName": "SANTOS, MARIA S.",
+      "email": "maria.santos@deped.edu.ph",
+      "isClassAdviser": true,
+      "advisorySectionId": 10,
+      "advisorySectionName": "10-A",
+      "schoolYearId": 1,
+      "schoolYearLabel": "2025-2026"
+    }
+  ],
+  "meta": {
+    "generatedAt": "2026-05-11T12:00:00Z",
+    "scope": {
+      "schoolId": 1,
+      "schoolName": "EnrollPro",
+      "schoolYearId": 1,
+      "schoolYearLabel": "2025-2026"
+    },
+    "total": 142
+  }
+}
+```
+
+### Sample: `GET /api/integration/v1/sections/:sectionId/learners`
+```json
+{
+  "data": {
+    "section": {
+      "id": 10,
+      "name": "7-A",
+      "programType": "REGULAR",
+      "maxCapacity": 40,
+      "gradeLevel": { "id": 7, "name": "Grade 7", "displayOrder": 1 },
+      "advisingTeacher": { "id": 1, "name": "SANTOS, MARIA S." }
+    },
+    "learners": [
+      {
+        "enrollmentRecordId": 500,
+        "enrolledAt": "2025-05-15T08:30:00Z",
+        "enrollmentApplicationId": 45,
+        "status": "ENROLLED",
+        "learner": { "id": 101, "lrn": "123456789012", "firstName": "JUAN", "lastName": "DELA CRUZ" }
+      }
+    ]
+  },
+  "meta": {
+    "scope": { "schoolYearId": 1, "schoolYearLabel": "2025-2026" },
+    "total": 40,
+    "page": 1,
+    "limit": 50,
+    "totalPages": 1
+  }
+}
+```
+
+### Sample: `GET /api/integration/v1/ecosystem/status?type=LEARNER`
+```json
+{
+  "data": [
+    {
+      "id": 101,
+      "name": "DELA CRUZ, JUAN",
+      "identifier": "123456789012",
+      "type": "LEARNER",
+      "grade": "Grade 7",
+      "section": "7-A",
+      "syncStatuses": [
+        { "ecosystem": "AIMS", "status": "SYNCED", "lastSyncedAt": "2026-05-11T12:00:00Z" }
+      ]
+    }
+  ],
+  "meta": {
+    "total": 1240,
+    "page": 1,
+    "limit": 50,
+    "totalPages": 25,
+    "pendingCount": 12
+  }
 }
 ```
 

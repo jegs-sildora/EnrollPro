@@ -31,8 +31,18 @@ export async function getPublicSettings(
   try {
     const settings = await getOrCreateSettings();
 
-    const enrollmentPhase = settings.activeSchoolYear
-      ? getEnrollmentPhase(settings.activeSchoolYear)
+    // Honor context school year if provided via middleware (req.schoolYearId)
+    // This allows the public settings (like enrollment dates) to reflect the
+    // context the user is browsing in, while keeping global identity (name, logo).
+    let contextSy = settings.activeSchoolYear;
+    if (req.schoolYearId && req.schoolYearId !== settings.activeSchoolYearId) {
+      contextSy = await prisma.schoolYear.findUnique({
+        where: { id: req.schoolYearId },
+      });
+    }
+
+    const enrollmentPhase = contextSy
+      ? getEnrollmentPhase(contextSy)
       : "CLOSED";
 
     res.json({
@@ -40,17 +50,23 @@ export async function getPublicSettings(
       logoUrl: settings.logoUrl,
       colorScheme: settings.colorScheme,
       selectedAccentHsl: settings.selectedAccentHsl,
-      activeSchoolYearId: settings.activeSchoolYearId,
-      activeSchoolYearLabel: settings.activeSchoolYear?.yearLabel ?? null,
-      activeSchoolYearStatus: settings.activeSchoolYear?.status ?? null,
-      systemStatus: settings.activeSchoolYear?.status ?? "DRAFT",
-      portalControl: settings.activeSchoolYear?.portalControl ?? "AUTO",
-      earlyRegOpenDate: settings.activeSchoolYear?.earlyRegOpenDate ?? null,
-      earlyRegCloseDate: settings.activeSchoolYear?.earlyRegCloseDate ?? null,
-      classOpeningDate: settings.activeSchoolYear?.classOpeningDate ?? null,
-      classEndDate: settings.activeSchoolYear?.classEndDate ?? null,
-      enrollOpenDate: settings.activeSchoolYear?.enrollOpenDate ?? null,
-      enrollCloseDate: settings.activeSchoolYear?.enrollCloseDate ?? null,
+      activeSchoolYearId: contextSy?.id ?? settings.activeSchoolYearId,
+      activeSchoolYearLabel:
+        contextSy?.yearLabel ?? settings.activeSchoolYear?.yearLabel ?? null,
+      activeSchoolYearStatus:
+        contextSy?.status ?? settings.activeSchoolYear?.status ?? null,
+      systemStatus:
+        contextSy?.status ?? settings.activeSchoolYear?.status ?? "DRAFT",
+      portalControl:
+        contextSy?.portalControl ??
+        settings.activeSchoolYear?.portalControl ??
+        "AUTO",
+      earlyRegOpenDate: contextSy?.earlyRegOpenDate ?? null,
+      earlyRegCloseDate: contextSy?.earlyRegCloseDate ?? null,
+      classOpeningDate: contextSy?.classOpeningDate ?? null,
+      classEndDate: contextSy?.classEndDate ?? null,
+      enrollOpenDate: contextSy?.enrollOpenDate ?? null,
+      enrollCloseDate: contextSy?.enrollCloseDate ?? null,
       facebookPageUrl: settings.facebookPageUrl,
       depedEmail: settings.depedEmail,
       schoolWebsite: settings.schoolWebsite,

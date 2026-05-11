@@ -15,7 +15,8 @@ async function main() {
       middleName: "SANTOS",
       suffix: "JR.",
       sex: "MALE" as Sex,
-      employeeId: "DEPED-USER-001",
+      employeeId: "1000003",
+      accountName: "1000003",
       designation: "SYSTEM ADMINISTRATOR",
       mobileNumber: "09170000001",
       email: "juan.delacruz@deped.edu.ph", // Using .edu.ph to match main seed
@@ -31,7 +32,8 @@ async function main() {
       middleName: "CLARA",
       suffix: "",
       sex: "FEMALE" as Sex,
-      employeeId: "DEPED-USER-002",
+      employeeId: "1000004",
+      accountName: "1000004",
       designation: "HEAD REGISTRAR",
       mobileNumber: "09180000002",
       email: "maria.reyes@deped.edu.ph",
@@ -47,10 +49,10 @@ async function main() {
 
   for (const user of users) {
     await prisma.user.upsert({
-      where: { email: user.email },
+      where: { employeeId: user.employeeId },
       update: {
-          ...user,
-          // If updating, preserve password unless it's the seed one
+        ...user,
+        // If updating, preserve password unless it's the seed one
       },
       create: user,
     });

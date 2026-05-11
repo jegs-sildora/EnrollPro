@@ -3,6 +3,7 @@ import {
   DEPED_TEACHER_PLANTILLA_POSITION_VALUES,
   DEPED_TEACHER_DEPARTMENT_VALUES,
   DEPED_TEACHER_SPECIALIZATION_VALUES,
+  SexEnum,
 } from "../constants/index.js";
 
 const optionalUpperText = z.preprocess((value) => {
@@ -58,13 +59,16 @@ export const teacherSchema = z
     firstName: requiredUpperText("First name is required"),
     lastName: requiredUpperText("Last name is required"),
     middleName: optionalUpperText.optional(),
+    sex: SexEnum.default("FEMALE"),
     email: z
       .string()
       .trim()
       .min(1, "DepEd email address is required")
       .email("Invalid email address")
       .transform((value) => value.toLowerCase()),
-    employeeId: requiredUpperText("Employee ID is required"),
+    employeeId: z
+      .string()
+      .regex(/^[0-9]{7}$/, "Employee ID must be exactly 7 numeric digits"),
     contactNumber: optionalContactNumber.optional(),
     specialization: z
       .preprocess(
