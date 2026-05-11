@@ -426,7 +426,7 @@ export default function EnrollmentGateTab() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-muted/30 p-6 rounded-2xl border-2 border-dashed border-primary/20">
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    <Label className="text-xs font-bold uppercase  text-foreground">
                       Opens On
                     </Label>
                     <DatePicker
@@ -442,7 +442,7 @@ export default function EnrollmentGateTab() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    <Label className="text-xs font-bold uppercase  text-foreground">
                       Closes On
                     </Label>
                     <DatePicker
@@ -473,18 +473,18 @@ export default function EnrollmentGateTab() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="flex flex-col items-center justify-center p-6 bg-muted/40 rounded-2xl border shadow-inner">
-                  <span className="text-[0.65rem] font-bold text-foreground uppercase tracking-[0.2em] mb-1">
+                  <span className="text-[0.65rem] font-bold text-foreground uppercase  mb-1">
                     Opens
                   </span>
-                  <span className="text-2xl font-black text-foreground tracking-tight">
+                  <span className="text-2xl font-black text-foreground ">
                     {formatDate(ay.earlyRegOpenDate)}
                   </span>
                 </div>
                 <div className="flex flex-col items-center justify-center p-6 bg-muted/40 rounded-2xl border shadow-inner">
-                  <span className="text-[0.65rem] font-bold text-foreground uppercase tracking-[0.2em] mb-1">
+                  <span className="text-[0.65rem] font-bold text-foreground uppercase  mb-1">
                     Closes
                   </span>
-                  <span className="text-2xl font-black text-foreground tracking-tight">
+                  <span className="text-2xl font-black text-foreground ">
                     {formatDate(ay.earlyRegCloseDate)}
                   </span>
                 </div>
@@ -525,7 +525,7 @@ export default function EnrollmentGateTab() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-muted/30 p-6 rounded-2xl border-2 border-dashed border-blue-500/20">
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    <Label className="text-xs font-bold uppercase  text-foreground">
                       Opens On
                     </Label>
                     <DatePicker
@@ -541,7 +541,7 @@ export default function EnrollmentGateTab() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    <Label className="text-xs font-bold uppercase  text-foreground">
                       Closes On
                     </Label>
                     <DatePicker
@@ -586,18 +586,18 @@ export default function EnrollmentGateTab() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="flex flex-col items-center justify-center p-6 bg-muted/40 rounded-2xl border shadow-inner">
-                  <span className="text-[0.65rem] font-bold text-foreground uppercase tracking-[0.2em] mb-1">
+                  <span className="text-[0.65rem] font-bold text-foreground uppercase  mb-1">
                     Opens
                   </span>
-                  <span className="text-2xl font-black text-foreground tracking-tight">
+                  <span className="text-2xl font-black text-foreground ">
                     {formatDate(ay.enrollOpenDate)}
                   </span>
                 </div>
                 <div className="flex flex-col items-center justify-center p-6 bg-muted/40 rounded-2xl border shadow-inner">
-                  <span className="text-[0.65rem] font-bold text-foreground uppercase tracking-[0.2em] mb-1">
+                  <span className="text-[0.65rem] font-bold text-foreground uppercase  mb-1">
                     Closes
                   </span>
-                  <span className="text-2xl font-black text-foreground tracking-tight">
+                  <span className="text-2xl font-black text-foreground ">
                     {formatDate(ay.enrollCloseDate)}
                   </span>
                 </div>

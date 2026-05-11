@@ -100,20 +100,22 @@ async function main() {
 
   // 0. CLEANUP: Remove existing teachers and their login accounts to prevent ID/Email conflicts
   console.log("🧹 Cleaning up existing faculty data...");
+  
+  // 1. Delete all users with role TEACHER regardless of whether they have a teacher profile
+  await prisma.user.deleteMany({
+    where: { role: "TEACHER" }
+  });
+
   const existingTeachers = await prisma.teacher.findMany({ select: { employeeId: true } });
   const teacherEmployeeIds = existingTeachers.map(t => t.employeeId).filter(Boolean);
   
   if (teacherEmployeeIds.length > 0) {
+    // Also delete any users matching teacher employee IDs just in case they have a different role
     await prisma.user.deleteMany({
-      where: { 
-        OR: [
-          { employeeId: { in: teacherEmployeeIds } },
-          { role: "TEACHER" }
-        ]
-      }
+      where: { employeeId: { in: teacherEmployeeIds } }
     });
+    
     // This will cascade delete SectionAdviser, TeacherSubject, TeacherDesignation if defined in schema
-    // If not cascade, we might need manual deletes. Based on typical prisma setups, let's be safe.
     await prisma.teacherSubject.deleteMany({});
     await prisma.teacherDesignation.deleteMany({});
     await prisma.sectionAdviser.deleteMany({});
@@ -142,11 +144,26 @@ async function main() {
   const usedEmailKeys = new Set<string>(); // Tracks firstName.lastName pairs
   const usedEmployeeIds = new Set<string>();
 
+  // Fetch all existing users from DB to prevent email collisions with non-teacher users (Admins, Registrars, etc.)
+  const existingUsers = await prisma.user.findMany({ select: { email: true } });
+  existingUsers.forEach(u => {
+    if (u.email) {
+      const parts = u.email.split('@')[0].toLowerCase();
+      usedEmailKeys.add(parts);
+    }
+  });
+
   // 1. Process Atlas Faculty
   ATLAS_FACULTY.forEach(f => {
     const fullNameKey = `${f.firstName}|${f.lastName}|${f.middleName ?? ""}`.toUpperCase();
-    const emailKey = `${f.firstName.toLowerCase()}.${f.lastName.toLowerCase()}`;
+    const emailKey = `${f.firstName.toLowerCase().replace(/\s/g, "")}.${f.lastName.toLowerCase().replace(/\s/g, "")}`;
     
+    // If an ATLAS faculty conflicts with an existing user (e.g. from seed-users), we might need to modify it
+    // But ATLAS faculty are supposed to be "fixed" data. Let's just warn if there's a conflict.
+    if (usedEmailKeys.has(emailKey)) {
+        console.warn(`  ⚠️ Warning: Atlas Faculty ${f.firstName} ${f.lastName} has a conflicting email key '${emailKey}'.`);
+    }
+
     usedNames.add(fullNameKey);
     usedEmailKeys.add(emailKey);
     usedEmployeeIds.add(f.employeeId);
@@ -267,6 +284,7 @@ async function main() {
         email: teacher.email,
         sex: teacher.sex,
         role: "TEACHER" as Role,
+        designation: designationStr,
       },
       create: {
         firstName: firstNameUpper,
@@ -278,6 +296,7 @@ async function main() {
         role: "TEACHER" as Role,
         sex: teacher.sex,
         isActive: true,
+        designation: designationStr,
       }
     });
 

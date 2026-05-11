@@ -83,7 +83,7 @@ export function ConfirmationSlipModal({
       if (axios.isAxiosError(err) && err.response?.status === 404) {
         setError("Learner not found. Please verify the LRN.");
       } else {
-        toastApiError(err as any);
+        toastApiError(err as never);
       }
       setLearner(null);
     } finally {
@@ -142,7 +142,7 @@ export function ConfirmationSlipModal({
       setLearner(null);
       inputRef.current?.focus();
     } catch (err: unknown) {
-      toastApiError(err as any);
+      toastApiError(err as never);
     } finally {
       setSaving(false);
     }
@@ -169,7 +169,7 @@ export function ConfirmationSlipModal({
 
         <div className="p-6 space-y-6">
           <div className="space-y-2">
-            <label className="text-xs font-black uppercase tracking-widest text-foreground flex justify-between">
+            <label className="text-xs font-black uppercase  text-foreground flex justify-between">
               1. Scan or Type 12-Digit LRN
               {loading && (
                 <Loader2 className="h-3 w-3 animate-spin text-primary" />
@@ -182,7 +182,7 @@ export function ConfirmationSlipModal({
                 setLrn(e.target.value.replace(/\D/g, "").slice(0, 12))
               }
               placeholder="e.g. 101234567890"
-              className="h-14 text-2xl font-black tracking-[0.2em] text-center border-2 focus-visible:ring-emerald-500"
+              className="h-14 text-2xl font-black  text-center border-2 focus-visible:ring-emerald-500"
               autoComplete="off"
             />
           </div>
@@ -197,7 +197,7 @@ export function ConfirmationSlipModal({
           {learner && (
             <Card className="border-2 border-emerald-100 bg-emerald-50/30 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
               <div className="bg-emerald-100/50 px-4 py-2 border-b border-emerald-100 flex justify-between items-center">
-                <span className="text-xs font-black uppercase tracking-wider text-emerald-800">
+                <span className="text-xs font-black uppercase  text-emerald-800">
                   Learner Found
                 </span>
                 <Badge
@@ -237,7 +237,7 @@ export function ConfirmationSlipModal({
                 </div>
 
                 <Button
-                  className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-wide gap-2 text-lg shadow-lg"
+                  className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase  gap-2 text-lg shadow-lg"
                   onClick={handleConfirm}
                   disabled={confirming}>
                   {confirming ? (
@@ -256,7 +256,7 @@ export function ConfirmationSlipModal({
           {!learner && !loading && !error && (
             <div className="py-12 flex flex-col items-center justify-center text-center space-y-3 opacity-20">
               <Search className="h-12 w-12" />
-              <p className="text-sm font-bold uppercase tracking-widest">
+              <p className="text-sm font-bold uppercase ">
                 Awaiting LRN Input
               </p>
             </div>

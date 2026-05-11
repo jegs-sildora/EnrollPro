@@ -26,7 +26,7 @@ export default function F2FStepProgressBar({
       <div className="md:hidden">
         <div className="flex items-center justify-between mb-4 p-4 rounded-2xl shadow-sm border border-border bg-primary text-primary-foreground">
           <div className="flex flex-col">
-            <span className="text-[0.625rem] font-bold uppercase tracking-widest opacity-85">
+            <span className="text-[0.625rem] font-bold uppercase  opacity-85">
               Step {currentStep} of {totalSteps}
             </span>
             <span className="text-lg font-extrabold leading-tight">
@@ -96,7 +96,7 @@ export default function F2FStepProgressBar({
                     <div className="flex flex-col items-center gap-0.5">
                       <span
                         className={cn(
-                          "text-[0.625rem] lg:text-[0.6875rem] font-semibold uppercase tracking-wider text-center whitespace-nowrap transition-colors duration-200",
+                          "text-[0.625rem] lg:text-[0.6875rem] font-semibold uppercase  text-center whitespace-nowrap transition-colors duration-200",
                           isCompleted || isActive
                             ? "text-foreground"
                             : "text-foreground",
@@ -106,7 +106,7 @@ export default function F2FStepProgressBar({
                       {/* Status badge */}
                       <span
                         className={cn(
-                          "text-[0.5625rem] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full transition-all duration-200",
+                          "text-[0.5625rem] font-bold uppercase  px-1.5 py-0.5 rounded-full transition-all duration-200",
                           isCompleted
                             ? "bg-primary text-primary-foreground"
                             : isActive

@@ -100,8 +100,14 @@ export function PaginationBar({
         <Button
           variant="outline"
           size="icon"
-          className="h-8 w-8 text-foreground hover:text-foreground shrink-0 border-2"
-          onClick={() => onPageChange(1)}
+          className="h-8 w-8 text-foreground hover:text-foreground shrink-0 border-2 active:translate-y-0"
+          onPointerDown={(e) => {
+            if (e.button === 0 && page !== 1) onPageChange(1);
+          }}
+          onClick={(e) => {
+            // Prevent double trigger if pointerDown already handled it
+            if (e.detail === 0) onPageChange(1); // detail 0 usually means keyboard
+          }}
           disabled={page === 1}
           title="First Page">
           <ChevronsLeft className="h-4 w-4" />
@@ -109,8 +115,13 @@ export function PaginationBar({
         <Button
           variant="outline"
           size="icon"
-          className="h-8 w-8 text-foreground hover:text-foreground mr-2 shrink-0 border-2"
-          onClick={() => onPageChange(page - 1)}
+          className="h-8 w-8 text-foreground hover:text-foreground mr-2 shrink-0 border-2 active:translate-y-0"
+          onPointerDown={(e) => {
+            if (e.button === 0 && page > 1) onPageChange(page - 1);
+          }}
+          onClick={(e) => {
+            if (e.detail === 0 && page > 1) onPageChange(page - 1);
+          }}
           disabled={page === 1}
           title="Previous Page">
           <ChevronLeft className="h-4 w-4" />
@@ -126,12 +137,17 @@ export function PaginationBar({
             variant={page === p ? 'default' : 'ghost'}
             size="icon"
             className={cn(
-              'h-8 w-8 text-sm font-black transition-all shrink-0 border-2 border-transparent',
+              'h-8 w-8 text-sm font-black transition-all shrink-0 border-2 border-transparent active:translate-y-0',
               page === p
                 ? 'bg-primary text-primary-foreground shadow-md border-primary/20 hover:bg-primary'
                 : 'text-foreground hover:bg-muted hover:border-border',
             )}
-            onClick={() => onPageChange(p)}>
+            onPointerDown={(e) => {
+              if (e.button === 0 && page !== p) onPageChange(p);
+            }}
+            onClick={(e) => {
+              if (e.detail === 0 && page !== p) onPageChange(p);
+            }}>
             {p}
           </Button>
         ))}
@@ -143,8 +159,13 @@ export function PaginationBar({
         <Button
           variant="outline"
           size="icon"
-          className="h-8 w-8 text-foreground hover:text-foreground ml-2 shrink-0 border-2"
-          onClick={() => onPageChange(page + 1)}
+          className="h-8 w-8 text-foreground hover:text-foreground ml-2 shrink-0 border-2 active:translate-y-0"
+          onPointerDown={(e) => {
+            if (e.button === 0 && page < totalPages) onPageChange(page + 1);
+          }}
+          onClick={(e) => {
+            if (e.detail === 0 && page < totalPages) onPageChange(page + 1);
+          }}
           disabled={page === totalPages || totalPages === 0}
           title="Next Page">
           <ChevronRight className="h-4 w-4" />
@@ -152,8 +173,13 @@ export function PaginationBar({
         <Button
           variant="outline"
           size="icon"
-          className="h-8 w-8 text-foreground hover:text-foreground shrink-0 border-2"
-          onClick={() => onPageChange(totalPages)}
+          className="h-8 w-8 text-foreground hover:text-foreground shrink-0 border-2 active:translate-y-0"
+          onPointerDown={(e) => {
+            if (e.button === 0 && page !== totalPages) onPageChange(totalPages);
+          }}
+          onClick={(e) => {
+            if (e.detail === 0 && page !== totalPages) onPageChange(totalPages);
+          }}
           disabled={page === totalPages || totalPages === 0}
           title="Last Page">
           <ChevronsRight className="h-4 w-4" />

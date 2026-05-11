@@ -144,7 +144,7 @@ export function ReturningLearnerFlow({
     <div className="max-w-6xl mx-auto p-4 md:p-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-400">
       <Button
         onClick={onBack}
-        className="group font-black uppercase tracking-widest bg-emerald-600 text-white shadow-md transition-all px-6">
+        className="group font-black uppercase  bg-emerald-600 text-white shadow-md transition-all px-6">
         <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
         Back to Selection
       </Button>
@@ -163,7 +163,7 @@ export function ReturningLearnerFlow({
 
         <CardContent className="p-8 space-y-8">
           <div className="space-y-3">
-            <Label className="text-sm font-black uppercase tracking-widest text-foreground">
+            <Label className="text-sm font-black uppercase  text-foreground">
               1. Enter Learner's 12-Digit LRN
             </Label>
             <div className="relative">
@@ -173,7 +173,7 @@ export function ReturningLearnerFlow({
                   setLrn(e.target.value.replace(/\D/g, "").slice(0, 12))
                 }
                 placeholder="101234567890"
-                className="h-16 text-3xl font-black tracking-[0.2em] text-center border-2 border-border focus-visible:ring-emerald-500"
+                className="h-16 text-3xl font-black  text-center border-2 border-border focus-visible:ring-emerald-500"
               />
               {loading && (
                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -195,7 +195,7 @@ export function ReturningLearnerFlow({
               <div className="p-6 rounded-2xl bg-emerald-50 border-2 border-emerald-100 space-y-4">
                 <div className="flex justify-between items-start">
                   <div className="flex flex-col">
-                    <span className="text-xs font-black uppercase tracking-widest text-emerald-700 opacity-70">
+                    <span className="text-xs font-black uppercase  text-emerald-700 opacity-70">
                       Learner Profile Found
                     </span>
                     <h3 className="text-2xl font-black text-foreground uppercase leading-none mt-1">
@@ -255,7 +255,7 @@ export function ReturningLearnerFlow({
               </div>
 
               <Button
-                className="w-full h-16 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-wide gap-3 text-xl shadow-xl shadow-emerald-200 disabled:opacity-50"
+                className="w-full h-16 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase  gap-3 text-xl shadow-xl shadow-emerald-200 disabled:opacity-50"
                 disabled={!isConfirmed || submitting}
                 onClick={handleSubmit}>
                 {submitting ? (

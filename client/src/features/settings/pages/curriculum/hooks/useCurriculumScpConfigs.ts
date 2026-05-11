@@ -206,7 +206,7 @@ export function useCurriculumScpConfigs() {
       scpIndex: number,
       stepIndex: number,
       field: keyof ScpStepConfig,
-      value: any,
+      value: unknown,
     ) => {
       setScpConfigs((current) => {
         const next = cloneScpConfigs(current);
@@ -264,7 +264,7 @@ export function useCurriculumScpConfigs() {
         rankingFormula: normalizeRankingFormulaForPayload(scp.rankingFormula),
         steps: scp.steps.map((step) => {
            // EXPLICIT HIGH-FIDELITY SERIALIZATION
-           let cleanRubric: any[] | null = null;
+           let cleanRubric: Record<string, unknown>[] | null = null;
            
            if (Array.isArray(step.rubric)) {
               cleanRubric = (step.rubric as RubricCategory[]).map((cat) => ({

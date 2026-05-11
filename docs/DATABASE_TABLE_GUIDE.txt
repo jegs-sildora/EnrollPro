@@ -78,5 +78,5 @@ M:1  : Many-to-One (Inverse of One-to-Many)
   - Relationship [1:M]: teachers -> teacher_subjects (List of subjects taught)
   - Relationship [1:M]: teachers -> teacher_designations (Yearly workload/roles)
 - teacher_subjects: Subject specialization of a teacher.
-- teacher_designations: Roles like "Grade Level Coordinator" for a specific year.
+- teacher_designations: Roles like "Department Head" for a specific year.
 - atlas_sync_events: Integration logs tracking data flow to external DepEd systems.

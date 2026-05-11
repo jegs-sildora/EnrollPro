@@ -502,7 +502,7 @@ export default function LearnerProfileStep() {
             <p className="text-sm font-bold text-primary">
               Sensitive Information
             </p>
-            <p className="text-[0.6875rem] text-primary font-medium uppercase tracking-wider">
+            <p className="text-[0.6875rem] text-primary font-medium uppercase ">
               Kept strictly confidential for enrollment processing.
             </p>
           </div>

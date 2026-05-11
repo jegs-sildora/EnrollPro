@@ -1438,18 +1438,18 @@ export default function PipelineBatchView({
     });
   };
 
-  const updateFinalizeRow = (
-    applicantId: number,
-    patch: Partial<FinalizeInterviewRowState>,
-  ) => {
-    setFinalizeInterviewRows((prev) => ({
-      ...prev,
-      [applicantId]: {
-        ...(prev[applicantId] ?? { ...DEFAULT_FINALIZE_INTERVIEW_ROW }),
-        ...patch,
-      },
-    }));
-  };
+  const updateFinalizeRow = useCallback(
+    (applicantId: number, patch: Partial<FinalizeInterviewRowState>) => {
+      setFinalizeInterviewRows((prev) => ({
+        ...prev,
+        [applicantId]: {
+          ...(prev[applicantId] ?? { ...DEFAULT_FINALIZE_INTERVIEW_ROW }),
+          ...patch,
+        },
+      }));
+    },
+    [],
+  );
 
   const getScpPrimaryScoreValue = useCallback(
     (applicantId: number) => {
@@ -2827,7 +2827,7 @@ export default function PipelineBatchView({
 
           <div className="flex flex-col md:flex-row gap-3 md:gap-4 items-end">
             <div className="flex-1 space-y-2 w-full">
-              <Label className="text-sm uppercase tracking-wider font-bold">
+              <Label className="text-sm uppercase  font-bold">
                 Search Applicant
               </Label>
               <div className="relative">

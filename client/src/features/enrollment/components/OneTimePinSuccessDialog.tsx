@@ -87,7 +87,7 @@ export function OneTimePinSuccessDialog({
               <CheckCircle2 className="h-5 w-5" />
             </span>
             <div className="space-y-1 text-left">
-              <DialogTitle className="text-base leading-tight text-emerald-900 sm:text-lg font-black uppercase tracking-wide">
+              <DialogTitle className="text-base leading-tight text-emerald-900 sm:text-lg font-black uppercase ">
                 Official Enrollment Confirmed
               </DialogTitle>
               <DialogDescription className="text-xs text-emerald-800/90 sm:text-sm font-semibold">
@@ -104,7 +104,7 @@ export function OneTimePinSuccessDialog({
         <div className="space-y-4 px-6 py-5">
           <div className="grid gap-2 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 sm:grid-cols-3">
             <div>
-              <p className="text-[0.65rem] text-emerald-700/90 font-black uppercase tracking-widest">
+              <p className="text-[0.65rem] text-emerald-700/90 font-black uppercase ">
                 Tracking No.
               </p>
               <p className="text-sm font-black text-emerald-950">
@@ -112,7 +112,7 @@ export function OneTimePinSuccessDialog({
               </p>
             </div>
             <div>
-              <p className="text-[0.65rem] text-emerald-700/90 font-black uppercase tracking-widest">
+              <p className="text-[0.65rem] text-emerald-700/90 font-black uppercase ">
                 Grade Level
               </p>
               <p className="text-sm font-black text-emerald-950">
@@ -120,7 +120,7 @@ export function OneTimePinSuccessDialog({
               </p>
             </div>
             <div>
-              <p className="text-[0.65rem] text-emerald-700/90 font-black uppercase tracking-widest">
+              <p className="text-[0.65rem] text-emerald-700/90 font-black uppercase ">
                 Section
               </p>
               <p className="text-sm font-black text-emerald-950">
@@ -133,7 +133,7 @@ export function OneTimePinSuccessDialog({
             <div className="flex items-start gap-2">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
               <div className="space-y-1">
-                <p className="text-xs text-amber-800 font-black uppercase tracking-wide">
+                <p className="text-xs text-amber-800 font-black uppercase ">
                   Volatile Data Warning
                 </p>
                 <p className="text-xs text-amber-900/90 font-semibold leading-relaxed">
@@ -145,10 +145,10 @@ export function OneTimePinSuccessDialog({
           </div>
 
           <div className="space-y-3 rounded-2xl border-2 border-dashed border-emerald-300 bg-white p-4 text-center">
-            <p className="text-[0.65rem] text-emerald-700/90 font-black uppercase tracking-[0.18em]">
+            <p className="text-[0.65rem] text-emerald-700/90 font-black uppercase ">
               Learner Portal One-Time PIN
             </p>
-            <p className=" text-4xl tracking-[0.35em] text-emerald-900 sm:text-5xl font-black">
+            <p className=" text-4xl  text-emerald-900 sm:text-5xl font-black">
               {portalPin}
             </p>
             <Button

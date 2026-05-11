@@ -67,12 +67,12 @@ export function PinHandoverModal({
 
         <div className="space-y-6 py-4">
           <div className="bg-slate-50 border border-slate-200 p-6 rounded-xl space-y-4 text-center">
-            <p className="text-xs font-black uppercase text-slate-500 tracking-widest">
+            <p className="text-xs font-black uppercase text-slate-500 ">
               Temporary Portal PIN:
             </p>
             
             <div className="flex items-center justify-center gap-4">
-              <span className="text-4xl font-black tracking-[0.2em] text-slate-900 font-mono">
+              <span className="text-4xl font-black  text-slate-900 font-mono">
                 {pin.split("").join(" ")}
               </span>
               <Button
@@ -114,7 +114,7 @@ export function PinHandoverModal({
           <Button
             onClick={handleClose}
             disabled={!hasWrittenPin}
-            className={`w-full h-12 font-black uppercase tracking-widest transition-all ${
+            className={`w-full h-12 font-black uppercase  transition-all ${
               hasWrittenPin
                 ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-100"
                 : "bg-slate-200 text-slate-500 cursor-not-allowed border-none shadow-none"

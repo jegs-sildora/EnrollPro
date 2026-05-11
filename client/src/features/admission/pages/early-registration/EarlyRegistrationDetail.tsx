@@ -470,7 +470,7 @@ export default function EarlyRegistrationDetail() {
           className="w-full lg:w-auto space-y-4 sm:space-y-6 overflow-y-auto p-3 sm:p-6 custom-scrollbar bg-muted/10 lg:shrink-0">
           <Card>
             <div className="p-4 pb-0">
-              <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">
+              <h3 className="text-xs font-bold text-foreground uppercase ">
                 Actions
               </h3>
             </div>
@@ -493,7 +493,7 @@ export default function EarlyRegistrationDetail() {
           <Card>
             <CardContent className="p-4 space-y-4">
               <div>
-                <h3 className="text-xs font-bold text-foreground uppercase tracking-wider mb-2">
+                <h3 className="text-xs font-bold text-foreground uppercase  mb-2">
                   System Info
                 </h3>
                 <div className="text-xs grid grid-cols-[100px_1fr] gap-2 font-bold">
@@ -534,7 +534,7 @@ export default function EarlyRegistrationDetail() {
 
               {applicant.enrollment && (
                 <div className="pt-4 border-t">
-                  <h3 className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <h3 className="text-xs font-bold text-emerald-700 uppercase  mb-2 flex items-center gap-2">
                     <span>✅</span> Enrolled
                   </h3>
                   <div className="text-xs grid grid-cols-[100px_1fr] gap-2">

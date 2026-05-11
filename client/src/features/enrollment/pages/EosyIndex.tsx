@@ -188,7 +188,7 @@ export default function EosyUpdating() {
 
       setSections(sorted);
     } catch (err) {
-      toastApiError(err as any);
+      toastApiError(err as never);
     } finally {
       setLoading(false);
     }
@@ -216,7 +216,7 @@ export default function EosyUpdating() {
       const res = await api.get(`/eosy/sections/${sectionId}/records`);
       setRecords(res.data.records || []);
     } catch (err) {
-      toastApiError(err as any);
+      toastApiError(err as never);
     } finally {
       setLoadingRecords(false);
     }
@@ -263,7 +263,7 @@ export default function EosyUpdating() {
       }
 
       try {
-        const payload: any = { eosyStatus: status };
+        const payload: Record<string, unknown> = { eosyStatus: status };
         if (finalAverage !== undefined) payload.finalAverage = finalAverage;
 
         await api.patch(`/eosy/records/${recordId}`, payload);
@@ -288,7 +288,7 @@ export default function EosyUpdating() {
           });
         }
       } catch (err) {
-        toastApiError(err as any);
+        toastApiError(err as never);
       }
     },
     [exportLock?.schoolYearFinalized],
@@ -327,7 +327,7 @@ export default function EosyUpdating() {
         description: "Learner status saved successfully.",
       });
     } catch (err) {
-      toastApiError(err as any);
+      toastApiError(err as never);
     }
   };
 
@@ -364,7 +364,7 @@ export default function EosyUpdating() {
         description: "Learner status saved successfully.",
       });
     } catch (err) {
-      toastApiError(err as any);
+      toastApiError(err as never);
     }
   };
 
@@ -401,7 +401,7 @@ export default function EosyUpdating() {
       });
       await fetchExportLockState();
     } catch (err) {
-      toastApiError(err as any);
+      toastApiError(err as never);
     }
   };
 
@@ -434,7 +434,7 @@ export default function EosyUpdating() {
       });
       await fetchExportLockState();
     } catch (err) {
-      toastApiError(err as any);
+      toastApiError(err as never);
     }
   };
 
@@ -483,7 +483,7 @@ export default function EosyUpdating() {
       });
       setBatchPromoteConfirmOpen(false);
     } catch (err) {
-      toastApiError(err as any);
+      toastApiError(err as never);
     }
   };
 
@@ -509,7 +509,7 @@ export default function EosyUpdating() {
       void fetchSections();
     } catch (err) {
       setSchoolFinalizeConfirmOpen(false);
-      toastApiError(err as any);
+      toastApiError(err as never);
     }
   };
 
@@ -661,7 +661,7 @@ export default function EosyUpdating() {
         id: "remarks",
         accessorKey: "remarks",
         header: () => (
-          <div className="text-center font-bold text-primary-foreground text-xs uppercase tracking-wider">
+          <div className="text-center font-bold text-primary-foreground text-xs uppercase ">
             Remarks
           </div>
         ),
@@ -692,7 +692,7 @@ export default function EosyUpdating() {
               <div className="text-center">
                 <span
                   className={cn(
-                    "text-xs font-black uppercase tracking-tighter",
+                    "text-xs font-black uppercase ",
                     isPassed ? "text-emerald-600" : "text-red-600",
                   )}>
                   {isPassed ? "PASSED" : "FAILED"}
@@ -833,7 +833,7 @@ export default function EosyUpdating() {
         <div className="flex items-center gap-3">
           {exportLock && (
             <div className="flex flex-col items-end mr-2">
-              <span className="text-xs font-black uppercase tracking-widest text-foreground mb-1">
+              <span className="text-xs font-black uppercase  text-foreground mb-1">
                 Progression Tracker
               </span>
               <Badge
@@ -913,7 +913,7 @@ export default function EosyUpdating() {
         {/* LEFT SIDEBAR: Class Tracker */}
         <Card className="w-full md:w-80 border-none shadow-sm flex flex-col h-full bg-card overflow-hidden shrink-0">
           <CardHeader className="p-4 border-b bg-muted/20 flex-shrink-0">
-            <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+            <CardTitle className="text-sm font-black uppercase  flex items-center gap-2">
               <GraduationCap className="h-4 w-4 text-primary" />
               Class Tracker
             </CardTitle>
@@ -1067,7 +1067,7 @@ export default function EosyUpdating() {
                 <button
                   onClick={() => setIncompleteOnly(false)}
                   className={cn(
-                    "h-8 px-4 text-xs font-black uppercase tracking-widerounded-lg transition-all",
+                    "h-8 px-4 text-xs font-black uppercase  transition-all",
                     !incompleteOnly
                       ? "bg-white shadow-sm text-primary border border-border"
                       : "text-foreground hover:text-primary",
@@ -1077,7 +1077,7 @@ export default function EosyUpdating() {
                 <button
                   onClick={() => setIncompleteOnly(true)}
                   className={cn(
-                    "h-8 px-4 text-xs font-black uppercase tracking-widerounded-lg transition-all flex items-center gap-2",
+                    "h-8 px-4 text-xs font-black uppercase  transition-all flex items-center gap-2",
                     incompleteOnly
                       ? "bg-white shadow-sm text-amber-600 border border-amber-100"
                       : "text-foreground hover:text-amber-600",
@@ -1093,7 +1093,7 @@ export default function EosyUpdating() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-9 px-4 font-black text-xs uppercase tracking-wider border-2"
+                  className="h-9 px-4 font-black text-xs uppercase  border-2"
                   disabled={!selectedSection || selectedSection.isEosyFinalized}
                   onClick={() =>
                     sileo.info({
@@ -1109,7 +1109,7 @@ export default function EosyUpdating() {
                   <Button
                     variant="default"
                     size="sm"
-                    className="h-9 px-4 font-black text-xs uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 shadow-md"
+                    className="h-9 px-4 font-black text-xs uppercase  bg-emerald-600 hover:bg-emerald-700 shadow-md"
                     disabled={
                       records.filter(
                         (r) =>
@@ -1165,7 +1165,7 @@ export default function EosyUpdating() {
                         Section finalized and locked for SF5/SF6 reporting.
                       </div>
                       <div className="hidden md:block h-6 w-px bg-border" />
-                      <span className="text-sm font-bold text-foreground uppercase tracking-tight">
+                      <span className="text-sm font-bold text-foreground uppercase ">
                         Showing {visibleRecords.length} of {records.length}{" "}
                         Learners
                       </span>
@@ -1186,7 +1186,7 @@ export default function EosyUpdating() {
                           <>
                             <div className="flex items-center gap-2 text-red-600">
                               <AlertCircle className="h-5 w-5" />
-                              <span className="font-black text-xs uppercase tracking-tighter">
+                              <span className="font-black text-xs uppercase ">
                                 {emptyRowsCount} learners require an EOSY Status
                               </span>
                             </div>
@@ -1199,7 +1199,7 @@ export default function EosyUpdating() {
                           <>
                             <div className="flex items-center gap-2 text-emerald-600">
                               <CheckCircle2 className="h-5 w-5" />
-                              <span className="font-black text-xs uppercase tracking-tighter">
+                              <span className="font-black text-xs uppercase ">
                                 Ready for Finalization
                               </span>
                             </div>
@@ -1214,7 +1214,7 @@ export default function EosyUpdating() {
                       <div className="hidden lg:block h-10 w-px bg-border" />
 
                       <div className="hidden lg:flex flex-col">
-                        <span className="text-xs font-black uppercase tracking-widest text-foreground">
+                        <span className="text-xs font-black uppercase  text-foreground">
                           Roster Metrics
                         </span>
                         <span className="text-sm font-bold text-primary mt-0.5">
@@ -1226,7 +1226,7 @@ export default function EosyUpdating() {
 
                     <Button
                       className={cn(
-                        "h-14 px-10 font-black uppercase tracking-[0.2em] text-sm transition-all shadow-xl",
+                        "h-14 px-10 font-black uppercase  text-sm transition-all shadow-xl",
                         emptyRowsCount > 0
                           ? "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
                           : "bg-primary hover:scale-[1.02] shadow-primary/20",
@@ -1252,7 +1252,7 @@ export default function EosyUpdating() {
         }>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="font-bold uppercase tracking-wider">
+            <DialogTitle className="font-bold uppercase ">
               Reason for Drop Out
             </DialogTitle>
             <DialogDescription className="font-semibold">
@@ -1261,7 +1261,7 @@ export default function EosyUpdating() {
           </DialogHeader>
           <div className="py-4 space-y-4">
             <div className="space-y-2">
-              <Label className="font-black text-xs uppercase tracking-widest text-foreground">
+              <Label className="font-black text-xs uppercase  text-foreground">
                 Select Reason
               </Label>
               <Select
@@ -1315,7 +1315,7 @@ export default function EosyUpdating() {
         }>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="font-bold uppercase tracking-wider">
+            <DialogTitle className="font-bold uppercase ">
               Effective Date of Transfer
             </DialogTitle>
             <DialogDescription className="font-semibold">
@@ -1324,7 +1324,7 @@ export default function EosyUpdating() {
           </DialogHeader>
           <div className="py-4 space-y-4">
             <div className="space-y-2">
-              <Label className="font-black text-xs uppercase tracking-widest text-foreground">
+              <Label className="font-black text-xs uppercase  text-foreground">
                 Effective Date
               </Label>
               <Input
@@ -1363,7 +1363,7 @@ export default function EosyUpdating() {
         }>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-3 font-bold uppercase tracking-wider">
+            <DialogTitle className="flex items-center gap-3 font-bold uppercase ">
               <div className="bg-amber-100 p-2 rounded-lg">
                 <Lock className="h-5 w-5 text-amber-600" />
               </div>
@@ -1376,7 +1376,7 @@ export default function EosyUpdating() {
           <div className="py-6 space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center">
-                <p className="text-xs font-black uppercase text-emerald-800 tracking-widest">
+                <p className="text-xs font-black uppercase text-emerald-800 ">
                   Promoted
                 </p>
                 <p className="text-2xl font-black text-emerald-700">
@@ -1384,7 +1384,7 @@ export default function EosyUpdating() {
                 </p>
               </div>
               <div className="bg-red-50 border border-red-100 rounded-xl p-4 text-center">
-                <p className="text-xs font-black uppercase text-red-800 tracking-widest">
+                <p className="text-xs font-black uppercase text-red-800 ">
                   Retained
                 </p>
                 <p className="text-2xl font-black text-red-700">
@@ -1393,14 +1393,14 @@ export default function EosyUpdating() {
               </div>
             </div>
             <div className="bg-muted/30 rounded-xl p-4 space-y-2 border-2 border-dashed">
-              <div className="flex justify-between items-center text-xs font-bold text-foreground uppercase tracking-tight">
+              <div className="flex justify-between items-center text-xs font-bold text-foreground uppercase ">
                 <span>Irregular / Transferred / Dropped</span>
                 <span>
                   {stats.irregular + stats.transferred + stats.dropped}
                 </span>
               </div>
               <div className="pt-2 border-t flex justify-between items-center">
-                <span className="text-sm font-black uppercase tracking-wider">
+                <span className="text-sm font-black uppercase ">
                   Total Learners
                 </span>
                 <span className="text-lg font-black">{records.length}</span>
@@ -1423,7 +1423,7 @@ export default function EosyUpdating() {
             </Button>
             <Button
               onClick={confirmFinalizeClass}
-              className="bg-primary font-black uppercase tracking-widest px-8">
+              className="bg-primary font-black uppercase  px-8">
               Confirm & Lock
             </Button>
           </DialogFooter>

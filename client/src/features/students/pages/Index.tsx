@@ -17,9 +17,6 @@ import {
   Mars,
   Venus,
   Users,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   CalendarDays,
   RefreshCw,
   AlertTriangle,
@@ -42,6 +39,7 @@ import { Badge } from "@/shared/ui/badge";
 import {
   formatManilaDate,
   formatScpType,
+  getLearnerStatusColorClasses,
   SCP_ACRONYMS,
 } from "@/shared/lib/utils";
 import {
@@ -271,13 +269,6 @@ export default function Students() {
     ? ((requestedTab as StudentTab) ?? "active")
     : "active";
 
-  const handleTabChange = (value: string) => {
-    setLoading(true);
-    setStudents([]);
-    setSearchParams({ tab: value }, { replace: true });
-    setPage(1);
-  };
-
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
 
@@ -426,34 +417,6 @@ export default function Students() {
     setSectionFilter("all");
   }, [gradeLevelFilter, programFilter, sections]);
 
-  // Handle sorting
-  const handleSort = useCallback(
-    (field: string) => {
-      if (sortBy === field) {
-        setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-      } else {
-        setSortBy(field);
-        setSortOrder("asc");
-      }
-      setPage(1);
-    },
-    [sortBy, sortOrder],
-  );
-
-  const getSortIcon = useCallback(
-    (field: string) => {
-      if (sortBy !== field) {
-        return <ArrowUpDown className="h-4 w-4 ml-1 opacity-40" />;
-      }
-      return sortOrder === "asc" ? (
-        <ArrowUp className="h-4 w-4 ml-1" />
-      ) : (
-        <ArrowDown className="h-4 w-4 ml-1" />
-      );
-    },
-    [sortBy, sortOrder],
-  );
-
   // Fetch students
   const fetchStudents = useCallback(async () => {
     if (!ayId && activeTab !== "completers") return;
@@ -483,7 +446,7 @@ export default function Students() {
       setStudents(res.data.students || []);
       setTotal(res.data.pagination.total);
     } catch (err) {
-      toastApiError(err as any);
+      toastApiError(err as never);
       setStudents([]);
     } finally {
       setLoading(false);
@@ -512,7 +475,7 @@ export default function Students() {
       });
       setSummary(res.data);
     } catch (err) {
-      toastApiError(err as any);
+      toastApiError(err as never);
       setSummary(null);
     } finally {
       setSummaryLoading(false);
@@ -531,8 +494,36 @@ export default function Students() {
     setSelectedStudentId(studentId);
   }, []);
 
+  const renderLearnerStatus = (student: Student) => {
+    let status = "ACTIVE";
+    if (student.lifecycleOutcome === "DROPPED_OUT") status = "DROPPED";
+    else if (student.lifecycleOutcome === "TRANSFERRED_OUT") status = "TRANSFERRED_OUT";
+    else if (activeTab === "completers") status = "JHS_COMPLETER";
+
+    const label = status
+      .replaceAll("_", " ")
+      .toLowerCase()
+      .replace(/^\w/, (c) => c.toUpperCase());
+
+    return (
+      <Badge
+        variant="outline"
+        className={cn(
+          "text-[10px] font-black uppercase px-2 h-5 border-none",
+          getLearnerStatusColorClasses(status),
+        )}>
+        {label}
+      </Badge>
+    );
+  };
+
   const getEnrolledBadge = () => (
-    <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200">
+    <Badge
+      variant="outline"
+      className={cn(
+        "text-[10px] font-black uppercase px-2 h-5 border-none",
+        getLearnerStatusColorClasses("ACTIVE"),
+      )}>
       Enrolled
     </Badge>
   );
@@ -573,7 +564,6 @@ export default function Students() {
       if (selectedStudentId !== studentId) {
         return;
       }
-      // StudentDetailPanel fetches internally on id change.
     },
     [selectedStudentId],
   );
@@ -697,6 +687,13 @@ export default function Students() {
     },
     [],
   );
+
+  const handleTabChange = (value: string) => {
+    setLoading(true);
+    setStudents([]);
+    setSearchParams({ tab: value }, { replace: true });
+    setPage(1);
+  };
 
   const submitTransferOut = useCallback(async () => {
     if (!actionStudent) return;
@@ -899,7 +896,7 @@ export default function Students() {
               {row.original.fullName}
             </span>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs font-semibold text-foreground leading-snug">
+              <span className="text-xs font-semibold text-foreground leading-snug opacity-80">
                 {formatLearningProgramLabel(row.original.learningProgram)}
               </span>
               {row.original.applicantType === "LATE_ENROLLEE" && (
@@ -975,6 +972,20 @@ export default function Students() {
           <span className="font-bold text-sm">
             {formatSectionLabel(row.original.section)}
           </span>
+        ),
+      },
+      {
+        id: "status",
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="Status"
+          />
+        ),
+        cell: ({ row }) => (
+          <div className="flex justify-center">
+            {renderLearnerStatus(row.original)}
+          </div>
         ),
       },
       {
@@ -1057,8 +1068,6 @@ export default function Students() {
       },
     ],
     [
-      handleSort,
-      getSortIcon,
       handleViewDetails,
       handleOpenProfilePage,
       openProfileQuickEditDialog,
@@ -1109,7 +1118,7 @@ export default function Students() {
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
         <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs uppercase tracking-wider font-bold">
+            <CardDescription className="text-xs uppercase  font-bold">
               Total Enrolled
             </CardDescription>
             <CardTitle className="text-2xl font-extrabold">
@@ -1119,7 +1128,7 @@ export default function Students() {
         </Card>
         <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
           <CardHeader className="pb-1">
-            <CardDescription className="text-xs uppercase tracking-wider font-bold">
+            <CardDescription className="text-xs uppercase  font-bold">
               Gender Breakdown
             </CardDescription>
           </CardHeader>
@@ -1166,7 +1175,7 @@ export default function Students() {
         </Card>
         <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
           <CardHeader className="pb-1">
-            <CardDescription className="text-xs uppercase tracking-wider font-bold">
+            <CardDescription className="text-xs uppercase  font-bold">
               Program Breakdown
             </CardDescription>
           </CardHeader>
@@ -1276,7 +1285,7 @@ export default function Students() {
               <CardHeader className="px-3 sm:px-6 pb-3">
                 <div className="flex flex-col md:flex-row gap-3 md:gap-4 items-stretch md:items-end">
                   <div className="flex-1 space-y-2 w-full">
-                    <Label className="text-xs sm:text-sm uppercase tracking-wider font-bold">
+                    <Label className="text-xs sm:text-sm uppercase  font-bold">
                       Search Learner
                     </Label>
                     <div className="relative">
@@ -1297,7 +1306,7 @@ export default function Students() {
                   </div>
                   <div className="grid grid-cols-1 md:flex gap-3 md:gap-4 w-full md:w-auto">
                     <div className="space-y-2">
-                      <Label className="text-xs sm:text-sm uppercase tracking-wider font-bold">
+                      <Label className="text-xs sm:text-sm uppercase  font-bold">
                         Grade Level
                       </Label>
                       <Select
@@ -1329,7 +1338,7 @@ export default function Students() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-xs sm:text-sm uppercase tracking-wider font-bold">
+                      <Label className="text-xs sm:text-sm uppercase  font-bold">
                         Program
                       </Label>
                       <Select
@@ -1361,7 +1370,7 @@ export default function Students() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-xs sm:text-sm uppercase tracking-wider font-bold">
+                      <Label className="text-xs sm:text-sm uppercase  font-bold">
                         Section
                       </Label>
                       <Select
@@ -1543,31 +1552,18 @@ export default function Students() {
                                     )}
                                   </div>
                                 </div>
-                                {activeTab === "active" ? (
-                                  getEnrolledBadge()
-                                ) : activeTab === "completers" ? (
-                                  <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200">
-                                    Completer
-                                  </Badge>
-                                ) : (
-                                  <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100 border-rose-200">
-                                    {student.lifecycleOutcome ===
-                                    "TRANSFERRED_OUT"
-                                      ? "Transferred"
-                                      : "Dropped Out"}
-                                  </Badge>
-                                )}
+                                {renderLearnerStatus(student)}
                               </div>
 
                               <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                                 <div>
-                                  <p className="text-xs uppercase tracking-wider font-bold text-foreground">
+                                  <p className="text-xs uppercase  font-bold text-foreground">
                                     LRN
                                   </p>
                                   <p className="font-bold">{student.lrn}</p>
                                 </div>
                                 <div>
-                                  <p className="text-xs uppercase tracking-wider font-bold text-foreground">
+                                  <p className="text-xs uppercase  font-bold text-foreground">
                                     Gender
                                   </p>
                                   <p className="font-bold uppercase">
@@ -1581,7 +1577,7 @@ export default function Students() {
                                   </p>
                                 </div>
                                 <div>
-                                  <p className="text-xs uppercase tracking-wider font-bold text-foreground">
+                                  <p className="text-xs uppercase  font-bold text-foreground">
                                     Grade Level
                                   </p>
                                   <p className="font-bold">
@@ -1589,7 +1585,7 @@ export default function Students() {
                                   </p>
                                 </div>
                                 <div>
-                                  <p className="text-xs uppercase tracking-wider font-bold text-foreground">
+                                  <p className="text-xs uppercase  font-bold text-foreground">
                                     Section
                                   </p>
                                   <p className="font-bold">
@@ -1912,7 +1908,7 @@ export default function Students() {
           <div className="space-y-6">
             {/* Group 1: Contact Information */}
             <div className="space-y-3">
-              <p className="text-xs uppercase tracking-widest font-black text-foreground border-b pb-1">
+              <p className="text-xs uppercase  font-black text-foreground border-b pb-1">
                 Contact Information
               </p>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -1960,7 +1956,7 @@ export default function Students() {
 
             {/* Group 2: Emergency Contact */}
             <div className="space-y-3">
-              <p className="text-xs uppercase tracking-widest font-black text-foreground border-b pb-1">
+              <p className="text-xs uppercase  font-black text-foreground border-b pb-1">
                 Emergency Contact (Secondary)
               </p>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -2007,7 +2003,7 @@ export default function Students() {
 
             {/* Group 3: Current Location */}
             <div className="space-y-3">
-              <p className="text-xs uppercase tracking-widest font-black text-foreground border-b pb-1">
+              <p className="text-xs uppercase  font-black text-foreground border-b pb-1">
                 Current Location
               </p>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -2079,7 +2075,7 @@ export default function Students() {
             <DialogDescription>
               Enter the 12-digit Learner Reference Number generated by the
               national DepEd LIS portal for {actionStudent?.fullName}. This will
-              clear the student's "Pending LRN" status.
+              clear the student's \"Pending LRN\" status.
             </DialogDescription>
           </DialogHeader>
 
@@ -2099,7 +2095,7 @@ export default function Students() {
                   })
                 }
                 placeholder="e.g., 101234567890"
-                className="h-12 text-lg font-black tracking-[0.2em] text-center"
+                className="h-12 text-lg font-black  text-center"
                 inputMode="numeric"
                 maxLength={12}
               />

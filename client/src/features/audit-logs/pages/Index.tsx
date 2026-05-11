@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router";
 import { sileo } from "sileo";
 import {
   ClipboardList,
@@ -16,7 +17,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Badge } from "@/shared/ui/badge";
-import { cn, formatUserRole } from "@/shared/lib/utils";
+import { cn, formatUserRole, getRoleColorClasses } from "@/shared/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import {
   Select,
@@ -79,20 +80,55 @@ function actionLabel(actionType: string) {
 export default function AuditLogs() {
   const { user } = useAuthStore();
   const isSystemAdmin = user?.role === "SYSTEM_ADMIN";
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [logs, setLogs] = useState<AuditLogRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [forbidden, setForbidden] = useState(false);
 
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(() => Number(searchParams.get("page")) || 1);
   const [total, setTotal] = useState(0);
   const [meta, setMeta] = useState({ criticalCount: 0, activeActors: 0 });
 
-  const [actionType, setActionType] = useState("all");
-  const [actorId, setActorId] = useState("all");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [actionType, setActionType] = useState(() => searchParams.get("actionType") || "all");
+  const [actorId, setActorId] = useState(() => searchParams.get("actorId") || "all");
+  const [dateFrom, setDateFrom] = useState(() => searchParams.get("dateFrom") || "");
+  const [dateTo, setDateTo] = useState(() => searchParams.get("dateTo") || "");
+
+  const updateUrlParams = useCallback(
+    (newParams: Record<string, string | number | undefined>) => {
+      const current = Object.fromEntries(searchParams.entries());
+      const updated = { ...current, ...newParams };
+
+      Object.keys(updated).forEach((key) => {
+        if (updated[key] === undefined || updated[key] === null || updated[key] === "" || updated[key] === "all") {
+          delete updated[key];
+        }
+      });
+
+      setSearchParams(updated as Record<string, string>, { replace: true });
+    },
+    [searchParams, setSearchParams],
+  );
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    updateUrlParams({ page: newPage });
+  };
+
+  const handleFilterChange = (key: string, value: string) => {
+    setPage(1);
+    const update: any = { page: 1 };
+    update[key] = value;
+    
+    if (key === "actionType") setActionType(value);
+    if (key === "actorId") setActorId(value);
+    if (key === "dateFrom") setDateFrom(value);
+    if (key === "dateTo") setDateTo(value);
+    
+    updateUrlParams(update);
+  };
 
   const [filterMeta, setFilterMeta] = useState<FilterMetadata>({
     actionTypes: [],
@@ -140,9 +176,19 @@ export default function AuditLogs() {
                   : "System / Guest"}
               </p>
               {log.user && (
-                <p className="text-xs font-bold text-foreground ">
-                  ID: {log.user.id} • {formatUserRole(log.user.role)}
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-foreground opacity-70">
+                    ID: {log.user.id}
+                  </span>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-[9px] font-black uppercase px-1.5 h-3.5 border-none",
+                      getRoleColorClasses(log.user.role),
+                    )}>
+                    {formatUserRole(log.user.role)}
+                  </Badge>
+                </div>
               )}
             </div>
           );
@@ -499,7 +545,7 @@ export default function AuditLogs() {
                 page={page}
                 total={total}
                 limit={PAGE_SIZE}
-                onPageChange={setPage}
+                onPageChange={handlePageChange}
                 onLimitChange={() => {}} // Fixed page size for forensic scannability
                 itemName="Audit Records"
               />

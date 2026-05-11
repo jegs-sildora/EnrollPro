@@ -401,7 +401,7 @@ export default function TrackingNextSteps({
               <div className="space-y-1 pb-2">
                 <p
                   className={cn(
-                    "text-sm font-black uppercase tracking-wide",
+                    "text-sm font-black uppercase ",
                     step.isCompleted && "text-emerald-700",
                     step.isActive && "text-blue-700",
                     !step.isCompleted && !step.isActive && "text-foreground",

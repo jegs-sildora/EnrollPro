@@ -328,7 +328,7 @@ function SectionListForBulk({
               <span className="font-bold text-sm uppercase">
                 {section.name.replace(/\s*-\s*G\d+$/i, "")}
               </span>
-              <span className="text-xs font-black text-foreground uppercase tracking-wider">
+              <span className="text-xs font-black text-foreground uppercase ">
                 {formatScpType(section.programType)}
               </span>
             </div>
@@ -362,7 +362,7 @@ export default function Enrollment() {
   const searchParam = searchParams.get("search");
   const applicantTypeTabParam = searchParams.get("tab") || "REGULAR";
 
-  const { configs, loading: _configsLoading } = useScpConfigs();
+  const { configs } = useScpConfigs();
   const [applicantTypeTab, setApplicantTypeTab] = useState(
     applicantTypeTabParam,
   );
@@ -559,7 +559,7 @@ export default function Enrollment() {
   const [sf1ExportOpen, setSf1ExportOpen] = useState(false);
   const [selectedExportSection, setSelectedExportSection] =
     useState<string>("");
-  const [sections, setSections] = useState<any[]>([]);
+  const [sections, setSections] = useState<{ id: number; name: string; gradeLevelName: string }[]>([]);
   const [loadingSections, setLoadingSections] = useState(false);
 
   // Bulk Actions
@@ -588,7 +588,7 @@ export default function Enrollment() {
       setIsBulkAssignOpen(false);
       void fetchData();
     } catch (err) {
-      toastApiError(err as any);
+      toastApiError(err as never);
     } finally {
       setBulkAssigning(false);
     }
@@ -600,8 +600,8 @@ export default function Enrollment() {
     try {
       const res = await api.get(`/sections/${ayId}`);
       // The API returns { gradeLevels: [ { gradeLevelName: 'Grade 7', sections: [...] }, ... ] }
-      const allSections = res.data.gradeLevels.flatMap((gl: any) =>
-        gl.sections.map((s: any) => ({
+      const allSections = res.data.gradeLevels.flatMap((gl: { gradeLevelName: string; sections: { id: number; name: string }[] }) =>
+        gl.sections.map((s: { id: number; name: string }) => ({
           ...s,
           gradeLevelName: gl.gradeLevelName,
         })),
@@ -630,7 +630,7 @@ export default function Enrollment() {
       link.click();
       link.remove();
     } catch (err) {
-      toastApiError(err as any);
+      toastApiError(err as never);
     } finally {
       setExporting(false);
     }
@@ -658,7 +658,7 @@ export default function Enrollment() {
       });
       setSf1ExportOpen(false);
     } catch (err) {
-      toastApiError(err as any);
+      toastApiError(err as never);
     } finally {
       setExporting(false);
     }
@@ -754,7 +754,7 @@ export default function Enrollment() {
 
       setGradeLevels(jhsLevels);
     } catch (err: unknown) {
-      toastApiError(err as any);
+      toastApiError(err as never);
     } finally {
       setLoadingGradeLevels(false);
     }
@@ -867,7 +867,7 @@ export default function Enrollment() {
         `/monitoring/enrollment/walk-in?lrn=${encodeURIComponent(normalizedLrn)}`,
       );
     } catch (err) {
-      toastApiError(err as any);
+      toastApiError(err as never);
     } finally {
       setIsWalkInGateChecking(false);
     }
@@ -944,7 +944,7 @@ export default function Enrollment() {
 
       closeReadingProfileDialog();
     } catch (err) {
-      toastApiError(err as any);
+      toastApiError(err as never);
       setReadingProfileDialog((prev) => ({ ...prev, saving: false }));
     }
   }, [closeReadingProfileDialog, readingProfileDialog]);
@@ -1052,7 +1052,7 @@ export default function Enrollment() {
       if (requestId !== latestFetchRequestRef.current) {
         return;
       }
-      toastApiError(err as any);
+      toastApiError(err as never);
     } finally {
       if (requestId === latestFetchRequestRef.current) {
         setLoading(false);
@@ -1094,7 +1094,7 @@ export default function Enrollment() {
           [applicationId]: response.data.sections ?? [],
         }));
       } catch (err) {
-        toastApiError(err as any);
+        toastApiError(err as never);
       } finally {
         setLoadingSectionOptionsByApplicationId((prev) => ({
           ...prev,
@@ -1185,7 +1185,7 @@ export default function Enrollment() {
 
         await fetchData();
       } catch (err) {
-        toastApiError(err as any);
+        toastApiError(err as never);
       } finally {
         setSavingSectionByApplicationId((prev) => ({
           ...prev,
@@ -1247,7 +1247,7 @@ export default function Enrollment() {
       closeUnenrollDialog();
       await fetchData();
     } catch (err) {
-      toastApiError(err as any);
+      toastApiError(err as never);
     }
   }, [closeUnenrollDialog, fetchData, unenrollDialog]);
 
@@ -1404,7 +1404,7 @@ export default function Enrollment() {
 
           let variant: "default" | "secondary" | "destructive" | "outline" =
             "outline";
-          let label = status || "Unknown";
+          const label = status || "Unknown";
 
           if (status === "PROMOTED") variant = "secondary";
           if (status === "RETAINED") variant = "destructive";
@@ -1878,7 +1878,7 @@ export default function Enrollment() {
         });
       }
     } catch (err) {
-      toastApiError(err as any);
+      toastApiError(err as never);
     }
   };
 
@@ -1909,7 +1909,7 @@ export default function Enrollment() {
           "Academic records and promotion statuses have been updated.",
       });
     } catch (err) {
-      toastApiError(err as any);
+      toastApiError(err as never);
     } finally {
       setIsSyncingSmart(null);
     }
@@ -1935,7 +1935,7 @@ export default function Enrollment() {
               <Lock className="h-5 w-5 text-white" />
             </div>
             <div>
-              <p className="text-sm font-black uppercase tracking-widest leading-none">
+              <p className="text-sm font-black uppercase  leading-none">
                 BOSY Locked ({activeSchoolYearLabel})
               </p>
               <p className="text-xs font-bold text-emerald-100 mt-1">
@@ -2031,7 +2031,7 @@ export default function Enrollment() {
                   className="bg-amber-50 border-2 border-amber-200 p-4 rounded-xl flex items-start gap-3 shadow-sm">
                   <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
                   <div>
-                    <h4 className="text-sm font-black text-amber-800 uppercase tracking-tight">
+                    <h4 className="text-sm font-black text-amber-800 uppercase ">
                       Compliance Warning: Temporary Enrollments
                     </h4>
                     <p className="text-xs font-bold text-amber-700 mt-1 leading-relaxed">
@@ -2167,7 +2167,7 @@ export default function Enrollment() {
                 <div className="flex flex-wrap items-center justify-center gap-4 shrink-0">
                   {workflowView === "SECTION_ASSIGNMENT" && (
                     <div className="flex items-center gap-2 bg-muted/30 p-1 rounded-lg border">
-                      <span className="text-xs font-black uppercase tracking-widest text-foreground ml-2 mr-1">
+                      <span className="text-xs font-black uppercase  text-foreground ml-2 mr-1">
                         Gender:
                       </span>
                       {(["ALL", "MALE", "FEMALE"] as const).map((g) => (
@@ -2176,7 +2176,7 @@ export default function Enrollment() {
                           variant={genderFilter === g ? "secondary" : "ghost"}
                           size="sm"
                           className={cn(
-                            "h-7 px-3 text-xs font-black uppercase rounded-md tracking-wider transition-all",
+                            "h-7 px-3 text-xs font-black uppercase rounded-md  transition-all",
                             genderFilter === g
                               ? "bg-white shadow-sm text-primary"
                               : "text-foreground hover:text-primary",
@@ -2197,7 +2197,7 @@ export default function Enrollment() {
 
                   {workflowView === "PENDING_VERIFICATION" && (
                     <div className="flex items-center gap-2 bg-muted/30 p-1 rounded-lg border">
-                      <span className="text-xs font-black uppercase tracking-widest text-foreground ml-2 mr-1">
+                      <span className="text-xs font-black uppercase  text-foreground ml-2 mr-1">
                         Filter:
                       </span>
                       {PENDING_QUEUE_FILTER_OPTIONS.map((option) => (
@@ -2210,7 +2210,7 @@ export default function Enrollment() {
                           }
                           size="sm"
                           className={cn(
-                            "h-7 px-3 text-xs font-black uppercase rounded-md tracking-wider transition-all",
+                            "h-7 px-3 text-xs font-black uppercase rounded-md  transition-all",
                             pendingQueueFilter === option.value
                               ? "bg-white shadow-sm text-primary"
                               : "text-foreground hover:text-primary",
@@ -2280,7 +2280,7 @@ export default function Enrollment() {
                   className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50">
                   <div className="bg-primary text-primary-foreground px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-8 border-2 border-white/20 backdrop-blur-xl">
                     <div className="flex flex-col">
-                      <span className="text-xs font-black uppercase tracking-widest opacity-80">
+                      <span className="text-xs font-black uppercase  opacity-80">
                         Bulk Actions
                       </span>
                       <span className="text-lg font-bold">
@@ -2304,7 +2304,7 @@ export default function Enrollment() {
                         </Button>
                         <DialogContent className="sm:max-w-md">
                           <DialogHeader>
-                            <DialogTitle className="text-sm font-bold uppercase tracking-wider">
+                            <DialogTitle className="text-sm font-bold uppercase ">
                               Bulk Section Assignment
                             </DialogTitle>
                             <DialogDescription className="text-sm font-semibold">
@@ -2314,7 +2314,7 @@ export default function Enrollment() {
                           </DialogHeader>
 
                           <div className="py-4">
-                            <Label className="text-xs font-black uppercase tracking-widest text-foreground block mb-3">
+                            <Label className="text-xs font-black uppercase  text-foreground block mb-3">
                               Select Target Section
                             </Label>
                             {/* Simple section list for bulk */}
@@ -2405,7 +2405,7 @@ export default function Enrollment() {
                       setScheduleStep(null);
                       setIsScheduleDialogOpen(true);
                     } catch (err) {
-                      toastApiError(err as any);
+                      toastApiError(err as never);
                     } finally {
                       setLoading(false);
                     }
@@ -2421,7 +2421,7 @@ export default function Enrollment() {
                     setScheduleStep(step);
                     setIsScheduleDialogOpen(true);
                   } catch (err) {
-                    toastApiError(err as any);
+                    toastApiError(err as never);
                   } finally {
                     setLoading(false);
                   }
@@ -2435,7 +2435,7 @@ export default function Enrollment() {
                     setSelectedApp(fullRes.data);
                     setScheduleStep(step);
                   } catch (err) {
-                    toastApiError(err as any);
+                    toastApiError(err as never);
                   } finally {
                     setLoading(false);
                   }
@@ -2543,7 +2543,7 @@ export default function Enrollment() {
                     setScheduleStep(interviewStep || null);
                     setIsScheduleDialogOpen(true);
                   } catch (err) {
-                    toastApiError(err as any);
+                    toastApiError(err as never);
                   } finally {
                     setLoading(false);
                   }
@@ -2615,7 +2615,7 @@ export default function Enrollment() {
         onOpenChange={setIsEnrollModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold uppercase tracking-wider">
+            <DialogTitle className="text-sm font-bold uppercase ">
               Official Enrollment Confirmation
             </DialogTitle>
             <DialogDescription className="text-sm font-semibold">
@@ -2695,7 +2695,7 @@ export default function Enrollment() {
         }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold uppercase tracking-wider">
+            <DialogTitle className="text-sm font-bold uppercase ">
               Verify LRN / Existing Record
             </DialogTitle>
             <DialogDescription className="text-sm font-semibold">
@@ -2708,7 +2708,7 @@ export default function Enrollment() {
             <div className="space-y-2">
               <Label
                 htmlFor="walkInLrn"
-                className="text-sm font-bold uppercase tracking-wider">
+                className="text-sm font-bold uppercase ">
                 Enter 12-Digit LRN
               </Label>
               <Input
@@ -2743,7 +2743,7 @@ export default function Enrollment() {
               <div className="space-y-1">
                 <Label
                   htmlFor="walkInNoLrn"
-                  className="text-sm font-bold tracking-wide">
+                  className="text-sm font-bold ">
                   Learner has no LRN yet
                 </Label>
                 <p className="text-[11px] font-semibold text-foreground">
@@ -2782,7 +2782,7 @@ export default function Enrollment() {
         }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold uppercase tracking-wider">
+            <DialogTitle className="text-sm font-bold uppercase ">
               Encode Reading Profile
             </DialogTitle>
             <DialogDescription className="text-sm font-semibold">
@@ -2793,7 +2793,7 @@ export default function Enrollment() {
 
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label className="text-sm font-bold uppercase tracking-wider">
+              <Label className="text-sm font-bold uppercase ">
                 Learner
               </Label>
               <p className="text-sm font-semibold">
@@ -2806,7 +2806,7 @@ export default function Enrollment() {
             <div className="space-y-2">
               <Label
                 htmlFor="readingProfileLevel"
-                className="text-sm font-bold uppercase tracking-wider">
+                className="text-sm font-bold uppercase ">
                 Reading Profile Level
               </Label>
               <Select
@@ -2837,7 +2837,7 @@ export default function Enrollment() {
             <div className="space-y-2">
               <Label
                 htmlFor="readingProfileNotes"
-                className="text-sm font-bold uppercase tracking-wider">
+                className="text-sm font-bold uppercase ">
                 Notes (Optional)
               </Label>
               <Textarea
@@ -2889,7 +2889,7 @@ export default function Enrollment() {
         }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold uppercase tracking-wider">
+            <DialogTitle className="text-sm font-bold uppercase ">
               Un-enrol Learner
             </DialogTitle>
             <DialogDescription className="text-sm font-semibold">
@@ -2900,7 +2900,7 @@ export default function Enrollment() {
 
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label className="text-sm font-bold uppercase tracking-wider">
+              <Label className="text-sm font-bold uppercase ">
                 Learner
               </Label>
               <p className="text-sm font-semibold">
@@ -2913,7 +2913,7 @@ export default function Enrollment() {
             <div className="space-y-2">
               <Label
                 htmlFor="unenrollReason"
-                className="text-sm font-bold uppercase tracking-wider">
+                className="text-sm font-bold uppercase ">
                 Reason
               </Label>
               <Select
@@ -2941,7 +2941,7 @@ export default function Enrollment() {
             <div className="space-y-2">
               <Label
                 htmlFor="unenrollNote"
-                className="text-sm font-bold uppercase tracking-wider">
+                className="text-sm font-bold uppercase ">
                 Note (Optional)
               </Label>
               <Textarea
@@ -2984,7 +2984,7 @@ export default function Enrollment() {
         onOpenChange={setIsGradeSelectDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold uppercase tracking-wider">
+            <DialogTitle className="text-sm font-bold uppercase ">
               Select Grade Level for Batch Sectioning
             </DialogTitle>
             <DialogDescription className="text-sm font-semibold">
@@ -2995,7 +2995,7 @@ export default function Enrollment() {
 
           <div className="py-4 space-y-4">
             <div className="space-y-2">
-              <Label className="text-sm font-bold uppercase tracking-wider">
+              <Label className="text-sm font-bold uppercase ">
                 Target Grade Level
               </Label>
               <div className="grid grid-cols-1 gap-3">
@@ -3042,7 +3042,7 @@ export default function Enrollment() {
                             variant="outline"
                             size="sm"
                             disabled={isSyncing}
-                            className="h-9 px-4 font-black text-xs uppercase tracking-widest border-2 border-primary/20 text-primary hover:bg-primary/5"
+                            className="h-9 px-4 font-black text-xs uppercase  border-2 border-primary/20 text-primary hover:bg-primary/5"
                             onClick={() => handleSmartSync(gl.id)}>
                             {isSyncing ? (
                               <>
@@ -3125,7 +3125,7 @@ export default function Enrollment() {
               <div className="bg-emerald-100 p-2 rounded-lg">
                 <Download className="h-5 w-5 text-emerald-600" />
               </div>
-              <DialogTitle className="text-sm font-bold uppercase tracking-wider">
+              <DialogTitle className="text-sm font-bold uppercase ">
                 Export LIS Batch / SF1
               </DialogTitle>
             </div>
@@ -3168,7 +3168,7 @@ export default function Enrollment() {
                 <span className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-foreground font-black tracking-widest">
+                <span className="bg-background px-2 text-foreground font-black ">
                   OR
                 </span>
               </div>
@@ -3177,7 +3177,7 @@ export default function Enrollment() {
             {/* Option 2: SF1 by Section */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <Label className="text-xs font-black uppercase tracking-widest text-foreground">
+                <Label className="text-xs font-black uppercase  text-foreground">
                   School Form 1 (SF1 Excel)
                 </Label>
                 <Badge className="h-4 px-1.5 text-[8px] font-black bg-primary/10 text-primary border-none">
@@ -3239,7 +3239,7 @@ export default function Enrollment() {
           <DialogFooter>
             <Button
               variant="ghost"
-              className="text-xs font-bold uppercase tracking-widest"
+              className="text-xs font-bold uppercase "
               onClick={() => setSf1ExportOpen(false)}>
               Close
             </Button>

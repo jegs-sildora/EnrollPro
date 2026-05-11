@@ -15,7 +15,7 @@ import { sileo } from "sileo";
 import { useAuthStore } from "@/store/auth.slice";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
-import { formatUserRole } from "@/shared/lib/utils";
+import { formatUserRole, getRoleColorClasses } from "@/shared/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import {
   Select,
@@ -198,11 +198,11 @@ export function DocumentManagement({
       if (input) input.value = "";
       onRefresh();
     } catch (error: unknown) {
-      toastApiError(error as any);
+      toastApiError(error as never);
     } finally {
       setIsUploading(false);
     }
-  };
+    };
 
   const handleDelete = useCallback(
     async (documentType: string) => {
@@ -218,11 +218,11 @@ export function DocumentManagement({
         });
         onRefresh();
       } catch (error: unknown) {
-        toastApiError(error as any);
+        toastApiError(error as never);
       }
     },
     [applicantId, endpointBase, onRefresh],
-  );
+    );
 
   // Merge checklist items and documents into audit rows
   // Showing only requirements that have been acted upon (uploaded, checked, or logged)
@@ -350,7 +350,10 @@ export function DocumentManagement({
               <div className="flex items-center justify-center">
                 <Badge
                   variant="outline"
-                  className="text-[0.5rem] h-4 px-1 uppercase ">
+                  className={cn(
+                    "text-[0.5rem] h-4 px-1 uppercase border-none",
+                    getRoleColorClasses(auditRow.modifiedBy?.role),
+                  )}>
                   {formatUserRole(auditRow.modifiedBy?.role) || "USER"}
                 </Badge>
               </div>
@@ -449,7 +452,7 @@ export function DocumentManagement({
       {!hideUpload && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-bold uppercase tracking-wider">
+            <CardTitle className="text-sm font-bold uppercase ">
               Upload New Document
             </CardTitle>
           </CardHeader>
@@ -501,7 +504,7 @@ export function DocumentManagement({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm font-bold uppercase tracking-wider">
+          <CardTitle className="text-sm font-bold uppercase ">
             Submitted Documents ({auditRows.length})
           </CardTitle>
         </CardHeader>

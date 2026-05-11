@@ -80,15 +80,15 @@ export function PersonalInfoSection({ learner }: Props) {
 
         {/* Identity Details */}
         <div className="flex-1 flex flex-col items-center md:items-start justify-center pt-2">
-          <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground text-center md:text-left">
+          <h1 className="text-2xl md:text-3xl font-black  text-foreground text-center md:text-left">
             {fullName}
           </h1>
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-1 mt-1">
-            <span className="text-sm font-bold text-foreground uppercase tracking-wider">
+            <span className="text-sm font-bold text-foreground uppercase ">
               LRN: {learner.lrn}
             </span>
             <div className="h-4 w-px bg-border hidden sm:block" />
-            <span className="text-sm font-bold text-primary uppercase tracking-wide">
+            <span className="text-sm font-bold text-primary uppercase ">
               {learner.gradeLevel?.name || "Grade —"} - {learner.enrollment?.section?.name || "Unassigned"}
               {curriculumLabel && ` (${curriculumLabel})`}
             </span>
@@ -100,7 +100,7 @@ export function PersonalInfoSection({ learner }: Props) {
       <div className="space-y-6 pt-6 border-t border-border">
         <div className="flex items-center gap-2 mb-2">
           <User className="h-4 w-4 text-primary" />
-          <h3 className="text-xs font-bold uppercase tracking-widest text-primary">
+          <h3 className="text-xs font-bold uppercase  text-primary">
             Demographic Information
           </h3>
         </div>
@@ -108,7 +108,7 @@ export function PersonalInfoSection({ learner }: Props) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6">
           {demographicInfo.map((item) => (
             <div key={item.label} className="flex flex-col">
-              <span className="text-xs font-bold text-foreground uppercase tracking-widest">
+              <span className="text-xs font-bold text-foreground uppercase ">
                 {item.label}
               </span>
               <span className="text-sm font-bold text-foreground mt-1.5">
@@ -117,7 +117,7 @@ export function PersonalInfoSection({ learner }: Props) {
             </div>
           ))}
           <div className="flex flex-col col-span-2 md:col-span-3">
-            <span className="text-xs font-bold text-foreground uppercase tracking-widest">
+            <span className="text-xs font-bold text-foreground uppercase ">
               Current Address
             </span>
             <span className="text-sm font-bold text-foreground mt-1.5 leading-relaxed">

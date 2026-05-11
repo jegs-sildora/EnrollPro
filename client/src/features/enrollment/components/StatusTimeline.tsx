@@ -48,7 +48,7 @@ export function StatusTimeline({ applicant }: Props) {
 
   return (
     <div className="mt-4 p-4 border-t">
-      <h3 className="text-xs font-bold text-foreground tracking-wider mb-3 uppercase">
+      <h3 className="text-xs font-bold text-foreground  mb-3 uppercase">
         Timeline
       </h3>
       <div className="space-y-3">

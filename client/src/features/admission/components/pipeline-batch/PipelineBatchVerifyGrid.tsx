@@ -388,6 +388,7 @@ export default function PipelineBatchVerifyGrid({
     isVerifyColumnFullyChecked,
     setVerifyColumnForAll,
     isVerifyRowReady,
+    disableDocumentChecks,
   ]);
 
   return (

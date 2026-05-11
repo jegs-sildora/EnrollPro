@@ -577,7 +577,7 @@ export default function Sections() {
 
     return (
       <div className="space-y-3 mt-6 first:mt-0">
-        <h3 className="text-sm font-black uppercase tracking-widest text-foreground border-b border-border/50 pb-2 text-center">
+        <h3 className="text-sm font-black uppercase  text-foreground border-b border-border/50 pb-2 text-center">
           {title}
         </h3>
         <div className="space-y-3">
@@ -608,13 +608,13 @@ export default function Sections() {
                       </h4>
                       <Badge
                         variant="secondary"
-                        className="text-[9px] uppercase tracking-wider font-bold">
+                        className="text-[9px] uppercase  font-bold">
                         {formatProgramType(s.programType)}
                       </Badge>
                       {s.isHomogeneous && s.programType === "REGULAR" && (
                         <Badge
                           variant="outline"
-                          className="text-[9px] uppercase tracking-wider font-black border-primary/20 text-primary">
+                          className="text-[9px] uppercase  font-black border-primary/20 text-primary">
                           Pilot
                         </Badge>
                       )}
@@ -1005,7 +1005,7 @@ export default function Sections() {
                 )}
                 <span
                   className={cn(
-                    "relative z-20 uppercase tracking-widest text-xs",
+                    "relative z-20 uppercase  text-xs",
                     activeGradeId === String(g.gradeLevelId)
                       ? "text-primary-foreground"
                       : "text-foreground",
@@ -1057,7 +1057,7 @@ export default function Sections() {
                         {g.sections.length === 0 ? (
                           <div className="flex flex-col items-center justify-center py-12 text-center text-foreground bg-muted/10 rounded-xl border border-dashed">
                             <Grid3X3 className="h-10 w-10 mb-3 opacity-20" />
-                            <p className="text-sm font-bold uppercase tracking-wider">
+                            <p className="text-sm font-bold uppercase ">
                               No Sections Configured
                             </p>
                             <p className="text-xs mt-1 font-semibold">
@@ -1145,7 +1145,7 @@ export default function Sections() {
                     School Form 1 (SF1)
                   </DialogTitle>
                   <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2 text-[13px] font-black uppercase tracking-wider text-foreground">
+                    <div className="flex items-center gap-2 text-[13px] font-black uppercase  text-foreground">
                       <span>
                         {viewRosterSection?.gradeLevelName} -{" "}
                         {viewRosterSection?.name}
@@ -1155,7 +1155,7 @@ export default function Sections() {
                         S.Y. {activeSchoolYearLabel || "2026-2027"}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs font-bold text-foreground uppercase tracking-widest">
+                    <div className="flex items-center gap-2 text-xs font-bold text-foreground uppercase ">
                       <span>Class Adviser:</span>
                       {viewRosterSection?.adviserName ? (
                         <span className="text-foreground">
@@ -1186,7 +1186,7 @@ export default function Sections() {
                             (viewRosterSection?.maxCapacity ?? 0)
                           }
                           onClick={() => setShowLateEnrolleeModal(true)}
-                          className="h-10 font-black uppercase text-[11px] tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-md group">
+                          className="h-10 font-black uppercase text-[11px]  bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-md group">
                           <UserPlus className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" />
                           Insert Late Enrollee
                         </Button>
@@ -1194,7 +1194,7 @@ export default function Sections() {
                     </TooltipTrigger>
                     {(viewRosterSection?.enrolledCount ?? 0) >=
                       (viewRosterSection?.maxCapacity ?? 0) && (
-                      <TooltipContent className="bg-slate-900 text-white border-none text-xs font-bold uppercase tracking-widest p-3 shadow-xl">
+                      <TooltipContent className="bg-slate-900 text-white border-none text-xs font-bold uppercase  p-3 shadow-xl">
                         <div className="flex items-center gap-2">
                           <AlertTriangle className="h-4 w-4 text-amber-400" />
                           Maximum capacity reached. Override requires
@@ -1210,7 +1210,7 @@ export default function Sections() {
                   size="sm"
                   onClick={handleDownloadSf1}
                   disabled={exportingSf1 || loadingRoster}
-                  className="h-10 font-bold uppercase text-[11px] tracking-wider border-border text-foreground hover:bg-muted hover:text-foreground transition-all shadow-sm">
+                  className="h-10 font-bold uppercase text-[11px]  border-border text-foreground hover:bg-muted hover:text-foreground transition-all shadow-sm">
                   {exportingSf1 ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
@@ -1222,7 +1222,7 @@ export default function Sections() {
                   variant="outline"
                   size="sm"
                   onClick={() => window.print()}
-                  className="h-10 font-bold uppercase text-[11px] tracking-wider border-border text-foreground hover:bg-muted hover:text-foreground transition-all shadow-sm">
+                  className="h-10 font-bold uppercase text-[11px]  border-border text-foreground hover:bg-muted hover:text-foreground transition-all shadow-sm">
                   <Printer className="h-4 w-4 mr-2" /> Print
                 </Button>
               </div>
@@ -1233,7 +1233,7 @@ export default function Sections() {
           {!loadingRoster && roster.length > 0 && (
             <div className="bg-muted/10 border-b border-border/60 px-8 py-2.5 flex items-center justify-center gap-12 select-none">
               <div className="flex items-center gap-3">
-                <p className="text-xs font-black text-foreground uppercase tracking-[0.2em]">
+                <p className="text-xs font-black text-foreground uppercase ">
                   Total Learners
                 </p>
                 <p className="text-base font-black text-foreground">
@@ -1242,7 +1242,7 @@ export default function Sections() {
               </div>
               <div className="w-px h-4 bg-border" />
               <div className="flex items-center gap-3">
-                <p className="text-xs font-black text-blue-400 uppercase tracking-[0.2em] flex items-center gap-1.5">
+                <p className="text-xs font-black text-blue-400 uppercase  flex items-center gap-1.5">
                   <Mars className="h-4 w-4" /> Male
                 </p>
                 <p className="text-base font-black text-blue-700">
@@ -1251,7 +1251,7 @@ export default function Sections() {
               </div>
               <div className="w-px h-4 bg-border" />
               <div className="flex items-center gap-3">
-                <p className="text-xs font-black text-pink-400 uppercase tracking-[0.2em] flex items-center gap-1.5">
+                <p className="text-xs font-black text-pink-400 uppercase  flex items-center gap-1.5">
                   <Venus className="h-4 w-4" /> Female
                 </p>
                 <p className="text-base font-black text-pink-700">
@@ -1265,7 +1265,7 @@ export default function Sections() {
             {loadingRoster ? (
               <div className="flex flex-col items-center justify-center py-24 space-y-4">
                 <Loader2 className="h-10 w-10 animate-spin text-foreground" />
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-foreground animate-pulse">
+                <p className="text-xs font-bold uppercase  text-foreground animate-pulse">
                   Aggregating LIS Data...
                 </p>
               </div>
@@ -1286,19 +1286,19 @@ export default function Sections() {
                   <Table>
                     <TableHeader>
                       <TableRow className="hover:bg-transparent border-none">
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs font-black uppercase h-11 px-5 text-foreground tracking-wider w-[50px] border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs font-black uppercase h-11 px-5 text-foreground  w-[50px] border-b border-border">
                           #
                         </TableHead>
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs font-black uppercase h-11 px-5 text-foreground tracking-wider w-[140px] border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs font-black uppercase h-11 px-5 text-foreground  w-[140px] border-b border-border">
                           LRN
                         </TableHead>
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs font-black uppercase h-11 px-5 text-foreground tracking-wider border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs font-black uppercase h-11 px-5 text-foreground  border-b border-border">
                           Learner Name (Last, First)
                         </TableHead>
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs font-black uppercase h-11 px-5 text-center text-foreground tracking-wider w-[70px] border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs font-black uppercase h-11 px-5 text-center text-foreground  w-[70px] border-b border-border">
                           Age
                         </TableHead>
-                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs font-black uppercase h-11 px-5 text-center text-foreground tracking-wider w-[160px] border-b border-border">
+                        <TableHead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm text-xs font-black uppercase h-11 px-5 text-center text-foreground  w-[160px] border-b border-border">
                           Remarks
                         </TableHead>
                       </TableRow>
@@ -1311,7 +1311,7 @@ export default function Sections() {
                             <TableCell
                               colSpan={5}
                               className="py-2.5 px-5 text-left">
-                              <span className="text-[11px] font-black uppercase tracking-[0.2em] text-foreground flex items-center gap-3">
+                              <span className="text-[11px] font-black uppercase  text-foreground flex items-center gap-3">
                                 <Mars className="h-3.5 w-3.5 text-blue-500 stroke-[3]" />
                                 MALE ({maleLearners.length})
                                 <div className="h-[1px] flex-1 bg-border/40" />
@@ -1357,7 +1357,7 @@ export default function Sections() {
                             <TableCell
                               colSpan={5}
                               className="py-2.5 px-5 text-left">
-                              <span className="text-[11px] font-black uppercase tracking-[0.2em] text-foreground flex items-center gap-3">
+                              <span className="text-[11px] font-black uppercase  text-foreground flex items-center gap-3">
                                 <Venus className="h-3.5 w-3.5 text-pink-500 stroke-[3]" />
                                 FEMALE ({femaleLearners.length})
                                 <div className="h-[1px] flex-1 bg-border/40" />
@@ -1404,14 +1404,14 @@ export default function Sections() {
 
           <DialogFooter className="bg-muted/20 border-t border-border px-8 py-5 flex flex-row items-center justify-between">
             <div className="flex items-center gap-4">
-              <p className="text-xs font-black text-foreground uppercase tracking-widest">
+              <p className="text-xs font-black text-foreground uppercase ">
                 DepEd Order No. 017, s. 2025 Compliant
               </p>
             </div>
             <Button
               onClick={() => setViewRosterSection(null)}
               variant="outline"
-              className="font-bold uppercase text-xs tracking-widest h-10 px-8 bg-background border-border text-foreground hover:bg-muted hover:text-foreground">
+              className="font-bold uppercase text-xs  h-10 px-8 bg-background border-border text-foreground hover:bg-muted hover:text-foreground">
               Close
             </Button>
           </DialogFooter>

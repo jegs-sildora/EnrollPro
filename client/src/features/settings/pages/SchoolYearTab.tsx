@@ -910,7 +910,7 @@ export default function SchoolYearTab() {
           <CalendarDays className="h-6 w-6" />
         </div>
         <div>
-          <h2 className="text-xl font-bold tracking-tight">
+          <h2 className="text-xl font-bold ">
             School Year Management
           </h2>
         </div>
@@ -922,7 +922,7 @@ export default function SchoolYearTab() {
             <div className="h-16 w-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-6 shadow-inner border border-amber-200">
               <School className="h-8 w-8" />
             </div>
-            <h3 className="text-2xl font-black tracking-tight mb-3 text-foreground uppercase">
+            <h3 className="text-2xl font-black  mb-3 text-foreground uppercase">
               Active School Year Required
             </h3>
             <p className="text-foreground font-medium max-w-lg mb-8 leading-relaxed">
@@ -955,7 +955,7 @@ export default function SchoolYearTab() {
               )}>
               <CardTitle
                 className={cn(
-                  "text-sm font-bold tracking-widest flex items-center gap-2 uppercase",
+                  "text-sm font-bold  flex items-center gap-2 uppercase",
                   activeYear ? "text-green-700" : "text-amber-700",
                 )}>
                 {activeYear ? (
@@ -1001,7 +1001,7 @@ export default function SchoolYearTab() {
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-muted/30 p-6 rounded-2xl border-2 border-dashed border-primary/20">
                         <div className="space-y-2">
-                          <Label className="text-xs font-bold uppercase tracking-wider text-foreground">
+                          <Label className="text-xs font-bold uppercase  text-foreground">
                             Opens On
                           </Label>
                           <DatePicker
@@ -1016,7 +1016,7 @@ export default function SchoolYearTab() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-xs font-bold uppercase tracking-wider text-foreground">
+                          <Label className="text-xs font-bold uppercase  text-foreground">
                             Closes On
                           </Label>
                           <DatePicker
@@ -1052,18 +1052,18 @@ export default function SchoolYearTab() {
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div className="flex flex-col items-center justify-center p-6 bg-muted/40 rounded-2xl border shadow-inner">
-                        <span className="text-[0.65rem] font-bold text-foreground uppercase tracking-[0.2em] mb-1">
+                        <span className="text-[0.65rem] font-bold text-foreground uppercase  mb-1">
                           Opens
                         </span>
-                        <span className="text-2xl font-black text-foreground tracking-tight">
+                        <span className="text-2xl font-black text-foreground ">
                           {formatCompactManilaDate(activeYear.classOpeningDate)}
                         </span>
                       </div>
                       <div className="flex flex-col items-center justify-center p-6 bg-muted/40 rounded-2xl border shadow-inner">
-                        <span className="text-[0.65rem] font-bold text-foreground uppercase tracking-[0.2em] mb-1">
+                        <span className="text-[0.65rem] font-bold text-foreground uppercase  mb-1">
                           Closes
                         </span>
-                        <span className="text-2xl font-black text-foreground tracking-tight">
+                        <span className="text-2xl font-black text-foreground ">
                           {formatCompactManilaDate(activeYear.classEndDate)}
                         </span>
                       </div>
@@ -1083,7 +1083,7 @@ export default function SchoolYearTab() {
 
           <Card className="border-blue-500/20 shadow-sm">
             <CardHeader className="bg-blue-500/5 border-b border-blue-500/10 pb-4 rounded-t-lg">
-              <CardTitle className="text-sm font-bold tracking-widest flex items-center gap-2 text-blue-700 uppercase">
+              <CardTitle className="text-sm font-bold  flex items-center gap-2 text-blue-700 uppercase">
                 Upcoming / Draft School Year
               </CardTitle>
             </CardHeader>
@@ -1097,7 +1097,7 @@ export default function SchoolYearTab() {
                       </span>
                       <Badge
                         variant="outline"
-                        className="bg-blue-50 text-blue-700 border-blue-200 uppercase font-black tracking-tighter text-xs">
+                        className="bg-blue-50 text-blue-700 border-blue-200 uppercase font-black  text-xs">
                         Draft
                       </Badge>
                     </div>
@@ -1362,7 +1362,7 @@ export default function SchoolYearTab() {
             )}
 
             <div className="p-4 rounded-lg border border-destructive/20 bg-destructive/5 space-y-4">
-              <div className="flex items-center gap-2 text-destructive font-black text-xs tracking-widest uppercase">
+              <div className="flex items-center gap-2 text-destructive font-black text-xs  uppercase">
                 <AlertTriangle className="h-4 w-4" />
                 System Activation
               </div>

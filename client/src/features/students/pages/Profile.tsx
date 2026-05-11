@@ -145,7 +145,7 @@ export default function StudentProfile() {
   const [recordHistoryLoading, setRecordHistoryLoading] = useState(false);
   const [recordHistoryLoaded, setRecordHistoryLoaded] = useState(false);
 
-  const [sf10Requests, setSf10Requests] = useState<any[]>([]);
+  const [sf10Requests, setSf10Requests] = useState<Record<string, unknown>[]>([]);
 
   const {
     data: student,
@@ -273,7 +273,7 @@ export default function StudentProfile() {
             {student.status === "TEMPORARILY_ENROLLED" && (
               <div className="flex items-center gap-2 mt-1 px-3 py-1 rounded-lg bg-amber-50 border border-amber-100 animate-in fade-in slide-in-from-left-2 duration-500">
                 <ShieldCheck className="h-3 w-3 text-amber-600" />
-                <p className="text-xs font-black uppercase tracking-wider text-amber-700">
+                <p className="text-xs font-black uppercase  text-amber-700">
                   Deficiency:{" "}
                   {student.isMissingSf9 && "Missing SF9 (Report Card)"}
                   {student.isMissingSf9 &&
@@ -301,7 +301,7 @@ export default function StudentProfile() {
         </div>
 
         <div className="hidden md:block text-right">
-          <p className="text-xs text-foreground uppercase font-bold tracking-wider">
+          <p className="text-xs text-foreground uppercase font-bold ">
             Tracking Number
           </p>
           <p className="text-lg  font-bold">{student.trackingNumber}</p>
@@ -541,7 +541,7 @@ export default function StudentProfile() {
                 <CardContent className="space-y-6">
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-xs uppercase tracking-wider text-foreground font-bold">
+                      <Label className="text-xs uppercase  text-foreground font-bold">
                         Mother's Maiden Name
                       </Label>
                       <div className="grid grid-cols-2 gap-2 text-sm">
@@ -569,7 +569,7 @@ export default function StudentProfile() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-xs uppercase tracking-wider text-foreground font-bold">
+                      <Label className="text-xs uppercase  text-foreground font-bold">
                         Father's Name
                       </Label>
                       <div className="grid grid-cols-2 gap-2 text-sm">
@@ -597,7 +597,7 @@ export default function StudentProfile() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-xs uppercase tracking-wider text-foreground font-bold">
+                      <Label className="text-xs uppercase  text-foreground font-bold">
                         Guardian's Name & Relationship
                       </Label>
                       <div className="grid grid-cols-2 gap-2 text-sm">
@@ -782,7 +782,7 @@ export default function StudentProfile() {
                           <CardTitle className="text-lg font-black uppercase text-amber-900 leading-none">
                             Deficiency Resolution
                           </CardTitle>
-                          <p className="text-xs font-bold text-amber-700/70 mt-1 uppercase tracking-widest">
+                          <p className="text-xs font-bold text-amber-700/70 mt-1 uppercase ">
                             DepEd Order 017, s. 2025 Compliance
                           </p>
                         </div>
@@ -1132,7 +1132,7 @@ export default function StudentProfile() {
                             </h3>
                             <p
                               className={cn(
-                                "text-xs font-bold mt-1 uppercase tracking-widest",
+                                "text-xs font-bold mt-1 uppercase ",
                                 student.hasPsaBirthCertificate ||
                                   student.birthCertificateType === "PSA"
                                   ? "text-emerald-600"
@@ -1218,7 +1218,7 @@ export default function StudentProfile() {
                         student.birthCertificateType === "PSA" ? (
                           <div className="flex items-center gap-2 bg-primary/10 p-3 rounded-lg border border-primary/20 mt-2">
                             <Lock className="h-4 w-4 text-primary" />
-                            <p className="text-xs font-black uppercase tracking-widest text-primary">
+                            <p className="text-xs font-black uppercase  text-primary">
                               Vault Locked - DepEd "Once Only" Rule Satisfied
                             </p>
                           </div>
@@ -1266,7 +1266,7 @@ export default function StudentProfile() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full border-amber-300 text-amber-800 hover:bg-amber-100 font-bold uppercase text-xs tracking-widest h-8 mt-2"
+                            className="w-full border-amber-300 text-amber-800 hover:bg-amber-100 font-bold uppercase text-xs  h-8 mt-2"
                             onClick={() => setIsAuthModalOpen(true)}>
                             Update to PSA Original
                           </Button>
@@ -1282,7 +1282,7 @@ export default function StudentProfile() {
                             <h3 className="font-black text-rose-900 uppercase leading-none">
                               PSA Birth Certificate
                             </h3>
-                            <p className="text-xs font-bold mt-1 uppercase tracking-widest text-rose-600">
+                            <p className="text-xs font-bold mt-1 uppercase  text-rose-600">
                               Missing from Vault
                             </p>
                           </div>
@@ -1298,7 +1298,7 @@ export default function StudentProfile() {
                         </div>
 
                         <Button
-                          className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-wide gap-2 shadow-lg shadow-primary/20"
+                          className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase  gap-2 shadow-lg shadow-primary/20"
                           onClick={() => setIsAuthModalOpen(true)}>
                           <ShieldCheck className="h-5 w-5" />
                           Verify Physical Document
@@ -1315,7 +1315,7 @@ export default function StudentProfile() {
                           <h3 className="font-black text-slate-900 uppercase leading-none">
                             SF10 (Permanent Record)
                           </h3>
-                          <p className="text-xs font-bold text-slate-500 mt-1 uppercase tracking-widest">
+                          <p className="text-xs font-bold text-slate-500 mt-1 uppercase ">
                             Awaiting Graduation / Transfer
                           </p>
                         </div>
@@ -1381,13 +1381,13 @@ export default function StudentProfile() {
                         <table className="w-full text-sm">
                           <thead className="bg-muted/40">
                             <tr>
-                              <th className="text-left px-4 py-3 font-bold uppercase text-xs tracking-wider text-foreground">
+                              <th className="text-left px-4 py-3 font-bold uppercase text-xs  text-foreground">
                                 Date / Time
                               </th>
-                              <th className="text-left px-4 py-3 font-bold uppercase text-xs tracking-wider text-foreground">
+                              <th className="text-left px-4 py-3 font-bold uppercase text-xs  text-foreground">
                                 Action
                               </th>
-                              <th className="text-left px-4 py-3 font-bold uppercase text-xs tracking-wider text-foreground">
+                              <th className="text-left px-4 py-3 font-bold uppercase text-xs  text-foreground">
                                 Performed By
                               </th>
                             </tr>

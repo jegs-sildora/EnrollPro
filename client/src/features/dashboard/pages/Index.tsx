@@ -759,7 +759,7 @@ export default function Dashboard() {
       {/* ── Visual Overlap / Analytics Placeholder (Cleaned up) ── */}
       {!isAdmin && (
         <div className="pt-8 border-t border-slate-50">
-          <p className="text-center text-xs font-black text-slate-300 uppercase tracking-[0.2em]">
+          <p className="text-center text-xs font-black text-slate-300 uppercase ">
             EnrollPro Operational Command Center • {new Date().getFullYear()}
           </p>
         </div>

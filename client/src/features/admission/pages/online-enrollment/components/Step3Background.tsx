@@ -29,7 +29,7 @@ export default function Step3Background() {
           <p className="text-sm font-bold text-primary">
             Sensitive Information
           </p>
-          <p className="text-[0.6875rem] text-primary font-medium uppercase tracking-wider">
+          <p className="text-[0.6875rem] text-primary font-medium uppercase ">
             All details are kept strictly confidential.
           </p>
         </div>
@@ -274,7 +274,7 @@ export default function Step3Background() {
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden p-1">
                 <div className="pt-4 space-y-6">
-                  <p className="text-xs font-bold uppercase text-foreground tracking-widest">
+                  <p className="text-xs font-bold uppercase text-foreground ">
                     If Yes, check only 1, either from a1 or a2
                   </p>
 

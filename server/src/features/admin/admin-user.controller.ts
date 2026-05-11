@@ -163,7 +163,12 @@ export async function index(req: Request, res: Response) {
 
 		const where: any = {};
 		if (role && role !== 'all') {
-			where.role = String(role).toUpperCase();
+			const requestedRole = String(role).toUpperCase();
+			if (requestedRole === 'TEACHER') {
+				where.role = { in: ['TEACHER', 'CLASS_ADVISER'] };
+			} else {
+				where.role = requestedRole;
+			}
 		} else {
 			// Exclude learners when fetching "all staff"
 			where.role = { not: 'LEARNER' };

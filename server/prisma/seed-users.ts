@@ -41,22 +41,6 @@ async function main() {
       lastLoginAt: now,
       mustChangePassword: true,
     },
-    {
-      firstName: "JOSE",
-      lastName: "MERCADO",
-      middleName: "PROTACIO",
-      suffix: "",
-      sex: "MALE" as Sex,
-      employeeId: "DEPED-USER-003",
-      designation: "ADMISSIONS OFFICER",
-      mobileNumber: "09190000003",
-      email: "jose.mercado@deped.edu.ph",
-      password: hashedPassword,
-      role: "GRADE_LEVEL_COORDINATOR" as Role,
-      isActive: true,
-      lastLoginAt: now,
-      mustChangePassword: true,
-    }
   ];
 
   console.log("🌱 Seeding DepEd Users...");

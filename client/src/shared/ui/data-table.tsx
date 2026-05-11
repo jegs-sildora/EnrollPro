@@ -4,7 +4,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import type { ColumnDef, SortingState, OnChangeFn, Row } from "@tanstack/react-table";
+import type { ColumnDef, SortingState, OnChangeFn, Row, RowSelectionState } from "@tanstack/react-table";
 import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -38,7 +38,6 @@ export interface DataTableProps<TData, TValue> {
   getRowClassName?: (row: TData) => string;
 }
 
-const MotionTableRow = motion.create(TableRow);
 const MotionTableBody = motion.create(TableBody);
 
 interface TableRowComponentProps<TData> {
@@ -113,9 +112,10 @@ export function DataTable<TData, TValue>({
   getRowClassName,
 }: DataTableProps<TData, TValue>) {
   const [internalSorting, setInternalSorting] = useState<SortingState>([]);
-  const [internalRowSelection, setInternalRowSelection] = useState({});
+  const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({});
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,

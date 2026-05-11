@@ -152,10 +152,10 @@ export default function LearnerPortal() {
                   className="h-16 w-auto object-contain"
                 />
                 <div>
-                  <h1 className="text-xl font-black uppercase tracking-tight text-foreground">
+                  <h1 className="text-xl font-black uppercase  text-foreground">
                     {schoolName || "MY SCHOOL RECORDS"}
                   </h1>
-                  <p className="text-xs text-primary font-black uppercase tracking-widest">
+                  <p className="text-xs text-primary font-black uppercase ">
                     School Year {learner.schoolYear?.yearLabel || "2026-2027"}
                   </p>
                 </div>
@@ -206,7 +206,7 @@ export default function LearnerPortal() {
 
             {/* Footer */}
             <div className="text-center pb-12 print:hidden">
-              <p className="text-xs text-foreground font-black uppercase tracking-[0.2em] opacity-50">
+              <p className="text-xs text-foreground font-black uppercase  opacity-50">
                 EnrollPro Learner Portal • Official School Record Access
               </p>
             </div>

@@ -132,7 +132,7 @@ export default function Step2Family() {
       )}
 
       <div className="space-y-8">
-        <h3 className="text-sm font-bold uppercase tracking-widest text-primary">
+        <h3 className="text-sm font-bold uppercase  text-primary">
           Current Home Address
         </h3>
 
@@ -294,7 +294,7 @@ export default function Step2Family() {
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden">
               <div className="pt-8 pb-1 space-y-6">
-                <h3 className="text-sm font-bold uppercase tracking-widest text-primary">
+                <h3 className="text-sm font-bold uppercase  text-primary">
                   Permanent Address
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -405,7 +405,7 @@ export default function Step2Family() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase tracking-widest text-primary">
+            <h3 className="text-sm font-bold uppercase  text-primary">
               Mother&apos;s Details
             </h3>
             <div className="flex items-center gap-2">
@@ -547,7 +547,7 @@ export default function Step2Family() {
 
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase tracking-widest text-primary">
+            <h3 className="text-sm font-bold uppercase  text-primary">
               Father&apos;s Details
             </h3>
             <div className="flex items-center gap-2">
@@ -685,7 +685,7 @@ export default function Step2Family() {
       <Separator className="opacity-50" />
 
       <div className="space-y-6">
-        <h3 className="text-sm font-bold uppercase tracking-widest text-primary">
+        <h3 className="text-sm font-bold uppercase  text-primary">
           Guardian Details
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -793,7 +793,7 @@ export default function Step2Family() {
       <Separator className="opacity-50" />
 
       <div className="space-y-4">
-        <Label className="text-sm font-bold uppercase tracking-widest text-primary">
+        <Label className="text-sm font-bold uppercase  text-primary">
           Who should we contact first?{" "}
           <span className="text-destructive">*</span>
         </Label>
@@ -879,7 +879,7 @@ export default function Step2Family() {
                   </div>
                   <span
                     className={cn(
-                      "font-bold text-sm uppercase tracking-wider text-center",
+                      "font-bold text-sm uppercase  text-center",
                       data.primaryContact === option.value
                         ? "text-primary"
                         : "text-foreground",
@@ -901,7 +901,7 @@ export default function Step2Family() {
 
       <div className="space-y-10">
         <div className="space-y-6">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-primary">
+          <h3 className="text-sm font-bold uppercase  text-primary">
             Contact Details
           </h3>
 
@@ -965,10 +965,10 @@ export default function Step2Family() {
             {data.primaryContact && (
               <div className="space-y-4">
                 <div className="flex flex-col gap-1">
-                  <h4 className="text-sm font-bold uppercase tracking-widest text-primary">
+                  <h4 className="text-sm font-bold uppercase  text-primary">
                     Primary Contact
                   </h4>
-                  <Label className="text-xs font-black uppercase text-foreground tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-black uppercase text-foreground  flex items-center gap-2">
                     {data.primaryContact === "MOTHER" ? (
                       <Venus className="w-3 h-3" />
                     ) : data.primaryContact === "FATHER" ? (
@@ -1101,10 +1101,10 @@ export default function Step2Family() {
                     key={secondary.id}
                     className="space-y-4 transition-opacity duration-0 opacity-70 hover:opacity-100 focus-within:opacity-100">
                     <div className="flex flex-col gap-1">
-                      <h4 className="text-sm font-bold uppercase tracking-widest text-foreground">
+                      <h4 className="text-sm font-bold uppercase  text-foreground">
                         Secondary Contact (Optional)
                       </h4>
-                      <Label className="text-xs font-black uppercase text-foreground/60 tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-black uppercase text-foreground/60  flex items-center gap-2">
                         <secondary.icon className="w-3 h-3" />
                         {secondary.label}'s Contact Information
                       </Label>

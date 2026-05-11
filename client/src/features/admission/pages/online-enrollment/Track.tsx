@@ -396,7 +396,7 @@ export default function TrackApplication({
             <div className="space-y-2">
               <Label
                 htmlFor="trackingNumber"
-                className="text-xs font-black uppercase tracking-widest text-foreground">
+                className="text-xs font-black uppercase  text-foreground">
                 Tracking Number
               </Label>
               <div className="relative">
@@ -423,7 +423,7 @@ export default function TrackApplication({
 
             <Button
               type="submit"
-              className="w-full h-14 text-lg font-black uppercase tracking-widest bg-primary hover:bg-primary/90 transition-all text-primary-foreground"
+              className="w-full h-14 text-lg font-black uppercase  bg-primary hover:bg-primary/90 transition-all text-primary-foreground"
               disabled={isLoading}>
               {isLoading ? "Searching..." : "Check Status"}
             </Button>
@@ -431,7 +431,7 @@ export default function TrackApplication({
 
           {!status && !error && (
             <div className="mt-8 pt-6 border-t border-dashed text-center">
-              <p className="text-md font-bold text-foreground uppercase tracking-widest">
+              <p className="text-md font-bold text-foreground uppercase ">
                 Lost or missing confirmation slip?
               </p>
               <p className="text-xs text-foreground/60 mt-1 uppercase font-bold">
@@ -473,7 +473,7 @@ export default function TrackApplication({
                     {Icon && <Icon className="w-10 h-10" />}
                   </div>
                   <div>
-                    <h3 className="text-xs font-black uppercase tracking-[0.2em] opacity-70">
+                    <h3 className="text-xs font-black uppercase  opacity-70">
                       Current Status
                     </h3>
                     <p className="text-3xl font-black uppercase  mt-1">
@@ -487,7 +487,7 @@ export default function TrackApplication({
 
                 <div className="grid gap-4 text-center grid-cols-1 md:grid-cols-3">
                   <div className="p-5 bg-primary/5 border border-primary/10 rounded-2xl space-y-1">
-                    <p className="text-[0.625rem] font-black uppercase text-foreground tracking-widest flex items-center justify-center gap-1.5">
+                    <p className="text-[0.625rem] font-black uppercase text-foreground  flex items-center justify-center gap-1.5">
                       <User className="w-3 h-3" /> Learner's Name
                     </p>
                     <p className="font-black text-primary uppercase">
@@ -496,7 +496,7 @@ export default function TrackApplication({
                     </p>
                   </div>
                   <div className="p-5 bg-primary/5 border border-primary/10 rounded-2xl space-y-1">
-                    <p className="text-[0.625rem] font-black uppercase text-foreground tracking-widest flex items-center justify-center gap-1.5">
+                    <p className="text-[0.625rem] font-black uppercase text-foreground  flex items-center justify-center gap-1.5">
                       <FileText className="w-3 h-3" /> Grade Level
                     </p>
                     <p className="font-black text-primary uppercase">
@@ -505,7 +505,7 @@ export default function TrackApplication({
                   </div>
 
                   <div className="p-5 bg-primary/5 border border-primary/10 rounded-2xl space-y-1">
-                    <p className="text-[0.625rem] font-black uppercase text-primary/60 tracking-widest flex items-center justify-center gap-1.5">
+                    <p className="text-[0.625rem] font-black uppercase text-primary/60  flex items-center justify-center gap-1.5">
                       <BookOpen className="w-3 h-3" /> Learning Program
                     </p>
                     <p className="font-black text-primary uppercase">
@@ -516,7 +516,7 @@ export default function TrackApplication({
                   {isAssessmentInProgress && examDate && (
                     <>
                       <div className="p-5 bg-purple-50 border border-purple-200 rounded-2xl space-y-1">
-                        <p className="text-[0.625rem] font-black uppercase text-purple-600 tracking-widest flex items-center justify-center gap-1.5">
+                        <p className="text-[0.625rem] font-black uppercase text-purple-600  flex items-center justify-center gap-1.5">
                           <Calendar className="w-3 h-3" /> Scheduled Date
                         </p>
                         <p className="font-black text-purple-900 uppercase">
@@ -527,7 +527,7 @@ export default function TrackApplication({
                         </p>
                       </div>
                       <div className="p-5 bg-purple-50 border border-purple-200 rounded-2xl space-y-1">
-                        <p className="text-[0.625rem] font-black uppercase text-purple-600 tracking-widest flex items-center justify-center gap-1.5">
+                        <p className="text-[0.625rem] font-black uppercase text-purple-600  flex items-center justify-center gap-1.5">
                           <MapPin className="w-3 h-3" /> Exam Location
                         </p>
                         <p className="font-black text-purple-900 uppercase">
@@ -535,7 +535,7 @@ export default function TrackApplication({
                         </p>
                       </div>
                       <div className="p-5 bg-purple-50 border border-purple-200 rounded-2xl space-y-1">
-                        <p className="text-[0.625rem] font-black uppercase text-purple-600 tracking-widest flex items-center justify-center gap-1.5">
+                        <p className="text-[0.625rem] font-black uppercase text-purple-600  flex items-center justify-center gap-1.5">
                           <ClipboardList className="w-3 h-3" /> Additional Notes
                         </p>
                         <p className="font-bold text-purple-900/80 text-[0.625rem] uppercase italic leading-tight line-clamp-2">
@@ -548,7 +548,7 @@ export default function TrackApplication({
                   {status.rawStatus === "FOR_REVISION" &&
                     status.rejectionReason && (
                       <div className="p-5 bg-primary/5 border border-primary/20 rounded-2xl space-y-1 md:col-span-3">
-                        <p className="text-[0.625rem] font-black uppercase text-primary tracking-widest flex items-center justify-center gap-1.5">
+                        <p className="text-[0.625rem] font-black uppercase text-primary  flex items-center justify-center gap-1.5">
                           <AlertCircle className="w-3 h-3" /> Revision Details
                         </p>
                         <p className="font-bold text-primary/90 italic">
@@ -558,7 +558,7 @@ export default function TrackApplication({
                     )}
 
                   <div className="p-5 bg-white border border-border rounded-2xl space-y-1 text-center md:col-span-3">
-                    <p className="text-[0.625rem] font-black uppercase text-foreground tracking-widest">
+                    <p className="text-[0.625rem] font-black uppercase text-foreground ">
                       Date Submitted
                     </p>
                     <p className="text-xs font-bold text-foreground">
@@ -568,7 +568,7 @@ export default function TrackApplication({
                 </div>
 
                 <div className="p-6 bg-white border border-border rounded-2xl space-y-4">
-                  <h4 className="text-sm font-black uppercase tracking-wider text-foreground">
+                  <h4 className="text-sm font-black uppercase  text-foreground">
                     Dynamic Next Steps
                   </h4>
                   <TrackingNextSteps
@@ -582,7 +582,7 @@ export default function TrackApplication({
 
                 <div className="flex flex-col items-center justify-center ">
                   <div className="mt-8 pt-6 border-t border-dashed text-center">
-                    <p className="text-md font-bold text-foreground uppercase tracking-widest">
+                    <p className="text-md font-bold text-foreground uppercase ">
                       Lost or missing confirmation slip?
                     </p>
                     <p className="text-xs text-foreground/60 mt-1 uppercase font-bold">
@@ -608,7 +608,7 @@ export default function TrackApplication({
                 </div>
 
                 <div className="pt-4 text-center">
-                  <p className="text-[0.6875rem] font-bold text-foreground/60 uppercase tracking-widest">
+                  <p className="text-[0.6875rem] font-bold text-foreground/60 uppercase ">
                     Last updated: {format(new Date(), "hh:mm a")}
                   </p>
                 </div>
@@ -660,12 +660,12 @@ export default function TrackApplication({
                     </h1>
                     <p
                       style={{ color: "#4b5563" }}
-                      className="text-base font-bold uppercase tracking-[0.2em] mb-2">
+                      className="text-base font-bold uppercase  mb-2">
                       Basic Education Early Registration Form Portal
                     </p>
                     <div
                       style={{ backgroundColor: "#061E29", color: "#ffffff" }}
-                      className="flex items-center justify-center px-6 py-3 rounded-xl text-xs font-black tracking-widest uppercase text-center">
+                      className="flex items-center justify-center px-6 py-3 rounded-xl text-xs font-black  uppercase text-center">
                       <p className="-mt-3">
                         Official Basic Education Early Registration Form
                         Confirmation Slip
@@ -700,7 +700,7 @@ export default function TrackApplication({
                   className="p-12 rounded-lg border-4 text-center space-y-6 relative overflow-hidden border-dashed">
                   <p
                     style={{ color: "#6b7280" }}
-                    className="text-xs uppercase tracking-[0.3em] font-black">
+                    className="text-xs uppercase  font-black">
                     Application Tracking Number
                   </p>
                   <p
@@ -767,7 +767,7 @@ export default function TrackApplication({
                   <div className="space-y-2">
                     <p
                       style={{ color: "#9ca3af" }}
-                      className="text-[0.625rem] font-black uppercase tracking-widest">
+                      className="text-[0.625rem] font-black uppercase ">
                       Security Validation
                     </p>
                     <div

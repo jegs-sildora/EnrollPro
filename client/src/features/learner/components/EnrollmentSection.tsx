@@ -125,16 +125,16 @@ export function EnrollmentSection({ learner }: Props) {
       {
         accessorKey: "status",
         header: () => <div className="text-center">Status</div>,
-        cell: ({ }) => (
+        cell: () => (
           <div className="flex justify-center">
             <span className="text-xs font-black px-2 py-0.5 rounded-md bg-muted text-foreground uppercase ">
-              {learner.status?.replace(/_/g, ' ') || "ENROLLED"}
+              {learner.status?.replace(/_/g, " ") || "ENROLLED"}
             </span>
           </div>
         ),
       },
     ],
-    [],
+    [learner.status],
   );
 
   return (

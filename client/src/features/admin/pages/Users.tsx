@@ -33,7 +33,7 @@ import {
   Lock as LockIcon,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
-import { cn, formatUserRole } from "@/shared/lib/utils";
+import { cn, formatUserRole, getRoleColorClasses } from "@/shared/lib/utils";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -79,6 +79,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
+import { PaginationBar } from "@/shared/components/PaginationBar";
 
 interface User {
   id: number;
@@ -139,7 +140,6 @@ interface Section {
   name: string;
 }
 
-const PAGE_SIZE = 15;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MOBILE_PATTERN = /^09\d{9}$/;
 const PASSWORD_PATTERN = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
@@ -181,24 +181,64 @@ export default function AdminUsers() {
   const [sections, setSections] = useState<Section[]>([]);
   const showSkeleton = useDelayedLoading(loading);
 
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(() => Number(searchParams.get("page")) || 1);
+  const [limit, setLimit] = useState(() => Number(searchParams.get("limit")) || 25);
   const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [search, setSearch] = useState(() => searchParams.get("search") || "");
+  const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get("search") || "");
 
-  const [roleFilter, setRoleFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [gradeLevelFilter, setGradeLevelFilter] = useState<string>("all");
-  const [sectionFilter, setSectionFilter] = useState<string>("all");
-  const [learnerStatusFilter, setLearnerStatusFilter] = useState<string>("all");
+  const [roleFilter, setRoleFilter] = useState<string>(() => searchParams.get("role") || "all");
+  const [statusFilter, setStatusFilter] = useState<string>(() => searchParams.get("status") || "all");
+  const [gradeLevelFilter, setGradeLevelFilter] = useState<string>(() => searchParams.get("gradeLevelId") || "all");
+  const [sectionFilter, setSectionFilter] = useState<string>(() => searchParams.get("sectionId") || "all");
+  const [learnerStatusFilter, setLearnerStatusFilter] = useState<string>(() => searchParams.get("learnerStatus") || "all");
 
-  const [sortBy, setSortBy] = useState<string>("createdAt");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [sortBy, setSortBy] = useState<string>(() => searchParams.get("sortBy") || "createdAt");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">(() => (searchParams.get("sortOrder") as "asc" | "desc") || "desc");
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+
+  const updateUrlParams = useCallback(
+    (newParams: Record<string, string | number | undefined | null>) => {
+      const current = Object.fromEntries(searchParams.entries());
+      const updated = { ...current, ...newParams };
+
+      // Remove undefined, nulls, empty strings, and defaults
+      Object.keys(updated).forEach((key) => {
+        if (
+          updated[key] === undefined || 
+          updated[key] === null || 
+          updated[key] === "" || 
+          updated[key] === "all"
+        ) {
+          delete updated[key];
+        }
+      });
+
+      setSearchParams(updated as Record<string, string>, { replace: true });
+    },
+    [searchParams, setSearchParams],
+  );
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    updateUrlParams({ page: newPage });
+  };
+
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit);
+    setPage(1);
+    updateUrlParams({ limit: newLimit, page: 1 });
+  };
 
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value }, { replace: true });
+    setPage(1);
+    setSearch("");
+    setRoleFilter("all");
+    setStatusFilter("all");
+    setGradeLevelFilter("all");
+    setSectionFilter("all");
+    setLearnerStatusFilter("all");
     setRowSelection({});
   };
 
@@ -256,7 +296,7 @@ export default function AdminUsers() {
         try {
           const res = await api.get(`/sections/${activeSchoolYearId}`);
           const gl = res.data.gradeLevels.find(
-            (g: any) => g.gradeLevelId === parseInt(gradeLevelFilter),
+            (g: { gradeLevelId: number }) => g.gradeLevelId === parseInt(gradeLevelFilter),
           );
           setSections(gl?.sections || []);
         } catch (err) {
@@ -371,7 +411,7 @@ export default function AdminUsers() {
   };
 
   const getDuplicateEmailMessage = (err: unknown): string | null => {
-    const response = (err as any).response;
+    const response = (err as { response?: { status?: number; data?: { field?: string; code?: string; message?: string } } }).response;
     if (response?.status !== 409) return null;
     const field = response.data?.field;
     const code = response.data?.code;
@@ -391,7 +431,7 @@ export default function AdminUsers() {
     try {
       const params: FetchUsersParams = {
         page,
-        limit: PAGE_SIZE,
+        limit,
         sortBy,
         sortOrder,
         tab: activeTab,
@@ -414,17 +454,16 @@ export default function AdminUsers() {
       }
       setUsers(filteredUsers);
       setTotal(res.data.total ?? 0);
-      setTotalPages(res.data.totalPages ?? 1);
     } catch (err) {
       toastApiError(err as never);
       setUsers([]);
       setTotal(0);
-      setTotalPages(1);
     } finally {
       setLoading(false);
     }
   }, [
     page,
+    limit,
     roleFilter,
     statusFilter,
     gradeLevelFilter,
@@ -633,7 +672,7 @@ export default function AdminUsers() {
         header: () => (
           <button
             onClick={() => handleSort("lastName")}
-            className="flex h-11 w-full items-center justify-start gap-1 px-4 text-xs font-extrabold uppercase tracking-widest text-maroon-900 bg-maroon-50/50 hover:bg-maroon-100/50 transition-colors">
+            className="flex h-11 w-full items-center justify-start gap-1 px-4 text-xs font-extrabold uppercase  text-maroon-900 bg-maroon-50/50 hover:bg-maroon-100/50 transition-colors">
             {activeTab === "staff" ? "Personnel Identity" : "Learner Identity"}
             {getSortIcon("lastName")}
           </button>
@@ -675,7 +714,7 @@ export default function AdminUsers() {
       {
         id: "context",
         header: () => (
-          <div className="flex h-11 w-full items-center justify-center text-xs font-extrabold uppercase tracking-widest text-maroon-900 bg-maroon-50/50">
+          <div className="flex h-11 w-full items-center justify-center text-xs font-extrabold uppercase  text-maroon-900 bg-maroon-50/50">
             {activeTab === "staff" ? "Designation / Role" : "Class Context"}
           </div>
         ),
@@ -714,17 +753,15 @@ export default function AdminUsers() {
           }
           return (
             <div className="space-y-1 text-center min-w-[140px] py-1">
-              <div className="text-[11px] font-black text-primary uppercase tracking-tight leading-none">
+              <div className="text-[11px] font-black text-primary uppercase  leading-none">
                 {user.designation || "NO DESIGNATION"}
               </div>
               <div className="flex justify-center">
                 <Badge
                   variant="outline"
                   className={cn(
-                    "text-[9px] font-black uppercase px-1.5 h-4",
-                    user.role === "SYSTEM_ADMIN"
-                      ? "bg-maroon-50 text-maroon-700 border-maroon-100"
-                      : "bg-purple-50 text-purple-700",
+                    "text-[9px] font-black uppercase px-1.5 h-4 border-none",
+                    getRoleColorClasses(user.role),
                   )}>
                   {formatUserRole(user.role)}
                 </Badge>
@@ -738,7 +775,7 @@ export default function AdminUsers() {
         header: () => (
           <button
             onClick={() => handleSort("isActive")}
-            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-extrabold uppercase tracking-widest text-maroon-900 bg-maroon-50/50">
+            className="flex h-11 w-full items-center justify-center gap-1 px-3 text-xs font-extrabold uppercase  text-maroon-900 bg-maroon-50/50">
             Account Status{getSortIcon("isActive")}
           </button>
         ),
@@ -763,7 +800,7 @@ export default function AdminUsers() {
                           : "bg-green-500 ring-green-100",
                     )}
                   />
-                  <span className="text-xs font-extrabold uppercase tracking-wider">
+                  <span className="text-xs font-extrabold uppercase ">
                     {isDropped || !user.isActive
                       ? "LOCKED"
                       : !isActivated
@@ -789,7 +826,7 @@ export default function AdminUsers() {
                         : "bg-green-500 ring-green-100",
                   )}
                 />
-                <span className="text-xs font-extrabold uppercase tracking-wider">
+                <span className="text-xs font-extrabold uppercase ">
                   {!user.isActive
                     ? "LOCKED"
                     : isPending
@@ -804,7 +841,7 @@ export default function AdminUsers() {
       {
         id: "actions",
         header: () => (
-          <div className="flex h-11 w-full items-center justify-center px-3 text-xs font-extrabold uppercase tracking-widest text-maroon-900 bg-maroon-50/50 rounded-tr-lg">
+          <div className="flex h-11 w-full items-center justify-center px-3 text-xs font-extrabold uppercase  text-maroon-900 bg-maroon-50/50 rounded-tr-lg">
             Actions
           </div>
         ),
@@ -816,7 +853,7 @@ export default function AdminUsers() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 px-3 font-black text-xs uppercase tracking-widest gap-1.5 border-orange-100 hover:bg-orange-50 hover:text-orange-600 transition-all"
+                  className="h-8 px-3 font-black text-xs uppercase  gap-1.5 border-orange-100 hover:bg-orange-50 hover:text-orange-600 transition-all"
                   title="Reset to Default Password"
                   onClick={() => {
                     setSelectedUser(user);
@@ -863,7 +900,7 @@ export default function AdminUsers() {
                 <DropdownMenuContent
                   align="end"
                   className="w-48">
-                  <DropdownMenuLabel className="text-xs font-extrabold uppercase tracking-widest opacity-50">
+                  <DropdownMenuLabel className="text-xs font-extrabold uppercase  opacity-50">
                     Account Control
                   </DropdownMenuLabel>
                   {user.role === "LEARNER" && (
@@ -945,7 +982,7 @@ export default function AdminUsers() {
             key={i}
             className="border-none shadow-sm bg-[hsl(var(--card))]">
             <CardHeader className="pb-2">
-              <p className="text-xs uppercase tracking-wider font-bold text-foreground">
+              <p className="text-xs uppercase  font-bold text-foreground">
                 {m.label}
               </p>
               <CardTitle className={cn("text-2xl font-extrabold", m.color)}>
@@ -965,7 +1002,7 @@ export default function AdminUsers() {
         <CardHeader className="px-3 sm:px-6 pb-3">
           <div className="flex flex-col md:flex-row gap-3 md:gap-4 items-stretch md:items-end">
             <div className="flex-1 space-y-2 w-full">
-              <Label className="text-xs sm:text-sm uppercase tracking-wider font-bold flex items-center justify-between">
+              <Label className="text-xs sm:text-sm uppercase  font-bold flex items-center justify-between">
                 <span>
                   {activeTab === "staff"
                     ? "Personnel Filter"
@@ -994,7 +1031,7 @@ export default function AdminUsers() {
               {activeTab === "staff" ? (
                 <>
                   <div className="space-y-2">
-                    <Label className="text-xs sm:text-sm uppercase tracking-wider font-bold">
+                    <Label className="text-xs sm:text-sm uppercase  font-bold">
                       Role
                     </Label>
                     <Select
@@ -1014,7 +1051,7 @@ export default function AdminUsers() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs sm:text-sm uppercase tracking-wider font-bold">
+                    <Label className="text-xs sm:text-sm uppercase  font-bold">
                       Status
                     </Label>
                     <Select
@@ -1034,7 +1071,7 @@ export default function AdminUsers() {
               ) : (
                 <>
                   <div className="space-y-2">
-                    <Label className="text-xs sm:text-sm uppercase tracking-wider font-bold">
+                    <Label className="text-xs sm:text-sm uppercase  font-bold">
                       Grade
                     </Label>
                     <Select
@@ -1056,7 +1093,7 @@ export default function AdminUsers() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs sm:text-sm uppercase tracking-wider font-bold">
+                    <Label className="text-xs sm:text-sm uppercase  font-bold">
                       Section
                     </Label>
                     <Select
@@ -1116,7 +1153,6 @@ export default function AdminUsers() {
       statusFilter,
       gradeLevelFilter,
       sectionFilter,
-      learnerStatusFilter,
       loading,
       fetchUsers,
       activeTab,
@@ -1180,10 +1216,8 @@ export default function AdminUsers() {
                     <Badge
                       variant="outline"
                       className={cn(
-                        "text-xs font-bold uppercase shrink-0",
-                        user.role === "LEARNER"
-                          ? "bg-blue-50 text-blue-700"
-                          : "bg-purple-50 text-purple-700",
+                        "text-xs font-bold uppercase shrink-0 border-none",
+                        getRoleColorClasses(user.role),
                       )}>
                       {activeTab === "learners"
                         ? user.learnerProfile?.enrollmentApplications?.[0]
@@ -1216,7 +1250,7 @@ export default function AdminUsers() {
                   animate={{ y: 0, opacity: 1 }}
                   exit={{ y: 20, opacity: 0 }}
                   className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 px-6 py-3 bg-maroon-900 text-white rounded-full shadow-2xl border border-maroon-700/50 backdrop-blur-md">
-                  <span className="text-xs font-black uppercase tracking-widest border-r border-white/20 pr-3">
+                  <span className="text-xs font-black uppercase  border-r border-white/20 pr-3">
                     {Object.keys(rowSelection).length} Selected
                   </span>
                   <div className="flex items-center gap-2">
@@ -1225,7 +1259,7 @@ export default function AdminUsers() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-8 text-xs font-bold uppercase tracking-widest hover:bg-white/10 text-white"
+                          className="h-8 text-xs font-bold uppercase  hover:bg-white/10 text-white"
                           onClick={() =>
                             sileo.info({
                               title: "Bulk Action",
@@ -1238,7 +1272,7 @@ export default function AdminUsers() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-8 text-xs font-bold uppercase tracking-widest hover:bg-white/10 text-white"
+                          className="h-8 text-xs font-bold uppercase  hover:bg-white/10 text-white"
                           onClick={() =>
                             sileo.info({
                               title: "Bulk Action",
@@ -1254,7 +1288,7 @@ export default function AdminUsers() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-8 text-xs font-black uppercase tracking-widest hover:bg-white/10 text-white"
+                          className="h-8 text-xs font-black uppercase  hover:bg-white/10 text-white"
                           onClick={() =>
                             sileo.info({
                               title: "Bulk Action",
@@ -1271,7 +1305,7 @@ export default function AdminUsers() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 text-xs font-bold uppercase tracking-widest hover:bg-red-500/20 text-red-200 hover:text-red-100"
+                      className="h-8 text-xs font-bold uppercase  hover:bg-red-500/20 text-red-200 hover:text-red-100"
                       onClick={() =>
                         sileo.info({
                           title: "Bulk Action",
@@ -1307,29 +1341,15 @@ export default function AdminUsers() {
             />
           </div>
 
-          {totalPages > 1 && (
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-2">
-              <p className="text-sm font-semibold text-foreground">
-                Page {page} of {totalPages}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1 || loading}>
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages || loading}>
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
+          <PaginationBar
+            page={page}
+            total={total}
+            limit={limit}
+            onPageChange={handlePageChange}
+            onLimitChange={handleLimitChange}
+            itemName={activeTab === "staff" ? "Personnel" : "Learners"}
+            className="mt-4 border shadow-none rounded-lg"
+          />
         </CardContent>
       </Card>
     ),
@@ -1339,7 +1359,7 @@ export default function AdminUsers() {
       loading,
       total,
       page,
-      totalPages,
+      limit,
       showSkeleton,
       activeTab,
       rowSelection,
@@ -1461,7 +1481,7 @@ export default function AdminUsers() {
           </SheetHeader>
           <div className="space-y-6 py-6">
             <div className="space-y-4">
-              <Label className="text-xs font-black uppercase tracking-widest text-foreground">
+              <Label className="text-xs font-black uppercase  text-foreground">
                 Staff Identity
               </Label>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -1589,7 +1609,7 @@ export default function AdminUsers() {
             </div>
 
             <div className="space-y-4 pt-4 border-t">
-              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-foreground">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase  text-foreground">
                 <Network className="h-3.5 w-3.5" />
                 Ecosystem RBAC Matrix
               </div>
@@ -1636,7 +1656,7 @@ export default function AdminUsers() {
             </div>
 
             <div className="space-y-4 pt-4 border-t">
-              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-foreground">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase  text-foreground">
                 <Briefcase className="h-3.5 w-3.5" />
                 Employment & Role
               </div>
@@ -1646,7 +1666,7 @@ export default function AdminUsers() {
                 </Label>
                 <Select
                   value={formData.role}
-                  onValueChange={(v: any) =>
+                  onValueChange={(v: User["role"]) =>
                     setFormData({ ...formData, role: v })
                   }>
                   <SelectTrigger className="h-11 font-bold text-primary">
@@ -1701,7 +1721,7 @@ export default function AdminUsers() {
             </div>
 
             <div className="space-y-4 pt-4 border-t">
-              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-foreground">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase  text-foreground">
                 <Mail className="h-3.5 w-3.5" />
                 Contact Information
               </div>
@@ -1746,7 +1766,7 @@ export default function AdminUsers() {
             </div>
 
             <div className="space-y-4 pt-4 border-t">
-              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-foreground">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase  text-foreground">
                 <ShieldAlert className="h-3.5 w-3.5" />
                 Security & Onboarding
               </div>
@@ -1804,13 +1824,13 @@ export default function AdminUsers() {
               variant="outline"
               onClick={() => setCreateOpen(false)}
               disabled={submitting}
-              className="flex-1 font-bold uppercase tracking-widest text-xs">
+              className="flex-1 font-bold uppercase  text-xs">
               Discard
             </Button>
             <Button
               onClick={handleCreate}
               disabled={submitting}
-              className="flex-[2] font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/20">
+              className="flex-[2] font-bold uppercase  text-xs shadow-lg shadow-primary/20">
               {submitting ? (
                 <RefreshCw className="h-4 w-4 animate-spin mr-2" />
               ) : (
@@ -1843,7 +1863,7 @@ export default function AdminUsers() {
               </Label>
               <Select
                 value={profileFormData.role}
-                onValueChange={(v: any) =>
+                onValueChange={(v: User["role"]) =>
                   setProfileFormData({ ...profileFormData, role: v })
                 }>
                 <SelectTrigger className="h-11 font-bold text-primary">
@@ -2008,13 +2028,13 @@ export default function AdminUsers() {
             <Button
               variant="outline"
               onClick={() => setResetOpen(false)}
-              className="flex-1 font-bold uppercase tracking-widest text-xs h-10">
+              className="flex-1 font-bold uppercase  text-xs h-10">
               Cancel
             </Button>
             <Button
               onClick={handleResetPassword}
               disabled={submitting}
-              className="flex-[2] font-black uppercase tracking-widest text-xs h-10">
+              className="flex-[2] font-black uppercase  text-xs h-10">
               {submitting ? (
                 <RefreshCw className="h-4 w-4 animate-spin mr-2" />
               ) : (

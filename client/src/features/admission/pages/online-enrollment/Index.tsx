@@ -233,7 +233,7 @@ export default function Apply() {
                     <h2 className="text-2xl sm:text-3xl font-black uppercase text-black">
                       {schoolName}
                     </h2>
-                    <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-destructive/10 text-destructive text-xs font-bold tracking-widest uppercase border border-destructive/20">
+                    <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-destructive/10 text-destructive text-xs font-bold  uppercase border border-destructive/20">
                       {isBosyLocked ? "Enrollment Finalized" : "Phase Inactive"}
                     </div>
                   </div>
@@ -244,7 +244,7 @@ export default function Apply() {
                         <h3 className="text-xl sm:text-2xl font-black text-black flex items-center justify-center gap-2">
                           ONLINE ENROLLMENT IS NOW CLOSED
                         </h3>
-                        <p className="text-sm font-bold text-foreground uppercase tracking-widest leading-relaxed">
+                        <p className="text-sm font-bold text-foreground uppercase  leading-relaxed">
                           The standard online enrollment period for S.Y.{" "}
                           {activeSchoolYearLabel} has officially ended, and
                           class rosters have been finalized.
@@ -252,7 +252,7 @@ export default function Apply() {
                       </div>
 
                       <div className="p-6 rounded-xl bg-red-50 border-2 border-red-200 text-left space-y-4 shadow-inner">
-                        <div className="flex items-center gap-2 text-red-900 font-black uppercase tracking-wider text-sm">
+                        <div className="flex items-center gap-2 text-red-900 font-black uppercase  text-sm">
                           LATE ENROLLMENT INSTRUCTIONS:
                         </div>
                         <p className="text-sm text-red-900 font-bold leading-relaxed">
@@ -275,7 +275,7 @@ export default function Apply() {
                         <Button
                           variant="outline"
                           size="lg"
-                          className="w-full sm:w-auto px-8 h-12 rounded-xl font-black uppercase tracking-widest text-xs transition-all border-2"
+                          className="w-full sm:w-auto px-8 h-12 rounded-xl font-black uppercase  text-xs transition-all border-2"
                           onClick={() => {
                             if (schoolWebsite) {
                               window.location.href = schoolWebsite;
@@ -289,7 +289,7 @@ export default function Apply() {
 
                       {facebookPageUrl && (
                         <div className="pt-6 border-t border-slate-200 space-y-4">
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide text-center">
+                          <p className="text-xs font-bold text-slate-500 uppercase  text-center">
                             For real-time updates and official memorandums,
                             please follow our page:
                           </p>
@@ -297,7 +297,7 @@ export default function Apply() {
                             href={facebookPageUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-black uppercase tracking-widest text-xs transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
+                            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-black uppercase  text-xs transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
                             <svg
                               className="w-5 h-5 fill-current"
                               viewBox="0 0 24 24">
@@ -322,7 +322,7 @@ export default function Apply() {
                       </p>
                       {facebookPageUrl ? (
                         <div className="pt-6 border-t border-border/50 space-y-4">
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide text-center leading-relaxed">
+                          <p className="text-xs font-bold text-slate-500 uppercase  text-center leading-relaxed">
                             Please stay tuned to our official school social
                             media pages for announcements regarding the next
                             registration schedule.
@@ -331,7 +331,7 @@ export default function Apply() {
                             href={facebookPageUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-black uppercase tracking-widest text-xs transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
+                            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-black uppercase  text-xs transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
                             <svg
                               className="w-5 h-5 fill-current"
                               viewBox="0 0 24 24">
@@ -402,7 +402,7 @@ export default function Apply() {
                       <ReturningLearnerFlow
                         onBack={() => setIntakeChoice(null)}
                         onSuccess={(data) =>
-                          setSubmittedSuccessData(data as any)
+                          setSubmittedSuccessData(data as EnrollmentSubmitSuccessPayload)
                         }
                       />
                     </motion.div>

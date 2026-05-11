@@ -114,7 +114,10 @@ export function ApplicationDetailPanel({
   };
 
   const persistedMandatoryMet = applicant
-    ? isMandatoryDocumentsMet(applicant.learnerType, applicant.checklist as any)
+    ? isMandatoryDocumentsMet(
+        applicant.learnerType,
+        applicant.checklist as Record<string, unknown>,
+      )
     : false;
 
   const [mandatoryMet, setMandatoryMet] = useState(false);
@@ -224,7 +227,7 @@ export function ApplicationDetailPanel({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-0 border-t pt-4">
             <div>
-              <p className="text-xs sm:text-[0.625rem] uppercase tracking-widest">
+              <p className="text-xs sm:text-[0.625rem] uppercase ">
                 Grade Level (Applicant Type)
               </p>
               <p className="text-xs sm:text-sm">
@@ -233,7 +236,7 @@ export function ApplicationDetailPanel({
               </p>
             </div>
             <div className="text-left sm:text-right">
-              <p className="text-xs sm:text-[0.625rem] uppercase tracking-widest">
+              <p className="text-xs sm:text-[0.625rem] uppercase ">
                 Learner Reference Number
               </p>
               <p className="text-xs sm:text-sm ">{applicant.lrn || "N/A"}</p>
@@ -309,7 +312,7 @@ export function ApplicationDetailPanel({
         {showRawJson && (
           <div className="rounded-md border bg-muted/20">
             <details className="group">
-              <summary className="cursor-pointer list-none p-3 text-xs sm:text-sm font-bold uppercase tracking-wide">
+              <summary className="cursor-pointer list-none p-3 text-xs sm:text-sm font-bold uppercase ">
                 <span className="group-open:hidden">
                   Show Raw Application JSON
                 </span>
@@ -326,7 +329,7 @@ export function ApplicationDetailPanel({
 
         {pipelineProcessHref && (
           <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
-            <p className="text-[11px] sm:text-xs uppercase tracking-wider text-foreground">
+            <p className="text-[11px] sm:text-xs uppercase  text-foreground">
               Processing Needed?
             </p>
             <Link

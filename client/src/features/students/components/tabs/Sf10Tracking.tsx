@@ -57,7 +57,6 @@ export function Sf10Tracking({
   learnerId,
   requests,
   onRefresh,
-  isAlumni: _isAlumni,
 }: Sf10TrackingProps) {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -84,7 +83,7 @@ export function Sf10Tracking({
       });
       onRefresh();
     } catch (err) {
-      toastApiError(err as any);
+      toastApiError(err as never);
     } finally {
       setSubmitting(false);
     }
@@ -104,7 +103,7 @@ export function Sf10Tracking({
       });
       onRefresh();
     } catch (err) {
-      toastApiError(err as any);
+      toastApiError(err as never);
     }
   };
 
@@ -116,7 +115,7 @@ export function Sf10Tracking({
       sileo.success({ title: "Record Deleted" });
       onRefresh();
     } catch (err) {
-      toastApiError(err as any);
+      toastApiError(err as never);
     }
   };
 

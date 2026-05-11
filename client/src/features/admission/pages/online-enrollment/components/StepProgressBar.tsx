@@ -64,7 +64,7 @@ export default function StepProgressBar({
         {/* Mobile */}
         <div className="md:hidden">
           <div className="mb-3 flex items-center justify-between gap-2">
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-foreground">
+            <p className="text-xs font-bold uppercase  text-foreground">
               Step {currentStep} of {totalSteps}
             </p>
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
@@ -121,7 +121,7 @@ export default function StepProgressBar({
               <p className="truncate font-bold text-foreground">
                 {currentStepData?.title}
               </p>
-              <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-wider text-primary">
+              <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[0.625rem] font-bold uppercase  text-primary">
                 Current
               </span>
             </div>
@@ -135,7 +135,7 @@ export default function StepProgressBar({
 
         {/* Desktop and larger */}
         <div className="hidden md:block">
-          <p className="mb-3 text-center text-base font-semibold uppercase tracking-[0.14em] text-foreground">
+          <p className="mb-3 text-center text-base font-semibold uppercase  text-foreground">
             Step {currentStep} of {totalSteps}
           </p>
 
@@ -200,7 +200,7 @@ export default function StepProgressBar({
 
                     <span
                       className={cn(
-                        "mt-1 rounded-full px-2 py-0.5 text-[0.5625rem] font-bold uppercase tracking-wider transition-colors",
+                        "mt-1 rounded-full px-2 py-0.5 text-[0.5625rem] font-bold uppercase  transition-colors",
                         isCompleted
                           ? "bg-primary text-primary-foreground"
                           : isActive

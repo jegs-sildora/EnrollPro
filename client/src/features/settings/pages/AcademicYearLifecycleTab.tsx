@@ -339,7 +339,7 @@ export default function AcademicYearLifecycleTab() {
               </CardDescription>
             </div>
             <div
-              className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border ${
+              className={`px-4 py-1.5 rounded-full text-xs font-black uppercase  border ${
                 isLocked
                   ? "bg-emerald-100 text-emerald-700 border-emerald-200"
                   : "bg-amber-100 text-primary border-amber-200"
@@ -474,7 +474,7 @@ export default function AcademicYearLifecycleTab() {
                   }
                 }}>
                 <DialogTrigger asChild>
-                  <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-b-4 border-primary/20 active:border-b-0 active:translate-y-1 font-black uppercase tracking-widest transition-all px-8 h-12">
+                  <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-b-4 border-primary/20 active:border-b-0 active:translate-y-1 font-black uppercase  transition-all px-8 h-12">
                     <Lock className="mr-2 h-5 w-5" />
                     Initiate BOSY Lockdown
                   </Button>
@@ -631,7 +631,7 @@ export default function AcademicYearLifecycleTab() {
                     {!isLockBlocked && (
                       <Button
                         className={cn(
-                          "font-black uppercase tracking-widest transition-all px-6",
+                          "font-black uppercase  transition-all px-6",
                           isLocking ||
                             lockConfirmLabel !== activeSchoolYearLabel ||
                             lockPin.length !== 6
@@ -669,7 +669,7 @@ export default function AcademicYearLifecycleTab() {
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
-                  className="font-black uppercase tracking-widest border-primary/20 text-primary hover:bg-primary/5">
+                  className="font-black uppercase  border-primary/20 text-primary hover:bg-primary/5">
                   <Unlock className="mr-2 h-4 w-4" />
                   Emergency BOSY Unlock
                 </Button>
@@ -788,7 +788,7 @@ export default function AcademicYearLifecycleTab() {
                   </Button>
                   <Button
                     className={cn(
-                      "font-black uppercase tracking-widest transition-all px-6 shrink-0",
+                      "font-black uppercase  transition-all px-6 shrink-0",
                       !isUnlockFormValid || isUnlocking
                         ? "bg-slate-200 text-slate-500 cursor-not-allowed"
                         : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-b-4 border-primary/20 active:border-b-0 active:translate-y-1",

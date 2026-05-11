@@ -331,7 +331,7 @@ export default function Step5Enrollment() {
   return (
     <div className="space-y-12">
       <div className="space-y-4">
-        <Label className="text-sm font-bold uppercase tracking-widest text-primary">
+        <Label className="text-sm font-bold uppercase  text-primary">
           Learner Category <span className="text-destructive">*</span>
         </Label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -351,7 +351,7 @@ export default function Step5Enrollment() {
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
                   : "border-border bg-white hover:bg-primary/5 text-foreground hover:text-foreground",
               )}>
-              <span className="font-bold text-sm leading-tight tracking-wide">
+              <span className="font-bold text-sm leading-tight ">
                 {typeOption.label}
               </span>
             </button>
@@ -365,7 +365,7 @@ export default function Step5Enrollment() {
       </div>
 
       <div className="space-y-6">
-        <Label className="text-sm font-bold uppercase tracking-widest text-primary">
+        <Label className="text-sm font-bold uppercase  text-primary">
           Grade Level to Apply for <span className="text-destructive">*</span>
         </Label>
         <div
@@ -407,7 +407,7 @@ export default function Step5Enrollment() {
       <div className="space-y-3 p-5 bg-muted/30 rounded-2xl border border-border/50">
         <Label
           htmlFor="generalAverage"
-          className="text-sm font-bold uppercase tracking-widest text-primary">
+          className="text-sm font-bold uppercase  text-primary">
           Final General Average <span className="text-destructive">*</span>
         </Label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
@@ -596,7 +596,7 @@ export default function Step5Enrollment() {
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden">
                 <div className="pt-6 space-y-6">
-                  <Label className="text-sm font-bold uppercase tracking-widest text-primary">
+                  <Label className="text-sm font-bold uppercase  text-primary">
                     Select SCP Program{" "}
                     <span className="text-destructive">*</span>
                   </Label>
@@ -780,7 +780,7 @@ export default function Step5Enrollment() {
 
       <div className="space-y-10 pt-6 border-t border-border/40">
         <div className="space-y-4">
-          <Label className="text-sm font-bold uppercase tracking-widest text-primary">
+          <Label className="text-sm font-bold uppercase  text-primary">
             If the school implements other distance learning modalities aside
             from face-to-face instruction, which would the learner prefer? Check
             all that applies:

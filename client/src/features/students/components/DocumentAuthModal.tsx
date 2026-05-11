@@ -74,7 +74,7 @@ export function DocumentAuthModal({
           </div>
 
           <div className="space-y-3">
-            <Label className="text-xs font-black uppercase text-foreground tracking-wider">
+            <Label className="text-xs font-black uppercase text-foreground ">
               Select Document Presented:
             </Label>
             
@@ -138,7 +138,7 @@ export function DocumentAuthModal({
             onClick={handleConfirm}
             disabled={!hasCertified || isSubmitting}
             className={cn(
-              "font-black uppercase tracking-widest transition-all px-8",
+              "font-black uppercase  transition-all px-8",
               hasCertified 
                 ? "bg-primary/90 text-white hover:bg-primary shadow-lg" 
                 : "bg-slate-200 text-foreground cursor-not-allowed border-none shadow-none"

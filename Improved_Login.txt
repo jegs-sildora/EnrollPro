@@ -113,7 +113,7 @@ export default function LoginPage() {
             </div>
             <div>
               <h1 className="text-4xl font-bold ">{acronym}</h1>
-              <p className="text-white/80 text-sm font-medium tracking-wide">Academic Records Management</p>
+              <p className="text-white/80 text-sm font-medium ">Academic Records Management</p>
             </div>
           </div>
 

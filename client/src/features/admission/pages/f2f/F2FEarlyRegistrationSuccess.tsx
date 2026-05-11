@@ -95,7 +95,7 @@ export default function F2FEarlyRegistrationSuccess({
                 ? "border-primary bg-primary/5"
                 : "border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/5",
             )}>
-            <p className="text-[0.625rem] text-foreground uppercase tracking-[0.2em] font-black">
+            <p className="text-[0.625rem] text-foreground uppercase  font-black">
               Application Tracking Number
             </p>
             <div className="flex items-center justify-center gap-4">
@@ -129,13 +129,13 @@ export default function F2FEarlyRegistrationSuccess({
           <div className="bg-muted/50 p-4 rounded-xl border border-border/50">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-[0.625rem] text-foreground uppercase tracking-wide font-bold mb-1">
+                <p className="text-[0.625rem] text-foreground uppercase  font-bold mb-1">
                   Encoded By
                 </p>
                 <p className="font-semibold">{encodedBy}</p>
               </div>
               <div>
-                <p className="text-[0.625rem] text-foreground uppercase tracking-wide font-bold mb-1">
+                <p className="text-[0.625rem] text-foreground uppercase  font-bold mb-1">
                   Date & Time
                 </p>
                 <p className="font-semibold">

@@ -85,10 +85,10 @@ export default function EcosystemSync() {
   const [gradeFilter, setGradeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [syncJob, setSyncJob] = useState<SyncJob | null>(null);
-  const [lastJobResults, setLastJobResults] = useState<any>(null);
+  const [lastJobResults, setLastJobResults] = useState<SyncJob | null>(null);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
-  const [sections, setSections] = useState<any[]>([]);
+  const [sections, setSections] = useState<{ id: number; name: string; gradeLevel: { name: string } }[]>([]);
   const [selectedSectionId, setSelectedSectionId] = useState<string>("");
   const [pendingCount, setPendingCount] = useState(0);
   const [provisioning, setProvisioning] = useState(false);
@@ -112,11 +112,7 @@ export default function EcosystemSync() {
     setPage(1); // Reset to first page when filters change
   }, [view, gradeFilter, statusFilter, debouncedSearch]);
 
-  useEffect(() => {
-    fetchEntities();
-  }, [view, gradeFilter, statusFilter, debouncedSearch, page, limit]);
-
-  const fetchEntities = async () => {
+  const fetchEntities = useCallback(async () => {
     setLoading(true);
     try {
       const type = view === "learners" ? "LEARNER" : "TEACHER";
@@ -133,7 +129,8 @@ export default function EcosystemSync() {
       setEntities(res.data.data);
       setTotal(res.data.meta?.total || 0);
       setPendingCount(res.data.meta?.pendingCount || 0);
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error(error);
       sileo.error({
         title: "Failed to fetch status",
         description: "Could not retrieve ecosystem sync statuses.",
@@ -141,13 +138,17 @@ export default function EcosystemSync() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [view, gradeFilter, statusFilter, debouncedSearch, page, limit]);
+
+  useEffect(() => {
+    fetchEntities();
+  }, [fetchEntities]);
 
   const fetchSections = async () => {
     try {
       const res = await api.get("/integration/v1/sections");
       setSections(res.data.data);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(error);
     }
   };
@@ -163,8 +164,9 @@ export default function EcosystemSync() {
         title: "Provisioning Complete",
         description: `Created ${createdCount} accounts. Skipped ${skippedCount} existing users.`,
       });
-      fetchEntities();
-    } catch (error) {
+      void fetchEntities();
+    } catch (error: unknown) {
+      console.error(error);
       sileo.error({
         title: "Provisioning Failed",
         description: "Could not provision teacher login accounts.",
@@ -191,7 +193,8 @@ export default function EcosystemSync() {
         title: fullSync ? "BOSY Sync Started" : "Delta Sync Started",
         description: `Synchronizing ${res.data.data.count} ${type.toLowerCase()} records to the mesh ecosystem...`,
       });
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error(error);
       sileo.error({
         title: "Sync Failed",
         description: "Could not trigger synchronization pipeline.",
@@ -213,9 +216,9 @@ export default function EcosystemSync() {
             setSyncJob(null);
             setIsReportOpen(true);
           }, 1500);
-          fetchEntities();
+          void fetchEntities();
         }
-      } catch (error) {
+      } catch {
         clearInterval(interval);
         setSyncJob(null);
       }
@@ -292,7 +295,7 @@ export default function EcosystemSync() {
         <Card className="shadow-none border bg-card/50">
           <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0 pb-2">
             <div className="flex flex-col">
-              <span className="text-xs font-black uppercase tracking-widest text-foreground">
+              <span className="text-xs font-black uppercase  text-foreground">
                 A.T.L.A.S.
               </span>
               <CardTitle className="text-sm font-black">
@@ -317,7 +320,7 @@ export default function EcosystemSync() {
               )}
               %
             </div>
-            <p className="text-xs font-bold text-foreground uppercase tracking-tight">
+            <p className="text-xs font-bold text-foreground uppercase ">
               {
                 entities.filter((e) =>
                   e.syncStatuses.some(
@@ -333,7 +336,7 @@ export default function EcosystemSync() {
         <Card className="shadow-none border bg-card/50">
           <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0 pb-2">
             <div className="flex flex-col">
-              <span className="text-xs font-black uppercase tracking-widest text-foreground">
+              <span className="text-xs font-black uppercase  text-foreground">
                 S.M.A.R.T.
               </span>
               <CardTitle className="text-sm font-black">
@@ -358,7 +361,7 @@ export default function EcosystemSync() {
               )}
               %
             </div>
-            <p className="text-xs font-bold text-foreground uppercase tracking-tight">
+            <p className="text-xs font-bold text-foreground uppercase ">
               {
                 entities.filter((e) =>
                   e.syncStatuses.some(
@@ -374,7 +377,7 @@ export default function EcosystemSync() {
         <Card className="shadow-none border bg-card/50">
           <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0 pb-2">
             <div className="flex flex-col">
-              <span className="text-xs font-black uppercase tracking-widest text-foreground">
+              <span className="text-xs font-black uppercase  text-foreground">
                 A.I.M.S.
               </span>
               <CardTitle className="text-sm font-black">
@@ -399,7 +402,7 @@ export default function EcosystemSync() {
               )}
               %
             </div>
-            <p className="text-xs font-bold text-foreground uppercase tracking-tight">
+            <p className="text-xs font-bold text-foreground uppercase ">
               {
                 entities.filter((e) =>
                   e.syncStatuses.some(
@@ -418,7 +421,7 @@ export default function EcosystemSync() {
         <div className="flex flex-col gap-1">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-black text-foreground uppercase tracking-tight">
+              <h1 className="text-2xl font-black text-foreground uppercase ">
                 Master Roster Synchronization
               </h1>
               <p className="text-xs text-foreground font-bold">
@@ -430,7 +433,7 @@ export default function EcosystemSync() {
               {view === "teachers" && (
                 <Button
                   variant="outline"
-                  className="h-10 font-black gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary px-6 uppercase tracking-widest text-xs"
+                  className="h-10 font-black gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary px-6 uppercase  text-xs"
                   onClick={handleProvisionTeachers}
                   disabled={provisioning || loading}>
                   {provisioning ? (
@@ -444,7 +447,7 @@ export default function EcosystemSync() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    className="h-10 font-black gap-2 relative bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg px-6 uppercase tracking-widest text-xs"
+                    className="h-10 font-black gap-2 relative bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg px-6 uppercase  text-xs"
                     disabled={!!syncJob || loading}>
                     {syncJob ? (
                       <Loader2 className="size-4 animate-spin" />
@@ -464,7 +467,7 @@ export default function EcosystemSync() {
                 <DropdownMenuContent
                   align="end"
                   className="w-56 font-bold">
-                  <DropdownMenuLabel className="text-xs uppercase tracking-widest opacity-50 px-2 py-1.5">
+                  <DropdownMenuLabel className="text-xs uppercase  opacity-50 px-2 py-1.5">
                     Sync Strategies
                   </DropdownMenuLabel>
                   <DropdownMenuItem
@@ -491,7 +494,7 @@ export default function EcosystemSync() {
               </DropdownMenu>
               <Button
                 variant="outline"
-                className="h-10 font-bold gap-2 text-xs uppercase tracking-wider"
+                className="h-10 font-bold gap-2 text-xs uppercase "
                 onClick={() => {
                   fetchSections();
                   setIsPrintModalOpen(true);
@@ -523,7 +526,7 @@ export default function EcosystemSync() {
                               : "bg-muted animate-pulse",
                           )}
                         />
-                        <span className="text-[9px] font-black uppercase tracking-tighter">
+                        <span className="text-[9px] font-black uppercase ">
                           ATLAS
                         </span>
                       </div>
@@ -536,7 +539,7 @@ export default function EcosystemSync() {
                               : "bg-muted animate-pulse",
                           )}
                         />
-                        <span className="text-[9px] font-black uppercase tracking-tighter">
+                        <span className="text-[9px] font-black uppercase ">
                           SMART
                         </span>
                       </div>
@@ -549,11 +552,11 @@ export default function EcosystemSync() {
                               : "bg-muted animate-pulse",
                           )}
                         />
-                        <span className="text-[9px] font-black uppercase tracking-tighter">
+                        <span className="text-[9px] font-black uppercase ">
                           AIMS
                         </span>
                       </div>
-                      <span className="text-xs font-black uppercase tracking-widest text-primary ml-2 animate-pulse">
+                      <span className="text-xs font-black uppercase  text-primary ml-2 animate-pulse">
                         Identity Federation: Propagating SSOT Identity...
                       </span>
                     </div>
@@ -598,7 +601,7 @@ export default function EcosystemSync() {
                   setView(val);
                   setPage(1);
                 }}>
-                <SelectTrigger className="h-9 font-black text-xs uppercase tracking-wider w-32">
+                <SelectTrigger className="h-9 font-black text-xs uppercase  w-32">
                   <SelectValue placeholder="View Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -624,7 +627,7 @@ export default function EcosystemSync() {
                     setGradeFilter(val);
                     setPage(1);
                   }}>
-                  <SelectTrigger className="h-9 font-bold text-xs uppercase tracking-wider w-32">
+                  <SelectTrigger className="h-9 font-bold text-xs uppercase  w-32">
                     <SelectValue placeholder="Grade" />
                   </SelectTrigger>
                   <SelectContent>
@@ -662,7 +665,7 @@ export default function EcosystemSync() {
               <Select
                 value={statusFilter}
                 onValueChange={setStatusFilter}>
-                <SelectTrigger className="h-9 font-bold text-xs uppercase tracking-wider w-32">
+                <SelectTrigger className="h-9 font-bold text-xs uppercase  w-32">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -717,19 +720,19 @@ export default function EcosystemSync() {
           <Table>
             <TableHeader>
               <TableRow className="bg-primary/5 hover:bg-primary/5 border-b">
-                <TableHead className="w-[300px] font-black uppercase text-xs tracking-widest py-4">
+                <TableHead className="w-[300px] font-black uppercase text-xs  py-4">
                   Master Entity Details
                 </TableHead>
-                <TableHead className="font-black uppercase text-xs tracking-widest text-center border-r border-dashed">
+                <TableHead className="font-black uppercase text-xs  text-center border-r border-dashed">
                   Source (EnrollPro)
                 </TableHead>
-                <TableHead className="font-black uppercase text-xs tracking-widest text-center">
+                <TableHead className="font-black uppercase text-xs  text-center">
                   A.T.L.A.S.
                 </TableHead>
-                <TableHead className="font-black uppercase text-xs tracking-widest text-center">
+                <TableHead className="font-black uppercase text-xs  text-center">
                   S.M.A.R.T.
                 </TableHead>
-                <TableHead className="font-black uppercase text-xs tracking-widest text-center">
+                <TableHead className="font-black uppercase text-xs  text-center">
                   A.I.M.S.
                 </TableHead>
                 <TableHead className="w-[80px]"></TableHead>
@@ -740,7 +743,7 @@ export default function EcosystemSync() {
                 <TableRow>
                   <TableCell
                     colSpan={6}
-                    className="h-80 text-center align-middle text-foreground font-black uppercase text-xs tracking-tighter">
+                    className="h-80 text-center align-middle text-foreground font-black uppercase text-xs ">
                     <Loader2 className="size-6 animate-spin mx-auto mb-2 opacity-30" />
                     Querying Ledger...
                   </TableCell>
@@ -749,7 +752,7 @@ export default function EcosystemSync() {
                 <TableRow>
                   <TableCell
                     colSpan={6}
-                    className="h-80 text-center align-middle text-foreground font-black uppercase text-xs tracking-tighter">
+                    className="h-80 text-center align-middle text-foreground font-black uppercase text-xs ">
                     No matching records in the Identity Ledger.
                   </TableCell>
                 </TableRow>
@@ -768,7 +771,7 @@ export default function EcosystemSync() {
                           <span className="font-bold text-xs uppercase">
                             {entity.name}
                           </span>
-                          <span className="text-[9px] font-black text-foreground uppercase tracking-tighter">
+                          <span className="text-[9px] font-black text-foreground uppercase ">
                             {entity.type === "LEARNER" ? "LRN" : "EMP"}:{" "}
                             <span className="text-foreground">
                               {entity.identifier}
@@ -942,7 +945,7 @@ export default function EcosystemSync() {
             </div>
 
             <div className="space-y-2">
-              <h4 className="text-xs font-black uppercase tracking-widest text-foreground px-1">
+              <h4 className="text-xs font-black uppercase  text-foreground px-1">
                 Subsystem Handshakes
               </h4>
               <div className="space-y-1">
@@ -969,7 +972,7 @@ export default function EcosystemSync() {
           <DialogFooter>
             <Button
               onClick={() => setIsReportOpen(false)}
-              className="w-full font-black uppercase text-xs tracking-widest h-10">
+              className="w-full font-black uppercase text-xs  h-10">
               Acknowledge & Close
             </Button>
           </DialogFooter>

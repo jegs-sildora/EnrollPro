@@ -133,9 +133,9 @@ export default function EarlyRegistrationForm({
     ).values(),
   );
 
-  const scrollToTop = () => {
+  const scrollToTop = useCallback(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  };
+  }, []);
 
   // Track furthest step
   useEffect(() => {
@@ -151,7 +151,7 @@ export default function EarlyRegistrationForm({
       setIsEditing(false);
       sessionStorage.removeItem(EDITING_KEY);
     }
-  }, [stepper.state.current.data.id, EDITING_KEY]);
+  }, [stepper.state, EDITING_KEY]);
 
   // Initial load of max step
   useEffect(() => {
@@ -182,12 +182,12 @@ export default function EarlyRegistrationForm({
     if (stepper.state.current.data.id) {
       sessionStorage.setItem(STEP_KEY, stepper.state.current.data.id);
     }
-  }, [stepper.state.current.data.id, STEP_KEY]);
+  }, [stepper.state, STEP_KEY]);
 
   // Scroll to top on step change
   useEffect(() => {
     scrollToTop();
-  }, [stepper.state.current.data.id]);
+  }, [stepper.state, scrollToTop]);
 
   // Field groups per step for partial validation
   const STEP_FIELDS: Record<string, FieldPath<EarlyRegFormData>[]> = {
@@ -333,7 +333,7 @@ export default function EarlyRegistrationForm({
     sessionStorage.setItem(EDITING_KEY, "true");
 
     if (isStepChanging) {
-      stepper.navigation.goTo(stepId as any);
+      stepper.navigation.goTo(stepId as "basic-info" | "learner-profile" | "address-guardian" | "legal-consent");
     }
 
     window.setTimeout(
@@ -538,3 +538,4 @@ export default function EarlyRegistrationForm({
     </div>
   );
 }
+

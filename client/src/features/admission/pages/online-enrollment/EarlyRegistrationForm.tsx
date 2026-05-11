@@ -419,7 +419,7 @@ export default function EnrollmentForm({
         .filter((field) => {
           const fieldError = field
             .split(".")
-            .reduce((obj, key) => (obj as any)?.[key], currentErrors);
+            .reduce((obj, key) => (obj as never)?.[key], currentErrors);
           return !!fieldError;
         })
         .map((field) => getFieldLabel(field));

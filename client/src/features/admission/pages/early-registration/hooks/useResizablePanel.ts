@@ -39,7 +39,7 @@ export function useResizablePanel() {
 
   const [isResizingState, setIsResizingState] = useState(false);
 
-  const stopResizing = useCallback(() => {
+  const stopResizing = useCallback(function stopResizing() {
     isResizing.current = false;
     setIsResizingState(false);
     document.removeEventListener("mousemove", handleMouseMove);

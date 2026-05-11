@@ -1,6 +1,5 @@
 import { Badge } from "@/shared/ui/badge";
-import { cn } from "@/shared/lib/utils";
-import { STATUS_CONFIG } from "../constants";
+import { cn, formatApplicationStatus, getApplicationStatusColorClasses } from "@/shared/lib/utils";
 
 export function StatusBadge({
   status,
@@ -9,10 +8,9 @@ export function StatusBadge({
   status: string;
   className?: string;
 }) {
-  const { label, className } = STATUS_CONFIG[status] ?? {
-    label: status,
-    className: "bg-muted text-foreground border-muted-foreground",
-  };
+  const label = formatApplicationStatus(status);
+  const colorClasses = getApplicationStatusColorClasses(status);
+  
   const isTemp = status === "TEMPORARILY_ENROLLED";
 
   return (
@@ -24,8 +22,8 @@ export function StatusBadge({
           : undefined
       }
       className={cn(
-        "h-auto py-1 px-3 whitespace-normal text-center leading-tight bg-white justify-center",
-        className,
+        "h-auto py-1 px-3 whitespace-normal text-center leading-tight justify-center border-none",
+        colorClasses,
         isTemp ? "cursor-help" : "",
         extraClassName,
       )}

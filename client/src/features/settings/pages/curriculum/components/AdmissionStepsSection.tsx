@@ -35,7 +35,7 @@ interface AdmissionStepsSectionProps {
     scpIndex: number,
     stepIndex: number,
     field: keyof ScpStepConfig,
-    value: any,
+    value: unknown,
   ) => void;
 }
 
@@ -102,7 +102,7 @@ function RubricBuilder({
     catId: string,
     critId: string,
     field: "name" | "description" | "maxPts",
-    value: any,
+    value: unknown,
   ) => {
     onChange(
       categories.map((c) => {

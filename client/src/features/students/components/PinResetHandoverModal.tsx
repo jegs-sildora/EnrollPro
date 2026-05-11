@@ -119,7 +119,7 @@ export function PinResetHandoverModal({
               <Button 
                 onClick={handleReset} 
                 disabled={isGenerating}
-                className="bg-amber-600 hover:bg-amber-700 text-white font-black uppercase tracking-widest"
+                className="bg-amber-600 hover:bg-amber-700 text-white font-black uppercase "
               >
                 {isGenerating ? (
                   <>
@@ -149,12 +149,12 @@ export function PinResetHandoverModal({
 
             <div className="space-y-6 py-4">
               <div className="bg-slate-50 border border-slate-200 p-6 rounded-xl space-y-4 text-center">
-                <p className="text-xs font-black uppercase text-foreground tracking-widest">
+                <p className="text-xs font-black uppercase text-foreground ">
                   New Portal PIN:
                 </p>
                 
                 <div className="flex items-center justify-center gap-4">
-                  <span className="text-4xl font-black tracking-[0.2em] text-foreground">
+                  <span className="text-4xl font-black  text-foreground">
                     {newPin.split("").join(" ")}
                   </span>
                   <Button
@@ -205,7 +205,7 @@ export function PinResetHandoverModal({
                 onClick={handleClose}
                 disabled={!hasCopiedPin}
                 className={cn(
-                  "w-full h-12 font-black uppercase tracking-widest transition-all",
+                  "w-full h-12 font-black uppercase  transition-all",
                   hasCopiedPin
                     ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-100"
                     : "bg-slate-200 text-foreground cursor-not-allowed border-none shadow-none"

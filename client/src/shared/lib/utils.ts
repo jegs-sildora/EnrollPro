@@ -204,13 +204,212 @@ export function getLearnerTypeLabel(type: string | null | undefined): string {
 export function formatUserRole(role: string | null | undefined): string {
   if (!role) return "N/A";
   if (role === "HEAD_REGISTRAR") return "Head Registrar";
-  if (role === "GRADE_LEVEL_COORDINATOR") return "Grade Level Coordinator";
   if (role === "CLASS_ADVISER") return "Class Adviser";
   return role.replaceAll("_", " ");
 }
 
 /**
- * Standardized utility to get a full image URL from a stored path or base64 string.
+ * Returns DepEd-aligned Tailwind CSS color classes for RBAC badges.
+ * Aligned with official DepEd visual identity guidelines.
+ */
+export function getRoleColorClasses(role: string | null | undefined): string {
+  if (!role) return "bg-slate-100 text-slate-600 border-slate-200";
+
+  switch (role) {
+    case "SYSTEM_ADMIN":
+      return "bg-slate-800 text-white border-slate-900";
+    case "HEAD_REGISTRAR":
+    case "REGISTRAR":
+      return "bg-red-800 text-white border-red-900";
+    case "CLASS_ADVISER":
+      return "bg-emerald-600 text-white border-emerald-700";
+    case "TEACHER":
+      return "bg-blue-600 text-white border-blue-700";
+    case "LEARNER":
+      return "bg-amber-500 text-slate-900 border-amber-600";
+    default:
+      return "bg-slate-100 text-slate-600 border-slate-200";
+  }
+}
+
+/**
+ * Returns DepEd-aligned Tailwind CSS classes for Plantilla (Permanent Rank) badges.
+ * Level 1: Foundational (Muted, professional colors)
+ */
+export function getPlantillaColorClasses(
+  position: string | null | undefined,
+): string {
+  if (!position) return "bg-slate-50 text-slate-600 border-slate-200";
+
+  const p = position.toUpperCase();
+
+  if (p.includes("PRINCIPAL") || p.includes("HEAD TEACHER")) {
+    return "bg-slate-800 text-white border-slate-900";
+  }
+  if (p.includes("MASTER TEACHER")) {
+    return "bg-indigo-50 text-indigo-700 border-indigo-200";
+  }
+  if (p.includes("TEACHER")) {
+    return "bg-blue-50 text-blue-700 border-blue-200";
+  }
+
+  return "bg-slate-50 text-slate-600 border-slate-200";
+}
+
+/**
+ * Returns DepEd-aligned Tailwind CSS classes for Academic Designation (Functional Role) badges.
+ * Level 2: Actionable (Strong, primary RBAC colors)
+ */
+export function getAcademicDesignationColorClasses(
+  designation: string | null | undefined,
+): string {
+  if (!designation) return "bg-slate-100 text-slate-600 border-slate-200";
+
+  const d = designation.toUpperCase();
+
+  if (d.includes("CLASS ADVISER")) {
+    return "bg-emerald-600 text-white border-emerald-700 shadow-sm";
+  }
+  if (d.includes("DEPARTMENT HEAD")) {
+    return "bg-amber-500 text-slate-900 border-amber-600 shadow-sm font-semibold";
+  }
+  if (d.includes("SUBJECT TEACHER")) {
+    return "bg-slate-100 text-slate-600 border-slate-200";
+  }
+
+  return "bg-slate-100 text-slate-600 border-slate-200";
+}
+
+/**
+ * Returns DepEd-aligned Tailwind CSS classes for Core Enrollment Statuses.
+ * Level 1: Master Directory (Permanent states)
+ */
+export function getLearnerStatusColorClasses(
+  status: string | null | undefined,
+): string {
+  if (!status) return "bg-slate-100 text-slate-600 border-slate-300";
+
+  const s = status.toUpperCase();
+
+  switch (s) {
+    case "ACTIVE":
+      return "bg-emerald-600 text-white font-semibold shadow-sm border-none";
+    case "JHS_COMPLETER":
+      return "bg-amber-500 text-slate-900 font-bold shadow-sm border-none";
+    case "DROPPED":
+      return "bg-red-800 text-white font-semibold shadow-sm border-none";
+    case "TRANSFERRED_OUT":
+      return "bg-slate-100 text-slate-600 border-slate-300";
+    default:
+      return "bg-slate-100 text-slate-600 border-slate-200";
+  }
+}
+
+/**
+ * Returns DepEd-aligned Tailwind CSS classes for Application & Admission Statuses.
+ * Uses a Semantic Intensity Model (Muted for pipeline, Solid for terminal).
+ */
+export function getApplicationStatusColorClasses(
+  status: string | null | undefined,
+): string {
+  if (!status) return "bg-slate-50 text-slate-500 border-slate-200";
+
+  const s = status.toUpperCase();
+
+  // 1. Pipeline / Transitional (Muted Blues/Indigos)
+  if (s === "SUBMITTED") {
+    return "bg-blue-50 text-blue-700 border-blue-200";
+  }
+  if (s === "UNDER_REVIEW" || s === "ELIGIBLE" || s === "IN_PROGRESS") {
+    return "bg-indigo-50 text-indigo-700 border-indigo-200";
+  }
+
+  // 2. Progression (Soft Greens/Teals)
+  if (
+    s === "ASSESSMENT_TAKEN" ||
+    s === "PASSED" ||
+    s === "PRE_REGISTERED" ||
+    s === "QUALIFIED"
+  ) {
+    return "bg-teal-50 text-teal-700 border-teal-200";
+  }
+
+  // 3. Warning State (High-Visibility Amber)
+  if (s === "TEMPORARILY_ENROLLED") {
+    return "bg-amber-100 text-amber-800 border-amber-400 font-medium";
+  }
+
+  // 4. The Finish Line (Solid DepEd Royal Blue)
+  if (s === "ENROLLED") {
+    return "bg-blue-600 text-white font-bold shadow-sm border-none";
+  }
+
+  // 5. Specialized / Edge Cases
+  if (s === "DRAFT") {
+    return "bg-gray-50 text-gray-500 border border-gray-200 border-dashed";
+  }
+  if (s === "FOR_REVISION") {
+    return "bg-orange-50 text-orange-700 border-orange-300";
+  }
+  if (s === "REJECTED" || s === "WITHDRAWN" || s === "FAILED") {
+    return "bg-rose-50 text-rose-700 border-rose-200";
+  }
+  if (s === "LINKED") {
+    return "bg-violet-50 text-violet-700 border-violet-200";
+  }
+
+  return "bg-slate-50 text-slate-500 border-slate-200";
+}
+
+/**
+ * Returns DepEd-aligned Tailwind CSS classes for Ancillary Role (Special Assignment) badges.
+ * Level 3: Lightweight Tags (Outlined or pastel to prevent UI clutter)
+ */
+export function getAncillaryRoleColorClasses(
+  role: string | null | undefined,
+): string {
+  if (!role) return "bg-slate-50 text-slate-500 border-slate-200";
+
+  const r = role.toUpperCase();
+
+  // Tech & Data Domain
+  if (r.includes("LIS") || r.includes("ICT")) {
+    return "bg-cyan-50 text-cyan-800 border-cyan-100";
+  }
+
+  // Health & Safety Domain
+  if (
+    r.includes("CLINIC") ||
+    r.includes("HEALTH") ||
+    r.includes("SDRRM") ||
+    r.includes("FEEDING")
+  ) {
+    return "bg-rose-50 text-rose-800 border-rose-100";
+  }
+
+  // Student Affairs Domain
+  if (
+    r.includes("GUIDANCE") ||
+    r.includes("SSLG") ||
+    r.includes("SPA") ||
+    r.includes("SPORTS") ||
+    r.includes("GPP") ||
+    r.includes("BSP") ||
+    r.includes("GSP")
+  ) {
+    return "bg-violet-50 text-violet-800 border-violet-100";
+  }
+
+  // Administrative / Leadership
+  if (r.includes("TIC") || r.includes("OIC") || r.includes("CUSTODIAN")) {
+    return "bg-slate-100 text-slate-700 border-slate-200";
+  }
+
+  return "bg-slate-50 text-slate-500 border-slate-100";
+}
+
+/**
+ * Returns standardized image URL from local path or base64.
  */
 export function getImageUrl(photo: string | null | undefined): string | null {
   if (!photo) return null;
@@ -230,3 +429,25 @@ export function getImageUrl(photo: string | null | undefined): string | null {
   const cleanPhoto = photo.startsWith("/") ? photo : `/${photo}`;
   return `${origin}${cleanPhoto}`;
 }
+
+/**
+ * Formats application status tokens into human-readable labels.
+ */
+export function formatApplicationStatus(
+  status: string | null | undefined,
+): string {
+  if (!status) return "N/A";
+  const s = status.toUpperCase();
+
+  if (s === "PRE_REGISTERED") return "Pre-registered";
+  if (s === "UNDER_REVIEW") return "Under Review";
+  if (s === "FOR_REVISION") return "For Revision";
+  if (s === "ASSESSMENT_TAKEN") return "Assessment Taken";
+  if (s === "TEMPORARILY_ENROLLED") return "Temporarily Enrolled";
+
+  return s
+    .replaceAll("_", " ")
+    .toLowerCase()
+    .replace(/^\w/, (c) => c.toUpperCase());
+}
+

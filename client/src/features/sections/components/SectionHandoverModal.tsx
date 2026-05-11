@@ -151,7 +151,7 @@ export function SectionHandoverModal({
               <RefreshCcw className="h-6 w-6" />
             </div>
             <div>
-              <DialogTitle className="text-xl font-black uppercase tracking-tight">
+              <DialogTitle className="text-xl font-black uppercase ">
                 Initiate Advisory Handover
               </DialogTitle>
               <DialogDescription className="text-primary-foreground/80 font-bold text-xs">
@@ -165,7 +165,7 @@ export function SectionHandoverModal({
           {/* Current Adviser Section */}
           <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <Label className="text-xs font-black uppercase tracking-[0.2em] text-foreground">
+              <Label className="text-xs font-black uppercase  text-foreground">
                 Current Adviser (To be relieved)
               </Label>
               <Badge
@@ -193,7 +193,7 @@ export function SectionHandoverModal({
             {/* Reason Section */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-xs font-black uppercase tracking-widest">
+                <Label className="text-xs font-black uppercase ">
                   Reason for Handover (Audit Required)
                 </Label>
                 <Select
@@ -222,7 +222,7 @@ export function SectionHandoverModal({
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
                     className="space-y-2 overflow-hidden">
-                    <Label className="text-xs font-black uppercase tracking-widest">
+                    <Label className="text-xs font-black uppercase ">
                       Specify Reason
                     </Label>
                     <Textarea
@@ -236,7 +236,7 @@ export function SectionHandoverModal({
               </AnimatePresence>
 
               <div className="space-y-2">
-                <Label className="text-xs font-black uppercase tracking-widest">
+                <Label className="text-xs font-black uppercase ">
                   Effective Handover Date
                 </Label>
                 <Input
@@ -255,7 +255,7 @@ export function SectionHandoverModal({
             {/* New Adviser Section */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-xs font-black uppercase tracking-widest">
+                <Label className="text-xs font-black uppercase ">
                   New Designated Adviser (Substitute)
                 </Label>
                 <div className="relative">
@@ -319,7 +319,7 @@ export function SectionHandoverModal({
           <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 flex gap-4">
             <ShieldAlert className="h-6 w-6 text-amber-600 shrink-0" />
             <div className="space-y-1">
-              <p className="text-[11px] font-black uppercase text-amber-800 tracking-wider leading-none">
+              <p className="text-[11px] font-black uppercase text-amber-800  leading-none">
                 Official DepEd Compliance Notice
               </p>
               <p className="text-xs font-bold text-amber-700 leading-relaxed">
@@ -348,13 +348,13 @@ export function SectionHandoverModal({
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            className="font-black uppercase text-xs tracking-widest h-11 px-8">
+            className="font-black uppercase text-xs  h-11 px-8">
             Cancel
           </Button>
           <Button
             onClick={handleHandover}
             disabled={submitting || !substituteTeacherId || !handoverReason}
-            className="font-black uppercase text-xs tracking-widest h-11 px-8 bg-primary shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+            className="font-black uppercase text-xs  h-11 px-8 bg-primary shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
             {submitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Executing

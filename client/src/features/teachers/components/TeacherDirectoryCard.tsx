@@ -34,7 +34,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/shared/ui/tooltip";
-import { cn } from "@/shared/lib/utils";
+import {
+  cn,
+  getAcademicDesignationColorClasses,
+  getAncillaryRoleColorClasses,
+  getPlantillaColorClasses,
+} from "@/shared/lib/utils";
 import type {
   Teacher,
   TeacherDesignationFilter,
@@ -230,27 +235,36 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
     {
       id: "teacher",
       accessorKey: "lastName",
-      size: 250,
-      minSize: 200,
+      size: 260,
+      minSize: 240,
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
-          title="TEACHER"
+          title="TEACHER IDENTITY"
           className="justify-center pl-0 font-bold"
         />
       ),
-      cell: ({ row }) => (
-        <div className="flex flex-col text-left">
-          <span className="font-bold text-sm uppercase leading-tight">
-            {formatTeacherName(row.original)}
-          </span>
-          <span className="text-xs text-foreground truncate font-bold">
-            {row.original.email ||
-              row.original.contactNumber ||
-              "No contact info"}
-          </span>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const teacher = row.original;
+        return (
+          <div className="flex flex-col text-left pl-2 py-1">
+            <span className="font-extrabold text-sm uppercase leading-tight truncate">
+              {formatTeacherName(teacher)}
+            </span>
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+              {/* Level 1: Plantilla Badge (Muted blue/indigo) */}
+              <Badge
+                variant="outline"
+                className={cn(
+                  "text-[10px] px-1.5 h-4 font-bold border-none",
+                  getPlantillaColorClasses(teacher.designationTitle),
+                )}>
+                {teacher.designationTitle || "UNRANKED"}
+              </Badge>
+            </div>
+          </div>
+        );
+      },
     },
     {
       id: "employeeId",
@@ -351,12 +365,12 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
     },
     {
       id: "designation",
-      size: 160,
-      minSize: 140,
+      size: 180,
+      minSize: 160,
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
-          title="DESIGNATION"
+          title="SYSTEM DESIGNATION"
           className="font-bold"
         />
       ),
@@ -365,45 +379,51 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
 
         if (!designation) {
           return (
-            <Badge
-              variant="outline"
-              className="text-xs font-bold uppercase">
-              None
-            </Badge>
+            <div className="flex justify-center">
+              <Badge
+                variant="outline"
+                className={cn(
+                  "text-[10px] font-black uppercase px-2 h-5 border-none",
+                  getAcademicDesignationColorClasses("SUBJECT TEACHER"),
+                )}>
+                Subject Teacher
+              </Badge>
+            </div>
           );
         }
 
         const ancillaryRoles = designation.ancillaryRoles ?? [];
-        const hasDesignation =
-          designation.isClassAdviser || ancillaryRoles.length > 0;
-
-        if (!hasDesignation) {
-          return (
-            <Badge
-              variant="outline"
-              className="text-xs font-bold uppercase">
-              None
-            </Badge>
-          );
-        }
 
         return (
-          <div className="flex flex-wrap justify-center gap-1">
-            {designation.isClassAdviser ? (
-              <Badge
-                variant="success"
-                className="text-xs font-black uppercase">
-                Class Adviser
-              </Badge>
-            ) : null}
-            {ancillaryRoles.map((role) => (
-              <Badge
-                key={`${row.original.id}-${role}`}
-                variant="outline"
-                className="text-xs font-bold uppercase">
-                {role}
-              </Badge>
-            ))}
+          <div className="flex flex-col items-center gap-1.5 py-1">
+            {/* Level 2: Academic Designation (Solid DepEd Colors) */}
+            <Badge
+              variant="outline"
+              className={cn(
+                "text-[10px] font-black uppercase px-2 h-5 border-none",
+                designation.isClassAdviser
+                  ? getAcademicDesignationColorClasses("CLASS ADVISER")
+                  : getAcademicDesignationColorClasses("SUBJECT TEACHER"),
+              )}>
+              {designation.isClassAdviser ? "Class Adviser" : "Subject Teacher"}
+            </Badge>
+
+            {/* Level 3: Ancillary Tags (Pastel Domains) */}
+            {ancillaryRoles.length > 0 && (
+              <div className="flex flex-wrap justify-center gap-1 max-w-[170px]">
+                {ancillaryRoles.map((role) => (
+                  <Badge
+                    key={`${row.original.id}-${role}`}
+                    variant="outline"
+                    className={cn(
+                      "text-[9px] font-bold uppercase px-1.5 h-4 border-none",
+                      getAncillaryRoleColorClasses(role),
+                    )}>
+                    {role}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
         );
       },
@@ -571,13 +591,13 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
 
                   <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
                     <div>
-                      <p className="text-foreground uppercase tracking-wide font-bold opacity-70">
+                      <p className="text-foreground uppercase  font-bold opacity-70">
                         Employee ID
                       </p>
                       <p className="font-bold">{teacher.employeeId || "-"}</p>
                     </div>
                     <div>
-                      <p className="text-foreground uppercase tracking-wide font-bold opacity-70">
+                      <p className="text-foreground uppercase  font-bold opacity-70">
                         Learning Area
                       </p>
                       <p className="font-bold">
@@ -585,7 +605,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                       </p>
                     </div>
                     <div>
-                      <p className="text-foreground uppercase tracking-wide font-bold opacity-70">
+                      <p className="text-foreground uppercase  font-bold opacity-70">
                         Contact
                       </p>
                       <p className="font-bold">
@@ -593,7 +613,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                       </p>
                     </div>
                     <div>
-                      <p className="text-foreground uppercase tracking-wide font-bold opacity-70">
+                      <p className="text-foreground uppercase  font-bold opacity-70">
                         Designation
                       </p>
                       <p className="font-bold uppercase">
@@ -601,7 +621,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                       </p>
                     </div>
                     <div>
-                      <p className="text-foreground uppercase tracking-wide font-bold opacity-70">
+                      <p className="text-foreground uppercase  font-bold opacity-70">
                         Advisory
                       </p>
                       {renderAdvisoryStatus(teacher)}

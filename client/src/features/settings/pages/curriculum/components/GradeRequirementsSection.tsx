@@ -76,7 +76,7 @@ export function GradeRequirementsSection({
     <div className="space-y-3 rounded-lg border border-border bg-muted/20 px-4 py-3">
       <div className="flex items-center gap-2">
         <GraduationCap className="h-4 w-4 text-primary" />
-        <Label className="text-sm font-bold uppercase tracking-wide">
+        <Label className="text-sm font-bold uppercase ">
           Grade Requirements
         </Label>
       </div>
@@ -84,7 +84,7 @@ export function GradeRequirementsSection({
       <div className="grid grid-cols-1 gap-3">
         {isSte && (
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold uppercase tracking-wide text-foreground">
+            <Label className="text-xs font-bold uppercase  text-foreground">
               Minimum Subject Average — Eng, Sci & Math (%)
             </Label>
             <Input

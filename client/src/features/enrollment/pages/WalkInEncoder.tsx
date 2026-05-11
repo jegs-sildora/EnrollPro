@@ -773,7 +773,7 @@ export default function WalkInEncoder() {
             Direct Intake: {activeSchoolYearLabel}
           </Badge>
           {isBosyLocked && (
-            <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 text-[11px] font-black uppercase tracking-widest border-none px-3">
+            <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 text-[11px] font-black uppercase  border-none px-3">
               Late Enrollment Phase
             </Badge>
           )}
@@ -797,13 +797,13 @@ export default function WalkInEncoder() {
         <CardContent className="space-y-5">
           {hydrationContext && (
             <section className="space-y-2 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-              <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 text-[11px] font-black uppercase tracking-widest">
+              <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 text-[11px] font-black uppercase ">
                 Record Found:{" "}
                 {hydrationContext.source === "ENROLLMENT"
                   ? "Pending Queue Record"
                   : "Early Registrant"}
               </Badge>
-              <p className="text-xs font-bold uppercase tracking-wider text-emerald-800">
+              <p className="text-xs font-bold uppercase  text-emerald-800">
                 Status: {hydrationContext.status.replace(/_/g, " ")}
               </p>
               {hydratedApplicantLabel &&
@@ -819,13 +819,13 @@ export default function WalkInEncoder() {
           )}
 
           <section className="space-y-3 rounded-lg border border-border p-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-primary">
+            <p className="text-xs font-bold uppercase  text-primary">
               1. Learner Information
             </p>
 
             <div className="grid gap-4 md:grid-cols-4">
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   LRN {formData.hasNoLrn ? "(No LRN)" : "*"}
                 </Label>
                 <Input
@@ -841,7 +841,7 @@ export default function WalkInEncoder() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Learner Type *
                 </Label>
                 <Select
@@ -865,7 +865,7 @@ export default function WalkInEncoder() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Grade Level *
                 </Label>
                 <Select
@@ -896,7 +896,7 @@ export default function WalkInEncoder() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Academic Status *
                 </Label>
                 <Select
@@ -948,7 +948,7 @@ export default function WalkInEncoder() {
 
             <div className="grid gap-4 md:grid-cols-4">
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Last Name *
                 </Label>
                 <Input
@@ -961,7 +961,7 @@ export default function WalkInEncoder() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   First Name *
                 </Label>
                 <Input
@@ -974,7 +974,7 @@ export default function WalkInEncoder() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Middle Name
                 </Label>
                 <Input
@@ -987,7 +987,7 @@ export default function WalkInEncoder() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Extension Name
                 </Label>
                 <Input
@@ -1003,7 +1003,7 @@ export default function WalkInEncoder() {
 
             <div className="grid gap-4 md:grid-cols-4">
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Birthdate *
                 </Label>
                 <div className="relative">
@@ -1077,7 +1077,7 @@ export default function WalkInEncoder() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Sex *
                 </Label>
                 <Select
@@ -1095,7 +1095,7 @@ export default function WalkInEncoder() {
                 </Select>
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Place of Birth
                 </Label>
                 <Input
@@ -1111,13 +1111,13 @@ export default function WalkInEncoder() {
           </section>
 
           <section className="space-y-4 rounded-lg border border-border p-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-primary">
+            <p className="text-xs font-bold uppercase  text-primary">
               2. Previous School Information
             </p>
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Name of Last School Attended *
                 </Label>
                 <Input
@@ -1130,7 +1130,7 @@ export default function WalkInEncoder() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   DepEd School ID
                 </Label>
                 <Input
@@ -1151,7 +1151,7 @@ export default function WalkInEncoder() {
 
             <div className="grid gap-4 md:grid-cols-3">
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   School Year Last Attended *
                 </Label>
                 <Select
@@ -1178,7 +1178,7 @@ export default function WalkInEncoder() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Last Grade Level Completed *
                 </Label>
                 <Select
@@ -1201,7 +1201,7 @@ export default function WalkInEncoder() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Type of Last School *
                 </Label>
                 <Select
@@ -1223,7 +1223,7 @@ export default function WalkInEncoder() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-[11px] font-bold uppercase tracking-wider">
+              <Label className="text-[11px] font-bold uppercase ">
                 School Address / Division (Optional)
               </Label>
               <Input
@@ -1239,7 +1239,7 @@ export default function WalkInEncoder() {
             {formData.learnerType === "ALS" && (
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  <Label className="text-[11px] font-bold uppercase ">
                     PEPT Certificate Number *
                   </Label>
                   <Input
@@ -1255,7 +1255,7 @@ export default function WalkInEncoder() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[11px] font-bold uppercase tracking-wider">
+                  <Label className="text-[11px] font-bold uppercase ">
                     PEPT Passing Date *
                   </Label>
                   <Input
@@ -1272,12 +1272,12 @@ export default function WalkInEncoder() {
           </section>
 
           <section className="space-y-3 rounded-lg border border-border p-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-primary">
+            <p className="text-xs font-bold uppercase  text-primary">
               3. Address
             </p>
             <div className="grid gap-4 md:grid-cols-3">
               <div className="space-y-2 md:col-span-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   House No. / Street
                 </Label>
                 <Input
@@ -1293,7 +1293,7 @@ export default function WalkInEncoder() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Sitio / Purok
                 </Label>
                 <Input
@@ -1309,7 +1309,7 @@ export default function WalkInEncoder() {
 
             <div className="grid gap-4 md:grid-cols-3">
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Barangay *
                 </Label>
                 <Input
@@ -1322,7 +1322,7 @@ export default function WalkInEncoder() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   City / Municipality *
                 </Label>
                 <Input
@@ -1338,7 +1338,7 @@ export default function WalkInEncoder() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Province *
                 </Label>
                 <Input
@@ -1354,13 +1354,13 @@ export default function WalkInEncoder() {
           </section>
 
           <section className="space-y-3 rounded-lg border border-border p-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-primary">
+            <p className="text-xs font-bold uppercase  text-primary">
               4. Parents / Guardian Information
             </p>
 
             <div className="grid gap-4 md:grid-cols-4">
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Mother - First Name
                 </Label>
                 <Input
@@ -1373,7 +1373,7 @@ export default function WalkInEncoder() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Mother - Last Name
                 </Label>
                 <Input
@@ -1386,7 +1386,7 @@ export default function WalkInEncoder() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Mother - Middle Name
                 </Label>
                 <Input
@@ -1399,7 +1399,7 @@ export default function WalkInEncoder() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Mother - Contact No.
                 </Label>
                 <Input
@@ -1422,7 +1422,7 @@ export default function WalkInEncoder() {
             <div className="grid gap-4 md:grid-cols-4">
               {/* ... Father names ... */}
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Father - First Name
                 </Label>
                 <Input
@@ -1435,7 +1435,7 @@ export default function WalkInEncoder() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Father - Last Name
                 </Label>
                 <Input
@@ -1448,7 +1448,7 @@ export default function WalkInEncoder() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Father - Middle Name
                 </Label>
                 <Input
@@ -1461,7 +1461,7 @@ export default function WalkInEncoder() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Father - Contact No.
                 </Label>
                 <Input
@@ -1484,7 +1484,7 @@ export default function WalkInEncoder() {
             <div className="grid gap-4 md:grid-cols-4">
               {/* ... Guardian names ... */}
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Guardian - First Name
                 </Label>
                 <Input
@@ -1501,7 +1501,7 @@ export default function WalkInEncoder() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Guardian - Last Name
                 </Label>
                 <Input
@@ -1514,7 +1514,7 @@ export default function WalkInEncoder() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Guardian - Contact No.
                 </Label>
                 <Input
@@ -1533,7 +1533,7 @@ export default function WalkInEncoder() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Guardian Relationship
                 </Label>
                 <Input
@@ -1549,7 +1549,7 @@ export default function WalkInEncoder() {
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Primary Contact Number
                 </Label>
                 <Input
@@ -1567,7 +1567,7 @@ export default function WalkInEncoder() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Email Address
                 </Label>
                 <Input
@@ -1583,13 +1583,13 @@ export default function WalkInEncoder() {
           </section>
 
           <section className="space-y-3 rounded-lg border border-border p-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-primary">
+            <p className="text-xs font-bold uppercase  text-primary">
               5. Physical Requirements Submitted
             </p>
 
             <div className="grid gap-4 md:grid-cols-3">
               <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase tracking-wider">
+                <Label className="text-[11px] font-bold uppercase ">
                   Final General Average (SF9) *
                 </Label>
                 <Input
@@ -1622,7 +1622,7 @@ export default function WalkInEncoder() {
                 />
                 <Label
                   htmlFor="isSf9Submitted"
-                  className="text-xs font-bold tracking-wide">
+                  className="text-xs font-bold ">
                   Original SF9 (Report Card)
                 </Label>
               </div>
@@ -1637,7 +1637,7 @@ export default function WalkInEncoder() {
                 />
                 <Label
                   htmlFor="isPsaBirthCertPresented"
-                  className="text-xs font-bold tracking-wide">
+                  className="text-xs font-bold ">
                   Original PSA Birth Certificate (Matches Phase 1 Copy)
                 </Label>
               </div>
@@ -1645,7 +1645,7 @@ export default function WalkInEncoder() {
           </section>
 
           <section className="space-y-3 rounded-lg border border-border p-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-primary">
+            <p className="text-xs font-bold uppercase  text-primary">
               6. Registrar Processing Outcome
             </p>
             <div className="grid gap-3 md:grid-cols-2">
@@ -1658,7 +1658,7 @@ export default function WalkInEncoder() {
                     : "border-border",
                 )}
                 onClick={() => setProcessOutcome("ENCODE_ONLY")}>
-                <p className="text-xs font-black uppercase tracking-wider">
+                <p className="text-xs font-black uppercase ">
                   Encode Only
                 </p>
                 <p className="text-xs font-semibold text-foreground">
@@ -1674,7 +1674,7 @@ export default function WalkInEncoder() {
                     : "border-border",
                 )}
                 onClick={() => setProcessOutcome("ENCODE_AND_VERIFY")}>
-                <p className="text-xs font-black uppercase tracking-wider">
+                <p className="text-xs font-black uppercase ">
                   Encode + Verify
                 </p>
                 <p className="text-xs font-semibold text-foreground">

@@ -14,18 +14,14 @@ export function useDelayedLoading(isLoading: boolean, delayMs = 200) {
   const [showLoading, setShowLoading] = useState(false);
 
   useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout>;
-
     if (isLoading) {
-      timeout = setTimeout(() => setShowLoading(true), delayMs);
-    } else {
-      setShowLoading(false);
+      const timeout = setTimeout(() => setShowLoading(true), delayMs);
+      return () => {
+        clearTimeout(timeout);
+        setShowLoading(false);
+      };
     }
-
-    return () => {
-      if (timeout) clearTimeout(timeout);
-    };
   }, [isLoading, delayMs]);
 
-  return showLoading;
+  return isLoading && showLoading;
 }

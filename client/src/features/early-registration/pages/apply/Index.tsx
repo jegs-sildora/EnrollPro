@@ -189,7 +189,7 @@ export default function EarlyRegistrationApply() {
                     <h2 className="text-2xl sm:text-3xl font-black uppercase text-black">
                       {schoolName}
                     </h2>
-                    <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-black tracking-[0.2em] uppercase border border-slate-200">
+                    <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-black  uppercase border border-slate-200">
                       {isBosyLocked
                         ? "ENROLLMENT FINALIZED"
                         : isRegularEnrollment
@@ -204,7 +204,7 @@ export default function EarlyRegistrationApply() {
                         <h3 className="text-xl sm:text-2xl font-black text-black flex items-center justify-center gap-2">
                           ONLINE ENROLLMENT IS NOW CLOSED
                         </h3>
-                        <p className="text-sm font-bold text-foreground uppercase tracking-widest leading-relaxed">
+                        <p className="text-sm font-bold text-foreground uppercase  leading-relaxed">
                           The standard online enrollment period for S.Y.{" "}
                           {activeSchoolYearLabel} has officially ended, and
                           class rosters have been finalized.
@@ -212,7 +212,7 @@ export default function EarlyRegistrationApply() {
                       </div>
 
                       <div className="p-6 rounded-xl bg-red-50 border-2 border-red-200 text-left space-y-4 shadow-inner">
-                        <div className="flex items-center gap-2 text-red-900 font-black uppercase tracking-wider text-sm">
+                        <div className="flex items-center gap-2 text-red-900 font-black uppercase  text-sm">
                           LATE ENROLLMENT INSTRUCTIONS:
                         </div>
                         <p className="text-sm text-red-900 font-bold leading-relaxed">
@@ -235,7 +235,7 @@ export default function EarlyRegistrationApply() {
                         <Button
                           variant="outline"
                           size="lg"
-                          className="w-full sm:w-auto px-8 h-12 rounded-xl font-black uppercase tracking-widest text-xs transition-all border-2"
+                          className="w-full sm:w-auto px-8 h-12 rounded-xl font-black uppercase  text-xs transition-all border-2"
                           onClick={() => {
                             if (schoolWebsite) {
                               window.location.href = schoolWebsite;
@@ -280,7 +280,7 @@ export default function EarlyRegistrationApply() {
                       <div className="pt-4">
                         <Link
                           to="/enrollment"
-                          className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-xs transition-all shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
+                          className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase  text-xs transition-all shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
                           Proceed to Official Enrollment Portal
                         </Link>
                       </div>
@@ -307,7 +307,7 @@ export default function EarlyRegistrationApply() {
                           </div>
                           <div className="flex items-start gap-2 text-blue-900/80 text-xs leading-relaxed">
                             <p className="font-medium">
-                              <span className="font-black uppercase text-xs tracking-tight mr-1">
+                              <span className="font-black uppercase text-xs  mr-1">
                                 Note:
                               </span>
                               Early Registration is{" "}
@@ -323,7 +323,7 @@ export default function EarlyRegistrationApply() {
 
                       {facebookPageUrl && (
                         <div className="pt-6 border-t border-slate-200 space-y-4">
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide text-center">
+                          <p className="text-xs font-bold text-slate-500 uppercase  text-center">
                             For real-time updates and official memorandums,
                             please follow our page:
                           </p>
@@ -331,7 +331,7 @@ export default function EarlyRegistrationApply() {
                             href={facebookPageUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-black uppercase tracking-widest text-xs transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
+                            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 h-12 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white font-black uppercase  text-xs transition-all shadow-lg hover:shadow-[#1877F2]/20 hover:-translate-y-0.5 active:translate-y-0 mx-auto">
                             <svg
                               className="w-5 h-5 fill-current"
                               viewBox="0 0 24 24">

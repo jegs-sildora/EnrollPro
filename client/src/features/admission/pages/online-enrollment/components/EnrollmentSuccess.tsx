@@ -148,12 +148,12 @@ export default function EnrollmentSuccess({
               </h1>
               <p
                 style={{ color: "#4b5563" }}
-                className="text-base font-bold uppercase tracking-[0.2em] mb-2">
+                className="text-base font-bold uppercase  mb-2">
                 BASIC EDUCATION ENROLLMENT FORM Portal
               </p>
               <div
                 style={{ backgroundColor: "#061E29", color: "#ffffff" }}
-                className="flex items-center justify-center px-6 py-3 rounded-xl text-xs font-black tracking-widest uppercase text-center">
+                className="flex items-center justify-center px-6 py-3 rounded-xl text-xs font-black  uppercase text-center">
                 <p className="-mt-3">
                   Official BASIC EDUCATION ENROLLMENT FORM Confirmation Slip
                 </p>
@@ -187,7 +187,7 @@ export default function EnrollmentSuccess({
             className="p-12 rounded-lg border-4 text-center space-y-6 relative overflow-hidden border-dashed">
             <p
               style={{ color: "#6b7280" }}
-              className="text-xs uppercase tracking-[0.3em] font-black">
+              className="text-xs uppercase  font-black">
               Application Tracking Number
             </p>
 
@@ -255,7 +255,7 @@ export default function EnrollmentSuccess({
             <div className="space-y-2">
               <p
                 style={{ color: "#9ca3af" }}
-                className="text-[0.625rem] font-black uppercase tracking-widest">
+                className="text-[0.625rem] font-black uppercase ">
                 Security Validation
               </p>
               <div
@@ -306,7 +306,7 @@ export default function EnrollmentSuccess({
                 ? "border-primary bg-primary/5"
                 : "border-muted-foreground/20 hover:border-primary/50 hover:bg-primary/2",
             )}>
-            <p className="text-[0.625rem] text-foreground uppercase tracking-[0.2em] font-black">
+            <p className="text-[0.625rem] text-foreground uppercase  font-black">
               Your Application Tracking Number
             </p>
             <div className="flex items-center justify-center gap-4">

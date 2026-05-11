@@ -153,11 +153,9 @@ export default function Teachers() {
   const [eosyDate, setEosyDate] = useState<string | null>(null);
 
   // Enterprise Standard: Delayed Skeleton for Initial Load (200ms delay)
-  // Only show skeleton if the INITIAL load takes longer than 200ms.
   const showSkeleton = useDelayedLoading(loading && isInitialLoad, 200);
 
   // Enterprise Standard: Stale-While-Revalidate for Pagination/Refetch
-  // Keep previous data visible but dim it while loading.
   const isRefetching = loading && !isInitialLoad;
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -298,7 +296,7 @@ export default function Teachers() {
       setAyLabel(res.data.scope?.yearLabel || null);
       setBosyDate(res.data.scope?.classOpeningDate || null);
       setEosyDate(res.data.scope?.classEndDate || null);
-      setIsInitialLoad(false); // First successful load marks end of initial load
+      setIsInitialLoad(false);
     } catch (err) {
       toastApiError(err as never);
     } finally {
@@ -319,12 +317,11 @@ export default function Teachers() {
     setAdvisorySectionsLoading(true);
     try {
       const res = await api.get(`/sections/${ayId}`);
-      // The backend returns { gradeLevels: [...] }
-      const gradeLevels = res.data.gradeLevels || [];
+      const gradeLevelsData = res.data.gradeLevels || [];
 
-      const options: AdvisorySectionOption[] = gradeLevels
-        .flatMap((gl: any) =>
-          (gl.sections || []).map((section: any) => ({
+      const options: AdvisorySectionOption[] = gradeLevelsData
+        .flatMap((gl: { gradeLevelName: string; sections: Array<{ id: number; name: string; maxCapacity: number; enrolledCount: number; programType: string; isHomogeneous: boolean; advisingTeacher: { id: number; name: string } | null }> }) =>
+          (gl.sections || []).map((section) => ({
             id: section.id,
             label: `${gl.gradeLevelName} - ${section.name}`,
             gradeLevelName: gl.gradeLevelName,
@@ -353,7 +350,7 @@ export default function Teachers() {
     fetchAdvisorySections();
   }, [fetchAdvisorySections]);
 
-  const handleCreate = async () => {
+  const handleCreate = useCallback(async () => {
     const payload: TeacherUpsertPayload = {
       firstName: formData.firstName.trim(),
       lastName: formData.lastName.trim(),
@@ -405,7 +402,7 @@ export default function Teachers() {
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [formData, fetchTeachers]);
 
   const startEditing = (teacher: Teacher) => {
     setEditingTeacher(teacher);
@@ -427,13 +424,13 @@ export default function Teachers() {
     setEditOpen(true);
   };
 
-  const closeEditSheet = () => {
+  const closeEditSheet = useCallback(() => {
     setEditOpen(false);
     setEditingTeacher(null);
     setEditFormData(createEmptyTeacherForm());
-  };
+  }, []);
 
-  const handleUpdate = async () => {
+  const handleUpdate = useCallback(async () => {
     if (!editingTeacher) {
       return;
     }
@@ -487,7 +484,7 @@ export default function Teachers() {
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [editingTeacher, editFormData, fetchTeachers, closeEditSheet]);
 
   const handleToggleStatus = async (
     id: number,
@@ -583,45 +580,48 @@ export default function Teachers() {
     designationFilter !== "all" ||
     subjectFilter !== "all";
 
-  const openDesignationEditor = (teacher: Teacher) => {
-    setDesignationOpenFor(teacher);
-    setDesignationDrawerTab("designation");
-    void fetchAdvisorySections(); // Refresh sections list on open
+  const openDesignationEditor = useCallback(
+    (teacher: Teacher) => {
+      setDesignationOpenFor(teacher);
+      setDesignationDrawerTab("designation");
+      void fetchAdvisorySections(); // Refresh sections list on open
 
-    const bosy = bosyDate?.split("T")[0] || null;
-    const eosy = eosyDate?.split("T")[0] || null;
+      const bosy = bosyDate?.split("T")[0] || null;
+      const eosy = eosyDate?.split("T")[0] || null;
 
-    const teacherFrom =
-      teacher.designation?.effectiveFrom?.split("T")[0] || null;
-    const teacherTo = teacher.designation?.effectiveTo?.split("T")[0] || null;
+      const teacherFrom =
+        teacher.designation?.effectiveFrom?.split("T")[0] || null;
+      const teacherTo = teacher.designation?.effectiveTo?.split("T")[0] || null;
 
-    const hasCustomPeriod =
-      Boolean(teacherFrom) &&
-      Boolean(teacherTo) &&
-      (teacherFrom !== bosy || teacherTo !== eosy);
+      const hasCustomPeriod =
+        Boolean(teacherFrom) &&
+        Boolean(teacherTo) &&
+        (teacherFrom !== bosy || teacherTo !== eosy);
 
-    setDesignationForm({
-      isClassAdviser: teacher.designation?.isClassAdviser ?? false,
-      advisorySectionId:
-        teacher.designation?.advisorySectionId?.toString() ?? "",
-      ancillaryRoles: teacher.designation?.ancillaryRoles ?? [],
-      designationNotes: teacher.designation?.designationNotes ?? "",
-      effectiveFrom: teacherFrom ?? bosy ?? "",
-      effectiveTo: teacherTo ?? eosy ?? "",
-      isCustomPeriod: hasCustomPeriod,
-      reason: "",
-    });
-    setDesignationCollision(null);
-    setAllowCollisionOverride(false);
-  };
+      setDesignationForm({
+        isClassAdviser: teacher.designation?.isClassAdviser ?? false,
+        advisorySectionId:
+          teacher.designation?.advisorySectionId?.toString() ?? "",
+        ancillaryRoles: teacher.designation?.ancillaryRoles ?? [],
+        designationNotes: teacher.designation?.designationNotes ?? "",
+        effectiveFrom: teacherFrom ?? bosy ?? "",
+        effectiveTo: teacherTo ?? eosy ?? "",
+        isCustomPeriod: hasCustomPeriod,
+        reason: "",
+      });
+      setDesignationCollision(null);
+      setAllowCollisionOverride(false);
+    },
+    [bosyDate, eosyDate, fetchAdvisorySections],
+  );
 
-  const closeDesignationEditor = () => {
+  const closeDesignationEditor = useCallback(() => {
     setDesignationOpenFor(null);
     setDesignationCollision(null);
     setAllowCollisionOverride(false);
-  };
+  }, []);
 
-  const handleSaveDesignation = async () => {
+  const handleSaveDesignation = useCallback(async () => {
     if (!designationOpenFor || !ayId) {
       return;
     }
@@ -687,13 +687,21 @@ export default function Teachers() {
       });
       closeDesignationEditor();
       fetchTeachers();
-      void fetchAdvisorySections(); // Refresh sections availability after save
+      void fetchAdvisorySections();
     } catch (err) {
       toastApiError(err as never);
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [
+    designationOpenFor,
+    ayId,
+    designationForm,
+    allowCollisionOverride,
+    fetchTeachers,
+    fetchAdvisorySections,
+    closeDesignationEditor,
+  ]);
 
   const selectedAdvisorySection = advisorySections.find(
     (section) => section.id.toString() === designationForm.advisorySectionId,
@@ -771,7 +779,6 @@ export default function Teachers() {
       loading,
       isRefetching,
       showSkeleton,
-      teachers,
       filteredTeachers,
       paginatedTeachers,
       searchQuery,
@@ -783,8 +790,7 @@ export default function Teachers() {
       page,
       limit,
       fetchTeachers,
-      bosyDate,
-      eosyDate,
+      openDesignationEditor,
     ],
   );
 
@@ -858,6 +864,7 @@ export default function Teachers() {
       canSubmitEdit,
       handleEditFieldChange,
       handleUpdate,
+      closeEditSheet,
     ],
   );
 
@@ -896,6 +903,8 @@ export default function Teachers() {
       selectedAdvisorySection,
       designationCollision,
       allowCollisionOverride,
+      closeDesignationEditor,
+      handleSaveDesignation,
     ],
   );
 
@@ -975,7 +984,7 @@ export default function Teachers() {
               <div className="p-2 bg-destructive-foreground/10 rounded-lg">
                 <UserMinus className="h-6 w-6" />
               </div>
-              <DialogTitle className="text-xl font-black uppercase tracking-tight text-white">
+              <DialogTitle className="text-xl font-black uppercase  text-white">
                 Deactivate Teacher Profile
               </DialogTitle>
             </div>
@@ -983,7 +992,7 @@ export default function Teachers() {
 
           <div className="p-6 space-y-6">
             <div className="space-y-1">
-              <p className="text-sm font-bold text-foreground uppercase tracking-wider">
+              <p className="text-sm font-bold text-foreground uppercase ">
                 Are you sure you want to deactivate:
               </p>
               <div className="flex items-center gap-3 pt-2">
@@ -996,7 +1005,7 @@ export default function Teachers() {
                       ? formatTeacherName(teacherToDeactivate)
                       : ""}
                   </p>
-                  <p className="text-[11px] font-bold text-foreground mt-1 uppercase tracking-tight">
+                  <p className="text-[11px] font-bold text-foreground mt-1 uppercase ">
                     ID: {teacherToDeactivate?.employeeId || "N/A"}
                   </p>
                 </div>
@@ -1007,7 +1016,7 @@ export default function Teachers() {
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex gap-3">
                 <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
                 <div className="space-y-1">
-                  <p className="text-[11px] font-black uppercase text-amber-800 tracking-wider leading-none">
+                  <p className="text-[11px] font-black uppercase text-amber-800  leading-none">
                     Deactivation Blocked
                   </p>
                   <p className="text-xs font-bold text-amber-700 leading-relaxed">
@@ -1020,7 +1029,7 @@ export default function Teachers() {
             ) : (
               <>
                 <div className="rounded-xl border bg-muted/30 p-4 space-y-1">
-                  <p className="text-xs font-bold text-foreground leading-relaxed uppercase tracking-tight">
+                  <p className="text-xs font-bold text-foreground leading-relaxed uppercase ">
                     This teacher currently has{" "}
                     <span className="text-foreground font-black">
                       NO ACTIVE ADVISORY ASSIGNMENT
@@ -1032,7 +1041,7 @@ export default function Teachers() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-xs font-black uppercase tracking-widest">
+                  <Label className="text-xs font-black uppercase ">
                     Reason for Deactivation (Required for Audit Log)
                   </Label>
                   <Select
@@ -1061,7 +1070,7 @@ export default function Teachers() {
             <Button
               variant="ghost"
               onClick={() => setTeacherToDeactivate(null)}
-              className="font-black uppercase text-xs tracking-widest h-11 px-8">
+              className="font-black uppercase text-xs  h-11 px-8">
               Cancel
             </Button>
             <Button
@@ -1079,7 +1088,7 @@ export default function Teachers() {
                 !deactivateReason ||
                 !teacherToDeactivate
               }
-              className="font-black uppercase text-xs tracking-widest h-11 px-8 bg-destructive hover:bg-destructive/90 shadow-lg shadow-destructive/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+              className="font-black uppercase text-xs  h-11 px-8 bg-destructive hover:bg-destructive/90 shadow-lg shadow-destructive/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}

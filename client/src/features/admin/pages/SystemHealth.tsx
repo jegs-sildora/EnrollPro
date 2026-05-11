@@ -197,7 +197,7 @@ export default function SystemHealth() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <Card className="border-none shadow-sm">
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-bold uppercase tracking-wider">
+            <CardDescription className="text-xs font-bold uppercase ">
               Database
             </CardDescription>
             <CardTitle className="flex items-center gap-2 text-xl">
@@ -229,7 +229,7 @@ export default function SystemHealth() {
 
         <Card className="border-none shadow-sm">
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-bold uppercase tracking-wider">
+            <CardDescription className="text-xs font-bold uppercase ">
               Users
             </CardDescription>
             <CardTitle className="flex items-center gap-2 text-xl">
@@ -258,7 +258,7 @@ export default function SystemHealth() {
 
         <Card className="border-none shadow-sm">
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-bold uppercase tracking-wider">
+            <CardDescription className="text-xs font-bold uppercase ">
               Server
             </CardDescription>
             <CardTitle className="flex items-center gap-2 text-xl">

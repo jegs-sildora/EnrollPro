@@ -144,7 +144,13 @@ export function EditSectionModal({
     setSubmitting(true);
     try {
       // Defensive update: Only send fields that have actually changed
-      const payload: any = {};
+      const payload: Partial<{
+        name: string;
+        maxCapacity: number;
+        programType: string;
+        advisingTeacherId: number | null;
+        sortOrder: number;
+      }> = {};
       if (name.trim() !== section.name) payload.name = name.trim();
       if (parseInt(capacity) !== section.maxCapacity)
         payload.maxCapacity = parseInt(capacity);
@@ -195,7 +201,7 @@ export function EditSectionModal({
       onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg border-2">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold uppercase tracking-tight">
+          <DialogTitle className="text-xl font-bold uppercase ">
             Edit Section
           </DialogTitle>
           <p className="text-sm text-foreground font-bold">
@@ -219,7 +225,7 @@ export function EditSectionModal({
                   placeholder="e.g. Rizal"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="h-10 font-black uppercase tracking-wide border-primary/20 focus:border-primary/50"
+                  className="h-10 font-black uppercase  border-primary/20 focus:border-primary/50"
                 />
               </div>
               <div className="space-y-2">

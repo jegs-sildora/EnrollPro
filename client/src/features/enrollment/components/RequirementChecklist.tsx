@@ -421,7 +421,7 @@ export function RequirementChecklist({
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+          <CardTitle className="text-sm font-bold uppercase  flex items-center gap-2">
             Documentary Checklist
             {(isUpdating || isLoadingRequirements) && (
               <Loader2 className="h-3 w-3 animate-spin text-foreground" />
@@ -462,7 +462,7 @@ export function RequirementChecklist({
       <CardContent className="space-y-4">
         {showAcademicStatusControl && (
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
-            <p className="text-[0.625rem] font-bold uppercase tracking-wider text-foreground">
+            <p className="text-[0.625rem] font-bold uppercase  text-foreground">
               Academic Status
             </p>
             <div className="mt-2 flex items-center gap-3">

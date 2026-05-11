@@ -40,7 +40,7 @@ const SummaryCard = ({
     <div className="px-5 py-3 bg-muted/30 border-b border-border/40 flex items-center justify-between">
       <div className="flex items-center gap-2">
         <Icon className="w-4 h-4 text-primary" />
-        <h4 className="text-xs font-bold uppercase tracking-wider text-foreground/70">
+        <h4 className="text-xs font-bold uppercase  text-foreground/70">
           {title}
         </h4>
       </div>
@@ -305,7 +305,7 @@ export default function LegalConsentStep({
         <div className="p-6 bg-primary/5 border border-primary/10 rounded-2xl space-y-6">
           <div className="flex items-center gap-2 mb-2">
             <ShieldCheck className="w-5 h-5 text-primary" />
-            <h3 className="text-sm font-bold uppercase tracking-widest text-primary">
+            <h3 className="text-sm font-bold uppercase  text-primary">
               Accuracy Certification
             </h3>
           </div>

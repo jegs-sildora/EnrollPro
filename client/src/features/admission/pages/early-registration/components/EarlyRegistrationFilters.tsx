@@ -139,7 +139,7 @@ export function EarlyRegistrationFilters({
 
       <div className="flex flex-col md:flex-row gap-3 md:gap-4 items-stretch md:items-end">
         <div className="flex-1 space-y-2 w-full">
-          <Label className="text-xs sm:text-sm uppercase tracking-wider font-bold">
+          <Label className="text-xs sm:text-sm uppercase  font-bold">
             Search Applicant
           </Label>
           <div className="relative">
@@ -160,7 +160,7 @@ export function EarlyRegistrationFilters({
         </div>
         <div className="grid grid-cols-1 md:flex gap-3 md:gap-4 w-full md:w-auto">
           <div className="space-y-2">
-            <Label className="text-xs sm:text-sm uppercase tracking-wider font-bold ">
+            <Label className="text-xs sm:text-sm uppercase  font-bold ">
               Curriculum Program
             </Label>
             <Select

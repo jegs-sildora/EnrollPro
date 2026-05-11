@@ -356,7 +356,7 @@ export function BatchSectioningWizard({
             ?.message
         : "Failed to generate sectioning preview.";
       setError(message || "An unexpected error occurred.");
-      toastApiError(err as any);
+      toastApiError(err as never);
     } finally {
       setIsLoading(false);
     }
@@ -528,7 +528,6 @@ export function BatchSectioningWizard({
     programFilter,
     sectionFilter,
     sortConfig,
-    getSectionPriority,
   ]);
 
   const virtualItemsData = useMemo(() => {
@@ -592,7 +591,7 @@ export function BatchSectioningWizard({
                   <h2 className="text-xl font-bold ">
                     HNHS Batch Sectioning Wizard
                   </h2>
-                  <p className="text-xs uppercase font-black tracking-widest text-foreground">
+                  <p className="text-xs uppercase font-black  text-foreground">
                     LIS BOSY PRE-RUN •{" "}
                     {previewData
                       ? `${previewData.gradeLevelName.toUpperCase()}`
@@ -665,7 +664,7 @@ export function BatchSectioningWizard({
                       <p className="text-lg font-bold">
                         Executing HNHS Hybrid Algorithm...
                       </p>
-                      <p className="text-sm text-foreground uppercase tracking-widest font-black">
+                      <p className="text-sm text-foreground uppercase  font-black">
                         Sorting, Slicing, and Snake Drafting
                       </p>
                     </div>
@@ -719,14 +718,14 @@ export function BatchSectioningWizard({
                           </CardHeader>
                           <CardContent>
                             <div className="space-y-2 pt-2 border-t border-border">
-                              <div className="flex justify-between text-xs font-black uppercase tracking-wider">
+                              <div className="flex justify-between text-xs font-black uppercase ">
                                 <span className="text-foreground">Status</span>
                                 <span className="text-green-600 flex items-center gap-1">
                                   <Check className="w-3 h-3 stroke-[3]" />{" "}
                                   COMPLETED
                                 </span>
                               </div>
-                              <div className="flex justify-between text-xs font-black uppercase tracking-wider">
+                              <div className="flex justify-between text-xs font-black uppercase ">
                                 <span className="text-foreground">
                                   Assigned
                                 </span>
@@ -739,7 +738,7 @@ export function BatchSectioningWizard({
                               {idx === 0 &&
                                 step.stats?.steCutoffScore !== undefined &&
                                 step.stats?.steCutoffScore !== null && (
-                                  <div className="flex justify-between text-xs font-black uppercase tracking-wider">
+                                  <div className="flex justify-between text-xs font-black uppercase ">
                                     <span className="text-foreground">
                                       STE Cut-off Score
                                     </span>
@@ -753,7 +752,7 @@ export function BatchSectioningWizard({
                               {idx === 1 &&
                                 step.stats?.pilotCutoffAve !== undefined &&
                                 step.stats?.pilotCutoffAve !== null && (
-                                  <div className="flex justify-between text-xs font-black uppercase tracking-wider">
+                                  <div className="flex justify-between text-xs font-black uppercase ">
                                     <span className="text-foreground">
                                       Pilot Cut-off (Gen Ave)
                                     </span>
@@ -766,7 +765,7 @@ export function BatchSectioningWizard({
                                 )}
 
                               {Number(step.stats?.spillover) > 0 && (
-                                <div className="flex justify-between items-center text-xs font-black uppercase tracking-wider text-orange-600">
+                                <div className="flex justify-between items-center text-xs font-black uppercase  text-orange-600">
                                   <span>Reclassified</span>
                                   <div className="flex items-center gap-2">
                                     <span>
@@ -792,7 +791,7 @@ export function BatchSectioningWizard({
                                 </div>
                               )}
                               {Number(step.stats?.frustratedCount) > 0 && (
-                                <div className="flex justify-between text-xs font-black uppercase tracking-wider text-destructive">
+                                <div className="flex justify-between text-xs font-black uppercase  text-destructive">
                                   <span>Remedial Balance</span>
                                   <span>
                                     {Number(step.stats?.frustratedCount)}{" "}
@@ -822,7 +821,7 @@ export function BatchSectioningWizard({
                         </div>
 
                         <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-2 text-xs font-bold text-foreground uppercase tracking-wider">
+                          <div className="flex items-center gap-2 text-xs font-bold text-foreground uppercase ">
                             <Filter className="w-3.5 h-3.5" /> Filter Preview
                           </div>
 
@@ -869,7 +868,7 @@ export function BatchSectioningWizard({
                                 <>
                                   {/* Regular Sections */}
                                   <SelectGroup>
-                                    <SelectLabel className="font-black text-xs text-foreground uppercase tracking-widest bg-muted/30 px-2 py-1">
+                                    <SelectLabel className="font-black text-xs text-foreground uppercase  bg-muted/30 px-2 py-1">
                                       Pilot Sections
                                     </SelectLabel>
                                     {uniqueSections
@@ -884,7 +883,7 @@ export function BatchSectioningWizard({
                                       ))}
                                   </SelectGroup>
                                   <SelectGroup>
-                                    <SelectLabel className="font-black text-xs text-foreground uppercase tracking-widest bg-muted/30 px-2 py-1 mt-2">
+                                    <SelectLabel className="font-black text-xs text-foreground uppercase  bg-muted/30 px-2 py-1 mt-2">
                                       Heterogeneous Sections
                                     </SelectLabel>
                                     {uniqueSections
@@ -913,7 +912,7 @@ export function BatchSectioningWizard({
                               {/* Special Program Sections */}
                               {programFilter !== "REGULAR" && (
                                 <SelectGroup>
-                                  <SelectLabel className="font-black text-xs text-foreground uppercase tracking-widest bg-muted/30 px-2 py-1">
+                                  <SelectLabel className="font-black text-xs text-foreground uppercase  bg-muted/30 px-2 py-1">
                                     Special Sections
                                   </SelectLabel>
                                   {uniqueSections
@@ -955,37 +954,37 @@ export function BatchSectioningWizard({
                                   <TableHead className="text-primary-foreground h-12 px-4 text-left">
                                     <button
                                       onClick={() => toggleSort("learnerName")}
-                                      className="flex items-center font-black text-xs uppercase tracking-wider hover:opacity-80 transition-opacity">
+                                      className="flex items-center font-black text-xs uppercase  hover:opacity-80 transition-opacity">
                                       Learner {getSortIcon("learnerName")}
                                     </button>
                                   </TableHead>
                                   <TableHead className="text-primary-foreground h-12 px-4 text-center">
                                     <button
                                       onClick={() => toggleSort("gender")}
-                                      className="flex items-center justify-center w-full font-black text-xs uppercase tracking-wider hover:opacity-80 transition-opacity">
+                                      className="flex items-center justify-center w-full font-black text-xs uppercase  hover:opacity-80 transition-opacity">
                                       Gender {getSortIcon("gender")}
                                     </button>
                                   </TableHead>
-                                  <TableHead className="text-primary-foreground font-black text-xs uppercase tracking-wider h-12 px-4 text-center">
+                                  <TableHead className="text-primary-foreground font-black text-xs uppercase  h-12 px-4 text-center">
                                     Program
                                   </TableHead>
-                                  <TableHead className="text-primary-foreground font-black text-xs uppercase tracking-wider h-12 px-4 text-center">
+                                  <TableHead className="text-primary-foreground font-black text-xs uppercase  h-12 px-4 text-center">
                                     Ranking
                                   </TableHead>
                                   <TableHead className="text-primary-foreground h-12 px-4 text-center">
                                     <button
                                       onClick={() => toggleSort("genAve")}
-                                      className="flex items-center justify-center w-full font-black text-xs uppercase tracking-wider hover:opacity-80 transition-opacity">
+                                      className="flex items-center justify-center w-full font-black text-xs uppercase  hover:opacity-80 transition-opacity">
                                       Gen Ave {getSortIcon("genAve")}
                                     </button>
                                   </TableHead>
-                                  <TableHead className="text-primary-foreground font-black text-xs uppercase tracking-wider h-12 px-4 text-center">
+                                  <TableHead className="text-primary-foreground font-black text-xs uppercase  h-12 px-4 text-center">
                                     Reading
                                   </TableHead>
                                   <TableHead className="text-primary-foreground h-12 px-4 text-center">
                                     <button
                                       onClick={() => toggleSort("sectionName")}
-                                      className="flex items-center justify-center w-full font-black text-xs uppercase tracking-wider hover:opacity-80 transition-opacity">
+                                      className="flex items-center justify-center w-full font-black text-xs uppercase  hover:opacity-80 transition-opacity">
                                       Assigned Section{" "}
                                       {getSortIcon("sectionName")}
                                     </button>
@@ -1024,7 +1023,7 @@ export function BatchSectioningWizard({
                                             className="py-2.5 px-4">
                                             <div className="flex items-center gap-3">
                                               <div className="h-[1px] flex-1 bg-border/80" />
-                                              <span className="text-xs font-black uppercase tracking-[0.25em] text-foreground whitespace-nowrap flex items-center gap-2">
+                                              <span className="text-xs font-black uppercase  text-foreground whitespace-nowrap flex items-center gap-2">
                                                 <div
                                                   className={cn(
                                                     "w-1.5 h-1.5 rounded-full",
@@ -1105,12 +1104,12 @@ export function BatchSectioningWizard({
                     <Button
                       variant="outline"
                       onClick={handleClose}
-                      className="h-11 sm:h-12 px-6 sm:px-8 font-black uppercase text-xs tracking-widest border-2 w-full sm:w-auto">
+                      className="h-11 sm:h-12 px-6 sm:px-8 font-black uppercase text-xs  border-2 w-full sm:w-auto">
                       Discard Preview
                     </Button>
                     <Button
                       onClick={handleCommit}
-                      className="h-11 sm:h-12 px-8 sm:px-10 font-black uppercase text-xs tracking-widest bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 w-full sm:w-auto"
+                      className="h-11 sm:h-12 px-8 sm:px-10 font-black uppercase text-xs  bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 w-full sm:w-auto"
                       disabled={isCommitting}>
                       {isCommitting ? (
                         <>
@@ -1164,7 +1163,7 @@ export function BatchSectioningWizard({
                     onClose(); // Force overlay to close
                     blocker.proceed?.();
                   }}
-                  className="flex-1 font-bold text-xs uppercase tracking-widest text-foreground hover:text-destructive hover:bg-destructive/10">
+                  className="flex-1 font-bold text-xs uppercase  text-foreground hover:text-destructive hover:bg-destructive/10">
                   Discard Batch & Leave
                 </Button>
                 <Button
@@ -1173,7 +1172,7 @@ export function BatchSectioningWizard({
                     onClose(); // Force overlay to close
                     blocker.proceed?.();
                   }}
-                  className="flex-1 font-black text-xs uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-md">
+                  className="flex-1 font-black text-xs uppercase  bg-primary hover:bg-primary/90 shadow-md">
                   Keep Data & Leave
                 </Button>
               </DialogFooter>
@@ -1212,7 +1211,7 @@ export function BatchSectioningWizard({
                     setIsDiscardDialogOpen(false);
                     onClose();
                   }}
-                  className="flex-1 font-bold text-xs uppercase tracking-widest text-foreground hover:text-destructive hover:bg-destructive/10">
+                  className="flex-1 font-bold text-xs uppercase  text-foreground hover:text-destructive hover:bg-destructive/10">
                   Discard Batch & Leave
                 </Button>
                 <Button
@@ -1221,7 +1220,7 @@ export function BatchSectioningWizard({
                     setIsDiscardDialogOpen(false);
                     onClose();
                   }}
-                  className="flex-1 font-black text-xs uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-md">
+                  className="flex-1 font-black text-xs uppercase  bg-primary hover:bg-primary/90 shadow-md">
                   Keep Data & Leave
                 </Button>
               </DialogFooter>
@@ -1301,7 +1300,7 @@ export function BatchSectioningWizard({
                         onClick={() =>
                           setReclassifiedLimit((prev) => prev + 50)
                         }
-                        className="font-black text-xs uppercase tracking-widest text-primary hover:bg-primary/10">
+                        className="font-black text-xs uppercase  text-primary hover:bg-primary/10">
                         Load Next 50 Learners (
                         {viewingReclassified.learners.length -
                           reclassifiedLimit}{" "}
@@ -1323,7 +1322,7 @@ export function BatchSectioningWizard({
                   <Button
                     variant="outline"
                     onClick={() => setViewingReclassified(null)}
-                    className="font-bold text-xs uppercase tracking-widest">
+                    className="font-bold text-xs uppercase ">
                     Close Audit List
                   </Button>
                 </div>

@@ -72,7 +72,7 @@ const SecurityRequirements = memo(function SecurityRequirements({
 
   return (
     <div className="rounded-xl bg-muted/50 p-4 border border-muted-foreground/10 space-y-3">
-      <p className="font-bold uppercase tracking-widest text-foreground/70 text-xs">
+      <p className="font-bold uppercase  text-foreground/70 text-xs">
         Security Requirements
       </p>
       <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">

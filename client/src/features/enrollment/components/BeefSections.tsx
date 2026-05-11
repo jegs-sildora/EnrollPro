@@ -42,7 +42,7 @@ function CollapsibleSection({ title, icon, children }: SectionProps) {
           <span>{title}</span>
         </div>
         <span
-          className={`text-xs uppercase tracking-widest text-foreground ${isOpen ? "opacity-60" : ""}`}>
+          className={`text-xs uppercase  text-foreground ${isOpen ? "opacity-60" : ""}`}>
           {isOpen ? "Hide" : "Show"}
         </span>
       </button>

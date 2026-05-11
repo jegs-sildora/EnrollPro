@@ -171,7 +171,7 @@ export default function Step4PreviousSchool() {
                     ? "border-primary bg-primary text-primary-foreground shadow-sm"
                     : "border-border bg-white hover:bg-primary/5 text-foreground hover:text-foreground",
                 )}>
-                <span className="font-bold text-sm leading-tight tracking-wide">
+                <span className="font-bold text-sm leading-tight ">
                   {lt.label}
                 </span>
               </button>
@@ -241,7 +241,7 @@ export default function Step4PreviousSchool() {
               {isMissingSf9 && (
                 <div className="pl-7 space-y-4 animate-in slide-in-from-top-2 duration-200">
                   <div className="space-y-2 bg-primary/5 p-3 rounded-lg border border-primary/10">
-                    <Label className="text-xs font-black uppercase text-primary/50 tracking-widest block mb-2">
+                    <Label className="text-xs font-black uppercase text-primary/50  block mb-2">
                       ↳ Select Alternative Status:
                     </Label>
                     <RadioGroup
@@ -320,7 +320,7 @@ export default function Step4PreviousSchool() {
                   <div className="space-y-2">
                     <Label
                       htmlFor="origin-school"
-                      className="text-xs font-black uppercase text-foreground tracking-widest">
+                      className="text-xs font-black uppercase text-foreground ">
                       Originating School Name
                     </Label>
                     <Input
@@ -348,7 +348,7 @@ export default function Step4PreviousSchool() {
                       />
                       <p
                         className={cn(
-                          "text-xs font-black uppercase tracking-tight",
+                          "text-xs font-black uppercase ",
                           errors.hasExecutedAffidavit
                             ? "text-destructive"
                             : "text-primary",
@@ -370,7 +370,7 @@ export default function Step4PreviousSchool() {
                     <div className="space-y-3 pt-1">
                       <Label
                         className={cn(
-                          "text-xs font-black uppercase tracking-widest block",
+                          "text-xs font-black uppercase  block",
                           errors.hasExecutedAffidavit
                             ? "text-destructive"
                             : "text-primary/50",

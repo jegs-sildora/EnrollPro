@@ -130,7 +130,7 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
               className="h-24 w-auto object-contain"
             />
           </div>
-          <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
+          <CardTitle className="text-2xl font-bold  text-foreground">
             {schoolName ? `${schoolName} Learner Portal` : "Learner Portal"}
           </CardTitle>
           <CardDescription className="text-sm leading-relaxed text-foreground mt-2">

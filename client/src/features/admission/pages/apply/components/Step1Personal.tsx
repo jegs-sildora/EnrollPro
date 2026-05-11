@@ -416,7 +416,7 @@ export default function Step1Personal() {
           <div>
             <h3
               className={cn(
-                "text-sm font-bold uppercase tracking-wider",
+                "text-sm font-bold uppercase ",
                 hasFilledEarlyRegistrationForm
                   ? "text-primary"
                   : "text-foreground",
@@ -442,8 +442,8 @@ export default function Step1Personal() {
             maxLength={12}
             disabled={hasNoLrn}
             className={cn(
-              "h-14 text-lg tracking-[0.25em] font-black text-center border-2",
-              hasNoLrn && "bg-muted cursor-not-allowed tracking-normal text-sm",
+              "h-14 text-lg  font-black text-center border-2",
+              hasNoLrn && "bg-muted cursor-not-allowed  text-sm",
               errors.lrn
                 ? "border-destructive"
                 : "border-primary/30 focus:border-primary",

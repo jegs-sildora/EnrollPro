@@ -48,7 +48,7 @@ import {
 } from "../utils";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { SCP_ACRONYMS } from "@/shared/lib/utils";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 interface TeacherDesignationSheetProps {
   open: boolean;
@@ -91,8 +91,6 @@ export function TeacherDesignationSheet({
   onClose,
   onSave,
 }: TeacherDesignationSheetProps) {
-  const [showAllSections, setShowAllSections] = useState(false);
-
   const teacherDisplayName = designationOpenFor
     ? formatTeacherName(designationOpenFor)
     : "Teacher";
@@ -104,7 +102,6 @@ export function TeacherDesignationSheet({
     const groups: Record<string, AdvisorySectionOption[]> = {};
 
     const filtered = advisorySections.filter((s) => {
-      if (showAllSections) return true;
       // Keep unassigned sections
       if (!s.currentAdviserId) return true;
       // Keep if it's the section already assigned to THIS teacher
@@ -137,7 +134,7 @@ export function TeacherDesignationSheet({
     });
 
     return groups;
-  }, [advisorySections, designationOpenFor?.id, showAllSections]);
+  }, [advisorySections, designationOpenFor?.id]);
 
   const sortedGradeLevels = useMemo(() => {
     return Object.keys(groupedSections).sort((a, b) => {
@@ -164,9 +161,9 @@ export function TeacherDesignationSheet({
     const isOccupied = section.currentAdviserId && !isCurrent;
 
     let label = `${baseName} (${typeLabel})`;
-    if (isCurrent) label;
-    else if (isOccupied) label += ` • [ ${section.currentAdviserName} ]`;
-    else label;
+    if (isOccupied && !isCurrent) {
+      label += ` • [ ${section.currentAdviserName} ]`;
+    }
 
     return label;
   };
@@ -327,15 +324,6 @@ export function TeacherDesignationSheet({
                         <Label className="uppercase text-foreground">
                           Advisory Section
                         </Label>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] font-black uppercase text-muted-foreground">
-                            Show All
-                          </span>
-                          <Switch 
-                             checked={showAllSections}
-                             onCheckedChange={setShowAllSections}
-                          />
-                        </div>
                       </div>
                       <Select
                         value={designationForm.advisorySectionId || "__none__"}

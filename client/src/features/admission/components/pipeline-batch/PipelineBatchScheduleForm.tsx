@@ -96,7 +96,7 @@ export default function PipelineBatchScheduleForm({
       <div className="rounded-lg border bg-muted/40 p-3 space-y-3">
         <div className="grid gap-2 md:grid-cols-3">
           <div className="rounded-md bg-background/70 px-2.5 py-2">
-            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-foreground">
+            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase  text-foreground">
               <CalendarDays
                 className="size-3.5"
                 aria-hidden="true"
@@ -108,7 +108,7 @@ export default function PipelineBatchScheduleForm({
             </p>
           </div>
           <div className="rounded-md bg-background/70 px-2.5 py-2">
-            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-foreground">
+            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase  text-foreground">
               <Clock3
                 className="size-3.5"
                 aria-hidden="true"
@@ -120,7 +120,7 @@ export default function PipelineBatchScheduleForm({
             </p>
           </div>
           <div className="rounded-md bg-background/70 px-2.5 py-2">
-            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-foreground">
+            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase  text-foreground">
               <MapPin
                 className="size-3.5"
                 aria-hidden="true"
@@ -134,7 +134,7 @@ export default function PipelineBatchScheduleForm({
         </div>
 
         <div className="space-y-1">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-foreground">
+          <p className="text-[11px] font-bold uppercase  text-foreground">
             Notes
           </p>
           <blockquote className="rounded-r-md border-l-2 border-muted-foreground/35 pl-3 text-sm italic text-foreground">

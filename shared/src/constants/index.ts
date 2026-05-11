@@ -4,7 +4,6 @@ import { z } from "zod";
 export const RoleEnum = z.enum([
   "SYSTEM_ADMIN",
   "HEAD_REGISTRAR",
-  "GRADE_LEVEL_COORDINATOR",
   "CLASS_ADVISER",
   "TEACHER",
 ]);
@@ -629,7 +628,6 @@ export const DEPED_TEACHER_PLANTILLA_POSITION_OPTIONS = [
 export const DEPED_TEACHER_ACADEMIC_DESIGNATION_OPTIONS = [
   { value: "SUBJECT TEACHER", label: "Subject Teacher" },
   { value: "CLASS ADVISER", label: "Class Adviser" },
-  { value: "GRADE LEVEL COORDINATOR", label: "Grade Level Coordinator" },
   { value: "DEPARTMENT HEAD", label: "Department Head" },
 ] as const;
 

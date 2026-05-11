@@ -93,7 +93,7 @@ export function HealthSection({ learner }: Props) {
           const r = row.original;
           return (
             <span
-              className={`text-xs font-black uppercase tracking-tighter text-left block ${
+              className={`text-xs font-black uppercase  text-left block ${
                 r.color === "red"
                   ? "text-red-600"
                   : r.color === "orange"
@@ -122,7 +122,7 @@ export function HealthSection({ learner }: Props) {
     <div className="space-y-10">
       <div className="flex items-center gap-2 mb-2">
         <Activity className="h-4 w-4 text-primary" />
-        <h2 className="text-xs font-bold uppercase tracking-widest text-primary">
+        <h2 className="text-xs font-bold uppercase  text-primary">
           Health Monitoring (SF8)
         </h2>
       </div>
@@ -133,7 +133,7 @@ export function HealthSection({ learner }: Props) {
           <div className="bg-primary/5 p-6 rounded-lg border border-primary/10 shadow-sm">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
               <div>
-                <h3 className="text-xs font-black text-primary uppercase tracking-widest">
+                <h3 className="text-xs font-black text-primary uppercase ">
                   Latest Measurement
                 </h3>
                 <p className="text-xs text-foreground font-bold uppercase mt-0.5">
@@ -164,11 +164,11 @@ export function HealthSection({ learner }: Props) {
                 <div
                   key={item.label}
                   className="bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-white shadow-sm flex flex-col">
-                  <span className="text-xs font-bold text-foreground uppercase tracking-tighter mb-1.5 leading-tight">
+                  <span className="text-xs font-bold text-foreground uppercase  mb-1.5 leading-tight">
                     {item.label}
                   </span>
                   <span
-                    className={`text-sm font-black tracking-tight ${item.color === "red" ? "text-red-600" : item.color === "orange" ? "text-orange-600" : item.color === "blue" ? "text-blue-600" : "text-emerald-600"}`}>
+                    className={`text-sm font-black  ${item.color === "red" ? "text-red-600" : item.color === "orange" ? "text-orange-600" : item.color === "blue" ? "text-blue-600" : "text-emerald-600"}`}>
                     {item.value}
                   </span>
                 </div>
@@ -178,7 +178,7 @@ export function HealthSection({ learner }: Props) {
 
           {/* History Table */}
           <div className="space-y-4">
-            <h3 className="text-xs font-bold text-foreground uppercase tracking-widest ml-1">
+            <h3 className="text-xs font-bold text-foreground uppercase  ml-1">
               Historical Records
             </h3>
             <div className="rounded-xl border border-border overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm">

@@ -159,7 +159,7 @@ function InterviewRubricCard({
           <div
             key={group.group}
             className="space-y-3">
-            <h4 className="text-xs font-black uppercase tracking-widest text-violet-700 opacity-70">
+            <h4 className="text-xs font-black uppercase  text-violet-700 opacity-70">
               {group.group}
             </h4>
             {group.items.map((item) => (

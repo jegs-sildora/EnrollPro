@@ -654,7 +654,7 @@ export default function BasicInfoStep() {
           <div className="space-y-2">
             <Label
               htmlFor="lrn"
-              className="text-sm font-bold uppercase tracking-widest text-primary">
+              className="text-sm font-bold uppercase  text-primary">
               Learner Reference Number (LRN)
               {lrnRequired && <span className="text-destructive"> *</span>}
             </Label>
@@ -667,7 +667,7 @@ export default function BasicInfoStep() {
                 inputMode="numeric"
                 disabled={hasNoLrn}
                 className={cn(
-                  "h-12 font-bold tracking-widest uppercase bg-white pl-4",
+                  "h-12 font-bold  uppercase bg-white pl-4",
                   hasNoLrn && "bg-muted/50 cursor-not-allowed",
                   errors.lrn && "border-destructive",
                 )}
@@ -729,7 +729,7 @@ export default function BasicInfoStep() {
           <div className="space-y-2">
             <Label
               htmlFor="schoolYear"
-              className="text-sm font-bold uppercase tracking-widest text-primary opacity-70">
+              className="text-sm font-bold uppercase  text-primary opacity-70">
               School Year
             </Label>
             <div className="relative">
@@ -746,7 +746,7 @@ export default function BasicInfoStep() {
 
         {/* ROW 2: Learner Category */}
         <div className="space-y-4">
-          <Label className="text-sm font-bold uppercase tracking-widest text-primary">
+          <Label className="text-sm font-bold uppercase  text-primary">
             Learner Category <span className="text-destructive">*</span>
           </Label>
           <div className="grid grid-cols-3 gap-3">
@@ -763,7 +763,7 @@ export default function BasicInfoStep() {
                     ? "border-primary bg-primary text-primary-foreground shadow-md"
                     : "border-border bg-white hover:bg-primary/5 text-foreground hover:text-foreground",
                 )}>
-                <span className="font-bold text-sm leading-tight tracking-wide">
+                <span className="font-bold text-sm leading-tight ">
                   {lt.label}
                 </span>
               </button>
@@ -780,7 +780,7 @@ export default function BasicInfoStep() {
         {/* ROW 3: Grade Level to Enroll */}
         <div className="space-y-4">
           <div className="flex justify-between items-end">
-            <Label className="text-sm font-bold uppercase tracking-widest text-primary">
+            <Label className="text-sm font-bold uppercase  text-primary">
               Grade Level to Enroll <span className="text-destructive">*</span>
             </Label>
           </div>
@@ -824,7 +824,7 @@ export default function BasicInfoStep() {
           <div className="space-y-3 p-5 bg-muted/30 rounded-2xl border border-border/50">
             <Label
               htmlFor="reportedGa"
-              className="text-sm font-bold uppercase tracking-widest text-primary">
+              className="text-sm font-bold uppercase  text-primary">
               Grade 6 General Average
             </Label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
@@ -1018,7 +1018,7 @@ export default function BasicInfoStep() {
 
             {isScpEligible && isScpApplication && hasOfferedScpPrograms && (
               <div className="space-y-3 pt-2">
-                <Label className="text-sm font-bold uppercase tracking-widest text-primary">
+                <Label className="text-sm font-bold uppercase  text-primary">
                   Select SCP Track <span className="text-destructive">*</span>
                 </Label>
 
@@ -1078,7 +1078,7 @@ export default function BasicInfoStep() {
                   <div className="rounded-2xl border border-primary/20 bg-white p-4 sm:p-5 space-y-4">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <p className="text-[0.625rem] font-bold uppercase tracking-widest text-primary/70">
+                        <p className="text-[0.625rem] font-bold uppercase  text-primary/70">
                           SCP Track Requirements
                         </p>
                         <p className="text-sm font-bold text-primary mt-1">
@@ -1088,7 +1088,7 @@ export default function BasicInfoStep() {
 
                       <span
                         className={cn(
-                          "inline-flex items-center rounded-full border px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-wide",
+                          "inline-flex items-center rounded-full border px-2 py-0.5 text-[0.625rem] font-bold uppercase ",
                           selectedScpRequirementCard.usingConfiguredPrerequisites
                             ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                             : "border-amber-200 bg-amber-50 text-amber-700",
@@ -1101,7 +1101,7 @@ export default function BasicInfoStep() {
 
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                       <div className="space-y-2">
-                        <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-primary">
+                        <p className="text-[0.6875rem] font-bold uppercase  text-primary">
                           Prerequisites
                         </p>
                         <ul className="space-y-2">
@@ -1119,7 +1119,7 @@ export default function BasicInfoStep() {
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-primary">
+                        <p className="text-[0.6875rem] font-bold uppercase  text-primary">
                           Documentary Requirements
                         </p>
                         <ul className="space-y-2">
@@ -1134,7 +1134,7 @@ export default function BasicInfoStep() {
                                   </p>
                                   <span
                                     className={cn(
-                                      "shrink-0 rounded-full border px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-wide",
+                                      "shrink-0 rounded-full border px-2 py-0.5 text-[0.625rem] font-bold uppercase ",
                                       requirement.status === "REQUIRED"
                                         ? "border-red-200 bg-red-50 text-red-700"
                                         : "border-blue-200 bg-blue-50 text-blue-700",

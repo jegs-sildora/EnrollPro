@@ -48,6 +48,7 @@ import {
 import { Avatar, AvatarFallback } from "@/shared/ui/avatar";
 import { Separator } from "@/shared/ui/separator";
 import { Button } from "@/shared/ui/button";
+import { cn, formatUserRole, getRoleColorClasses } from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
 
@@ -108,9 +109,16 @@ function UserNav() {
               <span className="text-[11px] font-bold truncate max-w-[120px]">
                 {user?.firstName} {user?.lastName}
               </span>
-              <span className="text-[9px] text-foreground font-semibold uppercase tracking-wider">
-                {user?.role?.replace("_", " ")}
-              </span>
+              <div className="flex justify-start">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "text-[8px] font-black uppercase px-1 h-3.5 border-none",
+                    getRoleColorClasses(user?.role),
+                  )}>
+                  {formatUserRole(user?.role)}
+                </Badge>
+              </div>
             </div>
             <ChevronDown className="size-3 opacity-50 ml-0.5" />
           </Button>
@@ -249,7 +257,7 @@ function SYSwitcher() {
 const NavDivider = memo(function NavDivider({ label }: { label: string }) {
   return (
     <div className="px-3 py-2 mt-2 transition-[margin,opacity,height] duration-200 ease-linear group-data-[collapsible=icon]:m-0 group-data-[collapsible=icon]:h-0 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:opacity-0 overflow-hidden">
-      <span className="text-[0.625rem] font-bold uppercase tracking-wider text-foreground opacity-60 whitespace-nowrap">
+      <span className="text-[0.625rem] font-bold uppercase  text-foreground opacity-60 whitespace-nowrap">
         {label}
       </span>
     </div>
@@ -425,7 +433,7 @@ function AppSidebar() {
                 )}
                 <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                   {schoolName ? (
-                    <span className="font-black leading-[1.1] uppercase tracking-tight break-words text-primary">
+                    <span className="font-black leading-[1.1] uppercase  break-words text-primary">
                       {schoolName}
                     </span>
                   ) : (
@@ -683,7 +691,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             {isHistoricalReadOnly ? (
               <Badge
                 variant="danger"
-                className="uppercase tracking-wide animate-pulse">
+                className="uppercase  animate-pulse">
                 Historical View: Read Only
               </Badge>
             ) : null}
