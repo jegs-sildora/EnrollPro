@@ -205,6 +205,7 @@ async function createFixture(seed: string): Promise<Fixture> {
   const enrollmentRecord = await prisma.enrollmentRecord.create({
     data: {
       enrollmentApplicationId: enrollmentApplication.id,
+      learnerId: learner.id,
       schoolYearId: schoolYear.id,
       sectionId: section.id,
       enrolledById: user.id,

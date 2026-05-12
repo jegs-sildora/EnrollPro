@@ -154,7 +154,7 @@ export async function findStudents(query: {
   // If schoolYearId is not provided, we might be searching globally (e.g. for Completers)
   
   const resolvedPage = parsePositiveInt(page) ?? 1;
-  const resolvedLimit = Math.min(parsePositiveInt(limit) ?? 15, 100);
+  const resolvedLimit = Math.min(parsePositiveInt(limit) ?? 15, 1000000);
   const resolvedGradeLevelId = parsePositiveInt(gradeLevelId);
   const resolvedSectionId = parsePositiveInt(sectionId);
   const resolvedProgramType = normalizeProgramType(programType);

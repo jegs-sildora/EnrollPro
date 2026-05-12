@@ -1,121 +1,34 @@
 import { useState, useEffect, useCallback, startTransition } from "react";
-import { Card, CardContent, CardHeader } from "@/shared/ui/card";
-import { Button } from "@/shared/ui/button";
-import { Badge } from "@/shared/ui/badge";
-import { Input } from "@/shared/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
-import {
-  AlertCircle,
-  CheckCircle2,
-  RefreshCw,
-  Search,
-  Users,
-  GraduationCap,
-  Loader2,
-} from "lucide-react";
-import { sileo } from "sileo";
-import { toastApiError } from "@/shared/hooks/useApiToast";
-import { useSettingsStore } from "@/store/settings.slice";
+import { Search, Loader2, RefreshCw, AlertCircle, CheckCircle2, LogOut } from "lucide-react";
 import { motion } from "motion/react";
 import type { RowSelectionState } from "@tanstack/react-table";
-import type { BOSYReadiness, BOSYQueueItem, JHSCompleter } from "../types";
+import type { AxiosError } from "axios";
+
 import {
   getBOSYReadiness,
   getBOSYQueue,
   confirmReturn,
   bulkConfirm,
-  getJHSCompleters,
+  syncBOSYQueue,
 } from "../api/bosy.api";
-import { QueueTable } from "../components/QueueTable";
-import { BulkConfirmBar } from "../components/BulkConfirmBar";
-import { DataTable } from "@/shared/ui/data-table";
-import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
-import { PaginationBar } from "@/shared/components/PaginationBar";
-import type { ColumnDef } from "@tanstack/react-table";
+import type {
+  BOSYReadiness,
+  BOSYQueueItem,
+} from "../types";
+import { toastApiError } from "@/shared/hooks/useApiToast";
+import { sileo } from "sileo";
+import { useSettingsStore } from "@/store/settings.slice";
+import { Card, CardContent, CardHeader } from "@/shared/ui/card";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/shared/lib/utils";
-
-const JHS_COMPLETER_COLUMNS: ColumnDef<JHSCompleter>[] = [
-  {
-    id: "learner",
-    accessorKey: "lastName",
-    header: ({ column }) => (
-      <DataTableColumnHeader
-        column={column}
-        title="LEARNER"
-      />
-    ),
-    cell: ({ row }) => {
-      const r = row.original;
-      return (
-        <div className="flex flex-col text-left py-0.5 leading-tight text-[11px] sm:text-xs">
-          <span className="font-bold uppercase truncate">
-            {r.lastName}, {r.firstName}
-            {r.middleName ? ` ${r.middleName.charAt(0)}.` : ""}
-          </span>
-          <span className="text-xs text-muted-foreground font-mono">
-            LRN: {r.lrn ?? "NO LRN"}
-          </span>
-        </div>
-      );
-    },
-  },
-  {
-    id: "lastGradeLevel",
-    accessorKey: "lastGradeLevel",
-    header: ({ column }) => (
-      <DataTableColumnHeader
-        column={column}
-        title="LAST GRADE"
-        className="justify-center"
-      />
-    ),
-    cell: ({ row }) => (
-      <div className="text-center">
-        <Badge
-          variant="outline"
-          className="text-[10px] font-black uppercase">
-          {row.original.lastGradeLevel ?? "—"}
-        </Badge>
-      </div>
-    ),
-    size: 90,
-  },
-  {
-    id: "lastSection",
-    accessorKey: "lastSectionName",
-    header: ({ column }) => (
-      <DataTableColumnHeader
-        column={column}
-        title="LAST SECTION"
-      />
-    ),
-    cell: ({ row }) => (
-      <span className="text-xs font-semibold">
-        {row.original.lastSectionName ?? "—"}
-      </span>
-    ),
-  },
-  {
-    id: "lastYear",
-    accessorKey: "lastYearEnrolled",
-    header: ({ column }) => (
-      <DataTableColumnHeader
-        column={column}
-        title="LAST SY"
-        className="justify-center"
-      />
-    ),
-    cell: ({ row }) => (
-      <div className="text-center text-xs text-muted-foreground">
-        {row.original.lastYearEnrolled ?? "—"}
-      </div>
-    ),
-    size: 90,
-  },
-];
+import { QueueTable } from "../components/QueueTable";
+import { PaginationBar } from "@/shared/components/PaginationBar";
+import { BulkConfirmBar } from "../components/BulkConfirmBar";
 
 export default function BOSYPage() {
-  // BOSY always operates on the active school year — never the viewing year
   const { activeSchoolYearId, activeSchoolYearLabel } = useSettingsStore();
   const syId = activeSchoolYearId;
 
@@ -124,7 +37,6 @@ export default function BOSYPage() {
 
   const [activeTab, setActiveTab] = useState("pending");
   const [queueSearch, setQueueSearch] = useState("");
-  const [jhsSearch, setJhsSearch] = useState("");
 
   // Pending Confirmation state
   const [pendingItems, setPendingItems] = useState<BOSYQueueItem[]>([]);
@@ -133,23 +45,24 @@ export default function BOSYPage() {
   const [pendingLimit, setPendingLimit] = useState(25);
   const [pendingLoading, setPendingLoading] = useState(false);
 
-  // Ready for Sectioning state
+  // Confirmed state
   const [confirmedItems, setConfirmedItems] = useState<BOSYQueueItem[]>([]);
   const [confirmedTotal, setConfirmedTotal] = useState(0);
   const [confirmedPage, setConfirmedPage] = useState(1);
   const [confirmedLimit, setConfirmedLimit] = useState(25);
   const [confirmedLoading, setConfirmedLoading] = useState(false);
 
-  // JHS Completers state
-  const [jhsItems, setJhsItems] = useState<JHSCompleter[]>([]);
-  const [jhsTotal, setJhsTotal] = useState(0);
-  const [jhsPage, setJhsPage] = useState(1);
-  const [jhsLimit, setJhsLimit] = useState(25);
-  const [jhsLoading, setJhsLoading] = useState(false);
+  // Transferred Out / Dropped state
+  const [droppedItems, setDroppedItems] = useState<BOSYQueueItem[]>([]);
+  const [droppedTotal, setDroppedTotal] = useState(0);
+  const [droppedPage, setDroppedPage] = useState(1);
+  const [droppedLimit, setDroppedLimit] = useState(25);
+  const [droppedLoading, setDroppedLoading] = useState(false);
 
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [confirmingIds, setConfirmingIds] = useState<Set<number>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   const fetchReadiness = useCallback(async () => {
     if (!syId) return;
@@ -158,11 +71,28 @@ export default function BOSYPage() {
       const data = await getBOSYReadiness(syId);
       setReadiness(data);
     } catch (e) {
-      toastApiError(e);
+      toastApiError(e as AxiosError<any>);
     } finally {
       setReadinessLoading(false);
     }
   }, [syId]);
+
+  const handleSync = async () => {
+    if (!syId) return;
+    setSyncing(true);
+    try {
+      const res = await syncBOSYQueue(syId);
+      sileo.success({
+        title: "Synchronization Complete",
+        description: `Successfully repaired ${res.created} learner record(s).`,
+      });
+      void handleRefresh();
+    } catch (e) {
+      toastApiError(e as AxiosError<any>);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const fetchPending = useCallback(async () => {
     if (!syId) return;
@@ -178,7 +108,7 @@ export default function BOSYPage() {
       setPendingItems(data.items);
       setPendingTotal(data.total);
     } catch (e) {
-      toastApiError(e);
+      toastApiError(e as AxiosError<any>);
     } finally {
       setPendingLoading(false);
     }
@@ -198,30 +128,31 @@ export default function BOSYPage() {
       setConfirmedItems(data.items);
       setConfirmedTotal(data.total);
     } catch (e) {
-      toastApiError(e);
+      toastApiError(e as AxiosError<any>);
     } finally {
       setConfirmedLoading(false);
     }
   }, [syId, queueSearch, confirmedPage, confirmedLimit]);
 
-  const fetchJHS = useCallback(async () => {
+  const fetchDropped = useCallback(async () => {
     if (!syId) return;
-    setJhsLoading(true);
+    setDroppedLoading(true);
     try {
-      const data = await getJHSCompleters({
+      const data = await getBOSYQueue({
         schoolYearId: syId,
-        search: jhsSearch || undefined,
-        page: jhsPage,
-        limit: jhsLimit,
+        status: "TRANSFERRED_OUT",
+        search: queueSearch || undefined,
+        page: droppedPage,
+        limit: droppedLimit,
       });
-      setJhsItems(data.items);
-      setJhsTotal(data.total);
+      setDroppedItems(data.items);
+      setDroppedTotal(data.total);
     } catch (e) {
-      toastApiError(e);
+      toastApiError(e as AxiosError<any>);
     } finally {
-      setJhsLoading(false);
+      setDroppedLoading(false);
     }
-  }, [syId, jhsSearch, jhsPage, jhsLimit]);
+  }, [syId, queueSearch, droppedPage, droppedLimit]);
 
   useEffect(() => {
     void fetchReadiness();
@@ -236,14 +167,14 @@ export default function BOSYPage() {
   }, [activeTab, fetchConfirmed]);
 
   useEffect(() => {
-    if (activeTab === "jhs") void fetchJHS();
-  }, [activeTab, fetchJHS]);
+    if (activeTab === "dropped") void fetchDropped();
+  }, [activeTab, fetchDropped]);
 
   const handleRefresh = () => {
     void fetchReadiness();
     if (activeTab === "pending") void fetchPending();
     else if (activeTab === "confirmed") void fetchConfirmed();
-    else if (activeTab === "jhs") void fetchJHS();
+    else if (activeTab === "dropped") void fetchDropped();
   };
 
   const handleConfirmSingle = async (applicationId: number) => {
@@ -260,7 +191,7 @@ export default function BOSYPage() {
       setPendingTotal((prev) => Math.max(0, prev - 1));
       void fetchReadiness();
     } catch (e) {
-      toastApiError(e);
+      toastApiError(e as AxiosError<any>);
     } finally {
       setConfirmingIds((prev) => {
         const next = new Set(prev);
@@ -305,7 +236,7 @@ export default function BOSYPage() {
       setRowSelection({});
       void fetchReadiness();
     } catch (e) {
-      toastApiError(e);
+      toastApiError(e as AxiosError<any>);
     } finally {
       setBulkLoading(false);
     }
@@ -319,13 +250,13 @@ export default function BOSYPage() {
     },
     {
       key: "confirmed",
-      label: "Ready for Sectioning",
+      label: "Confirmed (Walk-in & Portal)",
       count: readiness?.readyForSectioningCount,
     },
     {
-      key: "jhs",
-      label: "JHS Completers",
-      count: readiness?.jhsCompleterCount,
+      key: "dropped",
+      label: "Transferred Out / Dropped",
+      count: readiness?.droppedCount,
     },
   ];
 
@@ -353,13 +284,25 @@ export default function BOSYPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">BOSY Registration</h1>
+          <h1 className="text-3xl font-bold">BOSY Confirmation</h1>
           <p className="text-sm font-bold">
             Beginning of School Year — Continuing Learner Management
             {activeSchoolYearLabel ? ` · ${activeSchoolYearLabel}` : ""}
           </p>
         </div>
         <div className="flex items-center w-full md:w-auto gap-2">
+          <Button
+            variant="outline"
+            className="h-10 font-bold gap-2 bg-white border-2 border-primary/20 hover:border-primary hover:bg-primary/5 text-primary transition-all"
+            onClick={handleSync}
+            disabled={syncing || readinessLoading}>
+            {syncing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            Synchronize Roster
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -370,7 +313,7 @@ export default function BOSYPage() {
               readinessLoading ||
               pendingLoading ||
               confirmedLoading ||
-              jhsLoading
+              droppedLoading
             }>
             <RefreshCw
               className={cn(
@@ -378,7 +321,7 @@ export default function BOSYPage() {
                 (readinessLoading ||
                   pendingLoading ||
                   confirmedLoading ||
-                  jhsLoading) &&
+                  droppedLoading) &&
                   "animate-spin",
               )}
             />
@@ -386,8 +329,8 @@ export default function BOSYPage() {
         </div>
       </div>
 
-      {/* Readiness stat cards — no hardcoded color classes */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* Readiness stat cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           {
             icon: AlertCircle,
@@ -396,18 +339,13 @@ export default function BOSYPage() {
           },
           {
             icon: CheckCircle2,
-            label: "Ready for Sectioning",
+            label: "Confirmed (Returning)",
             value: readiness?.readyForSectioningCount ?? 0,
           },
           {
-            icon: Users,
-            label: "Already Enrolled",
-            value: readiness?.enrolledCount ?? 0,
-          },
-          {
-            icon: GraduationCap,
-            label: "JHS Completers",
-            value: readiness?.jhsCompleterCount ?? 0,
+            icon: LogOut,
+            label: "Transferred / Dropped",
+            value: readiness?.droppedCount ?? 0,
           },
         ].map(({ icon: Icon, label, value }) => (
           <Card
@@ -432,7 +370,7 @@ export default function BOSYPage() {
         ))}
       </div>
 
-      {/* Tabs — animated spring style matching Enrollment Management */}
+      {/* Tabs */}
       <Tabs
         value={activeTab}
         onValueChange={(v) => {
@@ -515,7 +453,7 @@ export default function BOSYPage() {
           </Card>
         </TabsContent>
 
-        {/* READY FOR SECTIONING */}
+        {/* CONFIRMED */}
         <TabsContent
           value="confirmed"
           className="mt-3">
@@ -563,9 +501,9 @@ export default function BOSYPage() {
           </Card>
         </TabsContent>
 
-        {/* JHS COMPLETERS */}
+        {/* DROPPED / TRANSFERRED */}
         <TabsContent
-          value="jhs"
+          value="dropped"
           className="mt-3">
           <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col min-h-0 overflow-hidden">
             <CardHeader className="px-3 sm:px-6 py-4 border-b border-border/50 shrink-0">
@@ -574,11 +512,11 @@ export default function BOSYPage() {
                 <Input
                   placeholder="Search LRN, First Name, Last Name..."
                   className="pl-10 h-11 text-sm font-bold bg-muted/30 border-2 border-transparent focus:border-primary transition-all"
-                  value={jhsSearch}
+                  value={queueSearch}
                   onChange={(e) => {
-                    setJhsSearch(e.target.value);
+                    setQueueSearch(e.target.value);
                     startTransition(() => {
-                      setJhsPage(1);
+                      setDroppedPage(1);
                     });
                   }}
                 />
@@ -586,20 +524,24 @@ export default function BOSYPage() {
             </CardHeader>
             <CardContent className="p-0 flex flex-col min-h-0">
               <div className="overflow-auto bg-muted/5">
-                <DataTable
-                  columns={JHS_COMPLETER_COLUMNS}
-                  data={jhsItems}
-                  loading={jhsLoading}
+                <QueueTable
+                  items={droppedItems}
+                  loading={droppedLoading}
+                  showConfirmAction={false}
+                  rowSelection={{}}
+                  onRowSelectionChange={() => {}}
+                  onConfirmSingle={() => {}}
+                  confirmingIds={new Set()}
                 />
               </div>
               <PaginationBar
-                page={jhsPage}
-                total={jhsTotal}
-                limit={jhsLimit}
-                onPageChange={setJhsPage}
+                page={droppedPage}
+                total={droppedTotal}
+                limit={droppedLimit}
+                onPageChange={setDroppedPage}
                 onLimitChange={(l) => {
-                  setJhsLimit(l);
-                  setJhsPage(1);
+                  setDroppedLimit(l);
+                  setDroppedPage(1);
                 }}
                 itemName="Learners"
               />

@@ -25,6 +25,7 @@ import {
   Download,
   MapPin,
   ClipboardList,
+  LogOut,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import {
@@ -209,6 +210,18 @@ const statusConfig: Record<
     icon: AlertCircle,
     color: "text-zinc-400 bg-zinc-50 border-zinc-200",
     desc: "This application has been withdrawn. We're here if you decide to join us in the future!",
+  },
+  TRANSFERRED: {
+    label: "Transferred Out",
+    icon: LogOut,
+    color: "text-slate-600 bg-slate-100 border-slate-300",
+    desc: "The learner has been officially transferred to another school.",
+  },
+  DROPPED: {
+    label: "Dropped",
+    icon: LogOut,
+    color: "text-slate-600 bg-slate-100 border-slate-300",
+    desc: "The learner has been dropped from the system.",
   },
 };
 

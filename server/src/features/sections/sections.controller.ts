@@ -51,68 +51,91 @@ export async function runBatchSectioning(req: Request, res: Response) {
 }
 
 export async function commitBatchSectioning(req: Request, res: Response) {
-  const { gradeLevelId, schoolYearId, assignments } = req.body;
+  try {
+    const { gradeLevelId, schoolYearId, assignments } = req.body;
 
-  if (!assignments || assignments.length === 0) {
-    return res
-      .status(400)
-      .json({ message: "No assignments provided to commit" });
+    if (!assignments || assignments.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "No assignments provided to commit" });
+    }
+
+    const appIds = assignments.map((a: any) => a.applicationId);
+
+    // Fetch learner IDs first as they are required for EnrollmentRecord
+    const applications = await prisma.enrollmentApplication.findMany({
+      where: { id: { in: appIds } },
+      select: { id: true, learnerId: true },
+    });
+
+    const appToLearnerMap = new Map(
+      applications.map((app) => [app.id, app.learnerId])
+    );
+
+    const results = await prisma.$transaction(
+      async (tx) => {
+        // Update application statuses to ENROLLED
+        await tx.enrollmentApplication.updateMany({
+          where: {
+            id: { in: appIds },
+            status: { not: "TEMPORARILY_ENROLLED" },
+          },
+          data: { status: "ENROLLED" },
+        });
+
+        // Clear any existing enrollment records for these applications to avoid unique constraint violations
+        // This allows re-running the sectioning algorithm
+        await tx.enrollmentRecord.deleteMany({
+          where: { enrollmentApplicationId: { in: appIds } },
+        });
+
+        const recordsToCreate = assignments.map((assignment: any) => {
+          const learnerId = appToLearnerMap.get(assignment.applicationId);
+          if (!learnerId) {
+            throw new Error(`Learner ID not found for application ${assignment.applicationId}`);
+          }
+          return {
+            enrollmentApplicationId: assignment.applicationId,
+            sectionId: assignment.sectionId,
+            schoolYearId,
+            enrolledById: req.user!.userId,
+            learnerId,
+            dateSectioned: new Date(),
+            sectioningMethod: SectioningMethod.BATCH_ALGORITHM,
+          };
+        });
+
+        await tx.enrollmentRecord.createMany({
+          data: recordsToCreate,
+        });
+
+        return recordsToCreate;
+      },
+      {
+        timeout: 20000, // Increased timeout for batch operations
+      }
+    );
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "BATCH_SECTIONING_COMMITTED",
+      description: `Committed batch sectioning for ${assignments.length} learners in Grade Level ID ${gradeLevelId}`,
+      subjectType: "Section",
+      recordId: gradeLevelId,
+      req,
+    });
+
+    res.json({
+      message: "Batch sectioning committed successfully",
+      count: results.length,
+    });
+  } catch (error: any) {
+    console.error("[commitBatchSectioning Error]:", error);
+    res.status(500).json({
+      message: error.message || "Failed to commit batch sectioning",
+      details: error.code === "P2002" ? "Unique constraint violation detected" : undefined,
+    });
   }
-
-  const results = await prisma.$transaction(
-    async (tx) => {
-      const appIds = assignments.map((a: any) => a.applicationId);
-
-      await tx.enrollmentApplication.updateMany({
-        where: {
-          id: { in: appIds },
-          status: { not: "TEMPORARILY_ENROLLED" },
-        },
-        data: { status: "ENROLLED" },
-      });
-
-      const recordsToCreate = assignments.map((assignment: any) => ({
-        enrollmentApplicationId: assignment.applicationId,
-        sectionId: assignment.sectionId,
-        schoolYearId,
-        enrolledById: req.user!.userId,
-      }));
-
-      await tx.enrollmentRecord.createMany({
-        data: recordsToCreate,
-      });
-
-      return new Array(assignments.length);
-    },
-    {
-      timeout: 15000,
-    },
-  );
-
-  await auditLog({
-    userId: req.user!.userId,
-    actionType: "BATCH_SECTIONING_COMMITTED",
-    description: `Committed batch sectioning for ${assignments.length} learners in Grade Level ID ${gradeLevelId}`,
-    subjectType: "Section",
-    recordId: gradeLevelId,
-    req,
-  });
-
-  // Process 1.1: Event-Driven Delta Sync (Automated)
-  // When a batch of students is sectioned, trigger sync for all of them
-  const assignmentsArray = assignments as any[];
-  const learnerIds = await prisma.enrollmentApplication.findMany({
-    where: { id: { in: assignmentsArray.map((a) => a.applicationId) } },
-    select: { learnerId: true },
-  });
-
-  for (const l of learnerIds) {
-  }
-
-  res.json({
-    message: "Batch sectioning committed successfully",
-    count: results.length,
-  });
 }
 
 const VALID_PROGRAM_TYPES = new Set([
@@ -740,6 +763,11 @@ export async function inlineSlotLearner(
   }
 
   const record = await prisma.$transaction(async (tx) => {
+    const application = await tx.enrollmentApplication.findUniqueOrThrow({
+      where: { id: enrollmentApplicationId },
+      select: { learnerId: true },
+    });
+
     await tx.enrollmentApplication.update({
       where: { id: enrollmentApplicationId },
       data: { status: "ENROLLED" },
@@ -748,6 +776,7 @@ export async function inlineSlotLearner(
     return tx.enrollmentRecord.create({
       data: {
         enrollmentApplicationId,
+        learnerId: application.learnerId,
         sectionId,
         schoolYearId,
         enrolledById: req.user!.userId,

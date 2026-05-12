@@ -48,6 +48,11 @@ export async function bulkConfirm(body: {
   return res.data;
 }
 
+export async function syncBOSYQueue(schoolYearId: number): Promise<{ created: number }> {
+  const res = await api.post<{ created: number }>(`/bosy/sync`, { schoolYearId });
+  return res.data;
+}
+
 export interface JHSCompleterParams {
   schoolYearId: number;
   page?: number;

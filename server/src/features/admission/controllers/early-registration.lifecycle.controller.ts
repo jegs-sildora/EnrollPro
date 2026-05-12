@@ -265,6 +265,7 @@ export function createEarlyRegistrationLifecycleController(
         const enrollment = await tx.enrollmentRecord.create({
           data: {
             enrollmentApplicationId: applicantId,
+            learnerId: applicant.learnerId,
             sectionId,
             schoolYearId: applicant.schoolYearId,
             enrolledById: req.user!.userId,
@@ -1349,7 +1350,7 @@ export function createEarlyRegistrationLifecycleController(
           Exclude<(typeof allowedFields)[number], "academicStatus">,
           boolean
         > & {
-          academicStatus: "PROMOTED" | "RETAINED";
+          academicStatus: "PROMOTED" | "RETAINED" | "CONDITIONALLY_PROMOTED";
         }
       > = {};
       for (const key of allowedFields) {
@@ -1360,16 +1361,18 @@ export function createEarlyRegistrationLifecycleController(
               .toUpperCase();
             if (
               normalizedAcademicStatus !== "PROMOTED" &&
-              normalizedAcademicStatus !== "RETAINED"
+              normalizedAcademicStatus !== "RETAINED" &&
+              normalizedAcademicStatus !== "CONDITIONALLY_PROMOTED"
             ) {
               throw new AppError(
                 422,
-                "academicStatus must be PROMOTED or RETAINED.",
+                "academicStatus must be PROMOTED, RETAINED, or CONDITIONALLY_PROMOTED.",
               );
             }
             filteredData.academicStatus = normalizedAcademicStatus as
               | "PROMOTED"
-              | "RETAINED";
+              | "RETAINED"
+              | "CONDITIONALLY_PROMOTED";
             continue;
           }
 
@@ -1756,6 +1759,7 @@ export function createEarlyRegistrationLifecycleController(
           await tx.enrollmentRecord.create({
             data: {
               enrollmentApplicationId: applicantId,
+              learnerId: applicant.learnerId,
               sectionId: targetSectionId,
               schoolYearId: applicant.schoolYearId,
               enrolledById: req.user!.userId,

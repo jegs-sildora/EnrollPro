@@ -46,7 +46,6 @@ export function createEarlyRegistrationBaseController(
     EARLY_REG_SUBMITTED: "SUBMITTED_BEERF",
     PENDING_VERIFICATION: "AWAITING_VERIFICATION",
     PRE_REGISTERED: "READY_FOR_ENROLLMENT",
-    READY_FOR_SECTIONING: "READY_FOR_ENROLLMENT",
   };
 
   function normalizeApplicationStatusToken(
@@ -222,7 +221,10 @@ export function createEarlyRegistrationBaseController(
 
       // Map sortBy to SQL columns
       let orderSql = Prisma.empty;
-      const direction = sortOrder?.toString().toLowerCase() === "asc" ? Prisma.sql`ASC` : Prisma.sql`DESC`;
+      const direction =
+        sortOrder?.toString().toLowerCase() === "asc"
+          ? Prisma.sql`ASC`
+          : Prisma.sql`DESC`;
 
       if (sortBy === "generalAverage") {
         orderSql = Prisma.sql`ORDER BY l.previous_gen_ave ${direction}, l.last_name ASC`;
@@ -236,9 +238,7 @@ export function createEarlyRegistrationBaseController(
         orderSql = Prisma.sql`ORDER BY q.created_at ${direction}`;
       }
 
-      const results = await prisma.$queryRaw<
-        { id: number; source: string }[]
-      >`
+      const results = await prisma.$queryRaw<{ id: number; source: string }[]>`
         WITH base_queue AS (
           -- Phase 2: Official Enrollment Applications
           SELECT 
@@ -315,9 +315,7 @@ export function createEarlyRegistrationBaseController(
         LIMIT ${take} OFFSET ${skip}
       `;
 
-      const totalCountRaw = await prisma.$queryRaw<
-        { count: bigint }[]
-      >`
+      const totalCountRaw = await prisma.$queryRaw<{ count: bigint }[]>`
         WITH base_queue AS (
           SELECT 
             ea.id, 

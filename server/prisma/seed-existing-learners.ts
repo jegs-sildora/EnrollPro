@@ -264,7 +264,7 @@ async function seedSectionBatch(
           PH_MIDDLE_NAMES.length
       ];
 
-    const lrn = `1225${section.id.toString().padStart(3, "0")}${sequence.toString().padStart(5, "0")}`;
+    const lrn = `1225${(section.id % 1000).toString().padStart(3, "0")}${(sequence % 100000).toString().padStart(5, "0")}`;
     const birthYear = 2025 - (gradeValue + 6);
 
     const learnerData = {
@@ -291,7 +291,7 @@ async function seedSectionBatch(
     const programPrefix =
       program === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? "STE" : "REG";
     const startYear = targetYear.yearLabel.split("-")[0];
-    const trackingNumber = `${programPrefix}-${startYear}-${section.id.toString().padStart(3, "0")}${sequence.toString().padStart(2, "0")}`;
+    const trackingNumber = `${programPrefix}-${startYear}-${(section.id % 1000).toString().padStart(3, "0")}${(sequence % 100).toString().padStart(2, "0")}`;
 
     const learner = await prisma.learner.upsert({
       where: { lrn },

@@ -6,6 +6,7 @@ import {
   confirmReturn,
   bulkConfirmReturn,
   getJHSCompleters,
+  syncBOSYQueue,
 } from "./bosy.service.js";
 
 function parsePositiveInt(value: unknown, fallback: number): number {
@@ -24,8 +25,41 @@ export async function getBosyReadiness(
       res.status(400).json({ message: "schoolYearId query param is required." });
       return;
     }
+
+    // Auto-sync missing learners before returning readiness
+    await syncBOSYQueue(schoolYearId, req.user!.userId);
+
     const data = await getBOSYReadiness(schoolYearId);
     res.json(data);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function syncBosyQueueHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const schoolYearId = parsePositiveInt(req.body.schoolYearId, 0);
+    if (!schoolYearId) {
+      res.status(400).json({ message: "schoolYearId is required." });
+      return;
+    }
+
+    const result = await syncBOSYQueue(schoolYearId, req.user!.userId);
+
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "BOSY_QUEUE_SYNCED",
+      description: `Synchronized BOSY queue; created ${result.created} missing applications.`,
+      subjectType: "SchoolYear",
+      recordId: schoolYearId,
+      req,
+    });
+
+    res.json(result);
   } catch (error) {
     next(error);
   }
@@ -42,19 +76,26 @@ export async function getBosyQueue(
       res.status(400).json({ message: "schoolYearId query param is required." });
       return;
     }
-    const gradeLevelId = req.query.gradeLevelId
-      ? parsePositiveInt(req.query.gradeLevelId, 0) || undefined
-      : undefined;
+
     const status =
       typeof req.query.status === "string" && req.query.status.length > 0
         ? req.query.status
         : undefined;
+
+    // If fetching pending confirmation, auto-sync to ensure list is complete
+    if (status === "PENDING_CONFIRMATION") {
+      await syncBOSYQueue(schoolYearId, req.user!.userId);
+    }
+
+    const gradeLevelId = req.query.gradeLevelId
+      ? parsePositiveInt(req.query.gradeLevelId, 0) || undefined
+      : undefined;
     const search =
       typeof req.query.search === "string" && req.query.search.length > 0
         ? req.query.search
         : undefined;
     const page = parsePositiveInt(req.query.page, 1);
-    const limit = Math.min(parsePositiveInt(req.query.limit, 20), 100);
+    const limit = Math.min(parsePositiveInt(req.query.limit, 20), 1000000);
 
     const result = await getBOSYQueue({ schoolYearId, gradeLevelId, status, search, page, limit });
     res.json(result);
@@ -143,7 +184,7 @@ export async function getJHSCompletersHandler(
 ): Promise<void> {
   try {
     const page = parsePositiveInt(req.query.page, 1);
-    const limit = Math.min(parsePositiveInt(req.query.limit, 20), 100);
+    const limit = Math.min(parsePositiveInt(req.query.limit, 20), 1000000);
     const search =
       typeof req.query.search === "string" && req.query.search.length > 0
         ? req.query.search

@@ -9,6 +9,7 @@ import { sileo } from "sileo";
 import { ChevronDown, GraduationCap, Plus, Upload } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
+import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { Button } from "@/shared/ui/button";
@@ -146,6 +147,8 @@ function createEmptyDesignationForm(): DesignationFormState {
 export default function Teachers() {
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
+  const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
+  const canMutate = !isHistoricalReadOnly || hasOverride;
 
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
@@ -322,21 +325,35 @@ export default function Teachers() {
       const gradeLevelsData = res.data.gradeLevels || [];
 
       const options: AdvisorySectionOption[] = gradeLevelsData
-        .flatMap((gl: { gradeLevelName: string; sections: Array<{ id: number; name: string; maxCapacity: number; enrolledCount: number; programType: string; isHomogeneous: boolean; advisingTeacher: { id: number; name: string } | null }> }) =>
-          (gl.sections || []).map((section) => ({
-            id: section.id,
-            label: `${gl.gradeLevelName} - ${section.name}`,
-            gradeLevelName: gl.gradeLevelName,
-            sectionName: section.name,
-            maxCapacity: section.maxCapacity,
-            enrolledCount: section.enrolledCount,
-            programType: section.programType,
-            isHomogeneous: section.isHomogeneous,
-            currentAdviserId: section.advisingTeacher?.id ?? null,
-            currentAdviserName: section.advisingTeacher?.name ?? null,
-          })),
+        .flatMap(
+          (gl: {
+            gradeLevelName: string;
+            sections: Array<{
+              id: number;
+              name: string;
+              maxCapacity: number;
+              enrolledCount: number;
+              programType: string;
+              isHomogeneous: boolean;
+              advisingTeacher: { id: number; name: string } | null;
+            }>;
+          }) =>
+            (gl.sections || []).map((section) => ({
+              id: section.id,
+              label: `${gl.gradeLevelName} - ${section.name}`,
+              gradeLevelName: gl.gradeLevelName,
+              sectionName: section.name,
+              maxCapacity: section.maxCapacity,
+              enrolledCount: section.enrolledCount,
+              programType: section.programType,
+              isHomogeneous: section.isHomogeneous,
+              currentAdviserId: section.advisingTeacher?.id ?? null,
+              currentAdviserName: section.advisingTeacher?.name ?? null,
+            })),
         )
-        .sort((a: AdvisorySectionOption, b: AdvisorySectionOption) => a.label.localeCompare(b.label));
+        .sort((a: AdvisorySectionOption, b: AdvisorySectionOption) =>
+          a.label.localeCompare(b.label),
+        );
 
       setAdvisorySections(options);
     } catch (err) {
@@ -926,40 +943,42 @@ export default function Teachers() {
           </p>
         </div>
         <div className="flex justify-end gap-2 flex-wrap">
-          <div className="inline-flex shadow-sm rounded-lg overflow-hidden">
-            <Button
-              onClick={openCreateTeacherSheet}
-              className="rounded-r-none">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Teacher
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  size="icon-sm"
-                  className="rounded-l-none border-l border-primary-foreground/20"
-                  aria-label="Open add teacher options">
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-56">
-                <DropdownMenuItem
-                  onClick={openCreateTeacherSheet}
-                  className="cursor-pointer">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Single Teacher
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={handleBulkImportPlaceholder}
-                  className="cursor-pointer">
-                  <Upload className="mr-2 h-4 w-4" />
-                  Bulk Import (CSV)
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          {canMutate && (
+            <div className="inline-flex shadow-sm rounded-lg overflow-hidden">
+              <Button
+                onClick={openCreateTeacherSheet}
+                className="rounded-r-none">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Teacher
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="icon-sm"
+                    className="rounded-l-none border-l border-primary-foreground/20"
+                    aria-label="Open add teacher options">
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56">
+                  <DropdownMenuItem
+                    onClick={openCreateTeacherSheet}
+                    className="cursor-pointer">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Single Teacher
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={handleBulkImportPlaceholder}
+                    className="cursor-pointer">
+                    <Upload className="mr-2 h-4 w-4" />
+                    Bulk Import (CSV)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
         </div>
       </div>
 

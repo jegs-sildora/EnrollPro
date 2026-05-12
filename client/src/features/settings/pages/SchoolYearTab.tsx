@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router";
 import { sileo } from "sileo";
 import { cn } from "@/shared/lib/utils";
 import {
@@ -283,6 +284,7 @@ function deriveNextSchoolYearLabel(activeYear: SYItem, fallbackLabel: string) {
 }
 
 export default function SchoolYearTab() {
+  const location = useLocation();
   const { setSettings, activeSchoolYearId } = useSettingsStore();
   const [years, setYears] = useState<SYItem[]>([]);
   const [defaults, setDefaults] = useState<Defaults | null>(null);
@@ -374,6 +376,19 @@ export default function SchoolYearTab() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    // Check for bridge state
+    if (location.state?.highlightUpcoming) {
+      // Small delay to ensure data is fetched and form is ready
+      const timer = setTimeout(() => {
+        handlePrepareRollover();
+        // Clear state to prevent re-triggering on manual tab changes
+        window.history.replaceState({}, document.title);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     if (!editClassOpening) {

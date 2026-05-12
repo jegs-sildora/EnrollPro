@@ -57,7 +57,7 @@ export interface EnrollmentDetail {
 export interface ChecklistData {
   id: number;
   applicantId: number;
-  academicStatus: "PROMOTED" | "RETAINED";
+  academicStatus: "PROMOTED" | "RETAINED" | "CONDITIONALLY_PROMOTED";
   isPsaBirthCertPresented: boolean;
   isSecondaryBirthDocPresented: boolean;
   isOriginalPsaBcCollected: boolean;

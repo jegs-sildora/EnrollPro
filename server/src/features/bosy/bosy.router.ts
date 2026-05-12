@@ -4,6 +4,7 @@ import { authorize } from "../../middleware/authorize.js";
 import {
   getBosyReadiness,
   getBosyQueue,
+  syncBosyQueueHandler,
   confirmReturnHandler,
   bulkConfirmReturnHandler,
   getJHSCompletersHandler,
@@ -23,6 +24,13 @@ router.get(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   getBosyQueue,
+);
+
+router.post(
+  "/sync",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  syncBosyQueueHandler,
 );
 
 router.post(

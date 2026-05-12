@@ -3,14 +3,17 @@ import { useSearchParams } from "react-router";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import EarlyRegistrationList from "./EarlyRegistrationList";
 import RegistrationPipelines from "../pipelines/RegistrationPipelines";
+import { motion } from "motion/react";
 
-type WorkspaceView = "monitoring" | "batch";
+type WorkspaceView = "pending" | "screening" | "qualified";
 
-const VIEW_QUERY_KEY = "view";
-const DEFAULT_VIEW: WorkspaceView = "monitoring";
+const VIEW_QUERY_KEY = "tab";
+const DEFAULT_VIEW: WorkspaceView = "pending";
 
 function normalizeView(raw: string | null): WorkspaceView {
-  return raw === "batch" ? "batch" : "monitoring";
+  if (raw === "screening") return "screening";
+  if (raw === "qualified") return "qualified";
+  return "pending";
 }
 
 export default function EarlyRegistrationWorkspace() {
@@ -40,24 +43,65 @@ export default function EarlyRegistrationWorkspace() {
     );
   };
 
+  const tabs = [
+    {
+      key: "pending",
+      label: "Pending BEERF Verification",
+    },
+    {
+      key: "screening",
+      label: "SCP Screening & Assessment",
+    },
+    {
+      key: "qualified",
+      label: "Qualified for Enrollment",
+    },
+  ];
+
   return (
-    <div className="space-y-4">
-      <Tabs value={activeView} onValueChange={handleViewChange}>
-        <TabsList className="h-auto gap-1 border border-border bg-white p-1">
-          <TabsTrigger value="monitoring" className="font-bold">
-            Application Monitoring
-          </TabsTrigger>
-          <TabsTrigger value="batch" className="font-bold">
-            Registration Pipelines
-          </TabsTrigger>
+    <div className="flex flex-col space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">
+          Early Registration
+        </h1>
+        <p className="text-xs text-foreground font-bold">
+          New Learner Intake & Screening Workflow
+        </p>
+      </div>
+
+      <Tabs value={activeView} onValueChange={handleViewChange} className="w-full">
+        <TabsList className="grid w-full h-auto grid-cols-3 gap-1 p-1 bg-white border border-border relative">
+          {tabs.map((tab) => (
+            <TabsTrigger
+              key={tab.key}
+              value={tab.key}
+              className="font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+              {activeView === tab.key && (
+                <motion.div
+                  layoutId="early-reg-active-pill"
+                  className="absolute inset-0 bg-primary rounded-md"
+                  transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                />
+              )}
+              <span className="relative z-20 text-xs sm:text-sm">
+                {tab.label}
+              </span>
+            </TabsTrigger>
+          ))}
         </TabsList>
       </Tabs>
 
-      {activeView === "batch" ? (
-        <RegistrationPipelines />
-      ) : (
-        <EarlyRegistrationList />
-      )}
+      <div className="mt-2">
+        {activeView === "pending" && (
+          <EarlyRegistrationList initialStatus="SUBMITTED_BEEF" />
+        )}
+        {activeView === "screening" && (
+          <RegistrationPipelines />
+        )}
+        {activeView === "qualified" && (
+          <EarlyRegistrationList initialStatus="READY_FOR_ENROLLMENT" />
+        )}
+      </div>
     </div>
   );
 }

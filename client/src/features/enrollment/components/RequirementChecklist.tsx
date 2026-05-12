@@ -26,6 +26,7 @@ import type {
   LearnerType,
   ChecklistData,
 } from "@/features/enrollment/hooks/useApplicationDetail";
+import type { AcademicStatus } from "@enrollpro/shared";
 
 interface Props {
   applicantId: number;
@@ -351,7 +352,7 @@ export function RequirementChecklist({
 
   const currentAcademicStatus = (localChecklist.academicStatus ??
     checklist?.academicStatus ??
-    "PROMOTED") as "PROMOTED" | "RETAINED";
+    "PROMOTED") as AcademicStatus;
   const hasAcademicStatusChange =
     currentAcademicStatus !== (checklist?.academicStatus ?? "PROMOTED");
   const hasPendingChanges = hasChanges || hasAcademicStatusChange;
@@ -468,7 +469,7 @@ export function RequirementChecklist({
             <div className="mt-2 flex items-center gap-3">
               <Select
                 value={currentAcademicStatus}
-                onValueChange={(value: "PROMOTED" | "RETAINED") => {
+                onValueChange={(value: AcademicStatus) => {
                   setLocalChecklist((prev) => ({
                     ...prev,
                     academicStatus: value,
@@ -480,6 +481,9 @@ export function RequirementChecklist({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="PROMOTED">Promoted</SelectItem>
+                  <SelectItem value="CONDITIONALLY_PROMOTED">
+                    Conditionally Promoted
+                  </SelectItem>
                   <SelectItem value="RETAINED">Retained</SelectItem>
                 </SelectContent>
               </Select>
@@ -488,6 +492,13 @@ export function RequirementChecklist({
                   variant="destructive"
                   className="text-xs font-bold">
                   Retained blocks verification/enrollment
+                </Badge>
+              )}
+              {currentAcademicStatus === "CONDITIONALLY_PROMOTED" && (
+                <Badge
+                  variant="outline"
+                  className="text-xs font-bold bg-amber-50 text-amber-700 border-amber-200">
+                  Remedial subjects required
                 </Badge>
               )}
             </div>

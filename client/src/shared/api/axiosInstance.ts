@@ -55,6 +55,12 @@ api.interceptors.request.use((config) => {
     if (contextSchoolYearId) {
       config.headers["x-school-year-context-id"] = String(contextSchoolYearId);
     }
+
+    const { historicalCorrectionToken } = useSettingsStore.getState();
+    if (historicalCorrectionToken) {
+      config.headers["x-historical-correction-token"] =
+        historicalCorrectionToken;
+    }
   }
   return config;
 });
@@ -107,7 +113,7 @@ api.interceptors.response.use(
       }
     }
 
-    if (status === 409 && code === "HISTORICAL_READ_ONLY" && hadToken) {
+    if (status === 403 && code === "SY_ARCHIVED_LOCKED" && hadToken) {
       if (!_historicalReadOnlyHandled) {
         _historicalReadOnlyHandled = true;
 

@@ -1,9 +1,11 @@
 import type { NextFunction, Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
+import jwt from "jsonwebtoken";
 
 const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const CONTEXT_SCHOOL_YEAR_HEADER = "x-school-year-context-id";
-const HISTORICAL_READ_ONLY_CODE = "HISTORICAL_READ_ONLY";
+const CORRECTION_TOKEN_HEADER = "x-historical-correction-token";
+const HISTORICAL_READ_ONLY_CODE = "SY_ARCHIVED_LOCKED";
 
 function parsePositiveIntHeaderValue(
   value: string | string[] | undefined,
@@ -66,10 +68,12 @@ export async function historicalReadOnlyGuard(
   const contextSchoolYearId = parsePositiveIntHeaderValue(
     req.headers[CONTEXT_SCHOOL_YEAR_HEADER],
   );
-  
+
   if (contextSchoolYearId === "invalid") {
     const rawValue = req.headers[CONTEXT_SCHOOL_YEAR_HEADER];
-    console.warn(`[Guard] 400 Bad Request: Invalid ${CONTEXT_SCHOOL_YEAR_HEADER} value: "${rawValue}"`);
+    console.warn(
+      `[Guard] 400 Bad Request: Invalid ${CONTEXT_SCHOOL_YEAR_HEADER} value: "${rawValue}"`,
+    );
     res.status(400).json({
       code: "INVALID_SCHOOL_YEAR_CONTEXT",
       message: `${CONTEXT_SCHOOL_YEAR_HEADER} must be a positive integer when provided`,
@@ -91,10 +95,35 @@ export async function historicalReadOnlyGuard(
   }
 
   if (contextSchoolYearId !== activeSchoolYearId) {
-    res.status(409).json({
+    // Check for a valid historical correction override token
+    const correctionToken = req.headers[CORRECTION_TOKEN_HEADER];
+    if (correctionToken && typeof correctionToken === "string") {
+      try {
+        const payload = jwt.verify(
+          correctionToken,
+          process.env.JWT_SECRET!,
+        ) as {
+          purpose?: string;
+          schoolYearId?: number;
+        };
+        if (
+          payload.purpose === "HISTORICAL_CORRECTION" &&
+          payload.schoolYearId === contextSchoolYearId
+        ) {
+          return next();
+        }
+      } catch {
+        res.status(403).json({
+          code: "CORRECTION_TOKEN_INVALID",
+          message: "Historical correction token is invalid or expired.",
+        });
+        return;
+      }
+    }
+
+    res.status(403).json({
       code: HISTORICAL_READ_ONLY_CODE,
-      message:
-        "Historical school year context is read-only. Switch to the active school year to continue.",
+      message: "This school year is archived and cannot be modified.",
       contextSchoolYearId,
       activeSchoolYearId,
     });

@@ -146,6 +146,10 @@ function resolveCurrentStepFromRawStatus(
     case "TEMPORARILY_ENROLLED":
       return "ENROLLMENT_QUALIFICATION";
     case "ENROLLED":
+    case "TRANSFERRED":
+    case "DROPPED":
+    case "TRANSFERRING_OUT":
+    case "TRANSFERRED_OUT":
       return "ENROLLED";
     case "NOT_QUALIFIED":
       return programType === "SCP"
@@ -182,6 +186,16 @@ function getTerminalStatusNotice(
       return {
         tone: "border-zinc-200 bg-zinc-50 text-zinc-700",
         message: "Current result: The application has been withdrawn.",
+      };
+    case "TRANSFERRED":
+      return {
+        tone: "border-slate-200 bg-slate-50 text-slate-700",
+        message: "Current result: The learner has been officially transferred to another school.",
+      };
+    case "DROPPED":
+      return {
+        tone: "border-slate-200 bg-slate-50 text-slate-700",
+        message: "Current result: The learner has been dropped from the system.",
       };
     default:
       return null;

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
+import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { sileo } from "sileo";
 import { Button } from "@/shared/ui/button";
@@ -79,6 +80,7 @@ import {
 import { PaginationBar } from "@/shared/components/PaginationBar";
 import { useResizablePanel } from "@/features/admission/pages/early-registration/hooks/useResizablePanel";
 import { motion, AnimatePresence } from "motion/react";
+import type { EosyStatus } from "@enrollpro/shared";
 
 interface Student {
   id: number;
@@ -99,7 +101,7 @@ interface Student {
   trackingNumber: string;
   status: string;
   applicantType?: string;
-  lifecycleOutcome: "TRANSFERRED_OUT" | "DROPPED_OUT" | null;
+  lifecycleOutcome: EosyStatus | null;
   dropOutReason: string | null;
   dropOutDate: string | null;
   transferOutDate: string | null;
@@ -122,7 +124,7 @@ interface StudentDetail extends Student {
     id: number;
     section: string;
     sectionId: number;
-    eosyStatus: "TRANSFERRED_OUT" | "DROPPED_OUT" | null;
+    eosyStatus: EosyStatus | null;
     dropOutReason: string | null;
     dropOutDate: string | null;
     transferOutDate: string | null;
@@ -272,6 +274,8 @@ export default function Students() {
 
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
+  const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
+  const canMutate = !isHistoricalReadOnly || hasOverride;
 
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
@@ -498,7 +502,8 @@ export default function Students() {
   const renderLearnerStatus = (student: Student) => {
     let status = "ACTIVE";
     if (student.lifecycleOutcome === "DROPPED_OUT") status = "DROPPED";
-    else if (student.lifecycleOutcome === "TRANSFERRED_OUT") status = "TRANSFERRED_OUT";
+    else if (student.lifecycleOutcome === "TRANSFERRED_OUT")
+      status = "TRANSFERRED_OUT";
     else if (activeTab === "completers") status = "JHS_COMPLETER";
 
     const label = status
@@ -1027,30 +1032,40 @@ export default function Students() {
                   <Eye className="mr-2 h-4 w-4" />
                   Open Full Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => void openProfileQuickEditDialog(row.original)}
-                  className="cursor-pointer">
-                  <UserRoundPen className="mr-2 h-4 w-4" />
-                  Quick Update Demographics
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => openAssignLrnDialog(row.original)}
-                  className="cursor-pointer">
-                  <Fingerprint className="mr-2 h-4 w-4" />
-                  Input Official LIS LRN
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => openTransferOutDialog(row.original)}
-                  className="cursor-pointer text-amber-700 focus:text-amber-700">
-                  <FileBadge2 className="mr-2 h-4 w-4" />
-                  Mark as Transferred Out
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => openDropoutDialog(row.original)}
-                  className="cursor-pointer text-rose-700 focus:text-rose-700">
-                  <BadgeAlert className="mr-2 h-4 w-4" />
-                  Mark as Dropped Out
-                </DropdownMenuItem>
+                {canMutate && (
+                  <DropdownMenuItem
+                    onClick={() =>
+                      void openProfileQuickEditDialog(row.original)
+                    }
+                    className="cursor-pointer">
+                    <UserRoundPen className="mr-2 h-4 w-4" />
+                    Quick Update Demographics
+                  </DropdownMenuItem>
+                )}
+                {canMutate && (
+                  <DropdownMenuItem
+                    onClick={() => openAssignLrnDialog(row.original)}
+                    className="cursor-pointer">
+                    <Fingerprint className="mr-2 h-4 w-4" />
+                    Input Official LIS LRN
+                  </DropdownMenuItem>
+                )}
+                {canMutate && (
+                  <DropdownMenuItem
+                    onClick={() => openTransferOutDialog(row.original)}
+                    className="cursor-pointer text-amber-700 focus:text-amber-700">
+                    <FileBadge2 className="mr-2 h-4 w-4" />
+                    Mark as Transferred Out
+                  </DropdownMenuItem>
+                )}
+                {canMutate && (
+                  <DropdownMenuItem
+                    onClick={() => openDropoutDialog(row.original)}
+                    className="cursor-pointer text-rose-700 focus:text-rose-700">
+                    <BadgeAlert className="mr-2 h-4 w-4" />
+                    Mark as Dropped Out
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -1064,6 +1079,7 @@ export default function Students() {
       openAssignLrnDialog,
       openTransferOutDialog,
       openDropoutDialog,
+      canMutate,
     ],
   );
 
@@ -1333,8 +1349,7 @@ export default function Students() {
                                   student.learningProgram,
                                 )}
                               </p>
-                              {student.applicantType ===
-                                "LATE_ENROLLEE" && (
+                              {student.applicantType === "LATE_ENROLLEE" && (
                                 <Badge className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 uppercase font-black">
                                   Late Enrolled
                                 </Badge>
@@ -1356,8 +1371,7 @@ export default function Students() {
                               Gender
                             </p>
                             <p className="font-bold uppercase">
-                              {student.sex === "MALE" ||
-                              student.sex === "M"
+                              {student.sex === "MALE" || student.sex === "M"
                                 ? "M"
                                 : student.sex === "FEMALE" ||
                                     student.sex === "F"
@@ -1369,9 +1383,7 @@ export default function Students() {
                             <p className="text-xs uppercase  font-bold text-foreground">
                               Grade Level
                             </p>
-                            <p className="font-bold">
-                              {student.gradeLevel}
-                            </p>
+                            <p className="font-bold">{student.gradeLevel}</p>
                           </div>
                           <div>
                             <p className="text-xs uppercase  font-bold text-foreground">
@@ -1384,9 +1396,7 @@ export default function Students() {
                         </div>
 
                         <p className="mt-2 text-[11px] font-bold text-foreground">
-                          {activeTab === "active"
-                            ? "Enrolled "
-                            : "Updated "}
+                          {activeTab === "active" ? "Enrolled " : "Updated "}
                           {formatDate(
                             student.dateEnrolled || student.createdAt,
                           )}
@@ -1422,36 +1432,40 @@ export default function Students() {
                                 <Eye className="mr-2 h-4 w-4" />
                                 Open Full Profile
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  void openProfileQuickEditDialog(student)
-                                }
-                                className="cursor-pointer">
-                                <UserRoundPen className="mr-2 h-4 w-4" />
-                                Quick Update Demographics
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  openAssignLrnDialog(student)
-                                }
-                                className="cursor-pointer">
-                                <Fingerprint className="mr-2 h-4 w-4" />
-                                Input Official LIS LRN
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  openTransferOutDialog(student)
-                                }
-                                className="cursor-pointer text-amber-700 focus:text-amber-700">
-                                <FileBadge2 className="mr-2 h-4 w-4" />
-                                Mark as Transferred Out
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => openDropoutDialog(student)}
-                                className="cursor-pointer text-rose-700 focus:text-rose-700">
-                                <BadgeAlert className="mr-2 h-4 w-4" />
-                                Mark as Dropped Out
-                              </DropdownMenuItem>
+                              {canMutate && (
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    void openProfileQuickEditDialog(student)
+                                  }
+                                  className="cursor-pointer">
+                                  <UserRoundPen className="mr-2 h-4 w-4" />
+                                  Quick Update Demographics
+                                </DropdownMenuItem>
+                              )}
+                              {canMutate && (
+                                <DropdownMenuItem
+                                  onClick={() => openAssignLrnDialog(student)}
+                                  className="cursor-pointer">
+                                  <Fingerprint className="mr-2 h-4 w-4" />
+                                  Input Official LIS LRN
+                                </DropdownMenuItem>
+                              )}
+                              {canMutate && (
+                                <DropdownMenuItem
+                                  onClick={() => openTransferOutDialog(student)}
+                                  className="cursor-pointer text-amber-700 focus:text-amber-700">
+                                  <FileBadge2 className="mr-2 h-4 w-4" />
+                                  Mark as Transferred Out
+                                </DropdownMenuItem>
+                              )}
+                              {canMutate && (
+                                <DropdownMenuItem
+                                  onClick={() => openDropoutDialog(student)}
+                                  className="cursor-pointer text-rose-700 focus:text-rose-700">
+                                  <BadgeAlert className="mr-2 h-4 w-4" />
+                                  Mark as Dropped Out
+                                </DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -1662,7 +1676,7 @@ export default function Students() {
               />
             )}
             <span className="relative z-20">
-              <span className="hidden sm:inline">JHS Completers</span>
+              <span className="hidden sm:inline">Alumni / JHS Completers</span>
               <span className="sm:hidden">Alumni</span>
             </span>
           </TabsTrigger>

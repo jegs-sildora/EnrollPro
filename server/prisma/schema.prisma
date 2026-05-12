@@ -760,6 +760,8 @@ enum ApplicationStatus {
   REJECTED
   WITHDRAWN
   TRANSFERRING_OUT
+  TRANSFERRED_OUT
+  DROPPED
 
   @@map("application_status")
 }

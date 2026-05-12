@@ -18,7 +18,9 @@ export default function RegistrationPipelines() {
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get("tab") || "REGULAR";
+
+  // Use "program" instead of "tab" to avoid collision with Workspace tabs
+  const activeProgram = searchParams.get("program") || "REGULAR";
   const [tabCounts, setTabCounts] = useState<Record<string, number>>({});
 
   const tabs = useMemo(
@@ -109,11 +111,11 @@ export default function RegistrationPipelines() {
     }
   }, [fetchActiveCount, tabs]);
 
-  const handleTabChange = (value: string) => {
+  const handleProgramChange = (value: string) => {
     setSearchParams(
       (previousParams) => {
         const nextParams = new URLSearchParams(previousParams);
-        nextParams.set("tab", value);
+        nextParams.set("program", value);
         return nextParams;
       },
       { replace: true },
@@ -121,17 +123,17 @@ export default function RegistrationPipelines() {
   };
 
   useEffect(() => {
-    if (!tabs.some((tab) => tab.key === activeTab)) {
+    if (!tabs.some((tab) => tab.key === activeProgram)) {
       setSearchParams(
         (previousParams) => {
           const nextParams = new URLSearchParams(previousParams);
-          nextParams.set("tab", "REGULAR");
+          nextParams.set("program", "REGULAR");
           return nextParams;
         },
         { replace: true },
       );
     }
-  }, [activeTab, tabs, setSearchParams]);
+  }, [activeProgram, tabs, setSearchParams]);
 
   useEffect(() => {
     const run = async () => {
@@ -144,14 +146,6 @@ export default function RegistrationPipelines() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground ">
-            Registration Pipelines
-          </h1>
-          <p className="text-sm font-bold">
-            Batch-process applicants by curriculum program
-          </p>
-        </div>
         <div className="flex gap-2">
           {[1, 2, 3].map((i) => (
             <Skeleton
@@ -167,33 +161,17 @@ export default function RegistrationPipelines() {
 
   if (error) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground ">
-            Registration Pipelines
-          </h1>
-        </div>
-        <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-6 text-center">
-          <p className="text-sm text-destructive font-medium">{error}</p>
-        </div>
+      <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-6 text-center">
+        <p className="text-sm text-destructive font-medium">{error}</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground ">
-          Registration Pipelines
-        </h1>
-        <p className="text-sm font-bold">
-          Batch-process applicants by curriculum program
-        </p>
-      </div>
-
       <Tabs
-        value={activeTab}
-        onValueChange={handleTabChange}
+        value={activeProgram}
+        onValueChange={handleProgramChange}
         className="w-full">
         <div className="mb-6 w-full pb-1">
           <TabsList
@@ -207,7 +185,7 @@ export default function RegistrationPipelines() {
                 value={tab.key}
                 title={tab.fullLabel}
                 className="w-full min-w-0 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
-                {activeTab === tab.key && (
+                {activeProgram === tab.key && (
                   <motion.div
                     layoutId="pipeline-active-pill"
                     className="absolute inset-0 bg-primary rounded-md"
@@ -221,7 +199,7 @@ export default function RegistrationPipelines() {
                 <span className="relative z-20 inline-flex w-full items-center justify-center gap-2">
                   {tab.label}
                   <Badge
-                    variant={activeTab === tab.key ? "secondary" : "outline"}
+                    variant={activeProgram === tab.key ? "secondary" : "outline"}
                     className="h-5 px-1.5 text-xs font-bold">
                     {tabCounts[tab.key] ?? 0}
                   </Badge>

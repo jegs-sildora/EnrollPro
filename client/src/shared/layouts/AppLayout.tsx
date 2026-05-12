@@ -1,11 +1,10 @@
-import { useEffect, useState, memo, type ReactNode } from "react";
+import { useEffect, useState, memo, useCallback, type ReactNode } from "react";
 import type React from "react";
 import { useNavigate, useLocation, Link, Outlet } from "react-router";
 import { Toaster } from "sileo";
 import {
   LayoutDashboard,
   FileSignature,
-  ClipboardCheck,
   Users,
   Layers,
   Settings,
@@ -69,6 +68,9 @@ import {
 import { AccessibilityMenu } from "@/shared/components/AccessibilityMenu";
 import { useAccessibility } from "@/shared/hooks/useAccessibility";
 import { NoSchoolYearState } from "@/features/settings/pages/curriculum/components/NoSchoolYearState";
+import { HistoricalBanner } from "../components/HistoricalBanner";
+import { useHistoricalReadOnly } from "../hooks/useHistoricalReadOnly";
+import { HistoricalCorrectionModal } from "../components/HistoricalCorrectionModal";
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
@@ -174,13 +176,30 @@ function SYSwitcher() {
     useSettingsStore();
   const [years, setYears] = useState<SchoolYearItem[]>([]);
   const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchYears = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const r = await api.get("/school-years");
+      setYears(r.data.years);
+    } catch {
+      // silent
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    api
-      .get("/school-years")
-      .then((r) => setYears(r.data.years))
-      .catch(() => {});
-  }, []);
+    void fetchYears();
+  }, [activeSchoolYearId, fetchYears]);
+
+  // Also fetch when opened to ensure fresh data (e.g. after rollover in another tab)
+  useEffect(() => {
+    if (open) {
+      void fetchYears();
+    }
+  }, [open, fetchYears]);
 
   const currentId = viewingSchoolYearId ?? activeSchoolYearId;
   const currentYear = years.find((y) => y.id === currentId);
@@ -188,7 +207,9 @@ function SYSwitcher() {
   const isOverride =
     viewingSchoolYearId && viewingSchoolYearId !== activeSchoolYearId;
 
-  if (years.length === 0) return null;
+  // Don't return null if initialized but empty, show the "No School Year Set" button
+  // unless there are absolutely no years in the database and we are not in an active year.
+  if (years.length === 0 && !isLoading && !activeSchoolYearId) return null;
 
   return (
     <div className="relative">
@@ -248,7 +269,10 @@ function SYSwitcher() {
                 <button
                   key={y.id}
                   onClick={() => {
-                    setViewingSY(y.id === activeSchoolYearId ? null : y.id);
+                    setViewingSY(
+                      y.id === activeSchoolYearId ? null : y.id,
+                      y.id === activeSchoolYearId ? null : y.status,
+                    );
                     setOpen(false);
                     // Trigger a full reload to ensure all components re-fetch data
                     // using the new school year context header.
@@ -307,8 +331,16 @@ const NavItem = memo(function NavItem({
   label: string;
   pathname: string;
 }) {
-  const isActive =
+  let isActive =
     pathname === to || (to !== "/" && pathname.startsWith(to + "/"));
+
+  // Surgical exclusion for EOSY updating overlapping with Sectioning & Rosters
+  if (
+    to === "/monitoring/enrollment" &&
+    pathname.startsWith("/monitoring/enrollment/eosy")
+  ) {
+    isActive = false;
+  }
 
   return (
     <SidebarMenuItem>
@@ -318,103 +350,6 @@ const NavItem = memo(function NavItem({
         tooltip={label}>
         <Link to={to}>
           <Icon className="size-4" />
-          <span>{label}</span>
-        </Link>
-      </SidebarMenuButton>
-    </SidebarMenuItem>
-  );
-});
-
-const NavItemParent = memo(function NavItemParent({
-  icon: Icon,
-  label,
-  children,
-  defaultOpen = true,
-  isActive = false,
-}: {
-  icon: React.ElementType;
-  label: string;
-  children: ReactNode;
-  defaultOpen?: boolean;
-  isActive?: boolean;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <SidebarMenuItem>
-      <SidebarMenuButton
-        tooltip={label}
-        onClick={() => setOpen((o) => !o)}
-        isActive={isActive}>
-        <Icon className="size-4" />
-        <span>{label}</span>
-        <ChevronDown
-          className={`ml-auto size-3.5 transition-transform duration-200 ${
-            open ? "" : "-rotate-90"
-          }`}
-        />
-      </SidebarMenuButton>
-      {open && <ul className="mt-0.5 space-y-0.5">{children}</ul>}
-    </SidebarMenuItem>
-  );
-});
-
-const NavItemChild = memo(function NavItemChild({
-  to,
-  icon: Icon,
-  label,
-  pathname,
-}: {
-  to: string;
-  icon: React.ElementType;
-  label: string;
-  pathname: string;
-  badgeCount?: number;
-}) {
-  let isActive = pathname === to || pathname.startsWith(to + "/");
-
-  // Monitoring (/monitoring/early-registration) should NOT highlight when Pipelines is active
-  if (
-    to === "/monitoring/early-registration" &&
-    pathname.startsWith("/monitoring/early-registration/pipelines")
-  ) {
-    isActive = false;
-  }
-
-  // Basic Education Early Registration Form detail pages (/monitoring/early-registration/:id) should highlight Monitoring
-  if (
-    to === "/monitoring/early-registration" &&
-    pathname.startsWith("/monitoring/early-registration/") &&
-    !pathname.startsWith("/monitoring/early-registration/pipelines")
-  ) {
-    isActive = true;
-  }
-
-  // Enrollment BOSY (/monitoring/enrollment) should NOT highlight when EOSY is active
-  if (
-    to === "/monitoring/enrollment" &&
-    pathname.startsWith("/monitoring/enrollment/eosy")
-  ) {
-    isActive = false;
-  }
-
-  // Enrollment detail routes (/monitoring/enrollment/* except EOSY) should highlight BOSY Registration
-  if (
-    to === "/monitoring/enrollment" &&
-    pathname.startsWith("/monitoring/enrollment/") &&
-    !pathname.startsWith("/monitoring/enrollment/eosy")
-  ) {
-    isActive = true;
-  }
-
-  return (
-    <SidebarMenuItem>
-      <SidebarMenuButton
-        asChild
-        isActive={isActive}
-        tooltip={label}
-        className="pl-8 text-sm">
-        <Link to={to}>
-          <Icon className="size-3.5" />
           <span>{label}</span>
         </Link>
       </SidebarMenuButton>
@@ -495,39 +430,35 @@ function AppSidebar() {
                       pathname={pathname}
                     />
 
+                    <NavDivider label="Intake & Preparation" />
                     <NavItem
                       to="/monitoring/early-registration"
                       icon={FileSignature}
                       label="Early Registration"
                       pathname={pathname}
                     />
+                    <NavItem
+                      to="/bosy"
+                      icon={UserPlus}
+                      label="BOSY Confirmation"
+                      pathname={pathname}
+                    />
 
-                    <NavItemParent
-                      icon={ClipboardCheck}
-                      label="Enrollment Operations"
-                      isActive={
-                        pathname.startsWith("/bosy") ||
-                        pathname.startsWith("/monitoring/enrollment")
-                      }>
-                      <NavItemChild
-                        to="/bosy"
-                        icon={UserPlus}
-                        label="BOSY Registration"
-                        pathname={pathname}
-                      />
-                      <NavItemChild
-                        to="/monitoring/enrollment"
-                        icon={Calendar}
-                        label="Enrollment"
-                        pathname={pathname}
-                      />
-                      <NavItemChild
-                        to="/monitoring/enrollment/eosy"
-                        icon={ArrowUpRightSquare}
-                        label="EOSY Updating"
-                        pathname={pathname}
-                      />
-                    </NavItemParent>
+                    <NavDivider label="Official Enrollment" />
+                    <NavItem
+                      to="/monitoring/enrollment"
+                      icon={Calendar}
+                      label="Sectioning & Rosters"
+                      pathname={pathname}
+                    />
+
+                    <NavDivider label="Closing Operations" />
+                    <NavItem
+                      to="/monitoring/enrollment/eosy"
+                      icon={ArrowUpRightSquare}
+                      label="EOSY Updating"
+                      pathname={pathname}
+                    />
 
                     <NavDivider label="Management" />
                     <NavItem
@@ -615,10 +546,8 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
     (colorScheme as { accent_hsl?: string } | null)?.accent_hsl;
   const location = useLocation();
 
-  const isHistoricalReadOnly =
-    viewingSchoolYearId !== null &&
-    activeSchoolYearId !== null &&
-    viewingSchoolYearId !== activeSchoolYearId;
+  const { isHistoricalReadOnly } = useHistoricalReadOnly();
+  const [showCorrectionModal, setShowCorrectionModal] = useState(false);
 
   const selectedSchoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
   const isSchoolYearBypassRoute =
@@ -716,7 +645,11 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
         />
 
         {/* Top bar */}
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background px-4">
+        <header
+          className={cn(
+            "flex h-14 shrink-0 items-center gap-2 border-b border-border px-4",
+            isHistoricalReadOnly ? "bg-muted" : "bg-background",
+          )}>
           <SidebarTrigger className="-ml-1" />
           <Separator
             orientation="vertical"
@@ -725,9 +658,9 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
           <div className="flex items-center gap-2">
             {isHistoricalReadOnly ? (
               <Badge
-                variant="danger"
-                className="uppercase  animate-pulse">
-                Historical View: Read Only
+                variant="outline"
+                className="uppercase text-muted-foreground border-border">
+                Historical View
               </Badge>
             ) : null}
           </div>
@@ -742,6 +675,14 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
             <UserNav />
           </div>
         </header>
+
+        <HistoricalBanner
+          onOpenCorrectionModal={() => setShowCorrectionModal(true)}
+        />
+        <HistoricalCorrectionModal
+          open={showCorrectionModal}
+          onOpenChange={setShowCorrectionModal}
+        />
 
         {/* Page content */}
         <AnimatePresence mode="wait">

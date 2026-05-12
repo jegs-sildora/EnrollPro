@@ -1,3 +1,7 @@
+import {
+  EosyStatus,
+  AcademicStatus,
+} from "../../../generated/prisma/index.js";
 import type { Request, Response } from "express";
 import {
   createSchoolYearControllerDeps,
@@ -71,7 +75,7 @@ async function carryOverEligibleLearners(
         where: {
           schoolYearId: sourceSchoolYearId,
           enrollmentApplication: {
-            status: "ENROLLED",
+            status: { in: ["ENROLLED", "OFFICIALLY_ENROLLED", "TEMPORARILY_ENROLLED"] },
           },
         },
         select: {
@@ -149,8 +153,10 @@ async function carryOverEligibleLearners(
       continue;
     }
 
-    const eosyStatus = record.eosyStatus ?? "PROMOTED";
-    if (eosyStatus === "IRREGULAR") {
+    const eosyStatus = record.eosyStatus ?? EosyStatus.PROMOTED;
+    const isIrregular = eosyStatus === EosyStatus.IRREGULAR;
+
+    if (isIrregular) {
       summary.skippedIrregular += 1;
       continue;
     }
@@ -161,7 +167,7 @@ async function carryOverEligibleLearners(
 
     const sourceDisplayOrder = record.section.gradeLevel.displayOrder;
     const targetDisplayOrder =
-      eosyStatus === "PROMOTED" ? sourceDisplayOrder + 1 : sourceDisplayOrder;
+      eosyStatus === EosyStatus.PROMOTED ? sourceDisplayOrder + 1 : sourceDisplayOrder;
     const targetGradeLevel =
       targetGradeLevelByDisplayOrder.get(targetDisplayOrder) ?? null;
 
@@ -207,13 +213,13 @@ async function carryOverEligibleLearners(
     });
 
     const resolvedAcademicStatus =
-      eosyStatus === "PROMOTED" ? "PROMOTED" : "RETAINED";
+      eosyStatus === EosyStatus.PROMOTED ? AcademicStatus.PROMOTED : AcademicStatus.RETAINED;
 
     await deps.prisma.applicationChecklist.create({
       data: {
         enrollmentId: createdApplication.id,
         academicStatus: resolvedAcademicStatus,
-        isRemedialRequired: eosyStatus === "IRREGULAR",
+        isRemedialRequired: isIrregular,
         updatedById: actingUserId,
       },
     });

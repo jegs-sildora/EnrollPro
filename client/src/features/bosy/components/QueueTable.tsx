@@ -5,7 +5,11 @@ import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { CheckCircle2, Loader2 } from "lucide-react";
-import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
+import type {
+  ColumnDef,
+  RowSelectionState,
+  OnChangeFn,
+} from "@tanstack/react-table";
 import type { BOSYQueueItem } from "../types";
 
 interface QueueTableProps {
@@ -13,7 +17,7 @@ interface QueueTableProps {
   loading: boolean;
   showConfirmAction: boolean;
   rowSelection: RowSelectionState;
-  onRowSelectionChange: (selection: RowSelectionState) => void;
+  onRowSelectionChange: OnChangeFn<RowSelectionState>;
   onConfirmSingle: (applicationId: number) => void;
   confirmingIds: Set<number>;
 }
@@ -33,6 +37,14 @@ function statusBadge(status: string) {
         variant="outline"
         className="text-[10px] font-black uppercase bg-emerald-50 border-emerald-200 text-emerald-700">
         Confirmed
+      </Badge>
+    );
+  if (status === "ENROLLED" || status === "OFFICIALLY_ENROLLED")
+    return (
+      <Badge
+        variant="outline"
+        className="text-[10px] font-black uppercase bg-blue-50 border-blue-200 text-blue-700">
+        Enrolled
       </Badge>
     );
   return (

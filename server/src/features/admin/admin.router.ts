@@ -9,6 +9,7 @@ import {
 } from "@enrollpro/shared";
 import * as userCtrl from "./admin-user.controller.js";
 import * as sysCtrl from "./admin-system.controller.js";
+import * as historicalCorrectionCtrl from "./historical-correction.controller.js";
 
 const router: Router = Router();
 
@@ -33,6 +34,12 @@ router.patch(
   "/users/:id/reset-password",
   validate(adminResetPasswordSchema),
   userCtrl.resetPassword,
+);
+
+// Historical Correction Override
+router.post(
+  "/historical-correction/authorize",
+  historicalCorrectionCtrl.authorize,
 );
 
 // System Health

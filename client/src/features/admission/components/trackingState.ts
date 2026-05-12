@@ -14,6 +14,8 @@ const NORMALIZED_STATUSES = new Set<TrackingStatus>([
   "NOT_QUALIFIED",
   "REJECTED",
   "WITHDRAWN",
+  "TRANSFERRED",
+  "DROPPED",
 ]);
 
 const RAW_TO_TRACKING_STATUS =
@@ -53,6 +55,8 @@ export function resolveCurrentStep(
     case "QUALIFIED_FOR_ENROLLMENT":
       return "ENROLLMENT_QUALIFICATION";
     case "ENROLLED":
+    case "TRANSFERRED":
+    case "DROPPED":
       return "ENROLLED";
     case "NOT_QUALIFIED":
       return programType === "SCP"

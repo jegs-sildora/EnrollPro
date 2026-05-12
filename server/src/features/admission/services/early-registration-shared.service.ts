@@ -24,7 +24,9 @@ export type PublicTrackingStatus =
   | "ENROLLED"
   | "NOT_QUALIFIED"
   | "REJECTED"
-  | "WITHDRAWN";
+  | "WITHDRAWN"
+  | "TRANSFERRED"
+  | "DROPPED";
 
 export type PublicCurrentStep =
   | "APPLICATION_SUBMITTED"
@@ -71,6 +73,8 @@ const NORMALIZED_TRACKING_STATUSES = new Set<PublicTrackingStatus>([
   "NOT_QUALIFIED",
   "REJECTED",
   "WITHDRAWN",
+  "TRANSFERRED",
+  "DROPPED",
 ]);
 
 const RAW_TO_TRACKING_STATUS = APPLICATION_STATUS_TO_TRACKING_STATUS as Record<
@@ -112,6 +116,8 @@ export function resolveCurrentStep(
     case "QUALIFIED_FOR_ENROLLMENT":
       return "ENROLLMENT_QUALIFICATION";
     case "ENROLLED":
+    case "TRANSFERRED":
+    case "DROPPED":
       return "ENROLLED";
     case "NOT_QUALIFIED":
       return programType === "SCP"
@@ -200,9 +206,12 @@ export function createInitialTrackingPayload(
     assessmentData: buildAssessmentData(programType, []),
   };
 }
-
 export const VALID_TRANSITIONS: Record<string, ApplicationStatus[]> = {
   ...(APPLICATION_VALID_TRANSITIONS as Record<string, ApplicationStatus[]>),
+  ENROLLED: ["WITHDRAWN", "TRANSFERRING_OUT", "TRANSFERRED_OUT", "DROPPED"],
+  TRANSFERRING_OUT: ["TRANSFERRED_OUT", "WITHDRAWN"],
+  TRANSFERRED_OUT: [],
+  DROPPED: [],
   PENDING_CONFIRMATION: ["READY_FOR_SECTIONING", "WITHDRAWN"],
 };
 

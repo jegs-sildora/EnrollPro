@@ -43,7 +43,11 @@ const NEXT_ACTION_BY_STATUS: Record<string, string> = {
   WITHDRAWN: "No Action",
 };
 
-export default function EarlyRegistration() {
+export default function EarlyRegistration({
+  initialStatus = "ALL",
+}: {
+  initialStatus?: string;
+}) {
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
 
@@ -60,9 +64,12 @@ export default function EarlyRegistration() {
     setType,
     page,
     setPage,
+    refresh,
     stageCounts,
-    fetchData,
-  } = useEarlyRegistrations(ayId);
+  } = useEarlyRegistrations({
+    schoolYearId: ayId,
+    initialStatus,
+  });
 
   const {
     actionType,
@@ -76,7 +83,7 @@ export default function EarlyRegistration() {
     handleApprove,
     handleMarkEligible,
     handleReject,
-  } = useRegistrationActions(fetchData);
+  } = useRegistrationActions(refresh);
 
   const { panelPercentage, isDesktopViewport, startResizing } =
     useResizablePanel();
@@ -132,7 +139,7 @@ export default function EarlyRegistration() {
               variant="outline"
               className="h-10 px-3 flex-1 md:flex-none text-sm font-bold"
               onClick={() => {
-                void fetchData();
+                void refresh();
               }}
               disabled={loading}>
               <RefreshCw
@@ -211,7 +218,7 @@ export default function EarlyRegistration() {
         isDesktopViewport={isDesktopViewport}
         panelPercentage={panelPercentage}
         startResizing={startResizing}
-        fetchData={fetchData}
+        fetchData={refresh}
         setSelectedApp={setSelectedApp}
         setActionType={setActionType}
         fetchSections={fetchSections}
@@ -239,7 +246,7 @@ export default function EarlyRegistration() {
         applicant={selectedApp as ApplicantDetail | null}
         step={scheduleStep}
         endpointBase="/early-registrations"
-        onSuccess={fetchData}
+        onSuccess={refresh}
         onCloseSheet={() => setSelectedId(null)}
       />
     </div>

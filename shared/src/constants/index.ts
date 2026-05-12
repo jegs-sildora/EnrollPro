@@ -13,6 +13,11 @@ export const SexEnum = z.enum(["MALE", "FEMALE"]);
 export const ComplianceStatusEnum = z.enum(["PENDING", "COMPLIED", "OVERDUE"]);
 
 export const APPLICATION_STATUS_VALUES = [
+  "EARLY_REG_SUBMITTED",
+  "PRE_REGISTERED",
+  "PENDING_VERIFICATION",
+  "READY_FOR_SECTIONING",
+  "OFFICIALLY_ENROLLED",
   "SUBMITTED_BEERF",
   "PENDING_BEEF",
   "AWAITING_VERIFICATION",
@@ -32,6 +37,9 @@ export const APPLICATION_STATUS_VALUES = [
   "ENROLLED",
   "REJECTED",
   "WITHDRAWN",
+  "TRANSFERRING_OUT",
+  "TRANSFERRED_OUT",
+  "DROPPED",
 ] as const;
 
 export const ApplicationStatusEnum = z.enum(APPLICATION_STATUS_VALUES);
@@ -54,6 +62,8 @@ export const TrackingStatusEnum = z.enum([
   "NOT_QUALIFIED",
   "REJECTED",
   "WITHDRAWN",
+  "TRANSFERRED",
+  "DROPPED",
 ]);
 
 export const TrackingCurrentStepEnum = z.enum([
@@ -68,6 +78,11 @@ export const APPLICATION_STATUS_TO_TRACKING_STATUS: Record<
   z.infer<typeof ApplicationStatusEnum>,
   z.infer<typeof TrackingStatusEnum>
 > = {
+  EARLY_REG_SUBMITTED: "SUBMITTED",
+  PRE_REGISTERED: "SUBMITTED",
+  PENDING_VERIFICATION: "IN_REVIEW",
+  READY_FOR_SECTIONING: "QUALIFIED_FOR_ENROLLMENT",
+  OFFICIALLY_ENROLLED: "ENROLLED",
   SUBMITTED_BEERF: "SUBMITTED",
   PENDING_BEEF: "IN_REVIEW",
   AWAITING_VERIFICATION: "IN_REVIEW",
@@ -87,12 +102,20 @@ export const APPLICATION_STATUS_TO_TRACKING_STATUS: Record<
   ENROLLED: "ENROLLED",
   REJECTED: "REJECTED",
   WITHDRAWN: "WITHDRAWN",
+  TRANSFERRING_OUT: "TRANSFERRED",
+  TRANSFERRED_OUT: "TRANSFERRED",
+  DROPPED: "DROPPED",
 };
 
 export const APPLICATION_VALID_TRANSITIONS: Record<
   z.infer<typeof ApplicationStatusEnum>,
   z.infer<typeof ApplicationStatusEnum>[]
 > = {
+  EARLY_REG_SUBMITTED: ["VERIFIED", "REJECTED", "WITHDRAWN"],
+  PRE_REGISTERED: ["PENDING_VERIFICATION", "WITHDRAWN"],
+  PENDING_VERIFICATION: ["READY_FOR_SECTIONING", "REJECTED", "WITHDRAWN"],
+  READY_FOR_SECTIONING: ["OFFICIALLY_ENROLLED", "WITHDRAWN"],
+  OFFICIALLY_ENROLLED: ["TRANSFERRING_OUT", "DROPPED", "WITHDRAWN"],
   SUBMITTED_BEERF: [
     "PENDING_BEEF",
     "VERIFIED",
@@ -173,12 +196,15 @@ export const APPLICATION_VALID_TRANSITIONS: Record<
     "REJECTED",
     "WITHDRAWN",
   ],
-  PENDING_CONFIRMATION: ["WITHDRAWN"],
+  PENDING_CONFIRMATION: ["READY_FOR_SECTIONING", "WITHDRAWN"],
   TEMPORARILY_ENROLLED: ["ENROLLED", "WITHDRAWN"],
   FAILED_ASSESSMENT: ["UNDER_REVIEW", "WITHDRAWN", "REJECTED"],
-  ENROLLED: ["WITHDRAWN"],
+  ENROLLED: ["WITHDRAWN", "TRANSFERRING_OUT", "DROPPED"],
   REJECTED: ["UNDER_REVIEW", "WITHDRAWN"],
   WITHDRAWN: [],
+  TRANSFERRING_OUT: ["TRANSFERRED_OUT", "WITHDRAWN"],
+  TRANSFERRED_OUT: [],
+  DROPPED: [],
 };
 
 export const SchoolYearStatusEnum = z.enum([
@@ -199,6 +225,22 @@ export const LearnerStatusEnum = z.enum([
   "TRANSFERRED_OUT",
 ]);
 export type LearnerStatus = z.infer<typeof LearnerStatusEnum>;
+
+export const AcademicStatusEnum = z.enum([
+  "PROMOTED",
+  "RETAINED",
+  "CONDITIONALLY_PROMOTED",
+]);
+export type AcademicStatus = z.infer<typeof AcademicStatusEnum>;
+
+export const EosyStatusEnum = z.enum([
+  "PROMOTED",
+  "RETAINED",
+  "IRREGULAR",
+  "TRANSFERRED_OUT",
+  "DROPPED_OUT",
+]);
+export type EosyStatus = z.infer<typeof EosyStatusEnum>;
 
 export const PortalControlEnum = z.enum([
   "AUTO",

@@ -317,30 +317,48 @@ export function getApplicationStatusColorClasses(
   const s = status.toUpperCase();
 
   // 1. Pipeline / Transitional (Muted Blues/Indigos)
-  if (s === "SUBMITTED") {
+  if (
+    s === "SUBMITTED" ||
+    s === "EARLY_REG_SUBMITTED" ||
+    s === "SUBMITTED_BEERF" ||
+    s === "SUBMITTED_BEEF" ||
+    s === "PRE_REGISTERED"
+  ) {
     return "bg-blue-50 text-blue-700 border-blue-200";
   }
-  if (s === "UNDER_REVIEW" || s === "ELIGIBLE" || s === "IN_PROGRESS") {
+  if (
+    s === "UNDER_REVIEW" ||
+    s === "ELIGIBLE" ||
+    s === "IN_PROGRESS" ||
+    s === "PENDING_VERIFICATION" ||
+    s === "AWAITING_VERIFICATION" ||
+    s === "VERIFIED" ||
+    s === "PENDING_BEEF"
+  ) {
     return "bg-indigo-50 text-indigo-700 border-indigo-200";
   }
 
-  // 2. Progression (Soft Greens/Teals)
+  // 2. Progression (Soft Greens/Teals/Purples)
   if (
     s === "ASSESSMENT_TAKEN" ||
     s === "PASSED" ||
-    s === "PRE_REGISTERED" ||
-    s === "QUALIFIED"
+    s === "QUALIFIED" ||
+    s === "READY_FOR_SECTIONING" ||
+    s === "READY_FOR_ENROLLMENT"
   ) {
     return "bg-teal-50 text-teal-700 border-teal-200";
   }
+  if (s === "EXAM_SCHEDULED" || s === "INTERVIEW_SCHEDULED") {
+    return "bg-purple-50 text-purple-700 border-purple-200";
+  }
 
   // 3. Warning State (High-Visibility Amber)
-  if (s === "TEMPORARILY_ENROLLED") {
+  if (s === "TEMPORARILY_ENROLLED" || s === "PENDING_CONFIRMATION") {
     return "bg-amber-100 text-amber-800 border-amber-400 font-medium";
   }
 
   // 4. The Finish Line (Solid DepEd Royal Blue)
-  if (s === "ENROLLED") {
+  if (s === "ENROLLED" || s === "OFFICIALLY_ENROLLED") {
     return "bg-blue-600 text-white font-bold shadow-sm border-none";
   }
 
@@ -351,11 +369,26 @@ export function getApplicationStatusColorClasses(
   if (s === "FOR_REVISION") {
     return "bg-orange-50 text-orange-700 border-orange-300";
   }
-  if (s === "REJECTED" || s === "WITHDRAWN" || s === "FAILED") {
+  if (
+    s === "REJECTED" ||
+    s === "WITHDRAWN" ||
+    s === "FAILED" ||
+    s === "FAILED_ASSESSMENT" ||
+    s === "NOT_QUALIFIED"
+  ) {
     return "bg-rose-50 text-rose-700 border-rose-200";
   }
   if (s === "LINKED") {
     return "bg-violet-50 text-violet-700 border-violet-200";
+  }
+  if (
+    s === "TRANSFERRING_OUT" ||
+    s === "TRANSFERRED_OUT" ||
+    s === "DROPPED" ||
+    s === "DROPPED_OUT" ||
+    s === "TRANSFERRED"
+  ) {
+    return "bg-slate-200 text-slate-700 border-slate-300 font-medium";
   }
 
   return "bg-slate-50 text-slate-500 border-slate-200";
@@ -444,10 +477,45 @@ export function formatApplicationStatus(
   if (s === "FOR_REVISION") return "For Revision";
   if (s === "ASSESSMENT_TAKEN") return "Assessment Taken";
   if (s === "TEMPORARILY_ENROLLED") return "Temporarily Enrolled";
+  if (s === "OFFICIALLY_ENROLLED") return "Officially Enrolled";
+  if (s === "SUBMITTED_BEERF") return "Submitted (BEERF)";
+  if (s === "SUBMITTED_BEEF") return "Submitted (BEEF)";
+  if (s === "PENDING_BEEF") return "Pending BEEF";
+  if (s === "EARLY_REG_SUBMITTED") return "Early Reg Submitted";
+  if (s === "READY_FOR_SECTIONING") return "Ready for Sectioning";
+  if (s === "READY_FOR_ENROLLMENT") return "Ready for Enrollment";
+  if (s === "TRANSFERRING_OUT") return "Transferring Out";
+  if (s === "TRANSFERRED_OUT") return "Transferred Out";
 
   return s
     .replaceAll("_", " ")
     .toLowerCase()
     .replace(/^\w/, (c) => c.toUpperCase());
+}
+
+/**
+ * Formats EOSY status tokens into human-readable labels.
+ */
+export function formatEosyStatus(status: string | null | undefined): string {
+  if (!status) return "N/A";
+  const s = status.toUpperCase();
+
+  switch (s) {
+    case "PROMOTED":
+      return "Promoted";
+    case "RETAINED":
+      return "Retained";
+    case "IRREGULAR":
+      return "Cond. Promoted";
+    case "TRANSFERRED_OUT":
+      return "Transferred Out";
+    case "DROPPED_OUT":
+      return "Dropped Out";
+    default:
+      return s
+        .replaceAll("_", " ")
+        .toLowerCase()
+        .replace(/^\w/, (c) => c.toUpperCase());
+  }
 }
 

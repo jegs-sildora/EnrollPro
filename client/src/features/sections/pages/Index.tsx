@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
+import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { Button } from "@/shared/ui/button";
 import { CreateSectionModal } from "../components/CreateSectionModal";
 import { InsertLateEnrolleeModal } from "../components/InsertLateEnrolleeModal";
@@ -257,6 +258,8 @@ export default function Sections() {
   const { activeSchoolYearId, viewingSchoolYearId, activeSchoolYearLabel } =
     useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
+  const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
+  const canMutate = !isHistoricalReadOnly || hasOverride;
 
   const [viewMode, setViewMode] = useState<"list" | "heatmap">("list");
   const [activeGradeId, setActiveGradeId] = useState<string>("");
@@ -675,49 +678,54 @@ export default function Sections() {
                     }>
                     <Users className="h-3.5 w-3.5 mr-2" /> View Roster
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 font-bold"
-                    onClick={() => setEditSection(s)}>
-                    <Edit2 className="h-3.5 w-3.5 mr-2" /> Edit
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 font-bold text-amber-600 border-amber-200 hover:bg-amber-50"
-                    onClick={() =>
-                      setHandoverSection({
-                        id: s.id,
-                        name: displaySectionName,
-                        gradeLevelName: gradeLevelName,
-                        advisingTeacher: s.advisingTeacher,
-                      })
-                    }>
-                    <RefreshCcw className="h-3.5 w-3.5 mr-2" /> Handover
-                  </Button>
-                  {isDeleteDisabled ? (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-foreground/30 cursor-not-allowed"
-                      disabled
-                      title="Cannot delete populated section">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  ) : (
+                  {canMutate && (
                     <Button
                       variant="outline"
-                      size="icon"
-                      className="h-8 w-8 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
-                      onClick={() => {
-                        setDeleteId(s.id);
-                        setDeleteName(displaySectionName);
-                      }}
-                      title="Delete section">
-                      <Trash2 className="h-4 w-4" />
+                      size="sm"
+                      className="h-8 font-bold"
+                      onClick={() => setEditSection(s)}>
+                      <Edit2 className="h-3.5 w-3.5 mr-2" /> Edit
                     </Button>
                   )}
+                  {canMutate && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 font-bold text-amber-600 border-amber-200 hover:bg-amber-50"
+                      onClick={() =>
+                        setHandoverSection({
+                          id: s.id,
+                          name: displaySectionName,
+                          gradeLevelName: gradeLevelName,
+                          advisingTeacher: s.advisingTeacher,
+                        })
+                      }>
+                      <RefreshCcw className="h-3.5 w-3.5 mr-2" /> Handover
+                    </Button>
+                  )}
+                  {canMutate &&
+                    (isDeleteDisabled ? (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-foreground/30 cursor-not-allowed"
+                        disabled
+                        title="Cannot delete populated section">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
+                        onClick={() => {
+                          setDeleteId(s.id);
+                          setDeleteName(displaySectionName);
+                        }}
+                        title="Delete section">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    ))}
                 </div>
               </div>
             );
@@ -1048,7 +1056,8 @@ export default function Sections() {
                           variant="default"
                           onClick={() =>
                             openCreateModal(g.gradeLevelId, g.gradeLevelName)
-                          }>
+                          }
+                          disabled={!canMutate}>
                           <Plus className="mr-2 h-4 w-4" /> Add{" "}
                           {g.gradeLevelName} Section
                         </Button>

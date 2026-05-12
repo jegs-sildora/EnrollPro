@@ -81,7 +81,13 @@ function normalizeLrnValue(value: string | undefined): string {
   return normalized;
 }
 
-export function useEarlyRegistrations(ayId: number | null) {
+export function useEarlyRegistrations({
+  schoolYearId,
+  initialStatus = "ALL",
+}: {
+  schoolYearId: number | null;
+  initialStatus?: string;
+}) {
   const [applications, setApplications] = useState<Application[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -91,9 +97,12 @@ export function useEarlyRegistrations(ayId: number | null) {
 
   // Filters
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("ALL");
+  const [status, setStatus] = useState(initialStatus);
   const [type, setType] = useState("ALL");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(50);
+
+  const ayId = schoolYearId;
 
   const buildBaseCountParams = useCallback(() => {
     const params = new URLSearchParams();
@@ -280,7 +289,9 @@ export function useEarlyRegistrations(ayId: number | null) {
     setType,
     page,
     setPage,
+    limit,
+    setLimit,
     stageCounts,
-    fetchData,
+    refresh: fetchData,
   };
 }

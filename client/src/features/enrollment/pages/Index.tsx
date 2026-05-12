@@ -24,6 +24,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
+import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useScpConfigs } from "@/features/admission/hooks/useScpConfigs";
 import {
@@ -79,9 +80,8 @@ import { PaginationBar } from "@/shared/components/PaginationBar";
 import {
   ENROLLMENT_SUB_MENU_DESCRIPTIONS,
   ENROLLMENT_SUB_MENU_OPTIONS,
-  PENDING_VERIFICATION_STATUSES,
-  ROLLOVER_ELIGIBLE_STATUSES,
-  SECTION_ASSIGNMENT_STATUSES,
+  UNSECTIONED_POOL_STATUSES,
+  BATCH_WORKSPACE_STATUSES,
   OFFICIAL_ROSTER_STATUSES,
   type EnrollmentSubMenu,
 } from "@/features/enrollment/workflow.constants";
@@ -160,10 +160,9 @@ const PENDING_QUEUE_FILTER_OPTIONS: Array<{
 ];
 
 const TABLE_NO_RESULTS_MESSAGES: Record<EnrollmentSubMenu, string> = {
-  PENDING_VERIFICATION: "No learners awaiting verification.",
-  ROLLOVER_ELIGIBLE: "No continuing learners found for rollover.",
-  SECTION_ASSIGNMENT: "No learners ready for section assignment.",
-  OFFICIAL_ROSTER: "No enrolled learners in official roster.",
+  UNSECTIONED_POOL: "No unsectioned learners found in the holding pool.",
+  BATCH_WORKSPACE: "No learners in the batch sectioning workspace.",
+  OFFICIAL_ROSTERS: "No finalized class rosters found for this SY.",
 };
 
 const UNENROLL_REASONS = [
@@ -254,14 +253,14 @@ function resolveSelectedApplicationSectionName(
 
 function resolveWorkflowFromQuery(value: string | null): EnrollmentSubMenu {
   if (!value) {
-    return "PENDING_VERIFICATION";
+    return "UNSECTIONED_POOL";
   }
 
   const matched = ENROLLMENT_SUB_MENU_OPTIONS.some(
     (option) => option.value === value,
   );
 
-  return matched ? (value as EnrollmentSubMenu) : "PENDING_VERIFICATION";
+  return matched ? (value as EnrollmentSubMenu) : "UNSECTIONED_POOL";
 }
 
 function SectionListForBulk({
@@ -356,6 +355,8 @@ export default function Enrollment() {
   } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const isBosyLocked = systemStatus === "BOSY_LOCKED";
+  const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
+  const canMutate = !isHistoricalReadOnly || hasOverride;
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const workflowParam = searchParams.get("workflow");
@@ -408,8 +409,8 @@ export default function Enrollment() {
       const params = new URLSearchParams();
       params.append("schoolYearId", String(ayId));
 
-      if (workflowView === "SECTION_ASSIGNMENT") {
-        params.append("status", "VERIFIED");
+      if (workflowView === "BATCH_WORKSPACE") {
+        params.append("status", Array.from(BATCH_WORKSPACE_STATUSES).join(","));
         params.append("withoutSection", "true");
         if (genderFilter !== "ALL") params.append("sex", genderFilter);
       } else {
@@ -429,8 +430,8 @@ export default function Enrollment() {
 
   const refreshTabCounts = useCallback(async () => {
     if (
-      workflowView !== "OFFICIAL_ROSTER" &&
-      workflowView !== "SECTION_ASSIGNMENT"
+      workflowView !== "OFFICIAL_ROSTERS" &&
+      workflowView !== "BATCH_WORKSPACE"
     )
       return;
     try {
@@ -448,8 +449,8 @@ export default function Enrollment() {
 
   useEffect(() => {
     if (
-      workflowView === "OFFICIAL_ROSTER" ||
-      workflowView === "SECTION_ASSIGNMENT"
+      workflowView === "OFFICIAL_ROSTERS" ||
+      workflowView === "BATCH_WORKSPACE"
     ) {
       void refreshTabCounts();
     }
@@ -473,8 +474,8 @@ export default function Enrollment() {
 
   useEffect(() => {
     if (
-      (workflowView === "OFFICIAL_ROSTER" ||
-        workflowView === "SECTION_ASSIGNMENT") &&
+      (workflowView === "OFFICIAL_ROSTERS" ||
+        workflowView === "BATCH_WORKSPACE") &&
       !tabs.some((t) => t.key === applicantTypeTab)
     ) {
       setApplicantTypeTab("REGULAR");
@@ -483,7 +484,7 @@ export default function Enrollment() {
 
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
 
-  const [sortBy, setSortBy] = useState<string>("createdAt");
+  const [sortBy, setSortBy] = useState<string>("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const sorting = useMemo<SortingState>(
@@ -501,8 +502,8 @@ export default function Enrollment() {
         setSortBy(newSorting[0].id);
         setSortOrder(newSorting[0].desc ? "desc" : "asc");
       } else {
-        setSortBy("createdAt");
-        setSortOrder("desc");
+        setSortBy("name");
+        setSortOrder("asc");
       }
       setPage(1);
     },
@@ -559,7 +560,9 @@ export default function Enrollment() {
   const [sf1ExportOpen, setSf1ExportOpen] = useState(false);
   const [selectedExportSection, setSelectedExportSection] =
     useState<string>("");
-  const [sections, setSections] = useState<{ id: number; name: string; gradeLevelName: string }[]>([]);
+  const [sections, setSections] = useState<
+    { id: number; name: string; gradeLevelName: string }[]
+  >([]);
   const [loadingSections, setLoadingSections] = useState(false);
 
   // Bulk Actions
@@ -600,11 +603,15 @@ export default function Enrollment() {
     try {
       const res = await api.get(`/sections/${ayId}`);
       // The API returns { gradeLevels: [ { gradeLevelName: 'Grade 7', sections: [...] }, ... ] }
-      const allSections = res.data.gradeLevels.flatMap((gl: { gradeLevelName: string; sections: { id: number; name: string }[] }) =>
-        gl.sections.map((s: { id: number; name: string }) => ({
-          ...s,
-          gradeLevelName: gl.gradeLevelName,
-        })),
+      const allSections = res.data.gradeLevels.flatMap(
+        (gl: {
+          gradeLevelName: string;
+          sections: { id: number; name: string }[];
+        }) =>
+          gl.sections.map((s: { id: number; name: string }) => ({
+            ...s,
+            gradeLevelName: gl.gradeLevelName,
+          })),
       );
       setSections(allSections);
     } catch (err) {
@@ -714,13 +721,13 @@ export default function Enrollment() {
       setPage(1);
 
       // Reset sorting to contextual defaults
-      if (nextView === "PENDING_VERIFICATION") {
-        setSortBy("createdAt");
+      if (nextView === "UNSECTIONED_POOL") {
+        setSortBy("name");
         setSortOrder("asc");
-      } else if (nextView === "SECTION_ASSIGNMENT") {
-        setSortBy("generalAverage");
+      } else if (nextView === "BATCH_WORKSPACE") {
+        setSortBy("genAve");
         setSortOrder("desc");
-      } else if (nextView === "OFFICIAL_ROSTER") {
+      } else if (nextView === "OFFICIAL_ROSTERS") {
         setSortBy("sex");
         setSortOrder("asc");
       }
@@ -744,8 +751,8 @@ export default function Enrollment() {
         return num !== null && num >= 7 && num <= 10;
       });
 
-      // Sort according to user preference: 7, 9, 8, 10
-      const order = [7, 9, 8, 10];
+      // Sort ascending: 7, 8, 9, 10
+      const order = [7, 8, 9, 10];
       jhsLevels.sort((a, b) => {
         const numA = extractGradeLevelNumber(a.name) || 0;
         const numB = extractGradeLevelNumber(b.name) || 0;
@@ -857,7 +864,7 @@ export default function Enrollment() {
 
         setIsWalkInGateOpen(false);
         navigate(
-          `/monitoring/enrollment?workflow=PENDING_VERIFICATION&search=${encodeURIComponent(normalizedLrn)}`,
+          `/monitoring/enrollment?workflow=UNSECTIONED_POOL&search=${encodeURIComponent(normalizedLrn)}`,
         );
         return;
       }
@@ -966,28 +973,16 @@ export default function Enrollment() {
       params.append("schoolYearId", String(ayId));
       if (search) params.append("search", search);
 
-      if (workflowView === "PENDING_VERIFICATION") {
+      if (workflowView === "UNSECTIONED_POOL") {
         params.append(
           "status",
-          Array.from(PENDING_VERIFICATION_STATUSES).join(","),
+          Array.from(UNSECTIONED_POOL_STATUSES).join(","),
         );
         params.append("withoutSection", "true");
       }
 
-      if (workflowView === "ROLLOVER_ELIGIBLE") {
-        params.append(
-          "status",
-          Array.from(ROLLOVER_ELIGIBLE_STATUSES).join(","),
-        );
-        params.append("learnerType", "CONTINUING");
-        params.append("withoutSection", "true");
-      }
-
-      if (workflowView === "SECTION_ASSIGNMENT") {
-        params.append(
-          "status",
-          Array.from(SECTION_ASSIGNMENT_STATUSES).join(","),
-        );
+      if (workflowView === "BATCH_WORKSPACE") {
+        params.append("status", Array.from(BATCH_WORKSPACE_STATUSES).join(","));
         params.append("withoutSection", "true");
         if (applicantTypeTab !== "ALL") {
           params.append("applicantType", applicantTypeTab);
@@ -997,7 +992,7 @@ export default function Enrollment() {
         }
       }
 
-      if (workflowView === "OFFICIAL_ROSTER") {
+      if (workflowView === "OFFICIAL_ROSTERS") {
         params.append("status", Array.from(OFFICIAL_ROSTER_STATUSES).join(","));
         params.append("withSection", "true");
         if (applicantTypeTab !== "ALL") {
@@ -1030,12 +1025,12 @@ export default function Enrollment() {
       filteredApps = filteredApps.filter((app) => {
         const hasSection = Boolean(resolveApplicationSectionName(app));
 
-        if (workflowView === "PENDING_VERIFICATION") {
-          return PENDING_VERIFICATION_STATUSES.has(app.status) && !hasSection;
+        if (workflowView === "UNSECTIONED_POOL") {
+          return UNSECTIONED_POOL_STATUSES.has(app.status) && !hasSection;
         }
 
-        if (workflowView === "SECTION_ASSIGNMENT") {
-          return SECTION_ASSIGNMENT_STATUSES.has(app.status) && !hasSection;
+        if (workflowView === "BATCH_WORKSPACE") {
+          return BATCH_WORKSPACE_STATUSES.has(app.status) && !hasSection;
         }
 
         return OFFICIAL_ROSTER_STATUSES.has(app.status) && hasSection;
@@ -1255,7 +1250,7 @@ export default function Enrollment() {
     const cols: ColumnDef<Application>[] = [];
 
     // Checkbox column for Section Assignment
-    if (workflowView === "SECTION_ASSIGNMENT") {
+    if (workflowView === "BATCH_WORKSPACE") {
       cols.push({
         id: "select",
         header: ({ table }) => (
@@ -1284,7 +1279,6 @@ export default function Enrollment() {
 
     cols.push({
       id: "photo",
-      header: "PHOTO",
       cell: ({ row }) => (
         <div className="flex items-center justify-center">
           <UserPhoto
@@ -1388,7 +1382,7 @@ export default function Enrollment() {
       ),
     });
 
-    if (workflowView === "ROLLOVER_ELIGIBLE") {
+    if (workflowView === "UNSECTIONED_POOL") {
       cols.push({
         id: "academicStatus",
         accessorKey: "academicStatus",
@@ -1404,7 +1398,7 @@ export default function Enrollment() {
 
           let variant: "default" | "secondary" | "destructive" | "outline" =
             "outline";
-          const label = status || "Unknown";
+          const label = status || "—";
 
           if (status === "PROMOTED") variant = "secondary";
           if (status === "RETAINED") variant = "destructive";
@@ -1431,8 +1425,8 @@ export default function Enrollment() {
     }
 
     if (
-      workflowView !== "SECTION_ASSIGNMENT" &&
-      workflowView !== "ROLLOVER_ELIGIBLE"
+      workflowView !== "BATCH_WORKSPACE" &&
+      workflowView !== "UNSECTIONED_POOL"
     ) {
       cols.push({
         id: "gradeLevel",
@@ -1452,8 +1446,8 @@ export default function Enrollment() {
     }
 
     if (
-      workflowView === "SECTION_ASSIGNMENT" ||
-      workflowView === "ROLLOVER_ELIGIBLE"
+      workflowView === "BATCH_WORKSPACE" ||
+      workflowView === "UNSECTIONED_POOL"
     ) {
       cols.push({
         id: "readingProfile",
@@ -1499,15 +1493,15 @@ export default function Enrollment() {
 
     cols.push({
       id: "context",
-      header: workflowView === "PENDING_VERIFICATION" ? "TYPE" : "SECTION",
+      header: workflowView === "UNSECTIONED_POOL" ? "TYPE" : "SECTION",
       cell: ({ row }) => {
         const app = row.original;
         const sectionName = resolveApplicationSectionName(app);
         const hasSection = Boolean(sectionName);
-        const isPendingVerification = workflowView === "PENDING_VERIFICATION";
+        const isPendingVerification = workflowView === "UNSECTIONED_POOL";
         const isSectionAssignment =
-          workflowView === "SECTION_ASSIGNMENT" ||
-          workflowView === "ROLLOVER_ELIGIBLE";
+          workflowView === "BATCH_WORKSPACE" ||
+          workflowView === "UNSECTIONED_POOL";
         const selectedSectionId = sectionSelectionByApplicationId[app.id] ?? "";
         const sectionOptions = sectionOptionsByApplicationId[app.id] ?? [];
         const isLoadingOptions =
@@ -1625,8 +1619,8 @@ export default function Enrollment() {
     });
 
     if (
-      workflowView !== "SECTION_ASSIGNMENT" &&
-      workflowView !== "ROLLOVER_ELIGIBLE"
+      workflowView !== "BATCH_WORKSPACE" &&
+      workflowView !== "UNSECTIONED_POOL"
     ) {
       cols.push({
         id: "status",
@@ -1649,8 +1643,8 @@ export default function Enrollment() {
     }
 
     if (
-      workflowView !== "SECTION_ASSIGNMENT" &&
-      workflowView !== "ROLLOVER_ELIGIBLE"
+      workflowView !== "BATCH_WORKSPACE" &&
+      workflowView !== "UNSECTIONED_POOL"
     ) {
       cols.push({
         id: "createdAt",
@@ -1674,10 +1668,6 @@ export default function Enrollment() {
       header: "ACTIONS",
       cell: ({ row }) => {
         const app = row.original;
-        const isPendingVerification = workflowView === "PENDING_VERIFICATION";
-        const isSectionAssignment =
-          workflowView === "SECTION_ASSIGNMENT" ||
-          workflowView === "ROLLOVER_ELIGIBLE";
         const hasReadingProfile = Boolean(app.readingProfileLevel);
         const isPendingBeefStatus =
           app.status === "PENDING_BEEF" ||
@@ -1685,7 +1675,7 @@ export default function Enrollment() {
         const selectedSectionId = sectionSelectionByApplicationId[app.id] ?? "";
         const isSavingSection = savingSectionByApplicationId[app.id] === true;
 
-        if (workflowView === "OFFICIAL_ROSTER") {
+        if (workflowView === "OFFICIAL_ROSTERS") {
           return (
             <div className="flex items-center justify-center gap-2">
               <Button
@@ -1698,39 +1688,42 @@ export default function Enrollment() {
                 }}>
                 <Eye className="h-3 w-3 mr-1" /> View
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={isBosyLocked}
-                className="h-8 text-sm font-bold border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openUnenrollDialog(app);
-                }}>
-                <LogOut className="h-3.5 w-3.5 mr-1" />
-                Un-enrol
-              </Button>
+              {canMutate && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isBosyLocked}
+                  className="h-8 text-sm font-bold border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openUnenrollDialog(app);
+                  }}>
+                  <LogOut className="h-3.5 w-3.5 mr-1" />
+                  Un-enrol
+                </Button>
+              )}
             </div>
           );
         }
+
+        const isUnsectionedPool = workflowView === "UNSECTIONED_POOL";
+        const isBatchWorkspace = workflowView === "BATCH_WORKSPACE";
 
         return (
           <div className="flex justify-center">
             <Button
               variant={
-                isPendingVerification || isSectionAssignment
-                  ? "default"
-                  : "secondary"
+                isUnsectionedPool || isBatchWorkspace ? "default" : "secondary"
               }
               size="sm"
               className={
-                isPendingVerification || isSectionAssignment
+                isUnsectionedPool || isBatchWorkspace
                   ? "h-8 bg-primary text-sm font-bold text-primary-foreground hover:opacity-90 whitespace-nowrap"
                   : "h-8 text-sm font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground whitespace-nowrap"
               }
               onClick={(e) => {
                 e.stopPropagation();
-                if (isPendingVerification && isPendingBeefStatus) {
+                if (isUnsectionedPool && isPendingBeefStatus) {
                   if (app.lrn) {
                     navigate(
                       `/monitoring/enrollment/walk-in?lrn=${encodeURIComponent(app.lrn)}&enrollmentId=${app.id}`,
@@ -1743,7 +1736,7 @@ export default function Enrollment() {
                   return;
                 }
 
-                if (isSectionAssignment) {
+                if (isUnsectionedPool || isBatchWorkspace) {
                   if (!hasReadingProfile) {
                     openReadingProfileDialog(app);
                     return;
@@ -1754,21 +1747,30 @@ export default function Enrollment() {
                 setSelectedId(app.id);
               }}
               disabled={
-                isSectionAssignment && (isSavingSection || !selectedSectionId)
+                (!canMutate && (isUnsectionedPool || isBatchWorkspace)) ||
+                ((isUnsectionedPool || isBatchWorkspace) &&
+                  (isSavingSection || !selectedSectionId))
               }>
-              {isPendingVerification ? (
+              {isUnsectionedPool ? (
                 isPendingBeefStatus ? (
                   <>
                     <UserPlus className="h-3.5 w-3.5 mr-1" />
                     Encode BEEF
                   </>
-                ) : (
+                ) : !hasReadingProfile ? (
                   <>
                     <FileCheck2 className="h-3.5 w-3.5 mr-1" />
-                    Verify Docs
+                    Encode Reading
+                  </>
+                ) : isSavingSection ? (
+                  "Assigning..."
+                ) : (
+                  <>
+                    <School className="h-3.5 w-3.5 mr-1" />
+                    Finalize Rollover
                   </>
                 )
-              ) : isSectionAssignment ? (
+              ) : isBatchWorkspace ? (
                 !hasReadingProfile ? (
                   <>
                     <FileCheck2 className="h-3.5 w-3.5 mr-1" />
@@ -1779,9 +1781,7 @@ export default function Enrollment() {
                 ) : (
                   <>
                     <School className="h-3.5 w-3.5 mr-1" />
-                    {workflowView === "ROLLOVER_ELIGIBLE"
-                      ? "Finalize Rollover"
-                      : "Finalize + Assign"}
+                    Finalize + Assign
                   </>
                 )
               ) : (
@@ -1809,6 +1809,7 @@ export default function Enrollment() {
     navigate,
     setSelectedId,
     isBosyLocked,
+    canMutate,
   ]);
 
   // --- Resizable Panel Logic (Fluid Percentage) ---
@@ -1892,28 +1893,7 @@ export default function Enrollment() {
     gradeLevelId: storedGlId,
     previewData: storedPreview,
     setSectioningParams,
-    smartSyncStatus,
-    setSmartSynced,
   } = useSectioningStore();
-
-  const [isSyncingSmart, setIsSyncingSmart] = useState<number | null>(null);
-
-  const handleSmartSync = async (gradeLevelId: number) => {
-    setIsSyncingSmart(gradeLevelId);
-    try {
-      await api.post("/enrollment/sync-smart-grades", { gradeLevelId });
-      setSmartSynced(gradeLevelId, true);
-      sileo.success({
-        title: "S.M.A.R.T. Sync Complete",
-        description:
-          "Academic records and promotion statuses have been updated.",
-      });
-    } catch (err) {
-      toastApiError(err as never);
-    } finally {
-      setIsSyncingSmart(null);
-    }
-  };
 
   useEffect(() => {
     if (isBatchPending && storedGlId && storedPreview) {
@@ -1960,8 +1940,8 @@ export default function Enrollment() {
               </p>
             </div>
             <div className="flex items-center w-full md:w-auto gap-2">
-              {(workflowView === "SECTION_ASSIGNMENT" ||
-                workflowView === "PENDING_VERIFICATION") && (
+              {(workflowView === "BATCH_WORKSPACE" ||
+                workflowView === "UNSECTIONED_POOL") && (
                 <Button
                   variant="outline"
                   className="h-10 px-3 text-sm font-bold border-red-200 text-red-700 hover:bg-red-50 shrink-0"
@@ -1970,7 +1950,7 @@ export default function Enrollment() {
                 </Button>
               )}
 
-              {workflowView === "OFFICIAL_ROSTER" && (
+              {workflowView === "OFFICIAL_ROSTERS" && (
                 <Button
                   variant="default"
                   className="h-10 px-3 text-sm font-bold bg-emerald-600 hover:bg-emerald-700 shrink-0"
@@ -1984,10 +1964,10 @@ export default function Enrollment() {
                 </Button>
               )}
 
-              {workflowView === "SECTION_ASSIGNMENT" && (
+              {workflowView === "BATCH_WORKSPACE" && (
                 <Button
                   variant="default"
-                  disabled={isBosyLocked}
+                  disabled={isBosyLocked || !canMutate}
                   className="h-10 px-3 text-sm font-bold bg-primary hover:bg-primary/90 disabled:bg-slate-200 disabled:text-slate-500 shrink-0"
                   onClick={() => {
                     void openBatchAssignModal();
@@ -2020,7 +2000,7 @@ export default function Enrollment() {
             }}
           />
 
-          {workflowView === "OFFICIAL_ROSTER" && (
+          {workflowView === "OFFICIAL_ROSTERS" && (
             <div className="space-y-4">
               {applications.some(
                 (a) => a.status === "TEMPORARILY_ENROLLED",
@@ -2098,7 +2078,7 @@ export default function Enrollment() {
             </div>
           )}
 
-          {workflowView === "SECTION_ASSIGNMENT" && (
+          {workflowView === "BATCH_WORKSPACE" && (
             <div className="w-full">
               <Tabs
                 value={applicantTypeTab}
@@ -2165,7 +2145,7 @@ export default function Enrollment() {
                 </div>
 
                 <div className="flex flex-wrap items-center justify-center gap-4 shrink-0">
-                  {workflowView === "SECTION_ASSIGNMENT" && (
+                  {workflowView === "BATCH_WORKSPACE" && (
                     <div className="flex items-center gap-2 bg-muted/30 p-1 rounded-lg border">
                       <span className="text-xs font-black uppercase  text-foreground ml-2 mr-1">
                         Gender:
@@ -2195,7 +2175,7 @@ export default function Enrollment() {
                     </div>
                   )}
 
-                  {workflowView === "PENDING_VERIFICATION" && (
+                  {workflowView === "UNSECTIONED_POOL" && (
                     <div className="flex items-center gap-2 bg-muted/30 p-1 rounded-lg border">
                       <span className="text-xs font-black uppercase  text-foreground ml-2 mr-1">
                         Filter:
@@ -2793,9 +2773,7 @@ export default function Enrollment() {
 
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label className="text-sm font-bold uppercase ">
-                Learner
-              </Label>
+              <Label className="text-sm font-bold uppercase ">Learner</Label>
               <p className="text-sm font-semibold">
                 {readingProfileDialog.application
                   ? `${readingProfileDialog.application.lastName}, ${readingProfileDialog.application.firstName}`
@@ -2900,9 +2878,7 @@ export default function Enrollment() {
 
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label className="text-sm font-bold uppercase ">
-                Learner
-              </Label>
+              <Label className="text-sm font-bold uppercase ">Learner</Label>
               <p className="text-sm font-semibold">
                 {unenrollDialog.application
                   ? `${unenrollDialog.application.lastName}, ${unenrollDialog.application.firstName}`
@@ -3007,8 +2983,6 @@ export default function Enrollment() {
                   gradeLevels.map((gl) => {
                     const gradeNum = extractGradeLevelNumber(gl.name);
                     const isG7 = gradeNum === 7;
-                    const isSynced = smartSyncStatus[gl.id] === true;
-                    const isSyncing = isSyncingSmart === gl.id;
 
                     return (
                       <div
@@ -3021,42 +2995,19 @@ export default function Enrollment() {
                           <p className="text-xs text-foreground uppercase font-black ">
                             {isG7
                               ? "Uses Early Reg Assessment Score"
-                              : isSynced
-                                ? "✅ S.M.A.R.T. Data Synchronized"
-                                : " Academic Records Missing"}
+                              : "Uses Final General Average from EnrollPro records"}
                           </p>
                         </div>
 
-                        {isG7 || isSynced ? (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            className="h-9 px-4 font-bold text-sm bg-primary hover:bg-primary/90"
-                            onClick={() =>
-                              handleStartBatchSectioning(gl.id, gl.name)
-                            }>
-                            Open Wizard
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={isSyncing}
-                            className="h-9 px-4 font-black text-xs uppercase  border-2 border-primary/20 text-primary hover:bg-primary/5"
-                            onClick={() => handleSmartSync(gl.id)}>
-                            {isSyncing ? (
-                              <>
-                                <Loader2 className="h-3 w-3 mr-2 animate-spin" />
-                                Syncing...
-                              </>
-                            ) : (
-                              <>
-                                <RefreshCw className="h-3 w-3 mr-2" />
-                                Sync Academic Records
-                              </>
-                            )}
-                          </Button>
-                        )}
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="h-9 px-4 font-bold text-sm bg-primary hover:bg-primary/90"
+                          onClick={() =>
+                            handleStartBatchSectioning(gl.id, gl.name)
+                          }>
+                          Open Wizard
+                        </Button>
                       </div>
                     );
                   })

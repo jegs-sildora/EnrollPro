@@ -62,7 +62,7 @@ export type ChecklistFieldKey =
   | "isUndertakingSigned"
   | "isConfirmationSlipReceived";
 
-export type AcademicStatusValue = "PROMOTED" | "RETAINED";
+export type AcademicStatusValue = "PROMOTED" | "RETAINED" | "CONDITIONALLY_PROMOTED";
 
 export interface VerifyGridColumn {
   key: ChecklistFieldKey;

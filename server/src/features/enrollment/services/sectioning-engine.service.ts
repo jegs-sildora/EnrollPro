@@ -1,4 +1,9 @@
-import { PrismaClient, ApplicantType, Sex, ReadingProfileLevel } from "../../../generated/prisma/index.js";
+import {
+  PrismaClient,
+  ApplicantType,
+  Sex,
+  ReadingProfileLevel,
+} from "../../../generated/prisma/index.js";
 import { AppError } from "../../../lib/AppError.js";
 import type { SectioningParams } from "@enrollpro/shared";
 import { DEFAULT_SECTIONING_PARAMS } from "@enrollpro/shared";
@@ -50,6 +55,7 @@ interface ApplicantWithRelations {
     sex: Sex;
     promotionStatus?: string | null;
     previousGenAve?: number | null;
+    enrollmentRecords: { finalAverage: number | null }[];
   };
   gradeLevel: {
     name: string;
@@ -72,18 +78,41 @@ export class SectioningEngine {
   // Helper to compute weighted score for Grade 7 STE
   private getWeightedScpScore(app: ApplicantWithRelations): number {
     const assessments = app.earlyRegistration?.assessments ?? [];
-    
+
     // Qualifying Exam (65%)
-    const examScore = assessments.find((a) => a.type === "QUALIFYING_EXAMINATION")?.score ?? 0;
-    
+    const examScore =
+      assessments.find((a) => a.type === "QUALIFYING_EXAMINATION")?.score ?? 0;
+
     // Interview (15%)
-    const interviewScore = assessments.find((a) => a.type === "INTERVIEW")?.score ?? 0;
-    
+    const interviewScore =
+      assessments.find((a) => a.type === "INTERVIEW")?.score ?? 0;
+
     // Grade Average (20%)
     const gradeAve = app.previousSchool?.generalAverage ?? 0;
 
-    const composite = (examScore * 0.65) + (interviewScore * 0.15) + (gradeAve * 0.20);
+    const composite = examScore * 0.65 + interviewScore * 0.15 + gradeAve * 0.2;
     return Math.round(composite * 1000) / 1000;
+  }
+
+  // ── Gen Ave Resolver ─────────────────────────────────────────────────────────
+  // Resolves the best available general average for an applicant.
+  // G7: SF10 previousSchool data (entered during early registration)
+  // G8-10: Learner.previousGenAve (from SMART sync) → prior EnrollmentRecord.finalAverage → previousSchool fallback
+  private resolveGenAve(
+    app: ApplicantWithRelations,
+    isGrade7: boolean,
+  ): number | null {
+    if (isGrade7) {
+      return (
+        app.previousSchool?.generalAverage ?? app.learner.previousGenAve ?? null
+      );
+    }
+    return (
+      app.learner.previousGenAve ??
+      app.learner.enrollmentRecords[0]?.finalAverage ??
+      app.previousSchool?.generalAverage ??
+      null
+    );
   }
 
   // ── Naming Engine ────────────────────────────────────────────────────────────
@@ -127,7 +156,9 @@ export class SectioningEngine {
       const name = this.getScpSectionName(PREFIX, i);
       targetNames.push(name);
       await this.prisma.section.upsert({
-        where: { uq_sections_name_grade_sy: { name, gradeLevelId, schoolYearId } },
+        where: {
+          uq_sections_name_grade_sy: { name, gradeLevelId, schoolYearId },
+        },
         create: {
           name,
           programType: "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
@@ -160,7 +191,9 @@ export class SectioningEngine {
         where: {
           gradeLevelId,
           schoolYearId,
-          status: { in: ["VERIFIED", "TEMPORARILY_ENROLLED", "READY_FOR_SECTIONING"] },
+          status: {
+            in: ["VERIFIED", "TEMPORARILY_ENROLLED", "READY_FOR_SECTIONING"],
+          },
           enrollmentRecord: null,
         },
       }),
@@ -208,28 +241,40 @@ export class SectioningEngine {
       gradeLevel.name.includes("7") || gradeLevel.displayOrder === 7;
 
     // 1. Fetch all eligible learners (VERIFIED, TEMPORARILY_ENROLLED, or READY_FOR_SECTIONING status, no section yet)
-    const applicants: ApplicantWithRelations[] = await (this.prisma.enrollmentApplication.findMany({
-      where: {
-        gradeLevelId,
-        schoolYearId,
-        status: { in: ["VERIFIED", "TEMPORARILY_ENROLLED", "READY_FOR_SECTIONING"] },
-        enrollmentRecord: null,
-      },
-      include: {
-        learner: true,
-        gradeLevel: true,
-        previousSchool: true,
-        earlyRegistration: {
-          include: {
-            assessments: {
-              where: { 
-                type: { in: ["QUALIFYING_EXAMINATION", "INTERVIEW"] }
+    const applicants: ApplicantWithRelations[] =
+      await (this.prisma.enrollmentApplication.findMany({
+        where: {
+          gradeLevelId,
+          schoolYearId,
+          status: {
+            in: ["VERIFIED", "TEMPORARILY_ENROLLED", "READY_FOR_SECTIONING"],
+          },
+          enrollmentRecord: null,
+        },
+        include: {
+          learner: {
+            include: {
+              enrollmentRecords: {
+                where: { schoolYearId: { lt: schoolYearId } },
+                orderBy: { schoolYearId: "desc" },
+                take: 1,
+                select: { finalAverage: true },
+              },
+            },
+          },
+          gradeLevel: true,
+          previousSchool: true,
+          earlyRegistration: {
+            include: {
+              assessments: {
+                where: {
+                  type: { in: ["QUALIFYING_EXAMINATION", "INTERVIEW"] },
+                },
               },
             },
           },
         },
-      },
-    }) as any); // Type assertion needed for complex include
+      }) as any); // Type assertion needed for complex include
 
     if (applicants.length === 0) {
       throw new AppError(400, "No eligible learners found for sectioning.");
@@ -237,10 +282,7 @@ export class SectioningEngine {
 
     // Check Gen Ave lock - check BOTH previousSchool and learner profile
     const missingGenAve = applicants.filter((a) => {
-      const isG7 = a.gradeLevel.displayOrder === 7 || a.gradeLevel.name.includes("7");
-      const ave = isG7 
-        ? (a.previousSchool?.generalAverage ?? a.learner.previousGenAve)
-        : (a.learner.previousGenAve ?? a.previousSchool?.generalAverage);
+      const ave = this.resolveGenAve(a, isGrade7);
       return ave === null || ave === undefined || ave === 0;
     });
 
@@ -312,8 +354,8 @@ export class SectioningEngine {
       if (isGrade7) {
         return this.getWeightedScpScore(b) - this.getWeightedScpScore(a);
       } else {
-        const aveA = a.learner.previousGenAve ?? 0;
-        const aveB = b.learner.previousGenAve ?? 0;
+        const aveA = this.resolveGenAve(a, false) ?? 0;
+        const aveB = this.resolveGenAve(b, false) ?? 0;
         return aveB - aveA;
       }
     });
@@ -328,9 +370,13 @@ export class SectioningEngine {
       steSpillover = sortedSte.slice(actualSteCount);
 
       if (sortedSte.length >= params.steQuota) {
-        steCutoffScore = this.getWeightedScpScore(sortedSte[params.steQuota - 1]);
+        steCutoffScore = this.getWeightedScpScore(
+          sortedSte[params.steQuota - 1],
+        );
       } else if (sortedSte.length > 0) {
-        steCutoffScore = this.getWeightedScpScore(sortedSte[sortedSte.length - 1]);
+        steCutoffScore = this.getWeightedScpScore(
+          sortedSte[sortedSte.length - 1],
+        );
       }
 
       const perSectionCounts = this.distributeQuotaToSections(
@@ -340,15 +386,17 @@ export class SectioningEngine {
       let steOffset = 0;
       perSectionCounts.forEach((count, sectionIndex) => {
         const targetSection = steSections[sectionIndex];
-        steToAssign.slice(steOffset, steOffset + count).forEach((app, idxInSegment) => {
-          const absoluteIdx = steOffset + idxInSegment;
-          preview.proposedAssignments.push(
-            this.mapToProposed(app, targetSection, isGrade7, {
-              rankingScore: this.getWeightedScpScore(app),
-              rank: absoluteIdx + 1
-            }),
-          );
-        });
+        steToAssign
+          .slice(steOffset, steOffset + count)
+          .forEach((app, idxInSegment) => {
+            const absoluteIdx = steOffset + idxInSegment;
+            preview.proposedAssignments.push(
+              this.mapToProposed(app, targetSection, isGrade7, {
+                rankingScore: this.getWeightedScpScore(app),
+                rank: absoluteIdx + 1,
+              }),
+            );
+          });
         steOffset += count;
       });
     } else {
@@ -359,8 +407,8 @@ export class SectioningEngine {
         if (availableSection) {
           preview.proposedAssignments.push(
             this.mapToProposed(app, availableSection, isGrade7, {
-              rankingScore: app.learner.previousGenAve ?? null,
-              rank: idx + 1
+              rankingScore: this.resolveGenAve(app, false) ?? null,
+              rank: idx + 1,
             }),
           );
           availableSection._count.enrollmentRecords++;
@@ -383,10 +431,17 @@ export class SectioningEngine {
         spillover: steSpillover.length,
         steCutoffScore,
         reclassifiedLearners: steSpillover.map((app, idx) =>
-          this.mapToProposed(app, { id: 0, name: "RECLASSIFIED" } as SectionWithCount, isGrade7, {
-            rankingScore: isGrade7 ? this.getWeightedScpScore(app) : (app.learner.previousGenAve ?? null),
-            rank: steToAssign.length + idx + 1
-          }),
+          this.mapToProposed(
+            app,
+            { id: 0, name: "RECLASSIFIED" } as SectionWithCount,
+            isGrade7,
+            {
+              rankingScore: isGrade7
+                ? this.getWeightedScpScore(app)
+                : (this.resolveGenAve(app, false) ?? null),
+              rank: steToAssign.length + idx + 1,
+            },
+          ),
         ),
         sections: steSections.map((s) => s.name),
       },
@@ -399,8 +454,8 @@ export class SectioningEngine {
     ];
 
     const sortedRegular = regularPool.sort((a, b) => {
-      const aveA = isGrade7 ? (a.previousSchool?.generalAverage ?? 0) : (a.learner.previousGenAve ?? 0);
-      const aveB = isGrade7 ? (b.previousSchool?.generalAverage ?? 0) : (b.learner.previousGenAve ?? 0);
+      const aveA = this.resolveGenAve(a, isGrade7) ?? 0;
+      const aveB = this.resolveGenAve(b, isGrade7) ?? 0;
       return aveB - aveA;
     });
 
@@ -410,27 +465,43 @@ export class SectioningEngine {
 
     if (isGrade7) {
       if (pilotSections.length < params.pilotSectionCount) {
-        throw new AppError(400, `Config requires ${params.pilotSectionCount} BEC Pilot section(s), but only ${pilotSections.length} found.`);
+        throw new AppError(
+          400,
+          `Config requires ${params.pilotSectionCount} BEC Pilot section(s), but only ${pilotSections.length} found.`,
+        );
       }
       const pilotPoolLimit = params.pilotSectionCount * params.sectionCapacity;
       pilotToAssign = sortedRegular.slice(0, pilotPoolLimit);
       remainingPool = sortedRegular.slice(pilotPoolLimit);
 
       if (sortedRegular.length >= pilotPoolLimit) {
-        pilotCutoffAve = pilotToAssign[pilotToAssign.length - 1].previousSchool?.generalAverage ?? null;
+        pilotCutoffAve =
+          pilotToAssign[pilotToAssign.length - 1].previousSchool
+            ?.generalAverage ?? null;
       } else if (sortedRegular.length > 0) {
-        pilotCutoffAve = sortedRegular[sortedRegular.length - 1].previousSchool?.generalAverage ?? null;
+        pilotCutoffAve =
+          sortedRegular[sortedRegular.length - 1].previousSchool
+            ?.generalAverage ?? null;
       }
 
       pilotToAssign.forEach((app, index) => {
-        const sectionIndex = Math.min(Math.floor(index / params.sectionCapacity), pilotSections.length - 1);
-        preview.proposedAssignments.push(this.mapToProposed(app, pilotSections[sectionIndex], isGrade7));
+        const sectionIndex = Math.min(
+          Math.floor(index / params.sectionCapacity),
+          pilotSections.length - 1,
+        );
+        preview.proposedAssignments.push(
+          this.mapToProposed(app, pilotSections[sectionIndex], isGrade7),
+        );
       });
     } else {
       sortedRegular.forEach((app) => {
-        const availablePilot = pilotSections.find((s) => s.maxCapacity - s._count.enrollmentRecords > 0);
+        const availablePilot = pilotSections.find(
+          (s) => s.maxCapacity - s._count.enrollmentRecords > 0,
+        );
         if (availablePilot) {
-          preview.proposedAssignments.push(this.mapToProposed(app, availablePilot, isGrade7));
+          preview.proposedAssignments.push(
+            this.mapToProposed(app, availablePilot, isGrade7),
+          );
           availablePilot._count.enrollmentRecords++;
           pilotToAssign.push(app);
         } else {
@@ -448,7 +519,11 @@ export class SectioningEngine {
         assigned: pilotToAssign.length,
         pilotCutoffAve,
         reclassifiedLearners: remainingPool.map((app) =>
-          this.mapToProposed(app, { id: 0, name: "RECLASSIFIED" } as SectionWithCount, isGrade7),
+          this.mapToProposed(
+            app,
+            { id: 0, name: "RECLASSIFIED" } as SectionWithCount,
+            isGrade7,
+          ),
         ),
         sections: pilotSections.map((s) => s.name),
       },
@@ -457,14 +532,23 @@ export class SectioningEngine {
     // --- STEP 3: Heterogeneous Snake Draft ---
     if (remainingPool.length > 0) {
       if (heteroSections.length === 0) {
-        throw new AppError(400, "Insufficient heterogeneous sections for remaining pool.");
+        throw new AppError(
+          400,
+          "Insufficient heterogeneous sections for remaining pool.",
+        );
       }
 
-      this.distributeEquitably(remainingPool, heteroSections, preview, isGrade7);
+      this.distributeEquitably(
+        remainingPool,
+        heteroSections,
+        preview,
+        isGrade7,
+      );
 
       preview.steps.push({
         title: "Heterogeneous Snake Draft",
-        description: "Distributed remaining pool equitably using a zig-zag snake draft.",
+        description:
+          "Distributed remaining pool equitably using a zig-zag snake draft.",
         stats: {
           assigned: remainingPool.length,
           sections: heteroSections.map((s) => s.name),
@@ -484,20 +568,34 @@ export class SectioningEngine {
     const males = pool.filter((a) => a.learner.sex === "MALE");
     const females = pool.filter((a) => a.learner.sex === "FEMALE");
 
-    const isFrustrated = (level: string | null) => level === "FRUSTRATION" || level === "NON_READER";
+    const isFrustrated = (level: string | null) =>
+      level === "FRUSTRATION" || level === "NON_READER";
 
-    const frustratedMales = males.filter((m) => isFrustrated(m.readingProfileLevel));
-    const standardMales = males.filter((m) => !isFrustrated(m.readingProfileLevel));
-    const frustratedFemales = females.filter((f) => isFrustrated(f.readingProfileLevel));
-    const standardFemales = females.filter((f) => !isFrustrated(f.readingProfileLevel));
+    const frustratedMales = males.filter((m) =>
+      isFrustrated(m.readingProfileLevel),
+    );
+    const standardMales = males.filter(
+      (m) => !isFrustrated(m.readingProfileLevel),
+    );
+    const frustratedFemales = females.filter((f) =>
+      isFrustrated(f.readingProfileLevel),
+    );
+    const standardFemales = females.filter(
+      (f) => !isFrustrated(f.readingProfileLevel),
+    );
 
     const sortFn = (a: ApplicantWithRelations, b: ApplicantWithRelations) => {
-      const aveA = isGrade7 ? (a.previousSchool?.generalAverage || 0) : (a.learner.previousGenAve || 0);
-      const aveB = isGrade7 ? (b.previousSchool?.generalAverage || 0) : (b.learner.previousGenAve || 0);
+      const aveA = this.resolveGenAve(a, isGrade7) || 0;
+      const aveB = this.resolveGenAve(b, isGrade7) || 0;
       return aveB - aveA;
     };
 
-    [frustratedMales, frustratedFemales, standardMales, standardFemales].forEach((p) => p.sort(sortFn));
+    [
+      frustratedMales,
+      frustratedFemales,
+      standardMales,
+      standardFemales,
+    ].forEach((p) => p.sort(sortFn));
 
     let sectionIndex = 0;
     let direction = 1;
@@ -505,7 +603,9 @@ export class SectioningEngine {
     const assignBatch = (batch: ApplicantWithRelations[]) => {
       batch.forEach((app) => {
         const targetSection = sections[sectionIndex];
-        preview.proposedAssignments.push(this.mapToProposed(app, targetSection, isGrade7));
+        preview.proposedAssignments.push(
+          this.mapToProposed(app, targetSection, isGrade7),
+        );
 
         sectionIndex += direction;
         if (sectionIndex >= sections.length) {
@@ -519,7 +619,10 @@ export class SectioningEngine {
     };
 
     const frustratedCombined: ApplicantWithRelations[] = [];
-    const maxFrustrated = Math.max(frustratedMales.length, frustratedFemales.length);
+    const maxFrustrated = Math.max(
+      frustratedMales.length,
+      frustratedFemales.length,
+    );
     for (let i = 0; i < maxFrustrated; i++) {
       if (frustratedMales[i]) frustratedCombined.push(frustratedMales[i]);
       if (frustratedFemales[i]) frustratedCombined.push(frustratedFemales[i]);
@@ -543,13 +646,10 @@ export class SectioningEngine {
   ) {
     let raw: number | null | undefined = null;
 
-    if (isGrade7) {
-      raw = app.previousSchool?.generalAverage ?? app.learner.previousGenAve;
-    } else {
-      raw = app.learner.previousGenAve ?? app.previousSchool?.generalAverage;
-    }
+    raw = this.resolveGenAve(app, isGrade7);
 
-    const genAve = (raw !== null && raw !== undefined) ? parseFloat(String(raw)) : null;
+    const genAve =
+      raw !== null && raw !== undefined ? parseFloat(String(raw)) : null;
 
     return {
       applicationId: app.id,

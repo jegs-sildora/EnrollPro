@@ -176,10 +176,13 @@ const EARLY_REG_TRANSITIONS: Record<string, ApplicationStatus[]> = {
     "WITHDRAWN",
   ],
   TEMPORARILY_ENROLLED: ["ENROLLED", "WITHDRAWN"],
-  ENROLLED: ["WITHDRAWN"],
+  ENROLLED: ["WITHDRAWN", "TRANSFERRING_OUT", "TRANSFERRED_OUT", "DROPPED"],
   FAILED_ASSESSMENT: ["UNDER_REVIEW", "WITHDRAWN", "REJECTED"],
   REJECTED: ["UNDER_REVIEW", "WITHDRAWN"],
   WITHDRAWN: [],
+  TRANSFERRING_OUT: ["TRANSFERRED_OUT", "WITHDRAWN"],
+  TRANSFERRED_OUT: [],
+  DROPPED: [],
 };
 
 function resolveAllowedTransitionsForApplication(
@@ -559,7 +562,7 @@ const CHECKLIST_BOOLEAN_KEYS = [
 
 type ChecklistBooleanKey = (typeof CHECKLIST_BOOLEAN_KEYS)[number];
 type ChecklistPatch = Partial<Record<ChecklistBooleanKey, boolean>>;
-type AcademicStatusValue = "PROMOTED" | "RETAINED";
+type AcademicStatusValue = "PROMOTED" | "RETAINED" | "CONDITIONALLY_PROMOTED";
 
 const DEFAULT_ACADEMIC_STATUS: AcademicStatusValue = "PROMOTED";
 
@@ -1608,7 +1611,7 @@ export async function index(req: Request, res: Response, next: NextFunction) {
 
     const page = Math.max(1, parseInt(String(req.query.page)) || 1);
     const limit = Math.min(
-      100,
+      1000000,
       Math.max(1, parseInt(String(req.query.limit)) || 20),
     );
     const search = (req.query.search as string)?.trim() || "";
@@ -3575,11 +3578,13 @@ export async function batchAssignRegularSection(
           },
           create: {
             enrollmentApplicationId: enrollmentApplication.id,
+            learnerId: registration.learnerId,
             sectionId,
             schoolYearId: registration.schoolYearId,
             enrolledById: req.user!.userId,
           },
           update: {
+            learnerId: registration.learnerId,
             sectionId,
             schoolYearId: registration.schoolYearId,
             enrolledById: req.user!.userId,
@@ -4503,6 +4508,7 @@ export async function approve(req: Request, res: Response, next: NextFunction) {
       const enrollment = await tx.enrollmentRecord.create({
         data: {
           enrollmentApplicationId: enrollmentApp.id,
+          learnerId: reg.learnerId,
           sectionId,
           schoolYearId: reg.schoolYearId,
           enrolledById: req.user!.userId,
@@ -5314,11 +5320,13 @@ export async function batchAssignRegularSectionsCommit(
               where: { enrollmentApplicationId: enrollmentApplication.id },
               create: {
                 enrollmentApplicationId: enrollmentApplication.id,
+                learnerId: reg.learnerId,
                 sectionId: plan.sectionId,
                 schoolYearId: reg.schoolYearId,
                 enrolledById: req.user!.userId,
               },
               update: {
+                learnerId: reg.learnerId,
                 sectionId: plan.sectionId,
                 schoolYearId: reg.schoolYearId,
                 enrolledById: req.user!.userId,

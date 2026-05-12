@@ -292,6 +292,7 @@ export function createEarlyRegistrationOperationsController(
         const enrollment = await tx.enrollmentRecord.create({
           data: {
             enrollmentApplicationId: enrollmentAppId,
+            learnerId: applicant.learnerId,
             sectionId,
             schoolYearId: applicant.schoolYearId,
             enrolledById: req.user!.userId,

@@ -20,7 +20,8 @@ import { Badge } from "@/shared/ui/badge";
 import { SheetTitle, SheetDescription } from "@/shared/ui/sheet";
 import { UserPhoto } from "@/shared/components/UserPhoto";
 import { ImageEnlarger } from "@/shared/components/ImageEnlarger";
-import { getImageUrl } from "@/shared/lib/utils";
+import { getImageUrl, formatEosyStatus } from "@/shared/lib/utils";
+import type { EosyStatus } from "@enrollpro/shared";
 import type { ApplicantDetail } from "@/features/enrollment/hooks/useApplicationDetail";
 import {
   PersonalInfo,
@@ -87,7 +88,7 @@ export interface StudentDetail {
     advisingTeacher: string | null;
     enrolledAt: string;
     enrolledBy: string;
-    eosyStatus?: "TRANSFERRED_OUT" | "DROPPED_OUT" | null;
+    eosyStatus?: EosyStatus | null;
     dropOutReason?: string | null;
     dropOutDate?: string | null;
     transferOutDate?: string | null;
@@ -374,7 +375,7 @@ export function StudentDetailPanel({
             </div>
             <div className="p-4 text-sm space-y-2">
               <p className="font-black text-primary uppercase">
-                {student.enrollment.eosyStatus.replace("_", " ")}
+                {formatEosyStatus(student.enrollment.eosyStatus)}
               </p>
               {student.enrollment.transferOutDate && (
                 <p className="text-xs">

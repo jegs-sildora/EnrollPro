@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Loader2, Pencil, RefreshCw, X } from "lucide-react";
+import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Input } from "@/shared/ui/input";
@@ -143,7 +144,8 @@ export default function PipelineBatchVerifyGrid({
                     className="h-5 w-5"
                     disabled={isBatchProcessing}
                     onClick={() => onStartLrnEdit(applicant.id)}
-                    title="Edit LRN">
+                    title="Edit LRN"
+                  >
                     <Pencil className="size-3.5" />
                   </Button>
                   {applicant.isPendingLrnCreation && (
@@ -175,7 +177,8 @@ export default function PipelineBatchVerifyGrid({
                       !hasValidLrnDraft ||
                       !hasChangedLrn
                     }
-                    onClick={() => onSaveLrn(applicant.id)}>
+                    onClick={() => onSaveLrn(applicant.id)}
+                  >
                     {savingLrnId === applicant.id ? (
                       <Loader2 className="size-3 animate-spin" />
                     ) : (
@@ -188,7 +191,8 @@ export default function PipelineBatchVerifyGrid({
                     variant="ghost"
                     className="h-7 px-1"
                     disabled={isBatchProcessing || savingLrnId === applicant.id}
-                    onClick={() => onCancelLrnEdit(applicant.id)}>
+                    onClick={() => onCancelLrnEdit(applicant.id)}
+                  >
                     <X className="size-3.5" />
                   </Button>
                 </div>
@@ -216,7 +220,8 @@ export default function PipelineBatchVerifyGrid({
                     <span
                       className={`font-bold ${
                         isRetained ? "text-foreground" : "text-foreground"
-                      }`}>
+                      }`}
+                    >
                       All required docs
                     </span>
                   </>
@@ -242,12 +247,16 @@ export default function PipelineBatchVerifyGrid({
                   value as AcademicStatusValue,
                 )
               }
-              disabled={isBatchProcessing}>
+              disabled={isBatchProcessing}
+            >
               <SelectTrigger className="h-8 w-full text-xs font-bold">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="PROMOTED">Promoted</SelectItem>
+                <SelectItem value="CONDITIONALLY_PROMOTED">
+                  Cond. Promoted
+                </SelectItem>
                 <SelectItem value="RETAINED">Retained</SelectItem>
               </SelectContent>
             </Select>
@@ -289,13 +298,20 @@ export default function PipelineBatchVerifyGrid({
             const academicStatus =
               verifyAcademicStatuses[applicant.id] ?? "PROMOTED";
             const isRetained = academicStatus === "RETAINED";
+            const isConditionallyPromoted =
+              academicStatus === "CONDITIONALLY_PROMOTED";
             return (
               <div
                 className={`flex items-center justify-center ${
                   isRetained ? "opacity-50" : ""
-                }`}>
+                }`}
+              >
                 <Checkbox
-                  className={verificationCheckboxClassName}
+                  className={cn(
+                    verificationCheckboxClassName,
+                    isConditionallyPromoted &&
+                      "border-amber-400 data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600",
+                  )}
                   checked={Boolean(
                     verifyGridValues[applicant.id]?.[column.key],
                   )}
@@ -319,36 +335,53 @@ export default function PipelineBatchVerifyGrid({
         const academicStatus =
           verifyAcademicStatuses[applicant.id] ?? "PROMOTED";
         const isRetained = academicStatus === "RETAINED";
+        const isConditionallyPromoted =
+          academicStatus === "CONDITIONALLY_PROMOTED";
         const rowReady = isVerifyRowReady(applicant.id);
         const rowMarked = Boolean(verifyRowsMarked[applicant.id]);
         const clearanceDisabled =
           isBatchProcessing || (!isRetained && !rowReady);
-        const clearanceClassName = isRetained
-          ? rowMarked
+
+        let clearanceClassName = "";
+        if (isRetained) {
+          clearanceClassName = rowMarked
             ? "border-amber-700 bg-amber-600 text-white"
-            : "border-amber-300 bg-amber-100 text-amber-800"
-          : rowMarked
+            : "border-amber-300 bg-amber-100 text-amber-800";
+        } else if (isConditionallyPromoted) {
+          clearanceClassName = rowMarked
+            ? "border-amber-700 bg-amber-600 text-white shadow-sm"
+            : rowReady
+              ? "border-amber-400 bg-amber-50 text-amber-900"
+              : "border-border bg-muted/60 text-foreground opacity-60";
+        } else {
+          clearanceClassName = rowMarked
             ? "border-emerald-700 bg-emerald-600 text-white"
             : rowReady
               ? "border-primary/90 bg-primary text-primary-foreground"
               : "border-border bg-muted/60 text-foreground opacity-60";
+        }
+
         const clearanceLabel = isRetained
           ? rowMarked
             ? "Retained Tagged"
             : "Mark Retained"
-          : rowMarked
-            ? disableDocumentChecks
-              ? "Marked"
-              : "Cleared"
-            : disableDocumentChecks
-              ? "Mark Handoff"
-              : "Mark Verified";
-
+          : isConditionallyPromoted
+            ? rowMarked
+              ? "Verify (Cond. P)"
+              : "Mark Verified"
+            : rowMarked
+              ? disableDocumentChecks
+                ? "Marked"
+                : "Cleared"
+              : disableDocumentChecks
+                ? "Mark Handoff"
+                : "Mark Verified";
         return (
           <div
             className={`inline-flex items-center gap-2 rounded-md border px-2 py-1 transition-colors mx-auto ${clearanceClassName} ${
               clearanceDisabled ? "cursor-not-allowed" : "cursor-pointer"
-            }`}>
+            }`}
+          >
             <Checkbox
               className={verificationCheckboxClassName}
               checked={rowMarked}
@@ -424,7 +457,8 @@ export default function PipelineBatchVerifyGrid({
             size="sm"
             className="h-8 text-xs font-bold"
             onClick={onReload}
-            disabled={isBatchProcessing || verifyGridLoading}>
+            disabled={isBatchProcessing || verifyGridLoading}
+          >
             {verifyGridLoading ? (
               <Loader2 className="size-3.5 animate-spin mr-1.5" />
             ) : (

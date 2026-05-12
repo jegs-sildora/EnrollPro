@@ -219,12 +219,12 @@ async function createFixture(seed: string): Promise<IntegrationFixture> {
     const enrollmentRecord = await prisma.enrollmentRecord.create({
       data: {
         enrollmentApplicationId: enrollmentApplication.id,
+        learnerId: learner.id,
         schoolYearId: schoolYear.id,
         sectionId: section.id,
         enrolledById: user.id,
       },
-    });
-    fixture.enrollmentRecordId = enrollmentRecord.id;
+    });    fixture.enrollmentRecordId = enrollmentRecord.id;
 
     const teacherDesignation = await prisma.teacherDesignation.create({
       data: {

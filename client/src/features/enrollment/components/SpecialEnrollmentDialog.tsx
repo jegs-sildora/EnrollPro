@@ -20,6 +20,7 @@ import {
 import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
+import type { AcademicStatus } from "@enrollpro/shared";
 
 interface SpecialEnrollmentDialogProps {
   open: boolean;
@@ -39,7 +40,22 @@ export function SpecialEnrollmentDialog({
     { id: number; name: string }[]
   >([]);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    lrn: string;
+    firstName: string;
+    lastName: string;
+    middleName: string;
+    extensionName: string;
+    birthdate: string;
+    sex: string;
+    learnerType: string;
+    applicantType: string;
+    gradeLevelId: string;
+    academicStatus: AcademicStatus;
+    originSchoolName: string;
+    peptCertificateNumber: string;
+    peptPassingDate: string;
+  }>({
     lrn: "",
     firstName: "",
     lastName: "",

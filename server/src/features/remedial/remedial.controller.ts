@@ -23,7 +23,7 @@ export async function getRemedialPending(
       ? parsePositiveInt(req.query.schoolYearId, 0) || undefined
       : undefined;
     const page = parsePositiveInt(req.query.page, 1);
-    const limit = Math.min(parsePositiveInt(req.query.limit, 20), 100);
+    const limit = Math.min(parsePositiveInt(req.query.limit, 20), 1000000);
     const skip = (page - 1) * limit;
 
     const where = {

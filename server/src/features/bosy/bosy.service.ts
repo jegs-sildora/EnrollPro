@@ -1,3 +1,10 @@
+// Refreshed status enum support
+import {
+  PrismaClient,
+  ApplicationStatus,
+  LearnerType,
+  ApplicantType,
+} from "../../generated/prisma/index.js";
 import { prisma } from "../../lib/prisma.js";
 
 export interface BOSYReadiness {
@@ -9,6 +16,7 @@ export interface BOSYReadiness {
   readyForSectioningCount: number;
   enrolledCount: number;
   jhsCompleterCount: number;
+  droppedCount: number;
 }
 
 export interface BOSYQueueItem {
@@ -53,18 +61,63 @@ export interface BulkConfirmResult {
 export async function getBOSYReadiness(
   schoolYearId: number,
 ): Promise<BOSYReadiness> {
+  const schoolYear = await prisma.schoolYear.findUnique({
+    where: { id: schoolYearId },
+    select: { id: true, yearLabel: true, isEosyFinalized: true, clonedFromId: true },
+  });
+
+  if (!schoolYear) {
+    throw Object.assign(new Error("School year not found."), { status: 404 });
+  }
+
+  const prevSchoolYearId = schoolYear.clonedFromId;
+
+  // If we have a previous year, we need to count learners who WERE enrolled but DON'T have an application yet.
+  // These are "missing" from the current year's PENDING_CONFIRMATION queue but SHOULD be there.
+  let missingContinuingCount = 0;
+  if (prevSchoolYearId) {
+    // Subquery: learner IDs who already have an application in the current year
+    const existingAppLearnerIds = await prisma.enrollmentApplication.findMany({
+      where: { schoolYearId },
+      select: { learnerId: true },
+    });
+    const excludedIds = existingAppLearnerIds.map((a) => a.learnerId);
+
+    missingContinuingCount = await prisma.enrollmentRecord.count({
+      where: {
+        schoolYearId: prevSchoolYearId,
+        learnerId: excludedIds.length > 0 ? { notIn: excludedIds } : undefined,
+        enrollmentApplication: {
+          status: { in: ["ENROLLED", "OFFICIALLY_ENROLLED", "TEMPORARILY_ENROLLED"] },
+        },
+        OR: [
+          { eosyStatus: { equals: null } },
+          { eosyStatus: { notIn: ["DROPPED_OUT", "TRANSFERRED_OUT", "IRREGULAR"] } }
+        ],
+        // Exclude Grade 10 Promoted (they graduate JHS)
+        NOT: {
+          AND: [
+            { section: { gradeLevel: { displayOrder: 10 } } },
+            { 
+              OR: [
+                { eosyStatus: { equals: null } },
+                { eosyStatus: "PROMOTED" }
+              ] 
+            },
+          ],
+        },
+      },
+    });
+  }
+
   const [
-    schoolYear,
     irregularBlockerCount,
-    pendingConfirmationCount,
+    existingPendingCount,
     readyForSectioningCount,
     enrolledCount,
     jhsCompleterCount,
+    droppedCount,
   ] = await Promise.all([
-    prisma.schoolYear.findUnique({
-      where: { id: schoolYearId },
-      select: { id: true, yearLabel: true, isEosyFinalized: true },
-    }),
     prisma.enrollmentRecord.count({
       where: { schoolYearId, eosyStatus: "IRREGULAR" },
     }),
@@ -86,27 +139,31 @@ export async function getBOSYReadiness(
       where: {
         schoolYearId,
         learnerType: "CONTINUING",
-        status: "ENROLLED",
+        status: { in: ["ENROLLED", "OFFICIALLY_ENROLLED"] },
       },
     }),
     prisma.learner.count({
       where: { status: "JHS_COMPLETER" },
     }),
+    prisma.enrollmentApplication.count({
+      where: {
+        schoolYearId,
+        learnerType: "CONTINUING",
+        status: { in: ["DROPPED", "TRANSFERRED_OUT", "TRANSFERRING_OUT"] },
+      },
+    }),
   ]);
-
-  if (!schoolYear) {
-    throw Object.assign(new Error("School year not found."), { status: 404 });
-  }
 
   return {
     schoolYearId: schoolYear.id,
     schoolYearLabel: schoolYear.yearLabel,
     isEosyFinalized: schoolYear.isEosyFinalized,
     irregularBlockerCount,
-    pendingConfirmationCount,
+    pendingConfirmationCount: existingPendingCount + missingContinuingCount,
     readyForSectioningCount,
     enrolledCount,
     jhsCompleterCount,
+    droppedCount,
   };
 }
 
@@ -121,11 +178,20 @@ export async function getBOSYQueue(params: {
   const { schoolYearId, gradeLevelId, status, search, page, limit } = params;
   const skip = (page - 1) * limit;
 
-  const where = {
+  const where: any = {
     schoolYearId,
     learnerType: "CONTINUING" as const,
     ...(gradeLevelId ? { gradeLevelId } : {}),
-    ...(status ? { status } : {}),
+    ...(status
+      ? {
+          status:
+            status.trim() === "ENROLLED"
+              ? { in: ["ENROLLED", "OFFICIALLY_ENROLLED"] as ApplicationStatus[] }
+              : status.trim() === "DROPPED" || status.trim() === "TRANSFERRED_OUT"
+              ? { in: ["DROPPED", "TRANSFERRED_OUT", "TRANSFERRING_OUT"] as ApplicationStatus[] }
+              : (status.trim() as ApplicationStatus),
+        }
+      : {}),
     ...(search
       ? {
           learner: {
@@ -139,7 +205,7 @@ export async function getBOSYQueue(params: {
       : {}),
   };
 
-  const [applications, total] = await Promise.all([
+  const [applicationsRaw, total] = await Promise.all([
     prisma.enrollmentApplication.findMany({
       where,
       skip,
@@ -171,6 +237,21 @@ export async function getBOSYQueue(params: {
     }),
     prisma.enrollmentApplication.count({ where }),
   ]);
+
+  const applications = applicationsRaw as unknown as Array<{
+    id: number;
+    trackingNumber: string | null;
+    status: ApplicationStatus;
+    learner: {
+      id: number;
+      lrn: string | null;
+      firstName: string;
+      lastName: string;
+      middleName: string | null;
+    };
+    gradeLevel: { id: number; name: string };
+    checklist: { academicStatus: any } | null;
+  }>;
 
   // Resolve prior-year section and adviser for each learner in one batch
   const learnerIds = applications.map((a) => a.learner.id);
@@ -229,6 +310,128 @@ export async function getBOSYQueue(params: {
   });
 
   return { items, total, page, limit };
+}
+
+export async function syncBOSYQueue(
+  schoolYearId: number,
+  actingUserId: number,
+): Promise<{ created: number }> {
+  const schoolYear = await prisma.schoolYear.findUnique({
+    where: { id: schoolYearId },
+    select: { id: true, yearLabel: true, clonedFromId: true },
+  });
+
+  if (!schoolYear || !schoolYear.clonedFromId) {
+    return { created: 0 };
+  }
+
+  const prevSchoolYearId = schoolYear.clonedFromId;
+  const startYear = parseInt(schoolYear.yearLabel.split("-")[0]);
+
+  // Find all eligible records from previous year
+  const sourceRecords = await prisma.enrollmentRecord.findMany({
+    where: {
+      schoolYearId: prevSchoolYearId,
+      enrollmentApplication: {
+        status: { in: ["ENROLLED", "OFFICIALLY_ENROLLED", "TEMPORARILY_ENROLLED"] },
+      },
+      OR: [
+        { eosyStatus: { equals: null } },
+        { eosyStatus: { notIn: ["DROPPED_OUT", "TRANSFERRED_OUT", "IRREGULAR"] } }
+      ],
+      // Exclude Grade 10 Promoted
+      NOT: {
+        AND: [
+          { section: { gradeLevel: { displayOrder: 10 } } },
+          { 
+            OR: [
+              { eosyStatus: { equals: null } },
+              { eosyStatus: "PROMOTED" }
+            ] 
+          },
+        ],
+      },
+    },
+    select: {
+      eosyStatus: true,
+      learnerId: true,
+      enrollmentApplication: {
+        select: {
+          applicantType: true,
+          isPrivacyConsentGiven: true,
+          guardianRelationship: true,
+          hasNoMother: true,
+          hasNoFather: true,
+        },
+      },
+      section: {
+        select: {
+          gradeLevel: { select: { displayOrder: true } },
+        },
+      },
+    },
+  });
+
+  // Find existing applications to avoid duplicates
+  const existingApplications = await prisma.enrollmentApplication.findMany({
+    where: { schoolYearId },
+    select: { learnerId: true },
+  });
+  const existingLearnerIds = new Set(existingApplications.map((a) => a.learnerId));
+
+  const gradeLevels = await prisma.gradeLevel.findMany({
+    select: { id: true, displayOrder: true },
+  });
+  const gradeLevelByOrder = new Map(gradeLevels.map((g) => [g.displayOrder, g.id]));
+
+  let createdCount = 0;
+
+  for (const record of sourceRecords) {
+    if (existingLearnerIds.has(record.learnerId)) continue;
+
+    const eosyStatus = record.eosyStatus ?? "PROMOTED";
+    const sourceOrder = record.section.gradeLevel.displayOrder;
+    const targetOrder = eosyStatus === "PROMOTED" ? sourceOrder + 1 : sourceOrder;
+    const targetGradeLevelId = gradeLevelByOrder.get(targetOrder);
+
+    if (!targetGradeLevelId) continue;
+
+    const newApp = await prisma.enrollmentApplication.create({
+      data: {
+        learnerId: record.learnerId,
+        schoolYearId,
+        gradeLevelId: targetGradeLevelId,
+        applicantType: record.enrollmentApplication.applicantType,
+        learnerType: "CONTINUING",
+        status: "PENDING_CONFIRMATION",
+        admissionChannel: "F2F",
+        isPrivacyConsentGiven: record.enrollmentApplication.isPrivacyConsentGiven,
+        guardianRelationship: record.enrollmentApplication.guardianRelationship,
+        hasNoMother: record.enrollmentApplication.hasNoMother,
+        hasNoFather: record.enrollmentApplication.hasNoFather,
+        encodedById: actingUserId,
+      },
+    });
+
+    const trackingNumber = `REG-${startYear}-${String(newApp.id).padStart(5, "0")}`;
+    await prisma.enrollmentApplication.update({
+      where: { id: newApp.id },
+      data: { trackingNumber },
+    });
+
+    await prisma.applicationChecklist.create({
+      data: {
+        enrollmentId: newApp.id,
+        academicStatus: eosyStatus === "PROMOTED" ? "PROMOTED" : "RETAINED",
+        updatedById: actingUserId,
+      },
+    });
+
+    existingLearnerIds.add(record.learnerId);
+    createdCount++;
+  }
+
+  return { created: createdCount };
 }
 
 export async function confirmReturn(

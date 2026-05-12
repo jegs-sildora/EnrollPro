@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import {
-  type ApplicationStatus,
+  ApplicationStatus,
   type Prisma,
 } from "../../../generated/prisma/index.js";
 import {
@@ -170,7 +170,13 @@ const normalizeStatus = (value: unknown): ApplicationStatus | undefined => {
   if (typeof value !== "string") return undefined;
   const status = value.trim().toUpperCase();
   if (!status || status === "ALL") return undefined;
-  return status as ApplicationStatus;
+
+  // Validate against runtime enum values to prevent Prisma validation errors
+  if (Object.values(ApplicationStatus).includes(status as any)) {
+    return status as ApplicationStatus;
+  }
+
+  return undefined;
 };
 
 export const createStudentsQueryController = (
@@ -288,7 +294,6 @@ export const createStudentsQueryController = (
         return res.status(400).json({ message: "Invalid student id" });
       }
 
-      console.log(`[getStudentById] Fetching application ID: ${parsedId}`);
       const applicant = await deps.prisma.enrollmentApplication.findUnique({
         where: { id: parsedId },
         include: {
@@ -332,17 +337,15 @@ export const createStudentsQueryController = (
       });
 
       if (!applicant) {
-        console.log(`[getStudentById] Application ID ${parsedId} NOT FOUND`);
         return res.status(404).json({ message: "Student not found" });
       }
-
-      console.log(`[getStudentById] Found applicant: ${applicant.learner?.lastName}, ${applicant.learner?.firstName}`);
 
       const activeAdviser =
         applicant.enrollmentRecord?.section.advisers[0]?.teacher ?? null;
 
       const addresses = (applicant.addresses || []) as AddressLike[];
-      const familyMembers = (applicant.familyMembers || []) as FamilyMemberLike[];
+      const familyMembers = (applicant.familyMembers ||
+        []) as FamilyMemberLike[];
       const currentAddr = addresses.find((a) => a.addressType === "CURRENT");
       const permanentAddr = addresses.find(
         (a) => a.addressType === "PERMANENT",
@@ -351,8 +354,6 @@ export const createStudentsQueryController = (
       const father = familyMembers.find((f) => f.relationship === "FATHER");
       const guardian = familyMembers.find((f) => f.relationship === "GUARDIAN");
       const parentOrGuardian = pickParentOrGuardian(familyMembers);
-
-      console.log(`[getStudentById] Building student object for ID: ${applicant.id}`);
 
       const student = {
         id: applicant.id,
@@ -404,9 +405,9 @@ export const createStudentsQueryController = (
       res.json({ student });
     } catch (error) {
       console.error("[getStudentById] Error:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Failed to fetch student details",
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
     }
   };
@@ -435,7 +436,7 @@ export const createStudentsQueryController = (
       }
 
       const page = parsePositiveInt(req.query.page) ?? 1;
-      const limit = Math.min(parsePositiveInt(req.query.limit) ?? 25, 100);
+      const limit = Math.min(parsePositiveInt(req.query.limit) ?? 25, 1000000);
       const skip = (page - 1) * limit;
 
       const subjectFilters: Prisma.AuditLogWhereInput[] = [
@@ -525,7 +526,9 @@ export const createStudentsQueryController = (
       const schoolYearId = parsePositiveInt(req.query.schoolYearId);
 
       if (!learnerId || !schoolYearId) {
-        return res.status(400).json({ message: "learnerId and schoolYearId are required" });
+        return res
+          .status(400)
+          .json({ message: "learnerId and schoolYearId are required" });
       }
 
       // Try enrollment application first
@@ -540,17 +543,23 @@ export const createStudentsQueryController = (
       }
 
       // Fallback to early registration application
-      const earlyRegApp = await deps.prisma.earlyRegistrationApplication.findFirst({
-        where: { learnerId, schoolYearId },
-        select: { id: true },
-        orderBy: { createdAt: "desc" },
-      });
+      const earlyRegApp =
+        await deps.prisma.earlyRegistrationApplication.findFirst({
+          where: { learnerId, schoolYearId },
+          select: { id: true },
+          orderBy: { createdAt: "desc" },
+        });
 
       if (earlyRegApp) {
         return res.json({ id: earlyRegApp.id });
       }
 
-      return res.status(404).json({ message: "No record found for this student in the specified school year" });
+      return res
+        .status(404)
+        .json({
+          message:
+            "No record found for this student in the specified school year",
+        });
     } catch (error) {
       console.error("[getStudentApplicationIdBySY] Error:", error);
       res.status(500).json({ message: "Failed to look up student record" });

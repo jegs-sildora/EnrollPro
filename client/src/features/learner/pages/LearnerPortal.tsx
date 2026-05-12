@@ -19,6 +19,7 @@ import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { sileo } from "sileo";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import api from "@/shared/api/axiosInstance";
+import type { AxiosError } from "axios";
 import depedLogo from "@/assets/DepEd-logo.png";
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
@@ -61,7 +62,7 @@ export default function LearnerPortal() {
           "Your enrollment return has been confirmed. You are now queued for section assignment.",
       });
     } catch (e) {
-      toastApiError(e);
+      toastApiError(e as AxiosError<any>);
     } finally {
       setConfirmLoading(false);
     }

@@ -12,6 +12,7 @@ import {
   TrackingCurrentStepEnum,
   TrackingProgramTypeEnum,
   TrackingStatusEnum,
+  AcademicStatusEnum,
 } from "../constants/index.js";
 
 // ─── Shared sub-schemas ────────────────────────────────
@@ -326,10 +327,10 @@ export const specialEnrollmentSchema = z
     birthdate: z.string().or(z.date()),
     sex: SexEnum,
     placeOfBirth: z.string().trim().optional().nullable(),
-    learnerType: z.enum(["NEW_ENROLLEE", "TRANSFEREE", "RETURNING", "ALS"]),
+    learnerType: LearnerTypeEnum,
     applicantType: ApplicantTypeEnum.default("REGULAR"),
     gradeLevelId: z.number().int().positive("Grade level is required"),
-    academicStatus: z.enum(["PROMOTED", "RETAINED"]).default("PROMOTED"),
+    academicStatus: AcademicStatusEnum.default("PROMOTED"),
     originSchoolName: z.string().trim().optional().nullable(),
     peptCertificateNumber: z.string().trim().optional().nullable(),
     peptPassingDate: z.string().or(z.date()).optional().nullable(),
@@ -368,7 +369,7 @@ export const specialEnrollmentSchema = z
       .nullable(),
     checklist: z
       .object({
-        academicStatus: z.enum(["PROMOTED", "RETAINED"]).optional(),
+        academicStatus: AcademicStatusEnum.optional(),
         isPsaBirthCertPresented: z.boolean().optional(),
         isOriginalPsaBcCollected: z.boolean().optional(),
         isPsaPhase1CopyMatched: z.boolean().optional(),
@@ -504,7 +505,7 @@ export const updateChecklistSchema = z.object({
   isCertOfRecognitionPresented: z.boolean().optional(),
   isUndertakingSigned: z.boolean().optional(),
   isConfirmationSlipReceived: z.boolean().optional(),
-  academicStatus: z.enum(["PROMOTED", "RETAINED"]).optional(),
+  academicStatus: AcademicStatusEnum.optional(),
 });
 
 export const requestRevisionSchema = z.object({
@@ -745,10 +746,8 @@ const CHECKLIST_FIELD_KEYS = [
   "isConfirmationSlipReceived",
 ] as const;
 
-const ACADEMIC_STATUS_VALUES = ["PROMOTED", "RETAINED"] as const;
-
 export const checklistFieldKeySchema = z.enum(CHECKLIST_FIELD_KEYS);
-export const academicStatusSchema = z.enum(ACADEMIC_STATUS_VALUES);
+export const academicStatusSchema = AcademicStatusEnum;
 
 const checklistUpdateInputSchema = z.object({
   isPsaBirthCertPresented: z.boolean().optional(),
@@ -761,7 +760,7 @@ const checklistUpdateInputSchema = z.object({
   isCertOfRecognitionPresented: z.boolean().optional(),
   isUndertakingSigned: z.boolean().optional(),
   isConfirmationSlipReceived: z.boolean().optional(),
-  academicStatus: academicStatusSchema.optional(),
+  academicStatus: AcademicStatusEnum.optional(),
 });
 
 export const batchVerifyDocumentsPreviewSchema = z.object({

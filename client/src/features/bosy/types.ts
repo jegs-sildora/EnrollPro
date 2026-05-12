@@ -7,6 +7,7 @@ export interface BOSYReadiness {
   readyForSectioningCount: number;
   enrolledCount: number;
   jhsCompleterCount: number;
+  droppedCount: number;
 }
 
 export interface BOSYQueueItem {

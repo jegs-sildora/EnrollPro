@@ -13,6 +13,7 @@ import { Label } from "@/shared/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
 import { Loader2 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
+import type { AxiosError } from "axios";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { sileo } from "sileo";
 
@@ -67,7 +68,7 @@ export function RemedialResolutionModal({
       onResolved(recordId, outcome);
       handleClose();
     } catch (error) {
-      toastApiError(error);
+      toastApiError(error as AxiosError<any>);
     } finally {
       setLoading(false);
     }
