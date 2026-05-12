@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { AppError } from "../../../lib/AppError.js";
 import { Prisma } from "../../../generated/prisma/index.js";
+import bcrypt from "bcryptjs";
 import {
   generateTrackingNumber,
   getTrackingPrefix,
@@ -640,6 +641,10 @@ export function createEarlyRegistrationLifecycleController(
           data: { isPendingLrnCreation: false },
         });
 
+        // Ensure Learner has a corresponding User record (Single Source of Truth)
+        const { ensureLearnerUserAccount } = await import("../../learner/learner.service.js");
+        await ensureLearnerUserAccount(tx, fullApplicant.learner);
+
         return enrollment;
       });
 
@@ -852,7 +857,10 @@ export function createEarlyRegistrationLifecycleController(
           ? { lrn: normalizedLrn }
           : { firstName, lastName, birthdate: parsedBirthdate },
       });
-      console.log(`[specialEnrollment] Learner found by ${normalizedLrn ? 'LRN' : 'Name'}:`, learner?.id || 'NOT FOUND');
+      console.log(
+        `[specialEnrollment] Learner found by ${normalizedLrn ? "LRN" : "Name"}:`,
+        learner?.id || "NOT FOUND",
+      );
 
       if (!learner) {
         learner = await prisma.learner.create({
@@ -884,7 +892,10 @@ export function createEarlyRegistrationLifecycleController(
             isPendingLrnCreation: hasNoLrn || !normalizedLrn,
           },
         });
-        console.log(`[specialEnrollment] Updated existing learner:`, learner.id);
+        console.log(
+          `[specialEnrollment] Updated existing learner:`,
+          learner.id,
+        );
       }
 
       // 2. Get active school year
@@ -895,7 +906,10 @@ export function createEarlyRegistrationLifecycleController(
         throw new AppError(422, "No active school year found.");
       }
       const activeSchoolYear = settings.activeSchoolYear;
-      console.log(`[specialEnrollment] Active School Year ID:`, activeSchoolYear.id);
+      console.log(
+        `[specialEnrollment] Active School Year ID:`,
+        activeSchoolYear.id,
+      );
 
       const existingEnrollment = await prisma.enrollmentApplication.findFirst({
         where: {
@@ -909,7 +923,10 @@ export function createEarlyRegistrationLifecycleController(
           trackingNumber: true,
         },
       });
-      console.log(`[specialEnrollment] Existing Enrollment:`, existingEnrollment);
+      console.log(
+        `[specialEnrollment] Existing Enrollment:`,
+        existingEnrollment,
+      );
 
       const updatableStatuses = new Set([
         "PENDING_BEEF",
@@ -923,15 +940,18 @@ export function createEarlyRegistrationLifecycleController(
         Number.isInteger(requestedEnrollmentId) &&
         requestedEnrollmentId > 0
       ) {
-        console.log(`[specialEnrollment] Requested Enrollment ID:`, requestedEnrollmentId);
+        console.log(
+          `[specialEnrollment] Requested Enrollment ID:`,
+          requestedEnrollmentId,
+        );
         const requestedEnrollment =
           await prisma.enrollmentApplication.findFirst({
-              where: {
-                id: requestedEnrollmentId,
-                learnerId: learner.id,
-                schoolYearId: settings.activeSchoolYearId || undefined,
-                status: { notIn: ["REJECTED", "WITHDRAWN"] },
-              },
+            where: {
+              id: requestedEnrollmentId,
+              learnerId: learner.id,
+              schoolYearId: settings.activeSchoolYearId || undefined,
+              status: { notIn: ["REJECTED", "WITHDRAWN"] },
+            },
             select: {
               id: true,
               status: true,
@@ -940,7 +960,10 @@ export function createEarlyRegistrationLifecycleController(
           });
 
         if (requestedEnrollment) {
-          console.log(`[specialEnrollment] Found requested enrollment:`, requestedEnrollment);
+          console.log(
+            `[specialEnrollment] Found requested enrollment:`,
+            requestedEnrollment,
+          );
           targetEnrollment = requestedEnrollment;
         } else {
           console.warn(
@@ -949,9 +972,14 @@ export function createEarlyRegistrationLifecycleController(
         }
       }
 
-      console.log(`[specialEnrollment] Resolved Target Enrollment:`, targetEnrollment);
+      console.log(
+        `[specialEnrollment] Resolved Target Enrollment:`,
+        targetEnrollment,
+      );
       if (targetEnrollment && !updatableStatuses.has(targetEnrollment.status)) {
-        console.warn(`[specialEnrollment] Target enrollment status ${targetEnrollment.status} is NOT updatable.`);
+        console.warn(
+          `[specialEnrollment] Target enrollment status ${targetEnrollment.status} is NOT updatable.`,
+        );
         throw new AppError(
           409,
           `An active enrollment already exists for this learner (Tracking: ${targetEnrollment.trackingNumber ?? `#${targetEnrollment.id}`}, Status: ${targetEnrollment.status}).`,
@@ -970,55 +998,58 @@ export function createEarlyRegistrationLifecycleController(
             : "VERIFIED";
 
       console.log(`[specialEnrollment] Resolved Status:`, resolvedStatus);
-      console.log(`[specialEnrollment] Target Enrollment Action:`, targetEnrollment ? 'UPDATE' : 'CREATE');
+      console.log(
+        `[specialEnrollment] Target Enrollment Action:`,
+        targetEnrollment ? "UPDATE" : "CREATE",
+      );
 
       let persistedApplication;
       try {
         persistedApplication = targetEnrollment
-            ? await prisma.enrollmentApplication.update({
-                where: { id: targetEnrollment.id },
-                data: {
-                  gradeLevelId: gradeLevel.id,
-                  applicantType: applicantType as any,
-                  learnerType: learnerType as any,
-                  status: resolvedStatus,
-                  intakeMethod: "BEEF_FULL",
-                  admissionChannel: "F2F",
-                  guardianRelationship: normalizeOptional(
-                    data.guardianRelationship,
-                  ),
-                  hasNoMother: !motherData,
-                  hasNoFather: !fatherData,
-                  encodedById: req.user!.userId,
-                  isPrivacyConsentGiven: true,
-                  isTemporarilyEnrolled: shouldTemporarilyEnroll,
-                  isMissingSf9: data.isMissingSf9 || false,
-                  hasSf9CertificationLetter:
-                    data.hasSf9CertificationLetter || false,
-                  hasUnsettledPrivateAccount:
-                    data.hasUnsettledPrivateAccount || false,
-                  originatingSchoolName: normalizeOptional(
-                    data.originatingSchoolName,
-                  ),
-                },
-                include: { learner: true },
-              })
-            : await prisma.enrollmentApplication.create({
-                data: {
-                  learnerId: learner.id,
-                  schoolYearId: settings.activeSchoolYearId!,
-                  gradeLevelId: gradeLevel.id,
-                  applicantType: applicantType as any,
-                  learnerType: learnerType as any,
-                  status: resolvedStatus,
-                  intakeMethod: "BEEF_FULL",
-                  admissionChannel: "F2F",
-                  guardianRelationship: normalizeOptional(
-                    data.guardianRelationship,
-                  ),
-                  hasNoMother: !motherData,
-                  hasNoFather: !fatherData,
-                  encodedById: req.user!.userId,
+          ? await prisma.enrollmentApplication.update({
+              where: { id: targetEnrollment.id },
+              data: {
+                gradeLevelId: gradeLevel.id,
+                applicantType: applicantType as any,
+                learnerType: learnerType as any,
+                status: resolvedStatus,
+                intakeMethod: "BEEF_FULL",
+                admissionChannel: "F2F",
+                guardianRelationship: normalizeOptional(
+                  data.guardianRelationship,
+                ),
+                hasNoMother: !motherData,
+                hasNoFather: !fatherData,
+                encodedById: req.user!.userId,
+                isPrivacyConsentGiven: true,
+                isTemporarilyEnrolled: shouldTemporarilyEnroll,
+                isMissingSf9: data.isMissingSf9 || false,
+                hasSf9CertificationLetter:
+                  data.hasSf9CertificationLetter || false,
+                hasUnsettledPrivateAccount:
+                  data.hasUnsettledPrivateAccount || false,
+                originatingSchoolName: normalizeOptional(
+                  data.originatingSchoolName,
+                ),
+              },
+              include: { learner: true },
+            })
+          : await prisma.enrollmentApplication.create({
+              data: {
+                learnerId: learner.id,
+                schoolYearId: settings.activeSchoolYearId!,
+                gradeLevelId: gradeLevel.id,
+                applicantType: applicantType as any,
+                learnerType: learnerType as any,
+                status: resolvedStatus,
+                intakeMethod: "BEEF_FULL",
+                admissionChannel: "F2F",
+                guardianRelationship: normalizeOptional(
+                  data.guardianRelationship,
+                ),
+                hasNoMother: !motherData,
+                hasNoFather: !fatherData,
+                encodedById: req.user!.userId,
                 isPrivacyConsentGiven: true,
                 isTemporarilyEnrolled: shouldTemporarilyEnroll,
                 isMissingSf9: data.isMissingSf9 || false,
@@ -1032,9 +1063,15 @@ export function createEarlyRegistrationLifecycleController(
               },
               include: { learner: true },
             });
-        console.log(`[specialEnrollment] Persisted Application ID:`, persistedApplication.id);
+        console.log(
+          `[specialEnrollment] Persisted Application ID:`,
+          persistedApplication.id,
+        );
       } catch (dbError) {
-        console.error(`[specialEnrollment] FAILED to persist application:`, dbError);
+        console.error(
+          `[specialEnrollment] FAILED to persist application:`,
+          dbError,
+        );
         throw dbError;
       }
 
@@ -1064,7 +1101,10 @@ export function createEarlyRegistrationLifecycleController(
           });
         }
       } catch (relError) {
-        console.error(`[specialEnrollment] FAILED to update address/family:`, relError);
+        console.error(
+          `[specialEnrollment] FAILED to update address/family:`,
+          relError,
+        );
         throw relError;
       }
 
@@ -1075,20 +1115,27 @@ export function createEarlyRegistrationLifecycleController(
         typeof data.checklist?.finalGeneralAverage === "number" ||
         typeof data.generalAverage === "number";
 
-      console.log(`[specialEnrollment] hasPreviousSchoolPayload: ${hasPreviousSchoolPayload}`);
+      console.log(
+        `[specialEnrollment] hasPreviousSchoolPayload: ${hasPreviousSchoolPayload}`,
+      );
 
       if (hasPreviousSchoolPayload) {
         try {
-          console.log(`[specialEnrollment] Upserting previous school for App ID: ${persistedApplication.id}`);
+          console.log(
+            `[specialEnrollment] Upserting previous school for App ID: ${persistedApplication.id}`,
+          );
           await prisma.enrollmentPreviousSchool.upsert({
             where: { applicationId: persistedApplication.id },
             update: {
-              schoolName: normalizeOptional(
-                data.lastSchoolName || data.originSchoolName,
-              ) || "UNKNOWN SCHOOL",
+              schoolName:
+                normalizeOptional(
+                  data.lastSchoolName || data.originSchoolName,
+                ) || "UNKNOWN SCHOOL",
               schoolDepedId: normalizeOptional(data.lastSchoolId),
               gradeCompleted: normalizeOptional(data.lastGradeCompleted),
-              schoolYearAttended: normalizeOptional(data.schoolYearLastAttended),
+              schoolYearAttended: normalizeOptional(
+                data.schoolYearLastAttended,
+              ),
               schoolAddress: normalizeOptional(data.lastSchoolAddress),
               schoolType: normalizeOptional(data.lastSchoolType),
               generalAverage:
@@ -1100,12 +1147,15 @@ export function createEarlyRegistrationLifecycleController(
             },
             create: {
               applicationId: persistedApplication.id,
-              schoolName: normalizeOptional(
-                data.lastSchoolName || data.originSchoolName,
-              ) || "UNKNOWN SCHOOL",
+              schoolName:
+                normalizeOptional(
+                  data.lastSchoolName || data.originSchoolName,
+                ) || "UNKNOWN SCHOOL",
               schoolDepedId: normalizeOptional(data.lastSchoolId),
               gradeCompleted: normalizeOptional(data.lastGradeCompleted),
-              schoolYearAttended: normalizeOptional(data.schoolYearLastAttended),
+              schoolYearAttended: normalizeOptional(
+                data.schoolYearLastAttended,
+              ),
               schoolAddress: normalizeOptional(data.lastSchoolAddress),
               schoolType: normalizeOptional(data.lastSchoolType),
               generalAverage:
@@ -1118,12 +1168,17 @@ export function createEarlyRegistrationLifecycleController(
           });
           console.log(`[specialEnrollment] Previous school upsert SUCCESS`);
         } catch (prevSchoolError) {
-          console.error(`[specialEnrollment] FAILED to update previous school:`, prevSchoolError);
+          console.error(
+            `[specialEnrollment] FAILED to update previous school:`,
+            prevSchoolError,
+          );
           throw prevSchoolError;
         }
       }
 
-      console.log(`[specialEnrollment] Finalizing Tracking Number and Checklist...`);
+      console.log(
+        `[specialEnrollment] Finalizing Tracking Number and Checklist...`,
+      );
       const trackingNumber =
         targetEnrollment?.trackingNumber ??
         generateTrackingNumber({
@@ -1136,6 +1191,12 @@ export function createEarlyRegistrationLifecycleController(
         where: { id: persistedApplication.id },
         data: { trackingNumber },
         include: { learner: true, gradeLevel: true },
+      });
+
+      // Ensure Learner has a corresponding User record (Single Source of Truth)
+      const { ensureLearnerUserAccount } = await import("../../learner/learner.service.js");
+      await prisma.$transaction(async (tx) => {
+        await ensureLearnerUserAccount(tx, updated.learner);
       });
 
       await prisma.applicationChecklist.upsert({
@@ -1282,12 +1343,18 @@ export function createEarlyRegistrationLifecycleController(
       }
 
       try {
-        await prisma.learner.update({
+        const updatedLearner = await prisma.learner.update({
           where: { id: applicant.learnerId },
           data: {
             lrn,
             isPendingLrnCreation: false,
           },
+        });
+
+        // Ensure User account is synced (updates accountName to LRN-...)
+        const { ensureLearnerUserAccount } = await import("../../learner/learner.service.js");
+        await prisma.$transaction(async (tx) => {
+          await ensureLearnerUserAccount(tx, updatedLearner);
         });
       } catch (error) {
         if (
@@ -1785,6 +1852,10 @@ export function createEarlyRegistrationLifecycleController(
             where: { id: applicant.learnerId },
             data: { isPendingLrnCreation: false },
           });
+
+          // Ensure Learner has a corresponding User record (Single Source of Truth)
+          const { ensureLearnerUserAccount } = await import("../../learner/learner.service.js");
+          await ensureLearnerUserAccount(tx, applicant.learner);
 
           batchResults.push(applicantId);
         }

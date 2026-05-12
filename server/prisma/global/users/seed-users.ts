@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient, Role, Sex } from "../src/generated/prisma/index.js";
+import { PrismaClient, Role, Sex } from "../../../src/generated/prisma/index.js";
 import * as bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -45,7 +45,7 @@ async function main() {
     },
   ];
 
-  console.log("🌱 Seeding DepEd Users...");
+  console.log("≡ƒî▒ Seeding DepEd Users...");
 
   for (const user of users) {
     await prisma.user.upsert({
@@ -58,7 +58,7 @@ async function main() {
     });
   }
 
-  console.log("✅ Seeded DepEd users successfully.");
+  console.log("Γ£à Seeded DepEd users successfully.");
 }
 
 main()

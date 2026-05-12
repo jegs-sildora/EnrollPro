@@ -2,6 +2,11 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
+import {
+  type Prisma,
+  LearnerStatus,
+  Role,
+} from "../../generated/prisma/index.js";
 
 function getUniqueConstraintFields(error: unknown): string[] {
   if (!error || typeof error !== "object") return [];
@@ -51,10 +56,10 @@ export async function index(req: Request, res: Response) {
       String(role).toUpperCase() === "LEARNER" || tab === "learners";
 
     if (isLearnerMode) {
-      const learnerWhere: any = {};
+      const learnerWhere: Prisma.LearnerWhereInput = {};
 
       if (learnerStatus && learnerStatus !== "all") {
-        learnerWhere.status = learnerStatus;
+        learnerWhere.status = String(learnerStatus) as LearnerStatus;
       }
 
       if (gradeLevelId && gradeLevelId !== "all") {
@@ -164,17 +169,17 @@ export async function index(req: Request, res: Response) {
       ? String(sortBy)
       : "createdAt";
 
-    const where: any = {};
+    const where: Prisma.UserWhereInput = {};
     if (role && role !== "all") {
-      const requestedRole = String(role).toUpperCase();
+      const requestedRole = String(role).toUpperCase() as Role;
       if (requestedRole === "TEACHER") {
-        where.role = { in: ["TEACHER", "CLASS_ADVISER"] };
+        where.role = { in: ["TEACHER", "CLASS_ADVISER"] as Role[] };
       } else {
         where.role = requestedRole;
       }
     } else {
       // Exclude learners when fetching "all staff"
-      where.role = { not: "LEARNER" };
+      where.role = { not: "LEARNER" as Role };
     }
 
     if (isActive !== undefined) where.isActive = String(isActive) === "true";
@@ -226,8 +231,9 @@ export async function index(req: Request, res: Response) {
       sortBy: safeSortBy,
       sortOrder: safeSortOrder,
     });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: err.message });
   }
 }
 
@@ -248,34 +254,111 @@ export async function store(req: Request, res: Response) {
       mustChangePassword = true,
     } = req.body;
 
+    // Normalize empty strings to null for optional unique/nullable fields
+    const cleanEmployeeId = employeeId?.trim() || null;
+    const cleanMiddleName = middleName?.trim() || null;
+    const cleanSuffix = suffix?.trim() || null;
+    const cleanDesignation = designation?.trim() || null;
+    const cleanMobileNumber = mobileNumber?.trim() || null;
+    const cleanEmail = email?.trim() || null;
+
+    // Pre-check for unique conflicts before attempting the insert.
+    // The users table has 3 unique constraints (email, employee_id, account_name).
+    // PostgreSQL may fire any of them; catching by constraint name is fragile,
+    // so we detect conflicts explicitly here to return clear 409 errors.
+    const orClauses: object[] = [];
+    if (cleanEmail) orClauses.push({ email: cleanEmail });
+    if (cleanEmployeeId) {
+      orClauses.push({ employeeId: cleanEmployeeId });
+      orClauses.push({ accountName: cleanEmployeeId });
+    }
+    if (orClauses.length > 0) {
+      const existing = await prisma.user.findFirst({
+        where: { OR: orClauses },
+        select: { email: true, employeeId: true, accountName: true },
+      });
+      if (existing) {
+        if (cleanEmail && existing.email === cleanEmail) {
+          return res.status(409).json({
+            message: "Email address is already in use by another account.",
+            field: "email",
+            code: "DUPLICATE_EMAIL",
+          });
+        }
+        return res.status(409).json({
+          message: "Employee ID is already in use by another account.",
+          field: "employeeId",
+          code: "DUPLICATE_EMPLOYEE_ID",
+        });
+      }
+    }
+
     const hashed = await bcrypt.hash(password, 12);
 
-    const user = await prisma.user.create({
-      data: {
-        firstName,
-        lastName,
-        middleName,
-        suffix,
-        sex,
-        employeeId,
-        accountName: employeeId || null,
-        designation,
-        mobileNumber,
-        email,
-        password: hashed,
-        role,
-        mustChangePassword,
-        createdById: req.user!.userId,
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        role: true,
-        isActive: true,
-        mustChangePassword: true,
-      },
+    const isTeacherRole = role === "TEACHER" || role === "CLASS_ADVISER";
+
+    const user = await prisma.$transaction(async (tx) => {
+      const created = await tx.user.create({
+        data: {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          middleName: cleanMiddleName,
+          suffix: cleanSuffix,
+          sex: (sex as "MALE" | "FEMALE") ?? "FEMALE",
+          employeeId: cleanEmployeeId,
+          accountName: cleanEmployeeId || null,
+          designation: cleanDesignation,
+          mobileNumber: cleanMobileNumber,
+          email: cleanEmail,
+          password: hashed,
+          role,
+          mustChangePassword,
+          createdById: req.user!.userId,
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          role: true,
+          isActive: true,
+          mustChangePassword: true,
+          sex: true,
+        },
+      });
+
+      if (isTeacherRole && cleanEmployeeId) {
+        const teacherEmail =
+          cleanEmail || `${cleanEmployeeId}@noemail.deped.local`;
+        await tx.teacher.upsert({
+          where: { employeeId: cleanEmployeeId },
+          create: {
+            employeeId: cleanEmployeeId,
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            middleName: cleanMiddleName,
+            sex: (sex as "MALE" | "FEMALE") ?? "FEMALE",
+            email: teacherEmail,
+            contactNumber: cleanMobileNumber,
+            designation: cleanDesignation,
+            isActive: true,
+            userId: created.id,
+          },
+          update: {
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            middleName: cleanMiddleName,
+            sex: (sex as "MALE" | "FEMALE") ?? "FEMALE",
+            email: teacherEmail,
+            contactNumber: cleanMobileNumber,
+            designation: cleanDesignation,
+            isActive: true,
+            userId: created.id,
+          },
+        });
+      }
+
+      return created;
     });
 
     await auditLog({
@@ -288,7 +371,8 @@ export async function store(req: Request, res: Response) {
     });
 
     res.status(201).json(user);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    console.error("[admin/users store] Error:", error);
     const uniqueFields = getUniqueConstraintFields(error);
     if (uniqueFields.some((field) => field.toLowerCase().includes("email"))) {
       return res.status(409).json({
@@ -297,8 +381,23 @@ export async function store(req: Request, res: Response) {
         code: "DUPLICATE_EMAIL",
       });
     }
+    if (
+      uniqueFields.some(
+        (field) =>
+          field.toLowerCase().includes("employee") ||
+          field.toLowerCase().includes("account_name"),
+      )
+    ) {
+      return res.status(409).json({
+        message: "Employee ID is already in use by another account.",
+        field: "employeeId",
+        code: "DUPLICATE_EMPLOYEE_ID",
+      });
+    }
 
-    res.status(500).json({ message: error.message });
+    const errMsg =
+      error instanceof Error ? error.message : "An unexpected error occurred.";
+    res.status(500).json({ message: errMsg });
   }
 }
 
@@ -321,29 +420,82 @@ export async function update(req: Request, res: Response) {
     const targetUser = await prisma.user.findUnique({ where: { id: userId } });
     if (!targetUser) return res.status(404).json({ message: "User not found" });
 
-    const user = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        firstName,
-        lastName,
-        middleName,
-        suffix,
-        sex,
-        employeeId,
-        accountName: employeeId || null,
-        designation,
-        mobileNumber,
-        email,
-        ...(role ? { role } : {}),
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        role: true,
-        isActive: true,
-      },
+    const isTeacherRole =
+      (role || targetUser.role) === "TEACHER" ||
+      (role || targetUser.role) === "CLASS_ADVISER";
+
+    const user = await prisma.$transaction(async (tx) => {
+      const updated = await tx.user.update({
+        where: { id: userId },
+        data: {
+          firstName,
+          lastName,
+          middleName,
+          suffix,
+          ...(sex !== undefined &&
+            sex !== null && { sex: sex as "MALE" | "FEMALE" }),
+          employeeId,
+          accountName: employeeId || null,
+          designation,
+          mobileNumber,
+          email,
+          ...(role ? { role } : {}),
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          role: true,
+          isActive: true,
+          sex: true,
+        },
+      });
+
+      const effectiveEmployeeId = employeeId || targetUser.employeeId;
+      if (isTeacherRole && effectiveEmployeeId) {
+        const teacherEmail =
+          email || `${effectiveEmployeeId}@noemail.deped.local`;
+        await tx.teacher.upsert({
+          where: { employeeId: effectiveEmployeeId },
+          create: {
+            employeeId: effectiveEmployeeId,
+            firstName,
+            lastName,
+            middleName: middleName || null,
+            sex: (sex as "MALE" | "FEMALE") ?? (updated.sex as "MALE" | "FEMALE"),
+            email: teacherEmail,
+            contactNumber: mobileNumber || null,
+            designation: designation || null,
+            isActive: true,
+            userId: updated.id,
+          },
+          update: {
+            firstName,
+            lastName,
+            middleName: middleName || null,
+            sex: (sex as "MALE" | "FEMALE") ?? (updated.sex as "MALE" | "FEMALE"),
+            email: teacherEmail,
+            contactNumber: mobileNumber || null,
+            designation: designation || null,
+            userId: updated.id,
+          },
+        });
+      }
+
+      if (targetUser.role === "LEARNER") {
+        await tx.learner.updateMany({
+          where: { userId: updated.id },
+          data: {
+            firstName,
+            lastName,
+            middleName: middleName || null,
+            sex: (sex as "MALE" | "FEMALE") ?? (updated.sex as "MALE" | "FEMALE"),
+          },
+        });
+      }
+
+      return updated;
     });
 
     await auditLog({
@@ -356,7 +508,8 @@ export async function update(req: Request, res: Response) {
     });
 
     res.json(user);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    console.error("[admin/users update] Error:", error);
     const uniqueFields = getUniqueConstraintFields(error);
     if (uniqueFields.some((field) => field.toLowerCase().includes("email"))) {
       return res.status(409).json({
@@ -365,8 +518,19 @@ export async function update(req: Request, res: Response) {
         code: "DUPLICATE_EMAIL",
       });
     }
+    if (
+      uniqueFields.some((field) => field.toLowerCase().includes("employee"))
+    ) {
+      return res.status(409).json({
+        message: "Employee ID is already in use by another account.",
+        field: "employeeId",
+        code: "DUPLICATE_EMPLOYEE_ID",
+      });
+    }
 
-    res.status(500).json({ message: error.message });
+    const errMsg =
+      error instanceof Error ? error.message : "An unexpected error occurred.";
+    res.status(500).json({ message: errMsg });
   }
 }
 
@@ -384,10 +548,21 @@ export async function deactivate(req: Request, res: Response) {
       });
     }
 
-    const user = await prisma.user.update({
-      where: { id: userId },
-      data: { isActive: false },
-      select: { id: true, firstName: true, lastName: true, role: true },
+    const user = await prisma.$transaction(async (tx) => {
+      const updated = await tx.user.update({
+        where: { id: userId },
+        data: { isActive: false },
+        select: { id: true, firstName: true, lastName: true, role: true, employeeId: true },
+      });
+
+      if (updated.employeeId) {
+        await tx.teacher.updateMany({
+          where: { employeeId: updated.employeeId },
+          data: { isActive: false },
+        });
+      }
+
+      return updated;
     });
 
     await auditLog({
@@ -400,8 +575,9 @@ export async function deactivate(req: Request, res: Response) {
     });
 
     res.json(user);
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: err.message });
   }
 }
 
@@ -409,10 +585,21 @@ export async function reactivate(req: Request, res: Response) {
   try {
     const userId = parseInt(String(req.params.id));
 
-    const user = await prisma.user.update({
-      where: { id: userId },
-      data: { isActive: true },
-      select: { id: true, firstName: true, lastName: true, role: true },
+    const user = await prisma.$transaction(async (tx) => {
+      const updated = await tx.user.update({
+        where: { id: userId },
+        data: { isActive: true },
+        select: { id: true, firstName: true, lastName: true, role: true, employeeId: true },
+      });
+
+      if (updated.employeeId) {
+        await tx.teacher.updateMany({
+          where: { employeeId: updated.employeeId },
+          data: { isActive: true },
+        });
+      }
+
+      return updated;
     });
 
     await auditLog({
@@ -425,8 +612,9 @@ export async function reactivate(req: Request, res: Response) {
     });
 
     res.json(user);
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: err.message });
   }
 }
 
@@ -453,8 +641,9 @@ export async function resetPassword(req: Request, res: Response) {
     });
 
     res.json({ message: "Password reset successfully" });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: err.message });
   }
 }
 
@@ -487,7 +676,8 @@ export async function metrics(_req: Request, res: Response) {
       pendingUnverified,
       lockedDeactivated,
     });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: err.message });
   }
 }

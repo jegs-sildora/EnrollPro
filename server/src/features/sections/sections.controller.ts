@@ -1,14 +1,17 @@
 import type { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
+import bcrypt from "bcryptjs";
 import {
   ApplicantType,
+  EosyStatus,
   SectioningMethod,
   SectionAdviserStatus,
 } from "../../generated/prisma/index.js";
 import { SectioningEngine } from "../enrollment/services/sectioning-engine.service.js";
 import { DEFAULT_SECTIONING_PARAMS } from "@enrollpro/shared";
 import type { SectioningParams } from "@enrollpro/shared";
+import { ensureLearnerUserAccount } from "../learner/learner.service.js";
 
 const sectioningEngine = new SectioningEngine(prisma);
 
@@ -60,7 +63,9 @@ export async function commitBatchSectioning(req: Request, res: Response) {
         .json({ message: "No assignments provided to commit" });
     }
 
-    const appIds = assignments.map((a: any) => a.applicationId);
+    const appIds = (
+      assignments as Array<{ applicationId: number; sectionId: number }>
+    ).map((a) => a.applicationId);
 
     // Fetch learner IDs first as they are required for EnrollmentRecord
     const applications = await prisma.enrollmentApplication.findMany({
@@ -69,7 +74,7 @@ export async function commitBatchSectioning(req: Request, res: Response) {
     });
 
     const appToLearnerMap = new Map(
-      applications.map((app) => [app.id, app.learnerId])
+      applications.map((app) => [app.id, app.learnerId]),
     );
 
     const results = await prisma.$transaction(
@@ -89,10 +94,14 @@ export async function commitBatchSectioning(req: Request, res: Response) {
           where: { enrollmentApplicationId: { in: appIds } },
         });
 
-        const recordsToCreate = assignments.map((assignment: any) => {
+        const recordsToCreate = (
+          assignments as Array<{ applicationId: number; sectionId: number }>
+        ).map((assignment) => {
           const learnerId = appToLearnerMap.get(assignment.applicationId);
           if (!learnerId) {
-            throw new Error(`Learner ID not found for application ${assignment.applicationId}`);
+            throw new Error(
+              `Learner ID not found for application ${assignment.applicationId}`,
+            );
           }
           return {
             enrollmentApplicationId: assignment.applicationId,
@@ -109,11 +118,30 @@ export async function commitBatchSectioning(req: Request, res: Response) {
           data: recordsToCreate,
         });
 
+        // Auto-create User accounts for learners who don't have one yet
+        const learnerIds = recordsToCreate.map(
+          (r: { learnerId: number }) => r.learnerId,
+        );
+        const learners = await tx.learner.findMany({
+          where: { id: { in: learnerIds }, userId: null },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            lrn: true,
+            sex: true,
+          },
+        });
+
+        for (const learner of learners) {
+          await ensureLearnerUserAccount(tx, learner);
+        }
+
         return recordsToCreate;
       },
       {
         timeout: 20000, // Increased timeout for batch operations
-      }
+      },
     );
 
     await auditLog({
@@ -129,11 +157,21 @@ export async function commitBatchSectioning(req: Request, res: Response) {
       message: "Batch sectioning committed successfully",
       count: results.length,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[commitBatchSectioning Error]:", error);
+    const isPrismaConflict =
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code: unknown }).code === "P2002";
     res.status(500).json({
-      message: error.message || "Failed to commit batch sectioning",
-      details: error.code === "P2002" ? "Unique constraint violation detected" : undefined,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to commit batch sectioning",
+      details: isPrismaConflict
+        ? "Unique constraint violation detected"
+        : undefined,
     });
   }
 }
@@ -148,14 +186,14 @@ const VALID_PROGRAM_TYPES = new Set([
   "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
 ]);
 
-const INACTIVE_EOSY_STATUSES = ["TRANSFERRED_OUT", "DROPPED_OUT"];
+const INACTIVE_EOSY_STATUSES: EosyStatus[] = ["TRANSFERRED_OUT", "DROPPED_OUT"];
 
 const activeEnrollmentFilter = {
   OR: [
     { eosyStatus: { equals: null } },
     {
       eosyStatus: {
-        notIn: INACTIVE_EOSY_STATUSES as any,
+        notIn: INACTIVE_EOSY_STATUSES,
       },
     },
   ],
@@ -421,17 +459,23 @@ export async function createSection(
     });
 
     res.json({ section });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[createSection Error]", error);
-    if (error.code === "P2002") {
+    const isPrismaConflict =
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code: unknown }).code === "P2002";
+    if (isPrismaConflict) {
       res.status(409).json({
         message: "A section with this name already exists in this grade level.",
       });
       return;
     }
-    res
-      .status(500)
-      .json({ message: error.message || "Failed to create section" });
+    res.status(500).json({
+      message:
+        error instanceof Error ? error.message : "Failed to create section",
+    });
   }
 }
 
@@ -580,26 +624,33 @@ export async function updateSection(
     });
 
     res.json({ section });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const prismaError = error as {
+      code?: string;
+      meta?: { target?: unknown };
+      message?: string;
+      stack?: string;
+    };
     console.error("[updateSection Error] Details:", {
-      code: error.code,
-      meta: error.meta,
-      message: error.message,
-      stack: error.stack,
+      code: prismaError.code,
+      meta: prismaError.meta,
+      message: prismaError.message,
+      stack: prismaError.stack,
     });
-    if (error.code === "P2002") {
-      const target = Array.isArray(error.meta?.target)
-        ? error.meta.target.join(", ")
-        : error.meta?.target || "unknown fields";
+    if (prismaError.code === "P2002") {
+      const target = Array.isArray(prismaError.meta?.target)
+        ? (prismaError.meta?.target as string[]).join(", ")
+        : prismaError.meta?.target || "unknown fields";
 
       res.status(409).json({
         message: `Conflict detected on [${target}]. This value already exists for another record in this context.`,
       });
       return;
     }
-    res
-      .status(500)
-      .json({ message: error.message || "Failed to update section" });
+    res.status(500).json({
+      message:
+        error instanceof Error ? error.message : "Failed to update section",
+    });
   }
 }
 
@@ -711,7 +762,19 @@ export async function getUnsectionedPool(
       enrollmentRecord: null,
     },
     include: {
-      learner: true,
+      learner: {
+        include: {
+          enrollmentRecords: {
+            where: {
+              schoolYearId: { not: parseInt(schoolYearId as string) },
+              finalAverage: { not: null },
+            },
+            orderBy: { schoolYearId: "desc" },
+            take: 1,
+            select: { finalAverage: true },
+          },
+        },
+      },
     },
     orderBy: [
       { learner: { lastName: "asc" } },
@@ -729,6 +792,10 @@ export async function getUnsectionedPool(
       middleName: app.learner.middleName,
       sex: app.learner.sex,
       applicantType: app.applicantType,
+      promotionGenAve:
+        app.learner.enrollmentRecords[0]?.finalAverage ??
+        app.learner.previousGenAve ??
+        null,
     })),
   });
 }
@@ -773,7 +840,7 @@ export async function inlineSlotLearner(
       data: { status: "ENROLLED" },
     });
 
-    return tx.enrollmentRecord.create({
+    const created = await tx.enrollmentRecord.create({
       data: {
         enrollmentApplicationId,
         learnerId: application.learnerId,
@@ -783,6 +850,24 @@ export async function inlineSlotLearner(
         sectioningMethod: SectioningMethod.INLINE_SLOTTING,
       },
     });
+
+    // Auto-create User account for this learner if they don't have one
+    const learner = await tx.learner.findUnique({
+      where: { id: application.learnerId },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        lrn: true,
+        userId: true,
+        sex: true,
+      },
+    });
+    if (learner) {
+      await ensureLearnerUserAccount(tx, learner);
+    }
+
+    return created;
   });
 
   await auditLog({
@@ -904,8 +989,9 @@ export async function handoverAdviser(req: Request, res: Response) {
     });
 
     res.json({ message: "Handover executed successfully" });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: err.message });
   }
 }
 
@@ -961,7 +1047,8 @@ export async function transferLearner(req: Request, res: Response) {
       message: "Learner transferred successfully",
       record: updatedRecord,
     });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error: unknown) {
+    const err = error as Error;
+    res.status(500).json({ message: err.message });
   }
 }

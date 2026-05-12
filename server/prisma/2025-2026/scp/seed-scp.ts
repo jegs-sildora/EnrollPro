@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient, ApplicantType, Sex } from "../src/generated/prisma/index.js";
+import { PrismaClient, ApplicantType, Sex } from "../../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 
@@ -83,7 +83,7 @@ async function main() {
       throw new Error("No SYSTEM_ADMIN found.");
     }
 
-    console.log(`🌱 Seeding SCP Applications for School Year: ${schoolYear.yearLabel}`);
+    console.log(`≡ƒî▒ Seeding SCP Applications for School Year: ${schoolYear.yearLabel}`);
 
     // Seed Applications
     for (let i = 1; i <= 30; i++) {
@@ -144,7 +144,7 @@ async function main() {
       });
     }
 
-    console.log("✅ SCP seeding completed.");
+    console.log("Γ£à SCP seeding completed.");
   } catch (error) {
     console.error("ERROR during SCP seeding:", error);
     process.exit(1);

@@ -5,7 +5,7 @@ import {
   SchoolYearStatus,
   Sex,
   PortalControl,
-} from "../src/generated/prisma/index.js";
+} from "../../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 import * as bcrypt from "bcryptjs";
@@ -37,7 +37,7 @@ async function main() {
       update: { status: y.status },
       create: { ...y, portalControl: "AUTO" as PortalControl },
     });
-    console.log(`✅ Verified School Year: ${y.yearLabel} (${y.status})`);
+    console.log(`Γ£à Verified School Year: ${y.yearLabel} (${y.status})`);
   }
 
   const activeSy = await prisma.schoolYear.findFirst({
@@ -61,14 +61,14 @@ async function main() {
     settings = await prisma.schoolSetting.create({
       data: defaultSettings,
     });
-    console.log("✅ Created default SchoolSettings row.");
+    console.log("Γ£à Created default SchoolSettings row.");
   } else {
     await prisma.schoolSetting.update({
       where: { id: settings.id },
       data: defaultSettings,
     });
     console.log(
-      "✅ SchoolSettings already exists, updated with default values and active SY.",
+      "Γ£à SchoolSettings already exists, updated with default values and active SY.",
     );
   }
 
@@ -89,7 +89,7 @@ async function main() {
         displayOrder: grade.displayOrder,
       },
     });
-    console.log(`✅ Verified Permanent Grade Level: ${grade.name}`);
+    console.log(`Γ£à Verified Permanent Grade Level: ${grade.name}`);
   }
 
   // 4. Seed Standard DepEd JHS Departments
@@ -135,7 +135,7 @@ async function main() {
       },
     });
   }
-  console.log("✅ Verified Standard DepEd Departments");
+  console.log("Γ£à Verified Standard DepEd Departments");
 
   // 5. Create first SYSTEM_ADMIN account
   const adminId = process.env.ADMIN_EMPLOYEE_ID ?? "1000001";
@@ -148,7 +148,7 @@ async function main() {
     where: { employeeId: adminId },
   });
   if (existingAdmin) {
-    console.log(`✅ Admin account already exists: ${adminId} (${email})`);
+    console.log(`Γ£à Admin account already exists: ${adminId} (${email})`);
   } else {
     const hashedPassword = await bcrypt.hash(password, 12);
     await prisma.user.create({
@@ -166,7 +166,7 @@ async function main() {
         designation: "SYSTEM ADMINISTRATOR",
       },
     });
-    console.log(`✅ System Admin created: ${adminId} (${email})`);
+    console.log(`Γ£à System Admin created: ${adminId} (${email})`);
     console.log(`   Temporary password:   ${password}`);
   }
 
@@ -181,7 +181,7 @@ async function main() {
     where: { employeeId: regId },
   });
   if (existingRegistrar) {
-    console.log(`✅ Registrar account already exists: ${regId} (${regEmail})`);
+    console.log(`Γ£à Registrar account already exists: ${regId} (${regEmail})`);
   } else {
     const hashedRegPassword = await bcrypt.hash(regPassword, 12);
     await prisma.user.create({
@@ -199,7 +199,7 @@ async function main() {
         designation: "HEAD REGISTRAR",
       },
     });
-    console.log(`✅ Head Registrar created: ${regId} (${regEmail})`);
+    console.log(`Γ£à Head Registrar created: ${regId} (${regEmail})`);
     console.log(`   Temporary password:   ${regPassword}`);
   }
 }

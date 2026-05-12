@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../lib/AppError.js";
 import axios from "axios";
+import { ensureLearnerUserAccount } from "../learner/learner.service.js";
 
 /**
  * POST /api/enrollment/confirm-slip
@@ -62,6 +63,11 @@ export async function confirmConfirmationSlip(req: Request, res: Response) {
         learner: true,
         gradeLevel: true,
       },
+    });
+
+    // Auto-create User account for the learner
+    await prisma.$transaction(async (tx) => {
+      await ensureLearnerUserAccount(tx, application.learner);
     });
 
     // Process 1.1: Event-Driven Delta Sync (Automated)
@@ -165,7 +171,14 @@ export async function batchConfirmConfirmationSlips(
             confirmationConsent: isEnrolling,
             batchIntakeMethod: intakeMethod,
           },
+          include: {
+            learner: true,
+          },
         });
+
+        if (isEnrolling) {
+          await ensureLearnerUserAccount(tx, app.learner);
+        }
 
         updates.push(app);
       }

@@ -222,11 +222,12 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       maxSize: 60,
       cell: ({ row }) => {
         const teacher = row.original;
-        const initials = `${teacher.firstName.charAt(0)}${teacher.lastName.charAt(0)}`.toUpperCase();
+        const initials =
+          `${teacher.firstName.charAt(0)}${teacher.lastName.charAt(0)}`.toUpperCase();
         return (
           <div className="flex justify-center ml-6">
             <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center font-black text-primary text-xs shrink-0 uppercase">
-                {initials}
+              {initials}
             </div>
           </div>
         );
@@ -357,11 +358,41 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
           className="font-bold"
         />
       ),
-      cell: ({ row }) => (
-        <div className="flex justify-center">
-          {renderTeacherStatus(row.original)}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const teacher = row.original;
+        const ua = teacher.userAccount;
+        let accountLabel = "No Account";
+        let accountColor =
+          "text-muted-foreground bg-muted border-muted-foreground/30";
+        if (ua) {
+          if (!ua.isActive) {
+            accountLabel = "Locked";
+            accountColor =
+              "text-slate-500 bg-slate-100 border-slate-300 dark:bg-slate-800 dark:border-slate-600";
+          } else if (ua.mustChangePassword && !ua.lastLoginAt) {
+            accountLabel = "Pending FTL";
+            accountColor =
+              "text-amber-700 bg-amber-50 border-amber-300 dark:bg-amber-950 dark:border-amber-700";
+          } else {
+            accountLabel = "Active";
+            accountColor =
+              "text-emerald-700 bg-emerald-50 border-emerald-300 dark:bg-emerald-950 dark:border-emerald-700";
+          }
+        }
+        return (
+          <div className="flex flex-col items-center gap-1.5">
+            {renderTeacherStatus(teacher)}
+            <Badge
+              variant="outline"
+              className={cn(
+                "text-[9px] font-black uppercase px-1.5 h-4 border",
+                accountColor,
+              )}>
+              {accountLabel}
+            </Badge>
+          </div>
+        );
+      },
     },
     {
       id: "designation",
@@ -625,6 +656,42 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                         Advisory
                       </p>
                       {renderAdvisoryStatus(teacher)}
+                    </div>
+                    <div>
+                      <p className="text-foreground uppercase  font-bold opacity-70">
+                        Portal Account
+                      </p>
+                      {(() => {
+                        const ua = teacher.userAccount;
+                        let accountLabel = "No Account";
+                        let accountColor =
+                          "text-muted-foreground bg-muted border-muted-foreground/30";
+                        if (ua) {
+                          if (!ua.isActive) {
+                            accountLabel = "Locked";
+                            accountColor =
+                              "text-slate-500 bg-slate-100 border-slate-300 dark:bg-slate-800 dark:border-slate-600";
+                          } else if (ua.mustChangePassword && !ua.lastLoginAt) {
+                            accountLabel = "Pending FTL";
+                            accountColor =
+                              "text-amber-700 bg-amber-50 border-amber-300 dark:bg-amber-950 dark:border-amber-700";
+                          } else {
+                            accountLabel = "Active";
+                            accountColor =
+                              "text-emerald-700 bg-emerald-50 border-emerald-300 dark:bg-emerald-950 dark:border-emerald-700";
+                          }
+                        }
+                        return (
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[9px] font-black uppercase px-1.5 h-4 border",
+                              accountColor,
+                            )}>
+                            {accountLabel}
+                          </Badge>
+                        );
+                      })()}
                     </div>
                   </div>
 

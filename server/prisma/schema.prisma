@@ -44,6 +44,7 @@ model User {
   createdBy                            User?                          @relation("UserCreatedBy", fields: [createdById], references: [id])
   createdUsers                         User[]                         @relation("UserCreatedBy")
   learnerProfile                       Learner?                       @relation("UserLearnerProfile")
+  teacherProfile                       Teacher?                       @relation("UserTeacherProfile")
 
   @@map("users")
 }
@@ -66,11 +67,13 @@ model Teacher {
   plantillaPosition     String?               @map("plantilla_position")
   designation           String?
   departmentId          Int?                  @map("department_id")
+  userId                Int?                  @unique(map: "uq_teachers_user_id") @map("user_id")
   headedDepartment      Department?           @relation("DepartmentHead")
   advisoryHistory       SectionAdviser[]
   teacherDesignations   TeacherDesignation[]
   subjects              TeacherSubject[]
   department            Department?           @relation("DepartmentTeachers", fields: [departmentId], references: [id])
+  user                  User?                 @relation("UserTeacherProfile", fields: [userId], references: [id], onDelete: SetNull)
 
   @@map("teachers")
 }

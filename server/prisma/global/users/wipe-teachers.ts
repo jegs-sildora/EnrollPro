@@ -1,4 +1,4 @@
-import { PrismaClient } from "../src/generated/prisma/index.js";
+import { PrismaClient } from "../../../src/generated/prisma/index.js";
 
 const prisma = new PrismaClient();
 
@@ -24,7 +24,7 @@ async function main() {
     prisma.teacher.deleteMany({})
   ]);
 
-  console.log("✅ Wiped all teachers and their functional designations.");
+  console.log("Γ£à Wiped all teachers and their functional designations.");
 }
 
 main()

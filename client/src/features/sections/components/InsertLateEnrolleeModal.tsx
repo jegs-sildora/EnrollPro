@@ -31,6 +31,7 @@ interface UnsectionedLearner {
   middleName: string | null;
   applicantType: string;
   learnerType: string;
+  promotionGenAve: number | null;
 }
 
 interface InsertLateEnrolleeModalProps {
@@ -232,20 +233,31 @@ export function InsertLateEnrolleeModal({
                               LRN: {learner.lrn || "PENDING"}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            {isTypeMismatch ? (
-                              <Badge
-                                variant="outline"
-                                className="text-[9px] font-black uppercase border-red-200 text-red-600 bg-red-50">
-                                Program Mismatch
-                              </Badge>
+                          <div className="flex flex-col items-end gap-1">
+                            {learner.promotionGenAve != null ? (
+                              <span className="text-[10px] font-black uppercase text-foreground/70">
+                                GEN AVE: {learner.promotionGenAve.toFixed(2)}
+                              </span>
                             ) : (
-                              <Badge
-                                variant="secondary"
-                                className="text-[9px] font-black uppercase">
-                                {learner.applicantType?.replace(/_/g, " ")}
-                              </Badge>
+                              <span className="text-[10px] font-bold uppercase text-foreground/40">
+                                GEN AVE: —
+                              </span>
                             )}
+                            <div className="flex items-center gap-2">
+                              {isTypeMismatch ? (
+                                <Badge
+                                  variant="outline"
+                                  className="text-[9px] font-black uppercase border-red-200 text-red-600 bg-red-50">
+                                  Program Mismatch
+                                </Badge>
+                              ) : (
+                                <Badge
+                                  variant="secondary"
+                                  className="text-[9px] font-black uppercase">
+                                  {learner.applicantType?.replace(/_/g, " ")}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </button>
                       );

@@ -1,4 +1,4 @@
-import { PrismaClient } from "../src/generated/prisma/index.js";
+import { PrismaClient } from "../../../src/generated/prisma/index.js";
 
 const prisma = new PrismaClient();
 
@@ -12,7 +12,7 @@ async function main() {
   // - ScpInterviewRubricCriterion (via Category)
   
   const result = await prisma.scpProgramConfig.deleteMany();
-  console.log(`✅ Wiped ${result.count} SCP program configurations and all associated steps/rubrics.`);
+  console.log(`Γ£à Wiped ${result.count} SCP program configurations and all associated steps/rubrics.`);
 }
 
 main()

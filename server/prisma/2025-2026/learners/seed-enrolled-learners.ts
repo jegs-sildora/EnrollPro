@@ -9,7 +9,7 @@ import {
   ApplicationStatus,
   ReadingProfileLevel,
   Role,
-} from "../src/generated/prisma/index.js";
+} from "../../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 import * as bcrypt from "bcryptjs";
@@ -130,7 +130,7 @@ const PH_BARANGAYS = [
   "BARANGAY 2",
   "SAN ISIDRO",
   "STA. LUCIA",
-  "SANTO NIÑO",
+  "SANTO NI├æO",
   "CONCEPCION",
   "MALANDAY",
   "POBLACION",
@@ -138,7 +138,7 @@ const PH_BARANGAYS = [
 
 async function main() {
   console.log(
-    "🚀 Scaling Enrollment Data: Provisioning 400+ Learners for 2025-2026...",
+    "≡ƒÜÇ Scaling Enrollment Data: Provisioning 400+ Learners for 2025-2026...",
   );
 
   // 1. Get Context
@@ -342,13 +342,13 @@ async function main() {
 
     if (i % 50 === 0 || i === totalLearners) {
       console.log(
-        `  📊 Progress: ${i}/${totalLearners} Learners enrolled for 2025-2026.`,
+        `  ≡ƒôè Progress: ${i}/${totalLearners} Learners enrolled for 2025-2026.`,
       );
     }
   }
 
   console.log(
-    `\n🎉 Successfully scaled to ${totalLearners} enrolled learners for 2025-2026.`,
+    `\n≡ƒÄë Successfully scaled to ${totalLearners} enrolled learners for 2025-2026.`,
   );
 }
 

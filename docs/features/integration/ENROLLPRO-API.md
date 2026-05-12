@@ -382,9 +382,10 @@ Public read-only feeds for companion systems (ATLAS, SMART, AIMS).
 | Method | Path | Auth | Description |
 | :--- | :--- | :--- | :--- |
 | GET | `/api/integration/v1/health` | None | Connectivity and DB health check. |
+| GET | `/api/integration/v1/school-year` | None | EnrollPro's active school year `id` and `yearLabel`. Use to confirm which year faculty/section data belongs to. |
 | GET | `/api/integration/v1/learners` | None | Paginated list of learners. **Requires `schoolYearId`**. Supports `page`/`limit`. |
-| GET | `/api/integration/v1/faculty` | None | List of all faculty members. Defaults to active school year if `schoolYearId` is omitted. |
-| GET | `/api/integration/v1/sections` | None | List of sections with occupancy. Defaults to active school year if `schoolYearId` is omitted. |
+| GET | `/api/integration/v1/faculty` | None | List of all faculty members. Defaults to active school year if `schoolYearId` is omitted. Active-year context available in `meta.scope`. |
+| GET | `/api/integration/v1/sections` | None | List of sections with occupancy. Defaults to active school year if `schoolYearId` is omitted. Active-year context available in `meta.scope`. |
 | GET | `/api/integration/v1/sections/:sectionId/learners` | None | Paginated roster for a specific section. Supports `page`/`limit`. |
 
 ### Sample: `GET /api/integration/v1/health`
@@ -395,6 +396,16 @@ Public read-only feeds for companion systems (ATLAS, SMART, AIMS).
     "db": "connected",
     "dbLatencyMs": 12,
     "timestamp": "2026-05-11T12:00:00Z"
+  }
+}
+```
+
+### Sample: `GET /api/integration/v1/school-year`
+```json
+{
+  "data": {
+    "id": 1,
+    "yearLabel": "2026-2027"
   }
 }
 ```

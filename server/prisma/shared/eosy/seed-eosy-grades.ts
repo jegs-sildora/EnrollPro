@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient, EosyStatus } from "../src/generated/prisma/index.js";
+import { PrismaClient, EosyStatus } from "../../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 
@@ -24,8 +24,8 @@ function generateGrade(isSTE: boolean): number {
 }
 
 async function main() {
-  console.log("🚀 Seeding End-of-School-Year (EOSY) Grades for 2025-2026 (Mock SMART Data)...");
-  console.log("🎯 Applying '65/66' Presentation Strategy (STE 7-VEGA will remain pending).");
+  console.log("≡ƒÜÇ Seeding End-of-School-Year (EOSY) Grades for 2025-2026 (Mock SMART Data)...");
+  console.log("≡ƒÄ» Applying '65/66' Presentation Strategy (STE 7-VEGA will remain pending).");
 
   const targetYear = await prisma.schoolYear.findUnique({
     where: { yearLabel: "2025-2026" }
@@ -43,7 +43,7 @@ async function main() {
   });
 
   if (!demoSection) {
-    console.warn(`⚠️ Demo section '${DEMO_SECTION_NAME}' not found. Defaulting to all-sections mode.`);
+    console.warn(`ΓÜá∩╕Å Demo section '${DEMO_SECTION_NAME}' not found. Defaulting to all-sections mode.`);
   }
 
   const records = await prisma.enrollmentRecord.findMany({
@@ -73,11 +73,11 @@ async function main() {
   });
 
   if (records.length === 0) {
-    console.warn("⚠️ No 'STE-' or 'REG-' records found in 2025-2026. Run db:seed-enrolled-learners first.");
+    console.warn("ΓÜá∩╕Å No 'STE-' or 'REG-' records found in 2025-2026. Run db:seed-enrolled-learners first.");
     return;
   }
 
-  console.log(`📊 Processing ${records.length} enrollment records for 2025-2026...`);
+  console.log(`≡ƒôè Processing ${records.length} enrollment records for 2025-2026...`);
 
   const BATCH_SIZE = 100;
   let processedCount = 0;
@@ -125,7 +125,7 @@ async function main() {
   console.log(`  - Left ${skippedCount} records in '${DEMO_SECTION_NAME}' with null status for live demo.`);
 
   // Finalize all sections except the demo section
-  console.log("\n🔒 Finalizing 65/66 sections...");
+  console.log("\n≡ƒöÆ Finalizing 65/66 sections...");
   
   const sections = await prisma.section.findMany({
     where: { schoolYearId: targetYear.id }
@@ -141,12 +141,12 @@ async function main() {
 
   await Promise.all(updatePromises);
   
-  console.log(`✅ Finalized ${sections.length - (demoSection ? 1 : 0)} sections.`);
+  console.log(`Γ£à Finalized ${sections.length - (demoSection ? 1 : 0)} sections.`);
   if (demoSection) {
-    console.log(`✨ Section '${DEMO_SECTION_NAME}' is UNLOCKED and ready for presentation.`);
+    console.log(`Γ£¿ Section '${DEMO_SECTION_NAME}' is UNLOCKED and ready for presentation.`);
   }
 
-  console.log(`\n✅ Successfully implemented '65/66' Presentation Strategy for 2025-2026.`);
+  console.log(`\nΓ£à Successfully implemented '65/66' Presentation Strategy for 2025-2026.`);
 }
 
 main()

@@ -9,7 +9,7 @@ import {
   ApplicationStatus,
   ReadingProfileLevel,
   Role,
-} from "../src/generated/prisma/index.js";
+} from "../../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 import * as bcrypt from "bcryptjs";
@@ -100,7 +100,7 @@ const PH_LAST_NAMES = [
   "ARROYO",
   "MAGSAYSAY",
   "QUIRINO",
-  "OSMEÑA",
+  "OSME├æA",
   "MACAPAGAL",
   "ROXAS",
   "QUEZON",
@@ -131,11 +131,11 @@ const PH_CITIES = [
   "PASIG",
   "TAGUIG",
   "VALENZUELA",
-  "DASMARIÑAS",
+  "DASMARI├æAS",
   "CAVITE CITY",
   "BACOOR",
   "IMUS",
-  "LAS PIÑAS",
+  "LAS PI├æAS",
 ];
 const PH_MOTHER_TONGUES = [
   "TAGALOG",
@@ -153,7 +153,7 @@ const PH_ELEMENTARY_SCHOOLS = [
   "CENTRAL ELEMENTARY SCHOOL",
   "SAN JOSE ELEMENTARY SCHOOL",
   "STA. MARIA ELEMENTARY SCHOOL",
-  "STO. NIÑO ELEMENTARY SCHOOL",
+  "STO. NI├æO ELEMENTARY SCHOOL",
   "BAGONG PAG-ASA ELEMENTARY SCHOOL",
   "MALIGAYA ELEMENTARY SCHOOL",
   "MAHABANG PARANG ELEMENTARY SCHOOL",
@@ -168,7 +168,7 @@ const PH_BARANGAYS = [
   "BARANGAY 2",
   "SAN ISIDRO",
   "STA. LUCIA",
-  "SANTO NIÑO",
+  "SANTO NI├æO",
   "CONCEPCION",
   "MALANDAY",
   "POBLACION",
@@ -177,7 +177,7 @@ const PH_BARANGAYS = [
 ];
 
 async function main() {
-  console.log("🚀 Seeding Existing Learners for 2025-2026 (Demo Data)...");
+  console.log("≡ƒÜÇ Seeding Existing Learners for 2025-2026 (Demo Data)...");
 
   const targetYear = await prisma.schoolYear.findUnique({
     where: { yearLabel: "2025-2026" },
@@ -196,7 +196,7 @@ async function main() {
   if (!admin) throw new Error("No SYSTEM_ADMIN found.");
 
   for (const gradeLevel of gradeLevels) {
-    console.log(`\n📦 Processing ${gradeLevel.name}...`);
+    console.log(`\n≡ƒôª Processing ${gradeLevel.name}...`);
 
     const sections = await prisma.section.findMany({
       where: {
@@ -206,7 +206,7 @@ async function main() {
     });
 
     if (sections.length === 0) {
-      console.warn(`⚠️ No sections found for ${gradeLevel.name} in 2025-2026.`);
+      console.warn(`ΓÜá∩╕Å No sections found for ${gradeLevel.name} in 2025-2026.`);
       continue;
     }
 
@@ -232,7 +232,7 @@ async function main() {
     }
   }
 
-  console.log("\n✅ Seeding of existing learners for 2025-2026 completed.");
+  console.log("\nΓ£à Seeding of existing learners for 2025-2026 completed.");
 }
 
 async function seedSectionBatch(

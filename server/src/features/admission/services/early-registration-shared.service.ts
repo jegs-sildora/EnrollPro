@@ -606,6 +606,8 @@ export function createEarlyRegistrationSharedService(
         application.previousSchool?.generalAverage ||
         application.checklist?.finalGeneralAverage ||
         (application.reportedGrades as any)?.generalAverage ||
+        (learner as any)?.enrollmentRecords?.[0]?.finalAverage ||
+        (learner as any)?.previousGenAve ||
         null,
 
       learningProgram,
@@ -1004,6 +1006,10 @@ export function createEarlyRegistrationSharedService(
             where: { id: earlyReg.id },
             data: { status: "ENROLLED" },
           });
+
+          // Ensure Learner has a corresponding User record (Single Source of Truth)
+          const { ensureLearnerUserAccount } = await import("../../learner/learner.service.js");
+          await ensureLearnerUserAccount(ptx, earlyReg.learner);
 
           // Carry over Previous School data from reportedGrades JSON
           const grades = earlyReg.reportedGrades as any;

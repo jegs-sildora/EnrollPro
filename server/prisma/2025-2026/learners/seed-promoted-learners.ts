@@ -4,7 +4,8 @@ import {
   ApplicantType,
   LearnerType,
   ApplicationStatus,
-} from "../src/generated/prisma/index.js";
+  ReadingProfileLevel,
+} from "../../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 
@@ -13,7 +14,7 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log("🚀 Seeding promoted learners from 2025-2026 to 2026-2027...");
+  console.log("≡ƒÜÇ Seeding promoted learners from 2025-2026 to 2026-2027...");
 
   // 1. Get Source and Target School Years
   const sourceYear = await prisma.schoolYear.findUnique({
@@ -50,7 +51,7 @@ async function main() {
     },
   });
 
-  console.log(`🔍 Found ${promotedRecords.length} promoted learners in ${sourceYear.yearLabel}.`);
+  console.log(`≡ƒöì Found ${promotedRecords.length} promoted learners in ${sourceYear.yearLabel}.`);
 
   const admin = await prisma.user.findFirst({
     where: { role: "SYSTEM_ADMIN" },
@@ -64,7 +65,7 @@ async function main() {
     
     // If no next grade level (e.g., Grade 10 completer), skip promotion seed
     if (!nextGradeLevelId) {
-      console.log(`⏩ Skipping ${record.learner.firstName} ${record.learner.lastName} (Grade 10 completer).`);
+      console.log(`ΓÅ⌐ Skipping ${record.learner.firstName} ${record.learner.lastName} (Grade 10 completer).`);
       continue;
     }
 
@@ -77,6 +78,21 @@ async function main() {
       update: {
         status: "READY_FOR_SECTIONING", // Promoted students are typically ready for sectioning
         gradeLevelId: nextGradeLevelId,
+        readingProfileLevel: record.enrollmentApplication.readingProfileLevel,
+        previousSchool: {
+          upsert: {
+            update: {
+              generalAverage: record.finalAverage,
+              schoolYearAttended: sourceYear.yearLabel,
+              gradeCompleted: gradeMap.get(record.enrollmentApplication.gradeLevelId)?.name,
+            },
+            create: {
+              generalAverage: record.finalAverage,
+              schoolYearAttended: sourceYear.yearLabel,
+              gradeCompleted: gradeMap.get(record.enrollmentApplication.gradeLevelId)?.name,
+            }
+          }
+        }
       },
       create: {
         learnerId: record.learnerId,
@@ -92,13 +108,21 @@ async function main() {
         guardianRelationship: record.enrollmentApplication.guardianRelationship || "PARENT",
         hasNoMother: record.enrollmentApplication.hasNoMother,
         hasNoFather: record.enrollmentApplication.hasNoFather,
+        readingProfileLevel: record.enrollmentApplication.readingProfileLevel,
+        previousSchool: {
+          create: {
+            generalAverage: record.finalAverage,
+            schoolYearAttended: sourceYear.yearLabel,
+            gradeCompleted: gradeMap.get(record.enrollmentApplication.gradeLevelId)?.name,
+          }
+        }
       },
     });
 
     promotedCount++;
   }
 
-  console.log(`\n🎉 Successfully seeded ${promotedCount} promoted learners to ${targetYear.yearLabel} as CONTINUING students.`);
+  console.log(`\n≡ƒÄë Successfully seeded ${promotedCount} promoted learners to ${targetYear.yearLabel} as CONTINUING students.`);
 }
 
 main()

@@ -383,7 +383,9 @@ export default function AdminUsers() {
     }
     if (
       (formData.role === "SYSTEM_ADMIN" ||
-        formData.role === "HEAD_REGISTRAR") &&
+        formData.role === "HEAD_REGISTRAR" ||
+        formData.role === "TEACHER" ||
+        formData.role === "CLASS_ADVISER") &&
       !formData.employeeId.trim()
     ) {
       nextErrors.employeeId = "Employee ID is mandatory for this role.";
@@ -538,7 +540,21 @@ export default function AdminUsers() {
     if (Object.keys(nextErrors).length > 0) return;
     setSubmitting(true);
     try {
-      await api.post("/admin/users", formData);
+      const payload = {
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        middleName: formData.middleName.trim() || null,
+        suffix: formData.suffix.trim() || null,
+        sex: formData.sex,
+        employeeId: formData.employeeId.trim() || null,
+        designation: formData.designation.trim() || null,
+        mobileNumber: formData.mobileNumber.trim() || null,
+        email: formData.email.trim() || null,
+        password: formData.password,
+        role: formData.role,
+        mustChangePassword: formData.mustChangePassword,
+      };
+      await api.post("/admin/users", payload);
       sileo.success({
         title: "Account Created",
         description: `${formData.lastName}, ${formData.firstName} added successfully.`,
@@ -549,6 +565,24 @@ export default function AdminUsers() {
       const duplicateEmailMessage = getDuplicateEmailMessage(err);
       if (duplicateEmailMessage) {
         setCreateErrors((prev) => ({ ...prev, email: duplicateEmailMessage }));
+        return;
+      }
+      const response = (
+        err as {
+          response?: {
+            status?: number;
+            data?: { code?: string; message?: string };
+          };
+        }
+      ).response;
+      if (
+        response?.status === 409 &&
+        response.data?.code === "DUPLICATE_EMPLOYEE_ID"
+      ) {
+        setCreateErrors((prev) => ({
+          ...prev,
+          employeeId: response.data?.message ?? "Employee ID already in use.",
+        }));
         return;
       }
       toastApiError(err as never);
@@ -1667,6 +1701,7 @@ export default function AdminUsers() {
                       Head Registrar
                     </SelectItem>
                     <SelectItem value="TEACHER">Teacher</SelectItem>
+                    <SelectItem value="CLASS_ADVISER">Class Adviser</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1862,6 +1897,7 @@ export default function AdminUsers() {
                   <SelectItem value="SYSTEM_ADMIN">Admin</SelectItem>
                   <SelectItem value="HEAD_REGISTRAR">Registrar</SelectItem>
                   <SelectItem value="TEACHER">Teacher</SelectItem>
+                  <SelectItem value="CLASS_ADVISER">Class Adviser</SelectItem>
                   <SelectItem value="LEARNER">Learner</SelectItem>
                 </SelectContent>
               </Select>

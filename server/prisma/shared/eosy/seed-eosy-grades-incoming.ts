@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient, EosyStatus } from "../src/generated/prisma/index.js";
+import { PrismaClient, EosyStatus } from "../../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 
@@ -36,7 +36,7 @@ function generateGrade(isSTE: boolean): number {
 }
 
 async function main() {
-  console.log("🚀 Seeding End-of-School-Year (EOSY) Grades for Incoming Enrolled Learners...");
+  console.log("≡ƒÜÇ Seeding End-of-School-Year (EOSY) Grades for Incoming Enrolled Learners...");
 
   const activeYear = await prisma.schoolYear.findFirst({
     where: { status: { not: "ARCHIVED" } },
@@ -63,7 +63,7 @@ async function main() {
     }
   });
 
-  console.log(`📊 Processing ${records.length} incoming enrolled learner records...`);
+  console.log(`≡ƒôè Processing ${records.length} incoming enrolled learner records...`);
 
   const BATCH_SIZE = 200;
   let processed = 0;
@@ -114,7 +114,7 @@ async function main() {
     }
   }
 
-  console.log("✅ EOSY grades for incoming learners seeded successfully.");
+  console.log("Γ£à EOSY grades for incoming learners seeded successfully.");
 }
 
 main()

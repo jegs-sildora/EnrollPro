@@ -1,4 +1,4 @@
-import { PrismaClient } from "../src/generated/prisma/index.js";
+import { PrismaClient } from "../../../src/generated/prisma/index.js";
 
 const prisma = new PrismaClient();
 
@@ -22,7 +22,7 @@ async function main() {
     prisma.section.deleteMany({})
   ]);
 
-  console.log("✅ Wiped all sections and their dependencies (EnrollmentRecords, Advisers).");
+  console.log("Γ£à Wiped all sections and their dependencies (EnrollmentRecords, Advisers).");
 }
 
 main()

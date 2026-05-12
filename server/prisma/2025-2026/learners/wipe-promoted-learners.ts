@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient } from "../src/generated/prisma/index.js";
+import { PrismaClient } from "../../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 
@@ -8,7 +8,7 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log("🧹 Wiping seeded promoted learners for 2026-2027...");
+  console.log("≡ƒº╣ Wiping seeded promoted learners for 2026-2027...");
 
   // 1. Get Target School Year
   const targetYear = await prisma.schoolYear.findUnique({
@@ -28,7 +28,7 @@ async function main() {
     },
   });
 
-  console.log(`\n✅ Successfully wiped ${count} promoted enrollment applications from ${targetYear.yearLabel}.`);
+  console.log(`\nΓ£à Successfully wiped ${count} promoted enrollment applications from ${targetYear.yearLabel}.`);
 }
 
 main()

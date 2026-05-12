@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient, Role, Sex } from "../src/generated/prisma/index.js";
+import { PrismaClient, Role, Sex } from "../../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 import * as bcrypt from "bcryptjs";
@@ -9,10 +9,10 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log("🛠️ Starting Teacher User Backfill...");
+  console.log("≡ƒ¢á∩╕Å Starting Teacher User Backfill...");
 
   const teachers = await prisma.teacher.findMany();
-  console.log(`🔍 Found ${teachers.length} teacher profiles.`);
+  console.log(`≡ƒöì Found ${teachers.length} teacher profiles.`);
 
   const defaultPasswordHash = await bcrypt.hash("DepEd2026!", 10);
   let createdCount = 0;
@@ -58,8 +58,8 @@ async function main() {
     }
   }
 
-  console.log(`✅ Backfill complete.`);
-  console.log(`📊 Stats: ${createdCount} users created, ${updatedCount} users updated/synced.`);
+  console.log(`Γ£à Backfill complete.`);
+  console.log(`≡ƒôè Stats: ${createdCount} users created, ${updatedCount} users updated/synced.`);
 }
 
 main()

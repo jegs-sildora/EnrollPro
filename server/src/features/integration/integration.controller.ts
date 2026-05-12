@@ -43,7 +43,9 @@ export async function getActiveSchoolYear(
 ): Promise<void> {
   const scopeResult = await resolveSchoolYearScope(req);
   if ("status" in scopeResult) {
-    res.status(scopeResult.status).json({ error: { message: scopeResult.message } });
+    res
+      .status(scopeResult.status)
+      .json({ error: { message: scopeResult.message } });
     return;
   }
 
@@ -171,6 +173,16 @@ export async function listIntegrationLearners(
             extensionName: true,
             birthdate: true,
             sex: true,
+            userId: true,
+            isPendingLrnCreation: true,
+            status: true,
+            user: {
+              select: {
+                accountName: true,
+                isActive: true,
+                mustChangePassword: true,
+              },
+            },
           },
         },
         schoolYear: {
@@ -222,6 +234,16 @@ export async function listIntegrationLearners(
         extensionName: application.learner.extensionName,
         birthdate: application.learner.birthdate,
         sex: application.learner.sex,
+        userId: application.learner.userId ?? null,
+        isPendingLrnCreation: application.learner.isPendingLrnCreation,
+        learnerStatus: application.learner.status,
+        portalAccount: application.learner.user
+          ? {
+              accountName: application.learner.user.accountName,
+              isActive: application.learner.user.isActive,
+              mustChangePassword: application.learner.user.mustChangePassword,
+            }
+          : null,
       },
       schoolYear: application.schoolYear,
       gradeLevel: application.gradeLevel,
@@ -259,6 +281,13 @@ export async function listIntegrationFaculty(
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     include: {
       _count: { select: { advisoryHistory: true } },
+      department: {
+        select: {
+          id: true,
+          code: true,
+          name: true,
+        },
+      },
       teacherDesignations: {
         where: { schoolYearId: scope.schoolYearId },
         include: {
@@ -301,6 +330,9 @@ export async function listIntegrationFaculty(
       contactNumber: teacher.contactNumber,
       specialization: teacher.specialization,
       isActive: teacher.isActive,
+      departmentId: teacher.departmentId ?? null,
+      departmentCode: teacher.department?.code ?? null,
+      departmentName: teacher.department?.name ?? null,
       sectionCount: teacher._count.advisoryHistory,
       schoolId: scope.schoolId,
       schoolName: scope.schoolName,
@@ -542,6 +574,16 @@ export async function listSectionLearners(
                 extensionName: true,
                 sex: true,
                 birthdate: true,
+                userId: true,
+                isPendingLrnCreation: true,
+                status: true,
+                user: {
+                  select: {
+                    accountName: true,
+                    isActive: true,
+                    mustChangePassword: true,
+                  },
+                },
               },
             },
           },

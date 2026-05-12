@@ -23,6 +23,8 @@ import {
 } from "../services/early-registration-shared.service.js";
 import { getSCPRankings } from "../services/scp-ranking.service.js";
 
+import { ensureLearnerUserAccount } from "../../learner/learner.service.js";
+
 export function createEarlyRegistrationBaseController(
   deps: AdmissionControllerDeps = createAdmissionControllerDeps(),
 ) {
@@ -386,7 +388,16 @@ export function createEarlyRegistrationBaseController(
         prisma.enrollmentApplication.findMany({
           where: { id: { in: enrollmentIds } },
           include: {
-            learner: true,
+            learner: {
+              include: {
+                enrollmentRecords: {
+                  where: syId ? { schoolYearId: { lt: syId } } : undefined,
+                  orderBy: { schoolYearId: "desc" },
+                  take: 1,
+                  select: { finalAverage: true },
+                },
+              },
+            },
             gradeLevel: true,
             enrollmentRecord: { include: { section: true } },
             programDetail: true,
@@ -1050,6 +1061,11 @@ export function createEarlyRegistrationBaseController(
       }
 
       return createdApplication;
+    });
+
+    // Auto-create User account for the learner
+    await prisma.$transaction(async (tx) => {
+      await ensureLearnerUserAccount(tx, (application as any).learner);
     });
 
     const shouldReuseLinkedTracking =

@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient, Sex, ApplicantType, ReadingProfileLevel, ApplicationStatus } from "../src/generated/prisma/index.js";
+import { PrismaClient, Sex, ApplicantType, ReadingProfileLevel, ApplicationStatus } from "../../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 import * as bcrypt from "bcryptjs";
@@ -17,11 +17,11 @@ function toUtcNoon(year: number, month: number, day: number): Date {
 const PH_FIRST_NAMES_MALE = [
 "JUAN", "JOSE", "MIGUEL", "CARLO", "RAFAEL", "PAOLO", "ANTONIO", "GABRIEL", "MATEO", "DIEGO", "EMMANUEL", "CHRISTIAN", "JOSHUA", "ANGELO", "RICARDO", "FERDINAND", "RODRIGO", "MANUEL", "CORAZON", "BENIGNO", "RAMON", "ELPIDIO", "SERGIO", "DIOSDADO", "JOSEPH"];
 const PH_FIRST_NAMES_FEMALE = ["MARIA", "ANGELICA", "PRINCESS", "JASMINE", "NICOLE", "GABRIELA", "SOFIA", "ISABELLA", "LIZA", "BEA", "CRISTINA", "PATRICIA", "ELENA", "ROSA", "TERESA", "IMELDA", "GLORIA", "CORAZON", "LOURDES", "REMEDIOS", "CARMELA", "JOSEFINA", "PERLA", "AURORA", "ESTRELLA"];
-const PH_LAST_NAMES = ["DELA CRUZ", "REYES", "SANTOS", "GARCIA", "MENDOZA", "FERNANDEZ", "NAVARRO", "RAMOS", "BAUTISTA", "GONZALES", "TORRES", "VILLANUEVA", "CRUZ", "PASCUAL", "AQUINO", "MARCOS", "DUTERTE", "ESTRADA", "ARROYO", "MAGSAYSAY", "QUIRINO", "OSMEÑA", "MACAPAGAL", "ROXAS", "QUEZON"];
+const PH_LAST_NAMES = ["DELA CRUZ", "REYES", "SANTOS", "GARCIA", "MENDOZA", "FERNANDEZ", "NAVARRO", "RAMOS", "BAUTISTA", "GONZALES", "TORRES", "VILLANUEVA", "CRUZ", "PASCUAL", "AQUINO", "MARCOS", "DUTERTE", "ESTRADA", "ARROYO", "MAGSAYSAY", "QUIRINO", "OSME├æA", "MACAPAGAL", "ROXAS", "QUEZON"];
 const PH_MIDDLE_NAMES = ["SANTIAGO", "DE LEON", "BALTAZAR", "CASTILLO", "SORIANO", "DEL ROSARIO", "VALDEZ", "RODRIGUEZ", "PANGANIBAN", "IBARRA", "LUNA", "SILANG"];
 
 async function main() {
-  console.log("🚀 Seeding 875 Pending Grade 7 Learners for 2026-2027 (Phase 1 Demo)...");
+  console.log("≡ƒÜÇ Seeding 875 Pending Grade 7 Learners for 2026-2027 (Phase 1 Demo)...");
 
   const targetYear = await prisma.schoolYear.findUnique({
     where: { yearLabel: "2026-2027" }
@@ -173,7 +173,7 @@ async function main() {
     }
   }
 
-  console.log("✅ Successfully seeded 875 pending Grade 7 learners for 2026-2027.");
+  console.log("Γ£à Successfully seeded 875 pending Grade 7 learners for 2026-2027.");
 }
 
 main()

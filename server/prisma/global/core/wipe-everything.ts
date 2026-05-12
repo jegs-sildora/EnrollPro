@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient } from "../src/generated/prisma/index.js";
+import { PrismaClient } from "../../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 
@@ -8,7 +8,7 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log("🚀 Starting Global Database Wipe...");
+  console.log("≡ƒÜÇ Starting Global Database Wipe...");
 
   try {
     // 1. Get all table names from the public schema
@@ -24,16 +24,16 @@ async function main() {
       .join(", ");
 
     if (tables.length > 0) {
-      console.log(`🧹 Truncating tables: ${tables}`);
+      console.log(`≡ƒº╣ Truncating tables: ${tables}`);
       // 3. Truncate all tables using CASCADE to handle foreign key constraints
       await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${tables} CASCADE;`);
-      console.log("✅ All tables truncated successfully.");
+      console.log("Γ£à All tables truncated successfully.");
     } else {
-      console.log("ℹ️ No tables found to truncate.");
+      console.log("Γä╣∩╕Å No tables found to truncate.");
     }
 
   } catch (error) {
-    console.error("❌ Error during database wipe:", error);
+    console.error("Γ¥î Error during database wipe:", error);
     process.exit(1);
   }
 }

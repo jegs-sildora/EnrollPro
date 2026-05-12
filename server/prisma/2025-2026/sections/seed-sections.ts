@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient, ApplicantType } from "../src/generated/prisma/index.js";
+import { PrismaClient, ApplicantType } from "../../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 
@@ -40,7 +40,7 @@ const TLE_TRACKS = [
 ];
 
 async function main() {
-  console.log("🌱 Seeding DepEd Sections for 2025-2026 (Start of Demo Timeline)...");
+  console.log("≡ƒî▒ Seeding DepEd Sections for 2025-2026 (Start of Demo Timeline)...");
 
   const targetYear = await prisma.schoolYear.findUnique({
     where: { yearLabel: "2025-2026" }
@@ -55,7 +55,7 @@ async function main() {
 
   for (const grade of gradeLevels) {
     const gradeNum = parseInt(grade.name.split(" ")[1]);
-    console.log(`\n📦 Processing ${grade.name}...`);
+    console.log(`\n≡ƒôª Processing ${grade.name}...`);
 
     let currentSortOrder = 1;
 
@@ -91,10 +91,10 @@ async function main() {
       if (specialization) tleIndex++;
     }
     
-    console.log(`✅ Finished seeding ${currentSortOrder - 1} sections for ${grade.name}.`);
+    console.log(`Γ£à Finished seeding ${currentSortOrder - 1} sections for ${grade.name}.`);
   }
 
-  console.log("\n✅ All sections seeded successfully with the new STE/BEC naming format.");
+  console.log("\nΓ£à All sections seeded successfully with the new STE/BEC naming format.");
 }
 
 async function upsertSection(name: string, gradeId: number, syId: number, program: ApplicantType, sortOrder: number, tleSpecialization: string | null) {

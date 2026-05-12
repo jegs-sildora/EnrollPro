@@ -79,6 +79,12 @@ export interface Teacher {
   designation: TeacherDesignation | null;
   isActive: boolean;
   createdAt: string;
+  userAccount: {
+    id: number;
+    isActive: boolean;
+    lastLoginAt: string | null;
+    mustChangePassword: boolean;
+  } | null;
 }
 
 export interface TeacherFormState {

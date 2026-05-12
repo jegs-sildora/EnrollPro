@@ -1,4 +1,4 @@
-import { PrismaClient } from "../src/generated/prisma/index.js";
+import { PrismaClient } from "../../../src/generated/prisma/index.js";
 
 const prisma = new PrismaClient();
 
@@ -37,7 +37,7 @@ async function main() {
     prisma.user.deleteMany({})
   ]);
 
-  console.log("✅ Wiped all users and cleared their operational audit trails.");
+  console.log("Γ£à Wiped all users and cleared their operational audit trails.");
 }
 
 main()

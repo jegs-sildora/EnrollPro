@@ -5,7 +5,12 @@ import {
   resolveSchoolYearScope,
 } from "./integration.shared.js";
 
-const STAFF_ROLES = ["SYSTEM_ADMIN", "HEAD_REGISTRAR"] as const;
+const STAFF_ROLES = [
+  "SYSTEM_ADMIN",
+  "HEAD_REGISTRAR",
+  "CLASS_ADVISER",
+  "TEACHER",
+] as const;
 
 function buildStaffName(user: {
   firstName: string;
@@ -50,6 +55,16 @@ async function fetchDefaultLearnerRows(schoolYearId: number) {
           extensionName: true,
           sex: true,
           birthdate: true,
+          userId: true,
+          isPendingLrnCreation: true,
+          status: true,
+          user: {
+            select: {
+              accountName: true,
+              isActive: true,
+              mustChangePassword: true,
+            },
+          },
         },
       },
       gradeLevel: {
@@ -102,8 +117,10 @@ export async function listIntegrationStaff(
       role: true,
       isActive: true,
       employeeId: true,
+      accountName: true,
       designation: true,
       mobileNumber: true,
+      mustChangePassword: true,
       createdAt: true,
       updatedAt: true,
       lastLoginAt: true,
@@ -115,6 +132,7 @@ export async function listIntegrationStaff(
     data: users.map((user) => ({
       id: user.id,
       employeeId: user.employeeId,
+      accountName: user.accountName,
       firstName: user.firstName,
       lastName: user.lastName,
       middleName: user.middleName,
@@ -125,6 +143,7 @@ export async function listIntegrationStaff(
       designation: user.designation,
       mobileNumber: user.mobileNumber,
       isActive: user.isActive,
+      mustChangePassword: user.mustChangePassword,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       lastLoginAt: user.lastLoginAt,
@@ -159,6 +178,13 @@ export async function listDefaultFaculty(
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     include: {
       _count: { select: { advisoryHistory: true } },
+      department: {
+        select: {
+          id: true,
+          code: true,
+          name: true,
+        },
+      },
       teacherDesignations: {
         where: { schoolYearId: scope.schoolYearId },
         include: {
@@ -193,6 +219,10 @@ export async function listDefaultFaculty(
       email: teacher.email,
       contactNumber: teacher.contactNumber,
       specialization: teacher.specialization,
+      isActive: teacher.isActive,
+      departmentId: teacher.departmentId ?? null,
+      departmentCode: teacher.department?.code ?? null,
+      departmentName: teacher.department?.name ?? null,
       sectionCount: teacher._count.advisoryHistory,
       isClassAdviser: designation?.isClassAdviser ?? false,
       designationNotes: designation?.designationNotes ?? null,
@@ -254,6 +284,16 @@ export async function listDefaultSmartStudents(
         fullName: buildLearnerName(application.learner),
         sex: application.learner.sex,
         birthdate: application.learner.birthdate,
+        userId: application.learner.userId ?? null,
+        isPendingLrnCreation: application.learner.isPendingLrnCreation,
+        learnerStatus: application.learner.status,
+        portalAccount: application.learner.user
+          ? {
+              accountName: application.learner.user.accountName,
+              isActive: application.learner.user.isActive,
+              mustChangePassword: application.learner.user.mustChangePassword,
+            }
+          : null,
       },
       gradeLevel: application.gradeLevel,
       section: application.enrollmentRecord?.section ?? null,
@@ -305,6 +345,16 @@ export async function listDefaultAimsContext(
         middleName: application.learner.middleName,
         extensionName: application.learner.extensionName,
         fullName: buildLearnerName(application.learner),
+        userId: application.learner.userId ?? null,
+        isPendingLrnCreation: application.learner.isPendingLrnCreation,
+        learnerStatus: application.learner.status,
+        portalAccount: application.learner.user
+          ? {
+              accountName: application.learner.user.accountName,
+              isActive: application.learner.user.isActive,
+              mustChangePassword: application.learner.user.mustChangePassword,
+            }
+          : null,
       },
       context: {
         gradeLevel: application.gradeLevel,

@@ -4,7 +4,7 @@ import {
   SectionAdviserStatus,
   Role,
   Sex,
-} from "../src/generated/prisma/index.js";
+} from "../../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 import * as bcrypt from "bcryptjs";
@@ -334,7 +334,7 @@ const PH_LAST_NAMES = [
   "ARROYO",
   "MAGSAYSAY",
   "QUIRINO",
-  "OSMEÑA",
+  "OSME├æA",
   "MACAPAGAL",
   "QUEZON",
   "MAGNO",
@@ -504,11 +504,11 @@ function generateRandomContactNumber(): string {
 
 async function main() {
   console.log(
-    "🌱 Scaling Faculty Roster: Generating 140+ UNIQUE DepEd Teachers...",
+    "≡ƒî▒ Scaling Faculty Roster: Generating 140+ UNIQUE DepEd Teachers...",
   );
 
   // 0. CLEANUP: Remove existing teachers and their login accounts to prevent ID/Email conflicts
-  console.log("🧹 Cleaning up existing faculty data...");
+  console.log("≡ƒº╣ Cleaning up existing faculty data...");
 
   await prisma.user.deleteMany({ where: { role: "TEACHER" } });
 
@@ -560,7 +560,7 @@ async function main() {
     // But ATLAS faculty are supposed to be "fixed" data. Let's just warn if there's a conflict.
     if (usedEmailKeys.has(emailKey)) {
       console.warn(
-        `  ⚠️ Warning: Atlas Faculty ${f.firstName} ${f.lastName} has a conflicting email key '${emailKey}'.`,
+        `  ΓÜá∩╕Å Warning: Atlas Faculty ${f.firstName} ${f.lastName} has a conflicting email key '${emailKey}'.`,
       );
     }
 
@@ -572,7 +572,7 @@ async function main() {
   });
 
   // 2. Generate remaining teachers with strict uniqueness
-  console.log("🔀 Shuffling name pools for maximum variety...");
+  console.log("≡ƒöÇ Shuffling name pools for maximum variety...");
 
   for (let i = teachersToSeed.length + 1; i <= totalTarget; i++) {
     let sex: Sex = "MALE";
@@ -632,7 +632,7 @@ async function main() {
     });
   }
 
-  console.log(`🚀 Provisioning ${teachersToSeed.length} Faculty accounts...`);
+  console.log(`≡ƒÜÇ Provisioning ${teachersToSeed.length} Faculty accounts...`);
 
   const firstAdmin = await prisma.user.findFirst({
     where: { role: "SYSTEM_ADMIN" },
@@ -807,18 +807,18 @@ async function main() {
 
     if ((i + 1) % 20 === 0 || i === teachersToSeed.length - 1) {
       console.log(
-        `  📊 Progress: ${i + 1}/${teachersToSeed.length} Faculty members fully provisioned.`,
+        `  ≡ƒôè Progress: ${i + 1}/${teachersToSeed.length} Faculty members fully provisioned.`,
       );
     }
   }
 
   console.log(
-    `\n🎉 Successfully scaled and synced ${teachersToSeed.length} UNIQUE teachers.`,
+    `\n≡ƒÄë Successfully scaled and synced ${teachersToSeed.length} UNIQUE teachers.`,
   );
   console.log(
-    `✅ No repeating names or numbers in emails. Employee IDs are 7-digit numeric.`,
+    `Γ£à No repeating names or numbers in emails. Employee IDs are 7-digit numeric.`,
   );
-  console.log(`🔑 Demo Login Password for all teachers: DepEd2026!`);
+  console.log(`≡ƒöæ Demo Login Password for all teachers: DepEd2026!`);
 }
 
 main()

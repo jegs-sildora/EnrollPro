@@ -112,6 +112,14 @@ export async function index(req: Request, res: Response) {
       include: {
         subjects: true,
         department: true,
+        user: {
+          select: {
+            id: true,
+            isActive: true,
+            lastLoginAt: true,
+            mustChangePassword: true,
+          },
+        },
         teacherDesignations: {
           where: schoolYearId ? { schoolYearId } : { id: -1 },
           include: {
@@ -145,6 +153,16 @@ export async function index(req: Request, res: Response) {
         subjects: teacher.subjects.map((s) => s.subject),
         isActive: teacher.isActive,
         createdAt: teacher.createdAt,
+        userAccount: teacher.user
+          ? {
+              id: teacher.user.id,
+              isActive: teacher.user.isActive,
+              lastLoginAt: teacher.user.lastLoginAt
+                ? teacher.user.lastLoginAt.toISOString()
+                : null,
+              mustChangePassword: teacher.user.mustChangePassword,
+            }
+          : null,
         designation: designation
           ? {
               id: designation.id,
@@ -280,11 +298,21 @@ export async function store(req: Request, res: Response) {
     const deptCode = normalizeOptionalUpperText(department);
 
     const teacher = await prisma.$transaction(async (tx) => {
-      // 1. Create/Upsert the User record for system login
-      // We use upsert in case a User with the same employeeId already exists
       const defaultPasswordHash = await bcrypt.hash("DepEd2026!", 10);
-      
-      await tx.user.upsert({
+
+      // 1. Create/Upsert the User record for system login
+      const existingUser = await tx.user.findUnique({
+        where: { employeeId: normalizedEmployeeId },
+        select: { id: true, role: true },
+      });
+
+      if (existingUser && existingUser.role === "SYSTEM_ADMIN") {
+        throw new Error(
+          "Conflict: This employee ID is already assigned to a System Administrator and cannot be automatically converted to a Teacher account.",
+        );
+      }
+
+      const upsertedUser = await tx.user.upsert({
         where: { employeeId: normalizedEmployeeId },
         update: {
           firstName: normalizedFirstName,
@@ -300,15 +328,17 @@ export async function store(req: Request, res: Response) {
           middleName: normalizeOptionalUpperText(middleName),
           email: normalizedEmail,
           employeeId: normalizedEmployeeId,
+          accountName: normalizedEmployeeId,
           password: defaultPasswordHash,
           role: "TEACHER",
           sex: sex === "MALE" ? "MALE" : "FEMALE",
           isActive: true,
           mustChangePassword: true,
         },
+        select: { id: true },
       });
 
-      // 2. Create the Teacher profile
+      // 2. Create the Teacher profile linked to the User
       const t = await tx.teacher.create({
         data: {
           firstName: normalizedFirstName,
@@ -321,6 +351,7 @@ export async function store(req: Request, res: Response) {
           specialization: normalizeOptionalUpperText(specialization),
           department: deptCode ? { connect: { code: deptCode } } : undefined,
           plantillaPosition: normalizeOptionalUpperText(plantillaPosition),
+          user: { connect: { id: upsertedUser.id } },
         },
       });
 
@@ -458,6 +489,20 @@ export async function update(req: Request, res: Response) {
             subject: sub.trim().toUpperCase(),
           })),
         });
+      }
+
+      // Backfill userId link if missing (for teachers created before the migration)
+      if (!t.userId) {
+        const linkedUser = await tx.user.findFirst({
+          where: { employeeId: normalizedEmployeeId },
+          select: { id: true },
+        });
+        if (linkedUser) {
+          await tx.teacher.update({
+            where: { id },
+            data: { userId: linkedUser.id },
+          });
+        }
       }
 
       return t;

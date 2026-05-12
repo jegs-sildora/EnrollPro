@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient, ApplicantType, AssessmentKind } from "../src/generated/prisma/index.js";
+import { PrismaClient, ApplicantType, AssessmentKind } from "../../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 
@@ -8,7 +8,7 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log("🚀 Seeding SCP Program Configurations for 2026-2027...");
+  console.log("≡ƒÜÇ Seeding SCP Program Configurations for 2026-2027...");
 
   const targetYear = await prisma.schoolYear.findUnique({
     where: { yearLabel: "2026-2027" }
@@ -205,7 +205,7 @@ async function main() {
     }
   });
 
-  console.log("✅ SCP configurations seeded successfully for 2026-2027.");
+  console.log("Γ£à SCP configurations seeded successfully for 2026-2027.");
 }
 
 main()
