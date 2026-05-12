@@ -37,6 +37,25 @@ export async function integrationHealth(
   });
 }
 
+export async function getActiveSchoolYear(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const scopeResult = await resolveSchoolYearScope(req);
+  if ("status" in scopeResult) {
+    res.status(scopeResult.status).json({ error: { message: scopeResult.message } });
+    return;
+  }
+
+  const { scope } = scopeResult;
+  res.json({
+    data: {
+      id: scope.schoolYearId,
+      yearLabel: scope.schoolYearLabel,
+    },
+  });
+}
+
 export async function listIntegrationLearners(
   req: Request,
   res: Response,

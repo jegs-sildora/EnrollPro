@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   integrationHealth,
+  getActiveSchoolYear,
   listIntegrationFaculty,
   listIntegrationLearners,
   listIntegrationSections,
@@ -26,6 +27,7 @@ router.get("/sample/staff", listSampleStaff);
 router.get("/sample/students", listSampleStudents);
 
 router.get("/health", integrationHealth);
+router.get("/school-year", getActiveSchoolYear);
 router.get("/learners", listIntegrationLearners);
 router.get("/students", listIntegrationLearners);
 router.get("/faculty", listIntegrationFaculty);
