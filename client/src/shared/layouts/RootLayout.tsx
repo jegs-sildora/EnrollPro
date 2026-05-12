@@ -61,6 +61,7 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
           selectedAccentHsl: res.data.selectedAccentHsl,
           activeSchoolYearId: res.data.activeSchoolYearId,
           activeSchoolYearLabel: res.data.activeSchoolYearLabel,
+          viewingSchoolYearId: res.data.viewingSchoolYearId,
           earlyRegOpenDate: res.data.earlyRegOpenDate,
           earlyRegCloseDate: res.data.earlyRegCloseDate,
           classOpeningDate: res.data.classOpeningDate,

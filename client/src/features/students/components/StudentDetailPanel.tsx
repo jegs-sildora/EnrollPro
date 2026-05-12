@@ -73,6 +73,7 @@ export interface StudentDetail {
   emailAddress: string;
   trackingNumber: string;
   status: string;
+  learnerStatus: string;
   applicantType?: string;
   rejectionReason: string | null;
   gradeLevel: string;

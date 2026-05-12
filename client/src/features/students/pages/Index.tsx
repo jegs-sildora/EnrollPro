@@ -570,6 +570,7 @@ export default function Students() {
   const mapPanelDetailToStudent = (detail: PanelStudentDetail): Student => {
     return {
       ...detail,
+      learnerStatus: detail.learnerStatus,
       learningProgram: "REGULAR", // Default fallback, though ideally fetched
       dateEnrolled: detail.enrollment?.enrolledAt || detail.createdAt,
       lifecycleOutcome: detail.enrollment?.eosyStatus || null,

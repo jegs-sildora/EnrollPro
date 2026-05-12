@@ -31,11 +31,20 @@ export async function getPublicSettings(
   try {
     const settings = await getOrCreateSettings();
 
-    // Honor context school year if provided via middleware (req.schoolYearId)
-    // This allows the public settings (like enrollment dates) to reflect the
-    // context the user is browsing in, while keeping global identity (name, logo).
-    let contextSy = settings.activeSchoolYear;
-    if (req.schoolYearId && req.schoolYearId !== settings.activeSchoolYearId) {
+    // Determine the "True Active" SY: global setting or fallback to latest ACTIVE row
+    let activeSy = settings.activeSchoolYear;
+    if (!activeSy) {
+      activeSy = await prisma.schoolYear.findFirst({
+        where: { status: "ACTIVE" },
+        orderBy: { createdAt: "desc" },
+      });
+    }
+
+    // Determine the "Context SY" (what the user is currently viewing)
+    // 1. If header context is provided, use it
+    // 2. Otherwise use the "True Active" SY determined above
+    let contextSy = activeSy;
+    if (req.schoolYearId && req.schoolYearId !== activeSy?.id) {
       contextSy = await prisma.schoolYear.findUnique({
         where: { id: req.schoolYearId },
       });
@@ -50,17 +59,14 @@ export async function getPublicSettings(
       logoUrl: settings.logoUrl,
       colorScheme: settings.colorScheme,
       selectedAccentHsl: settings.selectedAccentHsl,
-      activeSchoolYearId: contextSy?.id ?? settings.activeSchoolYearId,
-      activeSchoolYearLabel:
-        contextSy?.yearLabel ?? settings.activeSchoolYear?.yearLabel ?? null,
-      activeSchoolYearStatus:
-        contextSy?.status ?? settings.activeSchoolYear?.status ?? null,
-      systemStatus:
-        contextSy?.status ?? settings.activeSchoolYear?.status ?? "DRAFT",
+      activeSchoolYearId: activeSy?.id ?? null,
+      viewingSchoolYearId: contextSy?.id ?? activeSy?.id ?? null,
+      activeSchoolYearLabel: activeSy?.yearLabel ?? null,
+      viewingSchoolYearLabel: contextSy?.yearLabel ?? activeSy?.yearLabel ?? null,
+      activeSchoolYearStatus: activeSy?.status ?? null,
+      systemStatus: contextSy?.status ?? activeSy?.status ?? "DRAFT",
       portalControl:
-        contextSy?.portalControl ??
-        settings.activeSchoolYear?.portalControl ??
-        "AUTO",
+        contextSy?.portalControl ?? activeSy?.portalControl ?? "AUTO",
       earlyRegOpenDate: contextSy?.earlyRegOpenDate ?? null,
       earlyRegCloseDate: contextSy?.earlyRegCloseDate ?? null,
       classOpeningDate: contextSy?.classOpeningDate ?? null,

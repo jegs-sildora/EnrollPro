@@ -18,6 +18,7 @@
     "db:wipe-sections": "tsx prisma/wipe-sections.ts",
     "db:wipe-scp": "tsx prisma/wipe-scp.ts",
     "db:seed-scp": "tsx prisma/seed-scp.ts",
+    "db:seed-scp-configs": "tsx prisma/seed-scp-configs.ts",
     "db:seed-students": "tsx prisma/seed-students.ts",
     "db:seed-enrolled": "tsx prisma/seed-enrolled-learners.ts",
     "db:seed-existing-learners": "tsx prisma/seed-existing-learners.ts",
@@ -25,6 +26,10 @@
     "db:seed-eosy-grades-incoming": "tsx prisma/seed-eosy-grades-incoming.ts",
     "db:seed-pending-g7": "tsx prisma/seed-pending-g7.ts",
     "db:backfill-teacher-users": "tsx prisma/backfill-teacher-users.ts",
+    "db:seed-promoted": "tsx prisma/seed-promoted-learners.ts",
+    "db:wipe-promoted": "tsx prisma/wipe-promoted-learners.ts",
+    "db:seed-2026-2027": "tsx prisma/seed-2026-2027.ts",
+    "db:wipe-2026-2027": "tsx prisma/wipe-2026-2027.ts",
     "db:wipe": "tsx prisma/wipe.ts",
     "db:wipe-all": "tsx prisma/wipe-everything.ts"
   },

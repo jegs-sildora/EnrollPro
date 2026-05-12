@@ -1,7 +1,4 @@
-import {
-  EosyStatus,
-  AcademicStatus,
-} from "../../../generated/prisma/index.js";
+import { EosyStatus, AcademicStatus } from "../../../generated/prisma/index.js";
 import type { Request, Response } from "express";
 import {
   createSchoolYearControllerDeps,
@@ -75,7 +72,9 @@ async function carryOverEligibleLearners(
         where: {
           schoolYearId: sourceSchoolYearId,
           enrollmentApplication: {
-            status: { in: ["ENROLLED", "OFFICIALLY_ENROLLED", "TEMPORARILY_ENROLLED"] },
+            status: {
+              in: ["ENROLLED", "OFFICIALLY_ENROLLED", "TEMPORARILY_ENROLLED"],
+            },
           },
         },
         select: {
@@ -167,12 +166,23 @@ async function carryOverEligibleLearners(
 
     const sourceDisplayOrder = record.section.gradeLevel.displayOrder;
     const targetDisplayOrder =
-      eosyStatus === EosyStatus.PROMOTED ? sourceDisplayOrder + 1 : sourceDisplayOrder;
+      eosyStatus === EosyStatus.PROMOTED
+        ? sourceDisplayOrder + 1
+        : sourceDisplayOrder;
     const targetGradeLevel =
       targetGradeLevelByDisplayOrder.get(targetDisplayOrder) ?? null;
 
     if (!targetGradeLevel) {
       summary.skippedNoTargetGrade += 1;
+      // A PROMOTED learner with no target grade is a JHS Completer (e.g. Grade 10 → no Grade 11).
+      // EOSY section finalization should already have set this, but we enforce it here as a
+      // belt-and-suspenders guard so the Alumni / JHS Completers table is always consistent.
+      if (eosyStatus === EosyStatus.PROMOTED) {
+        await deps.prisma.learner.update({
+          where: { id: learnerId },
+          data: { status: "JHS_COMPLETER" },
+        });
+      }
       continue;
     }
 
@@ -213,7 +223,9 @@ async function carryOverEligibleLearners(
     });
 
     const resolvedAcademicStatus =
-      eosyStatus === EosyStatus.PROMOTED ? AcademicStatus.PROMOTED : AcademicStatus.RETAINED;
+      eosyStatus === EosyStatus.PROMOTED
+        ? AcademicStatus.PROMOTED
+        : AcademicStatus.RETAINED;
 
     await deps.prisma.applicationChecklist.create({
       data: {

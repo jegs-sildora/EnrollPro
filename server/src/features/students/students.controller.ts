@@ -105,6 +105,7 @@ export async function getStudents(req: Request, res: Response): Promise<void> {
     emailAddress: row.email || "",
     trackingNumber: row.trackingNumber,
     status: row.status,
+    learnerStatus: row.learner.status,
     gradeLevel: row.gradeLevel?.name || "",
     gradeLevelId: row.gradeLevelId,
     section: null,
@@ -176,6 +177,7 @@ export async function getStudentById(
       emailAddress: row.email,
       trackingNumber: row.trackingNumber,
       status: row.status,
+      learnerStatus: row.learner.status,
       rejectionReason: null,
       gradeLevel: {
         id: row.gradeLevel?.id || 0,
