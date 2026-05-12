@@ -149,10 +149,9 @@ export async function findStudents(query: {
     sortBy,
     sortOrder,
   } = query;
+
   const resolvedSchoolYearId = parsePositiveInt(schoolYearId);
   const resolvedLearnerId = parsePositiveInt(learnerId);
-  // If schoolYearId is not provided, we might be searching globally (e.g. for Completers)
-  
   const resolvedPage = parsePositiveInt(page) ?? 1;
   const resolvedLimit = Math.min(parsePositiveInt(limit) ?? 15, 1000000);
   const resolvedGradeLevelId = parsePositiveInt(gradeLevelId);
@@ -164,20 +163,50 @@ export async function findStudents(query: {
   const skip = (resolvedPage - 1) * resolvedLimit;
   const orderBy = resolveStudentOrderBy(sortBy, resolvedSortOrder);
 
-  // Global search for learners (Completers, Inactive, etc.)
-  if (learnerStatus && !resolvedSchoolYearId) {
-    const statuses = learnerStatus.split(",");
-    const learnerWhere: Prisma.LearnerWhereInput = {
-      status: statuses.length === 1 ? (statuses[0] as any) : { in: statuses as any[] },
-    };
+  // Define filters for the Learner model
+  const learnerWhere: Prisma.LearnerWhereInput = {};
+  
+  if (learnerStatus) {
+    const statuses = learnerStatus.split(",").map(s => s.trim().toUpperCase());
+    learnerWhere.status = statuses.length === 1 ? (statuses[0] as any) : { in: statuses as any[] };
+  } else if (resolvedSchoolYearId) {
+    // DEFAULT for "Active Enrolled" tab: Only show students who are still ACTIVE
+    // This explicitly excludes JHS_COMPLETER, DROPPED, and TRANSFERRED_OUT
+    learnerWhere.status = "ACTIVE";
+  }
 
-    if (search) {
-      const s = String(search);
-      learnerWhere.OR = [
-        { lrn: { contains: s, mode: "insensitive" } },
-        { firstName: { contains: s, mode: "insensitive" } },
-        { lastName: { contains: s, mode: "insensitive" } },
-      ];
+  if (search) {
+    const s = String(search);
+    const searchFilter = {
+      OR: [
+        { lrn: { contains: s, mode: "insensitive" as const } },
+        { firstName: { contains: s, mode: "insensitive" as const } },
+        { lastName: { contains: s, mode: "insensitive" as const } },
+      ],
+    };
+    Object.assign(learnerWhere, { ...learnerWhere, ...searchFilter });
+  }
+
+  // GLOBAL SEARCH (Alumni, Inactive) - No School Year provided
+  if (!resolvedSchoolYearId && learnerStatus) {
+    // For global search, we still want to filter by grade/section if provided
+    // but since we are searching Learners, we look at their LATEST enrollment application
+    const applicationWhere: Prisma.EnrollmentApplicationWhereInput = {};
+    if (resolvedGradeLevelId) applicationWhere.gradeLevelId = resolvedGradeLevelId;
+    
+    const enrollmentRecordFilters: Prisma.EnrollmentRecordWhereInput = {};
+    if (resolvedSectionId) enrollmentRecordFilters.sectionId = resolvedSectionId;
+    if (resolvedProgramType) enrollmentRecordFilters.section = { programType: resolvedProgramType };
+    
+    if (Object.keys(enrollmentRecordFilters).length > 0) {
+      applicationWhere.enrollmentRecord = enrollmentRecordFilters;
+    }
+
+    // If application filters are present, we must join with enrollmentApplications
+    if (Object.keys(applicationWhere).length > 0) {
+      learnerWhere.enrollmentApplications = {
+        some: applicationWhere
+      };
     }
 
     const total = await prisma.learner.count({ where: learnerWhere });
@@ -185,33 +214,19 @@ export async function findStudents(query: {
       where: learnerWhere,
       include: {
         enrollmentApplications: {
-          orderBy: { createdAt: "desc" },
+          orderBy: { schoolYear: { yearLabel: "desc" } },
           take: 1,
           include: {
             gradeLevel: true,
-            programDetail: {
-              select: {
-                scpType: true,
-              },
-            },
+            programDetail: { select: { scpType: true } },
             enrollmentRecord: {
               include: {
-                section: {
-                  select: {
-                    id: true,
-                    name: true,
-                    programType: true,
-                  },
-                },
+                section: { select: { id: true, name: true, programType: true } },
               },
             },
             addresses: true,
             familyMembers: true,
-            earlyRegistration: {
-              select: {
-                email: true,
-              },
-            },
+            earlyRegistration: { select: { email: true } },
           },
         },
       },
@@ -225,6 +240,7 @@ export async function findStudents(query: {
       return {
         ...latestApp,
         learner: l,
+        // Ensure status reflects the learner's actual status if no application status matches
         status: latestApp?.status || (l.status === "JHS_COMPLETER" ? "ALUMNI" : "INACTIVE"),
         gradeLevel: latestApp?.gradeLevel,
         enrollmentRecord: latestApp?.enrollmentRecord,
@@ -239,8 +255,10 @@ export async function findStudents(query: {
     };
   }
 
+  // SCHOOL YEAR SEARCH (Active Enrolled)
   const where: Prisma.EnrollmentApplicationWhereInput = {
     schoolYearId: resolvedSchoolYearId,
+    learner: learnerWhere,
   };
 
   if (resolvedLearnerId) {
@@ -253,11 +271,6 @@ export async function findStudents(query: {
         : { in: resolvedStatuses };
   }
 
-  // Strictly filter for ACTIVE learners by default if searching within a school year
-  where.learner = {
-    status: learnerStatus ? (learnerStatus as any) : "ACTIVE",
-  };
-
   const enrollmentRecordFilters: Prisma.EnrollmentRecordWhereInput = {};
   const shouldExcludeInactiveOutcomes = resolvedStatuses?.every(
     (applicationStatus) => ACTIVE_STATUS_DEFAULTS.includes(applicationStatus),
@@ -265,39 +278,36 @@ export async function findStudents(query: {
 
   if (shouldExcludeInactiveOutcomes) {
     enrollmentRecordFilters.OR = [
-      {
-        eosyStatus: null,
-      },
-      {
-        eosyStatus: {
-          notIn: [...INACTIVE_OUTCOMES],
-        },
-      },
-    ];
-  }
-
-  if (search) {
-    const s = String(search);
-    where.OR = [
-      { learner: { lrn: { contains: s, mode: "insensitive" } } },
-      { learner: { firstName: { contains: s, mode: "insensitive" } } },
-      { learner: { lastName: { contains: s, mode: "insensitive" } } },
-      { trackingNumber: { contains: s, mode: "insensitive" } },
+      { eosyStatus: null },
+      { eosyStatus: { notIn: [...INACTIVE_OUTCOMES] } },
     ];
   }
 
   if (resolvedGradeLevelId) where.gradeLevelId = resolvedGradeLevelId;
-
-  if (resolvedSectionId) {
-    enrollmentRecordFilters.sectionId = resolvedSectionId;
-  }
-
-  if (resolvedProgramType) {
-    enrollmentRecordFilters.section = { programType: resolvedProgramType };
-  }
+  if (resolvedSectionId) enrollmentRecordFilters.sectionId = resolvedSectionId;
+  if (resolvedProgramType) enrollmentRecordFilters.section = { programType: resolvedProgramType };
 
   if (Object.keys(enrollmentRecordFilters).length > 0) {
     where.enrollmentRecord = enrollmentRecordFilters;
+  }
+
+  // Add search to the application level as well if needed (tracking number)
+  if (search) {
+    const s = String(search);
+    const appSearch = {
+      OR: [
+        { trackingNumber: { contains: s, mode: "insensitive" as const } },
+        { learner: { lrn: { contains: s, mode: "insensitive" as const } } },
+        { learner: { firstName: { contains: s, mode: "insensitive" as const } } },
+        { learner: { lastName: { contains: s, mode: "insensitive" as const } } },
+      ]
+    };
+    // Combine with the learner status filter
+    where.AND = [
+      { learner: learnerWhere },
+      appSearch
+    ];
+    delete where.learner; // Use AND instead
   }
 
   const total = await prisma.enrollmentApplication.count({ where });
@@ -305,26 +315,12 @@ export async function findStudents(query: {
     where,
     include: {
       learner: true,
-      earlyRegistration: {
-        select: {
-          email: true,
-        },
-      },
+      earlyRegistration: { select: { email: true } },
       gradeLevel: true,
-      programDetail: {
-        select: {
-          scpType: true,
-        },
-      },
+      programDetail: { select: { scpType: true } },
       enrollmentRecord: {
         include: {
-          section: {
-            select: {
-              id: true,
-              name: true,
-              programType: true,
-            },
-          },
+          section: { select: { id: true, name: true, programType: true } },
         },
       },
       addresses: true,
@@ -362,6 +358,9 @@ export async function getStudentsSummary(query: {
         resolvedStatuses.length === 1
           ? resolvedStatuses[0]
           : { in: resolvedStatuses },
+      learner: {
+        status: "ACTIVE",
+      },
     },
     select: {
       learner: {

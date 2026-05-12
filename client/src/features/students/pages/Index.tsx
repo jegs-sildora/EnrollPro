@@ -100,6 +100,7 @@ interface Student {
   emailAddress: string;
   trackingNumber: string;
   status: string;
+  learnerStatus: string;
   applicantType?: string;
   lifecycleOutcome: EosyStatus | null;
   dropOutReason: string | null;
@@ -500,11 +501,13 @@ export default function Students() {
   }, []);
 
   const renderLearnerStatus = (student: Student) => {
-    let status = "ACTIVE";
-    if (student.lifecycleOutcome === "DROPPED_OUT") status = "DROPPED";
-    else if (student.lifecycleOutcome === "TRANSFERRED_OUT")
-      status = "TRANSFERRED_OUT";
-    else if (activeTab === "completers") status = "JHS_COMPLETER";
+    let status = student.learnerStatus || "ACTIVE";
+    
+    // Override with lifecycle outcome if present and tab is active/inactive
+    if (activeTab !== "completers") {
+      if (student.lifecycleOutcome === "DROPPED_OUT") status = "DROPPED";
+      else if (student.lifecycleOutcome === "TRANSFERRED_OUT") status = "TRANSFERRED_OUT";
+    }
 
     const label = status
       .replaceAll("_", " ")

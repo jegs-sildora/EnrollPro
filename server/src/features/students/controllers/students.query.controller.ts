@@ -239,6 +239,7 @@ export const createStudentsQueryController = (
           emailAddress: applicant.earlyRegistration?.email ?? null,
           trackingNumber: applicant.trackingNumber,
           status: applicant.status,
+          learnerStatus: applicant.learner?.status || "ACTIVE",
           applicantType: applicant.applicantType,
           gradeLevel: applicant.gradeLevel?.name || "Unknown",
           gradeLevelId: applicant.gradeLevelId,

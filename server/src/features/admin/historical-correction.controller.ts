@@ -17,7 +17,7 @@ export async function authorize(req: Request, res: Response): Promise<void> {
   if (!parsed.success) {
     res.status(400).json({
       code: "VALIDATION_ERROR",
-      message: parsed.error.errors[0]?.message ?? "Invalid request body",
+      message: parsed.error.issues[0]?.message ?? "Invalid request body",
     });
     return;
   }
@@ -53,12 +53,10 @@ export async function authorize(req: Request, res: Response): Promise<void> {
 
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
-    res
-      .status(500)
-      .json({
-        code: "CONFIGURATION_ERROR",
-        message: "Server misconfiguration.",
-      });
+    res.status(500).json({
+      code: "CONFIGURATION_ERROR",
+      message: "Server misconfiguration.",
+    });
     return;
   }
 
