@@ -85,3 +85,4 @@ PROCESS: P5.2 Monitor Application Status & View Placement
 <- Outbound to Learner: [Portal Dashboard View] (Noun: Digital display of enrollment status, document compliance flags, and class adviser info)
 -> Outbound to DB:
    - D20: audit_logs (Audit Log Entry: records portal access for security monitoring)
+

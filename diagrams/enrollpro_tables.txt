@@ -29,3 +29,11 @@ EnrollPro Database Tables (from server/prisma/schema.prisma)
 26. scp_program_options
 27. teacher_subjects
 28. teacher_designations
+
+D22: departments
+D23: teacher_subjects
+D24: grade_levels
+D25: section_advisers
+D28: scp_interview_rubric_criteria
+D27: scp_program_options
+
