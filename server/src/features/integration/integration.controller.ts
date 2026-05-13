@@ -1,4 +1,6 @@
 import type { Request, Response } from "express";
+import axios from "axios";
+import type { Prisma } from "../../generated/prisma/index.js";
 import { prisma } from "../../lib/prisma.js";
 import {
   buildTeacherName,
@@ -9,6 +11,29 @@ import {
 } from "./integration.shared.js";
 import { SectionAdviserStatus } from "../../generated/prisma/index.js";
 
+// ---------------------------------------------------------------------------
+// Local Prisma payload types — replace `any` throughout this file
+// ---------------------------------------------------------------------------
+type TeacherForFaculty = Prisma.TeacherGetPayload<{
+  include: {
+    _count: { select: { advisoryHistory: true } };
+    department: { select: { id: true; code: true; name: true } };
+    teacherDesignations: {
+      include: {
+        updatedBy: { select: { id: true; firstName: true; lastName: true } };
+        advisorySection: {
+          select: {
+            id: true;
+            name: true;
+            gradeLevelId: true;
+            gradeLevel: { select: { name: true } };
+          };
+        };
+      };
+    };
+  };
+}>;
+
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
 
@@ -16,22 +41,36 @@ export async function integrationHealth(
   _req: Request,
   res: Response,
 ): Promise<void> {
-  let dbStatus: "connected" | "down" = "connected";
-  let dbLatencyMs = 0;
+  const probeExternal = async (url: string, name: string) => {
+    try {
+      const start = Date.now();
+      await axios.get(`${url}/api/health`, { timeout: 3000 });
+      return { name, status: "ok", latency: `${Date.now() - start}ms` };
+    } catch (e: any) {
+      return { name, status: "offline", error: e.message };
+    }
+  };
 
-  try {
-    const startedAt = Date.now();
-    await prisma.$queryRaw`SELECT 1`;
-    dbLatencyMs = Date.now() - startedAt;
-  } catch {
-    dbStatus = "down";
-  }
+  const [dbStatus, atlasHealth, aimsHealth, smartHealth] = await Promise.all([
+    (async () => {
+      try {
+        const start = Date.now();
+        await prisma.$queryRaw`SELECT 1`;
+        return { status: "ok", latency: `${Date.now() - start}ms` };
+      } catch {
+        return { status: "down" };
+      }
+    })(),
+    probeExternal(process.env.ATLAS_API_BASE_URL || "http://njgrm.buru-degree.ts.net:5001", "ATLAS"),
+    probeExternal(process.env.AIMS_API_BASE_URL || "http://tfrog.buru-degree.ts.net:5000", "AIMS"),
+    probeExternal(process.env.SMART_API_BASE_URL || "http://laptop-pfvh73qk.buru-degree.ts.net:5003", "SMART"),
+  ]);
 
-  res.status(dbStatus === "connected" ? 200 : 503).json({
+  res.json({
     data: {
-      status: dbStatus === "connected" ? "ok" : "degraded",
+      status: dbStatus.status === "ok" ? "ok" : "degraded",
       db: dbStatus,
-      dbLatencyMs,
+      systems: [atlasHealth, aimsHealth, smartHealth],
       timestamp: new Date().toISOString(),
     },
   });
@@ -277,48 +316,70 @@ export async function listIntegrationFaculty(
 
   const { scope } = scopeResult;
 
-  const teachers = await prisma.teacher.findMany({
-    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-    include: {
-      _count: { select: { advisoryHistory: true } },
-      department: {
-        select: {
-          id: true,
-          code: true,
-          name: true,
-        },
-      },
-      teacherDesignations: {
-        where: { schoolYearId: scope.schoolYearId },
-        include: {
-          updatedBy: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-            },
+  // DPA: only expose inactive records when explicitly requested
+  const includeInactive =
+    String(req.query.includeInactive ?? "false").toLowerCase() === "true";
+
+  // Pagination — consistent with the rest of the integration layer
+  const page = parsePositiveInt(req.query.page) ?? 1;
+  const limit = Math.min(
+    parsePositiveInt(req.query.limit) ?? DEFAULT_PAGE_SIZE,
+    MAX_PAGE_SIZE,
+  );
+  const skip = (page - 1) * limit;
+
+  const where = includeInactive ? {} : { isActive: true };
+
+  const [total, teachers] = await Promise.all([
+    prisma.teacher.count({ where }),
+    prisma.teacher.findMany({
+      where,
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+      skip,
+      take: limit,
+      include: {
+        _count: { select: { advisoryHistory: true } },
+        department: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
           },
-          advisorySection: {
-            select: {
-              id: true,
-              name: true,
-              gradeLevelId: true,
-              gradeLevel: {
-                select: {
-                  name: true,
+        },
+        teacherDesignations: {
+          where: { schoolYearId: scope.schoolYearId },
+          include: {
+            updatedBy: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+            advisorySection: {
+              select: {
+                id: true,
+                name: true,
+                gradeLevelId: true,
+                gradeLevel: {
+                  select: {
+                    name: true,
+                  },
                 },
               },
             },
           },
+          take: 1,
         },
-        take: 1,
       },
-    },
-  });
+    }),
+  ]);
 
-  const rows = teachers.map((teacher: any) => {
+  const rows = teachers.map((teacher: TeacherForFaculty) => {
     const designation = teacher.teacherDesignations[0] ?? null;
 
+    // NOTE: designationNotes, updateReason, updatedById, updatedByName, updatedAt
+    // are internal HR audit fields — excluded to comply with DPA minimization.
     return {
       teacherId: teacher.id,
       employeeId: teacher.employeeId,
@@ -350,15 +411,8 @@ export async function listIntegrationFaculty(
         designation?.advisorySection?.gradeLevelId ?? null,
       advisorySectionGradeLevelName:
         designation?.advisorySection?.gradeLevel?.name ?? null,
-      designationNotes: designation?.designationNotes ?? null,
       effectiveFrom: designation?.effectiveFrom ?? null,
       effectiveTo: designation?.effectiveTo ?? null,
-      updateReason: designation?.updateReason ?? null,
-      updatedById: designation?.updatedById ?? null,
-      updatedByName: designation?.updatedBy
-        ? `${designation.updatedBy.lastName}, ${designation.updatedBy.firstName}`
-        : null,
-      updatedAt: designation?.updatedAt ?? null,
     };
   });
 
@@ -367,7 +421,11 @@ export async function listIntegrationFaculty(
     meta: {
       generatedAt: new Date().toISOString(),
       scope,
-      total: rows.length,
+      total,
+      page,
+      limit,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+      includeInactive,
     },
   });
 }
@@ -408,37 +466,50 @@ export async function listIntegrationSections(
     where.gradeLevelId = gradeLevelId;
   }
 
-  const sections = await prisma.section.findMany({
-    where,
-    include: {
-      gradeLevel: {
-        select: {
-          id: true,
-          name: true,
-          displayOrder: true,
+  // Pagination
+  const page = parsePositiveInt(req.query.page) ?? 1;
+  const limit = Math.min(
+    parsePositiveInt(req.query.limit) ?? DEFAULT_PAGE_SIZE,
+    MAX_PAGE_SIZE,
+  );
+  const skip = (page - 1) * limit;
+
+  const [total, sections] = await Promise.all([
+    prisma.section.count({ where }),
+    prisma.section.findMany({
+      where,
+      include: {
+        gradeLevel: {
+          select: {
+            id: true,
+            name: true,
+            displayOrder: true,
+          },
         },
-      },
-      advisers: {
-        where: { status: SectionAdviserStatus.ACTIVE },
-        include: {
-          teacher: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              middleName: true,
+        advisers: {
+          where: { status: SectionAdviserStatus.ACTIVE },
+          include: {
+            teacher: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                middleName: true,
+              },
             },
           },
         },
-      },
-      _count: {
-        select: {
-          enrollmentRecords: true,
+        _count: {
+          select: {
+            enrollmentRecords: true,
+          },
         },
       },
-    },
-    orderBy: [{ gradeLevel: { displayOrder: "asc" } }, { name: "asc" }],
-  });
+      orderBy: [{ gradeLevel: { displayOrder: "asc" } }, { name: "asc" }],
+      skip,
+      take: limit,
+    }),
+  ]);
 
   res.json({
     data: sections.map((section) => {
@@ -449,6 +520,10 @@ export async function listIntegrationSections(
         programType: section.programType,
         maxCapacity: section.maxCapacity,
         enrolledCount: section._count.enrollmentRecords,
+        availableSlots: Math.max(
+          0,
+          section.maxCapacity - section._count.enrollmentRecords,
+        ),
         gradeLevel: section.gradeLevel,
         advisingTeacher: activeAdviser
           ? {
@@ -466,7 +541,10 @@ export async function listIntegrationSections(
     }),
     meta: {
       scope,
-      total: sections.length,
+      total,
+      page,
+      limit,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
     },
   });
 }

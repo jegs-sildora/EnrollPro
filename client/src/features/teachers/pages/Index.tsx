@@ -6,7 +6,14 @@ import {
   startTransition,
 } from "react";
 import { sileo } from "sileo";
-import { ChevronDown, GraduationCap, Plus, Upload } from "lucide-react";
+import {
+  ChevronDown,
+  GraduationCap,
+  Plus,
+  RefreshCw,
+  Upload,
+} from "lucide-react";
+import { cn } from "@/shared/lib/utils";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
@@ -30,6 +37,7 @@ import {
 import { TeacherDirectoryCard } from "../components/TeacherDirectoryCard";
 import { TeacherFormSheet } from "@/features/teachers/components/TeacherFormSheet";
 import { TeacherDesignationSheet } from "../components/TeacherDesignationSheet";
+import { TeacherDetailPanel } from "../components/TeacherDetailPanel";
 import type {
   AdvisorySectionOption,
   DesignationCollision,
@@ -203,6 +211,8 @@ export default function Teachers() {
   const [editFormData, setEditFormData] = useState<TeacherFormState>(
     createEmptyTeacherForm,
   );
+
+  const [viewingTeacher, setViewingTeacher] = useState<Teacher | null>(null);
 
   const [designationForm, setDesignationForm] = useState<DesignationFormState>(
     createEmptyDesignationForm,
@@ -748,6 +758,44 @@ export default function Teachers() {
     setCreateOpen(true);
   };
 
+  const handleSyncAtlas = async () => {
+    setSubmitting(true);
+    try {
+      // Corrected endpoint path: /integration is mapped to integrationTriggerRoutes
+      const res = await api.post("/integration/atlas/sync-faculty");
+      sileo.success({
+        title: "ATLAS Sync Successful",
+        description: res.data.message || "Faculty roster has been synchronized with the scheduling system.",
+      });
+      fetchTeachers();
+    } catch (err: any) {
+      // Professional Error Handling with Reasons
+      const status = err.response?.status;
+      const errorCode = err.response?.data?.code;
+
+      if (status === 404) {
+        sileo.error({
+          title: "Service Unavailable",
+          description: "The ATLAS integration service endpoint could not be reached. This may be due to a server misconfiguration or the integration module being disabled.",
+        });
+      } else if (status === 503 || errorCode === "UPSTREAM_UNAVAILABLE") {
+        sileo.error({
+          title: "ATLAS Connection Failed",
+          description: "EnrollPro was unable to establish a handshake with the ATLAS Scheduling System. Please ensure the ATLAS server is online and reachable via Tailscale.",
+        });
+      } else if (status === 401 || status === 403) {
+        sileo.error({
+          title: "Access Denied",
+          description: "Integration credentials (API Key) for ATLAS are invalid or have expired. Please verify your system settings.",
+        });
+      } else {
+        toastApiError(err);
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleBulkImportPlaceholder = () => {
     sileo.info({
       title: "Bulk Import Coming Soon",
@@ -795,6 +843,7 @@ export default function Teachers() {
         onEditTeacher={startEditing}
         onDeactivateTeacher={setTeacherToDeactivate}
         onReactivateTeacher={setReactivateId}
+        onOpenDetail={setViewingTeacher}
       />
     ),
     [
@@ -814,6 +863,17 @@ export default function Teachers() {
       fetchTeachers,
       openDesignationEditor,
     ],
+  );
+
+  const renderedTeacherDetailPanel = useMemo(
+    () => (
+      <TeacherDetailPanel
+        open={Boolean(viewingTeacher)}
+        teacher={viewingTeacher}
+        onOpenChange={(open) => !open && setViewingTeacher(null)}
+      />
+    ),
+    [viewingTeacher],
   );
 
   const renderedTeacherCreateSheet = useMemo(
@@ -936,7 +996,7 @@ export default function Teachers() {
         <div className="space-y-1 text-left">
           <h1 className="text-2xl md:text-3xl font-bold flex items-center justify-start gap-2 text-balance">
             <GraduationCap className="h-7 w-7 md:h-8 md:w-8" />
-            Teacher Management
+            Teacher Profiling
           </h1>
           <p className="text-sm text-foreground text-balance font-bold">
             Manage teacher profiles, learning areas, and adviser assignments.
@@ -944,40 +1004,56 @@ export default function Teachers() {
         </div>
         <div className="flex justify-end gap-2 flex-wrap">
           {canMutate && (
-            <div className="inline-flex shadow-sm rounded-lg overflow-hidden">
+            <>
               <Button
-                onClick={openCreateTeacherSheet}
-                className="rounded-r-none">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Teacher
+                variant="secondary"
+                onClick={handleSyncAtlas}
+                disabled={submitting}
+                className="font-black uppercase text-xs h-10 border-2 border-primary/20 shadow-sm hover:bg-primary/5 active:scale-95 transition-all">
+                <RefreshCw
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    submitting && "animate-spin",
+                  )}
+                />
+                Sync with ATLAS
               </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="icon-sm"
-                    className="rounded-l-none border-l border-primary-foreground/20"
-                    aria-label="Open add teacher options">
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="w-56">
-                  <DropdownMenuItem
-                    onClick={openCreateTeacherSheet}
-                    className="cursor-pointer">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Single Teacher
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={handleBulkImportPlaceholder}
-                    className="cursor-pointer">
-                    <Upload className="mr-2 h-4 w-4" />
-                    Bulk Import (CSV)
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+
+              <div className="inline-flex shadow-sm rounded-lg overflow-hidden">
+                <Button
+                  onClick={openCreateTeacherSheet}
+                  className="rounded-r-none h-10">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Teacher
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      size="icon-sm"
+                      className="rounded-l-none border-l border-primary-foreground/20 h-10"
+                      aria-label="Open add teacher options">
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-56">
+                    <DropdownMenuItem
+                      onClick={openCreateTeacherSheet}
+                      className="cursor-pointer">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Single Teacher
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={handleBulkImportPlaceholder}
+                      className="cursor-pointer">
+                      <Upload className="mr-2 h-4 w-4" />
+                      Bulk Import (CSV)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -993,6 +1069,7 @@ export default function Teachers() {
       {renderedTeacherCreateSheet}
       {renderedTeacherEditSheet}
       {renderedDesignationSheet}
+      {renderedTeacherDetailPanel}
 
       <Dialog
         open={Boolean(teacherToDeactivate)}

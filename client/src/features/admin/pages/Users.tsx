@@ -79,6 +79,7 @@ import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import { PaginationBar } from "@/shared/components/PaginationBar";
+import { UserAccountFormSheet } from "../components/UserAccountFormSheet";
 
 interface User {
   id: number;
@@ -260,6 +261,19 @@ export default function AdminUsers() {
     setRowSelection({});
   };
 
+  const handleCreateFieldChange = useCallback(
+    (field: string, value: any) => {
+      setFormData((prev) => {
+        const next = { ...prev, [field]: value };
+        if (field === "firstName" || field === "lastName") {
+          next.email = computeEmail(next.firstName, next.lastName);
+        }
+        return next;
+      });
+    },
+    [],
+  );
+
   useEffect(() => {
     setPage(1);
     setSearch("");
@@ -350,6 +364,7 @@ export default function AdminUsers() {
     role: "TEACHER" as User["role"],
     password: "",
     mustChangePassword: true,
+    department: "",
   });
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [profileUser, setProfileUser] = useState<User | null>(null);
@@ -368,6 +383,7 @@ export default function AdminUsers() {
     mobileNumber: "",
     email: "",
     role: "TEACHER" as User["role"],
+    department: "",
   });
 
   const validateCreateForm = () => {
@@ -553,6 +569,7 @@ export default function AdminUsers() {
         password: formData.password,
         role: formData.role,
         mustChangePassword: formData.mustChangePassword,
+        department: formData.department || null,
       };
       await api.post("/admin/users", payload);
       sileo.success({
@@ -607,6 +624,13 @@ export default function AdminUsers() {
     });
     setProfileOpen(true);
   }, []);
+
+  const handleProfileFieldChange = useCallback(
+    (field: keyof typeof profileFormData, value: any) => {
+      setProfileFormData((prev) => ({ ...prev, [field]: value }));
+    },
+    [],
+  );
 
   const handleProfileSave = async () => {
     if (!profileUser) return;
@@ -1535,435 +1559,34 @@ export default function AdminUsers() {
         </AnimatePresence>
       </Tabs>
 
-      {/* Add User Account Drawer */}
-      <Sheet
+      <UserAccountFormSheet
+        mode="create"
         open={createOpen}
-        onOpenChange={setCreateOpen}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto scrollbar-thin">
-          <SheetHeader className="pb-6 border-b">
-            <SheetTitle className="text-2xl font-bold flex items-center gap-2 text-maroon-900">
-              Add Staff Account
-            </SheetTitle>
-            <SheetDescription className="font-bold text-foreground">
-              Create a new administrative or faculty account for the school
-              system.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="space-y-6 py-6">
-            <div className="space-y-4">
-              <Label className="text-xs font-black uppercase  text-foreground">
-                Staff Identity
-              </Label>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">
-                    First Name *
-                  </Label>
-                  <Input
-                    placeholder="REGINA"
-                    value={formData.firstName}
-                    onChange={(e) => {
-                      const v = e.target.value.toUpperCase();
-                      setCreateErrors((p) => ({ ...p, firstName: "" }));
-                      setFormData({
-                        ...formData,
-                        firstName: v,
-                        email: computeEmail(v, formData.lastName),
-                      });
-                    }}
-                    className={cn(
-                      "h-10 font-bold",
-                      createErrors.firstName && "border-destructive",
-                    )}
-                  />
-                  {createErrors.firstName && (
-                    <p className="text-xs font-bold text-destructive uppercase">
-                      {createErrors.firstName}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">
-                    Last Name *
-                  </Label>
-                  <Input
-                    placeholder="CRUZ"
-                    value={formData.lastName}
-                    onChange={(e) => {
-                      const v = e.target.value.toUpperCase();
-                      setCreateErrors((p) => ({ ...p, lastName: "" }));
-                      setFormData({
-                        ...formData,
-                        lastName: v,
-                        email: computeEmail(formData.firstName, v),
-                      });
-                    }}
-                    className={cn(
-                      "h-10 font-bold",
-                      createErrors.lastName && "border-destructive",
-                    )}
-                  />
-                  {createErrors.lastName && (
-                    <p className="text-xs font-bold text-destructive uppercase">
-                      {createErrors.lastName}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">
-                    Middle Name
-                  </Label>
-                  <Input
-                    placeholder="OPTIONAL"
-                    value={formData.middleName}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        middleName: e.target.value.toUpperCase(),
-                      })
-                    }
-                    className="h-10 font-bold"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">Suffix</Label>
-                  <Input
-                    placeholder="JR., III"
-                    value={formData.suffix}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        suffix: e.target.value.toUpperCase(),
-                      })
-                    }
-                    className="h-10 font-bold"
-                  />
-                </div>
-              </div>
-              <div className="space-y-3">
-                <Label className="text-xs font-bold uppercase">
-                  Sex at Birth *
-                </Label>
-                <div className="flex gap-4 pt-1">
-                  {(
-                    [
-                      { val: "MALE", icon: Mars },
-                      { val: "FEMALE", icon: Venus },
-                    ] as const
-                  ).map((s) => (
-                    <button
-                      key={s.val}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, sex: s.val })}
-                      className={cn(
-                        "flex items-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-sm font-bold uppercase",
-                        formData.sex === s.val
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:bg-muted/50",
-                      )}>
-                      <s.icon
-                        className={cn(
-                          "w-4 h-4",
-                          formData.sex === s.val
-                            ? "text-primary"
-                            : "text-foreground",
-                        )}
-                      />
-                      {s.val}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
+        onOpenChange={setCreateOpen}
+        formData={formData}
+        onFieldChange={handleCreateFieldChange}
+        onSubmit={handleCreate}
+        onCancel={() => setCreateOpen(false)}
+        submitting={submitting}
+        user={null}
+        onGeneratePassword={() =>
+          setFormData((p) => ({ ...p, password: generatePassword() }))
+        }
+        onCopyPassword={copyToClipboard}
+        passwordCopied={copied}
+      />
 
-            <div className="space-y-4 pt-4 border-t">
-              <div className="flex items-center gap-2 text-xs font-extrabold uppercase  text-foreground">
-                <Briefcase className="h-3.5 w-3.5" />
-                Employment & Role
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase">
-                  Assign Access Role *
-                </Label>
-                <Select
-                  value={formData.role}
-                  onValueChange={(v: User["role"]) =>
-                    setFormData({ ...formData, role: v })
-                  }>
-                  <SelectTrigger className="h-11 font-bold text-primary">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="SYSTEM_ADMIN">School Head</SelectItem>
-                    <SelectItem value="HEAD_REGISTRAR">
-                      Head Registrar
-                    </SelectItem>
-                    <SelectItem value="TEACHER">Teacher</SelectItem>
-                    <SelectItem value="CLASS_ADVISER">Class Adviser</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">
-                    Employee ID
-                  </Label>
-                  <Input
-                    placeholder="1234567"
-                    value={formData.employeeId}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        employeeId: e.target.value.toUpperCase(),
-                      })
-                    }
-                    className={cn(
-                      "h-10 font-bold",
-                      createErrors.employeeId && "border-destructive",
-                    )}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">
-                    Plantilla Position
-                  </Label>
-                  <Input
-                    placeholder="TEACHER I"
-                    value={formData.designation}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        designation: e.target.value.toUpperCase(),
-                      })
-                    }
-                    className="h-10 font-bold"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4 pt-4 border-t">
-              <div className="flex items-center gap-2 text-xs font-extrabold uppercase  text-foreground">
-                <Mail className="h-3.5 w-3.5" />
-                Contact Information
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase">
-                  Email Address *
-                </Label>
-                <Input
-                  type="email"
-                  placeholder="regina.cruz@deped.edu.ph"
-                  value={formData.email}
-                  onChange={(e) => {
-                    setCreateErrors((p) => ({ ...p, email: "" }));
-                    setFormData({ ...formData, email: e.target.value });
-                  }}
-                  className={cn(
-                    "h-10 font-bold",
-                    createErrors.email && "border-destructive",
-                  )}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase">
-                  Contact Number *
-                </Label>
-                <Input
-                  placeholder="09123456789"
-                  maxLength={11}
-                  value={formData.mobileNumber}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      mobileNumber: e.target.value.replace(/\D/g, ""),
-                    })
-                  }
-                  className={cn(
-                    "h-10 font-bold",
-                    createErrors.mobileNumber && "border-destructive",
-                  )}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-4 pt-4 border-t">
-              <div className="flex items-center gap-2 text-xs font-extrabold uppercase  text-foreground">
-                <ShieldAlert className="h-3.5 w-3.5" />
-                Security & Onboarding
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase">
-                  Temporary Password *
-                </Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={formData.password}
-                    readOnly
-                    className="h-10 font-bold bg-muted/30"
-                  />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-10 w-10"
-                    onClick={() => {
-                      setIsGenerating(true);
-                      setFormData({
-                        ...formData,
-                        password: generatePassword(),
-                      });
-                      setTimeout(() => setIsGenerating(false), 600);
-                    }}>
-                    <RefreshCw
-                      className={cn("h-4 w-4", isGenerating && "animate-spin")}
-                    />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-10 w-10"
-                    onClick={() => copyToClipboard(formData.password)}>
-                    {copied ? (
-                      <CheckIcon className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-              <div className="p-3 rounded-lg bg-orange-50 border border-orange-100 text-[11px] font-bold text-orange-800 leading-relaxed uppercase ">
-                <div className="flex items-center gap-1.5 mb-1 text-orange-900">
-                  <ShieldAlert className="h-3.5 w-3.5" />
-                  Governance Notice
-                </div>
-                Credential sharing should follow school policy. User must reset
-                this password upon first access.
-              </div>
-            </div>
-          </div>
-          <SheetFooter className="sticky bottom-0 bg-background pt-6 pb-6 border-t mt-4 flex gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setCreateOpen(false)}
-              disabled={submitting}
-              className="flex-1 font-bold uppercase  text-xs">
-              Discard
-            </Button>
-            <Button
-              onClick={handleCreate}
-              disabled={submitting}
-              className="flex-[2] font-bold uppercase  text-xs shadow-lg shadow-primary/20">
-              {submitting ? (
-                <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <Plus className="h-4 w-4 mr-2" />
-              )}
-              Create Account
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
-
-      {/* Edit User Profile Drawer */}
-      <Sheet
+      <UserAccountFormSheet
+        mode="edit"
         open={profileOpen}
-        onOpenChange={setProfileOpen}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto scrollbar-thin">
-          <SheetHeader className="pb-6 border-b">
-            <SheetTitle className="text-2xl font-bold text-maroon-900">
-              <Edit2 className="h-6 w-6 text-primary" />
-              Edit Account Details
-            </SheetTitle>
-            <SheetDescription>
-              Modify identity and access permissions.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="py-6 space-y-6">
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase">
-                Update Access Role *
-              </Label>
-              <Select
-                value={profileFormData.role}
-                onValueChange={(v: User["role"]) =>
-                  setProfileFormData({ ...profileFormData, role: v })
-                }>
-                <SelectTrigger className="h-11 font-bold text-primary">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="SYSTEM_ADMIN">Admin</SelectItem>
-                  <SelectItem value="HEAD_REGISTRAR">Registrar</SelectItem>
-                  <SelectItem value="TEACHER">Teacher</SelectItem>
-                  <SelectItem value="CLASS_ADVISER">Class Adviser</SelectItem>
-                  <SelectItem value="LEARNER">Learner</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase">
-                  First Name *
-                </Label>
-                <Input
-                  value={profileFormData.firstName}
-                  onChange={(e) =>
-                    setProfileFormData({
-                      ...profileFormData,
-                      firstName: e.target.value,
-                    })
-                  }
-                  className="h-10 font-bold"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase">
-                  Last Name *
-                </Label>
-                <Input
-                  value={profileFormData.lastName}
-                  onChange={(e) =>
-                    setProfileFormData({
-                      ...profileFormData,
-                      lastName: e.target.value,
-                    })
-                  }
-                  className="h-10 font-bold"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase">Email *</Label>
-              <Input
-                value={profileFormData.email}
-                onChange={(e) =>
-                  setProfileFormData({
-                    ...profileFormData,
-                    email: e.target.value,
-                  })
-                }
-                className="h-10 font-bold"
-              />
-            </div>
-          </div>
-          <SheetFooter className="border-t pt-6 pb-2 mt-4 flex gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setProfileOpen(false)}
-              className="flex-1 font-bold">
-              Cancel
-            </Button>
-            <Button
-              onClick={handleProfileSave}
-              disabled={submitting}
-              className="flex-[2] font-bold shadow-lg shadow-primary/20">
-              Save Changes
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+        onOpenChange={setProfileOpen}
+        formData={profileFormData}
+        onFieldChange={handleProfileFieldChange}
+        onSubmit={handleProfileSave}
+        onCancel={() => setProfileOpen(false)}
+        submitting={submitting}
+        user={profileUser}
+      />
 
       {/* Reset Password Dialog */}
       <Dialog

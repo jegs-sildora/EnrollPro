@@ -79,6 +79,7 @@ import {
 } from "../components/StudentDetailPanel";
 import { PaginationBar } from "@/shared/components/PaginationBar";
 import { useResizablePanel } from "@/features/admission/pages/early-registration/hooks/useResizablePanel";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import { motion, AnimatePresence } from "motion/react";
 import type { EosyStatus } from "@enrollpro/shared";
 
@@ -285,7 +286,7 @@ export default function Students() {
     useResizablePanel();
 
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [gradeLevelFilter, setGradeLevelFilter] = useState<string>("all");
   const [programFilter, setProgramFilter] = useState<string>("all");
   const [sectionFilter, setSectionFilter] = useState<string>("all");

@@ -19,6 +19,7 @@ import {
   ArrowUpRightSquare,
   UserPlus,
   School,
+  ArrowRightLeft,
 } from "lucide-react";
 
 import {
@@ -503,6 +504,12 @@ function AppSidebar() {
                       to="/admin/system"
                       icon={Activity}
                       label="System Health"
+                      pathname={pathname}
+                    />
+                    <NavItem
+                      to="/admin/integration"
+                      icon={ArrowRightLeft}
+                      label="Ecosystem Hub"
                       pathname={pathname}
                     />
                     <NavItem

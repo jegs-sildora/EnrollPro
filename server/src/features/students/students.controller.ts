@@ -48,23 +48,46 @@ export async function getStudents(req: Request, res: Response): Promise<void> {
   }
 
   if (search) {
-    const searchFilter = {
-      OR: [
-        {
-          learner: { lrn: { contains: search, mode: "insensitive" as const } },
-        },
-        {
-          learner: {
-            firstName: { contains: search, mode: "insensitive" as const },
+    let searchFilter;
+
+    if (search.includes(",")) {
+      const parts = search.split(",");
+      const lastName = parts[0].trim();
+      const firstName = (parts[1] || "").trim();
+
+      searchFilter = {
+        AND: [
+          {
+            learner: {
+              lastName: { contains: lastName, mode: "insensitive" as const },
+            },
           },
-        },
-        {
-          learner: {
-            lastName: { contains: search, mode: "insensitive" as const },
+          {
+            learner: {
+              firstName: { contains: firstName, mode: "insensitive" as const },
+            },
           },
-        },
-      ],
-    };
+        ],
+      };
+    } else {
+      searchFilter = {
+        OR: [
+          {
+            learner: { lrn: { contains: search, mode: "insensitive" as const } },
+          },
+          {
+            learner: {
+              firstName: { contains: search, mode: "insensitive" as const },
+            },
+          },
+          {
+            learner: {
+              lastName: { contains: search, mode: "insensitive" as const },
+            },
+          },
+        ],
+      };
+    }
 
     where.AND = Array.isArray(where.AND)
       ? [...(where.AND as unknown[]), searchFilter]

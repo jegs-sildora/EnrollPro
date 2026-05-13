@@ -115,6 +115,13 @@ export async function listSampleTeachers(
         },
         take: 1,
       },
+      department: {
+        select: {
+          id: true,
+          code: true,
+          name: true,
+        },
+      },
       _count: {
         select: {
           advisoryHistory: true,
@@ -139,6 +146,9 @@ export async function listSampleTeachers(
         contactNumber: teacher.contactNumber,
         specialization: teacher.specialization,
         isActive: teacher.isActive,
+        departmentId: teacher.departmentId ?? null,
+        departmentCode: (teacher as any).department?.code ?? null,
+        departmentName: (teacher as any).department?.name ?? null,
         sectionCount: teacher._count.advisoryHistory,
         designation: {
           isClassAdviser: designation?.isClassAdviser ?? false,

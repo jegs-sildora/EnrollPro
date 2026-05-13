@@ -252,10 +252,14 @@ export async function store(req: Request, res: Response) {
       password,
       role,
       mustChangePassword = true,
+      department,
     } = req.body;
 
     // Normalize empty strings to null for optional unique/nullable fields
     const cleanEmployeeId = employeeId?.trim() || null;
+    const cleanDeptCode = department
+      ? String(department).trim().toUpperCase()
+      : null;
     const cleanMiddleName = middleName?.trim() || null;
     const cleanSuffix = suffix?.trim() || null;
     const cleanDesignation = designation?.trim() || null;
@@ -342,7 +346,10 @@ export async function store(req: Request, res: Response) {
             contactNumber: cleanMobileNumber,
             designation: cleanDesignation,
             isActive: true,
-            userId: created.id,
+            user: { connect: { id: created.id } },
+            ...(cleanDeptCode
+              ? { department: { connect: { code: cleanDeptCode } } }
+              : {}),
           },
           update: {
             firstName: firstName.trim(),
@@ -353,7 +360,10 @@ export async function store(req: Request, res: Response) {
             contactNumber: cleanMobileNumber,
             designation: cleanDesignation,
             isActive: true,
-            userId: created.id,
+            user: { connect: { id: created.id } },
+            ...(cleanDeptCode
+              ? { department: { connect: { code: cleanDeptCode } } }
+              : {}),
           },
         });
       }
@@ -414,11 +424,16 @@ export async function update(req: Request, res: Response) {
       mobileNumber,
       email,
       role,
+      department,
     } = req.body;
     const userId = parseInt(String(req.params.id));
 
     const targetUser = await prisma.user.findUnique({ where: { id: userId } });
     if (!targetUser) return res.status(404).json({ message: "User not found" });
+
+    const cleanDeptCode = department
+      ? String(department).trim().toUpperCase()
+      : null;
 
     const isTeacherRole =
       (role || targetUser.role) === "TEACHER" ||
@@ -463,22 +478,30 @@ export async function update(req: Request, res: Response) {
             firstName,
             lastName,
             middleName: middleName || null,
-            sex: (sex as "MALE" | "FEMALE") ?? (updated.sex as "MALE" | "FEMALE"),
+            sex:
+              (sex as "MALE" | "FEMALE") ?? (updated.sex as "MALE" | "FEMALE"),
             email: teacherEmail,
             contactNumber: mobileNumber || null,
             designation: designation || null,
             isActive: true,
-            userId: updated.id,
+            user: { connect: { id: updated.id } },
+            ...(cleanDeptCode
+              ? { department: { connect: { code: cleanDeptCode } } }
+              : {}),
           },
           update: {
             firstName,
             lastName,
             middleName: middleName || null,
-            sex: (sex as "MALE" | "FEMALE") ?? (updated.sex as "MALE" | "FEMALE"),
+            sex:
+              (sex as "MALE" | "FEMALE") ?? (updated.sex as "MALE" | "FEMALE"),
             email: teacherEmail,
             contactNumber: mobileNumber || null,
             designation: designation || null,
-            userId: updated.id,
+            user: { connect: { id: updated.id } },
+            ...(cleanDeptCode
+              ? { department: { connect: { code: cleanDeptCode } } }
+              : {}),
           },
         });
       }
@@ -490,7 +513,8 @@ export async function update(req: Request, res: Response) {
             firstName,
             lastName,
             middleName: middleName || null,
-            sex: (sex as "MALE" | "FEMALE") ?? (updated.sex as "MALE" | "FEMALE"),
+            sex:
+              (sex as "MALE" | "FEMALE") ?? (updated.sex as "MALE" | "FEMALE"),
           },
         });
       }
@@ -552,7 +576,13 @@ export async function deactivate(req: Request, res: Response) {
       const updated = await tx.user.update({
         where: { id: userId },
         data: { isActive: false },
-        select: { id: true, firstName: true, lastName: true, role: true, employeeId: true },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+          employeeId: true,
+        },
       });
 
       if (updated.employeeId) {
@@ -589,7 +619,13 @@ export async function reactivate(req: Request, res: Response) {
       const updated = await tx.user.update({
         where: { id: userId },
         data: { isActive: true },
-        select: { id: true, firstName: true, lastName: true, role: true, employeeId: true },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+          employeeId: true,
+        },
       });
 
       if (updated.employeeId) {

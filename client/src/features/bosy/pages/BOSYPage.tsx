@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, startTransition } from "react";
 import { Search, Loader2, RefreshCw, AlertCircle, CheckCircle2, LogOut } from "lucide-react";
 import { motion } from "motion/react";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 import type { RowSelectionState } from "@tanstack/react-table";
 import type { AxiosError } from "axios";
 
@@ -37,6 +38,7 @@ export default function BOSYPage() {
 
   const [activeTab, setActiveTab] = useState("pending");
   const [queueSearch, setQueueSearch] = useState("");
+  const debouncedSearch = useDebounce(queueSearch, 300);
 
   // Pending Confirmation state
   const [pendingItems, setPendingItems] = useState<BOSYQueueItem[]>([]);

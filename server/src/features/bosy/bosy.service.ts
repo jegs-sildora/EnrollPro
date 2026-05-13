@@ -194,13 +194,40 @@ export async function getBOSYQueue(params: {
       : {}),
     ...(search
       ? {
-          learner: {
-            OR: [
-              { firstName: { contains: search, mode: "insensitive" as const } },
-              { lastName: { contains: search, mode: "insensitive" as const } },
-              { lrn: { contains: search, mode: "insensitive" as const } },
-            ],
-          },
+          learner: search.includes(",")
+            ? {
+                AND: [
+                  {
+                    lastName: {
+                      contains: search.split(",")[0].trim(),
+                      mode: "insensitive" as const,
+                    },
+                  },
+                  {
+                    firstName: {
+                      contains: (search.split(",")[1] || "").trim(),
+                      mode: "insensitive" as const,
+                    },
+                  },
+                ],
+              }
+            : {
+                OR: [
+                  {
+                    firstName: {
+                      contains: search,
+                      mode: "insensitive" as const,
+                    },
+                  },
+                  {
+                    lastName: {
+                      contains: search,
+                      mode: "insensitive" as const,
+                    },
+                  },
+                  { lrn: { contains: search, mode: "insensitive" as const } },
+                ],
+              },
         }
       : {}),
   };
@@ -543,15 +570,33 @@ export async function getJHSCompleters(params: {
   const where = {
     status: "JHS_COMPLETER" as const,
     ...(search
-      ? {
-          OR: [
-            { firstName: { contains: search, mode: "insensitive" as const } },
-            { lastName: { contains: search, mode: "insensitive" as const } },
-            { lrn: { contains: search, mode: "insensitive" as const } },
-          ],
-        }
+      ? search.includes(",")
+        ? {
+            AND: [
+              {
+                lastName: {
+                  contains: search.split(",")[0].trim(),
+                  mode: "insensitive" as const,
+                },
+              },
+              {
+                firstName: {
+                  contains: (search.split(",")[1] || "").trim(),
+                  mode: "insensitive" as const,
+                },
+              },
+            ],
+          }
+        : {
+            OR: [
+              { firstName: { contains: search, mode: "insensitive" as const } },
+              { lastName: { contains: search, mode: "insensitive" as const } },
+              { lrn: { contains: search, mode: "insensitive" as const } },
+            ],
+          }
       : {}),
   };
+
 
   const [learners, total] = await Promise.all([
     prisma.learner.findMany({

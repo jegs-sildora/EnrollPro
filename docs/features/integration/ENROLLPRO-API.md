@@ -31,25 +31,26 @@ This document provides a comprehensive reference for the EnrollPro backend API. 
 
 ## 1) Platform Health
 
-| Method | Path | Auth | Description |
-| :--- | :--- | :--- | :--- |
-| GET | `/api/health` | None | Basic health check. Returns `{ "ok": true }`. |
-| GET | `/api/ping` | None | Returns "pong". |
+| Method | Path          | Auth | Description                                   |
+| :----- | :------------ | :--- | :-------------------------------------------- |
+| GET    | `/api/health` | None | Basic health check. Returns `{ "ok": true }`. |
+| GET    | `/api/ping`   | None | Returns "pong".                               |
 
 ---
 
 ## 2) Authentication (`/api/auth`)
 
-| Method | Path | Auth | Roles | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| POST | `/api/auth/login` | None | - | Authenticates staff user and returns JWT + profile. |
-| POST | `/api/auth/learner-login` | None | - | Authenticates a returning learner by LRN + portal PIN. Returns a `LEARNER`-role JWT. |
-| POST | `/api/auth/verify` | None | - | Verifies credentials without establishing a session. |
-| POST | `/api/auth/logout` | None | - | Invalides current session (if applicable). |
-| GET | `/api/auth/me` | Required | All Staff | Returns current user profile from JWT. |
-| PATCH | `/api/auth/change-password` | Required | All Staff | Updates user password. |
+| Method | Path                        | Auth     | Roles     | Description                                                                          |
+| :----- | :-------------------------- | :------- | :-------- | :----------------------------------------------------------------------------------- |
+| POST   | `/api/auth/login`           | None     | -         | Authenticates staff user and returns JWT + profile.                                  |
+| POST   | `/api/auth/learner-login`   | None     | -         | Authenticates a returning learner by LRN + portal PIN. Returns a `LEARNER`-role JWT. |
+| POST   | `/api/auth/verify`          | None     | -         | Verifies credentials without establishing a session.                                 |
+| POST   | `/api/auth/logout`          | None     | -         | Invalides current session (if applicable).                                           |
+| GET    | `/api/auth/me`              | Required | All Staff | Returns current user profile from JWT.                                               |
+| PATCH  | `/api/auth/change-password` | Required | All Staff | Updates user password.                                                               |
 
 ### Sample: `POST /api/auth/login`
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -69,11 +70,13 @@ This document provides a comprehensive reference for the EnrollPro backend API. 
 ### Sample: `POST /api/auth/learner-login`
 
 **Request body:**
+
 ```json
 { "lrn": "123456789012", "pin": "082915" }
 ```
 
 **Response:**
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -97,16 +100,17 @@ This document provides a comprehensive reference for the EnrollPro backend API. 
 
 ## 3) Settings (`/api/settings`)
 
-| Method | Path | Auth | Roles | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| GET | `/api/settings/public` | None | - | Public branding and active SY context. |
-| GET | `/api/settings/scp-config` | None | - | Active Special Curricular Program configs. |
-| PUT | `/api/settings/identity` | Required | ADMIN | Update school name, email, and social links. |
-| POST | `/api/settings/logo` | Required | ADMIN | Upload school logo (extracts accent color). |
-| DELETE | `/api/settings/logo` | Required | ADMIN | Resets logo and theme to defaults. |
-| PUT | `/api/settings/accent` | Required | ADMIN | Manually override the theme accent color. |
+| Method | Path                       | Auth     | Roles | Description                                  |
+| :----- | :------------------------- | :------- | :---- | :------------------------------------------- |
+| GET    | `/api/settings/public`     | None     | -     | Public branding and active SY context.       |
+| GET    | `/api/settings/scp-config` | None     | -     | Active Special Curricular Program configs.   |
+| PUT    | `/api/settings/identity`   | Required | ADMIN | Update school name, email, and social links. |
+| POST   | `/api/settings/logo`       | Required | ADMIN | Upload school logo (extracts accent color).  |
+| DELETE | `/api/settings/logo`       | Required | ADMIN | Resets logo and theme to defaults.           |
+| PUT    | `/api/settings/accent`     | Required | ADMIN | Manually override the theme accent color.    |
 
 ### Sample: `GET /api/settings/public`
+
 ```json
 {
   "schoolName": "EnrollPro Integrated School",
@@ -128,11 +132,12 @@ This document provides a comprehensive reference for the EnrollPro backend API. 
 
 ## 4) Dashboard (`/api/dashboard`)
 
-| Method | Path | Auth | Roles | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| GET | `/api/dashboard/stats` | Required | ALL STAFF | Aggregated enrollment and admission metrics. |
+| Method | Path                   | Auth     | Roles     | Description                                  |
+| :----- | :--------------------- | :------- | :-------- | :------------------------------------------- |
+| GET    | `/api/dashboard/stats` | Required | ALL STAFF | Aggregated enrollment and admission metrics. |
 
 ### Sample: `GET /api/dashboard/stats`
+
 ```json
 {
   "stats": {
@@ -147,7 +152,13 @@ This document provides a comprehensive reference for the EnrollPro backend API. 
       "progressPercent": 25.9
     },
     "gradeLevelBreakdown": [
-      { "id": 1, "name": "Grade 7", "current": 40, "target": 160, "progressPercent": 25.0 }
+      {
+        "id": 1,
+        "name": "Grade 7",
+        "current": 40,
+        "target": 160,
+        "progressPercent": 25.0
+      }
     ],
     "earlyRegistration": {
       "submitted": 45,
@@ -164,17 +175,18 @@ This document provides a comprehensive reference for the EnrollPro backend API. 
 
 ## 5) School Years (`/api/school-years`)
 
-| Method | Path | Auth | Roles | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| GET | `/api/school-years` | Required | ALL STAFF | List all academic years. |
-| GET | `/api/school-years/next-defaults` | Required | ADMIN | Get suggested dates for the next SY. |
-| GET | `/api/school-years/:id` | Required | ADMIN | Detailed SY configuration. |
-| POST | `/api/school-years/activate` | Required | ADMIN | Create and activate a new academic year. |
-| POST | `/api/school-years/rollover` | Required | ADMIN | Clone data from previous year to new year. |
-| PUT | `/api/school-years/:id` | Required | ADMIN | Update SY settings. |
-| PATCH | `/api/school-years/:id/status` | Required | ADMIN | Transition SY status (e.g., ACTIVE -> ARCHIVED). |
+| Method | Path                              | Auth     | Roles     | Description                                      |
+| :----- | :-------------------------------- | :------- | :-------- | :----------------------------------------------- |
+| GET    | `/api/school-years`               | Required | ALL STAFF | List all academic years.                         |
+| GET    | `/api/school-years/next-defaults` | Required | ADMIN     | Get suggested dates for the next SY.             |
+| GET    | `/api/school-years/:id`           | Required | ADMIN     | Detailed SY configuration.                       |
+| POST   | `/api/school-years/activate`      | Required | ADMIN     | Create and activate a new academic year.         |
+| POST   | `/api/school-years/rollover`      | Required | ADMIN     | Clone data from previous year to new year.       |
+| PUT    | `/api/school-years/:id`           | Required | ADMIN     | Update SY settings.                              |
+| PATCH  | `/api/school-years/:id/status`    | Required | ADMIN     | Transition SY status (e.g., ACTIVE -> ARCHIVED). |
 
 ### Sample: `GET /api/school-years/1`
+
 ```json
 {
   "year": {
@@ -195,30 +207,37 @@ This document provides a comprehensive reference for the EnrollPro backend API. 
 
 ## 6) Curriculum (`/api/curriculum`)
 
-| Method | Path | Auth | Roles | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| GET | `/api/curriculum/:ayId/grade-levels` | Required | ADMIN | List grade levels for a specific year. |
-| GET | `/api/curriculum/:ayId/scp-config` | Required | REGISTRAR | List SCP configurations (STE, SPA, etc.). |
-| PUT | `/api/curriculum/:ayId/scp-config` | Required | ADMIN | Update SCP admission requirements. |
+| Method | Path                                 | Auth     | Roles     | Description                               |
+| :----- | :----------------------------------- | :------- | :-------- | :---------------------------------------- |
+| GET    | `/api/curriculum/:ayId/grade-levels` | Required | ADMIN     | List grade levels for a specific year.    |
+| GET    | `/api/curriculum/:ayId/scp-config`   | Required | REGISTRAR | List SCP configurations (STE, SPA, etc.). |
+| PUT    | `/api/curriculum/:ayId/scp-config`   | Required | ADMIN     | Update SCP admission requirements.        |
 
 ---
 
 ## 7) Sections (`/api/sections`)
 
-| Method | Path | Auth | Roles | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| GET | `/api/sections` | Required | REGISTRAR | List all sections for the active year. |
-| GET | `/api/sections/teachers` | Required | REGISTRAR | List teachers eligible for advisership. |
-| POST | `/api/sections` | Required | REGISTRAR | Create a new section. |
-| GET | `/api/sections/:id/roster` | Required | REGISTRAR | List all learners enrolled in a section. |
-| POST | `/api/sections/:id/handover-adviser`| Required | REGISTRAR | Transfer advisership to another teacher. |
+| Method | Path                                 | Auth     | Roles     | Description                              |
+| :----- | :----------------------------------- | :------- | :-------- | :--------------------------------------- |
+| GET    | `/api/sections`                      | Required | REGISTRAR | List all sections for the active year.   |
+| GET    | `/api/sections/teachers`             | Required | REGISTRAR | List teachers eligible for advisership.  |
+| POST   | `/api/sections`                      | Required | REGISTRAR | Create a new section.                    |
+| GET    | `/api/sections/:id/roster`           | Required | REGISTRAR | List all learners enrolled in a section. |
+| POST   | `/api/sections/:id/handover-adviser` | Required | REGISTRAR | Transfer advisership to another teacher. |
 
 ### Sample: `GET /api/sections/1/roster`
+
 ```json
 {
   "section": { "id": 1, "name": "7-A", "gradeLevel": "Grade 7" },
   "learners": [
-    { "id": 101, "lrn": "123456789012", "firstName": "JUAN", "lastName": "DELA CRUZ", "sex": "MALE" }
+    {
+      "id": 101,
+      "lrn": "123456789012",
+      "firstName": "JUAN",
+      "lastName": "DELA CRUZ",
+      "sex": "MALE"
+    }
   ],
   "total": 1
 }
@@ -228,15 +247,16 @@ This document provides a comprehensive reference for the EnrollPro backend API. 
 
 ## 8) Students & Masterlist (`/api/students`)
 
-| Method | Path | Auth | Roles | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| GET | `/api/students` | Required | ALL STAFF | List all active/enrolled learners. |
-| GET | `/api/students/:id` | Required | ALL STAFF | Detailed learner profile. |
-| GET | `/api/students/:id/health-records` | Required | ALL STAFF | BMI and physical assessment history. |
-| POST | `/api/students/:id/health-records` | Required | REGISTRAR | Add a new health measurement. |
-| POST | `/api/students/:id/verify-psa` | Required | REGISTRAR | Mark PSA Birth Certificate as verified. |
+| Method | Path                               | Auth     | Roles     | Description                             |
+| :----- | :--------------------------------- | :------- | :-------- | :-------------------------------------- |
+| GET    | `/api/students`                    | Required | ALL STAFF | List all active/enrolled learners.      |
+| GET    | `/api/students/:id`                | Required | ALL STAFF | Detailed learner profile.               |
+| GET    | `/api/students/:id/health-records` | Required | ALL STAFF | BMI and physical assessment history.    |
+| POST   | `/api/students/:id/health-records` | Required | REGISTRAR | Add a new health measurement.           |
+| POST   | `/api/students/:id/verify-psa`     | Required | REGISTRAR | Mark PSA Birth Certificate as verified. |
 
 ### Sample: `GET /api/students/101`
+
 ```json
 {
   "student": {
@@ -261,14 +281,14 @@ This document provides a comprehensive reference for the EnrollPro backend API. 
 
 Manages Phase 2 (BEEF/Enrollment applications).
 
-| Method | Path | Auth | Roles | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| POST | `/api/applications` | None | - | Public enrollment application submission. |
-| GET | `/api/applications/track/:no` | None | - | Track status by tracking number. |
-| GET | `/api/applications` | Required | REGISTRAR | List and filter applications. |
-| PATCH | `/api/applications/:id/verify` | Required | REGISTRAR | Verify documents/identity. |
-| PATCH | `/api/applications/:id/enroll` | Required | REGISTRAR | Finalize enrollment into a section. |
-| GET | `/api/applications/exports/sf1` | Required | REGISTRAR | Export School Form 1 data. |
+| Method | Path                            | Auth     | Roles     | Description                               |
+| :----- | :------------------------------ | :------- | :-------- | :---------------------------------------- |
+| POST   | `/api/applications`             | None     | -         | Public enrollment application submission. |
+| GET    | `/api/applications/track/:no`   | None     | -         | Track status by tracking number.          |
+| GET    | `/api/applications`             | Required | REGISTRAR | List and filter applications.             |
+| PATCH  | `/api/applications/:id/verify`  | Required | REGISTRAR | Verify documents/identity.                |
+| PATCH  | `/api/applications/:id/enroll`  | Required | REGISTRAR | Finalize enrollment into a section.       |
+| GET    | `/api/applications/exports/sf1` | Required | REGISTRAR | Export School Form 1 data.                |
 
 ---
 
@@ -276,45 +296,47 @@ Manages Phase 2 (BEEF/Enrollment applications).
 
 Manages Phase 1 (BEERF submission and screening).
 
-| Method | Path | Auth | Roles | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| POST | `/api/early-registrations` | None | - | Public BEERF submission. |
-| GET | `/api/early-registrations` | Required | ALL STAFF | List pre-registrations. |
-| GET | `/api/early-registrations/:id/detailed`| Required | ALL STAFF | Expanded profile for screening. |
-| PATCH | `/api/early-registrations/:id/verify` | Required | REGISTRAR | Mark documents as verified. |
-| PATCH | `/api/early-registrations/:id/pass` | Required | REGISTRAR | Mark as PASSED (for SCP programs). |
+| Method | Path                                    | Auth     | Roles     | Description                        |
+| :----- | :-------------------------------------- | :------- | :-------- | :--------------------------------- |
+| POST   | `/api/early-registrations`              | None     | -         | Public BEERF submission.           |
+| GET    | `/api/early-registrations`              | Required | ALL STAFF | List pre-registrations.            |
+| GET    | `/api/early-registrations/:id/detailed` | Required | ALL STAFF | Expanded profile for screening.    |
+| PATCH  | `/api/early-registrations/:id/verify`   | Required | REGISTRAR | Mark documents as verified.        |
+| PATCH  | `/api/early-registrations/:id/pass`     | Required | REGISTRAR | Mark as PASSED (for SCP programs). |
 
 ---
 
 ## 11) Teachers & Faculty (`/api/teachers`)
 
-| Method | Path | Auth | Roles | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| GET | `/api/teachers` | Required | REGISTRAR | List all faculty members. |
-| GET | `/api/teachers/:id` | Required | REGISTRAR | Single teacher profile. |
-| POST | `/api/teachers` | Required | ADMIN | Create new teacher profile. |
-| PUT | `/api/teachers/:id/designation` | Required | ADMIN | Set advisory or ancillary roles. |
+| Method | Path                            | Auth     | Roles     | Description                      |
+| :----- | :------------------------------ | :------- | :-------- | :------------------------------- |
+| GET    | `/api/teachers`                 | Required | REGISTRAR | List all faculty members.        |
+| GET    | `/api/teachers/:id`             | Required | REGISTRAR | Single teacher profile.          |
+| POST   | `/api/teachers`                 | Required | ADMIN     | Create new teacher profile.      |
+| PUT    | `/api/teachers/:id/designation` | Required | ADMIN     | Set advisory or ancillary roles. |
 
 ---
 
 ## 12) EOSY - End of School Year (`/api/eosy`)
 
-| Method | Path | Auth | Roles | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| GET | `/api/eosy/sections` | Required | REGISTRAR | List sections for EOSY processing. |
-| GET | `/api/eosy/sections/:id/records` | Required | REGISTRAR | Final grades and promotion status list. |
-| PATCH | `/api/eosy/records/:id` | Required | REGISTRAR | Update learner's final EOSY status. |
-| POST | `/api/eosy/sections/:id/finalize`| Required | REGISTRAR | Lock section records for the year. |
-| POST | `/api/eosy/school-year/finalize` | Required | ADMIN | Close academic year and promote all. |
-| GET | `/api/eosy/sections/:id/exports/sf5` | Required | REGISTRAR | **SF5** — Section-scoped learner promotion & proficiency report (JSON). |
-| GET | `/api/eosy/exports/sf6` | Required | REGISTRAR | **SF6** — School-wide enrollment summary by grade level (JSON). Requires `?schoolYearId=`. |
+| Method | Path                                 | Auth     | Roles     | Description                                                                                |
+| :----- | :----------------------------------- | :------- | :-------- | :----------------------------------------------------------------------------------------- |
+| GET    | `/api/eosy/sections`                 | Required | REGISTRAR | List sections for EOSY processing.                                                         |
+| GET    | `/api/eosy/sections/:id/records`     | Required | REGISTRAR | Final grades and promotion status list.                                                    |
+| PATCH  | `/api/eosy/records/:id`              | Required | REGISTRAR | Update learner's final EOSY status.                                                        |
+| POST   | `/api/eosy/sections/:id/finalize`    | Required | REGISTRAR | Lock section records for the year.                                                         |
+| POST   | `/api/eosy/school-year/finalize`     | Required | ADMIN     | Close academic year and promote all.                                                       |
+| GET    | `/api/eosy/sections/:id/exports/sf5` | Required | REGISTRAR | **SF5** — Section-scoped learner promotion & proficiency report (JSON).                    |
+| GET    | `/api/eosy/exports/sf6`              | Required | REGISTRAR | **SF6** — School-wide enrollment summary by grade level (JSON). Requires `?schoolYearId=`. |
 
 ### Sample: `GET /api/eosy/sections/10/exports/sf5`
+
 ```json
 {
   "generatedAt": "2026-04-01T08:00:00Z",
   "section": {
-    "id": 10, "name": "8-A",
+    "id": 10,
+    "name": "8-A",
     "gradeLevel": { "id": 8, "name": "Grade 8" },
     "schoolYear": { "id": 2, "yearLabel": "2026-2027" },
     "adviser": { "firstName": "MARIA", "lastName": "SANTOS" },
@@ -323,23 +345,31 @@ Manages Phase 1 (BEERF submission and screening).
   "totalLearners": 40,
   "learners": [
     {
-      "no": 1, "learnerId": 101, "lrn": "123456789012",
-      "lastName": "DELA CRUZ", "firstName": "JUAN", "middleName": "SAMSON",
-      "sex": "MALE", "birthdate": "2013-05-20",
-      "finalAverage": 88.5, "eosyStatus": "PROMOTED"
+      "no": 1,
+      "learnerId": 101,
+      "lrn": "123456789012",
+      "lastName": "DELA CRUZ",
+      "firstName": "JUAN",
+      "middleName": "SAMSON",
+      "sex": "MALE",
+      "birthdate": "2013-05-20",
+      "finalAverage": 88.5,
+      "eosyStatus": "PROMOTED"
     }
   ]
 }
 ```
 
 ### Sample: `GET /api/eosy/exports/sf6?schoolYearId=2`
+
 ```json
 {
   "generatedAt": "2026-04-01T08:00:00Z",
   "schoolYear": { "id": 2, "yearLabel": "2026-2027" },
   "rows": [
     {
-      "gradeId": 7, "gradeName": "Grade 7",
+      "gradeId": 7,
+      "gradeName": "Grade 7",
       "initialEnrollment": { "male": 80, "female": 70, "total": 150 },
       "promoted": { "male": 78, "female": 69, "total": 147 },
       "retained": { "male": 2, "female": 1, "total": 3 },
@@ -349,7 +379,15 @@ Manages Phase 1 (BEERF submission and screening).
       "noStatus": { "male": 0, "female": 0, "total": 0 }
     }
   ],
-  "grandTotal": { "male": 320, "female": 290, "total": 610, "promoted": 595, "retained": 10, "dropOut": 3, "transferOut": 2 }
+  "grandTotal": {
+    "male": 320,
+    "female": 290,
+    "total": 610,
+    "promoted": 595,
+    "retained": 10,
+    "dropOut": 3,
+    "transferOut": 2
+  }
 }
 ```
 
@@ -357,38 +395,49 @@ Manages Phase 1 (BEERF submission and screening).
 
 ## 13) Admin & System (`/api/admin`)
 
-| Method | Path | Auth | Roles | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| GET | `/api/admin/users` | Required | ADMIN | Manage system user accounts. |
-| GET | `/api/admin/system/health` | Required | ADMIN | Detailed server and DB metrics. |
-| GET | `/api/admin/dashboard/stats` | Required | ADMIN | High-level system overview. |
-| GET | `/api/admin/atlas/health` | Required | ADMIN | ATLAS Sync subsystem status. |
+| Method | Path                         | Auth     | Roles | Description                     |
+| :----- | :--------------------------- | :------- | :---- | :------------------------------ |
+| GET    | `/api/admin/users`           | Required | ADMIN | Manage system user accounts.    |
+| GET    | `/api/admin/system/health`   | Required | ADMIN | Detailed server and DB metrics. |
+| GET    | `/api/admin/dashboard/stats` | Required | ADMIN | High-level system overview.     |
+| GET    | `/api/admin/atlas/health`    | Required | ADMIN | ATLAS Sync subsystem status.    |
 
 ---
 
 ## 14) Audit Logs (`/api/audit-logs`)
 
-| Method | Path | Auth | Roles | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| GET | `/api/audit-logs` | Required | REGISTRAR | View system activity trail. |
-| GET | `/api/audit-logs/export` | Required | ADMIN | Export logs to CSV for compliance. |
+| Method | Path                     | Auth     | Roles     | Description                        |
+| :----- | :----------------------- | :------- | :-------- | :--------------------------------- |
+| GET    | `/api/audit-logs`        | Required | REGISTRAR | View system activity trail.        |
+| GET    | `/api/audit-logs/export` | Required | ADMIN     | Export logs to CSV for compliance. |
 
 ---
 
 ## 15) Integration v1 (`/api/integration/v1`)
 
-Public read-only feeds for companion systems (ATLAS, SMART, AIMS).
+Public read-only feeds for companion systems (ATLAS, SMART, AIMS). No auth required. All endpoints respect `schoolYearId` query param; if omitted the active school year is used.
 
-| Method | Path | Auth | Description |
-| :--- | :--- | :--- | :--- |
-| GET | `/api/integration/v1/health` | None | Connectivity and DB health check. |
-| GET | `/api/integration/v1/school-year` | None | EnrollPro's active school year `id` and `yearLabel`. Use to confirm which year faculty/section data belongs to. |
-| GET | `/api/integration/v1/learners` | None | Paginated list of learners. **Requires `schoolYearId`**. Supports `page`/`limit`. |
-| GET | `/api/integration/v1/faculty` | None | List of all faculty members. Defaults to active school year if `schoolYearId` is omitted. Active-year context available in `meta.scope`. |
-| GET | `/api/integration/v1/sections` | None | List of sections with occupancy. Defaults to active school year if `schoolYearId` is omitted. Active-year context available in `meta.scope`. |
-| GET | `/api/integration/v1/sections/:sectionId/learners` | None | Paginated roster for a specific section. Supports `page`/`limit`. |
+> **DPA Compliance Note:** Each feed is scoped to the minimum fields required by the consuming system, per RA 10173. Demographic PII (birthdate, sex) is excluded from SMART and AIMS feeds. Internal HR audit fields (designationNotes, updateReason, updatedById) are excluded from all external feeds. Portal security fields (mustChangePassword, lastLoginAt) are excluded from the staff feed.
+
+| Method | Path                                               | Auth | Description                                                                                                                                |
+| :----- | :------------------------------------------------- | :--- | :----------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/integration/v1/health`                       | None | Connectivity and DB health check.                                                                                                          |
+| GET    | `/api/integration/v1/school-year`                  | None | Active school year `id` and `yearLabel`.                                                                                                   |
+| GET    | `/api/integration/v1/learners`                     | None | Paginated enrolled learner list. **Requires `schoolYearId`**.                                                                              |
+| GET    | `/api/integration/v1/faculty`                      | None | Paginated faculty list with designation context. Defaults to active school year. Add `?includeInactive=true` to include inactive teachers. |
+| GET    | `/api/integration/v1/sections`                     | None | Paginated section list with capacity and adviser. Add `?gradeLevelId=` to filter.                                                          |
+| GET    | `/api/integration/v1/sections/:sectionId/learners` | None | Paginated roster for a specific section.                                                                                                   |
+| GET    | `/api/integration/v1/staff`                        | None | Paginated staff user list (non-teacher accounts). Add `?includeInactive=true` to include inactive.                                         |
+| GET    | `/api/integration/v1/default/faculty`              | None | Active faculty feed (ATLAS/AIMS optimised). Always filters `isActive: true`.                                                               |
+| GET    | `/api/integration/v1/default/smart/students`       | None | SMART-grade-encoding roster. Includes ENROLLED, TEMPORARILY_ENROLLED, and DROPPED. Paginated.                                              |
+| GET    | `/api/integration/v1/default/aims/context`         | None | AIMS LMS enrollment context. Enrolled students only. Includes `isRemedialRequired` risk flag. Paginated.                                   |
+
+> **Architectural boundary — teacher-subject-section assignments:** EnrollPro does not store which teacher teaches which subject in which section. That mapping is managed by ATLAS. EnrollPro exposes the _class adviser_ per section via the `advisingTeacher` object in `GET /sections`. ATLAS is the authoritative source for full teaching-load assignments.
+
+---
 
 ### Sample: `GET /api/integration/v1/health`
+
 ```json
 {
   "data": {
@@ -401,6 +450,7 @@ Public read-only feeds for companion systems (ATLAS, SMART, AIMS).
 ```
 
 ### Sample: `GET /api/integration/v1/school-year`
+
 ```json
 {
   "data": {
@@ -411,6 +461,7 @@ Public read-only feeds for companion systems (ATLAS, SMART, AIMS).
 ```
 
 ### Sample: `GET /api/integration/v1/learners?schoolYearId=1&page=1&limit=50`
+
 ```json
 {
   "data": [
@@ -446,7 +497,10 @@ Public read-only feeds for companion systems (ATLAS, SMART, AIMS).
 }
 ```
 
-### Sample: `GET /api/integration/v1/faculty`
+### Sample: `GET /api/integration/v1/faculty?page=1&limit=50`
+
+**Query params:** `schoolYearId`, `page`, `limit`, `includeInactive` (default `false`).
+
 ```json
 {
   "data": [
@@ -458,11 +512,28 @@ Public read-only feeds for companion systems (ATLAS, SMART, AIMS).
       "middleName": "SOLIS",
       "fullName": "SANTOS, MARIA S.",
       "email": "maria.santos@deped.edu.ph",
+      "contactNumber": "09171234567",
+      "specialization": "English",
+      "isActive": true,
+      "departmentId": 2,
+      "departmentCode": "ENG",
+      "departmentName": "English Department",
       "isClassAdviser": true,
+      "isTic": false,
+      "isTeachingExempt": false,
+      "advisoryEquivalentHoursPerWeek": 1,
       "advisorySectionId": 10,
       "advisorySectionName": "10-A",
+      "advisorySectionGradeLevelId": 4,
+      "advisorySectionGradeLevelName": "Grade 10",
+      "ancillaryRoles": [],
+      "sectionCount": 1,
+      "schoolId": 1,
+      "schoolName": "EnrollPro",
       "schoolYearId": 1,
-      "schoolYearLabel": "2025-2026"
+      "schoolYearLabel": "2025-2026",
+      "effectiveFrom": "2025-06-01T00:00:00Z",
+      "effectiveTo": null
     }
   ],
   "meta": {
@@ -473,12 +544,53 @@ Public read-only feeds for companion systems (ATLAS, SMART, AIMS).
       "schoolYearId": 1,
       "schoolYearLabel": "2025-2026"
     },
-    "total": 142
+    "total": 142,
+    "page": 1,
+    "limit": 50,
+    "totalPages": 3,
+    "includeInactive": false
+  }
+}
+```
+
+> **Fields removed from earlier versions:** `designationNotes`, `updateReason`, `updatedById`, `updatedByName`, `updatedAt` — internal HR audit fields, excluded per DPA minimization.
+
+### Sample: `GET /api/integration/v1/sections?page=1&limit=50`
+
+**Query params:** `schoolYearId`, `gradeLevelId`, `page`, `limit`.
+
+```json
+{
+  "data": [
+    {
+      "id": 10,
+      "name": "7-A",
+      "programType": "REGULAR",
+      "maxCapacity": 40,
+      "enrolledCount": 37,
+      "availableSlots": 3,
+      "gradeLevel": { "id": 7, "name": "Grade 7", "displayOrder": 1 },
+      "advisingTeacher": {
+        "id": 1,
+        "firstName": "MARIA",
+        "lastName": "SANTOS",
+        "middleName": "SOLIS"
+      },
+      "schoolYear": { "id": 1, "yearLabel": "2025-2026" }
+    }
+  ],
+  "meta": {
+    "scope": { "schoolYearId": 1, "schoolYearLabel": "2025-2026" },
+    "total": 24,
+    "page": 1,
+    "limit": 50,
+    "totalPages": 1
   }
 }
 ```
 
 ### Sample: `GET /api/integration/v1/sections/:sectionId/learners`
+
 ```json
 {
   "data": {
@@ -496,7 +608,12 @@ Public read-only feeds for companion systems (ATLAS, SMART, AIMS).
         "enrolledAt": "2025-05-15T08:30:00Z",
         "enrollmentApplicationId": 45,
         "status": "ENROLLED",
-        "learner": { "id": 101, "lrn": "123456789012", "firstName": "JUAN", "lastName": "DELA CRUZ" }
+        "learner": {
+          "id": 101,
+          "lrn": "123456789012",
+          "firstName": "JUAN",
+          "lastName": "DELA CRUZ"
+        }
       }
     ]
   },
@@ -510,6 +627,154 @@ Public read-only feeds for companion systems (ATLAS, SMART, AIMS).
 }
 ```
 
+### Sample: `GET /api/integration/v1/staff?page=1&limit=50`
+
+**Query params:** `schoolYearId`, `page`, `limit`, `includeInactive` (default `false`).
+
+> **DPA Note:** `mustChangePassword` and `lastLoginAt` are excluded. These are internal security-hygiene fields not required by any companion system.
+
+```json
+{
+  "data": [
+    {
+      "id": 5,
+      "employeeId": "EMP-001",
+      "accountName": "mjsantos",
+      "firstName": "MARIA",
+      "lastName": "SANTOS",
+      "middleName": null,
+      "suffix": null,
+      "fullName": "SANTOS, MARIA",
+      "email": "mjsantos@school.edu.ph",
+      "role": "HEAD_REGISTRAR",
+      "designation": "Head Registrar",
+      "mobileNumber": "09171234567",
+      "isActive": true,
+      "createdAt": "2024-06-01T00:00:00Z",
+      "updatedAt": "2025-01-10T08:00:00Z"
+    }
+  ],
+  "meta": {
+    "generatedAt": "2026-05-11T12:00:00Z",
+    "includeInactive": false,
+    "total": 12,
+    "page": 1,
+    "limit": 50,
+    "totalPages": 1
+  }
+}
+```
+
+### Sample: `GET /api/integration/v1/default/faculty`
+
+Same shape as `GET /faculty` but always filters `isActive: true` and omits `includeInactive` from meta.
+
+### Sample: `GET /api/integration/v1/default/smart/students?schoolYearId=1&page=1&limit=50`
+
+> **DPA Note:** `birthdate`, `sex`, `userId`, and portal account details are excluded. SMART only requires LRN, name, grade/section placement, and EOSY/drop-out status for grade encoding.
+
+```json
+{
+  "data": [
+    {
+      "enrollmentApplicationId": 45,
+      "enrollmentStatus": "ENROLLED",
+      "lrn": "123456789012",
+      "isPendingLrn": false,
+      "fullName": "DELA CRUZ, JUAN SAMSON",
+      "firstName": "JUAN",
+      "lastName": "DELA CRUZ",
+      "middleName": "SAMSON",
+      "extensionName": null,
+      "gradeLevel": { "id": 7, "name": "Grade 7", "displayOrder": 1 },
+      "section": { "id": 10, "name": "7-A", "programType": "REGULAR" },
+      "enrolledAt": "2025-05-15T08:30:00Z",
+      "eosyStatus": null,
+      "dropOutDate": null,
+      "dropOutReason": null,
+      "schoolYear": { "id": 1, "yearLabel": "2025-2026" }
+    },
+    {
+      "enrollmentApplicationId": 72,
+      "enrollmentStatus": "DROPPED",
+      "lrn": "987654321098",
+      "isPendingLrn": false,
+      "fullName": "REYES, ANNA",
+      "firstName": "ANNA",
+      "lastName": "REYES",
+      "middleName": null,
+      "extensionName": null,
+      "gradeLevel": { "id": 8, "name": "Grade 8", "displayOrder": 2 },
+      "section": { "id": 11, "name": "8-A", "programType": "REGULAR" },
+      "enrolledAt": "2025-05-16T09:00:00Z",
+      "eosyStatus": null,
+      "dropOutDate": "2025-11-03T00:00:00Z",
+      "dropOutReason": "Transferred out",
+      "schoolYear": { "id": 1, "yearLabel": "2025-2026" }
+    }
+  ],
+  "meta": {
+    "sourceSystem": "SMART",
+    "generatedAt": "2026-05-11T12:00:00Z",
+    "scopeSchoolYearId": 1,
+    "scopeSchoolYearLabel": "2025-2026",
+    "total": 1240,
+    "page": 1,
+    "limit": 50,
+    "totalPages": 25
+  }
+}
+```
+
+### Sample: `GET /api/integration/v1/default/aims/context?schoolYearId=1&page=1&limit=50`
+
+> **DPA Note:** `birthdate` and `sex` are excluded. AIMS only requires identity, LMS-context fields (learnerType, applicantType, learningModalities), and the remedial risk flag.
+
+```json
+{
+  "data": [
+    {
+      "enrollmentApplicationId": 45,
+      "applicantType": "REGULAR",
+      "learnerType": "RETURNING",
+      "learningModalities": ["FACE_TO_FACE"],
+      "isRemedialRequired": false,
+      "learner": {
+        "externalId": "550e8400-e29b-41d4-a716-446655440000",
+        "lrn": "123456789012",
+        "firstName": "JUAN",
+        "lastName": "DELA CRUZ",
+        "middleName": "SAMSON",
+        "extensionName": null,
+        "fullName": "DELA CRUZ, JUAN SAMSON",
+        "userId": 88,
+        "isPendingLrnCreation": false,
+        "learnerStatus": "ENROLLED",
+        "portalAccount": {
+          "accountName": "jdelacruz",
+          "isActive": true
+        }
+      },
+      "context": {
+        "gradeLevel": { "id": 7, "name": "Grade 7", "displayOrder": 1 },
+        "section": { "id": 10, "name": "7-A", "programType": "REGULAR" },
+        "schoolYear": { "id": 1, "yearLabel": "2025-2026" }
+      }
+    }
+  ],
+  "meta": {
+    "sourceSystem": "AIMS",
+    "generatedAt": "2026-05-11T12:00:00Z",
+    "scopeSchoolYearId": 1,
+    "scopeSchoolYearLabel": "2025-2026",
+    "total": 1240,
+    "page": 1,
+    "limit": 50,
+    "totalPages": 25
+  }
+}
+```
+
 ---
 
 ## Notes & Guidelines
@@ -518,31 +783,35 @@ Public read-only feeds for companion systems (ATLAS, SMART, AIMS).
 2. **Numeric IDs:** Primary keys are autoincrementing integers.
 3. **Upper Case Names:** Learner and Teacher names (First, Middle, Last) are strictly stored and returned in UPPERCASE as per DepEd standards.
 4. **Rate Limiting:** Public endpoints (Tracking, Submission) are subject to rate limiting (typically 100 requests per 15 minutes per IP).
+5. **DPA Minimization (Integration layer):** Each integration feed returns only the fields contractually required by the consuming system. If your system receives a field it has not declared a contractual need for, treat it as incidental — do not rely on it.
+6. **Teacher-subject-section mapping:** EnrollPro does not own subject-teacher-section assignments. Class adviser assignments are in `GET /sections` (`advisingTeacher`). Full teaching-load assignments are ATLAS domain.
 
 ---
 
 ## 16) BOSY — Beginning of School Year (`/api/bosy`)
 
-| Method | Path | Auth | Roles | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| GET | `/api/bosy/readiness` | Required | REGISTRAR | BOSY readiness checklist for a given SY. |
-| GET | `/api/bosy/queue` | Required | REGISTRAR | Learners in the PENDING_CONFIRMATION queue. |
-| POST | `/api/bosy/confirm-return/:applicationId` | Required | REGISTRAR | Staff confirms a single learner's return. |
-| POST | `/api/bosy/bulk-confirm` | Required | REGISTRAR | Staff bulk-confirms a batch of returns. |
-| GET | `/api/bosy/completers` | Required | REGISTRAR | JHS completers ready for SHS transition. |
-| **POST** | **`/api/bosy/confirm-intent`** | **Learner JWT** | **LEARNER** | **Self-service: learner signals intent to return.** |
-| **GET** | **`/api/bosy/expected-queue`** | **Required** | **REGISTRAR** | **Prior-year PROMOTED learners not yet in current SY pipeline.** |
+| Method   | Path                                      | Auth            | Roles         | Description                                                      |
+| :------- | :---------------------------------------- | :-------------- | :------------ | :--------------------------------------------------------------- |
+| GET      | `/api/bosy/readiness`                     | Required        | REGISTRAR     | BOSY readiness checklist for a given SY.                         |
+| GET      | `/api/bosy/queue`                         | Required        | REGISTRAR     | Learners in the PENDING_CONFIRMATION queue.                      |
+| POST     | `/api/bosy/confirm-return/:applicationId` | Required        | REGISTRAR     | Staff confirms a single learner's return.                        |
+| POST     | `/api/bosy/bulk-confirm`                  | Required        | REGISTRAR     | Staff bulk-confirms a batch of returns.                          |
+| GET      | `/api/bosy/completers`                    | Required        | REGISTRAR     | JHS completers ready for SHS transition.                         |
+| **POST** | **`/api/bosy/confirm-intent`**            | **Learner JWT** | **LEARNER**   | **Self-service: learner signals intent to return.**              |
+| **GET**  | **`/api/bosy/expected-queue`**            | **Required**    | **REGISTRAR** | **Prior-year PROMOTED learners not yet in current SY pipeline.** |
 
 ### Sample: `POST /api/bosy/confirm-intent`
 
 **Authorization:** `Bearer <learner-jwt>` (from `POST /api/auth/learner-login`)
 
 **Request body:**
+
 ```json
 { "schoolYearId": 2 }
 ```
 
 **Response:**
+
 ```json
 {
   "message": "Intent to return confirmed successfully.",
@@ -551,6 +820,7 @@ Public read-only feeds for companion systems (ATLAS, SMART, AIMS).
 ```
 
 ### Sample: `GET /api/bosy/expected-queue?priorSchoolYearId=1&currentSchoolYearId=2`
+
 ```json
 {
   "items": [
@@ -580,12 +850,13 @@ Public read-only feeds for companion systems (ATLAS, SMART, AIMS).
 
 Handles learners flagged as `CONDITIONALLY_PROMOTED` who must pass a summer remedial exam before the new school year.
 
-| Method | Path | Auth | Roles | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| **GET** | **`/api/remedial/pending`** | **Required** | **REGISTRAR** | **List all applications with remedial pending.** |
+| Method    | Path                                   | Auth         | Roles         | Description                                                     |
+| :-------- | :------------------------------------- | :----------- | :------------ | :-------------------------------------------------------------- |
+| **GET**   | **`/api/remedial/pending`**            | **Required** | **REGISTRAR** | **List all applications with remedial pending.**                |
 | **PATCH** | **`/api/remedial/:learnerId/resolve`** | **Required** | **REGISTRAR** | **Mark remedial as passed; set final average and EOSY status.** |
 
 ### Sample: `GET /api/remedial/pending?schoolYearId=1`
+
 ```json
 {
   "items": [
@@ -615,11 +886,13 @@ Handles learners flagged as `CONDITIONALLY_PROMOTED` who must pass a summer reme
 ### Sample: `PATCH /api/remedial/101/resolve`
 
 **Request body:**
+
 ```json
 { "schoolYearId": 1, "summerGrade": 78.0 }
 ```
 
 **Response:**
+
 ```json
 {
   "message": "Remedial case resolved successfully.",
@@ -638,24 +911,25 @@ Staff-initiated pull/push triggers for external companion systems. These complem
 
 **All endpoints require `SYSTEM_ADMIN` role.**
 
-| Method | Path | Auth | Roles | Description |
-| :--- | :--- | :--- | :--- | :--- |
+| Method   | Path                                                  | Auth         | Roles            | Description                                                                                        |
+| :------- | :---------------------------------------------------- | :----------- | :--------------- | :------------------------------------------------------------------------------------------------- |
 | **POST** | **`/api/integration/smart/sections/:id/sync-grades`** | **Required** | **SYSTEM_ADMIN** | **Pull final averages from S.M.A.R.T. for a section; persist to `EnrollmentRecord.finalAverage`.** |
-| **POST** | **`/api/integration/atlas/sync-faculty`** | **Required** | **SYSTEM_ADMIN** | **Pull faculty list from ATLAS and upsert `Teacher` records by `employeeId`.** |
+| **POST** | **`/api/integration/atlas/sync-faculty`**             | **Required** | **SYSTEM_ADMIN** | **Pull faculty list from ATLAS and upsert `Teacher` records by `employeeId`.**                     |
 
 ### Environment Variables
 
-| Variable | Required for | Description |
-| :--- | :--- | :--- |
-| `SMART_API_BASE_URL` | SMART sync | Base URL of the S.M.A.R.T. Tailscale node. |
-| `SMART_API_KEY` | SMART sync | API key sent in `X-API-KEY` header. |
-| `SMART_SYNC_FALLBACK_ENABLED` | SMART sync | Set `true` to use mock data when SMART is unreachable (demo/offline mode). |
-| `ATLAS_API_BASE_URL` | ATLAS sync | Base URL of the ATLAS teacher data endpoint. |
-| `ATLAS_API_KEY` | ATLAS sync | API key sent in `X-API-KEY` header. |
+| Variable                      | Required for | Description                                                                |
+| :---------------------------- | :----------- | :------------------------------------------------------------------------- |
+| `SMART_API_BASE_URL`          | SMART sync   | Base URL of the S.M.A.R.T. Tailscale node.                                 |
+| `SMART_API_KEY`               | SMART sync   | API key sent in `X-API-KEY` header.                                        |
+| `SMART_SYNC_FALLBACK_ENABLED` | SMART sync   | Set `true` to use mock data when SMART is unreachable (demo/offline mode). |
+| `ATLAS_API_BASE_URL`          | ATLAS sync   | Base URL of the ATLAS teacher data endpoint.                               |
+| `ATLAS_API_KEY`               | ATLAS sync   | API key sent in `X-API-KEY` header.                                        |
 
 ### Sample: `POST /api/integration/smart/sections/10/sync-grades`
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -672,16 +946,13 @@ Staff-initiated pull/push triggers for external companion systems. These complem
 ### Sample: `POST /api/integration/atlas/sync-faculty`
 
 **Response:**
+
 ```json
 {
   "success": true,
   "synced": 45,
   "skipped": 1,
-  "errors": [
-    { "employeeId": "BADID99", "error": "Missing email." }
-  ],
+  "errors": [{ "employeeId": "BADID99", "error": "Missing email." }],
   "message": "Synced 45 faculty record(s) from ATLAS."
 }
 ```
-
-

@@ -23,8 +23,10 @@ async function main() {
       where: { employeeId: teacher.employeeId }
     });
 
+    let userId = existingUser?.id;
+
     if (!existingUser) {
-      await prisma.user.create({
+      const newUser = await prisma.user.create({
         data: {
           firstName: teacher.firstName,
           lastName: teacher.lastName,
@@ -39,6 +41,7 @@ async function main() {
           mustChangePassword: true,
         }
       });
+      userId = newUser.id;
       createdCount++;
     } else {
       // Sync existing user to match teacher profile (Master record approach)
@@ -55,6 +58,14 @@ async function main() {
         }
       });
       updatedCount++;
+    }
+
+    // CRITICAL: Link the teacher profile to the user account if not already linked
+    if (teacher.userId !== userId) {
+      await prisma.teacher.update({
+        where: { id: teacher.id },
+        data: { userId }
+      });
     }
   }
 

@@ -1,10 +1,12 @@
 import { memo } from "react";
 import {
-  Edit2,
+  Briefcase,
+  Eye,
   FilterX,
   MoreHorizontal,
   RefreshCw,
   UserCheck,
+  UserRoundPen,
 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
@@ -22,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Card, CardContent, CardHeader } from "@/shared/ui/card";
 import { Skeleton } from "@/shared/ui/skeleton";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
@@ -47,7 +49,6 @@ import type {
 } from "../types";
 import {
   formatAdvisorySectionSummary,
-  formatDesignationSummary,
   formatTeacherName,
 } from "../utils";
 
@@ -97,6 +98,7 @@ interface TeacherDirectoryCardProps {
   onEditTeacher: (teacher: Teacher) => void;
   onDeactivateTeacher: (teacher: Teacher) => void;
   onReactivateTeacher: (id: number) => void;
+  onOpenDetail: (teacher: Teacher) => void;
 }
 
 export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
@@ -123,6 +125,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
   onEditTeacher,
   onDeactivateTeacher,
   onReactivateTeacher,
+  onOpenDetail,
 }: TeacherDirectoryCardProps) {
   const renderAdvisoryStatus = (teacher: Teacher) => {
     const advisorySummary = formatAdvisorySectionSummary(teacher);
@@ -158,54 +161,55 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
     </div>
   );
 
-  const renderTeacherActions = (teacher: Teacher, compact = false) => (
-    <div
-      className={`flex flex-wrap items-center ${compact ? "justify-start" : "justify-center"} gap-1.5`}>
+  const renderTeacherActions = (teacher: Teacher) => (
+    <div className="flex items-center justify-center gap-2 min-w-[180px]">
       <Button
-        variant="outline"
+        variant="secondary"
         size="sm"
-        className="h-7 px-2 text-xs gap-1 whitespace-nowrap font-bold"
-        onClick={() => onOpenDesignationEditor(teacher)}
-        disabled={!ayId}
-        title={
-          ayId ? "Edit designation" : "Select an active school year first"
-        }>
-        Designation
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        className="h-7 px-2 text-xs gap-1 whitespace-nowrap font-bold"
-        onClick={() => onEditTeacher(teacher)}
-        title="Edit profile">
-        <Edit2 className="h-3 w-3" />
-        Edit
+        className="h-8 px-3 text-xs font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
+        onClick={() => onOpenDetail(teacher)}>
+        <Eye className="h-3.5 w-3.5 mr-1.5" />
+        View
       </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="outline"
-            size="icon-sm"
-            className="h-7 w-7"
+            variant="secondary"
+            size="sm"
+            className="h-8 w-8 px-0 text-xs font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
             aria-label={`Open row actions for ${formatTeacherName(teacher)}`}>
             <MoreHorizontal className="h-3.5 w-3.5" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
-          align={compact ? "start" : "end"}
-          className="w-18">
+          align="end"
+          className="w-56 font-semibold">
+          <DropdownMenuItem
+            onClick={() => onOpenDesignationEditor(teacher)}
+            className="cursor-pointer"
+            disabled={!ayId}>
+            <Briefcase className="mr-2 h-4 w-4" />
+            Update Designation
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => onEditTeacher(teacher)}
+            className="cursor-pointer">
+            <UserRoundPen className="mr-2 h-4 w-4" />
+            Quick Update Profile
+          </DropdownMenuItem>
           {teacher.isActive ? (
             <DropdownMenuItem
               onClick={() => onDeactivateTeacher(teacher)}
-              className="cursor-pointer text-primary focus:text-primary-foreground font-bold hover:text-foreground">
-              Deactivate
+              className="cursor-pointer text-destructive focus:text-destructive">
+              <UserCheck className="mr-2 h-4 w-4" />
+              Deactivate Faculty
             </DropdownMenuItem>
           ) : (
             <DropdownMenuItem
               onClick={() => onReactivateTeacher(teacher.id)}
-              className="cursor-pointer text-emerald-700 focus:text-emerald-700 font-bold">
+              className="cursor-pointer text-emerald-700 focus:text-emerald-700">
               <UserCheck className="mr-2 h-4 w-4" />
-              Reactivate
+              Reactivate Faculty
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
@@ -280,9 +284,13 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
         />
       ),
       cell: ({ row }) => (
-        <span className="text-xs font-bold block text-center">
-          {row.original.employeeId || "-"}
-        </span>
+        <div className="flex justify-center">
+          {row.original.employeeId ? (
+            <span className="text-xs font-bold">{row.original.employeeId}</span>
+          ) : (
+            <span className="text-slate-400 italic font-medium text-xs">N/A</span>
+          )}
+        </div>
       ),
     },
     {
@@ -299,12 +307,20 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       ),
       cell: ({ row }) => (
         <div className="flex flex-col items-center text-center">
-          <span className="text-xs font-bold uppercase text-primary">
-            {row.original.department || "-"}
-          </span>
-          <span className="text-xs font-bold text-foreground">
-            {row.original.specialization || "Generalist"}
-          </span>
+          {row.original.department ? (
+            <span className="text-xs font-bold uppercase text-primary">
+              {row.original.department}
+            </span>
+          ) : (
+            <span className="text-slate-400 italic font-medium text-xs">Unassigned</span>
+          )}
+          {row.original.specialization ? (
+            <span className="text-xs font-bold text-foreground">
+              {row.original.specialization}
+            </span>
+          ) : (
+            <span className="text-slate-400 italic font-medium text-[10px]">Generalist</span>
+          )}
         </div>
       ),
     },
@@ -340,21 +356,38 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                 </Tooltip>
               ))
             ) : (
-              <span className="text-xs text-foreground font-medium">-</span>
+              <span className="text-slate-400 italic font-medium text-xs">N/A</span>
             )}
           </TooltipProvider>
         </div>
       ),
     },
     {
-      id: "status",
+      id: "facultyStatus",
       accessorKey: "isActive",
-      size: 120,
-      minSize: 100,
+      size: 140,
+      minSize: 120,
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
-          title="STATUS"
+          title="FACULTY STATUS"
+          className="font-bold"
+        />
+      ),
+      cell: ({ row }) => (
+        <div className="flex justify-center">
+          {renderTeacherStatus(row.original)}
+        </div>
+      ),
+    },
+    {
+      id: "portalAccess",
+      size: 160,
+      minSize: 140,
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title="PORTAL ACCESS"
           className="font-bold"
         />
       ),
@@ -364,30 +397,36 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
         let accountLabel = "No Account";
         let accountColor =
           "text-muted-foreground bg-muted border-muted-foreground/30";
+
         if (ua) {
           if (!ua.isActive) {
-            accountLabel = "Locked";
+            accountLabel = "Suspended";
             accountColor =
-              "text-slate-500 bg-slate-100 border-slate-300 dark:bg-slate-800 dark:border-slate-600";
+              "text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-900/50 dark:border-slate-800";
           } else if (ua.mustChangePassword && !ua.lastLoginAt) {
-            accountLabel = "Pending FTL";
+            accountLabel = "Provisioned";
             accountColor =
-              "text-amber-700 bg-amber-50 border-amber-300 dark:bg-amber-950 dark:border-amber-700";
+              "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800";
           } else {
-            accountLabel = "Active";
+            accountLabel = "SSO Active";
             accountColor =
-              "text-emerald-700 bg-emerald-50 border-emerald-300 dark:bg-emerald-950 dark:border-emerald-700";
+              "text-indigo-700 bg-indigo-50 border-indigo-200 dark:bg-indigo-950/30 dark:border-indigo-800";
           }
+        } else if (teacher.isActive) {
+          accountLabel = "No Account";
+          accountColor =
+            "text-rose-700 bg-rose-50 border-rose-200 dark:bg-rose-950/30 dark:border-rose-800";
         }
+
         return (
-          <div className="flex flex-col items-center gap-1.5">
-            {renderTeacherStatus(teacher)}
+          <div className="flex justify-center">
             <Badge
               variant="outline"
               className={cn(
-                "text-[9px] font-black uppercase px-1.5 h-4 border",
+                "text-[9px] font-black uppercase px-2 h-4.5 border gap-1 whitespace-nowrap",
                 accountColor,
               )}>
+              {ua?.isActive && <span className="text-[10px]">🌐</span>}
               {accountLabel}
             </Badge>
           </div>
@@ -411,14 +450,9 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
         if (!designation) {
           return (
             <div className="flex justify-center">
-              <Badge
-                variant="outline"
-                className={cn(
-                  "text-[10px] font-black uppercase px-2 h-5 border-none",
-                  getAcademicDesignationColorClasses("SUBJECT TEACHER"),
-                )}>
+              <span className="text-slate-500 font-bold uppercase text-[10px] whitespace-nowrap">
                 Subject Teacher
-              </Badge>
+              </span>
             </div>
           );
         }
@@ -428,16 +462,20 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
         return (
           <div className="flex flex-col items-center gap-1.5 py-1">
             {/* Level 2: Academic Designation (Solid DepEd Colors) */}
-            <Badge
-              variant="outline"
-              className={cn(
-                "text-[10px] font-black uppercase px-2 h-5 border-none",
-                designation.isClassAdviser
-                  ? getAcademicDesignationColorClasses("CLASS ADVISER")
-                  : getAcademicDesignationColorClasses("SUBJECT TEACHER"),
-              )}>
-              {designation.isClassAdviser ? "Class Adviser" : "Subject Teacher"}
-            </Badge>
+            {designation.isClassAdviser ? (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "text-[10px] font-black uppercase px-2 h-5 border-none whitespace-nowrap",
+                  getAcademicDesignationColorClasses("CLASS ADVISER"),
+                )}>
+                Class Adviser
+              </Badge>
+            ) : (
+              <span className="text-slate-500 font-bold uppercase text-[10px] whitespace-nowrap">
+                Subject Teacher
+              </span>
+            )}
 
             {/* Level 3: Ancillary Tags (Pastel Domains) */}
             {ancillaryRoles.length > 0 && (
@@ -481,96 +519,86 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
   return (
     <Card className="w-full min-w-0 overflow-hidden shadow-sm border-2">
       <CardHeader className="border-b bg-muted/10">
-        <div className="space-y-3">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <CardTitle className="text-lg font-bold uppercase">
-              Teacher Directory
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-9 w-9 shrink-0"
-                onClick={onRefresh}>
-                <RefreshCw
-                  className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
-                />
-              </Button>
-            </div>
-          </div>
-          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-5">
-            <Input
-              value={searchQuery}
-              onChange={(event) => onSearchQueryChange(event.target.value)}
-              placeholder="Search name, ID, learning area, section"
-              className="h-9 md:col-span-2 xl:col-span-2 font-bold"
-            />
-            <Select
-              value={statusFilter}
-              onValueChange={(value) =>
-                onStatusFilterChange(value as TeacherStatusFilter)
-              }>
-              <SelectTrigger className="h-9 font-bold uppercase text-xs">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem
-                  value="all"
-                  className="font-bold">
-                  All Statuses
-                </SelectItem>
-                <SelectItem
-                  value="active"
-                  className="font-bold">
-                  Active Only
-                </SelectItem>
-                <SelectItem
-                  value="inactive"
-                  className="font-bold">
-                  Inactive Only
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Select
-              value={designationFilter}
-              onValueChange={(value) =>
-                onDesignationFilterChange(value as TeacherDesignationFilter)
-              }>
-              <SelectTrigger className="h-9 font-bold uppercase text-xs">
-                <SelectValue placeholder="Designation" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem
-                  value="all"
-                  className="font-bold">
-                  All Designations
-                </SelectItem>
-                <SelectItem
-                  value="adviser"
-                  className="font-bold">
-                  Class Adviser
-                </SelectItem>
-                <SelectItem
-                  value="tic"
-                  className="font-bold">
-                  TIC
-                </SelectItem>
-                <SelectItem
-                  value="none"
-                  className="font-bold">
-                  No Designation
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Button
-              variant="ghost"
-              className="h-9 font-bold uppercase text-xs"
-              disabled={!hasActiveFilters}
-              onClick={onClearFilters}>
-              <FilterX className="mr-2 h-4 w-4" />
-              Clear
-            </Button>
-          </div>
+        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-6">
+          <Input
+            value={searchQuery}
+            onChange={(event) => onSearchQueryChange(event.target.value)}
+            placeholder="Search name, ID, learning area, section"
+            className="h-9 md:col-span-2 xl:col-span-2 font-bold"
+          />
+          <Select
+            value={statusFilter}
+            onValueChange={(value) =>
+              onStatusFilterChange(value as TeacherStatusFilter)
+            }>
+            <SelectTrigger className="h-9 font-bold uppercase text-xs">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem
+                value="all"
+                className="font-bold">
+                All Statuses
+              </SelectItem>
+              <SelectItem
+                value="active"
+                className="font-bold">
+                Active Only
+              </SelectItem>
+              <SelectItem
+                value="inactive"
+                className="font-bold">
+                Inactive Only
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            value={designationFilter}
+            onValueChange={(value) =>
+              onDesignationFilterChange(value as TeacherDesignationFilter)
+            }>
+            <SelectTrigger className="h-9 font-bold uppercase text-xs">
+              <SelectValue placeholder="Designation" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem
+                value="all"
+                className="font-bold">
+                All Designations
+              </SelectItem>
+              <SelectItem
+                value="adviser"
+                className="font-bold">
+                Class Adviser
+              </SelectItem>
+              <SelectItem
+                value="tic"
+                className="font-bold">
+                TIC
+              </SelectItem>
+              <SelectItem
+                value="none"
+                className="font-bold">
+                No Designation
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="ghost"
+            className="h-9 font-bold uppercase text-xs"
+            disabled={!hasActiveFilters}
+            onClick={onClearFilters}>
+            <FilterX className="mr-2 h-4 w-4" />
+            Clear
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 gap-2 font-bold uppercase text-xs"
+            onClick={onRefresh}>
+            <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+            Refresh
+          </Button>
         </div>
       </CardHeader>
       <CardContent className="p-0 min-w-0">
@@ -622,72 +650,98 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
 
                   <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
                     <div>
-                      <p className="text-foreground uppercase  font-bold opacity-70">
+                      <p className="text-foreground uppercase font-bold opacity-70">
                         Employee ID
                       </p>
-                      <p className="font-bold">{teacher.employeeId || "-"}</p>
+                      {teacher.employeeId ? (
+                        <p className="font-bold">{teacher.employeeId}</p>
+                      ) : (
+                        <p className="text-slate-400 italic font-medium">N/A</p>
+                      )}
                     </div>
                     <div>
-                      <p className="text-foreground uppercase  font-bold opacity-70">
+                      <p className="text-foreground uppercase font-bold opacity-70">
                         Learning Area
                       </p>
-                      <p className="font-bold">
-                        {teacher.specialization || "Not set"}
-                      </p>
+                      {teacher.specialization ? (
+                        <p className="font-bold">{teacher.specialization}</p>
+                      ) : (
+                        <p className="text-slate-400 italic font-medium">Unassigned</p>
+                      )}
                     </div>
                     <div>
-                      <p className="text-foreground uppercase  font-bold opacity-70">
+                      <p className="text-foreground uppercase font-bold opacity-70">
                         Contact
                       </p>
-                      <p className="font-bold">
-                        {teacher.contactNumber || "-"}
-                      </p>
+                      {teacher.contactNumber ? (
+                        <p className="font-bold">{teacher.contactNumber}</p>
+                      ) : (
+                        <p className="text-slate-400 italic font-medium">N/A</p>
+                      )}
                     </div>
                     <div>
-                      <p className="text-foreground uppercase  font-bold opacity-70">
+                      <p className="text-foreground uppercase font-bold opacity-70">
                         Designation
                       </p>
-                      <p className="font-bold uppercase">
-                        {formatDesignationSummary(teacher)}
-                      </p>
+                      {teacher.designation?.isClassAdviser ? (
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-[9px] font-black uppercase px-1.5 h-4 border-none whitespace-nowrap",
+                            getAcademicDesignationColorClasses("CLASS ADVISER"),
+                          )}>
+                          Class Adviser
+                        </Badge>
+                      ) : (
+                        <p className="text-slate-500 font-bold uppercase text-[10px]">
+                          Subject Teacher
+                        </p>
+                      )}
                     </div>
                     <div>
-                      <p className="text-foreground uppercase  font-bold opacity-70">
+                      <p className="text-foreground uppercase font-bold opacity-70">
                         Advisory
                       </p>
                       {renderAdvisoryStatus(teacher)}
                     </div>
                     <div>
-                      <p className="text-foreground uppercase  font-bold opacity-70">
-                        Portal Account
+                      <p className="text-foreground uppercase font-bold opacity-70">
+                        Portal Access
                       </p>
                       {(() => {
                         const ua = teacher.userAccount;
                         let accountLabel = "No Account";
                         let accountColor =
                           "text-muted-foreground bg-muted border-muted-foreground/30";
+
                         if (ua) {
                           if (!ua.isActive) {
-                            accountLabel = "Locked";
+                            accountLabel = "Suspended";
                             accountColor =
-                              "text-slate-500 bg-slate-100 border-slate-300 dark:bg-slate-800 dark:border-slate-600";
+                              "text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-900/50 dark:border-slate-800";
                           } else if (ua.mustChangePassword && !ua.lastLoginAt) {
-                            accountLabel = "Pending FTL";
+                            accountLabel = "Provisioned";
                             accountColor =
-                              "text-amber-700 bg-amber-50 border-amber-300 dark:bg-amber-950 dark:border-amber-700";
+                              "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800";
                           } else {
-                            accountLabel = "Active";
+                            accountLabel = "SSO Active";
                             accountColor =
-                              "text-emerald-700 bg-emerald-50 border-emerald-300 dark:bg-emerald-950 dark:border-emerald-700";
+                              "text-indigo-700 bg-indigo-50 border-indigo-200 dark:bg-indigo-950/30 dark:border-indigo-800";
                           }
+                        } else if (teacher.isActive) {
+                          accountLabel = "No Account";
+                          accountColor =
+                            "text-rose-700 bg-rose-50 border-rose-200 dark:bg-rose-950/30 dark:border-rose-800";
                         }
+
                         return (
                           <Badge
                             variant="outline"
                             className={cn(
-                              "text-[9px] font-black uppercase px-1.5 h-4 border",
+                              "text-[9px] font-black uppercase px-1.5 h-4.5 border gap-1 whitespace-nowrap",
                               accountColor,
                             )}>
+                            {ua?.isActive && <span className="text-[10px]">🌐</span>}
                             {accountLabel}
                           </Badge>
                         );
@@ -696,7 +750,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                   </div>
 
                   <div className="pt-2 border-t">
-                    {renderTeacherActions(teacher, true)}
+                    {renderTeacherActions(teacher)}
                   </div>
                 </div>
               ))

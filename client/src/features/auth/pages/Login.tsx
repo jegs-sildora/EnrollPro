@@ -338,6 +338,11 @@ export default function Login() {
         description: `Signed in as ${payload.user.firstName} ${payload.user.lastName}`,
       });
 
+      if (payload.user.mustChangePassword) {
+        setSuccess("Account security update required...");
+        return;
+      }
+
       redirectTimeoutRef.current = window.setTimeout(() => {
         navigate("/dashboard", { replace: true });
       }, 800);
@@ -368,7 +373,7 @@ export default function Login() {
     }
   };
 
-  if (token && user) {
+  if (token && user && !user.mustChangePassword) {
     return (
       <Navigate
         to="/dashboard"

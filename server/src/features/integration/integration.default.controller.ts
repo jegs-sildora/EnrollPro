@@ -1,16 +1,40 @@
 import type { Request, Response } from "express";
+import type { Prisma } from "../../generated/prisma/index.js";
 import { prisma } from "../../lib/prisma.js";
 import {
   buildTeacherName,
+  parsePositiveInt,
   resolveSchoolYearScope,
 } from "./integration.shared.js";
 
-const STAFF_ROLES = [
-  "SYSTEM_ADMIN",
-  "HEAD_REGISTRAR",
-  "CLASS_ADVISER",
-  "TEACHER",
-] as const;
+const DEFAULT_PAGE_SIZE = 50;
+const MAX_PAGE_SIZE = 200;
+
+// ---------------------------------------------------------------------------
+// Local Prisma payload types — eliminates `any` throughout this file
+// ---------------------------------------------------------------------------
+type TeacherForDefault = Prisma.TeacherGetPayload<{
+  include: {
+    _count: { select: { advisoryHistory: true } };
+    department: { select: { id: true; code: true; name: true } };
+    teacherDesignations: {
+      include: {
+        advisorySection: {
+          select: {
+            id: true;
+            name: true;
+            gradeLevelId: true;
+            gradeLevel: { select: { name: true } };
+          };
+        };
+      };
+    };
+  };
+}>;
+
+// ---------------------------------------------------------------------------
+// Staff roles exported by this feed
+// ---------------------------------------------------------------------------
 
 function buildStaffName(user: {
   firstName: string;
@@ -34,14 +58,25 @@ function buildLearnerName(learner: {
   return `${learner.lastName}, ${learner.firstName}${middle}${extension}`;
 }
 
-async function fetchDefaultLearnerRows(schoolYearId: number) {
+// ---------------------------------------------------------------------------
+// Shared learner fetch helpers — DPA-minimized per subsystem contract
+// ---------------------------------------------------------------------------
+
+/**
+ * AIMS context rows — enrolled students only, no demographic PII.
+ * Includes learnerType, applicantType, learningModalities, and remedial flag
+ * needed by the LMS to build virtual classrooms and pre-assign remedial modules.
+ */
+async function fetchAimsLearnerRows(
+  schoolYearId: number,
+  skip = 0,
+  take = MAX_PAGE_SIZE,
+) {
   return prisma.enrollmentApplication.findMany({
     where: {
       schoolYearId,
       status: "ENROLLED",
-      enrollmentRecord: {
-        isNot: null,
-      },
+      enrollmentRecord: { isNot: null },
     },
     include: {
       learner: {
@@ -53,8 +88,6 @@ async function fetchDefaultLearnerRows(schoolYearId: number) {
           lastName: true,
           middleName: true,
           extensionName: true,
-          sex: true,
-          birthdate: true,
           userId: true,
           isPendingLrnCreation: true,
           status: true,
@@ -62,36 +95,89 @@ async function fetchDefaultLearnerRows(schoolYearId: number) {
             select: {
               accountName: true,
               isActive: true,
-              mustChangePassword: true,
             },
           },
         },
       },
       gradeLevel: {
-        select: {
-          id: true,
-          name: true,
-          displayOrder: true,
-        },
+        select: { id: true, name: true, displayOrder: true },
       },
       enrollmentRecord: {
         select: {
           id: true,
           enrolledAt: true,
           section: {
-            select: {
-              id: true,
-              name: true,
-              programType: true,
-              maxCapacity: true,
-            },
+            select: { id: true, name: true, programType: true },
+          },
+        },
+      },
+      // Include checklist for remedial risk flag
+      checklist: {
+        select: { isRemedialRequired: true },
+      },
+    },
+    orderBy: [{ gradeLevelId: "asc" }, { id: "asc" }],
+    skip,
+    take,
+  });
+}
+
+/**
+ * SMART roster rows — active + dropped students, minimum fields for grade encoding.
+ * Excludes birthdate, sex, userId, portal account, and parent data per DPA minimization.
+ */
+async function fetchSmartLearnerRows(
+  schoolYearId: number,
+  skip = 0,
+  take = MAX_PAGE_SIZE,
+) {
+  return prisma.enrollmentApplication.findMany({
+    where: {
+      schoolYearId,
+      // Include dropped students so SMART can reflect their status in class records
+      status: { in: ["ENROLLED", "TEMPORARILY_ENROLLED", "DROPPED"] },
+      enrollmentRecord: { isNot: null },
+    },
+    include: {
+      learner: {
+        select: {
+          id: true,
+          lrn: true,
+          firstName: true,
+          lastName: true,
+          middleName: true,
+          extensionName: true,
+          isPendingLrnCreation: true,
+        },
+      },
+      gradeLevel: {
+        select: { id: true, name: true, displayOrder: true },
+      },
+      enrollmentRecord: {
+        select: {
+          id: true,
+          enrolledAt: true,
+          eosyStatus: true,
+          dropOutDate: true,
+          dropOutReason: true,
+          section: {
+            select: { id: true, name: true, programType: true },
           },
         },
       },
     },
     orderBy: [{ gradeLevelId: "asc" }, { id: "asc" }],
+    skip,
+    take,
   });
 }
+
+const STAFF_ROLES = [
+  "SYSTEM_ADMIN",
+  "HEAD_REGISTRAR",
+  "CLASS_ADVISER",
+  "TEACHER",
+] as const;
 
 export async function listIntegrationStaff(
   req: Request,
@@ -100,33 +186,45 @@ export async function listIntegrationStaff(
   const includeInactive =
     String(req.query.includeInactive ?? "false").toLowerCase() === "true";
 
-  const users = await prisma.user.findMany({
-    where: {
-      role: {
-        in: [...STAFF_ROLES],
+  // Pagination
+  const page = parsePositiveInt(req.query.page) ?? 1;
+  const limit = Math.min(
+    parsePositiveInt(req.query.limit) ?? DEFAULT_PAGE_SIZE,
+    MAX_PAGE_SIZE,
+  );
+  const skip = (page - 1) * limit;
+
+  const where = {
+    role: { in: [...STAFF_ROLES] as string[] },
+    ...(includeInactive ? {} : { isActive: true }),
+  };
+
+  const [total, users] = await Promise.all([
+    prisma.user.count({ where }),
+    prisma.user.findMany({
+      where,
+      // DPA: omit mustChangePassword and lastLoginAt (operational security fields)
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        middleName: true,
+        suffix: true,
+        email: true,
+        role: true,
+        isActive: true,
+        employeeId: true,
+        accountName: true,
+        designation: true,
+        mobileNumber: true,
+        createdAt: true,
+        updatedAt: true,
       },
-      ...(includeInactive ? {} : { isActive: true }),
-    },
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      middleName: true,
-      suffix: true,
-      email: true,
-      role: true,
-      isActive: true,
-      employeeId: true,
-      accountName: true,
-      designation: true,
-      mobileNumber: true,
-      mustChangePassword: true,
-      createdAt: true,
-      updatedAt: true,
-      lastLoginAt: true,
-    },
-    orderBy: [{ role: "asc" }, { lastName: "asc" }, { firstName: "asc" }],
-  });
+      orderBy: [{ role: "asc" }, { lastName: "asc" }, { firstName: "asc" }],
+      skip,
+      take: limit,
+    }),
+  ]);
 
   res.json({
     data: users.map((user) => ({
@@ -143,15 +241,16 @@ export async function listIntegrationStaff(
       designation: user.designation,
       mobileNumber: user.mobileNumber,
       isActive: user.isActive,
-      mustChangePassword: user.mustChangePassword,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      lastLoginAt: user.lastLoginAt,
     })),
     meta: {
       generatedAt: new Date().toISOString(),
       includeInactive,
-      total: users.length,
+      total,
+      page,
+      limit,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
     },
   });
 }
@@ -206,9 +305,10 @@ export async function listDefaultFaculty(
     },
   });
 
-  const rows = teachers.map((teacher: any) => {
+  const rows = teachers.map((teacher: TeacherForDefault) => {
     const designation = teacher.teacherDesignations[0] ?? null;
 
+    // DPA: designationNotes is an internal HR field — excluded from external feeds.
     return {
       teacherId: teacher.id,
       employeeId: teacher.employeeId,
@@ -225,7 +325,6 @@ export async function listDefaultFaculty(
       departmentName: teacher.department?.name ?? null,
       sectionCount: teacher._count.advisoryHistory,
       isClassAdviser: designation?.isClassAdviser ?? false,
-      designationNotes: designation?.designationNotes ?? null,
       effectiveFrom: designation?.effectiveFrom ?? null,
       effectiveTo: designation?.effectiveTo ?? null,
       advisorySection: designation?.advisorySection
@@ -268,36 +367,46 @@ export async function listDefaultSmartStudents(
   }
 
   const { scope } = scopeResult;
-  const applications = await fetchDefaultLearnerRows(scope.schoolYearId);
 
+  // Pagination
+  const page = parsePositiveInt(req.query.page) ?? 1;
+  const limit = Math.min(
+    parsePositiveInt(req.query.limit) ?? DEFAULT_PAGE_SIZE,
+    MAX_PAGE_SIZE,
+  );
+  const skip = (page - 1) * limit;
+
+  // Count only SMART-eligible statuses (ENROLLED, TEMPORARILY_ENROLLED, DROPPED)
+  const [total, applications] = await Promise.all([
+    prisma.enrollmentApplication.count({
+      where: {
+        schoolYearId: scope.schoolYearId,
+        status: { in: ["ENROLLED", "TEMPORARILY_ENROLLED", "DROPPED"] },
+        enrollmentRecord: { isNot: null },
+      },
+    }),
+    fetchSmartLearnerRows(scope.schoolYearId, skip, limit),
+  ]);
+
+  // DPA: SMART is a grading system — birthdate, sex, userId, portal account
+  // are NOT included. Only LRN, name, grade/section, and EOSY/drop-out status.
   res.json({
     data: applications.map((application) => ({
       enrollmentApplicationId: application.id,
-      learner: {
-        id: application.learner.id,
-        externalId: application.learner.externalId,
-        lrn: application.learner.lrn,
-        firstName: application.learner.firstName,
-        lastName: application.learner.lastName,
-        middleName: application.learner.middleName,
-        extensionName: application.learner.extensionName,
-        fullName: buildLearnerName(application.learner),
-        sex: application.learner.sex,
-        birthdate: application.learner.birthdate,
-        userId: application.learner.userId ?? null,
-        isPendingLrnCreation: application.learner.isPendingLrnCreation,
-        learnerStatus: application.learner.status,
-        portalAccount: application.learner.user
-          ? {
-              accountName: application.learner.user.accountName,
-              isActive: application.learner.user.isActive,
-              mustChangePassword: application.learner.user.mustChangePassword,
-            }
-          : null,
-      },
+      enrollmentStatus: application.status,
+      lrn: application.learner.lrn,
+      isPendingLrn: application.learner.isPendingLrnCreation,
+      fullName: buildLearnerName(application.learner),
+      firstName: application.learner.firstName,
+      lastName: application.learner.lastName,
+      middleName: application.learner.middleName,
+      extensionName: application.learner.extensionName,
       gradeLevel: application.gradeLevel,
       section: application.enrollmentRecord?.section ?? null,
       enrolledAt: application.enrollmentRecord?.enrolledAt ?? null,
+      eosyStatus: application.enrollmentRecord?.eosyStatus ?? null,
+      dropOutDate: application.enrollmentRecord?.dropOutDate ?? null,
+      dropOutReason: application.enrollmentRecord?.dropOutReason ?? null,
       schoolYear: {
         id: scope.schoolYearId,
         yearLabel: scope.schoolYearLabel,
@@ -308,7 +417,10 @@ export async function listDefaultSmartStudents(
       generatedAt: new Date().toISOString(),
       scopeSchoolYearId: scope.schoolYearId,
       scopeSchoolYearLabel: scope.schoolYearLabel,
-      totalRows: applications.length,
+      total,
+      page,
+      limit,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
     },
   });
 }
@@ -329,14 +441,35 @@ export async function listDefaultAimsContext(
   }
 
   const { scope } = scopeResult;
-  const applications = await fetchDefaultLearnerRows(scope.schoolYearId);
 
+  // Pagination
+  const page = parsePositiveInt(req.query.page) ?? 1;
+  const limit = Math.min(
+    parsePositiveInt(req.query.limit) ?? DEFAULT_PAGE_SIZE,
+    MAX_PAGE_SIZE,
+  );
+  const skip = (page - 1) * limit;
+
+  const [total, applications] = await Promise.all([
+    prisma.enrollmentApplication.count({
+      where: {
+        schoolYearId: scope.schoolYearId,
+        status: "ENROLLED",
+        enrollmentRecord: { isNot: null },
+      },
+    }),
+    fetchAimsLearnerRows(scope.schoolYearId, skip, limit),
+  ]);
+
+  // DPA: AIMS is an LMS — birthdate and sex are NOT included.
+  // isRemedialRequired IS included because AIMS must pre-assign remedial modules.
   res.json({
     data: applications.map((application) => ({
       enrollmentApplicationId: application.id,
       applicantType: application.applicantType,
       learnerType: application.learnerType,
       learningModalities: application.learningModalities,
+      isRemedialRequired: application.checklist?.isRemedialRequired ?? false,
       learner: {
         externalId: application.learner.externalId,
         lrn: application.learner.lrn,
@@ -352,7 +485,6 @@ export async function listDefaultAimsContext(
           ? {
               accountName: application.learner.user.accountName,
               isActive: application.learner.user.isActive,
-              mustChangePassword: application.learner.user.mustChangePassword,
             }
           : null,
       },
@@ -370,7 +502,10 @@ export async function listDefaultAimsContext(
       generatedAt: new Date().toISOString(),
       scopeSchoolYearId: scope.schoolYearId,
       scopeSchoolYearLabel: scope.schoolYearLabel,
-      totalRows: applications.length,
+      total,
+      page,
+      limit,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
     },
   });
 }

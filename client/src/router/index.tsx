@@ -8,7 +8,6 @@ import RootLayout from "@/shared/layouts/RootLayout";
 import ProtectedRoute from "@/shared/components/ProtectedRoute";
 
 import Login from "@/features/auth/pages/Login";
-import ChangePassword from "@/features/auth/pages/ChangePassword";
 import Dashboard from "@/features/dashboard/pages/Index";
 import EarlyRegistrationWorkspace from "@/features/admission/pages/early-registration/EarlyRegistrationWorkspace";
 import EarlyRegistrationDetail from "@/features/admission/pages/early-registration/EarlyRegistrationDetail";
@@ -39,6 +38,10 @@ import SampleIntegrationPage from "@/features/sample-integration/pages/Index";
 // DO 017 s.2025 — Standalone Early Registration Module (Grades 7–10)
 import EarlyRegistrationApply from "@/features/early-registration/pages/apply/Index";
 import BOSYPage from "@/features/bosy/pages/BOSYPage";
+
+import { lazy } from "react";
+
+const IntegrationHub = lazy(() => import("@/features/integration/pages/IntegrationHub"));
 
 export const router = createBrowserRouter([
   {
@@ -83,10 +86,6 @@ export const router = createBrowserRouter([
           {
             path: "/login",
             element: <Login />,
-          },
-          {
-            path: "/change-password",
-            element: <ChangePassword />,
           },
         ],
       },
@@ -228,6 +227,10 @@ export const router = createBrowserRouter([
                   {
                     path: "/admin/system",
                     element: <SystemHealth />,
+                  },
+                  {
+                    path: "/admin/integration",
+                    element: <IntegrationHub />,
                   },
                   {
                     path: "/audit-logs",

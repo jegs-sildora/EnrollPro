@@ -22,10 +22,15 @@ import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { Button } from "@/shared/ui/button";
-import { CreateSectionModal } from "../components/CreateSectionModal";
+import { SectionFormSheet } from "../components/SectionFormSheet";
+import type { SectionFormState, SectionItem, TeacherOption } from "../types";
 import { InsertLateEnrolleeModal } from "../components/InsertLateEnrolleeModal";
 import { SectionHandoverModal } from "../components/SectionHandoverModal";
-import { EditSectionModal } from "../components/EditSectionModal";
+import {
+  DEFAULT_MAX_CAPACITY_REGULAR,
+  DEFAULT_MAX_CAPACITY_SCP,
+} from "@enrollpro/shared/constants";
+
 import {
   Card,
   CardContent,
@@ -271,13 +276,24 @@ export default function Sections() {
   // Rule A & B: Delayed loading
   const showSkeleton = useDelayedLoading(loading);
 
-  // Add section modal state
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  // Section Form Sheet State
+  const [isFormSheetOpen, setIsFormSheetOpen] = useState(false);
+  const [formSheetMode, setFormSheetMode] = useState<"create" | "edit">("create");
+  const [sectionFormData, setSectionFormData] = useState<SectionFormState>({
+    name: "",
+    programType: "REGULAR",
+    adviserId: "none",
+    maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
+  });
+  const [submittingForm, setSubmittingForm] = useState(false);
+  const [programOptions, setProgramOptions] = useState<
+    { value: string; label: string }[]
+  >([{ value: "REGULAR", label: "Regular (BEC)" }]);
   const [createGlId, setCreateGlId] = useState<number | null>(null);
   const [createGlName, setCreateGlName] = useState("");
-
-  // Edit section state
-  const [editSection, setEditSection] = useState<SectionItem | null>(null);
+  const [editingSectionId, setEditingSectionId] = useState<number | null>(null);
+  const [loadingTeachers, setLoadingTeachers] = useState(false);
+  const [availableTeachers, setAvailableTeachers] = useState<TeacherOption[]>([]);
 
   // Delete confirmation
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -544,10 +560,162 @@ export default function Sections() {
     );
   }, [heatmapGradeFilter, heatmapGradeOptions]);
 
-  const openCreateModal = (glId: number, glName: string) => {
-    setCreateGlId(glId);
-    setCreateGlName(glName);
-    setIsCreateModalOpen(true);
+  const SCP_LABELS: Record<string, string> = {
+    REGULAR: "Regular (BEC)",
+    SCIENCE_TECHNOLOGY_AND_ENGINEERING: "STE",
+    SPECIAL_PROGRAM_IN_THE_ARTS: "SPA",
+    SPECIAL_PROGRAM_IN_SPORTS: "SPS",
+    SPECIAL_PROGRAM_IN_JOURNALISM: "SPJ",
+    SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: "SPFL",
+    SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION: "SPTVE",
+  };
+
+  useEffect(() => {
+    const fetchProgramOptions = async () => {
+      if (!ayId) return;
+      try {
+        const res = await api.get(`/curriculum/${ayId}/scp-config`);
+        const configs = res.data.scpProgramConfigs || [];
+        const offeredScps = configs
+          .filter((cfg: any) => cfg.isOffered)
+          .map((cfg: any) => ({
+            value: cfg.scpType,
+            label: SCP_LABELS[cfg.scpType] || cfg.scpType,
+          }));
+
+        setProgramOptions([
+          { value: "REGULAR", label: "Regular (BEC)" },
+          ...offeredScps,
+        ]);
+      } catch (err) {
+        console.error("Failed to fetch SCP configs", err);
+      }
+    };
+
+    if (ayId) {
+      fetchProgramOptions();
+    }
+  }, [ayId]);
+
+  const handleOpenCreate = useCallback(
+    (glId: number, glName: string) => {
+      setFormSheetMode("create");
+      setCreateGlId(glId);
+      setCreateGlName(glName);
+      setSectionFormData({
+        name: "",
+        programType: "REGULAR",
+        adviserId: "none",
+        maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
+      });
+      setAvailableTeachers(
+        teachers.map((t) => ({
+          id: t.id,
+          name: t.name,
+          employeeId: t.employeeId,
+        })),
+      );
+      setIsFormSheetOpen(true);
+    },
+    [teachers],
+  );
+
+  const handleOpenEdit = useCallback(
+    async (section: SectionItem, glName: string) => {
+      setFormSheetMode("edit");
+      setEditingSectionId(section.id);
+      setCreateGlName(glName);
+      setSectionFormData({
+        name: section.name,
+        programType: section.programType,
+        adviserId: section.advisingTeacher
+          ? section.advisingTeacher.id.toString()
+          : "none",
+        maxCapacity: section.maxCapacity,
+      });
+
+      // Fetch filtered teachers for editing
+      setLoadingTeachers(true);
+      try {
+        const res = await api.get(
+          `/sections/teachers?schoolYearId=${ayId}&excludeSectionId=${section.id}`,
+        );
+        setAvailableTeachers(res.data.teachers);
+      } catch (err) {
+        console.error("Failed to fetch teachers", err);
+        setAvailableTeachers(
+          teachers.map((t) => ({
+            id: t.id,
+            name: t.name,
+            employeeId: t.employeeId,
+          })),
+        );
+      } finally {
+        setLoadingTeachers(false);
+      }
+
+      setIsFormSheetOpen(true);
+    },
+    [ayId, teachers],
+  );
+
+  const handleFieldChange = useCallback(
+    (field: keyof SectionFormState, value: any) => {
+      setSectionFormData((prev) => {
+        const next = { ...prev, [field]: value };
+        
+        // Auto-update capacity when program type changes
+        if (field === "programType") {
+          next.maxCapacity = value === "REGULAR" 
+            ? DEFAULT_MAX_CAPACITY_REGULAR 
+            : DEFAULT_MAX_CAPACITY_SCP;
+        }
+        
+        return next;
+      });
+    },
+    [],
+  );
+
+  const handleFormSubmit = async () => {
+    if (!sectionFormData.name.trim()) return;
+    setSubmittingForm(true);
+    try {
+      const payload = {
+        name: sectionFormData.name.trim(),
+        programType: sectionFormData.programType,
+        advisingTeacherId:
+          sectionFormData.adviserId === "none"
+            ? null
+            : parseInt(sectionFormData.adviserId),
+        maxCapacity: sectionFormData.maxCapacity,
+      };
+
+      if (formSheetMode === "create") {
+        await api.post("/sections", {
+          ...payload,
+          gradeLevelId: createGlId,
+          schoolYearId: ayId,
+        });
+        sileo.success({
+          title: "Section created",
+          description: `${payload.name} has been added successfully.`,
+        });
+      } else {
+        await api.put(`/sections/${editingSectionId}`, payload);
+        sileo.success({
+          title: "Section updated",
+          description: `Changes to ${payload.name} have been saved.`,
+        });
+      }
+
+      setIsFormSheetOpen(false);
+      fetchData();
+    } catch (err) {
+      showSectionsErrorToast(formSheetMode, err);
+    } finally {
+      setSubmittingForm(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -683,7 +851,7 @@ export default function Sections() {
                       variant="outline"
                       size="sm"
                       className="h-8 font-bold"
-                      onClick={() => setEditSection(s)}>
+                      onClick={() => handleOpenEdit(s, gradeLevelName)}>
                       <Edit2 className="h-3.5 w-3.5 mr-2" /> Edit
                     </Button>
                   )}
@@ -1055,7 +1223,7 @@ export default function Sections() {
                           className="font-bold h-10 px-4"
                           variant="default"
                           onClick={() =>
-                            openCreateModal(g.gradeLevelId, g.gradeLevelName)
+                            handleOpenCreate(g.gradeLevelId, g.gradeLevelName)
                           }
                           disabled={!canMutate}>
                           <Plus className="mr-2 h-4 w-4" /> Add{" "}
@@ -1110,21 +1278,26 @@ export default function Sections() {
         </Tabs>
       )}
 
-      <EditSectionModal
-        section={editSection}
-        onOpenChange={(open) => !open && setEditSection(null)}
-        schoolYearId={ayId!}
-        onSuccess={fetchData}
-      />
-
-      <CreateSectionModal
-        open={isCreateModalOpen}
-        onOpenChange={setIsCreateModalOpen}
-        gradeLevelId={createGlId!}
+      <SectionFormSheet
+        mode={formSheetMode}
+        open={isFormSheetOpen}
+        onOpenChange={setIsFormSheetOpen}
+        title={formSheetMode === "create" ? "Add New Section" : "Edit Section"}
+        description={
+          formSheetMode === "create"
+            ? `Configure a new section roster for ${createGlName}.`
+            : `Update configuration for section ${sectionFormData.name}.`
+        }
+        formData={sectionFormData}
+        onFieldChange={handleFieldChange}
+        onSubmit={handleFormSubmit}
+        onCancel={() => setIsFormSheetOpen(false)}
+        submitting={submittingForm}
+        canSubmit={!!sectionFormData.name.trim()}
+        programOptions={programOptions}
+        teachers={availableTeachers}
+        loadingTeachers={loadingTeachers}
         gradeLevelName={createGlName}
-        schoolYearId={ayId!}
-        teachers={teachers}
-        onSuccess={fetchData}
       />
 
       <ConfirmationModal

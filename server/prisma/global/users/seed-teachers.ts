@@ -691,7 +691,7 @@ async function main() {
     });
 
     // STEP 2: PROVISION LOGIN ACCOUNT
-    await prisma.user.upsert({
+    const user = await prisma.user.upsert({
       where: { employeeId: teacher.employeeId },
       update: {
         firstName: firstNameUpper,
@@ -716,6 +716,13 @@ async function main() {
         isActive: true,
         designation: designationStr,
       },
+      select: { id: true }
+    });
+
+    // CRITICAL: Link the teacher profile to the user account
+    await prisma.teacher.update({
+      where: { id: teacher.id },
+      data: { userId: user.id }
     });
 
     // STEP 3: SEED QUALIFIED SUBJECTS

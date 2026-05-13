@@ -1,7 +1,7 @@
 import "dotenv/config";
 import path from "path";
 
-// Set process timezone to Manila
+// Ecosystem Integration: Environment variables updated on 2026-05-13
 process.env.TZ = "Asia/Manila";
 
 import app from "./app.js";
