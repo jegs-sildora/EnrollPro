@@ -47,15 +47,17 @@ api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
 
-    const { activeSchoolYearId, viewingSchoolYearId } =
-      useSettingsStore.getState();
-    const contextSchoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
+  const { activeSchoolYearId, viewingSchoolYearId } =
+    useSettingsStore.getState();
+  const contextSchoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
 
-    if (contextSchoolYearId) {
-      config.headers["x-school-year-context-id"] = String(contextSchoolYearId);
-    }
+  if (contextSchoolYearId) {
+    config.headers["x-school-year-context-id"] = String(contextSchoolYearId);
+  }
 
+  if (token) {
     const { historicalCorrectionToken } = useSettingsStore.getState();
     if (historicalCorrectionToken) {
       config.headers["x-historical-correction-token"] =

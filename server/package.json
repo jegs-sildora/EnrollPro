@@ -28,6 +28,8 @@
     "db:backfill-learner-users": "tsx prisma/shared/maintenance/backfill-learner-users.ts",
     "db:seed-promoted-learners": "tsx prisma/2025-2026/learners/seed-promoted-learners.ts",
     "db:wipe-promoted-learners": "tsx prisma/2025-2026/learners/wipe-promoted-learners.ts",
+    "db:seed-tle-test-learners": "tsx prisma/2025-2026/learners/seed-tle-test-learners.ts",
+    "db:wipe-tle-test-learners": "tsx prisma/2025-2026/learners/wipe-tle-test-learners.ts",
     "db:seed-2026-2027": "tsx prisma/2026-2027/core/seed-2026-2027.ts",
     "db:wipe-2026-2027": "tsx prisma/2026-2027/core/wipe-2026-2027.ts",
     "db:wipe": "tsx prisma/global/core/wipe.ts",

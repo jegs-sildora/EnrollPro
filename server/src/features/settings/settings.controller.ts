@@ -265,17 +265,15 @@ export async function removeLogo(req: Request, res: Response): Promise<void> {
 }
 
 export async function getScpConfig(req: Request, res: Response): Promise<void> {
-  const settings = await prisma.schoolSetting.findFirst({
-    select: { activeSchoolYearId: true },
-  });
+  const targetSchoolYearId = req.schoolYearId;
 
-  if (!settings?.activeSchoolYearId) {
+  if (!targetSchoolYearId) {
     res.json({ scpProgramConfigs: [] });
     return;
   }
 
   const scpProgramConfigs = await prisma.scpProgramConfig.findMany({
-    where: { schoolYearId: settings.activeSchoolYearId, isOffered: true },
+    where: { schoolYearId: targetSchoolYearId, isOffered: true },
     select: {
       id: true,
       schoolYearId: true,

@@ -37,6 +37,8 @@ export interface LearnerProfile {
   pendingConfirmation?: {
     applicationId: number;
     status: string;
+    gradeLevelDisplayOrder?: number | null;
+    tleProgramId?: number | null;
   } | null;
 }
 

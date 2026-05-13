@@ -364,7 +364,9 @@ export default function BasicInfoStep() {
     formState: { errors },
   } = useFormContext<EarlyRegFormData>();
 
-  const { activeSchoolYearLabel } = useSettingsStore();
+  const { activeSchoolYearLabel, activeSchoolYearId, viewingSchoolYearId } =
+    useSettingsStore();
+  const contextSchoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
   const learnerType = watch("learnerType");
   const gradeLevel = watch("gradeLevel");
   const lrn = watch("lrn");
@@ -505,7 +507,7 @@ export default function BasicInfoStep() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [contextSchoolYearId]);
 
   // 1. Auto-set School Year
   useEffect(() => {

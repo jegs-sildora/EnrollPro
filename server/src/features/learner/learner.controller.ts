@@ -85,7 +85,7 @@ export const lookupLearner = async (req: Request, res: Response) => {
       include: {
         learner: true,
         addresses: true,
-        gradeLevel: { select: { name: true } },
+        gradeLevel: { select: { name: true, displayOrder: true } },
         schoolYear: { select: { yearLabel: true } },
         enrollmentRecord: {
           include: {
@@ -185,7 +185,13 @@ export const lookupLearner = async (req: Request, res: Response) => {
         })),
         pendingConfirmation:
           application.status === "PENDING_CONFIRMATION"
-            ? { applicationId: application.id, status: application.status }
+            ? {
+                applicationId: application.id,
+                status: application.status,
+                gradeLevelDisplayOrder:
+                  application.gradeLevel.displayOrder ?? null,
+                tleProgramId: application.tleProgramId ?? null,
+              }
             : null,
       },
     });
@@ -204,7 +210,10 @@ export const lookupLearner = async (req: Request, res: Response) => {
  */
 export const learnerConfirmReturn = async (req: Request, res: Response) => {
   try {
-    const { applicationId } = req.body as { applicationId: unknown };
+    const { applicationId, tleProgramId } = req.body as {
+      applicationId: unknown;
+      tleProgramId?: unknown;
+    };
 
     const id = Number(applicationId);
     if (!Number.isInteger(id) || id <= 0) {
@@ -213,7 +222,12 @@ export const learnerConfirmReturn = async (req: Request, res: Response) => {
 
     const app = await prisma.enrollmentApplication.findUnique({
       where: { id },
-      select: { id: true, status: true, learnerId: true },
+      select: {
+        id: true,
+        status: true,
+        learnerId: true,
+        gradeLevel: { select: { displayOrder: true } },
+      },
     });
 
     if (!app) {
@@ -226,11 +240,25 @@ export const learnerConfirmReturn = async (req: Request, res: Response) => {
       });
     }
 
+    const requiresTle = [9, 10].includes(app.gradeLevel?.displayOrder ?? 0);
+    const resolvedTleProgramId =
+      tleProgramId != null ? Number(tleProgramId) : null;
+
+    if (requiresTle && !resolvedTleProgramId) {
+      return res.status(422).json({
+        message:
+          "TLE program selection is required for Grade 9 and Grade 10 learners.",
+      });
+    }
+
     await prisma.enrollmentApplication.update({
       where: { id },
       data: {
         status: "READY_FOR_SECTIONING",
         confirmationConsent: true,
+        ...(requiresTle && resolvedTleProgramId
+          ? { tleProgramId: resolvedTleProgramId }
+          : {}),
       },
     });
 

@@ -184,7 +184,8 @@ export const createStudentsQueryController = (
 ) => {
   const getStudents = async (req: Request, res: Response) => {
     try {
-      const schoolYearId = parsePositiveInt(req.query.schoolYearId);
+      // Prioritize query param, but fallback to the global SY context (req.schoolYearId)
+      const schoolYearId = parsePositiveInt(req.query.schoolYearId) ?? req.schoolYearId;
       const learnerStatus = parseQueryString(req.query.learnerStatus);
 
       if (!schoolYearId && !learnerStatus) {
@@ -199,7 +200,7 @@ export const createStudentsQueryController = (
         page: pageNum,
         limit: limitNum,
       } = await deps.searchStudents({
-        schoolYearId: schoolYearId ?? undefined,
+        schoolYearId,
         search: parseQueryString(req.query.search),
         gradeLevelId: parseQueryString(req.query.gradeLevelId),
         sectionId: parseQueryString(req.query.sectionId),

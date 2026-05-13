@@ -5,6 +5,7 @@ import {
   SchoolYearStatus,
   Sex,
   PortalControl,
+  TLECategory,
 } from "../../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
@@ -135,9 +136,65 @@ async function main() {
       },
     });
   }
-  console.log("Γ£à Verified Standard DepEd Departments");
+  console.log("✅ Verified Standard DepEd Departments");
 
-  // 5. Create first SYSTEM_ADMIN account
+  // 5. Seed TLE Programs (idempotent by name)
+  const tlePrograms: {
+    name: string;
+    category: TLECategory;
+    displayOrder: number;
+  }[] = [
+    { name: "ICT", category: "ICT", displayOrder: 1 },
+    { name: "HE - Cookery", category: "HOME_ECONOMICS", displayOrder: 2 },
+    {
+      name: "HE - Baking and Pastry Arts",
+      category: "HOME_ECONOMICS",
+      displayOrder: 3,
+    },
+    { name: "HE - Caregiving", category: "HOME_ECONOMICS", displayOrder: 4 },
+    { name: "IA - Carpentry", category: "INDUSTRIAL_ARTS", displayOrder: 5 },
+    {
+      name: "IA - Electrical Installation",
+      category: "INDUSTRIAL_ARTS",
+      displayOrder: 6,
+    },
+    { name: "IA - Electronics", category: "INDUSTRIAL_ARTS", displayOrder: 7 },
+    {
+      name: "IA - Shielded Metal Arc Welding",
+      category: "INDUSTRIAL_ARTS",
+      displayOrder: 8,
+    },
+    {
+      name: "AFA - Crop Production",
+      category: "AGRI_FISHERY_ARTS",
+      displayOrder: 9,
+    },
+    {
+      name: "AFA - Fishery Arts",
+      category: "AGRI_FISHERY_ARTS",
+      displayOrder: 10,
+    },
+    {
+      name: "AFA - Swine Production",
+      category: "AGRI_FISHERY_ARTS",
+      displayOrder: 11,
+    },
+  ];
+  for (const prog of tlePrograms) {
+    await prisma.tLEProgram.upsert({
+      where: { name: prog.name },
+      update: { category: prog.category, displayOrder: prog.displayOrder },
+      create: {
+        name: prog.name,
+        category: prog.category,
+        displayOrder: prog.displayOrder,
+        isActive: true,
+      },
+    });
+  }
+  console.log("✅ Verified TLE Programs");
+
+  // 6. Create first SYSTEM_ADMIN account
   const adminId = process.env.ADMIN_EMPLOYEE_ID ?? "1000001";
   const email = process.env.ADMIN_EMAIL ?? "admin@deped.edu.ph";
   const password = process.env.ADMIN_PASSWORD ?? "Admin2026!";

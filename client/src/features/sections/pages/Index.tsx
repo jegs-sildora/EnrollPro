@@ -74,6 +74,14 @@ interface Teacher {
   employeeId: string | null;
 }
 
+interface TLEProgram {
+  id: number;
+  name: string;
+  category: string;
+  isActive: boolean;
+  displayOrder: number;
+}
+
 interface SectionItem {
   id: number;
   name: string;
@@ -83,6 +91,7 @@ interface SectionItem {
   maxCapacity: number;
   enrolledCount: number;
   fillPercent: number;
+  tleProgramId?: number | null;
   advisingTeacher: { id: number; name: string } | null;
 }
 
@@ -278,12 +287,15 @@ export default function Sections() {
 
   // Section Form Sheet State
   const [isFormSheetOpen, setIsFormSheetOpen] = useState(false);
-  const [formSheetMode, setFormSheetMode] = useState<"create" | "edit">("create");
+  const [formSheetMode, setFormSheetMode] = useState<"create" | "edit">(
+    "create",
+  );
   const [sectionFormData, setSectionFormData] = useState<SectionFormState>({
     name: "",
     programType: "REGULAR",
     adviserId: "none",
     maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
+    tleProgramId: null,
   });
   const [submittingForm, setSubmittingForm] = useState(false);
   const [programOptions, setProgramOptions] = useState<
@@ -291,9 +303,13 @@ export default function Sections() {
   >([{ value: "REGULAR", label: "Regular (BEC)" }]);
   const [createGlId, setCreateGlId] = useState<number | null>(null);
   const [createGlName, setCreateGlName] = useState("");
+  const [createGlDisplayOrder, setCreateGlDisplayOrder] = useState<number>(0);
   const [editingSectionId, setEditingSectionId] = useState<number | null>(null);
   const [loadingTeachers, setLoadingTeachers] = useState(false);
-  const [availableTeachers, setAvailableTeachers] = useState<TeacherOption[]>([]);
+  const [availableTeachers, setAvailableTeachers] = useState<TeacherOption[]>(
+    [],
+  );
+  const [tlePrograms, setTlePrograms] = useState<TLEProgram[]>([]);
 
   // Delete confirmation
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -597,16 +613,27 @@ export default function Sections() {
     }
   }, [ayId]);
 
+  useEffect(() => {
+    api
+      .get("/bosy/tle-programs")
+      .then((res) => setTlePrograms(res.data.programs ?? res.data))
+      .catch(() => {
+        /* non-critical */
+      });
+  }, []);
+
   const handleOpenCreate = useCallback(
-    (glId: number, glName: string) => {
+    (glId: number, glName: string, glDisplayOrder: number) => {
       setFormSheetMode("create");
       setCreateGlId(glId);
       setCreateGlName(glName);
+      setCreateGlDisplayOrder(glDisplayOrder);
       setSectionFormData({
         name: "",
         programType: "REGULAR",
         adviserId: "none",
         maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
+        tleProgramId: null,
       });
       setAvailableTeachers(
         teachers.map((t) => ({
@@ -621,10 +648,11 @@ export default function Sections() {
   );
 
   const handleOpenEdit = useCallback(
-    async (section: SectionItem, glName: string) => {
+    async (section: SectionItem, glName: string, glDisplayOrder: number) => {
       setFormSheetMode("edit");
       setEditingSectionId(section.id);
       setCreateGlName(glName);
+      setCreateGlDisplayOrder(glDisplayOrder);
       setSectionFormData({
         name: section.name,
         programType: section.programType,
@@ -632,6 +660,7 @@ export default function Sections() {
           ? section.advisingTeacher.id.toString()
           : "none",
         maxCapacity: section.maxCapacity,
+        tleProgramId: section.tleProgramId ?? null,
       });
 
       // Fetch filtered teachers for editing
@@ -663,14 +692,15 @@ export default function Sections() {
     (field: keyof SectionFormState, value: any) => {
       setSectionFormData((prev) => {
         const next = { ...prev, [field]: value };
-        
+
         // Auto-update capacity when program type changes
         if (field === "programType") {
-          next.maxCapacity = value === "REGULAR" 
-            ? DEFAULT_MAX_CAPACITY_REGULAR 
-            : DEFAULT_MAX_CAPACITY_SCP;
+          next.maxCapacity =
+            value === "REGULAR"
+              ? DEFAULT_MAX_CAPACITY_REGULAR
+              : DEFAULT_MAX_CAPACITY_SCP;
         }
-        
+
         return next;
       });
     },
@@ -689,6 +719,7 @@ export default function Sections() {
             ? null
             : parseInt(sectionFormData.adviserId),
         maxCapacity: sectionFormData.maxCapacity,
+        tleProgramId: sectionFormData.tleProgramId ?? null,
       };
 
       if (formSheetMode === "create") {
@@ -743,6 +774,7 @@ export default function Sections() {
     sectionsToRender: SectionItem[],
     gradeLevelName: string,
     glId: number,
+    glDisplayOrder: number = 0,
   ) => {
     if (sectionsToRender.length === 0) return null;
 
@@ -851,7 +883,9 @@ export default function Sections() {
                       variant="outline"
                       size="sm"
                       className="h-8 font-bold"
-                      onClick={() => handleOpenEdit(s, gradeLevelName)}>
+                      onClick={() =>
+                        handleOpenEdit(s, gradeLevelName, glDisplayOrder)
+                      }>
                       <Edit2 className="h-3.5 w-3.5 mr-2" /> Edit
                     </Button>
                   )}
@@ -1298,6 +1332,8 @@ export default function Sections() {
         teachers={availableTeachers}
         loadingTeachers={loadingTeachers}
         gradeLevelName={createGlName}
+        gradeLevelDisplayOrder={createGlDisplayOrder}
+        tlePrograms={tlePrograms}
       />
 
       <ConfirmationModal

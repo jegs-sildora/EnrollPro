@@ -9,7 +9,7 @@ export const createSectionSchema = z.object({
   programType: ApplicantTypeEnum.default("REGULAR"),
   isHomogeneous: z.boolean().default(false),
   isSnake: z.boolean().default(false),
-  tleSpecialization: z.string().nullable().optional(),
+  tleProgramId: z.number().int().positive().nullable().optional(),
   advisingTeacherId: z.number().int().positive().optional().nullable(),
   maxCapacity: z.number().int().positive().default(45),
 });
@@ -47,7 +47,10 @@ export const batchSectioningSchema = z.object({
 });
 
 export const advisoryHandoverSchema = z.object({
-  substituteTeacherId: z.number().int().positive("Substitute teacher is required"),
+  substituteTeacherId: z
+    .number()
+    .int()
+    .positive("Substitute teacher is required"),
   handoverReason: z.string().min(5, "Reason must be at least 5 characters"),
   handoverDate: z.string().or(z.date()).optional(),
 });

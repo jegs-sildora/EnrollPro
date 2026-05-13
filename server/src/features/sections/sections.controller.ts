@@ -19,7 +19,7 @@ export async function getBatchPrerequisites(req: Request, res: Response) {
   const { gradeLevelId } = req.params;
   const schoolYearId = req.query.schoolYearId
     ? parseInt(String(req.query.schoolYearId))
-    : null;
+    : req.schoolYearId;
 
   if (!schoolYearId) {
     return res.status(400).json({ message: "School year ID is required" });
@@ -34,7 +34,14 @@ export async function getBatchPrerequisites(req: Request, res: Response) {
 }
 
 export async function runBatchSectioning(req: Request, res: Response) {
-  const { gradeLevelId, schoolYearId, params } = req.body;
+  const { gradeLevelId, params } = req.body;
+  const schoolYearId = req.body.schoolYearId
+    ? parseInt(String(req.body.schoolYearId))
+    : req.schoolYearId;
+
+  if (!schoolYearId) {
+    return res.status(400).json({ message: "School year ID is required" });
+  }
 
   const resolvedParams: SectioningParams = params ?? DEFAULT_SECTIONING_PARAMS;
 
@@ -55,7 +62,14 @@ export async function runBatchSectioning(req: Request, res: Response) {
 
 export async function commitBatchSectioning(req: Request, res: Response) {
   try {
-    const { gradeLevelId, schoolYearId, assignments } = req.body;
+    const { gradeLevelId, assignments } = req.body;
+    const schoolYearId = req.body.schoolYearId
+      ? parseInt(String(req.body.schoolYearId))
+      : req.schoolYearId;
+
+    if (!schoolYearId) {
+      return res.status(400).json({ message: "School year ID is required" });
+    }
 
     if (!assignments || assignments.length === 0) {
       return res
@@ -70,11 +84,14 @@ export async function commitBatchSectioning(req: Request, res: Response) {
     // Fetch learner IDs first as they are required for EnrollmentRecord
     const applications = await prisma.enrollmentApplication.findMany({
       where: { id: { in: appIds } },
-      select: { id: true, learnerId: true },
+      select: { id: true, learnerId: true, tleProgramId: true },
     });
 
     const appToLearnerMap = new Map(
       applications.map((app) => [app.id, app.learnerId]),
+    );
+    const appToTleProgramMap = new Map(
+      applications.map((app) => [app.id, app.tleProgramId]),
     );
 
     const results = await prisma.$transaction(
@@ -111,6 +128,8 @@ export async function commitBatchSectioning(req: Request, res: Response) {
             learnerId,
             dateSectioned: new Date(),
             sectioningMethod: SectioningMethod.BATCH_ALGORITHM,
+            tleProgramId:
+              appToTleProgramMap.get(assignment.applicationId) ?? null,
           };
         });
 
@@ -200,19 +219,29 @@ const activeEnrollmentFilter = {
 };
 
 export async function listSections(req: Request, res: Response): Promise<void> {
-  const ayId = req.params.ayId ? parseInt(String(req.params.ayId)) : null;
-  const { gradeLevelId, programType } = req.query;
+  // Source of truth for SY: route param > global context (req.schoolYearId)
+  const ayId = req.params.ayId
+    ? parseInt(String(req.params.ayId))
+    : req.schoolYearId;
+  const { gradeLevelId, programType, tleProgramId } = req.query;
+
+  if (!ayId) {
+    res.json({ sections: [] });
+    return;
+  }
 
   if (gradeLevelId) {
     const where: {
       gradeLevelId: number;
-      schoolYearId?: number;
+      schoolYearId: number;
       programType?: ApplicantType;
+      tleProgramId?: number;
     } = {
       gradeLevelId: parseInt(String(gradeLevelId)),
+      schoolYearId: ayId,
     };
-    if (ayId) where.schoolYearId = ayId;
     if (programType) where.programType = programType as ApplicantType;
+    if (tleProgramId) where.tleProgramId = parseInt(String(tleProgramId));
 
     const sections = await prisma.section.findMany({
       where,
@@ -241,6 +270,7 @@ export async function listSections(req: Request, res: Response): Promise<void> {
           maxCapacity: s.maxCapacity,
           programType: s.programType,
           isHomogeneous: s.isHomogeneous,
+          tleProgramId: s.tleProgramId ?? null,
           enrolledCount: s._count.enrollmentRecords,
           advisingTeacher: activeAdviser
             ? {
@@ -291,6 +321,7 @@ export async function listSections(req: Request, res: Response): Promise<void> {
           maxCapacity: s.maxCapacity,
           programType: s.programType,
           isHomogeneous: s.isHomogeneous,
+          tleProgramId: s.tleProgramId ?? null,
           enrolledCount: s._count.enrollmentRecords,
           advisingTeacher: activeAdviser
             ? {
@@ -307,7 +338,7 @@ export async function listSections(req: Request, res: Response): Promise<void> {
 export async function listEligibleAdvisers(req: Request, res: Response) {
   const schoolYearId = req.query.schoolYearId
     ? parseInt(String(req.query.schoolYearId))
-    : null;
+    : req.schoolYearId;
   const excludeSectionId = req.query.excludeSectionId
     ? parseInt(String(req.query.excludeSectionId))
     : null;
@@ -367,7 +398,7 @@ export async function createSection(
       advisingTeacherId,
       isHomogeneous,
       isSnake,
-      tleSpecialization,
+      tleProgramId,
     } = req.body;
 
     const normalizedName = typeof name === "string" ? name.trim() : "";
@@ -408,7 +439,7 @@ export async function createSection(
           programType: normalizedProgramType as ApplicantType,
           isHomogeneous: Boolean(isHomogeneous),
           isSnake: Boolean(isSnake),
-          tleSpecialization: tleSpecialization || null,
+          tleProgramId: tleProgramId ? Number(tleProgramId) : null,
         },
       });
 
@@ -493,7 +524,7 @@ export async function updateSection(
       programType,
       isHomogeneous,
       isSnake,
-      tleSpecialization,
+      tleProgramId,
     } = req.body;
 
     const existing = await prisma.section.findUnique({
@@ -526,8 +557,8 @@ export async function updateSection(
             ? { isHomogeneous: Boolean(isHomogeneous) }
             : {}),
           ...(isSnake !== undefined ? { isSnake: Boolean(isSnake) } : {}),
-          ...(tleSpecialization !== undefined
-            ? { tleSpecialization: tleSpecialization || null }
+          ...(tleProgramId !== undefined
+            ? { tleProgramId: tleProgramId ? Number(tleProgramId) : null }
             : {}),
         },
       });
@@ -747,7 +778,10 @@ export async function getUnsectionedPool(
   req: Request,
   res: Response,
 ): Promise<void> {
-  const { gradeLevelId, schoolYearId } = req.query;
+  const gradeLevelId = req.query.gradeLevelId;
+  const schoolYearId = req.query.schoolYearId
+    ? parseInt(String(req.query.schoolYearId))
+    : req.schoolYearId;
 
   if (!gradeLevelId || !schoolYearId) {
     res.status(400).json({ message: "gradeLevelId and schoolYearId required" });
@@ -757,7 +791,7 @@ export async function getUnsectionedPool(
   const applications = await prisma.enrollmentApplication.findMany({
     where: {
       gradeLevelId: parseInt(gradeLevelId as string),
-      schoolYearId: parseInt(schoolYearId as string),
+      schoolYearId: schoolYearId,
       status: "PASSED",
       enrollmentRecord: null,
     },
@@ -766,7 +800,7 @@ export async function getUnsectionedPool(
         include: {
           enrollmentRecords: {
             where: {
-              schoolYearId: { not: parseInt(schoolYearId as string) },
+              schoolYearId: { not: schoolYearId },
               finalAverage: { not: null },
             },
             orderBy: { schoolYearId: "desc" },
@@ -804,7 +838,16 @@ export async function inlineSlotLearner(
   req: Request,
   res: Response,
 ): Promise<void> {
-  const { enrollmentApplicationId, sectionId, schoolYearId } = req.body;
+  const enrollmentApplicationId = req.body.enrollmentApplicationId;
+  const sectionId = req.body.sectionId;
+  const schoolYearId = req.body.schoolYearId
+    ? parseInt(String(req.body.schoolYearId))
+    : req.schoolYearId;
+
+  if (!schoolYearId) {
+    res.status(400).json({ message: "schoolYearId is required" });
+    return;
+  }
 
   const section = await prisma.section.findUnique({
     where: { id: sectionId },
@@ -832,7 +875,7 @@ export async function inlineSlotLearner(
   const record = await prisma.$transaction(async (tx) => {
     const application = await tx.enrollmentApplication.findUniqueOrThrow({
       where: { id: enrollmentApplicationId },
-      select: { learnerId: true },
+      select: { learnerId: true, tleProgramId: true },
     });
 
     await tx.enrollmentApplication.update({
@@ -848,6 +891,7 @@ export async function inlineSlotLearner(
         schoolYearId,
         enrolledById: req.user!.userId,
         sectioningMethod: SectioningMethod.INLINE_SLOTTING,
+        tleProgramId: application.tleProgramId ?? null,
       },
     });
 

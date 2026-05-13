@@ -6,10 +6,10 @@ import {
   Database,
   History,
   LayoutDashboard,
-  LucideIcon,
   Play,
   RefreshCw,
   Zap,
+  type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";

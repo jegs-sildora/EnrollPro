@@ -1,17 +1,5 @@
-import {
-  memo,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import {
-  Check,
-  Plus,
-  Minus,
-  Users,
-  Info,
-} from "lucide-react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { Check, Plus, Minus, Users, Info } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -31,6 +19,14 @@ import {
 } from "@/shared/ui/sheet";
 import type { SectionFormState, TeacherOption } from "../types";
 
+const TLE_REQUIRED_DISPLAY_ORDERS = [9, 10];
+
+interface TLEProgramOption {
+  id: number;
+  name: string;
+  category: string;
+}
+
 type SectionFormField = keyof SectionFormState;
 
 interface SectionFormSheetProps {
@@ -49,6 +45,8 @@ interface SectionFormSheetProps {
   teachers: TeacherOption[];
   loadingTeachers?: boolean;
   gradeLevelName?: string;
+  gradeLevelDisplayOrder?: number;
+  tlePrograms?: TLEProgramOption[];
 }
 
 export const SectionFormSheet = memo(function SectionFormSheet({
@@ -67,7 +65,12 @@ export const SectionFormSheet = memo(function SectionFormSheet({
   teachers,
   loadingTeachers = false,
   gradeLevelName,
+  gradeLevelDisplayOrder = 0,
+  tlePrograms = [],
 }: SectionFormSheetProps) {
+  const requiresTle = TLE_REQUIRED_DISPLAY_ORDERS.includes(
+    gradeLevelDisplayOrder,
+  );
   const [panelPercentage, setPanelPercentage] = useState(40);
   const [isDesktopViewport, setIsDesktopViewport] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth >= 640 : true,
@@ -191,7 +194,9 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                   </Label>
                   <Select
                     value={formData.programType}
-                    onValueChange={(value) => onFieldChange("programType", value)}>
+                    onValueChange={(value) =>
+                      onFieldChange("programType", value)
+                    }>
                     <SelectTrigger className="font-bold">
                       <SelectValue placeholder="Select Program" />
                     </SelectTrigger>
@@ -222,9 +227,53 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                   className="font-black uppercase text-base placeholder:text-foreground/30"
                 />
                 <p className="text-[10px] text-muted-foreground font-bold italic">
-                  * Avoid using grade level prefix (e.g., use "Rizal" instead of "Grade 7 Rizal").
+                  * Avoid using grade level prefix (e.g., use "Rizal" instead of
+                  "Grade 7 Rizal").
                 </p>
               </div>
+
+              {requiresTle && (
+                <div className="space-y-2">
+                  <Label className="font-bold text-xs uppercase">
+                    TLE Specialization
+                  </Label>
+                  <Select
+                    value={
+                      formData.tleProgramId != null
+                        ? String(formData.tleProgramId)
+                        : "none"
+                    }
+                    onValueChange={(v) =>
+                      onFieldChange(
+                        "tleProgramId",
+                        v === "none" ? null : Number(v),
+                      )
+                    }>
+                    <SelectTrigger className="font-bold">
+                      <SelectValue placeholder="Select TLE Program" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem
+                        value="none"
+                        className="font-bold text-xs">
+                        Unassigned / Mixed
+                      </SelectItem>
+                      {tlePrograms.map((p) => (
+                        <SelectItem
+                          key={p.id}
+                          value={String(p.id)}
+                          className="font-bold text-xs">
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground font-bold italic">
+                    - Assign a TLE specialization for Grade 9 and Grade 10
+                    sections.
+                  </p>
+                </div>
+              )}
             </section>
 
             <section className="space-y-4 rounded-md border p-4 sm:p-5">
@@ -247,7 +296,13 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                   onValueChange={(value) => onFieldChange("adviserId", value)}
                   disabled={loadingTeachers}>
                   <SelectTrigger className="font-bold uppercase">
-                    <SelectValue placeholder={loadingTeachers ? "Loading Teachers..." : "Select Adviser"} />
+                    <SelectValue
+                      placeholder={
+                        loadingTeachers
+                          ? "Loading Teachers..."
+                          : "Select Adviser"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent className="font-bold uppercase">
                     <SelectItem value="none">Unassigned / To Follow</SelectItem>
@@ -261,7 +316,8 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                   </SelectContent>
                 </Select>
                 <p className="text-[10px] text-muted-foreground font-bold italic">
-                  - Showing only teachers with Class Adviser designation and without current advisory assignments.
+                  - Showing only teachers with Class Adviser designation and
+                  without current advisory assignments.
                 </p>
               </div>
 
@@ -275,13 +331,23 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                     variant="outline"
                     size="icon"
                     className="h-10 w-10 rounded-r-none border-r-0"
-                    onClick={() => onFieldChange("maxCapacity", Math.max(1, formData.maxCapacity - 1))}>
+                    onClick={() =>
+                      onFieldChange(
+                        "maxCapacity",
+                        Math.max(1, formData.maxCapacity - 1),
+                      )
+                    }>
                     <Minus className="h-4 w-4" />
                   </Button>
                   <Input
                     type="number"
                     value={formData.maxCapacity}
-                    onChange={(e) => onFieldChange("maxCapacity", parseInt(e.target.value) || 0)}
+                    onChange={(e) =>
+                      onFieldChange(
+                        "maxCapacity",
+                        parseInt(e.target.value) || 0,
+                      )
+                    }
                     className="h-10 w-full rounded-none text-center font-black text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none focus:border-transparent"
                   />
                   <Button
@@ -289,7 +355,9 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                     variant="outline"
                     size="icon"
                     className="h-10 w-10 rounded-l-none border-l-0"
-                    onClick={() => onFieldChange("maxCapacity", formData.maxCapacity + 1)}>
+                    onClick={() =>
+                      onFieldChange("maxCapacity", formData.maxCapacity + 1)
+                    }>
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>

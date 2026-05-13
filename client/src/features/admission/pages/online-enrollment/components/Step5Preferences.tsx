@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import api from "@/shared/api/axiosInstance";
+import { useSettingsStore } from "@/store/settings.slice";
 
 const LEARNER_TYPES = [
   { value: "NEW_ENROLLEE", label: "NEW ENROLLEE" },
@@ -97,6 +98,10 @@ export default function Step5Enrollment() {
     clearErrors,
     formState: { errors },
   } = useFormContext<EnrollmentFormData>();
+
+  const { activeSchoolYearLabel, activeSchoolYearId, viewingSchoolYearId } =
+    useSettingsStore();
+  const contextSchoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
 
   const learnerType = watch("learnerType");
   const gradeLevel = watch("gradeLevel");
@@ -206,7 +211,7 @@ export default function Step5Enrollment() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [contextSchoolYearId]);
 
   useEffect(() => {
     if (learnerType === "NEW_ENROLLEE" && gradeLevel !== "7") {

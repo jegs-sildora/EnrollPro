@@ -3,6 +3,7 @@ export interface SectionFormState {
   programType: string;
   adviserId: string;
   maxCapacity: number;
+  tleProgramId: number | null;
 }
 
 export interface TeacherOption {
@@ -20,5 +21,6 @@ export interface SectionItem {
   maxCapacity: number;
   enrolledCount: number;
   fillPercent: number;
+  tleProgramId?: number | null;
   advisingTeacher: { id: number; name: string } | null;
 }

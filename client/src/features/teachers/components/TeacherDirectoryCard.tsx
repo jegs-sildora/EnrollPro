@@ -47,10 +47,7 @@ import type {
   TeacherDesignationFilter,
   TeacherStatusFilter,
 } from "../types";
-import {
-  formatAdvisorySectionSummary,
-  formatTeacherName,
-} from "../utils";
+import { formatAdvisorySectionSummary, formatTeacherName } from "../utils";
 
 const SUBJECT_ACRONYMS: Record<string, string> = {
   MATHEMATICS: "MATH",
@@ -78,6 +75,7 @@ interface TeacherDirectoryCardProps {
   showSkeleton: boolean;
   filteredTeachers: Teacher[];
   paginatedTeachers: Teacher[];
+  teachers: Teacher[];
   searchQuery: string;
   statusFilter: TeacherStatusFilter;
   designationFilter: TeacherDesignationFilter;
@@ -105,6 +103,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
   loading,
   isRefetching,
   showSkeleton,
+  teachers,
   filteredTeachers,
   paginatedTeachers,
   searchQuery,
@@ -288,7 +287,9 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
           {row.original.employeeId ? (
             <span className="text-xs font-bold">{row.original.employeeId}</span>
           ) : (
-            <span className="text-slate-400 italic font-medium text-xs">N/A</span>
+            <span className="text-slate-400 italic font-medium text-xs">
+              N/A
+            </span>
           )}
         </div>
       ),
@@ -312,14 +313,18 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
               {row.original.department}
             </span>
           ) : (
-            <span className="text-slate-400 italic font-medium text-xs">Unassigned</span>
+            <span className="text-slate-400 italic font-medium text-xs">
+              Unassigned
+            </span>
           )}
           {row.original.specialization ? (
             <span className="text-xs font-bold text-foreground">
               {row.original.specialization}
             </span>
           ) : (
-            <span className="text-slate-400 italic font-medium text-[10px]">Generalist</span>
+            <span className="text-slate-400 italic font-medium text-[10px]">
+              Generalist
+            </span>
           )}
         </div>
       ),
@@ -356,7 +361,9 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                 </Tooltip>
               ))
             ) : (
-              <span className="text-slate-400 italic font-medium text-xs">N/A</span>
+              <span className="text-slate-400 italic font-medium text-xs">
+                N/A
+              </span>
             )}
           </TooltipProvider>
         </div>
@@ -498,6 +505,23 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       },
     },
     {
+      id: "advisorySection",
+      size: 200,
+      minSize: 180,
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title="ADVISORY SECTION"
+          className="font-bold"
+        />
+      ),
+      cell: ({ row }) => (
+        <div className="flex justify-center">
+          {renderAdvisoryStatus(row.original)}
+        </div>
+      ),
+    },
+    {
       id: "actions",
       size: 200,
       minSize: 180,
@@ -519,6 +543,43 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
   return (
     <Card className="w-full min-w-0 overflow-hidden shadow-sm border-2">
       <CardHeader className="border-b bg-muted/10">
+        <div className="flex flex-wrap items-center gap-3 pb-2 border-b mb-1">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black uppercase text-muted-foreground">
+              Total Faculty
+            </span>
+            <span className="text-base font-black text-primary">
+              {teachers.length}
+            </span>
+          </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black uppercase text-muted-foreground">
+              Active
+            </span>
+            <span className="text-base font-black text-green-600">
+              {teachers.filter((t) => t.isActive).length}
+            </span>
+          </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black uppercase text-muted-foreground">
+              Inactive
+            </span>
+            <span className="text-base font-black text-slate-400">
+              {teachers.filter((t) => !t.isActive).length}
+            </span>
+          </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black uppercase text-muted-foreground">
+              Class Advisers
+            </span>
+            <span className="text-base font-black text-indigo-600">
+              {teachers.filter((t) => t.designation?.isClassAdviser).length}
+            </span>
+          </div>
+        </div>
         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-6">
           <Input
             value={searchQuery}
@@ -596,7 +657,9 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
             size="sm"
             className="h-9 gap-2 font-bold uppercase text-xs"
             onClick={onRefresh}>
-            <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+            <RefreshCw
+              className={cn("h-3.5 w-3.5", loading && "animate-spin")}
+            />
             Refresh
           </Button>
         </div>
@@ -666,7 +729,9 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                       {teacher.specialization ? (
                         <p className="font-bold">{teacher.specialization}</p>
                       ) : (
-                        <p className="text-slate-400 italic font-medium">Unassigned</p>
+                        <p className="text-slate-400 italic font-medium">
+                          Unassigned
+                        </p>
                       )}
                     </div>
                     <div>
@@ -741,7 +806,9 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                               "text-[9px] font-black uppercase px-1.5 h-4.5 border gap-1 whitespace-nowrap",
                               accountColor,
                             )}>
-                            {ua?.isActive && <span className="text-[10px]">🌐</span>}
+                            {ua?.isActive && (
+                              <span className="text-[10px]">🌐</span>
+                            )}
                             {accountLabel}
                           </Badge>
                         );

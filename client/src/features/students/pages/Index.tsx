@@ -366,15 +366,6 @@ export default function Students() {
   const [summary, setSummary] = useState<StudentsSummary | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(true);
 
-  // Debounce search input
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [search]);
-
   // Fetch grade levels and sections
   useEffect(() => {
     const fetchFilters = async () => {

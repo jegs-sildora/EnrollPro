@@ -1,5 +1,12 @@
 import { useState, useEffect, useCallback, startTransition } from "react";
-import { Search, Loader2, RefreshCw, AlertCircle, CheckCircle2, LogOut } from "lucide-react";
+import {
+  Search,
+  Loader2,
+  RefreshCw,
+  AlertCircle,
+  CheckCircle2,
+  LogOut,
+} from "lucide-react";
 import { motion } from "motion/react";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import type { RowSelectionState } from "@tanstack/react-table";
@@ -11,11 +18,9 @@ import {
   confirmReturn,
   bulkConfirm,
   syncBOSYQueue,
+  getTLEPrograms,
 } from "../api/bosy.api";
-import type {
-  BOSYReadiness,
-  BOSYQueueItem,
-} from "../types";
+import type { BOSYReadiness, BOSYQueueItem, TLEProgram } from "../types";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { sileo } from "sileo";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -26,6 +31,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/shared/lib/utils";
 import { QueueTable } from "../components/QueueTable";
+import { TLEConfirmModal } from "../components/TLEConfirmModal";
 import { PaginationBar } from "@/shared/components/PaginationBar";
 import { BulkConfirmBar } from "../components/BulkConfirmBar";
 
@@ -65,6 +71,13 @@ export default function BOSYPage() {
   const [confirmingIds, setConfirmingIds] = useState<Set<number>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
+
+  // TLE confirm modal state
+  const [tlePrograms, setTlePrograms] = useState<TLEProgram[]>([]);
+  const [tlePendingItem, setTlePendingItem] = useState<BOSYQueueItem | null>(
+    null,
+  );
+  const [tleConfirmLoading, setTleConfirmLoading] = useState(false);
 
   const fetchReadiness = useCallback(async () => {
     if (!syId) return;
@@ -161,6 +174,12 @@ export default function BOSYPage() {
   }, [fetchReadiness]);
 
   useEffect(() => {
+    getTLEPrograms()
+      .then(setTlePrograms)
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     if (activeTab === "pending") void fetchPending();
   }, [activeTab, fetchPending]);
 
@@ -179,10 +198,13 @@ export default function BOSYPage() {
     else if (activeTab === "dropped") void fetchDropped();
   };
 
-  const handleConfirmSingle = async (applicationId: number) => {
+  const handleConfirmSingle = async (
+    applicationId: number,
+    tleProgramId?: number,
+  ) => {
     setConfirmingIds((prev) => new Set(prev).add(applicationId));
     try {
-      await confirmReturn(applicationId);
+      await confirmReturn(applicationId, tleProgramId);
       sileo.success({
         title: "Return Confirmed",
         description: `Application confirmed for sectioning.`,
@@ -200,6 +222,19 @@ export default function BOSYPage() {
         next.delete(applicationId);
         return next;
       });
+    }
+  };
+
+  const handleTleConfirm = async (
+    applicationId: number,
+    tleProgramId: number,
+  ) => {
+    setTleConfirmLoading(true);
+    try {
+      await handleConfirmSingle(applicationId, tleProgramId);
+      setTlePendingItem(null);
+    } finally {
+      setTleConfirmLoading(false);
     }
   };
 
@@ -264,6 +299,16 @@ export default function BOSYPage() {
 
   return (
     <div className="flex flex-col w-full min-w-0 overflow-hidden space-y-4 sm:space-y-6">
+      <TLEConfirmModal
+        open={tlePendingItem !== null}
+        onOpenChange={(v) => {
+          if (!v) setTlePendingItem(null);
+        }}
+        item={tlePendingItem}
+        tlePrograms={tlePrograms}
+        onConfirm={handleTleConfirm}
+        loading={tleConfirmLoading}
+      />
       {/* IRREGULAR blocker warning */}
       {readiness && readiness.irregularBlockerCount > 0 && (
         <motion.div
@@ -438,6 +483,7 @@ export default function BOSYPage() {
                   onRowSelectionChange={setRowSelection}
                   onConfirmSingle={handleConfirmSingle}
                   confirmingIds={confirmingIds}
+                  onRequestTleConfirm={setTlePendingItem}
                 />
               </div>
               <PaginationBar

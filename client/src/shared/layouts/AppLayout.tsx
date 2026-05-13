@@ -20,6 +20,7 @@ import {
   UserPlus,
   School,
   ArrowRightLeft,
+  BookOpen,
 } from "lucide-react";
 
 import {
@@ -513,6 +514,12 @@ function AppSidebar() {
                       pathname={pathname}
                     />
                     <NavItem
+                      to="/admin/tle-programs"
+                      icon={BookOpen}
+                      label="TLE Programs"
+                      pathname={pathname}
+                    />
+                    <NavItem
                       to="/settings"
                       icon={Settings}
                       label="Settings"
@@ -561,6 +568,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
     location.pathname === "/dashboard" ||
     location.pathname.startsWith("/admin/users") ||
     location.pathname.startsWith("/admin/system") ||
+    location.pathname.startsWith("/admin/tle-programs") ||
     location.pathname.startsWith("/settings");
   const shouldShowNoSchoolYearState =
     !isSchoolYearBypassRoute && !selectedSchoolYearId;

@@ -927,3 +927,23 @@ export const SCP_DEFAULT_PIPELINES: Record<ScpType, ScpProgramStepDef[]> = {
     },
   ],
 };
+
+// ─── TLE Specialization Constants ───────────────────────
+/** Grade displayOrder values that require a TLE program selection */
+export const TLE_REQUIRED_GRADE_DISPLAY_ORDERS = [9, 10] as const;
+
+export const TLE_CATEGORY_LABELS: Record<string, string> = {
+  HOME_ECONOMICS: "Home Economics",
+  INDUSTRIAL_ARTS: "Industrial Arts",
+  AGRI_FISHERY_ARTS: "Agri-Fishery Arts",
+  ICT: "Information and Communications Technology",
+};
+
+export const TLECategoryEnum = z.enum([
+  "HOME_ECONOMICS",
+  "INDUSTRIAL_ARTS",
+  "AGRI_FISHERY_ARTS",
+  "ICT",
+]);
+
+export type TLECategory = z.infer<typeof TLECategoryEnum>;

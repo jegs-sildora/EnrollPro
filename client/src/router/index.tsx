@@ -26,6 +26,7 @@ import NotFound from "@/shared/components/NotFound";
 // Admin Pages
 import AdminUsers from "@/features/admin/pages/Users";
 import SystemHealth from "@/features/admin/pages/SystemHealth";
+import TLEProgramsAdmin from "@/features/admin/pages/TLEPrograms";
 import Teachers from "@/features/teachers/pages/Index";
 
 // F2F Basic Education Early Registration Form Page
@@ -41,7 +42,9 @@ import BOSYPage from "@/features/bosy/pages/BOSYPage";
 
 import { lazy } from "react";
 
-const IntegrationHub = lazy(() => import("@/features/integration/pages/IntegrationHub"));
+const IntegrationHub = lazy(
+  () => import("@/features/integration/pages/IntegrationHub"),
+);
 
 export const router = createBrowserRouter([
   {
@@ -231,6 +234,10 @@ export const router = createBrowserRouter([
                   {
                     path: "/admin/integration",
                     element: <IntegrationHub />,
+                  },
+                  {
+                    path: "/admin/tle-programs",
+                    element: <TLEProgramsAdmin />,
                   },
                   {
                     path: "/audit-logs",

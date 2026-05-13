@@ -30,9 +30,13 @@ export interface BOSYQueueItem {
   middleName: string | null;
   gradeLevelId: number;
   gradeLevelName: string;
+  gradeLevelDisplayOrder: number;
   academicStatus: string | null;
   priorSectionName: string | null;
   priorAdviserName: string | null;
+  tleProgramId: number | null;
+  tleProgramName: string | null;
+  tleProgramCategory: string | null;
 }
 
 export interface JHSCompleter {
@@ -63,7 +67,12 @@ export async function getBOSYReadiness(
 ): Promise<BOSYReadiness> {
   const schoolYear = await prisma.schoolYear.findUnique({
     where: { id: schoolYearId },
-    select: { id: true, yearLabel: true, isEosyFinalized: true, clonedFromId: true },
+    select: {
+      id: true,
+      yearLabel: true,
+      isEosyFinalized: true,
+      clonedFromId: true,
+    },
   });
 
   if (!schoolYear) {
@@ -88,21 +97,27 @@ export async function getBOSYReadiness(
         schoolYearId: prevSchoolYearId,
         learnerId: excludedIds.length > 0 ? { notIn: excludedIds } : undefined,
         enrollmentApplication: {
-          status: { in: ["ENROLLED", "OFFICIALLY_ENROLLED", "TEMPORARILY_ENROLLED"] },
+          status: {
+            in: ["ENROLLED", "OFFICIALLY_ENROLLED", "TEMPORARILY_ENROLLED"],
+          },
         },
         OR: [
           { eosyStatus: { equals: null } },
-          { eosyStatus: { notIn: ["DROPPED_OUT", "TRANSFERRED_OUT", "IRREGULAR"] } }
+          {
+            eosyStatus: {
+              notIn: ["DROPPED_OUT", "TRANSFERRED_OUT", "IRREGULAR"],
+            },
+          },
         ],
         // Exclude Grade 10 Promoted (they graduate JHS)
         NOT: {
           AND: [
             { section: { gradeLevel: { displayOrder: 10 } } },
-            { 
+            {
               OR: [
                 { eosyStatus: { equals: null } },
-                { eosyStatus: "PROMOTED" }
-              ] 
+                { eosyStatus: "PROMOTED" },
+              ],
             },
           ],
         },
@@ -186,10 +201,22 @@ export async function getBOSYQueue(params: {
       ? {
           status:
             status.trim() === "ENROLLED"
-              ? { in: ["ENROLLED", "OFFICIALLY_ENROLLED"] as ApplicationStatus[] }
-              : status.trim() === "DROPPED" || status.trim() === "TRANSFERRED_OUT"
-              ? { in: ["DROPPED", "TRANSFERRED_OUT", "TRANSFERRING_OUT"] as ApplicationStatus[] }
-              : (status.trim() as ApplicationStatus),
+              ? {
+                  in: [
+                    "ENROLLED",
+                    "OFFICIALLY_ENROLLED",
+                  ] as ApplicationStatus[],
+                }
+              : status.trim() === "DROPPED" ||
+                  status.trim() === "TRANSFERRED_OUT"
+                ? {
+                    in: [
+                      "DROPPED",
+                      "TRANSFERRED_OUT",
+                      "TRANSFERRING_OUT",
+                    ] as ApplicationStatus[],
+                  }
+                : (status.trim() as ApplicationStatus),
         }
       : {}),
     ...(search
@@ -245,6 +272,7 @@ export async function getBOSYQueue(params: {
         id: true,
         trackingNumber: true,
         status: true,
+        tleProgramId: true,
         learner: {
           select: {
             id: true,
@@ -255,10 +283,13 @@ export async function getBOSYQueue(params: {
           },
         },
         gradeLevel: {
-          select: { id: true, name: true },
+          select: { id: true, name: true, displayOrder: true },
         },
         checklist: {
           select: { academicStatus: true },
+        },
+        tleProgram: {
+          select: { id: true, name: true, category: true },
         },
       },
     }),
@@ -269,6 +300,7 @@ export async function getBOSYQueue(params: {
     id: number;
     trackingNumber: string | null;
     status: ApplicationStatus;
+    tleProgramId: number | null;
     learner: {
       id: number;
       lrn: string | null;
@@ -276,8 +308,9 @@ export async function getBOSYQueue(params: {
       lastName: string;
       middleName: string | null;
     };
-    gradeLevel: { id: number; name: string };
+    gradeLevel: { id: number; name: string; displayOrder: number };
     checklist: { academicStatus: any } | null;
+    tleProgram: { id: number; name: string; category: string } | null;
   }>;
 
   // Resolve prior-year section and adviser for each learner in one batch
@@ -328,11 +361,15 @@ export async function getBOSYQueue(params: {
       middleName: a.learner.middleName,
       gradeLevelId: a.gradeLevel.id,
       gradeLevelName: a.gradeLevel.name,
+      gradeLevelDisplayOrder: a.gradeLevel.displayOrder,
       academicStatus: a.checklist?.academicStatus ?? null,
       priorSectionName: section?.name ?? null,
       priorAdviserName: adviser
         ? `${adviser.firstName} ${adviser.lastName}`.trim()
         : null,
+      tleProgramId: a.tleProgram?.id ?? null,
+      tleProgramName: a.tleProgram?.name ?? null,
+      tleProgramCategory: a.tleProgram?.category ?? null,
     };
   });
 
@@ -360,21 +397,24 @@ export async function syncBOSYQueue(
     where: {
       schoolYearId: prevSchoolYearId,
       enrollmentApplication: {
-        status: { in: ["ENROLLED", "OFFICIALLY_ENROLLED", "TEMPORARILY_ENROLLED"] },
+        status: {
+          in: ["ENROLLED", "OFFICIALLY_ENROLLED", "TEMPORARILY_ENROLLED"],
+        },
       },
       OR: [
         { eosyStatus: { equals: null } },
-        { eosyStatus: { notIn: ["DROPPED_OUT", "TRANSFERRED_OUT", "IRREGULAR"] } }
+        {
+          eosyStatus: {
+            notIn: ["DROPPED_OUT", "TRANSFERRED_OUT", "IRREGULAR"],
+          },
+        },
       ],
       // Exclude Grade 10 Promoted
       NOT: {
         AND: [
           { section: { gradeLevel: { displayOrder: 10 } } },
-          { 
-            OR: [
-              { eosyStatus: { equals: null } },
-              { eosyStatus: "PROMOTED" }
-            ] 
+          {
+            OR: [{ eosyStatus: { equals: null } }, { eosyStatus: "PROMOTED" }],
           },
         ],
       },
@@ -389,6 +429,7 @@ export async function syncBOSYQueue(
           guardianRelationship: true,
           hasNoMother: true,
           hasNoFather: true,
+          tleProgramId: true,
         },
       },
       section: {
@@ -404,12 +445,16 @@ export async function syncBOSYQueue(
     where: { schoolYearId },
     select: { learnerId: true },
   });
-  const existingLearnerIds = new Set(existingApplications.map((a) => a.learnerId));
+  const existingLearnerIds = new Set(
+    existingApplications.map((a) => a.learnerId),
+  );
 
   const gradeLevels = await prisma.gradeLevel.findMany({
     select: { id: true, displayOrder: true },
   });
-  const gradeLevelByOrder = new Map(gradeLevels.map((g) => [g.displayOrder, g.id]));
+  const gradeLevelByOrder = new Map(
+    gradeLevels.map((g) => [g.displayOrder, g.id]),
+  );
 
   let createdCount = 0;
 
@@ -418,7 +463,8 @@ export async function syncBOSYQueue(
 
     const eosyStatus = record.eosyStatus ?? "PROMOTED";
     const sourceOrder = record.section.gradeLevel.displayOrder;
-    const targetOrder = eosyStatus === "PROMOTED" ? sourceOrder + 1 : sourceOrder;
+    const targetOrder =
+      eosyStatus === "PROMOTED" ? sourceOrder + 1 : sourceOrder;
     const targetGradeLevelId = gradeLevelByOrder.get(targetOrder);
 
     if (!targetGradeLevelId) continue;
@@ -432,10 +478,14 @@ export async function syncBOSYQueue(
         learnerType: "CONTINUING",
         status: "PENDING_CONFIRMATION",
         admissionChannel: "F2F",
-        isPrivacyConsentGiven: record.enrollmentApplication.isPrivacyConsentGiven,
+        isPrivacyConsentGiven:
+          record.enrollmentApplication.isPrivacyConsentGiven,
         guardianRelationship: record.enrollmentApplication.guardianRelationship,
         hasNoMother: record.enrollmentApplication.hasNoMother,
         hasNoFather: record.enrollmentApplication.hasNoFather,
+        // G9→G10: carry forward the existing TLE program; G8→G9: learner must re-select
+        tleProgramId:
+          sourceOrder === 9 ? record.enrollmentApplication.tleProgramId : null,
         encodedById: actingUserId,
       },
     });
@@ -464,6 +514,7 @@ export async function syncBOSYQueue(
 export async function confirmReturn(
   applicationId: number,
   actingUserId: number,
+  tleProgramId?: number | null,
 ): Promise<{ applicationId: number; status: string }> {
   const application = await prisma.enrollmentApplication.findUnique({
     where: { id: applicationId },
@@ -471,6 +522,7 @@ export async function confirmReturn(
       id: true,
       status: true,
       learnerType: true,
+      gradeLevel: { select: { displayOrder: true } },
       learner: {
         select: { id: true, lrn: true, firstName: true, lastName: true },
       },
@@ -490,12 +542,24 @@ export async function confirmReturn(
     );
   }
 
+  // TLE is required for G9 and G10
+  const requiresTle = [9, 10].includes(application.gradeLevel.displayOrder);
+  if (requiresTle && !tleProgramId) {
+    throw Object.assign(
+      new Error(
+        "A TLE program selection is required for Grade 9 and Grade 10 learners.",
+      ),
+      { status: 422 },
+    );
+  }
+
   const updated = await prisma.enrollmentApplication.update({
     where: { id: applicationId },
     data: {
       status: "READY_FOR_SECTIONING",
       confirmationConsent: true,
       encodedById: actingUserId,
+      ...(requiresTle ? { tleProgramId: tleProgramId ?? null } : {}),
     },
     select: { id: true, status: true },
   });
@@ -507,6 +571,7 @@ export async function bulkConfirmReturn(
   applicationIds: number[],
   schoolYearId: number,
   actingUserId: number,
+  tleProgramMap?: Record<number, number | null>,
 ): Promise<BulkConfirmResult> {
   const confirmed: number[] = [];
   const failed: Array<{ id: number; reason: string }> = [];
@@ -516,7 +581,11 @@ export async function bulkConfirmReturn(
       id: { in: applicationIds },
       schoolYearId,
     },
-    select: { id: true, status: true },
+    select: {
+      id: true,
+      status: true,
+      gradeLevel: { select: { displayOrder: true } },
+    },
   });
 
   const appMap = new Map(applications.map((a) => [a.id, a]));
@@ -537,16 +606,31 @@ export async function bulkConfirmReturn(
       });
       continue;
     }
+    const requiresTle = [9, 10].includes(app.gradeLevel.displayOrder);
+    const tleProgramId = tleProgramMap?.[id] ?? null;
+    if (requiresTle && !tleProgramId) {
+      failed.push({
+        id,
+        reason:
+          "A TLE program selection is required for Grade 9 and Grade 10 learners.",
+      });
+      continue;
+    }
     confirmed.push(id);
   }
 
-  if (confirmed.length > 0) {
-    await prisma.enrollmentApplication.updateMany({
-      where: { id: { in: confirmed } },
+  // Update each confirmed application individually to set its tleProgramId
+  for (const id of confirmed) {
+    const app = appMap.get(id)!;
+    const requiresTle = [9, 10].includes(app.gradeLevel.displayOrder);
+    const tleProgramId = tleProgramMap?.[id] ?? null;
+    await prisma.enrollmentApplication.update({
+      where: { id },
       data: {
         status: "READY_FOR_SECTIONING",
         confirmationConsent: true,
         encodedById: actingUserId,
+        ...(requiresTle ? { tleProgramId } : {}),
       },
     });
   }
@@ -597,7 +681,6 @@ export async function getJHSCompleters(params: {
       : {}),
   };
 
-
   const [learners, total] = await Promise.all([
     prisma.learner.findMany({
       where,
@@ -636,4 +719,26 @@ export async function getJHSCompleters(params: {
   }));
 
   return { items, total, page, limit };
+}
+
+export async function getTLEPrograms(): Promise<
+  Array<{
+    id: number;
+    name: string;
+    category: string;
+    isActive: boolean;
+    displayOrder: number;
+  }>
+> {
+  return prisma.tLEProgram.findMany({
+    where: { isActive: true },
+    orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
+    select: {
+      id: true,
+      name: true,
+      category: true,
+      isActive: true,
+      displayOrder: true,
+    },
+  });
 }

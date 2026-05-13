@@ -1,9 +1,16 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { PersonalInfoSection } from "@/features/learner/components/PersonalInfoSection";
 import { EnrollmentSection } from "@/features/learner/components/EnrollmentSection";
 import { HealthSection } from "@/features/learner/components/HealthSection";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/select";
 import {
   Printer,
   LogOut,
@@ -24,12 +31,43 @@ import depedLogo from "@/assets/DepEd-logo.png";
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
+const TLE_REQUIRED_GRADE_DISPLAY_ORDERS = [9, 10];
+
+interface TLEProgram {
+  id: number;
+  name: string;
+  category: string;
+}
+
 export default function LearnerPortal() {
   const { logoUrl, schoolName } = useSettingsStore();
   const { learner, logout } = useLearnerStore();
   const [showExitModal, setShowExitModal] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [tlePrograms, setTlePrograms] = useState<TLEProgram[]>([]);
+  const [selectedTleProgramId, setSelectedTleProgramId] = useState<string>("");
+
+  const requiresTle =
+    learner?.pendingConfirmation?.gradeLevelDisplayOrder != null &&
+    TLE_REQUIRED_GRADE_DISPLAY_ORDERS.includes(
+      learner.pendingConfirmation.gradeLevelDisplayOrder,
+    );
+
+  useEffect(() => {
+    if (!requiresTle) return;
+    api
+      .get<{ programs: TLEProgram[] }>("/bosy/tle-programs")
+      .then((res) => setTlePrograms(res.data.programs))
+      .catch(() => {});
+  }, [requiresTle]);
+
+  // Pre-fill if already has a TLE selection
+  useEffect(() => {
+    if (learner?.pendingConfirmation?.tleProgramId) {
+      setSelectedTleProgramId(String(learner.pendingConfirmation.tleProgramId));
+    }
+  }, [learner?.pendingConfirmation?.tleProgramId]);
 
   const fullLogoUrl = useMemo(() => {
     if (!logoUrl) return depedLogo;
@@ -52,9 +90,21 @@ export default function LearnerPortal() {
   const handleConfirmReturn = async () => {
     const appId = learner?.pendingConfirmation?.applicationId;
     if (!appId) return;
+    if (requiresTle && !selectedTleProgramId) {
+      sileo.warning({
+        title: "TLE Program Required",
+        description: "Please select your TLE specialization before confirming.",
+      });
+      return;
+    }
     setConfirmLoading(true);
     try {
-      await api.post("/learner/confirm-return", { applicationId: appId });
+      await api.post("/learner/confirm-return", {
+        applicationId: appId,
+        ...(requiresTle && selectedTleProgramId
+          ? { tleProgramId: Number(selectedTleProgramId) }
+          : {}),
+      });
       setConfirmed(true);
       sileo.success({
         title: "Return Confirmed!",
@@ -215,29 +265,60 @@ export default function LearnerPortal() {
               {/* BOSY Confirm Return Banner */}
               {learner.pendingConfirmation && !confirmed && (
                 <Card className="shadow-xl border-2 border-orange-300 bg-orange-50 rounded-lg overflow-hidden print:hidden">
-                  <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                    <AlertCircle className="h-8 w-8 text-orange-500 shrink-0" />
-                    <div className="flex-1">
-                      <p className="font-black uppercase text-sm text-orange-800">
-                        Action Required: Confirm Your Return
-                      </p>
-                      <p className="text-sm text-orange-700 mt-1">
-                        Your enrollment for the upcoming school year is pending
-                        your confirmation. Please confirm your intent to return
-                        to confirm your slot and proceed to section assignment.
-                      </p>
+                  <CardContent className="p-6 flex flex-col gap-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                      <AlertCircle className="h-8 w-8 text-orange-500 shrink-0" />
+                      <div className="flex-1">
+                        <p className="font-black uppercase text-sm text-orange-800">
+                          Action Required: Confirm Your Return
+                        </p>
+                        <p className="text-sm text-orange-700 mt-1">
+                          Your enrollment for the upcoming school year is
+                          pending your confirmation. Please confirm your intent
+                          to return to confirm your slot and proceed to section
+                          assignment.
+                        </p>
+                      </div>
                     </div>
-                    <Button
-                      className="shrink-0 bg-orange-600 hover:bg-orange-700 text-white font-black uppercase text-xs"
-                      disabled={confirmLoading}
-                      onClick={() => void handleConfirmReturn()}>
-                      {confirmLoading ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                      )}
-                      Confirm Return
-                    </Button>
+                    {requiresTle && (
+                      <div className="flex flex-col gap-1.5">
+                        <p className="text-xs font-bold uppercase text-orange-800">
+                          Select Your TLE Specialization
+                        </p>
+                        <Select
+                          value={selectedTleProgramId}
+                          onValueChange={setSelectedTleProgramId}>
+                          <SelectTrigger className="bg-white border-orange-300 focus:ring-orange-400 text-sm">
+                            <SelectValue placeholder="Choose a TLE program..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {tlePrograms.map((p) => (
+                              <SelectItem
+                                key={p.id}
+                                value={String(p.id)}>
+                                {p.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    <div className="flex justify-end">
+                      <Button
+                        className="shrink-0 bg-orange-600 hover:bg-orange-700 text-white font-black uppercase text-xs"
+                        disabled={
+                          confirmLoading ||
+                          (requiresTle && !selectedTleProgramId)
+                        }
+                        onClick={() => void handleConfirmReturn()}>
+                        {confirmLoading ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="h-4 w-4 mr-2" />
+                        )}
+                        Confirm Return
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               )}

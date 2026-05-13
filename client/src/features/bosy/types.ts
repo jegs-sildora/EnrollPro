@@ -21,9 +21,13 @@ export interface BOSYQueueItem {
   middleName: string | null;
   gradeLevelId: number;
   gradeLevelName: string;
+  gradeLevelDisplayOrder: number;
   academicStatus: string | null;
   priorSectionName: string | null;
   priorAdviserName: string | null;
+  tleProgramId: number | null;
+  tleProgramName: string | null;
+  tleProgramCategory: string | null;
 }
 
 export interface JHSCompleter {
@@ -54,4 +58,12 @@ export interface JHSCompleterPage {
   total: number;
   page: number;
   limit: number;
+}
+
+export interface TLEProgram {
+  id: number;
+  name: string;
+  category: string;
+  isActive: boolean;
+  displayOrder: number;
 }

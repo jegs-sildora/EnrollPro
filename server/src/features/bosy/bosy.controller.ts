@@ -7,6 +7,7 @@ import {
   bulkConfirmReturn,
   getJHSCompleters,
   syncBOSYQueue,
+  getTLEPrograms,
 } from "./bosy.service.js";
 
 function parsePositiveInt(value: unknown, fallback: number): number {
@@ -22,7 +23,9 @@ export async function getBosyReadiness(
   try {
     const schoolYearId = parsePositiveInt(req.query.schoolYearId, 0);
     if (!schoolYearId) {
-      res.status(400).json({ message: "schoolYearId query param is required." });
+      res
+        .status(400)
+        .json({ message: "schoolYearId query param is required." });
       return;
     }
 
@@ -73,7 +76,9 @@ export async function getBosyQueue(
   try {
     const schoolYearId = parsePositiveInt(req.query.schoolYearId, 0);
     if (!schoolYearId) {
-      res.status(400).json({ message: "schoolYearId query param is required." });
+      res
+        .status(400)
+        .json({ message: "schoolYearId query param is required." });
       return;
     }
 
@@ -97,7 +102,14 @@ export async function getBosyQueue(
     const page = parsePositiveInt(req.query.page, 1);
     const limit = Math.min(parsePositiveInt(req.query.limit, 20), 1000000);
 
-    const result = await getBOSYQueue({ schoolYearId, gradeLevelId, status, search, page, limit });
+    const result = await getBOSYQueue({
+      schoolYearId,
+      gradeLevelId,
+      status,
+      search,
+      page,
+      limit,
+    });
     res.json(result);
   } catch (error) {
     next(error);
@@ -116,7 +128,16 @@ export async function confirmReturnHandler(
       return;
     }
 
-    const result = await confirmReturn(applicationId, req.user!.userId);
+    const tleProgramId =
+      req.body?.tleProgramId != null
+        ? parsePositiveInt(req.body.tleProgramId, 0) || null
+        : null;
+
+    const result = await confirmReturn(
+      applicationId,
+      req.user!.userId,
+      tleProgramId ?? undefined,
+    );
 
     await auditLog({
       userId: req.user!.userId,
@@ -139,18 +160,23 @@ export async function bulkConfirmReturnHandler(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const { applicationIds, schoolYearId } = req.body as {
+    const { applicationIds, schoolYearId, tleProgramMap } = req.body as {
       applicationIds: unknown;
       schoolYearId: unknown;
+      tleProgramMap?: Record<number, number | null>;
     };
 
     if (!Array.isArray(applicationIds) || applicationIds.length === 0) {
-      res.status(400).json({ message: "applicationIds must be a non-empty array." });
+      res
+        .status(400)
+        .json({ message: "applicationIds must be a non-empty array." });
       return;
     }
     const parsedIds = applicationIds.map((id) => parsePositiveInt(id, 0));
     if (parsedIds.some((id) => id === 0)) {
-      res.status(400).json({ message: "All applicationIds must be positive integers." });
+      res
+        .status(400)
+        .json({ message: "All applicationIds must be positive integers." });
       return;
     }
 
@@ -160,7 +186,12 @@ export async function bulkConfirmReturnHandler(
       return;
     }
 
-    const result = await bulkConfirmReturn(parsedIds, parsedSchoolYearId, req.user!.userId);
+    const result = await bulkConfirmReturn(
+      parsedIds,
+      parsedSchoolYearId,
+      req.user!.userId,
+      tleProgramMap,
+    );
 
     await auditLog({
       userId: req.user!.userId,
@@ -191,6 +222,19 @@ export async function getJHSCompletersHandler(
         : undefined;
     const result = await getJHSCompleters({ page, limit, search });
     res.json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getTLEProgramsHandler(
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const programs = await getTLEPrograms();
+    res.json(programs);
   } catch (error) {
     next(error);
   }

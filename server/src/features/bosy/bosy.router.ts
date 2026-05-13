@@ -8,6 +8,7 @@ import {
   confirmReturnHandler,
   bulkConfirmReturnHandler,
   getJHSCompletersHandler,
+  getTLEProgramsHandler,
 } from "./bosy.controller.js";
 
 const router = Router();
@@ -52,6 +53,13 @@ router.get(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   getJHSCompletersHandler,
+);
+
+router.get(
+  "/tle-programs",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "REGISTRAR"),
+  getTLEProgramsHandler,
 );
 
 export default router;

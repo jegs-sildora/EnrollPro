@@ -162,15 +162,8 @@ export function createEarlyRegistrationBaseController(
       const take = parseInt(limit as string);
 
       // 1. Resolve School Year ID
-      let syId: number | undefined;
-      if (schoolYearId) {
-        syId = parseInt(String(schoolYearId));
-      } else {
-        const settings = await prisma.schoolSetting.findFirst({
-          select: { activeSchoolYearId: true },
-        });
-        syId = settings?.activeSchoolYearId || undefined;
-      }
+      // Prioritize query param, then global SY context (req.schoolYearId)
+      const syId = schoolYearId ? parseInt(String(schoolYearId)) : (req.schoolYearId || 0);
 
       // 2. Build Status Filters for Raw SQL
       const statusFilters = (Array.isArray(status) ? status : [status])
@@ -1480,19 +1473,11 @@ export function createEarlyRegistrationBaseController(
         throw new AppError(400, "scpType query parameter is required.");
       }
 
-      // Resolve school year — fallback to active
-      let syId: number;
-      if (schoolYearId) {
-        syId = parseInt(String(schoolYearId));
-        if (isNaN(syId)) throw new AppError(400, "Invalid schoolYearId.");
-      } else {
-        const settings = await prisma.schoolSetting.findFirst({
-          select: { activeSchoolYearId: true },
-        });
-        if (!settings?.activeSchoolYearId) {
-          throw new AppError(400, "No active School Year configured.");
-        }
-        syId = settings.activeSchoolYearId;
+      // Resolve school year — prioritize query param, then global SY context (req.schoolYearId)
+      const syId = schoolYearId ? parseInt(String(schoolYearId)) : req.schoolYearId;
+
+      if (!syId) {
+        throw new AppError(400, "School Year context is required.");
       }
 
       const rankings = await getSCPRankings(

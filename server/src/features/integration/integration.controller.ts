@@ -61,9 +61,19 @@ export async function integrationHealth(
         return { status: "down" };
       }
     })(),
-    probeExternal(process.env.ATLAS_API_BASE_URL || "http://njgrm.buru-degree.ts.net:5001", "ATLAS"),
-    probeExternal(process.env.AIMS_API_BASE_URL || "http://tfrog.buru-degree.ts.net:5000", "AIMS"),
-    probeExternal(process.env.SMART_API_BASE_URL || "http://laptop-pfvh73qk.buru-degree.ts.net:5003", "SMART"),
+    probeExternal(
+      process.env.ATLAS_API_BASE_URL || "http://njgrm.buru-degree.ts.net:5001",
+      "ATLAS",
+    ),
+    probeExternal(
+      process.env.AIMS_API_BASE_URL || "http://tfrog.buru-degree.ts.net:5000",
+      "AIMS",
+    ),
+    probeExternal(
+      process.env.SMART_API_BASE_URL ||
+        "http://laptop-pfvh73qk.buru-degree.ts.net:5003",
+      "SMART",
+    ),
   ]);
 
   res.json({
@@ -250,6 +260,13 @@ export async function listIntegrationLearners(
             },
           },
         },
+        tleProgram: {
+          select: {
+            id: true,
+            name: true,
+            category: true,
+          },
+        },
       },
       orderBy: [{ gradeLevelId: "asc" }, { id: "asc" }],
       skip,
@@ -288,6 +305,9 @@ export async function listIntegrationLearners(
       gradeLevel: application.gradeLevel,
       section: application.enrollmentRecord?.section ?? null,
       enrolledAt: application.enrollmentRecord?.enrolledAt ?? null,
+      tleProgramId: application.tleProgram?.id ?? null,
+      tleSpecialization: application.tleProgram?.name ?? null,
+      tleProgramCategory: application.tleProgram?.category ?? null,
     })),
     meta: {
       schoolYearId,
@@ -504,6 +524,13 @@ export async function listIntegrationSections(
             enrollmentRecords: true,
           },
         },
+        tleProgram: {
+          select: {
+            id: true,
+            name: true,
+            category: true,
+          },
+        },
       },
       orderBy: [{ gradeLevel: { displayOrder: "asc" } }, { name: "asc" }],
       skip,
@@ -533,6 +560,9 @@ export async function listIntegrationSections(
               middleName: activeAdviser.middleName,
             }
           : null,
+        tleProgramId: section.tleProgram?.id ?? null,
+        tleSpecialization: section.tleProgram?.name ?? null,
+        tleProgramCategory: section.tleProgram?.category ?? null,
         schoolYear: {
           id: scope.schoolYearId,
           yearLabel: scope.schoolYearLabel,

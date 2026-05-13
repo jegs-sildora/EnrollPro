@@ -4,6 +4,40 @@ import { prisma } from "../../lib/prisma.js";
 export async function getStats(req: Request, res: Response): Promise<void> {
   const schoolYearId = req.schoolYearId;
 
+  // STRICT SCOPING: If no SY context, return empty stats to prevent cross-SY leakage.
+  if (!schoolYearId) {
+    res.json({
+      stats: {
+        totalPending: 0,
+        totalEnrolled: 0,
+        totalPreRegistered: 0,
+        sectionsAtCapacity: 0,
+        enrollmentTarget: {
+          current: 0,
+          target: 0,
+          seatsRemaining: 0,
+          progressPercent: 0,
+        },
+        gradeLevelBreakdown: [],
+        capacityAlerts: [],
+        actions: {
+          pendingReview: 0,
+          sectionsAtCapacity: 0,
+        },
+        earlyRegistration: {
+          submitted: 0,
+          verified: 0,
+          examScheduled: 0,
+          readyForEnrollment: 0,
+          enrolled: 0,
+          inPipeline: 0,
+          total: 0,
+        },
+      },
+    });
+    return;
+  }
+
   const [
     totalPending,
     totalEnrolled,
@@ -23,75 +57,65 @@ export async function getStats(req: Request, res: Response): Promise<void> {
           in: ["UNDER_REVIEW", "READY_FOR_ENROLLMENT", "SUBMITTED_BEEF"],
         },
         enrollmentRecord: { is: null },
-        ...(schoolYearId ? { schoolYearId } : {}),
+        schoolYearId,
       },
     }),
     prisma.enrollmentApplication.count({
       where: {
         status: "ENROLLED",
-        ...(schoolYearId ? { schoolYearId } : {}),
+        schoolYearId,
       },
     }),
     prisma.enrollmentApplication.count({
       where: {
         status: "READY_FOR_ENROLLMENT",
-        ...(schoolYearId ? { schoolYearId } : {}),
+        schoolYearId,
       },
     }),
     // Count sections at capacity
-    schoolYearId
-      ? prisma.$queryRaw<{ count: bigint }[]>`
-          SELECT COUNT(*)::bigint AS count
-          FROM "sections" s
-          WHERE s."school_year_id" = ${schoolYearId}
-            AND (
-              SELECT COUNT(*)
-              FROM "enrollment_records" e
-              WHERE e."section_id" = s.id
-                AND e."school_year_id" = ${schoolYearId}
-            ) >= s."max_capacity"
-        `
-      : prisma.$queryRaw<{ count: bigint }[]>`
-          SELECT COUNT(*)::bigint AS count
-          FROM "sections" s
-          WHERE (
-            SELECT COUNT(*)
-            FROM "enrollment_records" e
-            WHERE e."section_id" = s.id
-          ) >= s."max_capacity"
-        `,
+    prisma.$queryRaw<{ count: bigint }[]>`
+      SELECT COUNT(*)::bigint AS count
+      FROM "sections" s
+      WHERE s."school_year_id" = ${schoolYearId}
+        AND (
+          SELECT COUNT(*)
+          FROM "enrollment_records" e
+          WHERE e."section_id" = s.id
+            AND e."school_year_id" = ${schoolYearId}
+        ) >= s."max_capacity"
+    `,
     // ── Early Registration counts ──
     prisma.earlyRegistrationApplication.count({
       where: {
         status: "SUBMITTED_BEERF",
-        ...(schoolYearId ? { schoolYearId } : {}),
+        schoolYearId,
       },
     }),
     prisma.earlyRegistrationApplication.count({
       where: {
         status: { in: ["READY_FOR_ENROLLMENT", "VERIFIED"] },
-        ...(schoolYearId ? { schoolYearId } : {}),
+        schoolYearId,
       },
     }),
     prisma.earlyRegistrationApplication.count({
       where: {
         status: "EXAM_SCHEDULED",
-        ...(schoolYearId ? { schoolYearId } : {}),
+        schoolYearId,
       },
     }),
     prisma.earlyRegistrationApplication.count({
       where: {
-        status: "READY_FOR_ENROLLMENT",
-        ...(schoolYearId ? { schoolYearId } : {}),
+        status: "READY_FOR_ENROLMENT",
+        schoolYearId,
       },
     }),
     prisma.earlyRegistrationApplication.count({
       where: {
-        ...(schoolYearId ? { schoolYearId } : {}),
+        schoolYearId,
       },
     }),
     prisma.section.aggregate({
-      where: schoolYearId ? { schoolYearId } : undefined,
+      where: { schoolYearId },
       _sum: { maxCapacity: true },
     }),
     prisma.gradeLevel.findMany({
@@ -104,19 +128,19 @@ export async function getStats(req: Request, res: Response): Promise<void> {
             enrollmentApplications: {
               where: {
                 status: "ENROLLED",
-                ...(schoolYearId ? { schoolYearId } : {}),
+                schoolYearId,
               },
             },
           },
         },
         sections: {
-          where: schoolYearId ? { schoolYearId } : undefined,
+          where: { schoolYearId },
           select: {
             id: true,
             name: true,
             maxCapacity: true,
             enrollmentRecords: {
-              where: schoolYearId ? { schoolYearId } : undefined,
+              where: { schoolYearId },
               select: { id: true },
             },
           },

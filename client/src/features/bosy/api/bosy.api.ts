@@ -4,6 +4,7 @@ import type {
   BOSYQueuePage,
   BulkConfirmResult,
   JHSCompleterPage,
+  TLEProgram,
 } from "../types";
 
 export async function getBOSYReadiness(
@@ -33,9 +34,11 @@ export async function getBOSYQueue(
 
 export async function confirmReturn(
   applicationId: number,
+  tleProgramId?: number,
 ): Promise<{ applicationId: number; status: string }> {
   const res = await api.post<{ applicationId: number; status: string }>(
     `/bosy/confirm-return/${applicationId}`,
+    tleProgramId != null ? { tleProgramId } : {},
   );
   return res.data;
 }
@@ -43,13 +46,23 @@ export async function confirmReturn(
 export async function bulkConfirm(body: {
   applicationIds: number[];
   schoolYearId: number;
+  tleProgramMap?: Record<number, number>;
 }): Promise<BulkConfirmResult> {
   const res = await api.post<BulkConfirmResult>(`/bosy/bulk-confirm`, body);
   return res.data;
 }
 
-export async function syncBOSYQueue(schoolYearId: number): Promise<{ created: number }> {
-  const res = await api.post<{ created: number }>(`/bosy/sync`, { schoolYearId });
+export async function getTLEPrograms(): Promise<TLEProgram[]> {
+  const res = await api.get<{ programs: TLEProgram[] }>(`/bosy/tle-programs`);
+  return res.data.programs;
+}
+
+export async function syncBOSYQueue(
+  schoolYearId: number,
+): Promise<{ created: number }> {
+  const res = await api.post<{ created: number }>(`/bosy/sync`, {
+    schoolYearId,
+  });
   return res.data;
 }
 

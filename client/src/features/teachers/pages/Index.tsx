@@ -765,7 +765,9 @@ export default function Teachers() {
       const res = await api.post("/integration/atlas/sync-faculty");
       sileo.success({
         title: "ATLAS Sync Successful",
-        description: res.data.message || "Faculty roster has been synchronized with the scheduling system.",
+        description:
+          res.data.message ||
+          "Faculty roster has been synchronized with the scheduling system.",
       });
       fetchTeachers();
     } catch (err: any) {
@@ -776,17 +778,20 @@ export default function Teachers() {
       if (status === 404) {
         sileo.error({
           title: "Service Unavailable",
-          description: "The ATLAS integration service endpoint could not be reached. This may be due to a server misconfiguration or the integration module being disabled.",
+          description:
+            "The ATLAS integration service endpoint could not be reached. This may be due to a server misconfiguration or the integration module being disabled.",
         });
       } else if (status === 503 || errorCode === "UPSTREAM_UNAVAILABLE") {
         sileo.error({
           title: "ATLAS Connection Failed",
-          description: "EnrollPro was unable to establish a handshake with the ATLAS Scheduling System. Please ensure the ATLAS server is online and reachable via Tailscale.",
+          description:
+            "EnrollPro was unable to establish a handshake with the ATLAS Scheduling System. Please ensure the ATLAS server is online and reachable via Tailscale.",
         });
       } else if (status === 401 || status === 403) {
         sileo.error({
           title: "Access Denied",
-          description: "Integration credentials (API Key) for ATLAS are invalid or have expired. Please verify your system settings.",
+          description:
+            "Integration credentials (API Key) for ATLAS are invalid or have expired. Please verify your system settings.",
         });
       } else {
         toastApiError(err);
@@ -810,6 +815,7 @@ export default function Teachers() {
         loading={loading}
         isRefetching={isRefetching}
         showSkeleton={showSkeleton}
+        teachers={teachers}
         filteredTeachers={filteredTeachers}
         paginatedTeachers={paginatedTeachers}
         searchQuery={searchQuery}
@@ -850,6 +856,7 @@ export default function Teachers() {
       loading,
       isRefetching,
       showSkeleton,
+      teachers,
       filteredTeachers,
       paginatedTeachers,
       searchQuery,
@@ -1011,10 +1018,7 @@ export default function Teachers() {
                 disabled={submitting}
                 className="font-black uppercase text-xs h-10 border-2 border-primary/20 shadow-sm hover:bg-primary/5 active:scale-95 transition-all">
                 <RefreshCw
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    submitting && "animate-spin",
-                  )}
+                  className={cn("mr-2 h-4 w-4", submitting && "animate-spin")}
                 />
                 Sync with ATLAS
               </Button>
