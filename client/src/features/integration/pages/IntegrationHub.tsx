@@ -6,6 +6,7 @@ import {
   Database,
   History,
   LayoutDashboard,
+  LucideIcon,
   Play,
   RefreshCw,
   Zap,
@@ -20,6 +21,7 @@ import api from "@/shared/api/axiosInstance";
 import { IntegrationLogTable, type IntegrationLog } from "../components/IntegrationLogTable";
 import { useSettingsStore } from "@/store/settings.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
+import { sileo } from "sileo";
 
 // --- Types ---
 
@@ -31,8 +33,21 @@ interface EcosystemSystem {
   latency: string;
   lastSync: string;
   parity: { source: number; target: number };
-  icon: any;
+  icon: LucideIcon;
   color: string;
+}
+
+interface ExternalSystemHealth {
+  name: string;
+  status: "ok" | "error";
+  latency: string;
+}
+
+interface AuditLogResponse {
+  id: string;
+  createdAt: string;
+  description: string;
+  subjectType: string | null;
 }
 
 // --- Internal Components ---
@@ -130,7 +145,7 @@ function IntegrationHub() {
 
       // 2. Fetch Sync Logs (Real Audit Logs filtered by Integration actions)
       const logsRes = await api.get("/audit-logs?limit=50&actionType=INTEGRATION_BROADCAST,ATLAS_FACULTY_SYNC,SMART_SECTION_SYNC");
-      const realLogs = (logsRes.data.logs || []).map((l: any) => ({
+      const realLogs = (logsRes.data.logs || []).map((l: AuditLogResponse) => ({
         id: l.id,
         timestamp: l.createdAt,
         system: l.description.includes("AIMS") ? "AIMS" : l.description.includes("ATLAS") ? "ATLAS" : "SMART",
@@ -142,10 +157,10 @@ function IntegrationHub() {
       setLogs(realLogs);
 
       // 3. Map Systems from External Probe
-      const extSystems = healthRes.data.data.systems || [];
-      const atlasHealth = extSystems.find((s: any) => s.name === "ATLAS");
-      const aimsHealth = extSystems.find((s: any) => s.name === "AIMS");
-      const smartHealth = extSystems.find((s: any) => s.name === "SMART");
+      const extSystems: ExternalSystemHealth[] = healthRes.data.data.systems || [];
+      const atlasHealth = extSystems.find((s) => s.name === "ATLAS");
+      const aimsHealth = extSystems.find((s) => s.name === "AIMS");
+      const smartHealth = extSystems.find((s) => s.name === "SMART");
 
       setSystems([
         {
@@ -183,12 +198,6 @@ function IntegrationHub() {
         },
       ]);
     } catch (err) {
-      console.error("Failed to fetch integration data", err);
-      toastApiError(err as any);
-    } finally {
-      setLoading(false);
-    }
-  }, [activeSchoolYearId]);
       console.error("Failed to fetch integration data", err);
       toastApiError(err as any);
     } finally {
