@@ -56,6 +56,18 @@ const defaultClientOrigins = [
   "http://buru-degree.ts.net:5175",
   "https://dev-jegs.buru-degree.ts.net",
   "https://buru-degree.ts.net",
+  // ATLAS (Scheduling)
+  "https://njgrm.buru-degree.ts.net",
+  "http://njgrm.buru-degree.ts.net:5001",
+  // AIMS (LMS)
+  "https://tfrog.buru-degree.ts.net",
+  "http://tfrog.buru-degree.ts.net:5000",
+  // SMART (Grading)
+  "https://laptop-pfvh73qk.buru-degree.ts.net",
+  "http://laptop-pfvh73qk.buru-degree.ts.net:5003",
+  // atheng device
+  "https://atheng.buru-degree.ts.net",
+  "http://atheng.buru-degree.ts.net",
 ];
 const configuredClientOrigins = [
   process.env.CLIENT_URL,
@@ -169,8 +181,8 @@ apiRouter.all(/(.*)/, (req, res) => {
 
 app.use("/api", apiRouter);
 
-// Static files for uploads
-app.use("/uploads", express.static(uploadsDir));
+// Static files for uploads — open CORS so any tailnet host can fetch images/logos/docs
+app.use("/uploads", cors({ origin: "*" }), express.static(uploadsDir));
 
 // Error handler
 app.use(errorHandler);
