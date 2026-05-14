@@ -100,7 +100,7 @@ const PH_LAST_NAMES = [
   "ARROYO",
   "MAGSAYSAY",
   "QUIRINO",
-  "OSME├æA",
+  "OSMEÑA",
   "MACAPAGAL",
   "ROXAS",
   "QUEZON",
