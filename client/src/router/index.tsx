@@ -71,10 +71,6 @@ export const router = createBrowserRouter([
             element: <SampleIntegrationPage />,
           },
           {
-            path: "/learner",
-            element: <LearnerPortal />,
-          },
-          {
             path: "/learner/login",
             element: <LearnerLogin />,
           },
@@ -244,6 +240,22 @@ export const router = createBrowserRouter([
                     element: <AuditLogs />,
                   },
                 ],
+              },
+            ],
+          },
+        ],
+      },
+
+      // Learner portal — JWT required, role=LEARNER
+      {
+        element: <ProtectedRoute allowedRoles={["LEARNER"]} />,
+        children: [
+          {
+            element: <PublicLayout />,
+            children: [
+              {
+                path: "/learner",
+                element: <LearnerPortal />,
               },
             ],
           },

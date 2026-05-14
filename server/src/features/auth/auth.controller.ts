@@ -269,89 +269,49 @@ export async function verifyCredentials(
 
 /**
  * POST /api/auth/learner-login
- * Issues a short-lived JWT for a returning learner identified by LRN + portal PIN.
- * The PIN is verified against the bcrypt hash stored on the EnrollmentApplication.
- * No User record is required — this auth chain is separate from staff auth.
+ * Issues a JWT for a learner identified by LRN (accountName) + password.
+ * Uses the same createAuthToken helper as staff login — payload includes { userId, role, mustChangePassword }.
  */
-export async function learnerLogin(
-  req: Request,
-  res: Response,
-): Promise<void> {
+export async function learnerLogin(req: Request, res: Response): Promise<void> {
   const lrn = String(req.body.lrn ?? "").trim();
-  const pin = String(req.body.pin ?? "");
+  const password = String(req.body.password ?? "");
 
   if (!lrn || lrn.length !== 12) {
     res.status(400).json({ message: "LRN must be exactly 12 characters." });
     return;
   }
-  if (!pin) {
-    res.status(400).json({ message: "pin is required." });
+  if (!password) {
+    res.status(400).json({ message: "password is required." });
     return;
   }
 
-  const INVALID_MSG = "Invalid LRN or PIN.";
+  const INVALID_MSG = "Invalid LRN or password.";
 
   try {
-    const application = await prisma.enrollmentApplication.findFirst({
-      where: {
-        portalPin: { not: null },
-        learner: { lrn },
-      },
-      orderBy: { schoolYearId: "desc" },
-      include: {
-        learner: {
-          select: {
-            id: true,
-            lrn: true,
-            firstName: true,
-            lastName: true,
-            middleName: true,
-          },
-        },
-        schoolYear: { select: { id: true, yearLabel: true } },
-        gradeLevel: { select: { name: true } },
-      },
+    const user = await prisma.user.findUnique({
+      where: { accountName: lrn },
     });
 
-    if (!application || !application.portalPin) {
+    if (!user || user.role !== "LEARNER" || !user.isActive) {
       res.status(401).json({ message: INVALID_MSG });
       return;
     }
 
-    const pinValid = await verifyPin(pin, application.portalPin);
-    if (!pinValid) {
+    const passwordValid = await bcrypt.compare(password, user.password);
+    if (!passwordValid) {
       res.status(401).json({ message: INVALID_MSG });
       return;
     }
 
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) {
-      throw new AppError(500, "JWT secret is not configured.", "JWT_SECRET_MISSING");
-    }
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
 
-    const token = jwt.sign(
-      {
-        learnerId: application.learnerId,
-        enrollmentApplicationId: application.id,
-        role: "LEARNER",
-      },
-      jwtSecret,
-      { expiresIn: "8h" },
-    );
-
+    const token = createAuthToken(updatedUser);
     res.json({
       token,
-      learner: {
-        id: application.learner.id,
-        lrn: application.learner.lrn,
-        firstName: application.learner.firstName,
-        lastName: application.learner.lastName,
-        middleName: application.learner.middleName,
-        enrollmentApplicationId: application.id,
-        schoolYear: application.schoolYear,
-        gradeLevel: application.gradeLevel,
-        applicationStatus: application.status,
-      },
+      user: toUserResponse(updatedUser),
     });
   } catch (error) {
     if (error instanceof AppError) {

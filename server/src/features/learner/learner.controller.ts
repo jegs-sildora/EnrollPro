@@ -268,3 +268,187 @@ export const learnerConfirmReturn = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Could not confirm return." });
   }
 };
+
+/**
+ * GET /api/learner/profile
+ * Returns the authenticated learner's profile (same shape as lookupLearner).
+ * Requires JWT with role=LEARNER.
+ */
+export const getLearnerProfile = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+
+    const learner = await prisma.learner.findFirst({
+      where: { userId },
+      include: {
+        addresses: true,
+        enrollmentApplications: {
+          orderBy: { schoolYearId: "desc" },
+          take: 1,
+          include: {
+            gradeLevel: { select: { name: true, displayOrder: true } },
+            schoolYear: { select: { yearLabel: true } },
+            enrollmentRecord: {
+              include: {
+                section: {
+                  include: {
+                    advisers: {
+                      where: { status: "ACTIVE" },
+                      include: {
+                        teacher: {
+                          select: { firstName: true, lastName: true },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!learner) {
+      return res.status(404).json({ message: "Learner profile not found." });
+    }
+
+    const application = learner.enrollmentApplications[0] ?? null;
+    const currentAddress =
+      learner.addresses.find((a) => a.addressType === "CURRENT") ?? null;
+
+    const healthRecords = await prisma.healthRecord.findMany({
+      where: { learnerId: learner.id },
+      include: { schoolYear: { select: { yearLabel: true } } },
+      orderBy: [{ assessmentDate: "desc" }, { assessmentPeriod: "asc" }],
+    });
+
+    const activeAdviser =
+      (application?.enrollmentRecord?.section as any)?.advisers?.[0]?.teacher ??
+      null;
+
+    return res.json({
+      learner: {
+        id: learner.id,
+        lrn: learner.lrn,
+        firstName: learner.firstName,
+        lastName: learner.lastName,
+        middleName: learner.middleName,
+        suffix: learner.extensionName,
+        birthDate: learner.birthdate,
+        sex: learner.sex === "MALE" ? "Male" : "Female",
+        motherTongue: learner.motherTongue,
+        religion: learner.religion,
+        status: application?.status ?? null,
+        curriculum: application?.applicantType ?? null,
+        studentPhoto: learner.studentPhoto,
+        currentAddress: currentAddress
+          ? {
+              houseNumber: currentAddress.houseNoStreet,
+              street: currentAddress.street,
+              barangay: currentAddress.barangay,
+              municipality: currentAddress.cityMunicipality,
+              province: currentAddress.province,
+            }
+          : null,
+        enrollment: application?.enrollmentRecord
+          ? {
+              curriculum: application.applicantType,
+              section: application.enrollmentRecord.section
+                ? {
+                    name: application.enrollmentRecord.section.name,
+                    advisingTeacher: activeAdviser
+                      ? {
+                          firstName: activeAdviser.firstName,
+                          lastName: activeAdviser.lastName,
+                        }
+                      : null,
+                  }
+                : null,
+            }
+          : null,
+        schoolYear: application?.schoolYear ?? null,
+        gradeLevel: application?.gradeLevel ?? null,
+        healthRecords: healthRecords.map((r) => ({
+          id: r.id,
+          schoolYear: r.schoolYear.yearLabel,
+          assessmentPeriod: r.assessmentPeriod,
+          assessmentDate: r.assessmentDate,
+          weightKg: r.weightKg,
+          heightCm: r.heightCm,
+          notes: r.notes,
+        })),
+        pendingConfirmation:
+          application?.status === "PENDING_CONFIRMATION"
+            ? {
+                applicationId: application.id,
+                status: application.status,
+                gradeLevelDisplayOrder:
+                  application.gradeLevel.displayOrder ?? null,
+                tleProgramId: application.tleProgramId ?? null,
+              }
+            : null,
+      },
+    });
+  } catch (error) {
+    console.error("getLearnerProfile failed:", error);
+    return res.status(500).json({ message: "Error fetching learner profile." });
+  }
+};
+
+/**
+ * GET /api/learner/academic-history
+ * Returns all enrollment applications for the authenticated learner, ordered by school year desc.
+ * Requires JWT with role=LEARNER.
+ */
+export const getLearnerAcademicHistory = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const userId = req.user!.userId;
+
+    const learner = await prisma.learner.findFirst({ where: { userId } });
+    if (!learner) {
+      return res.status(404).json({ message: "Learner not found." });
+    }
+
+    const applications = await prisma.enrollmentApplication.findMany({
+      where: { learnerId: learner.id },
+      orderBy: { schoolYearId: "desc" },
+      include: {
+        schoolYear: { select: { id: true, yearLabel: true } },
+        gradeLevel: { select: { id: true, name: true } },
+        enrollmentRecord: {
+          select: {
+            finalAverage: true,
+            eosyStatus: true,
+            section: { select: { id: true, name: true } },
+          },
+        },
+      },
+    });
+
+    const history = applications.map((app) => ({
+      id: app.id,
+      schoolYear: app.schoolYear,
+      gradeLevel: app.gradeLevel,
+      status: app.status,
+      applicantType: app.applicantType,
+      enrollmentRecord: app.enrollmentRecord
+        ? {
+            section: app.enrollmentRecord.section,
+            finalAverage: app.enrollmentRecord.finalAverage,
+            eosyStatus: app.enrollmentRecord.eosyStatus,
+          }
+        : null,
+    }));
+
+    return res.json({ history });
+  } catch (error) {
+    console.error("getLearnerAcademicHistory failed:", error);
+    return res
+      .status(500)
+      .json({ message: "Error fetching academic history." });
+  }
+};

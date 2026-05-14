@@ -195,6 +195,23 @@ async function main() {
   });
   if (!admin) throw new Error("No SYSTEM_ADMIN found.");
 
+  const sy2024 = await prisma.schoolYear.findUnique({
+    where: { yearLabel: "2024-2025" },
+  });
+  const sy2023 = await prisma.schoolYear.findUnique({
+    where: { yearLabel: "2023-2024" },
+  });
+  const sy2022 = await prisma.schoolYear.findUnique({
+    where: { yearLabel: "2022-2023" },
+  });
+  const syMap = new Map<number, number>();
+  if (sy2024) syMap.set(9, sy2024.id);
+  if (sy2023) syMap.set(8, sy2023.id);
+  if (sy2022) syMap.set(7, sy2022.id);
+  const gradeLevelMap = new Map(
+    gradeLevels.map((gl) => [parseInt(gl.name.split(" ")[1]), gl.id]),
+  );
+
   for (const gradeLevel of gradeLevels) {
     console.log(`\n≡ƒôª Processing ${gradeLevel.name}...`);
 
@@ -206,7 +223,9 @@ async function main() {
     });
 
     if (sections.length === 0) {
-      console.warn(`ΓÜá∩╕Å No sections found for ${gradeLevel.name} in 2025-2026.`);
+      console.warn(
+        `ΓÜá∩╕Å No sections found for ${gradeLevel.name} in 2025-2026.`,
+      );
       continue;
     }
 
@@ -228,11 +247,46 @@ async function main() {
         targetYear,
         admin.id,
         currentEnrollmentCount + 1,
+        syMap,
+        gradeLevelMap,
       );
     }
   }
 
   console.log("\nΓ£à Seeding of existing learners for 2025-2026 completed.");
+}
+
+async function seedHistoricalApplications(
+  learnerId: number,
+  lrn: string,
+  gradeValue: number,
+  program: ApplicantType,
+  adminId: number,
+  syMap: Map<number, number>,
+  gradeLevelMap: Map<number, number>,
+): Promise<void> {
+  for (let priorGrade = gradeValue - 1; priorGrade >= 7; priorGrade--) {
+    const syId = syMap.get(priorGrade);
+    const gradeLevelId = gradeLevelMap.get(priorGrade);
+    if (!syId || !gradeLevelId) continue;
+    const trackingNumber = `HIST-${lrn}-G${priorGrade}`;
+    await prisma.enrollmentApplication.upsert({
+      where: { trackingNumber },
+      update: { status: "OFFICIALLY_ENROLLED" as ApplicationStatus },
+      create: {
+        trackingNumber,
+        learnerId,
+        gradeLevelId,
+        schoolYearId: syId,
+        applicantType: program,
+        learnerType: "CONTINUING" as LearnerType,
+        status: "OFFICIALLY_ENROLLED" as ApplicationStatus,
+        isPrivacyConsentGiven: true,
+        admissionChannel: "F2F",
+        encodedById: adminId,
+      },
+    });
+  }
 }
 
 async function seedSectionBatch(
@@ -243,6 +297,8 @@ async function seedSectionBatch(
   targetYear: any,
   adminId: number,
   startIndex: number,
+  syMap: Map<number, number>,
+  gradeLevelMap: Map<number, number>,
 ) {
   const gradeValue = parseInt(gradeLevel.name.split(" ")[1]);
 
@@ -312,7 +368,7 @@ async function seedSectionBatch(
         role: "LEARNER" as Role,
         sex,
         isActive: true,
-        mustChangePassword: false,
+        mustChangePassword: true,
       },
     });
     if (!learner.userId) {
@@ -408,6 +464,16 @@ async function seedSectionBatch(
         confirmationConsent: true,
       },
     });
+
+    await seedHistoricalApplications(
+      learner.id,
+      lrn,
+      gradeValue,
+      program,
+      adminId,
+      syMap,
+      gradeLevelMap,
+    );
   }
 }
 

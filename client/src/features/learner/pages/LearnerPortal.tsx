@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { PersonalInfoSection } from "@/features/learner/components/PersonalInfoSection";
 import { EnrollmentSection } from "@/features/learner/components/EnrollmentSection";
 import { HealthSection } from "@/features/learner/components/HealthSection";
+import { AcademicHistorySection } from "@/features/learner/components/AcademicHistorySection";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import {
@@ -20,13 +21,15 @@ import {
 } from "lucide-react";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useLearnerStore } from "@/store/learner.slice";
+import { useAuthStore } from "@/store/auth.slice";
 import { motion, AnimatePresence } from "motion/react";
-import { Navigate } from "react-router";
+import { Navigate, useNavigate } from "react-router";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { sileo } from "sileo";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import api from "@/shared/api/axiosInstance";
 import type { AxiosError } from "axios";
+import type { AcademicHistoryEntry } from "@/features/learner/types";
 import depedLogo from "@/assets/DepEd-logo.png";
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
@@ -41,12 +44,18 @@ interface TLEProgram {
 
 export default function LearnerPortal() {
   const { logoUrl, schoolName } = useSettingsStore();
-  const { learner, logout } = useLearnerStore();
+  const { learner, setLearner, logout } = useLearnerStore();
+  const { token, user, clearAuth } = useAuthStore();
+  const navigate = useNavigate();
   const [showExitModal, setShowExitModal] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [tlePrograms, setTlePrograms] = useState<TLEProgram[]>([]);
   const [selectedTleProgramId, setSelectedTleProgramId] = useState<string>("");
+  const [academicHistory, setAcademicHistory] = useState<
+    AcademicHistoryEntry[]
+  >([]);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   const requiresTle =
     learner?.pendingConfirmation?.gradeLevelDisplayOrder != null &&
@@ -69,6 +78,26 @@ export default function LearnerPortal() {
     }
   }, [learner?.pendingConfirmation?.tleProgramId]);
 
+  // Fetch learner profile + academic history when JWT is present
+  useEffect(() => {
+    if (!token || user?.role !== "LEARNER") return;
+    setProfileLoading(true);
+    Promise.all([
+      api.get("/learner/profile"),
+      api.get("/learner/academic-history"),
+    ])
+      .then(([profileRes, historyRes]) => {
+        setLearner(profileRes.data.learner);
+        setAcademicHistory(historyRes.data.history ?? []);
+      })
+      .catch(() => {
+        clearAuth();
+        navigate("/learner/login", { replace: true });
+      })
+      .finally(() => setProfileLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
   const fullLogoUrl = useMemo(() => {
     if (!logoUrl) return depedLogo;
     if (logoUrl.startsWith("http")) return logoUrl;
@@ -81,6 +110,7 @@ export default function LearnerPortal() {
 
   const handleExit = () => {
     logout();
+    clearAuth();
     sileo.success({
       title: "Signed Out",
       description: "You have successfully exited the Learner Portal.",
@@ -118,13 +148,22 @@ export default function LearnerPortal() {
     }
   };
 
-  // If no learner session, REDIRECT to login
-  if (!learner) {
+  // Guard: must have a valid LEARNER JWT
+  if (!token || user?.role !== "LEARNER") {
     return (
       <Navigate
         to="/learner/login"
         replace
       />
+    );
+  }
+
+  // Show loading skeleton while fetching profile
+  if (profileLoading || !learner) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
   }
 
@@ -359,6 +398,13 @@ export default function LearnerPortal() {
               <Card className="shadow-xl border-primary/5 bg-white/90 backdrop-blur-xl rounded-lg overflow-hidden print:border-0 print:shadow-none">
                 <CardContent className="p-8 md:p-10">
                   <HealthSection learner={learner} />
+                </CardContent>
+              </Card>
+
+              {/* Card 4: Academic History */}
+              <Card className="shadow-xl border-primary/5 bg-white/90 backdrop-blur-xl rounded-lg overflow-hidden print:border-0 print:shadow-none">
+                <CardContent className="p-8 md:p-10">
+                  <AcademicHistorySection history={academicHistory} />
                 </CardContent>
               </Card>
             </div>

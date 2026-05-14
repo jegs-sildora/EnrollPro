@@ -21,6 +21,36 @@ async function main() {
   // 1. Create School Years for the Demo Timeline
   const years = [
     {
+      yearLabel: "2022-2023",
+      status: "ARCHIVED" as SchoolYearStatus,
+      classOpeningDate: new Date("2022-06-01T00:00:00Z"),
+      classEndDate: new Date("2023-03-31T00:00:00Z"),
+      earlyRegOpenDate: new Date("2022-01-15T00:00:00Z"),
+      earlyRegCloseDate: new Date("2022-02-28T00:00:00Z"),
+      enrollOpenDate: new Date("2022-05-01T00:00:00Z"),
+      enrollCloseDate: new Date("2022-05-31T00:00:00Z"),
+    },
+    {
+      yearLabel: "2023-2024",
+      status: "ARCHIVED" as SchoolYearStatus,
+      classOpeningDate: new Date("2023-06-01T00:00:00Z"),
+      classEndDate: new Date("2024-03-31T00:00:00Z"),
+      earlyRegOpenDate: new Date("2023-01-15T00:00:00Z"),
+      earlyRegCloseDate: new Date("2023-02-28T00:00:00Z"),
+      enrollOpenDate: new Date("2023-05-01T00:00:00Z"),
+      enrollCloseDate: new Date("2023-05-31T00:00:00Z"),
+    },
+    {
+      yearLabel: "2024-2025",
+      status: "ARCHIVED" as SchoolYearStatus,
+      classOpeningDate: new Date("2024-06-01T00:00:00Z"),
+      classEndDate: new Date("2025-03-31T00:00:00Z"),
+      earlyRegOpenDate: new Date("2024-01-15T00:00:00Z"),
+      earlyRegCloseDate: new Date("2024-02-28T00:00:00Z"),
+      enrollOpenDate: new Date("2024-05-01T00:00:00Z"),
+      enrollCloseDate: new Date("2024-05-31T00:00:00Z"),
+    },
+    {
       yearLabel: "2025-2026",
       status: "ACTIVE" as SchoolYearStatus, // The "Current" year at the start of demo
       classOpeningDate: new Date("2025-06-01T00:00:00Z"),

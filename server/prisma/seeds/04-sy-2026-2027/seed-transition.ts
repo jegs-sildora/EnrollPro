@@ -33,8 +33,12 @@ async function main() {
 
   // 1.5 Cleanup existing 2026-2027 Enrollment Data
   console.log("🧹 Clearing existing 2026-2027 enrollment data...");
-  await prisma.enrollmentRecord.deleteMany({ where: { schoolYearId: sy2627.id } });
-  await prisma.enrollmentApplication.deleteMany({ where: { schoolYearId: sy2627.id } });
+  await prisma.enrollmentRecord.deleteMany({
+    where: { schoolYearId: sy2627.id },
+  });
+  await prisma.enrollmentApplication.deleteMany({
+    where: { schoolYearId: sy2627.id },
+  });
 
   // 2. Get Grade Levels
   const gradeLevels = await prisma.gradeLevel.findMany({
@@ -82,11 +86,11 @@ async function main() {
     const currentGrade = record.enrollmentApplication.gradeLevel;
     const eosyStatus = record.eosyStatus;
 
-    // EOSY Status Logic: 
+    // EOSY Status Logic:
     // PROMOTED or null -> Next Grade
     // RETAINED -> Same Grade
     // DROPPED_OUT/TRANSFERRED_OUT -> Skip
-    
+
     if (eosyStatus === "DROPPED_OUT" || eosyStatus === "TRANSFERRED_OUT") {
       statusSkippedCount++;
       skippedCount++;
@@ -94,7 +98,7 @@ async function main() {
     }
 
     const isPromoted = eosyStatus === "PROMOTED" || eosyStatus === null;
-    
+
     // Determine target Grade Level
     let targetGradeName = currentGrade.name;
     if (isPromoted) {
@@ -119,12 +123,16 @@ async function main() {
     }
 
     // Prepare 2026-2027 Enrollment Application
-    // Use full LRN to avoid collisions. If no LRN, use ID and random.
-    const trackingNumber = `REG-2026-${learner.lrn || `ID${learner.id}-${Math.floor(Math.random() * 1000)}`}`;
+    // Use full LRN to avoid collisions. If no LRN, use stable learner ID.
+    const trackingNumber = `REG-2026-${learner.lrn || `ID${learner.id}`}`;
 
     // TLE Logic: G9/G10 needs a program.
     let targetTleProgramId = record.tleProgramId;
-    if ((targetGradeName === "Grade 9" || targetGradeName === "Grade 10") && !targetTleProgramId && tlePrograms.length > 0) {
+    if (
+      (targetGradeName === "Grade 9" || targetGradeName === "Grade 10") &&
+      !targetTleProgramId &&
+      tlePrograms.length > 0
+    ) {
       // Assign based on learner ID for determinism during re-runs
       targetTleProgramId = tlePrograms[learner.id % tlePrograms.length].id;
     }
@@ -189,7 +197,7 @@ async function main() {
           confirmationConsent: true,
         },
       });
-      
+
       if (isPromoted) promotedCount++;
       else retainedCount++;
     } else {
@@ -197,8 +205,13 @@ async function main() {
       skippedCount++;
     }
 
-    if ((promotedCount + retainedCount + graduatesCount + skippedCount) % 500 === 0) {
-      console.log(`  ≡ƒôè Progress: ${promotedCount + retainedCount} Enrolled, ${graduatesCount} Graduates, ${skippedCount} Skipped...`);
+    if (
+      (promotedCount + retainedCount + graduatesCount + skippedCount) % 500 ===
+      0
+    ) {
+      console.log(
+        `  ≡ƒôè Progress: ${promotedCount + retainedCount} Enrolled, ${graduatesCount} Graduates, ${skippedCount} Skipped...`,
+      );
     }
   }
 
@@ -208,7 +221,9 @@ async function main() {
   console.log(`  - Grade 10 JHS Completers: ${graduatesCount}`);
   console.log(`  - Skipped (Status): ${statusSkippedCount}`);
   console.log(`  - Skipped (No Target Section): ${noSectionCount}`);
-  console.log(`  - Total Processed: ${promotedCount + retainedCount + graduatesCount + skippedCount}`);
+  console.log(
+    `  - Total Processed: ${promotedCount + retainedCount + graduatesCount + skippedCount}`,
+  );
 }
 
 main()

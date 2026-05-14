@@ -12,6 +12,7 @@ import {
   FileCheck,
   GitPullRequest,
   Lock,
+  Archive,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useAuthStore } from "@/store/auth.slice";
@@ -100,7 +101,7 @@ export default function Dashboard() {
     viewingSchoolYearId,
   } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
-  const { ayLabel } = useSchoolYearContext();
+  const { ayLabel, isViewingOverride, viewingStatus } = useSchoolYearContext();
   const isAdmin = user?.role === "SYSTEM_ADMIN";
   const isBosyLocked = systemStatus === "BOSY_LOCKED";
 
@@ -283,6 +284,25 @@ export default function Dashboard() {
           </div>
           <Badge className="bg-white text-emerald-700 font-black hover:bg-white uppercase ">
             Academic Phase
+          </Badge>
+        </motion.div>
+      )}
+
+      {isViewingOverride && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-slate-100 border-2 border-slate-300 text-slate-700 px-4 py-3 rounded-xl flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Archive className="h-5 w-5 text-slate-500" />
+            <p className="text-sm font-black uppercase">
+              Viewing Historical Data &middot; S.Y. {ayLabel}
+            </p>
+          </div>
+          <Badge
+            variant="outline"
+            className="border-slate-400 text-slate-600 font-black uppercase">
+            {viewingStatus ?? "ARCHIVED"}
           </Badge>
         </motion.div>
       )}

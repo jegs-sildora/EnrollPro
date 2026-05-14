@@ -163,7 +163,7 @@ export default function ChangePassword() {
   if (!user.mustChangePassword)
     return (
       <Navigate
-        to="/dashboard"
+        to={user.role === "LEARNER" ? "/learner" : "/dashboard"}
         replace
       />
     );
@@ -182,7 +182,7 @@ export default function ChangePassword() {
         description:
           "Your new password has been set. You can now access the system.",
       });
-      navigate("/dashboard");
+      navigate(res.data.user.role === "LEARNER" ? "/learner" : "/dashboard");
     } catch (err: unknown) {
       const axiosError = err as {
         response?: { status?: number; data?: { message?: string } };

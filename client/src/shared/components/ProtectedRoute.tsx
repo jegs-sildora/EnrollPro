@@ -10,20 +10,23 @@ export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   const { token, user } = useAuthStore();
 
   if (!token || !user) {
+    const loginPath =
+      allowedRoles?.length === 1 && allowedRoles[0] === "LEARNER"
+        ? "/learner/login"
+        : "/login";
     return (
       <Navigate
-        to="/login"
+        to={loginPath}
         replace
       />
     );
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    // If authenticated but role not allowed, don't go to /login (causes loop)
-    // Go to dashboard or a safe place.
+    // Redirect to role-appropriate home rather than /login (avoids loops)
     return (
       <Navigate
-        to="/dashboard"
+        to={user.role === "LEARNER" ? "/learner" : "/dashboard"}
         replace
       />
     );

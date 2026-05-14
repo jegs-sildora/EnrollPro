@@ -1,13 +1,13 @@
 import "dotenv/config";
-import { 
-  PrismaClient, 
-  Sex, 
-  ApplicantType, 
-  ReadingProfileLevel, 
+import {
+  PrismaClient,
+  Sex,
+  ApplicantType,
+  ReadingProfileLevel,
   ApplicationStatus,
   Role,
   LearnerType,
-  IntakeMethod
+  IntakeMethod,
 } from "../../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
@@ -24,30 +24,40 @@ function toUtcNoon(year: number, month: number, day: number): Date {
 }
 
 async function main() {
-  console.log("🚀 Seeding Grade 9 and 10 TLE test learners with prior-year history for BOSY testing...");
+  console.log(
+    "🚀 Seeding Grade 9 and 10 TLE test learners with prior-year history for BOSY testing...",
+  );
 
-  const sy2025 = await prisma.schoolYear.findUnique({ where: { yearLabel: "2025-2026" } });
-  const sy2026 = await prisma.schoolYear.findUnique({ where: { yearLabel: "2026-2027" } });
+  const sy2025 = await prisma.schoolYear.findUnique({
+    where: { yearLabel: "2025-2026" },
+  });
+  const sy2026 = await prisma.schoolYear.findUnique({
+    where: { yearLabel: "2026-2027" },
+  });
 
   if (!sy2025 || !sy2026) {
-    console.error("Required school years (2025-2026 or 2026-2027) not found. Please seed them first.");
+    console.error(
+      "Required school years (2025-2026 or 2026-2027) not found. Please seed them first.",
+    );
     return;
   }
 
   const gradeLevels = await prisma.gradeLevel.findMany({
-    where: { name: { in: ["Grade 8", "Grade 9", "Grade 10"] } }
+    where: { name: { in: ["Grade 8", "Grade 9", "Grade 10"] } },
   });
 
-  const g8 = gradeLevels.find(g => g.name === "Grade 8");
-  const g9 = gradeLevels.find(g => g.name === "Grade 9");
-  const g10 = gradeLevels.find(g => g.name === "Grade 10");
+  const g8 = gradeLevels.find((g) => g.name === "Grade 8");
+  const g9 = gradeLevels.find((g) => g.name === "Grade 9");
+  const g10 = gradeLevels.find((g) => g.name === "Grade 10");
 
   if (!g8 || !g9 || !g10) {
     console.error("Required grade levels not found.");
     return;
   }
 
-  const admin = await prisma.user.findFirst({ where: { role: "SYSTEM_ADMIN" } });
+  const admin = await prisma.user.findFirst({
+    where: { role: "SYSTEM_ADMIN" },
+  });
   if (!admin) {
     console.error("SYSTEM_ADMIN not found.");
     return;
@@ -89,7 +99,7 @@ async function main() {
       sex: "FEMALE" as Sex,
       priorGradeLevelId: g9.id,
       targetGradeLevelId: g10.id,
-    }
+    },
   ];
 
   for (const data of learnersData) {
@@ -109,15 +119,15 @@ async function main() {
         lastName: data.lastName,
         sex: data.sex,
         isActive: true,
-        mustChangePassword: false
-      }
+        mustChangePassword: true,
+      },
     });
 
     // 2. Create/Update Learner
     const learner = await prisma.learner.upsert({
       where: { lrn: data.lrn },
       update: {
-        userId: user.id
+        userId: user.id,
       },
       create: {
         lrn: data.lrn,
@@ -127,8 +137,8 @@ async function main() {
         sex: data.sex,
         isPendingLrnCreation: false,
         previousGenAve: 85,
-        userId: user.id
-      }
+        userId: user.id,
+      },
     });
 
     // 3. Create Prior Year (2025-2026) Record
@@ -151,22 +161,22 @@ async function main() {
         encodedById: admin.id,
         readingProfileLevel: "INDEPENDENT",
         portalPin: defaultPinHash,
-      }
+      },
     });
 
     // Find a section in 2025-2026 for the prior grade level
     const section = await prisma.section.findFirst({
-      where: { 
+      where: {
         gradeLevelId: data.priorGradeLevelId,
-        schoolYearId: sy2025.id
-      }
+        schoolYearId: sy2025.id,
+      },
     });
 
     if (section) {
       await prisma.enrollmentRecord.upsert({
         where: { enrollmentApplicationId: priorApp.id },
         update: {
-          sectionId: section.id
+          sectionId: section.id,
         },
         create: {
           enrollmentApplicationId: priorApp.id,
@@ -175,8 +185,8 @@ async function main() {
           sectionId: section.id,
           enrolledById: admin.id,
           enrolledAt: new Date(),
-          confirmationConsent: true
-        }
+          confirmationConsent: true,
+        },
       });
     }
 
@@ -207,7 +217,7 @@ async function main() {
         guardianName: "Test Guardian",
         portalPin: defaultPinHash,
         tleProgramId: null,
-      }
+      },
     });
 
     // 5. Create checklist for target application
@@ -221,14 +231,18 @@ async function main() {
         enrollmentId: targetApp.id,
         academicStatus: "PROMOTED",
         updatedById: admin.id,
-      }
+      },
     });
 
-    console.log(`- Seeded ${data.targetGradeLevelId === g9.id ? 'Grade 9' : 'Grade 10'} learner: ${data.firstName} ${data.lastName} (LRN: ${data.lrn}) with login and 2025-2026 history.`);
+    console.log(
+      `- Seeded ${data.targetGradeLevelId === g9.id ? "Grade 9" : "Grade 10"} learner: ${data.firstName} ${data.lastName} (LRN: ${data.lrn}) with login and 2025-2026 history.`,
+    );
   }
 
-  console.log("\n✅ Seeding complete. Learners are now in PENDING_CONFIRMATION for 2026-2027 with prior records and User accounts.");
-  }
+  console.log(
+    "\n✅ Seeding complete. Learners are now in PENDING_CONFIRMATION for 2026-2027 with prior records and User accounts.",
+  );
+}
 
 main()
   .catch((e) => {

@@ -51,3 +51,16 @@ export interface HealthRecord {
   heightCm: number;
   notes?: string | null;
 }
+
+export interface AcademicHistoryEntry {
+  id: number;
+  schoolYear: { id: number; yearLabel: string };
+  gradeLevel: { id: number; name: string };
+  status: string;
+  applicantType: string;
+  enrollmentRecord?: {
+    section: { id: number; name: string } | null;
+    finalAverage?: number | null;
+    eosyStatus?: string | null;
+  } | null;
+}

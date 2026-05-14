@@ -1,0 +1,222 @@
+ENROLLPRO DATA INITIALIZATION AND CLEANUP DOCUMENTATION
+
+This document provides a comprehensive overview of the seeding and wiping utilities in the EnrollPro ecosystem. These scripts are critical for maintaining the demo environment, testing new features, and transitioning between academic years.
+
+================================================================================
+1. MAIN ENTRY POINTS (Run from the project root)
+================================================================================
+
+- pnpm --filter server db:seed           : Baseline system setup (01-global/seed-core.ts)
+- pnpm --filter server db:wipe           : Targeted reset of learner/application data (wipe/wipe.ts)
+- pnpm --filter server db:wipe-all       : Full database truncate (wipe/wipe-everything.ts)
+
+================================================================================
+2. SEEDING MODULES (/server/prisma/seeds)
+================================================================================
+
+A. 01-GLOBAL (Baseline Data)
+--------------------------------------------------------------------------------
+- seed-core.ts:
+    * Command: pnpm --filter server db:seed
+    * Context: The foundational baseline for a new installation.
+    * Description: Creates the active School Year (2025-2026), default School Settings, Grade Levels (7-10), standard DepEd Departments (MATH, SCI, etc.), and TLE Programs. It also ensures the initial SYSTEM_ADMIN and HEAD_REGISTRAR accounts exist.
+    * Usage: First script to run after a fresh migration.
+
+- seed-users.ts:
+    * Command: pnpm --filter server db:seed-users
+    * Description: Creates a set of demo users with various roles to test access control.
+
+- seed-teachers.ts:
+    * Command: pnpm --filter server db:seed-teachers
+    * Description: Populates the Teacher table with faculty members. These are "mirrored" records used for advisory assignments.
+
+B. 02-SY-2025-2026 (Operational Demo Data)
+--------------------------------------------------------------------------------
+- seed-sections.ts:
+    * Command: pnpm --filter server db:seed-sections
+    * Description: Creates the class section structure for all grade levels.
+    * Context: These sections serve as the targets for learner assignments.
+
+- seed-enrolled-learners.ts:
+    * Command: pnpm --filter server db:seed-enrolled-learners
+    * Description: Generates a large pool of randomized learners and creates official EnrollmentRecords for them. 
+    * Logic: Uses lists of common Filipino names. Handles LRN generation, address creation, and family member mapping.
+
+- seed-scp.ts:
+    * Command: pnpm --filter server db:seed-scp
+    * Description: Configures Special Curricular Programs (STE, SPA, etc.) including admission steps and scoring rubrics.
+
+- seed-pending-g7.ts:
+    * Command: pnpm --filter server db:seed-pending-g7
+    * Description: Generates 875 incoming Grade 7 learners for the 2026-2027 school year (70 STE, 805 Regular).
+    * Context: Used to simulate the Phase 1 early registration pool.
+
+- enroll-pending-g7.ts:
+    * Command: pnpm --filter server db:enroll-pending-g7
+    * Description: Dynamically enrolls the 875 pending Grade 7 learners into assigned sections for the 2026-2027 school year.
+    * How it works: If existing sections reach 100% capacity, it automatically creates new sections from the Grade 7 theme pool (Stars/Heroes).
+    * Context: Transitions Phase 1 verified applications to officially ENROLLED status.
+
+C. 03-EOSY (End of School Year Processing)
+--------------------------------------------------------------------------------
+- seed-eosy-grades.ts:
+    * Command: pnpm --filter server db:seed-eosy-grades
+    * Description: Populates final averages and promotion statuses for the current student body to enable year-end finalization testing.
+
+- seed-eosy-grades-incoming.ts:
+    * Command: pnpm --filter server db:seed-eosy-grades-incoming
+    * Description: Generates EOSY grades specifically for learners in the incoming pool (Phase 2 enrollees).
+
+D. 04-SY-2026-2027 (Academic Transition)
+--------------------------------------------------------------------------------
+- seed-2026-2027.ts:
+    * Command: pnpm --filter server db:seed-2026-2027
+    * Description: Prepares the system for the upcoming academic year record.
+    * Note: This command chains seed-transition.ts automatically — it runs BOTH
+      seed-2026-2027.ts AND seed-transition.ts in sequence via the package.json
+      script definition. Run this command instead of calling them separately.
+
+- seed-transition.ts:
+    * Command: pnpm --filter server db:seed-transition-2026
+    * Description: Simulates the logic of "moving forward" in time. Handles the creation
+      of the next SY record and configuration clones. Automatically included when
+      running db:seed-2026-2027.
+
+- seed-scp-configs.ts:
+    * Command: pnpm --filter server db:seed-scp-configs
+    * Description: Seeds SCP (Special Curricular Program) pipeline configuration
+      defaults for the 2026-2027 school year.
+
+E. 05-TEST-DATA (Development and QA Fixtures)
+--------------------------------------------------------------------------------
+- seed-promoted-learners.ts:
+    * Command: pnpm --filter server db:seed-promoted-learners
+    * Description: Creates promoted learner records transitioning from 2025-2026
+      to 2026-2027, simulating the EOSY promotion flow for QA testing.
+    * Prerequisite: Both school years (2025-2026 and 2026-2027) must exist.
+
+- seed-tle-test-learners.ts:
+    * Command: pnpm --filter server db:seed-tle-test-learners
+    * Description: Seeds Grade 9 and 10 TLE (Technology and Livelihood Education)
+      learners with prior-year enrollment history specifically for BOSY testing
+      scenarios. Includes user account creation with default PIN (123456).
+
+================================================================================
+3. WIPE UTILITIES (/server/prisma/seeds/wipe)
+================================================================================
+
+- wipe-everything.ts:
+    * Command: pnpm --filter server db:wipe-all
+    * Description: The "Nuclear Option". 
+    * How it works: Executes a raw SQL `TRUNCATE TABLE ... CASCADE` on every table in the public schema except `_prisma_migrations`. 
+    * Warning: Leaves the database completely empty. Requires a full re-seed.
+
+- wipe.ts:
+    * Command: pnpm --filter server db:wipe
+    * Description: Targeted Learner/Application Reset.
+    * How it works: Clears all dynamic data (EnrollmentRecords, Applications, Learners, HealthRecords) but specifically PRESERVES "Master Data" (Users, Teachers, SchoolYears, GradeLevels, and Sections).
+    * Use Case: Reseting the enrollment state for a new demo walkthrough without losing the school structure.
+
+- wipe-enroll-pending-g7.ts:
+    * Command: pnpm --filter server db:wipe-enroll-pending-g7
+    * Description: Reverts the dynamic enrollments for Grade 7 2026-2027.
+    * How it works: Deletes enrollment records and resets application statuses to VERIFIED. 
+    * Note: Unlike other wipes, this script specifically PRESERVES sections and teacher assignments to maintain school structure.
+
+- wipe-2026-2027.ts:
+    * Command: pnpm --filter server db:wipe-2026-2027
+    * Description: Removes all data associated with the 2026-2027 school year,
+      including its enrollment records and applications.
+
+- wipe-learners-2025-2026.ts:
+    * Command: pnpm --filter server db:wipe-learners-2025-2026
+    * Description: Clears learner and enrollment data scoped to the 2025-2026 year.
+
+- wipe-eosy-grades.ts:
+    * Command: pnpm --filter server db:wipe-eosy-grades
+    * Description: Removes EOSY grade data for the main 2025-2026 student body.
+
+- wipe-eosy-grades-incoming.ts:
+    * Command: pnpm --filter server db:wipe-eosy-grades-incoming
+    * Description: Removes EOSY grade data for the incoming (ENR-tracking) learner pool.
+
+- wipe-promoted-learners.ts:
+    * Command: pnpm --filter server db:wipe-promoted-learners
+    * Description: Reverses seed-promoted-learners.ts — removes the cross-year
+      promoted learner fixture data.
+
+- wipe-tle-test-learners.ts:
+    * Command: pnpm --filter server db:wipe-tle-test-learners
+    * Description: Removes TLE test learner fixtures created by seed-tle-test-learners.ts.
+
+- wipe-scp.ts:
+    * Command: pnpm --filter server db:wipe-scp
+    * Description: Clears SCP program data (ScpProgramConfig, ScpProgramStep, ScpProgramOption)
+      for 2025-2026. Use before re-running db:seed-scp.
+
+- wipe-scp-configs.ts:
+    * Command: pnpm --filter server db:wipe-scp-configs
+    * Description: Clears SCP pipeline configuration data scoped to 2026-2027.
+
+- wipe-transition.ts:
+    * Command: pnpm --filter server db:wipe-transition
+    * Description: Undoes the transition seed — removes records created by seed-transition.ts
+      (tracking numbers and application records created during the SY transition).
+
+- wipe-core.ts:
+    * Command: pnpm --filter server db:wipe-core
+    * Description: Removes core baseline data (school settings, grade levels, departments).
+      Use with caution — leaves the database without the foundational structure.
+
+- Granular Wipes (wipe-sections.ts, wipe-teachers.ts, wipe-users.ts):
+    * Commands: pnpm --filter server db:wipe-sections, pnpm --filter server db:wipe-teachers, pnpm --filter server db:wipe-users
+    * Description: Deletes only records related to specific modules. Used primarily for debugging specific seed failures.
+
+================================================================================
+4. MAINTENANCE AND BACKFILL (/server/prisma/seeds/maintenance)
+================================================================================
+
+- backfill-learner-users.ts:
+    * Command: pnpm --filter server db:backfill-learner-users
+    * Context: Enrollment records created via administrative seeding may not initially have associated login users.
+    * Description: Iterates through the Learner table and creates User accounts for each, enabling them to log in to the Learner Portal.
+
+- backfill-teacher-users.ts:
+    * Command: pnpm --filter server db:backfill-teacher-users
+    * Description: Ensures all teachers in the database have a corresponding User account with the TEACHER role.
+
+================================================================================
+5. CROSS-SERVICE SEEDING (Root directory)
+================================================================================
+
+- seed.js:
+    * Command: node seed.js
+    * Target: ATLAS (Downstream Scheduling Service).
+    * Context: ATLAS maintains its own database but relies on EnrollPro for identity.
+    * Description: Populates the ATLAS database with subjects (compliant with DO 010 s.2024), campus buildings/rooms, and a mirrored faculty list.
+    * Execution: Run from the root to prepare the ATLAS service for integration testing.
+
+================================================================================
+6. DETERMINISM GUARANTEE
+================================================================================
+
+All seed scripts in server/prisma/seeds/ are DETERMINISTIC: running wipe followed
+by re-seed produces byte-for-byte identical data every time. This guarantee enables
+reproducible demo environments, stable regression baselines, and predictable QA runs.
+
+Implementation approach:
+  - No Math.random() calls anywhere in the seed pipeline.
+  - Grade generation uses index-based formulas (deterministicGrade(index, isSTE))
+    instead of Box-Muller normal distribution sampling.
+  - Teacher generation uses DEPT_SEQUENCE and PLANTILLA_SEQUENCE arrays with modulo
+    indexing instead of weighted random selection.
+  - Conditional remarks use (index % N === 0) instead of probability checks.
+  - All findMany() calls that feed batched operations include orderBy: { id: "asc" }
+    to ensure stable record ordering across re-seeds.
+  - Tracking numbers use learner.lrn or learner.id — never random suffixes.
+  - All seeds use upsert on stable unique keys (LRN, employeeId, yearLabel, etc.),
+    making repeated runs safe and idempotent.
+
+Verification:
+  grep -r "Math.random" server/prisma/seeds/
+  # Should return 0 matches. Any match is a determinism regression.

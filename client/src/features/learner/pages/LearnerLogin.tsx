@@ -12,7 +12,7 @@ import {
 import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useSettingsStore } from "@/store/settings.slice";
-import { useLearnerStore } from "@/store/learner.slice";
+import { useAuthStore } from "@/store/auth.slice";
 import { useNavigate } from "react-router";
 import api from "@/shared/api/axiosInstance";
 import { isAxiosError } from "axios";
@@ -24,7 +24,7 @@ const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 export function LookupForm() {
   const navigate = useNavigate();
   const { logoUrl, schoolName } = useSettingsStore();
-  const { setLearner } = useLearnerStore();
+  const { setAuth } = useAuthStore();
 
   const [lrn, setLrn] = useState("");
   const [password, setPassword] = useState("");
@@ -47,19 +47,22 @@ export function LookupForm() {
     setError(null);
 
     try {
-      const res = await api.post("/learner/lookup", { lrn, password });
+      const res = await api.post("/auth/learner-login", { lrn, password });
 
-      // 1. Set the global store
-      setLearner(res.data.learner);
+      // Store JWT + user in auth store
+      setAuth(res.data.token, res.data.user);
 
-      // 2. Show success toast
       sileo.success({
-        title: "Access Granted",
-        description: `Welcome back, ${res.data.learner.firstName}!`,
+        title: "Welcome back!",
+        description: `Logged in as ${res.data.user.firstName ?? lrn}.`,
       });
 
-      // 3. REDIRECT to the portal page
-      navigate("/learner");
+      // Redirect to change-password first if required
+      if (res.data.user.mustChangePassword) {
+        navigate("/change-password");
+      } else {
+        navigate("/learner");
+      }
     } catch (err: unknown) {
       setError(
         isAxiosError(err)

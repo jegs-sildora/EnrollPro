@@ -1,5 +1,8 @@
 import "dotenv/config";
-import { PrismaClient, EosyStatus } from "../../../src/generated/prisma/index.js";
+import {
+  PrismaClient,
+  EosyStatus,
+} from "../../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 
@@ -7,28 +10,23 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-function generateNormalRandom(mean: number, stdDev: number): number {
-  const u1 = Math.random();
-  const u2 = Math.random();
-  const z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
-  return mean + z * stdDev;
-}
-
-function generateGrade(isSTE: boolean): number {
-  const mean = isSTE ? 89 : 83;
-  const stdDev = isSTE ? 4 : 6;
-  let grade = generateNormalRandom(mean, stdDev);
-  if (grade < 60) grade = 60;
-  if (grade > 100) grade = 100;
+function deterministicGrade(index: number, isSTE: boolean): number {
+  const base = isSTE ? 82 : 72;
+  const range = isSTE ? 17 : 21;
+  const grade = base + (index % range);
   return parseFloat(grade.toFixed(2));
 }
 
 async function main() {
-  console.log("≡ƒÜÇ Seeding End-of-School-Year (EOSY) Grades for 2025-2026 (Mock SMART Data)...");
-  console.log("≡ƒÄ» Applying '65/66' Presentation Strategy (STE 7-VEGA will remain pending).");
+  console.log(
+    "≡ƒÜÇ Seeding End-of-School-Year (EOSY) Grades for 2025-2026 (Mock SMART Data)...",
+  );
+  console.log(
+    "≡ƒÄ» Applying '65/66' Presentation Strategy (STE 7-VEGA will remain pending).",
+  );
 
   const targetYear = await prisma.schoolYear.findUnique({
-    where: { yearLabel: "2025-2026" }
+    where: { yearLabel: "2025-2026" },
   });
 
   if (!targetYear) throw new Error("Timeline failure: 2025-2026 not found.");
@@ -36,48 +34,55 @@ async function main() {
   // Identify the demo section
   const DEMO_SECTION_NAME = "STE 7-VEGA";
   const demoSection = await prisma.section.findFirst({
-    where: { 
+    where: {
       name: DEMO_SECTION_NAME,
-      schoolYearId: targetYear.id
-    }
+      schoolYearId: targetYear.id,
+    },
   });
 
   if (!demoSection) {
-    console.warn(`ΓÜá∩╕Å Demo section '${DEMO_SECTION_NAME}' not found. Defaulting to all-sections mode.`);
+    console.warn(
+      `ΓÜá∩╕Å Demo section '${DEMO_SECTION_NAME}' not found. Defaulting to all-sections mode.`,
+    );
   }
 
   const records = await prisma.enrollmentRecord.findMany({
-    where: { 
+    where: {
       schoolYearId: targetYear.id,
       enrollmentApplication: {
         OR: [
           { trackingNumber: { startsWith: "STE-" } },
-          { trackingNumber: { startsWith: "REG-" } }
-        ]
-      }
+          { trackingNumber: { startsWith: "REG-" } },
+        ],
+      },
     },
     include: {
       enrollmentApplication: {
         select: {
           applicantType: true,
-          learnerId: true
-        }
+          learnerId: true,
+        },
       },
       section: {
         select: {
           id: true,
-          name: true
-        }
-      }
-    }
+          name: true,
+        },
+      },
+    },
+    orderBy: { id: "asc" },
   });
 
   if (records.length === 0) {
-    console.warn("ΓÜá∩╕Å No 'STE-' or 'REG-' records found in 2025-2026. Run db:seed-enrolled-learners first.");
+    console.warn(
+      "ΓÜá∩╕Å No 'STE-' or 'REG-' records found in 2025-2026. Run db:seed-enrolled-learners first.",
+    );
     return;
   }
 
-  console.log(`≡ƒôè Processing ${records.length} enrollment records for 2025-2026...`);
+  console.log(
+    `≡ƒôè Processing ${records.length} enrollment records for 2025-2026...`,
+  );
 
   const BATCH_SIZE = 100;
   let processedCount = 0;
@@ -85,18 +90,24 @@ async function main() {
 
   for (let i = 0; i < records.length; i += BATCH_SIZE) {
     const batch = records.slice(i, i + BATCH_SIZE);
-    
+
     await prisma.$transaction(
-      batch.map((record) => {
+      batch.map((record, batchIdx) => {
         const isDemoSection = record.section.name === DEMO_SECTION_NAME;
-        const isSTE = record.enrollmentApplication.applicantType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING";
-        const grade = generateGrade(isSTE);
-        
+        const isSTE =
+          record.enrollmentApplication.applicantType ===
+          "SCIENCE_TECHNOLOGY_AND_ENGINEERING";
+        const grade = deterministicGrade(i + batchIdx, isSTE);
+
         // If it's the demo section, we populate grades but NOT the EOSY status.
         // This allows the user to click "Bulk Mark Promoted" live.
-        const eosyStatus: EosyStatus | null = isDemoSection ? null : (grade >= 75 ? "PROMOTED" : "RETAINED");
+        const eosyStatus: EosyStatus | null = isDemoSection
+          ? null
+          : grade >= 75
+            ? "PROMOTED"
+            : "RETAINED";
         const remarks = `Final Ave: ${grade.toFixed(2)}`;
-        
+
         if (isDemoSection) skippedCount++;
         else processedCount++;
 
@@ -110,43 +121,56 @@ async function main() {
               update: {
                 learner: {
                   update: {
-                    promotionStatus: eosyStatus === "PROMOTED" ? "PROMOTED" : (eosyStatus === "RETAINED" ? "RETAINED" : null)
-                  }
-                }
-              }
-            }
-          }
+                    promotionStatus:
+                      eosyStatus === "PROMOTED"
+                        ? "PROMOTED"
+                        : eosyStatus === "RETAINED"
+                          ? "RETAINED"
+                          : null,
+                  },
+                },
+              },
+            },
+          },
         });
-      })
+      }),
     );
   }
 
   console.log(`  - Updated ${processedCount} records with EOSY status.`);
-  console.log(`  - Left ${skippedCount} records in '${DEMO_SECTION_NAME}' with null status for live demo.`);
+  console.log(
+    `  - Left ${skippedCount} records in '${DEMO_SECTION_NAME}' with null status for live demo.`,
+  );
 
   // Finalize all sections except the demo section
   console.log("\n≡ƒöÆ Finalizing 65/66 sections...");
-  
+
   const sections = await prisma.section.findMany({
-    where: { schoolYearId: targetYear.id }
+    where: { schoolYearId: targetYear.id },
   });
 
   const updatePromises = sections.map((s) => {
     const isDemo = s.name === DEMO_SECTION_NAME;
     return prisma.section.update({
       where: { id: s.id },
-      data: { isEosyFinalized: !isDemo }
+      data: { isEosyFinalized: !isDemo },
     });
   });
 
   await Promise.all(updatePromises);
-  
-  console.log(`Γ£à Finalized ${sections.length - (demoSection ? 1 : 0)} sections.`);
+
+  console.log(
+    `Γ£à Finalized ${sections.length - (demoSection ? 1 : 0)} sections.`,
+  );
   if (demoSection) {
-    console.log(`Γ£¿ Section '${DEMO_SECTION_NAME}' is UNLOCKED and ready for presentation.`);
+    console.log(
+      `Γ£¿ Section '${DEMO_SECTION_NAME}' is UNLOCKED and ready for presentation.`,
+    );
   }
 
-  console.log(`\nΓ£à Successfully implemented '65/66' Presentation Strategy for 2025-2026.`);
+  console.log(
+    `\nΓ£à Successfully implemented '65/66' Presentation Strategy for 2025-2026.`,
+  );
 }
 
 main()

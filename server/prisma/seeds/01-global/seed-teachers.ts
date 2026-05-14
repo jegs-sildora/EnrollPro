@@ -456,51 +456,25 @@ const DEPARTMENTS_WEIGHTED = [
   { code: "ESP", weight: 8 },
 ];
 
-const PLANTILLA_POSITIONS = [
-  { title: "TEACHER I", weight: 40 },
-  { title: "TEACHER II", weight: 30 },
-  { title: "TEACHER III", weight: 20 },
-  { title: "MASTER TEACHER I", weight: 7 },
-  { title: "MASTER TEACHER II", weight: 3 },
+// Pre-built proportional sequences (100 slots each, matching weights above)
+const DEPT_SEQUENCE: string[] = [
+  ...Array(15).fill("ENG"),
+  ...Array(15).fill("MATH"),
+  ...Array(15).fill("SCI"),
+  ...Array(12).fill("FIL"),
+  ...Array(12).fill("AP"),
+  ...Array(12).fill("MAPEH"),
+  ...Array(11).fill("TLE"),
+  ...Array(8).fill("ESP"),
 ];
 
-function getRandomFromWeighted(items: any[]) {
-  const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
-  let random = Math.random() * totalWeight;
-  for (const item of items) {
-    if (random < item.weight) return item;
-    random -= item.weight;
-  }
-  return items[0];
-}
-
-function generateRandomEmployeeId(usedIds: Set<string>): string {
-  let id = "";
-  do {
-    // Generate a 7-digit ID (1,000,000 to 9,999,999)
-    // DepEd employee IDs are strictly 7 digits
-    id = Math.floor(2000000 + Math.random() * 7999999).toString();
-  } while (usedIds.has(id));
-  usedIds.add(id);
-  return id;
-}
-
-function generateRandomContactNumber(): string {
-  const providers = [
-    "0917",
-    "0918",
-    "0927",
-    "0935",
-    "0945",
-    "0956",
-    "0966",
-    "0977",
-  ];
-  const provider = providers[Math.floor(Math.random() * providers.length)];
-  const mid = Math.floor(100 + Math.random() * 899).toString();
-  const last = Math.floor(1000 + Math.random() * 8999).toString();
-  return `${provider}-${mid}-${last}`;
-}
+const PLANTILLA_SEQUENCE: string[] = [
+  ...Array(40).fill("TEACHER I"),
+  ...Array(30).fill("TEACHER II"),
+  ...Array(20).fill("TEACHER III"),
+  ...Array(7).fill("MASTER TEACHER I"),
+  ...Array(3).fill("MASTER TEACHER II"),
+];
 
 async function main() {
   console.log(
@@ -571,64 +545,35 @@ async function main() {
     teachersToSeed.push(f);
   });
 
-  // 2. Generate remaining teachers with strict uniqueness
-  console.log("≡ƒöÇ Shuffling name pools for maximum variety...");
+  // 2. Generate remaining teachers deterministically (same output every run)
+  console.log("≡ƒöÇ Building deterministic name roster...");
 
   for (let i = teachersToSeed.length + 1; i <= totalTarget; i++) {
-    let sex: Sex = "MALE";
-    let firstName = "";
-    let lastName = "";
-    let middleName = "";
-    let fullNameKey = "";
-    let emailKey = "";
+    const localIdx = i - (ATLAS_FACULTY.length + 1); // 0-based offset past ATLAS block
+    const sex: Sex = localIdx % 2 === 0 ? "FEMALE" : "MALE";
+    const firstNames =
+      sex === "MALE" ? PH_FIRST_NAMES_MALE : PH_FIRST_NAMES_FEMALE;
+    const firstName = firstNames[Math.floor(localIdx / 2) % firstNames.length];
+    const lastName = PH_LAST_NAMES[localIdx % PH_LAST_NAMES.length];
+    const middleName = PH_MIDDLE_NAMES[(localIdx * 7) % PH_MIDDLE_NAMES.length];
 
-    // Keep generating until we find a name pair that produces a unique, number-less email local part
-    // AND a unique full name combination.
-    let attempts = 0;
-    do {
-      sex = Math.random() > 0.5 ? ("MALE" as Sex) : ("FEMALE" as Sex);
-      const firstNames =
-        sex === "MALE" ? PH_FIRST_NAMES_MALE : PH_FIRST_NAMES_FEMALE;
-
-      firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-      lastName =
-        PH_LAST_NAMES[Math.floor(Math.random() * PH_LAST_NAMES.length)];
-      middleName =
-        PH_MIDDLE_NAMES[Math.floor(Math.random() * PH_MIDDLE_NAMES.length)];
-
-      fullNameKey = `${firstName}|${lastName}|${middleName}`.toUpperCase();
-      emailKey = `${firstName.toLowerCase().replace(/\s/g, "")}.${lastName.toLowerCase().replace(/\s/g, "")}`;
-
-      attempts++;
-      if (attempts > 5000) {
-        throw new Error(
-          "Exhausted name combinations while maintaining strict email and full name uniqueness.",
-        );
-      }
-    } while (usedEmailKeys.has(emailKey) || usedNames.has(fullNameKey));
-
-    usedNames.add(fullNameKey);
-    usedEmailKeys.add(emailKey);
-
-    const deptPick = getRandomFromWeighted(DEPARTMENTS_WEIGHTED);
-    const deptInfo =
-      DEPARTMENT_DATA[deptPick.code as keyof typeof DEPARTMENT_DATA];
+    const deptCode = DEPT_SEQUENCE[localIdx % DEPT_SEQUENCE.length];
+    const deptInfo = DEPARTMENT_DATA[deptCode as keyof typeof DEPARTMENT_DATA];
     const specialization =
-      deptInfo.specializations[
-        Math.floor(Math.random() * deptInfo.specializations.length)
-      ];
-    const employeeId = generateRandomEmployeeId(usedEmployeeIds);
+      deptInfo.specializations[localIdx % deptInfo.specializations.length];
+    const employeeId = (2000020 + localIdx + 1).toString();
+    const contactNumber = `0917-${String(200 + localIdx).padStart(3, "0")}-${String(1000 + localIdx).padStart(4, "0")}`;
 
     teachersToSeed.push({
       employeeId,
       firstName,
       lastName,
       middleName,
-      deptCode: deptPick.code,
+      deptCode,
       subject: deptInfo.subject,
-      sex: sex,
-      contactNumber: generateRandomContactNumber(),
-      specialization: specialization,
+      sex,
+      contactNumber,
+      specialization,
     });
   }
 
@@ -657,7 +602,7 @@ async function main() {
       departments.find((d) => d.code === faculty.deptCode) || departments[0];
     const isClassAdviser = i < sections.length;
     const designationStr = isClassAdviser ? "CLASS ADVISER" : "SUBJECT TEACHER";
-    const position = getRandomFromWeighted(PLANTILLA_POSITIONS).title;
+    const position = PLANTILLA_SEQUENCE[i % PLANTILLA_SEQUENCE.length];
 
     // STEP 1: CREATE TEACHER PROFILE
     const teacher = await prisma.teacher.upsert({
@@ -716,13 +661,13 @@ async function main() {
         isActive: true,
         designation: designationStr,
       },
-      select: { id: true }
+      select: { id: true },
     });
 
     // CRITICAL: Link the teacher profile to the user account
     await prisma.teacher.update({
       where: { id: teacher.id },
-      data: { userId: user.id }
+      data: { userId: user.id },
     });
 
     // STEP 3: SEED QUALIFIED SUBJECTS

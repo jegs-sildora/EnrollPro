@@ -21,6 +21,7 @@ import {
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
+import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 import { Button } from "@/shared/ui/button";
 import { SectionFormSheet } from "../components/SectionFormSheet";
 import type { SectionFormState, SectionItem, TeacherOption } from "../types";
@@ -272,6 +273,7 @@ export default function Sections() {
   const { activeSchoolYearId, viewingSchoolYearId, activeSchoolYearLabel } =
     useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
+  const { ayLabel } = useSchoolYearContext();
   const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
   const canMutate = !isHistoricalReadOnly || hasOverride;
 
@@ -1374,7 +1376,7 @@ export default function Sections() {
                       </span>
                       <span className="w-1.5 h-1.5 rounded-full bg-muted" />
                       <span className="text-foreground">
-                        S.Y. {activeSchoolYearLabel || "2026-2027"}
+                        S.Y. {ayLabel || "2026-2027"}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-xs font-bold text-foreground uppercase ">

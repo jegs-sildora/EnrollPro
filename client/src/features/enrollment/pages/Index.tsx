@@ -25,6 +25,7 @@ import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
+import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useScpConfigs } from "@/features/admission/hooks/useScpConfigs";
 import {
@@ -354,6 +355,7 @@ export default function Enrollment() {
     systemStatus,
   } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
+  const { ayLabel } = useSchoolYearContext();
   const isBosyLocked = systemStatus === "BOSY_LOCKED";
   const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
   const canMutate = !isHistoricalReadOnly || hasOverride;
@@ -632,7 +634,7 @@ export default function Enrollment() {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `LIS-Master-${activeSchoolYearLabel}.xlsx`);
+      link.setAttribute("download", `LIS-Master-${ayLabel}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -1916,7 +1918,7 @@ export default function Enrollment() {
             </div>
             <div>
               <p className="text-sm font-black uppercase  leading-none">
-                BOSY Locked ({activeSchoolYearLabel})
+                BOSY Locked ({ayLabel})
               </p>
               <p className="text-xs font-bold text-emerald-100 mt-1">
                 System is currently processing Late Enrollees only via Inline
@@ -3096,7 +3098,7 @@ export default function Enrollment() {
                   </h4>
                   <p className="text-xs font-semibold text-emerald-700 mt-0.5">
                     Official BOSY/EOSY data extract for all sections in{" "}
-                    {activeSchoolYearLabel}.
+                    {ayLabel}.
                   </p>
                 </div>
                 <Button
