@@ -31,6 +31,7 @@
     "db:seed-tle-test-learners": "tsx prisma/2025-2026/learners/seed-tle-test-learners.ts",
     "db:wipe-tle-test-learners": "tsx prisma/2025-2026/learners/wipe-tle-test-learners.ts",
     "db:seed-2026-2027": "tsx prisma/2026-2027/core/seed-2026-2027.ts",
+    "db:seed-transition-2026": "tsx prisma/2026-2027/learners/seed-transition-2026.ts",
     "db:wipe-2026-2027": "tsx prisma/2026-2027/core/wipe-2026-2027.ts",
     "db:wipe": "tsx prisma/global/core/wipe.ts",
     "db:wipe-all": "tsx prisma/global/core/wipe-everything.ts"

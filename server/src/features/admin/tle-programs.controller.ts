@@ -135,9 +135,9 @@ export async function deactivateTLEProgram(
         in: [
           "ENROLLED",
           "TEMPORARILY_ENROLLED",
-          "PENDING",
-          "FOR_ASSESSMENT",
-          "FOR_INTERVIEW",
+          "PENDING_CONFIRMATION",
+          "READY_FOR_SECTIONING",
+          "OFFICIALLY_ENROLLED",
         ],
       },
     },

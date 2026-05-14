@@ -47,7 +47,14 @@ async function main() {
     },
   });
 
-  console.log(`Γ£à School Year 2026-2027 is ${targetYear.status}.`);
+  console.log(`✅ School Year 2026-2027 is ${targetYear.status}.`);
+
+  // 2.5 Cleanup existing 2026-2027 Infrastructure/Data (PRESERVING SECTIONS)
+  console.log("🧹 Cleaning up 2026-2027 data (preserving sections)...");
+  await prisma.enrollmentRecord.deleteMany({ where: { schoolYearId: targetYear.id } });
+  await prisma.enrollmentApplication.deleteMany({ where: { schoolYearId: targetYear.id } });
+  await prisma.sectionAdviser.deleteMany({ where: { schoolYearId: targetYear.id } });
+  await prisma.teacherDesignation.deleteMany({ where: { schoolYearId: targetYear.id } });
 
   // 3. Clone SCP Program Configurations FIRST (so sections can link to them)
   const prevScpConfigs = await prisma.scpProgramConfig.findMany({
@@ -214,7 +221,7 @@ async function main() {
         programType: s.programType,
         maxCapacity: s.maxCapacity,
         sortOrder: s.sortOrder,
-        tleSpecialization: s.tleSpecialization,
+        tleProgramId: s.tleProgramId,
         scpProgramConfigId: targetScpConfigId,
       },
       create: {
@@ -224,7 +231,7 @@ async function main() {
         programType: s.programType,
         maxCapacity: s.maxCapacity,
         sortOrder: s.sortOrder,
-        tleSpecialization: s.tleSpecialization,
+        tleProgramId: s.tleProgramId,
         scpProgramConfigId: targetScpConfigId,
       },
     });

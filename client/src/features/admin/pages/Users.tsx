@@ -23,8 +23,6 @@ import {
   MoreVertical,
   History,
   Mail,
-  Mars,
-  Venus,
   Users as UsersIcon,
   GraduationCap,
   Command,
@@ -64,14 +62,6 @@ import {
 } from "@/shared/ui/select";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { Checkbox } from "@/shared/ui/checkbox";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/shared/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { Avatar, AvatarFallback } from "@/shared/ui/avatar";
 import { motion, AnimatePresence } from "motion/react";
@@ -261,18 +251,15 @@ export default function AdminUsers() {
     setRowSelection({});
   };
 
-  const handleCreateFieldChange = useCallback(
-    (field: string, value: any) => {
-      setFormData((prev) => {
-        const next = { ...prev, [field]: value };
-        if (field === "firstName" || field === "lastName") {
-          next.email = computeEmail(next.firstName, next.lastName);
-        }
-        return next;
-      });
-    },
-    [],
-  );
+  const handleCreateFieldChange = useCallback((field: string, value: any) => {
+    setFormData((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === "firstName" || field === "lastName") {
+        next.email = computeEmail(next.firstName, next.lastName);
+      }
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     setPage(1);
@@ -371,7 +358,7 @@ export default function AdminUsers() {
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [createErrors, setCreateErrors] = useState<Record<string, string>>({});
+  const [_createErrors, setCreateErrors] = useState<Record<string, string>>({});
   const [profileFormData, setProfileFormData] = useState({
     firstName: "",
     lastName: "",
@@ -621,16 +608,14 @@ export default function AdminUsers() {
       mobileNumber: user.mobileNumber || "",
       email: user.email,
       role: user.role,
+      department: "",
     });
     setProfileOpen(true);
   }, []);
 
-  const handleProfileFieldChange = useCallback(
-    (field: keyof typeof profileFormData, value: any) => {
-      setProfileFormData((prev) => ({ ...prev, [field]: value }));
-    },
-    [],
-  );
+  const handleProfileFieldChange = useCallback((field: string, value: any) => {
+    setProfileFormData((prev) => ({ ...prev, [field]: value }));
+  }, []);
 
   const handleProfileSave = async () => {
     if (!profileUser) return;

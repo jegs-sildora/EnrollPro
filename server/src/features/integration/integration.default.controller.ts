@@ -195,7 +195,7 @@ export async function listIntegrationStaff(
   const skip = (page - 1) * limit;
 
   const where = {
-    role: { in: [...STAFF_ROLES] as string[] },
+    role: { in: [...STAFF_ROLES] },
     ...(includeInactive ? {} : { isActive: true }),
   };
 
