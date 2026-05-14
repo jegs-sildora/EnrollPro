@@ -16,6 +16,7 @@ import {
 import api from "@/shared/api/axiosInstance";
 import { useAuthStore } from "@/store/auth.slice";
 import { useSettingsStore } from "@/store/settings.slice";
+import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 import { cn } from "@/shared/lib/utils";
 import {
   Card,
@@ -95,11 +96,11 @@ export default function Dashboard() {
   const {
     enrollmentPhase,
     systemStatus,
-    activeSchoolYearLabel,
     activeSchoolYearId,
     viewingSchoolYearId,
   } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
+  const { ayLabel } = useSchoolYearContext();
   const isAdmin = user?.role === "SYSTEM_ADMIN";
   const isBosyLocked = systemStatus === "BOSY_LOCKED";
 
@@ -272,7 +273,7 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-sm font-black uppercase  leading-none">
-                BOSY Locked ({activeSchoolYearLabel})
+                BOSY Locked ({ayLabel})
               </p>
               <p className="text-xs font-bold text-emerald-100 mt-1">
                 System is currently processing Late Enrollees only via Inline
@@ -319,15 +320,19 @@ export default function Dashboard() {
                     onClick={() => setFocusOverride(mode)}
                     className={cn(
                       "relative h-7 px-3 text-xs font-black uppercase transition-all z-10",
-                      selected 
-                        ? "text-primary-foreground hover:text-primary-foreground hover:bg-transparent" 
-                        : "text-foreground hover:text-foreground"
+                      selected
+                        ? "text-primary-foreground hover:text-primary-foreground hover:bg-transparent"
+                        : "text-foreground hover:text-foreground",
                     )}>
                     {selected && (
                       <motion.div
                         layoutId="dashboard-seasonal-focus-pill"
                         className="absolute inset-0 bg-primary rounded-md"
-                        transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                        transition={{
+                          type: "spring",
+                          bounce: 0.15,
+                          duration: 0.5,
+                        }}
                       />
                     )}
                     <span className="relative z-20">{mode}</span>
@@ -345,7 +350,7 @@ export default function Dashboard() {
         aria-label="Enrollment progress">
         <div className="flex items-center gap-2">
           <h2 className="text-xs font-black uppercase  text-emerald-600">
-            Enrollment Progress ({activeSchoolYearLabel})
+            Enrollment Progress ({ayLabel})
           </h2>
           <div className="h-px flex-1 bg-emerald-100/50"></div>
         </div>
@@ -461,20 +466,27 @@ export default function Dashboard() {
                               {gl.name}
                             </span>
                             <span className="text-xs font-black text-emerald-700 tabular-nums">
-                              {gl.progressPercent.toFixed(0)}% ({formatMetric(gl.current)} / {formatMetric(gl.target)})
+                              {gl.progressPercent.toFixed(0)}% (
+                              {formatMetric(gl.current)} /{" "}
+                              {formatMetric(gl.target)})
                             </span>
                           </div>
                           <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden shadow-inner border border-slate-200/50">
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${gl.progressPercent}%` }}
-                              transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
+                              transition={{
+                                duration: 1,
+                                ease: "easeOut",
+                                delay: 0.2,
+                              }}
                               className="h-full rounded-full bg-emerald-500"
                             />
                           </div>
                         </div>
                       ))}
-                      {(!stats?.gradeLevelBreakdown || stats.gradeLevelBreakdown.length === 0) && (
+                      {(!stats?.gradeLevelBreakdown ||
+                        stats.gradeLevelBreakdown.length === 0) && (
                         <div className="col-span-full py-8 text-center">
                           <p className="text-xs font-bold text-slate-400 uppercase ">
                             No Grade Level Data Available
@@ -505,14 +517,22 @@ export default function Dashboard() {
                       </CardDescription>
                     </div>
                     <div className="flex gap-4">
-                       <div className="text-right">
-                          <p className="text-xs font-bold text-slate-400 uppercase">Enrolled</p>
-                          <p className="text-lg font-black text-emerald-600">{formatMetric(enrollmentCurrent)}</p>
-                       </div>
-                       <div className="text-right">
-                          <p className="text-xs font-bold text-slate-400 uppercase">Utilization</p>
-                          <p className="text-lg font-black text-emerald-600">{enrollmentProgress.toFixed(0)}%</p>
-                       </div>
+                      <div className="text-right">
+                        <p className="text-xs font-bold text-slate-400 uppercase">
+                          Enrolled
+                        </p>
+                        <p className="text-lg font-black text-emerald-600">
+                          {formatMetric(enrollmentCurrent)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-bold text-slate-400 uppercase">
+                          Utilization
+                        </p>
+                        <p className="text-lg font-black text-emerald-600">
+                          {enrollmentProgress.toFixed(0)}%
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </CardHeader>
@@ -523,7 +543,9 @@ export default function Dashboard() {
       </section>
 
       {/* ── Action Queues ── */}
-      <section className="space-y-4" aria-label="Action queues">
+      <section
+        className="space-y-4"
+        aria-label="Action queues">
         <div className="flex items-center gap-2">
           <h2 className="text-xs font-black uppercase  text-slate-500/80">
             Action Queues
@@ -535,7 +557,9 @@ export default function Dashboard() {
           <Card
             className={cn(
               "shadow-sm transition-all hover:shadow-md border-2",
-              pendingReviewAlert ? "border-amber-400 bg-amber-50/30" : "border-slate-200 bg-white"
+              pendingReviewAlert
+                ? "border-amber-400 bg-amber-50/30"
+                : "border-slate-200 bg-white",
             )}>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
@@ -547,12 +571,12 @@ export default function Dashboard() {
                 <div
                   className={cn(
                     "rounded-lg p-2",
-                    pendingReviewAlert ? "bg-amber-100" : "bg-slate-100"
+                    pendingReviewAlert ? "bg-amber-100" : "bg-slate-100",
                   )}>
                   <ClipboardList
                     className={cn(
                       "h-4 w-4",
-                      pendingReviewAlert ? "text-amber-700" : "text-slate-600"
+                      pendingReviewAlert ? "text-amber-700" : "text-slate-600",
                     )}
                   />
                 </div>
@@ -599,7 +623,9 @@ export default function Dashboard() {
           <Card
             className={cn(
               "shadow-sm transition-all hover:shadow-md border-2",
-              sectionsCapacityAlert ? "border-red-400 bg-red-50/30" : "border-slate-200 bg-white"
+              sectionsCapacityAlert
+                ? "border-red-400 bg-red-50/30"
+                : "border-slate-200 bg-white",
             )}>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
@@ -609,12 +635,12 @@ export default function Dashboard() {
                 <div
                   className={cn(
                     "rounded-lg p-2",
-                    sectionsCapacityAlert ? "bg-red-100" : "bg-slate-100"
+                    sectionsCapacityAlert ? "bg-red-100" : "bg-slate-100",
                   )}>
                   <AlertTriangle
                     className={cn(
                       "h-4 w-4",
-                      sectionsCapacityAlert ? "text-red-700" : "text-slate-600"
+                      sectionsCapacityAlert ? "text-red-700" : "text-slate-600",
                     )}
                   />
                 </div>
@@ -657,7 +683,8 @@ export default function Dashboard() {
                       ))
                     ) : (
                       <p>
-                        Distribution is stable. No grade level has currently exceeded the standard 45-learner section threshold.
+                        Distribution is stable. No grade level has currently
+                        exceeded the standard 45-learner section threshold.
                       </p>
                     )}
                   </div>
@@ -738,18 +765,31 @@ export default function Dashboard() {
                         Phase 1: Early Registration Summary
                       </CardTitle>
                       <CardDescription className="text-xs font-bold er">
-                        Minimized: Dashboard is currently adapting to the Phase 2 (BOSY) operational window.
+                        Minimized: Dashboard is currently adapting to the Phase
+                        2 (BOSY) operational window.
                       </CardDescription>
                     </div>
                     <div className="flex gap-4">
-                       <div className="text-right">
-                          <p className="text-xs font-bold text-slate-400 uppercase">Verified</p>
-                          <p className="text-lg font-black text-amber-600">{formatMetric(stats?.earlyRegistration?.verified ?? 0)}</p>
-                       </div>
-                       <div className="text-right">
-                          <p className="text-xs font-bold text-slate-400 uppercase">Ready</p>
-                          <p className="text-lg font-black text-amber-600">{formatMetric(stats?.earlyRegistration?.readyForEnrollment ?? 0)}</p>
-                       </div>
+                      <div className="text-right">
+                        <p className="text-xs font-bold text-slate-400 uppercase">
+                          Verified
+                        </p>
+                        <p className="text-lg font-black text-amber-600">
+                          {formatMetric(
+                            stats?.earlyRegistration?.verified ?? 0,
+                          )}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-bold text-slate-400 uppercase">
+                          Ready
+                        </p>
+                        <p className="text-lg font-black text-amber-600">
+                          {formatMetric(
+                            stats?.earlyRegistration?.readyForEnrollment ?? 0,
+                          )}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </CardHeader>
@@ -761,17 +801,21 @@ export default function Dashboard() {
 
       {/* ── System Oversight (Bottom Priority for Admin) ── */}
       {isAdmin && (
-        <section className="space-y-4 pt-8" aria-label="System oversight">
+        <section
+          className="space-y-4 pt-8"
+          aria-label="System oversight">
           <div className="flex items-center gap-2">
             <h2 className="text-xs font-black uppercase  text-slate-400">
               System Oversight
             </h2>
             <div className="h-px flex-1 bg-slate-100"></div>
           </div>
-          
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
             {adminCards.map((card) => (
-              <Card key={card.title} className="bg-slate-50/50 border-slate-200 shadow-none hover:bg-white transition-colors">
+              <Card
+                key={card.title}
+                className="bg-slate-50/50 border-slate-200 shadow-none hover:bg-white transition-colors">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                   <CardTitle className="text-xs font-black  text-slate-500">
                     {card.title}
@@ -788,13 +832,15 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             ))}
-            
+
             <Card className="md:col-span-2 bg-slate-50/50 border-slate-200 shadow-none border-dashed">
               <CardContent className="h-full flex items-center justify-center py-4">
-                 <div className="flex items-center gap-3 text-slate-400">
-                    <Activity className="h-4 w-4 opacity-50" />
-                    <span className="text-xs font-black ">Administrator Telemetry Active</span>
-                 </div>
+                <div className="flex items-center gap-3 text-slate-400">
+                  <Activity className="h-4 w-4 opacity-50" />
+                  <span className="text-xs font-black ">
+                    Administrator Telemetry Active
+                  </span>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -812,4 +858,3 @@ export default function Dashboard() {
     </div>
   );
 }
-

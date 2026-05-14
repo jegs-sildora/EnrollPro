@@ -50,6 +50,8 @@ export interface SettingsState {
   viewingSchoolYearId: number | null;
   /** Status of the currently-viewed SY (e.g. 'ARCHIVED', 'ACTIVE') */
   viewingSchoolYearStatus: string | null;
+  /** Label of the currently-viewed SY (e.g. '2024-2025') */
+  viewingSchoolYearLabel: string | null;
   /** Short-lived JWT allowing SYSTEM_ADMIN historical corrections — NOT persisted */
   historicalCorrectionToken: string | null;
   accentForeground: string | null;
@@ -58,7 +60,11 @@ export interface SettingsState {
   isHydrated: boolean;
   initialized: boolean;
   setSettings: (settings: Partial<SettingsState>) => void;
-  setViewingSY: (id: number | null, status?: string | null) => void;
+  setViewingSY: (
+    id: number | null,
+    status?: string | null,
+    label?: string | null,
+  ) => void;
   setHistoricalCorrectionToken: (token: string | null) => void;
   setFontSize: (size: number) => void;
   setHydrated: () => void;
@@ -87,6 +93,7 @@ export const useSettingsStore = create<SettingsState>()(
       bosyLockedAt: null,
       viewingSchoolYearId: null,
       viewingSchoolYearStatus: null,
+      viewingSchoolYearLabel: null,
       historicalCorrectionToken: null,
       accentForeground: null,
       accentMutedForeground: null,
@@ -95,10 +102,11 @@ export const useSettingsStore = create<SettingsState>()(
       initialized: false,
       setSettings: (settings) =>
         set((state) => ({ ...state, ...settings, initialized: true })),
-      setViewingSY: (id, status) =>
+      setViewingSY: (id, status, label) =>
         set({
           viewingSchoolYearId: id,
           viewingSchoolYearStatus: status ?? null,
+          viewingSchoolYearLabel: label ?? null,
         }),
       setHistoricalCorrectionToken: (token) =>
         set({ historicalCorrectionToken: token }),

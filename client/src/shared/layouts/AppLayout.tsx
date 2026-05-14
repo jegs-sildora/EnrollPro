@@ -274,6 +274,7 @@ function SYSwitcher() {
                     setViewingSY(
                       y.id === activeSchoolYearId ? null : y.id,
                       y.id === activeSchoolYearId ? null : y.status,
+                      y.id === activeSchoolYearId ? null : y.yearLabel,
                     );
                     setOpen(false);
                     // Trigger a full reload to ensure all components re-fetch data
@@ -569,7 +570,11 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
     location.pathname.startsWith("/admin/users") ||
     location.pathname.startsWith("/admin/system") ||
     location.pathname.startsWith("/admin/tle-programs") ||
-    location.pathname.startsWith("/settings");
+    location.pathname.startsWith("/settings") ||
+    // BOSY rollover always targets the active year — intentional bypass
+    location.pathname === "/bosy" ||
+    // Walk-in encoder is a direct mutation flow — intentional bypass
+    location.pathname === "/monitoring/enrollment/walk-in";
   const shouldShowNoSchoolYearState =
     !isSchoolYearBypassRoute && !selectedSchoolYearId;
 

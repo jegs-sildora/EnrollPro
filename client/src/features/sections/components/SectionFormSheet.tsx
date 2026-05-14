@@ -232,6 +232,32 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                 </p>
               </div>
 
+              <div className="space-y-2">
+                <Label className="font-bold text-xs uppercase">
+                  Section Rank / Number
+                </Label>
+                <Input
+                  type="number"
+                  min={1}
+                  placeholder="e.g., 1, 2, 3"
+                  value={formData.sectionRank ?? ""}
+                  onChange={(event) =>
+                    onFieldChange(
+                      "sectionRank",
+                      event.target.value
+                        ? parseInt(event.target.value, 10)
+                        : null,
+                    )
+                  }
+                  className="font-black text-base [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none placeholder:text-foreground/30"
+                />
+                <p className="text-[10px] text-muted-foreground font-bold italic">
+                  * Ordinal rank of this section within the grade level (e.g., 1
+                  for the first section, 2 for the second). Leave blank for STE
+                  / SCP sections.
+                </p>
+              </div>
+
               {requiresTle && (
                 <div className="space-y-2">
                   <Label className="font-bold text-xs uppercase">

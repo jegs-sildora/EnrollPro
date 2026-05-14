@@ -271,6 +271,7 @@ export async function listSections(req: Request, res: Response): Promise<void> {
           programType: s.programType,
           isHomogeneous: s.isHomogeneous,
           tleProgramId: s.tleProgramId ?? null,
+          sectionRank: s.sectionRank ?? null,
           enrolledCount: s._count.enrollmentRecords,
           advisingTeacher: activeAdviser
             ? {
@@ -322,6 +323,7 @@ export async function listSections(req: Request, res: Response): Promise<void> {
           programType: s.programType,
           isHomogeneous: s.isHomogeneous,
           tleProgramId: s.tleProgramId ?? null,
+          sectionRank: s.sectionRank ?? null,
           enrolledCount: s._count.enrollmentRecords,
           advisingTeacher: activeAdviser
             ? {
@@ -399,6 +401,7 @@ export async function createSection(
       isHomogeneous,
       isSnake,
       tleProgramId,
+      sectionRank,
     } = req.body;
 
     const normalizedName = typeof name === "string" ? name.trim() : "";
@@ -440,6 +443,7 @@ export async function createSection(
           isHomogeneous: Boolean(isHomogeneous),
           isSnake: Boolean(isSnake),
           tleProgramId: tleProgramId ? Number(tleProgramId) : null,
+          sectionRank: sectionRank != null ? Number(sectionRank) : null,
         },
       });
 
@@ -525,6 +529,7 @@ export async function updateSection(
       isHomogeneous,
       isSnake,
       tleProgramId,
+      sectionRank,
     } = req.body;
 
     const existing = await prisma.section.findUnique({
@@ -559,6 +564,9 @@ export async function updateSection(
           ...(isSnake !== undefined ? { isSnake: Boolean(isSnake) } : {}),
           ...(tleProgramId !== undefined
             ? { tleProgramId: tleProgramId ? Number(tleProgramId) : null }
+            : {}),
+          ...(sectionRank !== undefined
+            ? { sectionRank: sectionRank != null ? Number(sectionRank) : null }
             : {}),
         },
       });

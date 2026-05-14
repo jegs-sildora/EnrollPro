@@ -296,6 +296,7 @@ export default function Sections() {
     adviserId: "none",
     maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
     tleProgramId: null,
+    sectionRank: null,
   });
   const [submittingForm, setSubmittingForm] = useState(false);
   const [programOptions, setProgramOptions] = useState<
@@ -634,6 +635,7 @@ export default function Sections() {
         adviserId: "none",
         maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
         tleProgramId: null,
+        sectionRank: null,
       });
       setAvailableTeachers(
         teachers.map((t) => ({
@@ -661,6 +663,7 @@ export default function Sections() {
           : "none",
         maxCapacity: section.maxCapacity,
         tleProgramId: section.tleProgramId ?? null,
+        sectionRank: section.sectionRank ?? null,
       });
 
       // Fetch filtered teachers for editing
@@ -720,6 +723,7 @@ export default function Sections() {
             : parseInt(sectionFormData.adviserId),
         maxCapacity: sectionFormData.maxCapacity,
         tleProgramId: sectionFormData.tleProgramId ?? null,
+        sectionRank: sectionFormData.sectionRank ?? null,
       };
 
       if (formSheetMode === "create") {

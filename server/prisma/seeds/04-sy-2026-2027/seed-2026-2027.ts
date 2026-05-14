@@ -51,18 +51,10 @@ async function main() {
 
   // 2.5 Cleanup existing 2026-2027 Infrastructure/Data (PRESERVING SECTIONS)
   console.log("🧹 Cleaning up 2026-2027 data (preserving sections)...");
-  await prisma.enrollmentRecord.deleteMany({
-    where: { schoolYearId: targetYear.id },
-  });
-  await prisma.enrollmentApplication.deleteMany({
-    where: { schoolYearId: targetYear.id },
-  });
-  await prisma.sectionAdviser.deleteMany({
-    where: { schoolYearId: targetYear.id },
-  });
-  await prisma.teacherDesignation.deleteMany({
-    where: { schoolYearId: targetYear.id },
-  });
+  await prisma.enrollmentRecord.deleteMany({ where: { schoolYearId: targetYear.id } });
+  await prisma.enrollmentApplication.deleteMany({ where: { schoolYearId: targetYear.id } });
+  await prisma.sectionAdviser.deleteMany({ where: { schoolYearId: targetYear.id } });
+  await prisma.teacherDesignation.deleteMany({ where: { schoolYearId: targetYear.id } });
 
   // 3. Clone SCP Program Configurations FIRST (so sections can link to them)
   const prevScpConfigs = await prisma.scpProgramConfig.findMany({
@@ -165,13 +157,12 @@ async function main() {
 
         // Criteria
         for (const c of cat.criteria) {
-          const existingCriterion =
-            await prisma.scpInterviewRubricCriterion.findFirst({
-              where: {
-                rubricCategoryId: newCat.id,
-                name: c.name,
-              },
-            });
+          const existingCriterion = await prisma.scpInterviewRubricCriterion.findFirst({
+            where: {
+              rubricCategoryId: newCat.id,
+              name: c.name,
+            },
+          });
 
           if (!existingCriterion) {
             await prisma.scpInterviewRubricCriterion.create({
@@ -216,9 +207,7 @@ async function main() {
   console.log(`≡ƒôª Cloning ${prevSections.length} sections to 2026-2027...`);
 
   for (const s of prevSections) {
-    const targetScpConfigId = s.scpProgramConfigId
-      ? scpConfigMapping.get(s.scpProgramConfigId)
-      : null;
+    const targetScpConfigId = s.scpProgramConfigId ? scpConfigMapping.get(s.scpProgramConfigId) : null;
 
     await prisma.section.upsert({
       where: {

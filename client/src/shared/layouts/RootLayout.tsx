@@ -4,7 +4,7 @@ import { useSettingsStore, type PaletteColor } from "@/store/settings.slice";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import { Loader2 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
-import { ChangePasswordModal } from "@/features/auth/components/ChangePasswordModal";
+import ChangePasswordModal from "@/features/auth/components/ChangePasswordModal";
 
 const DEFAULT_ACCENT_HSL = "221 83% 53%";
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";

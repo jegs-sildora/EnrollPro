@@ -160,6 +160,8 @@ model Section {
   /// The specific TLE major for G9/G10. Null for G7/G8.
   tleProgramId        Int?                 @map("tle_program_id")
   scpProgramConfigId  Int?                 @map("scp_program_config_id")
+  /// Numeric rank of the section within its grade level (e.g., 1 for the first section). Null for SCP/STE sections.
+  sectionRank         Int?                 @map("section_rank")
   enrollmentRecords   EnrollmentRecord[]
   advisers            SectionAdviser[]
   gradeLevel          GradeLevel           @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
@@ -205,6 +207,8 @@ model TLEProgram {
   category     TLECategory
   isActive     Boolean     @default(true) @map("is_active")
   displayOrder Int         @default(0) @map("display_order")
+  description  String?     @map("description")
+  maxSlots     Int?        @map("max_slots")
   createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -791,6 +795,7 @@ enum ApplicationStatus {
   TRANSFERRING_OUT
   TRANSFERRED_OUT
   DROPPED
+  FLAGGED_FOR_REGISTRAR
 
   @@map("application_status")
 }
