@@ -220,3 +220,20 @@ Implementation approach:
 Verification:
   grep -r "Math.random" server/prisma/seeds/
   # Should return 0 matches. Any match is a determinism regression.
+
+
+db:seed-promoted-from-2025-2026
+db:wipe-promoted-from-2025-2026
+db:seed-incoming-g7-ready-for-sectioning
+db:wipe-incoming-g7-ready-for-sectioning
+
+wipe
+seed-section
+seed-teachers
+seed-existing-learners
+seed-eosy-grades
+
+
+wipe-2026-2027
+seed-2026-2027
+seed-promoted-

@@ -12,6 +12,7 @@ import dashboardRoutes from "./features/dashboard/dashboard.router.js";
 import schoolYearRoutes from "./features/school-year/school-year.router.js";
 import curriculumRoutes from "./features/curriculum/curriculum.router.js";
 import sectionsRoutes from "./features/sections/sections.router.js";
+import sectioningRoutes from "./features/sections/sectioning.router.js";
 import studentsRoutes from "./features/students/students.router.js";
 import applicationRoutes from "./features/admission/admission.router.js";
 import adminRoutes from "./features/admin/admin.router.js";
@@ -155,6 +156,7 @@ apiRouter.use("/school-years", schoolYearRoutes);
 apiRouter.use("/school-year", schoolYearRoutes);
 apiRouter.use("/curriculum", curriculumRoutes);
 apiRouter.use("/sections", sectionsRoutes);
+apiRouter.use("/sectioning", sectioningRoutes);
 apiRouter.use("/students", studentsRoutes);
 apiRouter.use("/applications", applicationRoutes);
 apiRouter.use("/admin", adminRoutes);
@@ -188,3 +190,4 @@ app.use("/uploads", cors({ origin: "*" }), express.static(uploadsDir));
 app.use(errorHandler);
 
 export default app;
+ 

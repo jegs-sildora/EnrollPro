@@ -205,6 +205,7 @@ export function formatUserRole(role: string | null | undefined): string {
   if (!role) return "N/A";
   if (role === "HEAD_REGISTRAR") return "Head Registrar";
   if (role === "CLASS_ADVISER") return "Class Adviser";
+  if (role === "MRF") return "MRF Staff";
   return role.replaceAll("_", " ");
 }
 
@@ -225,6 +226,8 @@ export function getRoleColorClasses(role: string | null | undefined): string {
       return "bg-emerald-600 text-white border-emerald-700";
     case "TEACHER":
       return "bg-blue-600 text-white border-blue-700";
+    case "MRF":
+      return "bg-teal-600 text-white border-teal-700";
     case "LEARNER":
       return "bg-amber-500 text-slate-900 border-amber-600";
     default:

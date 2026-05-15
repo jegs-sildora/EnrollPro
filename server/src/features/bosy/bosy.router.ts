@@ -11,7 +11,7 @@ import {
   getTLEProgramsHandler,
 } from "./bosy.controller.js";
 
-const router = Router();
+const router: Router = Router();
 
 router.get(
   "/readiness",
@@ -57,8 +57,6 @@ router.get(
 
 router.get(
   "/tle-programs",
-  authenticate,
-  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "REGISTRAR"),
   getTLEProgramsHandler,
 );
 

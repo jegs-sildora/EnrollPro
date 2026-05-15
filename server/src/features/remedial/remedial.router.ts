@@ -3,7 +3,7 @@ import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
 import { getRemedialPending, resolveRemedial } from "./remedial.controller.js";
 
-const router = Router();
+const router: Router = Router();
 
 router.get(
   "/pending",

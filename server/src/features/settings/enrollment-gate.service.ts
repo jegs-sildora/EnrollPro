@@ -32,17 +32,17 @@ export function isEnrollmentOpen(year: SchoolYear): boolean {
 
   const todayToken = toManilaDateToken(new Date());
 
-  const inPhase1 =
-    year.earlyRegOpenDate &&
-    year.earlyRegCloseDate &&
-    todayToken >= toManilaDateToken(year.earlyRegOpenDate) &&
-    todayToken <= toManilaDateToken(year.earlyRegCloseDate);
-
   const inPhase2 =
     year.enrollOpenDate &&
     year.enrollCloseDate &&
     todayToken >= toManilaDateToken(year.enrollOpenDate) &&
     todayToken <= toManilaDateToken(year.enrollCloseDate);
+
+  const inPhase1 =
+    year.earlyRegOpenDate &&
+    year.earlyRegCloseDate &&
+    todayToken >= toManilaDateToken(year.earlyRegOpenDate) &&
+    todayToken <= toManilaDateToken(year.earlyRegCloseDate);
 
   return Boolean(inPhase1 || inPhase2);
 }
@@ -63,21 +63,21 @@ export function getEnrollmentPhase(
   const todayToken = toManilaDateToken(new Date());
 
   if (
-    year.earlyRegOpenDate &&
-    year.earlyRegCloseDate &&
-    todayToken >= toManilaDateToken(year.earlyRegOpenDate) &&
-    todayToken <= toManilaDateToken(year.earlyRegCloseDate)
-  ) {
-    return "EARLY_REGISTRATION";
-  }
-
-  if (
     year.enrollOpenDate &&
     year.enrollCloseDate &&
     todayToken >= toManilaDateToken(year.enrollOpenDate) &&
     todayToken <= toManilaDateToken(year.enrollCloseDate)
   ) {
     return "REGULAR_ENROLLMENT";
+  }
+
+  if (
+    year.earlyRegOpenDate &&
+    year.earlyRegCloseDate &&
+    todayToken >= toManilaDateToken(year.earlyRegOpenDate) &&
+    todayToken <= toManilaDateToken(year.earlyRegCloseDate)
+  ) {
+    return "EARLY_REGISTRATION";
   }
 
   return "CLOSED";

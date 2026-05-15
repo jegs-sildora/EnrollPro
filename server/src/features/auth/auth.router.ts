@@ -4,6 +4,7 @@ import {
   me,
   changePassword,
   logout,
+  logoutLearner,
   verifyCredentials,
   learnerLogin,
 } from "./auth.controller.js";
@@ -19,6 +20,7 @@ router.post("/login", validate(loginSchema), login);
 router.post("/learner-login", learnerLogin);
 router.post("/verify", validate(loginSchema), verifyCredentials);
 router.post("/logout", logout);
+router.post("/logout-learner", logoutLearner);
 router.get("/me", authenticate, me);
 router.patch(
   "/change-password",

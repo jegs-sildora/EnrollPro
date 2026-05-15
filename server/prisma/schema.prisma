@@ -202,19 +202,22 @@ model SectionAdviser {
 
 /// Master list of TLE specialization tracks offered by the school (Grades 9 & 10)
 model TLEProgram {
-  id           Int         @id @default(autoincrement())
-  name         String      @unique
+  id           Int          @id @default(autoincrement())
+  name         String       @unique
   category     TLECategory
-  isActive     Boolean     @default(true) @map("is_active")
-  displayOrder Int         @default(0) @map("display_order")
-  description  String?     @map("description")
-  maxSlots     Int?        @map("max_slots")
-  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+  trackType    TLETrackType @default(SPECIALIZATION) @map("track_type")
+  isActive     Boolean      @default(true) @map("is_active")
+  displayOrder Int          @default(0) @map("display_order")
+  description  String?      @map("description")
+  maxSlots     Int?         @map("max_slots")
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  enrollmentApplications EnrollmentApplication[]
-  enrollmentRecords      EnrollmentRecord[]
-  sections               Section[]
+  enrollmentApplications        EnrollmentApplication[] @relation("PrimaryTLE")
+  enrollmentApplicationsChoice2 EnrollmentApplication[] @relation("SecondaryTLE")
+  enrollmentRecords             EnrollmentRecord[]      @relation("PrimaryTLE")
+  enrollmentRecordsChoice2      EnrollmentRecord[]      @relation("SecondaryTLE")
+  sections                      Section[]
 
   @@index([category], map: "idx_tle_programs_category")
   @@map("tle_programs")
@@ -379,8 +382,10 @@ model EnrollmentApplication {
   intakeMethod               IntakeMethod                  @default(BEEF_FULL) @map("intake_method")
   isMissingSf9               Boolean                       @default(false) @map("is_missing_sf9")
   originatingSchoolName      String?                       @map("originating_school_name")
+  reportedGrades             Json?                         @map("reported_grades")
   temporaryStatusDeadline    DateTime?                     @map("temporary_status_deadline") @db.Date
   tleProgramId               Int?                          @map("tle_program_id")
+  tleProgramChoice2Id        Int?                          @map("tle_program_choice2_id")
   addresses                  ApplicationAddress[]
   checklist                  ApplicationChecklist?
   familyMembers              ApplicationFamilyMember[]
@@ -391,7 +396,8 @@ model EnrollmentApplication {
   profileLockedBy            User?                         @relation("EnrollmentProfileLockedBy", fields: [profileLockedById], references: [id])
   readingProfileAssessedBy   User?                         @relation("EnrollmentReadingProfileAssessedBy", fields: [readingProfileAssessedById], references: [id])
   schoolYear                 SchoolYear                    @relation(fields: [schoolYearId], references: [id])
-  tleProgram                 TLEProgram?                   @relation(fields: [tleProgramId], references: [id], onDelete: SetNull)
+  tleProgram                 TLEProgram?                   @relation("PrimaryTLE", fields: [tleProgramId], references: [id], onDelete: SetNull)
+  tleProgramChoice2          TLEProgram?                   @relation("SecondaryTLE", fields: [tleProgramChoice2Id], references: [id], onDelete: SetNull)
   previousSchool             EnrollmentPreviousSchool?
   programDetail              EnrollmentProgramDetail?
   enrollmentRecord           EnrollmentRecord?
@@ -527,12 +533,14 @@ model EnrollmentRecord {
   finalAverage            Float?                @map("final_average")
   learnerId               Int                   @map("learner_id")
   tleProgramId            Int?                  @map("tle_program_id")
+  tleProgramChoice2Id     Int?                  @map("tle_program_choice2_id")
   enrolledBy              User                  @relation(fields: [enrolledById], references: [id])
   enrollmentApplication   EnrollmentApplication @relation(fields: [enrollmentApplicationId], references: [id], onDelete: Cascade)
   learner                 Learner               @relation(fields: [learnerId], references: [id], onDelete: Restrict)
   schoolYear              SchoolYear            @relation(fields: [schoolYearId], references: [id])
   section                 Section               @relation(fields: [sectionId], references: [id])
-  tleProgram              TLEProgram?           @relation(fields: [tleProgramId], references: [id], onDelete: SetNull)
+  tleProgram              TLEProgram?           @relation("PrimaryTLE", fields: [tleProgramId], references: [id], onDelete: SetNull)
+  tleProgramChoice2       TLEProgram?           @relation("SecondaryTLE", fields: [tleProgramChoice2Id], references: [id], onDelete: SetNull)
 
   @@index([sectionId], map: "idx_enroll_records_section_id")
   @@index([learnerId], map: "idx_enrollment_records_learner_id")
@@ -563,6 +571,9 @@ model AuditLog {
   description String
   subjectType String?  @map("subject_type")
   recordId    Int?     @map("record_id")
+  oldValue    String?  @map("old_value")
+  newValue    String?  @map("new_value")
+  metadata    Json?
   ipAddress   String   @map("ip_address") @db.VarChar(45)
   userAgent   String?  @map("user_agent")
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -740,6 +751,7 @@ enum Role {
   CLASS_ADVISER
   TEACHER
   LEARNER
+  MRF
 
   @@map("user_role")
 }
@@ -898,10 +910,10 @@ enum AcademicStatus {
 
 enum EosyStatus {
   PROMOTED
+  CONDITIONALLY_PROMOTED
   RETAINED
-  IRREGULAR
-  TRANSFERRED_OUT
   DROPPED_OUT
+  TRANSFERRED_OUT
 
   @@map("eosy_status")
 }
@@ -971,6 +983,13 @@ enum PortalControl {
   FORCE_CLOSE_ALL
 
   @@map("portal_control")
+}
+
+enum TLETrackType {
+  EXPLORATORY
+  SPECIALIZATION
+
+  @@map("tle_track_type")
 }
 
 enum TLECategory {

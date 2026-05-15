@@ -68,7 +68,7 @@ export function RemedialResolutionModal({
       onResolved(recordId, outcome);
       handleClose();
     } catch (error) {
-      toastApiError(error as AxiosError<any>);
+      toastApiError(error as AxiosError<{ message?: string; errors?: Record<string, string[]> }>);
     } finally {
       setLoading(false);
     }

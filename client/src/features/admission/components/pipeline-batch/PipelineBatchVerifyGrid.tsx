@@ -342,7 +342,7 @@ export default function PipelineBatchVerifyGrid({
         const clearanceDisabled =
           isBatchProcessing || (!isRetained && !rowReady);
 
-        let clearanceClassName = "";
+        let clearanceClassName: string;
         if (isRetained) {
           clearanceClassName = rowMarked
             ? "border-amber-700 bg-amber-600 text-white"

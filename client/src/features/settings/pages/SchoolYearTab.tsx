@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router";
 import { sileo } from "sileo";
+import { AnimatePresence, motion } from "motion/react";
 import { cn } from "@/shared/lib/utils";
 import {
   Calendar as CalendarIcon,
@@ -44,10 +45,28 @@ import {
   TableRow,
 } from "@/shared/ui/table";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
+import {
+  LoaderCore,
+  type LoadingState as MultiStepLoadingState,
+} from "@/components/ui/multi-step-loader";
 
 const MANILA_TIME_ZONE = "Asia/Manila";
 const MIN_ACTIVE_CALENDAR_SPAN_DAYS = 240;
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+const ROLLOVER_LOADING_STATES: MultiStepLoadingState[] = [
+  { text: "Validating EOSY completion and approved school calendar dates." },
+  {
+    text: "Archiving current school-year lifecycle records and locking audit history.",
+  },
+  {
+    text: "Preparing next school year timelines, enrollment windows, and registrar controls.",
+  },
+  {
+    text: "Applying rollover options: structure cloning and continuing-learner carryover.",
+  },
+  { text: "Refreshing active school-year context across modules." },
+];
 
 function getDatePartsInTimeZone(date: Date, timeZone = MANILA_TIME_ZONE) {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -294,9 +313,13 @@ export default function SchoolYearTab() {
   // Create state
   const [creating, setCreating] = useState(false);
   const [updatingDraft, setUpdatingDraft] = useState(false);
+  const [isRolloverLoaderOpen, setIsRolloverLoaderOpen] = useState(false);
+  const [rolloverLoaderStep, setRolloverLoaderStep] = useState(0);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [showNextForm, setShowNextForm] = useState(false);
   const [rolloverDraftBaseline, setRolloverDraftBaseline] =
     useState<RolloverDraftSnapshot | null>(null);
+  const pendingSuccessToastRef = useRef<(() => void) | null>(null);
 
   // Editable fields for setup
   const [editYearLabel, setYearLabel] = useState("");
@@ -378,6 +401,19 @@ export default function SchoolYearTab() {
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const syncPreference = () => setPrefersReducedMotion(mediaQuery.matches);
+    syncPreference();
+
+    mediaQuery.addEventListener("change", syncPreference);
+    return () => mediaQuery.removeEventListener("change", syncPreference);
+  }, []);
+
+  useEffect(() => {
     // Check for bridge state
     if (location.state?.highlightUpcoming) {
       // Small delay to ensure data is fetched and form is ready
@@ -388,6 +424,7 @@ export default function SchoolYearTab() {
       }, 500);
       return () => clearTimeout(timer);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
   useEffect(() => {
@@ -712,7 +749,13 @@ export default function SchoolYearTab() {
       return;
     }
 
+    const isRolloverFlow = Boolean(activeYear);
+
     setCreating(true);
+    if (isRolloverFlow) {
+      setRolloverLoaderStep(0);
+      setIsRolloverLoaderOpen(true);
+    }
     await new Promise((resolve) => setTimeout(resolve, 500));
     try {
       const derivedSchedule = buildSchoolYearSchedule(
@@ -748,7 +791,16 @@ export default function SchoolYearTab() {
             cloneFromId: null,
           };
 
+      if (isRolloverFlow) {
+        setRolloverLoaderStep(1);
+      }
+
       const res = await api.post(requestPath, requestPayload);
+
+      if (isRolloverFlow) {
+        setRolloverLoaderStep(2);
+      }
+
       const rolloverSummary =
         (res.data.rolloverSummary as RolloverSummary | null | undefined) ??
         null;
@@ -758,24 +810,56 @@ export default function SchoolYearTab() {
         activeSchoolYearLabel: res.data.year.yearLabel,
       });
 
+      if (isRolloverFlow) {
+        setRolloverLoaderStep(3);
+      }
+
       const successDescription = activeYear
         ? rolloverSummary
           ? `School Year ${res.data.year.yearLabel} is now active. ${rolloverSummary.createdApplications} learner application(s) were carried over.`
           : `School Year ${res.data.year.yearLabel} is now active.`
         : `School Year ${res.data.year.yearLabel} is now active.`;
 
-      sileo.success({
-        title: activeYear ? "Rollover Completed" : "School Year Activated",
-        description: successDescription,
-      });
+      if (isRolloverFlow) {
+        pendingSuccessToastRef.current = () => {
+          sileo.success({
+            title: activeYear ? "Rollover Completed" : "School Year Activated",
+            description: successDescription,
+          });
+        };
+      } else {
+        sileo.success({
+          title: activeYear ? "Rollover Completed" : "School Year Activated",
+          description: successDescription,
+        });
+      }
 
       setShowNextForm(false);
       setRolloverDraftBaseline(null);
-      fetchData();
+
+      if (isRolloverFlow) {
+        setRolloverLoaderStep(4);
+      }
+
+      await fetchData();
+
+      if (isRolloverFlow && !prefersReducedMotion) {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+      }
     } catch (err) {
+      pendingSuccessToastRef.current = null;
       toastApiError(err as never);
     } finally {
       setCreating(false);
+      if (isRolloverFlow) {
+        setIsRolloverLoaderOpen(false);
+        if (!prefersReducedMotion) {
+          await new Promise((resolve) => setTimeout(resolve, 420));
+        }
+        pendingSuccessToastRef.current?.();
+        pendingSuccessToastRef.current = null;
+        setRolloverLoaderStep(0);
+      }
     }
   };
 
@@ -920,6 +1004,97 @@ export default function SchoolYearTab() {
 
   return (
     <div className="space-y-6 mx-auto bg-white p-6 rounded-lg shadow">
+      <AnimatePresence>
+        {isRolloverLoaderOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.4, ease: "easeInOut" }}
+            className="fixed inset-0 z-[200] flex min-h-dvh w-screen items-center justify-center overflow-hidden bg-white/75 backdrop-blur-2xl"
+            role="status"
+            aria-live="polite"
+            aria-label="Running school year rollover"
+          >
+            <div className="absolute inset-0 pointer-events-none">
+              <svg
+                aria-hidden="true"
+                className="h-full w-full"
+                preserveAspectRatio="none"
+              >
+                <defs>
+                  <pattern
+                    id="school-year-rollover-pixel-grid"
+                    x="0"
+                    y="0"
+                    width="80"
+                    height="80"
+                    patternUnits="userSpaceOnUse"
+                  >
+                    <rect
+                      x="2"
+                      y="2"
+                      width="36"
+                      height="36"
+                      rx="6"
+                      fill="none"
+                      stroke="rgba(128,0,0,0.12)"
+                      strokeWidth="1.1"
+                    />
+                    <rect
+                      x="42"
+                      y="2"
+                      width="36"
+                      height="36"
+                      rx="6"
+                      fill="none"
+                      stroke="rgba(128,0,0,0.1)"
+                      strokeWidth="1.1"
+                    />
+                    <rect
+                      x="2"
+                      y="42"
+                      width="36"
+                      height="36"
+                      rx="6"
+                      fill="none"
+                      stroke="rgba(128,0,0,0.09)"
+                      strokeWidth="1.1"
+                    />
+                    <rect
+                      x="42"
+                      y="42"
+                      width="36"
+                      height="36"
+                      rx="6"
+                      fill="none"
+                      stroke="rgba(128,0,0,0.11)"
+                      strokeWidth="1.1"
+                    />
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#school-year-rollover-pixel-grid)" />
+              </svg>
+            </div>
+
+            <div className="relative z-10 w-full max-w-3xl px-6">
+              <div className="text-center mb-5">
+                <h3 className="text-md font-black text-foreground uppercase">
+                  Processing School Year Rollover
+                </h3>
+                <p className="text-md font-semibold text-foreground">
+                  Please keep this window open while records are being updated.
+                </p>
+              </div>
+              <LoaderCore
+                loadingStates={ROLLOVER_LOADING_STATES}
+                value={rolloverLoaderStep}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center shadow-sm border border-primary/20">
           <CalendarDays className="h-6 w-6" />
@@ -1260,6 +1435,9 @@ export default function SchoolYearTab() {
       <Dialog
         open={showNextForm}
         onOpenChange={(open) => {
+          if (isRolloverLoaderOpen) {
+            return;
+          }
           setShowNextForm(open);
           if (!open) {
             setRolloverDraftBaseline(null);
@@ -1410,9 +1588,13 @@ export default function SchoolYearTab() {
                 variant="outline"
                 className="font-bold"
                 onClick={() => {
+                  if (isRolloverLoaderOpen) {
+                    return;
+                  }
                   setShowNextForm(false);
                   setRolloverDraftBaseline(null);
-                }}>
+                }}
+                disabled={isRolloverLoaderOpen}>
                 Cancel
               </Button>
               {activeYear && (
@@ -1423,6 +1605,7 @@ export default function SchoolYearTab() {
                   disabled={
                     creating ||
                     updatingDraft ||
+                    isRolloverLoaderOpen ||
                     !editYearLabel.trim() ||
                     !editClassOpening ||
                     !editClassEnd ||
@@ -1443,6 +1626,7 @@ export default function SchoolYearTab() {
                 disabled={
                   creating ||
                   updatingDraft ||
+                  isRolloverLoaderOpen ||
                   !editYearLabel.trim() ||
                   !editClassOpening ||
                   !editClassEnd ||

@@ -1,0 +1,277 @@
+ENROLLPRO DUAL-LAPTOP GIT SYNC, CONFLICT RESOLUTION, AND DB-SAFE SCHEMA GUIDE
+===============================================================================
+Last Updated: 2026-05-16
+Scope: Laptop 2 (development) -> main push -> Laptop 1 pull, with high-conflict handling
+
+Purpose
+-------
+This guide is for your two-laptop workflow where:
+1) Laptop 2 has new development changes.
+2) Laptop 1 has older commits on main.
+3) EnrollPro is SSOT for ATLAS, AIMS, SMART.
+
+This guide prioritizes:
+1) Safe sync to main.
+2) Safe conflict resolution on large change sets.
+3) Non-destructive schema/database updates that do not erase production data.
+
+
+0) CRITICAL SAFETY RULES
+------------------------
+1) Never run destructive DB commands on shared/production DB:
+   - Do NOT run db wipe/reset against shared DB.
+   - Do NOT drop columns/tables as part of conflict "cleanup".
+2) Treat Prisma migrations as immutable once applied in shared environments.
+3) For schema conflicts, prefer forward-fix migration (new migration) instead of rewriting old applied migration files.
+4) One operator at a time applies migrations to shared DB.
+
+
+1) LAPTOP 2: PREPARE AND PUSH TO MAIN SAFELY
+--------------------------------------------
+
+1.1 Pre-flight checks (Laptop 2)
+Run from repo root:
+  git fetch origin
+  git status --short
+  git branch --show-current
+  git rev-list --left-right --count origin/main...HEAD
+
+Recommended safety snapshot before conflict-heavy operations:
+  git checkout -b backup/laptop2-<YYYYMMDD-HHMM>
+  git checkout <your-working-branch-or-main>
+
+1.2 Commit in controlled chunks (for many changed files)
+Use logical commit slicing to reduce conflict blast radius.
+
+Recommended chunk order:
+1) Schema + migration files:
+   - server/prisma/schema.prisma
+   - server/prisma/migrations/*
+2) Backend API and controllers/services:
+   - server/src/**
+3) Frontend UI/store/router:
+   - client/src/**
+4) Shared contracts/constants:
+   - shared/src/**
+5) Documentation:
+   - docs/**
+   - *.txt, *.md
+
+Example staging by group:
+  git add server/prisma/schema.prisma server/prisma/migrations
+  git commit -m "feat(db): add safe schema and migration updates"
+
+  git add server/src
+  git commit -m "feat(api): update backend routes and services"
+
+  git add client/src client/components.json client/package.json
+  git commit -m "feat(client): align BOSY/EOSY and learner workflows"
+
+  git add shared/src
+  git commit -m "chore(shared): align constants/contracts"
+
+  git add docs ENROLLPRO_CONSUMED_APIS.txt ENROLLPRO-CHANGELOG.md
+  git commit -m "docs: update integration and operational guides"
+
+Lockfiles and generated files:
+1) Commit lockfile updates only when they are intentional.
+2) Prefer regenerating generated artifacts after merge, not manual conflict edits.
+
+1.3 Sync with remote main before final push
+If you are working directly on main:
+  git checkout main
+  git fetch origin
+  git pull --rebase origin main
+
+Resolve conflicts (see Section 3), then:
+  git push origin main
+
+If branch protection blocks direct push:
+1) push your branch
+2) open PR to main
+3) merge PR
+
+
+2) LAPTOP 1: PULL AFTER LAPTOP 2 PUSH
+-------------------------------------
+
+2.1 Scenario A: Laptop 1 has no local changes
+  git checkout main
+  git fetch origin
+  git pull --ff-only origin main
+
+2.2 Scenario B: Laptop 1 has uncommitted local changes
+  git checkout main
+  git stash push -u -m "laptop1-pre-pull"
+  git fetch origin
+  git pull --rebase origin main
+  git stash pop
+
+If stash pop creates conflicts, resolve and commit.
+
+2.3 Scenario C: Laptop 1 has local commits diverged from origin/main
+  git checkout main
+  git fetch origin
+  git rebase origin/main
+
+Resolve conflicts, then:
+  git rebase --continue
+
+If rebase becomes invalid for your case:
+  git rebase --abort
+Then use a merge flow:
+  git merge origin/main
+
+
+3) CONFLICT RESOLUTION PLAYBOOK (HIGH CONFLICT REPO)
+----------------------------------------------------
+
+3.1 Resolve conflicts by category
+
+Category A: Prisma schema and migrations
+Files:
+  server/prisma/schema.prisma
+  server/prisma/migrations/**
+  server/prisma/migrations/migration_lock.toml
+
+Rules:
+1) Keep additive changes; avoid destructive removals.
+2) Do not rewrite already-applied migration history.
+3) If both laptops changed schema differently, merge schema logically and generate a NEW migration.
+4) migration_lock.toml conflicts must retain valid provider lock content; do not delete file.
+
+Category B: Integration/API route files
+Files:
+  server/src/app.ts
+  server/src/features/integration/**
+  server/src/features/settings/**
+  server/src/features/bosy/**
+  server/src/features/eosy/**
+
+Rules:
+1) Keep mounted route truth consistent with controllers.
+2) Preserve backwards-compatible aliases when they are already live.
+3) Re-check consumed endpoints after merge.
+
+Category C: Client app and store/router
+Files:
+  client/src/**
+  client/src/store/**
+  client/src/router/**
+
+Rules:
+1) Resolve conflicts functionally, not by blindly choosing ours/theirs.
+2) Keep auth/session and role guard logic intact.
+
+Category D: Shared contracts
+Files:
+  shared/src/constants/index.ts
+
+Rules:
+1) Enum and contract merges must remain backward compatible.
+2) Avoid changing enum meaning without coordinated backend/client updates.
+
+3.2 Fast conflict commands
+Show unresolved files:
+  git status
+
+Open conflict hunks quickly:
+  git diff --name-only --diff-filter=U
+
+If one file should use only local or incoming version:
+  git checkout --ours <file>
+  git checkout --theirs <file>
+
+After manual edit:
+  git add <file>
+
+Rebase flow finalize:
+  git rebase --continue
+
+Merge flow finalize:
+  git commit
+
+
+4) DB-SAFE SCHEMA UPDATE PROTOCOL (SSOT PROTECTION)
+---------------------------------------------------
+
+Because ATLAS/AIMS/SMART interact with EnrollPro DB-facing contracts, apply schema changes safely.
+
+4.1 Change design rules (non-destructive)
+1) Add columns/tables first.
+2) Keep old columns/contracts temporarily for compatibility.
+3) Backfill data in safe incremental scripts.
+4) Switch readers/writers after validation.
+5) Remove deprecated columns only in a later controlled release.
+
+4.2 Migration rollout order
+1) Backup DB (or ensure snapshot/restore point exists).
+2) Apply migration in development/staging first.
+3) Validate integration endpoints still return expected shapes.
+4) Apply migration in shared environment once validated.
+5) Regenerate Prisma client.
+
+Commands (run from repo root):
+Development migration creation:
+  pnpm --filter server run db:migrate
+
+Regenerate Prisma client:
+  pnpm --filter server run db:generate
+
+Build checks:
+  pnpm --filter server run build
+  pnpm --filter client run build
+
+4.3 Never erase live data during schema conflict fixes
+Do NOT do this on shared DB:
+1) db wipe/reset
+2) force-dropping tables to bypass conflicts
+3) editing old migration SQL to "replay differently"
+
+Use forward-fix instead:
+1) keep applied migrations untouched
+2) create new migration to fix/adjust state
+
+
+5) POST-MERGE INTEGRATION SMOKE CHECKS (ATLAS/AIMS/SMART)
+----------------------------------------------------------
+
+After pull/merge/migration, verify these endpoints:
+1) GET /api/integration/v1/health
+2) GET /api/integration/v1/school-year?schoolYearId=<id>
+3) GET /api/integration/v1/faculty?schoolYearId=<id>
+4) GET /api/integration/v1/sections?schoolYearId=<id>
+5) GET /api/integration/v1/sections/:sectionId/learners?schoolYearId=<id>
+6) GET /api/integration/v1/default/smart/students?schoolYearId=<id>
+7) GET /api/integration/v1/default/aims/context?schoolYearId=<id>
+
+Expected behavior checks:
+1) SMART feed includes ENROLLED, TEMPORARILY_ENROLLED, and DROPPED.
+2) AIMS context is ENROLLED + enrollment record + remedial flag support.
+3) Historical-year pulls must pass schoolYearId explicitly.
+
+
+6) PRACTICAL LARGE-CHANGE WORKFLOW FOR THIS REPO
+------------------------------------------------
+
+Given your current large set of changed files:
+1) Do not do one huge commit unless absolutely required.
+2) Prefer 4-6 logical commits as described above.
+3) Push early once backend+schema are stable; then docs/client.
+4) On Laptop 1, pull immediately after Laptop 2 push to reduce further divergence.
+
+
+7) QUICK RECOVERY CHECKLIST
+---------------------------
+
+If sync goes wrong:
+1) Stop and create safety branch from current state:
+   git checkout -b rescue/<timestamp>
+2) Capture current conflict files:
+   git diff --name-only --diff-filter=U
+3) Resolve schema and migration files first.
+4) Regenerate Prisma client.
+5) Run build checks.
+6) Re-run integration smoke checks.
+
+End of guide.

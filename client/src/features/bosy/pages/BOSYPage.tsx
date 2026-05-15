@@ -10,7 +10,6 @@ import {
 import { motion } from "motion/react";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import type { RowSelectionState } from "@tanstack/react-table";
-import type { AxiosError } from "axios";
 
 import {
   getBOSYReadiness,
@@ -86,7 +85,7 @@ export default function BOSYPage() {
       const data = await getBOSYReadiness(syId);
       setReadiness(data);
     } catch (e) {
-      toastApiError(e as AxiosError<any>);
+      toastApiError(e as never);
     } finally {
       setReadinessLoading(false);
     }
@@ -103,7 +102,7 @@ export default function BOSYPage() {
       });
       void handleRefresh();
     } catch (e) {
-      toastApiError(e as AxiosError<any>);
+      toastApiError(e as never);
     } finally {
       setSyncing(false);
     }
@@ -116,18 +115,18 @@ export default function BOSYPage() {
       const data = await getBOSYQueue({
         schoolYearId: syId,
         status: "PENDING_CONFIRMATION",
-        search: queueSearch || undefined,
+        search: debouncedSearch || undefined,
         page: pendingPage,
         limit: pendingLimit,
       });
       setPendingItems(data.items);
       setPendingTotal(data.total);
     } catch (e) {
-      toastApiError(e as AxiosError<any>);
+      toastApiError(e as never);
     } finally {
       setPendingLoading(false);
     }
-  }, [syId, queueSearch, pendingPage, pendingLimit]);
+  }, [syId, debouncedSearch, pendingPage, pendingLimit]);
 
   const fetchConfirmed = useCallback(async () => {
     if (!syId) return;
@@ -136,18 +135,18 @@ export default function BOSYPage() {
       const data = await getBOSYQueue({
         schoolYearId: syId,
         status: "READY_FOR_SECTIONING",
-        search: queueSearch || undefined,
+        search: debouncedSearch || undefined,
         page: confirmedPage,
         limit: confirmedLimit,
       });
       setConfirmedItems(data.items);
       setConfirmedTotal(data.total);
     } catch (e) {
-      toastApiError(e as AxiosError<any>);
+      toastApiError(e as never);
     } finally {
       setConfirmedLoading(false);
     }
-  }, [syId, queueSearch, confirmedPage, confirmedLimit]);
+  }, [syId, debouncedSearch, confirmedPage, confirmedLimit]);
 
   const fetchDropped = useCallback(async () => {
     if (!syId) return;
@@ -156,28 +155,30 @@ export default function BOSYPage() {
       const data = await getBOSYQueue({
         schoolYearId: syId,
         status: "TRANSFERRED_OUT",
-        search: queueSearch || undefined,
+        search: debouncedSearch || undefined,
         page: droppedPage,
         limit: droppedLimit,
       });
       setDroppedItems(data.items);
       setDroppedTotal(data.total);
     } catch (e) {
-      toastApiError(e as AxiosError<any>);
+      toastApiError(e as never);
     } finally {
       setDroppedLoading(false);
     }
-  }, [syId, queueSearch, droppedPage, droppedLimit]);
+  }, [syId, debouncedSearch, droppedPage, droppedLimit]);
 
   useEffect(() => {
     void fetchReadiness();
   }, [fetchReadiness]);
 
   useEffect(() => {
-    getTLEPrograms()
+    if (!syId) return;
+
+    getTLEPrograms(syId)
       .then(setTlePrograms)
       .catch(() => {});
-  }, []);
+  }, [syId]);
 
   useEffect(() => {
     if (activeTab === "pending") void fetchPending();
@@ -215,7 +216,7 @@ export default function BOSYPage() {
       setPendingTotal((prev) => Math.max(0, prev - 1));
       void fetchReadiness();
     } catch (e) {
-      toastApiError(e as AxiosError<any>);
+      toastApiError(e as never);
     } finally {
       setConfirmingIds((prev) => {
         const next = new Set(prev);
@@ -273,7 +274,7 @@ export default function BOSYPage() {
       setRowSelection({});
       void fetchReadiness();
     } catch (e) {
-      toastApiError(e as AxiosError<any>);
+      toastApiError(e as never);
     } finally {
       setBulkLoading(false);
     }
@@ -309,7 +310,7 @@ export default function BOSYPage() {
         onConfirm={handleTleConfirm}
         loading={tleConfirmLoading}
       />
-      {/* IRREGULAR blocker warning */}
+      {/* CONDITIONALLY_PROMOTED blocker warning */}
       {readiness && readiness.irregularBlockerCount > 0 && (
         <motion.div
           initial={{ opacity: 0, x: -10 }}

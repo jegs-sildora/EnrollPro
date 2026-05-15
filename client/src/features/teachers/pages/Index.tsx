@@ -18,6 +18,7 @@ import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { toastApiError } from "@/shared/hooks/useApiToast";
+import type { AxiosError } from "axios";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { Button } from "@/shared/ui/button";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
@@ -770,10 +771,11 @@ export default function Teachers() {
           "Faculty roster has been synchronized with the scheduling system.",
       });
       fetchTeachers();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as { response?: { status?: number, data?: { code?: string } } };
       // Professional Error Handling with Reasons
-      const status = err.response?.status;
-      const errorCode = err.response?.data?.code;
+      const status = error.response?.status;
+      const errorCode = error.response?.data?.code;
 
       if (status === 404) {
         sileo.error({
@@ -794,7 +796,7 @@ export default function Teachers() {
             "Integration credentials (API Key) for ATLAS are invalid or have expired. Please verify your system settings.",
         });
       } else {
-        toastApiError(err);
+        toastApiError(err as AxiosError<{ message?: string; errors?: Record<string, string[]> }>);
       }
     } finally {
       setSubmitting(false);

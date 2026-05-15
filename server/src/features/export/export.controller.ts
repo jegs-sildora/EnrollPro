@@ -192,11 +192,22 @@ export const exportSF1 = async (req: Request, res: Response) => {
     worksheet.getCell('O6').value = 'Name'; worksheet.getCell('P6').value = 'Relationship';
     ['O6', 'P6'].forEach(c => styleHeader(worksheet.getCell(c)));
 
-    // 4. Data
+    // 4. Data with Strict DepEd Sorting: Boys (A-Z) first, followed by Girls (A-Z)
+    const sorted = enrollmentRecords.sort((a, b) => {
+      const learnerA = a.enrollmentApplication.learner;
+      const learnerB = b.enrollmentApplication.learner;
+
+      // Group by Sex (M before F)
+      if (learnerA.sex !== learnerB.sex) {
+        return learnerA.sex === "MALE" ? -1 : 1;
+      }
+
+      // Within same sex, sort by Last Name
+      return learnerA.lastName.localeCompare(learnerB.lastName);
+    });
+
     let currentRow = 7;
-    const sorted = enrollmentRecords.sort((a,b) => a.enrollmentApplication.learner.lastName.localeCompare(b.enrollmentApplication.learner.lastName));
-    
-    sorted.forEach(record => {
+    sorted.forEach((record) => {
       const app = record.enrollmentApplication;
       const l = app.learner;
       const ad = getAddressParts(app.addresses);

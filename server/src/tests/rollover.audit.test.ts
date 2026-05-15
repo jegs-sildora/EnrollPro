@@ -330,8 +330,8 @@ async function runTests(): Promise<void> {
         schoolYearId: quarantineSY.id,
         sectionId: qSection.id,
         enrolledById: actingUserId,
-        // "IRREGULAR" is how the system persists a CONDITIONALLY_PROMOTED outcome.
-        eosyStatus: "IRREGULAR",
+        // CONDITIONALLY_PROMOTED is the persisted EOSY status for this outcome.
+        eosyStatus: "CONDITIONALLY_PROMOTED",
       },
     });
 

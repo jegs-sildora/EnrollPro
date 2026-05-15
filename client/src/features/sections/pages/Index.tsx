@@ -83,19 +83,6 @@ interface TLEProgram {
   displayOrder: number;
 }
 
-interface SectionItem {
-  id: number;
-  name: string;
-  sortOrder: number;
-  programType: string;
-  isHomogeneous: boolean;
-  maxCapacity: number;
-  enrolledCount: number;
-  fillPercent: number;
-  tleProgramId?: number | null;
-  advisingTeacher: { id: number; name: string } | null;
-}
-
 interface GradeLevelGroup {
   gradeLevelId: number;
   gradeLevelName: string;
@@ -270,7 +257,7 @@ interface RosterLearner {
 }
 
 export default function Sections() {
-  const { activeSchoolYearId, viewingSchoolYearId, activeSchoolYearLabel } =
+  const { activeSchoolYearId, viewingSchoolYearId } =
     useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const { ayLabel } = useSchoolYearContext();
@@ -579,7 +566,7 @@ export default function Sections() {
     );
   }, [heatmapGradeFilter, heatmapGradeOptions]);
 
-  const SCP_LABELS: Record<string, string> = {
+  const SCP_LABELS: Record<string, string> = useMemo(() => ({
     REGULAR: "Regular (BEC)",
     SCIENCE_TECHNOLOGY_AND_ENGINEERING: "STE",
     SPECIAL_PROGRAM_IN_THE_ARTS: "SPA",
@@ -587,7 +574,7 @@ export default function Sections() {
     SPECIAL_PROGRAM_IN_JOURNALISM: "SPJ",
     SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: "SPFL",
     SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION: "SPTVE",
-  };
+  }), []);
 
   useEffect(() => {
     const fetchProgramOptions = async () => {
@@ -596,8 +583,8 @@ export default function Sections() {
         const res = await api.get(`/curriculum/${ayId}/scp-config`);
         const configs = res.data.scpProgramConfigs || [];
         const offeredScps = configs
-          .filter((cfg: any) => cfg.isOffered)
-          .map((cfg: any) => ({
+          .filter((cfg: { isOffered: boolean; scpType: string }) => cfg.isOffered)
+          .map((cfg: { scpType: string }) => ({
             value: cfg.scpType,
             label: SCP_LABELS[cfg.scpType] || cfg.scpType,
           }));
@@ -614,7 +601,7 @@ export default function Sections() {
     if (ayId) {
       fetchProgramOptions();
     }
-  }, [ayId]);
+  }, [ayId, SCP_LABELS]);
 
   useEffect(() => {
     api
@@ -694,7 +681,7 @@ export default function Sections() {
   );
 
   const handleFieldChange = useCallback(
-    (field: keyof SectionFormState, value: any) => {
+    (field: keyof SectionFormState, value: string | number | null) => {
       setSectionFormData((prev) => {
         const next = { ...prev, [field]: value };
 
@@ -749,7 +736,10 @@ export default function Sections() {
       setIsFormSheetOpen(false);
       fetchData();
     } catch (err) {
-      showSectionsErrorToast(formSheetMode, err);
+      showSectionsErrorToast(
+        formSheetMode === "create" ? "create" : "update",
+        err,
+      );
     } finally {
       setSubmittingForm(false);
     }
@@ -1263,7 +1253,11 @@ export default function Sections() {
                           className="font-bold h-10 px-4"
                           variant="default"
                           onClick={() =>
-                            handleOpenCreate(g.gradeLevelId, g.gradeLevelName)
+                            handleOpenCreate(
+                              g.gradeLevelId,
+                              g.gradeLevelName,
+                              g.displayOrder,
+                            )
                           }
                           disabled={!canMutate}>
                           <Plus className="mr-2 h-4 w-4" /> Add{" "}

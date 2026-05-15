@@ -3,7 +3,7 @@ import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
 import * as ctrl from "./eosy.controller.js";
 
-const router = Router();
+const router: Router = Router();
 
 router.get(
   "/sections",
@@ -31,6 +31,13 @@ router.post(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.finalizeSection,
+);
+
+router.post(
+  "/batch-update",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.batchUpdateEosyRecords,
 );
 
 router.post(

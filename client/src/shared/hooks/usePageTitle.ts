@@ -46,6 +46,7 @@ function resolvePageTitle(pathname: string, search: string): string | null {
     "/teachers": "Teachers",
     "/admin/users": "User Management",
     "/admin/system": "System Health",
+    "/admin/integration": "Integration Hub",
     "/monitoring/enrollment/requirements": "Documentary Requirements",
   };
 
@@ -63,16 +64,16 @@ function resolvePageTitle(pathname: string, search: string): string | null {
 
 /**
  * Reactively updates document.title on every route change.
- * Format: "Page Name â€” School Name | EnrollPro"
+ * Format: "Page Name — School Name | EnrollPro"
  *         or "Page Name | EnrollPro" when school name is not yet loaded.
  *         or "EnrollPro" for unknown routes.
  */
-export function usePageTitle() {
+export function usePageTitle(customTitle?: string) {
   const { pathname, search } = useLocation();
   const schoolName = useSettingsStore((s) => s.schoolName);
 
   useEffect(() => {
-    const page = resolvePageTitle(pathname, search);
+    const page = customTitle ?? resolvePageTitle(pathname, search);
 
     let title: string;
     if (page) {
@@ -84,5 +85,5 @@ export function usePageTitle() {
     }
 
     document.title = title;
-  }, [pathname, search, schoolName]);
+  }, [pathname, search, schoolName, customTitle]);
 }

@@ -174,17 +174,17 @@ async function main() {
     category: TLECategory;
     displayOrder: number;
   }[] = [
-    { name: "ICT", category: "ICT", displayOrder: 1 },
+    { name: "ICT - Computer Systems Servicing", category: "ICT", displayOrder: 1 },
     { name: "HE - Cookery", category: "HOME_ECONOMICS", displayOrder: 2 },
     {
-      name: "HE - Baking and Pastry Arts",
+      name: "HE - Bread and Pastry Production",
       category: "HOME_ECONOMICS",
       displayOrder: 3,
     },
     { name: "HE - Caregiving", category: "HOME_ECONOMICS", displayOrder: 4 },
     { name: "IA - Carpentry", category: "INDUSTRIAL_ARTS", displayOrder: 5 },
     {
-      name: "IA - Electrical Installation",
+      name: "IA - Electrical Installation and Maintenance",
       category: "INDUSTRIAL_ARTS",
       displayOrder: 6,
     },
@@ -195,7 +195,7 @@ async function main() {
       displayOrder: 8,
     },
     {
-      name: "AFA - Crop Production",
+      name: "AFA - Agricultural Crops Production",
       category: "AGRI_FISHERY_ARTS",
       displayOrder: 9,
     },

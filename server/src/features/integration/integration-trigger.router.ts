@@ -9,7 +9,7 @@ import {
   broadcastPhase2,
 } from "./integration-trigger.controller.js";
 
-const router = Router();
+const router: Router = Router();
 
 // Integration triggers are SYSTEM_ADMIN only — they touch external systems.
 router.post(

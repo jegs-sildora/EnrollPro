@@ -52,8 +52,12 @@ export async function bulkConfirm(body: {
   return res.data;
 }
 
-export async function getTLEPrograms(): Promise<TLEProgram[]> {
-  const res = await api.get<{ programs: TLEProgram[] }>(`/bosy/tle-programs`);
+export async function getTLEPrograms(
+  schoolYearId: number,
+): Promise<TLEProgram[]> {
+  const res = await api.get<{ programs: TLEProgram[] }>(`/bosy/tle-programs`, {
+    params: { schoolYearId },
+  });
   return res.data.programs;
 }
 

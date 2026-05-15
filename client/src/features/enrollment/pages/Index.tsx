@@ -162,6 +162,7 @@ const PENDING_QUEUE_FILTER_OPTIONS: Array<{
 
 const TABLE_NO_RESULTS_MESSAGES: Record<EnrollmentSubMenu, string> = {
   UNSECTIONED_POOL: "No unsectioned learners found in the holding pool.",
+  TLE_SECTIONING: "No learners available for TLE specialization sectioning.",
   BATCH_WORKSPACE: "No learners in the batch sectioning workspace.",
   OFFICIAL_ROSTERS: "No finalized class rosters found for this SY.",
 };
@@ -256,11 +257,9 @@ function resolveWorkflowFromQuery(value: string | null): EnrollmentSubMenu {
   if (!value) {
     return "UNSECTIONED_POOL";
   }
-
   const matched = ENROLLMENT_SUB_MENU_OPTIONS.some(
     (option) => option.value === value,
   );
-
   return matched ? (value as EnrollmentSubMenu) : "UNSECTIONED_POOL";
 }
 
@@ -351,7 +350,6 @@ export default function Enrollment() {
   const {
     activeSchoolYearId,
     viewingSchoolYearId,
-    activeSchoolYearLabel,
     systemStatus,
   } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;

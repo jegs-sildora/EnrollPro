@@ -340,6 +340,9 @@ export default function Login() {
 
       if (payload.user.mustChangePassword) {
         setSuccess("Account security update required...");
+        redirectTimeoutRef.current = window.setTimeout(() => {
+          navigate("/change-password", { replace: true });
+        }, 800);
         return;
       }
 

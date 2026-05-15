@@ -500,11 +500,36 @@ async function main() {
       "Timeline failure: 2025-2026 not found. Run base seed first.",
     );
 
+  // Fetch ALL school years for persistent teacher assignments (2022-2025)
+  const allSchoolYears = await prisma.schoolYear.findMany({
+    where: {
+      yearLabel: {
+        in: ["2022-2023", "2023-2024", "2024-2025", "2025-2026"],
+      },
+    },
+    orderBy: { yearLabel: "asc" },
+  });
+
+  if (allSchoolYears.length === 0) {
+    throw new Error("No school years found in database.");
+  }
+
   const departments = await prisma.department.findMany();
+  // Fetch sections for 2025-2026 (primary year for identifying class advisers)
   const sections = await prisma.section.findMany({
     where: { schoolYearId: demoStartYear.id },
     orderBy: [{ gradeLevelId: "asc" }, { sortOrder: "asc" }],
   });
+
+  // Fetch sections for ALL school years for persistent assignment
+  const sectionsByYear = new Map<number, typeof sections>();
+  for (const schoolYear of allSchoolYears) {
+    const yearSections = await prisma.section.findMany({
+      where: { schoolYearId: schoolYear.id },
+      orderBy: [{ gradeLevelId: "asc" }, { sortOrder: "asc" }],
+    });
+    sectionsByYear.set(schoolYear.id, yearSections);
+  }
 
   const defaultPasswordHash = await bcrypt.hash("DepEd2026!", 10);
 
@@ -678,83 +703,91 @@ async function main() {
       data: { teacherId: teacher.id, subject: faculty.subject },
     });
 
-    // STEP 4: SEED TEACHER DESIGNATION
-    const advisorySectionId = isClassAdviser ? sections[i].id : null;
+    // STEP 4: SEED TEACHER DESIGNATION FOR ALL SCHOOL YEARS
+    for (const schoolYear of allSchoolYears) {
+      const advisorySectionId = isClassAdviser && schoolYear.id === demoStartYear.id ? sections[i].id : null;
 
-    await prisma.teacherDesignation.upsert({
-      where: {
-        uq_teacher_designations_teacher_sy: {
-          teacherId: teacher.id,
-          schoolYearId: demoStartYear.id,
-        },
-      },
-      update: {
-        isClassAdviser: isClassAdviser,
-        advisorySectionId: advisorySectionId,
-        ancillaryRoles: [],
-        effectiveFrom: demoStartYear.classOpeningDate,
-        effectiveTo: demoStartYear.classEndDate,
-        updatedById: firstAdmin?.id,
-      },
-      create: {
-        teacherId: teacher.id,
-        schoolYearId: demoStartYear.id,
-        isClassAdviser: isClassAdviser,
-        advisorySectionId: advisorySectionId,
-        ancillaryRoles: [],
-        effectiveFrom: demoStartYear.classOpeningDate,
-        effectiveTo: demoStartYear.classEndDate,
-        updatedById: firstAdmin?.id,
-      },
-    });
-
-    // STEP 5: SYNC SECTION ADVISER LEDGER
-    if (isClassAdviser) {
-      const section = sections[i];
-
-      const existingAdviser = await prisma.sectionAdviser.findFirst({
+      await prisma.teacherDesignation.upsert({
         where: {
-          sectionId: section.id,
-          schoolYearId: demoStartYear.id,
-          status: "ACTIVE",
-        },
-      });
-
-      if (existingAdviser && existingAdviser.teacherId !== teacher.id) {
-        await prisma.sectionAdviser.update({
-          where: { id: existingAdviser.id },
-          data: {
-            status: "HANDED_OVER" as SectionAdviserStatus,
-            effectiveTo: new Date(),
-            handoverReason: "Seed Update",
-          },
-        });
-      }
-
-      if (!existingAdviser || existingAdviser.teacherId !== teacher.id) {
-        await prisma.sectionAdviser.create({
-          data: {
-            sectionId: section.id,
+          uq_teacher_designations_teacher_sy: {
             teacherId: teacher.id,
-            schoolYearId: demoStartYear.id,
-            effectiveFrom: demoStartYear.classOpeningDate || new Date(),
-            status: "ACTIVE" as SectionAdviserStatus,
+            schoolYearId: schoolYear.id,
+          },
+        },
+        update: {
+          isClassAdviser: isClassAdviser && schoolYear.id === demoStartYear.id,
+          advisorySectionId: advisorySectionId,
+          ancillaryRoles: [],
+          effectiveFrom: schoolYear.classOpeningDate,
+          effectiveTo: schoolYear.classEndDate,
+          updatedById: firstAdmin?.id,
+        },
+        create: {
+          teacherId: teacher.id,
+          schoolYearId: schoolYear.id,
+          isClassAdviser: isClassAdviser && schoolYear.id === demoStartYear.id,
+          advisorySectionId: advisorySectionId,
+          ancillaryRoles: [],
+          effectiveFrom: schoolYear.classOpeningDate,
+          effectiveTo: schoolYear.classEndDate,
+          updatedById: firstAdmin?.id,
+        },
+      });
+
+      // STEP 5: SYNC SECTION ADVISER LEDGER (create for all years if class adviser)
+      if (isClassAdviser) {
+        // Find the section with the same name in this school year
+        const yearSections = sectionsByYear.get(schoolYear.id) || [];
+        const sectionName = sections[i].name;
+        const matchingSection = yearSections.find((s) => s.name === sectionName);
+
+        if (matchingSection) {
+          const existingAdviser = await prisma.sectionAdviser.findFirst({
+            where: {
+              sectionId: matchingSection.id,
+              schoolYearId: schoolYear.id,
+              status: "ACTIVE",
+            },
+          });
+
+          if (existingAdviser && existingAdviser.teacherId !== teacher.id) {
+            await prisma.sectionAdviser.update({
+              where: { id: existingAdviser.id },
+              data: {
+                status: "HANDED_OVER" as SectionAdviserStatus,
+                effectiveTo: new Date(),
+                handoverReason: "Seed Update",
+              },
+            });
+          }
+
+          if (!existingAdviser || existingAdviser.teacherId !== teacher.id) {
+            await prisma.sectionAdviser.create({
+              data: {
+                sectionId: matchingSection.id,
+                teacherId: teacher.id,
+                schoolYearId: schoolYear.id,
+                effectiveFrom: schoolYear.classOpeningDate || new Date(),
+                status: "ACTIVE" as SectionAdviserStatus,
+              },
+            });
+          }
+        }
+      } else if (schoolYear.id === demoStartYear.id) {
+        // Revoke adviser role in current year if not a class adviser
+        await prisma.sectionAdviser.updateMany({
+          where: {
+            teacherId: teacher.id,
+            schoolYearId: schoolYear.id,
+            status: "ACTIVE",
+          },
+          data: {
+            status: "REVOKED" as SectionAdviserStatus,
+            effectiveTo: new Date(),
+            handoverReason: "Seed Update (Role Change)",
           },
         });
       }
-    } else {
-      await prisma.sectionAdviser.updateMany({
-        where: {
-          teacherId: teacher.id,
-          schoolYearId: demoStartYear.id,
-          status: "ACTIVE",
-        },
-        data: {
-          status: "REVOKED" as SectionAdviserStatus,
-          effectiveTo: new Date(),
-          handoverReason: "Seed Update (Role Change)",
-        },
-      });
     }
 
     if ((i + 1) % 20 === 0 || i === teachersToSeed.length - 1) {

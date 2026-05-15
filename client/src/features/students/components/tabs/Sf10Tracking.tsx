@@ -36,7 +36,7 @@ import { sileo } from "sileo";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { cn } from "@/shared/lib/utils";
 
-interface Sf10Request {
+export interface Sf10Request {
   id: number;
   requestingSchoolName: string;
   requestingSchoolDepedId: string | null;

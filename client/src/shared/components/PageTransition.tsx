@@ -1,7 +1,7 @@
 import { motion, type Easing } from "motion/react";
 import type { ReactNode, ComponentProps } from "react";
 
-export const pageVariants = {
+const pageVariants = {
   initial: {
     opacity: 0,
     y: 10,
@@ -16,7 +16,7 @@ export const pageVariants = {
   },
 };
 
-export const pageTransition = {
+const pageTransition = {
   duration: 0.2,
   ease: "easeOut" as Easing,
 };

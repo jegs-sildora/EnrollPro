@@ -86,6 +86,7 @@ import type { EosyStatus } from "@enrollpro/shared";
 interface Student {
   id: number;
   learningProgram: string;
+  tleSpecialization?: string | null;
   dateEnrolled: string;
   lrn: string;
   fullName: string;
@@ -510,7 +511,7 @@ export default function Students() {
       <Badge
         variant="outline"
         className={cn(
-          "text-[10px] font-black uppercase px-2 h-5 border-none",
+          "text-[10px] font-black uppercase px-2 h-5 border-none whitespace-nowrap",
           getLearnerStatusColorClasses(status),
         )}>
         {label}
@@ -564,6 +565,7 @@ export default function Students() {
       ...detail,
       learnerStatus: detail.learnerStatus,
       learningProgram: "REGULAR", // Default fallback, though ideally fetched
+      tleSpecialization: null,
       dateEnrolled: detail.enrollment?.enrolledAt || detail.createdAt,
       lifecycleOutcome: detail.enrollment?.eosyStatus || null,
       dropOutReason: detail.enrollment?.dropOutReason || null,
@@ -872,6 +874,16 @@ export default function Students() {
   const columns = useMemo<ColumnDef<Student>[]>(
     () => [
       {
+        id: "rowNumber",
+        meta: { skeletonClassName: "w-[40px] mx-auto" },
+        header: () => <span className="text-xs font-bold">#</span>,
+        cell: ({ row }) => (
+          <span className="text-xs font-bold text-center block">
+            {(page - 1) * limit + row.index + 1}
+          </span>
+        ),
+      },
+      {
         id: "lastName",
         accessorKey: "lastName",
         meta: { skeletonClassName: "w-[200px]" },
@@ -962,6 +974,22 @@ export default function Students() {
         cell: ({ row }) => (
           <span className="font-bold text-sm">
             {formatSectionLabel(row.original.section)}
+          </span>
+        ),
+      },
+      {
+        id: "tleSpecialization",
+        accessorKey: "tleSpecialization",
+        meta: { skeletonClassName: "w-[180px] mx-auto" },
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="TLE"
+          />
+        ),
+        cell: ({ row }) => (
+          <span className="font-bold text-xs uppercase">
+            {row.original.tleSpecialization || "—"}
           </span>
         ),
       },
@@ -1068,6 +1096,7 @@ export default function Students() {
         ),
       },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       handleViewDetails,
       handleOpenProfilePage,
@@ -1076,6 +1105,8 @@ export default function Students() {
       openTransferOutDialog,
       openDropoutDialog,
       canMutate,
+      page,
+      limit,
     ],
   );
 

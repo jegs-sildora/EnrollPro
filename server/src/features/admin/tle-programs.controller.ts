@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
-import type { TLECategory } from "../../generated/prisma/index.js";
+import type { TLECategory, TLETrackType } from "../../generated/prisma/index.js";
 
 export async function listTLEPrograms(
   _req: Request,
@@ -17,7 +17,7 @@ export async function createTLEProgram(
   req: Request,
   res: Response,
 ): Promise<void> {
-  const { name, category, displayOrder, isActive } = req.body;
+  const { name, category, trackType, displayOrder, isActive } = req.body;
 
   if (!name || typeof name !== "string" || !name.trim()) {
     res.status(400).json({ message: "name is required" });
@@ -50,6 +50,7 @@ export async function createTLEProgram(
     data: {
       name: name.trim(),
       category: category as TLECategory,
+      trackType: trackType as TLETrackType,
       displayOrder: resolvedOrder,
       isActive: isActive !== false,
     },
@@ -72,7 +73,7 @@ export async function updateTLEProgram(
   res: Response,
 ): Promise<void> {
   const id = parseInt(String(req.params.id));
-  const { name, category, displayOrder, isActive } = req.body;
+  const { name, category, trackType, displayOrder, isActive } = req.body;
 
   const existing = await prisma.tLEProgram.findUnique({ where: { id } });
   if (!existing) {
@@ -97,6 +98,9 @@ export async function updateTLEProgram(
     data: {
       ...(name !== undefined ? { name: name.trim() } : {}),
       ...(category !== undefined ? { category: category as TLECategory } : {}),
+      ...(trackType !== undefined
+        ? { trackType: trackType as TLETrackType }
+        : {}),
       ...(displayOrder !== undefined
         ? { displayOrder: Number(displayOrder) }
         : {}),

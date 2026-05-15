@@ -30,6 +30,7 @@ interface TLEProgram {
   id: number;
   name: string;
   category: string;
+  trackType: string;
   displayOrder: number;
   isActive: boolean;
   createdAt?: string;
@@ -43,11 +44,22 @@ const TLE_CATEGORIES = [
   { value: "ICT", label: "Information & Communications Technology (ICT)" },
 ];
 
+const TLE_TRACK_TYPES = [
+  { value: "EXPLORATORY", label: "Exploratory (G7/G8)" },
+  { value: "SPECIALIZATION", label: "Specialization (NC II)" },
+];
+
 function categoryLabel(cat: string): string {
   return TLE_CATEGORIES.find((c) => c.value === cat)?.label ?? cat;
 }
 
-const EMPTY_FORM = { name: "", category: "", displayOrder: 0, isActive: true };
+const EMPTY_FORM = {
+  name: "",
+  category: "",
+  trackType: "SPECIALIZATION",
+  displayOrder: 0,
+  isActive: true,
+};
 
 export default function TLEPrograms() {
   const [programs, setPrograms] = useState<TLEProgram[]>([]);
@@ -99,6 +111,7 @@ export default function TLEPrograms() {
     setForm({
       name: p.name,
       category: p.category,
+      trackType: p.trackType,
       displayOrder: p.displayOrder,
       isActive: p.isActive,
     });
@@ -106,7 +119,7 @@ export default function TLEPrograms() {
   };
 
   const handleSubmit = async () => {
-    if (!form.name.trim() || !form.category) return;
+    if (!form.name.trim() || !form.category || !form.trackType) return;
     setSubmitting(true);
     try {
       if (editTarget) {
@@ -200,6 +213,9 @@ export default function TLEPrograms() {
                     Category
                   </th>
                   <th className="text-left font-black uppercase text-xs text-muted-foreground py-2 pr-4">
+                    Track Type
+                  </th>
+                  <th className="text-left font-black uppercase text-xs text-muted-foreground py-2 pr-4">
                     Status
                   </th>
                   <th className="text-right font-black uppercase text-xs text-muted-foreground py-2">
@@ -211,7 +227,7 @@ export default function TLEPrograms() {
                 {programs.length === 0 && (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={6}
                       className="py-8 text-center text-muted-foreground text-sm font-bold">
                       {loading ? "Loading..." : "No TLE programs found."}
                     </td>
@@ -229,6 +245,13 @@ export default function TLEPrograms() {
                       <span className="text-xs font-bold text-muted-foreground">
                         {categoryLabel(p.category)}
                       </span>
+                    </td>
+                    <td className="py-3 pr-4">
+                      <Badge
+                        variant="outline"
+                        className="font-bold text-[10px] uppercase">
+                        {p.trackType.replace(/_/g, " ")}
+                      </Badge>
                     </td>
                     <td className="py-3 pr-4">
                       <Badge
@@ -323,6 +346,29 @@ export default function TLEPrograms() {
 
             <div className="space-y-2">
               <Label className="font-bold text-xs uppercase">
+                Track Type *
+              </Label>
+              <Select
+                value={form.trackType}
+                onValueChange={(v) => setForm((f) => ({ ...f, trackType: v }))}>
+                <SelectTrigger className="font-bold">
+                  <SelectValue placeholder="Select track type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TLE_TRACK_TYPES.map((t) => (
+                    <SelectItem
+                      key={t.value}
+                      value={t.value}
+                      className="font-bold text-xs">
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="font-bold text-xs uppercase">
                 Display Order
               </Label>
               <Input
@@ -380,7 +426,12 @@ export default function TLEPrograms() {
             </Button>
             <Button
               onClick={() => void handleSubmit()}
-              disabled={submitting || !form.name.trim() || !form.category}
+              disabled={
+                submitting ||
+                !form.name.trim() ||
+                !form.category ||
+                !form.trackType
+              }
               className="font-black uppercase">
               {submitting
                 ? "Saving..."

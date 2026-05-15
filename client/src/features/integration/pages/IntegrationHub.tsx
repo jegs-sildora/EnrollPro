@@ -21,6 +21,8 @@ import api from "@/shared/api/axiosInstance";
 import { IntegrationLogTable, type IntegrationLog } from "../components/IntegrationLogTable";
 import { useSettingsStore } from "@/store/settings.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
+import type { AxiosError } from "axios";
+import { isAxiosError } from "axios";
 import { sileo } from "sileo";
 
 // --- Types ---
@@ -199,7 +201,7 @@ function IntegrationHub() {
       ]);
     } catch (err) {
       console.error("Failed to fetch integration data", err);
-      toastApiError(err as any);
+      toastApiError(err as AxiosError<{ message?: string; errors?: Record<string, string[]> }>);
     } finally {
       setLoading(false);
     }
@@ -222,10 +224,13 @@ function IntegrationHub() {
       });
 
       await fetchData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Professional Error Handling with Reasons
-      const status = err.response?.status;
-      const errorCode = err.response?.data?.code;
+      const status = isAxiosError(err) ? err.response?.status : undefined;
+      let errorCode: string | undefined;
+      if (isAxiosError(err) && err.response?.data && typeof err.response.data === 'object' && 'code' in err.response.data) {
+          errorCode = (err.response.data as { code: string }).code;
+      }
 
       if (status === 404) {
         sileo.error({
@@ -243,7 +248,7 @@ function IntegrationHub() {
           description: "The security credentials for the ecosystem handshake have expired. Please contact the System Administrator to refresh the Integration API Keys.",
         });
       } else {
-        toastApiError(err as any);
+        toastApiError(err as AxiosError<{ message?: string; errors?: Record<string, string[]> }>);
       }
     } finally {
       setIsSyncing(null);

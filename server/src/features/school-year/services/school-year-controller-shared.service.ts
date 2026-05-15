@@ -81,7 +81,20 @@ export async function cloneSchoolYearStructure(
     include: {
       sections: true,
       scpProgramConfigs: {
-        include: { options: true, steps: { orderBy: { stepOrder: "asc" } } },
+        include: {
+          options: true,
+          steps: {
+            orderBy: { stepOrder: "asc" },
+            include: {
+              rubricCategories: {
+                orderBy: { displayOrder: "asc" },
+                include: {
+                  criteria: { orderBy: { displayOrder: "asc" } },
+                },
+              },
+            },
+          },
+        },
       },
     },
   });
@@ -136,16 +149,49 @@ export async function cloneSchoolYearStructure(
     }
 
     if (scpProgram.steps.length > 0) {
-      await deps.prisma.scpProgramStep.createMany({
-        data: scpProgram.steps.map((step) => ({
-          scpProgramConfigId: newScpProgram.id,
-          stepOrder: step.stepOrder,
-          kind: step.kind,
-          label: step.label,
-          description: step.description,
-          isRequired: step.isRequired,
-        })),
-      });
+      for (const step of scpProgram.steps) {
+        const newStep = await deps.prisma.scpProgramStep.create({
+          data: {
+            scpProgramConfigId: newScpProgram.id,
+            stepOrder: step.stepOrder,
+            kind: step.kind,
+            label: step.label,
+            description: step.description,
+            isRequired: step.isRequired,
+            scheduledDate: step.scheduledDate,
+            scheduledTime: step.scheduledTime,
+            venue: step.venue,
+            notes: step.notes,
+            cutoffScore: step.cutoffScore,
+            rubric: step.rubric,
+          },
+        });
+
+        if (step.rubricCategories.length > 0) {
+          for (const category of step.rubricCategories) {
+            const newCategory =
+              await deps.prisma.scpInterviewRubricCategory.create({
+                data: {
+                  scpProgramStepId: newStep.id,
+                  name: category.name,
+                  displayOrder: category.displayOrder,
+                },
+              });
+
+            if (category.criteria.length > 0) {
+              await deps.prisma.scpInterviewRubricCriterion.createMany({
+                data: category.criteria.map((criterion) => ({
+                  rubricCategoryId: newCategory.id,
+                  name: criterion.name,
+                  description: criterion.description,
+                  maxPts: criterion.maxPts,
+                  displayOrder: criterion.displayOrder,
+                })),
+              });
+            }
+          }
+        }
+      }
     }
   }
 }

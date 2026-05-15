@@ -22,7 +22,7 @@ async function main() {
     "≡ƒÜÇ Seeding End-of-School-Year (EOSY) Grades for 2025-2026 (Mock SMART Data)...",
   );
   console.log(
-    "≡ƒÄ» Applying '65/66' Presentation Strategy (STE 7-VEGA will remain pending).",
+    "📻 Applying '65/66' Presentation Strategy (STE demo section VEGA will remain pending).",
   );
 
   const targetYear = await prisma.schoolYear.findUnique({
@@ -32,17 +32,18 @@ async function main() {
   if (!targetYear) throw new Error("Timeline failure: 2025-2026 not found.");
 
   // Identify the demo section
-  const DEMO_SECTION_NAME = "STE 7-VEGA";
+  const DEMO_SECTION_THEME = "VEGA";
   const demoSection = await prisma.section.findFirst({
     where: {
-      name: DEMO_SECTION_NAME,
+      name: DEMO_SECTION_THEME,
       schoolYearId: targetYear.id,
+      programType: "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
     },
   });
 
   if (!demoSection) {
     console.warn(
-      `ΓÜá∩╕Å Demo section '${DEMO_SECTION_NAME}' not found. Defaulting to all-sections mode.`,
+      `⚠️ Demo section '${DEMO_SECTION_THEME}' (STE) not found. Defaulting to all-sections mode.`,
     );
   }
 
@@ -93,7 +94,7 @@ async function main() {
 
     await prisma.$transaction(
       batch.map((record, batchIdx) => {
-        const isDemoSection = record.section.name === DEMO_SECTION_NAME;
+        const isDemoSection = demoSection ? record.section.id === demoSection.id : false;
         const isSTE =
           record.enrollmentApplication.applicantType ===
           "SCIENCE_TECHNOLOGY_AND_ENGINEERING";
@@ -139,7 +140,7 @@ async function main() {
 
   console.log(`  - Updated ${processedCount} records with EOSY status.`);
   console.log(
-    `  - Left ${skippedCount} records in '${DEMO_SECTION_NAME}' with null status for live demo.`,
+    `  - Left ${skippedCount} records in '${DEMO_SECTION_THEME}' with null status for live demo.`,
   );
 
   // Finalize all sections except the demo section
@@ -150,7 +151,7 @@ async function main() {
   });
 
   const updatePromises = sections.map((s) => {
-    const isDemo = s.name === DEMO_SECTION_NAME;
+    const isDemo = demoSection ? s.id === demoSection.id : false;
     return prisma.section.update({
       where: { id: s.id },
       data: { isEosyFinalized: !isDemo },
@@ -164,9 +165,17 @@ async function main() {
   );
   if (demoSection) {
     console.log(
-      `Γ£¿ Section '${DEMO_SECTION_NAME}' is UNLOCKED and ready for presentation.`,
+      `✅ Section '${DEMO_SECTION_THEME}' is UNLOCKED and ready for presentation.`,
     );
   }
+
+  // Mark the school year itself as EOSY-finalized (matches data.txt: is_eosy_finalized = true)
+  await prisma.schoolYear.update({
+    where: { id: targetYear.id },
+    data: { isEosyFinalized: true },
+  });
+
+  console.log(`✅ School year 2025-2026 marked as EOSY finalized.`);
 
   console.log(
     `\nΓ£à Successfully implemented '65/66' Presentation Strategy for 2025-2026.`,

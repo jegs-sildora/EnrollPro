@@ -45,7 +45,6 @@ import {
 } from "lucide-react";
 import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
-import type { AxiosError } from "axios";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useAuthStore } from "@/store/auth.slice";
@@ -217,7 +216,7 @@ export default function EosyUpdating() {
 
       setSections(sorted);
     } catch (err) {
-      toastApiError(err as AxiosError<any>);
+      toastApiError(err as never);
     } finally {
       setLoading(false);
     }
@@ -245,7 +244,7 @@ export default function EosyUpdating() {
       const res = await api.get(`/eosy/sections/${sectionId}/records`);
       setRecords(res.data.records || []);
     } catch (err) {
-      toastApiError(err as AxiosError<any>);
+      toastApiError(err as never);
     } finally {
       setLoadingRecords(false);
     }
@@ -496,7 +495,7 @@ export default function EosyUpdating() {
   );
   const emptyRowsCount = records.filter((r) => !r.eosyStatus).length;
   const irregularCount = records.filter(
-    (r) => r.eosyStatus === "IRREGULAR",
+    (r) => r.eosyStatus === "CONDITIONALLY_PROMOTED",
   ).length;
 
   const handleMarkAllPromoted = async () => {
@@ -553,7 +552,7 @@ export default function EosyUpdating() {
         await fetchRecords(selectedSectionId);
       }
     } catch (err) {
-      toastApiError(err as AxiosError<any>);
+      toastApiError(err as never);
     } finally {
       setIsSyncingSmart(false);
     }
@@ -717,7 +716,7 @@ export default function EosyUpdating() {
       (r) => r.eosyStatus === "PROMOTED" || !r.eosyStatus,
     ).length,
     retained: records.filter((r) => r.eosyStatus === "RETAINED").length,
-    irregular: records.filter((r) => r.eosyStatus === "IRREGULAR").length,
+    irregular: records.filter((r) => r.eosyStatus === "CONDITIONALLY_PROMOTED").length,
     dropped: records.filter((r) => r.eosyStatus === "DROPPED_OUT").length,
     transferred: records.filter((r) => r.eosyStatus === "TRANSFERRED_OUT")
       .length,
@@ -731,7 +730,7 @@ export default function EosyUpdating() {
         return "Promoted";
       case "RETAINED":
         return "Retained";
-      case "IRREGULAR":
+      case "CONDITIONALLY_PROMOTED":
         return "Irregular";
       case "TRANSFERRED_OUT":
         return "Transferred Out";
@@ -932,14 +931,14 @@ export default function EosyUpdating() {
                 <SelectContent>
                   <SelectItem value="PROMOTED">Promoted</SelectItem>
                   <SelectItem value="RETAINED">Retained</SelectItem>
-                  <SelectItem value="IRREGULAR">Irregular</SelectItem>
+                  <SelectItem value="CONDITIONALLY_PROMOTED">Irregular</SelectItem>
                   <SelectItem value="TRANSFERRED_OUT">
                     Transferred Out
                   </SelectItem>
                   <SelectItem value="DROPPED_OUT">Dropped Out</SelectItem>
                 </SelectContent>
               </Select>
-              {r.eosyStatus === "IRREGULAR" && !isFinalized && (
+              {r.eosyStatus === "CONDITIONALLY_PROMOTED" && !isFinalized && (
                 <button
                   className="text-[10px] font-black uppercase text-orange-600 hover:underline cursor-pointer"
                   onClick={() =>
@@ -1406,7 +1405,18 @@ export default function EosyUpdating() {
                 </Button>
 
                 {!isFinalized && (
-                  <DropdownMenu>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-9 px-4 font-black text-xs uppercase border-2 border-emerald-500 text-emerald-700 hover:bg-emerald-50 shadow-sm"
+                      onClick={() => navigate(`/monitoring/enrollment/eosy/workspace?sectionId=${selectedSectionId}`)}
+                    >
+                      <TrendingUp className="h-3.5 w-3.5 mr-2" />
+                      Rapid Entry Workspace
+                    </Button>
+                    
+                    <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="default"
@@ -1435,16 +1445,17 @@ export default function EosyUpdating() {
                         Mark Retained
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => handleBulkAction("IRREGULAR")}
+                        onClick={() => handleBulkAction("CONDITIONALLY_PROMOTED")}
                         className="font-bold text-amber-600">
                         Mark Cond. Promoted
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                )}
-              </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
+        )}
 
           <CardContent className="p-0 flex-1 overflow-hidden flex flex-col relative min-h-0">
             <div className="flex-1 bg-muted/5 relative min-h-0 overflow-hidden">

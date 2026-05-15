@@ -105,7 +105,7 @@ export async function getBOSYReadiness(
           { eosyStatus: { equals: null } },
           {
             eosyStatus: {
-              notIn: ["DROPPED_OUT", "TRANSFERRED_OUT", "IRREGULAR"],
+              notIn: ["DROPPED_OUT", "TRANSFERRED_OUT", "CONDITIONALLY_PROMOTED"],
             },
           },
         ],
@@ -134,7 +134,7 @@ export async function getBOSYReadiness(
     droppedCount,
   ] = await Promise.all([
     prisma.enrollmentRecord.count({
-      where: { schoolYearId, eosyStatus: "IRREGULAR" },
+      where: { schoolYearId, eosyStatus: "CONDITIONALLY_PROMOTED" },
     }),
     prisma.enrollmentApplication.count({
       where: {
@@ -390,10 +390,16 @@ export async function syncBOSYQueue(
   }
 
   const prevSchoolYearId = schoolYear.clonedFromId;
-  const startYear = parseInt(schoolYear.yearLabel.split("-")[0]);
+  const parsedStartYear = Number.parseInt(
+    schoolYear.yearLabel.split("-")[0]?.trim() ?? "",
+    10,
+  );
+  const startYear = Number.isFinite(parsedStartYear)
+    ? parsedStartYear
+    : new Date().getFullYear();
 
   // Find all eligible records from previous year
-  const sourceRecords = await prisma.enrollmentRecord.findMany({
+  const sourceRecords = (await prisma.enrollmentRecord.findMany({
     where: {
       schoolYearId: prevSchoolYearId,
       enrollmentApplication: {
@@ -405,7 +411,7 @@ export async function syncBOSYQueue(
         { eosyStatus: { equals: null } },
         {
           eosyStatus: {
-            notIn: ["DROPPED_OUT", "TRANSFERRED_OUT", "IRREGULAR"],
+              notIn: ["DROPPED_OUT", "TRANSFERRED_OUT", "CONDITIONALLY_PROMOTED"],
           },
         },
       ],
@@ -438,7 +444,19 @@ export async function syncBOSYQueue(
         },
       },
     },
-  });
+  })) as Array<{
+    eosyStatus: string | null;
+    learnerId: number;
+    enrollmentApplication: {
+      applicantType: ApplicantType;
+      isPrivacyConsentGiven: boolean | null;
+      guardianRelationship: string | null;
+      hasNoMother: boolean | null;
+      hasNoFather: boolean | null;
+      tleProgramId: number | null;
+    } | null;
+    section: { gradeLevel: { displayOrder: number } } | null;
+  }>;
 
   // Find existing applications to avoid duplicates
   const existingApplications = await prisma.enrollmentApplication.findMany({
@@ -462,7 +480,11 @@ export async function syncBOSYQueue(
     if (existingLearnerIds.has(record.learnerId)) continue;
 
     const eosyStatus = record.eosyStatus ?? "PROMOTED";
-    const sourceOrder = record.section.gradeLevel.displayOrder;
+    const section = record.section;
+    const application = record.enrollmentApplication;
+    if (!section || !application) continue;
+
+    const sourceOrder = section.gradeLevel.displayOrder;
     const targetOrder =
       eosyStatus === "PROMOTED" ? sourceOrder + 1 : sourceOrder;
     const targetGradeLevelId = gradeLevelByOrder.get(targetOrder);
@@ -474,18 +496,16 @@ export async function syncBOSYQueue(
         learnerId: record.learnerId,
         schoolYearId,
         gradeLevelId: targetGradeLevelId,
-        applicantType: record.enrollmentApplication.applicantType,
+        applicantType: application.applicantType,
         learnerType: "CONTINUING",
         status: "PENDING_CONFIRMATION",
         admissionChannel: "F2F",
-        isPrivacyConsentGiven:
-          record.enrollmentApplication.isPrivacyConsentGiven,
-        guardianRelationship: record.enrollmentApplication.guardianRelationship,
-        hasNoMother: record.enrollmentApplication.hasNoMother,
-        hasNoFather: record.enrollmentApplication.hasNoFather,
+        isPrivacyConsentGiven: application.isPrivacyConsentGiven ?? false,
+        guardianRelationship: application.guardianRelationship,
+        hasNoMother: application.hasNoMother ?? false,
+        hasNoFather: application.hasNoFather ?? false,
         // G9→G10: carry forward the existing TLE program; G8→G9: learner must re-select
-        tleProgramId:
-          sourceOrder === 9 ? record.enrollmentApplication.tleProgramId : null,
+        tleProgramId: sourceOrder === 9 ? application.tleProgramId : null,
         encodedById: actingUserId,
       },
     });
@@ -721,24 +741,50 @@ export async function getJHSCompleters(params: {
   return { items, total, page, limit };
 }
 
-export async function getTLEPrograms(): Promise<
+export async function getTLEPrograms(schoolYearId: number): Promise<
   Array<{
     id: number;
     name: string;
     category: string;
     isActive: boolean;
     displayOrder: number;
+    maxSlots: number | null;
+    availableSlots: number | null;
   }>
 > {
-  return prisma.tLEProgram.findMany({
+  const programs = await prisma.tLEProgram.findMany({
     where: { isActive: true },
     orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
-    select: {
-      id: true,
-      name: true,
-      category: true,
-      isActive: true,
-      displayOrder: true,
+  });
+
+  // Calculate current occupancy per program for the given school year
+  const occupancyRaw = await prisma.enrollmentApplication.groupBy({
+    by: ["tleProgramId"],
+    where: {
+      schoolYearId,
+      status: { in: ["READY_FOR_SECTIONING", "ENROLLED", "OFFICIALLY_ENROLLED"] },
+      tleProgramId: { not: null },
     },
+    _count: {
+      id: true,
+    },
+  });
+
+  const occupancyMap = new Map(
+    occupancyRaw.map((o) => [o.tleProgramId, o._count.id]),
+  );
+
+  return programs.map((p) => {
+    const max = p.maxSlots;
+    const current = occupancyMap.get(p.id) || 0;
+    return {
+      id: p.id,
+      name: p.name,
+      category: p.category,
+      isActive: p.isActive,
+      displayOrder: p.displayOrder,
+      maxSlots: max,
+      availableSlots: max != null ? Math.max(0, max - current) : null,
+    };
   });
 }

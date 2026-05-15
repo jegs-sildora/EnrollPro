@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 // router/index.tsx
 import { createBrowserRouter, Navigate } from "react-router";
 
@@ -13,12 +14,18 @@ import EarlyRegistrationWorkspace from "@/features/admission/pages/early-registr
 import EarlyRegistrationDetail from "@/features/admission/pages/early-registration/EarlyRegistrationDetail";
 import Enrollment from "@/features/enrollment/pages/Index";
 import EosyUpdating from "@/features/enrollment/pages/EosyIndex";
+import RegistrarEOSYWorkspace from "@/features/enrollment/pages/RegistrarEOSYWorkspace";
 import WalkInEncoder from "@/features/enrollment/pages/WalkInEncoder";
 import Students from "@/features/students/pages/Index";
 import Profile from "@/features/students/pages/Profile";
 import LearnerPortal from "@/features/learner/pages/LearnerPortal";
 import { LookupForm as LearnerLogin } from "@/features/learner/pages/LearnerLogin";
+import OnboardingConfirm from "@/features/learner/pages/OnboardingConfirm";
+import OnboardingTleSetup from "@/features/learner/pages/OnboardingTleSetup";
+import OnboardingGuard from "@/features/learner/components/OnboardingGuard";
+import ChangePassword from "@/features/auth/components/ChangePasswordModal";
 import Sections from "@/features/sections/pages/Index";
+import SectioningWorkspace from "@/features/sections/pages/SectioningWorkspace";
 import AuditLogs from "@/features/audit-logs/pages/Index";
 import Settings from "@/features/settings/pages/Index";
 import NotFound from "@/shared/components/NotFound";
@@ -46,11 +53,56 @@ const IntegrationHub = lazy(
   () => import("@/features/integration/pages/IntegrationHub"),
 );
 
+
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
     children: [
-      // Public routes
+      // 1. All Learner Routes (Isolated by Prefix)
+      {
+        path: "/learner",
+        children: [
+          {
+            path: "login",
+            element: <LearnerLogin />,
+          },
+          {
+            // Onboarding Tunnel & Dashboard Guard
+            element: <OnboardingGuard />,
+            children: [
+              {
+                path: "onboarding",
+                children: [
+                  {
+                    path: "confirm",
+                    element: <OnboardingConfirm />,
+                  },
+                  {
+                    path: "tle-setup",
+                    element: <OnboardingTleSetup />,
+                  },
+                ],
+              },
+              {
+                element: <ProtectedRoute allowedRoles={["LEARNER"]} />,
+                children: [
+                  {
+                    element: <PublicLayout />,
+                    children: [
+                      {
+                        index: true,
+                        element: <LearnerPortal />,
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+
+      // 2. Public routes (other than learner portal)
       {
         element: <PublicLayout />,
         children: [
@@ -71,14 +123,13 @@ export const router = createBrowserRouter([
             element: <SampleIntegrationPage />,
           },
           {
-            path: "/learner/login",
-            element: <LearnerLogin />,
+            path: "/change-password",
+            element: <ChangePassword />,
           },
-          // Fallback
-          { path: "*", element: <NotFound /> },
         ],
       },
-      // Auth routes
+
+      // 3. Auth routes (Staff login)
       {
         element: <AuthLayout />,
         children: [
@@ -89,7 +140,7 @@ export const router = createBrowserRouter([
         ],
       },
 
-      // Protected routes for Head Registrar and System Admin
+      // 4. Protected routes for Head Registrar and System Admin
       {
         element: (
           <ProtectedRoute
@@ -174,6 +225,10 @@ export const router = createBrowserRouter([
                 element: <EosyUpdating />,
               },
               {
+                path: "/monitoring/enrollment/eosy/workspace",
+                element: <RegistrarEOSYWorkspace />,
+              },
+              {
                 path: "/bosy",
                 element: <BOSYPage />,
               },
@@ -188,6 +243,10 @@ export const router = createBrowserRouter([
               {
                 path: "/sections",
                 element: <Sections />,
+              },
+              {
+                path: "/sections/workspace",
+                element: <SectioningWorkspace />,
               },
               {
                 path: "/monitoring/enrollment/requirements",
@@ -246,23 +305,7 @@ export const router = createBrowserRouter([
         ],
       },
 
-      // Learner portal — JWT required, role=LEARNER
-      {
-        element: <ProtectedRoute allowedRoles={["LEARNER"]} />,
-        children: [
-          {
-            element: <PublicLayout />,
-            children: [
-              {
-                path: "/learner",
-                element: <LearnerPortal />,
-              },
-            ],
-          },
-        ],
-      },
-
-      // Default redirect
+      // 5. Default redirects & Fallback
       {
         path: "/",
         element: (
@@ -272,6 +315,7 @@ export const router = createBrowserRouter([
           />
         ),
       },
+      { path: "*", element: <NotFound /> },
     ],
   },
 ]);

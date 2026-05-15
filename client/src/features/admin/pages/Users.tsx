@@ -30,7 +30,12 @@ import {
   Lock as LockIcon,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
-import { cn, formatUserRole, getRoleColorClasses } from "@/shared/lib/utils";
+import {
+  cn,
+  formatApplicationStatus,
+  formatUserRole,
+  getRoleColorClasses,
+} from "@/shared/lib/utils";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -87,6 +92,7 @@ interface User {
     | "HEAD_REGISTRAR"
     | "CLASS_ADVISER"
     | "TEACHER"
+    | "MRF"
     | "LEARNER";
   isActive: boolean;
   lastLoginAt: string | null;
@@ -228,16 +234,16 @@ export default function AdminUsers() {
     [searchParams, setSearchParams],
   );
 
-  const handlePageChange = (newPage: number) => {
+  const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
     updateUrlParams({ page: newPage });
-  };
+  }, [updateUrlParams]);
 
-  const handleLimitChange = (newLimit: number) => {
+  const handleLimitChange = useCallback((newLimit: number) => {
     setLimit(newLimit);
     setPage(1);
     updateUrlParams({ limit: newLimit, page: 1 });
-  };
+  }, [updateUrlParams]);
 
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value }, { replace: true });
@@ -251,7 +257,7 @@ export default function AdminUsers() {
     setRowSelection({});
   };
 
-  const handleCreateFieldChange = useCallback((field: string, value: any) => {
+  const handleCreateFieldChange = useCallback((field: string, value: unknown) => {
     setFormData((prev) => {
       const next = { ...prev, [field]: value };
       if (field === "firstName" || field === "lastName") {
@@ -358,7 +364,7 @@ export default function AdminUsers() {
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [_createErrors, setCreateErrors] = useState<Record<string, string>>({});
+  const [, setCreateErrors] = useState<Record<string, string>>({});
   const [profileFormData, setProfileFormData] = useState({
     firstName: "",
     lastName: "",
@@ -561,7 +567,9 @@ export default function AdminUsers() {
       await api.post("/admin/users", payload);
       sileo.success({
         title: "Account Created",
-        description: `${formData.lastName}, ${formData.firstName} added successfully.`,
+        description: formData.role === "MRF"
+          ? `${formData.lastName}, ${formData.firstName} added as MRF Staff. Note: They will use the Learner portal URL for authentication.`
+          : `${formData.lastName}, ${formData.firstName} added successfully.`,
       });
       setCreateOpen(false);
       fetchUsers();
@@ -613,8 +621,8 @@ export default function AdminUsers() {
     setProfileOpen(true);
   }, []);
 
-  const handleProfileFieldChange = useCallback((field: string, value: any) => {
-    setProfileFormData((prev) => ({ ...prev, [field]: value }));
+  const handleProfileFieldChange = useCallback((field: string, value: unknown) => {
+    setProfileFormData((prev) => ({ ...prev, [field]: value as never }));
   }, []);
 
   const handleProfileSave = async () => {
@@ -822,9 +830,11 @@ export default function AdminUsers() {
                         ? "bg-rose-50 text-rose-700 border-rose-100"
                         : user.learnerProfile?.status === "TRANSFERRED_OUT"
                           ? "bg-amber-50 text-amber-700 border-amber-100"
-                          : "bg-blue-50 text-blue-700 border-blue-100",
+                          : user.learnerProfile?.status === "JHS_COMPLETER"
+                            ? "bg-purple-50 text-purple-700 border-purple-100"
+                            : "bg-blue-50 text-blue-700 border-blue-100",
                     )}>
-                    {user.learnerProfile?.status?.replace("_", " ") || "ACTIVE"}
+                    {formatApplicationStatus(user.learnerProfile?.status || "ACTIVE")}
                   </Badge>
                 </div>
               </div>
@@ -891,7 +901,6 @@ export default function AdminUsers() {
             );
           }
 
-          const isPending = !user.lastLoginAt && user.isActive;
           return (
             <div className="flex flex-col items-center justify-center gap-1 min-w-[100px]">
               <div className="flex items-center gap-1.5">
@@ -900,17 +909,13 @@ export default function AdminUsers() {
                     "h-1.5 w-1.5 rounded-full ring-2 ring-offset-1",
                     !user.isActive
                       ? "bg-slate-400 ring-slate-100"
-                      : isPending
-                        ? "bg-orange-500 ring-orange-100"
-                        : "bg-green-500 ring-green-100",
+                      : "bg-green-500 ring-green-100",
                   )}
                 />
                 <span className="text-xs font-extrabold uppercase ">
                   {!user.isActive
                     ? "LOCKED"
-                    : isPending
-                      ? "PENDING FTL"
-                      : "ACTIVE"}
+                    : "ACTIVE"}
                 </span>
               </div>
             </div>
@@ -1442,6 +1447,8 @@ export default function AdminUsers() {
       showSkeleton,
       activeTab,
       rowSelection,
+      handlePageChange,
+      handleLimitChange,
     ],
   );
 
@@ -1455,6 +1462,10 @@ export default function AdminUsers() {
           </h1>
           <p className="text-sm font-bold text-foreground">
             Manage authenticated user accounts for personnel and learners.
+            <br />
+            <span className="text-xs font-normal text-muted-foreground mt-1 block">
+              <strong>Note:</strong> Materials Recovery Facility (MRF) users utilize learner credentials for authorization. Make sure they are granted MRF privileges accordingly if applicable.
+            </span>
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">

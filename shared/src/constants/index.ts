@@ -6,6 +6,8 @@ export const RoleEnum = z.enum([
   "HEAD_REGISTRAR",
   "CLASS_ADVISER",
   "TEACHER",
+  "LEARNER",
+  "MRF",
 ]);
 export type Role = z.infer<typeof RoleEnum>;
 export const SexEnum = z.enum(["MALE", "FEMALE"]);
@@ -236,7 +238,7 @@ export type AcademicStatus = z.infer<typeof AcademicStatusEnum>;
 export const EosyStatusEnum = z.enum([
   "PROMOTED",
   "RETAINED",
-  "IRREGULAR",
+  "CONDITIONALLY_PROMOTED",
   "TRANSFERRED_OUT",
   "DROPPED_OUT",
 ]);

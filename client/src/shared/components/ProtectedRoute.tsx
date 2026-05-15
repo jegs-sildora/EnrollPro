@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from "react-router";
 import { useAuthStore } from "@/store/auth.slice";
+import { useLearnerAuthStore } from "@/store/learner-auth.slice";
 import type { AuthRole } from "@/store/auth.slice";
 
 interface ProtectedRouteProps {
@@ -7,13 +8,25 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
-  const { token, user } = useAuthStore();
+  const isLearnerRoute =
+    allowedRoles?.length === 1 && allowedRoles[0] === "LEARNER";
 
-  if (!token || !user) {
-    const loginPath =
-      allowedRoles?.length === 1 && allowedRoles[0] === "LEARNER"
-        ? "/learner/login"
-        : "/login";
+  const staffAuth = useAuthStore();
+  const learnerAuth = useLearnerAuthStore();
+
+  const auth = isLearnerRoute ? learnerAuth : staffAuth;
+  const { token, user } = auth;
+
+  // Crucial: If we are on a learner route but only have a staff token (or vice versa),
+  // we must treat it as unauthorized for this specific guard.
+  const hasCorrectRoleType = user
+    ? isLearnerRoute
+      ? user.role === "LEARNER"
+      : user.role !== "LEARNER"
+    : false;
+
+  if (!token || !user || !hasCorrectRoleType) {
+    const loginPath = isLearnerRoute ? "/learner/login" : "/login";
     return (
       <Navigate
         to={loginPath}

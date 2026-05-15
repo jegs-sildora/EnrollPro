@@ -67,3 +67,13 @@ Prompt:
 Prompt:
 
 "Compare docs statements in [docs file] against code in [source files]. Rewrite mismatched sections to code-first truth and move aspirational behavior into a clearly labeled roadmap section."
+
+## 11. Type-safe Prisma seed prompt
+
+Prompt:
+
+"Implement or fix [seed/file] using the repo's actual Prisma schema and generated client. Do not guess field names, enum values, or relation shapes. Strictly avoid `any`. Do not use `as const` or readonly arrays when the value will be passed into mutable Prisma inputs such as `in`, `createMany`, or seed helper arrays. If a type is unclear, inspect the source of truth first; if it is still unclear, ask for clarification instead of inventing a shape. Preserve deterministic seeding and validate the touched file before finishing."
+
+Short version:
+
+"Fix [seed/file] against the real Prisma schema. No `any`. No invented fields. No readonly arrays where Prisma needs mutable `string[]` inputs. Inspect the source of truth first, then validate the file after editing."

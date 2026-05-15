@@ -12,8 +12,121 @@ import type {
 } from "../types";
 import {
   getDefaultProgramSteps,
+  getSteProgramSteps,
   mergeSteProgramSteps,
 } from "../utils/scpSteps";
+
+const DEFAULT_CUTOFF_SCORE = 50;
+const DEFAULT_MAX_SLOTS = 70;
+const DEFAULT_NOTES = "...";
+
+function getVenueByScpType(scpType: string): string {
+  switch (scpType) {
+    case "SCIENCE_TECHNOLOGY_AND_ENGINEERING":
+      return "Science Laboratory";
+    case "SPECIAL_PROGRAM_IN_THE_ARTS":
+      return "Arts Laboratory";
+    case "SPECIAL_PROGRAM_IN_SPORTS":
+      return "Sports Complex";
+    case "SPECIAL_PROGRAM_IN_JOURNALISM":
+      return "Journalism Laboratory";
+    case "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE":
+      return "Language Laboratory";
+    case "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION":
+      return "Technical-Vocational Laboratory";
+    default:
+      return "SCP Laboratory";
+  }
+}
+
+function getTodayMachineDateIso(): string {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  const day = today.getDate();
+  return new Date(Date.UTC(year, month, day, 12, 0, 0, 0)).toISOString();
+}
+
+function getDefaultInterviewRubric(): RubricCategory[] {
+  const steInterviewStep = getSteProgramSteps(false).find(
+    (step) => step.kind === "INTERVIEW",
+  );
+
+  return cloneUnknown(steInterviewStep?.rubric ?? []) as RubricCategory[];
+}
+
+function applyScpSampleDefaults(base: ScpConfig): ScpConfig {
+  const venue = getVenueByScpType(base.scpType);
+  const todayIso = getTodayMachineDateIso();
+  const interviewRubric = getDefaultInterviewRubric();
+  const steps = base.steps.length
+    ? base.steps
+    : getDefaultProgramSteps(base.scpType, base.isTwoPhase ?? false);
+
+  const normalizedSteps = withDefaultStepTimesStandalone(steps).map((step) => {
+    const isExam =
+      step.kind === "QUALIFYING_EXAMINATION" ||
+      step.kind === "PRELIMINARY_EXAMINATION" ||
+      step.kind === "FINAL_EXAMINATION";
+    const isInterview = step.kind === "INTERVIEW";
+
+    return {
+      ...step,
+      cutoffScore:
+        isExam && step.cutoffScore == null
+          ? DEFAULT_CUTOFF_SCORE
+          : step.cutoffScore ?? null,
+      venue: step.venue?.trim() ? step.venue : venue,
+      notes: step.notes?.trim() ? step.notes : DEFAULT_NOTES,
+      scheduledDate:
+        (step.kind === "QUALIFYING_EXAMINATION" || isInterview) &&
+        !step.scheduledDate
+          ? todayIso
+          : step.scheduledDate,
+      rubric: isInterview
+        ? Array.isArray(step.rubric) && step.rubric.length > 0
+          ? cloneUnknown(step.rubric)
+          : cloneUnknown(interviewRubric)
+        : step.rubric ?? null,
+    };
+  });
+
+  return {
+    ...base,
+    isOffered: base.isOffered ?? true,
+    maxSlots: base.maxSlots ?? DEFAULT_MAX_SLOTS,
+    cutoffScore: base.cutoffScore ?? DEFAULT_CUTOFF_SCORE,
+    notes: base.notes?.trim() ? base.notes : DEFAULT_NOTES,
+    artFields:
+      base.scpType === "SPECIAL_PROGRAM_IN_THE_ARTS"
+        ? base.artFields.length > 0
+          ? base.artFields
+          : ["Visual Arts", "Music", "Theater Arts"]
+        : base.artFields,
+    languages:
+      base.scpType === "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE"
+        ? base.languages.length > 0
+          ? base.languages
+          : ["Spanish", "Japanese", "French"]
+        : base.languages,
+    sportsList:
+      base.scpType === "SPECIAL_PROGRAM_IN_SPORTS"
+        ? base.sportsList.length > 0
+          ? base.sportsList
+          : ["Basketball", "Volleyball", "Athletics"]
+        : base.sportsList,
+    steps: normalizedSteps,
+  };
+}
+
+function withDefaultStepTimesStandalone(
+  steps: ScpStepConfig[] | null | undefined,
+): ScpStepConfig[] {
+  return (steps ?? []).map((step) => ({
+    ...step,
+    scheduledTime: step.scheduledTime?.trim() || "08:00 AM",
+  }));
+}
 
 function cloneUnknown<T>(value: T): T {
   if (value == null) {
@@ -93,10 +206,7 @@ export function useCurriculumScpConfigs() {
 
   const withDefaultStepTimes = useCallback(
     (steps: ScpStepConfig[] | null | undefined): ScpStepConfig[] =>
-      (steps ?? []).map((step) => ({
-        ...step,
-        scheduledTime: step.scheduledTime?.trim() || "08:00 AM",
-      })),
+      withDefaultStepTimesStandalone(steps),
     [],
   );
 
@@ -118,7 +228,7 @@ export function useCurriculumScpConfigs() {
         const found = fetched.find((config) => config.scpType === type.value);
 
         if (found) {
-          return {
+          return applyScpSampleDefaults({
             ...found,
             isOffered: found.isOffered ?? false,
             isTwoPhase: found.isTwoPhase ?? false,
@@ -129,10 +239,10 @@ export function useCurriculumScpConfigs() {
               found.rankingFormula,
             ),
             steps: withDefaultStepTimes(found.steps),
-          };
+          });
         }
 
-        return {
+        return applyScpSampleDefaults({
           scpType: type.value,
           isOffered: false,
           isTwoPhase: false,
@@ -145,7 +255,7 @@ export function useCurriculumScpConfigs() {
           languages: [],
           sportsList: [],
           steps: [],
-        };
+        });
       });
 
       const cloned = cloneScpConfigs(merged);

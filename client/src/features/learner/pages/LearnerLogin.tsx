@@ -12,8 +12,8 @@ import {
 import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useSettingsStore } from "@/store/settings.slice";
-import { useAuthStore } from "@/store/auth.slice";
-import { useNavigate } from "react-router";
+import { useLearnerAuthStore } from "@/store/learner-auth.slice";
+import { Navigate, useNavigate } from "react-router";
 import api from "@/shared/api/axiosInstance";
 import { isAxiosError } from "axios";
 import { sileo } from "sileo";
@@ -23,8 +23,8 @@ const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
 export function LookupForm() {
   const navigate = useNavigate();
-  const { logoUrl, schoolName } = useSettingsStore();
-  const { setAuth } = useAuthStore();
+  const { logoUrl, schoolName, accentForeground } = useSettingsStore();
+  const { token, user, setAuth } = useLearnerAuthStore();
 
   const [lrn, setLrn] = useState("");
   const [password, setPassword] = useState("");
@@ -77,16 +77,28 @@ export function LookupForm() {
 
   const isFormValid = lrn.length >= 12 && password.length >= 6;
 
+  const strokeColor = accentForeground === "0 0% 0%" ? "stroke-black" : "stroke-white";
+
+  // If already logged in as learner, skip login page
+  if (token && user && !user.mustChangePassword) {
+    return (
+      <Navigate
+        to="/learner"
+        replace
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background implementation */}
       <div
         className="fixed inset-0 -z-10"
         style={{
-          background: "hsl(var(--sidebar-background)/0.5)",
+          background: "hsl(var(--accent))",
         }}>
         <svg
-          className="absolute inset-0 w-full h-full opacity-[0.08]"
+          className="absolute inset-0 w-full h-full opacity-[0.15]"
           xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern
@@ -103,7 +115,7 @@ export function LookupForm() {
                 height="36"
                 rx="2"
                 fill="none"
-                stroke="hsl(var(--primary))"
+                className={strokeColor}
                 strokeWidth="1.5"
               />
               <rect
@@ -113,7 +125,7 @@ export function LookupForm() {
                 height="36"
                 rx="2"
                 fill="none"
-                stroke="hsl(var(--primary))"
+                className={strokeColor}
                 strokeWidth="1.5"
               />
               <rect
@@ -123,7 +135,7 @@ export function LookupForm() {
                 height="36"
                 rx="2"
                 fill="none"
-                stroke="hsl(var(--primary))"
+                className={strokeColor}
                 strokeWidth="1.5"
               />
               <rect
@@ -133,7 +145,7 @@ export function LookupForm() {
                 height="36"
                 rx="2"
                 fill="none"
-                stroke="hsl(var(--primary))"
+                className={strokeColor}
                 strokeWidth="1.5"
               />
             </pattern>
@@ -148,7 +160,7 @@ export function LookupForm() {
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "radial-gradient(circle at center, hsl(var(--primary)/0.05) 0%, transparent 70%)",
+              "radial-gradient(circle at center, hsl(var(--accent-foreground) / 0.1) 0%, transparent 70%)",
           }}
         />
       </div>
@@ -217,7 +229,7 @@ export function LookupForm() {
                   placeholder="••••••••"
                   className="h-11 text-base bg-background/50 border-input focus:bg-background transition-all pr-10 font-bold"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(event) => setPassword(event.target.value)}
                   required
                 />
                 <button

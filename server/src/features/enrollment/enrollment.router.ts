@@ -3,7 +3,7 @@ import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
 import { syncSmartGrades, confirmConfirmationSlip, batchConfirmConfirmationSlips } from "./enrollment.controller.js";
 
-const router = Router();
+const router: Router = Router();
 
 router.post(
   "/sync-smart-grades",

@@ -16,6 +16,7 @@ import {
 import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
 import { useAuthStore } from "@/store/auth.slice";
+import { useLearnerAuthStore } from "@/store/learner-auth.slice";
 import { useSettingsStore } from "@/store/settings.slice";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -94,12 +95,28 @@ const SecurityRequirements = memo(function SecurityRequirements({
 });
 
 export default function ChangePassword() {
-  const { user, token, setAuth, clearAuth } = useAuthStore();
+  const staffAuth = useAuthStore();
+  const learnerAuth = useLearnerAuthStore();
   const { accentForeground } = useSettingsStore();
   const navigate = useNavigate();
+  
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Staff takes priority when both stores have a session (shouldn't happen in practice)
+  const isStaff = !!(staffAuth.token && staffAuth.user);
+  const auth = isStaff ? staffAuth : learnerAuth;
+  const { user, token, setAuth, clearAuth } = auth;
+
+  // Learner-like roles (LEARNER + MRF) both use the learner portal
+  const isLearnerLikeRole = (role: string | null | undefined): boolean =>
+    role === "LEARNER" || role === "MRF";
+
+  // Fall back to any stored role when token is already gone (session expired on this page)
+  const activeRole = user?.role ?? learnerAuth.user?.role ?? null;
+  const homeRoute = isLearnerLikeRole(activeRole) ? "/learner" : "/dashboard";
+  const loginRoute = isLearnerLikeRole(activeRole) ? "/learner/login" : "/login";
 
   const {
     register,
@@ -112,7 +129,6 @@ export default function ChangePassword() {
     mode: "onChange",
   });
 
-  // These will trigger re-renders of ONLY the components using them
   const newPasswordValue = useWatch({
     control,
     name: "newPassword",
@@ -153,20 +169,14 @@ export default function ChangePassword() {
   );
 
   // Guard redirects
-  if (!token || !user)
-    return (
-      <Navigate
-        to="/login"
-        replace
-      />
-    );
-  if (!user.mustChangePassword)
-    return (
-      <Navigate
-        to={user.role === "LEARNER" ? "/learner" : "/dashboard"}
-        replace
-      />
-    );
+  if (!token || !user) {
+    return <Navigate to={loginRoute} replace />;
+  }
+
+  // If already changed, go home
+  if (!user.mustChangePassword) {
+    return <Navigate to={homeRoute} replace />;
+  }
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
@@ -182,7 +192,12 @@ export default function ChangePassword() {
         description:
           "Your new password has been set. You can now access the system.",
       });
-      navigate(res.data.user.role === "LEARNER" ? "/learner" : "/dashboard");
+      
+      // Delay slightly for toast visibility then navigate to the correct home
+      const finalHome = isLearnerLikeRole(res.data.user?.role) ? "/learner" : "/dashboard";
+      setTimeout(() => {
+        navigate(finalHome, { replace: true });
+      }, 500);
     } catch (err: unknown) {
       const axiosError = err as {
         response?: { status?: number; data?: { message?: string } };
@@ -213,7 +228,7 @@ export default function ChangePassword() {
         }
       `}</style>
 
-      {/* Pixel grid pattern bg - No changes here, but memoizing the form content helps */}
+      {/* Pixel grid pattern bg */}
       <div
         className="absolute inset-0 z-0"
         style={{ background: "var(--brand)" }}>
@@ -348,7 +363,7 @@ export default function ChangePassword() {
                 className="w-full text-xs text-foreground hover:text-primary h-8"
                 onClick={() => {
                   clearAuth();
-                  navigate("/login");
+                  navigate(loginRoute);
                 }}>
                 Cancel and Return to Login
               </Button>

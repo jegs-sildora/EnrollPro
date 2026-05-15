@@ -77,15 +77,74 @@ export async function commitBatchSectioning(req: Request, res: Response) {
         .json({ message: "No assignments provided to commit" });
     }
 
-    const appIds = (
-      assignments as Array<{ applicationId: number; sectionId: number }>
-    ).map((a) => a.applicationId);
+    const typedAssignments = assignments as Array<{
+      applicationId: number;
+      sectionId: number;
+    }>;
+    const appIds = typedAssignments.map((a) => a.applicationId);
+    const sectionIds = typedAssignments.map((a) => a.sectionId);
 
-    // Fetch learner IDs first as they are required for EnrollmentRecord
+    // Fetch applications with pre-write validation context
     const applications = await prisma.enrollmentApplication.findMany({
       where: { id: { in: appIds } },
-      select: { id: true, learnerId: true, tleProgramId: true },
+      select: {
+        id: true,
+        learnerId: true,
+        tleProgramId: true,
+        status: true,
+        gradeLevelId: true,
+      },
     });
+
+    const sections = await prisma.section.findMany({
+      where: { id: { in: sectionIds } },
+      select: {
+        id: true,
+        gradeLevelId: true,
+        tleProgramId: true,
+        gradeLevel: { select: { displayOrder: true } },
+      },
+    });
+
+    const appMap = new Map(applications.map((app) => [app.id, app]));
+    const sectionMap = new Map(sections.map((section) => [section.id, section]));
+
+    for (const assignment of typedAssignments) {
+      const app = appMap.get(assignment.applicationId);
+      const section = sectionMap.get(assignment.sectionId);
+
+      if (!app || !section) {
+        return res.status(400).json({ message: "Invalid assignment payload." });
+      }
+
+      if (app.status !== "READY_FOR_SECTIONING") {
+        return res.status(409).json({
+          message: `Application ${app.id} is not READY_FOR_SECTIONING.`,
+        });
+      }
+
+      if (app.gradeLevelId !== section.gradeLevelId) {
+        return res.status(422).json({
+          message: `Grade mismatch for application ${app.id}.`,
+        });
+      }
+
+      const isSpecGrade =
+        section.gradeLevel.displayOrder === 9 ||
+        section.gradeLevel.displayOrder === 10;
+
+      if (isSpecGrade && !app.tleProgramId) {
+        return res.status(422).json({
+          message: `Application ${app.id} has no tleProgramId and cannot be sectioned.`,
+        });
+      }
+
+      if (isSpecGrade && section.tleProgramId !== app.tleProgramId) {
+        return res.status(422).json({
+          message: `Track lock violation for application ${app.id}.`,
+        });
+      }
+    }
 
     const appToLearnerMap = new Map(
       applications.map((app) => [app.id, app.learnerId]),
@@ -100,7 +159,7 @@ export async function commitBatchSectioning(req: Request, res: Response) {
         await tx.enrollmentApplication.updateMany({
           where: {
             id: { in: appIds },
-            status: { not: "TEMPORARILY_ENROLLED" },
+            status: "READY_FOR_SECTIONING",
           },
           data: { status: "ENROLLED" },
         });

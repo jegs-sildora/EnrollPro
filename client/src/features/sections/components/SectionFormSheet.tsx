@@ -38,7 +38,7 @@ interface SectionFormSheetProps {
   submitting: boolean;
   canSubmit: boolean;
   onOpenChange: (open: boolean) => void;
-  onFieldChange: (field: SectionFormField, value: any) => void;
+  onFieldChange: (field: SectionFormField, value: string | number | null) => void;
   onCancel: () => void;
   onSubmit: () => void;
   programOptions: { value: string; label: string }[];

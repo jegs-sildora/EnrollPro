@@ -4,7 +4,6 @@ import bcrypt from "bcryptjs";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { AppError } from "../../lib/AppError.js";
-import { verifyPin } from "../learner/portal-pin.service.js";
 
 type AuthUser = {
   id: number;
@@ -22,6 +21,7 @@ type AuthUser = {
 const JWT_EXPIRES_IN: jwt.SignOptions["expiresIn"] =
   (process.env.JWT_EXPIRES_IN as jwt.SignOptions["expiresIn"]) ?? "24h";
 const AUTH_COOKIE_NAME = process.env.AUTH_COOKIE_NAME ?? "enrollpro_session";
+const LEARNER_COOKIE_NAME = "learner_session";
 
 function parseExpiresInToMs(
   expiresIn: jwt.SignOptions["expiresIn"],
@@ -60,13 +60,13 @@ function getCookieOptions(): CookieOptions {
   };
 }
 
-function setSessionCookie(res: Response, token: string): void {
-  res.cookie(AUTH_COOKIE_NAME, token, getCookieOptions());
+function setSessionCookie(res: Response, token: string, cookieName = AUTH_COOKIE_NAME): void {
+  res.cookie(cookieName, token, getCookieOptions());
 }
 
-function clearSessionCookie(res: Response): void {
+function clearSessionCookie(res: Response, cookieName = AUTH_COOKIE_NAME): void {
   const options = getCookieOptions();
-  res.clearCookie(AUTH_COOKIE_NAME, {
+  res.clearCookie(cookieName, {
     httpOnly: options.httpOnly,
     secure: options.secure,
     sameSite: options.sameSite,
@@ -156,6 +156,11 @@ export async function login(req: Request, res: Response): Promise<void> {
 
 export async function logout(_req: Request, res: Response): Promise<void> {
   clearSessionCookie(res);
+  res.status(204).send();
+}
+
+export async function logoutLearner(_req: Request, res: Response): Promise<void> {
+  clearSessionCookie(res, LEARNER_COOKIE_NAME);
   res.status(204).send();
 }
 
@@ -257,6 +262,22 @@ export async function verifyCredentials(
       return;
     }
 
+    // Check if learner is JHS_COMPLETER (since external subsystems AIMS, SMART, MRF should NOT allow access to alumni/JHS completers)
+    if (user.role === "LEARNER") {
+      const learner = await prisma.learner.findUnique({
+        where: { userId: user.id },
+        select: { status: true },
+      });
+
+      if (learner?.status === "JHS_COMPLETER") {
+        res.status(403).json({ 
+          valid: false, 
+          message: "JHS completers cannot access external portals like AIMS, SMART, or MRF." 
+        });
+        return;
+      }
+    }
+
     // Return the user object (excluding password) to allow subsystem to provision its own session
     res.json({
       valid: true,
@@ -309,6 +330,8 @@ export async function learnerLogin(req: Request, res: Response): Promise<void> {
     });
 
     const token = createAuthToken(updatedUser);
+    setSessionCookie(res, token, LEARNER_COOKIE_NAME);
+
     res.json({
       token,
       user: toUserResponse(updatedUser),

@@ -99,7 +99,7 @@ export default function Step5Enrollment() {
     formState: { errors },
   } = useFormContext<EnrollmentFormData>();
 
-  const { activeSchoolYearLabel, activeSchoolYearId, viewingSchoolYearId } =
+  const { activeSchoolYearId, viewingSchoolYearId } =
     useSettingsStore();
   const contextSchoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
 

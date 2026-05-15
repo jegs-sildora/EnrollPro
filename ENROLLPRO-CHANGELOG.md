@@ -61,9 +61,42 @@ This file tracks all changes to the EnrollPro API per the **Strict API Governanc
 
 ---
 
-## 2026-05-14 - Documentation Refresh
+## 2026-05-15 - DPA Compliance + Learner Portal Isolation + TLE Intercept
+
+### Learner Portal Isolation & Auth
+
+- **Action:** Added / Modified
+- **What Changed:**
+  - Added `POST /api/auth/logout-learner` to independently terminate learner sessions.
+  - Modified `POST /api/auth/learner-login` to set a dedicated `learner_session` cookie.
+  - Updated `authenticate` middleware to support multi-cookie targets (staff vs learner).
+- **The 'Why' (Business Justification):** Ensuring that parents/learners can manage their portal session without accidentally killing an active Registrar/Admin session on the same device.
+- **Impact Radius:** Learner Portal frontend.
+
+### DPA Compliance — Secure LRN Lookup
 
 - **Action:** Modified
-- **What Changed:** Re-aligned `ARCHITECTURE_MICROSERVICES.md` to be EnrollPro-centric and added SMART integration context.
-- **The 'Why' (Business Justification):** Establishes EnrollPro as the SSOT and documents the complete Tailnet ecosystem for cross-system data flow.
-- **Impact Radius:** AIMS, ATLAS, SMART.
+- **What Changed:**
+  - Secured `GET /api/learner/lookup` with `HEAD_REGISTRAR` authorization.
+  - Repurposed public "Returning Learner" flow on the landing page to a guided instruction screen.
+- **The 'Why' (Business Justification):** Prevents unauthorized users from guessing LRNs and leaking Student PII (Names, Grades) on the public website (R.A. 10173).
+- **Impact Radius:** Public Enrollment Site, Registrar Lookup.
+
+### BOSY Digital Confirmation Wall & TLE Intercept
+
+- **Action:** Added / Modified
+- **What Changed:**
+  - `POST /api/learner/confirm-return`: Now accepts `guardianName` and `tleProgramChoice2Id`.
+  - Added `POST /api/learner/request-transfer`: Allows learners to signal intent to transfer out.
+  - `GET /api/bosy/tle-programs`: Now public and requires `schoolYearId`; returns real-time `availableSlots`.
+  - COMPLIANCE: Every confirmation now logs IP and User-Agent to the `AuditLog`.
+- **The 'Why' (Business Justification):** Digitizes the physical confirmation slip and captures Grade 9 technical track choices upfront.
+- **Impact Radius:** Learner Portal, TLE Admin.
+
+### Data Integrity — Historical Enrollment Fix
+
+- **Action:** Modified
+- **What Changed:** Removed the forced `status: "ACTIVE"` filter from `findStudents` and `getStudentsSummary` services when a specific `schoolYearId` is provided.
+- **The 'Why' (Business Justification):** Allows the system to correctly report total enrolled counts for past years, including students who have since graduated (`JHS_COMPLETER`).
+- **Impact Radius:** **SMART**, **AIMS**. These systems now receive the correct student population when querying historical academic years.
+

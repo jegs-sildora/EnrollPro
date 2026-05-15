@@ -5,9 +5,7 @@ import {
   Smartphone,
   Briefcase,
   GraduationCap,
-  ShieldCheck,
   Calendar,
-  User,
   Fingerprint,
   Info,
   BadgeCheck,
@@ -22,7 +20,7 @@ import {
 } from "@/shared/ui/sheet";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { cn, getAcademicDesignationColorClasses, getAncillaryRoleColorClasses, getPlantillaColorClasses } from "@/shared/lib/utils";
+import { cn, getAcademicDesignationColorClasses, getAncillaryRoleColorClasses } from "@/shared/lib/utils";
 import type { Teacher } from "../types";
 import { formatTeacherName } from "../utils";
 import api from "@/shared/api/axiosInstance";
@@ -40,7 +38,13 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
 }: TeacherDetailPanelProps) {
   // ATLAS-UX-001: Persist teacher data locally to allow for smooth exit animations
   const [displayTeacher, setDisplayTeacher] = useState<Teacher | null>(teacher);
-  const [teachingLoad, setTeachingLoad] = useState<any[]>([]);
+  interface TeachingLoadItem {
+    subjectName: string;
+    subjectCode: string;
+    sectionName: string;
+    gradeLevel: string;
+  }
+  const [teachingLoad, setTeachingLoad] = useState<TeachingLoadItem[]>([]);
   const [loadLoading, setLoadLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -63,9 +67,10 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
         // Corrected endpoint path: /integration is mapped to integrationTriggerRoutes
         const res = await api.get(`/integration/atlas/faculty/${teacher.id}/teaching-load`);
         setTeachingLoad(res.data.data || []);
-      } catch (err: any) {
-        console.error("Failed to fetch teaching load", err);
-        const status = err.response?.status;
+      } catch (err: unknown) {
+        const error = err as { response?: { status?: number } };
+        console.error("Failed to fetch teaching load", error);
+        const status = error.response?.status;
         if (status === 404) {
           setLoadError("Integration Service Offline");
         } else if (status === 503) {

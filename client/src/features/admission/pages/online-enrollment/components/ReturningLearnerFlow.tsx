@@ -1,4 +1,3 @@
-import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardTitle,
@@ -6,269 +5,86 @@ import {
   CardDescription,
 } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
-import { Checkbox } from "@/shared/ui/checkbox";
-import { Badge } from "@/shared/ui/badge";
 import {
-  CheckCircle2,
   UserCheck,
-  Loader2,
-  AlertCircle,
   ArrowLeft,
+  ShieldAlert,
+  ArrowRight,
 } from "lucide-react";
-import api from "@/shared/api/axiosInstance";
-import { toastApiError } from "@/shared/hooks/useApiToast";
-import { useSettingsStore } from "@/store/settings.slice";
-import { sileo } from "sileo";
-import axios from "axios";
-
-interface LearnerLookupResult {
-  id: number;
-  firstName: string;
-  lastName: string;
-  promotionStatus: string;
-  previousGradeLevel: string;
-  previousSection: string;
-  previousGenAve?: number;
-  hasPsaBirthCertificate: boolean;
-}
-
-interface GradeLevelOption {
-  id: number;
-  name: string;
-}
-
-interface EnrollmentSubmitSuccessPayload {
-  trackingNumber: string;
-  applicantType: string;
-  programType: string;
-  status: string;
-  currentStep: string;
-  assessmentData?: unknown;
-}
+import { useNavigate } from "react-router";
 
 interface ReturningLearnerFlowProps {
   onBack: () => void;
-  onSuccess: (data: EnrollmentSubmitSuccessPayload) => void;
 }
 
+/**
+ * Repurposed Instruction Screen (DPA Compliant)
+ * Instead of public LRN lookup, this informs users that confirmation
+ * has been moved to the secure Learner Portal.
+ */
 export function ReturningLearnerFlow({
   onBack,
-  onSuccess,
 }: ReturningLearnerFlowProps) {
-  const { activeSchoolYearId, activeSchoolYearLabel } = useSettingsStore();
-  const [lrn, setLrn] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [learner, setLearner] = useState<LearnerLookupResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isConfirmed, setIsConfirmed] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleLookup = useCallback(async () => {
-    if (lrn.length !== 12) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await api.get(`/learner/lookup?lrn=${lrn}`);
-      setLearner(res.data);
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err) && err.response?.status === 404) {
-        setError(
-          "Learner record not found. Please verify the LRN or proceed as a New Student.",
-        );
-      } else {
-        toastApiError(err as never);
-      }
-      setLearner(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [lrn]);
-
-  useEffect(() => {
-    if (lrn.length === 12) {
-      void handleLookup();
-    } else {
-      setLearner(null);
-      setError(null);
-    }
-  }, [lrn, handleLookup]);
-
-  const handleSubmit = async () => {
-    if (!learner || !activeSchoolYearId) return;
-    setSubmitting(true);
-    try {
-      const glRes = await api.get("/school-years/grade-levels", {
-        params: { schoolYearId: activeSchoolYearId },
-      });
-
-      const gradeLevels: GradeLevelOption[] = glRes.data.gradeLevels || [];
-      const prevNumMatch = learner.previousGradeLevel.match(/\d+/);
-      const prevNum = prevNumMatch ? parseInt(prevNumMatch[0]) : 7;
-      const targetNum = prevNum + 1;
-
-      const targetGradeLevel = gradeLevels.find((gl) => {
-        const numMatch = gl.name.match(/\d+/);
-        return numMatch && parseInt(numMatch[0]) === targetNum;
-      });
-
-      if (!targetGradeLevel) {
-        sileo.error({
-          title: "Grade Level Error",
-          description: `Could not find Grade ${targetNum} for the active school year.`,
-        });
-        return;
-      }
-
-      const res = await api.post("/enrollment/confirm-slip", {
-        learnerId: learner.id,
-        schoolYearId: activeSchoolYearId,
-        gradeLevelId: targetGradeLevel.id,
-      });
-
-      sileo.success({
-        title: "Confirmation Received!",
-        description: `Your child's enrollment for ${activeSchoolYearLabel || "S.Y. 2026-2027"} has been confirmed.`,
-      });
-
-      onSuccess(res.data.application);
-    } catch (err: unknown) {
-      toastApiError(err as never);
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const navigate = useNavigate();
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-400">
+    <div className="max-w-4xl mx-auto p-4 md:p-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-400">
       <Button
         onClick={onBack}
-        className="group font-black uppercase  bg-emerald-600 text-white shadow-md transition-all px-6">
+        variant="ghost"
+        className="group font-black uppercase text-slate-500 hover:text-foreground px-6">
         <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
         Back to Selection
       </Button>
 
       <Card className="border-2 border-emerald-100 shadow-xl overflow-hidden bg-background">
-        <div className="bg-emerald-600 px-6 py-8 text-white text-center">
-          <UserCheck className="h-12 w-12 mx-auto mb-4" />
-          <CardTitle className="text-2xl font-black uppercase">
-            Continuing Learner Confirmation
+        <div className="bg-emerald-600 px-6 py-10 text-white text-center">
+          <ShieldAlert className="h-16 w-16 mx-auto mb-4 opacity-90" />
+          <CardTitle className="text-3xl font-black uppercase tracking-tight">
+            Secure Confirmation Required
           </CardTitle>
-          <CardDescription className="text-white font-semibold mt-2">
-            Streamlined enrollment for learners moving up to the next grade
-            level.
+          <CardDescription className="text-emerald-50 font-bold mt-2 text-base">
+            For your privacy and data security, continuing learner enrollment is now handled through the secure portal.
           </CardDescription>
         </div>
 
-        <CardContent className="p-8 space-y-8">
-          <div className="space-y-3">
-            <Label className="text-sm font-black uppercase  text-foreground">
-              1. Enter Learner's 12-Digit LRN
-            </Label>
-            <div className="relative">
-              <Input
-                value={lrn}
-                onChange={(e) =>
-                  setLrn(e.target.value.replace(/\D/g, "").slice(0, 12))
-                }
-                placeholder="101234567890"
-                className="h-16 text-3xl font-black  text-center border-2 border-border focus-visible:ring-emerald-500"
-              />
-              {loading && (
-                <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                  <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
-                </div>
-              )}
+        <CardContent className="p-10 space-y-8">
+          <div className="space-y-6 text-center max-w-2xl mx-auto">
+            <div className="space-y-2">
+              <h3 className="text-xl font-black text-slate-900 uppercase">Important Privacy Update</h3>
+              <p className="text-slate-600 font-bold leading-relaxed">
+                To comply with the <span className="text-slate-900 underline decoration-emerald-500 underline-offset-4">Philippine Data Privacy Act (R.A. 10173)</span>, we have moved all student records behind a secure login.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100 text-left space-y-4">
+              <div className="flex items-start gap-4">
+                 <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 text-emerald-700 font-black text-xs">1</div>
+                 <p className="text-sm font-bold text-slate-700">Log in to the **Learner Portal** using your LRN and password.</p>
+              </div>
+              <div className="flex items-start gap-4">
+                 <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 text-emerald-700 font-black text-xs">2</div>
+                 <p className="text-sm font-bold text-slate-700">Confirm your intent to return for the upcoming school year.</p>
+              </div>
+              <div className="flex items-start gap-4">
+                 <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 text-emerald-700 font-black text-xs">3</div>
+                 <p className="text-sm font-bold text-slate-700">Update your specialization track (for incoming Grade 9).</p>
+              </div>
+            </div>
+
+            <div className="pt-6">
+              <Button
+                onClick={() => navigate("/learner/login")}
+                className="w-full h-16 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase gap-3 text-lg shadow-xl shadow-emerald-200 transition-all active:scale-[0.98]">
+                <UserCheck className="h-6 w-6" />
+                Log In to Secure Portal
+                <ArrowRight className="h-5 w-5 ml-2" />
+              </Button>
+              <p className="text-[10px] font-black uppercase text-slate-400 mt-4 tracking-widest">
+                Need help? Contact the School Registrar's Office
+              </p>
             </div>
           </div>
-
-          {error && (
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-red-50 border border-red-100 text-red-700 text-sm font-bold animate-in zoom-in-95 duration-200">
-              <AlertCircle className="h-5 w-5" />
-              {error}
-            </div>
-          )}
-
-          {learner && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
-              <div className="p-6 rounded-2xl bg-emerald-50 border-2 border-emerald-100 space-y-4">
-                <div className="flex justify-between items-start">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-black uppercase  text-emerald-700 opacity-70">
-                      Learner Profile Found
-                    </span>
-                    <h3 className="text-2xl font-black text-foreground uppercase leading-none mt-1">
-                      {learner.lastName}, {learner.firstName}
-                    </h3>
-                  </div>
-                  <Badge className="bg-emerald-600 text-white font-bold uppercase text-xs">
-                    {learner.promotionStatus}
-                  </Badge>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 pt-2">
-                  <div className="space-y-1">
-                    <span className="text-[9px] font-black uppercase text-foreground">
-                      Previous Grade
-                    </span>
-                    <p className="font-bold text-foreground">
-                      {learner.previousGradeLevel} • {learner.previousSection}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-[9px] font-black uppercase text-foreground">
-                      Gen. Average
-                    </span>
-                    <p className="font-bold text-emerald-700">
-                      {learner.previousGenAve?.toFixed(2) || "N/A"}
-                    </p>
-                  </div>
-                </div>
-
-                {learner.hasPsaBirthCertificate && (
-                  <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-100/50 border border-emerald-200">
-                    <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                    <p className="text-xs font-bold text-emerald-800">
-                      PSA Birth Certificate already on file and verified.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-start space-x-3 p-4 bg-muted/20 rounded-xl border border-border">
-                <Checkbox
-                  id="confirm-enroll"
-                  checked={isConfirmed}
-                  onCheckedChange={(checked) =>
-                    setIsConfirmed(checked === true)
-                  }
-                  className="mt-1 border-emerald-500 data-[state=checked]:bg-emerald-600"
-                />
-                <Label
-                  htmlFor="confirm-enroll"
-                  className="text-sm font-bold leading-relaxed cursor-pointer select-none text-foreground">
-                  I hereby confirm the enrollment of this learner for the School
-                  Year {activeSchoolYearLabel || "2026-2027"}. I certify that
-                  all information in the existing records is still accurate.
-                </Label>
-              </div>
-
-              <Button
-                className="w-full h-16 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase  gap-3 text-xl shadow-xl shadow-emerald-200 disabled:opacity-50"
-                disabled={!isConfirmed || submitting}
-                onClick={handleSubmit}>
-                {submitting ? (
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                ) : (
-                  <>
-                    <UserCheck className="h-7 w-7" />
-                    Submit Confirmation ⚡
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>

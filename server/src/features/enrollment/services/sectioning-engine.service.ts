@@ -191,9 +191,7 @@ export class SectioningEngine {
         where: {
           gradeLevelId,
           schoolYearId,
-          status: {
-            in: ["VERIFIED", "TEMPORARILY_ENROLLED", "READY_FOR_SECTIONING"],
-          },
+          status: "READY_FOR_SECTIONING",
           enrollmentRecord: null,
         },
       }),
@@ -240,15 +238,13 @@ export class SectioningEngine {
     const isGrade7 =
       gradeLevel.name.includes("7") || gradeLevel.displayOrder === 7;
 
-    // 1. Fetch all eligible learners (VERIFIED, TEMPORARILY_ENROLLED, or READY_FOR_SECTIONING status, no section yet)
+    // 1. Fetch all eligible learners (READY_FOR_SECTIONING only, no section yet)
     const applicants: ApplicantWithRelations[] =
       await (this.prisma.enrollmentApplication.findMany({
         where: {
           gradeLevelId,
           schoolYearId,
-          status: {
-            in: ["VERIFIED", "TEMPORARILY_ENROLLED", "READY_FOR_SECTIONING"],
-          },
+          status: "READY_FOR_SECTIONING",
           enrollmentRecord: null,
         },
         include: {

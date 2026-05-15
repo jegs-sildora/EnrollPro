@@ -30,7 +30,7 @@ function toSf5Remarks(status: EosyStatus | null): string {
     case "PROMOTED":
       return "Promoted";
     case "RETAINED":
-    case "IRREGULAR":
+    case "CONDITIONALLY_PROMOTED":
       return "Not Promoted";
     case "TRANSFERRED_OUT":
       return "Transferred Out";
@@ -243,7 +243,92 @@ export async function updateEosyRecord(
       },
     });
 
+    await auditLog({
+      userId: req.user!.userId,
+      actionType: "EOSY_STATUS_UPDATED",
+      description: `Updated EOSY status for Learner ID ${record.learnerId}`,
+      subjectType: "EnrollmentRecord",
+      recordId: recordId,
+      oldValue: record.eosyStatus || "PENDING",
+      newValue: eosyStatus,
+      req,
+    });
+
     res.json(updated);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * POST /api/eosy/batch-update
+ * Body: { sectionId: number, updates: { recordId: number, status: EosyStatus }[] }
+ */
+export async function batchUpdateEosyRecords(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { sectionId, updates } = req.body;
+
+    if (!sectionId || !Array.isArray(updates)) {
+      throw new AppError(400, "Invalid payload. sectionId and updates array required.");
+    }
+
+    const section = await prisma.section.findUnique({
+      where: { id: sectionId },
+      include: { schoolYear: { select: { isEosyFinalized: true } } },
+    });
+
+    if (!section) throw new AppError(404, "Section not found.");
+    if (section.schoolYear.isEosyFinalized) {
+      throw new AppError(422, "Cannot update statuses. School year EOSY is finalized.");
+    }
+    if (section.isEosyFinalized) {
+      throw new AppError(403, `Section '${section.name}' is finalized and locked for EOSY updates.`);
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      let count = 0;
+
+      for (const update of updates) {
+        const current = await tx.enrollmentRecord.findUnique({
+          where: { id: update.recordId },
+          select: { eosyStatus: true, learner: { select: { firstName: true, lastName: true } } },
+        });
+
+        if (!current) continue;
+
+        await tx.enrollmentRecord.update({
+          where: { id: update.recordId },
+          data: { eosyStatus: update.status as EosyStatus },
+        });
+
+        await tx.auditLog.create({
+          data: {
+            userId: req.user!.userId,
+            actionType: "EOSY_STATUS_BATCH_UPDATE",
+            description: `Updated EOSY status for ${current.learner.lastName}, ${current.learner.firstName}`,
+            subjectType: "EnrollmentRecord",
+            recordId: update.recordId,
+            oldValue: current.eosyStatus || "PENDING",
+            newValue: update.status,
+            ipAddress: req.ip ?? "0.0.0.0",
+            userAgent: (req.headers["user-agent"] as string) ?? null,
+            metadata: { sectionId, sectionName: section.name },
+          },
+        });
+
+        count++;
+      }
+
+      return { count, sectionName: section.name };
+    });
+
+    res.json({
+      message: `Successfully processed ${result.count} updates for ${result.sectionName}.`,
+    });
   } catch (error) {
     next(error);
   }
@@ -338,6 +423,8 @@ export async function finalizeSection(
       description: `Finalized EOSY for section ${updated.name}`,
       subjectType: "Section",
       recordId: sectionId,
+      oldValue: "false",
+      newValue: "true",
       req,
     });
 
@@ -388,6 +475,8 @@ export async function reopenSection(
       description: `Re-opened EOSY for section ${updated.name}`,
       subjectType: "Section",
       recordId: sectionId,
+      oldValue: "true",
+      newValue: "false",
       req,
     });
 
@@ -909,7 +998,7 @@ export async function exportSF6(
         case "TRANSFERRED_OUT":
           row.transferOut[sexKey] += 1;
           break;
-        case "IRREGULAR":
+        case "CONDITIONALLY_PROMOTED":
           row.irregular[sexKey] += 1;
           break;
         default:

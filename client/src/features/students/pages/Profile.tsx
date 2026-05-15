@@ -43,7 +43,7 @@ import { sileo } from "sileo";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { cn } from "@/shared/lib/utils";
 import { DocumentAuthModal } from "@/features/students/components/DocumentAuthModal";
-import { Sf10Tracking } from "@/features/students/components/tabs/Sf10Tracking";
+import { Sf10Tracking, type Sf10Request } from "@/features/students/components/tabs/Sf10Tracking";
 import { useAuthStore } from "@/store/auth.slice";
 import axios from "axios";
 
@@ -145,7 +145,7 @@ export default function StudentProfile() {
   const [recordHistoryLoading, setRecordHistoryLoading] = useState(false);
   const [recordHistoryLoaded, setRecordHistoryLoaded] = useState(false);
 
-  const [sf10Requests, setSf10Requests] = useState<any[]>([]);
+  const [sf10Requests, setSf10Requests] = useState<Sf10Request[]>([]);
 
   const {
     data: student,

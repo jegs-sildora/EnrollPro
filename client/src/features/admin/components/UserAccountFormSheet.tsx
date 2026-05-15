@@ -58,7 +58,8 @@ interface User {
     | "HEAD_REGISTRAR"
     | "CLASS_ADVISER"
     | "TEACHER"
-    | "LEARNER";
+    | "LEARNER"
+    | "MRF";
   isActive: boolean;
 }
 
@@ -83,7 +84,7 @@ interface UserAccountFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   formData: UserAccountFormState;
-  onFieldChange: (field: keyof UserAccountFormState, value: any) => void;
+  onFieldChange: (field: keyof UserAccountFormState, value: unknown) => void;
   onSubmit: () => void;
   onCancel: () => void;
   submitting: boolean;
@@ -265,9 +266,15 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                     <SelectItem value="HEAD_REGISTRAR">Registrar</SelectItem>
                     <SelectItem value="TEACHER">Teacher</SelectItem>
                     <SelectItem value="CLASS_ADVISER">Class Adviser</SelectItem>
+                    <SelectItem value="MRF">MRF Staff</SelectItem>
                     {mode === "edit" && <SelectItem value="LEARNER">Learner</SelectItem>}
                   </SelectContent>
                 </Select>
+                {formData.role === "MRF" && (
+                  <p className="text-[10px] text-muted-foreground mt-1.5 leading-snug">
+                    <strong className="text-foreground">Note:</strong> MRF account holders must log in using the Learner/Participant credential paths to access MRF-specific subsystem integrations.
+                  </p>
+                )}
               </div>
             </section>
 

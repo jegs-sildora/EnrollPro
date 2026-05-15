@@ -223,7 +223,7 @@ export async function broadcastPhase1(
 
     // 2. Fetch Applicants
     const applicants = await prisma.enrollmentApplication.findMany({
-      where: { status: "VERIFIED", learnerType: "EARLY_REGISTRATION" },
+      where: { status: "VERIFIED", learnerType: "NEW_ENROLLEE" },
     });
 
     const aimsStatus = `PROVISIONED ${applicants.length} APPLICANTS`;

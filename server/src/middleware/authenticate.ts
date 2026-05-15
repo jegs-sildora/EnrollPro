@@ -18,15 +18,40 @@ declare global {
   }
 }
 
-export async function authenticate(
+export function authenticate(
   req: Request,
   res: Response,
   next: NextFunction,
+): Promise<void>;
+export function authenticate(
+  cookieName: string,
+): (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export function authenticate(
+  reqOrCookie: Request | string,
+  res?: Response,
+  next?: NextFunction,
+): void | Promise<void> | ((req: Request, res: Response, next: NextFunction) => Promise<void>) {
+  if (typeof reqOrCookie === "string") {
+    const cookieName = reqOrCookie;
+    return async (req: Request, res: Response, next: NextFunction) => {
+      return performAuth(req, res, next, cookieName);
+    };
+  }
+  
+  return performAuth(reqOrCookie, res!, next!, AUTH_COOKIE_NAME);
+}
+
+async function performAuth(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  cookieName: string,
 ): Promise<void> {
   const auth = req.headers.authorization;
   const bearerToken = auth?.startsWith("Bearer ") ? auth.split(" ")[1] : null;
-  const cookieToken = req.cookies?.[AUTH_COOKIE_NAME];
-  const queryToken = typeof req.query.token === "string" ? req.query.token : null;
+  const cookieToken = req.cookies?.[cookieName];
+  const queryToken =
+    typeof req.query.token === "string" ? req.query.token : null;
   const token = bearerToken ?? cookieToken ?? queryToken;
 
   if (!token) {
@@ -74,3 +99,5 @@ export async function authenticate(
       .json({ code: "SERVER_ERROR", message: "Authentication check failed." });
   }
 }
+
+export const authenticateLearner = authenticate("learner_session");

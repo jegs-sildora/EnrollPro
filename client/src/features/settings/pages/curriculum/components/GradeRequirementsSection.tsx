@@ -37,6 +37,7 @@ function extractMinAverage(
 function buildRules(
   isSte: boolean,
   subjectAverageMin: number,
+  generalAverageMin: number,
 ): ScpGradeRequirementRule[] {
   const rules: ScpGradeRequirementRule[] = [];
 
@@ -45,6 +46,13 @@ function buildRules(
       ruleType: "SUBJECT_AVERAGE_MIN",
       minAverage: subjectAverageMin,
       subjects: ["ENGLISH", "SCIENCE", "MATHEMATICS"],
+      subjectThresholds: [],
+    });
+  } else {
+    rules.push({
+      ruleType: "GENERAL_AVERAGE_MIN",
+      minAverage: generalAverageMin,
+      subjects: [],
       subjectThresholds: [],
     });
   }
@@ -65,10 +73,22 @@ export function GradeRequirementsSection({
     "SUBJECT_AVERAGE_MIN",
   );
 
+  const generalAverageMin = extractMinAverage(
+    currentRules,
+    "GENERAL_AVERAGE_MIN",
+  );
+
   const handleSubjectAverageChange = (raw: string) => {
     const parsed =
       raw === "" ? 85 : Math.min(100, Math.max(0, parseFloat(raw) || 85));
-    const next = buildRules(isSte, parsed);
+    const next = buildRules(isSte, parsed, generalAverageMin);
+    onUpdateGradeRequirements(scpIndex, next);
+  };
+
+  const handleGeneralAverageChange = (raw: string) => {
+    const parsed =
+      raw === "" ? 85 : Math.min(100, Math.max(0, parseFloat(raw) || 85));
+    const next = buildRules(isSte, subjectAverageMin, parsed);
     onUpdateGradeRequirements(scpIndex, next);
   };
 
@@ -106,10 +126,25 @@ export function GradeRequirementsSection({
         )}
 
         {!isSte && (
-          <p className="text-xs font-semibold italic text-foreground py-2">
-            No specific grade average requirements are defined for this program
-            type.
-          </p>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold uppercase  text-foreground">
+              Minimum General Average (%)
+            </Label>
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              step={0.5}
+              value={generalAverageMin}
+              onChange={(e) => handleGeneralAverageChange(e.target.value)}
+              className="h-9 text-sm font-bold"
+              placeholder="85"
+            />
+            <p className="text-xs text-foreground flex items-start gap-1">
+              <Info className="h-3 w-3 mt-0.5 shrink-0" />
+              Minimum required general average for this program.
+            </p>
+          </div>
         )}
       </div>
 

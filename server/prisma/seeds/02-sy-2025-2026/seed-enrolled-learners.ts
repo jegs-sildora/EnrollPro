@@ -130,7 +130,7 @@ const PH_BARANGAYS = [
   "BARANGAY 2",
   "SAN ISIDRO",
   "STA. LUCIA",
-  "SANTO NI├æO",
+  "SANTO NIÑO",
   "CONCEPCION",
   "MALANDAY",
   "POBLACION",

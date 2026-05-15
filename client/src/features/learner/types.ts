@@ -23,12 +23,13 @@ export interface LearnerProfile {
   } | null;
   enrollment?: {
     curriculum?: string | null;
+    tleProgramName?: string | null;
     section?: {
       name: string;
       advisingTeacher?: { firstName: string; lastName: string } | null;
     } | null;
   } | null;
-  schoolYear?: { yearLabel: string } | null;
+  schoolYear?: { id: number; yearLabel: string } | null;
   gradeLevel?: { name: string } | null;
   lastSchoolName?: string | null;
   schoolYearLastAttended?: string | null;
@@ -37,8 +38,11 @@ export interface LearnerProfile {
   pendingConfirmation?: {
     applicationId: number;
     status: string;
+    gradeLevelName: string;
     gradeLevelDisplayOrder?: number | null;
     tleProgramId?: number | null;
+    tleProgramName?: string | null;
+    guardianName?: string | null;
   } | null;
 }
 

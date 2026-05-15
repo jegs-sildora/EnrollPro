@@ -451,7 +451,7 @@ function AppSidebar() {
                     <NavItem
                       to="/monitoring/enrollment"
                       icon={Calendar}
-                      label="Sectioning & Rosters"
+                      label="Sectioning Workspace"
                       pathname={pathname}
                     />
 

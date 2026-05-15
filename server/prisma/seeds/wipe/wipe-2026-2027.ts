@@ -8,7 +8,7 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log("≡ƒº╣ Starting wipe for School Year 2026-2027...");
+  console.log("Starting wipe for School Year 2026-2027...");
 
   // 1. Find the target School Year
   const targetYear = await prisma.schoolYear.findUnique({
@@ -16,7 +16,30 @@ async function main() {
   });
 
   if (!targetYear) {
-    console.log("Γ¥î School year 2026-2027 not found. Nothing to wipe.");
+    console.log("School year 2026-2027 not found. Nothing to wipe.");
+
+    const previousYear = await prisma.schoolYear.findUnique({
+      where: { yearLabel: "2025-2026" },
+      select: { id: true, yearLabel: true },
+    });
+
+    if (previousYear) {
+      await prisma.schoolSetting.updateMany({
+        data: { activeSchoolYearId: previousYear.id },
+      });
+
+      await prisma.schoolYear.updateMany({
+        where: { id: previousYear.id },
+        data: { status: "ACTIVE" },
+      });
+
+      console.log(
+        `Set ${previousYear.yearLabel} as active school year after missing 2026-2027.`
+      );
+    } else {
+      console.log("School year 2025-2026 not found, active year was not updated.");
+    }
+
     return;
   }
 
@@ -31,55 +54,76 @@ async function main() {
       const er = await tx.enrollmentRecord.deleteMany({
         where: { schoolYearId: syId },
       });
-      console.log(`Γ£à Deleted ${er.count} Enrollment Records.`);
+      console.log(`Deleted ${er.count} Enrollment Records.`);
 
       // 2. Delete Enrollment Applications (tied to SY)
       const ea = await tx.enrollmentApplication.deleteMany({
         where: { schoolYearId: syId },
       });
-      console.log(`Γ£à Deleted ${ea.count} Enrollment Applications.`);
+      console.log(`Deleted ${ea.count} Enrollment Applications.`);
 
       // 3. Delete Early Registration Applications (tied to SY)
       const era = await tx.earlyRegistrationApplication.deleteMany({
         where: { schoolYearId: syId },
       });
-      console.log(`Γ£à Deleted ${era.count} Early Registration Applications.`);
+      console.log(`Deleted ${era.count} Early Registration Applications.`);
 
       // 4. Delete Section Advisers (tied to sections of that SY)
       const sa = await tx.sectionAdviser.deleteMany({
         where: { section: { schoolYearId: syId } },
       });
-      console.log(`Γ£à Deleted ${sa.count} Section Advisers.`);
+      console.log(`Deleted ${sa.count} Section Advisers.`);
 
       // 5. Delete Sections (tied to SY)
       const s = await tx.section.deleteMany({
         where: { schoolYearId: syId },
       });
-      console.log(`Γ£à Deleted ${s.count} Sections.`);
+      console.log(`Deleted ${s.count} Sections.`);
 
       // 6. Delete Health Records (tied to SY)
       const hr = await tx.healthRecord.deleteMany({
         where: { schoolYearId: syId },
       });
-      console.log(`Γ£à Deleted ${hr.count} Health Records.`);
+      console.log(`Deleted ${hr.count} Health Records.`);
 
       // 7. Delete Teacher Designations (tied to SY)
       const td = await tx.teacherDesignation.deleteMany({
         where: { schoolYearId: syId },
       });
-      console.log(`Γ£à Deleted ${td.count} Teacher Designations.`);
+      console.log(`Deleted ${td.count} Teacher Designations.`);
 
       // 8. Finally, delete the School Year itself
       await tx.schoolYear.delete({
         where: { id: syId },
       });
-      console.log(`Γ£à Deleted School Year record: ${targetYear.yearLabel}.`);
+      console.log(`Deleted School Year record: ${targetYear.yearLabel}.`);
+
+      // Restore previous school year as active after wiping the target year.
+      const previousYear = await tx.schoolYear.findUnique({
+        where: { yearLabel: "2025-2026" },
+        select: { id: true, yearLabel: true },
+      });
+
+      if (previousYear) {
+        await tx.schoolSetting.updateMany({
+          data: { activeSchoolYearId: previousYear.id },
+        });
+
+        await tx.schoolYear.updateMany({
+          where: { id: previousYear.id },
+          data: { status: "ACTIVE" },
+        });
+
+        console.log(`Set ${previousYear.yearLabel} as active school year.`);
+      } else {
+        console.log("School year 2025-2026 not found, active year was not updated.");
+      }
     });
 
-    console.log(`\n≡ƒÄë Successfully wiped all transaction data for ${targetYear.yearLabel}.`);
+    console.log(`\nSuccessfully wiped all transaction data for ${targetYear.yearLabel}.`);
     console.log("Note: Master data like Learners, Teachers, and Users were preserved.");
   } catch (error) {
-    console.error("Γ¥î Wipe failed:", error);
+    console.error("Wipe failed:", error);
   }
 }
 

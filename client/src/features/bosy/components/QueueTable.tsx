@@ -11,6 +11,7 @@ import type {
   OnChangeFn,
 } from "@tanstack/react-table";
 import type { BOSYQueueItem } from "../types";
+import { formatApplicationStatus, formatEosyStatus } from "@/shared/lib/utils";
 
 const TLE_REQUIRED_GRADE_DISPLAY_ORDERS = [9, 10];
 
@@ -54,7 +55,7 @@ function statusBadge(status: string) {
     <Badge
       variant="outline"
       className="text-[10px] font-black uppercase">
-      {status}
+      {formatApplicationStatus(status)}
     </Badge>
   );
 }
@@ -183,7 +184,7 @@ export function QueueTable({
                 className={`text-[10px] font-black uppercase ${
                   s === "PROMOTED" ? "text-emerald-600" : "text-amber-600"
                 }`}>
-                {s}
+                {formatEosyStatus(s)}
               </span>
             </div>
           );

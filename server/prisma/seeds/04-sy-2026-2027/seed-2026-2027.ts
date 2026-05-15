@@ -316,6 +316,19 @@ async function main() {
     }
   }
 
+  // Archive 2025-2026 now that 2026-2027 is active (matches data.txt: status = ARCHIVED)
+  await prisma.schoolYear.update({
+    where: { yearLabel: "2025-2026" },
+    data: { status: "ARCHIVED" },
+  });
+  console.log(`✅ School year 2025-2026 marked as ARCHIVED.`);
+
+  // Sync SchoolSetting to point to 2026-2027 as the active school year
+  await prisma.schoolSetting.updateMany({
+    data: { activeSchoolYearId: targetYear.id },
+  });
+  console.log(`✅ SchoolSetting.activeSchoolYearId updated to 2026-2027 (id=${targetYear.id}).`);
+
   console.log("\nΓ£à 2026-2027 Infrastructure seeded successfully.");
 }
 

@@ -228,13 +228,20 @@ export async function getJHSCompletersHandler(
 }
 
 export async function getTLEProgramsHandler(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
-    const programs = await getTLEPrograms();
-    res.json(programs);
+    const schoolYearId = parsePositiveInt(req.query.schoolYearId, 0);
+    if (!schoolYearId) {
+      res
+        .status(400)
+        .json({ message: "schoolYearId query param is required." });
+      return;
+    }
+    const programs = await getTLEPrograms(schoolYearId);
+    res.json({ programs });
   } catch (error) {
     next(error);
   }

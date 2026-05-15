@@ -153,7 +153,7 @@ async function carryOverEligibleLearners(
     }
 
     const eosyStatus = record.eosyStatus ?? EosyStatus.PROMOTED;
-    const isIrregular = eosyStatus === EosyStatus.IRREGULAR;
+    const isIrregular = eosyStatus === EosyStatus.CONDITIONALLY_PROMOTED;
 
     if (isIrregular) {
       summary.skippedIrregular += 1;
@@ -480,7 +480,7 @@ export function createSchoolYearAdminController(
     const irregularBlockerCount = await deps.prisma.enrollmentRecord.count({
       where: {
         schoolYearId: activeYear.id,
-        eosyStatus: "IRREGULAR",
+        eosyStatus: "CONDITIONALLY_PROMOTED",
       },
     });
 

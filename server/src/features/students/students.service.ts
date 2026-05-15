@@ -169,10 +169,6 @@ export async function findStudents(query: {
   if (learnerStatus) {
     const statuses = learnerStatus.split(",").map(s => s.trim().toUpperCase());
     learnerWhere.status = statuses.length === 1 ? (statuses[0] as any) : { in: statuses as any[] };
-  } else if (resolvedSchoolYearId) {
-    // DEFAULT for "Active Enrolled" tab: Only show students who are still ACTIVE
-    // This explicitly excludes JHS_COMPLETER, DROPPED, and TRANSFERRED_OUT
-    learnerWhere.status = "ACTIVE";
   }
 
   if (search) {
@@ -222,6 +218,7 @@ export async function findStudents(query: {
             enrollmentRecord: {
               include: {
                 section: { select: { id: true, name: true, programType: true } },
+                tleProgram: { select: { id: true, name: true } },
               },
             },
             addresses: true,
@@ -321,6 +318,7 @@ export async function findStudents(query: {
       enrollmentRecord: {
         include: {
           section: { select: { id: true, name: true, programType: true } },
+          tleProgram: { select: { id: true, name: true } },
         },
       },
       addresses: true,
@@ -358,9 +356,6 @@ export async function getStudentsSummary(query: {
         resolvedStatuses.length === 1
           ? resolvedStatuses[0]
           : { in: resolvedStatuses },
-      learner: {
-        status: "ACTIVE",
-      },
     },
     select: {
       learner: {

@@ -30,6 +30,7 @@ export interface SettingsState {
   facebookPageUrl: string | null;
   depedEmail: string | null;
   schoolWebsite: string | null;
+  isBosyEnrollmentOpen: boolean;
   enrollmentPhase:
     | "EARLY_REGISTRATION"
     | "REGULAR_ENROLLMENT"
@@ -88,6 +89,7 @@ export const useSettingsStore = create<SettingsState>()(
       facebookPageUrl: null,
       depedEmail: null,
       schoolWebsite: null,
+      isBosyEnrollmentOpen: false,
       enrollmentPhase: "CLOSED",
       systemStatus: "DRAFT",
       bosyLockedAt: null,

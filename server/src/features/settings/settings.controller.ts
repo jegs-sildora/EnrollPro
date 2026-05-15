@@ -53,6 +53,7 @@ export async function getPublicSettings(
     const enrollmentPhase = contextSy
       ? getEnrollmentPhase(contextSy)
       : "CLOSED";
+    const isBosyEnrollmentOpen = enrollmentPhase === "REGULAR_ENROLLMENT";
 
     res.json({
       schoolName: settings.schoolName,
@@ -77,6 +78,7 @@ export async function getPublicSettings(
       depedEmail: settings.depedEmail,
       schoolWebsite: settings.schoolWebsite,
       enrollmentPhase,
+      isBosyEnrollmentOpen,
     });
   } catch (error) {
     console.error("[Settings Controller] Error in getPublicSettings:", error);
