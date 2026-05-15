@@ -1,3 +1,4 @@
+import { Prisma } from "../../../generated/prisma/index.js";
 import { SchoolYearControllerDeps } from "./school-year-controller.deps.js";
 
 const MANILA_TIME_ZONE = "Asia/Manila";
@@ -163,7 +164,10 @@ export async function cloneSchoolYearStructure(
             venue: step.venue,
             notes: step.notes,
             cutoffScore: step.cutoffScore,
-            rubric: step.rubric,
+            rubric:
+              step.rubric === null
+                ? Prisma.JsonNull
+                : (step.rubric as Prisma.InputJsonValue),
           },
         });
 
