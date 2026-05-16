@@ -26,6 +26,8 @@ import OnboardingGuard from "@/features/learner/components/OnboardingGuard";
 import ChangePassword from "@/features/auth/components/ChangePasswordModal";
 import Sections from "@/features/sections/pages/Index";
 import SectioningWorkspace from "@/features/sections/pages/SectioningWorkspace";
+import SectioningHub from "@/features/sections/pages/SectioningHub";
+import TleSectioningWorkspace from "@/features/sections/pages/TleSectioningWorkspace";
 import AuditLogs from "@/features/audit-logs/pages/Index";
 import Settings from "@/features/settings/pages/Index";
 import NotFound from "@/shared/components/NotFound";
@@ -247,6 +249,18 @@ export const router = createBrowserRouter([
               {
                 path: "/sections/workspace",
                 element: <SectioningWorkspace />,
+              },
+              {
+                path: "/sectioning",
+                element: <SectioningHub />,
+              },
+              {
+                path: "/sectioning/home-room",
+                element: <SectioningWorkspace />,
+              },
+              {
+                path: "/sectioning/tle",
+                element: <TleSectioningWorkspace />,
               },
               {
                 path: "/monitoring/enrollment/requirements",

@@ -19,133 +19,211 @@ const prisma = new PrismaClient({ adapter });
 // ──────────────────────────────────────────────────────────────────────────────
 const TLE_CATALOG: {
   name: string;
+  programCode: string;
   category: TLECategory;
   trackType: TLETrackType;
   displayOrder: number;
   description?: string;
 }[] = [
-  // HOME ECONOMICS
-  {
-    name: "HE - Cookery",
-    category: "HOME_ECONOMICS",
-    trackType: "SPECIALIZATION",
-    displayOrder: 1,
-    description: "TESDA NC II – Cookery (Food and Beverage Services)",
-  },
-  {
-    name: "HE - Bread and Pastry Production",
-    category: "HOME_ECONOMICS",
-    trackType: "SPECIALIZATION",
-    displayOrder: 2,
-    description: "TESDA NC II – Bread and Pastry Production",
-  },
-  {
-    name: "HE - Caregiving",
-    category: "HOME_ECONOMICS",
-    trackType: "SPECIALIZATION",
-    displayOrder: 3,
-    description: "TESDA NC II – Caregiving",
-  },
-  {
-    name: "HE - Dressmaking",
-    category: "HOME_ECONOMICS",
-    trackType: "SPECIALIZATION",
-    displayOrder: 4,
-    description: "TESDA NC II – Dressmaking",
-  },
-  {
-    name: "HE - Beauty Care (Nail Care)",
-    category: "HOME_ECONOMICS",
-    trackType: "SPECIALIZATION",
-    displayOrder: 5,
-    description: "TESDA NC II – Beauty Care (Nail Care)",
-  },
   // ICT
   {
-    name: "ICT - Computer Systems Servicing",
+    name: "ICT - Computer System Servicing",
+    programCode: "TLE_ICTCSS9-12",
     category: "ICT",
     trackType: "SPECIALIZATION",
-    displayOrder: 6,
-    description: "TESDA NC II – Computer Systems Servicing",
-  },
-  {
-    name: "ICT - Technical Drafting",
-    category: "ICT",
-    trackType: "SPECIALIZATION",
-    displayOrder: 7,
-    description: "TESDA NC II – Technical Drafting",
-  },
-  {
-    name: "ICT - Animation",
-    category: "ICT",
-    trackType: "SPECIALIZATION",
-    displayOrder: 8,
-    description: "TESDA NC II – Animation",
+    
   },
   {
     name: "ICT - Computer Programming",
+    programCode: "TLE_ICTPROG9-12",
     category: "ICT",
     trackType: "SPECIALIZATION",
-    displayOrder: 9,
-    description: "TESDA NC II – Computer Programming",
-  },
-  // INDUSTRIAL ARTS
-  {
-    name: "IA - Carpentry",
-    category: "INDUSTRIAL_ARTS",
-    trackType: "SPECIALIZATION",
-    displayOrder: 10,
-    description: "TESDA NC II – Carpentry",
+    
   },
   {
-    name: "IA - Electrical Installation and Maintenance",
-    category: "INDUSTRIAL_ARTS",
+    name: "ICT - Animation",
+    programCode: "TLE_ICTAN9-12",
+    category: "ICT",
     trackType: "SPECIALIZATION",
-    displayOrder: 11,
-    description: "TESDA NC II – Electrical Installation and Maintenance",
+    
   },
   {
-    name: "IA - Electronics",
-    category: "INDUSTRIAL_ARTS",
+    name: "ICT - Illustration",
+    programCode: "TLE_ICTIL9-12",
+    category: "ICT",
     trackType: "SPECIALIZATION",
-    displayOrder: 12,
-    description: "TESDA NC II – Electronics",
+    
   },
   {
-    name: "IA - Shielded Metal Arc Welding",
-    category: "INDUSTRIAL_ARTS",
+    name: "ICT - Telecommunication (OSP/Subscribers Line)",
+    programCode: "TLE_ICTCST9-12",
+    category: "ICT",
     trackType: "SPECIALIZATION",
-    displayOrder: 13,
-    description: "TESDA NC I – Shielded Metal Arc Welding (SMAW)",
-  },
-  {
-    name: "IA - Plumbing",
-    category: "INDUSTRIAL_ARTS",
-    trackType: "SPECIALIZATION",
-    displayOrder: 14,
-    description: "TESDA NC II – Plumbing",
+    
   },
   // AGRI-FISHERY ARTS
   {
-    name: "AFA - Agricultural Crops Production",
+    name: "AFA - Crop Production (Agricultural Crop Production)",
+    programCode: "TLE_AFACP9-12",
     category: "AGRI_FISHERY_ARTS",
     trackType: "SPECIALIZATION",
-    displayOrder: 15,
-    description: "TESDA NC II – Agricultural Crops Production",
+    
   },
   {
-    name: "AFA - Fishery Arts",
+    name: "AFA - Animal Production (Poultry/Swine/Ruminants)",
+    programCode: "TLE_AP9-12",
     category: "AGRI_FISHERY_ARTS",
     trackType: "SPECIALIZATION",
-    displayOrder: 16,
-    description: "TESDA NC II – Fishery Arts (Aquaculture)",
+    
   },
   {
-    name: "AFA - Animal Production",
+    name: "AFA - Aquaculture (Fish Culture)",
+    programCode: "TLE_AFAQ9-12",
     category: "AGRI_FISHERY_ARTS",
     trackType: "SPECIALIZATION",
-    displayOrder: 17,
-    description: "TESDA NC II – Animal Production (Swine and Poultry)",
+    
+  },
+  {
+    name: "AFA - Fish Capture (Fishing Gear/Capture)",
+    programCode: "TLE_AFFC9-12",
+    category: "AGRI_FISHERY_ARTS",
+    trackType: "SPECIALIZATION",
+    
+  },
+  // HOME ECONOMICS / FAMILY AND CONSUMER SCIENCE
+  {
+    name: "HE - Food and Beverage Processing",
+    programCode: "TLE_AFFP9-12",
+    category: "HOME_ECONOMICS",
+    trackType: "SPECIALIZATION",
+    
+  },
+  {
+    name: "HE - Cookery",
+    programCode: "TLE_HECK9-12",
+    category: "HOME_ECONOMICS",
+    trackType: "SPECIALIZATION",
+    
+  },
+  {
+    name: "HE - Bread and Pastry",
+    programCode: "TLE_HEBP9-12",
+    category: "HOME_ECONOMICS",
+    trackType: "SPECIALIZATION",
+    
+  },
+  {
+    name: "HE - Dressmaking",
+    programCode: "TLE_HEDM9-12",
+    category: "HOME_ECONOMICS",
+    trackType: "SPECIALIZATION",
+    
+  },
+  {
+    name: "HE - Tailoring",
+    programCode: "TLE_HETL9-12",
+    category: "HOME_ECONOMICS",
+    trackType: "SPECIALIZATION",
+    
+  },
+  {
+    name: "HE - Handicrafts (Needlecraft/Macrame)",
+    programCode: "TLE_HEHC9-12",
+    category: "HOME_ECONOMICS",
+    trackType: "SPECIALIZATION",
+    
+  },
+  {
+    name: "HE - Food and Beverage Services",
+    programCode: "TLE_HEFBS9-12",
+    category: "HOME_ECONOMICS",
+    trackType: "SPECIALIZATION",
+    
+  },
+  {
+    name: "HE - Beauty Care (Nail Care/Hairdressing)",
+    programCode: "TLE_HEBC9-12",
+    category: "HOME_ECONOMICS",
+    trackType: "SPECIALIZATION",
+    
+  },
+  {
+    name: "HE - Caregiving",
+    programCode: "TLE_HECG9-12",
+    category: "HOME_ECONOMICS",
+    trackType: "SPECIALIZATION",
+    
+  },
+  {
+    name: "HE - Tourism Services (Tour Guiding/Travel Services)",
+    programCode: "TLE_HETS9-12",
+    category: "HOME_ECONOMICS",
+    trackType: "SPECIALIZATION",
+    
+  },
+  {
+    name: "HE - Housekeeping",
+    programCode: "TLE_HEHK9-12",
+    category: "HOME_ECONOMICS",
+    trackType: "SPECIALIZATION",
+    
+  },
+  {
+    name: "HE - Front Office Services",
+    programCode: "TLE_HEFO9-12",
+    category: "HOME_ECONOMICS",
+    trackType: "SPECIALIZATION",
+    
+  },
+  // INDUSTRIAL ARTS
+  {
+    name: "IA - Residential Plumbing",
+    programCode: "TLE_IAPB9-12",
+    category: "INDUSTRIAL_ARTS",
+    trackType: "SPECIALIZATION",
+    
+  },
+  {
+    name: "IA - Residential Construction (Masonry/Tile Setting)",
+    programCode: "TLE_IAMN9-12",
+    category: "INDUSTRIAL_ARTS",
+    trackType: "SPECIALIZATION",
+    
+  },
+  {
+    name: "IA - Carpentry",
+    programCode: "TLE_IACP9-12",
+    category: "INDUSTRIAL_ARTS",
+    trackType: "SPECIALIZATION",
+    
+  },
+  {
+    name: "IA - Shielded Metal Arc Welding (SMAW)",
+    programCode: "TLE_IAAW9-12",
+    category: "INDUSTRIAL_ARTS",
+    trackType: "SPECIALIZATION",
+    
+  },
+  {
+    name: "IA - Electrical Installation and Maintenance (EIM)",
+    programCode: "TLE_IAEI9-12",
+    category: "INDUSTRIAL_ARTS",
+    trackType: "SPECIALIZATION",
+    
+  },
+  {
+    name: "IA - EPAS",
+    programCode: "TLE_IAEP9-12",
+    category: "INDUSTRIAL_ARTS",
+    trackType: "SPECIALIZATION",
+    
+  },
+  {
+    name: "IA - Automotive Servicing",
+    programCode: "TLE_IAAS9-12",
+    category: "INDUSTRIAL_ARTS",
+    trackType: "SPECIALIZATION",
+    
   },
 ];
 
@@ -153,46 +231,73 @@ const TLE_CATALOG: {
 // Must match names in TLE_CATALOG above.
 const SECTION_ASSIGNMENT_TRACKS = [
   "HE - Cookery",
-  "HE - Bread and Pastry Production",
-  "ICT - Computer Systems Servicing",
-  "ICT - Technical Drafting",
-  "IA - Electrical Installation and Maintenance",
+  "HE - Bread and Pastry",
+  "ICT - Computer System Servicing",
+  "ICT - Computer Programming",
+  "IA - Electrical Installation and Maintenance (EIM)",
   "IA - Carpentry",
-  "AFA - Agricultural Crops Production",
+  "AFA - Crop Production (Agricultural Crop Production)",
 ];
 
 async function upsertTlePrograms() {
   console.log("\n📚 Upserting TLE Program catalog...");
   let created = 0;
   let updated = 0;
+  const seededIds: number[] = [];
 
   for (const prog of TLE_CATALOG) {
-    const result = await prisma.tLEProgram.upsert({
-      where: { name: prog.name },
-      update: {
-        category: prog.category,
-        trackType: prog.trackType,
-        displayOrder: prog.displayOrder,
-        description: prog.description ?? null,
-        isActive: true,
+    const existing = await prisma.tLEProgram.findFirst({
+      where: {
+        OR: [{ programCode: prog.programCode }, { name: prog.name }],
       },
-      create: {
-        name: prog.name,
-        category: prog.category,
-        trackType: prog.trackType,
-        displayOrder: prog.displayOrder,
-        description: prog.description ?? null,
-        isActive: true,
-      },
+      select: { id: true },
     });
-    if (result.updatedAt === result.createdAt) {
+
+    const result = existing
+      ? await prisma.tLEProgram.update({
+          where: { id: existing.id },
+          data: {
+            name: prog.name,
+            programCode: prog.programCode,
+            category: prog.category,
+            trackType: prog.trackType,
+            displayOrder: prog.displayOrder,
+            description: prog.description ?? null,
+            isActive: true,
+          },
+        })
+      : await prisma.tLEProgram.create({
+          data: {
+            name: prog.name,
+            programCode: prog.programCode,
+            category: prog.category,
+            trackType: prog.trackType,
+            displayOrder: prog.displayOrder,
+            description: prog.description ?? null,
+            isActive: true,
+          },
+        });
+
+    seededIds.push(result.id);
+
+    if (!existing) {
       created++;
     } else {
       updated++;
     }
   }
 
+  const deactivated = await prisma.tLEProgram.updateMany({
+    where: {
+      trackType: "SPECIALIZATION",
+      id: { notIn: seededIds },
+      isActive: true,
+    },
+    data: { isActive: false },
+  });
+
   console.log(`  ✅ TLE Programs: ${created} created, ${updated} updated.`);
+  console.log(`  ✅ Legacy specialization programs deactivated: ${deactivated.count}`);
 }
 
 async function assignTleProgramsToSections() {

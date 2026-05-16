@@ -270,7 +270,12 @@ export function ConfirmationWall({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         className="w-full max-w-4xl">
         {!gateLoading && isGateLocked ? (
-          <Card className="shadow-2xl border-none overflow-hidden bg-white">
+          <motion.div
+            initial={{ opacity: 0, y: 12, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
+            <Card className="shadow-2xl border-none overflow-hidden bg-white">
             <CardHeader className="bg-white text-foreground p-6 sm:p-8">
               <CardTitle className="text-2xl font-black uppercase tracking-tight">
                 Confirmation Locked
@@ -295,7 +300,8 @@ export function ConfirmationWall({
                 Sign Out
               </Button>
             </CardFooter>
-          </Card>
+            </Card>
+          </motion.div>
         ) : (
         <AnimatePresence mode="wait">
           {step === "ack" && (
@@ -315,7 +321,12 @@ export function ConfirmationWall({
                 </p>
               </div>
 
-              <Card className="shadow-2xl border-none overflow-hidden bg-white backdrop-blur-md">
+              <motion.div
+                initial={{ opacity: 0, y: 12, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              >
+                <Card className="shadow-2xl border-none overflow-hidden bg-white backdrop-blur-md">
                 <CardHeader className="bg-white text-foreground p-6 sm:p-8">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1">
@@ -477,7 +488,8 @@ export function ConfirmationWall({
                     </Button>
                   </div>
                 </CardFooter>
-              </Card>
+                </Card>
+              </motion.div>
 
               {/* DPA Footer */}
               <div className="text-center opacity-60 text-white drop-shadow-sm flex items-center justify-center gap-2 px-6">
@@ -496,7 +508,12 @@ export function ConfirmationWall({
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               className="w-full max-w-2xl mx-auto py-12">
-              <Card className="shadow-2xl border-none text-center p-12 space-y-8 bg-white/95 backdrop-blur-md">
+              <motion.div
+                initial={{ opacity: 0, y: 12, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              >
+                <Card className="shadow-2xl border-none text-center p-12 space-y-8 bg-white/95 backdrop-blur-md">
                 <div className="mx-auto w-24 h-24 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-inner ring-8 ring-emerald-50">
                   <CheckCircle2 className="h-12 w-12" />
                 </div>
@@ -535,7 +552,8 @@ export function ConfirmationWall({
                     <ArrowRight className="ml-4 h-6 w-6" />
                   </Button>
                 </div>
-              </Card>
+                </Card>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>

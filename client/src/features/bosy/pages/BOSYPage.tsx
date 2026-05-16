@@ -18,8 +18,9 @@ import {
   bulkConfirm,
   syncBOSYQueue,
   getTLEPrograms,
+  getJHSCompleters,
 } from "../api/bosy.api";
-import type { BOSYReadiness, BOSYQueueItem, TLEProgram } from "../types";
+import type { BOSYReadiness, BOSYQueueItem, TLEProgram, JHSCompleter } from "../types";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { sileo } from "sileo";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -31,12 +32,20 @@ import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/shared/lib/utils";
 import { QueueTable } from "../components/QueueTable";
 import { TLEConfirmModal } from "../components/TLEConfirmModal";
+import { JHSCompleterTable } from "../components/JHSCompleterTable";
 import { PaginationBar } from "@/shared/components/PaginationBar";
 import { BulkConfirmBar } from "../components/BulkConfirmBar";
 
 export default function BOSYPage() {
-  const { activeSchoolYearId, activeSchoolYearLabel } = useSettingsStore();
-  const syId = activeSchoolYearId;
+  const { activeSchoolYearId, activeSchoolYearLabel, viewingSchoolYearId } =
+    useSettingsStore();
+  const resolvedSchoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
+  const syId =
+    typeof resolvedSchoolYearId === "number" &&
+    Number.isFinite(resolvedSchoolYearId) &&
+    resolvedSchoolYearId > 0
+      ? resolvedSchoolYearId
+      : null;
 
   const [readiness, setReadiness] = useState<BOSYReadiness | null>(null);
   const [readinessLoading, setReadinessLoading] = useState(false);
@@ -65,6 +74,13 @@ export default function BOSYPage() {
   const [droppedPage, setDroppedPage] = useState(1);
   const [droppedLimit, setDroppedLimit] = useState(25);
   const [droppedLoading, setDroppedLoading] = useState(false);
+
+  // JHS Completers state
+  const [completersItems, setCompletersItems] = useState<JHSCompleter[]>([]);
+  const [completersTotal, setCompletersTotal] = useState(0);
+  const [completersPage, setCompletersPage] = useState(1);
+  const [completersLimit, setCompletersLimit] = useState(25);
+  const [completersLoading, setCompletersLoading] = useState(false);
 
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [confirmingIds, setConfirmingIds] = useState<Set<number>>(new Set());
@@ -168,6 +184,25 @@ export default function BOSYPage() {
     }
   }, [syId, debouncedSearch, droppedPage, droppedLimit]);
 
+  const fetchCompleters = useCallback(async () => {
+    if (!syId) return;
+    setCompletersLoading(true);
+    try {
+      const data = await getJHSCompleters({
+        schoolYearId: syId,
+        search: debouncedSearch || undefined,
+        page: completersPage,
+        limit: completersLimit,
+      });
+      setCompletersItems(data.items);
+      setCompletersTotal(data.total);
+    } catch (e) {
+      toastApiError(e as never);
+    } finally {
+      setCompletersLoading(false);
+    }
+  }, [syId, debouncedSearch, completersPage, completersLimit]);
+
   useEffect(() => {
     void fetchReadiness();
   }, [fetchReadiness]);
@@ -192,11 +227,16 @@ export default function BOSYPage() {
     if (activeTab === "dropped") void fetchDropped();
   }, [activeTab, fetchDropped]);
 
+  useEffect(() => {
+    if (activeTab === "completers") void fetchCompleters();
+  }, [activeTab, fetchCompleters]);
+
   const handleRefresh = () => {
     void fetchReadiness();
     if (activeTab === "pending") void fetchPending();
     else if (activeTab === "confirmed") void fetchConfirmed();
     else if (activeTab === "dropped") void fetchDropped();
+    else if (activeTab === "completers") void fetchCompleters();
   };
 
   const handleConfirmSingle = async (
@@ -239,13 +279,11 @@ export default function BOSYPage() {
     }
   };
 
+  const pendingIdSet = new Set(pendingItems.map((item) => item.applicationId));
   const selectedIds = Object.keys(rowSelection)
     .filter((k) => rowSelection[k])
-    .map((k) => {
-      const item = pendingItems[Number(k)];
-      return item?.applicationId;
-    })
-    .filter((id): id is number => id !== undefined);
+    .map((k) => Number(k))
+    .filter((id) => pendingIdSet.has(id));
 
   const handleBulkConfirm = async () => {
     if (!syId || selectedIds.length === 0) return;
@@ -295,6 +333,11 @@ export default function BOSYPage() {
       key: "dropped",
       label: "Transferred Out / Dropped",
       count: readiness?.droppedCount,
+    },
+    {
+      key: "completers",
+      label: "JHS Completers",
+      count: readiness?.jhsCompleterCount,
     },
   ];
 
@@ -361,7 +404,8 @@ export default function BOSYPage() {
               readinessLoading ||
               pendingLoading ||
               confirmedLoading ||
-              droppedLoading
+              droppedLoading ||
+              completersLoading
             }>
             <RefreshCw
               className={cn(
@@ -369,7 +413,8 @@ export default function BOSYPage() {
                 (readinessLoading ||
                   pendingLoading ||
                   confirmedLoading ||
-                  droppedLoading) &&
+                  droppedLoading ||
+                  completersLoading) &&
                   "animate-spin",
               )}
             />
@@ -593,6 +638,49 @@ export default function BOSYPage() {
                   setDroppedPage(1);
                 }}
                 itemName="Learners"
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* JHS COMPLETERS */}
+        <TabsContent
+          value="completers"
+          className="mt-3">
+          <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex flex-col min-h-0 overflow-hidden">
+            <CardHeader className="px-3 sm:px-6 py-4 border-b border-border/50 shrink-0">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
+                <Input
+                  placeholder="Search LRN, First Name, Last Name..."
+                  className="pl-10 h-11 text-sm font-bold bg-muted/30 border-2 border-transparent focus:border-primary transition-all"
+                  value={queueSearch}
+                  onChange={(e) => {
+                    setQueueSearch(e.target.value);
+                    startTransition(() => {
+                      setCompletersPage(1);
+                    });
+                  }}
+                />
+              </div>
+            </CardHeader>
+            <CardContent className="p-0 flex flex-col min-h-0">
+              <div className="overflow-auto bg-muted/5">
+                <JHSCompleterTable
+                  items={completersItems}
+                  loading={completersLoading}
+                />
+              </div>
+              <PaginationBar
+                page={completersPage}
+                total={completersTotal}
+                limit={completersLimit}
+                onPageChange={setCompletersPage}
+                onLimitChange={(l) => {
+                  setCompletersLimit(l);
+                  setCompletersPage(1);
+                }}
+                itemName="Completers"
               />
             </CardContent>
           </Card>

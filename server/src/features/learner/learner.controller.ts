@@ -530,6 +530,7 @@ export const learnerConfirmReturn = async (req: Request, res: Response) => {
         where: { id },
         data: {
           status: "READY_FOR_SECTIONING",
+          tleStatus: "READY_FOR_TLE_SECTIONING",
           confirmationConsent: true,
           guardianName: guardianName || undefined,
           ...(hasPrimaryTleChoice ? { tleProgramId: Number(tleProgramId) } : {}),
@@ -559,7 +560,11 @@ export const learnerConfirmReturn = async (req: Request, res: Response) => {
       }
     }
 
-    return res.json({ applicationId: id, status: "READY_FOR_SECTIONING" });
+    return res.json({
+      applicationId: id,
+      status: "READY_FOR_SECTIONING",
+      tleStatus: "READY_FOR_TLE_SECTIONING",
+    });
   } catch (error) {
     console.error("[Learner Portal] Critical failure in confirm-return:", error);
     return res.status(500).json({ message: "Could not confirm return due to policy validation error." });
@@ -652,7 +657,7 @@ export const getTLEOptions = async (req: Request, res: Response) => {
     if (order === 9) {
       const options = await prisma.tLEProgram.findMany({
         where: { trackType: "SPECIALIZATION", isActive: true },
-        orderBy: { displayOrder: "asc" },
+        orderBy: [{ category: "asc" }, { name: "asc" }],
       });
 
       const schoolYear = await prisma.schoolYear.findFirst({
@@ -667,7 +672,8 @@ export const getTLEOptions = async (req: Request, res: Response) => {
             return {
               id: program.id,
               name: program.name,
-              category: program.trackType,
+              programCode: program.programCode,
+              category: program.category,
               availableSlots: null,
             };
           }
@@ -690,7 +696,8 @@ export const getTLEOptions = async (req: Request, res: Response) => {
           return {
             id: program.id,
             name: program.name,
-            category: program.trackType,
+            programCode: program.programCode,
+            category: program.category,
             availableSlots: Math.max(program.maxSlots - takenSlots, 0),
           };
         }),

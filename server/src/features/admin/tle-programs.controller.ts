@@ -3,12 +3,21 @@ import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import type { TLECategory, TLETrackType } from "../../generated/prisma/index.js";
 
+const ALLOWED_TLE_CATEGORIES = new Set([
+  "HOME_ECONOMICS",
+  "ICT",
+  "INDUSTRIAL_ARTS",
+  "AGRI_FISHERY_ARTS",
+]);
+
+const ALLOWED_TRACK_TYPES = new Set(["EXPLORATORY", "SPECIALIZATION"]);
+
 export async function listTLEPrograms(
   _req: Request,
   res: Response,
 ): Promise<void> {
   const programs = await prisma.tLEProgram.findMany({
-    orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
+    orderBy: [{ category: "asc" }, { name: "asc" }],
   });
   res.json({ programs });
 }
@@ -17,7 +26,7 @@ export async function createTLEProgram(
   req: Request,
   res: Response,
 ): Promise<void> {
-  const { name, category, trackType, displayOrder, isActive } = req.body;
+  const { name, programCode, category, trackType, isActive } = req.body;
 
   if (!name || typeof name !== "string" || !name.trim()) {
     res.status(400).json({ message: "name is required" });
@@ -25,6 +34,23 @@ export async function createTLEProgram(
   }
   if (!category) {
     res.status(400).json({ message: "category is required" });
+    return;
+  }
+  if (!ALLOWED_TLE_CATEGORIES.has(String(category))) {
+    res.status(400).json({ message: "category is invalid" });
+    return;
+  }
+  if (!ALLOWED_TRACK_TYPES.has(String(trackType))) {
+    res.status(400).json({ message: "trackType is invalid" });
+    return;
+  }
+  if (
+    !programCode ||
+    typeof programCode !== "string" ||
+    !programCode.trim() ||
+    programCode.trim().length > 10
+  ) {
+    res.status(400).json({ message: "programCode is required (max 10 chars)" });
     return;
   }
 
@@ -38,20 +64,12 @@ export async function createTLEProgram(
     return;
   }
 
-  const maxOrder = await prisma.tLEProgram.aggregate({
-    _max: { displayOrder: true },
-  });
-  const resolvedOrder =
-    Number.isInteger(displayOrder) && Number(displayOrder) > 0
-      ? Number(displayOrder)
-      : (maxOrder._max.displayOrder ?? 0) + 1;
-
   const program = await prisma.tLEProgram.create({
     data: {
       name: name.trim(),
+      programCode: programCode.trim().toUpperCase(),
       category: category as TLECategory,
       trackType: trackType as TLETrackType,
-      displayOrder: resolvedOrder,
       isActive: isActive !== false,
     },
   });
@@ -73,7 +91,7 @@ export async function updateTLEProgram(
   res: Response,
 ): Promise<void> {
   const id = parseInt(String(req.params.id));
-  const { name, category, trackType, displayOrder, isActive } = req.body;
+  const { name, programCode, category, trackType, isActive } = req.body;
 
   const existing = await prisma.tLEProgram.findUnique({ where: { id } });
   if (!existing) {
@@ -92,17 +110,40 @@ export async function updateTLEProgram(
       return;
     }
   }
+  if (
+    category !== undefined &&
+    !ALLOWED_TLE_CATEGORIES.has(String(category))
+  ) {
+    res.status(400).json({ message: "category is invalid" });
+    return;
+  }
+  if (
+    trackType !== undefined &&
+    !ALLOWED_TRACK_TYPES.has(String(trackType))
+  ) {
+    res.status(400).json({ message: "trackType is invalid" });
+    return;
+  }
+  if (
+    programCode !== undefined &&
+    (typeof programCode !== "string" ||
+      !programCode.trim() ||
+      programCode.trim().length > 10)
+  ) {
+    res.status(400).json({ message: "programCode is required (max 10 chars)" });
+    return;
+  }
 
   const program = await prisma.tLEProgram.update({
     where: { id },
     data: {
       ...(name !== undefined ? { name: name.trim() } : {}),
+      ...(programCode !== undefined
+        ? { programCode: programCode.trim().toUpperCase() }
+        : {}),
       ...(category !== undefined ? { category: category as TLECategory } : {}),
       ...(trackType !== undefined
         ? { trackType: trackType as TLETrackType }
-        : {}),
-      ...(displayOrder !== undefined
-        ? { displayOrder: Number(displayOrder) }
         : {}),
       ...(isActive !== undefined ? { isActive: Boolean(isActive) } : {}),
     },

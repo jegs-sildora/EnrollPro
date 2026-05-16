@@ -12,6 +12,7 @@ import {
 import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useSettingsStore } from "@/store/settings.slice";
+import { motion } from "motion/react";
 import depedLogo from "@/assets/DepEd-logo.png";
 
 interface LookupFormProps {
@@ -121,8 +122,14 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
         />
       </div>
 
-      <Card className="w-full max-w-3xl mx-auto shadow-2xl border-primary/5 bg-white/90 backdrop-blur-xl p-2 sm:p-4">
-        <CardHeader className="text-center pb-4 pt-6 px-6 sm:px-10">
+      <motion.div
+        initial={{ opacity: 0, y: 18, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
+        className="w-full max-w-3xl mx-auto"
+      >
+        <Card className="w-full shadow-2xl border-primary/5 bg-white/90 backdrop-blur-xl p-2 sm:p-4">
+          <CardHeader className="text-center pb-4 pt-6 px-6 sm:px-10">
           <div className="flex justify-center mb-6">
             <img
               src={fullLogoUrl}
@@ -221,8 +228,9 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
               {loading ? "Verifying credentials..." : "Login to Portal"}
             </Button>
           </form>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 }

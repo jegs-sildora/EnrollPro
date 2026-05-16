@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
 import {
   Sheet,
   SheetContent,
@@ -49,6 +50,40 @@ interface SectionFormSheetProps {
   tlePrograms?: TLEProgramOption[];
 }
 
+function extractTleSectionSuffix(
+  sectionName: string,
+  tleProgramName: string,
+): string {
+  const normalizedSectionName = sectionName.trim();
+  const normalizedProgramName = tleProgramName.trim();
+
+  if (!normalizedSectionName) return "";
+  if (!normalizedProgramName) return normalizedSectionName;
+
+  const prefix = `${normalizedProgramName} - `;
+  if (
+    normalizedSectionName
+      .toLowerCase()
+      .startsWith(prefix.toLowerCase())
+  ) {
+    return normalizedSectionName.slice(prefix.length).trim();
+  }
+
+  if (
+    normalizedSectionName.toLowerCase() ===
+    normalizedProgramName.toLowerCase()
+  ) {
+    return "";
+  }
+
+  const markerIndex = normalizedSectionName.lastIndexOf(" - ");
+  if (markerIndex >= 0) {
+    return normalizedSectionName.slice(markerIndex + 3).trim();
+  }
+
+  return normalizedSectionName;
+}
+
 export const SectionFormSheet = memo(function SectionFormSheet({
   mode,
   open,
@@ -68,9 +103,19 @@ export const SectionFormSheet = memo(function SectionFormSheet({
   gradeLevelDisplayOrder = 0,
   tlePrograms = [],
 }: SectionFormSheetProps) {
-  const requiresTle = TLE_REQUIRED_DISPLAY_ORDERS.includes(
+  const isGrade9Or10 = TLE_REQUIRED_DISPLAY_ORDERS.includes(
     gradeLevelDisplayOrder,
   );
+  const isTleLaboratory =
+    isGrade9Or10 && formData.sectionType === "TLE_LABORATORY";
+  const selectedTleProgram =
+    isTleLaboratory && formData.tleProgramId != null
+      ? tlePrograms.find((program) => program.id === formData.tleProgramId)
+      : null;
+  const selectedTleProgramName = selectedTleProgram?.name ?? "";
+  const tleSectionSuffix = isTleLaboratory
+    ? extractTleSectionSuffix(formData.name, selectedTleProgramName)
+    : "";
   const [panelPercentage, setPanelPercentage] = useState(40);
   const [isDesktopViewport, setIsDesktopViewport] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth >= 640 : true,
@@ -176,6 +221,44 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                 </p>
               </header>
 
+              {isGrade9Or10 && (
+                <div className="space-y-2">
+                  <Label className="font-bold text-xs uppercase">Section Type</Label>
+                  <RadioGroup
+                    value={formData.sectionType}
+                    onValueChange={(value) =>
+                      onFieldChange("sectionType", value)
+                    }
+                    className="grid gap-3 sm:grid-cols-2"
+                  >
+                    <div className="flex items-center gap-2 rounded-md border p-3">
+                      <RadioGroupItem
+                        value="HOME_ROOM"
+                        id="section-type-home-room"
+                      />
+                      <Label
+                        htmlFor="section-type-home-room"
+                        className="font-bold text-xs uppercase cursor-pointer"
+                      >
+                        Home Room
+                      </Label>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-md border p-3">
+                      <RadioGroupItem
+                        value="TLE_LABORATORY"
+                        id="section-type-tle-laboratory"
+                      />
+                      <Label
+                        htmlFor="section-type-tle-laboratory"
+                        className="font-bold text-xs uppercase cursor-pointer"
+                      >
+                        TLE Laboratory
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              )}
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label className="font-bold text-xs uppercase">
@@ -188,102 +271,52 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                   />
                 </div>
 
+                {!isTleLaboratory && (
+                  <div className="space-y-2">
+                    <Label className="font-bold text-xs uppercase">
+                      Curricular Program *
+                    </Label>
+                    <Select
+                      value={formData.programType}
+                      onValueChange={(value) =>
+                        onFieldChange("programType", value)
+                      }>
+                      <SelectTrigger className="font-bold">
+                        <SelectValue placeholder="Select Program" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {programOptions.map((option) => (
+                          <SelectItem
+                            key={option.value}
+                            value={option.value}
+                            className="font-bold uppercase text-xs">
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+
+              {isTleLaboratory && (
                 <div className="space-y-2">
                   <Label className="font-bold text-xs uppercase">
-                    Curricular Program *
-                  </Label>
-                  <Select
-                    value={formData.programType}
-                    onValueChange={(value) =>
-                      onFieldChange("programType", value)
-                    }>
-                    <SelectTrigger className="font-bold">
-                      <SelectValue placeholder="Select Program" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {programOptions.map((option) => (
-                        <SelectItem
-                          key={option.value}
-                          value={option.value}
-                          className="font-bold uppercase text-xs">
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="font-bold text-xs uppercase">
-                  Section Name *
-                </Label>
-                <Input
-                  placeholder="e.g., Rizal, Mabini, Aristotle"
-                  value={formData.name}
-                  onChange={(event) =>
-                    onFieldChange("name", event.target.value)
-                  }
-                  className="font-black uppercase text-base placeholder:text-foreground/30"
-                />
-                <p className="text-[10px] text-muted-foreground font-bold italic">
-                  * Avoid using grade level prefix (e.g., use "Rizal" instead of
-                  "Grade 7 Rizal").
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="font-bold text-xs uppercase">
-                  Section Rank / Number
-                </Label>
-                <Input
-                  type="number"
-                  min={1}
-                  placeholder="e.g., 1, 2, 3"
-                  value={formData.sectionRank ?? ""}
-                  onChange={(event) =>
-                    onFieldChange(
-                      "sectionRank",
-                      event.target.value
-                        ? parseInt(event.target.value, 10)
-                        : null,
-                    )
-                  }
-                  className="font-black text-base [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none placeholder:text-foreground/30"
-                />
-                <p className="text-[10px] text-muted-foreground font-bold italic">
-                  * Ordinal rank of this section within the grade level (e.g., 1
-                  for the first section, 2 for the second). Leave blank for STE
-                  / SCP sections.
-                </p>
-              </div>
-
-              {requiresTle && (
-                <div className="space-y-2">
-                  <Label className="font-bold text-xs uppercase">
-                    TLE Specialization
+                    TLE Specialization *
                   </Label>
                   <Select
                     value={
                       formData.tleProgramId != null
                         ? String(formData.tleProgramId)
-                        : "none"
+                        : ""
                     }
                     onValueChange={(v) =>
-                      onFieldChange(
-                        "tleProgramId",
-                        v === "none" ? null : Number(v),
-                      )
+                      onFieldChange("tleProgramId", Number(v))
                     }>
                     <SelectTrigger className="font-bold">
                       <SelectValue placeholder="Select TLE Program" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem
-                        value="none"
-                        className="font-bold text-xs">
-                        Unassigned / Mixed
-                      </SelectItem>
                       {tlePrograms.map((p) => (
                         <SelectItem
                           key={p.id}
@@ -294,12 +327,33 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-[10px] text-muted-foreground font-bold italic">
-                    - Assign a TLE specialization for Grade 9 and Grade 10
-                    sections.
-                  </p>
                 </div>
               )}
+
+              <div className="space-y-2">
+                <Label className="font-bold text-xs uppercase">
+                  Section Name *
+                </Label>
+                <Input
+                  placeholder={
+                    isTleLaboratory
+                      ? selectedTleProgramName
+                        ? `e.g., ${selectedTleProgramName} - A`
+                        : "Select a TLE Specialization first"
+                      : "e.g., Rizal, Mabini, Aristotle"
+                  }
+                  value={formData.name}
+                  onChange={(event) =>
+                    onFieldChange("name", event.target.value)
+                  }
+                  className="font-black uppercase text-base placeholder:text-foreground/30"
+                />
+                <p className="text-[10px] text-muted-foreground font-bold italic">
+                  {isTleLaboratory
+                    ? `* Specialization is pre-filled. Append a letter to complete the name (e.g., ${selectedTleProgramName || "[Program]"} - A).`
+                    : '* Avoid using grade level prefix (e.g., use "Rizal" instead of "Grade 7 Rizal").'}
+                </p>
+              </div>
             </section>
 
             <section className="space-y-4 rounded-md border p-4 sm:p-5">
@@ -315,7 +369,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
 
               <div className="space-y-2">
                 <Label className="font-bold text-xs uppercase">
-                  Class Adviser
+                  {isTleLaboratory ? "TLE Instructor" : "Class Adviser"}
                 </Label>
                 <Select
                   value={formData.adviserId}
@@ -342,8 +396,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                   </SelectContent>
                 </Select>
                 <p className="text-[10px] text-muted-foreground font-bold italic">
-                  - Showing only teachers with Class Adviser designation and
-                  without current advisory assignments.
+                  - Showing available teachers eligible for section assignment.
                 </p>
               </div>
 

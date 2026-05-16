@@ -198,13 +198,18 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
       formData.role === "SYSTEM_ADMIN" ||
       formData.role === "HEAD_REGISTRAR" ||
       formData.role === "TEACHER" ||
-      formData.role === "CLASS_ADVISER"
+      formData.role === "CLASS_ADVISER" ||
+      formData.role === "MRF"
     );
   }, [formData.role]);
 
   const needsDepartment = useMemo(() => {
     return formData.role === "TEACHER" || formData.role === "CLASS_ADVISER";
   }, [formData.role]);
+
+  const showEmploymentDetails = useMemo(() => {
+    return needsEmployeeId || needsDepartment || formData.role === "MRF";
+  }, [formData.role, needsDepartment, needsEmployeeId]);
 
   const title = mode === "create" ? "Add Staff Account" : "Edit Account Details";
   const description = mode === "create" 
@@ -377,7 +382,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
             </section>
 
             {/* Employment Details Section (Conditional) */}
-            {(needsEmployeeId || needsDepartment) && (
+            {showEmploymentDetails && (
               <section className="space-y-4 rounded-md border p-4 sm:p-5">
                 <header className="space-y-1">
                   <h3 className="text-sm font-bold uppercase text-foreground flex items-center gap-2">

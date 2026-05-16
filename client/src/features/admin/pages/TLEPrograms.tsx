@@ -1,37 +1,24 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { sileo } from "sileo";
 import { Plus, Edit2, PowerOff, RefreshCw, BookOpen } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import type { AxiosError } from "axios";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
 import { Badge } from "@/shared/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/shared/ui/sheet";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
+import {
+  AddTleProgramModal,
+  type TLEProgramFormState,
+} from "../components/AddTleProgramModal";
 
 interface TLEProgram {
   id: number;
   name: string;
+  programCode: string;
   category: string;
   trackType: string;
-  displayOrder: number;
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -44,26 +31,34 @@ const TLE_CATEGORIES = [
   { value: "ICT", label: "Information & Communications Technology (ICT)" },
 ];
 
-const TLE_TRACK_TYPES = [
-  { value: "EXPLORATORY", label: "Exploratory (G7/G8)" },
-  { value: "SPECIALIZATION", label: "Specialization (NC II)" },
-];
-
 function categoryLabel(cat: string): string {
   return TLE_CATEGORIES.find((c) => c.value === cat)?.label ?? cat;
 }
 
-const EMPTY_FORM = {
+const EMPTY_FORM: TLEProgramFormState = {
   name: "",
+  programCode: "",
   category: "",
   trackType: "SPECIALIZATION",
-  displayOrder: 0,
   isActive: true,
 };
 
 export default function TLEPrograms() {
   const [programs, setPrograms] = useState<TLEProgram[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const specializationPrograms = useMemo(
+    () =>
+      [...programs]
+        .filter((program) => program.trackType === "SPECIALIZATION")
+        .sort((a, b) => {
+          if (a.category !== b.category) {
+            return a.category.localeCompare(b.category);
+          }
+          return a.name.localeCompare(b.name);
+        }),
+    [programs],
+  );
 
   // Sheet state
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -102,7 +97,7 @@ export default function TLEPrograms() {
 
   const openCreate = () => {
     setEditTarget(null);
-    setForm({ ...EMPTY_FORM, displayOrder: programs.length + 1 });
+    setForm(EMPTY_FORM);
     setSheetOpen(true);
   };
 
@@ -110,9 +105,9 @@ export default function TLEPrograms() {
     setEditTarget(p);
     setForm({
       name: p.name,
+      programCode: p.programCode,
       category: p.category,
       trackType: p.trackType,
-      displayOrder: p.displayOrder,
       isActive: p.isActive,
     });
     setSheetOpen(true);
@@ -195,7 +190,7 @@ export default function TLEPrograms() {
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-black uppercase flex items-center gap-2">
             <BookOpen className="h-4 w-4 text-primary" />
-            TLE Specializations ({programs.length})
+            TLE Specializations ({specializationPrograms.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -208,6 +203,9 @@ export default function TLEPrograms() {
                   </th>
                   <th className="text-left font-black uppercase text-xs text-muted-foreground py-2 pr-4">
                     Program Name
+                  </th>
+                  <th className="text-left font-black uppercase text-xs text-muted-foreground py-2 pr-4">
+                    Code
                   </th>
                   <th className="text-left font-black uppercase text-xs text-muted-foreground py-2 pr-4">
                     Category
@@ -224,23 +222,32 @@ export default function TLEPrograms() {
                 </tr>
               </thead>
               <tbody>
-                {programs.length === 0 && (
+                {specializationPrograms.length === 0 && (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="py-8 text-center text-muted-foreground text-sm font-bold">
-                      {loading ? "Loading..." : "No TLE programs found."}
+                      {loading
+                        ? "Loading..."
+                        : "No TLE specializations found."}
                     </td>
                   </tr>
                 )}
-                {programs.map((p) => (
+                {specializationPrograms.map((p, index) => (
                   <tr
                     key={p.id}
                     className="border-b last:border-0 hover:bg-muted/30">
                     <td className="py-3 pr-4 font-bold text-muted-foreground">
-                      {p.displayOrder}
+                      {index + 1}
                     </td>
                     <td className="py-3 pr-4 font-bold">{p.name}</td>
+                    <td className="py-3 pr-4">
+                      <Badge
+                        variant="outline"
+                        className="font-mono font-bold text-[10px] uppercase">
+                        {p.programCode}
+                      </Badge>
+                    </td>
                     <td className="py-3 pr-4">
                       <span className="text-xs font-bold text-muted-foreground">
                         {categoryLabel(p.category)}
@@ -290,158 +297,16 @@ export default function TLEPrograms() {
         </CardContent>
       </Card>
 
-      {/* Create / Edit Sheet */}
-      <Sheet
+      <AddTleProgramModal
         open={sheetOpen}
-        onOpenChange={setSheetOpen}>
-        <SheetContent
-          side="right"
-          className="w-full sm:max-w-md flex flex-col">
-          <SheetHeader className="border-b pb-4">
-            <SheetTitle className="font-black uppercase text-base">
-              {editTarget ? "Edit TLE Program" : "Add TLE Program"}
-            </SheetTitle>
-            <SheetDescription className="font-bold text-sm">
-              {editTarget
-                ? `Updating "${editTarget.name}"`
-                : "Create a new TLE specialization for assignment to Grade 9 and Grade 10 sections and learners."}
-            </SheetDescription>
-          </SheetHeader>
-
-          <div className="flex-1 overflow-y-auto py-4 space-y-4">
-            <div className="space-y-2">
-              <Label className="font-bold text-xs uppercase">
-                Program Name *
-              </Label>
-              <Input
-                value={form.name}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, name: e.target.value }))
-                }
-                placeholder="e.g., HE - Cookery"
-                className="font-bold"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="font-bold text-xs uppercase">Category *</Label>
-              <Select
-                value={form.category}
-                onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}>
-                <SelectTrigger className="font-bold">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TLE_CATEGORIES.map((c) => (
-                    <SelectItem
-                      key={c.value}
-                      value={c.value}
-                      className="font-bold text-xs">
-                      {c.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="font-bold text-xs uppercase">
-                Track Type *
-              </Label>
-              <Select
-                value={form.trackType}
-                onValueChange={(v) => setForm((f) => ({ ...f, trackType: v }))}>
-                <SelectTrigger className="font-bold">
-                  <SelectValue placeholder="Select track type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TLE_TRACK_TYPES.map((t) => (
-                    <SelectItem
-                      key={t.value}
-                      value={t.value}
-                      className="font-bold text-xs">
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="font-bold text-xs uppercase">
-                Display Order
-              </Label>
-              <Input
-                type="number"
-                value={form.displayOrder}
-                min={1}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    displayOrder: parseInt(e.target.value) || 0,
-                  }))
-                }
-                className="font-bold"
-              />
-              <p className="text-[10px] text-muted-foreground font-bold italic">
-                Lower numbers appear first in program lists.
-              </p>
-            </div>
-
-            {editTarget && (
-              <div className="space-y-2">
-                <Label className="font-bold text-xs uppercase">Status</Label>
-                <Select
-                  value={form.isActive ? "active" : "inactive"}
-                  onValueChange={(v) =>
-                    setForm((f) => ({ ...f, isActive: v === "active" }))
-                  }>
-                  <SelectTrigger className="font-bold">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem
-                      value="active"
-                      className="font-bold text-xs">
-                      Active
-                    </SelectItem>
-                    <SelectItem
-                      value="inactive"
-                      className="font-bold text-xs">
-                      Inactive
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </div>
-
-          <SheetFooter className="border-t pt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button
-              variant="outline"
-              onClick={() => setSheetOpen(false)}
-              disabled={submitting}
-              className="font-bold uppercase">
-              Cancel
-            </Button>
-            <Button
-              onClick={() => void handleSubmit()}
-              disabled={
-                submitting ||
-                !form.name.trim() ||
-                !form.category ||
-                !form.trackType
-              }
-              className="font-black uppercase">
-              {submitting
-                ? "Saving..."
-                : editTarget
-                  ? "Save Changes"
-                  : "Create Program"}
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+        submitting={submitting}
+        editProgramName={editTarget?.name}
+        form={form}
+        onOpenChange={setSheetOpen}
+        onCancel={() => setSheetOpen(false)}
+        onSubmit={() => void handleSubmit()}
+        onChange={setForm}
+      />
 
       <ConfirmationModal
         open={deactivateTarget !== null}

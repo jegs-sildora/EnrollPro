@@ -204,10 +204,10 @@ model SectionAdviser {
 model TLEProgram {
   id           Int          @id @default(autoincrement())
   name         String       @unique
+  programCode  String       @default("") @map("program_code")
   category     TLECategory
   trackType    TLETrackType @default(SPECIALIZATION) @map("track_type")
   isActive     Boolean      @default(true) @map("is_active")
-  displayOrder Int          @default(0) @map("display_order")
   description  String?      @map("description")
   maxSlots     Int?         @map("max_slots")
   createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -386,6 +386,7 @@ model EnrollmentApplication {
   temporaryStatusDeadline    DateTime?                     @map("temporary_status_deadline") @db.Date
   tleProgramId               Int?                          @map("tle_program_id")
   tleProgramChoice2Id        Int?                          @map("tle_program_choice2_id")
+  tleStatus                  TleSectioningStatus?          @default(PENDING) @map("tle_status")
   addresses                  ApplicationAddress[]
   checklist                  ApplicationChecklist?
   familyMembers              ApplicationFamilyMember[]
@@ -810,6 +811,14 @@ enum ApplicationStatus {
   FLAGGED_FOR_REGISTRAR
 
   @@map("application_status")
+}
+
+enum TleSectioningStatus {
+  PENDING
+  READY_FOR_TLE_SECTIONING
+  SECTIONED_FOR_TLE
+
+  @@map("tle_sectioning_status")
 }
 
 enum ReadingProfileLevel {

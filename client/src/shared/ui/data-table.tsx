@@ -23,6 +23,7 @@ import { cn } from "@/shared/lib/utils";
 export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  getRowId?: (originalRow: TData, index: number, parent?: Row<TData>) => string;
   onRowClick?: (row: TData) => void;
   loading?: boolean;
   className?: string;
@@ -97,6 +98,7 @@ const TableRowComponent = React.forwardRef(TableRowComponentInner) as <TData>(
 export function DataTable<TData, TValue>({
   columns,
   data,
+  getRowId,
   onRowClick,
   loading = false,
   className,
@@ -119,6 +121,7 @@ export function DataTable<TData, TValue>({
   const table = useReactTable({
     data,
     columns,
+    getRowId,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     onSortingChange: externalOnSortingChange ?? setInternalSorting,

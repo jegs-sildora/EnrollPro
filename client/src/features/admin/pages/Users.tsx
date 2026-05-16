@@ -394,7 +394,8 @@ export default function AdminUsers() {
       (formData.role === "SYSTEM_ADMIN" ||
         formData.role === "HEAD_REGISTRAR" ||
         formData.role === "TEACHER" ||
-        formData.role === "CLASS_ADVISER") &&
+        formData.role === "CLASS_ADVISER" ||
+        formData.role === "MRF") &&
       !formData.employeeId.trim()
     ) {
       nextErrors.employeeId = "Employee ID is mandatory for this role.";
@@ -431,7 +432,8 @@ export default function AdminUsers() {
     }
     if (
       (profileFormData.role === "SYSTEM_ADMIN" ||
-        profileFormData.role === "HEAD_REGISTRAR") &&
+        profileFormData.role === "HEAD_REGISTRAR" ||
+        profileFormData.role === "MRF") &&
       !profileFormData.employeeId.trim()
     ) {
       nextErrors.employeeId = "Employee ID is mandatory for this role.";

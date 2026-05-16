@@ -403,14 +403,55 @@ export async function listEligibleAdvisers(req: Request, res: Response) {
   const excludeSectionId = req.query.excludeSectionId
     ? parseInt(String(req.query.excludeSectionId))
     : null;
+  const sectionType = String(req.query.sectionType || "HOME_ROOM");
+  const tleProgramId = req.query.tleProgramId
+    ? parseInt(String(req.query.tleProgramId))
+    : null;
+
+  const isTleLaboratory = sectionType === "TLE_LABORATORY";
+
+  let tleTerms: string[] = [];
+  if (isTleLaboratory) {
+    if (!tleProgramId) {
+      res.json({ teachers: [] });
+      return;
+    }
+
+    const tleProgram = await prisma.tLEProgram.findUnique({
+      where: { id: tleProgramId },
+      select: { name: true, programCode: true },
+    });
+
+    if (!tleProgram) {
+      res.json({ teachers: [] });
+      return;
+    }
+
+    const shorthandName = tleProgram.name.replace(/^[A-Z]+\s*-\s*/i, "").trim();
+    tleTerms = [tleProgram.name, shorthandName, tleProgram.programCode]
+      .map((value) => value.trim())
+      .filter((value, index, values) => value.length > 0 && values.indexOf(value) === index);
+  }
 
   const teachers = await prisma.teacher.findMany({
     where: {
       isActive: true,
-      designation: {
-        equals: "CLASS ADVISER",
-        mode: "insensitive",
-      },
+      ...(!isTleLaboratory
+        ? {
+            designation: {
+              equals: "CLASS ADVISER",
+              mode: "insensitive" as const,
+            },
+          }
+        : {
+            specialization: { not: null },
+            OR: tleTerms.map((term) => ({
+              specialization: {
+                contains: term,
+                mode: "insensitive" as const,
+              },
+            })),
+          }),
       ...(schoolYearId
         ? {
             advisoryHistory: {

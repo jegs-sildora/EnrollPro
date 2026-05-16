@@ -78,9 +78,9 @@ interface Teacher {
 interface TLEProgram {
   id: number;
   name: string;
+  programCode: string;
   category: string;
   isActive: boolean;
-  displayOrder: number;
 }
 
 interface GradeLevelGroup {
@@ -104,6 +104,7 @@ const PROGRAM_TYPE_OPTIONS = [
 ];
 
 const SECTION_ACRONYMS = new Set(["STE", "SPA", "SPS", "SPJ", "SPFL", "SPTVE"]);
+const TLE_SECTION_DISPLAY_ORDERS = [9, 10];
 
 function formatSectionLabel(rawSection: string | null | undefined): string {
   if (!rawSection) return "-";
@@ -162,6 +163,49 @@ function formatProgramType(programType: string): string {
   );
 }
 
+function extractTleSectionSuffix(
+  sectionName: string,
+  tleProgramName: string,
+): string {
+  const normalizedSectionName = sectionName.trim();
+  const normalizedProgramName = tleProgramName.trim();
+
+  if (!normalizedSectionName) return "";
+  if (!normalizedProgramName) return normalizedSectionName;
+
+  const prefix = `${normalizedProgramName} - `;
+  if (
+    normalizedSectionName
+      .toLowerCase()
+      .startsWith(prefix.toLowerCase())
+  ) {
+    return normalizedSectionName.slice(prefix.length).trim();
+  }
+
+  if (
+    normalizedSectionName.toLowerCase() ===
+    normalizedProgramName.toLowerCase()
+  ) {
+    return "";
+  }
+
+  const markerIndex = normalizedSectionName.lastIndexOf(" - ");
+  if (markerIndex >= 0) {
+    return normalizedSectionName.slice(markerIndex + 3).trim();
+  }
+
+  return normalizedSectionName;
+}
+
+function buildTleSectionName(tleProgramName: string, suffix: string): string {
+  const normalizedProgramName = tleProgramName.trim();
+  const normalizedSuffix = suffix.trim();
+
+  if (!normalizedProgramName) return normalizedSuffix;
+  if (!normalizedSuffix) return normalizedProgramName;
+  return `${normalizedProgramName} - ${normalizedSuffix}`;
+}
+
 function fillColor(pct: number): string {
   if (pct > 100) return "bg-red-600";
   if (pct >= 90) return "bg-red-500";
@@ -187,6 +231,10 @@ const isPilotSection = (s: SectionItem): boolean => {
 
 const isSpecialSection = (s: SectionItem): boolean => {
   return s.programType !== "REGULAR";
+};
+
+const isTleSection = (s: SectionItem): boolean => {
+  return s.tleProgramId != null;
 };
 
 function resolveApiErrorMessage(error: unknown): string | null {
@@ -282,10 +330,10 @@ export default function Sections() {
   const [sectionFormData, setSectionFormData] = useState<SectionFormState>({
     name: "",
     programType: "REGULAR",
+    sectionType: "HOME_ROOM",
     adviserId: "none",
     maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
     tleProgramId: null,
-    sectionRank: null,
   });
   const [submittingForm, setSubmittingForm] = useState(false);
   const [programOptions, setProgramOptions] = useState<
@@ -335,6 +383,16 @@ export default function Sections() {
   const [loadingRoster, setLoadingRoster] = useState(false);
   const [classOpeningDate, setClassOpeningDate] = useState<string | null>(null);
   const [exportingSf1, setExportingSf1] = useState(false);
+
+  const resolveTleProgramName = useCallback(
+    (tleProgramId: number | null | undefined) => {
+      if (tleProgramId == null) return "";
+      return (
+        tlePrograms.find((program) => program.id === tleProgramId)?.name ?? ""
+      );
+    },
+    [tlePrograms],
+  );
 
   const handleDownloadSf1 = async () => {
     if (!viewRosterSection) return;
@@ -604,63 +662,40 @@ export default function Sections() {
   }, [ayId, SCP_LABELS]);
 
   useEffect(() => {
+    if (!ayId) return;
+
     api
-      .get("/bosy/tle-programs")
+      .get("/bosy/tle-programs", { params: { schoolYearId: ayId } })
       .then((res) => setTlePrograms(res.data.programs ?? res.data))
       .catch(() => {
         /* non-critical */
       });
-  }, []);
+  }, [ayId]);
 
-  const handleOpenCreate = useCallback(
-    (glId: number, glName: string, glDisplayOrder: number) => {
-      setFormSheetMode("create");
-      setCreateGlId(glId);
-      setCreateGlName(glName);
-      setCreateGlDisplayOrder(glDisplayOrder);
-      setSectionFormData({
-        name: "",
-        programType: "REGULAR",
-        adviserId: "none",
-        maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
-        tleProgramId: null,
-        sectionRank: null,
-      });
-      setAvailableTeachers(
-        teachers.map((t) => ({
-          id: t.id,
-          name: t.name,
-          employeeId: t.employeeId,
-        })),
-      );
-      setIsFormSheetOpen(true);
-    },
-    [teachers],
-  );
+  const fetchEligibleTeachers = useCallback(
+    async (
+      sectionType: "HOME_ROOM" | "TLE_LABORATORY",
+      tleProgramId: number | null,
+      excludeSectionId?: number | null,
+    ) => {
+      if (!ayId) return;
 
-  const handleOpenEdit = useCallback(
-    async (section: SectionItem, glName: string, glDisplayOrder: number) => {
-      setFormSheetMode("edit");
-      setEditingSectionId(section.id);
-      setCreateGlName(glName);
-      setCreateGlDisplayOrder(glDisplayOrder);
-      setSectionFormData({
-        name: section.name,
-        programType: section.programType,
-        adviserId: section.advisingTeacher
-          ? section.advisingTeacher.id.toString()
-          : "none",
-        maxCapacity: section.maxCapacity,
-        tleProgramId: section.tleProgramId ?? null,
-        sectionRank: section.sectionRank ?? null,
-      });
-
-      // Fetch filtered teachers for editing
       setLoadingTeachers(true);
       try {
-        const res = await api.get(
-          `/sections/teachers?schoolYearId=${ayId}&excludeSectionId=${section.id}`,
-        );
+        const params = new URLSearchParams({
+          schoolYearId: String(ayId),
+          sectionType,
+        });
+
+        if (excludeSectionId) {
+          params.set("excludeSectionId", String(excludeSectionId));
+        }
+
+        if (sectionType === "TLE_LABORATORY" && tleProgramId != null) {
+          params.set("tleProgramId", String(tleProgramId));
+        }
+
+        const res = await api.get(`/sections/teachers?${params.toString()}`);
         setAvailableTeachers(res.data.teachers);
       } catch (err) {
         console.error("Failed to fetch teachers", err);
@@ -674,45 +709,177 @@ export default function Sections() {
       } finally {
         setLoadingTeachers(false);
       }
+    },
+    [ayId, teachers],
+  );
+
+  useEffect(() => {
+    if (!isFormSheetOpen) return;
+
+    const isTleSection =
+      TLE_SECTION_DISPLAY_ORDERS.includes(createGlDisplayOrder) &&
+      sectionFormData.sectionType === "TLE_LABORATORY";
+
+    void fetchEligibleTeachers(
+      isTleSection ? "TLE_LABORATORY" : "HOME_ROOM",
+      isTleSection ? sectionFormData.tleProgramId : null,
+      formSheetMode === "edit" ? editingSectionId : null,
+    );
+  }, [
+    createGlDisplayOrder,
+    editingSectionId,
+    fetchEligibleTeachers,
+    formSheetMode,
+    isFormSheetOpen,
+    sectionFormData.sectionType,
+    sectionFormData.tleProgramId,
+  ]);
+
+  useEffect(() => {
+    if (!isFormSheetOpen) return;
+    if (sectionFormData.adviserId === "none") return;
+
+    const hasSelectedTeacher = availableTeachers.some(
+      (teacher) => String(teacher.id) === sectionFormData.adviserId,
+    );
+
+    if (!hasSelectedTeacher) {
+      setSectionFormData((prev) => ({ ...prev, adviserId: "none" }));
+    }
+  }, [availableTeachers, isFormSheetOpen, sectionFormData.adviserId]);
+
+  const handleOpenCreate = useCallback(
+    (glId: number, glName: string, glDisplayOrder: number) => {
+      setFormSheetMode("create");
+      setEditingSectionId(null);
+      setCreateGlId(glId);
+      setCreateGlName(glName);
+      setCreateGlDisplayOrder(glDisplayOrder);
+      setSectionFormData({
+        name: "",
+        programType: "REGULAR",
+        sectionType: "HOME_ROOM",
+        adviserId: "none",
+        maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
+        tleProgramId: null,
+      });
+      setIsFormSheetOpen(true);
+    },
+    [],
+  );
+
+  const handleOpenEdit = useCallback(
+    async (section: SectionItem, glName: string, glDisplayOrder: number) => {
+      setFormSheetMode("edit");
+      setEditingSectionId(section.id);
+      setCreateGlName(glName);
+      setCreateGlDisplayOrder(glDisplayOrder);
+      setSectionFormData({
+        name: section.name,
+        programType: section.programType,
+        sectionType:
+          TLE_SECTION_DISPLAY_ORDERS.includes(glDisplayOrder) && section.tleProgramId
+            ? "TLE_LABORATORY"
+            : "HOME_ROOM",
+        adviserId: section.advisingTeacher
+          ? section.advisingTeacher.id.toString()
+          : "none",
+        maxCapacity: section.maxCapacity,
+        tleProgramId: section.tleProgramId ?? null,
+      });
 
       setIsFormSheetOpen(true);
     },
-    [ayId, teachers],
+    [],
   );
 
   const handleFieldChange = useCallback(
     (field: keyof SectionFormState, value: string | number | null) => {
       setSectionFormData((prev) => {
-        const next = { ...prev, [field]: value };
+        const next: SectionFormState = { ...prev, [field]: value };
+
+        const currentProgramName = resolveTleProgramName(prev.tleProgramId);
+
+        if (field === "tleProgramId") {
+          const nextProgramName = resolveTleProgramName(Number(value));
+          const currentSuffix = extractTleSectionSuffix(prev.name, currentProgramName);
+          // Default to "A" when no suffix exists yet (fresh / first-time selection)
+          const suffix = currentSuffix.trim() || "A";
+          next.name = buildTleSectionName(nextProgramName, suffix);
+        }
 
         // Auto-update capacity when program type changes
-        if (field === "programType") {
+        if (field === "programType" && next.sectionType !== "TLE_LABORATORY") {
           next.maxCapacity =
             value === "REGULAR"
               ? DEFAULT_MAX_CAPACITY_REGULAR
               : DEFAULT_MAX_CAPACITY_SCP;
         }
 
+        if (field === "sectionType") {
+          if (value === "HOME_ROOM") {
+            next.tleProgramId = null;
+          }
+
+          if (value === "TLE_LABORATORY") {
+            // TLE labs operate under REGULAR with specialization track-lock.
+            next.programType = "REGULAR";
+            const suffix = extractTleSectionSuffix(prev.name, currentProgramName);
+            next.name = buildTleSectionName(currentProgramName, suffix);
+          }
+        }
+
         return next;
       });
     },
-    [],
+    [resolveTleProgramName],
   );
 
   const handleFormSubmit = async () => {
     if (!sectionFormData.name.trim()) return;
+
+    const allowTleLaboratory = TLE_SECTION_DISPLAY_ORDERS.includes(
+      createGlDisplayOrder,
+    );
+    const isTleLaboratory =
+      allowTleLaboratory && sectionFormData.sectionType === "TLE_LABORATORY";
+
+    if (isTleLaboratory && !sectionFormData.tleProgramId) {
+      sileo.error({
+        title: "TLE Specialization Required",
+        description:
+          "Please select a TLE specialization for TLE Laboratory sections.",
+      });
+      return;
+    }
+
+    if (isTleLaboratory) {
+      const tleProgramName = resolveTleProgramName(sectionFormData.tleProgramId);
+      const suffix = extractTleSectionSuffix(sectionFormData.name, tleProgramName);
+      if (!suffix.trim()) {
+        sileo.error({
+          title: "Section Name Suffix Required",
+          description:
+            "Add a suffix (e.g., A, B, C, D, or N) for the selected TLE specialization.",
+        });
+        return;
+      }
+    }
+
     setSubmittingForm(true);
     try {
       const payload = {
         name: sectionFormData.name.trim(),
-        programType: sectionFormData.programType,
+        programType: isTleLaboratory
+          ? "REGULAR"
+          : sectionFormData.programType,
         advisingTeacherId:
           sectionFormData.adviserId === "none"
             ? null
             : parseInt(sectionFormData.adviserId),
         maxCapacity: sectionFormData.maxCapacity,
-        tleProgramId: sectionFormData.tleProgramId ?? null,
-        sectionRank: sectionFormData.sectionRank ?? null,
+        // tleProgramId is the persistent lab marker for matrix scheduling.
+        tleProgramId: isTleLaboratory ? sectionFormData.tleProgramId : null,
       };
 
       if (formSheetMode === "create") {
@@ -1296,8 +1463,17 @@ export default function Sections() {
                               "Basic Education Curriculum (BEC)",
                               g.sections.filter(
                                 (s) =>
-                                  !isSpecialSection(s) && !isPilotSection(s),
+                                  !isSpecialSection(s) &&
+                                  !isPilotSection(s) &&
+                                  !isTleSection(s),
                               ),
+                              g.gradeLevelName,
+                              g.gradeLevelId,
+                            )}
+
+                            {renderSectionGroup(
+                              "Technology and Livelihood Education (TLE)",
+                              g.sections.filter((s) => isTleSection(s)),
                               g.gradeLevelName,
                               g.gradeLevelId,
                             )}
@@ -1327,7 +1503,12 @@ export default function Sections() {
         onSubmit={handleFormSubmit}
         onCancel={() => setIsFormSheetOpen(false)}
         submitting={submittingForm}
-        canSubmit={!!sectionFormData.name.trim()}
+        canSubmit={
+          !!sectionFormData.name.trim() &&
+          (!TLE_SECTION_DISPLAY_ORDERS.includes(createGlDisplayOrder) ||
+            sectionFormData.sectionType === "HOME_ROOM" ||
+            !!sectionFormData.tleProgramId)
+        }
         programOptions={programOptions}
         teachers={availableTeachers}
         loadingTeachers={loadingTeachers}

@@ -4,6 +4,7 @@ import {
   ApplicationStatus,
   LearnerType,
   ApplicantType,
+  TleSectioningStatus,
 } from "../../generated/prisma/index.js";
 import { prisma } from "../../lib/prisma.js";
 
@@ -37,6 +38,7 @@ export interface BOSYQueueItem {
   tleProgramId: number | null;
   tleProgramName: string | null;
   tleProgramCategory: string | null;
+  tleStatus: string | null;
 }
 
 export interface JHSCompleter {
@@ -273,6 +275,7 @@ export async function getBOSYQueue(params: {
         trackingNumber: true,
         status: true,
         tleProgramId: true,
+        tleStatus: true,
         learner: {
           select: {
             id: true,
@@ -311,6 +314,7 @@ export async function getBOSYQueue(params: {
     gradeLevel: { id: number; name: string; displayOrder: number };
     checklist: { academicStatus: any } | null;
     tleProgram: { id: number; name: string; category: string } | null;
+    tleStatus: string | null;
   }>;
 
   // Resolve prior-year section and adviser for each learner in one batch
@@ -370,6 +374,7 @@ export async function getBOSYQueue(params: {
       tleProgramId: a.tleProgram?.id ?? null,
       tleProgramName: a.tleProgram?.name ?? null,
       tleProgramCategory: a.tleProgram?.category ?? null,
+      tleStatus: a.tleStatus ?? null,
     };
   });
 
@@ -580,6 +585,9 @@ export async function confirmReturn(
       confirmationConsent: true,
       encodedById: actingUserId,
       ...(requiresTle ? { tleProgramId: tleProgramId ?? null } : {}),
+      ...(requiresTle && tleProgramId
+        ? { tleStatus: TleSectioningStatus.READY_FOR_TLE_SECTIONING }
+        : {}),
     },
     select: { id: true, status: true },
   });
@@ -651,6 +659,9 @@ export async function bulkConfirmReturn(
         confirmationConsent: true,
         encodedById: actingUserId,
         ...(requiresTle ? { tleProgramId } : {}),
+        ...(requiresTle && tleProgramId
+          ? { tleStatus: TleSectioningStatus.READY_FOR_TLE_SECTIONING }
+          : {}),
       },
     });
   }
@@ -745,16 +756,15 @@ export async function getTLEPrograms(schoolYearId: number): Promise<
   Array<{
     id: number;
     name: string;
+    programCode: string;
     category: string;
     isActive: boolean;
-    displayOrder: number;
     maxSlots: number | null;
     availableSlots: number | null;
   }>
 > {
   const programs = await prisma.tLEProgram.findMany({
-    where: { isActive: true },
-    orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
+    orderBy: [{ category: "asc" }, { name: "asc" }],
   });
 
   // Calculate current occupancy per program for the given school year
@@ -780,9 +790,9 @@ export async function getTLEPrograms(schoolYearId: number): Promise<
     return {
       id: p.id,
       name: p.name,
+      programCode: p.programCode,
       category: p.category,
       isActive: p.isActive,
-      displayOrder: p.displayOrder,
       maxSlots: max,
       availableSlots: max != null ? Math.max(0, max - current) : null,
     };

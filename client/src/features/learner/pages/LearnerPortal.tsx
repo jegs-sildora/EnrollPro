@@ -3,6 +3,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  type ReactNode,
 } from "react";
 import { PersonalInfoSection } from "@/features/learner/components/PersonalInfoSection";
 import { Card, CardHeader, CardTitle, CardContent } from "@/shared/ui/card";
@@ -59,6 +60,26 @@ interface TLEProgram {
   id: number;
   name: string;
   category: string;
+}
+
+function AnimatedCard({
+  children,
+  className,
+  delay = 0,
+}: {
+  children: ReactNode;
+  className?: string;
+  delay?: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 14, scale: 0.985 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.32, ease: "easeOut", delay }}
+    >
+      <Card className={className}>{children}</Card>
+    </motion.div>
+  );
 }
 
 export default function LearnerPortal() {
@@ -340,7 +361,10 @@ export default function LearnerPortal() {
             </div>
 
             {/* Zone B: Student Passport Hero Card */}
-            <Card className="shadow-xl border-primary/5 bg-card/90 backdrop-blur-xl rounded-lg overflow-hidden print:border-0 print:shadow-none">
+            <AnimatedCard
+              className="shadow-xl border-primary/5 bg-card/90 backdrop-blur-xl rounded-lg overflow-hidden print:border-0 print:shadow-none"
+              delay={0.05}
+            >
               <CardContent className="p-0">
                 <PersonalInfoSection
                   learner={learner}
@@ -355,7 +379,7 @@ export default function LearnerPortal() {
                   }
                 />
               </CardContent>
-            </Card>
+            </AnimatedCard>
 
             {/* Zone C: Navigation Tabs with Animated Pill (EnrollPro Design System) */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -436,10 +460,10 @@ export default function LearnerPortal() {
                     transition={{ duration: 0.2 }}
                     className="w-full">
                     <TabsContent value="health" forceMount className="mt-0 focus-visible:outline-none ring-0">
-                      <Card className="shadow-xl border-primary/5 bg-card/90 backdrop-blur-xl rounded-lg">
+                      <AnimatedCard className="shadow-xl border-primary/5 bg-card/90 backdrop-blur-xl rounded-lg">
                         <CardContent className="p-8 md:p-10">
                         </CardContent>
-                      </Card>
+                      </AnimatedCard>
                     </TabsContent>
                   </motion.div>
                 )}
@@ -501,7 +525,7 @@ function TransitionBanner({
   if (!isVisible) return null;
 
   return (
-    <Card className="shadow-xl border-2 border-primary/20 bg-primary/10 rounded-lg overflow-hidden print:hidden">
+    <AnimatedCard className="shadow-xl border-2 border-primary/20 bg-primary/10 rounded-lg overflow-hidden print:hidden">
       <CardContent className="p-6 flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <AlertCircle className="h-8 w-8 text-primary shrink-0" />
@@ -549,7 +573,7 @@ function TransitionBanner({
           </Button>
         </div>
       </CardContent>
-    </Card>
+    </AnimatedCard>
   );
 }
 
@@ -576,7 +600,7 @@ function JhsCompletionCard({
   };
 
   return (
-    <Card className="shadow-xl border-2 border-primary/20 bg-card rounded-lg overflow-hidden print:hidden">
+    <AnimatedCard className="shadow-xl border-2 border-primary/20 bg-card rounded-lg overflow-hidden print:hidden">
       <CardContent className="p-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-start gap-4">
           <div className="h-12 w-12 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow-sm">
@@ -600,7 +624,7 @@ function JhsCompletionCard({
           Request SF9 / Form 137
         </Button>
       </CardContent>
-    </Card>
+    </AnimatedCard>
   );
 }
 
@@ -608,10 +632,10 @@ function JhsCompletionCard({
 function AcademicJourneyTimeline({ grades, getStatus }: { grades: {level: number, name: string}[], getStatus: (name: string) => any }) {
   if (grades.length === 0) {
     return (
-      <Card className="shadow-xl border-primary/5 bg-card/90 backdrop-blur-xl rounded-lg p-12 text-center">
+      <AnimatedCard className="shadow-xl border-primary/5 bg-card/90 backdrop-blur-xl rounded-lg p-12 text-center">
         <BookOpen className="h-12 w-12 mx-auto text-muted-foreground opacity-20 mb-4" />
         <p className="text-sm font-bold text-muted-foreground">No Academic Records Available</p>
-      </Card>
+      </AnimatedCard>
     );
   }
 
@@ -623,10 +647,13 @@ function AcademicJourneyTimeline({ grades, getStatus }: { grades: {level: number
           const eosyStatus = status.type === "COMPLETED" ? status.data.enrollmentRecord?.eosyStatus ?? null : null;
           return (
             <AccordionItem key={g.name} value={g.name} className="border-none mb-4">
-              <Card className={cn(
-                "overflow-hidden transition-all duration-300 border-2",
-                status.type === "ACTIVE" ? "border-primary shadow-lg ring-4 ring-primary/5" : "border-transparent shadow-sm bg-card"
-              )}>
+              <AnimatedCard
+                className={cn(
+                  "overflow-hidden transition-all duration-300 border-2",
+                  status.type === "ACTIVE" ? "border-primary shadow-lg ring-4 ring-primary/5" : "border-transparent shadow-sm bg-card"
+                )}
+                delay={0.03 * g.level}
+              >
                 <AccordionTrigger className="px-6 py-4 hover:no-underline group">
                   <div className="flex items-center justify-between gap-4 text-left w-full">
                     <div className="flex items-center gap-4 text-left">
@@ -698,7 +725,7 @@ function AcademicJourneyTimeline({ grades, getStatus }: { grades: {level: number
                     ) : null}
                   </div>
                 </AccordionContent>
-              </Card>
+              </AnimatedCard>
             </AccordionItem>
           );
         })}
@@ -766,7 +793,7 @@ function HonorBadge({ average }: { average: number }) {
   );
 }
 
-<Card className="shadow-md border border-gray-200 bg-white p-6">
+<AnimatedCard className="shadow-md border border-gray-200 bg-white p-6">
   <CardHeader>
     <CardTitle className="text-lg font-bold text-center">
       Welcome to Hinigaran National High School
@@ -777,4 +804,4 @@ function HonorBadge({ average }: { average: number }) {
       Step 1: Confirmation of Return
     </p>
   </CardContent>
-</Card>
+</AnimatedCard>

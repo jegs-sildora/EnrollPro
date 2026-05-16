@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
+import { calculateTeacherWorkload } from "./services/workload-guard.service.js";
 
 /**
- * ATLAS-Sectioning: Returns sections with current M/F counts and TLE tracks.
+ * TLE Sectioning Workspace: Returns sections with current M/F counts and TLE tracks.
  * GET /api/sectioning/sections-summary
  */
 export async function getSectionsSummary(req: Request, res: Response) {
@@ -42,9 +43,9 @@ export async function getSectionsSummary(req: Request, res: Response) {
       return {
         id: s.id,
         name: s.name,
-        gradeLevel: s.gradeLevel.name,
+        gradeLevel: { id: s.gradeLevelId, name: s.gradeLevel.name },
         gradeLevelOrder: s.gradeLevel.displayOrder,
-        tleProgram: s.tleProgram?.name ?? null,
+        tleProgram: s.tleProgramId ? { id: s.tleProgramId, name: s.tleProgram?.name ?? "" } : null,
         tleProgramId: s.tleProgramId,
         maxCapacity: s.maxCapacity,
         currentCount: s.enrollmentRecords.length,
@@ -64,7 +65,7 @@ export async function getSectionsSummary(req: Request, res: Response) {
 }
 
 /**
- * ATLAS-Sectioning: Returns students READY_FOR_SECTIONING who have no section assignment.
+ * TLE Sectioning Workspace: Returns students READY_FOR_TLE_SECTIONING who have no section assignment.
  * GET /api/sectioning/pool
  */
 export async function getSectioningPool(req: Request, res: Response) {
@@ -80,7 +81,8 @@ export async function getSectioningPool(req: Request, res: Response) {
 
     const where: any = {
       schoolYearId,
-      status: "READY_FOR_SECTIONING",
+      tleStatus: "READY_FOR_TLE_SECTIONING",
+      applicantType: "REGULAR", // SCP Guard: exclude STE, SPAS, SPS, SPIJ, SPFL, SPTVE
       enrollmentRecord: null, // Critical: Only students not yet assigned
     };
 
@@ -106,6 +108,7 @@ export async function getSectioningPool(req: Request, res: Response) {
       sex: app.learner.sex,
       genAve: app.learner.previousGenAve,
       gradeLevel: app.gradeLevel.name,
+      gradeLevelId: app.gradeLevelId,
       tleProgram: app.tleProgram?.name ?? null,
       tleProgramId: app.tleProgramId,
     }));
@@ -118,7 +121,7 @@ export async function getSectioningPool(req: Request, res: Response) {
 }
 
 /**
- * ATLAS-Sectioning: Bulk Assignment with Track-Lock and Capacity Guards.
+ * TLE Sectioning Workspace: Bulk Assignment with Track-Lock and Capacity Guards.
  * POST /api/sectioning/assign-bulk
  */
 export async function assignBulk(req: Request, res: Response) {
@@ -191,6 +194,11 @@ export async function assignBulk(req: Request, res: Response) {
 
       // TLE Track Lock (Grades 9 & 10)
       const isSpecGrade = section.gradeLevel.displayOrder === 9 || section.gradeLevel.displayOrder === 10;
+      if (isSpecGrade && app.tleStatus !== "READY_FOR_TLE_SECTIONING") {
+        return res.status(409).json({
+          message: `Application ${app.id} is not READY_FOR_TLE_SECTIONING.`,
+        });
+      }
       if (isSpecGrade && !app.tleProgramId) {
         return res.status(422).json({
           message: `TLE Conflict: Student ${app.learner.firstName} ${app.learner.lastName} has no specialization track and cannot be sectioned.`
@@ -224,7 +232,10 @@ export async function assignBulk(req: Request, res: Response) {
         // Finalize Application Status
         await tx.enrollmentApplication.update({
           where: { id: app.id },
-          data: { status: "OFFICIALLY_ENROLLED" }
+          data: {
+            status: "OFFICIALLY_ENROLLED",
+            tleStatus: "SECTIONED_FOR_TLE",
+          }
         });
 
         records.push(record);
@@ -251,5 +262,139 @@ export async function assignBulk(req: Request, res: Response) {
   } catch (error) {
     console.error("assignBulk failed:", error);
     return res.status(500).json({ message: "Internal server error during bulk sectioning." });
+  }
+}
+
+/**
+ * TLE Sectioning Endpoint: Zero-trust bulk assignment with atomic transaction.
+ * Validates: Capacity, Track-lock (tleProgramId match), tleStatus = READY_FOR_TLE_SECTIONING.
+ * POST /api/sectioning/tle/assign
+ * Request: { sectionId: number, applicationIds: number[] }
+ */
+export async function tleSectioningAssign(req: Request, res: Response) {
+  try {
+    const { sectionId, applicationIds } = req.body;
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    if (!sectionId || !applicationIds || !Array.isArray(applicationIds)) {
+      return res.status(400).json({ message: "Missing or invalid sectionId or applicationIds." });
+    }
+
+    // 1. Fetch section with current telemetry
+    const section = await prisma.section.findUnique({
+      where: { id: sectionId },
+      include: {
+        enrollmentRecords: true,
+        gradeLevel: true,
+        tleProgram: true,
+      },
+    });
+
+    if (!section) {
+      return res.status(400).json({ message: "Section not found." });
+    }
+
+    // 2. Capacity verification
+    const currentCount = section.enrollmentRecords.length;
+    const incomingCount = applicationIds.length;
+    const maxCapacity = section.maxCapacity || 50;
+
+    if (currentCount + incomingCount > maxCapacity) {
+      return res.status(400).json({
+        message: `Capacity exceeded. Section has ${currentCount}/${maxCapacity}. Cannot add ${incomingCount} more.`,
+      });
+    }
+
+    // 3. Fetch all applications and validate
+    const applications = await prisma.enrollmentApplication.findMany({
+      where: { id: { in: applicationIds } },
+    });
+
+    if (applications.length !== applicationIds.length) {
+      return res.status(400).json({ message: "One or more application IDs not found." });
+    }
+
+    // 4. Per-application validation loop
+    for (const app of applications) {
+      // 4a. Check no existing enrollment record (prevent double-assign)
+      const existingRecord = await prisma.enrollmentRecord.findFirst({
+        where: { enrollmentApplicationId: app.id },
+      });
+      if (existingRecord) {
+        return res.status(409).json({
+          message: `Application ${app.id} already has an enrollment record.`,
+        });
+      }
+
+      // 4b. Check tleStatus readiness
+      if (app.tleStatus !== "READY_FOR_TLE_SECTIONING") {
+        return res.status(409).json({
+          message: `Application ${app.id} is not ready for TLE sectioning (tleStatus: ${app.tleStatus}).`,
+        });
+      }
+
+      // 4c. STRICT TRACK-LOCK: Ensure tleProgramId matches section's tleProgramId
+      if (app.tleProgramId !== section.tleProgramId) {
+        return res.status(422).json({
+          message: `Application ${app.id} TLE program (${app.tleProgramId}) does not match section program (${section.tleProgramId}). Track-lock violation.`,
+          errorCode: "TRACK_LOCK_VIOLATION",
+        });
+      }
+    }
+
+    // 5. Atomic transaction: Update tleStatus + create enrollment records + audit
+    const results = await prisma.$transaction(async (tx) => {
+      // 5a. Update all applications' tleStatus to SECTIONED_FOR_TLE
+      await tx.enrollmentApplication.updateMany({
+        where: { id: { in: applicationIds } },
+        data: {
+          tleStatus: "SECTIONED_FOR_TLE",
+          status: "OFFICIALLY_ENROLLED",
+          updatedAt: new Date(),
+        },
+      });
+
+      // 5b. Create enrollment records for all applications
+      const enrollmentRecords = await Promise.all(
+        applicationIds.map((appId) =>
+          tx.enrollmentRecord.create({
+            data: {
+              enrollmentApplicationId: appId,
+              sectionId,
+              schoolYearId: section.schoolYearId,
+              enrolledById: userId,
+              learnerId: applications.find(a => a.id === appId)?.learnerId || 0,
+            },
+          }),
+        ),
+      );
+
+      return enrollmentRecords;
+    });
+
+    // 6. Audit Logging
+    await auditLog({
+      userId,
+      actionType: "TLE_BULK_ASSIGNMENT",
+      description: `TLE sectioned ${applicationIds.length} students into Section: ${section.name}`,
+      subjectType: "Section",
+      recordId: sectionId,
+      req,
+    });
+
+    return res.json({
+      success: true,
+      message: `Successfully TLE-assigned ${applicationIds.length} students to ${section.name}.`,
+      count: results.length,
+      sectionId,
+    });
+
+  } catch (error) {
+    console.error("tleSectioningAssign failed:", error);
+    return res.status(500).json({ message: "Internal server error during TLE assignment." });
   }
 }
