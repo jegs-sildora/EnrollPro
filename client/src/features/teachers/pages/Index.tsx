@@ -346,6 +346,8 @@ export default function Teachers() {
               enrolledCount: number;
               programType: string;
               isHomogeneous: boolean;
+              tleProgramId?: number | null;
+              tleProgramName?: string | null;
               advisingTeacher: { id: number; name: string } | null;
             }>;
           }) =>
@@ -358,6 +360,8 @@ export default function Teachers() {
               enrolledCount: section.enrolledCount,
               programType: section.programType,
               isHomogeneous: section.isHomogeneous,
+              tleProgramId: section.tleProgramId ?? null,
+              tleProgramName: section.tleProgramName ?? null,
               currentAdviserId: section.advisingTeacher?.id ?? null,
               currentAdviserName: section.advisingTeacher?.name ?? null,
             })),

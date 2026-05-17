@@ -301,7 +301,7 @@ export default function AdminUsers() {
     if (activeTab === "learners") {
       const fetchLearnerMeta = async () => {
         try {
-          const res = await api.get("/curriculum/grade-levels");
+          const res = await api.get("/school-years/grade-levels");
           setGradeLevels(res.data.gradeLevels || []);
         } catch (err) {
           console.error("Failed to fetch grade levels", err);
@@ -569,9 +569,10 @@ export default function AdminUsers() {
       await api.post("/admin/users", payload);
       sileo.success({
         title: "Account Created",
-        description: formData.role === "MRF"
-          ? `${formData.lastName}, ${formData.firstName} added as MRF Staff. Note: They will use the Learner portal URL for authentication.`
-          : `${formData.lastName}, ${formData.firstName} added successfully.`,
+        description:
+          formData.role === "MRF"
+            ? `${formData.lastName}, ${formData.firstName} added as MRF Staff.`
+            : `${formData.lastName}, ${formData.firstName} added successfully.`,
       });
       setCreateOpen(false);
       fetchUsers();
@@ -824,20 +825,31 @@ export default function AdminUsers() {
                 </div>
 
                 <div className="flex justify-center">
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "text-[9px] font-black uppercase px-1.5 h-4",
-                      user.learnerProfile?.status === "DROPPED"
-                        ? "bg-rose-50 text-rose-700 border-rose-100"
-                        : user.learnerProfile?.status === "TRANSFERRED_OUT"
-                          ? "bg-amber-50 text-amber-700 border-amber-100"
-                          : user.learnerProfile?.status === "JHS_COMPLETER"
-                            ? "bg-purple-50 text-purple-700 border-purple-100"
-                            : "bg-blue-50 text-blue-700 border-blue-100",
-                    )}>
-                    {formatApplicationStatus(user.learnerProfile?.status || "ACTIVE")}
-                  </Badge>
+                  {(() => {
+                    const s = user.learnerProfile?.status || "ACTIVE";
+                    const statusClasses = (() => {
+                      switch (s) {
+                        case "ACTIVE":
+                          return "bg-emerald-600 text-white font-semibold shadow-sm border-none";
+                        case "JHS_COMPLETER":
+                          return "bg-primary text-primary-foreground font-bold shadow-sm border-none";
+                        case "DROPPED":
+                          return "bg-red-800 text-white font-semibold shadow-sm border-none";
+                        case "TRANSFERRED_OUT":
+                          return "bg-slate-100 text-slate-600 border-slate-300";
+                        default:
+                          return "bg-slate-100 text-slate-600 border-slate-200";
+                      }
+                    })();
+
+                    return (
+                      <Badge
+                        variant="outline"
+                        className={cn("text-[9px] font-black uppercase px-1.5 h-4", statusClasses)}>
+                        {formatApplicationStatus(s)}
+                      </Badge>
+                    );
+                  })()}
                 </div>
               </div>
             );
@@ -1464,10 +1476,6 @@ export default function AdminUsers() {
           </h1>
           <p className="text-sm font-bold text-foreground">
             Manage authenticated user accounts for personnel and learners.
-            <br />
-            <span className="text-xs font-normal text-muted-foreground mt-1 block">
-              <strong>Note:</strong> Materials Recovery Facility (MRF) users utilize learner credentials for authorization. Make sure they are granted MRF privileges accordingly if applicable.
-            </span>
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">

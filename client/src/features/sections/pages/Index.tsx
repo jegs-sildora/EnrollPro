@@ -234,7 +234,7 @@ const isSpecialSection = (s: SectionItem): boolean => {
 };
 
 const isTleSection = (s: SectionItem): boolean => {
-  return s.tleProgramId != null;
+  return s.tleProgramId != null && /\s-\s/.test(s.name);
 };
 
 function resolveApiErrorMessage(error: unknown): string | null {
@@ -975,7 +975,9 @@ export default function Sections() {
                       <Badge
                         variant="secondary"
                         className="text-[9px] uppercase  font-bold">
-                        {formatProgramType(s.programType)}
+                        {isTleSection(s)
+                          ? (resolveTleProgramName(s.tleProgramId) || "TLE")
+                          : formatProgramType(s.programType)}
                       </Badge>
                       {s.isHomogeneous && s.programType === "REGULAR" && (
                         <Badge

@@ -55,18 +55,20 @@ const MIN_ACTIVE_CALENDAR_SPAN_DAYS = 240;
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 const ROLLOVER_LOADING_STATES: MultiStepLoadingState[] = [
-  { text: "Validating EOSY completion and approved school calendar dates." },
+  { text: "Validating EOSY completion and confirming the approved school calendar." },
   {
-    text: "Archiving current school-year lifecycle records and locking audit history.",
+    text: "Archiving the current school-year record and locking audit history.",
   },
   {
-    text: "Preparing next school year timelines, enrollment windows, and registrar controls.",
+    text: "Preparing the next school-year timeline, enrollment windows, and registrar controls.",
   },
   {
-    text: "Applying rollover options: structure cloning and continuing-learner carryover.",
+    text: "Applying rollover options for structure cloning and continuing-learner carryover.",
   },
-  { text: "Refreshing active school-year context across modules." },
+  { text: "Refreshing active school-year context across connected modules." },
 ];
+
+const ROLLOVER_CLOSE_COUNTDOWN_SECONDS = 5;
 
 function getDatePartsInTimeZone(date: Date, timeZone = MANILA_TIME_ZONE) {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -315,6 +317,7 @@ export default function SchoolYearTab() {
   const [updatingDraft, setUpdatingDraft] = useState(false);
   const [isRolloverLoaderOpen, setIsRolloverLoaderOpen] = useState(false);
   const [rolloverLoaderStep, setRolloverLoaderStep] = useState(0);
+  const [isRolloverFinishing, setIsRolloverFinishing] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [showNextForm, setShowNextForm] = useState(false);
   const [rolloverDraftBaseline, setRolloverDraftBaseline] =
@@ -754,6 +757,7 @@ export default function SchoolYearTab() {
     setCreating(true);
     if (isRolloverFlow) {
       setRolloverLoaderStep(0);
+      setIsRolloverFinishing(false);
       setIsRolloverLoaderOpen(true);
     }
     await new Promise((resolve) => setTimeout(resolve, 500));
@@ -843,8 +847,11 @@ export default function SchoolYearTab() {
 
       await fetchData();
 
-      if (isRolloverFlow && !prefersReducedMotion) {
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+      if (isRolloverFlow) {
+        setIsRolloverFinishing(true);
+        await new Promise((resolve) =>
+          setTimeout(resolve, ROLLOVER_CLOSE_COUNTDOWN_SECONDS * 1000),
+        );
       }
     } catch (err) {
       pendingSuccessToastRef.current = null;
@@ -853,6 +860,7 @@ export default function SchoolYearTab() {
       setCreating(false);
       if (isRolloverFlow) {
         setIsRolloverLoaderOpen(false);
+        setIsRolloverFinishing(false);
         if (!prefersReducedMotion) {
           await new Promise((resolve) => setTimeout(resolve, 420));
         }
@@ -1089,6 +1097,8 @@ export default function SchoolYearTab() {
               <LoaderCore
                 loadingStates={ROLLOVER_LOADING_STATES}
                 value={rolloverLoaderStep}
+                showCompletionMessage={isRolloverFinishing}
+                completionCountdownSeconds={ROLLOVER_CLOSE_COUNTDOWN_SECONDS}
               />
             </div>
           </motion.div>

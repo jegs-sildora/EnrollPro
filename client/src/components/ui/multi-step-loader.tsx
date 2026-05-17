@@ -41,6 +41,9 @@ export type LoadingState = {
   text: string;
 };
 
+const DEFAULT_COMPLETION_MESSAGE =
+  "Everything has been set up. This window will close in {seconds} seconds...";
+
 /**
  * Smoothly follows `target` with `stepDelay` ms between each integer step.
  * Resets immediately when target goes backward (e.g. loader is closed/reset).
@@ -81,24 +84,83 @@ function useAnimatedStep(target: number, stepDelay = 500) {
   return displayed;
 }
 
+function useCompletionCountdown(enabled: boolean, seconds = 5): number {
+  const initialSeconds = Math.max(1, Math.floor(seconds));
+  const [countdown, setCountdown] = useState(initialSeconds);
+
+  useEffect(() => {
+    if (!enabled) {
+      setCountdown(initialSeconds);
+      return;
+    }
+
+    setCountdown(initialSeconds);
+
+    const interval = setInterval(() => {
+      setCountdown((current) => (current > 1 ? current - 1 : 1));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [enabled, initialSeconds]);
+
+  return countdown;
+}
+
 export const LoaderCore = ({
   loadingStates,
   value = 0,
   stepDelay = 500,
+  completionMessage = DEFAULT_COMPLETION_MESSAGE,
+  completionCountdownSeconds = 5,
+  showCompletionMessage = false,
 }: {
   loadingStates: LoadingState[];
   value?: number;
   stepDelay?: number;
+  completionMessage?: string;
+  completionCountdownSeconds?: number;
+  showCompletionMessage?: boolean;
 }) => {
   const displayedValue = useAnimatedStep(value, stepDelay);
+  const countdown = useCompletionCountdown(
+    showCompletionMessage,
+    completionCountdownSeconds,
+  );
+  const finalStepIndex = Math.max(loadingStates.length - 1, 0);
+  const isFinalizing = showCompletionMessage && loadingStates.length > 0;
+  const progressPercent = loadingStates.length === 0
+    ? 0
+    : Math.min(
+        100,
+        isFinalizing
+          ? 100
+          : ((Math.min(displayedValue + 1, loadingStates.length) / loadingStates.length) * 100),
+      );
+  const resolvedCompletionMessage = completionMessage.replace(
+    "{seconds}",
+    String(countdown),
+  );
 
   return (
-    <div className="flex flex-col gap-2 w-full max-w-lg mx-auto">
+    <div className="flex w-full max-w-xl flex-col gap-3 mx-auto">
+      <div className="h-1.5 overflow-hidden rounded-full bg-primary/10">
+        <motion.div
+          className="h-full rounded-full bg-gradient-to-r from-primary via-primary/80 to-emerald-500"
+          initial={false}
+          animate={{ width: `${progressPercent}%` }}
+          transition={{ duration: 0.45, ease: "easeOut" }}
+        />
+      </div>
+
       {loadingStates.map((loadingState, index) => {
-        const isCompleted = index < displayedValue;
+        const isCompleted =
+          index < displayedValue || (isFinalizing && index === finalStepIndex);
         const isCurrent =
-          index === displayedValue && displayedValue < loadingStates.length;
+          !isFinalizing &&
+          index === displayedValue &&
+          displayedValue < loadingStates.length;
         const isPending = index > displayedValue;
+        const isFinalStep = index === finalStepIndex;
 
         return (
           <motion.div
@@ -106,12 +168,13 @@ export const LoaderCore = ({
             animate={{ opacity: isPending ? 0.35 : 1 }}
             transition={{ duration: 0.35, ease: "easeOut" }}
             className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
-              isCurrent && "bg-primary/5 ring-1 ring-primary/15",
+              "flex items-center gap-3 rounded-xl border px-4 py-3.5 transition-colors",
+              isCurrent && "border-primary/20 bg-primary/5 shadow-sm",
+              isCompleted && isFinalStep && isFinalizing && "border-emerald-500/20 bg-emerald-500/5",
             )}
           >
             {/* Status icon */}
-            <div className="shrink-0 flex items-center justify-center w-6 h-5">
+            <div className="shrink-0 flex h-5 w-6 items-center justify-center">
               <AnimatePresence mode="wait">
                 {isCompleted ? (
                   <motion.div
@@ -148,21 +211,42 @@ export const LoaderCore = ({
             </div>
 
             {/* Step text */}
-            <span
-              className={cn(
-                "text-md leading-snug transition-colors duration-300",
-                isCurrent
-                  ? "text-foreground font-semibold"
-                  : isCompleted
-                    ? "text-muted-foreground font-medium"
-                    : "text-muted-foreground/50 font-medium",
-              )}
-            >
-              {loadingState.text}
-            </span>
+            <div className="min-w-0 flex-1">
+              <div
+                className={cn(
+                  "text-[0.98rem] leading-snug transition-colors duration-300",
+                  isCurrent
+                    ? "font-semibold text-foreground"
+                    : isCompleted
+                      ? "font-medium text-muted-foreground"
+                      : "font-medium text-muted-foreground/55",
+                )}
+              >
+                {loadingState.text}
+              </div>
+              {isFinalStep && isFinalizing ? (
+                <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                  Final checks complete
+                </div>
+              ) : null}
+            </div>
           </motion.div>
         );
       })}
+
+      <AnimatePresence>
+        {isFinalizing ? (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.28, ease: "easeOut" }}
+            className="rounded-xl border border-emerald-500/20 bg-emerald-500/8 px-4 py-3 text-sm font-semibold text-emerald-950 shadow-sm"
+          >
+            {resolvedCompletionMessage}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 };
@@ -201,7 +285,8 @@ export const MultiStepLoader = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex min-h-dvh w-screen items-center justify-center overflow-hidden bg-white/75 backdrop-blur-2xl"
+          transition={{ duration: 0.35, ease: "easeInOut" }}
+          className="fixed inset-0 z-[100] flex min-h-dvh w-screen items-center justify-center overflow-hidden bg-white/80 backdrop-blur-2xl"
         >
           <div className="absolute inset-0 pointer-events-none">
             <svg

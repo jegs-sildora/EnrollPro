@@ -29,6 +29,8 @@ export interface AdvisorySectionOption {
   enrolledCount: number;
   programType: string;
   isHomogeneous: boolean;
+  tleProgramId?: number | null;
+  tleProgramName?: string | null;
   currentAdviserId: number | null;
   currentAdviserName: string | null;
 }

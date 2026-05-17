@@ -298,7 +298,7 @@ export function getLearnerStatusColorClasses(
     case "ACTIVE":
       return "bg-emerald-600 text-white font-semibold shadow-sm border-none";
     case "JHS_COMPLETER":
-      return "bg-amber-500 text-slate-900 font-bold shadow-sm border-none";
+      return "bg-primary text-primary-foreground font-bold shadow-sm border-none";
     case "DROPPED":
       return "bg-red-800 text-white font-semibold shadow-sm border-none";
     case "TRANSFERRED_OUT":

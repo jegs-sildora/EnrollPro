@@ -50,40 +50,6 @@ interface SectionFormSheetProps {
   tlePrograms?: TLEProgramOption[];
 }
 
-function extractTleSectionSuffix(
-  sectionName: string,
-  tleProgramName: string,
-): string {
-  const normalizedSectionName = sectionName.trim();
-  const normalizedProgramName = tleProgramName.trim();
-
-  if (!normalizedSectionName) return "";
-  if (!normalizedProgramName) return normalizedSectionName;
-
-  const prefix = `${normalizedProgramName} - `;
-  if (
-    normalizedSectionName
-      .toLowerCase()
-      .startsWith(prefix.toLowerCase())
-  ) {
-    return normalizedSectionName.slice(prefix.length).trim();
-  }
-
-  if (
-    normalizedSectionName.toLowerCase() ===
-    normalizedProgramName.toLowerCase()
-  ) {
-    return "";
-  }
-
-  const markerIndex = normalizedSectionName.lastIndexOf(" - ");
-  if (markerIndex >= 0) {
-    return normalizedSectionName.slice(markerIndex + 3).trim();
-  }
-
-  return normalizedSectionName;
-}
-
 export const SectionFormSheet = memo(function SectionFormSheet({
   mode,
   open,
@@ -113,9 +79,9 @@ export const SectionFormSheet = memo(function SectionFormSheet({
       ? tlePrograms.find((program) => program.id === formData.tleProgramId)
       : null;
   const selectedTleProgramName = selectedTleProgram?.name ?? "";
-  const tleSectionSuffix = isTleLaboratory
-    ? extractTleSectionSuffix(formData.name, selectedTleProgramName)
-    : "";
+//   const tleSectionSuffix = isTleLaboratory
+//     ? extractTleSectionSuffix(formData.name, selectedTleProgramName)
+//     : "";
   const [panelPercentage, setPanelPercentage] = useState(40);
   const [isDesktopViewport, setIsDesktopViewport] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth >= 640 : true,

@@ -149,9 +149,11 @@ export function TeacherDesignationSheet({
     const baseName = section.sectionName.replace(/\s*-\s*G\d+$/i, "").trim();
     const acronym = SCP_ACRONYMS[section.programType] || section.programType;
 
-    // Add visual indicator for Homogeneous/Pilot status if not SCP
-    const typeLabel =
-      section.programType !== "REGULAR"
+    // Determine TLE explicitly only when the section uses the generated TLE naming pattern.
+    const hasTle = Boolean(section.tleProgramId && /\s-\s/.test(section.sectionName));
+    const typeLabel = hasTle
+      ? (section.tleProgramName || "TLE")
+      : section.programType !== "REGULAR"
         ? acronym
         : section.isHomogeneous
           ? "BEC"

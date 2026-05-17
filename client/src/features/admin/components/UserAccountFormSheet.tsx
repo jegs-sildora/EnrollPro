@@ -181,6 +181,13 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
     };
   }, [stopResizing]);
 
+  useEffect(() => {
+    // When role is MRF, enforce a fixed designation and prevent editing.
+    if (formData.role === "MRF") {
+      onFieldChange("designation", "MRF Staff");
+    }
+  }, [formData.role, onFieldChange]);
+
   const canSubmit = useMemo(() => {
     const basic = 
       formData.firstName.trim().length > 0 &&
@@ -275,11 +282,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                     {mode === "edit" && <SelectItem value="LEARNER">Learner</SelectItem>}
                   </SelectContent>
                 </Select>
-                {formData.role === "MRF" && (
-                  <p className="text-[10px] text-muted-foreground mt-1.5 leading-snug">
-                    <strong className="text-foreground">Note:</strong> MRF account holders must log in using the Learner/Participant credential paths to access MRF-specific subsystem integrations.
-                  </p>
-                )}
+                {/* When role is MRF, treat designation as tied to role and lock editing */}
               </div>
             </section>
 
@@ -446,7 +449,14 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                     onChange={(e) => onFieldChange("designation", e.target.value.toUpperCase())}
                     placeholder="e.g. Master Teacher II"
                     className="h-10 font-bold"
+                    readOnly={formData.role === "MRF"}
+                    aria-readonly={formData.role === "MRF"}
                   />
+                  {formData.role === "MRF" && (
+                    <p className="text-[10px] text-muted-foreground mt-1.5 leading-snug">
+                      <strong className="text-foreground">Note:</strong> Designation is tied to the selected role for MRF accounts and cannot be edited here.
+                    </p>
+                  )}
                 </div>
               </section>
             )}
