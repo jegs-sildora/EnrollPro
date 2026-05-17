@@ -67,7 +67,7 @@ import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import { differenceInYears } from "date-fns";
 import { Badge } from "@/shared/ui/badge";
 import { motion, AnimatePresence } from "motion/react";
-import { cn } from "@/shared/lib/utils";
+import { cn, SCP_LABELS as SCP_FULL_LABELS } from "@/shared/lib/utils";
 
 interface Teacher {
   id: number;
@@ -151,16 +151,46 @@ function extractGradeLevelNumber(rawGradeLevel: string): string {
 
 function formatHeatmapLabel(
   gradeLevelName: string,
-  sectionName: string,
+  sectionLabel: string,
 ): string {
-  return `${extractGradeLevelNumber(gradeLevelName)} - ${formatSectionLabel(sectionName)}`;
+  return `${extractGradeLevelNumber(gradeLevelName)} - ${sectionLabel}`;
 }
 
-function formatProgramType(programType: string): string {
-  return (
-    PROGRAM_TYPE_OPTIONS.find((option) => option.value === programType)
-      ?.label ?? programType
-  );
+function formatProgramType(
+  programType: string,
+  scpTypeLabels: Record<string, string>,
+): string {
+  if (programType === "REGULAR") {
+    return (
+      PROGRAM_TYPE_OPTIONS.find((option) => option.value === programType)
+        ?.label ?? programType
+    );
+  }
+
+  return scpTypeLabels[programType] || programType;
+}
+
+function buildSectionDisplayName(
+  sectionName: string,
+  programType: string,
+  scpTypeLabels: Record<string, string>,
+): string {
+  const baseLabel = formatSectionLabel(sectionName);
+  const scpLabel = scpTypeLabels[programType];
+  if (!scpLabel) return baseLabel;
+
+  const normalizedBase = baseLabel.trim().toUpperCase();
+  const normalizedScp = scpLabel.trim().toUpperCase();
+
+  if (
+    normalizedBase === normalizedScp ||
+    normalizedBase.startsWith(`${normalizedScp} `) ||
+    normalizedBase.startsWith(`${normalizedScp}-`)
+  ) {
+    return baseLabel;
+  }
+
+  return `${scpLabel} ${baseLabel}`;
 }
 
 function extractTleSectionSuffix(
@@ -174,17 +204,12 @@ function extractTleSectionSuffix(
   if (!normalizedProgramName) return normalizedSectionName;
 
   const prefix = `${normalizedProgramName} - `;
-  if (
-    normalizedSectionName
-      .toLowerCase()
-      .startsWith(prefix.toLowerCase())
-  ) {
+  if (normalizedSectionName.toLowerCase().startsWith(prefix.toLowerCase())) {
     return normalizedSectionName.slice(prefix.length).trim();
   }
 
   if (
-    normalizedSectionName.toLowerCase() ===
-    normalizedProgramName.toLowerCase()
+    normalizedSectionName.toLowerCase() === normalizedProgramName.toLowerCase()
   ) {
     return "";
   }
@@ -305,8 +330,7 @@ interface RosterLearner {
 }
 
 export default function Sections() {
-  const { activeSchoolYearId, viewingSchoolYearId } =
-    useSettingsStore();
+  const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const { ayLabel } = useSchoolYearContext();
   const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
@@ -348,6 +372,10 @@ export default function Sections() {
     [],
   );
   const [tlePrograms, setTlePrograms] = useState<TLEProgram[]>([]);
+  const [offeredScpTypeLabels, setOfferedScpTypeLabels] = useState<
+    Record<string, string>
+  >({});
+  const [offeredScpTypes, setOfferedScpTypes] = useState<string[]>([]);
 
   // Delete confirmation
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -624,15 +652,18 @@ export default function Sections() {
     );
   }, [heatmapGradeFilter, heatmapGradeOptions]);
 
-  const SCP_LABELS: Record<string, string> = useMemo(() => ({
-    REGULAR: "Regular (BEC)",
-    SCIENCE_TECHNOLOGY_AND_ENGINEERING: "STE",
-    SPECIAL_PROGRAM_IN_THE_ARTS: "SPA",
-    SPECIAL_PROGRAM_IN_SPORTS: "SPS",
-    SPECIAL_PROGRAM_IN_JOURNALISM: "SPJ",
-    SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: "SPFL",
-    SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION: "SPTVE",
-  }), []);
+  const SCP_SHORT_LABELS: Record<string, string> = useMemo(
+    () => ({
+      REGULAR: "Regular (BEC)",
+      SCIENCE_TECHNOLOGY_AND_ENGINEERING: "STE",
+      SPECIAL_PROGRAM_IN_THE_ARTS: "SPA",
+      SPECIAL_PROGRAM_IN_SPORTS: "SPS",
+      SPECIAL_PROGRAM_IN_JOURNALISM: "SPJ",
+      SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: "SPFL",
+      SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION: "SPTVE",
+    }),
+    [],
+  );
 
   useEffect(() => {
     const fetchProgramOptions = async () => {
@@ -641,11 +672,24 @@ export default function Sections() {
         const res = await api.get(`/curriculum/${ayId}/scp-config`);
         const configs = res.data.scpProgramConfigs || [];
         const offeredScps = configs
-          .filter((cfg: { isOffered: boolean; scpType: string }) => cfg.isOffered)
+          .filter(
+            (cfg: { isOffered: boolean; scpType: string }) => cfg.isOffered,
+          )
           .map((cfg: { scpType: string }) => ({
             value: cfg.scpType,
-            label: SCP_LABELS[cfg.scpType] || cfg.scpType,
+            label: SCP_SHORT_LABELS[cfg.scpType] || cfg.scpType,
           }));
+
+        const offeredLabels = offeredScps.reduce(
+          (acc, scp) => {
+            acc[scp.value] = scp.label;
+            return acc;
+          },
+          {} as Record<string, string>,
+        );
+
+        setOfferedScpTypeLabels(offeredLabels);
+        setOfferedScpTypes(offeredScps.map((scp) => scp.value));
 
         setProgramOptions([
           { value: "REGULAR", label: "Regular (BEC)" },
@@ -653,13 +697,15 @@ export default function Sections() {
         ]);
       } catch (err) {
         console.error("Failed to fetch SCP configs", err);
+        setOfferedScpTypeLabels({});
+        setOfferedScpTypes([]);
       }
     };
 
     if (ayId) {
       fetchProgramOptions();
     }
-  }, [ayId, SCP_LABELS]);
+  }, [ayId, SCP_SHORT_LABELS]);
 
   useEffect(() => {
     if (!ayId) return;
@@ -778,7 +824,8 @@ export default function Sections() {
         name: section.name,
         programType: section.programType,
         sectionType:
-          TLE_SECTION_DISPLAY_ORDERS.includes(glDisplayOrder) && section.tleProgramId
+          TLE_SECTION_DISPLAY_ORDERS.includes(glDisplayOrder) &&
+          section.tleProgramId
             ? "TLE_LABORATORY"
             : "HOME_ROOM",
         adviserId: section.advisingTeacher
@@ -802,7 +849,10 @@ export default function Sections() {
 
         if (field === "tleProgramId") {
           const nextProgramName = resolveTleProgramName(Number(value));
-          const currentSuffix = extractTleSectionSuffix(prev.name, currentProgramName);
+          const currentSuffix = extractTleSectionSuffix(
+            prev.name,
+            currentProgramName,
+          );
           // Default to "A" when no suffix exists yet (fresh / first-time selection)
           const suffix = currentSuffix.trim() || "A";
           next.name = buildTleSectionName(nextProgramName, suffix);
@@ -824,7 +874,10 @@ export default function Sections() {
           if (value === "TLE_LABORATORY") {
             // TLE labs operate under REGULAR with specialization track-lock.
             next.programType = "REGULAR";
-            const suffix = extractTleSectionSuffix(prev.name, currentProgramName);
+            const suffix = extractTleSectionSuffix(
+              prev.name,
+              currentProgramName,
+            );
             next.name = buildTleSectionName(currentProgramName, suffix);
           }
         }
@@ -838,9 +891,8 @@ export default function Sections() {
   const handleFormSubmit = async () => {
     if (!sectionFormData.name.trim()) return;
 
-    const allowTleLaboratory = TLE_SECTION_DISPLAY_ORDERS.includes(
-      createGlDisplayOrder,
-    );
+    const allowTleLaboratory =
+      TLE_SECTION_DISPLAY_ORDERS.includes(createGlDisplayOrder);
     const isTleLaboratory =
       allowTleLaboratory && sectionFormData.sectionType === "TLE_LABORATORY";
 
@@ -854,8 +906,13 @@ export default function Sections() {
     }
 
     if (isTleLaboratory) {
-      const tleProgramName = resolveTleProgramName(sectionFormData.tleProgramId);
-      const suffix = extractTleSectionSuffix(sectionFormData.name, tleProgramName);
+      const tleProgramName = resolveTleProgramName(
+        sectionFormData.tleProgramId,
+      );
+      const suffix = extractTleSectionSuffix(
+        sectionFormData.name,
+        tleProgramName,
+      );
       if (!suffix.trim()) {
         sileo.error({
           title: "Section Name Suffix Required",
@@ -870,9 +927,7 @@ export default function Sections() {
     try {
       const payload = {
         name: sectionFormData.name.trim(),
-        programType: isTleLaboratory
-          ? "REGULAR"
-          : sectionFormData.programType,
+        programType: isTleLaboratory ? "REGULAR" : sectionFormData.programType,
         advisingTeacherId:
           sectionFormData.adviserId === "none"
             ? null
@@ -932,6 +987,175 @@ export default function Sections() {
     }
   };
 
+  const renderSectionCards = (
+    sectionsToRender: SectionItem[],
+    gradeLevelName: string,
+    glId: number,
+    glDisplayOrder: number = 0,
+  ) => {
+    return (
+      <div className="space-y-3">
+        {sectionsToRender.map((s) => {
+          const displaySectionName = buildSectionDisplayName(
+            s.name,
+            s.programType,
+            offeredScpTypeLabels,
+          );
+          const isDeleteDisabled = s.enrolledCount > 0;
+          const fillPercent =
+            s.maxCapacity > 0 ? (s.enrolledCount / s.maxCapacity) * 100 : 0;
+          const isOverCapacity = s.enrolledCount > s.maxCapacity;
+
+          return (
+            <div
+              key={s.id}
+              className={cn(
+                "flex flex-col sm:flex-row sm:items-center justify-between rounded-lg border bg-card p-4 shadow-sm transition-all gap-4",
+                isOverCapacity
+                  ? "border-red-300 bg-red-50/30 hover:border-red-400"
+                  : "border-border hover:border-primary/20",
+              )}>
+              <div className="flex items-start sm:items-center gap-4">
+                <div className="text-2xl leading-none mt-0.5 sm:mt-0">
+                  {fillEmoji(fillPercent)}
+                </div>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-black text-base uppercase ">
+                      {displaySectionName}
+                    </h4>
+                    <Badge
+                      variant="secondary"
+                      className="text-[9px] uppercase  font-bold">
+                      {isTleSection(s)
+                        ? resolveTleProgramName(s.tleProgramId) || "TLE"
+                        : formatProgramType(
+                            s.programType,
+                            offeredScpTypeLabels,
+                          )}
+                    </Badge>
+                    {s.isHomogeneous && s.programType === "REGULAR" && (
+                      <Badge
+                        variant="outline"
+                        className="text-[9px] uppercase  font-black border-primary/20 text-primary">
+                        Pilot
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-foreground font-semibold">
+                        Adviser:
+                      </span>
+                      {s.advisingTeacher ? (
+                        <span className="font-bold text-foreground">
+                          {s.advisingTeacher.name}
+                        </span>
+                      ) : (
+                        <span className="font-bold text-amber-600 flex items-center gap-1 bg-amber-50 px-1.5 py-0.5 rounded-md">
+                          Unassigned
+                        </span>
+                      )}
+                    </div>
+                    <span className="hidden sm:inline text-border">|</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-foreground font-semibold">
+                        Capacity:
+                      </span>
+                      <span
+                        className={cn(
+                          "font-bold",
+                          isOverCapacity ? "text-red-700" : "text-foreground",
+                        )}>
+                        {s.enrolledCount}/{s.maxCapacity}{" "}
+                        <span
+                          className={cn(
+                            isOverCapacity ? "font-black" : "text-foreground",
+                          )}>
+                          ({Math.round(fillPercent)}%)
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 font-bold text-primary border-primary/20 hover:bg-primary/5"
+                  onClick={() =>
+                    setViewRosterSection({
+                      id: s.id,
+                      name: displaySectionName,
+                      gradeLevelName: gradeLevelName,
+                      adviserName: s.advisingTeacher?.name ?? null,
+                      maxCapacity: s.maxCapacity,
+                      enrolledCount: s.enrolledCount,
+                      programType: s.programType,
+                      gradeLevelId: glId,
+                    })
+                  }>
+                  <Users className="h-3.5 w-3.5 mr-2" /> View Roster
+                </Button>
+                {canMutate && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 font-bold"
+                    onClick={() =>
+                      handleOpenEdit(s, gradeLevelName, glDisplayOrder)
+                    }>
+                    <Edit2 className="h-3.5 w-3.5 mr-2" /> Edit
+                  </Button>
+                )}
+                {canMutate && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 font-bold text-amber-600 border-amber-200 hover:bg-amber-50"
+                    onClick={() =>
+                      setHandoverSection({
+                        id: s.id,
+                        name: displaySectionName,
+                        gradeLevelName: gradeLevelName,
+                        advisingTeacher: s.advisingTeacher,
+                      })
+                    }>
+                    <RefreshCcw className="h-3.5 w-3.5 mr-2" /> Handover
+                  </Button>
+                )}
+                {canMutate &&
+                  (isDeleteDisabled ? (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-foreground/30 cursor-not-allowed"
+                      disabled
+                      title="Cannot delete populated section">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
+                      onClick={() => {
+                        setDeleteId(s.id);
+                        setDeleteName(displaySectionName);
+                      }}
+                      title="Delete section">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   const renderSectionGroup = (
     title: string,
     sectionsToRender: SectionItem[],
@@ -946,154 +1170,60 @@ export default function Sections() {
         <h3 className="text-sm font-black uppercase  text-foreground border-b border-border/50 pb-2 text-center">
           {title}
         </h3>
-        <div className="space-y-3">
-          {sectionsToRender.map((s) => {
-            const displaySectionName = formatSectionLabel(s.name);
-            const isDeleteDisabled = s.enrolledCount > 0;
-            const fillPercent =
-              s.maxCapacity > 0 ? (s.enrolledCount / s.maxCapacity) * 100 : 0;
-            const isOverCapacity = s.enrolledCount > s.maxCapacity;
+        {renderSectionCards(
+          sectionsToRender,
+          gradeLevelName,
+          glId,
+          glDisplayOrder,
+        )}
+      </div>
+    );
+  };
+
+  const renderScpGroups = (
+    sectionsToRender: SectionItem[],
+    gradeLevelName: string,
+    glId: number,
+    glDisplayOrder: number = 0,
+  ) => {
+    const scpSections = sectionsToRender.filter((s) => isSpecialSection(s));
+    if (scpSections.length === 0) return null;
+
+    const scpTypesInSections = Array.from(
+      new Set(scpSections.map((s) => s.programType)),
+    );
+    const orderedScpTypes = [
+      ...offeredScpTypes,
+      ...scpTypesInSections.filter((type) => !offeredScpTypes.includes(type)),
+    ];
+
+    return (
+      <div className="space-y-4 mt-6 first:mt-0">
+        <h3 className="text-sm font-black uppercase  text-foreground border-b border-border/50 pb-2 text-center">
+          Special Curricular Programs (SCP)
+        </h3>
+        <div className="space-y-6">
+          {orderedScpTypes.map((scpType) => {
+            const scpSectionsForType = scpSections.filter(
+              (section) => section.programType === scpType,
+            );
+            if (scpSectionsForType.length === 0) return null;
+
+            const scpLabel = SCP_FULL_LABELS[scpType] || scpType;
 
             return (
               <div
-                key={s.id}
-                className={cn(
-                  "flex flex-col sm:flex-row sm:items-center justify-between rounded-lg border bg-card p-4 shadow-sm transition-all gap-4",
-                  isOverCapacity
-                    ? "border-red-300 bg-red-50/30 hover:border-red-400"
-                    : "border-border hover:border-primary/20",
-                )}>
-                <div className="flex items-start sm:items-center gap-4">
-                  <div className="text-2xl leading-none mt-0.5 sm:mt-0">
-                    {fillEmoji(fillPercent)}
-                  </div>
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-black text-base uppercase ">
-                        {displaySectionName}
-                      </h4>
-                      <Badge
-                        variant="secondary"
-                        className="text-[9px] uppercase  font-bold">
-                        {isTleSection(s)
-                          ? (resolveTleProgramName(s.tleProgramId) || "TLE")
-                          : formatProgramType(s.programType)}
-                      </Badge>
-                      {s.isHomogeneous && s.programType === "REGULAR" && (
-                        <Badge
-                          variant="outline"
-                          className="text-[9px] uppercase  font-black border-primary/20 text-primary">
-                          Pilot
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-foreground font-semibold">
-                          Adviser:
-                        </span>
-                        {s.advisingTeacher ? (
-                          <span className="font-bold text-foreground">
-                            {s.advisingTeacher.name}
-                          </span>
-                        ) : (
-                          <span className="font-bold text-amber-600 flex items-center gap-1 bg-amber-50 px-1.5 py-0.5 rounded-md">
-                            Unassigned
-                          </span>
-                        )}
-                      </div>
-                      <span className="hidden sm:inline text-border">|</span>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-foreground font-semibold">
-                          Capacity:
-                        </span>
-                        <span
-                          className={cn(
-                            "font-bold",
-                            isOverCapacity ? "text-red-700" : "text-foreground",
-                          )}>
-                          {s.enrolledCount}/{s.maxCapacity}{" "}
-                          <span
-                            className={cn(
-                              isOverCapacity ? "font-black" : "text-foreground",
-                            )}>
-                            ({Math.round(fillPercent)}%)
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 self-end sm:self-auto">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 font-bold text-primary border-primary/20 hover:bg-primary/5"
-                    onClick={() =>
-                      setViewRosterSection({
-                        id: s.id,
-                        name: displaySectionName,
-                        gradeLevelName: gradeLevelName,
-                        adviserName: s.advisingTeacher?.name ?? null,
-                        maxCapacity: s.maxCapacity,
-                        enrolledCount: s.enrolledCount,
-                        programType: s.programType,
-                        gradeLevelId: glId,
-                      })
-                    }>
-                    <Users className="h-3.5 w-3.5 mr-2" /> View Roster
-                  </Button>
-                  {canMutate && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 font-bold"
-                      onClick={() =>
-                        handleOpenEdit(s, gradeLevelName, glDisplayOrder)
-                      }>
-                      <Edit2 className="h-3.5 w-3.5 mr-2" /> Edit
-                    </Button>
-                  )}
-                  {canMutate && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 font-bold text-amber-600 border-amber-200 hover:bg-amber-50"
-                      onClick={() =>
-                        setHandoverSection({
-                          id: s.id,
-                          name: displaySectionName,
-                          gradeLevelName: gradeLevelName,
-                          advisingTeacher: s.advisingTeacher,
-                        })
-                      }>
-                      <RefreshCcw className="h-3.5 w-3.5 mr-2" /> Handover
-                    </Button>
-                  )}
-                  {canMutate &&
-                    (isDeleteDisabled ? (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-foreground/30 cursor-not-allowed"
-                        disabled
-                        title="Cannot delete populated section">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
-                        onClick={() => {
-                          setDeleteId(s.id);
-                          setDeleteName(displaySectionName);
-                        }}
-                        title="Delete section">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    ))}
-                </div>
+                key={scpType}
+                className="space-y-3">
+                <h4 className="text-xs font-black uppercase text-foreground/70 border-b border-border/40 pb-1 text-center">
+                  {scpLabel}
+                </h4>
+                {renderSectionCards(
+                  scpSectionsForType,
+                  gradeLevelName,
+                  glId,
+                  glDisplayOrder,
+                )}
               </div>
             );
           })}
@@ -1295,7 +1425,11 @@ export default function Sections() {
                       onClick={() =>
                         setViewRosterSection({
                           id: section.id,
-                          name: formatSectionLabel(section.name),
+                          name: buildSectionDisplayName(
+                            section.name,
+                            section.programType,
+                            offeredScpTypeLabels,
+                          ),
                           gradeLevelName: group.gradeLevelName,
                           adviserName: section.advisingTeacher?.name ?? null,
                           maxCapacity: section.maxCapacity,
@@ -1317,7 +1451,11 @@ export default function Sections() {
                         <p className="text-sm font-bold truncate group-hover:text-primary transition-colors">
                           {formatHeatmapLabel(
                             group.gradeLevelName,
-                            section.name,
+                            buildSectionDisplayName(
+                              section.name,
+                              section.programType,
+                              offeredScpTypeLabels,
+                            ),
                           )}
                         </p>
                         <div className="mt-1 h-2 w-full rounded-full bg-muted">
@@ -1447,9 +1585,8 @@ export default function Sections() {
                           </div>
                         ) : (
                           <div className="space-y-8 pb-4">
-                            {renderSectionGroup(
-                              "Special Curricular Programs (SCP)",
-                              g.sections.filter((s) => isSpecialSection(s)),
+                            {renderScpGroups(
+                              g.sections,
                               g.gradeLevelName,
                               g.gradeLevelId,
                             )}

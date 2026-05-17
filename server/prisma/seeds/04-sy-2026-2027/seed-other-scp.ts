@@ -163,6 +163,45 @@ const PH_BARANGAYS = [
   "SAN ROQUE",
 ];
 
+const MAPEH_ARTS_SPECIALIZATIONS = [
+  "MAJOR IN MUSIC EDUCATION",
+  "FINE ARTS",
+  "THEATER / PERFORMING ARTS",
+  "DANCE",
+];
+
+const MAPEH_SPORTS_SPECIALIZATIONS = [
+  "SPORTS SCIENCE",
+  "CERTIFIED SPECIALIST COACH",
+  "MAJOR IN PHYSICAL EDUCATION",
+];
+
+function isArtsSpecialization(value: string | null): boolean {
+  if (!value) return false;
+  const normalized = value.toUpperCase();
+  return (
+    normalized.includes("ART") ||
+    normalized.includes("MUSIC") ||
+    normalized.includes("DANCE") ||
+    normalized.includes("THEATER") ||
+    normalized.includes("PERFORMING")
+  );
+}
+
+function isSportsSpecialization(value: string | null): boolean {
+  if (!value) return false;
+  const normalized = value.toUpperCase();
+  return (
+    normalized.includes("SPORT") ||
+    normalized.includes("PHYSICAL EDUCATION") ||
+    normalized.includes("COACH")
+  );
+}
+
+function sortUniqueIds(ids: number[]): number[] {
+  return Array.from(new Set(ids)).sort((a, b) => a - b);
+}
+
 function toUtcNoon(year: number, month: number, day: number): Date {
   return new Date(Date.UTC(year, month, day, 12, 0, 0, 0));
 }
@@ -187,6 +226,32 @@ async function assignSectionAdviser(
   schoolYearId: number,
   effectiveFrom: Date,
 ) {
+  // A teacher can only advise one section per school year (DB unique constraint).
+  const existingForTeacher = await prisma.sectionAdviser.findFirst({
+    where: {
+      teacherId,
+      schoolYearId,
+    },
+  });
+
+  if (existingForTeacher) {
+    if (
+      existingForTeacher.sectionId === sectionId &&
+      existingForTeacher.status !== "ACTIVE"
+    ) {
+      await prisma.sectionAdviser.update({
+        where: { id: existingForTeacher.id },
+        data: {
+          status: "ACTIVE" as SectionAdviserStatus,
+          effectiveFrom,
+          effectiveTo: null,
+          handoverReason: null,
+        },
+      });
+    }
+    return;
+  }
+
   const existing = await prisma.sectionAdviser.findFirst({
     where: {
       sectionId,
@@ -246,11 +311,13 @@ async function seedEnrolledLearners(params: {
     const sequence = i + 1;
     const sex: Sex = sequence % 2 === 0 ? "FEMALE" : "MALE";
     const nameIndex = sequence + sectionId * 31;
-    const firstPool = sex === "MALE" ? PH_FIRST_NAMES_MALE : PH_FIRST_NAMES_FEMALE;
+    const firstPool =
+      sex === "MALE" ? PH_FIRST_NAMES_MALE : PH_FIRST_NAMES_FEMALE;
 
     const firstName = firstPool[nameIndex % firstPool.length];
     const lastName = PH_LAST_NAMES[(nameIndex + 13) % PH_LAST_NAMES.length];
-    const middleName = PH_MIDDLE_NAMES[(nameIndex + 7) % PH_MIDDLE_NAMES.length];
+    const middleName =
+      PH_MIDDLE_NAMES[(nameIndex + 7) % PH_MIDDLE_NAMES.length];
 
     const lrn = buildLrn(sectionId, sequence);
     const birthYear = 2026 - (gradeValue + 6);
@@ -269,7 +336,8 @@ async function seedEnrolledLearners(params: {
         isIpCommunity: sequence % 50 === 0,
         is4PsBeneficiary: sequence % 15 === 0,
         psaBirthCertNumber: `PSA-12-${lrn}`,
-        previousGenAve: programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? 92 : 86,
+        previousGenAve:
+          programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? 92 : 86,
         promotionStatus: "PROMOTED",
       },
       create: {
@@ -285,7 +353,8 @@ async function seedEnrolledLearners(params: {
         isIpCommunity: sequence % 50 === 0,
         is4PsBeneficiary: sequence % 15 === 0,
         psaBirthCertNumber: `PSA-12-${lrn}`,
-        previousGenAve: programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? 92 : 86,
+        previousGenAve:
+          programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" ? 92 : 86,
         promotionStatus: "PROMOTED",
         isPendingLrnCreation: false,
       },
@@ -354,18 +423,32 @@ async function seedEnrolledLearners(params: {
           create: [
             {
               relationship: "MOTHER" as FamilyRelationship,
-              firstName: PH_FIRST_NAMES_FEMALE[(nameIndex + 5000) % PH_FIRST_NAMES_FEMALE.length],
-              lastName: PH_LAST_NAMES[(nameIndex + 5000) % PH_LAST_NAMES.length],
-              middleName: PH_MIDDLE_NAMES[(nameIndex + 5000) % PH_MIDDLE_NAMES.length],
-              contactNumber: `0922${String(nameIndex + 5000).padStart(7, "0").slice(-7)}`,
+              firstName:
+                PH_FIRST_NAMES_FEMALE[
+                  (nameIndex + 5000) % PH_FIRST_NAMES_FEMALE.length
+                ],
+              lastName:
+                PH_LAST_NAMES[(nameIndex + 5000) % PH_LAST_NAMES.length],
+              middleName:
+                PH_MIDDLE_NAMES[(nameIndex + 5000) % PH_MIDDLE_NAMES.length],
+              contactNumber: `0922${String(nameIndex + 5000)
+                .padStart(7, "0")
+                .slice(-7)}`,
               occupation: "HOUSEWIFE",
             },
             {
               relationship: "FATHER" as FamilyRelationship,
-              firstName: PH_FIRST_NAMES_MALE[(nameIndex + 3000) % PH_FIRST_NAMES_MALE.length],
-              lastName: PH_LAST_NAMES[(nameIndex + 3000) % PH_LAST_NAMES.length],
-              middleName: PH_MIDDLE_NAMES[(nameIndex + 3000) % PH_MIDDLE_NAMES.length],
-              contactNumber: `0917${String(nameIndex + 3000).padStart(7, "0").slice(-7)}`,
+              firstName:
+                PH_FIRST_NAMES_MALE[
+                  (nameIndex + 3000) % PH_FIRST_NAMES_MALE.length
+                ],
+              lastName:
+                PH_LAST_NAMES[(nameIndex + 3000) % PH_LAST_NAMES.length],
+              middleName:
+                PH_MIDDLE_NAMES[(nameIndex + 3000) % PH_MIDDLE_NAMES.length],
+              contactNumber: `0917${String(nameIndex + 3000)
+                .padStart(7, "0")
+                .slice(-7)}`,
               occupation: "EMPLOYEE",
             },
             {
@@ -373,7 +456,9 @@ async function seedEnrolledLearners(params: {
               firstName,
               lastName,
               middleName,
-              contactNumber: `0998${String(nameIndex + 7000).padStart(7, "0").slice(-7)}`,
+              contactNumber: `0998${String(nameIndex + 7000)
+                .padStart(7, "0")
+                .slice(-7)}`,
               occupation: "GUARDIAN",
             },
           ],
@@ -420,10 +505,14 @@ async function main() {
   });
 
   if (!targetYear) {
-    throw new Error("School year 2026-2027 not found. Run db:seed-2026-2027 first.");
+    throw new Error(
+      "School year 2026-2027 not found. Run db:seed-2026-2027 first.",
+    );
   }
 
-  const admin = await prisma.user.findFirst({ where: { role: "SYSTEM_ADMIN" } });
+  const admin = await prisma.user.findFirst({
+    where: { role: "SYSTEM_ADMIN" },
+  });
   if (!admin) {
     throw new Error("No SYSTEM_ADMIN found.");
   }
@@ -436,7 +525,11 @@ async function main() {
   const scpConfigs = await prisma.scpProgramConfig.findMany({
     where: {
       schoolYearId: targetYear.id,
-      scpType: { in: PROGRAMS.map((p) => p.type).concat("SCIENCE_TECHNOLOGY_AND_ENGINEERING" as ApplicantType) },
+      scpType: {
+        in: PROGRAMS.map((p) => p.type).concat(
+          "SCIENCE_TECHNOLOGY_AND_ENGINEERING" as ApplicantType,
+        ),
+      },
     },
     select: { id: true, scpType: true },
   });
@@ -452,15 +545,63 @@ async function main() {
     },
   });
 
-  const mapehTeachers = await prisma.teacher.findMany({
-    where: {
-      departmentId: mapehDepartment?.id ?? undefined,
-      isActive: true,
-    },
-    select: { id: true },
+  const allActiveTeachers = await prisma.teacher.findMany({
+    where: { isActive: true },
+    select: { id: true, departmentId: true, specialization: true },
   });
 
-  let mapehIndex = 0;
+  const existingAdvisers = await prisma.sectionAdviser.findMany({
+    where: {
+      schoolYearId: targetYear.id,
+      status: "ACTIVE" as SectionAdviserStatus,
+    },
+    select: { teacherId: true, sectionId: true },
+  });
+
+  const usedTeacherIds = new Set(
+    existingAdvisers.map((adviser) => adviser.teacherId),
+  );
+
+  const allActiveTeacherIds = sortUniqueIds(
+    allActiveTeachers.map((teacher) => teacher.id),
+  );
+  const mapehTeacherIds = sortUniqueIds(
+    allActiveTeachers
+      .filter((teacher) => teacher.departmentId === mapehDepartment?.id)
+      .map((teacher) => teacher.id),
+  );
+  const mapehArtsTeacherIds = sortUniqueIds(
+    allActiveTeachers
+      .filter(
+        (teacher) =>
+          teacher.departmentId === mapehDepartment?.id &&
+          (MAPEH_ARTS_SPECIALIZATIONS.includes(teacher.specialization ?? "") ||
+            isArtsSpecialization(teacher.specialization)),
+      )
+      .map((teacher) => teacher.id),
+  );
+  const mapehSportsTeacherIds = sortUniqueIds(
+    allActiveTeachers
+      .filter(
+        (teacher) =>
+          teacher.departmentId === mapehDepartment?.id &&
+          (MAPEH_SPORTS_SPECIALIZATIONS.includes(teacher.specialization ?? "") ||
+            isSportsSpecialization(teacher.specialization)),
+      )
+      .map((teacher) => teacher.id),
+  );
+
+  const pickAdviserId = (...pools: number[][]): number | null => {
+    for (const pool of pools) {
+      for (const id of pool) {
+        if (!usedTeacherIds.has(id)) {
+          usedTeacherIds.add(id);
+          return id;
+        }
+      }
+    }
+    return null;
+  };
 
   for (const gradeLevel of gradeLevels) {
     const gradeValue = parseInt(gradeLevel.name.split(" ")[1]);
@@ -497,15 +638,29 @@ async function main() {
           },
         });
 
-        if (mapehTeachers.length > 0) {
-          const adviser = mapehTeachers[mapehIndex % mapehTeachers.length];
+        const isSpa = program.type === "SPECIAL_PROGRAM_IN_THE_ARTS";
+        const isSps = program.type === "SPECIAL_PROGRAM_IN_SPORTS";
+        const adviserId = isSpa
+          ? pickAdviserId(
+            mapehArtsTeacherIds,
+            mapehTeacherIds,
+            allActiveTeacherIds,
+          )
+          : isSps
+            ? pickAdviserId(
+              mapehSportsTeacherIds,
+              mapehTeacherIds,
+              allActiveTeacherIds,
+            )
+            : pickAdviserId(allActiveTeacherIds);
+
+        if (adviserId != null) {
           await assignSectionAdviser(
             section.id,
-            adviser.id,
+            adviserId,
             targetYear.id,
             targetYear.classOpeningDate || new Date(),
           );
-          mapehIndex++;
         }
 
         const currentCount = await prisma.enrollmentRecord.count({
