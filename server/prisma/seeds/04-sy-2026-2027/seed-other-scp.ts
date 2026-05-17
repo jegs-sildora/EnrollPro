@@ -585,7 +585,9 @@ async function main() {
       .filter(
         (teacher) =>
           teacher.departmentId === mapehDepartment?.id &&
-          (MAPEH_SPORTS_SPECIALIZATIONS.includes(teacher.specialization ?? "") ||
+          (MAPEH_SPORTS_SPECIALIZATIONS.includes(
+            teacher.specialization ?? "",
+          ) ||
             isSportsSpecialization(teacher.specialization)),
       )
       .map((teacher) => teacher.id),
@@ -642,16 +644,16 @@ async function main() {
         const isSps = program.type === "SPECIAL_PROGRAM_IN_SPORTS";
         const adviserId = isSpa
           ? pickAdviserId(
-            mapehArtsTeacherIds,
-            mapehTeacherIds,
-            allActiveTeacherIds,
-          )
-          : isSps
-            ? pickAdviserId(
-              mapehSportsTeacherIds,
+              mapehArtsTeacherIds,
               mapehTeacherIds,
               allActiveTeacherIds,
             )
+          : isSps
+            ? pickAdviserId(
+                mapehSportsTeacherIds,
+                mapehTeacherIds,
+                allActiveTeacherIds,
+              )
             : pickAdviserId(allActiveTeacherIds);
 
         if (adviserId != null) {
