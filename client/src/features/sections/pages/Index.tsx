@@ -681,7 +681,7 @@ export default function Sections() {
           }));
 
         const offeredLabels = offeredScps.reduce(
-          (acc, scp) => {
+          (acc: Record<string, string>, scp: { value: string; label: string }) => {
             acc[scp.value] = scp.label;
             return acc;
           },
@@ -689,7 +689,7 @@ export default function Sections() {
         );
 
         setOfferedScpTypeLabels(offeredLabels);
-        setOfferedScpTypes(offeredScps.map((scp) => scp.value));
+        setOfferedScpTypes(offeredScps.map((scp: { value: string; label: string }) => scp.value));
 
         setProgramOptions([
           { value: "REGULAR", label: "Regular (BEC)" },

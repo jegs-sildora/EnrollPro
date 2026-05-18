@@ -162,8 +162,9 @@ model Section {
   scpProgramConfigId  Int?                 @map("scp_program_config_id")
   /// Numeric rank of the section within its grade level (e.g., 1 for the first section). Null for SCP/STE sections.
   sectionRank         Int?                 @map("section_rank")
-  enrollmentRecords   EnrollmentRecord[]
-  advisers            SectionAdviser[]
+  enrollmentRecords    EnrollmentRecord[]   @relation("HomeroomSection")
+  enrollmentRecordsTle  EnrollmentRecord[]   @relation("TLESection")
+  advisers              SectionAdviser[]
   gradeLevel          GradeLevel           @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
   schoolYear          SchoolYear           @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
   scpProgramConfig    ScpProgramConfig?    @relation(fields: [scpProgramConfigId], references: [id], onDelete: SetNull)
@@ -204,11 +205,9 @@ model SectionAdviser {
 model TLEProgram {
   id           Int          @id @default(autoincrement())
   name         String       @unique
-  programCode  String       @default("") @map("program_code")
   category     TLECategory
   trackType    TLETrackType @default(SPECIALIZATION) @map("track_type")
   isActive     Boolean      @default(true) @map("is_active")
-  description  String?      @map("description")
   maxSlots     Int?         @map("max_slots")
   createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -535,17 +534,20 @@ model EnrollmentRecord {
   learnerId               Int                   @map("learner_id")
   tleProgramId            Int?                  @map("tle_program_id")
   tleProgramChoice2Id     Int?                  @map("tle_program_choice2_id")
+  tleSectionId            Int?                  @map("tle_section_id")
   enrolledBy              User                  @relation(fields: [enrolledById], references: [id])
   enrollmentApplication   EnrollmentApplication @relation(fields: [enrollmentApplicationId], references: [id], onDelete: Cascade)
   learner                 Learner               @relation(fields: [learnerId], references: [id], onDelete: Restrict)
   schoolYear              SchoolYear            @relation(fields: [schoolYearId], references: [id])
-  section                 Section               @relation(fields: [sectionId], references: [id])
+  section                 Section               @relation("HomeroomSection", fields: [sectionId], references: [id])
+  tleSection              Section?              @relation("TLESection", fields: [tleSectionId], references: [id])
   tleProgram              TLEProgram?           @relation("PrimaryTLE", fields: [tleProgramId], references: [id], onDelete: SetNull)
   tleProgramChoice2       TLEProgram?           @relation("SecondaryTLE", fields: [tleProgramChoice2Id], references: [id], onDelete: SetNull)
 
   @@index([sectionId], map: "idx_enroll_records_section_id")
   @@index([learnerId], map: "idx_enrollment_records_learner_id")
   @@index([tleProgramId], map: "idx_enrollment_records_tle_program_id")
+  @@index([tleSectionId], map: "idx_enrollment_records_tle_section_id")
   @@map("enrollment_records")
 }
 

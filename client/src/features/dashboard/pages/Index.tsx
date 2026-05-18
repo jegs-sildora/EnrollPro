@@ -10,7 +10,8 @@ import {
   Activity,
   FileText,
   FileCheck,
-  GitPullRequest,
+  TrendingUp,
+  TrendingDown,
   Lock,
   Archive,
 } from "lucide-react";
@@ -36,6 +37,8 @@ interface Stats {
   totalEnrolled: number;
   totalPreRegistered: number;
   sectionsAtCapacity: number;
+  previousYearTotal?: number;
+  unsectionedCount?: number;
   actions?: {
     pendingReview: number;
     sectionsAtCapacity: number;
@@ -49,6 +52,7 @@ interface Stats {
   earlyRegistration?: {
     submitted: number;
     verified: number;
+    pendingDocuments?: number;
     examScheduled?: number;
     readyForEnrollment?: number;
     enrolled?: number;
@@ -60,11 +64,16 @@ interface Stats {
     name: string;
     current: number;
     target: number;
+    forecastedTarget?: number;
     progressPercent: number;
   }>;
   capacityAlerts?: Array<{
     message: string;
     severity: "WARNING" | "CRITICAL";
+    currentEnrolled?: number;
+    maxCapacity?: number;
+    sectionName?: string;
+    gradeLevel?: string;
   }>;
 }
 
@@ -183,12 +192,8 @@ export default function Dashboard() {
 
   const pendingReviewCount =
     stats?.actions?.pendingReview ?? stats?.totalPending ?? 0;
-  const sectionsAtCapacityCount =
-    stats?.actions?.sectionsAtCapacity ?? stats?.sectionsAtCapacity ?? 0;
   const pendingReviewAlert =
     pendingReviewCount >= ACTION_THRESHOLDS.pendingReview;
-  const sectionsCapacityAlert =
-    sectionsAtCapacityCount >= ACTION_THRESHOLDS.sectionsAtCapacity;
 
   const enrollmentCurrent =
     stats?.enrollmentTarget?.current ?? stats?.totalEnrolled ?? 0;
@@ -198,32 +203,26 @@ export default function Dashboard() {
     (enrollmentTarget > 0
       ? Number(((enrollmentCurrent / enrollmentTarget) * 100).toFixed(1))
       : 0);
-  const enrollmentProgressClamped = clampProgress(enrollmentProgress);
-  const seatsRemaining =
-    stats?.enrollmentTarget?.seatsRemaining ??
-    Math.max(enrollmentTarget - enrollmentCurrent, 0);
 
-  const earlyRegCards = [
+  const leslPipeline = [
     {
-      title: "Submitted",
+      title: "Encoded (BEEF)",
       value: stats?.earlyRegistration?.submitted ?? 0,
       icon: FileText,
       color: "text-amber-600",
       bg: "bg-amber-50",
+      tooltip: "Forms entered into the system",
     },
     {
-      title: "Exam Scheduled",
-      value: stats?.earlyRegistration?.examScheduled ?? 0,
-      icon: GitPullRequest,
-      color: "text-indigo-600",
-      bg: "bg-indigo-50",
-    },
-    {
-      title: "Ready for Enrollment",
-      value: stats?.earlyRegistration?.readyForEnrollment ?? 0,
-      icon: CheckCircle,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
+      title: "Pending Documents",
+      value:
+        stats?.earlyRegistration?.pendingDocuments ??
+        stats?.earlyRegistration?.inPipeline ??
+        0,
+      icon: ClipboardList,
+      color: "text-orange-600",
+      bg: "bg-orange-50",
+      tooltip: "Awaiting PSA Birth Certificate or SF9",
     },
     {
       title: "Verified",
@@ -231,13 +230,15 @@ export default function Dashboard() {
       icon: FileCheck,
       color: "text-teal-600",
       bg: "bg-teal-50",
+      tooltip: "Documents cleared",
     },
     {
-      title: "Enrolled",
-      value: stats?.earlyRegistration?.enrolled ?? stats?.totalEnrolled ?? 0,
-      icon: Users,
-      color: "text-emerald-600",
-      bg: "bg-emerald-50",
+      title: "Ready for Sectioning",
+      value: stats?.earlyRegistration?.readyForEnrollment ?? 0,
+      icon: CheckCircle,
+      color: "text-blue-600",
+      bg: "bg-blue-50",
+      tooltip: "Confirmed for BOSY — awaiting homeroom assignment",
     },
   ];
 
@@ -387,8 +388,8 @@ export default function Dashboard() {
               <Card className="lg:col-span-4 border-emerald-200 bg-gradient-to-br from-white to-emerald-50/30 shadow-sm border-2">
                 <CardHeader className="pb-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <CardTitle className="text-xs font-black uppercase  text-emerald-900/40">
-                      Global Enrollment Status
+                    <CardTitle className="text-xs font-black uppercase text-emerald-900/40">
+                      Growth Indicator
                     </CardTitle>
                     <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 h-5 px-1.5 text-xs font-black uppercase er">
                       School-Wide
@@ -400,7 +401,7 @@ export default function Dashboard() {
                   {showSkeleton ? (
                     <>
                       <Skeleton className="h-10 w-44" />
-                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-5 w-40" />
                       <Skeleton className="h-4 w-64" />
                     </>
                   ) : (
@@ -410,44 +411,45 @@ export default function Dashboard() {
                           <span className="text-5xl font-black text-emerald-700 tabular-nums">
                             {formatMetric(enrollmentCurrent)}
                           </span>
-                          <span className="text-xl font-bold text-emerald-900/30 uppercase er">
-                            / {formatMetric(enrollmentTarget)}
-                          </span>
                         </div>
-                        <p className="text-xs font-bold text-emerald-900/50 uppercase ">
-                          Total Enrollees
+                        <p className="text-xs font-bold text-emerald-900/50 uppercase">
+                          Total Enrolled · SY {ayLabel}
                         </p>
                       </div>
 
-                      <div className="space-y-2">
-                        <div
-                          role="progressbar"
-                          aria-valuemin={0}
-                          aria-valuemax={100}
-                          aria-valuenow={Math.round(enrollmentProgressClamped)}
-                          className="h-4 w-full rounded-full bg-emerald-100 overflow-hidden shadow-inner border border-emerald-200/50">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${enrollmentProgressClamped}%` }}
-                            transition={{ duration: 1, ease: "easeOut" }}
-                            className="h-full rounded-full bg-emerald-600 shadow-[0_0_12px_rgba(5,150,105,0.3)]"
-                          />
-                        </div>
-                        <div className="flex justify-between text-xs font-black uppercase  text-emerald-800/60">
-                          <span>BOSY Progress</span>
-                          <span>{enrollmentProgress.toFixed(1)}% Capacity</span>
-                        </div>
-                      </div>
-
-                      <div className="rounded-xl bg-white/80 p-3 border border-emerald-100 shadow-sm">
-                        <p className="text-xs font-bold text-emerald-900/70 leading-relaxed">
-                          {enrollmentTarget === 0
-                            ? "Section capacity target is unavailable until sections are configured."
-                            : seatsRemaining > 0
-                              ? `System Forecast: ${formatMetric(seatsRemaining)} slots remain available across all Junior High School grade levels.`
-                              : "Operational Limit Reached: All seats are currently occupied."}
-                        </p>
-                      </div>
+                      {/* Growth vs prior SY */}
+                      {(() => {
+                        const prev = stats?.previousYearTotal ?? null;
+                        if (!prev || prev === 0) {
+                          return (
+                            <p className="text-xs font-bold text-slate-400 uppercase">
+                              No prior SY data
+                            </p>
+                          );
+                        }
+                        const delta = enrollmentCurrent - prev;
+                        const pct = ((delta / prev) * 100).toFixed(1);
+                        const positive = delta >= 0;
+                        return (
+                          <div
+                            className={cn(
+                              "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-black text-sm",
+                              positive
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-red-100 text-red-700",
+                            )}>
+                            {positive ? (
+                              <TrendingUp className="h-4 w-4 shrink-0" />
+                            ) : (
+                              <TrendingDown className="h-4 w-4 shrink-0" />
+                            )}
+                            <span>
+                              {positive ? "+" : ""}
+                              {pct}% vs prior SY ({formatMetric(prev)})
+                            </span>
+                          </div>
+                        );
+                      })()}
                     </>
                   )}
                 </CardContent>
@@ -455,8 +457,8 @@ export default function Dashboard() {
 
               <Card className="lg:col-span-8 border-slate-200 bg-white shadow-sm flex flex-col">
                 <CardHeader className="pb-3 border-b border-slate-50">
-                  <CardTitle className="text-xs font-black uppercase  text-foreground">
-                    Capacity by Grade Level
+                  <CardTitle className="text-xs font-black uppercase text-foreground">
+                    Forecast vs. Actual Enrollment
                   </CardTitle>
                 </CardHeader>
 
@@ -477,24 +479,27 @@ export default function Dashboard() {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-                      {stats?.gradeLevelBreakdown?.map((gl) => (
+                      {stats?.gradeLevelBreakdown?.map((gl) => {
+                        const forecast = gl.forecastedTarget ?? gl.target;
+                        const fillPct = forecast > 0
+                          ? clampProgress((gl.current / forecast) * 100)
+                          : 0;
+                        return (
                         <div
                           key={gl.id}
                           className="space-y-3">
                           <div className="flex justify-between items-end">
-                            <span className="text-xs font-black uppercase  text-slate-700">
+                            <span className="text-xs font-black uppercase text-slate-700">
                               {gl.name}
                             </span>
                             <span className="text-xs font-black text-emerald-700 tabular-nums">
-                              {gl.progressPercent.toFixed(0)}% (
-                              {formatMetric(gl.current)} /{" "}
-                              {formatMetric(gl.target)})
+                              {formatMetric(gl.current)} / {formatMetric(forecast)} Forecasted
                             </span>
                           </div>
                           <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden shadow-inner border border-slate-200/50">
                             <motion.div
                               initial={{ width: 0 }}
-                              animate={{ width: `${gl.progressPercent}%` }}
+                              animate={{ width: `${fillPct}%` }}
                               transition={{
                                 duration: 1,
                                 ease: "easeOut",
@@ -503,8 +508,12 @@ export default function Dashboard() {
                               className="h-full rounded-full bg-emerald-500"
                             />
                           </div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">
+                            Forecast Fill Rate — {fillPct.toFixed(0)}%
+                          </p>
                         </div>
-                      ))}
+                        );
+                      })}
                       {(!stats?.gradeLevelBreakdown ||
                         stats.gradeLevelBreakdown.length === 0) && (
                         <div className="col-span-full py-8 text-center">
@@ -567,13 +576,14 @@ export default function Dashboard() {
         className="space-y-4"
         aria-label="Action queues">
         <div className="flex items-center gap-2">
-          <h2 className="text-xs font-black uppercase  text-slate-500/80">
+          <h2 className="text-xs font-black uppercase text-slate-500/80">
             Action Queues
           </h2>
           <div className="h-px flex-1 bg-slate-100"></div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+          {/* Card 1 — Pending Verifications (always visible) */}
           <Card
             className={cn(
               "shadow-sm transition-all hover:shadow-md border-2",
@@ -583,10 +593,10 @@ export default function Dashboard() {
             )}>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xs font-black  text-foreground">
+                <CardTitle className="text-xs font-black text-foreground">
                   {effectiveFocus === "ENROLLMENT"
                     ? "Pending BOSY Verifications"
-                    : "Pending Review"}
+                    : "Pending Verifications"}
                 </CardTitle>
                 <div
                   className={cn(
@@ -626,7 +636,7 @@ export default function Dashboard() {
 
               <Button
                 type="button"
-                className="w-full font-black uppercase  text-xs h-10"
+                className="w-full font-black uppercase text-xs h-10"
                 variant={pendingReviewAlert ? "default" : "outline"}
                 onClick={() =>
                   navigate(
@@ -640,88 +650,192 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card
-            className={cn(
-              "shadow-sm transition-all hover:shadow-md border-2",
-              sectionsCapacityAlert
-                ? "border-red-400 bg-red-50/30"
-                : "border-slate-200 bg-white",
-            )}>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xs font-black  text-foreground">
-                  Section Capacity Alerts
-                </CardTitle>
-                <div
-                  className={cn(
-                    "rounded-lg p-2",
-                    sectionsCapacityAlert ? "bg-red-100" : "bg-slate-100",
-                  )}>
-                  <AlertTriangle
-                    className={cn(
-                      "h-4 w-4",
-                      sectionsCapacityAlert ? "text-red-700" : "text-slate-600",
-                    )}
-                  />
-                </div>
-              </div>
-            </CardHeader>
+          {/* Cards 2 & 3 — hidden in EARLY mode (sectioning hasn't started) */}
+          {effectiveFocus !== "EARLY" && (
+            <>
+              {/* Card 2 — Overcrowded Sections */}
+              {(() => {
+                // A section is overcrowded only when it STRICTLY exceeds its
+                // maximum capacity (currentEnrolled > maxCapacity).
+                // Sections sitting exactly at capacity (e.g. 35/35) are NOT overcrowded.
+                const overcrowded =
+                  stats?.capacityAlerts?.filter((a) =>
+                    a.currentEnrolled !== undefined && a.maxCapacity !== undefined
+                      ? a.currentEnrolled > a.maxCapacity
+                      : a.severity === "CRITICAL",
+                  ) ?? [];
+                const hasOvercrowded = overcrowded.length > 0;
 
-            <CardContent className="space-y-4">
-              {showSkeleton ? (
-                <>
-                  <Skeleton className="h-8 w-24" />
-                  <Skeleton className="h-4 w-44" />
-                </>
-              ) : (
-                <>
-                  <div className="text-5xl font-black tabular-nums">
-                    {stats?.capacityAlerts?.length || 0}
-                  </div>
-                  <div className="text-xs font-bold text-foreground min-h-[2rem] space-y-1.5">
-                    {stats?.capacityAlerts &&
-                    stats.capacityAlerts.length > 0 ? (
-                      stats.capacityAlerts.slice(0, 2).map((alert, i) => (
-                        <p
-                          key={i}
+                const overcrowdedMessage = (alert: NonNullable<Stats["capacityAlerts"]>[number]) => {
+                  if (
+                    alert.currentEnrolled !== undefined &&
+                    alert.maxCapacity !== undefined
+                  ) {
+                    const label =
+                      alert.gradeLevel && alert.sectionName
+                        ? `${alert.gradeLevel} '${alert.sectionName}'`
+                        : alert.sectionName ?? "Section";
+                    return `${label} is OVERCROWDED (${alert.currentEnrolled}/${alert.maxCapacity})`;
+                  }
+                  return alert.message;
+                };
+
+                return (
+                  <Card
+                    className={cn(
+                      "shadow-sm transition-all hover:shadow-md border-2",
+                      hasOvercrowded
+                        ? "border-destructive bg-destructive/5"
+                        : "border-slate-200 bg-white",
+                    )}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-xs font-black text-foreground">
+                          Overcrowded Sections
+                        </CardTitle>
+                        <div
                           className={cn(
-                            "flex items-start gap-2 leading-snug",
-                            alert.severity === "CRITICAL"
-                              ? "text-red-700 font-black"
-                              : "text-amber-700",
+                            "rounded-lg p-2",
+                            hasOvercrowded ? "bg-red-100" : "bg-slate-100",
                           )}>
-                          <span
+                          <AlertTriangle
                             className={cn(
-                              "h-1.5 w-1.5 rounded-full mt-1 shrink-0",
-                              alert.severity === "CRITICAL"
-                                ? "bg-red-600 animate-pulse"
-                                : "bg-amber-600",
+                              "h-4 w-4",
+                              hasOvercrowded
+                                ? "text-destructive"
+                                : "text-slate-600",
                             )}
                           />
-                          {alert.message}
-                        </p>
-                      ))
-                    ) : (
-                      <p>
-                        Distribution is stable. No grade level has currently
-                        exceeded the standard 45-learner section threshold.
-                      </p>
-                    )}
-                  </div>
-                </>
-              )}
+                        </div>
+                      </div>
+                    </CardHeader>
 
-              <Button
-                type="button"
-                className="w-full font-black uppercase  text-xs h-10"
-                variant={sectionsCapacityAlert ? "destructive" : "outline"}
-                onClick={() => navigate("/sections")}>
-                {sectionsAtCapacityCount > 0
-                  ? "Balance Sections"
-                  : "Open Section Workspace"}
-              </Button>
-            </CardContent>
-          </Card>
+                    <CardContent className="space-y-4">
+                      {showSkeleton ? (
+                        <>
+                          <Skeleton className="h-8 w-24" />
+                          <Skeleton className="h-4 w-44" />
+                        </>
+                      ) : (
+                        <>
+                          {/* Big number = count of sections strictly over capacity */}
+                          <div
+                            className={cn(
+                              "text-5xl font-black tabular-nums",
+                              hasOvercrowded && "text-destructive",
+                            )}>
+                            {overcrowded.length}
+                          </div>
+                          <div className="text-xs font-bold min-h-[2rem] space-y-1.5">
+                            {hasOvercrowded ? (
+                              overcrowded.slice(0, 3).map((alert, i) => (
+                                <p
+                                  key={i}
+                                  className="flex items-start gap-2 leading-snug text-destructive font-black">
+                                  <span className="h-1.5 w-1.5 rounded-full mt-1 shrink-0 bg-destructive animate-pulse" />
+                                  {overcrowdedMessage(alert)}
+                                </p>
+                              ))
+                            ) : (
+                              <p className="flex items-center gap-1.5 text-emerald-600">
+                                <CheckCircle className="h-3.5 w-3.5 shrink-0" />
+                                All sections within physical capacity.
+                              </p>
+                            )}
+                          </div>
+                        </>
+                      )}
+
+                      {hasOvercrowded && (
+                        <Button
+                          type="button"
+                          className="w-full font-black uppercase text-xs h-10"
+                          variant="destructive"
+                          onClick={() => navigate("/sections")}>
+                          Resolve Overcrowding
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+
+              {/* Card 3 — Unsectioned Learners */}
+              {(() => {
+                const unsectioned = stats?.unsectionedCount ?? 0;
+                const hasUnsectioned = unsectioned > 0;
+                return (
+                  <Card
+                    className={cn(
+                      "shadow-sm transition-all hover:shadow-md border-2",
+                      hasUnsectioned
+                        ? "border-amber-400 bg-amber-50/30"
+                        : "border-slate-200 bg-white",
+                    )}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-xs font-black text-foreground">
+                          Unsectioned Learners
+                        </CardTitle>
+                        <div
+                          className={cn(
+                            "rounded-lg p-2",
+                            hasUnsectioned ? "bg-amber-100" : "bg-slate-100",
+                          )}>
+                          <Users
+                            className={cn(
+                              "h-4 w-4",
+                              hasUnsectioned
+                                ? "text-amber-700"
+                                : "text-slate-600",
+                            )}
+                          />
+                        </div>
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="space-y-4">
+                      {showSkeleton ? (
+                        <>
+                          <Skeleton className="h-8 w-24" />
+                          <Skeleton className="h-4 w-44" />
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-5xl font-black tabular-nums">
+                            {formatMetric(unsectioned)}
+                          </div>
+                          <p className="text-xs font-bold min-h-[2rem] leading-relaxed">
+                            {hasUnsectioned ? (
+                              <span className="text-amber-700">
+                                Verified learners with no homeroom assignment.
+                                Assign before BOSY closes.
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1.5 text-emerald-600">
+                                <CheckCircle className="h-3.5 w-3.5 shrink-0" />
+                                All verified learners are sectioned.
+                              </span>
+                            )}
+                          </p>
+                        </>
+                      )}
+
+                      <Button
+                        type="button"
+                        className="w-full font-black uppercase text-xs h-10"
+                        variant={hasUnsectioned ? "default" : "outline"}
+                        onClick={() => navigate("/sections/homerooms")}>
+                        {hasUnsectioned
+                          ? `Assign Homerooms (${formatMetric(unsectioned)})`
+                          : "Homerooms Up To Date"}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+            </>
+          )}
         </div>
       </section>
 
@@ -744,8 +858,8 @@ export default function Dashboard() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-              {earlyRegCards.map((stat) => (
+              className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {leslPipeline.map((stat) => (
                 <Card
                   key={stat.title}
                   className="border-amber-100 bg-white shadow-sm transition-all hover:shadow-md border-b-2">
@@ -802,9 +916,9 @@ export default function Dashboard() {
                       </div>
                       <div className="text-right">
                         <p className="text-xs font-bold text-slate-400 uppercase">
-                          Ready
+                          Ready for Sectioning
                         </p>
-                        <p className="text-lg font-black text-amber-600">
+                        <p className="text-lg font-black text-blue-600">
                           {formatMetric(
                             stats?.earlyRegistration?.readyForEnrollment ?? 0,
                           )}

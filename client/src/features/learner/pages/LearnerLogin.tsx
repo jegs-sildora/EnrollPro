@@ -59,7 +59,7 @@ export function LookupForm() {
 
       // Redirect to change-password first if required
       if (res.data.user.mustChangePassword) {
-        navigate("/change-password");
+        navigate("/change-password?origin=learner");
       } else {
         navigate("/learner");
       }

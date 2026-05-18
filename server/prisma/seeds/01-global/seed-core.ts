@@ -172,52 +172,31 @@ async function main() {
   const tlePrograms: {
     name: string;
     category: TLECategory;
-    displayOrder: number;
   }[] = [
-    { name: "ICT - Computer Systems Servicing", category: "ICT", displayOrder: 1 },
-    { name: "HE - Cookery", category: "HOME_ECONOMICS", displayOrder: 2 },
-    {
-      name: "HE - Bread and Pastry Production",
-      category: "HOME_ECONOMICS",
-      displayOrder: 3,
-    },
-    { name: "HE - Caregiving", category: "HOME_ECONOMICS", displayOrder: 4 },
-    { name: "IA - Carpentry", category: "INDUSTRIAL_ARTS", displayOrder: 5 },
-    {
-      name: "IA - Electrical Installation and Maintenance",
-      category: "INDUSTRIAL_ARTS",
-      displayOrder: 6,
-    },
-    { name: "IA - Electronics", category: "INDUSTRIAL_ARTS", displayOrder: 7 },
-    {
-      name: "IA - Shielded Metal Arc Welding",
-      category: "INDUSTRIAL_ARTS",
-      displayOrder: 8,
-    },
-    {
-      name: "AFA - Agricultural Crops Production",
-      category: "AGRI_FISHERY_ARTS",
-      displayOrder: 9,
-    },
-    {
-      name: "AFA - Fishery Arts",
-      category: "AGRI_FISHERY_ARTS",
-      displayOrder: 10,
-    },
-    {
-      name: "AFA - Swine Production",
-      category: "AGRI_FISHERY_ARTS",
-      displayOrder: 11,
-    },
+    // Family and Consumer Science (FCS)
+    { name: "FCS - Cookery", category: "HOME_ECONOMICS" },
+    { name: "FCS - Bread and Pastry Production", category: "HOME_ECONOMICS" },
+    { name: "FCS - Household Services", category: "HOME_ECONOMICS" },
+    { name: "FCS - Beauty Care", category: "HOME_ECONOMICS" },
+
+    // Industrial Arts (IA)
+    { name: "IA - SMAW", category: "INDUSTRIAL_ARTS" },
+    { name: "IA - Electrical Installation and Maintenance", category: "INDUSTRIAL_ARTS" },
+
+    // Information and Communications Technology (ICT)
+    { name: "ICT - Computer Systems Servicing", category: "ICT" },
+    { name: "ICT - Technical Drafting", category: "ICT" },
+
+    // Agriculture and Fishery Arts (AFA)
+    { name: "AFA - Agricultural Crops Production", category: "AGRI_FISHERY_ARTS" },
   ];
   for (const prog of tlePrograms) {
     await prisma.tLEProgram.upsert({
       where: { name: prog.name },
-      update: { category: prog.category, displayOrder: prog.displayOrder },
+      update: { category: prog.category },
       create: {
         name: prog.name,
         category: prog.category,
-        displayOrder: prog.displayOrder,
         isActive: true,
       },
     });

@@ -77,74 +77,15 @@ export async function commitBatchSectioning(req: Request, res: Response) {
         .json({ message: "No assignments provided to commit" });
     }
 
-    const typedAssignments = assignments as Array<{
-      applicationId: number;
-      sectionId: number;
-    }>;
-    const appIds = typedAssignments.map((a) => a.applicationId);
-    const sectionIds = typedAssignments.map((a) => a.sectionId);
+    const appIds = (
+      assignments as Array<{ applicationId: number; sectionId: number }>
+    ).map((a) => a.applicationId);
 
-    // Fetch applications with pre-write validation context
+    // Fetch learner IDs first as they are required for EnrollmentRecord
     const applications = await prisma.enrollmentApplication.findMany({
       where: { id: { in: appIds } },
-      select: {
-        id: true,
-        learnerId: true,
-        tleProgramId: true,
-        status: true,
-        gradeLevelId: true,
-      },
+      select: { id: true, learnerId: true, tleProgramId: true },
     });
-
-    const sections = await prisma.section.findMany({
-      where: { id: { in: sectionIds } },
-      select: {
-        id: true,
-        gradeLevelId: true,
-        tleProgramId: true,
-        gradeLevel: { select: { displayOrder: true } },
-      },
-    });
-
-    const appMap = new Map(applications.map((app) => [app.id, app]));
-    const sectionMap = new Map(sections.map((section) => [section.id, section]));
-
-    for (const assignment of typedAssignments) {
-      const app = appMap.get(assignment.applicationId);
-      const section = sectionMap.get(assignment.sectionId);
-
-      if (!app || !section) {
-        return res.status(400).json({ message: "Invalid assignment payload." });
-      }
-
-      if (app.status !== "READY_FOR_SECTIONING") {
-        return res.status(409).json({
-          message: `Application ${app.id} is not READY_FOR_SECTIONING.`,
-        });
-      }
-
-      if (app.gradeLevelId !== section.gradeLevelId) {
-        return res.status(422).json({
-          message: `Grade mismatch for application ${app.id}.`,
-        });
-      }
-
-      const isSpecGrade =
-        section.gradeLevel.displayOrder === 9 ||
-        section.gradeLevel.displayOrder === 10;
-
-      if (isSpecGrade && !app.tleProgramId) {
-        return res.status(422).json({
-          message: `Application ${app.id} has no tleProgramId and cannot be sectioned.`,
-        });
-      }
-
-      if (isSpecGrade && section.tleProgramId !== app.tleProgramId) {
-        return res.status(422).json({
-          message: `Track lock violation for application ${app.id}.`,
-        });
-      }
-    }
 
     const appToLearnerMap = new Map(
       applications.map((app) => [app.id, app.learnerId]),
@@ -159,7 +100,7 @@ export async function commitBatchSectioning(req: Request, res: Response) {
         await tx.enrollmentApplication.updateMany({
           where: {
             id: { in: appIds },
-            status: "READY_FOR_SECTIONING",
+            status: { not: "TEMPORARILY_ENROLLED" },
           },
           data: { status: "ENROLLED" },
         });
@@ -314,6 +255,9 @@ export async function listSections(req: Request, res: Response): Promise<void> {
             enrollmentRecords: {
               where: activeEnrollmentFilter,
             },
+            enrollmentRecordsTle: {
+              where: activeEnrollmentFilter,
+            },
           },
         },
       },
@@ -331,7 +275,7 @@ export async function listSections(req: Request, res: Response): Promise<void> {
           isHomogeneous: s.isHomogeneous,
           tleProgramId: s.tleProgramId ?? null,
           sectionRank: s.sectionRank ?? null,
-          enrolledCount: s._count.enrollmentRecords,
+          enrolledCount: s._count.enrollmentRecords + s._count.enrollmentRecordsTle,
           advisingTeacher: activeAdviser
             ? {
                 id: activeAdviser.id,
@@ -359,6 +303,9 @@ export async function listSections(req: Request, res: Response): Promise<void> {
               enrollmentRecords: {
                 where: activeEnrollmentFilter,
               },
+              enrollmentRecordsTle: {
+                where: activeEnrollmentFilter,
+              },
             },
           },
         },
@@ -383,7 +330,7 @@ export async function listSections(req: Request, res: Response): Promise<void> {
           isHomogeneous: s.isHomogeneous,
           tleProgramId: s.tleProgramId ?? null,
           sectionRank: s.sectionRank ?? null,
-          enrolledCount: s._count.enrollmentRecords,
+          enrolledCount: s._count.enrollmentRecords + s._count.enrollmentRecordsTle,
           advisingTeacher: activeAdviser
             ? {
                 id: activeAdviser.id,
@@ -403,55 +350,14 @@ export async function listEligibleAdvisers(req: Request, res: Response) {
   const excludeSectionId = req.query.excludeSectionId
     ? parseInt(String(req.query.excludeSectionId))
     : null;
-  const sectionType = String(req.query.sectionType || "HOME_ROOM");
-  const tleProgramId = req.query.tleProgramId
-    ? parseInt(String(req.query.tleProgramId))
-    : null;
-
-  const isTleLaboratory = sectionType === "TLE_LABORATORY";
-
-  let tleTerms: string[] = [];
-  if (isTleLaboratory) {
-    if (!tleProgramId) {
-      res.json({ teachers: [] });
-      return;
-    }
-
-    const tleProgram = await prisma.tLEProgram.findUnique({
-      where: { id: tleProgramId },
-      select: { name: true, programCode: true },
-    });
-
-    if (!tleProgram) {
-      res.json({ teachers: [] });
-      return;
-    }
-
-    const shorthandName = tleProgram.name.replace(/^[A-Z]+\s*-\s*/i, "").trim();
-    tleTerms = [tleProgram.name, shorthandName, tleProgram.programCode]
-      .map((value) => value.trim())
-      .filter((value, index, values) => value.length > 0 && values.indexOf(value) === index);
-  }
 
   const teachers = await prisma.teacher.findMany({
     where: {
       isActive: true,
-      ...(!isTleLaboratory
-        ? {
-            designation: {
-              equals: "CLASS ADVISER",
-              mode: "insensitive" as const,
-            },
-          }
-        : {
-            specialization: { not: null },
-            OR: tleTerms.map((term) => ({
-              specialization: {
-                contains: term,
-                mode: "insensitive" as const,
-              },
-            })),
-          }),
+      designation: {
+        equals: "CLASS ADVISER",
+        mode: "insensitive",
+      },
       ...(schoolYearId
         ? {
             advisoryHistory: {
@@ -502,6 +408,7 @@ export async function createSection(
       isSnake,
       tleProgramId,
       sectionRank,
+      sectionType,
     } = req.body;
 
     const normalizedName = typeof name === "string" ? name.trim() : "";
@@ -509,6 +416,14 @@ export async function createSection(
       res
         .status(400)
         .json({ message: "name, gradeLevelId, and schoolYearId are required" });
+      return;
+    }
+
+    // Guard: TLE Laboratory sections must have a TLE specialization
+    if (sectionType === "TLE_LABORATORY" && !tleProgramId) {
+      res.status(400).json({
+        message: "A TLE specialization is required for TLE Laboratory sections.",
+      });
       return;
     }
 
@@ -843,6 +758,16 @@ export async function getSectionRoster(
           },
         },
       },
+      enrollmentRecordsTle: {
+        where: activeEnrollmentFilter,
+        include: {
+          enrollmentApplication: {
+            include: {
+              learner: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -852,7 +777,8 @@ export async function getSectionRoster(
   }
 
   const activeAdviser = section.advisers[0]?.teacher ?? null;
-  const learners = section.enrollmentRecords.map((record) => ({
+  const records = section.tleProgramId ? section.enrollmentRecordsTle : section.enrollmentRecords;
+  const learners = records.map((record) => ({
     id: record.enrollmentApplication.learner.id,
     enrollmentApplicationId: record.enrollmentApplication.id,
     lrn: record.enrollmentApplication.learner.lrn,

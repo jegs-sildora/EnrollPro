@@ -13,6 +13,7 @@
     "db:seed-users": "tsx prisma/seeds/01-global/seed-users.ts",
     "db:seed-teachers": "tsx prisma/seeds/01-global/seed-teachers.ts",
     "db:seed-sections": "tsx prisma/seeds/02-sy-2025-2026/seed-sections.ts",
+    "db:seed-sections-and-teachers": "pnpm --filter server db:seed-sections && pnpm --filter server db:seed-teachers",
     "db:seed-scp": "tsx prisma/seeds/02-sy-2025-2026/seed-scp.ts",
     "db:seed-enrolled-learners": "tsx prisma/seeds/02-sy-2025-2026/seed-enrolled-learners.ts",
     "db:seed-existing-learners": "tsx prisma/seeds/02-sy-2025-2026/seed-existing-learners.ts",

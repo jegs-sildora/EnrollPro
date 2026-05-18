@@ -1145,6 +1145,7 @@ export default function AdminUsers() {
                           Registrar
                         </SelectItem>
                         <SelectItem value="TEACHER">Teacher</SelectItem>
+                        <SelectItem value="MRF">MRF Staff</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

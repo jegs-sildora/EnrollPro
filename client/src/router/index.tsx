@@ -24,7 +24,9 @@ import OnboardingConfirm from "@/features/learner/pages/OnboardingConfirm";
 import OnboardingTleSetup from "@/features/learner/pages/OnboardingTleSetup";
 import OnboardingGuard from "@/features/learner/components/OnboardingGuard";
 import ChangePassword from "@/features/auth/components/ChangePasswordModal";
-import Sections from "@/features/sections/pages/Index";
+import Sections from "@/features/sections/pages/Index"
+import Homerooms from "@/features/sections/pages/Homerooms"
+import TleLaboratories from "@/features/sections/pages/TleLaboratories";
 import SectioningWorkspace from "@/features/sections/pages/SectioningWorkspace";
 import SectioningHub from "@/features/sections/pages/SectioningHub";
 import TleSectioningWorkspace from "@/features/sections/pages/TleSectioningWorkspace";
@@ -136,7 +138,7 @@ export const router = createBrowserRouter([
         element: <AuthLayout />,
         children: [
           {
-            path: "/login",
+            path: "/staff/login",
             element: <Login />,
           },
         ],
@@ -245,6 +247,14 @@ export const router = createBrowserRouter([
               {
                 path: "/sections",
                 element: <Sections />,
+              },
+              {
+                path: "/sections/homerooms",
+                element: <Homerooms />,
+              },
+              {
+                path: "/sections/tle",
+                element: <TleLaboratories />,
               },
               {
                 path: "/sections/workspace",

@@ -341,7 +341,7 @@ export default function Login() {
       if (payload.user.mustChangePassword) {
         setSuccess("Account security update required...");
         redirectTimeoutRef.current = window.setTimeout(() => {
-          navigate("/change-password", { replace: true });
+          navigate("/change-password?origin=staff", { replace: true });
         }, 800);
         return;
       }

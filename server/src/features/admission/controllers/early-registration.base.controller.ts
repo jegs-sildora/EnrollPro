@@ -212,6 +212,26 @@ export function createEarlyRegistrationBaseController(
 
       // 3. Execution: Unified Raw Query for ID and Metadata
       const searchPattern = search ? `%${String(search)}%` : null;
+
+      // Build SQL search condition — handles "LAST, FIRST MI." comma-split format
+      let sqlSearchCond: ReturnType<typeof Prisma.sql>;
+      if (search && String(search).includes(",")) {
+        const parts = String(search).split(",");
+        const lnPat = `%${parts[0].trim()}%`;
+        const fnRaw = (parts[1] || "").trim();
+        // Take only the first word to ignore middle initials (e.g. "RAMON R." → "RAMON")
+        const fnPat = `%${fnRaw.split(/\s+/)[0] || fnRaw}%`;
+        sqlSearchCond = Prisma.sql`AND l.last_name ILIKE ${lnPat} AND l.first_name ILIKE ${fnPat}`;
+      } else if (searchPattern) {
+        sqlSearchCond = Prisma.sql`AND (
+                l.lrn ILIKE ${searchPattern} OR 
+                l.first_name ILIKE ${searchPattern} OR 
+                l.last_name ILIKE ${searchPattern} OR 
+                q.tracking_number ILIKE ${searchPattern}
+              )`;
+      } else {
+        sqlSearchCond = Prisma.empty;
+      }
       const gradeId = gradeLevelId ? parseInt(String(gradeLevelId)) : null;
 
       // Map sortBy to SQL columns
@@ -287,16 +307,7 @@ export function createEarlyRegistrationBaseController(
           SELECT q.* FROM base_queue q
           JOIN learners l ON q.learner_id = l.id
           WHERE 1=1
-            ${
-              searchPattern
-                ? Prisma.sql`AND (
-                l.lrn ILIKE ${searchPattern} OR 
-                l.first_name ILIKE ${searchPattern} OR 
-                l.last_name ILIKE ${searchPattern} OR 
-                q.tracking_number ILIKE ${searchPattern}
-              )`
-                : Prisma.empty
-            }
+            ${sqlSearchCond}
             ${
               isTruthyQuery(withoutLrn)
                 ? Prisma.sql`AND l.is_pending_lrn_creation = true`
@@ -351,16 +362,7 @@ export function createEarlyRegistrationBaseController(
         SELECT COUNT(*) as count FROM base_queue q
         JOIN learners l ON q.learner_id = l.id
         WHERE 1=1
-          ${
-            searchPattern
-              ? Prisma.sql`AND (
-              l.lrn ILIKE ${searchPattern} OR 
-              l.first_name ILIKE ${searchPattern} OR 
-              l.last_name ILIKE ${searchPattern} OR 
-              q.tracking_number ILIKE ${searchPattern}
-            )`
-              : Prisma.empty
-          }
+          ${sqlSearchCond}
           ${
             isTruthyQuery(withoutLrn)
               ? Prisma.sql`AND l.is_pending_lrn_creation = true`

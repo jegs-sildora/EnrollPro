@@ -26,7 +26,7 @@ export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
     : false;
 
   if (!token || !user || !hasCorrectRoleType) {
-    const loginPath = isLearnerRoute ? "/learner/login" : "/login";
+    const loginPath = isLearnerRoute ? "/learner/login" : "/staff/login";
     return (
       <Navigate
         to={loginPath}

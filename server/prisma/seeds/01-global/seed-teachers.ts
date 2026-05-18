@@ -28,6 +28,20 @@ interface Faculty {
   sex: Sex;
   contactNumber: string;
   specialization: string;
+  assignmentTarget?: TeacherAssignmentTarget;
+}
+
+type TeacherAssignmentKind =
+  | "STE"
+  | "SPA_ARTS"
+  | "SPS_SPORTS"
+  | "TLE_PROGRAM";
+
+interface TeacherAssignmentTarget {
+  kind: TeacherAssignmentKind;
+  poolIndex: number;
+  tleProgramId?: number;
+  tleSectionSlot?: number; // 0 = G9 slot, 1 = G10 slot
 }
 
 const ATLAS_FACULTY: Faculty[] = [
@@ -476,6 +490,118 @@ const PLANTILLA_SEQUENCE: string[] = [
   ...Array(3).fill("MASTER TEACHER II"),
 ];
 
+const STE_ADVISER_SPECIALIZATIONS = [
+  "ENVIRONMENTAL SCIENCE",
+  "RESEARCH I",
+  "BASIC STATISTICS",
+  "RESEARCH II",
+  "ADVANCED STATISTICS",
+  "BIOTECHNOLOGY",
+  "RESEARCH III",
+  "ADVANCED PHYSICS",
+];
+
+const SPA_ARTS_ADVISER_SPECIALIZATIONS = [
+  "MUSIC EDUCATION",
+  "FINE ARTS",
+  "THEATER / PERFORMING ARTS",
+  "DANCE",
+  "LITERATURE / CREATIVE WRITING",
+  "MUSIC EDUCATION",
+  "FINE ARTS",
+  "THEATER / PERFORMING ARTS",
+];
+
+const SPS_ADVISER_SPECIALIZATIONS = [
+  "MAJOR IN PHYSICAL EDUCATION",
+  "SPORTS SCIENCE",
+  "CERTIFIED SPECIALIST COACH",
+  "SPORTS COACHING",
+  "INDIVIDUAL / DUAL SPORTS",
+  "TEAM SPORTS",
+  "SPORTS OFFICIATING",
+  "SPORTS SCIENCE",
+];
+
+function buildFacultyTemplate(params: {
+  employeeId: string;
+  seedIndex: number;
+  deptCode: string;
+  subject: string;
+  specialization: string;
+  assignmentTarget?: TeacherAssignmentTarget;
+}): Faculty {
+  const sex: Sex = params.seedIndex % 2 === 0 ? "FEMALE" : "MALE";
+  const firstNames =
+    sex === "MALE" ? PH_FIRST_NAMES_MALE : PH_FIRST_NAMES_FEMALE;
+
+  return {
+    employeeId: params.employeeId,
+    firstName: firstNames[params.seedIndex % firstNames.length],
+    lastName: PH_LAST_NAMES[(params.seedIndex * 3) % PH_LAST_NAMES.length],
+    middleName: PH_MIDDLE_NAMES[(params.seedIndex * 5) % PH_MIDDLE_NAMES.length],
+    deptCode: params.deptCode,
+    subject: params.subject,
+    sex,
+    contactNumber: `0917-910-${String(1000 + params.seedIndex).padStart(4, "0")}`,
+    specialization: params.specialization,
+    assignmentTarget: params.assignmentTarget,
+  };
+}
+
+function buildFacultyPool(params: {
+  baseEmployeeId: number;
+  seedOffset: number;
+  deptCode: string;
+  subject: string;
+  specializations: string[];
+  assignmentKind: Exclude<TeacherAssignmentKind, "TLE_PROGRAM">;
+}): Faculty[] {
+  return params.specializations.map((specialization, index) =>
+    buildFacultyTemplate({
+      employeeId: String(params.baseEmployeeId + index).padStart(7, "0"),
+      seedIndex: params.seedOffset + index,
+      deptCode: params.deptCode,
+      subject: params.subject,
+      specialization,
+      assignmentTarget: {
+        kind: params.assignmentKind,
+        poolIndex: index,
+      },
+    }),
+  );
+}
+
+function buildTleFacultyPool(
+  tlePrograms: Array<{ id: number; name: string }>,
+  baseEmployeeId: number,
+  seedOffset: number,
+): Faculty[] {
+  const result: Faculty[] = [];
+  let idx = 0;
+  for (const program of tlePrograms) {
+    for (const slot of [0, 1] as const) {
+      result.push(
+        buildFacultyTemplate({
+          employeeId: String(baseEmployeeId + idx).padStart(7, "0"),
+          seedIndex: seedOffset + idx,
+          deptCode: "TLE",
+          subject: "TLE",
+          specialization: `MAJOR IN ${program.name.toUpperCase()}`,
+          assignmentTarget: {
+            kind: "TLE_PROGRAM",
+            poolIndex: idx,
+            tleProgramId: program.id,
+            tleSectionSlot: slot,
+          },
+        }),
+      );
+      idx++;
+    }
+  }
+  return result;
+}
+
 async function main() {
   console.log(
     "≡ƒî▒ Scaling Faculty Roster: Generating 140+ UNIQUE DepEd Teachers...",
@@ -531,10 +657,79 @@ async function main() {
     sectionsByYear.set(schoolYear.id, yearSections);
   }
 
+  // Store ALL TLE sections per program per year (ordered by gradeLevelId asc → slot 0=G9, slot 1=G10)
+  const tleSectionsByYearAndProgramId = new Map<number, Map<number, number[]>>();
+  for (const [schoolYearId, yearSections] of sectionsByYear.entries()) {
+    const programSectionMap = new Map<number, number[]>();
+    const sorted = [...yearSections].sort(
+      (a, b) => (a.gradeLevelId ?? 0) - (b.gradeLevelId ?? 0),
+    );
+    for (const section of sorted) {
+      if (!section.tleProgramId) continue;
+      const existing = programSectionMap.get(section.tleProgramId) ?? [];
+      existing.push(section.id);
+      programSectionMap.set(section.tleProgramId, existing);
+    }
+    tleSectionsByYearAndProgramId.set(schoolYearId, programSectionMap);
+  }
+
+  const activeTlePrograms = await prisma.tLEProgram.findMany({
+    where: { isActive: true },
+    orderBy: [{ category: "asc" }, { name: "asc" }],
+    select: { id: true, name: true },
+  });
+
+  if (activeTlePrograms.length > 25) {
+    console.warn(
+      `⚠️  Found ${activeTlePrograms.length} active TLE programs. The current G9/G10 section count may not cover every program with a unique slot.`,
+    );
+  }
+
+  const steSpecialFaculty = buildFacultyPool({
+    baseEmployeeId: 3100000,
+    seedOffset: 200,
+    deptCode: "SCI",
+    subject: "SCIENCE",
+    specializations: STE_ADVISER_SPECIALIZATIONS,
+    assignmentKind: "STE",
+  });
+
+  const spaSpecialFaculty = buildFacultyPool({
+    baseEmployeeId: 3200000,
+    seedOffset: 300,
+    deptCode: "MAPEH",
+    subject: "MAPEH",
+    specializations: SPA_ARTS_ADVISER_SPECIALIZATIONS,
+    assignmentKind: "SPA_ARTS",
+  });
+
+  const spsSpecialFaculty = buildFacultyPool({
+    baseEmployeeId: 3300000,
+    seedOffset: 400,
+    deptCode: "MAPEH",
+    subject: "MAPEH",
+    specializations: SPS_ADVISER_SPECIALIZATIONS,
+    assignmentKind: "SPS_SPORTS",
+  });
+
+  const tleSpecialFaculty = buildTleFacultyPool(activeTlePrograms, 3400000, 500);
+
+  const teachersToSeed: Faculty[] = [
+    ...ATLAS_FACULTY,
+    ...steSpecialFaculty,
+    ...spaSpecialFaculty,
+    ...spsSpecialFaculty,
+    ...tleSpecialFaculty,
+  ];
+
   const defaultPasswordHash = await bcrypt.hash("DepEd2026!", 10);
 
-  const totalTarget = 142;
-  const teachersToSeed: Faculty[] = [];
+  const totalTarget = Math.max(142, teachersToSeed.length + 20);
+
+  const dynamicTleSpecializations =
+    activeTlePrograms.length > 0
+      ? activeTlePrograms.map((program) => `MAJOR IN ${program.name.toUpperCase()}`)
+      : DEPARTMENT_DATA.TLE.specializations;
 
   const usedNames = new Set<string>();
   const usedEmailKeys = new Set<string>(); // Tracks firstName.lastName pairs
@@ -549,25 +744,21 @@ async function main() {
     }
   });
 
-  // 1. Process Atlas Faculty
-  ATLAS_FACULTY.forEach((f) => {
+  // 1. Process Atlas Faculty and fixed specialized pools.
+  [...teachersToSeed].forEach((f) => {
     const fullNameKey =
       `${f.firstName}|${f.lastName}|${f.middleName ?? ""}`.toUpperCase();
     const emailKey = `${f.firstName.toLowerCase().replace(/\s/g, "")}.${f.lastName.toLowerCase().replace(/\s/g, "")}`;
 
-    // If an ATLAS faculty conflicts with an existing user (e.g. from seed-users), we might need to modify it
-    // But ATLAS faculty are supposed to be "fixed" data. Let's just warn if there's a conflict.
     if (usedEmailKeys.has(emailKey)) {
       console.warn(
-        `  ΓÜá∩╕Å Warning: Atlas Faculty ${f.firstName} ${f.lastName} has a conflicting email key '${emailKey}'.`,
+        `  ΓÜá∩╕Å Warning: Faculty ${f.firstName} ${f.lastName} has a conflicting email key '${emailKey}'.`,
       );
     }
 
     usedNames.add(fullNameKey);
     usedEmailKeys.add(emailKey);
     usedEmployeeIds.add(f.employeeId);
-
-    teachersToSeed.push(f);
   });
 
   // 2. Generate remaining teachers deterministically (same output every run)
@@ -584,8 +775,12 @@ async function main() {
 
     const deptCode = DEPT_SEQUENCE[localIdx % DEPT_SEQUENCE.length];
     const deptInfo = DEPARTMENT_DATA[deptCode as keyof typeof DEPARTMENT_DATA];
+    const specializationPool =
+      deptCode === "TLE"
+        ? dynamicTleSpecializations
+        : deptInfo.specializations;
     const specialization =
-      deptInfo.specializations[localIdx % deptInfo.specializations.length];
+      specializationPool[localIdx % specializationPool.length];
     const employeeId = (2000020 + localIdx + 1).toString();
     const contactNumber = `0917-${String(200 + localIdx).padStart(3, "0")}-${String(1000 + localIdx).padStart(4, "0")}`;
 
@@ -607,6 +802,11 @@ async function main() {
   const firstAdmin = await prisma.user.findFirst({
     where: { role: "SYSTEM_ADMIN" },
   });
+  const demoYearSections = sectionsByYear.get(demoStartYear.id) || [];
+  const demoYearRegularSections = demoYearSections.filter(
+    (section) => section.programType === "REGULAR" && !section.tleProgramId,
+  );
+  let regularSectionCursor = 0;
 
   for (let i = 0; i < teachersToSeed.length; i++) {
     const faculty = teachersToSeed[i];
@@ -625,9 +825,63 @@ async function main() {
 
     const dept =
       departments.find((d) => d.code === faculty.deptCode) || departments[0];
-    const isClassAdviser = i < sections.length;
-    const designationStr = isClassAdviser ? "CLASS ADVISER" : "SUBJECT TEACHER";
+    const assignmentTarget = faculty.assignmentTarget ?? null;
+    const regularSectionIndex =
+      assignmentTarget || regularSectionCursor >= demoYearRegularSections.length
+        ? null
+        : regularSectionCursor++;
+
+    const designationStr =
+      assignmentTarget || regularSectionIndex !== null
+        ? "CLASS ADVISER"
+        : "SUBJECT TEACHER";
     const position = PLANTILLA_SEQUENCE[i % PLANTILLA_SEQUENCE.length];
+
+    const resolveAdvisorySectionId = (schoolYearId: number) => {
+      const yearSections = sectionsByYear.get(schoolYearId) || [];
+      const regularSections = yearSections.filter(
+        (section) => section.programType === "REGULAR" && !section.tleProgramId,
+      );
+      const steSections = yearSections.filter(
+        (section) => section.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+      );
+      const spaSections = yearSections.filter(
+        (section) => section.programType === "SPECIAL_PROGRAM_IN_THE_ARTS",
+      );
+      const spsSections = yearSections.filter(
+        (section) => section.programType === "SPECIAL_PROGRAM_IN_SPORTS",
+      );
+      const tleSections = yearSections.filter((section) => section.tleProgramId);
+
+      if (!assignmentTarget) {
+        return regularSectionIndex !== null
+          ? regularSections[regularSectionIndex]?.id ?? null
+          : null;
+      }
+
+      if (assignmentTarget.kind === "STE") {
+        return steSections[assignmentTarget.poolIndex]?.id ?? null;
+      }
+
+      if (assignmentTarget.kind === "SPA_ARTS") {
+        return spaSections[assignmentTarget.poolIndex]?.id ?? null;
+      }
+
+      if (assignmentTarget.kind === "SPS_SPORTS") {
+        return spsSections[assignmentTarget.poolIndex]?.id ?? null;
+      }
+
+      if (assignmentTarget.kind === "TLE_PROGRAM") {
+        const sections =
+          tleSectionsByYearAndProgramId
+            .get(schoolYearId)
+            ?.get(assignmentTarget.tleProgramId ?? -1) ?? [];
+        const slot = assignmentTarget.tleSectionSlot ?? 0;
+        return sections[slot] ?? null;
+      }
+
+      return null;
+    };
 
     // STEP 1: CREATE TEACHER PROFILE
     const teacher = await prisma.teacher.upsert({
@@ -705,7 +959,7 @@ async function main() {
 
     // STEP 4: SEED TEACHER DESIGNATION FOR ALL SCHOOL YEARS
     for (const schoolYear of allSchoolYears) {
-      const advisorySectionId = isClassAdviser && schoolYear.id === demoStartYear.id ? sections[i].id : null;
+      const advisorySectionId = resolveAdvisorySectionId(schoolYear.id);
 
       await prisma.teacherDesignation.upsert({
         where: {
@@ -715,7 +969,7 @@ async function main() {
           },
         },
         update: {
-          isClassAdviser: isClassAdviser && schoolYear.id === demoStartYear.id,
+          isClassAdviser: advisorySectionId !== null,
           advisorySectionId: advisorySectionId,
           ancillaryRoles: [],
           effectiveFrom: schoolYear.classOpeningDate,
@@ -725,7 +979,7 @@ async function main() {
         create: {
           teacherId: teacher.id,
           schoolYearId: schoolYear.id,
-          isClassAdviser: isClassAdviser && schoolYear.id === demoStartYear.id,
+          isClassAdviser: advisorySectionId !== null,
           advisorySectionId: advisorySectionId,
           ancillaryRoles: [],
           effectiveFrom: schoolYear.classOpeningDate,
@@ -735,43 +989,36 @@ async function main() {
       });
 
       // STEP 5: SYNC SECTION ADVISER LEDGER (create for all years if class adviser)
-      if (isClassAdviser) {
-        // Find the section with the same name in this school year
-        const yearSections = sectionsByYear.get(schoolYear.id) || [];
-        const sectionName = sections[i].name;
-        const matchingSection = yearSections.find((s) => s.name === sectionName);
+      if (advisorySectionId) {
+        const existingAdviser = await prisma.sectionAdviser.findFirst({
+          where: {
+            sectionId: advisorySectionId,
+            schoolYearId: schoolYear.id,
+            status: "ACTIVE",
+          },
+        });
 
-        if (matchingSection) {
-          const existingAdviser = await prisma.sectionAdviser.findFirst({
-            where: {
-              sectionId: matchingSection.id,
-              schoolYearId: schoolYear.id,
-              status: "ACTIVE",
+        if (existingAdviser && existingAdviser.teacherId !== teacher.id) {
+          await prisma.sectionAdviser.update({
+            where: { id: existingAdviser.id },
+            data: {
+              status: "HANDED_OVER" as SectionAdviserStatus,
+              effectiveTo: new Date(),
+              handoverReason: "Seed Update",
             },
           });
+        }
 
-          if (existingAdviser && existingAdviser.teacherId !== teacher.id) {
-            await prisma.sectionAdviser.update({
-              where: { id: existingAdviser.id },
-              data: {
-                status: "HANDED_OVER" as SectionAdviserStatus,
-                effectiveTo: new Date(),
-                handoverReason: "Seed Update",
-              },
-            });
-          }
-
-          if (!existingAdviser || existingAdviser.teacherId !== teacher.id) {
-            await prisma.sectionAdviser.create({
-              data: {
-                sectionId: matchingSection.id,
-                teacherId: teacher.id,
-                schoolYearId: schoolYear.id,
-                effectiveFrom: schoolYear.classOpeningDate || new Date(),
-                status: "ACTIVE" as SectionAdviserStatus,
-              },
-            });
-          }
+        if (!existingAdviser || existingAdviser.teacherId !== teacher.id) {
+          await prisma.sectionAdviser.create({
+            data: {
+              sectionId: advisorySectionId,
+              teacherId: teacher.id,
+              schoolYearId: schoolYear.id,
+              effectiveFrom: schoolYear.classOpeningDate || new Date(),
+              status: "ACTIVE" as SectionAdviserStatus,
+            },
+          });
         }
       } else if (schoolYear.id === demoStartYear.id) {
         // Revoke adviser role in current year if not a class adviser

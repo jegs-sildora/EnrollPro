@@ -20,6 +20,9 @@ import {
   CalendarDays,
   RefreshCw,
   AlertTriangle,
+  PieChart,
+  BookOpen,
+  Flag,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -176,7 +179,20 @@ interface StudentsSummary {
     other: number;
   };
   programBreakdown: Record<string, number>;
+  gradeBreakdown: Record<string, number>;
+  specialDemographics: {
+    fourPs: number;
+    balikAral: number;
+    transfereesIn: number;
+  };
 }
+
+const GRADE_DISPLAY = [
+  { key: "Grade 7", label: "G7" },
+  { key: "Grade 8", label: "G8" },
+  { key: "Grade 9", label: "G9" },
+  { key: "Grade 10", label: "G10" },
+] as const;
 
 const VALID_TABS = ["active", "completers", "inactive"] as const;
 type StudentTab = (typeof VALID_TABS)[number];
@@ -857,19 +873,6 @@ export default function Students() {
       .filter((item) => item.count > 0)
       .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
   }, [summary]);
-
-  const topProgramBreakdownItems = useMemo(
-    () => programBreakdownItems.slice(0, 3),
-    [programBreakdownItems],
-  );
-
-  const otherProgramLearnerCount = useMemo(
-    () =>
-      programBreakdownItems
-        .slice(3)
-        .reduce((totalCount, item) => totalCount + item.count, 0),
-    [programBreakdownItems],
-  );
 
   const columns = useMemo<ColumnDef<Student>[]>(
     () => [
@@ -1570,83 +1573,127 @@ export default function Students() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
-        <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
-          <CardHeader className="pb-2">
-            <CardDescription className="text-xs uppercase  font-bold">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        {/* Card 1: Total Enrolled + Grade Breakdown */}
+        <Card className="border-none shadow-sm bg-[hsl(var(--card))] h-full">
+          <CardHeader className="pb-1">
+            <CardDescription className="text-xs uppercase font-bold flex items-center gap-1.5">
+              <Users className="h-3.5 w-3.5" />
               Total Enrolled
             </CardDescription>
-            <CardTitle className="text-2xl font-extrabold">
-              {summaryLoading ? "..." : (summary?.totalEnrolled ?? 0)}
+            <CardTitle className="text-3xl font-extrabold">
+              {summaryLoading ? "…" : (summary?.totalEnrolled ?? 0).toLocaleString()}
             </CardTitle>
           </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-2 gap-1.5">
+              {GRADE_DISPLAY.map(({ key, label }) => (
+                <div
+                  key={key}
+                  className="rounded-md border bg-muted/40 px-2 py-1 flex items-center justify-between gap-2 text-xs font-medium">
+                  <span>{label}</span>
+                  <span className="font-extrabold">
+                    {summaryLoading ? "…" : (summary?.gradeBreakdown[key] ?? 0)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
         </Card>
-        <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
+
+        {/* Card 2: Gender Breakdown + Progress Bar */}
+        <Card className="border-none shadow-sm bg-[hsl(var(--card))] h-full">
           <CardHeader className="pb-1">
-            <CardDescription className="text-xs uppercase  font-bold">
+            <CardDescription className="text-xs uppercase font-bold flex items-center gap-1.5">
+              <PieChart className="h-3.5 w-3.5" />
               Gender Breakdown
             </CardDescription>
           </CardHeader>
-          <CardContent className="pt-0">
+          <CardContent className="pt-0 space-y-2">
             {summaryLoading ? (
-              <div className="text-sm font-bold text-foreground">...</div>
+              <div className="text-sm font-bold text-foreground">…</div>
             ) : !summary ? (
               <p className="text-xs font-semibold text-foreground">
                 No enrolled learners yet.
               </p>
             ) : (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-md border bg-muted/40 px-2 py-1 flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-bold uppercase inline-flex items-center gap-1">
-                    <Mars className="h-3.5 w-3.5 text-sky-700" />
-                    Male
-                  </span>
-                  <span className="text-xs font-extrabold text-sky-700">
-                    {summary.genderBreakdown.male}
-                  </span>
-                </div>
-                <div className="rounded-md border bg-muted/40 px-2 py-1 flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-bold uppercase inline-flex items-center gap-1">
-                    <Venus className="h-3.5 w-3.5 text-rose-700" />
-                    Female
-                  </span>
-                  <span className="text-xs font-extrabold text-rose-700">
-                    {summary.genderBreakdown.female}
-                  </span>
-                </div>
-                {summary.genderBreakdown.other > 0 && (
-                  <div className="rounded-md border border-dashed bg-muted/30 px-2 py-1 flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-bold uppercase text-foreground">
-                      Others
+              <>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-md border bg-muted/40 px-2 py-1 flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-bold uppercase inline-flex items-center gap-1">
+                      <Mars className="h-3.5 w-3.5 text-sky-700" /> Male
                     </span>
-                    <span className="text-xs font-extrabold text-foreground">
-                      {summary.genderBreakdown.other}
+                    <span className="text-xs font-extrabold text-sky-700">
+                      {summary.genderBreakdown.male}
                     </span>
                   </div>
+                  <div className="rounded-md border bg-muted/40 px-2 py-1 flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-bold uppercase inline-flex items-center gap-1">
+                      <Venus className="h-3.5 w-3.5 text-rose-700" /> Female
+                    </span>
+                    <span className="text-xs font-extrabold text-rose-700">
+                      {summary.genderBreakdown.female}
+                    </span>
+                  </div>
+                </div>
+                {summary.totalEnrolled > 0 && (
+                  <div className="space-y-1">
+                    <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="bg-sky-500 transition-all"
+                        style={{
+                          width: `${(summary.genderBreakdown.male / summary.totalEnrolled) * 100}%`,
+                        }}
+                      />
+                      <div
+                        className="bg-rose-400 transition-all"
+                        style={{
+                          width: `${(summary.genderBreakdown.female / summary.totalEnrolled) * 100}%`,
+                        }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground font-medium text-right">
+                      {((summary.genderBreakdown.male / summary.totalEnrolled) * 100).toFixed(1)}% M
+                      {" · "}
+                      {((summary.genderBreakdown.female / summary.totalEnrolled) * 100).toFixed(1)}% F
+                    </p>
+                  </div>
                 )}
-              </div>
+              </>
             )}
           </CardContent>
         </Card>
-        <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
+
+        {/* Card 3: Curricular Programs */}
+        <Card className="border-none shadow-sm bg-[hsl(var(--card))] h-full">
           <CardHeader className="pb-1">
-            <CardDescription className="text-xs uppercase  font-bold">
-              Program Breakdown
+            <CardDescription className="text-xs uppercase font-bold flex items-center gap-1.5">
+              <BookOpen className="h-3.5 w-3.5" />
+              Curricular Programs
             </CardDescription>
+            {!summaryLoading && programBreakdownItems.length > 0 && (
+              <CardTitle className="text-3xl font-extrabold">
+                {programBreakdownItems.length}
+              </CardTitle>
+            )}
           </CardHeader>
           <CardContent className="pt-0">
             {summaryLoading ? (
-              <div className="text-sm font-bold text-foreground">...</div>
+              <div className="text-sm font-bold text-foreground">…</div>
             ) : programBreakdownItems.length === 0 ? (
               <p className="text-xs font-semibold text-foreground">
                 No enrolled learners yet.
               </p>
             ) : (
-              <div className="grid grid-cols-2 gap-2">
-                {topProgramBreakdownItems.map((item) => (
+              <div
+                className={cn(
+                  "flex flex-col gap-1.5",
+                  programBreakdownItems.length > 4 && "max-h-[80px] overflow-y-auto pr-1",
+                )}>
+                {programBreakdownItems.map((item) => (
                   <div
                     key={item.key}
-                    className="rounded-md border bg-muted/40 px-2 py-1 flex items-center justify-between gap-2">
+                    className="flex items-center justify-between text-sm gap-2">
                     <span className="text-[11px] font-bold uppercase">
                       {item.label}
                     </span>
@@ -1655,16 +1702,43 @@ export default function Students() {
                     </span>
                   </div>
                 ))}
-                {otherProgramLearnerCount > 0 && (
-                  <div className="rounded-md border border-dashed bg-muted/30 px-2 py-1 flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-bold uppercase text-foreground">
-                      Others
-                    </span>
-                    <span className="text-xs font-extrabold text-foreground">
-                      {otherProgramLearnerCount}
-                    </span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Card 4: Special Demographics / Flags */}
+        <Card className="h-full shadow-sm bg-amber-50/40 dark:bg-amber-950/10 border border-amber-200/50 dark:border-amber-800/30">
+          <CardHeader className="pb-1">
+            <CardDescription className="text-xs uppercase font-bold flex items-center gap-1.5">
+              <Flag className="h-3.5 w-3.5 text-amber-600" />
+              Special Demographics
+            </CardDescription>
+            <p className="text-[10px] text-muted-foreground font-medium leading-tight">
+              DepEd funding &amp; intervention flags — not additional totals.
+            </p>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {summaryLoading ? (
+              <div className="text-sm font-bold text-foreground">…</div>
+            ) : !summary ? (
+              <p className="text-xs font-semibold text-foreground">
+                No enrolled learners yet.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {[
+                  { label: "4Ps Beneficiaries", value: summary.specialDemographics.fourPs },
+                  { label: "Balik-Aral (Returnees)", value: summary.specialDemographics.balikAral },
+                  { label: "Transferees In", value: summary.specialDemographics.transfereesIn },
+                ].map(({ label, value }) => (
+                  <div
+                    key={label}
+                    className="flex items-center justify-between text-xs font-medium">
+                    <span className="text-muted-foreground">{label}</span>
+                    <span className="font-extrabold text-foreground">{value}</span>
                   </div>
-                )}
+                ))}
               </div>
             )}
           </CardContent>

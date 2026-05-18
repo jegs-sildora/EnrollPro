@@ -77,11 +77,23 @@ export async function index(req: Request, res: Response) {
       }
 
       if (normalizedSearch) {
-        learnerWhere.OR = [
-          { firstName: { contains: normalizedSearch, mode: "insensitive" } },
-          { lastName: { contains: normalizedSearch, mode: "insensitive" } },
-          { lrn: { contains: normalizedSearch, mode: "insensitive" } },
-        ];
+        if (normalizedSearch.includes(",")) {
+          const parts = normalizedSearch.split(",");
+          const lastNamePart = parts[0].trim();
+          const firstNameRaw = (parts[1] || "").trim();
+          // Take only the first word to ignore middle initials (e.g. "RAMON R." → "RAMON")
+          const firstNamePart = firstNameRaw.split(/\s+/)[0] || firstNameRaw;
+          learnerWhere.AND = [
+            { lastName: { contains: lastNamePart, mode: "insensitive" } },
+            { firstName: { contains: firstNamePart, mode: "insensitive" } },
+          ];
+        } else {
+          learnerWhere.OR = [
+            { firstName: { contains: normalizedSearch, mode: "insensitive" } },
+            { lastName: { contains: normalizedSearch, mode: "insensitive" } },
+            { lrn: { contains: normalizedSearch, mode: "insensitive" } },
+          ];
+        }
       }
 
       const [learners, total] = await Promise.all([
@@ -126,7 +138,7 @@ export async function index(req: Request, res: Response) {
           middleName: l.middleName || null,
           suffix: l.extensionName || null,
           sex: l.sex,
-          email: l.user?.email || `(No Portal Account)`,
+          email: l.user?.email ?? "",
           role: "LEARNER",
           isActive: l.user?.isActive ?? false,
           lastLoginAt: l.user?.lastLoginAt || null,

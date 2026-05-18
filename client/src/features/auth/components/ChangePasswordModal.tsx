@@ -116,7 +116,7 @@ export default function ChangePassword() {
   // Fall back to any stored role when token is already gone (session expired on this page)
   const activeRole = user?.role ?? learnerAuth.user?.role ?? null;
   const homeRoute = isLearnerLikeRole(activeRole) ? "/learner" : "/dashboard";
-  const loginRoute = isLearnerLikeRole(activeRole) ? "/learner/login" : "/login";
+  const loginRoute = isLearnerLikeRole(activeRole) ? "/learner/login" : "/staff/login";
 
   const {
     register,

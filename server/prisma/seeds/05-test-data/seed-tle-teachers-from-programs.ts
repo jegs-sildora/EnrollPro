@@ -285,7 +285,7 @@ async function main() {
 
   const tlePrograms = await prisma.tLEProgram.findMany({
     orderBy: [{ category: "asc" }, { name: "asc" }],
-    select: { id: true, name: true, category: true, programCode: true },
+    select: { id: true, name: true, category: true },
   });
 
   if (tlePrograms.length === 0) {
@@ -303,11 +303,7 @@ async function main() {
     select: { id: true },
   });
 
-  // Build a lookup map: programCode → faculty record
-  const facultyByCode = new Map<string, TleFaculty>(
-    TLE_FACULTY.map((f) => [f.programCode, f]),
-  );
-
+  // programCode was removed from TLEProgram; match by specialization keyword instead
   const defaultPasswordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
 
   let created = 0;
@@ -315,7 +311,10 @@ async function main() {
   let skipped = 0;
 
   for (const program of tlePrograms) {
-    const faculty = facultyByCode.get(program.programCode ?? "");
+    const programKeyword = program.name.toUpperCase().split(" - ").pop()?.trim() ?? program.name.toUpperCase();
+    const faculty = TLE_FACULTY.find((f) =>
+      f.specialization.toUpperCase().includes(programKeyword),
+    );
 
     // If no static entry exists, generate a deterministic fallback so every
     // program still gets an eligible instructor in the filter dropdown.
@@ -338,7 +337,7 @@ async function main() {
 
     if (!faculty) {
       console.log(
-        `  ⚠ No static entry for "${program.programCode}" (${program.name}) — using deterministic fallback.`,
+        `  ⚠ No static entry for "${program.name}" — using deterministic fallback.`,
       );
     }
 
@@ -438,7 +437,7 @@ async function main() {
     });
 
     console.log(
-      `  ✓ ${lastName}, ${firstName} → ${program.programCode ?? program.name}`,
+      `  ✓ ${lastName}, ${firstName} → ${program.name}`,
     );
   }
 

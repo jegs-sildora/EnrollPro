@@ -28,7 +28,7 @@ export interface BOSYQueueItem {
   tleProgramId: number | null;
   tleProgramName: string | null;
   tleProgramCategory: string | null;
-  tleStatus: string | null;
+  tleStatus?: string | null;
 }
 
 export interface JHSCompleter {
@@ -64,7 +64,7 @@ export interface JHSCompleterPage {
 export interface TLEProgram {
   id: number;
   name: string;
-  programCode: string;
   category: string;
   isActive: boolean;
+  displayOrder: number;
 }

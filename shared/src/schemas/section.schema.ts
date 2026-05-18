@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { ApplicantTypeEnum } from "../constants/index.js";
 
-export const createSectionSchema = z.object({
+// Base object — no refinements so .partial() works on updateSectionSchema
+const sectionBaseSchema = z.object({
   name: z.string().min(1, "Section name is required"),
   sortOrder: z.number().int().positive().optional(),
   gradeLevelId: z.number().int().positive(),
@@ -12,9 +13,21 @@ export const createSectionSchema = z.object({
   tleProgramId: z.number().int().positive().nullable().optional(),
   advisingTeacherId: z.number().int().positive().optional().nullable(),
   maxCapacity: z.number().int().positive().default(45),
+  sectionType: z.enum(["HOME_ROOM", "TLE_LABORATORY"]).optional(),
 });
 
-export const updateSectionSchema = createSectionSchema.partial();
+export const createSectionSchema = sectionBaseSchema.superRefine((data, ctx) => {
+  if (data.sectionType === "TLE_LABORATORY" && !data.tleProgramId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["tleProgramId"],
+      message: "A TLE specialization is required for TLE Laboratory sections.",
+    });
+  }
+});
+
+// .partial() on the base object — safe because there are no refinements on it
+export const updateSectionSchema = sectionBaseSchema.partial();
 
 export const sectioningParamsSchema = z.object({
   steQuota: z.number().int().min(1).max(500),

@@ -89,15 +89,17 @@ const MINERALS = [
   "APATITE",
 ];
 
-// TLE track names as stored in the TLEProgram table.
-// These are cycled through G9 and G10 BEC sections.
-const TLE_TRACK_NAMES = [
-  "HE - Cookery",
-  "HE - Bread and Pastry Production",
+// Fallback TLE track names used only when the database has no active TLE programs yet.
+// The live seed now prefers whatever `tLEProgram.isActive = true` returns.
+const FALLBACK_TLE_TRACK_NAMES = [
+  "FCS - Cookery",
+  "FCS - Bread and Pastry Production",
+  "FCS - Household Services",
+  "FCS - Beauty Care",
+  "IA - SMAW",
+  "IA - Electrical Installation and Maintenance",
   "ICT - Computer Systems Servicing",
   "ICT - Technical Drafting",
-  "IA - Electrical Installation and Maintenance",
-  "IA - Carpentry",
   "AFA - Agricultural Crops Production",
 ];
 
@@ -135,11 +137,20 @@ async function main() {
     );
   }
 
-  // Pre-load TLE program IDs by name so we can assign tleProgramId (FK) on G9/G10 BEC sections.
-  const tlePrograms = await prisma.tLEProgram.findMany({
-    where: { name: { in: TLE_TRACK_NAMES } },
+  // Pre-load active TLE programs so G9/G10 sections follow the live catalog.
+  let tlePrograms = await prisma.tLEProgram.findMany({
+    where: { isActive: true },
+    orderBy: [{ category: "asc" }, { name: "asc" }],
     select: { id: true, name: true },
   });
+
+  if (tlePrograms.length === 0) {
+    tlePrograms = await prisma.tLEProgram.findMany({
+      where: { name: { in: FALLBACK_TLE_TRACK_NAMES } },
+      orderBy: [{ category: "asc" }, { name: "asc" }],
+      select: { id: true, name: true },
+    });
+  }
 
   if (tlePrograms.length === 0) {
     console.warn(
@@ -154,6 +165,13 @@ async function main() {
     tleMap[p.name] = p.id;
   }
 
+  const tleSectionSlotCount = FLOWERS.length + MINERALS.length;
+  if (tlePrograms.length > tleSectionSlotCount) {
+    console.warn(
+      `⚠️  Found ${tlePrograms.length} active TLE programs but only ${tleSectionSlotCount} Grade 9/10 section slots. Extra programs will stay unassigned in this seed run.`,
+    );
+  }
+
   const gradeLevels = await prisma.gradeLevel.findMany({
     where: { name: { in: ["Grade 7", "Grade 8", "Grade 9", "Grade 10"] } },
     orderBy: { displayOrder: "asc" },
@@ -164,6 +182,7 @@ async function main() {
   // Seed sections for each school year
   for (const schoolYear of schoolYears) {
     console.log(`\n📅 Seeding sections for ${schoolYear.yearLabel}...`);
+    let tleProgramCursor = 0;
 
     for (const grade of gradeLevels) {
       const gradeNum = parseInt(grade.name.split(" ")[1]);
@@ -201,6 +220,63 @@ async function main() {
         }
       }
 
+      // ── SCP Special Program Sections ───────────────────────────────
+      // SPA/SPS belong to the SCP lane and should be seeded for Grades 7-10.
+      // They are not regular sections and should keep the 35-capacity rule.
+      if (gradeNum >= 7 && gradeNum <= 10) {
+        const specialSections: Array<{
+          name: string;
+          programType:
+            | "SPECIAL_PROGRAM_IN_THE_ARTS"
+            | "SPECIAL_PROGRAM_IN_SPORTS";
+        }> = [
+          { name: "SPA A", programType: "SPECIAL_PROGRAM_IN_THE_ARTS" },
+          { name: "SPA B", programType: "SPECIAL_PROGRAM_IN_THE_ARTS" },
+          { name: "SPS A", programType: "SPECIAL_PROGRAM_IN_SPORTS" },
+          { name: "SPS B", programType: "SPECIAL_PROGRAM_IN_SPORTS" },
+        ];
+
+        for (const specialSection of specialSections) {
+          const special = await prisma.section.upsert({
+            where: {
+              uq_sections_name_grade_sy: {
+                name: specialSection.name,
+                gradeLevelId: grade.id,
+                schoolYearId: schoolYear.id,
+              },
+            },
+            update: {
+              programType: specialSection.programType,
+              sortOrder: currentSortOrder++,
+              sectionRank: null,
+              tleProgramId: null,
+              maxCapacity: 35,
+            },
+            create: {
+              name: specialSection.name,
+              gradeLevelId: grade.id,
+              schoolYearId: schoolYear.id,
+              programType: specialSection.programType,
+              sortOrder: currentSortOrder++,
+              sectionRank: null,
+              tleProgramId: null,
+              maxCapacity: 35,
+            },
+          });
+
+          if (teachers.length > 0) {
+            const advisor = teachers[teacherRotationIndex % teachers.length];
+            await assignSectionAdviser(
+              special.id,
+              advisor.id,
+              schoolYear.id,
+              schoolYear.classOpeningDate || new Date(),
+            );
+            teacherRotationIndex++;
+          }
+        }
+      }
+
       // ── BEC / Regular Sections ──────────────────────────────────────
       // • programType : REGULAR
       // • name        : theme only (e.g. "JOSE RIZAL") — grade/rank stored in columns
@@ -212,17 +288,14 @@ async function main() {
       else if (gradeNum === 9) themes = FLOWERS;
       else if (gradeNum === 10) themes = MINERALS;
 
-      let tleIndex = 0;
       for (let i = 0; i < themes.length; i++) {
         const theme = themes[i];
         const sectionRank = i + 1;
 
+        // Do NOT attach TLE program IDs to existing BEC themed sections.
+        // TLE programs must have dedicated sections created separately
+        // (see the explicit ensure-pass after grade loops).
         let tleProgramId: number | null = null;
-        if (gradeNum === 9 || gradeNum === 10) {
-          const trackName = TLE_TRACK_NAMES[tleIndex % TLE_TRACK_NAMES.length];
-          tleProgramId = tleMap[trackName] ?? null;
-          tleIndex++;
-        }
 
         const section = await upsertSection(
           theme,
@@ -234,8 +307,8 @@ async function main() {
           tleProgramId,
         );
 
-        // Assign advisory teacher
-        if (teachers.length > 0) {
+        // Assign advisory teacher only for non-TLE sections.
+        if (teachers.length > 0 && !tleProgramId) {
           const advisor = teachers[teacherRotationIndex % teachers.length];
           await assignSectionAdviser(
             section.id,
@@ -253,6 +326,53 @@ async function main() {
     }
 
     console.log(`✓ All sections seeded for ${schoolYear.yearLabel}.`);
+
+    // Ensure: for each active TLE program, there is at least one dedicated section
+    // created for Grade 9 (preferred) or Grade 10 (fallback) with tleProgramId set.
+    const grade9Level = gradeLevels.find((g) => g.name === "Grade 9");
+    const grade10Level = gradeLevels.find((g) => g.name === "Grade 10");
+
+    for (const program of tlePrograms) {
+      // Ensure both Grade 9 and Grade 10 have a dedicated section for this program
+      for (const targetGrade of [grade9Level, grade10Level]) {
+        if (!targetGrade) continue;
+
+        try {
+          const existing = await prisma.section.findFirst({
+            where: {
+              tleProgramId: program.id,
+              schoolYearId: schoolYear.id,
+              gradeLevelId: targetGrade.id,
+            },
+          });
+
+          if (existing) continue; // already has a section for this program and grade
+
+          // compute next sortOrder for the target grade in this school year
+          const agg = await prisma.section.aggregate({
+            where: { gradeLevelId: targetGrade.id, schoolYearId: schoolYear.id },
+            _max: { sortOrder: true },
+          });
+          const nextSort = (agg._max.sortOrder ?? 0) + 1;
+
+          const tleSectionName = `${program.name.toUpperCase()} - TLE`;
+
+          await upsertSection(
+            tleSectionName,
+            targetGrade.id,
+            schoolYear.id,
+            "REGULAR",
+            nextSort,
+            null,
+            program.id,
+          );
+        } catch (err) {
+          console.warn(
+            `⚠️  Could not ensure TLE section for program ${program.name} (grade ${targetGrade?.name}): ${(err as Error).message}`,
+          );
+        }
+      }
+    }
   }
 
   console.log("\n✓ All sections seeded successfully for all school years.");
@@ -302,20 +422,57 @@ async function assignSectionAdviser(
   effectiveFrom: Date,
 ) {
   try {
-    await prisma.sectionAdviser.upsert({
+    const existingForTeacher = await prisma.sectionAdviser.findFirst({
       where: {
-        sectionId_teacherId_schoolYearId: {
-          sectionId,
-          teacherId,
-          schoolYearId,
-        },
+        teacherId,
+        schoolYearId,
       },
-      update: {
+    });
+
+    if (existingForTeacher) {
+      if (
+        existingForTeacher.sectionId === sectionId &&
+        existingForTeacher.status !== "ACTIVE"
+      ) {
+        await prisma.sectionAdviser.update({
+          where: { id: existingForTeacher.id },
+          data: {
+            status: "ACTIVE" as SectionAdviserStatus,
+            effectiveFrom,
+            effectiveTo: null,
+            handoverReason: null,
+          },
+        });
+      }
+
+      return;
+    }
+
+    const existing = await prisma.sectionAdviser.findFirst({
+      where: {
+        sectionId,
+        schoolYearId,
         status: "ACTIVE" as SectionAdviserStatus,
-        effectiveFrom,
-        effectiveTo: null,
       },
-      create: {
+    });
+
+    if (existing && existing.teacherId === teacherId) {
+      return;
+    }
+
+    if (existing && existing.teacherId !== teacherId) {
+      await prisma.sectionAdviser.update({
+        where: { id: existing.id },
+        data: {
+          status: "HANDED_OVER" as SectionAdviserStatus,
+          effectiveTo: new Date(),
+          handoverReason: "Seed Update",
+        },
+      });
+    }
+
+    await prisma.sectionAdviser.create({
+      data: {
         sectionId,
         teacherId,
         schoolYearId,

@@ -21,6 +21,8 @@ import {
   School,
   ArrowRightLeft,
   BookOpen,
+  Home,
+  FlaskConical,
 } from "lucide-react";
 
 import {
@@ -90,7 +92,7 @@ function UserNav() {
 
   const handleLogout = () => {
     clearAuth();
-    navigate("/login");
+    navigate("/staff/login");
   };
 
   const initials = user?.firstName
@@ -152,7 +154,7 @@ function UserNav() {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="cursor-pointer font-bold text-xs text-destructive focus:text-destructive"
+            className="cursor-pointer font-bold text-xs text-destructive focus:text-primary-foreground"
             onClick={() => setShowLogoutConfirm(true)}>
             <LogOut className="mr-2 h-4 w-4" />
             Sign Out
@@ -323,6 +325,51 @@ const NavDivider = memo(function NavDivider({ label }: { label: string }) {
   );
 });
 
+function NavGroup({
+  icon: Icon,
+  label,
+  pathname,
+  children,
+}: {
+  icon: React.ElementType;
+  label: string;
+  pathname: string;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(
+    () => pathname.startsWith("/sections"),
+  );
+
+  // Auto-open when navigating into /sections
+  useEffect(() => {
+    if (pathname.startsWith("/sections")) setOpen(true);
+  }, [pathname]);
+
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        onClick={() => setOpen((v) => !v)}
+        isActive={pathname === "/sections"}
+        tooltip={label}
+        className="cursor-pointer">
+        <Icon className="size-4" />
+        <span>{label}</span>
+        <ChevronDown
+          className={cn(
+            "ml-auto size-3.5 transition-transform duration-200",
+            open && "rotate-180",
+          )}
+        />
+      </SidebarMenuButton>
+      {open && (
+        <div className="pl-6 mt-0.5 flex flex-col gap-0.5 group-data-[collapsible=icon]:hidden">
+          {children}
+        </div>
+      )}
+    </SidebarMenuItem>
+  );
+}
+
 const NavItem = memo(function NavItem({
   to,
   icon: Icon,
@@ -377,7 +424,7 @@ function AppSidebar() {
 
   const handleLogout = () => {
     clearAuth();
-    navigate("/login");
+    navigate("/staff/login");
   };
 
   return (
@@ -478,12 +525,23 @@ function AppSidebar() {
                         pathname={pathname}
                       />
                     )}
-                    <NavItem
-                      to="/sections"
+                    <NavGroup
                       icon={Layers}
                       label="Sections"
-                      pathname={pathname}
-                    />
+                      pathname={pathname}>
+                      <NavItem
+                        to="/sections/homerooms"
+                        icon={Home}
+                        label="Homerooms"
+                        pathname={pathname}
+                      />
+                      <NavItem
+                        to="/sections/tle"
+                        icon={FlaskConical}
+                        label="TLE Laboratories"
+                        pathname={pathname}
+                      />
+                    </NavGroup>
                   </>
                 )}
 

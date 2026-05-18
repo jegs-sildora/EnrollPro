@@ -67,7 +67,6 @@ export async function createTLEProgram(
   const program = await prisma.tLEProgram.create({
     data: {
       name: name.trim(),
-      programCode: programCode.trim().toUpperCase(),
       category: category as TLECategory,
       trackType: trackType as TLETrackType,
       isActive: isActive !== false,
@@ -91,7 +90,7 @@ export async function updateTLEProgram(
   res: Response,
 ): Promise<void> {
   const id = parseInt(String(req.params.id));
-  const { name, programCode, category, trackType, isActive } = req.body;
+  const { name, category, trackType, isActive } = req.body;
 
   const existing = await prisma.tLEProgram.findUnique({ where: { id } });
   if (!existing) {
@@ -124,23 +123,10 @@ export async function updateTLEProgram(
     res.status(400).json({ message: "trackType is invalid" });
     return;
   }
-  if (
-    programCode !== undefined &&
-    (typeof programCode !== "string" ||
-      !programCode.trim() ||
-      programCode.trim().length > 10)
-  ) {
-    res.status(400).json({ message: "programCode is required (max 10 chars)" });
-    return;
-  }
-
   const program = await prisma.tLEProgram.update({
     where: { id },
     data: {
       ...(name !== undefined ? { name: name.trim() } : {}),
-      ...(programCode !== undefined
-        ? { programCode: programCode.trim().toUpperCase() }
-        : {}),
       ...(category !== undefined ? { category: category as TLECategory } : {}),
       ...(trackType !== undefined
         ? { trackType: trackType as TLETrackType }

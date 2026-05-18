@@ -48,6 +48,9 @@ interface SectionFormSheetProps {
   gradeLevelName?: string;
   gradeLevelDisplayOrder?: number;
   tlePrograms?: TLEProgramOption[];
+  /** When set, locks the section type and hides the radio toggle.
+   *  HOMEROOM → forces HOME_ROOM mode; TLE_LAB → forces TLE_LABORATORY mode. */
+  defaultMode?: "HOMEROOM" | "TLE_LAB";
 }
 
 export const SectionFormSheet = memo(function SectionFormSheet({
@@ -68,12 +71,20 @@ export const SectionFormSheet = memo(function SectionFormSheet({
   gradeLevelName,
   gradeLevelDisplayOrder = 0,
   tlePrograms = [],
+  defaultMode,
 }: SectionFormSheetProps) {
   const isGrade9Or10 = TLE_REQUIRED_DISPLAY_ORDERS.includes(
     gradeLevelDisplayOrder,
   );
+  // When defaultMode is set, override isTleLaboratory accordingly
   const isTleLaboratory =
-    isGrade9Or10 && formData.sectionType === "TLE_LABORATORY";
+    defaultMode === "TLE_LAB"
+      ? true
+      : defaultMode === "HOMEROOM"
+        ? false
+        : isGrade9Or10 && formData.sectionType === "TLE_LABORATORY";
+  // Show the section-type radio only when there is no forced mode
+  const showSectionTypeRadio = !defaultMode && isGrade9Or10;
   const selectedTleProgram =
     isTleLaboratory && formData.tleProgramId != null
       ? tlePrograms.find((program) => program.id === formData.tleProgramId)
@@ -187,7 +198,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                 </p>
               </header>
 
-              {isGrade9Or10 && (
+              {showSectionTypeRadio && (
                 <div className="space-y-2">
                   <Label className="font-bold text-xs uppercase">Section Type</Label>
                   <RadioGroup

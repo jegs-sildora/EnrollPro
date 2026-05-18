@@ -756,7 +756,6 @@ export async function getTLEPrograms(schoolYearId: number): Promise<
   Array<{
     id: number;
     name: string;
-    programCode: string;
     category: string;
     isActive: boolean;
     maxSlots: number | null;
@@ -790,7 +789,6 @@ export async function getTLEPrograms(schoolYearId: number): Promise<
     return {
       id: p.id,
       name: p.name,
-      programCode: p.programCode,
       category: p.category,
       isActive: p.isActive,
       maxSlots: max,

@@ -7,6 +7,9 @@ import { toastApiError } from "@/shared/hooks/useApiToast";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import type { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/shared/ui/data-table";
+import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import {
   AddTleProgramModal,
@@ -16,7 +19,6 @@ import {
 interface TLEProgram {
   id: number;
   name: string;
-  programCode: string;
   category: string;
   trackType: string;
   isActive: boolean;
@@ -37,7 +39,6 @@ function categoryLabel(cat: string): string {
 
 const EMPTY_FORM: TLEProgramFormState = {
   name: "",
-  programCode: "",
   category: "",
   trackType: "SPECIALIZATION",
   isActive: true,
@@ -105,7 +106,6 @@ export default function TLEPrograms() {
     setEditTarget(p);
     setForm({
       name: p.name,
-      programCode: p.programCode,
       category: p.category,
       trackType: p.trackType,
       isActive: p.isActive,
@@ -195,104 +195,100 @@ export default function TLEPrograms() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left font-black uppercase text-xs text-muted-foreground py-2 pr-4">
-                    #
-                  </th>
-                  <th className="text-left font-black uppercase text-xs text-muted-foreground py-2 pr-4">
-                    Program Name
-                  </th>
-                  <th className="text-left font-black uppercase text-xs text-muted-foreground py-2 pr-4">
-                    Code
-                  </th>
-                  <th className="text-left font-black uppercase text-xs text-muted-foreground py-2 pr-4">
-                    Category
-                  </th>
-                  <th className="text-left font-black uppercase text-xs text-muted-foreground py-2 pr-4">
-                    Track Type
-                  </th>
-                  <th className="text-left font-black uppercase text-xs text-muted-foreground py-2 pr-4">
-                    Status
-                  </th>
-                  <th className="text-right font-black uppercase text-xs text-muted-foreground py-2">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {specializationPrograms.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="py-8 text-center text-muted-foreground text-sm font-bold">
-                      {loading
-                        ? "Loading..."
-                        : "No TLE specializations found."}
-                    </td>
-                  </tr>
-                )}
-                {specializationPrograms.map((p, index) => (
-                  <tr
-                    key={p.id}
-                    className="border-b last:border-0 hover:bg-muted/30">
-                    <td className="py-3 pr-4 font-bold text-muted-foreground">
-                      {index + 1}
-                    </td>
-                    <td className="py-3 pr-4 font-bold">{p.name}</td>
-                    <td className="py-3 pr-4">
-                      <Badge
-                        variant="outline"
-                        className="font-mono font-bold text-[10px] uppercase">
-                        {p.programCode}
-                      </Badge>
-                    </td>
-                    <td className="py-3 pr-4">
+            <DataTable<TLEProgram, unknown>
+              columns={(
+                (): ColumnDef<TLEProgram>[] => [
+                  {
+                    id: "index",
+                    header: ({ column }) => (
+                      <DataTableColumnHeader column={column} title="#" className="font-black" />
+                    ),
+                    cell: ({ row }) => <span className="font-bold">{row.index + 1}</span>,
+                    size: 60,
+                  },
+                  {
+                    id: "name",
+                    accessorKey: "name",
+                    header: ({ column }) => (
+                      <DataTableColumnHeader column={column} title="Program Name" />
+                    ),
+                    cell: ({ row }) => <span className="font-bold">{row.original.name}</span>,
+                    size: 360,
+                  },
+                  {
+                    id: "category",
+                    accessorKey: "category",
+                    header: ({ column }) => (
+                      <DataTableColumnHeader column={column} title="Category" />
+                    ),
+                    cell: ({ row }) => (
                       <span className="text-xs font-bold text-muted-foreground">
-                        {categoryLabel(p.category)}
+                        {categoryLabel(row.original.category)}
                       </span>
-                    </td>
-                    <td className="py-3 pr-4">
-                      <Badge
-                        variant="outline"
-                        className="font-bold text-[10px] uppercase">
-                        {p.trackType.replace(/_/g, " ")}
+                    ),
+                    size: 220,
+                  },
+                  {
+                    id: "trackType",
+                    accessorKey: "trackType",
+                    header: ({ column }) => (
+                      <DataTableColumnHeader column={column} title="Track Type" />
+                    ),
+                    cell: ({ row }) => (
+                      <Badge variant="outline" className="font-bold text-[10px] uppercase">
+                        {row.original.trackType.replace(/_/g, " ")}
                       </Badge>
-                    </td>
-                    <td className="py-3 pr-4">
-                      <Badge
-                        variant={p.isActive ? "default" : "secondary"}
-                        className="font-bold text-xs">
-                        {p.isActive ? "Active" : "Inactive"}
+                    ),
+                    size: 160,
+                  },
+                  {
+                    id: "status",
+                    accessorKey: "isActive",
+                    header: ({ column }) => (
+                      <DataTableColumnHeader column={column} title="Status" />
+                    ),
+                    cell: ({ row }) => (
+                      <Badge variant={row.original.isActive ? "default" : "secondary"} className="font-bold text-xs">
+                        {row.original.isActive ? "Active" : "Inactive"}
                       </Badge>
-                    </td>
-                    <td className="py-3 text-right">
+                    ),
+                    size: 120,
+                  },
+                  {
+                    id: "actions",
+                    header: ({ column }) => (
+                      <DataTableColumnHeader column={column} title="Actions" className="text-right" />
+                    ),
+                    cell: ({ row }) => (
                       <div className="flex items-center justify-end gap-2">
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
                           title="Edit"
-                          onClick={() => openEdit(p)}>
+                          onClick={() => openEdit(row.original)}>
                           <Edit2 className="h-3.5 w-3.5" />
                         </Button>
-                        {p.isActive && (
+                        {row.original.isActive && (
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-destructive hover:text-destructive"
                             title="Deactivate"
-                            onClick={() => setDeactivateTarget(p)}>
+                            onClick={() => setDeactivateTarget(row.original)}>
                             <PowerOff className="h-3.5 w-3.5" />
                           </Button>
                         )}
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    ),
+                    size: 160,
+                  },
+                ]
+              )()}
+              data={specializationPrograms}
+              tableClassName="min-w-full"
+              loading={loading}
+            />
           </div>
         </CardContent>
       </Card>

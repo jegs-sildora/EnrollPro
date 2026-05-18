@@ -53,7 +53,9 @@ export async function getStudents(req: Request, res: Response): Promise<void> {
     if (search.includes(",")) {
       const parts = search.split(",");
       const lastName = parts[0].trim();
-      const firstName = (parts[1] || "").trim();
+      const firstNameRaw = (parts[1] || "").trim();
+      // Take only the first word to ignore middle initials (e.g. "RAMON R." → "RAMON")
+      const firstName = firstNameRaw.split(/\s+/)[0] || firstNameRaw;
 
       searchFilter = {
         AND: [

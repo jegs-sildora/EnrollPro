@@ -26,16 +26,21 @@ A. 01-GLOBAL (Baseline Data)
     * Command: pnpm --filter server db:seed-users
     * Description: Creates a set of demo users with various roles to test access control.
 
-- seed-teachers.ts:
-    * Command: pnpm --filter server db:seed-teachers
-    * Description: Populates the Teacher table with faculty members. These are "mirrored" records used for advisory assignments.
-
 B. 02-SY-2025-2026 (Operational Demo Data)
 --------------------------------------------------------------------------------
 - seed-sections.ts:
     * Command: pnpm --filter server db:seed-sections
     * Description: Creates the class section structure for all grade levels.
     * Context: These sections serve as the targets for learner assignments.
+
+- seed-teachers.ts:
+    * Command: pnpm --filter server db:seed-teachers
+    * Description: Populates the Teacher table with faculty members. These are "mirrored" records used for advisory assignments.
+    * Order: run after db:seed-sections so TLE sections already exist when advisory links are created.
+
+- seed-sections-and-teachers:
+    * Command: pnpm --filter server db:seed-sections-and-teachers
+    * Description: Convenience command that runs db:seed-sections first and then db:seed-teachers.
 
 - seed-enrolled-learners.ts:
     * Command: pnpm --filter server db:seed-enrolled-learners
@@ -228,7 +233,7 @@ db:seed-incoming-g7-ready-for-sectioning
 db:wipe-incoming-g7-ready-for-sectioning
 
 wipe
-seed-section
+seed-sections
 seed-teachers
 seed-existing-learners
 seed-eosy-grades

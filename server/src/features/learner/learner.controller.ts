@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { verifyPin } from "./portal-pin.service.js";
-import { getEnrollmentPhase } from "../settings/enrollment-gate.service.js";
 
 const PORTAL_LOOKUP_ERROR = "Invalid learner credentials.";
 
@@ -240,32 +239,13 @@ export const lookupLearner = async (req: Request, res: Response) => {
  */
 export const learnerConfirmReturn = async (req: Request, res: Response) => {
   try {
-    console.log("[Learner Portal] Incoming request body:", req.body);
-
-    const {
-      applicationId,
-      tleProgramId,
-      guardianName,
-      tleProgramChoice2Id,
-      confirmAction,
-    } =
+    const { applicationId, tleProgramId, guardianName, tleProgramChoice2Id } =
       req.body as {
         applicationId: unknown;
         tleProgramId?: unknown;
         guardianName?: string;
         tleProgramChoice2Id?: unknown;
-        confirmAction?: unknown;
       };
-
-    if (
-      confirmAction !== "CONFIRM_RETURN" &&
-      confirmAction !== "SUBMIT_TLE_CHOICES"
-    ) {
-      return res.status(400).json({
-        message:
-          "Explicit confirmAction is required (CONFIRM_RETURN or SUBMIT_TLE_CHOICES).",
-      });
-    }
 
     const id = Number(applicationId);
     if (!Number.isInteger(id) || id <= 0) {
@@ -282,7 +262,6 @@ export const learnerConfirmReturn = async (req: Request, res: Response) => {
           select: { 
             firstName: true, 
             lastName: true,
-            promotionStatus: true,
             enrollmentRecords: {
                where: { 
                  enrollmentApplication: {
@@ -309,134 +288,10 @@ export const learnerConfirmReturn = async (req: Request, res: Response) => {
     }
 
     const gradeOrder = app.gradeLevel.displayOrder;
-    const isGrade9 = gradeOrder === 9;
-    const isGrade10 = gradeOrder === 10;
-
-    const schoolYear = await prisma.schoolYear.findUnique({
-      where: { id: app.schoolYearId },
-    });
-    const isBosyEnrollmentOpen = Boolean(
-      schoolYear && getEnrollmentPhase(schoolYear) === "REGULAR_ENROLLMENT",
-    );
-
-    if (!isBosyEnrollmentOpen) {
-      return res.status(403).json({
-        message: "BOSY enrollment is currently closed.",
-      });
-    }
-
-    const previousGradeDisplayOrder =
-      typeof gradeOrder === "number" ? gradeOrder - 1 : null;
-
-    const previousGradeRecord =
-      previousGradeDisplayOrder != null && previousGradeDisplayOrder >= 7
-        ? await prisma.enrollmentRecord.findFirst({
-            where: {
-              learnerId: app.learnerId,
-              enrollmentApplication: {
-                gradeLevel: { displayOrder: previousGradeDisplayOrder },
-              },
-            },
-            orderBy: { enrolledAt: "desc" },
-            select: { eosyStatus: true },
-          })
-        : null;
-
-    const priorPromotionStatus =
-      previousGradeRecord?.eosyStatus ?? app.learner?.promotionStatus ?? null;
-
-    if (priorPromotionStatus !== "PROMOTED") {
-      return res.status(403).json({
-        message:
-          "Only learners with previous EOSY status PROMOTED can confirm BOSY return.",
-      });
-    }
-
-    const hasPrimaryTleChoice =
-      tleProgramId != null &&
-      !isNaN(Number(tleProgramId)) &&
-      Number(tleProgramId) > 0;
-    const hasFallbackTleChoice =
-      tleProgramChoice2Id != null &&
-      !isNaN(Number(tleProgramChoice2Id)) &&
-      Number(tleProgramChoice2Id) > 0;
-    const hasAnyTleChoice = hasPrimaryTleChoice || hasFallbackTleChoice;
-
-    if (confirmAction === "CONFIRM_RETURN") {
-      if (hasAnyTleChoice) {
-        return res.status(400).json({
-          message: "Track choices are not allowed during Stage 1 confirmation.",
-        });
-      }
-
-      await prisma.enrollmentApplication.update({
-        where: { id },
-        data: {
-          status: "PENDING_CONFIRMATION",
-          confirmationConsent: true,
-          guardianName: guardianName || undefined,
-        },
-      });
-
-      if (app.learner) {
-        await auditLog({
-          userId: req.user?.userId || null,
-          actionType: "LEARNER_CONFIRMATION",
-          description: `Learner ${app.learner.firstName} ${app.learner.lastName} confirmed BOSY return${guardianName ? ` (Signed by: ${guardianName})` : ""}`,
-          subjectType: "EnrollmentApplication",
-          recordId: id,
-          req,
-        });
-      }
-
-      return res.json({
-        applicationId: id,
-        status: "PENDING_CONFIRMATION",
-        nextStep: isGrade9 ? "TLE_SELECTION" : "COMPLETE",
-      });
-    }
-
-    if (!app.confirmationConsent) {
-      return res.status(409).json({
-        message: "Stage 1 incomplete. Confirm return first before track selection.",
-      });
-    }
-
-    const isRegularCurriculum = app.applicantType === "REGULAR";
-
-    if (isGrade9 && !isRegularCurriculum) {
-      await prisma.enrollmentApplication.update({
-        where: { id },
-        data: {
-          status: "READY_FOR_SECTIONING",
-          confirmationConsent: true,
-          guardianName: guardianName || undefined,
-          tleProgramId: null,
-          tleProgramChoice2Id: null,
-        },
-      });
-
-      if (app.learner) {
-        await auditLog({
-          userId: req.user?.userId || null,
-          actionType: "LEARNER_CONFIRMATION",
-          description: `Learner ${app.learner.firstName} ${app.learner.lastName} finalized BOSY confirmation via SCP bypass (${app.applicantType}).`,
-          subjectType: "EnrollmentApplication",
-          recordId: id,
-          req,
-        });
-      }
-
-      return res.json({
-        applicationId: id,
-        status: "READY_FOR_SECTIONING",
-        bypassedTleSelection: true,
-      });
-    }
 
     // 2. MATATAG RULESET ENFORCEMENT
-    if (isGrade9) {
-      if (!hasPrimaryTleChoice || !hasFallbackTleChoice) {
+    if (gradeOrder === 9) {
+      if (!tleProgramId || !tleProgramChoice2Id) {
         return res.status(400).json({ message: "Grade 9 requires both Primary and Fallback choices." });
       }
       if (Number(tleProgramId) === Number(tleProgramChoice2Id)) {
@@ -444,7 +299,7 @@ export const learnerConfirmReturn = async (req: Request, res: Response) => {
       }
     }
 
-    if (isGrade10 && hasPrimaryTleChoice) {
+    if (gradeOrder === 10) {
       // Safety Check: Learner Enrollment Records
       const g9Record = app.learner?.enrollmentRecords?.[0];
       const prevTleId = g9Record?.tleProgramId;
@@ -457,72 +312,44 @@ export const learnerConfirmReturn = async (req: Request, res: Response) => {
     }
 
     // 3. CAPACITY & TRACK VALIDATION
-    const validateSpecializationTrack = async (
-      programId: number,
-      label: "Primary" | "Fallback",
-    ) => {
-      const selectedTrack = await prisma.tLEProgram.findUnique({
-        where: { id: programId },
+    if (tleProgramId && Number(tleProgramId) > 0) {
+      const primaryTrack = await prisma.tLEProgram.findUnique({
+        where: { id: Number(tleProgramId) },
         select: { id: true, name: true, trackType: true, maxSlots: true }
       });
 
-      if (!selectedTrack || selectedTrack.trackType !== "SPECIALIZATION") {
+      if (!primaryTrack || primaryTrack.trackType !== "SPECIALIZATION") {
         return res.status(400).json({ message: "Invalid Specialization Track selected." });
       }
 
-      if (selectedTrack.maxSlots != null) {
+      if (primaryTrack.maxSlots) {
         const enrolledCount = await prisma.enrollmentApplication.count({
           where: { 
-            tleProgramId: selectedTrack.id, 
+            tleProgramId: primaryTrack.id, 
             schoolYearId: app.schoolYearId,
-            status: {
-              in: [
-                "READY_FOR_SECTIONING",
-                "TEMPORARILY_ENROLLED",
-                "ENROLLED",
-                "OFFICIALLY_ENROLLED",
-              ],
-            },
+            status: "READY_FOR_SECTIONING"
           }
         });
         
-        const availableSlots = selectedTrack.maxSlots - enrolledCount;
-        if (app.tleProgramId !== selectedTrack.id && availableSlots <= 0) {
-          return res.status(409).json({ message: `The ${label} track '${selectedTrack.name}' has no available slots.` });
+        if (app.tleProgramId !== primaryTrack.id && enrolledCount >= primaryTrack.maxSlots) {
+          return res.status(409).json({ message: `The track '${primaryTrack.name}' is currently at full capacity.` });
         }
       }
-
-      return null;
-    };
-
-    if (hasPrimaryTleChoice) {
-      const trackValidationError = await validateSpecializationTrack(
-        Number(tleProgramId),
-        "Primary",
-      );
-      if (trackValidationError) {
-        return trackValidationError;
-      }
     }
 
-    if (hasFallbackTleChoice) {
-      const trackValidationError = await validateSpecializationTrack(
-        Number(tleProgramChoice2Id),
-        "Fallback",
-      );
-      if (trackValidationError) {
-        return trackValidationError;
-      }
-    }
-
-    if (
-      app.status !== "PENDING_CONFIRMATION" &&
-      app.status !== "READY_FOR_SECTIONING"
-    ) {
+    if (app.status !== "PENDING_CONFIRMATION" && app.status !== "READY_FOR_SECTIONING") {
        return res.status(409).json({
          message: `Application is already in status '${app.status}'.`,
        });
     }
+
+    const resolvedTleId = (tleProgramId != null && !isNaN(Number(tleProgramId)) && Number(tleProgramId) > 0) 
+      ? Number(tleProgramId) 
+      : null;
+      
+    const resolvedTleId2 = (tleProgramChoice2Id != null && !isNaN(Number(tleProgramChoice2Id)) && Number(tleProgramChoice2Id) > 0) 
+      ? Number(tleProgramChoice2Id) 
+      : null;
 
     // Update the application
     try {
@@ -530,13 +357,10 @@ export const learnerConfirmReturn = async (req: Request, res: Response) => {
         where: { id },
         data: {
           status: "READY_FOR_SECTIONING",
-          tleStatus: "READY_FOR_TLE_SECTIONING",
           confirmationConsent: true,
           guardianName: guardianName || undefined,
-          ...(hasPrimaryTleChoice ? { tleProgramId: Number(tleProgramId) } : {}),
-          ...(hasFallbackTleChoice
-            ? { tleProgramChoice2Id: Number(tleProgramChoice2Id) }
-            : {}),
+          tleProgramId: resolvedTleId,
+          tleProgramChoice2Id: resolvedTleId2
         },
       });
     } catch (dbError) {
@@ -550,7 +374,7 @@ export const learnerConfirmReturn = async (req: Request, res: Response) => {
         await auditLog({
           userId: req.user?.userId || null,
           actionType: "LEARNER_CONFIRMATION",
-          description: `Learner ${app.learner.firstName} ${app.learner.lastName} submitted TLE specialization choices${guardianName ? ` (Signed by: ${guardianName})` : ""}`,
+          description: `Learner ${app.learner.firstName} ${app.learner.lastName} confirmed return via TLE Setup${guardianName ? ` (Signed by: ${guardianName})` : ""}`,
           subjectType: "EnrollmentApplication",
           recordId: id,
           req,
@@ -560,11 +384,7 @@ export const learnerConfirmReturn = async (req: Request, res: Response) => {
       }
     }
 
-    return res.json({
-      applicationId: id,
-      status: "READY_FOR_SECTIONING",
-      tleStatus: "READY_FOR_TLE_SECTIONING",
-    });
+    return res.json({ applicationId: id, status: "READY_FOR_SECTIONING" });
   } catch (error) {
     console.error("[Learner Portal] Critical failure in confirm-return:", error);
     return res.status(500).json({ message: "Could not confirm return due to policy validation error." });
@@ -657,55 +477,12 @@ export const getTLEOptions = async (req: Request, res: Response) => {
     if (order === 9) {
       const options = await prisma.tLEProgram.findMany({
         where: { trackType: "SPECIALIZATION", isActive: true },
-        orderBy: [{ category: "asc" }, { name: "asc" }],
+        orderBy: { name: "asc" },
       });
-
-      const schoolYear = await prisma.schoolYear.findFirst({
-        where: { status: { in: ["ACTIVE", "ENROLLMENT_OPEN", "BOSY_LOCKED"] } },
-        orderBy: { id: "desc" },
-        select: { id: true },
-      });
-
-      const programsWithCapacity = await Promise.all(
-        options.map(async (program) => {
-          if (program.maxSlots == null) {
-            return {
-              id: program.id,
-              name: program.name,
-              programCode: program.programCode,
-              category: program.category,
-              availableSlots: null,
-            };
-          }
-
-          const takenSlots = await prisma.enrollmentApplication.count({
-            where: {
-              tleProgramId: program.id,
-              ...(schoolYear ? { schoolYearId: schoolYear.id } : {}),
-              status: {
-                in: [
-                  "READY_FOR_SECTIONING",
-                  "TEMPORARILY_ENROLLED",
-                  "ENROLLED",
-                  "OFFICIALLY_ENROLLED",
-                ],
-              },
-            },
-          });
-
-          return {
-            id: program.id,
-            name: program.name,
-            programCode: program.programCode,
-            category: program.category,
-            availableSlots: Math.max(program.maxSlots - takenSlots, 0),
-          };
-        }),
-      );
 
       return res.json({
         phase: "SPECIALIZATION",
-        options: programsWithCapacity,
+        options,
       });
     }
 
@@ -789,7 +566,6 @@ export const getOnboardingStatus = async (req: Request, res: Response) => {
           take: 1,
           include: {
             gradeLevel: { select: { displayOrder: true } },
-            schoolYear: true,
           },
         },
       },
@@ -807,22 +583,8 @@ export const getOnboardingStatus = async (req: Request, res: Response) => {
       return res.json({ nextStep: "COMPLETE" });
     }
 
-    // If BOSY is closed or this year is already EOSY-finalized,
-    // do not force the learner through onboarding tunnel.
-    const isBosyEnrollmentOpen = Boolean(
-      application.schoolYear &&
-        getEnrollmentPhase(application.schoolYear) === "REGULAR_ENROLLMENT",
-    );
-
-    if (!isBosyEnrollmentOpen || application.schoolYear?.isEosyFinalized) {
-      return res.json({ nextStep: "COMPLETE" });
-    }
-
     // Gate 1: Intent Confirmation (The Wall)
-    if (
-      application.status === "PENDING_CONFIRMATION" &&
-      !application.confirmationConsent
-    ) {
+    if (application.status === "PENDING_CONFIRMATION") {
       return res.json({ nextStep: "CONFIRMATION" });
     }
 
@@ -830,12 +592,10 @@ export const getOnboardingStatus = async (req: Request, res: Response) => {
     const isSpecializationGrade =
       application.gradeLevel?.displayOrder === 9 ||
       application.gradeLevel?.displayOrder === 10;
-    const requiresTleSelection =
-      isSpecializationGrade && application.applicantType === "REGULAR";
 
     if (
-      requiresTleSelection &&
-      application.confirmationConsent &&
+      application.status === "READY_FOR_SECTIONING" &&
+      isSpecializationGrade &&
       !application.tleProgramId
     ) {
       return res.json({ nextStep: "TLE_SELECTION" });
@@ -865,7 +625,7 @@ export const getLearnerProfile = async (req: Request, res: Response) => {
       include: {
         enrollmentApplications: {
           orderBy: { schoolYearId: "desc" },
-          take: 5,
+          take: 1,
           include: {
             addresses: true,
             gradeLevel: { select: { name: true, displayOrder: true } },
@@ -898,15 +658,9 @@ export const getLearnerProfile = async (req: Request, res: Response) => {
     }
 
     const application = learner.enrollmentApplications[0] ?? null;
-    const addressSourceApplication =
-      learner.enrollmentApplications.find((app) =>
-        app.addresses.some((a: any) => a.addressType === "CURRENT"),
-      ) ?? null;
-
     const currentAddress =
-      addressSourceApplication?.addresses.find(
-        (a: any) => a.addressType === "CURRENT",
-      ) ?? null;
+      application?.addresses.find((a: any) => a.addressType === "CURRENT") ??
+      null;
 
     const healthRecords = await prisma.healthRecord.findMany({
       where: { learnerId: learner.id },
@@ -917,28 +671,6 @@ export const getLearnerProfile = async (req: Request, res: Response) => {
     const activeAdviser =
       (application?.enrollmentRecord?.section as any)?.advisers?.[0]?.teacher ??
       null;
-
-    const previousGradeDisplayOrder =
-      application?.gradeLevel?.displayOrder != null
-        ? application.gradeLevel.displayOrder - 1
-        : null;
-
-    const previousGradeRecord =
-      previousGradeDisplayOrder != null && previousGradeDisplayOrder >= 7
-        ? await prisma.enrollmentRecord.findFirst({
-            where: {
-              learnerId: learner.id,
-              enrollmentApplication: {
-                gradeLevel: { displayOrder: previousGradeDisplayOrder },
-              },
-            },
-            orderBy: { enrolledAt: "desc" },
-            select: { eosyStatus: true },
-          })
-        : null;
-
-    const previousEosyStatus =
-      previousGradeRecord?.eosyStatus ?? learner.promotionStatus ?? null;
 
     return res.json({
       learner: {
@@ -1005,7 +737,6 @@ export const getLearnerProfile = async (req: Request, res: Response) => {
                 tleProgramId: application.tleProgramId ?? null,
                 tleProgramName: (application as any).tleProgram?.name ?? null,
                 guardianName: application.guardianName ?? null,
-                previousEosyStatus,
               }
             : null,
       },

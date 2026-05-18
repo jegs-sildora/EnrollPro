@@ -155,16 +155,16 @@ api.interceptors.response.use(
 
               setTimeout(() => {
                 _sessionExpiredHandled = false;
-                if (window.location.pathname !== "/login") {
-                  window.location.replace("/login");
+                if (window.location.pathname !== "/staff/login") {
+                  window.location.replace("/staff/login");
                 }
               }, 1500);
             } else {
               _sessionExpiredHandled = false;
             }
           } else {
-            if (!isLearnerPath && window.location.pathname !== "/login") {
-              window.location.replace("/login");
+            if (!isLearnerPath && window.location.pathname !== "/staff/login") {
+              window.location.replace("/staff/login");
             }
           }
         }

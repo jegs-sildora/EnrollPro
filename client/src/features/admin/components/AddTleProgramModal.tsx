@@ -19,7 +19,6 @@ import {
 
 export interface TLEProgramFormState {
   name: string;
-  programCode: string;
   category: string;
   trackType: string;
   isActive: boolean;
@@ -89,21 +88,7 @@ export function AddTleProgramModal({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label className="font-bold text-xs uppercase">Program Code *</Label>
-            <Input
-              value={form.programCode}
-              maxLength={10}
-              onChange={(e) =>
-                onChange({ ...form, programCode: e.target.value.toUpperCase() })
-              }
-              placeholder="e.g., HE-COOK"
-              className="font-bold uppercase"
-            />
-            <p className="text-[10px] text-muted-foreground font-bold italic">
-              Max 10 characters.
-            </p>
-          </div>
+          {/* programCode removed — not used anymore */}
 
           <div className="space-y-2">
             <Label className="font-bold text-xs uppercase">Category *</Label>
@@ -186,11 +171,7 @@ export function AddTleProgramModal({
           <Button
             onClick={onSubmit}
             disabled={
-              submitting ||
-              !form.name.trim() ||
-              !form.programCode.trim() ||
-              !form.category ||
-              !form.trackType
+              submitting || !form.name.trim() || !form.category || !form.trackType
             }
             className="font-black uppercase">
             {submitting ? "Saving..." : isEdit ? "Save Changes" : "Create Program"}

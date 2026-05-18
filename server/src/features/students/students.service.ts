@@ -358,9 +358,17 @@ export async function getStudentsSummary(query: {
           : { in: resolvedStatuses },
     },
     select: {
+      learnerType: true,
       learner: {
         select: {
           sex: true,
+          is4PsBeneficiary: true,
+          isBalikAral: true,
+        },
+      },
+      gradeLevel: {
+        select: {
+          name: true,
         },
       },
       programDetail: {
@@ -395,6 +403,9 @@ export async function getStudentsSummary(query: {
     {} as Record<ApplicantType, number>,
   );
 
+  const gradeBreakdown: Record<string, number> = {};
+  const specialDemographics = { fourPs: 0, balikAral: 0, transfereesIn: 0 };
+
   for (const application of applications) {
     const lifecycleOutcome = application.enrollmentRecord?.eosyStatus;
     if (lifecycleOutcome && INACTIVE_OUTCOME_SET.has(lifecycleOutcome)) {
@@ -423,6 +434,17 @@ export async function getStudentsSummary(query: {
     } else {
       programBreakdown["REGULAR"] += 1;
     }
+
+    // Grade level breakdown
+    const gradeName = application.gradeLevel?.name ?? "";
+    if (gradeName) {
+      gradeBreakdown[gradeName] = (gradeBreakdown[gradeName] ?? 0) + 1;
+    }
+
+    // Special demographics / DepEd flags
+    if (application.learner?.is4PsBeneficiary) specialDemographics.fourPs += 1;
+    if (application.learner?.isBalikAral) specialDemographics.balikAral += 1;
+    if (application.learnerType === "TRANSFEREE") specialDemographics.transfereesIn += 1;
   }
 
   const totalEnrolled =
@@ -432,5 +454,7 @@ export async function getStudentsSummary(query: {
     totalEnrolled,
     genderBreakdown,
     programBreakdown,
+    gradeBreakdown,
+    specialDemographics,
   };
 }

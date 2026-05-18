@@ -150,7 +150,7 @@ export function TeacherDesignationSheet({
     const acronym = SCP_ACRONYMS[section.programType] || section.programType;
 
     // Determine TLE explicitly only when the section uses the generated TLE naming pattern.
-    const hasTle = Boolean(section.tleProgramId && /\s-\s/.test(section.sectionName));
+    const hasTle = Boolean(section.tleProgramId);
     const typeLabel = hasTle
       ? (section.tleProgramName || "TLE")
       : section.programType !== "REGULAR"
