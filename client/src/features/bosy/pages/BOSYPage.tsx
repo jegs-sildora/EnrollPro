@@ -456,7 +456,7 @@ export default function BOSYPage() {
               {readinessLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               ) : (
-                <p className="text-2xl font-black tabular-nums">{value}</p>
+                <p className="text-2xl font-black">{value}</p>
               )}
             </CardContent>
           </Card>

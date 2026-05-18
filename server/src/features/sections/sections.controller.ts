@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import bcrypt from "bcryptjs";
+import ExcelJS from "exceljs";
 import {
   ApplicantType,
   EosyStatus,
@@ -1129,4 +1130,462 @@ export async function transferLearner(req: Request, res: Response) {
     const err = error as Error;
     res.status(500).json({ message: err.message });
   }
+}
+
+export async function exportSectionSf1(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const id = parseInt(String(req.params.id));
+
+  const [section, schoolSetting] = await Promise.all([
+    prisma.section.findUnique({
+      where: { id },
+      include: {
+        gradeLevel: true,
+        schoolYear: { select: { yearLabel: true } },
+        advisers: {
+          where: { status: SectionAdviserStatus.ACTIVE },
+          include: { teacher: true },
+        },
+        enrollmentRecords: {
+          where: activeEnrollmentFilter,
+          include: {
+            enrollmentApplication: {
+              include: {
+                learner: true,
+                addresses: true,
+                familyMembers: true,
+              },
+            },
+          },
+        },
+        enrollmentRecordsTle: {
+          where: activeEnrollmentFilter,
+          include: {
+            enrollmentApplication: {
+              include: {
+                learner: true,
+                addresses: true,
+                familyMembers: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+    prisma.schoolSetting.findFirst({
+      select: { schoolName: true },
+    }),
+  ]);
+
+  if (!section) {
+    res.status(404).json({ message: "Section not found" });
+    return;
+  }
+
+  const adviser = section.advisers[0]?.teacher ?? null;
+  const adviserName = adviser
+    ? `${adviser.lastName}, ${adviser.firstName}${adviser.middleName ? " " + adviser.middleName.charAt(0) + "." : ""}`
+    : "";
+
+  // First Friday of June of school year start year
+  const yr = parseInt(section.schoolYear.yearLabel.split("-")[0]);
+  const firstFridayJune = new Date(yr, 5, 1);
+  while (firstFridayJune.getDay() !== 5) {
+    firstFridayJune.setDate(firstFridayJune.getDate() + 1);
+  }
+
+  const records = section.tleProgramId
+    ? section.enrollmentRecordsTle
+    : section.enrollmentRecords;
+
+  type LearnerRow = {
+    lrn: string;
+    lastName: string;
+    firstName: string;
+    middleName: string;
+    sex: string;
+    birthdate: Date | null;
+    motherTongue: string;
+    ipGroup: string;
+    religion: string;
+    houseStreet: string;
+    barangay: string;
+    municipality: string;
+    province: string;
+    fatherName: string;
+    motherName: string;
+    guardianName: string;
+    guardianRelationship: string;
+    contactNumber: string;
+  };
+
+  const allLearners: LearnerRow[] = records.map((r) => {
+    const l = r.enrollmentApplication.learner;
+    const app = r.enrollmentApplication;
+    const address = app.addresses[0] ?? null;
+    const father = app.familyMembers.find((m) => m.relationship === "FATHER");
+    const mother = app.familyMembers.find((m) => m.relationship === "MOTHER");
+    const fmtMember = (
+      m:
+        | { lastName: string; firstName: string; middleName: string | null }
+        | undefined,
+    ) =>
+      m
+        ? `${m.lastName}, ${m.firstName}${m.middleName ? " " + m.middleName : ""}`
+        : "";
+    return {
+      lrn: l.lrn ?? "",
+      lastName: l.lastName,
+      firstName: l.firstName,
+      middleName: l.middleName ?? "",
+      sex: l.sex,
+      birthdate: l.birthdate,
+      motherTongue: l.motherTongue ?? "",
+      ipGroup: l.isIpCommunity ? (l.ipGroupName ?? "") : "",
+      religion: l.religion ?? "",
+      houseStreet: [address?.houseNoStreet, address?.sitio]
+        .filter(Boolean)
+        .join(" "),
+      barangay: address?.barangay ?? "",
+      municipality: address?.cityMunicipality ?? "",
+      province: address?.province ?? "",
+      fatherName: fmtMember(father),
+      motherName: fmtMember(mother),
+      guardianName: app.guardianName ?? "",
+      guardianRelationship: app.guardianRelationship ?? "",
+      contactNumber: app.contactNumber ?? "",
+    };
+  });
+
+  const males = allLearners
+    .filter((l) => l.sex === "MALE")
+    .sort(
+      (a, b) =>
+        a.lastName.localeCompare(b.lastName) ||
+        a.firstName.localeCompare(b.firstName),
+    );
+  const females = allLearners
+    .filter((l) => l.sex !== "MALE")
+    .sort(
+      (a, b) =>
+        a.lastName.localeCompare(b.lastName) ||
+        a.firstName.localeCompare(b.firstName),
+    );
+
+  const fmtDate = (d: Date | null): string => {
+    if (!d) return "";
+    const dt = new Date(d);
+    const mm = String(dt.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(dt.getUTCDate()).padStart(2, "0");
+    const yyyy = dt.getUTCFullYear();
+    return `${mm}/${dd}/${yyyy}`;
+  };
+
+  const computeAge = (birthdate: Date | null): string | number => {
+    if (!birthdate) return "";
+    const diff = firstFridayJune.getTime() - new Date(birthdate).getTime();
+    return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+  };
+
+  // ── Build workbook ────────────────────────────────────────────────────────
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("SF1");
+
+  // 21 columns A–U
+  ws.columns = [
+    { width: 14 }, // A  LRN
+    { width: 14 }, // B  NAME (merged B–D, primary width)
+    { width: 5 },  // C  NAME (part of merge)
+    { width: 3 },  // D  NAME (part of merge)
+    { width: 5 },  // E  Sex
+    { width: 13 }, // F  Birth Date
+    { width: 5 },  // G  Age
+    { width: 14 }, // H  Mother Tongue
+    { width: 14 }, // I  IP
+    { width: 12 }, // J  Religion
+    { width: 18 }, // K  House/Street
+    { width: 14 }, // L  Barangay
+    { width: 16 }, // M  Municipality
+    { width: 14 }, // N  Province
+    { width: 22 }, // O  Father
+    { width: 22 }, // P  Mother
+    { width: 18 }, // Q  Guardian Name
+    { width: 14 }, // R  Guardian Relationship
+    { width: 16 }, // S  Contact
+    { width: 14 }, // T  Learning Modality
+    { width: 10 }, // U  Remarks
+  ];
+
+  const thin = { style: "thin" as const };
+  const thinBorder = { top: thin, left: thin, bottom: thin, right: thin };
+
+  // ── Row 1: Title ──────────────────────────────────────────────────────────
+  ws.mergeCells("A1:U1");
+  const r1 = ws.getCell("A1");
+  r1.value = "School Form 1 (SF 1) School Register";
+  r1.font = { bold: true, size: 13 };
+  r1.alignment = { horizontal: "center", vertical: "middle" };
+  ws.getRow(1).height = 22;
+
+  // ── Row 2: Subtitle ───────────────────────────────────────────────────────
+  ws.mergeCells("A2:U2");
+  const r2 = ws.getCell("A2");
+  r2.value =
+    "(This replaces Form 1, Master List & STS Form 2-Family Background and Profile)";
+  r2.font = { italic: true, size: 9 };
+  r2.alignment = { horizontal: "center", vertical: "middle" };
+  ws.getRow(2).height = 14;
+
+  // ── Row 3: School ID / Division ───────────────────────────────────────────
+  ws.getCell("A3").value = "School ID:";
+  ws.getCell("A3").font = { bold: true, size: 9 };
+  ws.mergeCells("B3:E3");
+  ws.getCell("B3").border = { bottom: thin };
+  ws.getCell("F3").value = "Division:";
+  ws.getCell("F3").font = { bold: true, size: 9 };
+  ws.mergeCells("G3:U3");
+  ws.getCell("G3").border = { bottom: thin };
+  ws.getRow(3).height = 14;
+
+  // ── Row 4: School Name / School Year / Grade Level / Section ─────────────
+  ws.getCell("A4").value = "School Name:";
+  ws.getCell("A4").font = { bold: true, size: 9 };
+  ws.mergeCells("B4:G4");
+  ws.getCell("B4").value = schoolSetting?.schoolName ?? "";
+  ws.getCell("B4").font = { size: 9 };
+  ws.getCell("B4").border = { bottom: thin };
+  ws.getCell("H4").value = "School Year:";
+  ws.getCell("H4").font = { bold: true, size: 9 };
+  ws.mergeCells("I4:J4");
+  ws.getCell("I4").value = section.schoolYear.yearLabel;
+  ws.getCell("I4").font = { size: 9 };
+  ws.getCell("I4").border = { bottom: thin };
+  ws.getCell("K4").value = "Grade Level:";
+  ws.getCell("K4").font = { bold: true, size: 9 };
+  ws.mergeCells("L4:M4");
+  ws.getCell("L4").value = section.gradeLevel.name;
+  ws.getCell("L4").font = { size: 9 };
+  ws.getCell("L4").border = { bottom: thin };
+  ws.getCell("N4").value = "Section:";
+  ws.getCell("N4").font = { bold: true, size: 9 };
+  ws.mergeCells("O4:U4");
+  ws.getCell("O4").value = section.name;
+  ws.getCell("O4").font = { size: 9 };
+  ws.getCell("O4").border = { bottom: thin };
+  ws.getRow(4).height = 14;
+
+  // ── Rows 5–6: Two-row column headers ─────────────────────────────────────
+  const hdrStyle: Partial<ExcelJS.Style> = {
+    font: { bold: true, size: 9 },
+    alignment: { vertical: "middle", horizontal: "center", wrapText: true },
+    border: thinBorder,
+  };
+
+  // Non-grouped columns span both rows 5–6
+  const spanBoth: Array<[string, string, string]> = [
+    ["A5:A6", "A5", "LRN"],
+    ["B5:D6", "B5", "NAME\n(Last, First, Middle)"],
+    ["E5:E6", "E5", "Sex\n(M/F)"],
+    ["F5:F6", "F5", "BIRTH DATE\n(mm/dd/yyyy)"],
+    ["G5:G6", "G5", "AGE"],
+    ["H5:H6", "H5", "MOTHER\nTONGUE"],
+    ["I5:I6", "I5", "IP\n(Ethnic Group)"],
+    ["J5:J6", "J5", "RELIGION"],
+    ["S5:S6", "S5", "Contact Number\nof Parent or Guardian"],
+    ["T5:T6", "T5", "Learning\nModality"],
+    ["U5:U6", "U5", "REMARKS"],
+  ];
+  for (const [range, master, label] of spanBoth) {
+    ws.mergeCells(range);
+    const c = ws.getCell(master);
+    c.value = label;
+    c.style = hdrStyle as ExcelJS.Style;
+  }
+
+  // Group headers — row 5 only
+  ws.mergeCells("K5:N5");
+  ws.getCell("K5").value = "ADDRESS";
+  ws.getCell("K5").style = hdrStyle as ExcelJS.Style;
+  ws.mergeCells("O5:P5");
+  ws.getCell("O5").value = "PARENTS";
+  ws.getCell("O5").style = hdrStyle as ExcelJS.Style;
+  ws.mergeCells("Q5:R5");
+  ws.getCell("Q5").value = "GUARDIAN\n(if Not Parent)";
+  ws.getCell("Q5").style = hdrStyle as ExcelJS.Style;
+
+  // Individual sub-headers — row 6 only (for grouped columns)
+  const sub6: Array<[string, string]> = [
+    ["K6", "House #/Street/\nSitio/Purok"],
+    ["L6", "Barangay"],
+    ["M6", "Municipality/\nCity"],
+    ["N6", "Province"],
+    ["O6", "Father's Name\n(Last, First, Middle)"],
+    ["P6", "Mother's Maiden Name\n(Last, First, Middle)"],
+    ["Q6", "Name"],
+    ["R6", "Relationship"],
+  ];
+  for (const [addr, label] of sub6) {
+    const c = ws.getCell(addr);
+    c.value = label;
+    c.style = hdrStyle as ExcelJS.Style;
+  }
+  ws.getRow(5).height = 24;
+  ws.getRow(6).height = 36;
+
+  // ── Data rows ─────────────────────────────────────────────────────────────
+  let rowIdx = 7;
+
+  const maleFill = {
+    type: "pattern" as const,
+    pattern: "solid" as const,
+    fgColor: { argb: "FFDCE6F1" },
+  };
+  const femaleFill = {
+    type: "pattern" as const,
+    pattern: "solid" as const,
+    fgColor: { argb: "FFFFEBF0" },
+  };
+
+  const writeLearnerRow = (
+    l: LearnerRow,
+    fill: { type: "pattern"; pattern: "solid"; fgColor: { argb: string } },
+  ) => {
+    const name = `${l.lastName.toUpperCase()}, ${l.firstName.toUpperCase()}${l.middleName ? " " + l.middleName.toUpperCase() : ""}`;
+    const dc: Partial<ExcelJS.Style> = {
+      font: { size: 9 },
+      alignment: { vertical: "middle", horizontal: "left", wrapText: false },
+      border: thinBorder,
+      fill,
+    };
+    const cc: Partial<ExcelJS.Style> = {
+      ...dc,
+      alignment: { vertical: "middle", horizontal: "center", wrapText: false },
+    };
+    const nc: Partial<ExcelJS.Style> = {
+      ...dc,
+      alignment: { vertical: "middle", horizontal: "left", wrapText: true },
+    };
+
+    ws.mergeCells(`B${rowIdx}:D${rowIdx}`);
+
+    const setCv = (
+      col: string,
+      val: string | number,
+      style: Partial<ExcelJS.Style> = dc,
+    ) => {
+      const c = ws.getCell(`${col}${rowIdx}`);
+      c.value = val as ExcelJS.CellValue;
+      c.style = style as ExcelJS.Style;
+    };
+
+    setCv("A", l.lrn, cc);
+    setCv("B", name, nc);
+    setCv("E", l.sex === "MALE" ? "M" : "F", cc);
+    setCv("F", fmtDate(l.birthdate), cc);
+    setCv("G", computeAge(l.birthdate), cc);
+    setCv("H", l.motherTongue, dc);
+    setCv("I", l.ipGroup, dc);
+    setCv("J", l.religion, dc);
+    setCv("K", l.houseStreet, dc);
+    setCv("L", l.barangay, dc);
+    setCv("M", l.municipality, dc);
+    setCv("N", l.province, dc);
+    setCv("O", l.fatherName, dc);
+    setCv("P", l.motherName, dc);
+    setCv("Q", l.guardianName, dc);
+    setCv("R", l.guardianRelationship, dc);
+    setCv("S", l.contactNumber, dc);
+    setCv("T", "", cc);
+    setCv("U", "", cc);
+    ws.getRow(rowIdx).height = 16;
+    rowIdx++;
+  };
+
+  const writeTotalRow = (label: string, count: number) => {
+    ws.mergeCells(`A${rowIdx}:S${rowIdx}`);
+    const lc = ws.getCell(`A${rowIdx}`);
+    lc.value = label;
+    lc.style = {
+      font: { bold: true, size: 9 },
+      alignment: { horizontal: "right", vertical: "middle" },
+      border: thinBorder,
+    } as ExcelJS.Style;
+    const tc = ws.getCell(`T${rowIdx}`);
+    tc.value = count;
+    tc.style = {
+      font: { bold: true, size: 9 },
+      alignment: { horizontal: "center", vertical: "middle" },
+      border: thinBorder,
+    } as ExcelJS.Style;
+    ws.getCell(`U${rowIdx}`).style = {
+      border: thinBorder,
+    } as ExcelJS.Style;
+    ws.getRow(rowIdx).height = 14;
+    rowIdx++;
+  };
+
+  males.forEach((l) => writeLearnerRow(l, maleFill));
+  writeTotalRow("TOTAL MALE", males.length);
+
+  females.forEach((l) => writeLearnerRow(l, femaleFill));
+  writeTotalRow("TOTAL FEMALE", females.length);
+
+  writeTotalRow("COMBINED", allLearners.length);
+
+  // ── Legend ────────────────────────────────────────────────────────────────
+  rowIdx++; // blank row
+  ws.mergeCells(`A${rowIdx}:U${rowIdx}`);
+  ws.getCell(`A${rowIdx}`).value =
+    "T/O = Transferred Out, T/I = Transferred In, DRP = Dropped, " +
+    "LE = Late Enrollment, CCT = CCT Recipient, B/A = Balik Aral, " +
+    "SNED = Special Needs Education, ACL = Accelerated";
+  ws.getCell(`A${rowIdx}`).font = { size: 8, italic: true };
+  ws.getCell(`A${rowIdx}`).alignment = {
+    horizontal: "left",
+    vertical: "middle",
+    wrapText: true,
+  };
+  ws.getRow(rowIdx).height = 20;
+  rowIdx++;
+
+  // ── Signature block ───────────────────────────────────────────────────────
+  rowIdx++; // blank row
+  ws.getCell(`A${rowIdx}`).value = "Prepared by:";
+  ws.getCell(`A${rowIdx}`).font = { bold: true, size: 9 };
+  ws.mergeCells(`B${rowIdx}:G${rowIdx}`);
+  ws.getCell(`B${rowIdx}`).value = adviserName;
+  ws.getCell(`B${rowIdx}`).font = { size: 9 };
+  ws.getCell(`B${rowIdx}`).border = { bottom: thin };
+  ws.getCell(`H${rowIdx}`).value = "Certified Correct:";
+  ws.getCell(`H${rowIdx}`).font = { bold: true, size: 9 };
+  ws.mergeCells(`I${rowIdx}:N${rowIdx}`);
+  ws.getCell(`I${rowIdx}`).border = { bottom: thin };
+  ws.getRow(rowIdx).height = 16;
+  rowIdx++;
+
+  ws.getCell(`A${rowIdx}`).value = "BoSY Date:";
+  ws.getCell(`A${rowIdx}`).font = { bold: true, size: 9 };
+  ws.mergeCells(`B${rowIdx}:D${rowIdx}`);
+  ws.getCell(`B${rowIdx}`).border = { bottom: thin };
+  ws.getCell(`E${rowIdx}`).value = "EoSY Date:";
+  ws.getCell(`E${rowIdx}`).font = { bold: true, size: 9 };
+  ws.mergeCells(`F${rowIdx}:H${rowIdx}`);
+  ws.getCell(`F${rowIdx}`).border = { bottom: thin };
+  ws.getRow(rowIdx).height = 16;
+
+  // ── Stream response ───────────────────────────────────────────────────────
+  const safeSection = section.name.replace(/[^a-zA-Z0-9\-_ ]/g, "").trim();
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  );
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="SF1-${safeSection}.xlsx"`,
+  );
+
+  await wb.xlsx.write(res);
+  res.end();
 }

@@ -362,9 +362,9 @@ function NavGroup({
         />
       </SidebarMenuButton>
       {open && (
-        <div className="pl-6 mt-0.5 flex flex-col gap-0.5 group-data-[collapsible=icon]:hidden">
+        <ul className="pl-6 mt-0.5 flex flex-col gap-0.5 group-data-[collapsible=icon]:hidden list-none p-0 m-0">
           {children}
-        </div>
+        </ul>
       )}
     </SidebarMenuItem>
   );

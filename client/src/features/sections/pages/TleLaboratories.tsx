@@ -12,6 +12,7 @@ import { Skeleton } from "@/shared/ui/skeleton"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs"
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal"
 import { SectionFormSheet } from "../components/SectionFormSheet"
+import SectionRosterModal from "../components/SectionRosterModal"
 import type { SectionFormState, SectionItem, TeacherOption } from "../types"
 import { DEFAULT_MAX_CAPACITY_REGULAR } from "@enrollpro/shared/constants"
 
@@ -58,19 +59,26 @@ function TleSectionCard({
   category,
   onEdit,
   onDelete,
+  onViewRoster,
   canMutate,
 }: {
   section: SectionItem
   category: TLECategory | null
   onEdit: () => void
   onDelete: () => void
+  onViewRoster: () => void
   canMutate: boolean
 }) {
   const pct = section.fillPercent ?? Math.round((section.enrolledCount / section.maxCapacity) * 100)
   const badgeLabel = category ? TLE_CATEGORY_BADGE[category] : null
 
   return (
-    <div className="rounded-lg border bg-card p-4 space-y-3 hover:border-primary/40 transition-colors">
+    <div
+      className="rounded-lg border bg-card p-4 space-y-3 hover:border-primary/40 transition-colors cursor-pointer"
+      onClick={onViewRoster}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onViewRoster() }}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 space-y-1">
           <p className="font-black uppercase text-sm text-foreground truncate">{section.name}</p>
@@ -82,14 +90,14 @@ function TleSectionCard({
         </div>
         {canMutate && (
           <div className="flex gap-1 shrink-0">
-            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs font-bold" onClick={onEdit}>
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs font-bold" onClick={(e) => { e.stopPropagation(); onEdit() }}>
               Edit
             </Button>
             <Button
               size="sm"
               variant="ghost"
               className="h-7 px-2 text-xs font-bold text-destructive hover:text-destructive"
-              onClick={onDelete}>
+              onClick={(e) => { e.stopPropagation(); onDelete() }}>
               Remove
             </Button>
           </div>
@@ -165,6 +173,9 @@ export default function TleLaboratories() {
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [deleteName, setDeleteName] = useState("")
   const [deleting, setDeleting] = useState(false)
+
+  // Roster modal state
+  const [rosterSectionId, setRosterSectionId] = useState<number | null>(null)
 
   // ── Data fetching ───────────────────────────────────────────────────────────
 
@@ -495,6 +506,7 @@ export default function TleLaboratories() {
                               setDeleteId(s.id)
                               setDeleteName(s.name)
                             }}
+                            onViewRoster={() => setRosterSectionId(s.id)}
                             canMutate={canMutate}
                           />
                         ))}
@@ -565,6 +577,12 @@ export default function TleLaboratories() {
         confirmText={deleting ? "Removing..." : "Remove Section"}
         onConfirm={handleDelete}
         variant="danger"
+      />
+
+      <SectionRosterModal
+        sectionId={rosterSectionId}
+        open={rosterSectionId !== null}
+        onOpenChange={(open) => { if (!open) setRosterSectionId(null) }}
       />
     </div>
   )

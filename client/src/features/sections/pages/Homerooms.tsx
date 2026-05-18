@@ -12,6 +12,7 @@ import { Skeleton } from "@/shared/ui/skeleton"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs"
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal"
 import { SectionFormSheet } from "../components/SectionFormSheet"
+import SectionRosterModal from "../components/SectionRosterModal"
 import type { SectionFormState, SectionItem, TeacherOption } from "../types"
 import {
   DEFAULT_MAX_CAPACITY_REGULAR,
@@ -39,17 +40,24 @@ function SectionCard({
   section,
   onEdit,
   onDelete,
+  onViewRoster,
   canMutate,
 }: {
   section: SectionItem
   onEdit: () => void
   onDelete: () => void
+  onViewRoster: () => void
   canMutate: boolean
 }) {
   const pct = section.fillPercent ?? Math.round((section.enrolledCount / section.maxCapacity) * 100)
 
   return (
-    <div className="rounded-lg border bg-card p-4 space-y-3 hover:border-primary/40 transition-colors">
+    <div
+      className="rounded-lg border bg-card p-4 space-y-3 hover:border-primary/40 transition-colors cursor-pointer"
+      onClick={onViewRoster}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onViewRoster() }}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="font-black uppercase text-sm text-foreground truncate">{section.name}</p>
@@ -61,10 +69,10 @@ function SectionCard({
         </div>
         {canMutate && (
           <div className="flex gap-1 shrink-0">
-            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs font-bold" onClick={onEdit}>
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs font-bold" onClick={(e) => { e.stopPropagation(); onEdit() }}>
               Edit
             </Button>
-            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs font-bold text-destructive hover:text-destructive" onClick={onDelete}>
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs font-bold text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); onDelete() }}>
               Remove
             </Button>
           </div>
@@ -139,6 +147,9 @@ export default function Homerooms() {
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [deleteName, setDeleteName] = useState("")
   const [deleting, setDeleting] = useState(false)
+
+  // Roster modal state
+  const [rosterSectionId, setRosterSectionId] = useState<number | null>(null)
 
   const fetchData = useCallback(async () => {
     if (!ayId) {
@@ -380,6 +391,7 @@ export default function Homerooms() {
                           setDeleteId(s.id)
                           setDeleteName(s.name)
                         }}
+                        onViewRoster={() => setRosterSectionId(s.id)}
                         canMutate={canMutate}
                       />
                     ))}
@@ -404,6 +416,7 @@ export default function Homerooms() {
                         setDeleteId(s.id)
                         setDeleteName(s.name)
                       }}
+                      onViewRoster={() => setRosterSectionId(s.id)}
                       canMutate={canMutate}
                     />
                   ))}
@@ -464,6 +477,12 @@ export default function Homerooms() {
         confirmText={deleting ? "Removing..." : "Remove Section"}
         onConfirm={handleDelete}
         variant="danger"
+      />
+
+      <SectionRosterModal
+        sectionId={rosterSectionId}
+        open={rosterSectionId !== null}
+        onOpenChange={(open) => { if (!open) setRosterSectionId(null) }}
       />
     </div>
   )

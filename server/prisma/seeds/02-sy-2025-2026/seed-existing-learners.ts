@@ -17,6 +17,19 @@ import * as bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
+// --- TLE section overflow cache (cleared at the start of each main() invocation) ---
+type TleSectionCacheEntry = {
+  id: number;
+  name: string;
+  maxCapacity: number;
+  sortOrder: number;
+  sectionRank: number | null;
+  programType: ApplicantType;
+};
+
+const tleSectionCache = new Map<string, TleSectionCacheEntry[]>();
+const tleSectionCounts = new Map<number, number>(); // section id → current enrollment count
+
 const defaultPinHash = bcrypt.hashSync("DepEd2026!", 10);
 
 function toUtcNoon(year: number, month: number, day: number): Date {
@@ -337,17 +350,103 @@ function resolveTleProgramId(
   return tlePrograms[programIndex % tlePrograms.length]?.id ?? null;
 }
 
-async function findTleSection(
+/**
+ * Returns the id of the first TLE lab section for this (schoolYear, gradeLevel,
+ * tleProgram) triple that still has capacity. If all existing sections are full,
+ * creates the next overflow section (original → B → C → … Z) and returns its id.
+ * Counts are maintained in module-level Maps so the DB is only queried once per
+ * triple per main() invocation; reset tleSectionCache/tleSectionCounts in main().
+ */
+async function resolveOrCreateTleSection(
   schoolYearId: number,
   gradeLevelId: number,
   tleProgramId: number | null,
 ): Promise<number | null> {
   if (!tleProgramId) return null;
-  const sec = await prisma.section.findFirst({
-    where: { schoolYearId, gradeLevelId, tleProgramId },
-    select: { id: true },
+
+  const key = `${schoolYearId}:${gradeLevelId}:${tleProgramId}`;
+
+  // --- Populate cache on first access for this triple ---
+  if (!tleSectionCache.has(key)) {
+    const sections = await prisma.section.findMany({
+      where: { schoolYearId, gradeLevelId, tleProgramId },
+      select: {
+        id: true,
+        name: true,
+        maxCapacity: true,
+        sortOrder: true,
+        sectionRank: true,
+        programType: true,
+      },
+      orderBy: { name: "asc" },
+    });
+    tleSectionCache.set(key, sections);
+
+    for (const sec of sections) {
+      if (!tleSectionCounts.has(sec.id)) {
+        const count = await prisma.enrollmentRecord.count({
+          where: {
+            tleSectionId: sec.id,
+            enrollmentApplication: {
+              status: {
+                in: ["ENROLLED", "OFFICIALLY_ENROLLED", "TEMPORARILY_ENROLLED"],
+              },
+            },
+          },
+        });
+        tleSectionCounts.set(sec.id, count);
+      }
+    }
+  }
+
+  const sections = tleSectionCache.get(key)!;
+
+  // --- Return the first section that still has room ---
+  for (const sec of sections) {
+    const count = tleSectionCounts.get(sec.id) ?? 0;
+    if (count < sec.maxCapacity) {
+      tleSectionCounts.set(sec.id, count + 1);
+      return sec.id;
+    }
+  }
+
+  // --- All sections full: create the next overflow section ---
+  const original = sections[0];
+  if (!original) return null;
+
+  // sections.length == 1 (just the original "A") → next is "B"; 2 → "C"; etc.
+  const nextLetter = String.fromCharCode("A".charCodeAt(0) + sections.length);
+  const newName = `${original.name} - ${nextLetter}`;
+
+  const newSection = await prisma.section.upsert({
+    where: {
+      uq_sections_name_grade_sy: { name: newName, gradeLevelId, schoolYearId },
+    },
+    update: {},
+    create: {
+      name: newName,
+      schoolYearId,
+      gradeLevelId,
+      tleProgramId,
+      programType: original.programType,
+      maxCapacity: original.maxCapacity,
+      sortOrder: original.sortOrder,
+      sectionRank: original.sectionRank,
+    },
+    select: {
+      id: true,
+      name: true,
+      maxCapacity: true,
+      sortOrder: true,
+      sectionRank: true,
+      programType: true,
+    },
   });
-  return sec?.id ?? null;
+
+  sections.push(newSection);
+  tleSectionCounts.set(newSection.id, 1);
+  console.log(`  + Created overflow TLE section: ${newName} (maxCapacity: ${newSection.maxCapacity})`);
+  return newSection.id;
 }
 
 async function ensureActiveTlePrograms(): Promise<SeedTleProgram[]> {
@@ -390,6 +489,10 @@ async function ensureActiveTlePrograms(): Promise<SeedTleProgram[]> {
 }
 
 async function main() {
+  // Reset TLE section overflow cache so each invocation starts from live DB counts.
+  tleSectionCache.clear();
+  tleSectionCounts.clear();
+
   const targetYearLabel = process.env.SEED_TARGET_YEAR_LABEL ?? "2025-2026";
   const expectedTotalEnrolled = Number(
     process.env.SEED_EXPECTED_TOTAL_ENROLLED ?? "2890",
@@ -607,7 +710,7 @@ async function seedHistoricalAcademicHistory(
       },
     });
     // Upsert enrollment record for this application
-    const historicalTleSectionId = await findTleSection(syId, gradeLevelId, historicalTleProgramId);
+    const historicalTleSectionId = await resolveOrCreateTleSection(syId, gradeLevelId, historicalTleProgramId);
     await prisma.enrollmentRecord.upsert({
       where: { enrollmentApplicationId: application.id },
       update: {
@@ -651,7 +754,6 @@ async function seedSectionBatch(
   const gradeValue = parseInt(gradeLevel.name.split(" ")[1]);
   const program: ApplicantType = section.programType;
   const sectionTleProgramId = resolveTleProgramId(section, gradeValue, tlePrograms);
-  const tleSectionId = await findTleSection(targetYear.id, gradeLevel.id, sectionTleProgramId);
   // True when we are filling a TLE laboratory section (G9/G10 REGULAR)
   const isTleSectioned = sectionTleProgramId !== null;
 
@@ -805,6 +907,13 @@ async function seedSectionBatch(
         },
       },
     });
+
+    // Resolve per-learner: overflows into "- B", "- C" … sections automatically.
+    const tleSectionId = await resolveOrCreateTleSection(
+      targetYear.id,
+      gradeLevel.id,
+      sectionTleProgramId,
+    );
 
     await prisma.enrollmentRecord.upsert({
       where: { enrollmentApplicationId: application.id },

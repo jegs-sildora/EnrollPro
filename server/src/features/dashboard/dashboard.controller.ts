@@ -63,7 +63,7 @@ export async function getStats(req: Request, res: Response): Promise<void> {
       }),
       prisma.enrollmentApplication.count({
         where: {
-          status: "ENROLLED",
+          status: { in: ["ENROLLED", "OFFICIALLY_ENROLLED", "TEMPORARILY_ENROLLED"] },
           schoolYearId,
         },
       }),
@@ -128,14 +128,14 @@ export async function getStats(req: Request, res: Response): Promise<void> {
             select: {
               enrollmentApplications: {
                 where: {
-                  status: "ENROLLED",
+                  status: { in: ["ENROLLED", "OFFICIALLY_ENROLLED", "TEMPORARILY_ENROLLED"] },
                   schoolYearId,
                 },
               },
             },
           },
           sections: {
-            where: { schoolYearId },
+            where: { schoolYearId, tleProgramId: null },
             select: {
               id: true,
               name: true,

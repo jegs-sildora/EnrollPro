@@ -6,8 +6,6 @@ import {
   Users,
   CheckCircle,
   AlertTriangle,
-  UserCog,
-  Activity,
   FileText,
   FileCheck,
   TrendingUp,
@@ -242,25 +240,36 @@ export default function Dashboard() {
     },
   ];
 
-  const adminCards = [
-    {
-      title: "Active Users",
-      value: adminStats?.activeUsers ?? 0,
-      description: `${(adminStats?.usersByRole["HEAD_REGISTRAR"] ?? 0) + (adminStats?.usersByRole["REGISTRAR"] ?? 0)} Registrars | ${adminStats?.usersByRole["TEACHER"] || 0} Teachers`,
-      icon: UserCog,
-      color: "text-purple-600",
-      bg: "bg-purple-50",
-    },
-    {
-      title: "System Status",
-      value: adminStats?.systemStatus === "OK" ? "Healthy" : "Error",
-      description: "Database & Core Services",
-      icon: Activity,
-      color:
-        adminStats?.systemStatus === "OK" ? "text-green-600" : "text-red-600",
-      bg: adminStats?.systemStatus === "OK" ? "bg-green-50" : "bg-red-50",
-    },
-  ];
+  // System Analytics — admin footer row
+  const registrarCount =
+    (adminStats?.usersByRole?.["HEAD_REGISTRAR"] ?? 0) +
+    (adminStats?.usersByRole?.["REGISTRAR"] ?? 0);
+  const teacherCount = adminStats?.usersByRole?.["TEACHER"] ?? 0;
+  const totalPersonnel = registrarCount + teacherCount;
+
+  // Enrollment conversion: enrolled ÷ (enrolled + pending review)
+  const totalApplicants = enrollmentCurrent + pendingReviewCount;
+  const conversionRate =
+    totalApplicants > 0
+      ? Math.round((enrollmentCurrent / totalApplicants) * 100)
+      : 0;
+  const conversionLabel =
+    conversionRate >= 80
+      ? "High Efficiency"
+      : conversionRate >= 50
+        ? "Moderate"
+        : "Review Needed";
+
+  // Schoolwide average fill rate across all grade levels
+  const glBreakdown = stats?.gradeLevelBreakdown ?? [];
+  const totalForecastAll = glBreakdown.reduce(
+    (s, g) => s + (g.forecastedTarget ?? g.target),
+    0,
+  );
+  const avgFillPct =
+    totalForecastAll > 0
+      ? clampProgress(Math.round((enrollmentCurrent / totalForecastAll) * 100))
+      : 0;
 
   return (
     <div className="space-y-6">
@@ -293,16 +302,16 @@ export default function Dashboard() {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-slate-100 border-2 border-slate-300 text-slate-700 px-4 py-3 rounded-xl flex items-center justify-between">
+          className="bg-white border-2 border-slate-300 text-foreground px-4 py-3 rounded-xl flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Archive className="h-5 w-5 text-slate-500" />
+            <Archive className="h-5 w-5 text-foreground" />
             <p className="text-sm font-black uppercase">
               Viewing Historical Data &middot; S.Y. {ayLabel}
             </p>
           </div>
           <Badge
             variant="outline"
-            className="border-slate-400 text-slate-600 font-black uppercase">
+            className="border-slate-400 text-foreground font-black uppercase">
             {viewingStatus ?? "ARCHIVED"}
           </Badge>
         </motion.div>
@@ -422,7 +431,7 @@ export default function Dashboard() {
                         const prev = stats?.previousYearTotal ?? null;
                         if (!prev || prev === 0) {
                           return (
-                            <p className="text-xs font-bold text-slate-400 uppercase">
+                            <p className="text-xs font-bold text-foreground uppercase">
                               No prior SY data
                             </p>
                           );
@@ -489,14 +498,14 @@ export default function Dashboard() {
                           key={gl.id}
                           className="space-y-3">
                           <div className="flex justify-between items-end">
-                            <span className="text-xs font-black uppercase text-slate-700">
+                            <span className="text-xs font-black uppercase text-foreground">
                               {gl.name}
                             </span>
                             <span className="text-xs font-black text-emerald-700 tabular-nums">
                               {formatMetric(gl.current)} / {formatMetric(forecast)} Forecasted
                             </span>
                           </div>
-                          <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden shadow-inner border border-slate-200/50">
+                          <div className="h-2.5 w-full rounded-full bg-white overflow-hidden shadow-inner border border-slate-200/50">
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${fillPct}%` }}
@@ -508,7 +517,7 @@ export default function Dashboard() {
                               className="h-full rounded-full bg-emerald-500"
                             />
                           </div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">
+                          <p className="text-[10px] font-bold text-foreground uppercase">
                             Forecast Fill Rate — {fillPct.toFixed(0)}%
                           </p>
                         </div>
@@ -517,7 +526,7 @@ export default function Dashboard() {
                       {(!stats?.gradeLevelBreakdown ||
                         stats.gradeLevelBreakdown.length === 0) && (
                         <div className="col-span-full py-8 text-center">
-                          <p className="text-xs font-bold text-slate-400 uppercase ">
+                          <p className="text-xs font-bold text-foreground uppercase ">
                             No Grade Level Data Available
                           </p>
                         </div>
@@ -547,7 +556,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex gap-4">
                       <div className="text-right">
-                        <p className="text-xs font-bold text-slate-400 uppercase">
+                        <p className="text-xs font-bold text-foreground uppercase">
                           Enrolled
                         </p>
                         <p className="text-lg font-black text-emerald-600">
@@ -555,7 +564,7 @@ export default function Dashboard() {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs font-bold text-slate-400 uppercase">
+                        <p className="text-xs font-bold text-foreground uppercase">
                           Utilization
                         </p>
                         <p className="text-lg font-black text-emerald-600">
@@ -576,10 +585,10 @@ export default function Dashboard() {
         className="space-y-4"
         aria-label="Action queues">
         <div className="flex items-center gap-2">
-          <h2 className="text-xs font-black uppercase text-slate-500/80">
+          <h2 className="text-xs font-black uppercase text-foreground">
             Action Queues
           </h2>
-          <div className="h-px flex-1 bg-slate-100"></div>
+          <div className="h-px flex-1 bg-white"></div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
@@ -601,12 +610,12 @@ export default function Dashboard() {
                 <div
                   className={cn(
                     "rounded-lg p-2",
-                    pendingReviewAlert ? "bg-amber-100" : "bg-slate-100",
+                    pendingReviewAlert ? "bg-amber-100" : "bg-white",
                   )}>
                   <ClipboardList
                     className={cn(
                       "h-4 w-4",
-                      pendingReviewAlert ? "text-amber-700" : "text-slate-600",
+                      pendingReviewAlert ? "text-amber-700" : "text-foreground",
                     )}
                   />
                 </div>
@@ -653,57 +662,41 @@ export default function Dashboard() {
           {/* Cards 2 & 3 — hidden in EARLY mode (sectioning hasn't started) */}
           {effectiveFocus !== "EARLY" && (
             <>
-              {/* Card 2 — Overcrowded Sections */}
+              {/* Card 2 — Section Capacity Index */}
               {(() => {
-                // A section is overcrowded only when it STRICTLY exceeds its
-                // maximum capacity (currentEnrolled > maxCapacity).
-                // Sections sitting exactly at capacity (e.g. 35/35) are NOT overcrowded.
-                const overcrowded =
-                  stats?.capacityAlerts?.filter((a) =>
-                    a.currentEnrolled !== undefined && a.maxCapacity !== undefined
-                      ? a.currentEnrolled > a.maxCapacity
-                      : a.severity === "CRITICAL",
-                  ) ?? [];
-                const hasOvercrowded = overcrowded.length > 0;
-
-                const overcrowdedMessage = (alert: NonNullable<Stats["capacityAlerts"]>[number]) => {
-                  if (
-                    alert.currentEnrolled !== undefined &&
-                    alert.maxCapacity !== undefined
-                  ) {
-                    const label =
-                      alert.gradeLevel && alert.sectionName
-                        ? `${alert.gradeLevel} '${alert.sectionName}'`
-                        : alert.sectionName ?? "Section";
-                    return `${label} is OVERCROWDED (${alert.currentEnrolled}/${alert.maxCapacity})`;
-                  }
-                  return alert.message;
-                };
+                const sectionsAtMax = stats?.sectionsAtCapacity ?? 0;
+                const warningCount =
+                  stats?.capacityAlerts?.filter(
+                    (a) => a.severity === "WARNING",
+                  ).length ?? 0;
+                const hasCapacityPressure = sectionsAtMax > 0;
 
                 return (
                   <Card
                     className={cn(
                       "shadow-sm transition-all hover:shadow-md border-2",
-                      hasOvercrowded
-                        ? "border-destructive bg-destructive/5"
+                      hasCapacityPressure
+                        ? "border-amber-300 bg-amber-50/50"
                         : "border-slate-200 bg-white",
                     )}>
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-xs font-black text-foreground">
-                          Overcrowded Sections
+                          Section Capacity Index
                         </CardTitle>
                         <div
                           className={cn(
                             "rounded-lg p-2",
-                            hasOvercrowded ? "bg-red-100" : "bg-slate-100",
+                            hasCapacityPressure
+                              ? "bg-amber-100"
+                              : "bg-white",
                           )}>
                           <AlertTriangle
                             className={cn(
                               "h-4 w-4",
-                              hasOvercrowded
-                                ? "text-destructive"
-                                : "text-slate-600",
+                              hasCapacityPressure
+                                ? "text-amber-600"
+                                : "text-foreground",
                             )}
                           />
                         </div>
@@ -718,41 +711,42 @@ export default function Dashboard() {
                         </>
                       ) : (
                         <>
-                          {/* Big number = count of sections strictly over capacity */}
                           <div
                             className={cn(
                               "text-5xl font-black tabular-nums",
-                              hasOvercrowded && "text-destructive",
+                              hasCapacityPressure
+                                ? "text-amber-600"
+                                : "text-foreground",
                             )}>
-                            {overcrowded.length}
+                            {avgFillPct}%
                           </div>
-                          <div className="text-xs font-bold min-h-[2rem] space-y-1.5">
-                            {hasOvercrowded ? (
-                              overcrowded.slice(0, 3).map((alert, i) => (
-                                <p
-                                  key={i}
-                                  className="flex items-start gap-2 leading-snug text-destructive font-black">
-                                  <span className="h-1.5 w-1.5 rounded-full mt-1 shrink-0 bg-destructive animate-pulse" />
-                                  {overcrowdedMessage(alert)}
-                                </p>
-                              ))
+                          <p className="text-xs font-bold min-h-[2rem] leading-relaxed">
+                            {hasCapacityPressure ? (
+                              <span className="text-amber-700">
+                                {sectionsAtMax} section
+                                {sectionsAtMax !== 1 ? "s" : ""} at maximum
+                                capacity.
+                                {warningCount > 0
+                                  ? ` ${warningCount} approaching limit.`
+                                  : ""}
+                              </span>
                             ) : (
-                              <p className="flex items-center gap-1.5 text-emerald-600">
+                              <span className="flex items-center gap-1.5 text-emerald-600">
                                 <CheckCircle className="h-3.5 w-3.5 shrink-0" />
-                                All sections within physical capacity.
-                              </p>
+                                All sections have available seats.
+                              </span>
                             )}
-                          </div>
+                          </p>
                         </>
                       )}
 
-                      {hasOvercrowded && (
+                      {hasCapacityPressure && (
                         <Button
                           type="button"
                           className="w-full font-black uppercase text-xs h-10"
-                          variant="destructive"
-                          onClick={() => navigate("/sections")}>
-                          Resolve Overcrowding
+                          variant="outline"
+                          onClick={() => navigate("/sections/homerooms")}>
+                          Manage Section Capacity
                         </Button>
                       )}
                     </CardContent>
@@ -780,14 +774,14 @@ export default function Dashboard() {
                         <div
                           className={cn(
                             "rounded-lg p-2",
-                            hasUnsectioned ? "bg-amber-100" : "bg-slate-100",
+                            hasUnsectioned ? "bg-amber-100" : "bg-white",
                           )}>
                           <Users
                             className={cn(
                               "h-4 w-4",
                               hasUnsectioned
                                 ? "text-amber-700"
-                                : "text-slate-600",
+                                : "text-foreground",
                             )}
                           />
                         </div>
@@ -905,7 +899,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex gap-4">
                       <div className="text-right">
-                        <p className="text-xs font-bold text-slate-400 uppercase">
+                        <p className="text-xs font-bold text-foreground uppercase">
                           Verified
                         </p>
                         <p className="text-lg font-black text-amber-600">
@@ -915,7 +909,7 @@ export default function Dashboard() {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs font-bold text-slate-400 uppercase">
+                        <p className="text-xs font-bold text-foreground uppercase">
                           Ready for Sectioning
                         </p>
                         <p className="text-lg font-black text-blue-600">
@@ -933,48 +927,175 @@ export default function Dashboard() {
         </AnimatePresence>
       </section>
 
-      {/* ── System Oversight (Bottom Priority for Admin) ── */}
+      {/* ── System Analytics (Admin Footer) ── */}
       {isAdmin && (
         <section
           className="space-y-4 pt-8"
-          aria-label="System oversight">
+          aria-label="System analytics">
           <div className="flex items-center gap-2">
-            <h2 className="text-xs font-black uppercase  text-slate-400">
-              System Oversight
+            <h2 className="text-xs font-black uppercase text-foreground">
+              System Analytics
             </h2>
-            <div className="h-px flex-1 bg-slate-100"></div>
+            <div className="h-px flex-1 bg-white"></div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {adminCards.map((card) => (
-              <Card
-                key={card.title}
-                className="bg-slate-50/50 border-slate-200 shadow-none hover:bg-white transition-colors">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                  <CardTitle className="text-xs font-black  text-slate-500">
-                    {card.title}
-                  </CardTitle>
-                  <card.icon className={cn("h-3.5 w-3.5", card.color)} />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-xl font-black tabular-nums">
-                    {card.value}
-                  </div>
-                  <p className="text-xs font-bold text-slate-400 mt-1 uppercase er">
-                    {card.description}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {/* ── Card 1: Enrollment Conversion Index ── */}
+            <Card className="bg-white border-slate-200 shadow-none transition-colors">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-xs font-black uppercase text-foreground">
+                  Conversion Index
+                </CardTitle>
+                <TrendingUp className="h-3.5 w-3.5 text-foreground" />
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {showSkeleton ? (
+                  <Skeleton className="h-8 w-20" />
+                ) : (
+                  <>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-black">
+                        {conversionRate}%
+                      </span>
+                      <span
+                        className={cn(
+                          "text-xs font-bold uppercase",
+                          conversionRate >= 80
+                            ? "text-emerald-600"
+                            : conversionRate >= 50
+                              ? "text-amber-600"
+                              : "text-red-600",
+                        )}>
+                        {conversionLabel}
+                      </span>
+                    </div>
+                    <p className="text-xs font-bold text-foreground uppercase">
+                      {formatMetric(enrollmentCurrent)} enrolled
+                      &nbsp;&middot;&nbsp;
+                      {formatMetric(pendingReviewCount)} in queue
+                    </p>
+                    <p className="text-xs text-foreground border-t border-slate-100 pt-2">
+                      Applications converted to active enrollment records.
+                    </p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
 
-            <Card className="md:col-span-2 bg-slate-50/50 border-slate-200 shadow-none border-dashed">
-              <CardContent className="h-full flex items-center justify-center py-4">
-                <div className="flex items-center gap-3 text-slate-400">
-                  <Activity className="h-4 w-4 opacity-50" />
-                  <span className="text-xs font-black ">
-                    Administrator Telemetry Active
-                  </span>
-                </div>
+            {/* ── Card 2: Active ERP Personnel ── */}
+            <Card className="bg-white border-slate-200 shadow-none transition-colors">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-xs font-black uppercase text-foreground">
+                  Active Personnel
+                </CardTitle>
+                <Users className="h-3.5 w-3.5 text-foreground" />
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {showSkeleton ? (
+                  <Skeleton className="h-8 w-16" />
+                ) : (
+                  <>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-2xl font-black">
+                        {formatMetric(totalPersonnel)}
+                      </span>
+                      <span className="text-xs font-bold text-foreground uppercase">
+                        ERP accounts
+                      </span>
+                    </div>
+                    <p className="text-xs font-bold text-foreground uppercase">
+                      {registrarCount} Registrar
+                      {registrarCount !== 1 ? "s" : ""}
+                      &nbsp;&middot;&nbsp;
+                      {teacherCount} Teachers
+                    </p>
+                    <div className="flex items-center gap-1.5 border-t border-slate-100 pt-2">
+                      <span
+                        className={cn(
+                          "h-1.5 w-1.5 rounded-full shrink-0",
+                          adminStats?.systemStatus === "OK"
+                            ? "bg-emerald-500"
+                            : "bg-red-500",
+                        )}
+                      />
+                      <span className="text-xs text-foreground">
+                        Database{" "}
+                        {adminStats?.systemStatus === "OK"
+                          ? "nominal"
+                          : "degraded"}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* ── Card 3: Enrollment Pipeline Snapshot ── */}
+            <Card className="bg-white border-slate-200 shadow-none transition-colors">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-xs font-black uppercase text-foreground">
+                  Enrollment Pipeline
+                </CardTitle>
+                <ClipboardList className="h-3.5 w-3.5 text-foreground" />
+              </CardHeader>
+              <CardContent>
+                {showSkeleton ? (
+                  <div className="space-y-3 pt-1">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="h-5 w-full" />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-3 pt-1">
+                    {([
+                      {
+                        label: "Pre-Registered",
+                        value: stats?.totalPreRegistered ?? 0,
+                        bar: "bg-amber-400",
+                      },
+                      {
+                        label: "Pending Review",
+                        value: pendingReviewCount,
+                        bar: "bg-blue-400",
+                      },
+                      {
+                        label: "Enrolled",
+                        value: enrollmentCurrent,
+                        bar: "bg-emerald-500",
+                      },
+                    ] as const).map(({ label, value, bar }) => {
+                      const peak = Math.max(
+                        stats?.totalPreRegistered ?? 0,
+                        pendingReviewCount,
+                        enrollmentCurrent,
+                        1,
+                      );
+                      return (
+                        <div key={label} className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-foreground uppercase">
+                              {label}
+                            </span>
+                            <span className="text-xs font-black tabular-nums text-foreground">
+                              {formatMetric(value)}
+                            </span>
+                          </div>
+                          <div className="h-1.5 w-full rounded-full bg-white overflow-hidden">
+                            <div
+                              className={cn(
+                                "h-full rounded-full transition-all",
+                                bar,
+                              )}
+                              style={{
+                                width: `${Math.round((value / peak) * 100)}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -984,7 +1105,7 @@ export default function Dashboard() {
       {/* ── Visual Overlap / Analytics Placeholder (Cleaned up) ── */}
       {!isAdmin && (
         <div className="pt-8 border-t border-slate-50">
-          <p className="text-center text-xs font-black text-slate-300 uppercase ">
+          <p className="text-center text-xs font-black text-foreground uppercase ">
             EnrollPro Operational Command Center • {new Date().getFullYear()}
           </p>
         </div>

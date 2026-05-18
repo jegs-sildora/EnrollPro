@@ -6,6 +6,7 @@ import {
   updateSection,
   deleteSection,
   getSectionRoster,
+  exportSectionSf1,
   getUnsectionedPool,
   inlineSlotLearner,
   getBatchPrerequisites,
@@ -103,6 +104,13 @@ router.get(
 	authenticate,
 	authorize('HEAD_REGISTRAR', 'SYSTEM_ADMIN'),
 	getSectionRoster,
+);
+
+router.get(
+	'/:id/roster/sf1',
+	authenticate,
+	authorize('HEAD_REGISTRAR', 'SYSTEM_ADMIN'),
+	exportSectionSf1,
 );
 
 router.get(

@@ -225,7 +225,7 @@ export function BatchSectioningParamsModal({
               <div className="flex items-center gap-3 p-4 rounded-xl bg-primary/5 border border-primary/20">
                 <Users className="h-8 w-8 text-primary shrink-0" />
                 <div>
-                  <p className="text-2xl font-black tabular-nums text-primary leading-none">
+                  <p className="text-2xl font-black text-primary leading-none">
                     {prereqs?.unassignedCount ?? "–"}
                   </p>
                   <p className="text-xs font-black uppercase  text-foreground mt-0.5">
