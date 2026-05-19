@@ -619,7 +619,9 @@ async function seedGradeLabSections(opts: {
       occupancies[targetIdx]++;
       assigned++;
     }
-    console.log(`    Assigned ${assigned} learner(s) to TLE lab sections (balanced)`);
+    console.log(
+      `    Assigned ${assigned} learner(s) to TLE lab sections (balanced)`,
+    );
   }
 
   // Assign one unique adviser per section.
