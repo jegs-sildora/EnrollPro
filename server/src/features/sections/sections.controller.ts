@@ -224,7 +224,7 @@ export async function listSections(req: Request, res: Response): Promise<void> {
   const ayId = req.params.ayId
     ? parseInt(String(req.params.ayId))
     : req.schoolYearId;
-  const { gradeLevelId, programType, tleProgramId } = req.query;
+  const { gradeLevelId, programType, tleProgramId, sectionType } = req.query;
 
   if (!ayId) {
     res.json({ sections: [] });
@@ -276,7 +276,8 @@ export async function listSections(req: Request, res: Response): Promise<void> {
           isHomogeneous: s.isHomogeneous,
           tleProgramId: s.tleProgramId ?? null,
           sectionRank: s.sectionRank ?? null,
-          enrolledCount: s._count.enrollmentRecords + s._count.enrollmentRecordsTle,
+          enrolledCount:
+            s._count.enrollmentRecords + s._count.enrollmentRecordsTle,
           advisingTeacher: activeAdviser
             ? {
                 id: activeAdviser.id,
@@ -293,7 +294,15 @@ export async function listSections(req: Request, res: Response): Promise<void> {
     orderBy: { displayOrder: "asc" },
     include: {
       sections: {
-        where: ayId ? { schoolYearId: ayId } : undefined,
+        where: ayId
+          ? {
+              schoolYearId: ayId,
+              ...(sectionType === "TLE_LABORATORY"
+                ? { tleProgramId: { not: null } }
+                : {}),
+              ...(sectionType === "HOME_ROOM" ? { tleProgramId: null } : {}),
+            }
+          : undefined,
         include: {
           advisers: {
             where: { status: SectionAdviserStatus.ACTIVE },
@@ -331,7 +340,8 @@ export async function listSections(req: Request, res: Response): Promise<void> {
           isHomogeneous: s.isHomogeneous,
           tleProgramId: s.tleProgramId ?? null,
           sectionRank: s.sectionRank ?? null,
-          enrolledCount: s._count.enrollmentRecords + s._count.enrollmentRecordsTle,
+          enrolledCount:
+            s._count.enrollmentRecords + s._count.enrollmentRecordsTle,
           advisingTeacher: activeAdviser
             ? {
                 id: activeAdviser.id,
@@ -423,7 +433,8 @@ export async function createSection(
     // Guard: TLE Laboratory sections must have a TLE specialization
     if (sectionType === "TLE_LABORATORY" && !tleProgramId) {
       res.status(400).json({
-        message: "A TLE specialization is required for TLE Laboratory sections.",
+        message:
+          "A TLE specialization is required for TLE Laboratory sections.",
       });
       return;
     }
@@ -778,7 +789,9 @@ export async function getSectionRoster(
   }
 
   const activeAdviser = section.advisers[0]?.teacher ?? null;
-  const records = section.tleProgramId ? section.enrollmentRecordsTle : section.enrollmentRecords;
+  const records = section.tleProgramId
+    ? section.enrollmentRecordsTle
+    : section.enrollmentRecords;
   const learners = records.map((record) => ({
     id: record.enrollmentApplication.learner.id,
     enrollmentApplicationId: record.enrollmentApplication.id,
@@ -1297,11 +1310,11 @@ export async function exportSectionSf1(
   ws.columns = [
     { width: 14 }, // A  LRN
     { width: 14 }, // B  NAME (merged B–D, primary width)
-    { width: 5 },  // C  NAME (part of merge)
-    { width: 3 },  // D  NAME (part of merge)
-    { width: 5 },  // E  Sex
+    { width: 5 }, // C  NAME (part of merge)
+    { width: 3 }, // D  NAME (part of merge)
+    { width: 5 }, // E  Sex
     { width: 13 }, // F  Birth Date
-    { width: 5 },  // G  Age
+    { width: 5 }, // G  Age
     { width: 14 }, // H  Mother Tongue
     { width: 14 }, // I  IP
     { width: 12 }, // J  Religion

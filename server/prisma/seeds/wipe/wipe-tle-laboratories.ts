@@ -69,37 +69,76 @@ async function main() {
     console.log("  No TLE lab sections found for the active school year.");
   } else {
     const labSectionIds = labSections.map((s) => s.id);
-    console.log(`  Found ${labSections.length} TLE lab section(s) to remove.`);
+    console.log(`  Found ${labSections.length} TLE lab section(s) to process.`);
 
     // Step 1: Nullify EnrollmentRecord.tleSectionId (preserve the records themselves).
     const cleared = await prisma.enrollmentRecord.updateMany({
       where: { tleSectionId: { in: labSectionIds } },
       data: { tleSectionId: null },
     });
-    console.log(`  ✔ Cleared tleSectionId on ${cleared.count} enrollment record(s).`);
+    console.log(
+      `  ✔ Cleared tleSectionId on ${cleared.count} enrollment record(s).`,
+    );
 
-    // Step 2: Delete SectionAdviser links for these sections.
+    // Identify which "lab" sections actually have homeroom learners — these are homeroom
+    // sections that were accidentally given tleProgramId by a previous seed run.
+    // We must repair (reset tleProgramId) rather than delete them.
+    const corruptedHomeroom = await prisma.section.findMany({
+      where: {
+        id: { in: labSectionIds },
+        enrollmentRecords: { some: {} },
+      },
+      select: { id: true, name: true },
+    });
+
+    const corruptedIds = new Set(corruptedHomeroom.map((s) => s.id));
+    const deletableIds = labSectionIds.filter((id) => !corruptedIds.has(id));
+
+    // Repair corrupted homeroom sections — reset tleProgramId without deleting.
+    if (corruptedHomeroom.length > 0) {
+      await prisma.section.updateMany({
+        where: { id: { in: corruptedHomeroom.map((s) => s.id) } },
+        data: { tleProgramId: null },
+      });
+      console.log(
+        `  ✔ Repaired ${corruptedHomeroom.length} homeroom section(s) (reset tleProgramId):`,
+      );
+      for (const s of corruptedHomeroom) {
+        console.log(`      - ${s.name}`);
+      }
+    }
+
+    // Step 2: Delete SectionAdviser links for deletable sections only.
     const advisersDeleted = await prisma.sectionAdviser.deleteMany({
-      where: { sectionId: { in: labSectionIds } },
+      where: { sectionId: { in: deletableIds } },
     });
-    console.log(`  ✔ Deleted ${advisersDeleted.count} section adviser record(s).`);
+    console.log(
+      `  ✔ Deleted ${advisersDeleted.count} section adviser record(s).`,
+    );
 
-    // Step 3: Delete the lab sections.
-    const sectionsDeleted = await prisma.section.deleteMany({
-      where: { id: { in: labSectionIds } },
-    });
-    console.log(`  ✔ Deleted ${sectionsDeleted.count} TLE lab section(s):`);
-    for (const s of labSections) {
-      console.log(`      - ${s.name}`);
+    // Step 3: Delete the pure TLE lab sections (no homeroom learners).
+    if (deletableIds.length > 0) {
+      const deletableSections = labSections.filter(
+        (s) => !corruptedIds.has(s.id),
+      );
+      const sectionsDeleted = await prisma.section.deleteMany({
+        where: { id: { in: deletableIds } },
+      });
+      console.log(`  ✔ Deleted ${sectionsDeleted.count} TLE lab section(s):`);
+      for (const s of deletableSections) {
+        console.log(`      - ${s.name}`);
+      }
     }
   }
 
-  // Step 4: Delete placeholder teacher records created by the seed.
-  // Identified by: lastName exactly "TLE ADVISER" AND employeeId starting with "TL".
+  // Step 4: Delete seeded TLE adviser teachers (both old "TLE ADVISER" placeholders and
+  // newer real PH-named teachers seeded by this script). All seeded teachers share:
+  //   - email ending with "@school.edu.ph" (the placeholder seed domain)
+  //   - employeeId starting with "9" (TLE seed namespace)
   const placeholderTeachers = await prisma.teacher.findMany({
     where: {
-      lastName: "TLE ADVISER",
-      employeeId: { startsWith: "TL" },
+      email: { endsWith: "@school.edu.ph" },
+      employeeId: { startsWith: "9" },
     },
     select: { id: true, firstName: true, lastName: true, employeeId: true },
   });
