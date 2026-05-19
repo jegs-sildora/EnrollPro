@@ -35,6 +35,7 @@ import { TLEConfirmModal } from "../components/TLEConfirmModal";
 import { JHSCompleterTable } from "../components/JHSCompleterTable";
 import { PaginationBar } from "@/shared/components/PaginationBar";
 import { BulkConfirmBar } from "../components/BulkConfirmBar";
+import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 
 export default function BOSYPage() {
   const { activeSchoolYearId, activeSchoolYearLabel, viewingSchoolYearId } =
@@ -46,6 +47,9 @@ export default function BOSYPage() {
     resolvedSchoolYearId > 0
       ? resolvedSchoolYearId
       : null;
+
+  const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
+  const canMutate = !isHistoricalReadOnly || hasOverride;
 
   const [readiness, setReadiness] = useState<BOSYReadiness | null>(null);
   const [readinessLoading, setReadinessLoading] = useState(false);
@@ -380,13 +384,16 @@ export default function BOSYPage() {
             Beginning of School Year — Continuing Learner Management
             {activeSchoolYearLabel ? ` · ${activeSchoolYearLabel}` : ""}
           </p>
+          {isHistoricalReadOnly && (
+            <p className="text-xs font-bold text-amber-600 mt-0.5">Viewing archived data — all confirmation actions are disabled.</p>
+          )}
         </div>
         <div className="flex items-center w-full md:w-auto gap-2">
           <Button
             variant="outline"
             className="h-10 font-bold gap-2 bg-white border-2 border-primary/20 hover:border-primary hover:bg-primary/5 text-primary transition-all"
             onClick={handleSync}
-            disabled={syncing || readinessLoading}>
+            disabled={syncing || readinessLoading || !canMutate}>
             {syncing ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
@@ -524,7 +531,7 @@ export default function BOSYPage() {
                 <QueueTable
                   items={pendingItems}
                   loading={pendingLoading}
-                  showConfirmAction
+                  showConfirmAction={canMutate}
                   rowSelection={rowSelection}
                   onRowSelectionChange={setRowSelection}
                   onConfirmSingle={handleConfirmSingle}
@@ -687,12 +694,14 @@ export default function BOSYPage() {
         </TabsContent>
       </Tabs>
 
-      <BulkConfirmBar
-        selectedCount={selectedIds.length}
-        loading={bulkLoading}
-        onConfirm={() => void handleBulkConfirm()}
-        onClear={() => setRowSelection({})}
-      />
+      {canMutate && (
+        <BulkConfirmBar
+          selectedCount={selectedIds.length}
+          loading={bulkLoading}
+          onConfirm={() => void handleBulkConfirm()}
+          onClear={() => setRowSelection({})}
+        />
+      )}
     </div>
   );
 }

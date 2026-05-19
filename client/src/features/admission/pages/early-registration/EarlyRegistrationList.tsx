@@ -7,6 +7,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { ScheduleExamDialog } from "@/features/enrollment/components/ScheduleExamDialog";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
+import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 
 // Hooks
 import { useEarlyRegistrations } from "./hooks/useEarlyRegistrations";
@@ -50,6 +51,8 @@ export default function EarlyRegistration({
 }) {
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
+  const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
+  const canMutate = !isHistoricalReadOnly || hasOverride;
 
   // Custom Hooks
   const {
@@ -125,16 +128,21 @@ export default function EarlyRegistration({
             <p className="text-sm font-bold text-foreground">
               Applicant screening and assessment workflow
             </p>
+            {isHistoricalReadOnly && (
+              <p className="text-xs font-bold text-amber-600 mt-0.5">Viewing archived data — intake actions are disabled.</p>
+            )}
           </div>
 
           <div className="flex w-full md:w-auto gap-2">
-            <Button
-              asChild
-              className="h-10 px-3 flex-1 md:flex-none text-sm font-bold bg-primary hover:bg-primary/90">
-              <Link to="/monitoring/f2f-early-registration">
-                <UserPlus className="h-4 w-4 mr-2" />+ Walk-In BEERF
-              </Link>
-            </Button>
+            {canMutate && (
+              <Button
+                asChild
+                className="h-10 px-3 flex-1 md:flex-none text-sm font-bold bg-primary hover:bg-primary/90">
+                <Link to="/monitoring/f2f-early-registration">
+                  <UserPlus className="h-4 w-4 mr-2" />+ Walk-In BEERF
+                </Link>
+              </Button>
+            )}
             <Button
               variant="outline"
               className="h-10 px-3 flex-1 md:flex-none text-sm font-bold"
@@ -220,9 +228,9 @@ export default function EarlyRegistration({
         startResizing={startResizing}
         fetchData={refresh}
         setSelectedApp={setSelectedApp}
-        setActionType={setActionType}
+        setActionType={canMutate ? setActionType : () => {}}
         fetchSections={fetchSections}
-        setIsScheduleDialogOpen={setIsScheduleDialogOpen}
+        setIsScheduleDialogOpen={canMutate ? setIsScheduleDialogOpen : () => {}}
         setScheduleStep={setScheduleStep}
       />
 
@@ -235,13 +243,13 @@ export default function EarlyRegistration({
         sections={sections}
         rejectionReason={rejectionReason}
         setRejectionReason={setRejectionReason}
-        handleMarkEligible={handleMarkEligible}
-        handleApprove={handleApprove}
-        handleReject={handleReject}
+        handleMarkEligible={canMutate ? handleMarkEligible : () => {}}
+        handleApprove={canMutate ? handleApprove : () => {}}
+        handleReject={canMutate ? handleReject : () => {}}
       />
 
       <ScheduleExamDialog
-        open={isScheduleDialogOpen}
+        open={isScheduleDialogOpen && canMutate}
         onOpenChange={isScheduleDialogOpen ? setIsScheduleDialogOpen : () => {}}
         applicant={selectedApp as ApplicantDetail | null}
         step={scheduleStep}

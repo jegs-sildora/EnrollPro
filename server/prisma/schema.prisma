@@ -1008,6 +1008,7 @@ enum TLECategory {
   INDUSTRIAL_ARTS
   AGRI_FISHERY_ARTS
   ICT
+  GENERAL
 
   @@map("tle_category")
 }

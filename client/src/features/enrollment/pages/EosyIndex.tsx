@@ -3,7 +3,6 @@ import { useNavigate } from "react-router";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
@@ -36,7 +35,6 @@ import {
   RefreshCw,
   AlertCircle,
   Search,
-  Printer,
   CheckCircle2,
   GraduationCap,
   ChevronDown,
@@ -47,6 +45,7 @@ import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useSettingsStore } from "@/store/settings.slice";
+import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { useAuthStore } from "@/store/auth.slice";
 import { format } from "date-fns";
 import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
@@ -112,6 +111,7 @@ export default function EosyUpdating() {
   const navigate = useNavigate();
   const { activeSchoolYearId, viewingSchoolYearId, activeSchoolYearLabel } =
     useSettingsStore();
+  const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
   const user = useAuthStore((state) => state.user);
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const isAdmin = user?.role === "SYSTEM_ADMIN";
@@ -194,21 +194,17 @@ export default function EosyUpdating() {
         const glB = b.gradeLevel.displayOrder ?? 99;
         if (glA !== glB) return glA - glB;
 
-        // 2. Program Priority (SCP first)
-        const isScpA = a.programType !== "REGULAR";
-        const isScpB = b.programType !== "REGULAR";
-        if (isScpA !== isScpB) return isScpA ? -1 : 1;
-
-        // 3. Section Type Priority (Star/Pilot sections first)
-        const isStarA =
-          a.name.toUpperCase().startsWith("PILOT") ||
-          /^SECTION\s*[1-5](\s|$)/i.test(a.name) ||
-          a.isHomogeneous;
-        const isStarB =
-          b.name.toUpperCase().startsWith("PILOT") ||
-          /^SECTION\s*[1-5](\s|$)/i.test(b.name) ||
-          b.isHomogeneous;
-        if (isStarA !== isStarB) return isStarA ? -1 : 1;
+        // 2. Program Type Priority: STE → SPA → SPS → other SCP → BEC (REGULAR)
+        const getProgramPriority = (type: string) => {
+          if (type === "STE") return 1;
+          if (type === "SPA") return 2;
+          if (type === "SPS") return 3;
+          if (type !== "REGULAR") return 4;
+          return 5;
+        };
+        const ppA = getProgramPriority(a.programType ?? "REGULAR");
+        const ppB = getProgramPriority(b.programType ?? "REGULAR");
+        if (ppA !== ppB) return ppA - ppB;
 
         // 4. Alphabetical Name
         return a.name.localeCompare(b.name);
@@ -268,6 +264,13 @@ export default function EosyUpdating() {
 
   const handleStatusChange = useCallback(
     async (recordId: number, status: string, finalAverage?: number | null) => {
+      if (isHistoricalReadOnly && !hasOverride) {
+        sileo.error({
+          title: "Read-Only",
+          description: "This school year is archived. All records are read-only.",
+        });
+        return;
+      }
       if (exportLock?.schoolYearFinalized) {
         sileo.error({
           title: "School Year Locked",
@@ -1019,6 +1022,9 @@ export default function EosyUpdating() {
           <p className="text-sm font-bold text-foreground mt-1">
             End of School Year status finalization for DepEd LIS compliance.
           </p>
+          {isHistoricalReadOnly && (
+            <p className="text-xs font-bold text-amber-600 mt-0.5">Viewing archived data — status changes are disabled.</p>
+          )}
         </div>
         <div className="flex items-center gap-3">
           {exportLock && (
@@ -1299,164 +1305,142 @@ export default function EosyUpdating() {
         <Card className="flex-1 border-none shadow-sm flex flex-col overflow-hidden bg-card h-full">
           {/* ROW 1: IDENTITY */}
           <CardHeader className="p-5 border-b bg-muted/5 flex-shrink-0">
-            <div className="flex items-center gap-4">
-              <div className="bg-primary/10 p-3 rounded-2xl shrink-0">
+            {/* Identity */}
+            <div className="flex items-start gap-4">
+              <div className="bg-primary/10 p-3 rounded-2xl shrink-0 mt-0.5">
                 <Building2 className="h-6 w-6 text-primary" />
               </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 flex-wrap">
                   <CardTitle className="text-2xl font-bold uppercase truncate">
                     {selectedSection ? selectedSection.name : "Select Section"}
                   </CardTitle>
                   {selectedSection?.isEosyFinalized && (
-                    <Badge className="bg-emerald-600 text-white font-black uppercase text-xs st h-5 shrink-0">
+                    <Badge className="bg-emerald-600 text-white font-black uppercase text-xs h-5 shrink-0">
                       <Lock className="h-3 w-3 mr-1" />
                       Finalized
                     </Badge>
                   )}
                 </div>
-                <CardDescription className="font-bold text-xs uppercase text-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                  {selectedSection ? (
-                    <>
-                      <span>{selectedSection.gradeLevel.name}</span>
-                      <span className="opacity-30">•</span>
-                      <span>End of School Year Reporting</span>
-                      {selectedSection.advisers?.[0] && (
-                        <>
-                          <span className="opacity-30">•</span>
-                          <span className="text-primary font-black">
-                            Adviser:{" "}
-                            {selectedSection.advisers[0].teacher.lastName},{" "}
-                            {selectedSection.advisers[0].teacher.firstName}
-                          </span>
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    "Choose a class from the tracker to start updating statuses"
-                  )}
-                </CardDescription>
+                <p className="font-black text-xs uppercase text-foreground/60 tracking-wide mt-1">
+                  {selectedSection
+                    ? `${selectedSection.gradeLevel.name} · END OF SCHOOL YEAR REPORTING`
+                    : "Choose a class from the tracker to start updating statuses"}
+                </p>
+                {selectedSection?.advisers?.[0] && (
+                  <p className="text-xs font-black uppercase text-primary/80 mt-0.5">
+                    ADVISER: {selectedSection.advisers[0].teacher.lastName},{" "}
+                    {selectedSection.advisers[0].teacher.firstName}
+                  </p>
+                )}
               </div>
             </div>
-          </CardHeader>
-
-          {/* ROW 2: CONTROLS & ACTIONS */}
-          {selectedSection && (
-            <div className="px-5 py-3 border-b bg-background flex flex-col sm:flex-row sm:items-center justify-between gap-4 flex-shrink-0">
-              <div className="flex items-center bg-muted/30 p-1 rounded-xl border w-fit">
-                <button
-                  onClick={() => setIncompleteOnly(false)}
-                  className={cn(
-                    "h-8 px-4 text-xs font-black uppercase  transition-all",
-                    !incompleteOnly
-                      ? "bg-white shadow-sm text-primary border border-border"
-                      : "text-foreground hover:text-primary",
-                  )}>
-                  All ({records.length})
-                </button>
-                <button
-                  onClick={() => setIncompleteOnly(true)}
-                  className={cn(
-                    "h-8 px-4 text-xs font-black uppercase  transition-all flex items-center gap-2",
-                    incompleteOnly
-                      ? "bg-white shadow-sm text-amber-600 border border-amber-100"
-                      : "text-foreground hover:text-amber-600",
-                  )}>
-                  {emptyRowsCount > 0 && (
-                    <AlertCircle className="h-3 w-3 fill-amber-500 text-white" />
-                  )}
-                  Missing Status ({emptyRowsCount})
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={isSyncingSmart || isFinalized}
-                  className="h-9 px-4 font-black text-xs uppercase  border-2 border-primary/20 text-primary hover:bg-primary/5 shadow-sm"
-                  onClick={handleSmartSync}>
-                  {isSyncingSmart ? (
-                    <>
-                      <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
-                      Syncing...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="h-3.5 w-3.5 mr-2" />
-                      Sync with SMART
-                    </>
-                  )}
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-9 px-4 font-black text-xs uppercase  border-2 shadow-sm"
-                  disabled={!selectedSection || selectedSection.isEosyFinalized}
-                  onClick={() =>
-                    sileo.info({
-                      title: "Module Ready",
-                      description: "SF5/SF6 Generation Engine initialized.",
-                    })
-                  }>
-                  <Printer className="h-3.5 w-3.5 mr-2 text-primary" />
-                  Generate SF5 & SF6
-                </Button>
-
-                {!isFinalized && (
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-9 px-4 font-black text-xs uppercase border-2 border-emerald-500 text-emerald-700 hover:bg-emerald-50 shadow-sm"
-                      onClick={() => navigate(`/monitoring/enrollment/eosy/workspace?sectionId=${selectedSectionId}`)}
-                    >
-                      <TrendingUp className="h-3.5 w-3.5 mr-2" />
-                      Rapid Entry Workspace
-                    </Button>
-                    
-                    <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="h-9 px-4 font-black text-xs uppercase  bg-emerald-600 hover:bg-emerald-700 shadow-md"
-                        disabled={
-                          Object.keys(rowSelection).length === 0 ||
-                          isSchoolYearFinalized
-                        }>
-                        <TrendingUp className="h-3.5 w-3.5 mr-2" />
-                        Bulk Actions ({Object.keys(rowSelection).length})
-                        <ChevronDown className="h-3.5 w-3.5 ml-2" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="w-48">
-                      <DropdownMenuItem
-                        onClick={() => handleBulkAction("PROMOTED")}
-                        className="font-bold text-emerald-600">
-                        Mark Promoted
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleBulkAction("RETAINED")}
-                        className="font-bold text-red-600">
-                        Mark Retained
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleBulkAction("CONDITIONALLY_PROMOTED")}
-                        className="font-bold text-amber-600">
-                        Mark Cond. Promoted
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+            {/* Controls */}
+            {selectedSection && (
+              <div className="flex flex-wrap items-center justify-between gap-3 mt-4 pt-4 border-t border-border/60">
+                <div className="flex items-center bg-muted/30 p-1 rounded-xl border w-fit gap-0.5">
+                  <button
+                    onClick={() => setIncompleteOnly(false)}
+                    className={cn(
+                      "h-8 px-4 text-xs font-black uppercase rounded-lg transition-all",
+                      !incompleteOnly
+                        ? "bg-white shadow-sm text-primary border border-border"
+                        : "text-foreground hover:text-primary",
+                    )}>
+                    ALL ({records.length})
+                  </button>
+                  <button
+                    onClick={() => setIncompleteOnly(true)}
+                    className={cn(
+                      "h-8 px-4 text-xs font-black uppercase rounded-lg transition-all flex items-center gap-1.5",
+                      incompleteOnly
+                        ? "bg-white shadow-sm text-amber-600 border border-amber-100"
+                        : "text-foreground hover:text-amber-600",
+                    )}>
+                    {emptyRowsCount > 0 && (
+                      <AlertCircle className="h-3 w-3 fill-amber-500 text-white" />
+                    )}
+                    MISSING ({emptyRowsCount})
+                  </button>
                 </div>
-              )}
-            </div>
-          </div>
-        )}
-
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isSyncingSmart || isFinalized}
+                    className="h-8 px-3 font-black text-xs uppercase border-2 border-primary/20 text-primary hover:bg-primary/5"
+                    onClick={handleSmartSync}>
+                    {isSyncingSmart ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                        Syncing...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                        Sync SMART
+                      </>
+                    )}
+                  </Button>
+                  {!isFinalized && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-3 font-black text-xs uppercase border-2 border-emerald-500 text-emerald-700 hover:bg-emerald-50"
+                        onClick={() =>
+                          navigate(
+                            `/monitoring/enrollment/eosy/workspace?sectionId=${selectedSectionId}`,
+                          )
+                        }>
+                        <TrendingUp className="h-3.5 w-3.5 mr-1.5" />
+                        Rapid Entry Workspace
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="h-8 px-3 font-black text-xs uppercase bg-emerald-600 hover:bg-emerald-700 shadow-md"
+                            disabled={
+                              Object.keys(rowSelection).length === 0 ||
+                              isSchoolYearFinalized
+                            }>
+                            Actions
+                            {Object.keys(rowSelection).length > 0 && (
+                              <Badge className="ml-1.5 h-4 min-w-4 px-1 text-[10px] bg-white/20 text-white border-0">
+                                {Object.keys(rowSelection).length}
+                              </Badge>
+                            )}
+                            <ChevronDown className="h-3.5 w-3.5 ml-1" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem
+                            onClick={() => handleBulkAction("PROMOTED")}
+                            className="font-bold text-emerald-600">
+                            Mark Promoted
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleBulkAction("RETAINED")}
+                            className="font-bold text-red-600">
+                            Mark Retained
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleBulkAction("CONDITIONALLY_PROMOTED")
+                            }
+                            className="font-bold text-amber-600">
+                            Mark Cond. Promoted
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardHeader>
           <CardContent className="p-0 flex-1 overflow-hidden flex flex-col relative min-h-0">
             <div className="flex-1 bg-muted/5 relative min-h-0 overflow-hidden">
               <DataTable<EnrollmentRecord, unknown>
@@ -1867,15 +1851,78 @@ export default function EosyUpdating() {
         variant="primary"
       />
 
-      <ConfirmationModal
+      {/* MASTER EOSY FINALIZATION — custom professional dialog */}
+      <Dialog
         open={schoolFinalizeConfirmOpen}
-        onOpenChange={setSchoolFinalizeConfirmOpen}
-        title="🔒 MASTER EOSY FINALIZATION"
-        description={`CRITICAL: This will lock the entire ${activeSchoolYearLabel} school year. No further class updates or status changes will be allowed across all 128 sections. Proceed with Master Lock?`}
-        confirmText="Yes, Finalize & Lock School Year"
-        onConfirm={handleSchoolFinalize}
-        variant="danger"
-      />
+        onOpenChange={setSchoolFinalizeConfirmOpen}>
+        <DialogContent className="sm:max-w-[480px] border-t-8 border-t-red-700 p-0 overflow-hidden bg-sidebar shadow-2xl">
+          <div className="px-8 pt-8 pb-0">
+            <DialogHeader className="items-center text-center gap-3">
+              <div className="h-16 w-16 bg-red-100 rounded-full flex items-center justify-center shadow-inner border-2 border-red-200 mb-1">
+                <Lock className="h-7 w-7 text-red-700" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-black uppercase tracking-tight text-foreground">
+                  Master EOSY Finalization
+                </DialogTitle>
+                <p className="text-[11px] font-black uppercase tracking-widest text-red-600 mt-1.5">
+                  S.Y. {activeSchoolYearLabel} — Irreversible Action
+                </p>
+              </div>
+              <DialogDescription className="text-sm font-semibold text-foreground/80 leading-relaxed max-w-sm pt-1">
+                This will permanently lock all sections for the current school year. No further EOSY status changes will be permitted.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="mt-5 space-y-3">
+              {/* Numbered checklist */}
+              <div className="rounded-xl border border-red-200 bg-red-50 p-4 space-y-2.5">
+                <p className="text-[10px] font-black uppercase tracking-widest text-red-700 mb-2">
+                  What this action does
+                </p>
+                {[
+                  `Lock all ${exportLock?.totalSections ?? "--"} sections — no further status changes allowed`,
+                  `Mark S.Y. ${activeSchoolYearLabel} EOSY as permanently archived`,
+                  "Preserve all academic records for DepEd LIS audit readiness",
+                  "Enable master SF5 export and academic year rollover",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <span className="flex-shrink-0 h-5 w-5 rounded-full bg-red-700 text-white text-[10px] font-black flex items-center justify-center mt-0.5">
+                      {i + 1}
+                    </span>
+                    <p className="text-sm font-semibold text-red-900 leading-snug">
+                      {item}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Warning strip */}
+              <div className="flex items-center gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2.5">
+                <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+                <p className="text-xs font-bold text-amber-900">
+                  This action cannot be undone without emergency administrator access.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 px-8 py-6 mt-4">
+            <Button
+              variant="outline"
+              className="flex-1 h-11 font-bold border-2"
+              onClick={() => setSchoolFinalizeConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="flex-1 h-11 font-black uppercase tracking-tight bg-red-700 hover:bg-red-800 text-white shadow-md active:scale-[0.98] transition-transform"
+              onClick={handleSchoolFinalize}>
+              <Lock className="h-4 w-4 mr-2" />
+              Yes, Lock School Year
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <RemedialResolutionModal
         open={remedialModal.open}

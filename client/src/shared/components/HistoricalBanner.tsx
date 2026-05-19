@@ -21,7 +21,7 @@ export const HistoricalBanner = memo(function HistoricalBanner({
     isSystemAdmin,
   } = useHistoricalReadOnly();
 
-  const { setViewingSY, setHistoricalCorrectionToken } = useSettingsStore();
+  const { viewingSchoolYearLabel, setViewingSY, setHistoricalCorrectionToken } = useSettingsStore();
 
   if (!isHistoricalReadOnly) return null;
 
@@ -40,9 +40,10 @@ export const HistoricalBanner = memo(function HistoricalBanner({
     <History className="h-3.5 w-3.5 shrink-0" />
   );
 
+  const syLabel = viewingSchoolYearLabel ? `S.Y. ${viewingSchoolYearLabel}` : null;
   const message = isArchivedYear
-    ? "You are browsing an archived school year. All data is read-only."
-    : `You are viewing a historical school year (${viewingSchoolYearStatus ?? "past"}). Mutations are restricted.`;
+    ? `You are browsing archived school year${syLabel ? ` ${syLabel}` : ""}. All records are read-only.`
+    : `You are viewing ${syLabel ?? "a historical school year"} (${viewingSchoolYearStatus ?? "past"}). Mutations are restricted.`;
 
   return (
     <div

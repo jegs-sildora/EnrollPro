@@ -28,6 +28,7 @@ import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { toastApiError } from "@/shared/hooks/useApiToast";
+import { AnimatedNumber } from "@/shared/components/AnimatedNumber";
 import { sileo } from "sileo";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -198,7 +199,7 @@ const VALID_TABS = ["active", "completers", "inactive"] as const;
 type StudentTab = (typeof VALID_TABS)[number];
 
 const PROGRAM_FILTER_OPTIONS = [
-  { value: "REGULAR", label: "Regular" },
+  { value: "REGULAR", label: "Regular (BEC)" },
   { value: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "STE" },
   { value: "SPECIAL_PROGRAM_IN_THE_ARTS", label: "SPA" },
   { value: "SPECIAL_PROGRAM_IN_SPORTS", label: "SPS" },
@@ -267,7 +268,7 @@ const formatLearningProgramLabel = (
     .toUpperCase();
 
   if (normalizedProgram === "REGULAR") {
-    return "Regular Program";
+    return "Regular (BEC) Program";
   }
 
   const displayName = formatScpType(normalizedProgram).replace(
@@ -1582,7 +1583,7 @@ export default function Students() {
               Total Enrolled
             </CardDescription>
             <CardTitle className="text-3xl font-extrabold">
-              {summaryLoading ? "…" : (summary?.totalEnrolled ?? 0).toLocaleString()}
+              {summaryLoading ? "…" : <AnimatedNumber value={summary?.totalEnrolled ?? 0} />}
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
@@ -1593,7 +1594,7 @@ export default function Students() {
                   className="rounded-md border bg-muted/40 px-2 py-1 flex items-center justify-between gap-2 text-xs font-medium">
                   <span>{label}</span>
                   <span className="font-extrabold">
-                    {summaryLoading ? "…" : (summary?.gradeBreakdown[key] ?? 0)}
+                    {summaryLoading ? "…" : <AnimatedNumber value={summary?.gradeBreakdown[key] ?? 0} />}
                   </span>
                 </div>
               ))}
@@ -1624,7 +1625,7 @@ export default function Students() {
                       <Mars className="h-3.5 w-3.5 text-sky-700" /> Male
                     </span>
                     <span className="text-xs font-extrabold text-sky-700">
-                      {summary.genderBreakdown.male}
+                      <AnimatedNumber value={summary.genderBreakdown.male} />
                     </span>
                   </div>
                   <div className="rounded-md border bg-muted/40 px-2 py-1 flex items-center justify-between gap-2">
@@ -1632,7 +1633,7 @@ export default function Students() {
                       <Venus className="h-3.5 w-3.5 text-rose-700" /> Female
                     </span>
                     <span className="text-xs font-extrabold text-rose-700">
-                      {summary.genderBreakdown.female}
+                      <AnimatedNumber value={summary.genderBreakdown.female} />
                     </span>
                   </div>
                 </div>
@@ -1653,9 +1654,17 @@ export default function Students() {
                       />
                     </div>
                     <p className="text-[10px] text-muted-foreground font-medium text-right">
-                      {((summary.genderBreakdown.male / summary.totalEnrolled) * 100).toFixed(1)}% M
+                      <AnimatedNumber
+                        value={(summary.genderBreakdown.male / summary.totalEnrolled) * 100}
+                        decimals={1}
+                        suffix="% M"
+                      />
                       {" · "}
-                      {((summary.genderBreakdown.female / summary.totalEnrolled) * 100).toFixed(1)}% F
+                      <AnimatedNumber
+                        value={(summary.genderBreakdown.female / summary.totalEnrolled) * 100}
+                        decimals={1}
+                        suffix="% F"
+                      />
                     </p>
                   </div>
                 )}
@@ -1673,7 +1682,7 @@ export default function Students() {
             </CardDescription>
             {!summaryLoading && programBreakdownItems.length > 0 && (
               <CardTitle className="text-3xl font-extrabold">
-                {programBreakdownItems.length}
+                <AnimatedNumber value={programBreakdownItems.length} />
               </CardTitle>
             )}
           </CardHeader>
@@ -1698,7 +1707,7 @@ export default function Students() {
                       {item.label}
                     </span>
                     <span className="text-xs font-extrabold text-blue-700">
-                      {item.count}
+                      <AnimatedNumber value={item.count} />
                     </span>
                   </div>
                 ))}
@@ -1736,7 +1745,7 @@ export default function Students() {
                     key={label}
                     className="flex items-center justify-between text-xs font-medium">
                     <span className="text-muted-foreground">{label}</span>
-                    <span className="font-extrabold text-foreground">{value}</span>
+                    <AnimatedNumber value={value} className="font-extrabold text-foreground" />
                   </div>
                 ))}
               </div>

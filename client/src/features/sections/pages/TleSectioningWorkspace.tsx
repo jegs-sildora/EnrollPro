@@ -8,7 +8,8 @@ import { Badge } from "@/shared/ui/badge";
 import { Progress } from "@/shared/ui/progress";
 import axiosInstance from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
-import { ChevronRight, ChevronLeft, Loader2, Users } from "lucide-react";
+import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
+import { ChevronRight, ChevronLeft, Loader2, Users, Archive } from "lucide-react";
 
 interface Candidate {
   applicationId: number;
@@ -39,6 +40,7 @@ interface Section {
  * Route: /sectioning/tle
  */
 export default function TleSectioningWorkspace() {
+  const { isHistoricalReadOnly } = useHistoricalReadOnly();
   const [searchParams] = useSearchParams();
   const selectedSectionId = searchParams.get("sectionId");
 
@@ -54,8 +56,8 @@ export default function TleSectioningWorkspace() {
 
   // API: Fetch sections on mount
   useEffect(() => {
-    fetchSections();
-  }, []);
+    if (!isHistoricalReadOnly) fetchSections();
+  }, [isHistoricalReadOnly]);
 
   // Load pool when section changes
   useEffect(() => {
@@ -167,6 +169,22 @@ export default function TleSectioningWorkspace() {
     : 0;
   const boys = stagedCandidates.filter((c) => c.sex === "MALE").length;
   const girls = stagedCandidates.filter((c) => c.sex === "FEMALE").length;
+
+  if (isHistoricalReadOnly) {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-7xl mx-auto flex flex-col items-center justify-center min-h-[60vh] gap-4">
+          <Archive className="h-12 w-12 text-slate-300" />
+          <div className="text-center space-y-1">
+            <p className="text-sm font-black uppercase text-slate-500">TLE Sectioning Unavailable</p>
+            <p className="text-xs text-slate-400 font-bold max-w-sm">
+              This workspace is only accessible for the active school year. Switch to the active year to manage TLE sectioning.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-6">

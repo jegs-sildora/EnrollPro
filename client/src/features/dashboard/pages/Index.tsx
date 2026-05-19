@@ -29,6 +29,7 @@ import { Skeleton } from "@/shared/ui/skeleton";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
+import { AnimatedNumber } from "@/shared/components/AnimatedNumber";
 
 interface Stats {
   totalPending: number;
@@ -82,6 +83,16 @@ interface AdminStats {
   systemStatus: string;
 }
 
+interface EosyLockState {
+  schoolYearId: number;
+  schoolYearLabel: string;
+  schoolYearFinalized: boolean;
+  totalSections: number;
+  finalizedSections: number;
+  canFinalizeSchoolYear: boolean;
+  lockReason: string | null;
+}
+
 type FocusOverride = "AUTO" | "EARLY" | "ENROLLMENT";
 type FocusMode = "EARLY" | "ENROLLMENT" | "BALANCED";
 
@@ -114,6 +125,7 @@ export default function Dashboard() {
 
   const [stats, setStats] = useState<Stats | null>(null);
   const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
+  const [eosyLockState, setEosyLockState] = useState<EosyLockState | null>(null);
   const [loading, setLoading] = useState(true);
   const [focusOverride, setFocusOverride] = useState<FocusOverride>("AUTO");
 
@@ -123,15 +135,20 @@ export default function Dashboard() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [statsRes, adminRes] = await Promise.all([
-          api.get("/dashboard/stats"),
+        const schoolYearParam = ayId ? `?schoolYearId=${ayId}` : "";
+        const [statsRes, adminRes, eosyRes] = await Promise.all([
+          api.get(`/dashboard/stats${schoolYearParam}`),
           isAdmin
             ? api.get("/admin/dashboard/stats")
+            : Promise.resolve({ data: null }),
+          isBosyLocked && ayId
+            ? api.get(`/eosy/school-year/${ayId}/export-lock`).catch(() => ({ data: null }))
             : Promise.resolve({ data: null }),
         ]);
 
         setStats(statsRes.data.stats);
         if (adminRes.data) setAdminStats(adminRes.data);
+        if (eosyRes.data) setEosyLockState(eosyRes.data as EosyLockState);
       } catch {
         setStats({
           totalPending: 0,
@@ -166,9 +183,12 @@ export default function Dashboard() {
     };
 
     fetchData();
-  }, [isAdmin, ayId]);
+  }, [isAdmin, ayId, isBosyLocked]);
 
   const autoFocus = useMemo<FocusMode>(() => {
+    // BOSY phase: collapse both enrollment and early reg (EOSY section takes over)
+    if (isBosyLocked) return "BALANCED";
+
     if (enrollmentPhase === "EARLY_REGISTRATION") {
       return "EARLY";
     }
@@ -181,7 +201,7 @@ export default function Dashboard() {
     }
 
     return "BALANCED";
-  }, [enrollmentPhase]);
+  }, [enrollmentPhase, isBosyLocked]);
 
   const effectiveFocus: FocusMode =
     focusOverride === "AUTO" ? autoFocus : focusOverride;
@@ -271,9 +291,16 @@ export default function Dashboard() {
       ? clampProgress(Math.round((enrollmentCurrent / totalForecastAll) * 100))
       : 0;
 
+  const eosyProgress =
+    eosyLockState && eosyLockState.totalSections > 0
+      ? Math.round(
+          (eosyLockState.finalizedSections / eosyLockState.totalSections) * 100,
+        )
+      : 0;
+
   return (
     <div className="space-y-6">
-      {isBosyLocked && (
+      {isBosyLocked && viewingStatus !== 'ARCHIVED' && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -329,50 +356,219 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <div className="flex flex-col items-start gap-3 md:items-end">
-          <div className="flex flex-col items-start gap-1 md:items-end">
-            <p className="text-xs font-bold uppercase  text-foreground">
-              Seasonal Focus
-            </p>
-            <div
-              className="inline-flex rounded-lg border bg-card p-1 shadow-sm relative"
-              role="group"
-              aria-label="Command center seasonal focus">
-              {(["AUTO", "EARLY", "ENROLLMENT"] as const).map((mode) => {
-                const selected = focusOverride === mode;
+        {viewingStatus !== 'ARCHIVED' && (
+          <div className="flex flex-col items-start gap-3 md:items-end">
+            <div className="flex flex-col items-start gap-1 md:items-end">
+              <p className="text-xs font-bold uppercase  text-foreground">
+                Seasonal Focus
+              </p>
+              <div
+                className="inline-flex rounded-lg border bg-card p-1 shadow-sm relative"
+                role="group"
+                aria-label="Command center seasonal focus">
+                {(["AUTO", "EARLY", "ENROLLMENT"] as const).map((mode) => {
+                  const selected = focusOverride === mode;
 
-                return (
-                  <Button
-                    key={mode}
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setFocusOverride(mode)}
-                    className={cn(
-                      "relative h-7 px-3 text-xs font-black uppercase transition-all z-10",
-                      selected
-                        ? "text-primary-foreground hover:text-primary-foreground hover:bg-transparent"
-                        : "text-foreground hover:text-foreground",
-                    )}>
-                    {selected && (
-                      <motion.div
-                        layoutId="dashboard-seasonal-focus-pill"
-                        className="absolute inset-0 bg-primary rounded-md"
-                        transition={{
-                          type: "spring",
-                          bounce: 0.15,
-                          duration: 0.5,
-                        }}
-                      />
-                    )}
-                    <span className="relative z-20">{mode}</span>
-                  </Button>
-                );
-              })}
+                  return (
+                    <Button
+                      key={mode}
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setFocusOverride(mode)}
+                      className={cn(
+                        "relative h-7 px-3 text-xs font-black uppercase transition-all z-10",
+                        selected
+                          ? "text-primary-foreground hover:text-primary-foreground hover:bg-transparent"
+                          : "text-foreground hover:text-foreground",
+                      )}>
+                      {selected && (
+                        <motion.div
+                          layoutId="dashboard-seasonal-focus-pill"
+                          className="absolute inset-0 bg-primary rounded-md"
+                          transition={{
+                            type: "spring",
+                            bounce: 0.15,
+                            duration: 0.5,
+                          }}
+                        />
+                      )}
+                      <span className="relative z-20">{mode}</span>
+                    </Button>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
+
+      {/* ── EOSY Progress (when BOSY locked) ── */}
+      {isBosyLocked && viewingStatus !== 'ARCHIVED' && (
+        <section className="space-y-4" aria-label="EOSY progress">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xs font-black uppercase text-slate-600">
+              End of School Year Progress · {ayLabel}
+            </h2>
+            <div className="h-px flex-1 bg-slate-200" />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {/* Classes Finalized */}
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xs font-black uppercase text-foreground">
+                    Classes Finalized
+                  </CardTitle>
+                  <div className="bg-slate-100 rounded-lg p-2">
+                    <CheckCircle className="h-4 w-4 text-slate-600" />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {showSkeleton ? (
+                  <>
+                    <Skeleton className="h-10 w-32" />
+                    <Skeleton className="h-2 w-full" />
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-baseline gap-2">
+                      <AnimatedNumber
+                        value={eosyLockState?.finalizedSections ?? 0}
+                        className="text-5xl font-black tabular-nums"
+                      />
+                      <span className="text-xl font-black text-foreground/40">
+                        /{" "}
+                        <AnimatedNumber
+                          value={eosyLockState?.totalSections ?? 0}
+                        />
+                      </span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${eosyProgress}%` }}
+                        transition={{
+                          duration: 1,
+                          ease: "easeOut",
+                          delay: 0.2,
+                        }}
+                        className="h-full rounded-full bg-slate-700"
+                      />
+                    </div>
+                    <p className="text-xs font-bold text-foreground uppercase">
+                      <AnimatedNumber value={eosyProgress} suffix="%" />{" "}
+                      of classes have submitted EOSY reports
+                    </p>
+                  </>
+                )}
+                <Button
+                  type="button"
+                  className="w-full font-black uppercase text-xs h-10"
+                  variant="outline"
+                  onClick={() => navigate("/monitoring/enrollment/eosy")}>
+                  Open EOSY Tracker
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Final Enrollment Count */}
+            <Card className="border-emerald-200 bg-gradient-to-br from-white to-emerald-50/30 shadow-sm border-2">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xs font-black uppercase text-emerald-900/40">
+                    Final Enrollment
+                  </CardTitle>
+                  {eosyLockState?.schoolYearFinalized && (
+                    <Badge className="bg-slate-800 text-white font-black uppercase text-xs h-5">
+                      <Lock className="h-3 w-3 mr-1" />
+                      Locked
+                    </Badge>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {showSkeleton ? (
+                  <Skeleton className="h-10 w-32" />
+                ) : (
+                  <>
+                    <AnimatedNumber
+                      value={enrollmentCurrent}
+                      className="text-5xl font-black text-emerald-700 tabular-nums"
+                    />
+                    <p className="text-xs font-bold text-emerald-900/50 uppercase">
+                      Total Enrolled · SY {ayLabel}
+                    </p>
+                    {stats?.previousYearTotal && stats.previousYearTotal > 0 && (() => {
+                      const delta = enrollmentCurrent - stats.previousYearTotal;
+                      const positive = delta >= 0;
+                      return (
+                        <div
+                          className={cn(
+                            "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-black text-sm",
+                            positive
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-red-100 text-red-700",
+                          )}>
+                          {positive ? (
+                            <TrendingUp className="h-4 w-4 shrink-0" />
+                          ) : (
+                            <TrendingDown className="h-4 w-4 shrink-0" />
+                          )}
+                          <span>
+                            {positive ? "+" : ""}
+                            {delta.toLocaleString("en-PH")} vs prior SY
+                          </span>
+                        </div>
+                      );
+                    })()}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Grade Level Summary */}
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xs font-black uppercase text-foreground">
+                  Grade Level Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {showSkeleton ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3, 4].map((i) => (
+                      <Skeleton key={i} className="h-5 w-full" />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-2.5 pt-1">
+                    {glBreakdown.slice(0, 5).map((gl) => (
+                      <div
+                        key={gl.id}
+                        className="flex items-center justify-between gap-3">
+                        <span className="text-xs font-bold uppercase text-foreground truncate">
+                          {gl.name}
+                        </span>
+                        <span className="text-xs font-black tabular-nums text-emerald-600 shrink-0">
+                          <AnimatedNumber value={gl.current} />
+                        </span>
+                      </div>
+                    ))}
+                    {glBreakdown.length === 0 && (
+                      <p className="text-xs font-bold text-foreground uppercase">
+                        No data available
+                      </p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+      )}
 
       {/* ── Enrollment Progress (Top Priority) ── */}
       <section
@@ -417,9 +613,10 @@ export default function Dashboard() {
                     <>
                       <div className="flex flex-col gap-1">
                         <div className="flex items-baseline gap-2">
-                          <span className="text-5xl font-black text-emerald-700 tabular-nums">
-                            {formatMetric(enrollmentCurrent)}
-                          </span>
+                          <AnimatedNumber
+                            value={enrollmentCurrent}
+                            className="text-5xl font-black text-emerald-700 tabular-nums"
+                          />
                         </div>
                         <p className="text-xs font-bold text-emerald-900/50 uppercase">
                           Total Enrolled · SY {ayLabel}
@@ -454,7 +651,7 @@ export default function Dashboard() {
                             )}
                             <span>
                               {positive ? "+" : ""}
-                              {pct}% vs prior SY ({formatMetric(prev)})
+                              <AnimatedNumber value={Number(pct)} decimals={1} suffix="%" /> vs prior SY (<AnimatedNumber value={prev} />)
                             </span>
                           </div>
                         );
@@ -502,7 +699,7 @@ export default function Dashboard() {
                               {gl.name}
                             </span>
                             <span className="text-xs font-black text-emerald-700 tabular-nums">
-                              {formatMetric(gl.current)} / {formatMetric(forecast)} Forecasted
+                              <AnimatedNumber value={gl.current} /> / <AnimatedNumber value={forecast} /> Forecasted
                             </span>
                           </div>
                           <div className="h-2.5 w-full rounded-full bg-white overflow-hidden shadow-inner border border-slate-200/50">
@@ -518,7 +715,7 @@ export default function Dashboard() {
                             />
                           </div>
                           <p className="text-[10px] font-bold text-foreground uppercase">
-                            Forecast Fill Rate — {fillPct.toFixed(0)}%
+                            Forecast Fill Rate — <AnimatedNumber value={Math.round(fillPct)} suffix="%" />
                           </p>
                         </div>
                         );
@@ -560,7 +757,7 @@ export default function Dashboard() {
                           Enrolled
                         </p>
                         <p className="text-lg font-black text-emerald-600">
-                          {formatMetric(enrollmentCurrent)}
+                          <AnimatedNumber value={enrollmentCurrent} />
                         </p>
                       </div>
                       <div className="text-right">
@@ -568,7 +765,7 @@ export default function Dashboard() {
                           Utilization
                         </p>
                         <p className="text-lg font-black text-emerald-600">
-                          {enrollmentProgress.toFixed(0)}%
+                          <AnimatedNumber value={Math.round(enrollmentProgress)} suffix="%" />
                         </p>
                       </div>
                     </div>
@@ -630,9 +827,10 @@ export default function Dashboard() {
                 </>
               ) : (
                 <>
-                  <div className="text-5xl font-black tabular-nums">
-                    {formatMetric(pendingReviewCount)}
-                  </div>
+                  <AnimatedNumber
+                    value={pendingReviewCount}
+                    className="text-5xl font-black tabular-nums"
+                  />
                   <p className="text-xs font-bold text-foreground min-h-[2rem] leading-relaxed">
                     {effectiveFocus === "ENROLLMENT"
                       ? "Basic Education Enrollment Forms (BEEF) requiring SF9 and physical PSA validation."
@@ -711,15 +909,16 @@ export default function Dashboard() {
                         </>
                       ) : (
                         <>
-                          <div
+                          <AnimatedNumber
+                            value={avgFillPct}
+                            suffix="%"
                             className={cn(
                               "text-5xl font-black tabular-nums",
                               hasCapacityPressure
                                 ? "text-amber-600"
                                 : "text-foreground",
-                            )}>
-                            {avgFillPct}%
-                          </div>
+                            )}
+                          />
                           <p className="text-xs font-bold min-h-[2rem] leading-relaxed">
                             {hasCapacityPressure ? (
                               <span className="text-amber-700">
@@ -796,9 +995,10 @@ export default function Dashboard() {
                         </>
                       ) : (
                         <>
-                          <div className="text-5xl font-black tabular-nums">
-                            {formatMetric(unsectioned)}
-                          </div>
+                          <AnimatedNumber
+                            value={unsectioned}
+                            className="text-5xl font-black tabular-nums"
+                          />
                           <p className="text-xs font-bold min-h-[2rem] leading-relaxed">
                             {hasUnsectioned ? (
                               <span className="text-amber-700">
@@ -870,9 +1070,10 @@ export default function Dashboard() {
                     {showSkeleton ? (
                       <Skeleton className="h-8 w-20" />
                     ) : (
-                      <div className="text-3xl font-black tabular-nums">
-                        {formatMetric(stat.value)}
-                      </div>
+                      <AnimatedNumber
+                        value={stat.value}
+                        className="text-3xl font-black tabular-nums"
+                      />
                     )}
                   </CardContent>
                 </Card>
@@ -903,9 +1104,7 @@ export default function Dashboard() {
                           Verified
                         </p>
                         <p className="text-lg font-black text-amber-600">
-                          {formatMetric(
-                            stats?.earlyRegistration?.verified ?? 0,
-                          )}
+                          <AnimatedNumber value={stats?.earlyRegistration?.verified ?? 0} />
                         </p>
                       </div>
                       <div className="text-right">
@@ -913,9 +1112,7 @@ export default function Dashboard() {
                           Ready for Sectioning
                         </p>
                         <p className="text-lg font-black text-blue-600">
-                          {formatMetric(
-                            stats?.earlyRegistration?.readyForEnrollment ?? 0,
-                          )}
+                          <AnimatedNumber value={stats?.earlyRegistration?.readyForEnrollment ?? 0} />
                         </p>
                       </div>
                     </div>
@@ -954,9 +1151,11 @@ export default function Dashboard() {
                 ) : (
                   <>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-black">
-                        {conversionRate}%
-                      </span>
+                      <AnimatedNumber
+                        value={conversionRate}
+                        suffix="%"
+                        className="text-2xl font-black"
+                      />
                       <span
                         className={cn(
                           "text-xs font-bold uppercase",
@@ -970,9 +1169,9 @@ export default function Dashboard() {
                       </span>
                     </div>
                     <p className="text-xs font-bold text-foreground uppercase">
-                      {formatMetric(enrollmentCurrent)} enrolled
+                      <AnimatedNumber value={enrollmentCurrent} /> enrolled
                       &nbsp;&middot;&nbsp;
-                      {formatMetric(pendingReviewCount)} in queue
+                      <AnimatedNumber value={pendingReviewCount} /> in queue
                     </p>
                     <p className="text-xs text-foreground border-t border-slate-100 pt-2">
                       Applications converted to active enrollment records.
@@ -996,18 +1195,19 @@ export default function Dashboard() {
                 ) : (
                   <>
                     <div className="flex items-baseline gap-1.5">
-                      <span className="text-2xl font-black">
-                        {formatMetric(totalPersonnel)}
-                      </span>
+                      <AnimatedNumber
+                        value={totalPersonnel}
+                        className="text-2xl font-black"
+                      />
                       <span className="text-xs font-bold text-foreground uppercase">
                         ERP accounts
                       </span>
                     </div>
                     <p className="text-xs font-bold text-foreground uppercase">
-                      {registrarCount} Registrar
+                      <AnimatedNumber value={registrarCount} /> Registrar
                       {registrarCount !== 1 ? "s" : ""}
                       &nbsp;&middot;&nbsp;
-                      {teacherCount} Teachers
+                      <AnimatedNumber value={teacherCount} /> Teachers
                     </p>
                     <div className="flex items-center gap-1.5 border-t border-slate-100 pt-2">
                       <span
@@ -1077,7 +1277,7 @@ export default function Dashboard() {
                               {label}
                             </span>
                             <span className="text-xs font-black tabular-nums text-foreground">
-                              {formatMetric(value)}
+                              <AnimatedNumber value={value} />
                             </span>
                           </div>
                           <div className="h-1.5 w-full rounded-full bg-white overflow-hidden">

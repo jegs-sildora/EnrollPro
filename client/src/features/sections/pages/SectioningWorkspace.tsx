@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   Info,
   FileDown,
+  Archive,
   RefreshCw as RefreshCwIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -34,6 +35,7 @@ import {
 import { Badge } from "@/shared/ui/badge";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { sileo } from "sileo";
+import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { cn } from "@/shared/lib/utils";
 
 // --- Types ---
@@ -66,6 +68,7 @@ interface PoolLearner {
 }
 
 export default function SectioningWorkspace() {
+  const { isHistoricalReadOnly } = useHistoricalReadOnly();
   const [sections, setSections] = useState<SectionSummary[]>([]);
   const [pool, setPool] = useState<PoolLearner[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,6 +82,10 @@ export default function SectioningWorkspace() {
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
   const fetchData = useCallback(async () => {
+    if (isHistoricalReadOnly) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const [secRes, poolRes] = await Promise.all([
@@ -92,7 +99,7 @@ export default function SectioningWorkspace() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isHistoricalReadOnly]);
 
   useEffect(() => {
     fetchData();
@@ -178,6 +185,20 @@ export default function SectioningWorkspace() {
       <div className="h-[calc(100vh-100px)] flex flex-col items-center justify-center space-y-4">
         <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
         <p className="text-xs font-black uppercase tracking-widest text-slate-400">Synchronizing ATLAS Workspace...</p>
+      </div>
+    );
+  }
+
+  if (isHistoricalReadOnly) {
+    return (
+      <div className="h-[calc(100vh-100px)] flex flex-col items-center justify-center gap-4 p-6">
+        <Archive className="h-12 w-12 text-slate-300" />
+        <div className="text-center space-y-1">
+          <p className="text-sm font-black uppercase text-slate-500">Sectioning Workspace Unavailable</p>
+          <p className="text-xs text-slate-400 font-bold max-w-sm">
+            This workspace is only accessible for the active school year. Switch to the active year to manage learner sectioning.
+          </p>
+        </div>
       </div>
     );
   }

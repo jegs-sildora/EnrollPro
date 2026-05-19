@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AnimatedNumber } from "@/shared/components/AnimatedNumber";
 import { useSearchParams } from "react-router";
 import { sileo } from "sileo";
 import {
@@ -487,7 +488,7 @@ export default function AuditLogs() {
                   </p>
                 </div>
                 <CardTitle className="text-3xl font-black ">
-                  {total.toLocaleString()}
+                  <AnimatedNumber value={total} />
                 </CardTitle>
               </CardHeader>
             </Card>
@@ -500,7 +501,7 @@ export default function AuditLogs() {
                   </p>
                 </div>
                 <CardTitle className="text-3xl font-black  text-amber-600">
-                  {meta.criticalCount.toLocaleString()}
+                  <AnimatedNumber value={meta.criticalCount} />
                 </CardTitle>
               </CardHeader>
             </Card>

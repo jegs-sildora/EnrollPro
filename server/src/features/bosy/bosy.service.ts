@@ -763,6 +763,7 @@ export async function getTLEPrograms(schoolYearId: number): Promise<
   }>
 > {
   const programs = await prisma.tLEProgram.findMany({
+    where: { trackType: "SPECIALIZATION", isActive: true },
     orderBy: [{ category: "asc" }, { name: "asc" }],
   });
 

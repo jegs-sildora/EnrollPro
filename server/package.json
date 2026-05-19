@@ -29,6 +29,7 @@
     "db:seed-other-scp": "tsx prisma/seeds/04-sy-2026-2027/seed-other-scp.ts",
     "db:seed-promoted-learners": "tsx prisma/seeds/05-test-data/seed-promoted-learners.ts",
     "db:seed-tle-data": "tsx prisma/seeds/01-global/seed-tle-data.ts",
+    "db:seed-exploratory-tle": "tsx prisma/seeds/01-global/seed-exploratory-tle.ts",
     "db:seed-tle-teachers-from-programs": "tsx prisma/seeds/05-test-data/seed-tle-teachers-from-programs.ts",
     "db:seed-tle-test-learners": "tsx prisma/seeds/05-test-data/seed-tle-test-learners.ts",
     "db:wipe": "tsx prisma/seeds/wipe/wipe.ts",
