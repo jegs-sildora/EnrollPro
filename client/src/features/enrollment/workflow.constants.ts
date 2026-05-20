@@ -1,7 +1,6 @@
 
 export const ENROLLMENT_SUB_MENU_VALUES = [
   "UNSECTIONED_POOL",
-  "TLE_SECTIONING",
   "BATCH_WORKSPACE",
   "OFFICIAL_ROSTERS",
 ] as const;
@@ -14,7 +13,6 @@ export const ENROLLMENT_SUB_MENU_OPTIONS: Array<{
   label: string;
 }> = [
   { value: "UNSECTIONED_POOL", label: "Unsectioned Learner Pool" },
-  { value: "TLE_SECTIONING", label: "TLE Specialization Sectioning" },
   { value: "BATCH_WORKSPACE", label: "Batch Sectioning Workspace" },
   { value: "OFFICIAL_ROSTERS", label: "Official Class Rosters" },
 ];
@@ -25,8 +23,6 @@ export const ENROLLMENT_SUB_MENU_DESCRIPTIONS: Record<
 > = {
   UNSECTIONED_POOL:
     "Unified holding pool for qualified new intake and confirmed returning learners waiting for class assignments.",
-  TLE_SECTIONING:
-    "Unlimited sectioning for TLE Specialization assignments (no slot limits).",
   BATCH_WORKSPACE:
     "Mass sectioning environment to build balanced classes based on program requirements and gender parity.",
   OFFICIAL_ROSTERS:

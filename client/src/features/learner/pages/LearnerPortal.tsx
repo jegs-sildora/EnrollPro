@@ -6,25 +6,22 @@ import {
   type ReactNode,
 } from "react";
 import { PersonalInfoSection } from "@/features/learner/components/PersonalInfoSection";
+import { ConfirmationSlip } from "@/features/learner/components/ConfirmationSlip";
+import { LearnerPixelGridBackground } from "@/features/learner/components/LearnerPixelGridBackground";
 import { Card, CardHeader, CardTitle, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
 import {
   Printer,
   LogOut,
   CheckCircle2,
   Loader2,
   AlertCircle,
+  ArrowRight,
   BookOpen,
   Activity,
   Medal,
   FileText,
+  Lock,
   Sparkles,
 } from "lucide-react";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -56,12 +53,6 @@ const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
 const TLE_REQUIRED_GRADE_DISPLAY_ORDERS = [9, 10];
 
-interface TLEProgram {
-  id: number;
-  name: string;
-  category: string;
-}
-
 function AnimatedCard({
   children,
   className,
@@ -86,33 +77,31 @@ export default function LearnerPortal() {
   const {
     logoUrl,
     schoolName,
-    accentForeground,
     depedEmail,
     isBosyEnrollmentOpen,
+    isTleSelectionOpen,
+    activeSchoolYearLabel,
     setSettings,
   } = useSettingsStore();
   const { learner, setLearner, logout: clearLearnerData } = useLearnerStore();
-  const { token, user, clearAuth } = useLearnerAuthStore();
+  const { user, clearAuth, isHydrated } = useLearnerAuthStore();
   const navigate = useNavigate();
   const [showExitModal, setShowExitModal] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
-  const [tlePrograms, setTlePrograms] = useState<TLEProgram[]>([]);
-  const [selectedTleProgramId, setSelectedTleProgramId] = useState<string>("");
+  const [confirmationResult, setConfirmationResult] = useState<{
+    applicationId: number;
+    confirmedAt: Date;
+  } | null>(null);
+  const [slipOpen, setSlipOpen] = useState(false);
   const [academicHistory, setAcademicHistory] = useState<
     AcademicHistoryEntry[]
   >([]);
   const [profileLoading, setProfileLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("journey");
 
-  const requiresTle =
-    learner?.pendingConfirmation?.gradeLevelDisplayOrder != null &&
-    TLE_REQUIRED_GRADE_DISPLAY_ORDERS.includes(
-      learner.pendingConfirmation.gradeLevelDisplayOrder,
-    );
-
   const fetchData = useCallback(() => {
-    if (!token || user?.role !== "LEARNER") return;
+    if (!isHydrated || user?.role !== "LEARNER") return;
     setProfileLoading(true);
     Promise.all([
       api.get("/learner/profile"),
@@ -127,11 +116,26 @@ export default function LearnerPortal() {
         navigate("/learner/login", { replace: true });
       })
       .finally(() => setProfileLoading(false));
-  }, [token, user?.role, setLearner, clearAuth, navigate]);
+  }, [isHydrated, user?.role, setLearner, clearAuth, navigate]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Phase 3 TLE gate: redirect to TLE onboarding if selection is open and learner is pending
+  useEffect(() => {
+    if (!learner) return;
+    const tleStatus = learner.pendingConfirmation?.tleStatus;
+    const gradeLevelDisplayOrder = learner.pendingConfirmation?.gradeLevelDisplayOrder;
+    if (
+      isTleSelectionOpen &&
+      tleStatus === "PENDING" &&
+      gradeLevelDisplayOrder != null &&
+      TLE_REQUIRED_GRADE_DISPLAY_ORDERS.includes(gradeLevelDisplayOrder)
+    ) {
+      navigate("/learner/onboarding/tle", { replace: true });
+    }
+  }, [learner, isTleSelectionOpen, navigate]);
 
   useEffect(() => {
     if (logoUrl) return;
@@ -145,20 +149,6 @@ export default function LearnerPortal() {
       })
       .catch(() => {});
   }, [logoUrl, setSettings]);
-
-  useEffect(() => {
-    if (!requiresTle || !learner?.schoolYear?.id) return;
-    api
-      .get<{ programs: TLEProgram[] }>("/bosy/tle-programs", { params: { schoolYearId: learner?.schoolYear?.id } })
-      .then((res) => setTlePrograms(res.data.programs))
-      .catch(() => {});
-  }, [requiresTle, learner?.schoolYear?.id]);
-
-  useEffect(() => {
-    if (learner?.pendingConfirmation?.tleProgramId) {
-      setSelectedTleProgramId(String(learner.pendingConfirmation.tleProgramId));
-    }
-  }, [learner?.pendingConfirmation?.tleProgramId]);
 
   const fullLogoUrl = useMemo(() => {
     if (!logoUrl) return null;
@@ -187,22 +177,12 @@ export default function LearnerPortal() {
   const handleConfirmReturn = async () => {
     const appId = learner?.pendingConfirmation?.applicationId;
     if (!appId) return;
-    if (requiresTle && !selectedTleProgramId) {
-      sileo.warning({
-        title: "TLE Program Required",
-        description: "Please select your TLE specialization before confirming.",
-      });
-      return;
-    }
     setConfirmLoading(true);
     try {
-      await api.post("/learner/confirm-return", {
-        applicationId: appId,
-        ...(requiresTle && selectedTleProgramId
-          ? { tleProgramId: Number(selectedTleProgramId) }
-          : {}),
-      });
+      await api.post("/learner/confirm-return", { applicationId: appId });
+      const now = new Date();
       setConfirmed(true);
+      setConfirmationResult({ applicationId: appId, confirmedAt: now });
       sileo.success({
         title: "Return Confirmed!",
         description:
@@ -216,13 +196,23 @@ export default function LearnerPortal() {
     }
   };
 
-  if (!token || user?.role !== "LEARNER") {
+  if (!isHydrated) {
+    return (
+      <div className="min-h-screen relative overflow-hidden flex items-center justify-center">
+        <LearnerPixelGridBackground />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (user?.role !== "LEARNER") {
     return <Navigate to="/learner/login" replace />;
   }
 
   if (profileLoading || !learner) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen relative overflow-hidden flex items-center justify-center">
+        <LearnerPixelGridBackground />
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -273,7 +263,6 @@ export default function LearnerPortal() {
     .filter((g) => getAcademicStatus(g.name).type !== "EMPTY")
     .reverse(); // Show latest first
 
-  const strokeColor = accentForeground === "0 0% 0%" ? "stroke-black" : "stroke-white";
   const latestCompletedRecord = academicHistory.find(
     (entry) => entry.enrollmentRecord?.eosyStatus,
   );
@@ -313,23 +302,7 @@ export default function LearnerPortal() {
         variant="danger"
         onConfirm={handleExit}
       />
-      {/* Global Background */}
-      <div
-        className="fixed inset-0 -z-10"
-        style={{ background: "hsl(var(--accent))" }}>
-        <svg className="absolute inset-0 w-full h-full opacity-[0.15]" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="pixel-grid" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
-              <rect x="2" y="2" width="36" height="36" rx="2" fill="none" className={strokeColor} strokeWidth="1.5" />
-              <rect x="42" y="2" width="36" height="36" rx="2" fill="none" className={strokeColor} strokeWidth="1.5" />
-              <rect x="2" y="42" width="36" height="36" rx="2" fill="none" className={strokeColor} strokeWidth="1.5" />
-              <rect x="42" y="42" width="36" height="36" rx="2" fill="none" className={strokeColor} strokeWidth="1.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#pixel-grid)" />
-        </svg>
-        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at center, hsl(var(--accent-foreground) / 0.1) 0%, transparent 70%)" }} />
-      </div>
+      <LearnerPixelGridBackground />
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -428,16 +401,19 @@ export default function LearnerPortal() {
                     <TabsContent value="journey" forceMount className="mt-0 focus-visible:outline-none ring-0">
                       <div className="space-y-4">
                         <TransitionBanner
-                          isVisible={showTransitionBanner}
+                          isVisible={showTransitionBanner || (confirmed && Boolean(confirmationResult))}
                           nextSchoolYearLabel={nextSchoolYearLabel}
                           targetGradeLabel={targetGradeLabel}
                           isRetained={latestEosyStatus === "RETAINED"}
-                          requiresTle={requiresTle}
-                          tlePrograms={tlePrograms}
-                          selectedTleProgramId={selectedTleProgramId}
                           confirmLoading={confirmLoading}
-                          onTleProgramChange={setSelectedTleProgramId}
+                          confirmed={confirmed}
                           onConfirm={() => void handleConfirmReturn()}
+                          onViewSlip={() => setSlipOpen(true)}
+                        />
+                        <Phase3TleCard
+                          pendingConfirmation={learner.pendingConfirmation ?? null}
+                          isTleSelectionOpen={isTleSelectionOpen}
+                          onNavigate={() => navigate("/learner/onboarding/tle")}
                         />
                         <JhsCompletionCard
                           isVisible={showJhsCompletionCard}
@@ -477,6 +453,28 @@ export default function LearnerPortal() {
         </motion.div>
       </AnimatePresence>
 
+      {confirmationResult && learner && (
+        <ConfirmationSlip
+          open={slipOpen}
+          onClose={() => setSlipOpen(false)}
+          learner={{
+            firstName: learner.firstName,
+            lastName: learner.lastName,
+            middleName: learner.middleName,
+            suffix: learner.suffix,
+            lrn: learner.lrn,
+          }}
+          gradeLevelName={
+            learner.pendingConfirmation?.gradeLevelName ??
+            `Grade ${learner.pendingConfirmation?.gradeLevelDisplayOrder ?? ""}`
+          }
+          schoolName={schoolName}
+          schoolYearLabel={activeSchoolYearLabel}
+          applicationId={confirmationResult.applicationId}
+          confirmedAt={confirmationResult.confirmedAt}
+        />
+      )}
+
       <style dangerouslySetInnerHTML={{ __html: `@media print { @page { margin: 1.5cm; } body { background-color: white !important; } .print\\:hidden { display: none !important; } .shadow-xl, .shadow-sm { box-shadow: none !important; } .border-primary\\/5 { border: none !important; } .bg-white\\/90 { background-color: white !important; } .backdrop-blur-xl { backdrop-filter: none !important; } .rounded-lg { border-radius: 0 !important; } .divide-y > * { page-break-inside: avoid; } }` }} />
     </div>
   );
@@ -504,26 +502,54 @@ function TransitionBanner({
   nextSchoolYearLabel,
   targetGradeLabel,
   isRetained,
-  requiresTle,
-  tlePrograms,
-  selectedTleProgramId,
   confirmLoading,
-  onTleProgramChange,
+  confirmed,
   onConfirm,
+  onViewSlip,
 }: {
   isVisible: boolean;
   nextSchoolYearLabel: string;
   targetGradeLabel: string;
   isRetained: boolean;
-  requiresTle: boolean;
-  tlePrograms: TLEProgram[];
-  selectedTleProgramId: string;
   confirmLoading: boolean;
-  onTleProgramChange: (value: string) => void;
+  confirmed: boolean;
   onConfirm: () => void;
+  onViewSlip: () => void;
 }) {
   if (!isVisible) return null;
 
+  // Success state — show after confirmation
+  if (confirmed) {
+    return (
+      <AnimatedCard className="shadow-xl border-2 border-emerald-500/30 bg-emerald-50 rounded-lg overflow-hidden print:hidden">
+        <CardContent className="p-6 flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <CheckCircle2 className="h-8 w-8 text-emerald-600 shrink-0" />
+            <div className="flex-1">
+              <p className="font-black uppercase text-sm text-emerald-700">
+                Enrollment Confirmed
+              </p>
+              <p className="text-sm text-emerald-800 mt-1">
+                Your return for S.Y. {nextSchoolYearLabel} ({targetGradeLabel}) has been
+                officially recorded. You are now queued for section assignment.
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              className="shrink-0 border-emerald-400 text-emerald-700 hover:bg-emerald-100 font-black uppercase text-xs gap-2"
+              onClick={onViewSlip}>
+              <FileText className="h-4 w-4" />
+              View Confirmation Slip
+            </Button>
+          </div>
+        </CardContent>
+      </AnimatedCard>
+    );
+  }
+
+  // Pending confirmation state
   return (
     <AnimatedCard className="shadow-xl border-2 border-primary/20 bg-primary/10 rounded-lg overflow-hidden print:hidden">
       <CardContent className="p-6 flex flex-col gap-4">
@@ -540,36 +566,113 @@ function TransitionBanner({
             </p>
           </div>
         </div>
-        {requiresTle && (
-          <div className="flex flex-col gap-1.5">
-            <p className="text-xs font-bold uppercase text-primary">
-              Select Your TLE Specialization
-            </p>
-            <Select value={selectedTleProgramId} onValueChange={onTleProgramChange}>
-              <SelectTrigger className="bg-card border-primary/20 text-sm">
-                <SelectValue placeholder="Choose a TLE program..." />
-              </SelectTrigger>
-              <SelectContent>
-                {tlePrograms.map((program) => (
-                  <SelectItem key={program.id} value={String(program.id)}>
-                    {program.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
         <div className="flex justify-end">
           <Button
             className="shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase text-xs"
-            disabled={confirmLoading || (requiresTle && !selectedTleProgramId)}
+            disabled={confirmLoading}
             onClick={onConfirm}>
             {confirmLoading ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
               <CheckCircle2 className="h-4 w-4 mr-2" />
             )}
-            Confirm Enrollment
+            Confirm Return for S.Y. {nextSchoolYearLabel}
+          </Button>
+        </div>
+      </CardContent>
+    </AnimatedCard>
+  );
+}
+
+function Phase3TleCard({
+  pendingConfirmation,
+  isTleSelectionOpen,
+  onNavigate,
+}: {
+  pendingConfirmation: {
+    applicationId: number;
+    status: string;
+    gradeLevelDisplayOrder?: number | null;
+    tleStatus?: string | null;
+  } | null;
+  isTleSelectionOpen: boolean;
+  onNavigate: () => void;
+}) {
+  const gradeOrder = pendingConfirmation?.gradeLevelDisplayOrder;
+  if (!gradeOrder || !TLE_REQUIRED_GRADE_DISPLAY_ORDERS.includes(gradeOrder)) return null;
+  if (pendingConfirmation?.status === "PENDING_CONFIRMATION") return null;
+
+  const tleStatus = pendingConfirmation?.tleStatus;
+
+  if (tleStatus === "SECTIONED_FOR_TLE") {
+    return (
+      <AnimatedCard className="shadow-xl border-2 border-green-500/20 bg-green-50 rounded-lg overflow-hidden print:hidden">
+        <CardContent className="p-6 flex items-center gap-4">
+          <CheckCircle2 className="h-8 w-8 text-green-600 shrink-0" />
+          <div>
+            <p className="font-black uppercase text-sm text-green-700">Phase 3 Complete</p>
+            <p className="text-sm text-green-800 mt-1">
+              Your TLE Specialization section has been assigned. Check your section details above.
+            </p>
+          </div>
+        </CardContent>
+      </AnimatedCard>
+    );
+  }
+
+  if (tleStatus === "READY_FOR_TLE_SECTIONING") {
+    return (
+      <AnimatedCard className="shadow-xl border-2 border-blue-500/20 bg-blue-50 rounded-lg overflow-hidden print:hidden">
+        <CardContent className="p-6 flex items-center gap-4">
+          <CheckCircle2 className="h-8 w-8 text-blue-600 shrink-0" />
+          <div>
+            <p className="font-black uppercase text-sm text-blue-700">TLE Selection Submitted</p>
+            <p className="text-sm text-blue-800 mt-1">
+              Your TLE Specialization choice has been received. Awaiting section assignment by the registrar.
+            </p>
+          </div>
+        </CardContent>
+      </AnimatedCard>
+    );
+  }
+
+  if (!isTleSelectionOpen) {
+    return (
+      <AnimatedCard className="shadow-xl border-2 border-muted/40 bg-muted/20 rounded-lg overflow-hidden print:hidden">
+        <CardContent className="p-6 flex items-center gap-4">
+          <Lock className="h-8 w-8 text-muted-foreground shrink-0" />
+          <div>
+            <p className="font-black uppercase text-sm text-muted-foreground">Phase 3: TLE Specialization Selection</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              TLE Specialization Selection will open after the enrollment period concludes. Check back later.
+            </p>
+          </div>
+        </CardContent>
+      </AnimatedCard>
+    );
+  }
+
+  // isTleSelectionOpen && tleStatus === "PENDING"
+  return (
+    <AnimatedCard className="shadow-xl border-2 border-purple-500/20 bg-purple-50 rounded-lg overflow-hidden print:hidden">
+      <CardContent className="p-6 flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <AlertCircle className="h-8 w-8 text-purple-600 shrink-0" />
+          <div className="flex-1">
+            <p className="font-black uppercase text-sm text-purple-700">
+              Phase 3: TLE Specialization Selection
+            </p>
+            <p className="text-sm text-purple-900 mt-1">
+              TLE Specialization Selection is now open. Please select your preferred specialization track.
+            </p>
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <Button
+            className="shrink-0 bg-purple-600 hover:bg-purple-700 text-white font-black uppercase text-xs"
+            onClick={onNavigate}>
+            <ArrowRight className="h-4 w-4 mr-2" />
+            Select TLE Specialization
           </Button>
         </div>
       </CardContent>

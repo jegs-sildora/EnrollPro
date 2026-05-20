@@ -106,8 +106,10 @@ export default function ChangePassword() {
 
   // Staff takes priority when both stores have a session (shouldn't happen in practice)
   const isStaff = !!(staffAuth.token && staffAuth.user);
-  const auth = isStaff ? staffAuth : learnerAuth;
-  const { user, token, setAuth, clearAuth } = auth;
+  const user = isStaff ? staffAuth.user : learnerAuth.user;
+  const hasSession = isStaff
+    ? Boolean(staffAuth.token && staffAuth.user)
+    : Boolean(learnerAuth.user);
 
   // Learner-like roles (LEARNER + MRF) both use the learner portal
   const isLearnerLikeRole = (role: string | null | undefined): boolean =>
@@ -169,7 +171,7 @@ export default function ChangePassword() {
   );
 
   // Guard redirects
-  if (!token || !user) {
+  if (!hasSession || !user) {
     return <Navigate to={loginRoute} replace />;
   }
 
@@ -186,7 +188,11 @@ export default function ChangePassword() {
         newPassword: data.newPassword,
       });
 
-      setAuth(res.data.token, res.data.user);
+      if (isLearnerLikeRole(res.data.user?.role)) {
+        learnerAuth.setAuth(res.data.user);
+      } else {
+        staffAuth.setAuth(res.data.token, res.data.user);
+      }
       sileo.success({
         title: "Password Updated",
         description:
@@ -362,7 +368,11 @@ export default function ChangePassword() {
                 variant="ghost"
                 className="w-full text-xs text-foreground hover:text-primary h-8"
                 onClick={() => {
-                  clearAuth();
+                  if (isStaff) {
+                    staffAuth.clearAuth();
+                  } else {
+                    learnerAuth.clearAuth();
+                  }
                   navigate(loginRoute);
                 }}>
                 Cancel and Return to Login

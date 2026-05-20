@@ -9,7 +9,8 @@ import { Progress } from "@/shared/ui/progress";
 import axiosInstance from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
-import { ChevronRight, ChevronLeft, Loader2, Users, Archive } from "lucide-react";
+import { useSettingsStore } from "@/store/settings.slice";
+import { ChevronRight, ChevronLeft, Loader2, Users, Archive, AlertTriangle } from "lucide-react";
 
 interface Candidate {
   applicationId: number;
@@ -41,6 +42,7 @@ interface Section {
  */
 export default function TleSectioningWorkspace() {
   const { isHistoricalReadOnly } = useHistoricalReadOnly();
+  const { isTleSelectionOpen } = useSettingsStore();
   const [searchParams] = useSearchParams();
   const selectedSectionId = searchParams.get("sectionId");
 
@@ -196,6 +198,13 @@ export default function TleSectioningWorkspace() {
             Assign students to TLE sections by program and track
           </p>
         </motion.div>
+
+        {!isTleSelectionOpen && (
+          <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 mb-6">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            Phase 3 TLE Sectioning requires the admin to open Phase 3 TLE Selection first.
+          </div>
+        )}
 
         {/* Section Selector */}
         {!selectedSection && (

@@ -90,6 +90,7 @@ model SchoolSetting {
   depedEmail         String?     @map("deped_email")
   facebookPageUrl    String?     @map("facebook_page_url")
   schoolWebsite      String?     @map("school_website")
+  isTleSelectionOpen Boolean     @default(false) @map("is_tle_selection_open")
   activeSchoolYear   SchoolYear? @relation(fields: [activeSchoolYearId], references: [id])
 
   @@map("school_settings")

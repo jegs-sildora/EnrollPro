@@ -3,28 +3,39 @@ import { Navigate, Outlet, useLocation } from "react-router";
 import { Loader2 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useLearnerAuthStore } from "@/store/learner-auth.slice";
+import { LearnerPixelGridBackground } from "@/features/learner/components/LearnerPixelGridBackground";
 
 type OnboardingStep = "CONFIRMATION" | "TLE_SELECTION" | "COMPLETE";
 
 export default function OnboardingGuard() {
   const [step, setStep] = useState<OnboardingStep | null>(null);
   const [loading, setLoading] = useState(true);
-  const { token } = useLearnerAuthStore();
+  const { user, isHydrated } = useLearnerAuthStore();
   const location = useLocation();
 
   useEffect(() => {
-    if (!token) return;
+    if (!isHydrated) return;
+    if (!user || user.role !== "LEARNER") {
+      setLoading(false);
+      return;
+    }
 
     let isMounted = true;
     
     const checkStatus = async () => {
       try {
-        const res = await api.get<{ nextStep: OnboardingStep }>("/learner/onboarding-status");
+        const res = await api.get<{ nextStep: OnboardingStep }>(
+          "/learner/onboarding-status",
+          { timeout: 10000 },
+        );
         if (isMounted) {
           setStep(res.data.nextStep);
         }
       } catch (error) {
         console.error("Failed to check onboarding status", error);
+        if (isMounted) {
+          setStep("COMPLETE");
+        }
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -35,15 +46,25 @@ export default function OnboardingGuard() {
     checkStatus();
 
     return () => { isMounted = false; };
-  }, [token, location.pathname]); // Re-check on path changes within learner portal
+  }, [user, isHydrated, location.pathname]); // Re-check on path changes within learner portal
 
-  if (!token) {
+  if (!isHydrated) {
+    return (
+      <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-slate-50/50">
+        <LearnerPixelGridBackground />
+        <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
+      </div>
+    );
+  }
+
+  if (!user || user.role !== "LEARNER") {
     return <Navigate to="/learner/login" replace />;
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50/50">
+      <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-slate-50/50">
+        <LearnerPixelGridBackground />
         <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
       </div>
     );

@@ -28,6 +28,7 @@ import { sileo } from "sileo";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import type { AxiosError } from "axios";
 import { cn } from "@/shared/lib/utils";
+import { LearnerPixelGridBackground } from "@/features/learner/components/LearnerPixelGridBackground";
 
 interface Props {
   learner: {
@@ -54,7 +55,6 @@ export function ConfirmationWall({
 }: Props) {
   const {
     schoolName,
-    accentForeground,
     isBosyEnrollmentOpen,
     setSettings,
   } = useSettingsStore();
@@ -72,13 +72,14 @@ export function ConfirmationWall({
 
     const syncBosyGate = async () => {
       try {
-        const res = await api.get("/settings/public");
+        const res = await api.get("/settings/public", { timeout: 10000 });
         if (!isMounted) {
           return;
         }
 
         setSettings({
           isBosyEnrollmentOpen: Boolean(res.data.isBosyEnrollmentOpen),
+          isTleSelectionOpen: Boolean(res.data.isTleSelectionOpen),
         });
       } catch {
         // Keep persisted value when refresh fails.
@@ -178,9 +179,6 @@ export function ConfirmationWall({
     }
   };
 
-  const strokeColor =
-    accentForeground === "0 0% 0%" ? "stroke-black" : "stroke-white";
-
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center p-4 sm:p-8">
       {gateLoading ? (
@@ -189,86 +187,12 @@ export function ConfirmationWall({
         </div>
       ) : null}
 
-      {/* Global Pixel Grid Background */}
-      <div
-        className="fixed inset-0 -z-10"
-        style={{
-          background: "hsl(var(--accent))",
-        }}>
-        {/* Pixel grid */}
-        <svg
-          className="absolute inset-0 w-full h-full opacity-[0.15]"
-          xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern
-              id="pixel-grid"
-              x="0"
-              y="0"
-              width="80"
-              height="80"
-              patternUnits="userSpaceOnUse">
-              <rect
-                x="2"
-                y="2"
-                width="36"
-                height="36"
-                rx="2"
-                fill="none"
-                className={strokeColor}
-                strokeWidth="1.5"
-              />
-              <rect
-                x="42"
-                y="2"
-                width="36"
-                height="36"
-                rx="2"
-                fill="none"
-                className={strokeColor}
-                strokeWidth="1.5"
-              />
-              <rect
-                x="2"
-                y="42"
-                width="36"
-                height="36"
-                rx="2"
-                fill="none"
-                className={strokeColor}
-                strokeWidth="1.5"
-              />
-              <rect
-                x="42"
-                y="42"
-                width="36"
-                height="36"
-                rx="2"
-                fill="none"
-                className={strokeColor}
-                strokeWidth="1.5"
-              />
-            </pattern>
-          </defs>
-          <rect
-            width="100%"
-            height="100%"
-            fill="url(#pixel-grid)"
-          />
-        </svg>
-        {/* Radial glow */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(circle at center, hsl(var(--accent-foreground) / 0.1) 0%, transparent 70%)",
-          }}
-        />
-      </div>
+      <LearnerPixelGridBackground />
 
       <motion.div
         initial={{ opacity: 0, scale: 0.98, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="w-full max-w-4xl">
+        className="w-full max-w-4xl space-y-4">
         {!gateLoading && isGateLocked ? (
           <motion.div
             initial={{ opacity: 0, y: 12, scale: 0.98 }}
@@ -310,14 +234,16 @@ export function ConfirmationWall({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="space-y-6 sm:space-y-8">
-              {/* Header Info */}
-              <div className="text-center space-y-2 text-white drop-shadow-sm">
-                <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight">
-                  Welcome to {schoolName}
+              className="space-y-5 sm:space-y-6">
+              <div className="rounded-2xl border border-primary/20 bg-white px-5 py-4 shadow-sm">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
+                  Step 1 of 2
+                </p>
+                <h1 className="mt-1 text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+                  Confirmation of Return
                 </h1>
-                <p className="text-lg font-bold opacity-90 uppercase tracking-wide">
-                  Step 1: Confirmation of Return
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Official BOSY intent declaration for {schoolName}.
                 </p>
               </div>
 
@@ -326,8 +252,8 @@ export function ConfirmationWall({
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
               >
-                <Card className="shadow-2xl border-none overflow-hidden bg-white backdrop-blur-md">
-                <CardHeader className="bg-white text-foreground p-6 sm:p-8">
+                <Card className="shadow-xl border border-slate-200 overflow-hidden bg-white">
+                <CardHeader className="bg-white text-foreground p-6 sm:p-8 border-b border-slate-100">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1">
                       <CardTitle className="text-2xl font-black uppercase tracking-tight">
@@ -345,9 +271,9 @@ export function ConfirmationWall({
                   </div>
                 </CardHeader>
 
-                <CardContent className="p-6 sm:p-10 space-y-8">
+                <CardContent className="p-6 sm:p-10 space-y-6">
                   {/* Warning Box */}
-                  <div className="flex gap-4 p-5 rounded-2xl bg-amber-50 border border-amber-100 items-start">
+                  <div className="flex gap-4 p-5 rounded-2xl bg-amber-50 border border-amber-200 items-start">
                     <ShieldAlert className="h-6 w-6 text-amber-600 shrink-0 mt-0.5" />
                     <div className="space-y-1">
                       <p className="text-sm font-black text-foreground uppercase tracking-tight">
@@ -363,42 +289,38 @@ export function ConfirmationWall({
                   </div>
 
                   {/* Body Content */}
-                  <div className="space-y-6">
-                    <div className="flex items-start gap-4 group">
-                      <div className="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border-2 border-slate-100 group-hover:border-primary transition-colors">
-                        <FileText className="h-5 w-5 text-foreground group-hover:text-primary transition-colors" />
-                      </div>
-                      <div className="space-y-1">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                      <div className="mb-2 flex items-center gap-2">
+                        <div className="h-9 w-9 rounded-full bg-white flex items-center justify-center border border-slate-200">
+                          <FileText className="h-4 w-4 text-primary" />
+                        </div>
                         <p className="text-sm font-black text-foreground uppercase">
                           Enrollment Intent
                         </p>
-                        <p className="text-xs font-bold text-foreground leading-relaxed">
-                          By confirming, you signal your intent to continue
-                          your studies at {schoolName} for the{" "}
-                          {learner.schoolYear?.yearLabel} school year.
-                        </p>
                       </div>
+                      <p className="text-xs font-semibold text-foreground leading-relaxed">
+                        By confirming, you signal your intent to continue your studies at {schoolName} for the {learner.schoolYear?.yearLabel} school year.
+                      </p>
                     </div>
 
-                    <div className="flex items-start gap-4 group">
-                      <div className="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border-2 border-slate-100 group-hover:border-primary transition-colors">
-                        <UserCheck className="h-5 w-5 text-foreground group-hover:text-primary transition-colors" />
-                      </div>
-                      <div className="space-y-1">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                      <div className="mb-2 flex items-center gap-2">
+                        <div className="h-9 w-9 rounded-full bg-white flex items-center justify-center border border-slate-200">
+                          <UserCheck className="h-4 w-4 text-primary" />
+                        </div>
                         <p className="text-sm font-black text-foreground uppercase">
                           Verification Status
                         </p>
-                        <p className="text-xs font-bold text-foreground leading-relaxed">
-                          Your records have been automatically validated based
-                          on your Grade {9} performance. No physical documents
-                          are required at this stage.
-                        </p>
                       </div>
+                      <p className="text-xs font-semibold text-foreground leading-relaxed">
+                        Your records have been automatically validated. No physical documents are required at this stage.
+                      </p>
                     </div>
                   </div>
 
                   {/* Declaration Section */}
-                  <div className="pt-6 border-t border-slate-100 space-y-6">
+                  <div className="pt-6 border-t border-slate-100 space-y-6 rounded-2xl bg-slate-50/70 p-4 sm:p-6">
                     <div className="space-y-3">
                       <Label className="text-[10px] font-black uppercase text-foreground tracking-widest ml-1">
                         Legal Acknowledgment
@@ -407,8 +329,8 @@ export function ConfirmationWall({
                         className={cn(
                           "flex items-center space-x-3 p-4 rounded-xl border-2 transition-all cursor-pointer",
                           acknowledged
-                            ? "bg-primary/[0.03] border-primary"
-                            : "bg-slate-50 border-transparent hover:border-slate-200",
+                            ? "bg-primary/[0.05] border-primary"
+                            : "bg-white border-slate-200 hover:border-primary/40",
                         )}
                         onClick={() => setAcknowledged(!acknowledged)}>
                         <Checkbox
@@ -443,7 +365,7 @@ export function ConfirmationWall({
                           onChange={(e) =>
                             setGuardianName(e.target.value.toUpperCase())
                           }
-                          className="h-14 px-5 rounded-xl border-2 border-slate-100 focus:border-primary font-black uppercase text-sm tracking-widest placeholder:text-slate-300 transition-all"
+                          className="h-12 px-5 rounded-xl border-2 border-slate-200 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0 font-black uppercase text-sm tracking-widest placeholder:text-slate-300 transition-all bg-white"
                         />
                         <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none opacity-40">
                           <UserCheck className="h-4 w-4" />
@@ -457,34 +379,38 @@ export function ConfirmationWall({
                   </div>
                 </CardContent>
 
-                <CardFooter className="bg-slate-50 border-t border-slate-100 p-6 sm:p-8 flex flex-col sm:flex-row gap-4 items-center justify-between">
-                  <button
-                    onClick={handleTransferRequest}
-                    className="text-[10px] font-black uppercase text-slate-400 hover:text-destructive tracking-widest transition-colors">
-                    I am not returning (Request Transfer)
-                  </button>
-
-                  <div className="flex items-center gap-3 w-full sm:w-auto">
+                <CardFooter className="bg-slate-50 border-t border-slate-100 p-6 sm:p-8 flex flex-col gap-3">
+                  <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
                     <Button
-                      variant="ghost"
-                      onClick={onLogout}
-                      className="font-black uppercase text-xs tracking-widest h-12 px-6 rounded-xl hover:bg-slate-200">
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Sign Out
+                      variant="outline"
+                      onClick={handleTransferRequest}
+                      className="h-11 rounded-xl font-bold text-xs uppercase tracking-wide border-slate-300 text-slate-700 hover:bg-slate-100">
+                      I am not returning (Request Transfer)
                     </Button>
+
                     <Button
                       size="lg"
                       disabled={!acknowledged || !guardianName || isSubmitting}
                       onClick={handleConfirmReturn}
-                      className="h-14 px-10 flex-1 sm:flex-none rounded-xl font-black uppercase tracking-widest text-sm shadow-2xl shadow-primary/40 bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98]">
+                      className="h-12 w-full rounded-xl font-black uppercase tracking-wide text-sm shadow-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
                       {isSubmitting ? (
                         <Loader2 className="h-5 w-5 animate-spin" />
                       ) : (
                         <>
-                          Confirm Return for S.Y. {learner.schoolYear?.yearLabel}{" "}
-                          <ArrowRight className="ml-3 h-5 w-5" />
+                          Confirm Return
+                          <ArrowRight className="ml-2 h-5 w-5" />
                         </>
                       )}
+                    </Button>
+                  </div>
+
+                  <div className="flex w-full justify-end">
+                    <Button
+                      variant="ghost"
+                      onClick={onLogout}
+                      className="h-10 rounded-xl font-semibold text-xs uppercase tracking-wide text-slate-600 hover:bg-slate-200">
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
                     </Button>
                   </div>
                 </CardFooter>
@@ -492,9 +418,9 @@ export function ConfirmationWall({
               </motion.div>
 
               {/* DPA Footer */}
-              <div className="text-center opacity-60 text-white drop-shadow-sm flex items-center justify-center gap-2 px-6">
+              <div className="text-center text-slate-500 flex items-center justify-center gap-2 px-6">
                 <Info className="h-4 w-4 shrink-0" />
-                <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed max-w-lg">
+                <p className="text-xs font-medium leading-relaxed max-w-lg">
                   Strictly compliant with R.A. 10173 (Data Privacy Act of 2012).
                   Your digital signature is recorded for audit purposes.
                 </p>

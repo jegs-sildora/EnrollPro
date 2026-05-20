@@ -48,18 +48,15 @@ api.interceptors.request.use((config) => {
   const isLearnerPath =
     window.location.pathname.startsWith("/learner") ||
     window.location.pathname === "/change-password";
-  const hasLearnerToken = !!useLearnerAuthStore.getState().token;
+  const hasLearnerSession = !!useLearnerAuthStore.getState().user;
 
   const isLearnerApi =
     config.url?.startsWith("/learner") ||
     config.url === "/auth/logout-learner" ||
-    (config.url === "/auth/change-password" && isLearnerPath && hasLearnerToken);
+    (config.url === "/auth/change-password" && isLearnerPath && hasLearnerSession);
 
   if (isLearnerApi) {
-    const learnerToken = useLearnerAuthStore.getState().token;
-    if (learnerToken) {
-      config.headers.Authorization = `Bearer ${learnerToken}`;
-    }
+    // Learner auth is cookie-session based. Do not attach bearer token.
   } else {
     const token = useAuthStore.getState().token;
     if (token) {
@@ -76,7 +73,7 @@ api.interceptors.request.use((config) => {
   }
 
   const currentToken = isLearnerApi
-    ? useLearnerAuthStore.getState().token
+    ? (useLearnerAuthStore.getState().user ? "learner-session" : null)
     : useAuthStore.getState().token;
 
   if (currentToken) {
@@ -112,8 +109,8 @@ api.interceptors.response.use(
       const isLearnerPath = window.location.pathname.startsWith("/learner");
 
       if (isLearnerApi) {
-        const hadLearnerToken = !!useLearnerAuthStore.getState().token;
-        if (hadLearnerToken) {
+        const hadLearnerSession = !!useLearnerAuthStore.getState().user;
+        if (hadLearnerSession) {
           if (code === "TOKEN_EXPIRED" && !_sessionExpiredHandled) {
             _sessionExpiredHandled = true;
             useLearnerAuthStore.getState().setSessionExpired(true);
@@ -173,7 +170,7 @@ api.interceptors.response.use(
 
     if (status === 403 && code === "SY_ARCHIVED_LOCKED") {
       const hadToken =
-        useLearnerAuthStore.getState().token || useAuthStore.getState().token;
+        useLearnerAuthStore.getState().user || useAuthStore.getState().token;
       if (hadToken && !_historicalReadOnlyHandled) {
         _historicalReadOnlyHandled = true;
 

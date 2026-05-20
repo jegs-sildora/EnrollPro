@@ -34,11 +34,10 @@ export async function getBOSYQueue(
 
 export async function confirmReturn(
   applicationId: number,
-  tleProgramId?: number,
 ): Promise<{ applicationId: number; status: string }> {
   const res = await api.post<{ applicationId: number; status: string }>(
     `/bosy/confirm-return/${applicationId}`,
-    tleProgramId != null ? { tleProgramId } : {},
+    {},
   );
   return res.data;
 }
@@ -46,7 +45,6 @@ export async function confirmReturn(
 export async function bulkConfirm(body: {
   applicationIds: number[];
   schoolYearId: number;
-  tleProgramMap?: Record<number, number>;
 }): Promise<BulkConfirmResult> {
   const res = await api.post<BulkConfirmResult>(`/bosy/bulk-confirm`, body);
   return res.data;

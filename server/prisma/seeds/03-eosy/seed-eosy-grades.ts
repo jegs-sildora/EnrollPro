@@ -169,13 +169,22 @@ async function main() {
     );
   }
 
-  // Mark the school year itself as EOSY-finalized (matches data.txt: is_eosy_finalized = true)
+  // Only finalize/archive the school year when ALL sections are finalized.
+  // If VEGA is intentionally left open for demo flow, keep the school year unfinalized.
+  const shouldFinalizeSchoolYear = demoSection ? false : true;
+
   await prisma.schoolYear.update({
     where: { id: targetYear.id },
-    data: { isEosyFinalized: true },
+    data: { isEosyFinalized: shouldFinalizeSchoolYear },
   });
 
-  console.log(`✅ School year 2025-2026 marked as EOSY finalized.`);
+  if (shouldFinalizeSchoolYear) {
+    console.log(`✅ School year 2025-2026 marked as EOSY finalized.`);
+  } else {
+    console.log(
+      `ℹ️ School year 2025-2026 remains NOT finalized because '${DEMO_SECTION_THEME}' is intentionally unfinalized.`,
+    );
+  }
 
   console.log(
     `\nΓ£à Successfully implemented '65/66' Presentation Strategy for 2025-2026.`,

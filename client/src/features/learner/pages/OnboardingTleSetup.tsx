@@ -15,6 +15,7 @@ import { Input } from "@/shared/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { cn } from "@/shared/lib/utils";
 import { motion } from "motion/react";
+import { LearnerPixelGridBackground } from "@/features/learner/components/LearnerPixelGridBackground";
 
 type TLEProgram = {
   id: number;
@@ -216,7 +217,7 @@ function RichChoiceSelect({
 
 export default function OnboardingTleSetup() {
   const navigate = useNavigate();
-  const { token, user } = useLearnerAuthStore();
+  const { user, isHydrated } = useLearnerAuthStore();
   const { learner, setLearner } = useLearnerStore();
 
   const [loading, setLoading] = useState(true);
@@ -236,7 +237,7 @@ export default function OnboardingTleSetup() {
   const isScpBypass = isGrade9 && !isRegularCurriculum;
 
   const fetchContext = useCallback(async () => {
-    if (!token || user?.role !== "LEARNER") {
+    if (!isHydrated || user?.role !== "LEARNER") {
       return;
     }
 
@@ -275,7 +276,7 @@ export default function OnboardingTleSetup() {
     } finally {
       setLoading(false);
     }
-  }, [navigate, setLearner, token, user?.role]);
+  }, [navigate, setLearner, isHydrated, user?.role]);
 
   useEffect(() => {
     void fetchContext();
@@ -289,8 +290,7 @@ export default function OnboardingTleSetup() {
     const runBypassFinalization = async () => {
       setAutoFinalizing(true);
       try {
-        await api.post("/learner/confirm-return", {
-          confirmAction: "SUBMIT_TLE_CHOICES",
+        await api.post("/learner/submit-tle-choices", {
           applicationId: appId,
         });
 
@@ -345,8 +345,7 @@ export default function OnboardingTleSetup() {
 
     setSubmitting(true);
     try {
-      await api.post("/learner/confirm-return", {
-        confirmAction: "SUBMIT_TLE_CHOICES",
+      await api.post("/learner/submit-tle-choices", {
         applicationId: appId,
         tleProgramId: Number(choice1),
         tleProgramChoice2Id: Number(choice2),
@@ -366,7 +365,8 @@ export default function OnboardingTleSetup() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50/50">
+      <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-slate-50/50">
+        <LearnerPixelGridBackground />
         <Loader2 className="h-10 w-10 animate-spin text-primary opacity-30" />
       </div>
     );
@@ -374,7 +374,8 @@ export default function OnboardingTleSetup() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-6">
+        <LearnerPixelGridBackground />
         <motion.div
           initial={{ opacity: 0, y: 14, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -401,20 +402,7 @@ export default function OnboardingTleSetup() {
   if (step === "success") {
     return (
       <div className="min-h-screen relative overflow-hidden">
-        <div className="fixed inset-0 -z-10" style={{ background: "hsl(var(--accent))" }}>
-          <svg className="absolute inset-0 w-full h-full opacity-[0.15]" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="pixel-grid" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
-                <rect x="2" y="2" width="36" height="36" rx="2" fill="none" className="stroke-white" strokeWidth="1.5" />
-                <rect x="42" y="2" width="36" height="36" rx="2" fill="none" className="stroke-white" strokeWidth="1.5" />
-                <rect x="2" y="42" width="36" height="36" rx="2" fill="none" className="stroke-white" strokeWidth="1.5" />
-                <rect x="42" y="42" width="36" height="36" rx="2" fill="none" className="stroke-white" strokeWidth="1.5" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#pixel-grid)" />
-          </svg>
-          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at center, hsl(var(--accent-foreground) / 0.1) 0%, transparent 70%)" }} />
-        </div>
+        <LearnerPixelGridBackground />
 
         <div className="min-h-screen flex items-center justify-center p-6">
           <motion.div
@@ -445,7 +433,8 @@ export default function OnboardingTleSetup() {
 
   if (isScpBypass) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-6">
+        <LearnerPixelGridBackground />
         <motion.div
           initial={{ opacity: 0, y: 14, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -477,26 +466,7 @@ export default function OnboardingTleSetup() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      <div className="fixed inset-0 -z-10" style={{ background: "hsl(var(--accent))" }}>
-        <svg className="absolute inset-0 h-full w-full opacity-[0.15]" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="pixel-grid" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
-              <rect x="2" y="2" width="36" height="36" rx="2" fill="none" className="stroke-white" strokeWidth="1.5" />
-              <rect x="42" y="2" width="36" height="36" rx="2" fill="none" className="stroke-white" strokeWidth="1.5" />
-              <rect x="2" y="42" width="36" height="36" rx="2" fill="none" className="stroke-white" strokeWidth="1.5" />
-              <rect x="42" y="42" width="36" height="36" rx="2" fill="none" className="stroke-white" strokeWidth="1.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#pixel-grid)" />
-        </svg>
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(circle at center, hsl(var(--accent-foreground) / 0.1) 0%, transparent 70%)",
-          }}
-        />
-      </div>
+      <LearnerPixelGridBackground />
 
       <div className="mx-auto flex min-h-screen w-full max-w-4xl items-center justify-center p-4 sm:p-6">
         <motion.div

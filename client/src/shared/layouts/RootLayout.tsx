@@ -52,7 +52,7 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
   // Fetch public settings on mount
   useEffect(() => {
     api
-      .get("/settings/public")
+      .get("/settings/public", { timeout: 10000 })
       .then((res) => {
         setSettings({
           schoolName: res.data.schoolName,
@@ -75,6 +75,7 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
           depedEmail: res.data.depedEmail,
           schoolWebsite: res.data.schoolWebsite,
           isBosyEnrollmentOpen: Boolean(res.data.isBosyEnrollmentOpen),
+          isTleSelectionOpen: Boolean(res.data.isTleSelectionOpen),
         });
       })
       .catch(() => {

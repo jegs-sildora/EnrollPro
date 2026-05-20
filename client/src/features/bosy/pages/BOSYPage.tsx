@@ -17,10 +17,9 @@ import {
   confirmReturn,
   bulkConfirm,
   syncBOSYQueue,
-  getTLEPrograms,
   getJHSCompleters,
 } from "../api/bosy.api";
-import type { BOSYReadiness, BOSYQueueItem, TLEProgram, JHSCompleter } from "../types";
+import type { BOSYReadiness, BOSYQueueItem, JHSCompleter } from "../types";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { sileo } from "sileo";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -31,7 +30,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/shared/lib/utils";
 import { QueueTable } from "../components/QueueTable";
-import { TLEConfirmModal } from "../components/TLEConfirmModal";
 import { JHSCompleterTable } from "../components/JHSCompleterTable";
 import { PaginationBar } from "@/shared/components/PaginationBar";
 import { BulkConfirmBar } from "../components/BulkConfirmBar";
@@ -90,13 +88,6 @@ export default function BOSYPage() {
   const [confirmingIds, setConfirmingIds] = useState<Set<number>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
-
-  // TLE confirm modal state
-  const [tlePrograms, setTlePrograms] = useState<TLEProgram[]>([]);
-  const [tlePendingItem, setTlePendingItem] = useState<BOSYQueueItem | null>(
-    null,
-  );
-  const [tleConfirmLoading, setTleConfirmLoading] = useState(false);
 
   const fetchReadiness = useCallback(async () => {
     if (!syId) return;
@@ -212,14 +203,6 @@ export default function BOSYPage() {
   }, [fetchReadiness]);
 
   useEffect(() => {
-    if (!syId) return;
-
-    getTLEPrograms(syId)
-      .then(setTlePrograms)
-      .catch(() => {});
-  }, [syId]);
-
-  useEffect(() => {
     if (activeTab === "pending") void fetchPending();
   }, [activeTab, fetchPending]);
 
@@ -243,13 +226,10 @@ export default function BOSYPage() {
     else if (activeTab === "completers") void fetchCompleters();
   };
 
-  const handleConfirmSingle = async (
-    applicationId: number,
-    tleProgramId?: number,
-  ) => {
+  const handleConfirmSingle = async (applicationId: number) => {
     setConfirmingIds((prev) => new Set(prev).add(applicationId));
     try {
-      await confirmReturn(applicationId, tleProgramId);
+      await confirmReturn(applicationId);
       sileo.success({
         title: "Return Confirmed",
         description: `Application confirmed for sectioning.`,
@@ -267,19 +247,6 @@ export default function BOSYPage() {
         next.delete(applicationId);
         return next;
       });
-    }
-  };
-
-  const handleTleConfirm = async (
-    applicationId: number,
-    tleProgramId: number,
-  ) => {
-    setTleConfirmLoading(true);
-    try {
-      await handleConfirmSingle(applicationId, tleProgramId);
-      setTlePendingItem(null);
-    } finally {
-      setTleConfirmLoading(false);
     }
   };
 
@@ -347,16 +314,6 @@ export default function BOSYPage() {
 
   return (
     <div className="flex flex-col w-full min-w-0 overflow-hidden space-y-4 sm:space-y-6">
-      <TLEConfirmModal
-        open={tlePendingItem !== null}
-        onOpenChange={(v) => {
-          if (!v) setTlePendingItem(null);
-        }}
-        item={tlePendingItem}
-        tlePrograms={tlePrograms}
-        onConfirm={handleTleConfirm}
-        loading={tleConfirmLoading}
-      />
       {/* CONDITIONALLY_PROMOTED blocker warning */}
       {readiness && readiness.irregularBlockerCount > 0 && (
         <motion.div
@@ -536,7 +493,6 @@ export default function BOSYPage() {
                   onRowSelectionChange={setRowSelection}
                   onConfirmSingle={handleConfirmSingle}
                   confirmingIds={confirmingIds}
-                  onRequestTleConfirm={setTlePendingItem}
                 />
               </div>
               <PaginationBar

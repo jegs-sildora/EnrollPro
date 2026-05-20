@@ -232,7 +232,13 @@ export async function changePassword(
   });
 
   const token = createAuthToken(updated);
-  setSessionCookie(res, token);
+  const isLearner = updated.role === "LEARNER";
+  setSessionCookie(res, token, isLearner ? LEARNER_COOKIE_NAME : AUTH_COOKIE_NAME);
+
+  if (isLearner) {
+    res.json({ user: toUserResponse(updated) });
+    return;
+  }
 
   res.json({ token, user: toUserResponse(updated) });
 }
@@ -333,7 +339,6 @@ export async function learnerLogin(req: Request, res: Response): Promise<void> {
     setSessionCookie(res, token, LEARNER_COOKIE_NAME);
 
     res.json({
-      token,
       user: toUserResponse(updatedUser),
     });
   } catch (error) {

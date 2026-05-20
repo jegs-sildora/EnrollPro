@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/sha
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { useNavigate } from "react-router";
-import { BookOpen, Wrench } from "lucide-react";
+import { BookOpen } from "lucide-react";
 
 /**
  * SectioningHub: Entry lobby for sectioning workspace.
@@ -25,16 +25,6 @@ export default function SectioningHub() {
       icon: BookOpen,
       route: "/sectioning/home-room",
       color: "from-blue-50 to-blue-100",
-    },
-    {
-      id: "tle",
-      title: "TLE Track Sectioning",
-      description: "Assign students to TLE laboratories (Grades 9-10)",
-      badge: "TLE",
-      badgeColor: "bg-amber-500",
-      icon: Wrench,
-      route: "/sectioning/tle",
-      color: "from-amber-50 to-amber-100",
     },
   ];
 

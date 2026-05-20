@@ -21,9 +21,8 @@ interface QueueTableProps {
   showConfirmAction: boolean;
   rowSelection: RowSelectionState;
   onRowSelectionChange: OnChangeFn<RowSelectionState>;
-  onConfirmSingle: (applicationId: number, tleProgramId?: number) => void;
+  onConfirmSingle: (applicationId: number) => void;
   confirmingIds: Set<number>;
-  onRequestTleConfirm?: (item: BOSYQueueItem) => void;
 }
 
 function statusBadge(status: string) {
@@ -68,7 +67,6 @@ export function QueueTable({
   onRowSelectionChange,
   onConfirmSingle,
   confirmingIds,
-  onRequestTleConfirm,
 }: QueueTableProps) {
   const columns = useMemo<ColumnDef<BOSYQueueItem>[]>(() => {
     const base: ColumnDef<BOSYQueueItem>[] = [
@@ -264,9 +262,6 @@ export function QueueTable({
           const r = row.original;
           const isConfirming = confirmingIds.has(r.applicationId);
           if (r.status !== "PENDING_CONFIRMATION") return null;
-          const requiresTle = TLE_REQUIRED_GRADE_DISPLAY_ORDERS.includes(
-            r.gradeLevelDisplayOrder,
-          );
           return (
             <div className="flex justify-center">
               <Button
@@ -274,13 +269,7 @@ export function QueueTable({
                 variant="outline"
                 className="h-6 px-2 text-[10px] font-black uppercase text-emerald-700 border-emerald-200 hover:bg-emerald-50"
                 disabled={isConfirming}
-                onClick={() => {
-                  if (requiresTle && onRequestTleConfirm) {
-                    onRequestTleConfirm(r);
-                  } else {
-                    onConfirmSingle(r.applicationId);
-                  }
-                }}>
+                onClick={() => onConfirmSingle(r.applicationId)}>
                 {isConfirming ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
                 ) : (
@@ -297,7 +286,7 @@ export function QueueTable({
     }
 
     return base;
-  }, [showConfirmAction, onConfirmSingle, confirmingIds, onRequestTleConfirm]);
+  }, [showConfirmAction, onConfirmSingle, confirmingIds]);
 
   if (loading) {
     return (

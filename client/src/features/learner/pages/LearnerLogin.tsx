@@ -10,7 +10,7 @@ import {
   CardDescription,
 } from "@/shared/ui/card";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
-import { AlertCircle, Eye, EyeOff } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useLearnerAuthStore } from "@/store/learner-auth.slice";
 import { Navigate, useNavigate } from "react-router";
@@ -18,13 +18,14 @@ import api from "@/shared/api/axiosInstance";
 import { isAxiosError } from "axios";
 import { sileo } from "sileo";
 import depedLogo from "@/assets/DepEd-logo.png";
+import { LearnerPixelGridBackground } from "@/features/learner/components/LearnerPixelGridBackground";
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
 export function LookupForm() {
   const navigate = useNavigate();
-  const { logoUrl, schoolName, accentForeground } = useSettingsStore();
-  const { token, user, setAuth } = useLearnerAuthStore();
+  const { logoUrl, schoolName } = useSettingsStore();
+  const { user, setAuth, isHydrated } = useLearnerAuthStore();
 
   const [lrn, setLrn] = useState("");
   const [password, setPassword] = useState("");
@@ -49,8 +50,8 @@ export function LookupForm() {
     try {
       const res = await api.post("/auth/learner-login", { lrn, password });
 
-      // Store JWT + user in auth store
-      setAuth(res.data.token, res.data.user);
+      // Store learner user profile; auth session is maintained via httpOnly cookie.
+      setAuth(res.data.user);
 
       sileo.success({
         title: "Welcome back!",
@@ -77,10 +78,12 @@ export function LookupForm() {
 
   const isFormValid = lrn.length >= 12 && password.length >= 6;
 
-  const strokeColor = accentForeground === "0 0% 0%" ? "stroke-black" : "stroke-white";
-
   // If already logged in as learner, skip login page
-  if (token && user && !user.mustChangePassword) {
+  if (!isHydrated) {
+    return null;
+  }
+
+  if (user && !user.mustChangePassword) {
     return (
       <Navigate
         to="/learner"
@@ -90,102 +93,52 @@ export function LookupForm() {
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background implementation */}
-      <div
-        className="fixed inset-0 -z-10"
-        style={{
-          background: "hsl(var(--accent))",
-        }}>
-        <svg
-          className="absolute inset-0 w-full h-full opacity-[0.15]"
-          xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern
-              id="pixel-grid"
-              x="0"
-              y="0"
-              width="80"
-              height="80"
-              patternUnits="userSpaceOnUse">
-              <rect
-                x="2"
-                y="2"
-                width="36"
-                height="36"
-                rx="2"
-                fill="none"
-                className={strokeColor}
-                strokeWidth="1.5"
-              />
-              <rect
-                x="42"
-                y="2"
-                width="36"
-                height="36"
-                rx="2"
-                fill="none"
-                className={strokeColor}
-                strokeWidth="1.5"
-              />
-              <rect
-                x="2"
-                y="42"
-                width="36"
-                height="36"
-                rx="2"
-                fill="none"
-                className={strokeColor}
-                strokeWidth="1.5"
-              />
-              <rect
-                x="42"
-                y="42"
-                width="36"
-                height="36"
-                rx="2"
-                fill="none"
-                className={strokeColor}
-                strokeWidth="1.5"
-              />
-            </pattern>
-          </defs>
-          <rect
-            width="100%"
-            height="100%"
-            fill="url(#pixel-grid)"
-          />
-        </svg>
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(circle at center, hsl(var(--accent-foreground) / 0.1) 0%, transparent 70%)",
-          }}
-        />
-      </div>
+    <div className="min-h-screen w-full relative overflow-hidden">
+      <LearnerPixelGridBackground />
 
-      <Card className="w-full max-w-3xl mx-auto shadow-2xl border-primary/5 bg-white/90 backdrop-blur-xl p-2 sm:p-4">
-        <CardHeader className="text-center pb-4 pt-6 px-6 sm:px-10">
-          <div className="flex justify-center mb-6">
-            <img
-              src={fullLogoUrl}
-              alt={`${schoolName || "School"} Logo`}
-              className="h-24 w-auto object-contain"
-            />
+      <div className="mx-auto flex min-h-screen w-full max-w-6xl items-center px-4 py-8 sm:px-6 lg:px-10">
+        <div className="grid w-full grid-cols-1 overflow-hidden rounded-3xl border border-slate-200/80 bg-white/70 shadow-2xl backdrop-blur-xl lg:grid-cols-2">
+          <div className="hidden lg:flex flex-col justify-between bg-gradient-to-br from-primary to-primary/80 p-10 text-primary-foreground">
+            <div className="space-y-5">
+              <img
+                src={fullLogoUrl}
+                alt={`${schoolName || "School"} Logo`}
+                className="h-24 w-auto object-contain"
+              />
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] opacity-90">Hinigaran National High School</p>
+                <h2 className="mt-3 text-3xl font-black leading-tight">Learner Portal</h2>
+                <p className="mt-3 max-w-md text-sm opacity-90">
+                  Securely access your enrollment status, adviser details, and official school records.
+                </p>
+              </div>
+            </div>
+            <p className="text-xs font-semibold uppercase tracking-[0.1em] opacity-80">
+              Mobile-ready access for every learner
+            </p>
           </div>
-          <CardTitle className="text-2xl font-bold  text-foreground">
-            {schoolName ? `${schoolName} Learner Portal` : "Learner Portal"}
-          </CardTitle>
-          <CardDescription className="text-sm leading-relaxed text-foreground mt-2">
-            Log in to view your official class section, adviser details, and
-            digital school records.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="px-6 sm:px-10 pb-10">
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-6">
+
+          <Card className="rounded-none border-0 bg-transparent shadow-none">
+            <CardHeader className="px-6 pb-4 pt-8 text-center sm:px-10 lg:text-left">
+              <div className="mb-4 flex justify-center lg:hidden">
+                <img
+                  src={fullLogoUrl}
+                  alt={`${schoolName || "School"} Logo`}
+                  className="h-20 w-auto object-contain"
+                />
+              </div>
+              <CardTitle className="text-2xl font-black tracking-tight text-slate-900">
+                Login to Learner Portal
+              </CardTitle>
+              <CardDescription className="mt-1 text-sm text-muted-foreground">
+                Enter your LRN and password to continue.
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent className="px-6 pb-10 sm:px-10">
+              <form
+                onSubmit={handleSubmit}
+                className="space-y-6">
             {error && (
               <Alert
                 variant="destructive"
@@ -200,13 +153,13 @@ export function LookupForm() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="lrn"
-                className="text-sm font-medium text-foreground ml-1">
+                className="text-sm font-semibold text-foreground ml-1">
                 Learner Reference Number (LRN)
               </Label>
               <Input
                 id="lrn"
                 placeholder="e.g., 101234567890"
-                className="h-11 text-base bg-background/50 border-input focus:bg-background transition-all font-bold"
+                className="h-12 text-base bg-white border-slate-300 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0 font-semibold"
                 value={lrn}
                 onChange={(e) =>
                   setLrn(e.target.value.replace(/\D/g, "").slice(0, 12))
@@ -219,7 +172,7 @@ export function LookupForm() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="password"
-                className="text-sm font-medium text-foreground ml-1">
+                className="text-sm font-semibold text-foreground ml-1">
                 Password
               </Label>
               <div className="relative">
@@ -227,7 +180,7 @@ export function LookupForm() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="h-11 text-base bg-background/50 border-input focus:bg-background transition-all pr-10 font-bold"
+                  className="h-12 text-base bg-white border-slate-300 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0 pr-10 font-semibold"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   required
@@ -260,13 +213,22 @@ export function LookupForm() {
 
             <Button
               type="submit"
-              className="w-full h-12 text-base font-bold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md transition-all active:scale-[0.98]"
+              className="w-full h-12 text-base font-black bg-primary text-primary-foreground hover:bg-primary/90 hover:-translate-y-0.5 shadow-lg transition-all"
               disabled={!isFormValid || loading}>
-              {loading ? "Verifying credentials..." : "Login to Portal"}
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Verifying credentials...
+                </>
+              ) : (
+                "Login to Portal"
+              )}
             </Button>
           </form>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

@@ -29,7 +29,6 @@ import Homerooms from "@/features/sections/pages/Homerooms"
 import TleLaboratories from "@/features/sections/pages/TleLaboratories";
 import SectioningWorkspace from "@/features/sections/pages/SectioningWorkspace";
 import SectioningHub from "@/features/sections/pages/SectioningHub";
-import TleSectioningWorkspace from "@/features/sections/pages/TleSectioningWorkspace";
 import AuditLogs from "@/features/audit-logs/pages/Index";
 import Settings from "@/features/settings/pages/Index";
 import NotFound from "@/shared/components/NotFound";
@@ -267,10 +266,6 @@ export const router = createBrowserRouter([
               {
                 path: "/sectioning/home-room",
                 element: <SectioningWorkspace />,
-              },
-              {
-                path: "/sectioning/tle",
-                element: <TleSectioningWorkspace />,
               },
               {
                 path: "/monitoring/enrollment/requirements",

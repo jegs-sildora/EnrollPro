@@ -4,7 +4,9 @@ import {
   AlertTriangle,
   CalendarClock,
   CalendarDays,
+  Lock,
   Settings2,
+  Unlock,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -20,6 +22,7 @@ import {
 } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { Switch } from "@/shared/ui/switch";
 import { DatePicker } from "@/shared/ui/date-picker";
 
 import { formatManilaDate } from "@/shared/lib/utils";
@@ -131,11 +134,12 @@ function getPhaseStatus(openDate: string | null, closeDate: string | null) {
 }
 
 export default function EnrollmentGateTab() {
-  const { activeSchoolYearId, setSettings } = useSettingsStore();
+  const { activeSchoolYearId, isTleSelectionOpen, setSettings } = useSettingsStore();
   const [ay, setAy] = useState<AYDates | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [saving, setSaving] = useState(false);
+  const [tleGateSaving, setTleGateSaving] = useState(false);
 
   // Edit mode
   const [isEditing, setIsEditing] = useState(false);
@@ -327,6 +331,24 @@ export default function EnrollmentGateTab() {
       toastApiError(err as never);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleTleGateToggle = async (checked: boolean) => {
+    setTleGateSaving(true);
+    try {
+      const res = await api.patch("/settings/tle-gate", { isTleSelectionOpen: checked });
+      setSettings({ isTleSelectionOpen: Boolean(res.data.isTleSelectionOpen) });
+      sileo.success({
+        title: checked ? "Phase 3 Opened" : "Phase 3 Closed",
+        description: checked
+          ? "TLE Specialization Selection is now open for G9/G10 learners."
+          : "TLE Specialization Selection has been closed.",
+      });
+    } catch (err) {
+      toastApiError(err as never);
+    } finally {
+      setTleGateSaving(false);
     }
   };
 
@@ -603,6 +625,66 @@ export default function EnrollmentGateTab() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Phase 3 — TLE Specialization Selection Gate */}
+          <div className="">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant="outline"
+                    className="bg-purple-500/5 text-purple-600 border-purple-500/20 px-2 py-0.5">
+                    PHASE 3
+                  </Badge>
+                  <h4 className="font-bold text-lg text-foreground">
+                    TLE Specialization Selection
+                  </h4>
+                </div>
+                <p className="text-sm font-bold text-foreground bg-muted/50 px-3 py-1.5 rounded-md inline-block">
+                  For:{" "}
+                  <span className="text-foreground">
+                    Grade 9 and Grade 10 learners (after homeroom sectioning)
+                  </span>
+                </p>
+              </div>
+              <span
+                className={`text-xs font-bold px-3 py-1.5 rounded-full border shadow-sm ${
+                  isTleSelectionOpen
+                    ? "bg-purple-100 text-purple-700 font-bold"
+                    : "bg-slate-100 text-slate-500"
+                }`}>
+                {isTleSelectionOpen ? "🟢 OPEN" : "⚫ CLOSED"}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between p-6 bg-muted/40 rounded-2xl border">
+              <div className="flex items-center gap-3">
+                {isTleSelectionOpen ? (
+                  <Unlock className="h-5 w-5 text-purple-600" />
+                ) : (
+                  <Lock className="h-5 w-5 text-muted-foreground" />
+                )}
+                <div>
+                  <p className="text-sm font-bold text-foreground">
+                    {isTleSelectionOpen
+                      ? "Phase 3 is currently open"
+                      : "Phase 3 is currently closed"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {isTleSelectionOpen
+                      ? "G9/G10 learners can now select their TLE Specialization."
+                      : "Toggle to allow G9/G10 learners to select their TLE Specialization."}
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={isTleSelectionOpen}
+                onCheckedChange={handleTleGateToggle}
+                disabled={tleGateSaving}
+                aria-label="Toggle Phase 3 TLE Specialization Selection"
+              />
+            </div>
           </div>
 
           {isEditing && (

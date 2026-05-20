@@ -12,7 +12,6 @@ import {
   ChevronsUpDown,
   Search,
   X,
-  Plus,
   Mars,
   Venus,
 } from "lucide-react";
@@ -20,7 +19,6 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
-import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/shared/lib/utils";
 import {
   Select,
@@ -42,7 +40,6 @@ import {
   TEACHER_SPECIALIZATION_GROUPS,
   TEACHER_DEPARTMENT_OPTIONS,
 } from "../utils";
-import { DEPED_TEACHER_SUBJECT_GROUPS } from "@enrollpro/shared";
 
 type TeacherFormField = keyof TeacherFormState;
 
@@ -100,8 +97,8 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
   const [specializationSearchTerm, setSpecializationSearchTerm] = useState("");
   const [activeSpecializationIndex, setActiveSpecializationIndex] = useState(0);
 
-  const [subjectSearchTerm, setSubjectSearchTerm] = useState("");
-  const [isSubjectPopoverOpen, setIsSubjectPopoverOpen] = useState(false);
+  const [, setSubjectSearchTerm] = useState("");
+  const [, setIsSubjectPopoverOpen] = useState(false);
 
   const allSpecializationOptions = useMemo(
     () =>
@@ -306,29 +303,6 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
     },
     [onFieldChange],
   );
-
-  const handleSubjectToggle = useCallback(
-    (subject: string) => {
-      const currentSubjects = formData.subjects || [];
-      const exists = currentSubjects.includes(subject);
-      const nextSubjects = exists
-        ? currentSubjects.filter((s) => s !== subject)
-        : [...currentSubjects, subject];
-      onFieldChange("subjects", nextSubjects);
-    },
-    [formData.subjects, onFieldChange],
-  );
-
-  const filteredSubjectGroups = useMemo(() => {
-    return DEPED_TEACHER_SUBJECT_GROUPS.map((group) => ({
-      ...group,
-      options: group.options.filter(
-        (opt) =>
-          opt.label.toLowerCase().includes(subjectSearchTerm.toLowerCase()) ||
-          opt.value.toLowerCase().includes(subjectSearchTerm.toLowerCase()),
-      ),
-    })).filter((group) => group.options.length > 0);
-  }, [subjectSearchTerm]);
 
   const handleSpecializationSearchKeyDown = useCallback(
     (event: ReactKeyboardEvent<HTMLInputElement>) => {

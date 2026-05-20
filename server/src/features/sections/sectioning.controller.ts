@@ -284,11 +284,11 @@ export async function tleSectioningAssign(req: Request, res: Response) {
       return res.status(400).json({ message: "Missing or invalid sectionId or applicationIds." });
     }
 
-    // 1. Fetch section with current telemetry
+    // 1. Fetch section with current TLE telemetry (use TLE relation for capacity)
     const section = await prisma.section.findUnique({
       where: { id: sectionId },
       include: {
-        enrollmentRecords: true,
+        enrollmentRecordsTle: { select: { id: true } },
         gradeLevel: true,
         tleProgram: true,
       },
@@ -298,14 +298,14 @@ export async function tleSectioningAssign(req: Request, res: Response) {
       return res.status(400).json({ message: "Section not found." });
     }
 
-    // 2. Capacity verification
-    const currentCount = section.enrollmentRecords.length;
+    // 2. Capacity verification using TLE-specific count
+    const currentTleCount = section.enrollmentRecordsTle.length;
     const incomingCount = applicationIds.length;
     const maxCapacity = section.maxCapacity || 50;
 
-    if (currentCount + incomingCount > maxCapacity) {
+    if (currentTleCount + incomingCount > maxCapacity) {
       return res.status(400).json({
-        message: `Capacity exceeded. Section has ${currentCount}/${maxCapacity}. Cannot add ${incomingCount} more.`,
+        message: `Capacity exceeded. Section has ${currentTleCount}/${maxCapacity}. Cannot add ${incomingCount} more.`,
       });
     }
 
@@ -320,24 +320,14 @@ export async function tleSectioningAssign(req: Request, res: Response) {
 
     // 4. Per-application validation loop
     for (const app of applications) {
-      // 4a. Check no existing enrollment record (prevent double-assign)
-      const existingRecord = await prisma.enrollmentRecord.findFirst({
-        where: { enrollmentApplicationId: app.id },
-      });
-      if (existingRecord) {
-        return res.status(409).json({
-          message: `Application ${app.id} already has an enrollment record.`,
-        });
-      }
-
-      // 4b. Check tleStatus readiness
+      // 4a. Check tleStatus readiness
       if (app.tleStatus !== "READY_FOR_TLE_SECTIONING") {
         return res.status(409).json({
           message: `Application ${app.id} is not ready for TLE sectioning (tleStatus: ${app.tleStatus}).`,
         });
       }
 
-      // 4c. STRICT TRACK-LOCK: Ensure tleProgramId matches section's tleProgramId
+      // 4b. STRICT TRACK-LOCK: Ensure tleProgramId matches section's tleProgramId
       if (app.tleProgramId !== section.tleProgramId) {
         return res.status(422).json({
           message: `Application ${app.id} TLE program (${app.tleProgramId}) does not match section program (${section.tleProgramId}). Track-lock violation.`,
@@ -346,9 +336,16 @@ export async function tleSectioningAssign(req: Request, res: Response) {
       }
     }
 
-    // 5. Atomic transaction: Update tleStatus + create enrollment records + audit
-    const results = await prisma.$transaction(async (tx) => {
-      // 5a. Update all applications' tleStatus to SECTIONED_FOR_TLE
+    // 5. Pre-fetch existing enrollment records for all applications
+    const existingRecords = await prisma.enrollmentRecord.findMany({
+      where: { enrollmentApplicationId: { in: applicationIds } },
+      select: { id: true, enrollmentApplicationId: true },
+    });
+    const existingMap = new Map(existingRecords.map((r) => [r.enrollmentApplicationId, r.id]));
+
+    // 6. Atomic transaction: Update tleStatus + upsert tleSectionId on enrollment records
+    await prisma.$transaction(async (tx) => {
+      // 6a. Update all applications' tleStatus to SECTIONED_FOR_TLE
       await tx.enrollmentApplication.updateMany({
         where: { id: { in: applicationIds } },
         data: {
@@ -358,28 +355,23 @@ export async function tleSectioningAssign(req: Request, res: Response) {
         },
       });
 
-      // 5b. Create enrollment records for all applications
-      const enrollmentRecords = await Promise.all(
-        applicationIds.map((appId) =>
-          tx.enrollmentRecord.create({
-            data: {
-              enrollmentApplicationId: appId,
-              sectionId,
-              schoolYearId: section.schoolYearId,
-              enrolledById: userId,
-              learnerId: applications.find(a => a.id === appId)?.learnerId || 0,
-            },
-          }),
-        ),
-      );
-
-      return enrollmentRecords;
+      // 6b. Update existing enrollment record's tleSectionId (students must already have a homeroom record)
+      for (const appId of applicationIds) {
+        const existingRecordId = existingMap.get(appId);
+        if (existingRecordId) {
+          await tx.enrollmentRecord.update({
+            where: { id: existingRecordId },
+            data: { tleSectionId: sectionId },
+          });
+        }
+        // If no record exists, skip — TLE sectioning requires a prior homeroom assignment
+      }
     });
 
-    // 6. Audit Logging
+    // 7. Audit Logging
     await auditLog({
       userId,
-      actionType: "TLE_BULK_ASSIGNMENT",
+      actionType: "REGISTRAR_TLE_ASSIGNMENT",
       description: `TLE sectioned ${applicationIds.length} students into Section: ${section.name}`,
       subjectType: "Section",
       recordId: sectionId,
@@ -389,7 +381,7 @@ export async function tleSectioningAssign(req: Request, res: Response) {
     return res.json({
       success: true,
       message: `Successfully TLE-assigned ${applicationIds.length} students to ${section.name}.`,
-      count: results.length,
+      count: applicationIds.length,
       sectionId,
     });
 

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { verifyPin } from "./portal-pin.service.js";
+import { getEnrollmentPhase } from "../settings/enrollment-gate.service.js";
 
 const PORTAL_LOOKUP_ERROR = "Invalid learner credentials.";
 
@@ -210,10 +211,14 @@ export const lookupLearner = async (req: Request, res: Response) => {
         })),
         pendingConfirmation:
           application.status === "PENDING_CONFIRMATION" ||
-          application.status === "READY_FOR_SECTIONING"
+          application.status === "READY_FOR_SECTIONING" ||
+          (application.status === "ENROLLED" &&
+            application.tleStatus === "PENDING" &&
+            [9, 10].includes(application.gradeLevel.displayOrder ?? 0))
             ? {
                 applicationId: application.id,
                 status: application.status,
+                tleStatus: application.tleStatus ?? null,
                 gradeLevelName: application.gradeLevel.name,
                 gradeLevelDisplayOrder:
                   application.gradeLevel.displayOrder ?? null,
@@ -233,161 +238,205 @@ export const lookupLearner = async (req: Request, res: Response) => {
 };
 
 /**
- * Learner self-confirms return for BOSY.
+ * Learner self-confirms return for BOSY (Phase 2 only — no TLE).
  * POST /api/learner/confirm-return
- * Body: { applicationId: number, guardianName?: string, tleProgramId?: number, tleProgramChoice2Id?: number }
+ * Body: { applicationId: number, guardianName?: string }
  */
 export const learnerConfirmReturn = async (req: Request, res: Response) => {
   try {
-    const { applicationId, tleProgramId, guardianName, tleProgramChoice2Id } =
-      req.body as {
-        applicationId: unknown;
-        tleProgramId?: unknown;
-        guardianName?: string;
-        tleProgramChoice2Id?: unknown;
-      };
+    const { applicationId, guardianName } = req.body as {
+      applicationId: unknown;
+      guardianName?: string;
+    };
 
     const id = Number(applicationId);
     if (!Number.isInteger(id) || id <= 0) {
-      console.warn("[Learner Portal] Invalid applicationId received:", applicationId);
       return res.status(400).json({ message: "Invalid applicationId." });
     }
 
-    // 1. Fetch Application with Policy Context
     const app = await prisma.enrollmentApplication.findUnique({
       where: { id },
-      include: {
-        gradeLevel: { select: { displayOrder: true } },
-        learner: { 
-          select: { 
-            firstName: true, 
-            lastName: true,
-            enrollmentRecords: {
-               where: { 
-                 enrollmentApplication: {
-                   gradeLevel: { displayOrder: 9 }
-                 }
-               },
-               take: 1,
-               select: { tleProgramId: true } // Explicitly select the ID
-            }
-          } 
-        },
+      select: {
+        id: true,
+        status: true,
+        learner: { select: { firstName: true, lastName: true } },
       },
     });
 
     if (!app) {
-      console.warn("[Learner Portal] Application not found for ID:", id);
       return res.status(404).json({ message: "Application not found." });
     }
 
-    // Safety Check: Grade Level
-    if (!app.gradeLevel) {
-       console.error("[Learner Portal] Integrity Error: Application has no gradeLevel record.");
-       return res.status(500).json({ message: "Academic context missing." });
-    }
-
-    const gradeOrder = app.gradeLevel.displayOrder;
-
-    // 2. MATATAG RULESET ENFORCEMENT
-    if (gradeOrder === 9) {
-      if (!tleProgramId || !tleProgramChoice2Id) {
-        return res.status(400).json({ message: "Grade 9 requires both Primary and Fallback choices." });
-      }
-      if (Number(tleProgramId) === Number(tleProgramChoice2Id)) {
-        return res.status(400).json({ message: "Primary and Fallback choices must be unique." });
-      }
-    }
-
-    if (gradeOrder === 10) {
-      // Safety Check: Learner Enrollment Records
-      const g9Record = app.learner?.enrollmentRecords?.[0];
-      const prevTleId = g9Record?.tleProgramId;
-      
-      if (!prevTleId || Number(tleProgramId) !== prevTleId) {
-        return res.status(403).json({ 
-          message: "Grade 10 must continue their Grade 9 specialization. Track switching is prohibited." 
-        });
-      }
-    }
-
-    // 3. CAPACITY & TRACK VALIDATION
-    if (tleProgramId && Number(tleProgramId) > 0) {
-      const primaryTrack = await prisma.tLEProgram.findUnique({
-        where: { id: Number(tleProgramId) },
-        select: { id: true, name: true, trackType: true, maxSlots: true }
+    if (app.status !== "PENDING_CONFIRMATION") {
+      return res.status(409).json({
+        message: `Application is already in status '${app.status}'.`,
       });
-
-      if (!primaryTrack || primaryTrack.trackType !== "SPECIALIZATION") {
-        return res.status(400).json({ message: "Invalid Specialization Track selected." });
-      }
-
-      if (primaryTrack.maxSlots) {
-        const enrolledCount = await prisma.enrollmentApplication.count({
-          where: { 
-            tleProgramId: primaryTrack.id, 
-            schoolYearId: app.schoolYearId,
-            status: "READY_FOR_SECTIONING"
-          }
-        });
-        
-        if (app.tleProgramId !== primaryTrack.id && enrolledCount >= primaryTrack.maxSlots) {
-          return res.status(409).json({ message: `The track '${primaryTrack.name}' is currently at full capacity.` });
-        }
-      }
     }
 
-    if (app.status !== "PENDING_CONFIRMATION" && app.status !== "READY_FOR_SECTIONING") {
-       return res.status(409).json({
-         message: `Application is already in status '${app.status}'.`,
-       });
-    }
+    await prisma.enrollmentApplication.update({
+      where: { id },
+      data: {
+        status: "READY_FOR_SECTIONING",
+        confirmationConsent: true,
+        guardianName: guardianName || undefined,
+      },
+    });
 
-    const resolvedTleId = (tleProgramId != null && !isNaN(Number(tleProgramId)) && Number(tleProgramId) > 0) 
-      ? Number(tleProgramId) 
-      : null;
-      
-    const resolvedTleId2 = (tleProgramChoice2Id != null && !isNaN(Number(tleProgramChoice2Id)) && Number(tleProgramChoice2Id) > 0) 
-      ? Number(tleProgramChoice2Id) 
-      : null;
-
-    // Update the application
-    try {
-      await prisma.enrollmentApplication.update({
-        where: { id },
-        data: {
-          status: "READY_FOR_SECTIONING",
-          confirmationConsent: true,
-          guardianName: guardianName || undefined,
-          tleProgramId: resolvedTleId,
-          tleProgramChoice2Id: resolvedTleId2
-        },
-      });
-    } catch (dbError) {
-      console.error("[Learner Portal] Database Update Failed:", dbError);
-      return res.status(500).json({ message: "Failed to save academic choices." });
-    }
-
-    // 4. Log the digital acknowledgment
     if (app.learner) {
-      try {
-        await auditLog({
-          userId: req.user?.userId || null,
-          actionType: "LEARNER_CONFIRMATION",
-          description: `Learner ${app.learner.firstName} ${app.learner.lastName} confirmed return via TLE Setup${guardianName ? ` (Signed by: ${guardianName})` : ""}`,
-          subjectType: "EnrollmentApplication",
-          recordId: id,
-          req,
-        });
-      } catch (logError) {
-        console.warn("[Learner Portal] Audit Log Failed (Non-Critical):", logError);
-      }
+      await auditLog({
+        userId: req.user?.userId || null,
+        actionType: "LEARNER_CONFIRMATION",
+        description: `Learner ${app.learner.firstName} ${app.learner.lastName} confirmed return for BOSY${guardianName ? ` (Guardian: ${guardianName})` : ""}`,
+        subjectType: "EnrollmentApplication",
+        recordId: id,
+        req,
+      });
     }
 
     return res.json({ applicationId: id, status: "READY_FOR_SECTIONING" });
   } catch (error) {
     console.error("[Learner Portal] Critical failure in confirm-return:", error);
-    return res.status(500).json({ message: "Could not confirm return due to policy validation error." });
+    return res.status(500).json({ message: "Could not confirm return." });
+  }
+};
+
+/**
+ * Learner submits TLE specialization choices (Phase 3 gate).
+ * POST /api/learner/submit-tle-choices
+ * Body: { applicationId: number, tleProgramId?: number, tleProgramChoice2Id?: number }
+ * Grade 9: requires both tleProgramId and tleProgramChoice2Id.
+ * Grade 10: auto-resolves from locked G9 track (no body choices needed).
+ */
+export const submitTleChoices = async (req: Request, res: Response) => {
+  try {
+    const settings = await prisma.schoolSetting.findFirst({
+      select: { isTleSelectionOpen: true },
+    });
+    if (!settings?.isTleSelectionOpen) {
+      return res.status(403).json({ message: "Phase 3 TLE Selection is not currently open." });
+    }
+
+    const { applicationId, tleProgramId, tleProgramChoice2Id } = req.body as {
+      applicationId: unknown;
+      tleProgramId?: unknown;
+      tleProgramChoice2Id?: unknown;
+    };
+
+    const id = Number(applicationId);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ message: "Invalid applicationId." });
+    }
+
+    const app = await prisma.enrollmentApplication.findUnique({
+      where: { id },
+      include: {
+        gradeLevel: { select: { displayOrder: true } },
+        learner: {
+          select: {
+            firstName: true,
+            lastName: true,
+            enrollmentRecords: {
+              where: {
+                enrollmentApplication: {
+                  gradeLevel: { displayOrder: 9 },
+                },
+              },
+              take: 1,
+              select: { tleProgramId: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!app) {
+      return res.status(404).json({ message: "Application not found." });
+    }
+
+    const allowedStatuses = ["READY_FOR_SECTIONING", "ENROLLED", "OFFICIALLY_ENROLLED"];
+    if (!allowedStatuses.includes(app.status)) {
+      return res.status(409).json({
+        message: `Cannot submit TLE choices at status '${app.status}'.`,
+      });
+    }
+
+    if (app.tleStatus !== "PENDING") {
+      return res.status(409).json({ message: "TLE selection has already been submitted." });
+    }
+
+    const gradeOrder = app.gradeLevel.displayOrder;
+    let resolvedTleId: number;
+    let resolvedTleId2: number | null = null;
+
+    if (gradeOrder === 10) {
+      const g9Record = app.learner?.enrollmentRecords?.[0];
+      if (!g9Record?.tleProgramId) {
+        return res.status(422).json({
+          message: "No Grade 9 TLE track record found. Cannot determine Grade 10 specialization.",
+        });
+      }
+      resolvedTleId = g9Record.tleProgramId;
+    } else {
+      // Grade 9
+      const p1 = Number(tleProgramId);
+      const p2 = Number(tleProgramChoice2Id);
+      if (!p1 || !p2) {
+        return res.status(400).json({ message: "Grade 9 requires both Primary and Fallback TLE choices." });
+      }
+      if (p1 === p2) {
+        return res.status(400).json({ message: "Primary and Fallback choices must be different." });
+      }
+      resolvedTleId = p1;
+      resolvedTleId2 = p2;
+    }
+
+    const primaryTrack = await prisma.tLEProgram.findUnique({
+      where: { id: resolvedTleId },
+      select: { id: true, name: true, trackType: true, maxSlots: true },
+    });
+    if (!primaryTrack || primaryTrack.trackType !== "SPECIALIZATION") {
+      return res.status(400).json({ message: "Invalid Specialization Track selected." });
+    }
+
+    if (primaryTrack.maxSlots) {
+      const enrolledCount = await prisma.enrollmentApplication.count({
+        where: {
+          tleProgramId: primaryTrack.id,
+          schoolYearId: app.schoolYearId,
+          tleStatus: { in: ["READY_FOR_TLE_SECTIONING", "SECTIONED_FOR_TLE"] },
+        },
+      });
+      if (app.tleProgramId !== primaryTrack.id && enrolledCount >= primaryTrack.maxSlots) {
+        return res.status(409).json({
+          message: `The track '${primaryTrack.name}' is currently at full capacity.`,
+        });
+      }
+    }
+
+    await prisma.enrollmentApplication.update({
+      where: { id },
+      data: {
+        tleProgramId: resolvedTleId,
+        tleProgramChoice2Id: resolvedTleId2,
+        tleStatus: "READY_FOR_TLE_SECTIONING",
+      },
+    });
+
+    if (app.learner) {
+      await auditLog({
+        userId: req.user?.userId || null,
+        actionType: "LEARNER_TLE_SELECTION_SUBMITTED",
+        description: `Learner ${app.learner.firstName} ${app.learner.lastName} submitted TLE choices. Primary: program ID ${resolvedTleId}${resolvedTleId2 ? `, Fallback: ${resolvedTleId2}` : " (G10 auto-lock)"}`,
+        subjectType: "EnrollmentApplication",
+        recordId: id,
+        req,
+      });
+    }
+
+    return res.json({ applicationId: id, tleStatus: "READY_FOR_TLE_SECTIONING" });
+  } catch (error) {
+    console.error("[Learner Portal] Critical failure in submit-tle-choices:", error);
+    return res.status(500).json({ message: "Could not submit TLE choices." });
   }
 };
 
@@ -558,24 +607,50 @@ export const getOnboardingStatus = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.userId;
 
+    // Resolve active school year similarly to settings/public.
+    const settings = await prisma.schoolSetting.findFirst({
+      include: { activeSchoolYear: true },
+    });
+
+    let activeSy = settings?.activeSchoolYear ?? null;
+    if (!activeSy) {
+      activeSy = await prisma.schoolYear.findFirst({
+        where: { status: "ACTIVE" },
+        orderBy: { createdAt: "desc" },
+      });
+    }
+
+    // No active school year means no onboarding tunnel.
+    if (!activeSy) {
+      return res.json({ nextStep: "COMPLETE" });
+    }
+
+    // BOSY wall should only be enforced during REGULAR_ENROLLMENT.
+    const enrollmentPhase = getEnrollmentPhase(activeSy);
+    const isBosyEnrollmentOpen = enrollmentPhase === "REGULAR_ENROLLMENT";
+    if (!isBosyEnrollmentOpen) {
+      return res.json({ nextStep: "COMPLETE" });
+    }
+
     const learner = await prisma.learner.findFirst({
       where: { userId },
-      include: {
-        enrollmentApplications: {
-          orderBy: { schoolYearId: "desc" },
-          take: 1,
-          include: {
-            gradeLevel: { select: { displayOrder: true } },
-          },
-        },
-      },
+      select: { id: true },
     });
 
     if (!learner) {
       return res.status(404).json({ message: "Learner profile not found." });
     }
 
-    const application = learner.enrollmentApplications[0];
+    const application = await prisma.enrollmentApplication.findFirst({
+      where: {
+        learnerId: learner.id,
+        schoolYearId: activeSy.id,
+      },
+      include: {
+        gradeLevel: { select: { displayOrder: true } },
+      },
+      orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+    });
 
     // If no application for the new year exists, we assume they are already on the dashboard
     // (or they haven't been triggered for promotion yet).
@@ -625,7 +700,7 @@ export const getLearnerProfile = async (req: Request, res: Response) => {
       include: {
         enrollmentApplications: {
           orderBy: { schoolYearId: "desc" },
-          take: 1,
+          take: 2,
           include: {
             addresses: true,
             gradeLevel: { select: { name: true, displayOrder: true } },
@@ -658,6 +733,7 @@ export const getLearnerProfile = async (req: Request, res: Response) => {
     }
 
     const application = learner.enrollmentApplications[0] ?? null;
+    const previousApplication = learner.enrollmentApplications[1] ?? null;
     const currentAddress =
       application?.addresses.find((a: any) => a.addressType === "CURRENT") ??
       null;
@@ -726,10 +802,14 @@ export const getLearnerProfile = async (req: Request, res: Response) => {
         })),
         pendingConfirmation:
           application?.status === "PENDING_CONFIRMATION" ||
-          application?.status === "READY_FOR_SECTIONING"
+          application?.status === "READY_FOR_SECTIONING" ||
+          (application?.status === "ENROLLED" &&
+            application.tleStatus === "PENDING" &&
+            [9, 10].includes(application.gradeLevel.displayOrder ?? 0))
             ? {
                 applicationId: application.id,
                 status: application.status,
+                tleStatus: application.tleStatus ?? null,
                 gradeLevelId: application.gradeLevelId,
                 gradeLevelName: application.gradeLevel.name,
                 gradeLevelDisplayOrder:
@@ -737,6 +817,8 @@ export const getLearnerProfile = async (req: Request, res: Response) => {
                 tleProgramId: application.tleProgramId ?? null,
                 tleProgramName: (application as any).tleProgram?.name ?? null,
                 guardianName: application.guardianName ?? null,
+                previousEosyStatus:
+                  previousApplication?.enrollmentRecord?.eosyStatus ?? null,
               }
             : null,
       },

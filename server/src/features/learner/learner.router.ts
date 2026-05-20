@@ -3,6 +3,7 @@ import {
   lookupLearner,
   lookupLearnerByLrn,
   learnerConfirmReturn,
+  submitTleChoices,
   getLearnerProfile,
   getLearnerAcademicHistory,
   learnerRequestTransfer,
@@ -30,6 +31,9 @@ router.get(
 
 // Learner self-confirms BOSY return
 router.post("/confirm-return", authenticateLearner, learnerConfirmReturn);
+
+// Learner submits Phase 3 TLE specialization choices
+router.post("/submit-tle-choices", authenticateLearner, submitTleChoices);
 
 // Learner requests transfer out
 router.post("/request-transfer", authenticateLearner, learnerRequestTransfer);

@@ -42,6 +42,7 @@ export interface LearnerProfile {
     gradeLevelDisplayOrder?: number | null;
     tleProgramId?: number | null;
     tleProgramName?: string | null;
+    tleStatus?: string | null;
     guardianName?: string | null;
   } | null;
 }

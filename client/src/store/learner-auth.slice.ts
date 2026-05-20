@@ -14,11 +14,10 @@ interface User {
 }
 
 interface LearnerAuthState {
-  token: string | null;
   user: User | null;
   sessionExpired: boolean;
   isHydrated: boolean;
-  setAuth: (token: string, user: User) => void;
+  setAuth: (user: User) => void;
   clearAuth: () => void;
   setSessionExpired: (expired: boolean) => void;
   setHydrated: () => void;
@@ -27,18 +26,17 @@ interface LearnerAuthState {
 export const useLearnerAuthStore = create<LearnerAuthState>()(
   persist(
     (set) => ({
-      token: null,
       user: null,
       sessionExpired: false,
       isHydrated: false,
-      setAuth: (token, user) => set({ token, user, sessionExpired: false }),
-      clearAuth: () => set({ token: null, user: null }),
+      setAuth: (user) => set({ user, sessionExpired: false }),
+      clearAuth: () => set({ user: null }),
       setSessionExpired: (expired) => set({ sessionExpired: expired }),
       setHydrated: () => set({ isHydrated: true }),
     }),
     {
       name: "learner-auth-storage",
-      partialize: (state) => ({ token: state.token, user: state.user }),
+      partialize: (state) => ({ user: state.user }),
       onRehydrateStorage: () => (state) => {
         state?.setHydrated();
       },

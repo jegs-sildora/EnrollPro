@@ -539,7 +539,6 @@ export async function syncBOSYQueue(
 export async function confirmReturn(
   applicationId: number,
   actingUserId: number,
-  tleProgramId?: number | null,
 ): Promise<{ applicationId: number; status: string }> {
   const application = await prisma.enrollmentApplication.findUnique({
     where: { id: applicationId },
@@ -567,27 +566,12 @@ export async function confirmReturn(
     );
   }
 
-  // TLE is required for G9 and G10
-  const requiresTle = [9, 10].includes(application.gradeLevel.displayOrder);
-  if (requiresTle && !tleProgramId) {
-    throw Object.assign(
-      new Error(
-        "A TLE program selection is required for Grade 9 and Grade 10 learners.",
-      ),
-      { status: 422 },
-    );
-  }
-
   const updated = await prisma.enrollmentApplication.update({
     where: { id: applicationId },
     data: {
       status: "READY_FOR_SECTIONING",
       confirmationConsent: true,
       encodedById: actingUserId,
-      ...(requiresTle ? { tleProgramId: tleProgramId ?? null } : {}),
-      ...(requiresTle && tleProgramId
-        ? { tleStatus: TleSectioningStatus.READY_FOR_TLE_SECTIONING }
-        : {}),
     },
     select: { id: true, status: true },
   });
@@ -599,7 +583,6 @@ export async function bulkConfirmReturn(
   applicationIds: number[],
   schoolYearId: number,
   actingUserId: number,
-  tleProgramMap?: Record<number, number | null>,
 ): Promise<BulkConfirmResult> {
   const confirmed: number[] = [];
   const failed: Array<{ id: number; reason: string }> = [];
@@ -634,34 +617,16 @@ export async function bulkConfirmReturn(
       });
       continue;
     }
-    const requiresTle = [9, 10].includes(app.gradeLevel.displayOrder);
-    const tleProgramId = tleProgramMap?.[id] ?? null;
-    if (requiresTle && !tleProgramId) {
-      failed.push({
-        id,
-        reason:
-          "A TLE program selection is required for Grade 9 and Grade 10 learners.",
-      });
-      continue;
-    }
     confirmed.push(id);
   }
 
-  // Update each confirmed application individually to set its tleProgramId
-  for (const id of confirmed) {
-    const app = appMap.get(id)!;
-    const requiresTle = [9, 10].includes(app.gradeLevel.displayOrder);
-    const tleProgramId = tleProgramMap?.[id] ?? null;
-    await prisma.enrollmentApplication.update({
-      where: { id },
+  if (confirmed.length > 0) {
+    await prisma.enrollmentApplication.updateMany({
+      where: { id: { in: confirmed } },
       data: {
         status: "READY_FOR_SECTIONING",
         confirmationConsent: true,
         encodedById: actingUserId,
-        ...(requiresTle ? { tleProgramId } : {}),
-        ...(requiresTle && tleProgramId
-          ? { tleStatus: TleSectioningStatus.READY_FOR_TLE_SECTIONING }
-          : {}),
       },
     });
   }

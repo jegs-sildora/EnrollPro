@@ -31,6 +31,7 @@ export interface SettingsState {
   depedEmail: string | null;
   schoolWebsite: string | null;
   isBosyEnrollmentOpen: boolean;
+  isTleSelectionOpen: boolean;
   enrollmentPhase:
     | "EARLY_REGISTRATION"
     | "REGULAR_ENROLLMENT"
@@ -90,6 +91,7 @@ export const useSettingsStore = create<SettingsState>()(
       depedEmail: null,
       schoolWebsite: null,
       isBosyEnrollmentOpen: false,
+      isTleSelectionOpen: false,
       enrollmentPhase: "CLOSED",
       systemStatus: "DRAFT",
       bosyLockedAt: null,

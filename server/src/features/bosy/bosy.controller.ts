@@ -128,15 +128,9 @@ export async function confirmReturnHandler(
       return;
     }
 
-    const tleProgramId =
-      req.body?.tleProgramId != null
-        ? parsePositiveInt(req.body.tleProgramId, 0) || null
-        : null;
-
     const result = await confirmReturn(
       applicationId,
       req.user!.userId,
-      tleProgramId ?? undefined,
     );
 
     await auditLog({
@@ -160,10 +154,9 @@ export async function bulkConfirmReturnHandler(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const { applicationIds, schoolYearId, tleProgramMap } = req.body as {
+    const { applicationIds, schoolYearId } = req.body as {
       applicationIds: unknown;
       schoolYearId: unknown;
-      tleProgramMap?: Record<number, number | null>;
     };
 
     if (!Array.isArray(applicationIds) || applicationIds.length === 0) {
@@ -190,7 +183,6 @@ export async function bulkConfirmReturnHandler(
       parsedIds,
       parsedSchoolYearId,
       req.user!.userId,
-      tleProgramMap,
     );
 
     await auditLog({

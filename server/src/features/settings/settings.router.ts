@@ -9,6 +9,7 @@ import {
   getScpConfig,
   removeLogo,
   selectAccentColor,
+  toggleTleGate,
   updateIdentity,
   uploadLogo,
 } from "./settings.controller.js";
@@ -42,5 +43,6 @@ router.put(
   validate(selectAccentSchema),
   selectAccentColor,
 );
+router.patch("/tle-gate", authenticate, authorize("SYSTEM_ADMIN"), toggleTleGate);
 
 export default router;
