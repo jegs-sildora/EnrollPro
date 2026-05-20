@@ -21,12 +21,10 @@ import Profile from "@/features/students/pages/Profile";
 import LearnerPortal from "@/features/learner/pages/LearnerPortal";
 import { LookupForm as LearnerLogin } from "@/features/learner/pages/LearnerLogin";
 import OnboardingConfirm from "@/features/learner/pages/OnboardingConfirm";
-import OnboardingTleSetup from "@/features/learner/pages/OnboardingTleSetup";
 import OnboardingGuard from "@/features/learner/components/OnboardingGuard";
 import ChangePassword from "@/features/auth/components/ChangePasswordModal";
 import Sections from "@/features/sections/pages/Index"
 import Homerooms from "@/features/sections/pages/Homerooms"
-import TleLaboratories from "@/features/sections/pages/TleLaboratories";
 import SectioningWorkspace from "@/features/sections/pages/SectioningWorkspace";
 import SectioningHub from "@/features/sections/pages/SectioningHub";
 import AuditLogs from "@/features/audit-logs/pages/Index";
@@ -36,8 +34,8 @@ import NotFound from "@/shared/components/NotFound";
 // Admin Pages
 import AdminUsers from "@/features/admin/pages/Users";
 import SystemHealth from "@/features/admin/pages/SystemHealth";
-import TLEProgramsAdmin from "@/features/admin/pages/TLEPrograms";
 import Teachers from "@/features/teachers/pages/Index";
+import IntakeDashboard from "@/features/intake/pages/IntakeDashboard";
 
 // F2F Basic Education Early Registration Form Page
 import F2FEarlyRegistration from "@/features/admission/pages/f2f/Index";
@@ -79,10 +77,6 @@ export const router = createBrowserRouter([
                   {
                     path: "confirm",
                     element: <OnboardingConfirm />,
-                  },
-                  {
-                    path: "tle-setup",
-                    element: <OnboardingTleSetup />,
                   },
                 ],
               },
@@ -252,10 +246,6 @@ export const router = createBrowserRouter([
                 element: <Homerooms />,
               },
               {
-                path: "/sections/tle",
-                element: <TleLaboratories />,
-              },
-              {
                 path: "/sections/workspace",
                 element: <SectioningWorkspace />,
               },
@@ -266,6 +256,10 @@ export const router = createBrowserRouter([
               {
                 path: "/sectioning/home-room",
                 element: <SectioningWorkspace />,
+              },
+              {
+                path: "/intake",
+                element: <IntakeDashboard />,
               },
               {
                 path: "/monitoring/enrollment/requirements",
@@ -308,10 +302,6 @@ export const router = createBrowserRouter([
                   {
                     path: "/admin/integration",
                     element: <IntegrationHub />,
-                  },
-                  {
-                    path: "/admin/tle-programs",
-                    element: <TLEProgramsAdmin />,
                   },
                   {
                     path: "/audit-logs",

@@ -75,7 +75,6 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
           depedEmail: res.data.depedEmail,
           schoolWebsite: res.data.schoolWebsite,
           isBosyEnrollmentOpen: Boolean(res.data.isBosyEnrollmentOpen),
-          isTleSelectionOpen: Boolean(res.data.isTleSelectionOpen),
         });
       })
       .catch(() => {

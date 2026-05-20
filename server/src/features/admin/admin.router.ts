@@ -10,7 +10,6 @@ import {
 import * as userCtrl from "./admin-user.controller.js";
 import * as sysCtrl from "./admin-system.controller.js";
 import * as historicalCorrectionCtrl from "./historical-correction.controller.js";
-import * as tleProgramsCtrl from "./tle-programs.controller.js";
 
 const router: Router = Router();
 
@@ -41,15 +40,6 @@ router.patch(
 router.post(
   "/historical-correction/authorize",
   historicalCorrectionCtrl.authorize,
-);
-
-// TLE Programs CRUD
-router.get("/tle-programs", tleProgramsCtrl.listTLEPrograms);
-router.post("/tle-programs", tleProgramsCtrl.createTLEProgram);
-router.put("/tle-programs/:id", tleProgramsCtrl.updateTLEProgram);
-router.patch(
-  "/tle-programs/:id/deactivate",
-  tleProgramsCtrl.deactivateTLEProgram,
 );
 
 // System Health

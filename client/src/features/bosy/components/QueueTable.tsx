@@ -13,8 +13,6 @@ import type {
 import type { BOSYQueueItem } from "../types";
 import { formatApplicationStatus, formatEosyStatus } from "@/shared/lib/utils";
 
-const TLE_REQUIRED_GRADE_DISPLAY_ORDERS = [9, 10];
-
 interface QueueTableProps {
   items: BOSYQueueItem[];
   loading: boolean;
@@ -205,48 +203,6 @@ export function QueueTable({
           </div>
         ),
         size: 110,
-      },
-      {
-        id: "tleProgram",
-        accessorKey: "tleProgramName",
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="TLE"
-          />
-        ),
-        cell: ({ row }) => {
-          const r = row.original;
-          const requiresTle = TLE_REQUIRED_GRADE_DISPLAY_ORDERS.includes(
-            r.gradeLevelDisplayOrder,
-          );
-          if (!requiresTle)
-            return (
-              <div className="text-xs text-muted-foreground text-center">—</div>
-            );
-          return (
-            <div className="text-xs flex flex-col gap-0.5">
-              {r.tleProgramName ? (
-                <span className="font-semibold">{r.tleProgramName}</span>
-              ) : (
-                <span className="text-amber-600 font-bold text-[10px] uppercase">
-                  Not Set
-                </span>
-              )}
-              {r.tleStatus === "READY_FOR_TLE_SECTIONING" && (
-                <span className="text-[9px] font-black uppercase text-blue-600 tracking-wide">
-                  Awaiting TLE Section
-                </span>
-              )}
-              {r.tleStatus === "SECTIONED_FOR_TLE" && (
-                <span className="text-[9px] font-black uppercase text-emerald-600 tracking-wide">
-                  TLE Sectioned
-                </span>
-              )}
-            </div>
-          );
-        },
-        size: 130,
       },
     ];
 

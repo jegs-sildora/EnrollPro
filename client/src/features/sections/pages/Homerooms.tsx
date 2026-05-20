@@ -136,6 +136,7 @@ export default function Homerooms() {
     maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
     tleProgramId: null,
   })
+  const [pendingIsHomogeneous, setPendingIsHomogeneous] = useState(false)
   const [submittingForm, setSubmittingForm] = useState(false)
   const [createGlId, setCreateGlId] = useState<number | null>(null)
   const [createGlName, setCreateGlName] = useState("")
@@ -216,17 +217,18 @@ export default function Homerooms() {
     }
   }, [isFormSheetOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleOpenCreate = useCallback((glId: number, glName: string) => {
+  const handleOpenCreate = useCallback((glId: number, glName: string, programType = "REGULAR", isHomogeneous = false) => {
     setFormSheetMode("create")
     setEditingSectionId(null)
     setCreateGlId(glId)
     setCreateGlName(glName)
+    setPendingIsHomogeneous(isHomogeneous)
     setSectionFormData({
       name: "",
-      programType: "REGULAR",
+      programType,
       sectionType: "HOME_ROOM",
       adviserId: "none",
-      maxCapacity: DEFAULT_MAX_CAPACITY_REGULAR,
+      maxCapacity: programType === "REGULAR" ? DEFAULT_MAX_CAPACITY_REGULAR : DEFAULT_MAX_CAPACITY_SCP,
       tleProgramId: null,
     })
     setIsFormSheetOpen(true)
@@ -236,6 +238,7 @@ export default function Homerooms() {
     setFormSheetMode("edit")
     setEditingSectionId(section.id)
     setCreateGlName(glName)
+    setPendingIsHomogeneous(section.isHomogeneous)
     setSectionFormData({
       name: section.name,
       programType: section.programType,
@@ -271,6 +274,7 @@ export default function Homerooms() {
         advisingTeacherId:
           sectionFormData.adviserId === "none" ? null : parseInt(sectionFormData.adviserId),
         maxCapacity: sectionFormData.maxCapacity,
+        isHomogeneous: pendingIsHomogeneous,
         tleProgramId: null,
       }
       if (formSheetMode === "create") {
@@ -335,6 +339,8 @@ export default function Homerooms() {
     )
   }
 
+  const scpProgramOptions = programOptions.filter((opt) => opt.value !== "REGULAR")
+
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <div>
@@ -369,75 +375,129 @@ export default function Homerooms() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
             className="w-full">
-        {homeroomGroups.map((g) => {
-          const scpSections = g.sections.filter((s) => s.programType !== "REGULAR")
-          const becSections = g.sections.filter((s) => s.programType === "REGULAR")
+            {homeroomGroups.map((g) => {
+              const homoBecSections = g.sections.filter((s) => s.programType === "REGULAR" && s.isHomogeneous)
+              const heteroBecSections = g.sections.filter((s) => s.programType === "REGULAR" && !s.isHomogeneous)
 
-          return (
-            <TabsContent key={g.gradeLevelId} value={String(g.gradeLevelId)} className="mt-0 focus-visible:outline-none ring-0 space-y-6">
-              {/* SCP Group */}
-              {scpSections.length > 0 && (
-                <div className="space-y-3">
-                  <h2 className="font-black uppercase tracking-widest text-foreground text-center">
-                    Special Curricular Programs (SCP)
-                  </h2>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {scpSections.map((s) => (
-                      <SectionCard
-                        key={s.id}
-                        section={s}
-                        onEdit={() => handleOpenEdit(s, g.gradeLevelName)}
-                        onDelete={() => {
-                          setDeleteId(s.id)
-                          setDeleteName(s.name)
-                        }}
-                        onViewRoster={() => setRosterSectionId(s.id)}
-                        canMutate={canMutate}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+              return (
+                <TabsContent
+                  key={g.gradeLevelId}
+                  value={String(g.gradeLevelId)}
+                  className="mt-0 focus-visible:outline-none ring-0 space-y-8">
 
-              {/* BEC Group */}
-              <div className="space-y-3">
-                {scpSections.length > 0 && (
-                  <h2 className="font-black uppercase tracking-widest text-foreground text-center">
-                    Basic Education Curriculum (BEC)
-                  </h2>
-                )}
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {becSections.map((s) => (
-                    <SectionCard
-                      key={s.id}
-                      section={s}
-                      onEdit={() => handleOpenEdit(s, g.gradeLevelName)}
-                      onDelete={() => {
-                        setDeleteId(s.id)
-                        setDeleteName(s.name)
-                      }}
-                      onViewRoster={() => setRosterSectionId(s.id)}
-                      canMutate={canMutate}
-                    />
-                  ))}
-                  {canMutate && (
-                    <button
-                      onClick={() => handleOpenCreate(g.gradeLevelId, g.gradeLevelName)}
-                      className="flex min-h-[100px] items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 p-6 text-sm font-bold text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary">
-                      <Plus className="size-4" />
-                      Add Homeroom
-                    </button>
+                  {/* SCP Section */}
+                  {scpProgramOptions.length > 0 && (
+                    <section className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-black uppercase tracking-widest text-muted-foreground bg-muted px-2 py-0.5 rounded">SCP</span>
+                        <div className="h-px flex-1 bg-border" />
+                        <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">Special Curricular Programs</span>
+                      </div>
+                      <div className="space-y-6 pl-4 border-l-2 border-muted">
+                        {scpProgramOptions.map(({ value: programType, label }) => {
+                          const sections = g.sections.filter((s) => s.programType === programType)
+                          return (
+                            <div key={programType} className="space-y-3">
+                              <h3 className="text-sm font-black uppercase text-foreground tracking-wide">{label}</h3>
+                              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                {sections.map((s) => (
+                                  <SectionCard
+                                    key={s.id}
+                                    section={s}
+                                    onEdit={() => handleOpenEdit(s, g.gradeLevelName)}
+                                    onDelete={() => { setDeleteId(s.id); setDeleteName(s.name) }}
+                                    onViewRoster={() => setRosterSectionId(s.id)}
+                                    canMutate={canMutate}
+                                  />
+                                ))}
+                                {canMutate && (
+                                  <button
+                                    onClick={() => handleOpenCreate(g.gradeLevelId, g.gradeLevelName, programType, true)}
+                                    className="flex min-h-[100px] items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 p-6 text-sm font-bold text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary">
+                                    <Plus className="size-4" />
+                                    Add {label} Section
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </section>
                   )}
-                </div>
-                {becSections.length === 0 && scpSections.length === 0 && !canMutate && (
-                  <p className="py-12 text-center text-sm font-bold text-muted-foreground">
-                    No homeroom sections for this grade level.
-                  </p>
-                )}
-              </div>
-            </TabsContent>
-          )
-        })}
+
+                  {/* BEC Section */}
+                  <section className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-black uppercase tracking-widest text-muted-foreground bg-muted px-2 py-0.5 rounded">BEC</span>
+                      <div className="h-px flex-1 bg-border" />
+                      <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">Basic Education Curriculum</span>
+                    </div>
+                    <div className="space-y-6 pl-4 border-l-2 border-muted">
+                      {/* Homogeneous / Pilot */}
+                      <div className="space-y-3">
+                        <h3 className="text-sm font-black uppercase text-foreground tracking-wide">
+                          BEC <span className="font-medium normal-case text-foreground/60">(Homogeneous / Pilot Section)</span>
+                        </h3>
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                          {homoBecSections.map((s) => (
+                            <SectionCard
+                              key={s.id}
+                              section={s}
+                              onEdit={() => handleOpenEdit(s, g.gradeLevelName)}
+                              onDelete={() => { setDeleteId(s.id); setDeleteName(s.name) }}
+                              onViewRoster={() => setRosterSectionId(s.id)}
+                              canMutate={canMutate}
+                            />
+                          ))}
+                          {canMutate && (
+                            <button
+                              onClick={() => handleOpenCreate(g.gradeLevelId, g.gradeLevelName, "REGULAR", true)}
+                              className="flex min-h-[100px] items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 p-6 text-sm font-bold text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary">
+                              <Plus className="size-4" />
+                              Add Homogeneous Section
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Heterogeneous */}
+                      <div className="space-y-3">
+                        <h3 className="text-sm font-black uppercase text-foreground tracking-wide">
+                          BEC <span className="font-medium normal-case text-foreground/60">(Heterogeneous Section)</span>
+                        </h3>
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                          {heteroBecSections.map((s) => (
+                            <SectionCard
+                              key={s.id}
+                              section={s}
+                              onEdit={() => handleOpenEdit(s, g.gradeLevelName)}
+                              onDelete={() => { setDeleteId(s.id); setDeleteName(s.name) }}
+                              onViewRoster={() => setRosterSectionId(s.id)}
+                              canMutate={canMutate}
+                            />
+                          ))}
+                          {canMutate && (
+                            <button
+                              onClick={() => handleOpenCreate(g.gradeLevelId, g.gradeLevelName, "REGULAR", false)}
+                              className="flex min-h-[100px] items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 p-6 text-sm font-bold text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary">
+                              <Plus className="size-4" />
+                              Add Heterogeneous Section
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {homoBecSections.length === 0 && heteroBecSections.length === 0 && !canMutate && (
+                        <p className="py-8 text-center text-sm font-bold text-muted-foreground">
+                          No homeroom sections for this grade level.
+                        </p>
+                      )}
+                    </div>
+                  </section>
+                </TabsContent>
+              )
+            })}
           </motion.div>
         </AnimatePresence>
       </Tabs>

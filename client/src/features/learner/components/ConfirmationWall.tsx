@@ -39,10 +39,9 @@ interface Props {
       gradeLevelName?: string | null;
       gradeLevelDisplayOrder?: number | null;
       previousEosyStatus?: string | null;
-      tleProgramId?: number | null;
     } | null;
   };
-  onSuccess: (nextStep: "COMPLETE" | "TLE_SELECTION") => void;
+  onSuccess: (nextStep: "COMPLETE") => void;
   onLogout: () => void;
   onRedirectDashboard: () => void;
 }
@@ -79,7 +78,6 @@ export function ConfirmationWall({
 
         setSettings({
           isBosyEnrollmentOpen: Boolean(res.data.isBosyEnrollmentOpen),
-          isTleSelectionOpen: Boolean(res.data.isTleSelectionOpen),
         });
       } catch {
         // Keep persisted value when refresh fails.
@@ -108,8 +106,6 @@ export function ConfirmationWall({
 
   const incomingGrade =
     learner.pendingConfirmation?.gradeLevelName || "Next Grade";
-  const targetGradeOrder =
-    learner.pendingConfirmation?.gradeLevelDisplayOrder ?? null;
   const isPromotedPrerequisiteMet =
     learner.pendingConfirmation?.previousEosyStatus === "PROMOTED";
   const isGateLocked = !isPromotedPrerequisiteMet;
@@ -139,11 +135,6 @@ export function ConfirmationWall({
         guardianName,
         confirmAction: "CONFIRM_RETURN",
       });
-
-      if (targetGradeOrder === 9) {
-        onSuccess("TLE_SELECTION");
-        return;
-      }
 
       setStep("success");
       sileo.success({

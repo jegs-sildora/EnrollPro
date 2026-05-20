@@ -20,9 +20,6 @@ import {
   UserPlus,
   School,
   ArrowRightLeft,
-  BookOpen,
-  Home,
-  FlaskConical,
 } from "lucide-react";
 
 import {
@@ -325,51 +322,6 @@ const NavDivider = memo(function NavDivider({ label }: { label: string }) {
   );
 });
 
-function NavGroup({
-  icon: Icon,
-  label,
-  pathname,
-  children,
-}: {
-  icon: React.ElementType;
-  label: string;
-  pathname: string;
-  children: React.ReactNode;
-}) {
-  const [open, setOpen] = useState(
-    () => pathname.startsWith("/sections"),
-  );
-
-  // Auto-open when navigating into /sections
-  useEffect(() => {
-    if (pathname.startsWith("/sections")) setOpen(true);
-  }, [pathname]);
-
-  return (
-    <SidebarMenuItem>
-      <SidebarMenuButton
-        onClick={() => setOpen((v) => !v)}
-        isActive={pathname === "/sections"}
-        tooltip={label}
-        className="cursor-pointer">
-        <Icon className="size-4" />
-        <span>{label}</span>
-        <ChevronDown
-          className={cn(
-            "ml-auto size-3.5 transition-transform duration-200",
-            open && "rotate-180",
-          )}
-        />
-      </SidebarMenuButton>
-      {open && (
-        <ul className="pl-6 mt-0.5 flex flex-col gap-0.5 group-data-[collapsible=icon]:hidden list-none p-0 m-0">
-          {children}
-        </ul>
-      )}
-    </SidebarMenuItem>
-  );
-}
-
 const NavItem = memo(function NavItem({
   to,
   icon: Icon,
@@ -525,23 +477,12 @@ function AppSidebar() {
                         pathname={pathname}
                       />
                     )}
-                    <NavGroup
+                    <NavItem
+                      to="/sections/homerooms"
                       icon={Layers}
-                      label="Sections"
-                      pathname={pathname}>
-                      <NavItem
-                        to="/sections/homerooms"
-                        icon={Home}
-                        label="Homerooms"
-                        pathname={pathname}
-                      />
-                      <NavItem
-                        to="/sections/tle"
-                        icon={FlaskConical}
-                        label="TLE Laboratories"
-                        pathname={pathname}
-                      />
-                    </NavGroup>
+                      label="Homeroom Sections"
+                      pathname={pathname}
+                    />
                   </>
                 )}
 
@@ -570,12 +511,6 @@ function AppSidebar() {
                       to="/admin/integration"
                       icon={ArrowRightLeft}
                       label="Ecosystem Hub"
-                      pathname={pathname}
-                    />
-                    <NavItem
-                      to="/admin/tle-programs"
-                      icon={BookOpen}
-                      label="TLE Programs"
                       pathname={pathname}
                     />
                     <NavItem
@@ -627,7 +562,6 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
     location.pathname === "/dashboard" ||
     location.pathname.startsWith("/admin/users") ||
     location.pathname.startsWith("/admin/system") ||
-    location.pathname.startsWith("/admin/tle-programs") ||
     location.pathname.startsWith("/settings") ||
     // BOSY rollover always targets the active year — intentional bypass
     location.pathname === "/bosy" ||

@@ -25,10 +25,6 @@ export interface BOSYQueueItem {
   academicStatus: string | null;
   priorSectionName: string | null;
   priorAdviserName: string | null;
-  tleProgramId: number | null;
-  tleProgramName: string | null;
-  tleProgramCategory: string | null;
-  tleStatus?: string | null;
 }
 
 export interface JHSCompleter {

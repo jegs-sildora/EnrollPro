@@ -3,7 +3,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/shared/ui/dialog";
+} from "@/shared/ui/dialog"; 
 import { Button } from "@/shared/ui/button";
 import { Printer, X } from "lucide-react";
 

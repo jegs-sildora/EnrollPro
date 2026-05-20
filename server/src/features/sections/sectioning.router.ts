@@ -3,7 +3,6 @@ import {
   getSectionsSummary,
   getSectioningPool,
   assignBulk,
-  tleSectioningAssign
 } from "./sectioning.controller.js";
 import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
@@ -17,6 +16,5 @@ router.use(authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"));
 router.get("/sections-summary", getSectionsSummary);
 router.get("/pool", getSectioningPool);
 router.post("/assign-bulk", assignBulk);
-router.post("/tle/assign", tleSectioningAssign);
 
 export default router;

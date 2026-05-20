@@ -10,21 +10,11 @@ const sectionBaseSchema = z.object({
   programType: ApplicantTypeEnum.default("REGULAR"),
   isHomogeneous: z.boolean().default(false),
   isSnake: z.boolean().default(false),
-  tleProgramId: z.number().int().positive().nullable().optional(),
   advisingTeacherId: z.number().int().positive().optional().nullable(),
   maxCapacity: z.number().int().positive().default(45),
-  sectionType: z.enum(["HOME_ROOM", "TLE_LABORATORY"]).optional(),
 });
 
-export const createSectionSchema = sectionBaseSchema.superRefine((data, ctx) => {
-  if (data.sectionType === "TLE_LABORATORY" && !data.tleProgramId) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["tleProgramId"],
-      message: "A TLE specialization is required for TLE Laboratory sections.",
-    });
-  }
-});
+export const createSectionSchema = sectionBaseSchema;
 
 // .partial() on the base object — safe because there are no refinements on it
 export const updateSectionSchema = sectionBaseSchema.partial();

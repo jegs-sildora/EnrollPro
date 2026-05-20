@@ -982,22 +982,6 @@ export default function Students() {
         ),
       },
       {
-        id: "tleSpecialization",
-        accessorKey: "tleSpecialization",
-        meta: { skeletonClassName: "w-[180px] mx-auto" },
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="TLE"
-          />
-        ),
-        cell: ({ row }) => (
-          <span className="font-bold text-xs uppercase">
-            {row.original.tleSpecialization || "—"}
-          </span>
-        ),
-      },
-      {
         id: "status",
         header: ({ column }) => (
           <DataTableColumnHeader

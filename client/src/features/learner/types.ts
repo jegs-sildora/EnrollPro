@@ -23,7 +23,6 @@ export interface LearnerProfile {
   } | null;
   enrollment?: {
     curriculum?: string | null;
-    tleProgramName?: string | null;
     section?: {
       name: string;
       advisingTeacher?: { firstName: string; lastName: string } | null;
@@ -40,9 +39,6 @@ export interface LearnerProfile {
     status: string;
     gradeLevelName: string;
     gradeLevelDisplayOrder?: number | null;
-    tleProgramId?: number | null;
-    tleProgramName?: string | null;
-    tleStatus?: string | null;
     guardianName?: string | null;
   } | null;
 }

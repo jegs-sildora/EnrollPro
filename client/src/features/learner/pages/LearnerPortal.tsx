@@ -16,12 +16,10 @@ import {
   CheckCircle2,
   Loader2,
   AlertCircle,
-  ArrowRight,
   BookOpen,
   Activity,
   Medal,
   FileText,
-  Lock,
   Sparkles,
 } from "lucide-react";
 import { useSettingsStore } from "@/store/settings.slice";
@@ -51,8 +49,6 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
-const TLE_REQUIRED_GRADE_DISPLAY_ORDERS = [9, 10];
-
 function AnimatedCard({
   children,
   className,
@@ -79,7 +75,6 @@ export default function LearnerPortal() {
     schoolName,
     depedEmail,
     isBosyEnrollmentOpen,
-    isTleSelectionOpen,
     activeSchoolYearLabel,
     setSettings,
   } = useSettingsStore();
@@ -121,21 +116,6 @@ export default function LearnerPortal() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  // Phase 3 TLE gate: redirect to TLE onboarding if selection is open and learner is pending
-  useEffect(() => {
-    if (!learner) return;
-    const tleStatus = learner.pendingConfirmation?.tleStatus;
-    const gradeLevelDisplayOrder = learner.pendingConfirmation?.gradeLevelDisplayOrder;
-    if (
-      isTleSelectionOpen &&
-      tleStatus === "PENDING" &&
-      gradeLevelDisplayOrder != null &&
-      TLE_REQUIRED_GRADE_DISPLAY_ORDERS.includes(gradeLevelDisplayOrder)
-    ) {
-      navigate("/learner/onboarding/tle", { replace: true });
-    }
-  }, [learner, isTleSelectionOpen, navigate]);
 
   useEffect(() => {
     if (logoUrl) return;
@@ -410,11 +390,6 @@ export default function LearnerPortal() {
                           onConfirm={() => void handleConfirmReturn()}
                           onViewSlip={() => setSlipOpen(true)}
                         />
-                        <Phase3TleCard
-                          pendingConfirmation={learner.pendingConfirmation ?? null}
-                          isTleSelectionOpen={isTleSelectionOpen}
-                          onNavigate={() => navigate("/learner/onboarding/tle")}
-                        />
                         <JhsCompletionCard
                           isVisible={showJhsCompletionCard}
                           schoolYearLabel={latestCompletedRecord?.schoolYear?.yearLabel ?? null}
@@ -577,102 +552,6 @@ function TransitionBanner({
               <CheckCircle2 className="h-4 w-4 mr-2" />
             )}
             Confirm Return for S.Y. {nextSchoolYearLabel}
-          </Button>
-        </div>
-      </CardContent>
-    </AnimatedCard>
-  );
-}
-
-function Phase3TleCard({
-  pendingConfirmation,
-  isTleSelectionOpen,
-  onNavigate,
-}: {
-  pendingConfirmation: {
-    applicationId: number;
-    status: string;
-    gradeLevelDisplayOrder?: number | null;
-    tleStatus?: string | null;
-  } | null;
-  isTleSelectionOpen: boolean;
-  onNavigate: () => void;
-}) {
-  const gradeOrder = pendingConfirmation?.gradeLevelDisplayOrder;
-  if (!gradeOrder || !TLE_REQUIRED_GRADE_DISPLAY_ORDERS.includes(gradeOrder)) return null;
-  if (pendingConfirmation?.status === "PENDING_CONFIRMATION") return null;
-
-  const tleStatus = pendingConfirmation?.tleStatus;
-
-  if (tleStatus === "SECTIONED_FOR_TLE") {
-    return (
-      <AnimatedCard className="shadow-xl border-2 border-green-500/20 bg-green-50 rounded-lg overflow-hidden print:hidden">
-        <CardContent className="p-6 flex items-center gap-4">
-          <CheckCircle2 className="h-8 w-8 text-green-600 shrink-0" />
-          <div>
-            <p className="font-black uppercase text-sm text-green-700">Phase 3 Complete</p>
-            <p className="text-sm text-green-800 mt-1">
-              Your TLE Specialization section has been assigned. Check your section details above.
-            </p>
-          </div>
-        </CardContent>
-      </AnimatedCard>
-    );
-  }
-
-  if (tleStatus === "READY_FOR_TLE_SECTIONING") {
-    return (
-      <AnimatedCard className="shadow-xl border-2 border-blue-500/20 bg-blue-50 rounded-lg overflow-hidden print:hidden">
-        <CardContent className="p-6 flex items-center gap-4">
-          <CheckCircle2 className="h-8 w-8 text-blue-600 shrink-0" />
-          <div>
-            <p className="font-black uppercase text-sm text-blue-700">TLE Selection Submitted</p>
-            <p className="text-sm text-blue-800 mt-1">
-              Your TLE Specialization choice has been received. Awaiting section assignment by the registrar.
-            </p>
-          </div>
-        </CardContent>
-      </AnimatedCard>
-    );
-  }
-
-  if (!isTleSelectionOpen) {
-    return (
-      <AnimatedCard className="shadow-xl border-2 border-muted/40 bg-muted/20 rounded-lg overflow-hidden print:hidden">
-        <CardContent className="p-6 flex items-center gap-4">
-          <Lock className="h-8 w-8 text-muted-foreground shrink-0" />
-          <div>
-            <p className="font-black uppercase text-sm text-muted-foreground">Phase 3: TLE Specialization Selection</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              TLE Specialization Selection will open after the enrollment period concludes. Check back later.
-            </p>
-          </div>
-        </CardContent>
-      </AnimatedCard>
-    );
-  }
-
-  // isTleSelectionOpen && tleStatus === "PENDING"
-  return (
-    <AnimatedCard className="shadow-xl border-2 border-purple-500/20 bg-purple-50 rounded-lg overflow-hidden print:hidden">
-      <CardContent className="p-6 flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <AlertCircle className="h-8 w-8 text-purple-600 shrink-0" />
-          <div className="flex-1">
-            <p className="font-black uppercase text-sm text-purple-700">
-              Phase 3: TLE Specialization Selection
-            </p>
-            <p className="text-sm text-purple-900 mt-1">
-              TLE Specialization Selection is now open. Please select your preferred specialization track.
-            </p>
-          </div>
-        </div>
-        <div className="flex justify-end">
-          <Button
-            className="shrink-0 bg-purple-600 hover:bg-purple-700 text-white font-black uppercase text-xs"
-            onClick={onNavigate}>
-            <ArrowRight className="h-4 w-4 mr-2" />
-            Select TLE Specialization
           </Button>
         </div>
       </CardContent>

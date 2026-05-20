@@ -59,12 +59,7 @@ export default function OnboardingConfirm() {
     });
   };
 
-  const handleSuccess = (nextStep: "COMPLETE" | "TLE_SELECTION") => {
-    if (nextStep === "TLE_SELECTION") {
-      navigate("/learner/onboarding/tle-setup", { replace: true });
-      return;
-    }
-
+  const handleSuccess = (_nextStep: "COMPLETE") => {
     navigate("/learner", { replace: true });
   };
 

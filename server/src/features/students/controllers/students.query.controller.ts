@@ -246,7 +246,7 @@ export const createStudentsQueryController = (
           gradeLevelId: applicant.gradeLevelId,
           section: applicant.enrollmentRecord?.section?.name || null,
           sectionId: applicant.enrollmentRecord?.sectionId || null,
-          tleSpecialization: applicant.enrollmentRecord?.tleProgram?.name || null,
+          tleSpecialization: null,
           studentPhoto: applicant.learner?.studentPhoto || null,
           createdAt: applicant.createdAt,
           updatedAt: applicant.updatedAt,

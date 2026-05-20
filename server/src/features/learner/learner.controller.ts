@@ -110,10 +110,8 @@ export const lookupLearner = async (req: Request, res: Response) => {
         addresses: true,
         gradeLevel: { select: { name: true, displayOrder: true } },
         schoolYear: { select: { id: true, yearLabel: true } },
-        tleProgram: { select: { name: true } },
         enrollmentRecord: {
           include: {
-            tleProgram: { select: { name: true } },
             section: {
               include: {
                 advisers: {
@@ -184,7 +182,7 @@ export const lookupLearner = async (req: Request, res: Response) => {
         enrollment: application.enrollmentRecord
           ? {
               curriculum: application.applicantType,
-              tleProgramName: (application.enrollmentRecord as any).tleProgram?.name ?? null,
+
               section: application.enrollmentRecord.section
                 ? {
                     name: application.enrollmentRecord.section.name,
@@ -211,19 +209,13 @@ export const lookupLearner = async (req: Request, res: Response) => {
         })),
         pendingConfirmation:
           application.status === "PENDING_CONFIRMATION" ||
-          application.status === "READY_FOR_SECTIONING" ||
-          (application.status === "ENROLLED" &&
-            application.tleStatus === "PENDING" &&
-            [9, 10].includes(application.gradeLevel.displayOrder ?? 0))
+          application.status === "READY_FOR_SECTIONING"
             ? {
                 applicationId: application.id,
                 status: application.status,
-                tleStatus: application.tleStatus ?? null,
                 gradeLevelName: application.gradeLevel.name,
                 gradeLevelDisplayOrder:
                   application.gradeLevel.displayOrder ?? null,
-                tleProgramId: application.tleProgramId ?? null,
-                tleProgramName: (application as any).tleProgram?.name ?? null,
                 guardianName: application.guardianName ?? null,
               }
             : null,
@@ -301,146 +293,6 @@ export const learnerConfirmReturn = async (req: Request, res: Response) => {
 };
 
 /**
- * Learner submits TLE specialization choices (Phase 3 gate).
- * POST /api/learner/submit-tle-choices
- * Body: { applicationId: number, tleProgramId?: number, tleProgramChoice2Id?: number }
- * Grade 9: requires both tleProgramId and tleProgramChoice2Id.
- * Grade 10: auto-resolves from locked G9 track (no body choices needed).
- */
-export const submitTleChoices = async (req: Request, res: Response) => {
-  try {
-    const settings = await prisma.schoolSetting.findFirst({
-      select: { isTleSelectionOpen: true },
-    });
-    if (!settings?.isTleSelectionOpen) {
-      return res.status(403).json({ message: "Phase 3 TLE Selection is not currently open." });
-    }
-
-    const { applicationId, tleProgramId, tleProgramChoice2Id } = req.body as {
-      applicationId: unknown;
-      tleProgramId?: unknown;
-      tleProgramChoice2Id?: unknown;
-    };
-
-    const id = Number(applicationId);
-    if (!Number.isInteger(id) || id <= 0) {
-      return res.status(400).json({ message: "Invalid applicationId." });
-    }
-
-    const app = await prisma.enrollmentApplication.findUnique({
-      where: { id },
-      include: {
-        gradeLevel: { select: { displayOrder: true } },
-        learner: {
-          select: {
-            firstName: true,
-            lastName: true,
-            enrollmentRecords: {
-              where: {
-                enrollmentApplication: {
-                  gradeLevel: { displayOrder: 9 },
-                },
-              },
-              take: 1,
-              select: { tleProgramId: true },
-            },
-          },
-        },
-      },
-    });
-
-    if (!app) {
-      return res.status(404).json({ message: "Application not found." });
-    }
-
-    const allowedStatuses = ["READY_FOR_SECTIONING", "ENROLLED", "OFFICIALLY_ENROLLED"];
-    if (!allowedStatuses.includes(app.status)) {
-      return res.status(409).json({
-        message: `Cannot submit TLE choices at status '${app.status}'.`,
-      });
-    }
-
-    if (app.tleStatus !== "PENDING") {
-      return res.status(409).json({ message: "TLE selection has already been submitted." });
-    }
-
-    const gradeOrder = app.gradeLevel.displayOrder;
-    let resolvedTleId: number;
-    let resolvedTleId2: number | null = null;
-
-    if (gradeOrder === 10) {
-      const g9Record = app.learner?.enrollmentRecords?.[0];
-      if (!g9Record?.tleProgramId) {
-        return res.status(422).json({
-          message: "No Grade 9 TLE track record found. Cannot determine Grade 10 specialization.",
-        });
-      }
-      resolvedTleId = g9Record.tleProgramId;
-    } else {
-      // Grade 9
-      const p1 = Number(tleProgramId);
-      const p2 = Number(tleProgramChoice2Id);
-      if (!p1 || !p2) {
-        return res.status(400).json({ message: "Grade 9 requires both Primary and Fallback TLE choices." });
-      }
-      if (p1 === p2) {
-        return res.status(400).json({ message: "Primary and Fallback choices must be different." });
-      }
-      resolvedTleId = p1;
-      resolvedTleId2 = p2;
-    }
-
-    const primaryTrack = await prisma.tLEProgram.findUnique({
-      where: { id: resolvedTleId },
-      select: { id: true, name: true, trackType: true, maxSlots: true },
-    });
-    if (!primaryTrack || primaryTrack.trackType !== "SPECIALIZATION") {
-      return res.status(400).json({ message: "Invalid Specialization Track selected." });
-    }
-
-    if (primaryTrack.maxSlots) {
-      const enrolledCount = await prisma.enrollmentApplication.count({
-        where: {
-          tleProgramId: primaryTrack.id,
-          schoolYearId: app.schoolYearId,
-          tleStatus: { in: ["READY_FOR_TLE_SECTIONING", "SECTIONED_FOR_TLE"] },
-        },
-      });
-      if (app.tleProgramId !== primaryTrack.id && enrolledCount >= primaryTrack.maxSlots) {
-        return res.status(409).json({
-          message: `The track '${primaryTrack.name}' is currently at full capacity.`,
-        });
-      }
-    }
-
-    await prisma.enrollmentApplication.update({
-      where: { id },
-      data: {
-        tleProgramId: resolvedTleId,
-        tleProgramChoice2Id: resolvedTleId2,
-        tleStatus: "READY_FOR_TLE_SECTIONING",
-      },
-    });
-
-    if (app.learner) {
-      await auditLog({
-        userId: req.user?.userId || null,
-        actionType: "LEARNER_TLE_SELECTION_SUBMITTED",
-        description: `Learner ${app.learner.firstName} ${app.learner.lastName} submitted TLE choices. Primary: program ID ${resolvedTleId}${resolvedTleId2 ? `, Fallback: ${resolvedTleId2}` : " (G10 auto-lock)"}`,
-        subjectType: "EnrollmentApplication",
-        recordId: id,
-        req,
-      });
-    }
-
-    return res.json({ applicationId: id, tleStatus: "READY_FOR_TLE_SECTIONING" });
-  } catch (error) {
-    console.error("[Learner Portal] Critical failure in submit-tle-choices:", error);
-    return res.status(500).json({ message: "Could not submit TLE choices." });
-  }
-};
-
-/**
  * Learner requests transfer out.
  * POST /api/learner/request-transfer
  * Body: { applicationId: number, reason?: string }
@@ -491,111 +343,6 @@ export const learnerRequestTransfer = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Learner request-transfer failed:", error);
     return res.status(500).json({ message: "Could not process transfer request." });
-  }
-};
-
-/**
- * GET /api/learner/tle-options/:gradeLevelId
- * Returns dynamic TLE track options based on DepEd curriculum rules for the grade level.
- */
-export const getTLEOptions = async (req: Request, res: Response) => {
-  try {
-    const gradeLevelId = parseInt(req.params.gradeLevelId as string);
-    const userId = req.user!.userId;
-
-    const gradeLevel = await prisma.gradeLevel.findUnique({
-      where: { id: gradeLevelId },
-    });
-
-    if (!gradeLevel) {
-      return res.status(404).json({ message: "Grade level not found." });
-    }
-
-    const order = gradeLevel.displayOrder;
-
-    // Phase 1: Exploratory (Grades 7 & 8)
-    if (order === 7 || order === 8) {
-      return res.json({
-        phase: "EXPLORATORY",
-        message: "Exploratory Phase - No NC II Selection Required.",
-        options: [],
-      });
-    }
-
-    // Phase 2: Specialization Selection (Grade 9)
-    if (order === 9) {
-      const options = await prisma.tLEProgram.findMany({
-        where: { trackType: "SPECIALIZATION", isActive: true },
-        orderBy: { name: "asc" },
-      });
-
-      return res.json({
-        phase: "SPECIALIZATION",
-        options,
-      });
-    }
-
-    // Phase 3: Continuity (Grade 10)
-    if (order === 10) {
-      // Find the learner first
-      const learner = await prisma.learner.findFirst({
-        where: { userId },
-      });
-
-      if (!learner) {
-        return res.status(404).json({ message: "Learner not found." });
-      }
-
-      // Look for the Grade 9 enrollment record to find the locked track
-      const prevRecord = await prisma.enrollmentRecord.findFirst({
-        where: {
-          learnerId: learner.id,
-          enrollmentApplication: {
-            gradeLevel: { displayOrder: 9 },
-          },
-        },
-        include: {
-          tleProgram: true,
-        },
-      });
-
-      if (!prevRecord || !prevRecord.tleProgram) {
-        // Fallback: Check the latest application if record is missing (though should exist)
-        const prevApp = await prisma.enrollmentApplication.findFirst({
-          where: {
-            learnerId: learner.id,
-            gradeLevel: { displayOrder: 9 },
-            tleProgramId: { not: null },
-          },
-          include: {
-            tleProgram: true,
-          },
-          orderBy: { schoolYearId: "desc" },
-        });
-
-        if (prevApp?.tleProgram) {
-          return res.json({
-            phase: "CONTINUITY",
-            lockedProgram: prevApp.tleProgram,
-          });
-        }
-
-        return res.json({
-          phase: "CONTINUITY_MISSING_TRACK",
-          message: "Could not find your locked Grade 9 specialization. Please contact the Registrar.",
-        });
-      }
-
-      return res.json({
-        phase: "CONTINUITY",
-        lockedProgram: prevRecord.tleProgram,
-      });
-    }
-
-    return res.json({ phase: "UNKNOWN", options: [] });
-  } catch (error) {
-    console.error("getTLEOptions failed:", error);
-    return res.status(500).json({ message: "Error fetching TLE options." });
   }
 };
 
@@ -663,19 +410,6 @@ export const getOnboardingStatus = async (req: Request, res: Response) => {
       return res.json({ nextStep: "CONFIRMATION" });
     }
 
-    // Gate 2: TLE Selection (Grade 9 Choice & Grade 10 Continuity)
-    const isSpecializationGrade =
-      application.gradeLevel?.displayOrder === 9 ||
-      application.gradeLevel?.displayOrder === 10;
-
-    if (
-      application.status === "READY_FOR_SECTIONING" &&
-      isSpecializationGrade &&
-      !application.tleProgramId
-    ) {
-      return res.json({ nextStep: "TLE_SELECTION" });
-    }
-
     // All gates cleared
     return res.json({ nextStep: "COMPLETE" });
   } catch (error) {
@@ -705,10 +439,8 @@ export const getLearnerProfile = async (req: Request, res: Response) => {
             addresses: true,
             gradeLevel: { select: { name: true, displayOrder: true } },
             schoolYear: { select: { id: true, yearLabel: true } },
-            tleProgram: { select: { name: true } },
             enrollmentRecord: {
               include: {
-                tleProgram: { select: { name: true } },
                 section: {
                   include: {
                     advisers: {
@@ -775,7 +507,6 @@ export const getLearnerProfile = async (req: Request, res: Response) => {
         enrollment: application?.enrollmentRecord
           ? {
               curriculum: application.applicantType,
-              tleProgramName: (application.enrollmentRecord as any).tleProgram?.name ?? null,
               section: application.enrollmentRecord.section
                 ? {
                     name: application.enrollmentRecord.section.name,
@@ -802,20 +533,14 @@ export const getLearnerProfile = async (req: Request, res: Response) => {
         })),
         pendingConfirmation:
           application?.status === "PENDING_CONFIRMATION" ||
-          application?.status === "READY_FOR_SECTIONING" ||
-          (application?.status === "ENROLLED" &&
-            application.tleStatus === "PENDING" &&
-            [9, 10].includes(application.gradeLevel.displayOrder ?? 0))
+          application?.status === "READY_FOR_SECTIONING"
             ? {
                 applicationId: application.id,
                 status: application.status,
-                tleStatus: application.tleStatus ?? null,
                 gradeLevelId: application.gradeLevelId,
                 gradeLevelName: application.gradeLevel.name,
                 gradeLevelDisplayOrder:
                   application.gradeLevel.displayOrder ?? null,
-                tleProgramId: application.tleProgramId ?? null,
-                tleProgramName: (application as any).tleProgram?.name ?? null,
                 guardianName: application.guardianName ?? null,
                 previousEosyStatus:
                   previousApplication?.enrollmentRecord?.eosyStatus ?? null,

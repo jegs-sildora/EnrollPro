@@ -135,7 +135,7 @@ export async function getStats(req: Request, res: Response): Promise<void> {
             },
           },
           sections: {
-            where: { schoolYearId, tleProgramId: null },
+            where: { schoolYearId },
             select: {
               id: true,
               name: true,

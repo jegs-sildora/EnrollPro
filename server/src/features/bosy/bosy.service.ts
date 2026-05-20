@@ -4,7 +4,6 @@ import {
   ApplicationStatus,
   LearnerType,
   ApplicantType,
-  TleSectioningStatus,
 } from "../../generated/prisma/index.js";
 import { prisma } from "../../lib/prisma.js";
 
@@ -35,10 +34,6 @@ export interface BOSYQueueItem {
   academicStatus: string | null;
   priorSectionName: string | null;
   priorAdviserName: string | null;
-  tleProgramId: number | null;
-  tleProgramName: string | null;
-  tleProgramCategory: string | null;
-  tleStatus: string | null;
 }
 
 export interface JHSCompleter {
@@ -274,8 +269,6 @@ export async function getBOSYQueue(params: {
         id: true,
         trackingNumber: true,
         status: true,
-        tleProgramId: true,
-        tleStatus: true,
         learner: {
           select: {
             id: true,
@@ -291,9 +284,6 @@ export async function getBOSYQueue(params: {
         checklist: {
           select: { academicStatus: true },
         },
-        tleProgram: {
-          select: { id: true, name: true, category: true },
-        },
       },
     }),
     prisma.enrollmentApplication.count({ where }),
@@ -303,7 +293,6 @@ export async function getBOSYQueue(params: {
     id: number;
     trackingNumber: string | null;
     status: ApplicationStatus;
-    tleProgramId: number | null;
     learner: {
       id: number;
       lrn: string | null;
@@ -313,8 +302,6 @@ export async function getBOSYQueue(params: {
     };
     gradeLevel: { id: number; name: string; displayOrder: number };
     checklist: { academicStatus: any } | null;
-    tleProgram: { id: number; name: string; category: string } | null;
-    tleStatus: string | null;
   }>;
 
   // Resolve prior-year section and adviser for each learner in one batch
@@ -371,10 +358,6 @@ export async function getBOSYQueue(params: {
       priorAdviserName: adviser
         ? `${adviser.firstName} ${adviser.lastName}`.trim()
         : null,
-      tleProgramId: a.tleProgram?.id ?? null,
-      tleProgramName: a.tleProgram?.name ?? null,
-      tleProgramCategory: a.tleProgram?.category ?? null,
-      tleStatus: a.tleStatus ?? null,
     };
   });
 
@@ -440,7 +423,6 @@ export async function syncBOSYQueue(
           guardianRelationship: true,
           hasNoMother: true,
           hasNoFather: true,
-          tleProgramId: true,
         },
       },
       section: {
@@ -458,7 +440,6 @@ export async function syncBOSYQueue(
       guardianRelationship: string | null;
       hasNoMother: boolean | null;
       hasNoFather: boolean | null;
-      tleProgramId: number | null;
     } | null;
     section: { gradeLevel: { displayOrder: number } } | null;
   }>;
@@ -509,8 +490,6 @@ export async function syncBOSYQueue(
         guardianRelationship: application.guardianRelationship,
         hasNoMother: application.hasNoMother ?? false,
         hasNoFather: application.hasNoFather ?? false,
-        // G9→G10: carry forward the existing TLE program; G8→G9: learner must re-select
-        tleProgramId: sourceOrder === 9 ? application.tleProgramId : null,
         encodedById: actingUserId,
       },
     });
@@ -717,48 +696,4 @@ export async function getJHSCompleters(params: {
   return { items, total, page, limit };
 }
 
-export async function getTLEPrograms(schoolYearId: number): Promise<
-  Array<{
-    id: number;
-    name: string;
-    category: string;
-    isActive: boolean;
-    maxSlots: number | null;
-    availableSlots: number | null;
-  }>
-> {
-  const programs = await prisma.tLEProgram.findMany({
-    where: { trackType: "SPECIALIZATION", isActive: true },
-    orderBy: [{ category: "asc" }, { name: "asc" }],
-  });
 
-  // Calculate current occupancy per program for the given school year
-  const occupancyRaw = await prisma.enrollmentApplication.groupBy({
-    by: ["tleProgramId"],
-    where: {
-      schoolYearId,
-      status: { in: ["READY_FOR_SECTIONING", "ENROLLED", "OFFICIALLY_ENROLLED"] },
-      tleProgramId: { not: null },
-    },
-    _count: {
-      id: true,
-    },
-  });
-
-  const occupancyMap = new Map(
-    occupancyRaw.map((o) => [o.tleProgramId, o._count.id]),
-  );
-
-  return programs.map((p) => {
-    const max = p.maxSlots;
-    const current = occupancyMap.get(p.id) || 0;
-    return {
-      id: p.id,
-      name: p.name,
-      category: p.category,
-      isActive: p.isActive,
-      maxSlots: max,
-      availableSlots: max != null ? Math.max(0, max - current) : null,
-    };
-  });
-}

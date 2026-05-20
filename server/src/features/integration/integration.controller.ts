@@ -260,13 +260,6 @@ export async function listIntegrationLearners(
             },
           },
         },
-        tleProgram: {
-          select: {
-            id: true,
-            name: true,
-            category: true,
-          },
-        },
       },
       orderBy: [{ gradeLevelId: "asc" }, { id: "asc" }],
       skip,
@@ -305,9 +298,6 @@ export async function listIntegrationLearners(
       gradeLevel: application.gradeLevel,
       section: application.enrollmentRecord?.section ?? null,
       enrolledAt: application.enrollmentRecord?.enrolledAt ?? null,
-      tleProgramId: application.tleProgram?.id ?? null,
-      tleSpecialization: application.tleProgram?.name ?? null,
-      tleProgramCategory: application.tleProgram?.category ?? null,
     })),
     meta: {
       schoolYearId,
@@ -524,13 +514,6 @@ export async function listIntegrationSections(
             enrollmentRecords: true,
           },
         },
-        tleProgram: {
-          select: {
-            id: true,
-            name: true,
-            category: true,
-          },
-        },
       },
       orderBy: [{ gradeLevel: { displayOrder: "asc" } }, { name: "asc" }],
       skip,
@@ -560,9 +543,6 @@ export async function listIntegrationSections(
               middleName: activeAdviser.middleName,
             }
           : null,
-        tleProgramId: section.tleProgram?.id ?? null,
-        tleSpecialization: section.tleProgram?.name ?? null,
-        tleProgramCategory: section.tleProgram?.category ?? null,
         schoolYear: {
           id: scope.schoolYearId,
           yearLabel: scope.schoolYearLabel,

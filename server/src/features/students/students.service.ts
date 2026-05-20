@@ -218,7 +218,6 @@ export async function findStudents(query: {
             enrollmentRecord: {
               include: {
                 section: { select: { id: true, name: true, programType: true } },
-                tleProgram: { select: { id: true, name: true } },
               },
             },
             addresses: true,
@@ -318,7 +317,6 @@ export async function findStudents(query: {
       enrollmentRecord: {
         include: {
           section: { select: { id: true, name: true, programType: true } },
-          tleProgram: { select: { id: true, name: true } },
         },
       },
       addresses: true,

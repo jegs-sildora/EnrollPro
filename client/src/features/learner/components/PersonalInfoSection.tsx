@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { User, ImageOff, MapPin, Calendar, Fingerprint, Briefcase } from "lucide-react";
+import { User, ImageOff, MapPin, Calendar, Fingerprint } from "lucide-react";
 import type { LearnerProfile } from "../types";
 import { useMemo } from "react";
 import { cn } from "@/shared/lib/utils";
@@ -113,16 +113,6 @@ export function PersonalInfoSection({ learner, profileBadge }: Props) {
               highlight 
             />
             
-            {/* TLE SPECIALIZATION - Explicitly displayed as requested */}
-            {(learner.enrollment?.tleProgramName || learner.pendingConfirmation?.tleProgramName) && (
-               <HeroDetail 
-                  icon={Briefcase} 
-                  label="TLE Specialization" 
-                  value={learner.enrollment?.tleProgramName || learner.pendingConfirmation?.tleProgramName || "N/A"} 
-                  highlight 
-               />
-            )}
-
             <HeroDetail 
               icon={Calendar} 
               label="Date of Birth" 

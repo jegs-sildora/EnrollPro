@@ -7,7 +7,6 @@ import {
   bulkConfirmReturn,
   getJHSCompleters,
   syncBOSYQueue,
-  getTLEPrograms,
 } from "./bosy.service.js";
 
 function parsePositiveInt(value: unknown, fallback: number): number {
@@ -219,22 +218,3 @@ export async function getJHSCompletersHandler(
   }
 }
 
-export async function getTLEProgramsHandler(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
-  try {
-    const schoolYearId = parsePositiveInt(req.query.schoolYearId, 0);
-    if (!schoolYearId) {
-      res
-        .status(400)
-        .json({ message: "schoolYearId query param is required." });
-      return;
-    }
-    const programs = await getTLEPrograms(schoolYearId);
-    res.json({ programs });
-  } catch (error) {
-    next(error);
-  }
-}

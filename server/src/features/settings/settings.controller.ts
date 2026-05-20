@@ -79,35 +79,12 @@ export async function getPublicSettings(
       schoolWebsite: settings.schoolWebsite,
       enrollmentPhase,
       isBosyEnrollmentOpen,
-      isTleSelectionOpen: settings.isTleSelectionOpen,
     });
   } catch (error) {
     console.error("[Settings Controller] Error in getPublicSettings:", error);
     // Let the global error handler handle it, or send a more specific response
     throw error;
   }
-}
-
-export async function toggleTleGate(
-  req: Request,
-  res: Response,
-): Promise<void> {
-  const settings = await getOrCreateSettings();
-  const isTleSelectionOpen = Boolean(req.body?.isTleSelectionOpen);
-
-  const updated = await prisma.schoolSetting.update({
-    where: { id: settings.id },
-    data: { isTleSelectionOpen },
-  });
-
-  await auditLog({
-    userId: req.user!.userId,
-    actionType: "SETTINGS_UPDATED",
-    description: `Admin ${isTleSelectionOpen ? "opened" : "closed"} Phase 3: TLE Specialization Selection`,
-    req,
-  });
-
-  res.json({ isTleSelectionOpen: updated.isTleSelectionOpen });
 }
 
 export async function updateIdentity(
