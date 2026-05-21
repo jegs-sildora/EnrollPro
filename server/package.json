@@ -47,7 +47,9 @@
     "db:wipe-promoted-from-2025-2026": "tsx prisma/seeds/wipe/wipe-promoted-from-2025-2026.ts",
     "db:wipe-incoming-g7-ready-for-sectioning": "tsx prisma/seeds/wipe/wipe-incoming-g7-ready-for-sectioning.ts",
     "db:backfill-teacher-users": "tsx prisma/seeds/maintenance/backfill-teacher-users.ts",
-    "db:backfill-learner-users": "tsx prisma/seeds/maintenance/backfill-learner-users.ts"
+    "db:backfill-learner-users": "tsx prisma/seeds/maintenance/backfill-learner-users.ts",
+    "db:seed-discrepancy": "tsx prisma/seeds/01-global/seed-discrepancy.ts",
+    "db:seed-trim-excess": "tsx prisma/seeds/01-global/seed-trim-excess.ts"
   },
   "dependencies": {
     "@enrollpro/shared": "workspace:*",
