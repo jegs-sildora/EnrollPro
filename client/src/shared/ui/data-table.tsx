@@ -152,8 +152,8 @@ export function DataTable<TData, TValue>({
       )}>
       <div
         ref={containerRef}
-        className="overflow-y-auto relative flex-1 min-h-0 w-full"
-        style={virtualize ? { maxHeight: containerHeight } : undefined}>
+        className="overflow-auto relative flex-1 min-h-0 w-full"
+        style={virtualize && containerHeight !== "100%" ? { maxHeight: containerHeight } : undefined}>
         <Table className={cn("w-full", tableClassName)}>
           <TableHeader className="bg-[hsl(var(--primary))] border-none">
             {table.getHeaderGroups().map((headerGroup) => (

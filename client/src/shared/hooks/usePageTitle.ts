@@ -43,7 +43,7 @@ function resolvePageTitle(pathname: string, search: string): string | null {
     "/sections": "Sections",
     "/audit-logs": "Audit Logs",
     "/settings": "Settings",
-    "/teachers": "Teachers",
+    "/teachers": "Teacher Directory",
     "/admin/users": "User Management",
     "/admin/system": "System Health",
     "/admin/integration": "Integration Hub",

@@ -21,12 +21,12 @@ export function EnrollmentWorkflowTabs({
         onValueChange(nextValue as EnrollmentSubMenu)
       }
       className="w-full">
-      <TabsList className="w-full flex flex-wrap h-auto gap-1 p-1 bg-white border-border relative">
+      <TabsList className="grid w-full h-auto gap-1 p-1 bg-white border border-border relative grid-cols-2 lg:grid-cols-4">
         {ENROLLMENT_SUB_MENU_OPTIONS.map((option) => (
           <TabsTrigger
             key={option.value}
             value={option.value}
-            className="flex-1 min-w-25 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+            className="w-full min-w-0 font-bold transition-all relative z-10 data-[state=active]:bg-transparent data-[state=active]:shadow-none">
             {value === option.value && (
               <motion.div
                 layoutId="enrollment-active-pill"

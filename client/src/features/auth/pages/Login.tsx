@@ -240,6 +240,7 @@ export default function Login() {
 
   const settings = useSettingsStore() as SchoolMetaSettings;
   const schoolName = settings.schoolName || "EnrollPro";
+  const isBosyEnrollmentOpen = settings.isBosyEnrollmentOpen;
   const schoolAddress = normalizeOptionalText(settings.schoolAddress);
   const schoolDivision = normalizeOptionalText(settings.schoolDivision);
   const schoolRegion = normalizeOptionalText(settings.schoolRegion);
@@ -318,6 +319,17 @@ export default function Login() {
         window.clearTimeout(redirectTimeoutRef.current);
       }
 
+      const isTeacherRole =
+        payload.user.role === "TEACHER" || payload.user.role === "MRF";
+
+      if (isTeacherRole && !isBosyEnrollmentOpen) {
+        sileo.error({
+          title: "Access Restricted",
+          description: "BOSY Enrollment is not yet open.",
+        });
+        return;
+      }
+
       setAuth(payload.token, payload.user);
 
       // Persistence logic
@@ -346,11 +358,16 @@ export default function Login() {
         return;
       }
 
+      const destination =
+        payload.user.role === "TEACHER" || payload.user.role === "MRF"
+          ? "/intake"
+          : "/dashboard";
+
       redirectTimeoutRef.current = window.setTimeout(() => {
-        navigate("/dashboard", { replace: true });
+        navigate(destination, { replace: true });
       }, 800);
     },
-    [navigate, setAuth, rememberMe],
+    [navigate, setAuth, rememberMe, isBosyEnrollmentOpen],
   );
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -377,9 +394,11 @@ export default function Login() {
   };
 
   if (token && user && !user.mustChangePassword) {
+    const homeRoute =
+      user.role === "TEACHER" || user.role === "MRF" ? "/intake" : "/dashboard";
     return (
       <Navigate
-        to="/dashboard"
+        to={homeRoute}
         replace
       />
     );

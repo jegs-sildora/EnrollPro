@@ -167,7 +167,7 @@ async function createFixture(seed: string): Promise<IntegrationFixture> {
       data: {
         firstName: "Faculty",
         lastName: `One-${seed}`,
-        employeeId: `IT-T-${seed}`,
+        employeeId: String(Math.floor(1000000 + Math.random() * 9000000)),
         email: `integration-faculty-${seed}@example.com`,
       },
     });
@@ -271,7 +271,7 @@ async function runTests(): Promise<void> {
     const health = await requestJson(baseUrl, "/api/integration/v1/health");
     assert.equal(health.status, 200);
     assert.equal(typeof health.body?.data?.status, "string");
-    assert.equal(typeof health.body?.data?.db, "string");
+    assert.equal(typeof health.body?.data?.db?.status, "string");
 
     const learnersMissingScope = await requestJson(
       baseUrl,

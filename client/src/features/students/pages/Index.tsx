@@ -1547,8 +1547,7 @@ export default function Students() {
     <div className="space-y-6">
       {/* Header */}
       <div className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
-          <Users className="h-8 w-8" />
+        <h1 className="text-2xl sm:text-3xl font-bold">
           Learner Directory
         </h1>
         <p className="text-sm font-bold text-foreground">

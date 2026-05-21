@@ -3,7 +3,6 @@ import { AnimatedNumber } from "@/shared/components/AnimatedNumber";
 import { useSearchParams } from "react-router";
 import { sileo } from "sileo";
 import {
-  ClipboardList,
   Download,
   RefreshCw,
   ShieldAlert,
@@ -338,8 +337,7 @@ export default function AuditLogs() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold  flex items-center gap-2 text-foreground">
-            <ClipboardList className="h-8 w-8 text-primary" />
+          <h1 className="text-3xl font-bold text-foreground">
             Audit Logs
           </h1>
           <p className="text-sm font-bold text-foreground ">

@@ -34,14 +34,11 @@ interface Faculty {
 type TeacherAssignmentKind =
   | "STE"
   | "SPA_ARTS"
-  | "SPS_SPORTS"
-  | "TLE_PROGRAM";
+  | "SPS_SPORTS";
 
 interface TeacherAssignmentTarget {
   kind: TeacherAssignmentKind;
   poolIndex: number;
-  tleProgramId?: number;
-  tleSectionSlot?: number; // 0 = G9 slot, 1 = G10 slot
 }
 
 const ATLAS_FACULTY: Faculty[] = [
@@ -268,127 +265,77 @@ const ATLAS_FACULTY: Faculty[] = [
 ];
 
 const PH_FIRST_NAMES_MALE = [
-  "JUAN",
-  "MIGUEL",
-  "CARLO",
-  "RAFAEL",
-  "ANTONIO",
-  "GABRIEL",
-  "MATEO",
-  "DIEGO",
-  "EMMANUEL",
-  "CHRISTIAN",
-  "JOSHUA",
-  "ANGELO",
-  "RICARDO",
-  "FERDINAND",
-  "RODRIGO",
-  "MANUEL",
-  "BENIGNO",
-  "ELPIDIO",
-  "SERGIO",
-  "DIOSDADO",
-  "JOSEPH",
-  "VICENTE",
-  "ANDRES",
-  "EMILIO",
-  "APOLINARIO",
-  "MARCELO",
-  "GREGORIO",
-  "JUANCHO",
-  "ALBERTO",
-  "RENATO",
-  "EDUARDO",
-  "ROBERTO",
-  "FRANCISCO",
+  "JUAN", "MIGUEL", "CARLO", "RAFAEL", "ANTONIO", "GABRIEL", "MATEO", "DIEGO", "EMMANUEL", "CHRISTIAN", 
+  "JOSHUA", "ANGELO", "RICARDO", "FERDINAND", "RODRIGO", "MANUEL", "BENIGNO", "ELPIDIO", "SERGIO", "DIOSDADO", 
+  "JOSEPH", "VICENTE", "ANDRES", "EMILIO", "APOLINARIO", "MARCELO", "GREGORIO", "JUANCHO", "ALBERTO", "RENATO", 
+  "EDUARDO", "ROBERTO", "FRANCISCO", "ARTHUR", "REYNALDO", "ROMEO", "RAMON", "JULIO", "CESAR", "ERNESTO", 
+  "FELIPE", "GUILLERMO", "HOMER", "IGNACIO", "JAIME", "LEONARDO", "MARIANO", "NESTOR", "ORLANDO", "PABLO", 
+  "QUINTIN", "ROLANDO", "SALVADOR", "TOMAS", "URBANO", "VICTOR", "WILFREDO", "XAVIER", "YURI", "ZACARIAS", 
+  "ALFONSO", "BERNARDO", "CORNELIO", "DOMINGO", "EFREN", "FIDEL", "GILBERTO"
 ];
 const PH_FIRST_NAMES_FEMALE = [
-  "ANGELICA",
-  "PRINCESS",
-  "JASMINE",
-  "NICOLE",
-  "GABRIELA",
-  "SOFIA",
-  "ISABELLA",
-  "BEA",
-  "CRISTINA",
-  "PATRICIA",
-  "ELENA",
-  "ROSA",
-  "TERESA",
-  "IMELDA",
-  "GLORIA",
-  "REMEDIOS",
-  "CARMELA",
-  "JOSEFINA",
-  "PERLA",
-  "AURORA",
-  "ESTRELLA",
-  "CORAZON",
-  "LOURDES",
-  "CRISTETA",
-  "FELICIDAD",
-  "LEONOR",
-  "MARIA",
-  "CONCEPCION",
-  "SALVACION",
-  "PURISIMA",
+  "ANGELICA", "PRINCESS", "JASMINE", "NICOLE", "GABRIELA", "SOFIA", "ISABELLA", "BEA", "CRISTINA", "PATRICIA", 
+  "ELENA", "ROSA", "TERESA", "IMELDA", "GLORIA", "REMEDIOS", "CARMELA", "JOSEFINA", "PERLA", "AURORA", 
+  "ESTRELLA", "CORAZON", "LOURDES", "CRISTETA", "FELICIDAD", "LEONOR", "MARIA", "CONCEPCION", "SALVACION", "PURISIMA",
+  "ANITA", "BELEN", "CARMEN", "DOLORES", "EVANGELINE", "FLORDELIZA", "GENOVEVA", "HELEN", "IRENE", "JULIETA", 
+  "KRISTINE", "LEONILA", "MILAGROS", "NATIVIDAD", "OFELIA", "PACITA", "QUINTINA", "ROSARIO", "SOCORRO", "TRINIDAD", 
+  "URSULA", "VIRGINIA", "WENDY", "XYZA", "YOLANDA", "ZENAIDA", "ALICIA", "BEATRIZ", "CATALINA", "DINAH", 
+  "EULALIA", "FLORENCIA"
 ];
 const PH_LAST_NAMES = [
-  "FERNANDEZ",
-  "NAVARRO",
-  "GONZALES",
-  "VILLANUEVA",
-  "CRUZ",
-  "PASCUAL",
-  "AQUINO",
-  "MARCOS",
-  "DUTERTE",
-  "ESTRADA",
-  "ARROYO",
-  "MAGSAYSAY",
-  "QUIRINO",
-  "OSMEÑA",
-  "MACAPAGAL",
-  "QUEZON",
-  "MAGNO",
-  "BALTAZAR",
-  "SANTIAGO",
-  "DE LEON",
-  "CASTILLO",
-  "SORIANO",
-  "DEL ROSARIO",
-  "VALDEZ",
-  "RODRIGUEZ",
-  "PANGANIBAN",
-  "IBARRA",
-  "LUNA",
-  "SILANG",
+  "FERNANDEZ", "NAVARRO", "GONZALES", "VILLANUEVA", "CRUZ", "PASCUAL", "AQUINO", "MARCOS", "DUTERTE", "ESTRADA", 
+  "ARROYO", "MAGSAYSAY", "QUIRINO", "OSMEÑA", "MACAPAGAL", "QUEZON", "MAGNO", "BALTAZAR", "SANTIAGO", "DE LEON", 
+  "CASTILLO", "SORIANO", "DEL ROSARIO", "VALDEZ", "RODRIGUEZ", "PANGANIBAN", "IBARRA", "LUNA", "SILANG",
+  "GARCIA", "MENDOZA", "REYES", "BAUTISTA", "TORRES", "RAMOS", "FLORES", "DOMINGO", "TOLENTINO", "DELA CRUZ", "SANTOS", 
+  "OCAMPO", "AGUILAR", "ALVAREZ", "BERNARDO", "CABRERA", "DIAZ", "EVANGELISTA", "FAJARDO", "GOMEZ", "HERNANDEZ", 
+  "IGNACIO", "JAVIER", "LACSON", "MALLARI", "NATIVIDAD", "ORTEGA", "PEREZ", "QUIAMBAO", "RIVERA", "SALAZAR", "TAYAG", 
+  "UMALI", "VERGARA", "YAP", "ZAMORA", "ALCANTARA", "BELTRAN", "CORTEZ", "DAVID", "ENRIQUEZ", "FRANCISCO", "GUTIERREZ", 
+  "ILAGAN", "JACINTO", "LAUREL", "MACALINTAL", "NICOLAS", "PADA", "QUINTO", "ROXAS", "SALVADOR", "TUASON", "URBANO", 
+  "VALENCIA", "YAMBAO", "ZARATE"
 ];
 const PH_MIDDLE_NAMES = [
-  "SANTIAGO",
-  "DE LEON",
-  "BALTAZAR",
-  "CASTILLO",
-  "SORIANO",
-  "DEL ROSARIO",
-  "VALDEZ",
-  "RODRIGUEZ",
-  "PANGANIBAN",
-  "IBARRA",
-  "LUNA",
-  "SILANG",
-  "AGONCILLO",
-  "MAGBANUA",
-  "TECSON",
-  "LLANES",
-  "ESCODA",
-  "VILLA",
-  "GUERRERO",
-  "HERNANDEZ",
-  "TOLENTINO",
-  "ABELLA",
+  "SANTIAGO", "DE LEON", "BALTAZAR", "CASTILLO", "SORIANO", "DEL ROSARIO", "VALDEZ", "RODRIGUEZ", "PANGANIBAN", 
+  "IBARRA", "LUNA", "SILANG", "AGONCILLO", "MAGBANUA", "TECSON", "LLANES", "ESCODA", "VILLA", "GUERRERO", "HERNANDEZ", 
+  "TOLENTINO", "ABELLA", "GARCIA", "MENDOZA", "REYES", "BAUTISTA", "TORRES", "RAMOS", "FLORES", "DOMINGO", 
+  "DELA CRUZ", "SANTOS", "OCAMPO", "AGUILAR", "ALVAREZ", "BERNARDO", "CABRERA", "DIAZ", "EVANGELISTA", "FAJARDO", 
+  "GOMEZ", "IGNACIO", "JAVIER", "LACSON", "MALLARI", "NATIVIDAD", "ORTEGA", "PEREZ", "QUIAMBAO", "RIVERA", "SALAZAR", 
+  "TAYAG", "UMALI", "VERGARA", "YAP", "ZAMORA"
 ];
+
+// Global unique name registry to ensure absolutely no repeats
+const GLOBAL_USED_EMAIL_KEYS = new Set<string>();
+const GLOBAL_USED_FULL_NAMES = new Set<string>();
+
+for (const f of ATLAS_FACULTY) {
+  const fullNameKey = `${f.firstName}|${f.lastName}|${f.middleName ?? ""}`.toUpperCase();
+  const emailKey = `${f.firstName.toLowerCase().replace(/\\s/g, "")}.${f.lastName.toLowerCase().replace(/\\s/g, "")}`;
+  GLOBAL_USED_FULL_NAMES.add(fullNameKey);
+  GLOBAL_USED_EMAIL_KEYS.add(emailKey);
+}
+
+function generateUniqueName(seed: number, sex: Sex) {
+  const firstNames = sex === "MALE" ? PH_FIRST_NAMES_MALE : PH_FIRST_NAMES_FEMALE;
+  let attempts = 0;
+  while (true) {
+    const fnIdx = (seed + attempts * 13) % firstNames.length;
+    const lnIdx = (seed * 3 + attempts * 17) % PH_LAST_NAMES.length;
+    const mnIdx = (seed * 5 + attempts * 19) % PH_MIDDLE_NAMES.length;
+
+    const firstName = firstNames[fnIdx];
+    const lastName = PH_LAST_NAMES[lnIdx];
+    const middleName = PH_MIDDLE_NAMES[mnIdx];
+    
+    const fullNameKey = `${firstName}|${lastName}|${middleName}`.toUpperCase();
+    const emailKey = `${firstName.toLowerCase().replace(/\\s/g, "")}.${lastName.toLowerCase().replace(/\\s/g, "")}`;
+
+    if (!GLOBAL_USED_FULL_NAMES.has(fullNameKey) && !GLOBAL_USED_EMAIL_KEYS.has(emailKey)) {
+      GLOBAL_USED_FULL_NAMES.add(fullNameKey);
+      GLOBAL_USED_EMAIL_KEYS.add(emailKey);
+      return { firstName, lastName, middleName };
+    }
+    attempts++;
+  }
+}
 
 const DEPARTMENT_DATA: Record<
   string,
@@ -470,17 +417,16 @@ const DEPARTMENTS_WEIGHTED = [
   { code: "ESP", weight: 8 },
 ];
 
-// Pre-built proportional sequences (100 slots each, matching weights above)
-const DEPT_SEQUENCE: string[] = [
-  ...Array(15).fill("ENG"),
-  ...Array(15).fill("MATH"),
-  ...Array(15).fill("SCI"),
-  ...Array(12).fill("FIL"),
-  ...Array(12).fill("AP"),
-  ...Array(12).fill("MAPEH"),
-  ...Array(11).fill("TLE"),
-  ...Array(8).fill("ESP"),
-];
+const TARGET_DEPT_COUNTS: Record<string, number> = {
+  SCI: 19,
+  MATH: 22,
+  ENG: 22,
+  TLE: 22,
+  FIL: 16,
+  ESP: 11,
+  MAPEH: 21,
+  AP: 13,
+};
 
 const PLANTILLA_SEQUENCE: string[] = [
   ...Array(40).fill("TEACHER I"),
@@ -532,14 +478,13 @@ function buildFacultyTemplate(params: {
   assignmentTarget?: TeacherAssignmentTarget;
 }): Faculty {
   const sex: Sex = params.seedIndex % 2 === 0 ? "FEMALE" : "MALE";
-  const firstNames =
-    sex === "MALE" ? PH_FIRST_NAMES_MALE : PH_FIRST_NAMES_FEMALE;
+  const { firstName, lastName, middleName } = generateUniqueName(params.seedIndex, sex);
 
   return {
     employeeId: params.employeeId,
-    firstName: firstNames[params.seedIndex % firstNames.length],
-    lastName: PH_LAST_NAMES[(params.seedIndex * 3) % PH_LAST_NAMES.length],
-    middleName: PH_MIDDLE_NAMES[(params.seedIndex * 5) % PH_MIDDLE_NAMES.length],
+    firstName,
+    lastName,
+    middleName,
     deptCode: params.deptCode,
     subject: params.subject,
     sex,
@@ -555,7 +500,7 @@ function buildFacultyPool(params: {
   deptCode: string;
   subject: string;
   specializations: string[];
-  assignmentKind: Exclude<TeacherAssignmentKind, "TLE_PROGRAM">;
+  assignmentKind: TeacherAssignmentKind;
 }): Faculty[] {
   return params.specializations.map((specialization, index) =>
     buildFacultyTemplate({
@@ -571,35 +516,14 @@ function buildFacultyPool(params: {
     }),
   );
 }
-
-function buildTleFacultyPool(
-  tlePrograms: Array<{ id: number; name: string }>,
-  baseEmployeeId: number,
-  seedOffset: number,
-): Faculty[] {
-  const result: Faculty[] = [];
-  let idx = 0;
-  for (const program of tlePrograms) {
-    for (const slot of [0, 1] as const) {
-      result.push(
-        buildFacultyTemplate({
-          employeeId: String(baseEmployeeId + idx).padStart(7, "0"),
-          seedIndex: seedOffset + idx,
-          deptCode: "TLE",
-          subject: "TLE",
-          specialization: `MAJOR IN ${program.name.toUpperCase()}`,
-          assignmentTarget: {
-            kind: "TLE_PROGRAM",
-            poolIndex: idx,
-            tleProgramId: program.id,
-            tleSectionSlot: slot,
-          },
-        }),
-      );
-      idx++;
+function generateUniqueEmployeeId(usedIds: Set<string>): string {
+  while (true) {
+    const id = Math.floor(1000000 + Math.random() * 9000000).toString();
+    if (!usedIds.has(id)) {
+      usedIds.add(id);
+      return id;
     }
   }
-  return result;
 }
 
 async function main() {
@@ -657,33 +581,7 @@ async function main() {
     sectionsByYear.set(schoolYear.id, yearSections);
   }
 
-  // Store ALL TLE sections per program per year (ordered by gradeLevelId asc → slot 0=G9, slot 1=G10)
-  const tleSectionsByYearAndProgramId = new Map<number, Map<number, number[]>>();
-  for (const [schoolYearId, yearSections] of sectionsByYear.entries()) {
-    const programSectionMap = new Map<number, number[]>();
-    const sorted = [...yearSections].sort(
-      (a, b) => (a.gradeLevelId ?? 0) - (b.gradeLevelId ?? 0),
-    );
-    for (const section of sorted) {
-      if (!section.tleProgramId) continue;
-      const existing = programSectionMap.get(section.tleProgramId) ?? [];
-      existing.push(section.id);
-      programSectionMap.set(section.tleProgramId, existing);
-    }
-    tleSectionsByYearAndProgramId.set(schoolYearId, programSectionMap);
-  }
 
-  const activeTlePrograms = await prisma.tLEProgram.findMany({
-    where: { isActive: true },
-    orderBy: [{ category: "asc" }, { name: "asc" }],
-    select: { id: true, name: true },
-  });
-
-  if (activeTlePrograms.length > 25) {
-    console.warn(
-      `⚠️  Found ${activeTlePrograms.length} active TLE programs. The current G9/G10 section count may not cover every program with a unique slot.`,
-    );
-  }
 
   const steSpecialFaculty = buildFacultyPool({
     baseEmployeeId: 3100000,
@@ -712,89 +610,77 @@ async function main() {
     assignmentKind: "SPS_SPORTS",
   });
 
-  const tleSpecialFaculty = buildTleFacultyPool(activeTlePrograms, 3400000, 500);
-
   const teachersToSeed: Faculty[] = [
     ...ATLAS_FACULTY,
     ...steSpecialFaculty,
     ...spaSpecialFaculty,
     ...spsSpecialFaculty,
-    ...tleSpecialFaculty,
   ];
 
   const defaultPasswordHash = await bcrypt.hash("DepEd2026!", 10);
 
-  const totalTarget = Math.max(142, teachersToSeed.length + 20);
-
-  const dynamicTleSpecializations =
-    activeTlePrograms.length > 0
-      ? activeTlePrograms.map((program) => `MAJOR IN ${program.name.toUpperCase()}`)
-      : DEPARTMENT_DATA.TLE.specializations;
-
-  const usedNames = new Set<string>();
-  const usedEmailKeys = new Set<string>(); // Tracks firstName.lastName pairs
-  const usedEmployeeIds = new Set<string>();
+  const dynamicTleSpecializations = DEPARTMENT_DATA.TLE.specializations;
 
   // Fetch all existing users from DB to prevent email collisions with non-teacher users (Admins, Registrars, etc.)
   const existingUsers = await prisma.user.findMany({ select: { email: true } });
   existingUsers.forEach((u) => {
     if (u.email) {
       const parts = u.email.split("@")[0].toLowerCase();
-      usedEmailKeys.add(parts);
+      GLOBAL_USED_EMAIL_KEYS.add(parts);
     }
   });
 
-  // 1. Process Atlas Faculty and fixed specialized pools.
-  [...teachersToSeed].forEach((f) => {
-    const fullNameKey =
-      `${f.firstName}|${f.lastName}|${f.middleName ?? ""}`.toUpperCase();
-    const emailKey = `${f.firstName.toLowerCase().replace(/\s/g, "")}.${f.lastName.toLowerCase().replace(/\s/g, "")}`;
+  // 2. Generate remaining teachers deterministically to strictly meet exact counts
+  console.log("≡ƒöÇ Building deterministic name roster matching exact department counts...");
 
-    if (usedEmailKeys.has(emailKey)) {
-      console.warn(
-        `  ΓÜá∩╕Å Warning: Faculty ${f.firstName} ${f.lastName} has a conflicting email key '${emailKey}'.`,
-      );
+  const currentCounts: Record<string, number> = {};
+  for (const f of teachersToSeed) {
+    currentCounts[f.deptCode] = (currentCounts[f.deptCode] || 0) + 1;
+  }
+
+  let localIdx = 0;
+  for (const [deptCode, target] of Object.entries(TARGET_DEPT_COUNTS)) {
+    const current = currentCounts[deptCode] || 0;
+    const needed = target - current;
+    
+    if (needed > 0) {
+      const deptInfo = DEPARTMENT_DATA[deptCode as keyof typeof DEPARTMENT_DATA];
+      const specializationPool = deptCode === "TLE" ? dynamicTleSpecializations : deptInfo.specializations;
+      
+      for (let i = 0; i < needed; i++) {
+        const sex: Sex = localIdx % 2 === 0 ? "FEMALE" : "MALE";
+        const { firstName, lastName, middleName } = generateUniqueName(1000 + localIdx, sex);
+
+        const specialization = specializationPool[localIdx % specializationPool.length];
+        const employeeId = (2000020 + localIdx + 1).toString();
+        const contactNumber = `0917-${String(200 + localIdx).padStart(3, "0")}-${String(1000 + localIdx).padStart(4, "0")}`;
+
+        teachersToSeed.push({
+          employeeId,
+          firstName,
+          lastName,
+          middleName,
+          deptCode,
+          subject: deptInfo.subject,
+          sex,
+          contactNumber,
+          specialization,
+        });
+        localIdx++;
+      }
+    } else if (needed < 0) {
+      console.warn(`  ΓÜá∩╕Å Already have more ${deptCode} teachers than target (${current} > ${target}). Skipping generation.`);
     }
+  }
 
-    usedNames.add(fullNameKey);
-    usedEmailKeys.add(emailKey);
-    usedEmployeeIds.add(f.employeeId);
-  });
+  const usedEmployeeIds = new Set<string>();
+  const existingUsersForIds = await prisma.user.findMany({ select: { employeeId: true } });
+  existingUsersForIds.forEach((u) => { if (u.employeeId) usedEmployeeIds.add(u.employeeId); });
+  const existingTeachersForIds = await prisma.teacher.findMany({ select: { employeeId: true } });
+  existingTeachersForIds.forEach((t) => usedEmployeeIds.add(t.employeeId));
 
-  // 2. Generate remaining teachers deterministically (same output every run)
-  console.log("≡ƒöÇ Building deterministic name roster...");
-
-  for (let i = teachersToSeed.length + 1; i <= totalTarget; i++) {
-    const localIdx = i - (ATLAS_FACULTY.length + 1); // 0-based offset past ATLAS block
-    const sex: Sex = localIdx % 2 === 0 ? "FEMALE" : "MALE";
-    const firstNames =
-      sex === "MALE" ? PH_FIRST_NAMES_MALE : PH_FIRST_NAMES_FEMALE;
-    const firstName = firstNames[Math.floor(localIdx / 2) % firstNames.length];
-    const lastName = PH_LAST_NAMES[localIdx % PH_LAST_NAMES.length];
-    const middleName = PH_MIDDLE_NAMES[(localIdx * 7) % PH_MIDDLE_NAMES.length];
-
-    const deptCode = DEPT_SEQUENCE[localIdx % DEPT_SEQUENCE.length];
-    const deptInfo = DEPARTMENT_DATA[deptCode as keyof typeof DEPARTMENT_DATA];
-    const specializationPool =
-      deptCode === "TLE"
-        ? dynamicTleSpecializations
-        : deptInfo.specializations;
-    const specialization =
-      specializationPool[localIdx % specializationPool.length];
-    const employeeId = (2000020 + localIdx + 1).toString();
-    const contactNumber = `0917-${String(200 + localIdx).padStart(3, "0")}-${String(1000 + localIdx).padStart(4, "0")}`;
-
-    teachersToSeed.push({
-      employeeId,
-      firstName,
-      lastName,
-      middleName,
-      deptCode,
-      subject: deptInfo.subject,
-      sex,
-      contactNumber,
-      specialization,
-    });
+  for (const f of teachersToSeed) {
+    f.employeeId = generateUniqueEmployeeId(usedEmployeeIds);
   }
 
   console.log(`≡ƒÜÇ Provisioning ${teachersToSeed.length} Faculty accounts...`);
@@ -804,7 +690,7 @@ async function main() {
   });
   const demoYearSections = sectionsByYear.get(demoStartYear.id) || [];
   const demoYearRegularSections = demoYearSections.filter(
-    (section) => section.programType === "REGULAR" && !section.tleProgramId,
+    (section) => section.programType === "REGULAR",
   );
   let regularSectionCursor = 0;
 
@@ -840,7 +726,7 @@ async function main() {
     const resolveAdvisorySectionId = (schoolYearId: number) => {
       const yearSections = sectionsByYear.get(schoolYearId) || [];
       const regularSections = yearSections.filter(
-        (section) => section.programType === "REGULAR" && !section.tleProgramId,
+        (section) => section.programType === "REGULAR",
       );
       const steSections = yearSections.filter(
         (section) => section.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
@@ -851,7 +737,6 @@ async function main() {
       const spsSections = yearSections.filter(
         (section) => section.programType === "SPECIAL_PROGRAM_IN_SPORTS",
       );
-      const tleSections = yearSections.filter((section) => section.tleProgramId);
 
       if (!assignmentTarget) {
         return regularSectionIndex !== null
@@ -869,15 +754,6 @@ async function main() {
 
       if (assignmentTarget.kind === "SPS_SPORTS") {
         return spsSections[assignmentTarget.poolIndex]?.id ?? null;
-      }
-
-      if (assignmentTarget.kind === "TLE_PROGRAM") {
-        const sections =
-          tleSectionsByYearAndProgramId
-            .get(schoolYearId)
-            ?.get(assignmentTarget.tleProgramId ?? -1) ?? [];
-        const slot = assignmentTarget.tleSectionSlot ?? 0;
-        return sections[slot] ?? null;
       }
 
       return null;

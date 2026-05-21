@@ -5,8 +5,10 @@ import {
   FilterX,
   MoreHorizontal,
   RefreshCw,
+  Search,
   UserCheck,
   UserRoundPen,
+  Users,
 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
@@ -80,6 +82,8 @@ interface TeacherDirectoryCardProps {
   statusFilter: TeacherStatusFilter;
   designationFilter: TeacherDesignationFilter;
   subjectFilter: string;
+  specializationFilter: string;
+  availableSpecializations: string[];
   hasActiveFilters: boolean;
   ayId: number | null;
   page: number;
@@ -90,6 +94,7 @@ interface TeacherDirectoryCardProps {
   onStatusFilterChange: (value: TeacherStatusFilter) => void;
   onDesignationFilterChange: (value: TeacherDesignationFilter) => void;
   onSubjectFilterChange: (value: string) => void;
+  onSpecializationFilterChange: (value: string) => void;
   onClearFilters: () => void;
   onRefresh: () => void;
   onOpenDesignationEditor: (teacher: Teacher) => void;
@@ -109,6 +114,8 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
   searchQuery,
   statusFilter,
   designationFilter,
+  specializationFilter,
+  availableSpecializations,
   hasActiveFilters,
   ayId,
   page,
@@ -118,6 +125,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
   onSearchQueryChange,
   onStatusFilterChange,
   onDesignationFilterChange,
+  onSpecializationFilterChange,
   onClearFilters,
   onRefresh,
   onOpenDesignationEditor,
@@ -387,59 +395,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
         </div>
       ),
     },
-    {
-      id: "portalAccess",
-      size: 160,
-      minSize: 140,
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title="PORTAL ACCESS"
-          className="font-bold"
-        />
-      ),
-      cell: ({ row }) => {
-        const teacher = row.original;
-        const ua = teacher.userAccount;
-        let accountLabel = "No Account";
-        let accountColor =
-          "text-muted-foreground bg-muted border-muted-foreground/30";
 
-        if (ua) {
-          if (!ua.isActive) {
-            accountLabel = "Suspended";
-            accountColor =
-              "text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-900/50 dark:border-slate-800";
-          } else if (ua.mustChangePassword && !ua.lastLoginAt) {
-            accountLabel = "Provisioned";
-            accountColor =
-              "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800";
-          } else {
-            accountLabel = "SSO Active";
-            accountColor =
-              "text-indigo-700 bg-indigo-50 border-indigo-200 dark:bg-indigo-950/30 dark:border-indigo-800";
-          }
-        } else if (teacher.isActive) {
-          accountLabel = "No Account";
-          accountColor =
-            "text-rose-700 bg-rose-50 border-rose-200 dark:bg-rose-950/30 dark:border-rose-800";
-        }
-
-        return (
-          <div className="flex justify-center">
-            <Badge
-              variant="outline"
-              className={cn(
-                "text-[9px] font-black uppercase px-2 h-4.5 border gap-1 whitespace-nowrap",
-                accountColor,
-              )}>
-              {ua?.isActive && <span className="text-[10px]">🌐</span>}
-              {accountLabel}
-            </Badge>
-          </div>
-        );
-      },
-    },
     {
       id: "designation",
       size: 180,
@@ -541,76 +497,84 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
   ];
 
   return (
-    <Card className="w-full min-w-0 overflow-hidden shadow-sm border-2">
-      <CardHeader className="border-b bg-muted/10">
-        <div className="flex flex-wrap items-center gap-3 pb-2 border-b mb-1">
+    <Card className="w-full min-w-0 overflow-hidden shadow-xl border border-slate-200/60 dark:border-slate-800/60 flex flex-col max-h-full min-h-0 rounded-xl">
+      <CardHeader className="border-b bg-gradient-to-r from-muted/20 via-muted/10 to-transparent py-3 px-4 shrink-0">
+        <div className="flex flex-wrap items-center gap-4 pb-3 border-b border-dashed border-border/60 mb-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-black uppercase text-muted-foreground">
-              Total Faculty
+            <Users className="h-4 w-4 text-muted-foreground" />
+            <span className="text-[11px] font-black uppercase text-muted-foreground tracking-wider">
+              Total
             </span>
-            <span className="text-base font-black text-primary">
+            <span className="text-base font-black text-primary tabular-nums">
               {teachers.length}
             </span>
           </div>
-          <div className="h-4 w-px bg-border" />
+          <div className="h-4 w-px bg-border/50" />
           <div className="flex items-center gap-2">
-            <span className="text-xs font-black uppercase text-muted-foreground">
+            <div className="h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20" />
+            <span className="text-[11px] font-black uppercase text-muted-foreground tracking-wider">
               Active
             </span>
-            <span className="text-base font-black text-green-600">
+            <span className="text-base font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
               {teachers.filter((t) => t.isActive).length}
             </span>
           </div>
-          <div className="h-4 w-px bg-border" />
+          <div className="h-4 w-px bg-border/50" />
           <div className="flex items-center gap-2">
-            <span className="text-xs font-black uppercase text-muted-foreground">
+            <div className="h-2 w-2 rounded-full bg-slate-400 ring-2 ring-slate-400/20" />
+            <span className="text-[11px] font-black uppercase text-muted-foreground tracking-wider">
               Inactive
             </span>
-            <span className="text-base font-black text-slate-400">
+            <span className="text-base font-black text-slate-400 tabular-nums">
               {teachers.filter((t) => !t.isActive).length}
             </span>
           </div>
-          <div className="h-4 w-px bg-border" />
+          <div className="h-4 w-px bg-border/50" />
           <div className="flex items-center gap-2">
-            <span className="text-xs font-black uppercase text-muted-foreground">
+            <div className="h-2 w-2 rounded-full bg-indigo-500 ring-2 ring-indigo-500/20" />
+            <span className="text-[11px] font-black uppercase text-muted-foreground tracking-wider">
               Class Advisers
             </span>
-            <span className="text-base font-black text-indigo-600">
+            <span className="text-base font-black text-indigo-600 dark:text-indigo-400 tabular-nums">
               {teachers.filter((t) => t.designation?.isClassAdviser).length}
             </span>
           </div>
+          {hasActiveFilters && (
+            <>
+              <div className="h-4 w-px bg-border/50" />
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-black uppercase text-amber-600 tracking-wider">
+                  Showing
+                </span>
+                <span className="text-base font-black text-amber-600 tabular-nums">
+                  {filteredTeachers.length}
+                </span>
+              </div>
+            </>
+          )}
         </div>
-        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-6">
-          <Input
-            value={searchQuery}
-            onChange={(event) => onSearchQueryChange(event.target.value)}
-            placeholder="Search name, ID, learning area, section"
-            className="h-9 md:col-span-2 xl:col-span-2 font-bold"
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[220px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+            <Input
+              value={searchQuery}
+              onChange={(event) => onSearchQueryChange(event.target.value)}
+              placeholder="Search name, ID, learning area, section..."
+              className="h-9 pl-9 font-bold text-xs"
+            />
+          </div>
           <Select
             value={statusFilter}
             onValueChange={(value) =>
               onStatusFilterChange(value as TeacherStatusFilter)
             }>
-            <SelectTrigger className="h-9 font-bold uppercase text-xs">
+            <SelectTrigger className="h-9 w-auto min-w-[130px] font-bold uppercase text-xs">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem
-                value="all"
-                className="font-bold">
-                All Statuses
-              </SelectItem>
-              <SelectItem
-                value="active"
-                className="font-bold">
-                Active Only
-              </SelectItem>
-              <SelectItem
-                value="inactive"
-                className="font-bold">
-                Inactive Only
-              </SelectItem>
+              <SelectItem value="all" className="font-bold">All Statuses</SelectItem>
+              <SelectItem value="active" className="font-bold">Active Only</SelectItem>
+              <SelectItem value="inactive" className="font-bold">Inactive Only</SelectItem>
             </SelectContent>
           </Select>
           <Select
@@ -618,44 +582,43 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
             onValueChange={(value) =>
               onDesignationFilterChange(value as TeacherDesignationFilter)
             }>
-            <SelectTrigger className="h-9 font-bold uppercase text-xs">
+            <SelectTrigger className="h-9 w-auto min-w-[150px] font-bold uppercase text-xs">
               <SelectValue placeholder="Designation" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem
-                value="all"
-                className="font-bold">
-                All Designations
-              </SelectItem>
-              <SelectItem
-                value="adviser"
-                className="font-bold">
-                Class Adviser
-              </SelectItem>
-              <SelectItem
-                value="tic"
-                className="font-bold">
-                TIC
-              </SelectItem>
-              <SelectItem
-                value="none"
-                className="font-bold">
-                No Designation
-              </SelectItem>
+              <SelectItem value="all" className="font-bold">All Designations</SelectItem>
+              <SelectItem value="adviser" className="font-bold">Class Adviser</SelectItem>
+              <SelectItem value="tic" className="font-bold">TIC</SelectItem>
+              <SelectItem value="none" className="font-bold">No Designation</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            value={specializationFilter}
+            onValueChange={onSpecializationFilterChange}>
+            <SelectTrigger className="h-9 w-auto min-w-[160px] font-bold uppercase text-xs">
+              <SelectValue placeholder="Department" />
+            </SelectTrigger>
+            <SelectContent className="max-h-60">
+              <SelectItem value="all" className="font-bold">All Departments</SelectItem>
+              {availableSpecializations.map((spec) => (
+                <SelectItem key={spec} value={spec} className="font-bold text-xs uppercase">
+                  {spec}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Button
             variant="ghost"
-            className="h-9 font-bold uppercase text-xs"
+            className="h-9 font-bold uppercase text-xs px-3"
             disabled={!hasActiveFilters}
             onClick={onClearFilters}>
-            <FilterX className="mr-2 h-4 w-4" />
+            <FilterX className="mr-1.5 h-3.5 w-3.5" />
             Clear
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="h-9 gap-2 font-bold uppercase text-xs"
+            className="h-9 gap-1.5 font-bold uppercase text-xs"
             onClick={onRefresh}>
             <RefreshCw
               className={cn("h-3.5 w-3.5", loading && "animate-spin")}
@@ -664,10 +627,10 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="p-0 min-w-0">
+      <CardContent className="p-0 min-w-0 flex flex-col flex-1 min-h-0 overflow-hidden">
         <div
           className={cn(
-            "min-w-0 transition-opacity duration-200",
+            "min-w-0 transition-opacity duration-200 flex flex-col flex-1 min-h-0",
             isRefetching ? "opacity-50 pointer-events-none" : "opacity-100",
           )}>
           <div className="md:hidden space-y-3">
@@ -824,7 +787,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
             )}
           </div>
 
-          <div className="hidden md:block flex-1 overflow-auto bg-muted/5 relative">
+          <div className="hidden md:flex flex-col min-h-0 max-h-full bg-muted/5 relative">
             <DataTable<Teacher, unknown>
               columns={columns}
               data={paginatedTeachers}
@@ -832,7 +795,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
               loading={loading}
               virtualize={true}
               estimatedRowHeight={60}
-              className="border-none rounded-none h-full"
+              className="border-none rounded-none max-h-full h-auto"
               containerHeight="100%"
               noResultsMessage={
                 hasActiveFilters
@@ -842,14 +805,16 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
             />
           </div>
 
-          <PaginationBar
-            page={page}
-            total={filteredTeachers.length}
-            limit={limit}
-            onPageChange={onPageChange}
-            onLimitChange={onLimitChange}
-            itemName="Teachers"
-          />
+          <div className="shrink-0 border-t">
+            <PaginationBar
+              page={page}
+              total={filteredTeachers.length}
+              limit={limit}
+              onPageChange={onPageChange}
+              onLimitChange={onLimitChange}
+              itemName="Teachers"
+            />
+          </div>
         </div>
       </CardContent>
     </Card>

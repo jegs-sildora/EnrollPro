@@ -1116,7 +1116,7 @@ export default function SchoolYearTab() {
         </div>
       </div>
 
-      {isZeroState ? (
+      {!loading && isZeroState ? (
         <Card className="shadow-lg bg-white">
           <CardContent className="pt-12 pb-14 flex flex-col items-center text-center">
             <div className="h-16 w-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-6 shadow-inner border border-amber-200">
@@ -1139,7 +1139,7 @@ export default function SchoolYearTab() {
             </Button>
           </CardContent>
         </Card>
-      ) : (
+      ) : !loading ? (
         <>
           <Card
             className={cn(
@@ -1440,7 +1440,7 @@ export default function SchoolYearTab() {
             </div>
           )}
         </>
-      )}
+      ) : null}
 
       <Dialog
         open={showNextForm}

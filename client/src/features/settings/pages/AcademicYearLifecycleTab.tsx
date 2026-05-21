@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import {
   Card,
   CardHeader,
@@ -31,23 +31,17 @@ import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
 import {
   Lock,
   Unlock,
-  AlertTriangle,
   CheckCircle2,
   History,
   ShieldAlert,
-  BarChart3,
+  RotateCcw,
 } from "lucide-react";
 import { useSettingsStore } from "@/store/settings.slice";
 import api from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
 import { format } from "date-fns";
 import { cn } from "@/shared/lib/utils";
-
-interface PreLockStats {
-  pendingCount: number;
-  unsectionedCount: number;
-  sectionedCount: number;
-}
+import { AdminPinInput } from "@/shared/components/AdminPinInput";
 
 const UNLOCK_CATEGORIES = [
   "Division Office Mandate / Extension",
@@ -60,37 +54,15 @@ export default function AcademicYearLifecycleTab() {
   const { activeSchoolYearLabel, systemStatus, bosyLockedAt, setSettings } =
     useSettingsStore();
 
-  const [isLockModalOpen, setIsLockModalOpen] = useState(false);
   const [isUnlockModalOpen, setIsUnlockModalOpen] = useState(false);
-
-  // --- Lock State ---
-  const [lockConfirmLabel, setLockConfirmLabel] = useState("");
-  const [lockConfirmTouched, setLockConfirmTouched] = useState(false);
-  const [pinDigits, setPinDigits] = useState<string[]>(Array(6).fill(""));
-  const [pinTouched, setPinTouched] = useState(false);
-  const [visibleIndices, setVisibleIndices] = useState<number[]>([]);
-  const lockPin = pinDigits.join("");
-  const pinInputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-  const isLockConfirmValid = lockConfirmLabel === activeSchoolYearLabel;
-  const isPinValid = lockPin.length === 6;
-
-  const [isLocking, setIsLocking] = useState(false);
 
   // --- Unlock State ---
   const [unlockCategory, setUnlockCategory] = useState("");
   const [unlockJustification, setUnlockJustification] = useState("");
-  const [unlockPinDigits, setUnlockPinDigits] = useState<string[]>(
-    Array(6).fill(""),
-  );
+  const [unlockPin, setUnlockPin] = useState("");
   const [unlockPinTouched, setUnlockPinTouched] = useState(false);
-  const [unlockVisibleIndices, setUnlockVisibleIndices] = useState<number[]>(
-    [],
-  );
-  const unlockPin = unlockPinDigits.join("");
-  const unlockPinInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const isUnlockPinValid = unlockPin.length === 6;
+  const isUnlockPinValid = /^\d{6}$/.test(unlockPin);
   const isUnlockFormValid =
     unlockCategory !== "" &&
     unlockJustification.length >= 10 &&
@@ -98,70 +70,35 @@ export default function AcademicYearLifecycleTab() {
 
   const [isUnlocking, setIsUnlocking] = useState(false);
 
-  const [preLockStats, setPreLockStats] = useState<PreLockStats | null>(null);
-
   const isLocked = systemStatus === "BOSY_LOCKED";
-  const totalIncomplete =
-    (preLockStats?.pendingCount ?? 0) + (preLockStats?.unsectionedCount ?? 0);
-  const isLockBlocked = !isLocked && totalIncomplete > 0;
+  const isEosyFinalized = systemStatus === "ARCHIVED";
 
-  const fetchStatus = async () => {
-    try {
-      const res = await api.get("/admin/system/status");
-      if (res.data.preLockStats) {
-        setPreLockStats(res.data.preLockStats);
-      }
-    } catch (err) {
-      console.error("Failed to fetch pre-lock stats", err);
-    }
-  };
+  // --- Rollover State ---
+  const [isRolloverModalOpen, setIsRolloverModalOpen] = useState(false);
+  const [rolloverOpeningDate, setRolloverOpeningDate] = useState("");
+  const [isRollingOver, setIsRollingOver] = useState(false);
 
-  useEffect(() => {
-    fetchStatus();
-  }, [systemStatus]);
-
-  const handleLockBosy = async () => {
-    if (lockConfirmLabel !== activeSchoolYearLabel) {
-      setLockConfirmTouched(true);
+  const handleRollover = async () => {
+    if (!rolloverOpeningDate) {
       sileo.error({
-        title: "Validation Failed",
-        description: "School year label does not match.",
+        title: "Date Required",
+        description: "Please enter the class opening date for the new school year.",
       });
       return;
     }
-
-    if (!/^\d{6}$/.test(lockPin)) {
-      setPinTouched(true);
-      sileo.error({
-        title: "Invalid PIN",
-        description: "Please enter a valid 6-digit Admin PIN.",
-      });
-      return;
-    }
-
-    setIsLocking(true);
+    setIsRollingOver(true);
     try {
-      const res = await api.post("/admin/system/lock-bosy", {
-        pin: lockPin,
-        yearLabel: lockConfirmLabel,
+      await api.post("/school-years/rollover", {
+        classOpeningDate: rolloverOpeningDate,
       });
-
       sileo.success({
-        title: "BOSY Locked",
-        description: res.data.message,
+        title: "School Year Rolled Over",
+        description: "The new school year has been created successfully.",
       });
-
-      // Refresh global settings
       const pubRes = await api.get("/settings/public");
       setSettings(pubRes.data);
-
-      setIsLockModalOpen(false);
-      setLockConfirmLabel("");
-      setLockConfirmTouched(false);
-      setPinDigits(Array(6).fill(""));
-      setPinTouched(false);
-      setVisibleIndices([]);
-      fetchStatus();
+      setIsRolloverModalOpen(false);
+      setRolloverOpeningDate("");
     } catch (err: unknown) {
       const message =
         err && typeof err === "object" && "response" in err
@@ -169,13 +106,13 @@ export default function AcademicYearLifecycleTab() {
               ?.message
           : err instanceof Error
             ? err.message
-            : "Failed to lock BOSY.";
+            : "Failed to initiate school year rollover.";
       sileo.error({
-        title: "Lock Failed",
+        title: "Rollover Failed",
         description: message || "An unexpected error occurred.",
       });
     } finally {
-      setIsLocking(false);
+      setIsRollingOver(false);
     }
   };
 
@@ -225,10 +162,8 @@ export default function AcademicYearLifecycleTab() {
       setIsUnlockModalOpen(false);
       setUnlockCategory("");
       setUnlockJustification("");
-      setUnlockPinDigits(Array(6).fill(""));
+      setUnlockPin("");
       setUnlockPinTouched(false);
-      setUnlockVisibleIndices([]);
-      fetchStatus();
     } catch (err: unknown) {
       const message =
         err && typeof err === "object" && "response" in err
@@ -243,72 +178,6 @@ export default function AcademicYearLifecycleTab() {
       });
     } finally {
       setIsUnlocking(false);
-    }
-  };
-
-  const handleUnlockPinChange = (index: number, value: string) => {
-    const newDigits = [...unlockPinDigits];
-    const cleanValue = value.replace(/\D/g, "").slice(-1);
-
-    if (cleanValue) {
-      newDigits[index] = cleanValue;
-      setUnlockPinDigits(newDigits);
-
-      setUnlockVisibleIndices((prev) => [...prev, index]);
-      setTimeout(() => {
-        setUnlockVisibleIndices((prev) => prev.filter((i) => i !== index));
-      }, 1000);
-
-      if (index < 5) {
-        unlockPinInputRefs.current[index + 1]?.focus();
-      }
-    } else if (value === "") {
-      newDigits[index] = "";
-      setUnlockPinDigits(newDigits);
-    }
-  };
-
-  const handleUnlockPinKeyDown = (
-    index: number,
-    e: React.KeyboardEvent<HTMLInputElement>,
-  ) => {
-    if (e.key === "Backspace" && !unlockPinDigits[index] && index > 0) {
-      unlockPinInputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handlePinChange = (index: number, value: string) => {
-    const newDigits = [...pinDigits];
-    // Only allow numbers
-    const cleanValue = value.replace(/\D/g, "").slice(-1);
-
-    if (cleanValue) {
-      newDigits[index] = cleanValue;
-      setPinDigits(newDigits);
-
-      // Show digit for 1 second
-      setVisibleIndices((prev) => [...prev, index]);
-      setTimeout(() => {
-        setVisibleIndices((prev) => prev.filter((i) => i !== index));
-      }, 1000);
-
-      // Auto-advance
-      if (index < 5) {
-        pinInputRefs.current[index + 1]?.focus();
-      }
-    } else if (value === "") {
-      // Allow deletion
-      newDigits[index] = "";
-      setPinDigits(newDigits);
-    }
-  };
-
-  const handlePinKeyDown = (
-    index: number,
-    e: React.KeyboardEvent<HTMLInputElement>,
-  ) => {
-    if (e.key === "Backspace" && !pinDigits[index] && index > 0) {
-      pinInputRefs.current[index - 1]?.focus();
     }
   };
 
@@ -379,276 +248,10 @@ export default function AcademicYearLifecycleTab() {
             </Alert>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-            <div className="p-4 rounded-xl border bg-white space-y-3">
-              <h4 className="text-sm font-black uppercase  flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-primary" />
-                PRE-LOCK READINESS
-              </h4>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between border-b border-slate-50 pb-1">
-                  <span className="text-sm font-bold text-slate-600">
-                    Learners Sectioned:
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-black">
-                      {preLockStats?.sectionedCount?.toLocaleString() ?? "..."}
-                    </span>
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                  </div>
-                </div>
 
-                <div className="flex items-center justify-between border-b border-slate-50 pb-1">
-                  <span className="text-sm font-bold text-slate-600">
-                    Unsectioned (Ready):
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`text-sm font-black ${preLockStats && preLockStats.unsectionedCount > 0 ? "text-primary" : "text-slate-900"}`}>
-                      {preLockStats?.unsectionedCount?.toLocaleString() ??
-                        "..."}
-                    </span>
-                    {preLockStats && preLockStats.unsectionedCount === 0 ? (
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                    ) : (
-                      <AlertTriangle className="h-3.5 w-3.5 text-primary" />
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-slate-600">
-                    Pending Verification:
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`text-sm font-black ${preLockStats && preLockStats.pendingCount > 0 ? "text-primary" : "text-slate-900"}`}>
-                      {preLockStats?.pendingCount?.toLocaleString() ?? "..."}
-                    </span>
-                    {preLockStats && preLockStats.pendingCount === 0 ? (
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                    ) : (
-                      <AlertTriangle className="h-3.5 w-3.5 text-primary" />
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-xl border bg-white space-y-3">
-              <h4 className="text-sm font-black uppercase  flex items-center gap-2">
-                <ShieldAlert className="h-4 w-4 text-primary" />
-                System Restrictions
-              </h4>
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2 text-xs font-bold text-foreground">
-                  <div
-                    className={`h-1.5 w-1.5 rounded-full ${isLocked ? "bg-emerald-500" : "bg-slate-300"}`}
-                  />
-                  Batch Operations: {isLocked ? "Disabled" : "Enabled"}
-                </li>
-                <li className="flex items-center gap-2 text-xs font-bold text-foreground">
-                  <div
-                    className={`h-1.5 w-1.5 rounded-full ${isLocked ? "bg-emerald-500" : "bg-slate-300"}`}
-                  />
-                  Late Enrollment Flow: {isLocked ? "Active" : "Inactive"}
-                </li>
-              </ul>
-            </div>
-          </div>
         </CardContent>
         <CardFooter className="bg-white border-t p-6 flex flex-col items-start gap-4">
-          {!isLocked ? (
-            <>
-              <Dialog
-                open={isLockModalOpen}
-                onOpenChange={(open) => {
-                  setIsLockModalOpen(open);
-                  if (!open) {
-                    setLockConfirmLabel("");
-                    setLockConfirmTouched(false);
-                    setPinDigits(Array(6).fill(""));
-                    setPinTouched(false);
-                    setVisibleIndices([]);
-                  }
-                }}>
-                <DialogTrigger asChild>
-                  <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-b-4 border-primary/20 active:border-b-0 active:translate-y-1 font-black uppercase  transition-all px-8 h-12">
-                    <Lock className="mr-2 h-5 w-5" />
-                    Initiate BOSY Lockdown
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle className="text-2xl font-black uppercase text-primary flex items-center gap-2">
-                      <ShieldAlert className="h-6 w-6" />
-                      <Lock className="h-6 w-6" />
-                      Authorize BOSY Lockdown
-                    </DialogTitle>
-                    <DialogDescription className="font-bold text-foreground pt-2">
-                      You are about to end the official enrollment period for
-                      S.Y. {activeSchoolYearLabel}.
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <div className="space-y-6 py-4">
-                    <div className="bg-primary/5 border border-primary/20 p-4 rounded-lg space-y-2">
-                      <p className="text-sm font-bold text-primary underline uppercase ">
-                        Critical Impacts:
-                      </p>
-                      <ul className="text-xs font-medium space-y-1 list-disc pl-4 text-primary/80">
-                        <li>
-                          Mass batch sectioning will be disabled immediately.
-                        </li>
-                        <li>
-                          Registrars will transition to Late Enrollment
-                          workflow.
-                        </li>
-                        <li>
-                          This action is recorded in the permanent System Audit
-                          Log.
-                        </li>
-                      </ul>
-                    </div>
-
-                    {isLockBlocked ? (
-                      <div className="bg-primary/5 border border-primary/20 p-4 rounded-lg flex items-start gap-3">
-                        <AlertTriangle className="h-6 w-6 text-primary shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-sm font-black text-primary uppercase">
-                            Lockdown Blocked
-                          </p>
-                          <p className="text-xs font-bold text-primary mt-1 leading-relaxed">
-                            You have {totalIncomplete} Unsectioned or Pending
-                            Learners. All active learners must be assigned to a
-                            section before SF1 generation can begin.
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 flex items-center gap-2">
-                          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                          <p className="text-xs font-bold text-emerald-800 uppercase">
-                            PRE-FLIGHT CHECK PASSED: 0 Pending Learners, 0
-                            Unsectioned.
-                          </p>
-                        </div>
-
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label
-                              htmlFor="confirm-sy"
-                              className="text-xs font-black uppercase">
-                              Type "{activeSchoolYearLabel}" below to confirm:
-                            </Label>
-                            <div className="relative">
-                              <Input
-                                id="confirm-sy"
-                                placeholder=""
-                                value={lockConfirmLabel}
-                                onChange={(e) =>
-                                  setLockConfirmLabel(e.target.value)
-                                }
-                                onBlur={() => setLockConfirmTouched(true)}
-                                className={cn(
-                                  "font-bold uppercase pr-10",
-                                  lockConfirmTouched &&
-                                    !isLockConfirmValid &&
-                                    "border-primary focus-visible:ring-primary",
-                                )}
-                              />
-                              {lockConfirmLabel === activeSchoolYearLabel &&
-                                lockConfirmLabel !== "" && (
-                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600">
-                                    <CheckCircle2 className="h-5 w-5" />
-                                  </div>
-                                )}
-                            </div>
-                            {lockConfirmTouched && !isLockConfirmValid && (
-                              <p className="text-xs text-primary font-bold uppercase animate-in fade-in slide-in-from-top-1 duration-200">
-                                School Year label does not match
-                              </p>
-                            )}
-                          </div>
-
-                          <div className="space-y-3">
-                            <Label className="text-xs font-black uppercase">
-                              Enter 6-Digit Admin PIN:
-                            </Label>
-                            <div className="flex justify-between gap-2">
-                              {pinDigits.map((digit, idx) => (
-                                <Input
-                                  key={idx}
-                                  ref={(el) => {
-                                    pinInputRefs.current[idx] = el;
-                                  }}
-                                  type={
-                                    visibleIndices.includes(idx)
-                                      ? "text"
-                                      : "password"
-                                  }
-                                  inputMode="numeric"
-                                  maxLength={1}
-                                  value={digit}
-                                  onChange={(e) =>
-                                    handlePinChange(idx, e.target.value)
-                                  }
-                                  onKeyDown={(e) => handlePinKeyDown(idx, e)}
-                                  onBlur={() => setPinTouched(true)}
-                                  className={cn(
-                                    "w-12 h-14 text-center text-xl font-black focus-visible:ring-primary",
-                                    pinTouched &&
-                                      !isPinValid &&
-                                      "border-primary focus-visible:ring-primary",
-                                  )}
-                                />
-                              ))}
-                            </div>
-                            {pinTouched && !isPinValid && (
-                              <p className="text-xs text-primary font-bold uppercase animate-in fade-in slide-in-from-top-1 duration-200">
-                                Valid 6-digit administrative PIN required
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  <DialogFooter>
-                    <Button
-                      variant="ghost"
-                      onClick={() => setIsLockModalOpen(false)}
-                      disabled={isLocking}>
-                      Cancel
-                    </Button>
-                    {!isLockBlocked && (
-                      <Button
-                        className={cn(
-                          "font-black uppercase  transition-all px-6",
-                          isLocking ||
-                            lockConfirmLabel !== activeSchoolYearLabel ||
-                            lockPin.length !== 6
-                            ? "bg-slate-200 text-slate-500 cursor-not-allowed"
-                            : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg border-b-4 border-primary/20 active:border-b-0 active:translate-y-1",
-                        )}
-                        onClick={handleLockBosy}
-                        disabled={
-                          isLocking ||
-                          lockConfirmLabel !== activeSchoolYearLabel ||
-                          lockPin.length !== 6
-                        }>
-                        {isLocking
-                          ? "Locking System..."
-                          : "Confirm & Execute Lockdown"}
-                      </Button>
-                    )}
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </>
-          ) : (
+          {isLocked && (
             <Dialog
               open={isUnlockModalOpen}
               onOpenChange={(open) => {
@@ -656,9 +259,8 @@ export default function AcademicYearLifecycleTab() {
                 if (!open) {
                   setUnlockCategory("");
                   setUnlockJustification("");
-                  setUnlockPinDigits(Array(6).fill(""));
+                  setUnlockPin("");
                   setUnlockPinTouched(false);
-                  setUnlockVisibleIndices([]);
                 }
               }}>
               <DialogTrigger asChild>
@@ -734,35 +336,15 @@ export default function AcademicYearLifecycleTab() {
                       <Label className="text-xs font-black uppercase text-primary">
                         Enter 6-Digit Admin PIN to Override:
                       </Label>
-                      <div className="flex justify-between gap-2">
-                        {unlockPinDigits.map((digit, idx) => (
-                          <Input
-                            key={idx}
-                            ref={(el) => {
-                              unlockPinInputRefs.current[idx] = el;
-                            }}
-                            type={
-                              unlockVisibleIndices.includes(idx)
-                                ? "text"
-                                : "password"
-                            }
-                            inputMode="numeric"
-                            maxLength={1}
-                            value={digit}
-                            onChange={(e) =>
-                              handleUnlockPinChange(idx, e.target.value)
-                            }
-                            onKeyDown={(e) => handleUnlockPinKeyDown(idx, e)}
-                            onBlur={() => setUnlockPinTouched(true)}
-                            className={cn(
-                              "w-12 h-14 text-center text-xl font-black focus-visible:ring-primary border-primary/20",
-                              unlockPinTouched &&
-                                !isUnlockPinValid &&
-                                "border-primary bg-primary/5",
-                            )}
-                          />
-                        ))}
-                      </div>
+                      <AdminPinInput
+                        value={unlockPin}
+                        onChange={setUnlockPin}
+                        invalid={unlockPinTouched && !isUnlockPinValid}
+                        onBlur={() => setUnlockPinTouched(true)}
+                        autoFocus={isUnlockModalOpen}
+                        disabled={isUnlocking}
+                        ariaLabel="BOSY unlock admin PIN"
+                      />
                       {unlockPinTouched && !isUnlockPinValid && (
                         <p className="text-xs text-primary font-bold uppercase animate-in fade-in slide-in-from-top-1 duration-200">
                           Valid 6-digit administrative PIN required
@@ -804,6 +386,118 @@ export default function AcademicYearLifecycleTab() {
           )}
         </CardFooter>
       </Card>
+
+      {isEosyFinalized && (
+        <Card className="bg-white shadow-sm border-emerald-200">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <RotateCcw className="h-5 w-5 text-emerald-600" />
+                  School Year Rollover
+                </CardTitle>
+                <CardDescription>
+                  Active School Year:{" "}
+                  <span className="font-bold text-foreground">
+                    {activeSchoolYearLabel}
+                  </span>
+                </CardDescription>
+              </div>
+              <div className="px-4 py-1.5 rounded-full text-xs font-black uppercase border bg-emerald-100 text-emerald-700 border-emerald-200">
+                READY
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert className="bg-emerald-100/50 border-emerald-200 text-emerald-900">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              <AlertTitle className="font-bold">EOSY Finalized — Ready for Rollover</AlertTitle>
+              <AlertDescription className="text-sm font-medium">
+                All sections have been finalized and EOSY is complete. Initiating rollover will archive
+                the current school year and create the next one with the carried-over learner population.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+          <CardFooter className="bg-white border-t p-6">
+            <Dialog
+              open={isRolloverModalOpen}
+              onOpenChange={(open) => {
+                setIsRolloverModalOpen(open);
+                if (!open) setRolloverOpeningDate("");
+              }}>
+              <DialogTrigger asChild>
+                <Button className="font-black uppercase bg-emerald-600 hover:bg-emerald-700 text-white border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 shadow-lg">
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Initiate School Year Rollover
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[480px]">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-black uppercase text-primary flex items-center gap-2">
+                    Confirm School Year Rollover
+                  </DialogTitle>
+                  <DialogDescription className="font-bold text-foreground pt-2">
+                    This action will archive the current school year and prepare the next one.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-6 py-4">
+                  <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 p-4 rounded-lg space-y-2">
+                    <p className="text-sm font-black uppercase">Rollover will:</p>
+                    <ul className="text-[11px] font-bold leading-relaxed opacity-90 space-y-1 list-disc pl-4">
+                      <li>Archive the current school year ({activeSchoolYearLabel})</li>
+                      <li>Create a new Active school year with the specified opening date</li>
+                      <li>Carry over eligible learners and section structure</li>
+                    </ul>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="rollover-date"
+                      className="text-xs font-black uppercase text-primary">
+                      New School Year Class Opening Date (Required)
+                    </Label>
+                    <Input
+                      id="rollover-date"
+                      type="date"
+                      value={rolloverOpeningDate}
+                      onChange={(e) => setRolloverOpeningDate(e.target.value)}
+                      className="font-bold border-primary/20 focus-visible:ring-primary"
+                    />
+                  </div>
+                </div>
+
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setIsRolloverModalOpen(false)}
+                    disabled={isRollingOver}
+                    className="font-bold">
+                    Cancel
+                  </Button>
+                  <Button
+                    className={cn(
+                      "font-black uppercase transition-all px-6 shrink-0",
+                      !rolloverOpeningDate || isRollingOver
+                        ? "bg-slate-200 text-slate-500 cursor-not-allowed"
+                        : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1",
+                    )}
+                    onClick={handleRollover}
+                    disabled={!rolloverOpeningDate || isRollingOver}>
+                    {isRollingOver ? (
+                      "Processing..."
+                    ) : (
+                      <>
+                        <RotateCcw className="mr-2 h-4 w-4" /> Confirm Rollover
+                      </>
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </CardFooter>
+        </Card>
+      )}
     </div>
   );
 }

@@ -258,10 +258,6 @@ export const router = createBrowserRouter([
                 element: <SectioningWorkspace />,
               },
               {
-                path: "/intake",
-                element: <IntakeDashboard />,
-              },
-              {
                 path: "/monitoring/enrollment/requirements",
                 element: (
                   <Navigate
@@ -314,7 +310,33 @@ export const router = createBrowserRouter([
         ],
       },
 
-      // 5. Default redirects & Fallback
+      // 5. Shared routes for Admin + Teacher (Intake Dashboard)
+      {
+        element: (
+          <ProtectedRoute
+            allowedRoles={[
+              "HEAD_REGISTRAR",
+              "REGISTRAR",
+              "SYSTEM_ADMIN",
+              "TEACHER",
+              "MRF",
+            ]}
+          />
+        ),
+        children: [
+          {
+            element: <AppLayout />,
+            children: [
+              {
+                path: "/intake",
+                element: <IntakeDashboard />,
+              },
+            ],
+          },
+        ],
+      },
+
+      // 6. Default redirects & Fallback
       {
         path: "/",
         element: (

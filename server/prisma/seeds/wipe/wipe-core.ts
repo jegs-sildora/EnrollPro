@@ -62,9 +62,7 @@ async function main() {
       `✓ Deleted ${cfgs.count} SCP configs (${steps.count} steps, ${opts.count} options).`,
     );
 
-    // TLE programs (if present)
-    const tle = await tx.tLEProgram.deleteMany({});
-    console.log(`✓ Deleted ${tle.count} TLE programs.`);
+
 
     // School years (after clearing anything that references them)
     const sy = await tx.schoolYear.deleteMany({});

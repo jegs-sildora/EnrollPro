@@ -18,7 +18,6 @@ import {
   Copy,
   Briefcase,
   IdCard,
-  UserCog as UserCogIcon,
   Check as CheckIcon,
   MoreVertical,
   History,
@@ -134,7 +133,22 @@ interface GradeLevel {
 interface Section {
   id: number;
   name: string;
+  programType: string;
+  gradeLevelId: number;
 }
+
+const PROGRAM_FILTER_OPTIONS = [
+  { value: "REGULAR", label: "Regular (BEC)" },
+  { value: "SCIENCE_TECHNOLOGY_AND_ENGINEERING", label: "STE" },
+  { value: "SPECIAL_PROGRAM_IN_THE_ARTS", label: "SPA" },
+  { value: "SPECIAL_PROGRAM_IN_SPORTS", label: "SPS" },
+  { value: "SPECIAL_PROGRAM_IN_JOURNALISM", label: "SPJ" },
+  { value: "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE", label: "SPFL" },
+  {
+    value: "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
+    label: "SPTVE",
+  },
+];
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MOBILE_PATTERN = /^09\d{9}$/;
@@ -176,6 +190,7 @@ export default function AdminUsers() {
 
   const [gradeLevels, setGradeLevels] = useState<GradeLevel[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
+  const [filteredSections, setFilteredSections] = useState<Section[]>([]);
   const showSkeleton = useDelayedLoading(loading);
 
   const [page, setPage] = useState(() => Number(searchParams.get("page")) || 1);
@@ -203,6 +218,7 @@ export default function AdminUsers() {
   const [learnerStatusFilter, setLearnerStatusFilter] = useState<string>(
     () => searchParams.get("learnerStatus") || "all",
   );
+  const [programFilter, setProgramFilter] = useState<string>("all");
 
   const [sortBy, setSortBy] = useState<string>(
     () => searchParams.get("sortBy") || "createdAt",
@@ -312,19 +328,18 @@ export default function AdminUsers() {
   }, [activeTab]);
 
   useEffect(() => {
-    if (
-      activeTab === "learners" &&
-      gradeLevelFilter !== "all" &&
-      activeSchoolYearId
-    ) {
+    if (activeTab === "learners" && activeSchoolYearId) {
       const fetchSections = async () => {
         try {
           const res = await api.get(`/sections/${activeSchoolYearId}`);
-          const gl = res.data.gradeLevels.find(
-            (g: { gradeLevelId: number }) =>
-              g.gradeLevelId === parseInt(gradeLevelFilter),
+          const allSections = (res.data.gradeLevels || []).flatMap(
+            (gl: { gradeLevelId: number; sections: Section[] }) =>
+              (gl.sections || []).map((s: Section) => ({
+                ...s,
+                gradeLevelId: gl.gradeLevelId,
+              })),
           );
-          setSections(gl?.sections || []);
+          setSections(allSections);
         } catch (err) {
           console.error("Failed to fetch sections", err);
         }
@@ -334,7 +349,27 @@ export default function AdminUsers() {
       setSections([]);
       setSectionFilter("all");
     }
-  }, [activeTab, gradeLevelFilter, activeSchoolYearId]);
+  }, [activeTab, activeSchoolYearId]);
+
+  useEffect(() => {
+    if (gradeLevelFilter === "all") {
+      setFilteredSections(
+        programFilter === "all"
+          ? sections
+          : sections.filter((s) => s.programType === programFilter),
+      );
+    } else {
+      setFilteredSections(
+        sections.filter((s) => {
+          const isGradeMatch = s.gradeLevelId === parseInt(gradeLevelFilter, 10);
+          const isProgramMatch =
+            programFilter === "all" || s.programType === programFilter;
+          return isGradeMatch && isProgramMatch;
+        }),
+      );
+    }
+    setSectionFilter("all");
+  }, [gradeLevelFilter, programFilter, sections]);
 
   // Dialogs & Sheets
   const [createOpen, setCreateOpen] = useState(false);
@@ -1058,17 +1093,12 @@ export default function AdminUsers() {
 
   const metricsElement = useMemo(
     () => (
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
         {[
           {
             label: "Total Active Personnel",
             val: metrics.totalActiveStaff,
             color: "text-emerald-600",
-          },
-          {
-            label: "Pending Invites / Unverified",
-            val: metrics.pendingUnverified,
-            color: "text-orange-600",
           },
           {
             label: "Locked / Deactivated",
@@ -1104,11 +1134,13 @@ export default function AdminUsers() {
                 <span>
                   {activeTab === "staff"
                     ? "Personnel Filter"
-                    : "Learner Filter"}
+                    : "Search Learner"}
                 </span>
-                <div className="hidden sm:flex items-center gap-1 px-1.5 py-0.5 bg-muted/50 rounded border text-xs text-foreground font-extrabold">
-                  <Command className="h-2.5 w-2.5" /> F or /
-                </div>
+                {activeTab === "staff" && (
+                  <div className="hidden sm:flex items-center gap-1 px-1.5 py-0.5 bg-muted/50 rounded border text-xs text-foreground font-extrabold">
+                    <Command className="h-2.5 w-2.5" /> F or /
+                  </div>
+                )}
               </Label>
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4" />
@@ -1117,7 +1149,7 @@ export default function AdminUsers() {
                   placeholder={
                     activeTab === "staff"
                       ? "Search by Employee ID, Email, or Name..."
-                      : "Search by LRN, Last Name, or First Name..."
+                      : "LRN, first name, last name..."
                   }
                   className="pl-9 h-10 text-sm font-bold shadow-inner focus:ring-primary/20"
                   value={search}
@@ -1171,21 +1203,45 @@ export default function AdminUsers() {
                 <>
                   <div className="space-y-2">
                     <Label className="text-xs sm:text-sm uppercase  font-bold">
-                      Grade
+                      Grade Level
                     </Label>
                     <Select
                       value={gradeLevelFilter}
                       onValueChange={setGradeLevelFilter}>
-                      <SelectTrigger className="h-10 w-full md:w-32 text-sm font-bold">
-                        <SelectValue placeholder="All Grade" />
+                      <SelectTrigger className="h-10 w-full md:w-52 text-sm font-bold">
+                        <SelectValue placeholder="All Grades" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Grade</SelectItem>
+                        <SelectItem value="all" className="text-sm font-bold">All Grades</SelectItem>
                         {gradeLevels.map((gl) => (
                           <SelectItem
                             key={gl.id}
-                            value={gl.id.toString()}>
+                            value={gl.id.toString()}
+                            className="text-sm font-bold">
                             {gl.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs sm:text-sm uppercase  font-bold">
+                      Program
+                    </Label>
+                    <Select
+                      value={programFilter}
+                      onValueChange={setProgramFilter}>
+                      <SelectTrigger className="h-10 w-full md:w-52 text-sm font-bold">
+                        <SelectValue placeholder="All Programs" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all" className="text-sm font-bold">All Programs</SelectItem>
+                        {PROGRAM_FILTER_OPTIONS.map((option) => (
+                          <SelectItem
+                            key={option.value}
+                            value={option.value}
+                            className="text-sm font-bold">
+                            {option.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1197,17 +1253,17 @@ export default function AdminUsers() {
                     </Label>
                     <Select
                       value={sectionFilter}
-                      onValueChange={setSectionFilter}
-                      disabled={gradeLevelFilter === "all"}>
-                      <SelectTrigger className="h-10 w-full md:w-36 text-sm font-bold">
-                        <SelectValue placeholder="All Section" />
+                      onValueChange={setSectionFilter}>
+                      <SelectTrigger className="h-10 w-full md:w-52 text-sm font-bold">
+                        <SelectValue placeholder="All Sections" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Section</SelectItem>
-                        {sections.map((s) => (
+                        <SelectItem value="all" className="text-sm font-bold">All Sections</SelectItem>
+                        {filteredSections.map((s) => (
                           <SelectItem
                             key={s.id}
-                            value={s.id.toString()}>
+                            value={s.id.toString()}
+                            className="text-sm font-bold">
                             {s.name}
                           </SelectItem>
                         ))}
@@ -1235,6 +1291,7 @@ export default function AdminUsers() {
                   setRoleFilter("all");
                   setStatusFilter("all");
                   setGradeLevelFilter("all");
+                  setProgramFilter("all");
                   setSectionFilter("all");
                   setLearnerStatusFilter("all");
                   setPage(1);
@@ -1251,12 +1308,13 @@ export default function AdminUsers() {
       roleFilter,
       statusFilter,
       gradeLevelFilter,
+      programFilter,
       sectionFilter,
+      filteredSections,
       loading,
       fetchUsers,
       activeTab,
       gradeLevels,
-      sections,
     ],
   );
 
@@ -1471,8 +1529,7 @@ export default function AdminUsers() {
     <div className="space-y-6 min-w-0 w-full max-w-full overflow-x-hidden">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2 text-maroon-900">
-            <UserCogIcon className="h-7 w-7 text-primary" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-maroon-900">
             User Management
           </h1>
           <p className="text-sm font-bold text-foreground">

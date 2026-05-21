@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "motion/react"
 import { sileo } from "sileo"
 import { Plus, Users } from "lucide-react"
@@ -315,15 +315,8 @@ export default function Homerooms() {
     }
   }
 
-  // Keep only homeroom sections (excludes TLE labs)
-  const homeroomGroups = useMemo(
-    () =>
-      groups.map((g) => ({
-        ...g,
-        sections: g.sections.filter((s) => s.tleProgramId == null),
-      })),
-    [groups],
-  )
+  // All sections are homeroom sections (TLE labs no longer exist)
+  const homeroomGroups = groups
 
   if (showSkeleton) {
     return (
@@ -339,12 +332,11 @@ export default function Homerooms() {
     )
   }
 
-  const scpProgramOptions = programOptions.filter((opt) => opt.value !== "REGULAR")
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-black uppercase text-foreground">Homeroom Sections</h1>
+        <h1 className="text-3xl font-black uppercase text-foreground">Homeroom Sections</h1>
         <p className="text-sm text-foreground font-bold">Manage grade level sections and advising teachers</p>
       </div>
 
@@ -385,53 +377,64 @@ export default function Homerooms() {
                   value={String(g.gradeLevelId)}
                   className="mt-0 focus-visible:outline-none ring-0 space-y-8">
 
-                  {/* SCP Section */}
-                  {scpProgramOptions.length > 0 && (
-                    <section className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs font-black uppercase tracking-widest text-muted-foreground bg-muted px-2 py-0.5 rounded">SCP</span>
-                        <div className="h-px flex-1 bg-border" />
-                        <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">Special Curricular Programs</span>
-                      </div>
-                      <div className="space-y-6 pl-4 border-l-2 border-muted">
-                        {scpProgramOptions.map(({ value: programType, label }) => {
-                          const sections = g.sections.filter((s) => s.programType === programType)
-                          return (
-                            <div key={programType} className="space-y-3">
-                              <h3 className="text-sm font-black uppercase text-foreground tracking-wide">{label}</h3>
-                              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                {sections.map((s) => (
-                                  <SectionCard
-                                    key={s.id}
-                                    section={s}
-                                    onEdit={() => handleOpenEdit(s, g.gradeLevelName)}
-                                    onDelete={() => { setDeleteId(s.id); setDeleteName(s.name) }}
-                                    onViewRoster={() => setRosterSectionId(s.id)}
-                                    canMutate={canMutate}
-                                  />
-                                ))}
-                                {canMutate && (
-                                  <button
-                                    onClick={() => handleOpenCreate(g.gradeLevelId, g.gradeLevelName, programType, true)}
-                                    className="flex min-h-[100px] items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 p-6 text-sm font-bold text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary">
-                                    <Plus className="size-4" />
-                                    Add {label} Section
-                                  </button>
-                                )}
+                  {/* SCP Section — derived from actual section data, not config */}
+                  {(() => {
+                    const SCP_TYPES = [
+                      "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+                      "SPECIAL_PROGRAM_IN_THE_ARTS",
+                      "SPECIAL_PROGRAM_IN_SPORTS",
+                      "SPECIAL_PROGRAM_IN_JOURNALISM",
+                      "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
+                      "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
+                    ] as const
+                    const presentScpTypes = SCP_TYPES.filter(
+                      (pt) => g.sections.some((s) => s.programType === pt)
+                    )
+                    if (presentScpTypes.length === 0) return null
+                    return (
+                      <section className="space-y-4">
+                        <div className="flex items-center justify-center gap-3">
+                          <span className="text-xs font-black uppercase tracking-widest text-foreground bg-muted px-2 py-0.5 rounded">Special Curricular Programs (SCP)</span>
+                        </div>
+                        <div className="space-y-6 pl-4 border-l-2 border-muted">
+                          {presentScpTypes.map((programType) => {
+                            const label = SCP_SHORT_LABELS[programType] ?? programType
+                            const sections = g.sections.filter((s) => s.programType === programType)
+                            return (
+                              <div key={programType} className="space-y-3">
+                                <h3 className="text-sm font-black uppercase text-foreground tracking-wide">{label}</h3>
+                                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                  {sections.map((s) => (
+                                    <SectionCard
+                                      key={s.id}
+                                      section={s}
+                                      onEdit={() => handleOpenEdit(s, g.gradeLevelName)}
+                                      onDelete={() => { setDeleteId(s.id); setDeleteName(s.name) }}
+                                      onViewRoster={() => setRosterSectionId(s.id)}
+                                      canMutate={canMutate}
+                                    />
+                                  ))}
+                                  {canMutate && (
+                                    <button
+                                      onClick={() => handleOpenCreate(g.gradeLevelId, g.gradeLevelName, programType, true)}
+                                      className="flex min-h-[100px] items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 p-6 text-sm font-bold text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary">
+                                      <Plus className="size-4" />
+                                      Add {label} Section
+                                    </button>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </section>
-                  )}
+                            )
+                          })}
+                        </div>
+                      </section>
+                    )
+                  })()}
 
                   {/* BEC Section */}
                   <section className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-black uppercase tracking-widest text-muted-foreground bg-muted px-2 py-0.5 rounded">BEC</span>
-                      <div className="h-px flex-1 bg-border" />
-                      <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">Basic Education Curriculum</span>
+                    <div className="flex items-center justify-center gap-3">
+                      <span className="text-xs font-black uppercase tracking-widest text-foreground bg-muted px-2 py-0.5 rounded">Basic Education Curriculum (BEC)</span>
                     </div>
                     <div className="space-y-6 pl-4 border-l-2 border-muted">
                       {/* Homogeneous / Pilot */}

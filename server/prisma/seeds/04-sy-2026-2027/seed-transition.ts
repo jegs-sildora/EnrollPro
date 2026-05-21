@@ -53,10 +53,7 @@ async function main() {
   });
   if (!admin) throw new Error("No SYSTEM_ADMIN found.");
 
-  // 4. Get all TLE Programs for G9/G10 assignment
-  const tlePrograms = await prisma.tLEProgram.findMany({
-    where: { isActive: true },
-  });
+
 
   // 5. Get 2025-2026 Enrollment Records
   const records2526 = await prisma.enrollmentRecord.findMany({
@@ -126,16 +123,7 @@ async function main() {
     // Use full LRN to avoid collisions. If no LRN, use stable learner ID.
     const trackingNumber = `REG-2026-${learner.lrn || `ID${learner.id}`}`;
 
-    // TLE Logic: G9/G10 needs a program.
-    let targetTleProgramId = record.tleProgramId;
-    if (
-      (targetGradeName === "Grade 9" || targetGradeName === "Grade 10") &&
-      !targetTleProgramId &&
-      tlePrograms.length > 0
-    ) {
-      // Assign based on learner ID for determinism during re-runs
-      targetTleProgramId = tlePrograms[learner.id % tlePrograms.length].id;
-    }
+
 
     const application = await prisma.enrollmentApplication.upsert({
       where: {
@@ -144,7 +132,6 @@ async function main() {
       update: {
         status: "ENROLLED" as ApplicationStatus,
         gradeLevelId: targetGrade.id,
-        tleProgramId: targetTleProgramId,
       },
       create: {
         learnerId: learner.id,
@@ -158,7 +145,6 @@ async function main() {
         admissionChannel: record.enrollmentApplication.admissionChannel,
         encodedById: admin.id,
         readingProfileLevel: record.enrollmentApplication.readingProfileLevel,
-        tleProgramId: targetTleProgramId,
         portalPin: record.enrollmentApplication.portalPin,
       },
     });
@@ -184,7 +170,6 @@ async function main() {
         update: {
           sectionId: section.id,
           enrolledById: admin.id,
-          tleProgramId: targetTleProgramId,
         },
         create: {
           enrollmentApplicationId: application.id,
@@ -192,7 +177,6 @@ async function main() {
           schoolYearId: sy2627.id,
           enrolledById: admin.id,
           learnerId: learner.id,
-          tleProgramId: targetTleProgramId,
           enrolledAt: new Date(),
           confirmationConsent: true,
         },

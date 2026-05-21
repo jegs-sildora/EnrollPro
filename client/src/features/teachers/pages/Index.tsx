@@ -199,6 +199,7 @@ export default function Teachers() {
   const [designationFilter, setDesignationFilter] =
     useState<TeacherDesignationFilter>("all");
   const [subjectFilter, setSubjectFilter] = useState<string>("all");
+  const [specializationFilter, setSpecializationFilter] = useState<string>("all");
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(25);
@@ -219,10 +220,18 @@ export default function Teachers() {
     createEmptyDesignationForm,
   );
 
+  const availableSpecializations = useMemo(() => {
+    const specs = new Set<string>();
+    for (const t of teachers) {
+      if (t.specialization) specs.add(t.specialization.toUpperCase());
+    }
+    return Array.from(specs).sort();
+  }, [teachers]);
+
   // Reset page when filters or limit change
   useEffect(() => {
     setPage(1);
-  }, [searchQuery, statusFilter, designationFilter, subjectFilter, limit]);
+  }, [searchQuery, statusFilter, designationFilter, subjectFilter, specializationFilter, limit]);
 
   const handleFieldChange = useCallback(
     (field: TeacherFormField, value: string | string[]) => {
@@ -599,11 +608,15 @@ export default function Teachers() {
           (s) => s.toUpperCase() === subjectFilter.toUpperCase(),
         );
 
+      const matchesSpecialization =
+        specializationFilter === "all" ||
+        (teacher.specialization ?? "").toUpperCase() === specializationFilter.toUpperCase();
+
       return (
-        matchesSearch && matchesStatus && matchesDesignation && matchesSubject
+        matchesSearch && matchesStatus && matchesDesignation && matchesSubject && matchesSpecialization
       );
     });
-  }, [teachers, searchQuery, statusFilter, designationFilter, subjectFilter]);
+  }, [teachers, searchQuery, statusFilter, designationFilter, subjectFilter, specializationFilter]);
 
   const paginatedTeachers = useMemo(() => {
     const start = (page - 1) * limit;
@@ -615,7 +628,8 @@ export default function Teachers() {
     searchQuery.trim().length > 0 ||
     statusFilter !== "all" ||
     designationFilter !== "all" ||
-    subjectFilter !== "all";
+    subjectFilter !== "all" ||
+    specializationFilter !== "all";
 
   const openDesignationEditor = useCallback(
     (teacher: Teacher) => {
@@ -828,6 +842,8 @@ export default function Teachers() {
         statusFilter={statusFilter}
         designationFilter={designationFilter}
         subjectFilter={subjectFilter}
+        specializationFilter={specializationFilter}
+        availableSpecializations={availableSpecializations}
         hasActiveFilters={hasActiveFilters}
         ayId={ayId}
         page={page}
@@ -842,6 +858,7 @@ export default function Teachers() {
         onStatusFilterChange={setStatusFilter}
         onDesignationFilterChange={setDesignationFilter}
         onSubjectFilterChange={setSubjectFilter}
+        onSpecializationFilterChange={setSpecializationFilter}
         onClearFilters={() => {
           startTransition(() => {
             setSearchQuery("");
@@ -849,6 +866,7 @@ export default function Teachers() {
           setStatusFilter("all");
           setDesignationFilter("all");
           setSubjectFilter("all");
+          setSpecializationFilter("all");
         }}
         onRefresh={fetchTeachers}
         onOpenDesignationEditor={openDesignationEditor}
@@ -869,6 +887,8 @@ export default function Teachers() {
       statusFilter,
       designationFilter,
       subjectFilter,
+      specializationFilter,
+      availableSpecializations,
       hasActiveFilters,
       ayId,
       page,
@@ -1004,11 +1024,10 @@ export default function Teachers() {
   );
 
   return (
-    <div className="space-y-6 min-w-0 w-full max-w-full overflow-x-hidden">
+    <div className="flex flex-col min-w-0 w-full max-w-full overflow-hidden h-[calc(100vh-6rem)] gap-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1 text-left">
-          <h1 className="text-2xl md:text-3xl font-bold flex items-center justify-start gap-2 text-balance">
-            <GraduationCap className="h-7 w-7 md:h-8 md:w-8" />
+          <h1 className="text-2xl md:text-3xl font-bold text-balance">
             Teacher Profiling
           </h1>
           <p className="text-sm text-foreground text-balance font-bold">

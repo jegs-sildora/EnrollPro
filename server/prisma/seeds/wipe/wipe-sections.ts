@@ -3,9 +3,9 @@ import { PrismaClient } from "../../../src/generated/prisma/index.js";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Starting sections wipe...");
+  console.log("🗑️ Starting sections wipe...");
 
-  // 1. Clear dependent records that reference sections
+  // 1. Clear dependent records that reference sections first to prevent foreign key constraint failures.
   await prisma.$transaction([
     // EnrollmentRecords reference sections (RESTRICT)
     prisma.enrollmentRecord.deleteMany({}),
@@ -18,16 +18,16 @@ async function main() {
       data: { advisorySectionId: null }
     }),
 
-    // Finally delete sections
+    // Finally delete all sections
     prisma.section.deleteMany({})
   ]);
 
-  console.log("Γ£à Wiped all sections and their dependencies (EnrollmentRecords, Advisers).");
+  console.log("✅ Wiped all sections and their dependencies (EnrollmentRecords, Advisers).");
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error("❌ Wipe failed:", e);
     process.exit(1);
   })
   .finally(async () => {

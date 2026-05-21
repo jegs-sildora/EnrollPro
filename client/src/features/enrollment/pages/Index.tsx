@@ -18,6 +18,10 @@ import {
   Loader2,
   Lock,
   Download,
+  CheckCircle2,
+  AlertTriangle,
+  ShieldAlert,
+  BarChart3,
   AlertCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -72,6 +76,7 @@ import { BatchSectioningParamsModal } from "@/features/enrollment/components/Bat
 import { ApplicationDetailPanel } from "@/features/enrollment/components/ApplicationDetailPanel";
 import { ScheduleExamDialog } from "@/features/enrollment/components/ScheduleExamDialog";
 import { UserPhoto } from "@/shared/components/UserPhoto";
+import { AdminPinInput } from "@/shared/components/AdminPinInput";
 import { StatusBadge } from "@/features/enrollment/components/StatusBadge";
 import { EnrollmentWorkflowTabs } from "@/features/enrollment/components/EnrollmentWorkflowTabs";
 import { BatchConfirmationModal } from "@/features/enrollment/components/BatchConfirmationModal";
@@ -164,6 +169,7 @@ const TABLE_NO_RESULTS_MESSAGES: Record<EnrollmentSubMenu, string> = {
   UNSECTIONED_POOL: "No unsectioned learners found in the holding pool.",
   BATCH_WORKSPACE: "No learners in the batch sectioning workspace.",
   OFFICIAL_ROSTERS: "No finalized class rosters found for this SY.",
+  BOSY_FINALIZATION: "Review BOSY readiness and lockdown controls below.",
 };
 
 const UNENROLL_REASONS = [
@@ -350,6 +356,7 @@ export default function Enrollment() {
     activeSchoolYearId,
     viewingSchoolYearId,
     systemStatus,
+    setSettings,
   } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const { ayLabel } = useSchoolYearContext();
@@ -385,6 +392,40 @@ export default function Enrollment() {
     resolveWorkflowFromQuery(workflowParam),
   );
   const workflowViewRef = useRef<EnrollmentSubMenu>(workflowView);
+
+  const [preLockStats, setPreLockStats] = useState<{
+    pendingCount: number;
+    unsectionedCount: number;
+    sectionedCount: number;
+  } | null>(null);
+  const [isLockModalOpen, setIsLockModalOpen] = useState(false);
+  const [lockConfirmLabel, setLockConfirmLabel] = useState("");
+  const [lockConfirmTouched, setLockConfirmTouched] = useState(false);
+  const [adminPin, setAdminPin] = useState("");
+  const [pinTouched, setPinTouched] = useState(false);
+  const [isLocking, setIsLocking] = useState(false);
+
+  const isLockConfirmValid = lockConfirmLabel === ayLabel;
+  const isPinValid = /^\d{6}$/.test(adminPin);
+  const totalIncomplete =
+    (preLockStats?.pendingCount ?? 0) +
+    (preLockStats?.unsectionedCount ?? 0);
+  const isLockBlocked = !isBosyLocked && totalIncomplete > 0;
+
+  const fetchPreLockStats = useCallback(async () => {
+    try {
+      const res = await api.get("/admin/system/status");
+      if (res.data.preLockStats) {
+        setPreLockStats(res.data.preLockStats);
+      }
+    } catch (err) {
+      console.error("Failed to fetch pre-lock stats", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchPreLockStats();
+  }, [fetchPreLockStats, systemStatus]);
 
   const tabs = useMemo(
     () => [
@@ -729,10 +770,75 @@ export default function Enrollment() {
       } else if (nextView === "OFFICIAL_ROSTERS") {
         setSortBy("sex");
         setSortOrder("asc");
+      } else if (nextView === "BOSY_FINALIZATION") {
+        setSortBy("name");
+        setSortOrder("asc");
       }
     },
     [],
   );
+
+  const handleLockBosy = useCallback(async () => {
+    if (!isLockConfirmValid) {
+      setLockConfirmTouched(true);
+      sileo.error({
+        title: "Validation Failed",
+        description: "School year label does not match.",
+      });
+      return;
+    }
+
+    if (!isPinValid) {
+      setPinTouched(true);
+      sileo.error({
+        title: "Invalid PIN",
+        description: "Please enter a valid 6-digit Admin PIN.",
+      });
+      return;
+    }
+
+    setIsLocking(true);
+    try {
+      const res = await api.post("/admin/system/lock-bosy", {
+        pin: adminPin,
+        yearLabel: lockConfirmLabel,
+      });
+
+      sileo.success({ title: "BOSY Locked", description: res.data.message });
+      const pubRes = await api.get("/settings/public");
+      setSettings(pubRes.data);
+
+      setIsLockModalOpen(false);
+      setLockConfirmLabel("");
+      setLockConfirmTouched(false);
+      setAdminPin("");
+      setPinTouched(false);
+
+      await fetchPreLockStats();
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response: { data?: { message?: string } } }).response
+              .data?.message
+          : err instanceof Error
+            ? err.message
+            : "Failed to lock BOSY.";
+
+      sileo.error({
+        title: "Lock Failed",
+        description: message || "An unexpected error occurred.",
+      });
+    } finally {
+      setIsLocking(false);
+    }
+  }, [
+    adminPin,
+    fetchPreLockStats,
+    isLockConfirmValid,
+    isPinValid,
+    lockConfirmLabel,
+    setSettings,
+  ]);
 
   const fetchGradeLevels = useCallback(async () => {
     if (!ayId) return;
@@ -966,6 +1072,17 @@ export default function Enrollment() {
       }
       return;
     }
+
+    if (workflowView === "BOSY_FINALIZATION") {
+      if (requestId === latestFetchRequestRef.current) {
+        setApplications([]);
+        setTotal(0);
+        setRowSelection({});
+        setLoading(false);
+      }
+      return;
+    }
+
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -2124,6 +2241,108 @@ export default function Enrollment() {
             </div>
           )}
 
+          {workflowView === "BOSY_FINALIZATION" && (
+            <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
+              <CardHeader className="px-4 sm:px-6 py-5 border-b border-border/50">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 p-2 rounded-lg">
+                    <ShieldAlert className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black uppercase">BOSY Finalization</h3>
+                    <p className="text-sm font-bold text-foreground/70">
+                      Review blockers and authorize BOSY lockdown for {ayLabel}.
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6 space-y-5">
+                {isBosyLocked && (
+                  <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-50 border border-emerald-200">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+                    <div>
+                      <p className="text-sm font-black text-emerald-800 uppercase">
+                        BOSY Locked - Enrollment Finalized
+                      </p>
+                      <p className="text-xs font-bold text-emerald-700 mt-0.5">
+                        Official class rosters are sealed and grading operations are active.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="rounded-xl border border-border bg-muted/30 p-4">
+                    <p className="text-[11px] font-black uppercase tracking-wide text-foreground/60">Learners Sectioned</p>
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className="text-2xl font-black tabular-nums">
+                        {preLockStats?.sectionedCount?.toLocaleString() ?? "..."}
+                      </span>
+                      <BarChart3 className="h-4 w-4 text-foreground/50" />
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-border bg-muted/30 p-4">
+                    <p className="text-[11px] font-black uppercase tracking-wide text-foreground/60">Unsectioned Learners</p>
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className={cn("text-2xl font-black tabular-nums", (preLockStats?.unsectionedCount ?? 1) === 0 ? "text-foreground" : "text-primary")}>
+                        {preLockStats?.unsectionedCount?.toLocaleString() ?? "..."}
+                      </span>
+                      {(preLockStats?.unsectionedCount ?? 1) === 0 ? (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                      ) : (
+                        <AlertTriangle className="h-4 w-4 text-primary" />
+                      )}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-border bg-muted/30 p-4">
+                    <p className="text-[11px] font-black uppercase tracking-wide text-foreground/60">Pending Verifications</p>
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className={cn("text-2xl font-black tabular-nums", (preLockStats?.pendingCount ?? 1) === 0 ? "text-foreground" : "text-primary")}>
+                        {preLockStats?.pendingCount?.toLocaleString() ?? "..."}
+                      </span>
+                      {(preLockStats?.pendingCount ?? 1) === 0 ? (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                      ) : (
+                        <AlertTriangle className="h-4 w-4 text-primary" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {!isBosyLocked && isLockBlocked && (
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-black uppercase text-primary">Lockdown Blocked</p>
+                      <p className="text-xs font-bold text-primary/90 mt-1">
+                        {totalIncomplete} learner(s) remain unsectioned or pending verification.
+                        Resolve all blockers before locking BOSY.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {!isBosyLocked && (
+                  <div className="space-y-3">
+                    <Button
+                      type="button"
+                      className="h-12 px-6 text-sm font-black uppercase tracking-wide"
+                      disabled={isLockBlocked || isLocking || !canMutate}
+                      onClick={() => setIsLockModalOpen(true)}>
+                      <Lock className="h-4 w-4 mr-2" />
+                      Initiate BOSY Lockdown
+                    </Button>
+                    <p className="text-xs text-foreground/60 font-semibold">
+                      Locking BOSY finalizes class rosters, enables SF1 generation, and transitions operations to post-lock workflows.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {workflowView !== "BOSY_FINALIZATION" && (
+
           <Card className="border-none shadow-sm bg-[hsl(var(--card))] flex-1 flex flex-col min-h-0 overflow-hidden relative">
             <CardHeader className="px-3 sm:px-6 py-4 border-b border-border/50 shrink-0">
               <div className="flex flex-col xl:flex-row items-center gap-4">
@@ -2333,6 +2552,7 @@ export default function Enrollment() {
               )}
             </AnimatePresence>
           </Card>
+          )}
         </div>
       </div>
 
@@ -2663,6 +2883,93 @@ export default function Enrollment() {
         onSuccess={fetchData}
         onCloseSheet={() => setSelectedId(null)}
       />
+
+      <Dialog
+        open={isLockModalOpen}
+        onOpenChange={(open) => {
+          setIsLockModalOpen(open);
+          if (!open) {
+            setLockConfirmLabel("");
+            setLockConfirmTouched(false);
+            setAdminPin("");
+            setPinTouched(false);
+          }
+        }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-bold uppercase">
+              Authorize BOSY Lockdown
+            </DialogTitle>
+            <DialogDescription className="text-sm font-semibold">
+              Confirm official lock for S.Y. {ayLabel}. This action requires a
+              valid System Admin PIN.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label
+                htmlFor="confirm-sy-bosy"
+                className="text-xs font-black uppercase">
+                Type {ayLabel} to confirm
+              </Label>
+              <Input
+                id="confirm-sy-bosy"
+                value={lockConfirmLabel}
+                onChange={(event) => setLockConfirmLabel(event.target.value)}
+                onBlur={() => setLockConfirmTouched(true)}
+                className={cn(
+                  "h-10 text-sm font-bold uppercase",
+                  lockConfirmTouched &&
+                    !isLockConfirmValid &&
+                    "border-primary focus-visible:ring-primary",
+                )}
+              />
+              {lockConfirmTouched && !isLockConfirmValid && (
+                <p className="text-xs font-bold text-primary uppercase">
+                  School year label does not match.
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-black uppercase">
+                Enter 6-digit admin PIN
+              </Label>
+              <AdminPinInput
+                value={adminPin}
+                onChange={setAdminPin}
+                invalid={pinTouched && !isPinValid}
+                onBlur={() => setPinTouched(true)}
+                autoFocus={isLockModalOpen}
+                disabled={isLocking}
+                ariaLabel="Enrollment BOSY lock admin PIN"
+              />
+              {pinTouched && !isPinValid && (
+                <p className="text-xs font-bold text-primary uppercase">
+                  Valid 6-digit administrative PIN required.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              className="font-bold"
+              disabled={isLocking}
+              onClick={() => setIsLockModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="font-bold"
+              onClick={handleLockBosy}
+              disabled={isLocking || !isLockConfirmValid || !isPinValid}>
+              {isLocking ? "Locking..." : "Confirm Lockdown"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={isWalkInGateOpen}

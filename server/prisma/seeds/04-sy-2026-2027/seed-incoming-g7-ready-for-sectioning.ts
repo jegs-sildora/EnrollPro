@@ -49,9 +49,9 @@ function toUtcNoon(year: number, month: number, day: number): Date {
   return new Date(Date.UTC(year, month, day, 12, 0, 0, 0));
 }
 
-function buildLrn(sectionId: number, index: number): string {
-  const sec = String(sectionId).padStart(3, "0");
-  const seq = String(index).padStart(3, "0");
+function buildLrn(sectionOrdinal: number, index: number): string {
+  const sec = String(sectionOrdinal).padStart(2, "0");
+  const seq = String(index).padStart(4, "0");
   return `262627${sec}${seq}`;
 }
 
@@ -92,15 +92,17 @@ async function main() {
   let updatedApps = 0;
   let createdLearners = 0;
 
-  for (const section of sections) {
+  for (let sIdx = 0; sIdx < sections.length; sIdx++) {
+    const section = sections[sIdx];
+    const sectionOrdinal = sIdx + 1;
     const targetCount = Math.max(0, section.maxCapacity - 1);
 
     for (let i = 1; i <= targetCount; i++) {
       const sex: Sex = i % 2 === 0 ? "FEMALE" : "MALE";
       const firstNamePool = sex === "MALE" ? MALE_NAMES : FEMALE_NAMES;
       const firstName = firstNamePool[(i - 1) % firstNamePool.length];
-      const lastName = LAST_NAMES[(section.id + i) % LAST_NAMES.length];
-      const lrn = buildLrn(section.id, i);
+      const lastName = LAST_NAMES[(sectionOrdinal + i) % LAST_NAMES.length];
+      const lrn = buildLrn(sectionOrdinal, i);
 
       const existingLearner = await prisma.learner.findUnique({
         where: { lrn },
@@ -135,7 +137,7 @@ async function main() {
         createdLearners += 1;
       }
 
-      const trackingNumber = `ING7-2627-S${section.id}-N${String(i).padStart(3, "0")}`;
+      const trackingNumber = `ING7-2627-S${String(sectionOrdinal).padStart(2, "0")}-N${String(i).padStart(3, "0")}`;  
 
       const existingApp = await prisma.enrollmentApplication.findUnique({
         where: { trackingNumber },
@@ -155,8 +157,6 @@ async function main() {
           isPrivacyConsentGiven: true,
           encodedById: admin.id,
           confirmationConsent: false,
-          tleProgramId: null,
-          tleProgramChoice2Id: null,
         },
         create: {
           learnerId: learner.id,

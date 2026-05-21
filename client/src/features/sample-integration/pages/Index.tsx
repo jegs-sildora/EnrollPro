@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  Database,
   GraduationCap,
   RefreshCw,
   ShieldCheck,
@@ -285,8 +284,7 @@ export default function SampleIntegrationPage() {
     <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 md:px-8">
       <header className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <h1 className="flex items-center gap-2 text-3xl font-bold ">
-            <Database className="h-7 w-7 text-primary" />
+          <h1 className="text-3xl font-bold">
             Core API Feed Console
           </h1>
           <p className="mt-1 text-sm text-foreground">

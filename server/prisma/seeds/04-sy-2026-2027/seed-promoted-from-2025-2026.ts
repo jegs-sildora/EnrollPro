@@ -62,8 +62,6 @@ async function main() {
     data: {
       status: ApplicationStatus.PENDING_CONFIRMATION,
       confirmationConsent: false,
-      tleProgramId: null,
-      tleProgramChoice2Id: null,
     },
   });
 
@@ -115,8 +113,6 @@ async function main() {
           readingProfileLevel: record.enrollmentApplication.readingProfileLevel,
           encodedById: record.enrollmentApplication.encodedById,
           confirmationConsent: false,
-          tleProgramId: null,
-          tleProgramChoice2Id: null,
           trackingNumber,
         },
       });

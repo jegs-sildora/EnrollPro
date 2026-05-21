@@ -20,6 +20,7 @@ import {
   UserPlus,
   School,
   ArrowRightLeft,
+  ClipboardList,
 } from "lucide-react";
 
 import {
@@ -312,12 +313,15 @@ function SYSwitcher() {
   );
 }
 
-const NavDivider = memo(function NavDivider({ label }: { label: string }) {
+const NavDivider = memo(function NavDivider({ label, badge }: { label: string; badge?: React.ReactNode }) {
   return (
     <div className="px-3 py-2 mt-2 transition-[margin,opacity,height] duration-200 ease-linear group-data-[collapsible=icon]:m-0 group-data-[collapsible=icon]:h-0 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:opacity-0 overflow-hidden">
-      <span className="text-[0.625rem] font-bold uppercase  text-foreground opacity-60 whitespace-nowrap">
-        {label}
-      </span>
+      <div className="flex items-center gap-2">
+        <span className="text-[0.625rem] font-bold uppercase  text-foreground opacity-60 whitespace-nowrap">
+          {label}
+        </span>
+        {badge}
+      </div>
     </div>
   );
 });
@@ -363,7 +367,10 @@ function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { clearAuth } = useAuthStore();
-  const { schoolName, logoUrl } = useSettingsStore();
+  const { schoolName, logoUrl, systemStatus } = useSettingsStore();
+  const isBosyLocked = systemStatus === "BOSY_LOCKED";
+  const isEosyArchivedState = systemStatus === "ARCHIVED";
+  const activeBadge = <span className="text-[0.5rem] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white uppercase tracking-wide">ACTIVE</span>;
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const isAdmin = useAuthStore((s) => s.user?.role === "SYSTEM_ADMIN");
@@ -372,6 +379,9 @@ function AppSidebar() {
   );
   const isRegistrar =
     useAuthStore((s) => s.user?.role === "REGISTRAR") || isHeadRegistrar;
+  const isTeacher = useAuthStore(
+    (s) => s.user?.role === "TEACHER" || s.user?.role === "MRF",
+  );
   const pathname = location.pathname;
 
   const handleLogout = () => {
@@ -446,7 +456,7 @@ function AppSidebar() {
                       pathname={pathname}
                     />
 
-                    <NavDivider label="Official Enrollment" />
+                    <NavDivider label="Official Enrollment" badge={!isBosyLocked && !isEosyArchivedState ? activeBadge : undefined} />
                     <NavItem
                       to="/monitoring/enrollment"
                       icon={Calendar}
@@ -454,7 +464,7 @@ function AppSidebar() {
                       pathname={pathname}
                     />
 
-                    <NavDivider label="Closing Operations" />
+                    <NavDivider label="Closing Operations" badge={isBosyLocked && !isEosyArchivedState ? activeBadge : undefined} />
                     <NavItem
                       to="/monitoring/enrollment/eosy"
                       icon={ArrowUpRightSquare}
@@ -473,7 +483,7 @@ function AppSidebar() {
                       <NavItem
                         to="/teachers"
                         icon={Presentation}
-                        label="Teachers"
+                        label="Teacher Directory"
                         pathname={pathname}
                       />
                     )}
@@ -488,7 +498,7 @@ function AppSidebar() {
 
                 {isAdmin && (
                   <>
-                    <NavDivider label="System" />
+                    <NavDivider label="System" badge={isEosyArchivedState ? activeBadge : undefined} />
                     <NavItem
                       to="/admin/users"
                       icon={UserCog}
@@ -517,6 +527,18 @@ function AppSidebar() {
                       to="/settings"
                       icon={Settings}
                       label="Settings"
+                      pathname={pathname}
+                    />
+                  </>
+                )}
+
+                {isTeacher && (
+                  <>
+                    <NavDivider label="Intake" />
+                    <NavItem
+                      to="/intake"
+                      icon={ClipboardList}
+                      label="Reading & Confirmation"
                       pathname={pathname}
                     />
                   </>

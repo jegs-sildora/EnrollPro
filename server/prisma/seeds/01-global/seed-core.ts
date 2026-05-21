@@ -5,8 +5,6 @@ import {
   SchoolYearStatus,
   Sex,
   PortalControl,
-  TLECategory,
-  TLETrackType,
 } from "../../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
@@ -168,55 +166,6 @@ async function main() {
     });
   }
   console.log("✅ Verified Standard DepEd Departments");
-
-  // 5. Seed TLE Programs (idempotent by name)
-  const tlePrograms: {
-    name: string;
-    category: TLECategory;
-    trackType?: TLETrackType;
-  }[] = [
-    // Family and Consumer Science (FCS)
-    { name: "FCS - Cookery", category: "HOME_ECONOMICS" },
-    { name: "FCS - Bread and Pastry Production", category: "HOME_ECONOMICS" },
-    { name: "FCS - Household Services", category: "HOME_ECONOMICS" },
-    { name: "FCS - Beauty Care", category: "HOME_ECONOMICS" },
-
-    // Industrial Arts (IA)
-    { name: "IA - SMAW", category: "INDUSTRIAL_ARTS" },
-    { name: "IA - Electrical Installation and Maintenance", category: "INDUSTRIAL_ARTS" },
-
-    // Information and Communications Technology (ICT)
-    { name: "ICT - Computer Systems Servicing", category: "ICT" },
-    { name: "ICT - Technical Drafting", category: "ICT" },
-
-    // Agriculture and Fishery Arts (AFA)
-    { name: "AFA - Agricultural Crops Production", category: "AGRI_FISHERY_ARTS" },
-
-    // Exploratory Programs — Grades 7 & 8
-    { name: "Agri-Fishery Arts (AFA) \u2014 Exploratory", category: "AGRI_FISHERY_ARTS", trackType: "EXPLORATORY" },
-    { name: "Home Economics (HE) \u2014 Exploratory", category: "HOME_ECONOMICS", trackType: "EXPLORATORY" },
-    { name: "Industrial Arts (IA) \u2014 Exploratory", category: "INDUSTRIAL_ARTS", trackType: "EXPLORATORY" },
-    { name: "Information & Communications Technology (ICT) \u2014 Exploratory", category: "ICT", trackType: "EXPLORATORY" },
-
-    // Specialization Programs — Grades 9 & 10 (baseline catalog)
-    { name: "Agri-Fishery Arts (AFA) \u2014 Specialization", category: "AGRI_FISHERY_ARTS", trackType: "SPECIALIZATION" },
-    { name: "Home Economics (HE) \u2014 Specialization", category: "HOME_ECONOMICS", trackType: "SPECIALIZATION" },
-    { name: "Industrial Arts (IA) \u2014 Specialization", category: "INDUSTRIAL_ARTS", trackType: "SPECIALIZATION" },
-    { name: "Information & Communications Technology (ICT) \u2014 Specialization", category: "ICT", trackType: "SPECIALIZATION" },
-  ];
-  for (const prog of tlePrograms) {
-    await prisma.tLEProgram.upsert({
-      where: { name: prog.name },
-      update: { category: prog.category, ...(prog.trackType && { trackType: prog.trackType }) },
-      create: {
-        name: prog.name,
-        category: prog.category,
-        isActive: true,
-        ...(prog.trackType && { trackType: prog.trackType }),
-      },
-    });
-  }
-  console.log("\u2705 Verified TLE Programs");
 
   // 6. Create first SYSTEM_ADMIN account
   const adminId = process.env.ADMIN_EMPLOYEE_ID ?? "1000001";

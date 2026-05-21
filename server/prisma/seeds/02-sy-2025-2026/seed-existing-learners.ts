@@ -3,7 +3,6 @@ import {
   PrismaClient,
   Sex,
   ApplicantType,
-  TLECategory,
   FamilyRelationship,
   AddressType,
   LearnerType,
@@ -11,24 +10,10 @@ import {
   ReadingProfileLevel,
   Role,
   EosyStatus,
-  TleSectioningStatus,
 } from "../../../src/generated/prisma/index.js";
 import * as bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
-
-// --- TLE section overflow cache (cleared at the start of each main() invocation) ---
-type TleSectionCacheEntry = {
-  id: number;
-  name: string;
-  maxCapacity: number;
-  sortOrder: number;
-  sectionRank: number | null;
-  programType: ApplicantType;
-};
-
-const tleSectionCache = new Map<string, TleSectionCacheEntry[]>();
-const tleSectionCounts = new Map<number, number>(); // section id → current enrollment count
 
 const defaultPinHash = bcrypt.hashSync("DepEd2026!", 10);
 
@@ -188,7 +173,6 @@ const PH_BARANGAYS = [
   "SAN ROQUE",
 ];
 
-// --- Grade-level themed section names (matching seed-sections.ts) ---
 const HEROES = [
   "JOSE RIZAL",
   "ANDRES BONIFACIO",
@@ -256,41 +240,6 @@ const MINERALS = [
   "APATITE",
 ];
 
-const FALLBACK_TLE_PROGRAMS: {
-  name: string;
-  category: TLECategory;
-}[] = [
-  { name: "ICT", category: "ICT" },
-  { name: "HE - Cookery", category: "HOME_ECONOMICS" },
-  {
-    name: "HE - Baking and Pastry Arts",
-    category: "HOME_ECONOMICS",
-  },
-  { name: "HE - Caregiving", category: "HOME_ECONOMICS" },
-  { name: "IA - Carpentry", category: "INDUSTRIAL_ARTS" },
-  {
-    name: "IA - Electrical Installation",
-    category: "INDUSTRIAL_ARTS",
-  },
-  { name: "IA - Electronics", category: "INDUSTRIAL_ARTS" },
-  {
-    name: "IA - Shielded Metal Arc Welding",
-    category: "INDUSTRIAL_ARTS",
-  },
-  {
-    name: "AFA - Crop Production",
-    category: "AGRI_FISHERY_ARTS",
-  },
-  {
-    name: "AFA - Fishery Arts",
-    category: "AGRI_FISHERY_ARTS",
-  },
-  {
-    name: "AFA - Swine Production",
-    category: "AGRI_FISHERY_ARTS",
-  },
-];
-
 type SeedGradeLevel = {
   id: number;
   name: string;
@@ -308,15 +257,8 @@ type SeedSection = {
   maxCapacity: number;
   sortOrder: number;
   sectionRank: number | null;
-  tleProgramId: number | null;
 };
 
-type SeedTleProgram = {
-  id: number;
-  name: string;
-};
-
-// Helper function to get theme pool for a grade level
 function getThemePoolForGrade(gradeNum: number): string[] {
   if (gradeNum === 7) return HEROES;
   if (gradeNum === 8) return CORE_VALUES;
@@ -325,174 +267,7 @@ function getThemePoolForGrade(gradeNum: number): string[] {
   return [];
 }
 
-function resolveTleProgramId(
-  section: SeedSection,
-  gradeValue: number,
-  tlePrograms: SeedTleProgram[],
-): number | null {
-  if (section.programType !== "REGULAR") {
-    return null;
-  }
-
-  if (gradeValue !== 9 && gradeValue !== 10) {
-    return null;
-  }
-
-  if (section.tleProgramId) {
-    return section.tleProgramId;
-  }
-
-  if (tlePrograms.length === 0) {
-    return null;
-  }
-
-  const programIndex = Math.max((section.sectionRank ?? section.sortOrder) - 1, 0);
-  return tlePrograms[programIndex % tlePrograms.length]?.id ?? null;
-}
-
-/**
- * Returns the id of the first TLE lab section for this (schoolYear, gradeLevel,
- * tleProgram) triple that still has capacity. If all existing sections are full,
- * creates the next overflow section (original → B → C → … Z) and returns its id.
- * Counts are maintained in module-level Maps so the DB is only queried once per
- * triple per main() invocation; reset tleSectionCache/tleSectionCounts in main().
- */
-async function resolveOrCreateTleSection(
-  schoolYearId: number,
-  gradeLevelId: number,
-  tleProgramId: number | null,
-): Promise<number | null> {
-  if (!tleProgramId) return null;
-
-  const key = `${schoolYearId}:${gradeLevelId}:${tleProgramId}`;
-
-  // --- Populate cache on first access for this triple ---
-  if (!tleSectionCache.has(key)) {
-    const sections = await prisma.section.findMany({
-      where: { schoolYearId, gradeLevelId, tleProgramId },
-      select: {
-        id: true,
-        name: true,
-        maxCapacity: true,
-        sortOrder: true,
-        sectionRank: true,
-        programType: true,
-      },
-      orderBy: { name: "asc" },
-    });
-    tleSectionCache.set(key, sections);
-
-    for (const sec of sections) {
-      if (!tleSectionCounts.has(sec.id)) {
-        const count = await prisma.enrollmentRecord.count({
-          where: {
-            tleSectionId: sec.id,
-            enrollmentApplication: {
-              status: {
-                in: ["ENROLLED", "OFFICIALLY_ENROLLED", "TEMPORARILY_ENROLLED"],
-              },
-            },
-          },
-        });
-        tleSectionCounts.set(sec.id, count);
-      }
-    }
-  }
-
-  const sections = tleSectionCache.get(key)!;
-
-  // --- Return the first section that still has room ---
-  for (const sec of sections) {
-    const count = tleSectionCounts.get(sec.id) ?? 0;
-    if (count < sec.maxCapacity) {
-      tleSectionCounts.set(sec.id, count + 1);
-      return sec.id;
-    }
-  }
-
-  // --- All sections full: create the next overflow section ---
-  const original = sections[0];
-  if (!original) return null;
-
-  // sections.length == 1 (just the original "A") → next is "B"; 2 → "C"; etc.
-  const nextLetter = String.fromCharCode("A".charCodeAt(0) + sections.length);
-  const newName = `${original.name} - ${nextLetter}`;
-
-  const newSection = await prisma.section.upsert({
-    where: {
-      uq_sections_name_grade_sy: { name: newName, gradeLevelId, schoolYearId },
-    },
-    update: {},
-    create: {
-      name: newName,
-      schoolYearId,
-      gradeLevelId,
-      tleProgramId,
-      programType: original.programType,
-      maxCapacity: original.maxCapacity,
-      sortOrder: original.sortOrder,
-      sectionRank: original.sectionRank,
-    },
-    select: {
-      id: true,
-      name: true,
-      maxCapacity: true,
-      sortOrder: true,
-      sectionRank: true,
-      programType: true,
-    },
-  });
-
-  sections.push(newSection);
-  tleSectionCounts.set(newSection.id, 1);
-  console.log(`  + Created overflow TLE section: ${newName} (maxCapacity: ${newSection.maxCapacity})`);
-  return newSection.id;
-}
-
-async function ensureActiveTlePrograms(): Promise<SeedTleProgram[]> {
-  let tlePrograms = await prisma.tLEProgram.findMany({
-    where: { isActive: true },
-    select: { id: true, name: true },
-    orderBy: [{ name: "asc" }],
-  });
-
-  if (tlePrograms.length > 0) {
-    return tlePrograms;
-  }
-
-  console.warn(
-    "⚠️ No active TLE programs found. Creating fallback TLE programs for Grade 9/10 BEC specialization.",
-  );
-
-  for (const program of FALLBACK_TLE_PROGRAMS) {
-    await prisma.tLEProgram.upsert({
-      where: { name: program.name },
-      update: {
-        category: program.category,
-        isActive: true,
-      },
-      create: {
-        name: program.name,
-        category: program.category,
-        isActive: true,
-      },
-    });
-  }
-
-  tlePrograms = await prisma.tLEProgram.findMany({
-    where: { isActive: true },
-    select: { id: true, name: true },
-    orderBy: [{ name: "asc" }],
-  });
-
-  return tlePrograms;
-}
-
 async function main() {
-  // Reset TLE section overflow cache so each invocation starts from live DB counts.
-  tleSectionCache.clear();
-  tleSectionCounts.clear();
-
   const targetYearLabel = process.env.SEED_TARGET_YEAR_LABEL ?? "2025-2026";
   const expectedTotalEnrolled = Number(
     process.env.SEED_EXPECTED_TOTAL_ENROLLED ?? "2890",
@@ -512,8 +287,6 @@ async function main() {
     where: { name: { in: ["Grade 7", "Grade 8", "Grade 9", "Grade 10"] } },
     orderBy: { displayOrder: "asc" },
   });
-
-  const tlePrograms = await ensureActiveTlePrograms();
 
   const admin = await prisma.user.findFirst({
     where: { role: "SYSTEM_ADMIN" },
@@ -540,16 +313,10 @@ async function main() {
   for (const gradeLevel of gradeLevels) {
     console.log(`\nProcessing ${gradeLevel.name}...`);
 
-    const gradeValue = parseInt(gradeLevel.name.split(" ")[1]);
-
-    // ALL grades: assign learners to homeroom sections (tleProgramId = null).
-    // G9/G10 REGULAR homerooms derive their TLE program via resolveTleProgramId (section rank).
-    // G9/G10 STE/SCP sections also have tleProgramId = null and are included here.
     const sections = await prisma.section.findMany({
       where: {
         gradeLevelId: gradeLevel.id,
         schoolYearId: targetYear.id,
-        tleProgramId: null,
       },
       orderBy: { sortOrder: "asc" },
     });
@@ -578,7 +345,6 @@ async function main() {
         currentEnrollmentCount + 1,
         syMap,
         gradeLevelMap,
-        tlePrograms,
       );
     }
   }
@@ -603,8 +369,6 @@ async function main() {
   console.log("Existing learners seed completed with expected total.");
 }
 
-
-// For each learner, create historical applications and enrollment records for archived years (2024-2025, 2023-2024, 2022-2023)
 async function seedHistoricalAcademicHistory(
   learnerId: number,
   lrn: string,
@@ -613,37 +377,16 @@ async function seedHistoricalAcademicHistory(
   adminId: number,
   syMap: Map<number, number>,
   gradeLevelMap: Map<number, number>,
-  tleProgramId: number | null,
   section: SeedSection,
-  tlePrograms: SeedTleProgram[],
   nameIndex: number,
   previousGenAve: number,
 ) {
-  // For each prior grade, create an application and enrollment record
   for (let priorGrade = gradeValue - 1; priorGrade >= 7; priorGrade--) {
     const syId = syMap.get(priorGrade);
     const gradeLevelId = gradeLevelMap.get(priorGrade);
     if (!syId || !gradeLevelId) continue;
     const trackingNumber = `HIST-${lrn}-G${priorGrade}`;
-    
-    // For G9/G10 REGULAR prior grades, learners belong to TLE lab sections.
-    const isPriorSpecGrade = (priorGrade === 9 || priorGrade === 10) && program === "REGULAR";
 
-    // Resolve TLE program BEFORE the section lookup so we can query by it.
-    let historicalTleProgramId: number | null = null;
-    if (priorGrade === 9 || priorGrade === 10) {
-      historicalTleProgramId =
-        tleProgramId ??
-        (tlePrograms.length > 0
-          ? tlePrograms[
-              Math.max((section.sectionRank ?? section.sortOrder) - 1, 0) %
-                tlePrograms.length
-            ]?.id ?? null
-          : null);
-    }
-
-    // ALL grades use homeroom sections (tleProgramId = null) as the primary section.
-    // G9/G10 REGULAR TLE program is recorded via historicalTleProgramId only (not sectionId).
     let historicalSection: SeedSection | null = null;
     const themePool = getThemePoolForGrade(priorGrade);
     if (themePool.length > 0) {
@@ -652,7 +395,6 @@ async function seedHistoricalAcademicHistory(
           schoolYearId: syId,
           gradeLevelId: gradeLevelId,
           programType: section.programType,
-          tleProgramId: null,
           name: { in: themePool },
         },
       })) as SeedSection | null;
@@ -663,7 +405,6 @@ async function seedHistoricalAcademicHistory(
           schoolYearId: syId,
           gradeLevelId: gradeLevelId,
           programType: section.programType,
-          tleProgramId: null,
         },
         orderBy: { sortOrder: "asc" },
       })) as SeedSection | null;
@@ -676,21 +417,15 @@ async function seedHistoricalAcademicHistory(
       continue;
     }
 
-    // Calculate year-end status and final average for archived year
     const eosyStatuses: EosyStatus[] = ["PROMOTED", "CONDITIONALLY_PROMOTED"];
     const eosyStatus = eosyStatuses[(nameIndex + priorGrade) % eosyStatuses.length] as EosyStatus;
-    // Final average: vary from previousGenAve by ±3 points
     const variance = ((nameIndex + priorGrade * 7) % 7) - 3;
     const finalAverage = Math.max(60, Math.min(100, previousGenAve + variance));
-    // Upsert application
+
     const application = await prisma.enrollmentApplication.upsert({
       where: { trackingNumber },
       update: {
         status: "OFFICIALLY_ENROLLED" as ApplicationStatus,
-        tleProgramId: historicalTleProgramId,
-        ...(isPriorSpecGrade && historicalTleProgramId
-          ? { tleStatus: "SECTIONED_FOR_TLE" as TleSectioningStatus }
-          : {}),
       },
       create: {
         trackingNumber,
@@ -703,23 +438,16 @@ async function seedHistoricalAcademicHistory(
         isPrivacyConsentGiven: true,
         admissionChannel: "F2F",
         encodedById: adminId,
-        tleProgramId: historicalTleProgramId,
-        ...(isPriorSpecGrade && historicalTleProgramId
-          ? { tleStatus: "SECTIONED_FOR_TLE" as TleSectioningStatus }
-          : {}),
       },
     });
-    // Upsert enrollment record for this application
-    const historicalTleSectionId = await resolveOrCreateTleSection(syId, gradeLevelId, historicalTleProgramId);
+
     await prisma.enrollmentRecord.upsert({
       where: { enrollmentApplicationId: application.id },
       update: {
         schoolYearId: syId,
         sectionId: historicalSection.id,
-        tleSectionId: historicalTleSectionId,
         enrolledById: adminId,
         learnerId,
-        tleProgramId: historicalTleProgramId,
         eosyStatus,
         finalAverage,
       },
@@ -727,12 +455,10 @@ async function seedHistoricalAcademicHistory(
         enrollmentApplicationId: application.id,
         schoolYearId: syId,
         sectionId: historicalSection.id,
-        tleSectionId: historicalTleSectionId,
         enrolledById: adminId,
         learnerId,
         enrolledAt: new Date(),
         confirmationConsent: true,
-        tleProgramId: historicalTleProgramId,
         eosyStatus,
         finalAverage,
       },
@@ -749,13 +475,9 @@ async function seedSectionBatch(
   startIndex: number,
   syMap: Map<number, number>,
   gradeLevelMap: Map<number, number>,
-  tlePrograms: SeedTleProgram[],
 ) {
   const gradeValue = parseInt(gradeLevel.name.split(" ")[1]);
   const program: ApplicantType = section.programType;
-  const sectionTleProgramId = resolveTleProgramId(section, gradeValue, tlePrograms);
-  // True when we are filling a TLE laboratory section (G9/G10 REGULAR)
-  const isTleSectioned = sectionTleProgramId !== null;
 
   for (let i = 0; i < count; i++) {
     const sequence = startIndex + i;
@@ -810,7 +532,6 @@ async function seedSectionBatch(
       create: learnerData,
     });
 
-    // Create login account for enrolled learner
     const learnerUser = await prisma.user.upsert({
       where: { accountName: lrn },
       update: { firstName, lastName, middleName },
@@ -843,8 +564,6 @@ async function seedSectionBatch(
         learnerType: "CONTINUING" as LearnerType,
         status: "OFFICIALLY_ENROLLED" as ApplicationStatus,
         portalPin: defaultPinHash,
-        tleProgramId: sectionTleProgramId,
-        ...(isTleSectioned ? { tleStatus: "SECTIONED_FOR_TLE" as TleSectioningStatus } : {}),
       },
       create: {
         learnerId: learner.id,
@@ -860,11 +579,8 @@ async function seedSectionBatch(
         readingProfileLevel: "INDEPENDENT" as ReadingProfileLevel,
         guardianRelationship: "MOTHER",
         portalPin: defaultPinHash,
-        tleProgramId: sectionTleProgramId,
-        ...(isTleSectioned ? { tleStatus: "SECTIONED_FOR_TLE" as TleSectioningStatus } : {}),
         familyMembers: {
           create: [
-            // Mother
             {
               relationship: "MOTHER" as FamilyRelationship,
               firstName: PH_FIRST_NAMES_FEMALE[(nameIndex + 5000) % PH_FIRST_NAMES_FEMALE.length],
@@ -873,7 +589,6 @@ async function seedSectionBatch(
               contactNumber: `0922${String(nameIndex + 5000).padStart(7, "0").slice(-7)}`,
               occupation: "HOUSEWIFE",
             },
-            // Father
             {
               relationship: "FATHER" as FamilyRelationship,
               firstName: PH_FIRST_NAMES_MALE[(nameIndex + 3000) % PH_FIRST_NAMES_MALE.length],
@@ -882,7 +597,6 @@ async function seedSectionBatch(
               contactNumber: `0917${String(nameIndex + 3000).padStart(7, "0").slice(-7)}`,
               occupation: "EMPLOYEE",
             },
-            // Guardian (sample: uncle/aunt)
             {
               relationship: "GUARDIAN" as FamilyRelationship,
               firstName: firstName || "GUARDIAN",
@@ -908,37 +622,25 @@ async function seedSectionBatch(
       },
     });
 
-    // Resolve per-learner: overflows into "- B", "- C" … sections automatically.
-    const tleSectionId = await resolveOrCreateTleSection(
-      targetYear.id,
-      gradeLevel.id,
-      sectionTleProgramId,
-    );
-
     await prisma.enrollmentRecord.upsert({
       where: { enrollmentApplicationId: application.id },
       update: {
         schoolYearId: targetYear.id,
         sectionId: section.id,
-        tleSectionId,
         enrolledById: adminId,
         learnerId: learner.id,
-        tleProgramId: sectionTleProgramId,
       },
       create: {
         enrollmentApplicationId: application.id,
         schoolYearId: targetYear.id,
         sectionId: section.id,
-        tleSectionId,
         enrolledById: adminId,
         learnerId: learner.id,
         enrolledAt: new Date(),
         confirmationConsent: true,
-        tleProgramId: sectionTleProgramId,
       },
     });
 
-    // Add academic history for archived years (2024-2025, 2023-2024, 2022-2023)
     await seedHistoricalAcademicHistory(
       learner.id,
       lrn,
@@ -947,9 +649,7 @@ async function seedSectionBatch(
       adminId,
       syMap,
       gradeLevelMap,
-      sectionTleProgramId,
       section,
-      tlePrograms,
       nameIndex,
       learnerData.previousGenAve,
     );

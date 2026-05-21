@@ -109,9 +109,11 @@ interface EosyExportLockState {
 
 export default function EosyUpdating() {
   const navigate = useNavigate();
-  const { activeSchoolYearId, viewingSchoolYearId, activeSchoolYearLabel } =
+  const { activeSchoolYearId, viewingSchoolYearId, activeSchoolYearLabel, systemStatus } =
     useSettingsStore();
   const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
+  const isBosyLocked = systemStatus === "BOSY_LOCKED";
+  const isEosyArchivedState = systemStatus === "ARCHIVED";
   const user = useAuthStore((state) => state.user);
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const isAdmin = user?.role === "SYSTEM_ADMIN";
@@ -1012,6 +1014,52 @@ export default function EosyUpdating() {
     if (!incompleteOnly) return records;
     return records.filter((r) => !r.eosyStatus);
   }, [records, incompleteOnly]);
+
+  if (isEosyArchivedState || (isBosyLocked && isSchoolYearFinalized)) {
+    return (
+      <div className="h-[calc(100vh-100px)] flex flex-col items-center justify-center gap-6 p-6">
+        <div className="h-20 w-20 bg-emerald-100 rounded-full flex items-center justify-center border border-emerald-200">
+          <CheckCircle2 className="h-10 w-10 text-emerald-500" />
+        </div>
+        <div className="text-center space-y-3 max-w-lg">
+          <h2 className="text-xl font-black uppercase text-emerald-700">
+            EOSY Successfully Finalized.
+          </h2>
+          <p className="text-sm font-bold text-slate-500 leading-relaxed">
+            All academic records for this school year are sealed and locked.
+            Please proceed to System Settings to initiate the School Year Rollover
+            and prepare the next academic cycle.
+          </p>
+        </div>
+        <Button
+          onClick={() => navigate("/settings/lifecycle")}
+          className="font-black uppercase px-6">
+          <ArrowRight className="mr-2 h-4 w-4" />
+          Go to School Year Rollover
+        </Button>
+      </div>
+    );
+  }
+
+  if (!isBosyLocked) {
+    return (
+      <div className="h-[calc(100vh-100px)] flex flex-col items-center justify-center gap-6 p-6">
+        <div className="h-20 w-20 bg-slate-100 rounded-full flex items-center justify-center border border-slate-200">
+          <Lock className="h-10 w-10 text-slate-400" />
+        </div>
+        <div className="text-center space-y-3 max-w-lg">
+          <h2 className="text-xl font-black uppercase text-slate-600">
+            EOSY Updating is currently locked.
+          </h2>
+          <p className="text-sm font-bold text-slate-400 leading-relaxed">
+            End of School Year (EOSY) operations cannot begin until the Beginning
+            of School Year (BOSY) enrollment phase is officially finalized and
+            locked by the Administration.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-[calc(100vh-100px)] space-y-4 px-2 sm:px-0 overflow-hidden">

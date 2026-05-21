@@ -3,6 +3,7 @@ export const ENROLLMENT_SUB_MENU_VALUES = [
   "UNSECTIONED_POOL",
   "BATCH_WORKSPACE",
   "OFFICIAL_ROSTERS",
+  "BOSY_FINALIZATION",
 ] as const;
 
 
@@ -15,6 +16,7 @@ export const ENROLLMENT_SUB_MENU_OPTIONS: Array<{
   { value: "UNSECTIONED_POOL", label: "Unsectioned Learner Pool" },
   { value: "BATCH_WORKSPACE", label: "Batch Sectioning Workspace" },
   { value: "OFFICIAL_ROSTERS", label: "Official Class Rosters" },
+  { value: "BOSY_FINALIZATION", label: "BOSY Finalization" },
 ];
 
 export const ENROLLMENT_SUB_MENU_DESCRIPTIONS: Record<
@@ -27,6 +29,8 @@ export const ENROLLMENT_SUB_MENU_DESCRIPTIONS: Record<
     "Mass sectioning environment to build balanced classes based on program requirements and gender parity.",
   OFFICIAL_ROSTERS:
     "Finalized class lists ready for DepEd School Form 1 (SF1) and LIS synchronization.",
+  BOSY_FINALIZATION:
+    "Final readiness checks and authorization controls before BOSY lockdown.",
 };
 
 export const UNSECTIONED_POOL_STATUSES = new Set([
