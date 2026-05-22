@@ -297,6 +297,20 @@ export const unenrollSchema = z.object({
     .nullable(),
 });
 
+export const processExitSchema = z.object({
+  exitType: z.enum(["TRANSFERRED_OUT", "DROPPED_OUT", "NO_LONGER_PARTICIPATING"]),
+  effectiveDate: z
+    .string()
+    .trim()
+    .min(1, "Effective date is required")
+    .refine((v) => !isNaN(Date.parse(v)), { message: "Invalid date format." }),
+  reason: z
+    .string()
+    .trim()
+    .min(1, "Reason is required")
+    .max(500, "Reason must not exceed 500 characters"),
+});
+
 export const readingProfileUpdateSchema = z.object({
   readingProfileLevel: ReadingProfileLevelEnum,
   readingProfileNotes: z

@@ -37,6 +37,7 @@ export interface DataTableProps<TData, TValue> {
   rowSelection?: Record<string, boolean>;
   onRowSelectionChange?: OnChangeFn<Record<string, boolean>>;
   getRowClassName?: (row: TData) => string;
+  dense?: boolean;
 }
 
 const MotionTableBody = motion.create(TableBody);
@@ -48,6 +49,7 @@ interface TableRowComponentProps<TData> {
   style?: React.CSSProperties;
   className?: string;
   getRowClassName?: (row: TData) => string;
+  dense?: boolean;
 }
 
 function TableRowComponentInner<TData>(
@@ -58,6 +60,7 @@ function TableRowComponentInner<TData>(
     style,
     className,
     getRowClassName,
+    dense,
   }: TableRowComponentProps<TData>,
   ref: React.ForwardedRef<HTMLTableRowElement>,
 ) {
@@ -80,7 +83,7 @@ function TableRowComponentInner<TData>(
       {row.getVisibleCells().map((cell) => (
         <TableCell
           key={cell.id}
-          className="p-3"
+          className={dense ? "py-1.5 px-2" : "p-3"}
           style={{ width: cell.column.getSize() }}>
           {flexRender(cell.column.columnDef.cell, cell.getContext())}
         </TableCell>
@@ -112,6 +115,7 @@ export function DataTable<TData, TValue>({
   rowSelection: externalRowSelection,
   onRowSelectionChange: externalOnRowSelectionChange,
   getRowClassName,
+  dense = false,
 }: DataTableProps<TData, TValue>) {
   const [internalSorting, setInternalSorting] = useState<SortingState>([]);
   const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({});
@@ -164,7 +168,10 @@ export function DataTable<TData, TValue>({
                   return (
                     <TableHead
                       key={header.id}
-                      className="text-center font-bold text-primary-foreground text-xs h-11 px-3 sticky top-0 z-20 shadow-sm bg-[hsl(var(--primary))]"
+                      className={cn(
+                        "text-center font-bold text-primary-foreground text-xs px-3 sticky top-0 z-20 shadow-sm bg-[hsl(var(--primary))]",
+                        dense ? "h-8" : "h-11",
+                      )}
                       style={{
                         width: header.column.getSize(),
                         minWidth: header.column.columnDef.minSize,
@@ -203,7 +210,7 @@ export function DataTable<TData, TValue>({
                       return (
                         <TableCell
                           key={index}
-                          className="p-4">
+                          className={dense ? "py-1.5 px-2" : "p-4"}>
                           <Skeleton
                             className={cn(
                               "h-5 w-full",
@@ -244,6 +251,7 @@ export function DataTable<TData, TValue>({
                           row={rows[virtualRow.index]}
                           onRowClick={onRowClick}
                           getRowClassName={getRowClassName}
+                          dense={dense}
                         />
                       )),
                       virtualItems.length > 0 && (
@@ -266,6 +274,7 @@ export function DataTable<TData, TValue>({
                         row={row}
                         onRowClick={onRowClick}
                         getRowClassName={getRowClassName}
+                        dense={dense}
                       />
                     ))}
               </MotionTableBody>

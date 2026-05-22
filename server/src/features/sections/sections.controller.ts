@@ -753,7 +753,11 @@ export async function getSectionRoster(
     middleName: record.enrollmentApplication.learner.middleName,
     sex: record.enrollmentApplication.learner.sex,
     status: record.enrollmentApplication.status,
+    applicantType: record.enrollmentApplication.applicantType,
     enrolledAt: record.enrolledAt,
+    sectioningMethod: record.sectioningMethod,
+    dateSectioned: record.dateSectioned?.toISOString() ?? null,
+    sf1Remarks: record.sf1Remarks ?? null,
   }));
 
   res.json({
@@ -838,11 +842,24 @@ export async function inlineSlotLearner(
   req: Request,
   res: Response,
 ): Promise<void> {
+  const sectionId = parseInt(String(req.params.id));
   const enrollmentApplicationId = req.body.enrollmentApplicationId;
-  const sectionId = req.body.sectionId;
+  const officialEnrollmentDate = req.body.officialEnrollmentDate as string | undefined;
+  const isCapacityOverride = Boolean(req.body.isCapacityOverride);
   const schoolYearId = req.body.schoolYearId
     ? parseInt(String(req.body.schoolYearId))
     : req.schoolYearId;
+
+  if (!officialEnrollmentDate) {
+    res.status(400).json({ message: "officialEnrollmentDate is required for inline slotting" });
+    return;
+  }
+
+  const parsedEnrollmentDate = new Date(officialEnrollmentDate);
+  if (isNaN(parsedEnrollmentDate.getTime())) {
+    res.status(400).json({ message: "officialEnrollmentDate must be a valid ISO date string" });
+    return;
+  }
 
   if (!schoolYearId) {
     res.status(400).json({ message: "schoolYearId is required" });
@@ -867,8 +884,14 @@ export async function inlineSlotLearner(
     return;
   }
 
-  if (section._count.enrollmentRecords >= section.maxCapacity) {
-    res.status(400).json({ message: "Section is already at maximum capacity" });
+  if (section._count.enrollmentRecords >= section.maxCapacity && !isCapacityOverride) {
+    res.status(409).json({
+      message: "Section capacity reached",
+      code: "SECTION_CAPACITY_EXCEEDED",
+      currentCount: section._count.enrollmentRecords,
+      maxCapacity: section.maxCapacity,
+      sectionName: section.name,
+    });
     return;
   }
 
@@ -891,6 +914,8 @@ export async function inlineSlotLearner(
         schoolYearId,
         enrolledById: req.user!.userId,
         sectioningMethod: SectioningMethod.INLINE_SLOTTING,
+        enrolledAt: parsedEnrollmentDate,
+        dateSectioned: parsedEnrollmentDate,
       },
     });
 

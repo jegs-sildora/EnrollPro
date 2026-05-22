@@ -1,11 +1,12 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "@fontsource-variable/instrument-sans";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif;
 
   --animate-modal-in: modal-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-modal-out: modal-out 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -102,7 +103,7 @@
 }
 
 @theme inline {
-  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif;
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
   --color-card: hsl(var(--card));

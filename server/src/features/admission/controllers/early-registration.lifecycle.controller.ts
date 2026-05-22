@@ -1882,6 +1882,147 @@ export function createEarlyRegistrationLifecycleController(
     }
   }
 
+  async function processExit(req: Request, res: Response, next: NextFunction) {
+    try {
+      const applicantId = parseInt(String(req.params.id));
+      const { exitType, effectiveDate, reason } = req.body as {
+        exitType: "TRANSFERRED_OUT" | "DROPPED_OUT" | "NO_LONGER_PARTICIPATING";
+        effectiveDate: string;
+        reason: string;
+      };
+
+      const { data: applicant } = await findApplicantOrThrow(applicantId);
+
+      const terminalExitStatuses = [
+        "TRANSFERRED_OUT",
+        "DROPPED_OUT",
+        "NO_LONGER_PARTICIPATING",
+      ];
+      if (terminalExitStatuses.includes(applicant.status)) {
+        throw new AppError(
+          400,
+          "Learner is already in a terminal exit state.",
+        );
+      }
+
+      const enrollableStatuses = ["ENROLLED", "OFFICIALLY_ENROLLED"];
+      if (!enrollableStatuses.includes(applicant.status)) {
+        throw new AppError(
+          422,
+          "Only enrolled learners can have their exit processed.",
+        );
+      }
+
+      const parsedDate = new Date(effectiveDate);
+
+      const updated = await deps.prisma.$transaction(async (tx: any) => {
+        // Update the enrollment record with exit audit trail — DO NOT DELETE
+        await tx.enrollmentRecord.updateMany({
+          where: { enrollmentApplicationId: applicantId },
+          data: {
+            ...(exitType === "TRANSFERRED_OUT"
+              ? { transferOutDate: parsedDate, transferOutReason: reason }
+              : {}),
+            ...(exitType === "DROPPED_OUT"
+              ? { dropOutDate: parsedDate, dropOutReason: reason }
+              : {}),
+            ...(exitType === "NO_LONGER_PARTICIPATING"
+              ? { sf1Remarks: reason }
+              : {}),
+          },
+        });
+
+        // Update the application status to the terminal exit state
+        return await tx.enrollmentApplication.update({
+          where: { id: applicantId },
+          data: { status: exitType },
+          include: { learner: true },
+        });
+      });
+
+      const exitTypeLabel: Record<string, string> = {
+        TRANSFERRED_OUT: "Transferred Out (T/O)",
+        DROPPED_OUT: "Dropped Out (NLPA)",
+        NO_LONGER_PARTICIPATING: "No Longer Participating (NLP)",
+      };
+
+      await auditLog({
+        userId: req.user!.userId,
+        actionType: "APPLICATION_EXIT_PROCESSED",
+        description: `Processed learner exit for ${updated.learner.firstName} ${updated.learner.lastName} (#${applicantId}). Type: ${exitTypeLabel[exitType]}. Effective: ${effectiveDate}. Reason: ${reason}`,
+        subjectType: "EnrollmentApplication",
+        recordId: applicantId,
+        req,
+      });
+
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async function restoreStatus(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const applicantId = parseInt(String(req.params.id));
+
+      const { data: applicant } = await findApplicantOrThrow(applicantId);
+
+      const terminalExitStatuses = [
+        "TRANSFERRED_OUT",
+        "DROPPED_OUT",
+        "NO_LONGER_PARTICIPATING",
+      ];
+      if (!terminalExitStatuses.includes(applicant.status)) {
+        throw new AppError(
+          422,
+          "Only learners in a terminal exit state can be restored.",
+        );
+      }
+
+      const previousStatus = applicant.status;
+
+      const updated = await deps.prisma.$transaction(async (tx: any) => {
+        // Clear all exit audit trail fields from the enrollment record
+        await tx.enrollmentRecord.updateMany({
+          where: { enrollmentApplicationId: applicantId },
+          data: {
+            transferOutDate: null,
+            transferOutReason: null,
+            dropOutDate: null,
+            dropOutReason: null,
+            sf1Remarks: null,
+          },
+        });
+
+        // Restore the application status back to ENROLLED
+        return await tx.enrollmentApplication.update({
+          where: { id: applicantId },
+          data: { status: "ENROLLED" },
+          include: { learner: true },
+        });
+      });
+
+      await auditLog({
+        userId: req.user!.userId,
+        actionType: "APPLICATION_STATUS_RESTORED",
+        description: `Restored learner status for ${
+          updated.learner.firstName
+        } ${updated.learner.lastName} (#${applicantId}) from ${previousStatus} back to ENROLLED. All exit record data cleared.`,
+        subjectType: "EnrollmentApplication",
+        recordId: applicantId,
+        req,
+      });
+
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   return {
     approve,
     verify,
@@ -1894,6 +2035,8 @@ export function createEarlyRegistrationLifecycleController(
     withdraw,
     reject,
     unenroll,
+    processExit,
+    restoreStatus,
     specialEnrollment,
     batchAssignSection,
   };
@@ -1915,3 +2058,5 @@ export const updateChecklist = lifecycleController.updateChecklist;
 export const requestRevision = lifecycleController.requestRevision;
 export const withdraw = lifecycleController.withdraw;
 export const reject = lifecycleController.reject;
+export const processExit = lifecycleController.processExit;
+export const restoreStatus = lifecycleController.restoreStatus;

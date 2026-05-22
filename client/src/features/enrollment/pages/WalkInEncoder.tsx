@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { ArrowLeft, RefreshCw, Calendar as CalendarIcon } from "lucide-react";
+import { ArrowLeft, RefreshCw, Calendar as CalendarIcon, AlertTriangle } from "lucide-react";
 import { format, isValid, parse, isAfter, isBefore } from "date-fns";
 import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
@@ -20,6 +20,13 @@ import { Badge } from "@/shared/ui/badge";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Calendar } from "@/shared/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/dialog";
 import { cn } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 
@@ -84,6 +91,13 @@ interface HydrationContextState {
   enrollmentApplicationId: number | null;
   earlyRegistrationId: number | null;
   applicantType: string | null;
+}
+
+interface LateSectionOption {
+  id: number;
+  name: string;
+  enrolledCount: number;
+  maxCapacity: number;
 }
 
 const EMPTY_CONTACT: ContactPersonState = {
@@ -214,6 +228,20 @@ export default function WalkInEncoder() {
   );
   const [processOutcome, setProcessOutcome] =
     useState<ProcessOutcome>("ENCODE_AND_VERIFY");
+
+  // --- Late Enrollment (Post-BOSY) state ---
+  const [lateEnrollmentDate, setLateEnrollmentDate] = useState(
+    () => format(new Date(), "yyyy-MM-dd"),
+  );
+  const [lateTargetSectionId, setLateTargetSectionId] = useState<number | null>(null);
+  const [lateSections, setLateSections] = useState<LateSectionOption[]>([]);
+  const [loadingLateSections, setLoadingLateSections] = useState(false);
+  const [isCapacityOverrideOpen, setIsCapacityOverrideOpen] = useState(false);
+  const [pendingOverrideContext, setPendingOverrideContext] = useState<{
+    enrollmentApplicationId: number;
+    sectionId: number;
+    date: string;
+  } | null>(null);
 
   const [dateInput, setDateInput] = useState(() => {
     if (!formData.birthdate) return "";
@@ -470,6 +498,33 @@ export default function WalkInEncoder() {
     }
   };
 
+  // Fetch sections when grade level changes and BOSY is locked
+  useEffect(() => {
+    if (!isBosyLocked || !formData.gradeLevelId) {
+      setLateSections([]);
+      setLateTargetSectionId(null);
+      return;
+    }
+    const fetchLateSections = async () => {
+      setLoadingLateSections(true);
+      try {
+        const res = await api.get("/sections", {
+          params: { gradeLevelId: formData.gradeLevelId },
+        });
+        setLateSections(res.data.sections || []);
+      } catch {
+        sileo.error({
+          title: "Section Load Error",
+          description: "Could not load sections for this grade level.",
+        });
+      } finally {
+        setLoadingLateSections(false);
+      }
+    };
+    void fetchLateSections();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isBosyLocked, formData.gradeLevelId]);
+
   const selectedGradeLevel = useMemo(
     () =>
       gradeLevels.find(
@@ -638,6 +693,24 @@ export default function WalkInEncoder() {
       return false;
     }
 
+    // BOSY-locked: late enrollment assignment fields are required
+    if (isBosyLocked) {
+      if (!lateEnrollmentDate) {
+        sileo.error({
+          title: "Enrollment Date Required",
+          description: "Official enrollment date is required for late enrollees.",
+        });
+        return false;
+      }
+      if (!lateTargetSectionId) {
+        sileo.error({
+          title: "Section Required",
+          description: "Please select the target section for direct assignment.",
+        });
+        return false;
+      }
+    }
+
     return true;
   };
 
@@ -727,6 +800,29 @@ export default function WalkInEncoder() {
         "/applications/special-enrollment",
         payload,
       );
+
+      // BOSY-locked: immediately inline-slot the learner into the chosen section
+      if (isBosyLocked && lateTargetSectionId) {
+        const enrollmentApplicationId =
+          response.data?.enrollmentApplicationId as number | undefined;
+        if (!enrollmentApplicationId) {
+          sileo.error({
+            title: "Slotting Error",
+            description: "BEEF saved but could not retrieve application ID for inline slotting.",
+          });
+          setSubmitting(false);
+          return;
+        }
+        await doInlineSlot(
+          enrollmentApplicationId,
+          lateTargetSectionId,
+          lateEnrollmentDate,
+          false,
+        );
+        return;
+      }
+
+      // Standard (non-BOSY) flow
       const trackingHint = String(
         response.data?.trackingNumber ||
           `${formData.lastName.trim()} ${formData.firstName.trim()}`,
@@ -751,6 +847,43 @@ export default function WalkInEncoder() {
       }
     } catch (error) {
       toastApiError(error as never);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const doInlineSlot = async (
+    enrollmentApplicationId: number,
+    sectionId: number,
+    date: string,
+    isCapacityOverride: boolean,
+  ) => {
+    try {
+      await api.post(`/sections/${sectionId}/inline-slot`, {
+        enrollmentApplicationId,
+        officialEnrollmentDate: date,
+        isCapacityOverride,
+      });
+      sileo.success({
+        title: "Late Enrollee Slotted",
+        description: "Learner has been directly assigned to the section and SF1 updated.",
+      });
+      navigate("/sections");
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status?: number; data?: { message?: string; code?: string; sectionName?: string } } };
+      if (axiosErr?.response?.status === 409) {
+        // Section at capacity — ask for override confirmation
+        setPendingOverrideContext({ enrollmentApplicationId, sectionId, date });
+        setIsCapacityOverrideOpen(true);
+        setSubmitting(false);
+        return;
+      }
+      sileo.error({
+        title: "Slotting Failed",
+        description:
+          axiosErr?.response?.data?.message ??
+          "An unexpected error occurred during section assignment.",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -1644,45 +1777,118 @@ export default function WalkInEncoder() {
             </div>
           </section>
 
-          <section className="space-y-3 rounded-lg border border-border p-4">
-            <p className="text-xs font-bold uppercase  text-primary">
-              6. Registrar Processing Outcome
-            </p>
-            <div className="grid gap-3 md:grid-cols-2">
-              <button
-                type="button"
-                className={cn(
-                  "rounded-md border px-3 py-2 text-left",
-                  processOutcome === "ENCODE_ONLY"
-                    ? "border-primary bg-primary/5"
-                    : "border-border",
-                )}
-                onClick={() => setProcessOutcome("ENCODE_ONLY")}>
-                <p className="text-xs font-black uppercase ">
-                  Encode Only
+          {/* BOSY-locked: Late Enrollment Assignment (replaces Processing Outcome) */}
+          {isBosyLocked ? (
+            <section className="space-y-3 rounded-lg border-2 border-amber-300 bg-amber-50/60 p-4">
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-bold uppercase text-amber-700">
+                  7. Late Enrollment Assignment
                 </p>
-                <p className="text-xs font-semibold text-foreground">
-                  Save BEEF then return learner to Awaiting Verification.
-                </p>
-              </button>
-              <button
-                type="button"
-                className={cn(
-                  "rounded-md border px-3 py-2 text-left",
-                  processOutcome === "ENCODE_AND_VERIFY"
-                    ? "border-primary bg-primary/5"
-                    : "border-border",
-                )}
-                onClick={() => setProcessOutcome("ENCODE_AND_VERIFY")}>
-                <p className="text-xs font-black uppercase ">
-                  Encode + Verify
-                </p>
-                <p className="text-xs font-semibold text-foreground">
-                  Save BEEF and immediately progress to verification outcome.
-                </p>
-              </button>
-            </div>
-          </section>
+                <Badge className="bg-amber-500 text-white border-none text-[9px] font-black uppercase px-2">
+                  BOSY LOCKED
+                </Badge>
+              </div>
+              <p className="text-[11px] font-semibold text-amber-700">
+                BOSY is locked. This learner will be directly assigned to the selected section. The official enrollment date is required for accurate SF10 and DepEd records.
+              </p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-[11px] font-bold uppercase">
+                    Official Enrollment Date *
+                  </Label>
+                  <Input
+                    type="date"
+                    value={lateEnrollmentDate}
+                    max={format(new Date(), "yyyy-MM-dd")}
+                    className="h-10 font-bold"
+                    onChange={(e) => setLateEnrollmentDate(e.target.value)}
+                  />
+                  <p className="text-[10px] text-amber-600 font-semibold">
+                    Backdating allowed for SF10 compliance.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[11px] font-bold uppercase">
+                    Target Section *
+                  </Label>
+                  <Select
+                    value={lateTargetSectionId !== null ? String(lateTargetSectionId) : ""}
+                    onValueChange={(v) => setLateTargetSectionId(Number(v))}
+                    disabled={loadingLateSections || !formData.gradeLevelId}>
+                    <SelectTrigger className="h-10 font-bold">
+                      <SelectValue
+                        placeholder={
+                          !formData.gradeLevelId
+                            ? "Select grade level first"
+                            : loadingLateSections
+                            ? "Loading sections..."
+                            : "Select section"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {lateSections.map((s) => {
+                        const isFull = s.enrolledCount >= s.maxCapacity;
+                        return (
+                          <SelectItem key={s.id} value={String(s.id)}>
+                            <span className={cn(isFull && "text-amber-600")}>
+                              {s.name} ({s.enrolledCount}/{s.maxCapacity})
+                              {isFull ? " ⚠ Full" : ""}
+                            </span>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                  {lateSections.length === 0 && !loadingLateSections && formData.gradeLevelId && (
+                    <p className="text-[10px] text-amber-600 font-semibold">
+                      No sections found for this grade level.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </section>
+          ) : (
+            <section className="space-y-3 rounded-lg border border-border p-4">
+              <p className="text-xs font-bold uppercase  text-primary">
+                6. Registrar Processing Outcome
+              </p>
+              <div className="grid gap-3 md:grid-cols-2">
+                <button
+                  type="button"
+                  className={cn(
+                    "rounded-md border px-3 py-2 text-left",
+                    processOutcome === "ENCODE_ONLY"
+                      ? "border-primary bg-primary/5"
+                      : "border-border",
+                  )}
+                  onClick={() => setProcessOutcome("ENCODE_ONLY")}>
+                  <p className="text-xs font-black uppercase ">
+                    Encode Only
+                  </p>
+                  <p className="text-xs font-semibold text-foreground">
+                    Save BEEF then return learner to Awaiting Verification.
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  className={cn(
+                    "rounded-md border px-3 py-2 text-left",
+                    processOutcome === "ENCODE_AND_VERIFY"
+                      ? "border-primary bg-primary/5"
+                      : "border-border",
+                  )}
+                  onClick={() => setProcessOutcome("ENCODE_AND_VERIFY")}>
+                  <p className="text-xs font-black uppercase ">
+                    Encode + Verify
+                  </p>
+                  <p className="text-xs font-semibold text-foreground">
+                    Save BEEF and immediately progress to verification outcome.
+                  </p>
+                </button>
+              </div>
+            </section>
+          )}
 
           <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
             <Button
@@ -1695,7 +1901,10 @@ export default function WalkInEncoder() {
             </Button>
             <Button
               type="button"
-              className="h-10 px-6 text-xs font-bold"
+              className={cn(
+                "h-10 px-6 text-xs font-bold",
+                isBosyLocked && "bg-amber-600 hover:bg-amber-700",
+              )}
               disabled={submitting}
               onClick={() => {
                 void handleSubmit();
@@ -1703,8 +1912,10 @@ export default function WalkInEncoder() {
               {submitting ? (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  {isBosyLocked ? "Slotting..." : "Saving..."}
                 </>
+              ) : isBosyLocked ? (
+                "Save BEEF & Slot to Section"
               ) : (
                 "Save & Route to Sectioning"
               )}
@@ -1712,6 +1923,59 @@ export default function WalkInEncoder() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Capacity Override Warning Modal */}
+      <Dialog
+        open={isCapacityOverrideOpen}
+        onOpenChange={setIsCapacityOverrideOpen}>
+        <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl">
+          <DialogHeader className="px-6 pt-6 pb-4 bg-amber-50 border-b border-amber-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-100 rounded-lg text-amber-700">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <DialogTitle className="text-base font-black uppercase text-amber-900">
+                Section Capacity Reached
+              </DialogTitle>
+            </div>
+          </DialogHeader>
+          <div className="px-6 py-5 bg-background space-y-3">
+            <p className="text-sm font-semibold text-foreground">
+              The selected section has reached its maximum DepEd capacity. Are you sure you want to proceed with this assignment?
+            </p>
+            <p className="text-xs text-amber-700 font-bold">
+              This action will create an over-capacity record. Ensure administrative approval has been obtained.
+            </p>
+          </div>
+          <DialogFooter className="px-6 py-4 bg-muted/30 border-t border-border flex items-center justify-end gap-2">
+            <Button
+              variant="outline"
+              className="font-bold uppercase text-xs"
+              onClick={() => {
+                setIsCapacityOverrideOpen(false);
+                setPendingOverrideContext(null);
+              }}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-amber-600 hover:bg-amber-700 text-white font-bold uppercase text-xs px-6"
+              onClick={() => {
+                if (!pendingOverrideContext) return;
+                setIsCapacityOverrideOpen(false);
+                setSubmitting(true);
+                void doInlineSlot(
+                  pendingOverrideContext.enrollmentApplicationId,
+                  pendingOverrideContext.sectionId,
+                  pendingOverrideContext.date,
+                  true,
+                );
+                setPendingOverrideContext(null);
+              }}>
+              Confirm Override
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

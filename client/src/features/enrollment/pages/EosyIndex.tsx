@@ -40,6 +40,8 @@ import {
   ChevronDown,
   ArrowRight,
   Loader2,
+  HelpCircle,
+  X,
 } from "lucide-react";
 import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
@@ -54,6 +56,12 @@ import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { cn } from "@/shared/lib/utils";
 import { motion } from "motion/react";
 import { Checkbox } from "@/shared/ui/checkbox";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/shared/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -106,6 +114,26 @@ interface EosyExportLockState {
   canFinalizeSchoolYear: boolean;
   lockReason: string | null;
 }
+
+const PROGRAM_TYPE_ORDER: string[] = [
+  "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+  "SPECIAL_PROGRAM_IN_THE_ARTS",
+  "SPECIAL_PROGRAM_IN_SPORTS",
+  "SPECIAL_PROGRAM_IN_JOURNALISM",
+  "SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE",
+  "SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION",
+  "REGULAR",
+];
+
+const PROGRAM_TYPE_LABELS: Record<string, string> = {
+  SCIENCE_TECHNOLOGY_AND_ENGINEERING: "STE",
+  SPECIAL_PROGRAM_IN_THE_ARTS: "SPA",
+  SPECIAL_PROGRAM_IN_SPORTS: "SPS",
+  SPECIAL_PROGRAM_IN_JOURNALISM: "SP Journalism",
+  SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: "SP Foreign Language",
+  SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION: "SP TVE",
+  REGULAR: "Regular",
+};
 
 export default function EosyUpdating() {
   const navigate = useNavigate();
@@ -175,6 +203,7 @@ export default function EosyUpdating() {
     loading: false,
   });
   const [batchPromoteConfirmOpen, setBatchPromoteConfirmOpen] = useState(false);
+  const [showBanner, setShowBanner] = useState(true);
   const [remedialModal, setRemedialModal] = useState<{
     open: boolean;
     recordId: number | null;
@@ -196,11 +225,11 @@ export default function EosyUpdating() {
         const glB = b.gradeLevel.displayOrder ?? 99;
         if (glA !== glB) return glA - glB;
 
-        // 2. Program Type Priority: STE → SPA → SPS → other SCP → BEC (REGULAR)
+        // 2. Program Type Priority: STE → SPA → SPS → other SCP → REGULAR
         const getProgramPriority = (type: string) => {
-          if (type === "STE") return 1;
-          if (type === "SPA") return 2;
-          if (type === "SPS") return 3;
+          if (type === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") return 1;
+          if (type === "SPECIAL_PROGRAM_IN_THE_ARTS") return 2;
+          if (type === "SPECIAL_PROGRAM_IN_SPORTS") return 3;
           if (type !== "REGULAR") return 4;
           return 5;
         };
@@ -990,7 +1019,7 @@ export default function EosyUpdating() {
 
   const filteredGroups = useMemo(() => {
     const search = sectionSearch.toLowerCase().trim();
-    const filtered: Record<string, Section[]> = {};
+    const filtered: Record<string, { programType: string; sections: Section[] }[]> = {};
 
     Object.entries(groupedSections).forEach(([gl, secs]) => {
       if (gradeFilter !== "ALL" && gl !== gradeFilter) return;
@@ -1005,7 +1034,29 @@ export default function EosyUpdating() {
           adviserName.toLowerCase().includes(search)
         );
       });
-      if (matching.length > 0) filtered[gl] = matching;
+
+      if (matching.length === 0) return;
+
+      // Sub-group by programType in defined order
+      const byProgramType = new Map<string, Section[]>();
+      matching.forEach((s) => {
+        const pt = s.programType ?? "REGULAR";
+        if (!byProgramType.has(pt)) byProgramType.set(pt, []);
+        byProgramType.get(pt)!.push(s);
+      });
+
+      const ordered = PROGRAM_TYPE_ORDER
+        .filter((pt) => byProgramType.has(pt))
+        .map((pt) => ({ programType: pt, sections: byProgramType.get(pt)! }));
+
+      // Append any programTypes not in PROGRAM_TYPE_ORDER
+      byProgramType.forEach((sections, pt) => {
+        if (!PROGRAM_TYPE_ORDER.includes(pt)) {
+          ordered.push({ programType: pt, sections });
+        }
+      });
+
+      filtered[gl] = ordered;
     });
     return filtered;
   }, [groupedSections, sectionSearch, gradeFilter]);
@@ -1140,12 +1191,12 @@ export default function EosyUpdating() {
         </div>
       </div>
 
-      {exportLock?.lockReason && (
+      {exportLock?.lockReason && showBanner && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className={cn(
-            "rounded-xl border-2 px-6 py-5 flex-shrink-0 shadow-sm transition-all",
+            "rounded-xl border-2 px-4 py-3 flex-shrink-0 shadow-sm transition-all",
             isSchoolYearFinalized
               ? "border-slate-200 bg-slate-50/50"
               : "border-amber-200 bg-amber-50 text-amber-900",
@@ -1155,19 +1206,27 @@ export default function EosyUpdating() {
             <div className="flex-1">
               <h3
                 className={cn(
-                  "text-lg font-black uppercase tracking-tight",
+                  "text-base font-black uppercase tracking-tight",
                   isSchoolYearFinalized ? "text-slate-900" : "text-amber-900",
                 )}>
                 {isSchoolYearFinalized
                   ? `EOSY Permanently Finalized & Archived (S.Y. ${activeSchoolYearLabel})`
                   : "Operational Status"}
               </h3>
-              <p className="text-sm font-bold opacity-80 mt-1 leading-relaxed max-w-3xl">
+              <p className="text-xs font-bold opacity-80 mt-0.5 leading-relaxed max-w-3xl">
                 {isSchoolYearFinalized
                   ? `School year ${activeSchoolYearLabel} is globally locked. All class statuses and academic records are now read-only to preserve DepEd LIS integrity and audit readiness.`
                   : exportLock.lockReason}
               </p>
             </div>
+            {!isSchoolYearFinalized && (
+              <button
+                onClick={() => setShowBanner(false)}
+                className="opacity-40 hover:opacity-100 transition-opacity shrink-0 p-1 -mt-0.5"
+                aria-label="Dismiss banner">
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
           {/* Section 2: The Actions */}
@@ -1282,67 +1341,80 @@ export default function EosyUpdating() {
           </CardHeader>
           <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent min-h-0">
             <div className="p-2 space-y-4">
-              {Object.entries(filteredGroups).map(([gl, secs]) => (
-                <div
-                  key={gl}
-                  className="space-y-1">
-                  <h3 className="px-3 py-1 text-xs font-black uppercase  text-foreground bg-muted/40 rounded-md mb-2">
+              {Object.entries(filteredGroups).map(([gl, programGroups]) => (
+                <div key={gl}>
+                  {/* Grade-level header — sticky at the top of the scroll container */}
+                  <h3 className="sticky top-0 z-20 px-3 py-1 text-xs font-black uppercase text-foreground bg-card border-b border-border/40 mb-1">
                     {gl}
                   </h3>
-                  {secs.map((s) => {
-                    const adviser = s.advisers?.[0]?.teacher;
-                    const adviserName = adviser
-                      ? `${adviser.lastName}, ${adviser.firstName}`
-                      : "No Adviser Assigned";
 
-                    return (
-                      <button
-                        key={s.id}
-                        onClick={() => setSelectedSectionId(String(s.id))}
-                        className={cn(
-                          "w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all text-left group",
-                          selectedSectionId === String(s.id)
-                            ? "bg-primary text-primary-foreground shadow-md"
-                            : "hover:bg-muted",
-                        )}>
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-xs font-black uppercase truncate">
-                            {s.name}
-                          </span>
-                          <span
-                            className={cn(
-                              "text-xs font-bold uppercase truncate",
-                              selectedSectionId === String(s.id)
-                                ? "text-primary-foreground/70"
-                                : "text-foreground",
-                            )}>
-                            Adviser: {adviserName}
-                          </span>
-                        </div>
-                        <div className="shrink-0 ml-2">
-                          {s.isEosyFinalized ? (
-                            <CheckCircle2
+                  {programGroups.map(({ programType, sections: pgSecs }) => (
+                    <div key={programType} className="mb-2">
+                      {/* Program-type sub-header — sticky below the grade header (~28 px) */}
+                      <div className="sticky top-6 z-20 px-3 py-0.5 bg-muted border-y border-border/30">
+                        <span className="text-xs font-black uppercase tracking-widest text-foreground">
+                          {PROGRAM_TYPE_LABELS[programType] ?? programType}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1 pt-1">
+                        {pgSecs.map((s) => {
+                          const adviser = s.advisers?.[0]?.teacher;
+                          const adviserName = adviser
+                            ? `${adviser.lastName}, ${adviser.firstName}`
+                            : "No Adviser Assigned";
+
+                          return (
+                            <button
+                              key={s.id}
+                              onClick={() => setSelectedSectionId(String(s.id))}
                               className={cn(
-                                "h-4 w-4",
+                                "w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-all text-left group",
                                 selectedSectionId === String(s.id)
-                                  ? "text-white"
-                                  : "text-emerald-500",
-                              )}
-                            />
-                          ) : (
-                            <div
-                              className={cn(
-                                "h-2 w-2 rounded-full",
-                                selectedSectionId === String(s.id)
-                                  ? "bg-white/50"
-                                  : "bg-red-400",
-                              )}
-                            />
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
+                                  ? "bg-primary text-primary-foreground shadow-md"
+                                  : "hover:bg-muted",
+                              )}>
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-xs font-black uppercase truncate">
+                                  {s.name}
+                                </span>
+                                <span
+                                  className={cn(
+                                    "text-xs font-bold uppercase truncate",
+                                    selectedSectionId === String(s.id)
+                                      ? "text-primary-foreground"
+                                      : "text-foreground",
+                                  )}>
+                                  Adviser: {adviserName}
+                                </span>
+                              </div>
+                              <div className="shrink-0 ml-2">
+                                {s.isEosyFinalized ? (
+                                  <CheckCircle2
+                                    className={cn(
+                                      "h-4 w-4",
+                                      selectedSectionId === String(s.id)
+                                        ? "text-white"
+                                        : "text-emerald-500",
+                                    )}
+                                  />
+                                ) : (
+                                  <div
+                                    className={cn(
+                                      "h-2 w-2 rounded-full",
+                                      selectedSectionId === String(s.id)
+                                        ? "bg-white/50"
+                                        : "bg-red-400",
+                                    )}
+                                  />
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
@@ -1352,15 +1424,15 @@ export default function EosyUpdating() {
         {/* RIGHT CONTENT: Status Grid */}
         <Card className="flex-1 border-none shadow-sm flex flex-col overflow-hidden bg-card h-full">
           {/* ROW 1: IDENTITY */}
-          <CardHeader className="p-5 border-b bg-muted/5 flex-shrink-0">
+          <CardHeader className="p-3 border-b bg-muted/5 flex-shrink-0">
             {/* Identity */}
-            <div className="flex items-start gap-4">
-              <div className="bg-primary/10 p-3 rounded-2xl shrink-0 mt-0.5">
-                <Building2 className="h-6 w-6 text-primary" />
+            <div className="flex items-center gap-3">
+              <div className="bg-primary/10 p-2 rounded-xl shrink-0">
+                <Building2 className="h-5 w-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <CardTitle className="text-2xl font-bold uppercase truncate">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <CardTitle className="text-base font-bold uppercase truncate">
                     {selectedSection ? selectedSection.name : "Select Section"}
                   </CardTitle>
                   {selectedSection?.isEosyFinalized && (
@@ -1370,13 +1442,13 @@ export default function EosyUpdating() {
                     </Badge>
                   )}
                 </div>
-                <p className="font-black text-xs uppercase text-foreground/60 tracking-wide mt-1">
+                <p className="font-black text-[10px] uppercase text-foreground/60 tracking-wide">
                   {selectedSection
                     ? `${selectedSection.gradeLevel.name} · END OF SCHOOL YEAR REPORTING`
                     : "Choose a class from the tracker to start updating statuses"}
                 </p>
                 {selectedSection?.advisers?.[0] && (
-                  <p className="text-xs font-black uppercase text-primary/80 mt-0.5">
+                  <p className="text-[10px] font-black uppercase text-primary/80">
                     ADVISER: {selectedSection.advisers[0].teacher.lastName},{" "}
                     {selectedSection.advisers[0].teacher.firstName}
                   </p>
@@ -1385,7 +1457,7 @@ export default function EosyUpdating() {
             </div>
             {/* Controls */}
             {selectedSection && (
-              <div className="flex flex-wrap items-center justify-between gap-3 mt-4 pt-4 border-t border-border/60">
+              <div className="flex flex-wrap items-center justify-between gap-2 mt-2 pt-2 border-t border-border/60">
                 <div className="flex items-center bg-muted/30 p-1 rounded-xl border w-fit gap-0.5">
                   <button
                     onClick={() => setIncompleteOnly(false)}
@@ -1513,104 +1585,77 @@ export default function EosyUpdating() {
                 tableClassName="border-separate border-spacing-0 w-full"
                 containerHeight="100%"
                 virtualize={false}
+                dense={true}
               />
             </div>
 
-            {/* ROW 4: STICKY FOOTER */}
+            {/* ROW 4: STICKY FOOTER — Dense action bar */}
             {selectedSection && !isSchoolYearFinalized && (
-              <div className="p-5 border-t bg-white flex-shrink-0 z-30 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.04)]">
+              <div className="px-4 py-2.5 border-t bg-white flex-shrink-0 z-30 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.04)] flex items-center justify-between gap-4">
                 {selectedSection.isEosyFinalized ? (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-6">
-                      <div className="flex items-center gap-3 text-emerald-700 font-bold text-sm">
-                        <div className="bg-emerald-100 p-1.5 rounded-full">
-                          <CheckCircle2 className="h-5 w-5" />
-                        </div>
-                        Section finalized and locked for SF5/SF6 reporting.
+                  <>
+                    <div className="flex items-center gap-2 text-emerald-700 font-bold text-xs min-w-0">
+                      <div className="bg-emerald-100 p-1 rounded-full shrink-0">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
                       </div>
-                      <div className="hidden md:block h-6 w-px bg-border" />
-                      <span className="text-sm font-bold text-foreground uppercase ">
-                        Showing {visibleRecords.length} of {records.length}{" "}
-                        Learners
+                      <span className="truncate">Section finalized and locked for SF5/SF6 reporting.</span>
+                      <span className="text-foreground/50 shrink-0">
+                        ({visibleRecords.length}/{records.length})
                       </span>
                     </div>
                     <Button
                       variant="outline"
-                      className="h-11 px-8 font-black uppercase text-xs border-2 border-primary text-primary hover:bg-primary hover:text-white transition-all"
+                      size="sm"
+                      className="h-9 px-4 font-black uppercase text-xs border-2 border-primary text-primary hover:bg-primary hover:text-white transition-all shrink-0"
                       onClick={() => handleReopenClass(selectedSection.id)}>
-                      <Unlock className="h-4 w-4 mr-2" />
+                      <Unlock className="h-3.5 w-3.5 mr-1.5" />
                       Re-open Section
                     </Button>
-                  </div>
+                  </>
                 ) : (
-                  <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="flex items-center gap-8">
-                      <div className="flex flex-col">
-                        {emptyRowsCount > 0 ? (
-                          <>
-                            <div className="flex items-center gap-2 text-red-600">
-                              <AlertCircle className="h-5 w-5" />
-                              <span className="font-black text-xs uppercase ">
-                                {emptyRowsCount} learners require an EOSY Status
-                              </span>
-                            </div>
-                            <p className="text-xs font-bold text-foreground uppercase mt-1">
-                              Please use{" "}
-                              <button
-                                onClick={() => setBatchPromoteConfirmOpen(true)}
-                                className="text-primary hover:underline font-black cursor-pointer">
-                                'Bulk Mark'
-                              </button>{" "}
-                              or assign statuses manually to activate lock.
-                            </p>
-                          </>
-                        ) : (
-                          <>
-                            <div className="flex items-center gap-2 text-emerald-600">
-                              <CheckCircle2 className="h-5 w-5" />
-                              <span className="font-black text-xs uppercase ">
-                                Ready for Finalization
-                              </span>
-                            </div>
-                            <p className="text-xs font-bold text-foreground uppercase mt-1">
-                              All {records.length} learners have been assigned
-                              an EOSY status.
-                            </p>
-                            <div className="flex items-center gap-1.5 mt-2 text-[10px] font-black uppercase text-emerald-600/70">
-                              <CheckCircle2 className="h-3 w-3" />
-                              System Check: No learner with Gen Ave &lt; 75 is
-                              marked as PROMOTED.
-                            </div>
-                          </>
-                        )}
-                      </div>
-
-                      <div className="hidden lg:block h-10 w-px bg-border" />
-
-                      <div className="hidden lg:flex flex-col">
-                        <span className="text-xs font-black uppercase  text-foreground">
-                          Roster Metrics
-                        </span>
-                        <span className="text-sm font-bold text-primary mt-0.5">
-                          Showing {visibleRecords.length} of {records.length}{" "}
-                          Learners
-                        </span>
-                      </div>
+                  <>
+                    <div className="flex items-center gap-3 min-w-0">
+                      {emptyRowsCount > 0 ? (
+                        <div className="flex items-center gap-2 text-red-600 min-w-0">
+                          <AlertCircle className="h-4 w-4 shrink-0" />
+                          <span className="font-black text-xs uppercase truncate">
+                            {emptyRowsCount} learners missing EOSY status
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-emerald-600">
+                          <CheckCircle2 className="h-4 w-4 shrink-0" />
+                          <span className="font-black text-xs uppercase">Ready for Finalization</span>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <HelpCircle className="h-3.5 w-3.5 text-emerald-600/60 cursor-help shrink-0" />
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-xs text-xs font-bold">
+                                All {records.length} learners have been assigned an EOSY status. System Check: No learner with Gen Ave &lt; 75 is marked as PROMOTED.
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      )}
+                      <span className="text-xs text-foreground/40 font-bold shrink-0">
+                        {visibleRecords.length}/{records.length} learners
+                      </span>
                     </div>
-
                     <Button
+                      size="sm"
                       className={cn(
-                        "h-14 px-10 font-black uppercase  text-sm transition-all shadow-xl",
+                        "h-9 px-4 font-black uppercase text-xs transition-all shrink-0",
                         emptyRowsCount > 0
-                          ? "bg-slate-200 text-foreground cursor-not-allowed shadow-none"
-                          : "bg-primary hover:scale-[1.02] shadow-primary/20",
+                          ? "bg-muted text-foreground/50 cursor-not-allowed shadow-none"
+                          : "bg-primary shadow-md shadow-primary/20",
                       )}
                       onClick={handleFinalizeClass}
                       disabled={records.length === 0 || emptyRowsCount > 0}>
-                      <Lock className="h-5 w-5 mr-3" />
+                      <Lock className="h-3.5 w-3.5 mr-1.5" />
                       Finalize & Lock Section
                     </Button>
-                  </div>
+                  </>
                 )}
               </div>
             )}

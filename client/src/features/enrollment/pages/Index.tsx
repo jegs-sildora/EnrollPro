@@ -15,6 +15,9 @@ import {
   School,
   UserPlus,
   LogOut,
+  RotateCcw,
+  Info,
+  MoreVertical,
   Loader2,
   Lock,
   Download,
@@ -81,6 +84,18 @@ import { StatusBadge } from "@/features/enrollment/components/StatusBadge";
 import { EnrollmentWorkflowTabs } from "@/features/enrollment/components/EnrollmentWorkflowTabs";
 import { BatchConfirmationModal } from "@/features/enrollment/components/BatchConfirmationModal";
 import { PinHandoverModal } from "@/features/enrollment/components/PinHandoverModal";
+import { LearnerExitModal } from "@/features/enrollment/components/LearnerExitModal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/shared/ui/tooltip";
 import { useSectioningStore } from "@/store/sectioning.slice";
 import { PaginationBar } from "@/shared/components/PaginationBar";
 import {
@@ -121,6 +136,11 @@ interface Application {
   enrollmentRecord?: {
     sectionId: number;
     section?: { id: number; name: string } | null;
+    transferOutDate?: string | null;
+    transferOutReason?: string | null;
+    dropOutDate?: string | null;
+    dropOutReason?: string | null;
+    sf1Remarks?: string | null;
   } | null;
   section?: { name: string } | null;
   studentPhoto?: string | null;
@@ -171,14 +191,6 @@ const TABLE_NO_RESULTS_MESSAGES: Record<EnrollmentSubMenu, string> = {
   OFFICIAL_ROSTERS: "No finalized class rosters found for this SY.",
   BOSY_FINALIZATION: "Review BOSY readiness and lockdown controls below.",
 };
-
-const UNENROLL_REASONS = [
-  "Data Entry Error",
-  "Transferred before opening of classes",
-  "Requested withdrawal by guardian",
-  "Duplicate enrollment record",
-  "Other registrar correction",
-] as const;
 
 const READING_PROFILE_LEVEL_OPTIONS: Array<{
   value: ReadingProfileLevel;
@@ -569,17 +581,17 @@ export default function Enrollment() {
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [scheduleStep, setScheduleStep] = useState<AssessmentStep | null>(null);
 
-  const [unenrollDialog, setUnenrollDialog] = useState<{
+  const [exitModal, setExitModal] = useState<{
     open: boolean;
     application: Application | null;
-    reason: string;
-    note: string;
-  }>({
-    open: false,
-    application: null,
-    reason: "",
-    note: "",
-  });
+    mode: "create" | "view";
+  }>({ open: false, application: null, mode: "create" });
+
+  const [restoreDialog, setRestoreDialog] = useState<{
+    open: boolean;
+    application: Application | null;
+  }>({ open: false, application: null });
+  const [restoring, setRestoring] = useState(false);
 
   const [readingProfileDialog, setReadingProfileDialog] = useState<{
     open: boolean;
@@ -1312,55 +1324,45 @@ export default function Enrollment() {
     ],
   );
 
-  const openUnenrollDialog = useCallback((app: Application) => {
-    setUnenrollDialog({
-      open: true,
-      application: app,
-      reason: "",
-      note: "",
-    });
+  const openExitModal = useCallback(
+    (app: Application, mode: "create" | "view" = "create") => {
+      setExitModal({ open: true, application: app, mode });
+    },
+    [],
+  );
+
+  const closeExitModal = useCallback(() => {
+    setExitModal({ open: false, application: null, mode: "create" });
   }, []);
 
-  const closeUnenrollDialog = useCallback(() => {
-    setUnenrollDialog({
-      open: false,
-      application: null,
-      reason: "",
-      note: "",
-    });
+  const openRestoreDialog = useCallback((app: Application) => {
+    setRestoreDialog({ open: true, application: app });
   }, []);
 
-  const handleUnenrollSubmit = useCallback(async () => {
-    if (!unenrollDialog.application) return;
+  const closeRestoreDialog = useCallback(() => {
+    setRestoreDialog({ open: false, application: null });
+  }, []);
 
-    if (!unenrollDialog.reason) {
-      sileo.error({
-        title: "Reason Required",
-        description: "Select a reason before un-enrolling this learner.",
-      });
-      return;
-    }
-
+  const handleRestoreConfirm = useCallback(async () => {
+    if (!restoreDialog.application) return;
+    setRestoring(true);
     try {
       await api.patch(
-        `/applications/${unenrollDialog.application.id}/unenroll`,
-        {
-          reason: unenrollDialog.reason,
-          note: unenrollDialog.note.trim() || undefined,
-        },
+        `/applications/${restoreDialog.application.id}/restore-status`,
       );
-
       sileo.success({
-        title: "Un-enrolled",
-        description: "Learner has been removed from the official roster.",
+        title: "Learner Restored",
+        description:
+          "The learner has been returned to active enrolled status.",
       });
-
-      closeUnenrollDialog();
-      await fetchData();
+      closeRestoreDialog();
+      void fetchData();
     } catch (err) {
       toastApiError(err as never);
+    } finally {
+      setRestoring(false);
     }
-  }, [closeUnenrollDialog, fetchData, unenrollDialog]);
+  }, [restoreDialog.application, closeRestoreDialog, fetchData]);
 
   const columns = useMemo<ColumnDef<Application>[]>(() => {
     const cols: ColumnDef<Application>[] = [];
@@ -1748,11 +1750,16 @@ export default function Enrollment() {
           />
         ),
         cell: ({ row }) => (
-          <div className="flex justify-center whitespace-nowrap">
+          <div className="flex flex-col items-center gap-1">
             <StatusBadge
               status={row.original.status}
-              className="text-sm font-bold"
+              className="text-xs font-bold"
             />
+            {row.original.applicantType === "LATE_ENROLLEE" && (
+              <Badge className="text-[9px] font-black uppercase bg-amber-100 text-amber-700 border border-amber-200 shadow-none px-2 py-0.5 h-auto">
+                LATE ENROLLEE
+              </Badge>
+            )}
           </div>
         ),
       });
@@ -1792,31 +1799,70 @@ export default function Enrollment() {
         const isSavingSection = savingSectionByApplicationId[app.id] === true;
 
         if (workflowView === "OFFICIAL_ROSTERS") {
+          const isTerminalExit = [
+            "TRANSFERRED_OUT",
+            "DROPPED_OUT",
+            "NO_LONGER_PARTICIPATING",
+          ].includes(app.status);
           return (
-            <div className="flex items-center justify-center gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                className="h-8 text-sm font-bold bg-primary/10 hover:bg-primary border-2 border-primary/20 hover:text-primary-foreground"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedId(app.id);
-                }}>
-                <Eye className="h-3 w-3 mr-1" /> View
-              </Button>
+            <div className="flex items-center justify-center gap-1">
+              {/* Primary: View Profile */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 hover:bg-primary/10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedId(app.id);
+                    }}>
+                    <Eye className="h-4 w-4" />
+                    <span className="sr-only">View Profile</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">View Profile</TooltipContent>
+              </Tooltip>
+
+              {/* Overflow: contextual admin actions */}
               {canMutate && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={isBosyLocked}
-                  className="h-8 text-sm font-bold border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openUnenrollDialog(app);
-                  }}>
-                  <LogOut className="h-3.5 w-3.5 mr-1" />
-                  Un-enrol
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 hover:bg-muted"
+                      onClick={(e) => e.stopPropagation()}>
+                      <MoreVertical className="h-4 w-4" />
+                      <span className="sr-only">More actions</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52">
+                    {isTerminalExit ? (
+                      <>
+                        <DropdownMenuItem
+                          className="gap-2 text-sm cursor-pointer"
+                          onClick={() => openExitModal(app, "view")}>
+                          <Info className="h-4 w-4 shrink-0" />
+                          View Exit Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="gap-2 text-sm cursor-pointer text-amber-600 focus:text-amber-600"
+                          onClick={() => openRestoreDialog(app)}>
+                          <RotateCcw className="h-4 w-4 shrink-0" />
+                          Restore Learner
+                        </DropdownMenuItem>
+                      </>
+                    ) : (
+                      <DropdownMenuItem
+                        className="gap-2 text-sm cursor-pointer"
+                        onClick={() => openExitModal(app)}>
+                        <LogOut className="h-4 w-4 shrink-0" />
+                        Process Exit
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </div>
           );
@@ -1921,10 +1967,10 @@ export default function Enrollment() {
     ensureSectionOptionsLoaded,
     handleAssignAndEnroll,
     openReadingProfileDialog,
-    openUnenrollDialog,
+    openExitModal,
+    openRestoreDialog,
     navigate,
     setSelectedId,
-    isBosyLocked,
     canMutate,
   ]);
 
@@ -3164,97 +3210,55 @@ export default function Enrollment() {
         </DialogContent>
       </Dialog>
 
+      <LearnerExitModal
+        open={exitModal.open}
+        mode={exitModal.mode}
+        application={exitModal.application}
+        onClose={closeExitModal}
+        onSuccess={() => {
+          closeExitModal();
+          void fetchData();
+        }}
+      />
+
+      {/* Restore Learner Confirmation Dialog */}
       <Dialog
-        open={unenrollDialog.open}
+        open={restoreDialog.open}
         onOpenChange={(open) => {
-          if (!open) {
-            closeUnenrollDialog();
-          }
+          if (!open) closeRestoreDialog();
         }}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold uppercase ">
-              Un-enrol Learner
+            <DialogTitle className="text-sm font-bold uppercase tracking-wide">
+              Restore Learner to Active Status?
             </DialogTitle>
-            <DialogDescription className="text-sm font-semibold">
-              Record the reason for removing this learner from the official
-              roster.
-            </DialogDescription>
           </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label className="text-sm font-bold uppercase ">Learner</Label>
-              <p className="text-sm font-semibold">
-                {unenrollDialog.application
-                  ? `${unenrollDialog.application.lastName}, ${unenrollDialog.application.firstName}`
-                  : "N/A"}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label
-                htmlFor="unenrollReason"
-                className="text-sm font-bold uppercase ">
-                Reason
-              </Label>
-              <Select
-                value={unenrollDialog.reason}
-                onValueChange={(value) => {
-                  setUnenrollDialog((prev) => ({ ...prev, reason: value }));
-                }}>
-                <SelectTrigger
-                  id="unenrollReason"
-                  className="h-10 text-sm font-bold">
-                  <SelectValue placeholder="Select reason" />
-                </SelectTrigger>
-                <SelectContent>
-                  {UNENROLL_REASONS.map((reason) => (
-                    <SelectItem
-                      key={reason}
-                      value={reason}>
-                      {reason}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label
-                htmlFor="unenrollNote"
-                className="text-sm font-bold uppercase ">
-                Note (Optional)
-              </Label>
-              <Textarea
-                id="unenrollNote"
-                value={unenrollDialog.note}
-                onChange={(event) => {
-                  setUnenrollDialog((prev) => ({
-                    ...prev,
-                    note: event.target.value,
-                  }));
-                }}
-                placeholder="Add extra details for audit context"
-                className="min-h-24 text-sm font-semibold"
-              />
-            </div>
+          <div className="py-2 space-y-3">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              You are about to reverse this learner's exit. This will clear
+              their exit date and reason, returning them to the active Official
+              Class Roster and resuming their inclusion in DepEd SF4 and grading
+              reports.
+            </p>
+            <p className="text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-300 rounded-md px-3 py-2">
+              Only do this to correct an administrative error.
+            </p>
           </div>
-
           <DialogFooter>
             <Button
               variant="outline"
               className="text-sm font-bold"
-              onClick={closeUnenrollDialog}>
+              onClick={closeRestoreDialog}
+              disabled={restoring}>
               Cancel
             </Button>
             <Button
-              className="text-sm font-bold bg-destructive hover:bg-destructive/90"
-              disabled={!unenrollDialog.reason}
+              className="text-sm font-bold bg-red-600 hover:bg-red-700 text-white"
               onClick={() => {
-                void handleUnenrollSubmit();
-              }}>
-              Confirm Un-enrol
+                void handleRestoreConfirm();
+              }}
+              disabled={restoring}>
+              {restoring ? "Restoring..." : "Confirm Restoration"}
             </Button>
           </DialogFooter>
         </DialogContent>

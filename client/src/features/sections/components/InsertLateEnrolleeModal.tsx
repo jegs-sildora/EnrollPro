@@ -68,6 +68,9 @@ export function InsertLateEnrolleeModal({
   const [selectedLearner, setSelectedLearner] =
     useState<UnsectionedLearner | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [officialEnrollmentDate, setOfficialEnrollmentDate] = useState(
+    () => format(new Date(), "yyyy-MM-dd"),
+  );
 
   const elapsedSchoolDays = useMemo(() => {
     if (!classOpeningDate) return 0;
@@ -102,6 +105,7 @@ export function InsertLateEnrolleeModal({
       void fetchPool();
       setSelectedLearner(null);
       setSearch("");
+      setOfficialEnrollmentDate(format(new Date(), "yyyy-MM-dd"));
     }
   }, [open, fetchPool]);
 
@@ -118,6 +122,7 @@ export function InsertLateEnrolleeModal({
     try {
       await api.post(`/sections/${sectionId}/inline-slot`, {
         enrollmentApplicationId: selectedLearner.id,
+        officialEnrollmentDate,
       });
 
       sileo.success({
@@ -128,15 +133,17 @@ export function InsertLateEnrolleeModal({
       onSuccess();
       onOpenChange(false);
     } catch (err: unknown) {
-      const message =
-        err && typeof err === "object" && "response" in err
-          ? (err as { response: { data?: { message?: string } } }).response.data
-              ?.message
-          : "An unexpected error occurred during manual sectioning.";
-      sileo.error({
-        title: "Slotting Failed",
-        description: message,
-      });
+      const axiosErr = err as { response?: { status?: number; data?: { message?: string; sectionName?: string } } };
+      const status = axiosErr?.response?.status;
+      const message = axiosErr?.response?.data?.message ?? "An unexpected error occurred during manual sectioning.";
+      if (status === 409) {
+        sileo.error({
+          title: "Section at Capacity",
+          description: `${message} — Use the capacity override option if administratively approved.`,
+        });
+      } else {
+        sileo.error({ title: "Slotting Failed", description: message });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -344,6 +351,23 @@ export function InsertLateEnrolleeModal({
                     grading microservice.
                   </p>
                 </div>
+              </div>
+
+              {/* Official Enrollment Date — required for SF10/dateSectioned */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold uppercase text-foreground">
+                  Official Enrollment Date *
+                </label>
+                <input
+                  type="date"
+                  value={officialEnrollmentDate}
+                  max={format(new Date(), "yyyy-MM-dd")}
+                  onChange={(e) => setOfficialEnrollmentDate(e.target.value)}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm font-bold shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+                <p className="text-[10px] text-amber-700 font-semibold">
+                  Used for SF10 dateSectioned. Backdating allowed for DepEd compliance.
+                </p>
               </div>
             </div>
           )}

@@ -7,6 +7,7 @@ import {
   approveSchema,
   rejectSchema,
   unenrollSchema,
+  processExitSchema,
   scheduleExamSchema,
   recordResultSchema,
   rescheduleExamSchema,
@@ -196,6 +197,19 @@ router.patch(
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   validate(unenrollSchema),
   ctrl.unenroll,
+);
+router.patch(
+  "/:id/process-exit",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  validate(processExitSchema),
+  ctrl.processExit,
+);
+router.patch(
+  "/:id/restore-status",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  ctrl.restoreStatus,
 );
 
 router.patch(

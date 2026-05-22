@@ -772,6 +772,8 @@ enum ApplicationStatus {
   TRANSFERRING_OUT
   TRANSFERRED_OUT
   DROPPED
+  DROPPED_OUT
+  NO_LONGER_PARTICIPATING
   FLAGGED_FOR_REGISTRAR
 
   @@map("application_status")

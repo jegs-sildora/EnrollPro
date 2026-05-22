@@ -384,11 +384,16 @@ export function getApplicationStatusColorClasses(
   if (s === "LINKED") {
     return "bg-violet-50 text-violet-700 border-violet-200";
   }
+  if (s === "DROPPED_OUT") {
+    return "bg-red-100 text-red-700 border-red-300 font-medium";
+  }
+  if (s === "NO_LONGER_PARTICIPATING") {
+    return "bg-amber-100 text-amber-800 border-amber-400 font-medium";
+  }
   if (
     s === "TRANSFERRING_OUT" ||
     s === "TRANSFERRED_OUT" ||
     s === "DROPPED" ||
-    s === "DROPPED_OUT" ||
     s === "TRANSFERRED"
   ) {
     return "bg-slate-200 text-slate-700 border-slate-300 font-medium";
@@ -489,6 +494,8 @@ export function formatApplicationStatus(
   if (s === "READY_FOR_ENROLLMENT") return "Ready for Enrollment";
   if (s === "TRANSFERRING_OUT") return "Transferring Out";
   if (s === "TRANSFERRED_OUT") return "Transferred Out";
+  if (s === "DROPPED_OUT") return "Dropped Out";
+  if (s === "NO_LONGER_PARTICIPATING") return "NLP";
 
   return s
     .replaceAll("_", " ")
