@@ -154,18 +154,23 @@ export const LoaderCore = ({
 
       {loadingStates.map((loadingState, index) => {
         const isCompleted =
-          index < displayedValue || (isFinalizing && index === finalStepIndex);
+          index < displayedValue ||
+          (isFinalizing && index === finalStepIndex);
         const isCurrent =
           !isFinalizing &&
           index === displayedValue &&
-          displayedValue < loadingStates.length;
+          displayedValue <= finalStepIndex;
         const isPending = index > displayedValue;
         const isFinalStep = index === finalStepIndex;
 
         return (
           <motion.div
             key={index}
-            animate={{ opacity: isPending ? 0.35 : 1 }}
+            animate={{
+              opacity: isPending ? 0.35 : 1,
+              y: isPending ? 3 : isCurrent ? 0 : -1,
+              scale: isPending ? 0.995 : 1,
+            }}
             transition={{ duration: 0.35, ease: "easeOut" }}
             className={cn(
               "flex items-center gap-3 rounded-xl border px-4 py-3.5 transition-colors",

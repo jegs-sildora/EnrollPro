@@ -7,7 +7,7 @@ import {
   CheckCircle2,
   LogOut,
 } from "lucide-react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import type { RowSelectionState } from "@tanstack/react-table";
 
@@ -21,7 +21,6 @@ import {
 } from "../api/bosy.api";
 import type { BOSYReadiness, BOSYQueueItem, JHSCompleter } from "../types";
 import { toastApiError } from "@/shared/hooks/useApiToast";
-import { sileo } from "sileo";
 import { useSettingsStore } from "@/store/settings.slice";
 import { Card, CardContent, CardHeader } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
@@ -34,6 +33,14 @@ import { JHSCompleterTable } from "../components/JHSCompleterTable";
 import { PaginationBar } from "@/shared/components/PaginationBar";
 import { BulkConfirmBar } from "../components/BulkConfirmBar";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
+import {
+  getReducedMotionProps,
+  listVariants,
+  panelTransition,
+  sectionVariants,
+  staggerTransition,
+} from "@/shared/lib/motion";
+import { lifecycleFeedback } from "@/shared/lib/lifecycle-feedback";
 
 export default function BOSYPage() {
   const { activeSchoolYearId, activeSchoolYearLabel, viewingSchoolYearId } =
@@ -88,6 +95,8 @@ export default function BOSYPage() {
   const [confirmingIds, setConfirmingIds] = useState<Set<number>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const shouldReduceMotion = useReducedMotion() ?? false;
+  const motionState = getReducedMotionProps(shouldReduceMotion);
 
   const fetchReadiness = useCallback(async () => {
     if (!syId) return;
@@ -104,13 +113,17 @@ export default function BOSYPage() {
 
   const handleSync = async () => {
     if (!syId) return;
+    lifecycleFeedback.progress(
+      "Synchronizing BOSY Queue",
+      "Refreshing continuing-learner records for the active academic year.",
+    );
     setSyncing(true);
     try {
       const res = await syncBOSYQueue(syId);
-      sileo.success({
-        title: "Synchronization Complete",
-        description: `Successfully repaired ${res.created} learner record(s).`,
-      });
+      lifecycleFeedback.success(
+        "BOSY Synchronization Complete",
+        `Successfully repaired ${res.created} learner record(s).`,
+      );
       void handleRefresh();
     } catch (e) {
       toastApiError(e as never);
@@ -227,13 +240,17 @@ export default function BOSYPage() {
   };
 
   const handleConfirmSingle = async (applicationId: number) => {
+    lifecycleFeedback.progress(
+      "Confirming Learner Return",
+      "Submitting the learner record for BOSY sectioning readiness.",
+    );
     setConfirmingIds((prev) => new Set(prev).add(applicationId));
     try {
       await confirmReturn(applicationId);
-      sileo.success({
-        title: "Return Confirmed",
-        description: `Application confirmed for sectioning.`,
-      });
+      lifecycleFeedback.success(
+        "Learner Return Confirmed",
+        "Application confirmed for sectioning.",
+      );
       setPendingItems((prev) =>
         prev.filter((item) => item.applicationId !== applicationId),
       );
@@ -258,6 +275,10 @@ export default function BOSYPage() {
 
   const handleBulkConfirm = async () => {
     if (!syId || selectedIds.length === 0) return;
+    lifecycleFeedback.progress(
+      "Processing Bulk Confirmation",
+      "Applying BOSY confirmation to selected learner records.",
+    );
     setBulkLoading(true);
     try {
       const result = await bulkConfirm({
@@ -265,20 +286,20 @@ export default function BOSYPage() {
         schoolYearId: syId,
       });
       if (result.confirmed.length > 0) {
-        sileo.success({
-          title: "Bulk Confirm Complete",
-          description: `${result.confirmed.length} learner(s) confirmed for sectioning.`,
-        });
+        lifecycleFeedback.success(
+          "Bulk Confirmation Completed",
+          `${result.confirmed.length} learner(s) confirmed for sectioning.`,
+        );
         setPendingItems((prev) =>
           prev.filter((item) => !result.confirmed.includes(item.applicationId)),
         );
         setPendingTotal((prev) => Math.max(0, prev - result.confirmed.length));
       }
       if (result.failed.length > 0) {
-        sileo.warning({
-          title: "Some items failed",
-          description: `${result.failed.length} application(s) could not be confirmed.`,
-        });
+        lifecycleFeedback.warning(
+          "Partial Confirmation Result",
+          `${result.failed.length} application(s) could not be confirmed.`,
+        );
       }
       setRowSelection({});
       void fetchReadiness();
@@ -313,7 +334,11 @@ export default function BOSYPage() {
   ];
 
   return (
-    <div className="flex flex-col w-full min-w-0 overflow-hidden space-y-4 sm:space-y-6">
+    <motion.div
+      className="flex flex-col w-full min-w-0 overflow-hidden space-y-4 sm:space-y-6"
+      variants={listVariants}
+      transition={staggerTransition}
+      {...motionState}>
       {/* CONDITIONALLY_PROMOTED blocker warning */}
       {readiness && readiness.irregularBlockerCount > 0 && (
         <motion.div
@@ -334,7 +359,10 @@ export default function BOSYPage() {
       )}
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <motion.div
+        className="flex flex-col md:flex-row md:items-center justify-between gap-4"
+        variants={sectionVariants}
+        transition={panelTransition}>
         <div>
           <h1 className="text-3xl font-bold">BOSY Confirmation</h1>
           <p className="text-sm font-bold">
@@ -384,7 +412,7 @@ export default function BOSYPage() {
             />
           </Button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Readiness stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -658,6 +686,6 @@ export default function BOSYPage() {
           onClear={() => setRowSelection({})}
         />
       )}
-    </div>
+    </motion.div>
   );
 }

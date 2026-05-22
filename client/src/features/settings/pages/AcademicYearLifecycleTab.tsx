@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   CardHeader,
@@ -8,7 +8,6 @@ import {
   CardFooter,
 } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import {
   Dialog,
@@ -35,13 +34,25 @@ import {
   History,
   ShieldAlert,
   RotateCcw,
+  AlertCircle,
 } from "lucide-react";
 import { useSettingsStore } from "@/store/settings.slice";
 import api from "@/shared/api/axiosInstance";
-import { sileo } from "sileo";
+import { motion, useReducedMotion } from "motion/react";
 import { format } from "date-fns";
 import { cn } from "@/shared/lib/utils";
 import { AdminPinInput } from "@/shared/components/AdminPinInput";
+import EmergencyEosyUnlockModal from "../components/EmergencyEosyUnlockModal";
+import ExecuteRolloverModal from "../components/ExecuteRolloverModal";
+import {
+  getReducedMotionProps,
+  listVariants,
+  panelTransition,
+  sectionVariants,
+  staggerTransition,
+} from "@/shared/lib/motion";
+import { lifecycleFeedback } from "@/shared/lib/lifecycle-feedback";
+import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 
 const UNLOCK_CATEGORIES = [
   "Division Office Mandate / Extension",
@@ -51,10 +62,12 @@ const UNLOCK_CATEGORIES = [
 ];
 
 export default function AcademicYearLifecycleTab() {
-  const { activeSchoolYearLabel, systemStatus, bosyLockedAt, setSettings } =
+  const { activeSchoolYearLabel, activeSchoolYearStatus, systemStatus, bosyLockedAt, activeSchoolYearId, setSettings, setViewingSY } =
     useSettingsStore();
+  const { ayId } = useSchoolYearContext();
 
   const [isUnlockModalOpen, setIsUnlockModalOpen] = useState(false);
+  const [isEosyUnlockModalOpen, setIsEosyUnlockModalOpen] = useState(false);
 
   // --- Unlock State ---
   const [unlockCategory, setUnlockCategory] = useState("");
@@ -69,80 +82,102 @@ export default function AcademicYearLifecycleTab() {
     isUnlockPinValid;
 
   const [isUnlocking, setIsUnlocking] = useState(false);
+  const [isEosyFinalized, setIsEosyFinalized] = useState(false);
 
-  const isLocked = systemStatus === "BOSY_LOCKED";
-  const isEosyFinalized = systemStatus === "ARCHIVED";
+  type LifecyclePhase = "ENROLLMENT" | "ACADEMIC" | "ROLLOVER_READY";
+  const resolvedLifecycleStatus = activeSchoolYearStatus ?? systemStatus;
+  const currentPhase: LifecyclePhase =
+    isEosyFinalized && resolvedLifecycleStatus !== "ARCHIVED"
+      ? "ROLLOVER_READY"
+      : resolvedLifecycleStatus === "BOSY_LOCKED" || resolvedLifecycleStatus === "ARCHIVED"
+      ? "ACADEMIC"
+      : "ENROLLMENT";
+  const isLocked = currentPhase !== "ENROLLMENT";
+  const shouldReduceMotion = useReducedMotion() ?? false;
+  const motionState = getReducedMotionProps(shouldReduceMotion);
 
-  // --- Rollover State ---
-  const [isRolloverModalOpen, setIsRolloverModalOpen] = useState(false);
-  const [rolloverOpeningDate, setRolloverOpeningDate] = useState("");
-  const [isRollingOver, setIsRollingOver] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
 
-  const handleRollover = async () => {
-    if (!rolloverOpeningDate) {
-      sileo.error({
-        title: "Date Required",
-        description: "Please enter the class opening date for the new school year.",
-      });
+    const refreshSettings = async () => {
+      try {
+        const pubRes = await api.get("/settings/public");
+        if (!cancelled) {
+          setSettings(pubRes.data);
+        }
+      } catch {
+        // Keep the current store values if the refresh fails.
+      }
+    };
+
+    void refreshSettings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeSchoolYearId, setSettings]);
+
+  useEffect(() => {
+    if (!ayId) {
+      setIsEosyFinalized(false);
       return;
     }
-    setIsRollingOver(true);
-    try {
-      await api.post("/school-years/rollover", {
-        classOpeningDate: rolloverOpeningDate,
-      });
-      sileo.success({
-        title: "School Year Rolled Over",
-        description: "The new school year has been created successfully.",
-      });
-      const pubRes = await api.get("/settings/public");
-      setSettings(pubRes.data);
-      setIsRolloverModalOpen(false);
-      setRolloverOpeningDate("");
-    } catch (err: unknown) {
-      const message =
-        err && typeof err === "object" && "response" in err
-          ? (err as { response: { data?: { message?: string } } }).response.data
-              ?.message
-          : err instanceof Error
-            ? err.message
-            : "Failed to initiate school year rollover.";
-      sileo.error({
-        title: "Rollover Failed",
-        description: message || "An unexpected error occurred.",
-      });
-    } finally {
-      setIsRollingOver(false);
-    }
-  };
+
+    let cancelled = false;
+
+    const refreshExportLock = async () => {
+      try {
+        const res = await api.get(`/eosy/school-year/${ayId}/export-lock`);
+        if (!cancelled) {
+          setIsEosyFinalized(Boolean(res.data?.schoolYearFinalized));
+        }
+      } catch {
+        if (!cancelled) {
+          setIsEosyFinalized(false);
+        }
+      }
+    };
+
+    void refreshExportLock();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ayId]);
+
+  // --- Rollover State ---
+  const [isExecuteRolloverOpen, setIsExecuteRolloverOpen] = useState(false);
 
   const handleUnlockBosy = async () => {
     if (unlockCategory === "") {
-      sileo.error({
-        title: "Category Required",
-        description: "Please select an authorization category.",
-      });
+      lifecycleFeedback.warning(
+        "Category Required",
+        "Please select an authorization category.",
+      );
       return;
     }
 
     if (unlockJustification.length < 10) {
-      sileo.error({
-        title: "Justification Required",
-        description:
-          "Please provide a detailed justification for this emergency action.",
-      });
+      lifecycleFeedback.warning(
+        "Justification Required",
+        "Please provide a detailed justification for this emergency action.",
+      );
       return;
     }
 
     if (!isUnlockPinValid) {
       setUnlockPinTouched(true);
-      sileo.error({
-        title: "PIN Required",
-        description: "Please enter your 6-digit Admin PIN to authorize.",
-      });
+      lifecycleFeedback.warning(
+        "PIN Required",
+        "Please enter your 6-digit Admin PIN to authorize.",
+      );
       return;
     }
 
+    lifecycleFeedback.progress(
+      "Processing BOSY Unlock",
+      "Reopening the enrollment phase for controlled operational recovery.",
+    );
     setIsUnlocking(true);
     try {
       const res = await api.post("/admin/system/unlock-bosy", {
@@ -150,10 +185,7 @@ export default function AcademicYearLifecycleTab() {
         pin: unlockPin,
       });
 
-      sileo.success({
-        title: "BOSY Unlocked",
-        description: res.data.message,
-      });
+      lifecycleFeedback.success("BOSY Unlock Completed", res.data.message);
 
       // Refresh global settings
       const pubRes = await api.get("/settings/public");
@@ -172,18 +204,23 @@ export default function AcademicYearLifecycleTab() {
           : err instanceof Error
             ? err.message
             : "Failed to unlock BOSY.";
-      sileo.error({
-        title: "Unlock Failed",
-        description: message || "An unexpected error occurred.",
-      });
+      lifecycleFeedback.error(
+        "BOSY Unlock Failed",
+        message || "An unexpected error occurred.",
+      );
     } finally {
       setIsUnlocking(false);
     }
   };
 
   return (
-    <div className="space-y-6 max-w-7xl">
-      <Card className={cn("bg-white shadow-sm")}>
+    <motion.div
+      className="space-y-6 max-w-7xl"
+      variants={listVariants}
+      transition={staggerTransition}
+      {...motionState}>
+      <motion.div variants={sectionVariants} transition={panelTransition}>
+      <Card className={cn("shadow-sm", isLocked ? "bg-slate-50" : "bg-white")}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="space-y-1">
@@ -208,42 +245,47 @@ export default function AcademicYearLifecycleTab() {
               </CardDescription>
             </div>
             <div
-              className={`px-4 py-1.5 rounded-full text-xs font-black uppercase  border ${
-                isLocked
-                  ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                  : "bg-amber-100 text-primary border-amber-200"
-              }`}>
-              {systemStatus?.replace("_", " ")}
+              className={cn(
+                "px-4 py-1.5 rounded-full text-xs font-black uppercase border",
+                currentPhase === "ROLLOVER_READY"
+                  ? "bg-slate-100 text-slate-600 border-slate-200"
+                  : currentPhase === "ACADEMIC"
+                    ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                    : "bg-amber-100 text-primary border-amber-200",
+              )}>
+              {currentPhase === "ROLLOVER_READY"
+                ? "EOSY FINALIZED"
+                : currentPhase === "ACADEMIC"
+                  ? "BOSY LOCKED"
+                  : "ENROLLMENT OPEN"}
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {isLocked ? (
-            <Alert className="bg-emerald-100/50 border-emerald-200 text-emerald-900">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              <AlertTitle className="font-bold">
-                Academic Phase Active
-              </AlertTitle>
+          {currentPhase === "ENROLLMENT" ? (
+            <Alert className="bg-amber-100/50 border-amber-200 text-primary">
+              <AlertTitle className="font-bold">Enrollment Phase Active</AlertTitle>
               <AlertDescription className="text-sm font-medium">
-                Official enrollment has ended. SF1 rosters are finalized. New
-                registrations are now classified as "Late Enrollees".
+                The system is currently in the Enrollment Phase. Registrars can
+                perform batch sectioning and mass verifications. Locking BOSY
+                will finalize the official learner rosters (SF1).
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Alert className="bg-slate-50 border-slate-200 text-slate-700">
+              <Lock className="h-4 w-4 text-slate-400" />
+              <AlertTitle className="font-bold text-slate-600">
+                BOSY was finalized. Intake is closed.
+              </AlertTitle>
+              <AlertDescription className="text-sm font-medium text-slate-500">
+                Official learner rosters (SF1) have been generated. New
+                registrations are now closed for this academic year.
                 {bosyLockedAt && (
                   <div className="mt-2 flex items-center gap-1.5 text-xs uppercase font-black opacity-70">
                     <History className="h-3 w-3" />
                     Locked on {format(new Date(bosyLockedAt), "PPP p")}
                   </div>
                 )}
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <Alert className="bg-amber-100/50 border-amber-200 text-primary">
-              <AlertTitle className="font-bold">
-                Enrollment Phase Active
-              </AlertTitle>
-              <AlertDescription className="text-sm font-medium">
-                The system is currently in the Enrollment Phase. Registrars can
-                perform batch sectioning and mass verifications. Locking BOSY
-                will finalize the official learner rosters (SF1).
               </AlertDescription>
             </Alert>
           )}
@@ -386,29 +428,53 @@ export default function AcademicYearLifecycleTab() {
           )}
         </CardFooter>
       </Card>
+      </motion.div>
 
-      {isEosyFinalized && (
-        <Card className="bg-white shadow-sm border-emerald-200">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <RotateCcw className="h-5 w-5 text-emerald-600" />
-                  School Year Rollover
-                </CardTitle>
-                <CardDescription>
-                  Active School Year:{" "}
-                  <span className="font-bold text-foreground">
-                    {activeSchoolYearLabel}
-                  </span>
-                </CardDescription>
-              </div>
-              <div className="px-4 py-1.5 rounded-full text-xs font-black uppercase border bg-emerald-100 text-emerald-700 border-emerald-200">
-                READY
-              </div>
+      <Card
+        className={cn(
+          "shadow-sm",
+          currentPhase === "ROLLOVER_READY"
+            ? "bg-white border-emerald-200"
+            : "bg-slate-50/50 border-slate-200",
+        )}>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <CardTitle
+                className={cn(
+                  "text-xl flex items-center gap-2",
+                  currentPhase !== "ROLLOVER_READY" && "text-slate-500",
+                )}>
+                <RotateCcw
+                  className={cn(
+                    "h-5 w-5",
+                    currentPhase === "ROLLOVER_READY"
+                      ? "text-emerald-600"
+                      : "text-slate-400",
+                  )}
+                />
+                School Year Rollover
+              </CardTitle>
+              <CardDescription>
+                Active School Year:{" "}
+                <span className="font-bold text-foreground">
+                  {activeSchoolYearLabel}
+                </span>
+              </CardDescription>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            <div
+              className={cn(
+                "px-4 py-1.5 rounded-full text-xs font-black uppercase border",
+                currentPhase === "ROLLOVER_READY"
+                  ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                  : "bg-slate-100 text-slate-500 border-slate-200",
+              )}>
+              {currentPhase === "ROLLOVER_READY" ? "READY" : "LOCKED"}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {currentPhase === "ROLLOVER_READY" ? (
             <Alert className="bg-emerald-100/50 border-emerald-200 text-emerald-900">
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
               <AlertTitle className="font-bold">EOSY Finalized — Ready for Rollover</AlertTitle>
@@ -417,87 +483,59 @@ export default function AcademicYearLifecycleTab() {
                 the current school year and create the next one with the carried-over learner population.
               </AlertDescription>
             </Alert>
-          </CardContent>
-          <CardFooter className="bg-white border-t p-6">
-            <Dialog
-              open={isRolloverModalOpen}
-              onOpenChange={(open) => {
-                setIsRolloverModalOpen(open);
-                if (!open) setRolloverOpeningDate("");
-              }}>
-              <DialogTrigger asChild>
-                <Button className="font-black uppercase bg-emerald-600 hover:bg-emerald-700 text-white border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 shadow-lg">
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  Initiate School Year Rollover
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[480px]">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl font-black uppercase text-primary flex items-center gap-2">
-                    Confirm School Year Rollover
-                  </DialogTitle>
-                  <DialogDescription className="font-bold text-foreground pt-2">
-                    This action will archive the current school year and prepare the next one.
-                  </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-6 py-4">
-                  <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 p-4 rounded-lg space-y-2">
-                    <p className="text-sm font-black uppercase">Rollover will:</p>
-                    <ul className="text-[11px] font-bold leading-relaxed opacity-90 space-y-1 list-disc pl-4">
-                      <li>Archive the current school year ({activeSchoolYearLabel})</li>
-                      <li>Create a new Active school year with the specified opening date</li>
-                      <li>Carry over eligible learners and section structure</li>
-                    </ul>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="rollover-date"
-                      className="text-xs font-black uppercase text-primary">
-                      New School Year Class Opening Date (Required)
-                    </Label>
-                    <Input
-                      id="rollover-date"
-                      type="date"
-                      value={rolloverOpeningDate}
-                      onChange={(e) => setRolloverOpeningDate(e.target.value)}
-                      className="font-bold border-primary/20 focus-visible:ring-primary"
-                    />
-                  </div>
-                </div>
-
-                <DialogFooter className="gap-2 sm:gap-0">
-                  <Button
-                    variant="ghost"
-                    onClick={() => setIsRolloverModalOpen(false)}
-                    disabled={isRollingOver}
-                    className="font-bold">
-                    Cancel
-                  </Button>
-                  <Button
-                    className={cn(
-                      "font-black uppercase transition-all px-6 shrink-0",
-                      !rolloverOpeningDate || isRollingOver
-                        ? "bg-slate-200 text-slate-500 cursor-not-allowed"
-                        : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1",
-                    )}
-                    onClick={handleRollover}
-                    disabled={!rolloverOpeningDate || isRollingOver}>
-                    {isRollingOver ? (
-                      "Processing..."
-                    ) : (
-                      <>
-                        <RotateCcw className="mr-2 h-4 w-4" /> Confirm Rollover
-                      </>
-                    )}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+          ) : (
+            <Alert className="bg-amber-50 border-amber-200 text-amber-900">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertTitle className="font-bold">Rollover Locked</AlertTitle>
+              <AlertDescription className="text-sm font-medium">
+                All class sections must complete End of School Year (EOSY) finalization before
+                rollover can be initiated.
+              </AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+          <CardFooter className={cn("border-t p-6", currentPhase === "ROLLOVER_READY" ? "bg-white" : "bg-slate-50/50")}>
+            {currentPhase !== "ROLLOVER_READY" ? null : (
+            <div className="flex flex-wrap items-center gap-3">
+            <Button
+              className="font-black uppercase bg-emerald-600 hover:bg-emerald-700 text-white border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 shadow-lg"
+              onClick={() => setIsExecuteRolloverOpen(true)}>
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Initiate School Year Rollover
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setIsEosyUnlockModalOpen(true)}
+              className="font-black uppercase border-red-600 text-red-600 hover:bg-red-50 hover:text-red-700">
+              <ShieldAlert className="mr-2 h-4 w-4" />
+              Emergency EOSY Unlock
+            </Button>
+            </div>
+            )}
           </CardFooter>
         </Card>
-      )}
-    </div>
+
+      <EmergencyEosyUnlockModal
+        open={isEosyUnlockModalOpen}
+        schoolYearId={activeSchoolYearId}
+        schoolYearLabel={activeSchoolYearLabel}
+        onOpenChange={setIsEosyUnlockModalOpen}
+        onSuccess={async () => {
+          const pubRes = await api.get("/settings/public");
+          setSettings(pubRes.data);
+        }}
+      />
+      <ExecuteRolloverModal
+        open={isExecuteRolloverOpen}
+        activeSchoolYearLabel={activeSchoolYearLabel}
+        onOpenChange={setIsExecuteRolloverOpen}
+        onSuccess={async () => {
+          const pubRes = await api.get("/settings/public");
+          setSettings(pubRes.data);
+          // Clear any viewing override so the SY switcher reflects the new active year.
+          setViewingSY(null, null, null);
+        }}
+      />
+    </motion.div>
   );
 }

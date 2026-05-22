@@ -21,6 +21,7 @@ import {
   School,
   ArrowRightLeft,
   ClipboardList,
+  Check,
 } from "lucide-react";
 
 import {
@@ -208,6 +209,68 @@ function SYSwitcher() {
   const currentLabel = currentYear?.yearLabel ?? "No School Year Set";
   const isOverride =
     viewingSchoolYearId && viewingSchoolYearId !== activeSchoolYearId;
+  const currentAcademicYear = years.find((y) => y.id === activeSchoolYearId) ?? null;
+  const archivedYears = years.filter((y) => y.status === "ARCHIVED");
+
+  const getStatusBadgeMeta = (status?: string | null) => {
+    if (status === "ENROLLMENT_OPEN") {
+      return {
+        label: "ENROLLMENT",
+        className: "bg-blue-100 text-blue-700",
+      };
+    }
+
+    if (status === "BOSY_LOCKED" || status === "ACTIVE") {
+      return {
+        label: "ACTIVE",
+        className: "bg-emerald-100 text-emerald-700",
+      };
+    }
+
+    if (status === "EOSY_PROCESSING") {
+      return {
+        label: "EOSY CLOSING",
+        className: "bg-amber-100 text-amber-700",
+      };
+    }
+
+    if (status === "ARCHIVED") {
+      return {
+        label: "ARCHIVED",
+        className: "bg-slate-100 text-slate-600",
+      };
+    }
+
+    return {
+      label: "ACTIVE",
+      className: "bg-emerald-100 text-emerald-700",
+    };
+  };
+
+  const renderStatusBadge = (status?: string | null) => {
+    const badge = getStatusBadgeMeta(status);
+    return (
+      <span
+        className={cn(
+          "text-[10px] font-bold px-2 py-0.5 rounded-full",
+          badge.className,
+        )}>
+        {badge.label}
+      </span>
+    );
+  };
+
+  const handleSelectYear = (y: SchoolYearItem) => {
+    setViewingSY(
+      y.id === activeSchoolYearId ? null : y.id,
+      y.id === activeSchoolYearId ? null : y.status,
+      y.id === activeSchoolYearId ? null : y.yearLabel,
+    );
+    setOpen(false);
+    // Trigger a full reload to ensure all components re-fetch data
+    // using the new school year context header.
+    setTimeout(() => window.location.reload(), 50);
+  };
 
   // Don't return null if initialized but empty, show the "No School Year Set" button
   // unless there are absolutely no years in the database and we are not in an active year.
@@ -222,7 +285,7 @@ function SYSwitcher() {
               variant="outline"
               size="sm"
               className={cn(
-                "h-8 gap-1.5 text-xs font-bold transition-all duration-200 border-2",
+                "h-8 gap-2 text-xs font-bold transition-all duration-200 border",
                 currentYear?.status === "ARCHIVED"
                   ? "border-slate-300 bg-slate-50"
                   : "border-border",
@@ -243,13 +306,7 @@ function SYSwitcher() {
                 )}>
                 {currentLabel}
               </span>
-              {currentYear?.status === "ARCHIVED" && (
-                <Badge
-                  variant="outline"
-                  className="h-4 px-1 text-[8px] font-black uppercase bg-slate-200 text-slate-700 border-slate-300">
-                  ARCHIVED
-                </Badge>
-              )}
+              {renderStatusBadge(currentYear?.status)}
               <ChevronsUpDown className="size-3 opacity-50" />
             </Button>
           </TooltipTrigger>
@@ -265,46 +322,59 @@ function SYSwitcher() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute right-0 top-full z-50 mt-1 min-w-45 rounded-md border border-border bg-popover font-bold shadow-lg overflow-hidden">
-            <div className="py-1">
-              {years.map((y) => (
+            className="absolute right-0 top-full z-50 mt-1 w-72 rounded-md border border-border bg-popover font-bold shadow-lg overflow-hidden">
+            <div className="py-2">
+              <div className="text-xs font-bold text-slate-500 mb-2 px-2 uppercase tracking-wide">
+                Current School Year
+              </div>
+              {currentAcademicYear ? (
                 <button
-                  key={y.id}
-                  onClick={() => {
-                    setViewingSY(
-                      y.id === activeSchoolYearId ? null : y.id,
-                      y.id === activeSchoolYearId ? null : y.status,
-                      y.id === activeSchoolYearId ? null : y.yearLabel,
-                    );
-                    setOpen(false);
-                    // Trigger a full reload to ensure all components re-fetch data
-                    // using the new school year context header.
-                    setTimeout(() => window.location.reload(), 50);
-                  }}
-                  className={`flex w-full items-center gap-2 px-3 py-2 text-xs transition-colors ${
-                    y.id === currentId
-                      ? "bg-accent text-accent-foreground"
-                      : "hover:bg-sidebar-accent hover:text-accent-foreground"
-                  }`}>
-                  <span className="flex-1 text-left">{y.yearLabel}</span>
-                  <span
-                    className={cn(
-                      "rounded px-1.5 py-0.5 text-[0.625rem] font-black uppercase",
-                      y.status === "ACTIVE"
-                        ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                        : y.status === "UPCOMING"
-                          ? "bg-blue-100 text-blue-800 border border-blue-200"
-                          : y.status === "DRAFT"
-                            ? "bg-amber-100 text-amber-800 border border-amber-200"
-                            : y.status === "ARCHIVED" ||
-                                y.status === "BOSY_LOCKED"
-                              ? "bg-slate-200 text-slate-800 border border-slate-300"
-                              : "bg-gray-100 text-gray-800 border border-gray-200",
-                    )}>
-                    {y.status === "BOSY_LOCKED" ? "BOSY LOCKED" : y.status}
+                  key={currentAcademicYear.id}
+                  onClick={() => handleSelectYear(currentAcademicYear)}
+                  className={cn(
+                    "flex w-full items-center gap-2 px-3 py-2 text-xs transition-colors",
+                    currentAcademicYear.id === currentId
+                      ? "bg-slate-100 font-bold text-slate-900"
+                      : "hover:bg-slate-50 text-slate-700",
+                  )}>
+                  <span className="w-4 text-slate-600">
+                    {currentAcademicYear.id === currentId ? (
+                      <Check className="h-3.5 w-3.5" />
+                    ) : null}
                   </span>
+                  <span className="flex-1 text-left">{currentAcademicYear.yearLabel}</span>
+                  {renderStatusBadge(currentAcademicYear.status)}
                 </button>
-              ))}
+              ) : (
+                <div className="px-3 py-2 text-xs text-slate-500">No active academic year found.</div>
+              )}
+
+              <div className="border-b border-slate-100 my-2" />
+
+              <div className="text-xs font-semibold text-slate-500 mb-2 px-2 uppercase tracking-wide">
+                Archived Records
+              </div>
+              {archivedYears.length > 0 ? (
+                archivedYears.map((y) => (
+                  <button
+                    key={y.id}
+                    onClick={() => handleSelectYear(y)}
+                    className={cn(
+                      "flex w-full items-center gap-2 px-3 py-2 text-xs transition-colors",
+                      y.id === currentId
+                        ? "bg-slate-50 font-semibold text-slate-900"
+                        : "hover:bg-slate-50 text-slate-700",
+                    )}>
+                    <span className="w-4 text-slate-600">
+                      {y.id === currentId ? <Check className="h-3.5 w-3.5" /> : null}
+                    </span>
+                    <span className="flex-1 text-left">{y.yearLabel}</span>
+                    {renderStatusBadge(y.status)}
+                  </button>
+                ))
+              ) : (
+                <div className="px-3 py-2 text-xs text-slate-500">No archived records available.</div>
+              )}
             </div>
           </motion.div>
         )}

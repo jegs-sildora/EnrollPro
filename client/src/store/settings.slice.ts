@@ -21,6 +21,7 @@ export interface SettingsState {
   selectedAccentHsl: string | null;
   activeSchoolYearId: number | null;
   activeSchoolYearLabel: string | null;
+  activeSchoolYearStatus: string | null;
   earlyRegOpenDate: string | null;
   earlyRegCloseDate: string | null;
   classOpeningDate: string | null;
@@ -80,6 +81,7 @@ export const useSettingsStore = create<SettingsState>()(
       selectedAccentHsl: null,
       activeSchoolYearId: null,
       activeSchoolYearLabel: null,
+      activeSchoolYearStatus: null,
       earlyRegOpenDate: null,
       earlyRegCloseDate: null,
       classOpeningDate: null,

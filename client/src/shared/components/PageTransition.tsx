@@ -1,25 +1,6 @@
-import { motion, type Easing } from "motion/react";
+import { motion } from "motion/react";
 import type { ReactNode, ComponentProps } from "react";
-
-const pageVariants = {
-  initial: {
-    opacity: 0,
-    y: 10,
-  },
-  animate: {
-    opacity: 1,
-    y: 0,
-  },
-  exit: {
-    opacity: 0,
-    y: -10,
-  },
-};
-
-const pageTransition = {
-  duration: 0.2,
-  ease: "easeOut" as Easing,
-};
+import { pageTransition, pageVariants } from "@/shared/lib/motion";
 
 interface PageTransitionProps extends ComponentProps<typeof motion.div> {
   children: ReactNode;

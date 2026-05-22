@@ -591,31 +591,40 @@ export async function unlockSchoolYearEosy(
 ) {
   try {
     const { schoolYearId, pin, justification } = req.body;
-    const syId = parseInt(String(schoolYearId));
-
-    if (!Number.isInteger(syId)) {
-      throw new AppError(400, "A valid schoolYearId is required.");
-    }
+    const requestedSchoolYearId = Number.isInteger(parseInt(String(schoolYearId)))
+      ? parseInt(String(schoolYearId))
+      : null;
 
     const adminPin = process.env.ADMIN_BOSY_LOCK_PIN || "123456";
     if (pin !== adminPin) {
       throw new AppError(403, "Invalid Security PIN for emergency unlock.");
     }
 
-    if (!justification || justification.length < 10) {
+    if (!justification || String(justification).trim().length < 10) {
       throw new AppError(
         400,
         "A valid justification (min 10 characters) is required for emergency archive unlock.",
       );
     }
 
-    const schoolYear = await prisma.schoolYear.findUnique({
-      where: { id: syId },
+    // Always target the latest archived/finalized school year for emergency unlock.
+    // This prevents stale client state from unlocking an older school year.
+    const schoolYear = await prisma.schoolYear.findFirst({
+      where: {
+        status: "ARCHIVED",
+        isEosyFinalized: true,
+      },
+      orderBy: {
+        id: "desc",
+      },
       select: { id: true, yearLabel: true, isEosyFinalized: true },
     });
 
     if (!schoolYear) {
-      throw new AppError(404, "School year not found.");
+      throw new AppError(
+        404,
+        "No archived/finalized school year found to unlock.",
+      );
     }
 
     if (!schoolYear.isEosyFinalized) {
@@ -623,7 +632,7 @@ export async function unlockSchoolYearEosy(
     }
 
     const updated = await prisma.schoolYear.update({
-      where: { id: syId },
+      where: { id: schoolYear.id },
       data: {
         isEosyFinalized: false,
         status: "BOSY_LOCKED", // Revert to BOSY_LOCKED so teachers can correct records
@@ -633,13 +642,13 @@ export async function unlockSchoolYearEosy(
     await auditLog({
       userId: req.user!.userId,
       actionType: "SCHOOL_YEAR_EMERGENCY_UNLOCK",
-      description: `Admin triggered EMERGENCY EOSY UNLOCK for S.Y. ${updated.yearLabel}. Justification: ${justification}`,
+      description: `Admin triggered EMERGENCY EOSY UNLOCK for latest archived S.Y. ${updated.yearLabel}${requestedSchoolYearId && requestedSchoolYearId !== updated.id ? ` (requested ${requestedSchoolYearId}, system applied ${updated.id})` : ""}. Justification: ${justification}`,
       subjectType: "SchoolYear",
-      recordId: syId,
+      recordId: updated.id,
       req,
     });
 
-    const state = await getSchoolYearExportLockState(syId);
+    const state = await getSchoolYearExportLockState(updated.id);
     res.json({ schoolYear: updated, exportLock: state });
   } catch (error) {
     next(error);

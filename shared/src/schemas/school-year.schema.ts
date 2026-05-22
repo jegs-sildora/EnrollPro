@@ -20,6 +20,7 @@ export const rolloverSchoolYearSchema = z.object({
   classEndDate: z.string().or(z.date()).optional().nullable(),
   cloneStructure: z.boolean().optional().default(true),
   carryOverLearners: z.boolean().optional().default(true),
+  pin: z.string().optional(),
 });
 
 export const updateRolloverDraftSchema = z.object({

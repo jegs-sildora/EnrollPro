@@ -27,8 +27,7 @@ import {
   BarChart3,
   AlertCircle,
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
-import { sileo } from "sileo";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
@@ -67,6 +66,12 @@ import { Sheet, SheetContent } from "@/shared/ui/sheet";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
 import { format } from "date-fns";
+import {
+  getReducedMotionProps,
+  panelTransition,
+  sectionVariants,
+} from "@/shared/lib/motion";
+import { lifecycleFeedback } from "@/shared/lib/lifecycle-feedback";
 import type {
   CellContext,
   ColumnDef,
@@ -423,6 +428,8 @@ export default function Enrollment() {
     (preLockStats?.pendingCount ?? 0) +
     (preLockStats?.unsectionedCount ?? 0);
   const isLockBlocked = !isBosyLocked && totalIncomplete > 0;
+  const shouldReduceMotion = useReducedMotion() ?? false;
+  const motionState = getReducedMotionProps(shouldReduceMotion);
 
   const fetchPreLockStats = useCallback(async () => {
     try {
@@ -629,15 +636,19 @@ export default function Enrollment() {
     if (selectedRows.length === 0) return;
     setBulkAssigning(true);
     try {
+      lifecycleFeedback.progress(
+        "Assigning Learners",
+        `Assigning ${selectedRows.length} learner(s) to the selected section.`,
+      );
       await api.post("/enrollment/batch-assign-manual", {
         applicationIds: selectedRows.map((r) => r.id),
         sectionId,
       });
 
-      sileo.success({
-        title: "Bulk Assignment Complete",
-        description: `Successfully assigned ${selectedRows.length} learners to section.`,
-      });
+      lifecycleFeedback.success(
+        "Bulk Assignment Complete",
+        `Successfully assigned ${selectedRows.length} learners to section.`,
+      );
 
       setRowSelection({});
       setIsBulkAssignOpen(false);
@@ -698,6 +709,10 @@ export default function Enrollment() {
   const handleExportSf1 = async (sectionId: number, sectionName: string) => {
     setExporting(true);
     try {
+      lifecycleFeedback.progress(
+        "Preparing SF1 Export",
+        `Generating School Form 1 for ${sectionName}.`,
+      );
       const response = await api.get(`/export/sf1/${sectionId}`, {
         responseType: "blob",
       });
@@ -711,10 +726,10 @@ export default function Enrollment() {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      sileo.success({
-        title: "Export Complete",
-        description: `School Form 1 for ${sectionName} generated.`,
-      });
+      lifecycleFeedback.success(
+        "Export Complete",
+        `School Form 1 for ${sectionName} generated.`,
+      );
       setSf1ExportOpen(false);
     } catch (err) {
       toastApiError(err as never);
@@ -793,22 +808,26 @@ export default function Enrollment() {
   const handleLockBosy = useCallback(async () => {
     if (!isLockConfirmValid) {
       setLockConfirmTouched(true);
-      sileo.error({
-        title: "Validation Failed",
-        description: "School year label does not match.",
-      });
+      lifecycleFeedback.warning(
+        "Validation Failed",
+        "School year label does not match.",
+      );
       return;
     }
 
     if (!isPinValid) {
       setPinTouched(true);
-      sileo.error({
-        title: "Invalid PIN",
-        description: "Please enter a valid 6-digit Admin PIN.",
-      });
+      lifecycleFeedback.warning(
+        "Invalid PIN",
+        "Please enter a valid 6-digit Admin PIN.",
+      );
       return;
     }
 
+    lifecycleFeedback.progress(
+      "Authorizing BOSY Lockdown",
+      "Finalizing class rosters and transitioning to academic operations.",
+    );
     setIsLocking(true);
     try {
       const res = await api.post("/admin/system/lock-bosy", {
@@ -816,7 +835,7 @@ export default function Enrollment() {
         yearLabel: lockConfirmLabel,
       });
 
-      sileo.success({ title: "BOSY Locked", description: res.data.message });
+      lifecycleFeedback.success("BOSY Lockdown Completed", res.data.message);
       const pubRes = await api.get("/settings/public");
       setSettings(pubRes.data);
 
@@ -836,10 +855,10 @@ export default function Enrollment() {
             ? err.message
             : "Failed to lock BOSY.";
 
-      sileo.error({
-        title: "Lock Failed",
-        description: message || "An unexpected error occurred.",
-      });
+      lifecycleFeedback.error(
+        "BOSY Lockdown Failed",
+        message || "An unexpected error occurred.",
+      );
     } finally {
       setIsLocking(false);
     }
@@ -942,10 +961,10 @@ export default function Enrollment() {
 
     const normalizedLrn = walkInLrn.trim();
     if (!/^\d{12}$/.test(normalizedLrn)) {
-      sileo.error({
-        title: "LRN Required",
-        description: "Enter a valid 12-digit LRN or enable the no-LRN path.",
-      });
+      lifecycleFeedback.error(
+        "LRN Required",
+        "Enter a valid 12-digit LRN or enable the no-LRN path.",
+      );
       return;
     }
 
@@ -971,13 +990,12 @@ export default function Enrollment() {
           return;
         }
 
-        sileo.info({
-          title: "Existing Learner Found",
-          description:
-            response.data?.type === "EARLY_REGISTRATION"
-              ? "This learner pre-registered in February. Redirecting to Enrollment queue for Delta updates."
-              : "This learner already exists in the active enrollment queue. Redirecting now.",
-        });
+        lifecycleFeedback.progress(
+          "Existing Learner Found",
+          response.data?.type === "EARLY_REGISTRATION"
+            ? "This learner pre-registered in February. Redirecting to Enrollment queue for Delta updates."
+            : "This learner already exists in the active enrollment queue. Redirecting now.",
+        );
 
         setIsWalkInGateOpen(false);
         navigate(
@@ -1029,10 +1047,10 @@ export default function Enrollment() {
     }
 
     if (!readingProfileDialog.level) {
-      sileo.error({
-        title: "Reading Profile Required",
-        description: "Select a Reading Profile level before saving.",
-      });
+      lifecycleFeedback.error(
+        "Reading Profile Required",
+        "Select a Reading Profile level before saving.",
+      );
       return;
     }
 
@@ -1060,11 +1078,10 @@ export default function Enrollment() {
         ),
       );
 
-      sileo.success({
-        title: "Reading Profile Saved",
-        description:
-          "Reading Profile was encoded successfully. You can now proceed to section assignment.",
-      });
+      lifecycleFeedback.success(
+        "Reading Profile Saved",
+        "Reading Profile was encoded successfully. You can now proceed to section assignment.",
+      );
 
       closeReadingProfileDialog();
     } catch (err) {
@@ -1231,21 +1248,20 @@ export default function Enrollment() {
   const handleAssignAndEnroll = useCallback(
     async (application: Application) => {
       if (!application.readingProfileLevel) {
-        sileo.error({
-          title: "Reading Profile Required",
-          description:
-            "Encode Reading Profile before assigning this learner to a section.",
-        });
+        lifecycleFeedback.error(
+          "Reading Profile Required",
+          "Encode Reading Profile before assigning this learner to a section.",
+        );
         openReadingProfileDialog(application);
         return;
       }
 
       const selectedSectionId = sectionSelectionByApplicationId[application.id];
       if (!selectedSectionId) {
-        sileo.error({
-          title: "Section Required",
-          description: "Select a section before assigning and enrolling.",
-        });
+        lifecycleFeedback.error(
+          "Section Required",
+          "Select a section before assigning and enrolling.",
+        );
         return;
       }
 
@@ -1271,6 +1287,10 @@ export default function Enrollment() {
       }));
 
       try {
+        lifecycleFeedback.progress(
+          "Assigning And Enrolling Learner",
+          `Processing section placement and enrollment for ${application.lastName}, ${application.firstName}.`,
+        );
         const approveResponse = await api.patch(
           `/applications/${application.id}/approve`,
           {
@@ -1293,10 +1313,10 @@ export default function Enrollment() {
           return next;
         });
 
-        sileo.success({
-          title: "Assigned & Enrolled",
-          description: `${application.lastName}, ${application.firstName} is now officially enrolled.`,
-        });
+        lifecycleFeedback.success(
+          "Assigned & Enrolled",
+          `${application.lastName}, ${application.firstName} is now officially enrolled.`,
+        );
 
         if (enrollResponse.data?.rawPortalPin) {
           setPinHandover({
@@ -1350,11 +1370,10 @@ export default function Enrollment() {
       await api.patch(
         `/applications/${restoreDialog.application.id}/restore-status`,
       );
-      sileo.success({
-        title: "Learner Restored",
-        description:
-          "The learner has been returned to active enrolled status.",
-      });
+      lifecycleFeedback.success(
+        "Learner Restored",
+        "The learner has been returned to active enrolled status.",
+      );
       closeRestoreDialog();
       void fetchData();
     } catch (err) {
@@ -2035,10 +2054,10 @@ export default function Enrollment() {
           pin: res.data.rawPortalPin,
         });
       } else {
-        sileo.success({
-          title: "Enrolled",
-          description: "Official enrollment confirmed.",
-        });
+        lifecycleFeedback.success(
+          "Enrolled",
+          "Official enrollment confirmed.",
+        );
       }
     } catch (err) {
       toastApiError(err as never);
@@ -2288,6 +2307,10 @@ export default function Enrollment() {
           )}
 
           {workflowView === "BOSY_FINALIZATION" && (
+            <motion.div
+              variants={sectionVariants}
+              transition={panelTransition}
+              {...motionState}>
             <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
               <CardHeader className="px-4 sm:px-6 py-5 border-b border-border/50">
                 <div className="flex items-center gap-3">
@@ -2385,6 +2408,7 @@ export default function Enrollment() {
                 )}
               </CardContent>
             </Card>
+            </motion.div>
           )}
 
           {workflowView !== "BOSY_FINALIZATION" && (
@@ -2691,10 +2715,10 @@ export default function Enrollment() {
                 onPass={async () => {
                   try {
                     await api.patch(`/applications/${selectedId}/pass`);
-                    sileo.success({
-                      title: "Passed",
-                      description: "Applicant marked as PASSED.",
-                    });
+                    lifecycleFeedback.success(
+                      "Passed",
+                      "Applicant marked as PASSED.",
+                    );
                     fetchData();
                   } catch (e) {
                     toastApiError(e as never);
@@ -2703,10 +2727,10 @@ export default function Enrollment() {
                 onFail={async () => {
                   try {
                     await api.patch(`/applications/${selectedId}/fail`);
-                    sileo.success({
-                      title: "Failed",
-                      description: "Applicant marked as FAILED.",
-                    });
+                    lifecycleFeedback.success(
+                      "Failed",
+                      "Applicant marked as FAILED.",
+                    );
                     fetchData();
                   } catch (e) {
                     toastApiError(e as never);
@@ -2730,10 +2754,10 @@ export default function Enrollment() {
                     await api.patch(
                       `/applications/${selectedId}/temporarily-enroll`,
                     );
-                    sileo.success({
-                      title: "Updated",
-                      description: "Applicant is now temporarily enrolled.",
-                    });
+                    lifecycleFeedback.success(
+                      "Updated",
+                      "Applicant is now temporarily enrolled.",
+                    );
                     fetchData();
                   } catch (e) {
                     toastApiError(e as never);
@@ -2747,10 +2771,10 @@ export default function Enrollment() {
                   const lrn = raw.trim();
 
                   if (!/^\d{12}$/.test(lrn)) {
-                    sileo.error({
-                      title: "Invalid LRN",
-                      description: "LRN must be exactly 12 digits.",
-                    });
+                    lifecycleFeedback.error(
+                      "Invalid LRN",
+                      "LRN must be exactly 12 digits.",
+                    );
                     return;
                   }
 
@@ -2758,10 +2782,10 @@ export default function Enrollment() {
                     await api.patch(`/applications/${selectedId}/assign-lrn`, {
                       lrn,
                     });
-                    sileo.success({
-                      title: "LRN Assigned",
-                      description: "Learner record updated successfully.",
-                    });
+                    lifecycleFeedback.success(
+                      "LRN Assigned",
+                      "Learner record updated successfully.",
+                    );
                     fetchData();
                   } catch (e) {
                     toastApiError(e as never);
@@ -2804,11 +2828,10 @@ export default function Enrollment() {
                       setSelectedId(res.data.id);
                     }
 
-                    sileo.success({
-                      title: "Verified",
-                      description:
-                        "Physical documents verified. Learner is now ready for section assignment.",
-                    });
+                    lifecycleFeedback.success(
+                      "Verified",
+                      "Physical documents verified. Learner is now ready for section assignment.",
+                    );
                     fetchData();
                   } catch (e) {
                     toastApiError(e as never);
@@ -2837,12 +2860,12 @@ export default function Enrollment() {
                         reason: reasonInput || undefined,
                       },
                     );
-                    sileo.success({
-                      title: lock ? "Profile Locked" : "Profile Unlocked",
-                      description: lock
+                    lifecycleFeedback.success(
+                      lock ? "Profile Locked" : "Profile Unlocked",
+                      lock
                         ? "Enrollment profile updates are now restricted."
                         : "Enrollment profile updates are now allowed.",
-                    });
+                    );
                     fetchData();
                   } catch (e) {
                     toastApiError(e as never);
