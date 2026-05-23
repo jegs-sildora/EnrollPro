@@ -50,6 +50,7 @@ import { cn } from "@/shared/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { useSearchParams, useNavigate } from "react-router";
 import type { EosyStatus } from "@enrollpro/shared";
+import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 
 interface SectionRecord {
   id: number;
@@ -88,7 +89,12 @@ export default function RegistrarEOSYWorkspace() {
   
   // UI State
   const [showSummary, setShowSummary] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const {
+    inputValue: searchQuery,
+    setInputValue: setSearchQuery,
+    activeFilter: activeSearchQuery,
+    isSearching,
+  } = useDebouncedSearch();
 
   const fetchData = useCallback(async () => {
     if (!sectionId) return;
@@ -192,9 +198,10 @@ export default function RegistrarEOSYWorkspace() {
   const filteredRecords = useMemo(() => {
     return records.filter(r => {
       const full = `${r.enrollmentApplication.learner.lastName} ${r.enrollmentApplication.learner.firstName}`.toLowerCase();
-      return full.includes(searchQuery.toLowerCase()) || r.enrollmentApplication.learner.lrn?.includes(searchQuery);
+      const search = activeSearchQuery.toLowerCase();
+      return full.includes(search) || r.enrollmentApplication.learner.lrn?.includes(activeSearchQuery);
     });
-  }, [records, searchQuery]);
+  }, [records, activeSearchQuery]);
 
   if (loading) {
     return (
@@ -304,7 +311,24 @@ export default function RegistrarEOSYWorkspace() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredRecords.map((record, index) => {
+                  {isSearching ? (
+                    <TableRow>
+                      <TableCell colSpan={6}>
+                        <div className="h-64 flex flex-col items-center justify-center gap-3 text-center bg-background/80">
+                          <Search className="h-10 w-10 animate-pulse text-slate-400" />
+                          <div className="space-y-1">
+                            <p className="text-lg font-medium text-slate-500">
+                              Searching...
+                            </p>
+                            <p className="text-sm font-medium text-slate-400">
+                              Scanning EOSY records...
+                            </p>
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredRecords.map((record, index) => {
                     const status = localStatuses[record.id];
                     return (
                       <TableRow key={record.id} className={cn(
@@ -361,7 +385,8 @@ export default function RegistrarEOSYWorkspace() {
                         </TableCell>
                       </TableRow>
                     );
-                  })}
+                    })
+                  )}
                 </TableBody>
               </Table>
            </div>

@@ -287,7 +287,7 @@ export default function ExecuteRolloverModal({
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label className="text-xs font-black uppercase text-primary">
-                  Start of Classes (BOSY)
+                  Beginning of School Year (BOSY)
                 </Label>
                 <div className={isSubmitting ? "pointer-events-none opacity-50" : ""}>
                   <DatePicker

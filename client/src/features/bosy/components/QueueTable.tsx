@@ -3,6 +3,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
+import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import type {
@@ -16,6 +17,7 @@ import { formatApplicationStatus, formatEosyStatus } from "@/shared/lib/utils";
 interface QueueTableProps {
   items: BOSYQueueItem[];
   loading: boolean;
+  isSearching?: boolean;
   showConfirmAction: boolean;
   rowSelection: RowSelectionState;
   onRowSelectionChange: OnChangeFn<RowSelectionState>;
@@ -60,6 +62,7 @@ function statusBadge(status: string) {
 export function QueueTable({
   items,
   loading,
+  isSearching,
   showConfirmAction,
   rowSelection,
   onRowSelectionChange,
@@ -257,8 +260,14 @@ export function QueueTable({
       columns={columns}
       data={items}
       getRowId={(row) => String(row.applicationId)}
+      forceEmptyState={Boolean(isSearching)}
       rowSelection={rowSelection}
       onRowSelectionChange={onRowSelectionChange}
+      prependBodyRow={
+        isSearching ? (
+          <TableSearchIndicator colSpan={showConfirmAction ? 7 : 6} />
+        ) : null
+      }
     />
   );
 }

@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useEffect } from "react";
 import {
   Briefcase,
   Eye,
@@ -32,12 +32,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { PaginationBar } from "@/shared/components/PaginationBar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/shared/ui/tooltip";
+import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import {
   cn,
   getAcademicDesignationColorClasses,
@@ -51,26 +46,6 @@ import type {
 } from "../types";
 import { formatAdvisorySectionSummary, formatTeacherName } from "../utils";
 
-const SUBJECT_ACRONYMS: Record<string, string> = {
-  MATHEMATICS: "MATH",
-  SCIENCE: "SCI",
-  ENGLISH: "ENG",
-  FILIPINO: "FIL",
-  "ARALING PANLIPUNAN": "AP",
-  "VALUES EDUCATION": "ESP",
-  "EDUKASYON SA PAGPAPAKATAO": "ESP",
-  "EDUKASYON SA PAGPAPAKATAO (ESP)": "ESP",
-  ESP: "ESP",
-  MAPEH: "MAPEH",
-  TLE: "TLE",
-  "HOME ECONOMICS": "HE",
-  "INDUSTRIAL ARTS": "IA",
-  "AGRI_FISHERY ARTS": "AFA",
-  "INFORMATION AND COMMUNICATIONS TECHNOLOGY": "ICT",
-  "INFORMATION AND COMMUNICATIONS TECHNOLOGY (ICT)": "ICT",
-  ICT: "ICT",
-};
-
 interface TeacherDirectoryCardProps {
   loading: boolean;
   isRefetching: boolean;
@@ -78,12 +53,11 @@ interface TeacherDirectoryCardProps {
   filteredTeachers: Teacher[];
   paginatedTeachers: Teacher[];
   teachers: Teacher[];
-  searchQuery: string;
   statusFilter: TeacherStatusFilter;
   designationFilter: TeacherDesignationFilter;
-  subjectFilter: string;
-  specializationFilter: string;
-  availableSpecializations: string[];
+  departmentFilter: string;
+  availableDepartments: string[];
+  availableDesignationFilters: Array<{ value: string; label: string }>;
   hasActiveFilters: boolean;
   ayId: number | null;
   page: number;
@@ -93,8 +67,7 @@ interface TeacherDirectoryCardProps {
   onSearchQueryChange: (value: string) => void;
   onStatusFilterChange: (value: TeacherStatusFilter) => void;
   onDesignationFilterChange: (value: TeacherDesignationFilter) => void;
-  onSubjectFilterChange: (value: string) => void;
-  onSpecializationFilterChange: (value: string) => void;
+  onDepartmentFilterChange: (value: string) => void;
   onClearFilters: () => void;
   onRefresh: () => void;
   onOpenDesignationEditor: (teacher: Teacher) => void;
@@ -111,11 +84,11 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
   teachers,
   filteredTeachers,
   paginatedTeachers,
-  searchQuery,
   statusFilter,
   designationFilter,
-  specializationFilter,
-  availableSpecializations,
+  departmentFilter,
+  availableDepartments,
+  availableDesignationFilters,
   hasActiveFilters,
   ayId,
   page,
@@ -125,7 +98,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
   onSearchQueryChange,
   onStatusFilterChange,
   onDesignationFilterChange,
-  onSpecializationFilterChange,
+  onDepartmentFilterChange,
   onClearFilters,
   onRefresh,
   onOpenDesignationEditor,
@@ -134,6 +107,18 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
   onReactivateTeacher,
   onOpenDetail,
 }: TeacherDirectoryCardProps) {
+  const {
+    inputValue: searchInputValue,
+    setInputValue: setSearchInputValue,
+    activeFilter: activeSearch,
+    isSearching,
+    clearSearch,
+  } = useDebouncedSearch();
+
+  useEffect(() => {
+    onSearchQueryChange(activeSearch);
+  }, [activeSearch, onSearchQueryChange]);
+
   const renderAdvisoryStatus = (teacher: Teacher) => {
     const advisorySummary = formatAdvisorySectionSummary(teacher);
 
@@ -338,46 +323,6 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       ),
     },
     {
-      id: "subjects",
-      size: 240,
-      minSize: 220,
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title="QUALIFIED SUBJECTS"
-          className="font-bold"
-        />
-      ),
-      cell: ({ row }) => (
-        <div className="flex flex-wrap justify-center gap-1">
-          <TooltipProvider delayDuration={300}>
-            {row.original.subjects.length > 0 ? (
-              row.original.subjects.map((sub) => (
-                <Tooltip key={sub}>
-                  <TooltipTrigger asChild>
-                    <Badge
-                      variant="outline"
-                      className="cursor-help text-[9px] px-1 py-0 h-4 bg-muted/50 font-bold uppercase transition-colors hover:bg-muted hover:text-primary">
-                      {SUBJECT_ACRONYMS[sub.toUpperCase()] || sub.toUpperCase()}
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="top"
-                    className="text-xs font-bold uppercase">
-                    {sub}
-                  </TooltipContent>
-                </Tooltip>
-              ))
-            ) : (
-              <span className="text-slate-400 italic font-medium text-xs">
-                N/A
-              </span>
-            )}
-          </TooltipProvider>
-        </div>
-      ),
-    },
-    {
       id: "facultyStatus",
       accessorKey: "isActive",
       size: 140,
@@ -557,8 +502,8 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
           <div className="relative flex-1 min-w-[220px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
             <Input
-              value={searchQuery}
-              onChange={(event) => onSearchQueryChange(event.target.value)}
+              value={searchInputValue}
+              onChange={(event) => setSearchInputValue(event.target.value)}
               placeholder="Search name, ID, learning area, section..."
               className="h-9 pl-9 font-bold text-xs"
             />
@@ -587,22 +532,24 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all" className="font-bold">All Designations</SelectItem>
-              <SelectItem value="adviser" className="font-bold">Class Adviser</SelectItem>
-              <SelectItem value="tic" className="font-bold">TIC</SelectItem>
-              <SelectItem value="none" className="font-bold">No Designation</SelectItem>
+              {availableDesignationFilters.map((option) => (
+                <SelectItem key={option.value} value={option.value} className="font-bold text-xs uppercase">
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Select
-            value={specializationFilter}
-            onValueChange={onSpecializationFilterChange}>
+            value={departmentFilter}
+            onValueChange={onDepartmentFilterChange}>
             <SelectTrigger className="h-9 w-auto min-w-[160px] font-bold uppercase text-xs">
               <SelectValue placeholder="Department" />
             </SelectTrigger>
             <SelectContent className="max-h-60">
               <SelectItem value="all" className="font-bold">All Departments</SelectItem>
-              {availableSpecializations.map((spec) => (
-                <SelectItem key={spec} value={spec} className="font-bold text-xs uppercase">
-                  {spec}
+              {availableDepartments.map((department) => (
+                <SelectItem key={department} value={department} className="font-bold text-xs uppercase">
+                  {department}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -611,7 +558,10 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
             variant="ghost"
             className="h-9 font-bold uppercase text-xs px-3"
             disabled={!hasActiveFilters}
-            onClick={onClearFilters}>
+            onClick={() => {
+              clearSearch();
+              onClearFilters();
+            }}>
             <FilterX className="mr-1.5 h-3.5 w-3.5" />
             Clear
           </Button>
@@ -645,6 +595,18 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                   <Skeleton className="h-8 w-full" />
                 </div>
               ))
+            ) : isSearching ? (
+              <div className="h-64 flex flex-col items-center justify-center gap-3 text-center bg-background/80 rounded-xl border-2 border-dashed">
+                <Search className="h-10 w-10 animate-pulse text-slate-400" />
+                <div className="space-y-1">
+                  <p className="text-lg font-medium text-slate-500">
+                    Searching...
+                  </p>
+                  <p className="text-sm font-medium text-slate-400">
+                    Scanning DepEd faculty records...
+                  </p>
+                </div>
+              </div>
             ) : paginatedTeachers.length === 0 ? (
               <div className="rounded-xl border-2 border-dashed px-4 py-8 text-center text-sm text-foreground italic font-bold">
                 {hasActiveFilters
@@ -793,10 +755,24 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
               data={paginatedTeachers}
               tableClassName="min-w-full"
               loading={loading}
+              forceEmptyState={isSearching}
               virtualize={true}
               estimatedRowHeight={60}
               className="border-none rounded-none max-h-full h-auto"
               containerHeight="100%"
+              emptyStateContent={
+                <div className="h-64 flex flex-col items-center justify-center gap-3 text-center bg-background/80">
+                  <Search className="h-10 w-10 animate-pulse text-slate-400" />
+                  <div className="space-y-1">
+                    <p className="text-lg font-medium text-slate-500">
+                      Searching...
+                    </p>
+                    <p className="text-sm font-medium text-slate-400">
+                      Scanning DepEd faculty records...
+                    </p>
+                  </div>
+                </div>
+              }
               noResultsMessage={
                 hasActiveFilters
                   ? "No teachers match the current filter set."

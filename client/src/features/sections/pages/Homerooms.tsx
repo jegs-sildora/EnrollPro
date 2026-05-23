@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "motion/react"
 import { sileo } from "sileo"
-import { Plus, Users } from "lucide-react"
+import { ArrowRightLeft, Plus, Users } from "lucide-react"
 import api from "@/shared/api/axiosInstance"
 import { useSettingsStore } from "@/store/settings.slice"
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly"
@@ -13,7 +13,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs"
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal"
 import { SectionFormSheet } from "../components/SectionFormSheet"
 import SectionRosterModal from "../components/SectionRosterModal"
-import type { SectionFormState, SectionItem, TeacherOption } from "../types"
+import { AssignAdviserModal } from "../components/AssignAdviserModal"
+import type {
+  AdviserCandidate,
+  SectionFormState,
+  SectionItem,
+  TeacherOption,
+} from "../types"
 import {
   DEFAULT_MAX_CAPACITY_REGULAR,
   DEFAULT_MAX_CAPACITY_SCP,
@@ -41,12 +47,14 @@ function SectionCard({
   onEdit,
   onDelete,
   onViewRoster,
+  onOpenAssignAdviser,
   canMutate,
 }: {
   section: SectionItem
   onEdit: () => void
   onDelete: () => void
   onViewRoster: () => void
+  onOpenAssignAdviser: () => void
   canMutate: boolean
 }) {
   const pct = section.fillPercent ?? Math.round((section.enrolledCount / section.maxCapacity) * 100)
@@ -80,12 +88,43 @@ function SectionCard({
       </div>
 
       <div className="text-xs text-muted-foreground font-bold space-y-1">
-        <p>
-          <span className="text-foreground/70">Adviser:</span>{" "}
-          {section.advisingTeacher?.name ?? (
-            <span className="italic opacity-60">Unassigned</span>
-          )}
-        </p>
+        {canMutate ? (
+          section.advisingTeacher ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onOpenAssignAdviser()
+              }}
+              className="w-full rounded-md border border-primary/20 bg-primary/5 px-2 py-2 text-left hover:bg-primary/10 transition-colors"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="truncate text-xs font-black text-foreground">
+                  Adviser: {section.advisingTeacher.name}
+                </p>
+                <ArrowRightLeft className="h-3.5 w-3.5 text-primary shrink-0" />
+              </div>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onOpenAssignAdviser()
+              }}
+              className="w-full rounded-md border-2 border-dashed border-amber-300 bg-amber-50/60 px-2 py-2 text-left text-amber-800 hover:border-primary/50 hover:bg-amber-50 transition-colors"
+            >
+              + Assign Class Adviser
+            </button>
+          )
+        ) : (
+          <p>
+            <span className="text-foreground/70">Adviser:</span>{" "}
+            {section.advisingTeacher?.name ?? (
+              <span className="italic opacity-60">Unassigned</span>
+            )}
+          </p>
+        )}
         <div className="flex items-center gap-2">
           <Users className="size-3 shrink-0" />
           <span>
@@ -143,6 +182,15 @@ export default function Homerooms() {
   const [editingSectionId, setEditingSectionId] = useState<number | null>(null)
   const [availableTeachers, setAvailableTeachers] = useState<TeacherOption[]>([])
   const [loadingTeachers, setLoadingTeachers] = useState(false)
+  const [adviserCandidates, setAdviserCandidates] = useState<AdviserCandidate[]>([])
+  const [loadingAdviserCandidates, setLoadingAdviserCandidates] = useState(false)
+  const [assignTarget, setAssignTarget] = useState<{
+    id: number
+    name: string
+    gradeLevelName: string
+    programType: string
+    currentAdviser: { id: number; name: string } | null
+  } | null>(null)
 
   // Delete state
   const [deleteId, setDeleteId] = useState<number | null>(null)
@@ -211,11 +259,96 @@ export default function Homerooms() {
     [ayId],
   )
 
+  const fetchAdviserCandidates = useCallback(async () => {
+    if (!ayId) {
+      setAdviserCandidates([])
+      return
+    }
+
+    setLoadingAdviserCandidates(true)
+    try {
+      const res = await api.get("/teachers", {
+        params: { schoolYearId: ayId },
+      })
+
+      const mapped: AdviserCandidate[] = (res.data.teachers || [])
+        .filter(
+          (teacher: {
+            isActive?: boolean
+            designationTitle?: string | null
+          }) =>
+            teacher.isActive &&
+            String(teacher.designationTitle ?? "").toUpperCase() === "CLASS ADVISER",
+        )
+        .map(
+          (teacher: {
+            id: number
+            firstName: string
+            lastName: string
+            middleName: string | null
+            employeeId: string | null
+            department: string | null
+            specialization: string | null
+            isActive: boolean
+            designationTitle: string | null
+            designation?: {
+              isClassAdviser?: boolean
+              advisorySection?: {
+                id: number
+                name: string
+                gradeLevelName: string
+              } | null
+            } | null
+          }) => ({
+            id: teacher.id,
+            name: `${teacher.lastName}, ${teacher.firstName}${teacher.middleName ? ` ${teacher.middleName.charAt(0)}.` : ""}`,
+            employeeId: teacher.employeeId,
+            department: teacher.department,
+            specialization: teacher.specialization,
+            isActive: teacher.isActive,
+            designationTitle: teacher.designationTitle,
+            assignedSection:
+              teacher.designation?.isClassAdviser && teacher.designation?.advisorySection
+                ? {
+                    id: teacher.designation.advisorySection.id,
+                    name: teacher.designation.advisorySection.name,
+                    gradeLevelName: teacher.designation.advisorySection.gradeLevelName,
+                  }
+                : null,
+          }),
+        )
+
+      setAdviserCandidates(mapped)
+    } catch {
+      setAdviserCandidates([])
+    } finally {
+      setLoadingAdviserCandidates(false)
+    }
+  }, [ayId])
+
   useEffect(() => {
     if (isFormSheetOpen) {
       void fetchTeachers(formSheetMode === "edit" ? editingSectionId : null)
     }
   }, [isFormSheetOpen]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    void fetchAdviserCandidates()
+  }, [fetchAdviserCandidates])
+
+  const handleOpenAssignAdviser = useCallback(
+    (section: SectionItem, gradeLevelName: string) => {
+      if (!canMutate) return
+      setAssignTarget({
+        id: section.id,
+        name: section.name,
+        gradeLevelName,
+        programType: section.programType,
+        currentAdviser: section.advisingTeacher,
+      })
+    },
+    [canMutate],
+  )
 
   const handleOpenCreate = useCallback((glId: number, glName: string, programType = "REGULAR", isHomogeneous = false) => {
     setFormSheetMode("create")
@@ -411,6 +544,7 @@ export default function Homerooms() {
                                       onEdit={() => handleOpenEdit(s, g.gradeLevelName)}
                                       onDelete={() => { setDeleteId(s.id); setDeleteName(s.name) }}
                                       onViewRoster={() => setRosterSectionId(s.id)}
+                                      onOpenAssignAdviser={() => handleOpenAssignAdviser(s, g.gradeLevelName)}
                                       canMutate={canMutate}
                                     />
                                   ))}
@@ -450,6 +584,7 @@ export default function Homerooms() {
                               onEdit={() => handleOpenEdit(s, g.gradeLevelName)}
                               onDelete={() => { setDeleteId(s.id); setDeleteName(s.name) }}
                               onViewRoster={() => setRosterSectionId(s.id)}
+                              onOpenAssignAdviser={() => handleOpenAssignAdviser(s, g.gradeLevelName)}
                               canMutate={canMutate}
                             />
                           ))}
@@ -477,6 +612,7 @@ export default function Homerooms() {
                               onEdit={() => handleOpenEdit(s, g.gradeLevelName)}
                               onDelete={() => { setDeleteId(s.id); setDeleteName(s.name) }}
                               onViewRoster={() => setRosterSectionId(s.id)}
+                              onOpenAssignAdviser={() => handleOpenAssignAdviser(s, g.gradeLevelName)}
                               canMutate={canMutate}
                             />
                           ))}
@@ -546,6 +682,20 @@ export default function Homerooms() {
         sectionId={rosterSectionId}
         open={rosterSectionId !== null}
         onOpenChange={(open) => { if (!open) setRosterSectionId(null) }}
+      />
+
+      <AssignAdviserModal
+        open={assignTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setAssignTarget(null)
+        }}
+        section={assignTarget}
+        teachers={adviserCandidates}
+        loadingTeachers={loadingAdviserCandidates}
+        onSuccess={() => {
+          void fetchData()
+          void fetchAdviserCandidates()
+        }}
       />
     </div>
   )

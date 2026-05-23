@@ -83,7 +83,8 @@ import {
 } from "../components/StudentDetailPanel";
 import { PaginationBar } from "@/shared/components/PaginationBar";
 import { useResizablePanel } from "@/features/admission/pages/early-registration/hooks/useResizablePanel";
-import { useDebounce } from "@/shared/hooks/useDebounce";
+import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
+import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
 import { motion, AnimatePresence } from "motion/react";
 import type { EosyStatus } from "@enrollpro/shared";
 
@@ -303,8 +304,13 @@ export default function Students() {
   const { panelPercentage, isDesktopViewport, startResizing } =
     useResizablePanel();
 
-  const [search, setSearch] = useState("");
-  const debouncedSearch = useDebounce(search, 300);
+  const {
+    inputValue: search,
+    setInputValue: setSearch,
+    activeFilter: debouncedSearch,
+    isSearching,
+    clearSearch,
+  } = useDebouncedSearch();
   const [gradeLevelFilter, setGradeLevelFilter] = useState<string>("all");
   const [programFilter, setProgramFilter] = useState<string>("all");
   const [sectionFilter, setSectionFilter] = useState<string>("all");
@@ -1115,11 +1121,7 @@ export default function Students() {
                   className="pl-9 h-10 text-sm font-bold"
                   value={search}
                   onChange={(e) => {
-                    const val = e.target.value;
-                    setSearch(val);
-                    startTransition(() => {
-                      setPage(1);
-                    });
+                    setSearch(e.target.value);
                   }}
                 />
               </div>
@@ -1241,7 +1243,7 @@ export default function Students() {
                 className="h-10 px-3 text-sm font-bold w-full md:w-auto"
                 onClick={() => {
                   startTransition(() => {
-                    setSearch("");
+                    clearSearch();
                     setGradeLevelFilter("all");
                     setProgramFilter("all");
                     setSectionFilter("all");
@@ -1494,10 +1496,16 @@ export default function Students() {
                     columns={columns}
                     data={students}
                     loading={false}
+                    forceEmptyState={isSearching}
                     virtualize={true}
                     estimatedRowHeight={60}
                     className="border-none rounded-none h-full"
                     containerHeight="100%"
+                    prependBodyRow={
+                      isSearching ? (
+                        <TableSearchIndicator colSpan={8} />
+                      ) : null
+                    }
                     noResultsMessage="No learners found for the selected filters."
                     sorting={sorting}
                     onSortingChange={onSortingChange}

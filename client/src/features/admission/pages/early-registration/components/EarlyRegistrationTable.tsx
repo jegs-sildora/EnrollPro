@@ -8,6 +8,7 @@ import { formatScpType } from "@/shared/lib/utils";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
+import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
 import type { Application } from "../hooks/useEarlyRegistrations";
 
 interface TableProps {
@@ -16,6 +17,7 @@ interface TableProps {
   selectedId: number | null;
   setSelectedId: (id: number | null) => void;
   getNextAction: (status: string, applicantType?: string) => string;
+  isSearching?: boolean;
 }
 
 function isLockedEnrollmentHandoff(application: Application): boolean {
@@ -45,6 +47,7 @@ export function EarlyRegistrationTable({
   loading,
   setSelectedId,
   getNextAction,
+  isSearching,
 }: TableProps) {
   const orderedApplications = useMemo(() => {
     const unlocked: Application[] = [];
@@ -249,6 +252,7 @@ export function EarlyRegistrationTable({
         columns={columns}
         data={orderedApplications}
         loading={loading}
+        forceEmptyState={Boolean(isSearching)}
         virtualize={true}
         estimatedRowHeight={50}
         onRowClick={(app) => {
@@ -257,6 +261,7 @@ export function EarlyRegistrationTable({
           }
         }}
         noResultsMessage="No applicants found."
+        prependBodyRow={isSearching ? <TableSearchIndicator colSpan={9} /> : null}
       />
     </div>
   );

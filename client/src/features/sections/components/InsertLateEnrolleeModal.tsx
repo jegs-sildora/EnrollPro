@@ -22,6 +22,7 @@ import { cn } from "@/shared/lib/utils";
 import { sileo } from "sileo";
 import { useSettingsStore } from "@/store/settings.slice";
 import { differenceInBusinessDays, format } from "date-fns";
+import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 
 interface UnsectionedLearner {
   id: number;
@@ -62,7 +63,13 @@ export function InsertLateEnrolleeModal({
   onSuccess,
 }: InsertLateEnrolleeModalProps) {
   const { classOpeningDate } = useSettingsStore();
-  const [search, setSearch] = useState("");
+  const {
+    inputValue: search,
+    setInputValue: setSearch,
+    activeFilter: activeSearch,
+    isSearching,
+    clearSearch,
+  } = useDebouncedSearch();
   const [loading, setLoading] = useState(false);
   const [pool, setPool] = useState<UnsectionedLearner[]>([]);
   const [selectedLearner, setSelectedLearner] =
@@ -104,15 +111,15 @@ export function InsertLateEnrolleeModal({
     if (open) {
       void fetchPool();
       setSelectedLearner(null);
-      setSearch("");
+      clearSearch();
       setOfficialEnrollmentDate(format(new Date(), "yyyy-MM-dd"));
     }
-  }, [open, fetchPool]);
+  }, [open, fetchPool, clearSearch]);
 
   const filteredPool = pool.filter((l) => {
     const fullName = `${l.lastName} ${l.firstName}`.toLowerCase();
     const lrn = (l.lrn || "").toLowerCase();
-    const s = search.toLowerCase();
+    const s = activeSearch.toLowerCase();
     return fullName.includes(s) || lrn.includes(s);
   });
 
@@ -203,6 +210,18 @@ export function InsertLateEnrolleeModal({
                     <p className="text-xs font-black uppercase  text-foreground animate-pulse">
                       Scanning LIS Pool...
                     </p>
+                  </div>
+                ) : isSearching ? (
+                  <div className="py-16 flex flex-col items-center justify-center gap-3 text-center px-6">
+                    <Search className="h-10 w-10 animate-pulse text-slate-400" />
+                    <div className="space-y-1">
+                      <p className="text-lg font-medium text-slate-500">
+                        Searching...
+                      </p>
+                      <p className="text-sm font-medium text-slate-400">
+                        Scanning unsectioned records...
+                      </p>
+                    </div>
                   </div>
                 ) : filteredPool.length === 0 ? (
                   <div className="py-16 flex flex-col items-center justify-center text-center px-6">

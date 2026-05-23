@@ -11,6 +11,7 @@ import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
 import { useSettingsStore } from "@/store/settings.slice";
 import { toastApiError } from "@/shared/hooks/useApiToast";
+import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Card, CardContent, CardHeader } from "@/shared/ui/card";
@@ -69,7 +70,12 @@ export default function PipelineBatchView({
   const [loading, setLoading] = useState(true);
 
   // Filters
-  const [search, setSearch] = useState("");
+  const {
+    inputValue: search,
+    setInputValue: setSearch,
+    activeFilter: activeSearch,
+    isSearching,
+  } = useDebouncedSearch();
   const [status, setStatus] = useState("ALL");
   const [page, setPage] = useState(1);
   const limit = 50;
@@ -164,7 +170,7 @@ export default function PipelineBatchView({
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (search) params.append("search", search);
+      if (activeSearch) params.append("search", activeSearch);
       if (status !== "ALL") params.append("status", status);
       params.append("schoolYearId", String(ayId));
 
@@ -181,7 +187,7 @@ export default function PipelineBatchView({
         status === "ALL"
           ? ACTIVE_REGISTRATION_EXCLUDED_STATUSES.map((excludedStatus) => {
               const excludedParams = new URLSearchParams();
-              if (search) excludedParams.append("search", search);
+              if (activeSearch) excludedParams.append("search", activeSearch);
               excludedParams.append("schoolYearId", String(ayId));
               if (applicantType !== "ALL") {
                 excludedParams.append("applicantType", applicantType);
@@ -243,7 +249,7 @@ export default function PipelineBatchView({
     } finally {
       setLoading(false);
     }
-  }, [ayId, search, status, applicantType, page]);
+  }, [ayId, activeSearch, status, applicantType, page]);
 
   useEffect(() => {
     fetchData();
@@ -252,7 +258,7 @@ export default function PipelineBatchView({
   // Reset selection when filters change
   useEffect(() => {
     setSelectedIds(new Set());
-  }, [status, search, applicantType, page]);
+  }, [status, activeSearch, applicantType, page]);
 
   const selectedApplications = useMemo(
     () => applications.filter((app) => selectedIds.has(app.id)),
@@ -2993,6 +2999,7 @@ export default function PipelineBatchView({
           <PipelineBatchApplicantsTable
             applications={applications}
             loading={loading}
+            isSearching={isSearching}
             showAssessment={showAssessment}
             selectedIds={selectedIds}
             isBatchProcessing={isBatchProcessing}

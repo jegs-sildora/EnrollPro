@@ -3,11 +3,13 @@ import {
   AlertTriangle,
   ShieldCheck,
   Calendar,
+  Fingerprint,
   Info,
   ArrowRight,
   ArrowLeft,
   Save,
   Loader2,
+  X,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { Badge } from "@/shared/ui/badge";
@@ -96,6 +98,9 @@ export function TeacherDesignationSheet({
     : "Teacher";
   const designationLastUpdated =
     designationOpenFor?.designation?.updatedAt ?? null;
+  const teacherInitials = designationOpenFor
+    ? `${designationOpenFor.firstName.charAt(0)}${designationOpenFor.lastName.charAt(0)}`.toUpperCase()
+    : "T";
 
   // Group sections by Grade Level for categorized dropdown
   const groupedSections = useMemo(() => {
@@ -181,21 +186,31 @@ export function TeacherDesignationSheet({
       <SheetContent
         side="right"
         className="w-full p-0 sm:max-w-3xl flex flex-col overflow-hidden bg-background">
-        <SheetHeader className="space-y-1 border-b p-3 sm:p-4 pr-14 shrink-0 bg-primary font-black">
-          <SheetTitle className="text-2xl text-primary-foreground font-black uppercase">
-            Teacher Designation
-          </SheetTitle>
-          <SheetDescription className="text-primary-foreground flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-            <span>{teacherDisplayName}</span>
-            <span className="hidden sm:inline">|</span>
-            <span>{ayLabel ? `S.Y. ${ayLabel}` : "No Active School Year"}</span>
-            {designationLastUpdated ? (
-              <>
-                <span className="hidden sm:inline">|</span>
-                <span>Updated {formatDateTime(designationLastUpdated)}</span>
-              </>
-            ) : null}
-          </SheetDescription>
+        <SheetHeader className="bg-primary px-6 py-6 space-y-1 relative shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="size-16 rounded-2xl bg-white/10 flex items-center justify-center font-black text-white text-2xl uppercase border-2 border-white/20 shadow-xl">
+              {teacherInitials}
+            </div>
+            <div className="space-y-0.5">
+              <SheetTitle className="text-2xl font-black text-white uppercase leading-none">
+                {teacherDisplayName}
+              </SheetTitle>
+              <SheetDescription className="text-white/80 font-bold uppercase text-xs flex items-center gap-2">
+                <Fingerprint className="size-3" />
+                Employee ID: {designationOpenFor?.employeeId || "N/A"}
+              </SheetDescription>
+              <p className="text-white/70 text-xs font-semibold">
+                {ayLabel ? `S.Y. ${ayLabel}` : "No Active School Year"}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute right-4 top-4 rounded-full p-2 text-white/50 hover:bg-white/10 hover:text-white transition-colors"
+            aria-label="Close designation panel">
+            <X className="size-5" />
+          </button>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 font-bold">

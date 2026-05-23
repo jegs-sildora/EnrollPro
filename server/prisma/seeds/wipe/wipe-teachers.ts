@@ -12,9 +12,6 @@ async function main() {
     // TeacherDesignations reference teachers
     prisma.teacherDesignation.deleteMany({}),
 
-    // TeacherSubjects reference teachers (CASCADE, but explicit is fine)
-    prisma.teacherSubject.deleteMany({}),
-
     // Departments might reference a teacher as Head
     prisma.department.updateMany({
       data: { headId: null }

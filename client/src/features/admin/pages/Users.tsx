@@ -68,6 +68,7 @@ import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { Avatar, AvatarFallback } from "@/shared/ui/avatar";
+import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import { motion, AnimatePresence } from "motion/react";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -198,10 +199,17 @@ export default function AdminUsers() {
     () => Number(searchParams.get("limit")) || 25,
   );
   const [total, setTotal] = useState(0);
-  const [search, setSearch] = useState(() => searchParams.get("search") || "");
-  const [debouncedSearch, setDebouncedSearch] = useState(
-    () => searchParams.get("search") || "",
-  );
+  const {
+    inputValue: search,
+    setInputValue: setSearch,
+    activeFilter: debouncedSearch,
+    isSearching,
+    clearSearch,
+  } = useDebouncedSearch(searchParams.get("search") || "");
+  const shouldShowSearchingState =
+    isSearching &&
+    search.trim().length > 0 &&
+    search.trim() !== debouncedSearch;
 
   const [roleFilter, setRoleFilter] = useState<string>(
     () => searchParams.get("role") || "all",
@@ -264,7 +272,7 @@ export default function AdminUsers() {
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value }, { replace: true });
     setPage(1);
-    setSearch("");
+    clearSearch();
     setRoleFilter("all");
     setStatusFilter("all");
     setGradeLevelFilter("all");
@@ -285,7 +293,7 @@ export default function AdminUsers() {
 
   useEffect(() => {
     setPage(1);
-    setSearch("");
+    clearSearch();
     setRoleFilter("all");
     setStatusFilter("all");
     setGradeLevelFilter("all");
@@ -504,11 +512,6 @@ export default function AdminUsers() {
     }
     return null;
   };
-
-  useEffect(() => {
-    setDebouncedSearch(search.trim());
-    setPage(1);
-  }, [search]);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -1287,7 +1290,7 @@ export default function AdminUsers() {
                 variant="outline"
                 className="h-10 px-3 text-sm font-bold w-full md:w-auto"
                 onClick={() => {
-                  setSearch("");
+                  clearSearch();
                   setRoleFilter("all");
                   setStatusFilter("all");
                   setGradeLevelFilter("all");
@@ -1341,6 +1344,20 @@ export default function AdminUsers() {
                   <div className="h-9 bg-muted rounded w-full" />
                 </div>
               ))
+            ) : shouldShowSearchingState ? (
+              <div className="h-64 flex flex-col items-center justify-center gap-3 text-center bg-background/80 rounded-xl border-2 border-dashed">
+                <Search className="h-10 w-10 animate-pulse text-slate-400" />
+                <div className="space-y-1">
+                  <p className="text-lg font-medium text-slate-500">
+                    Searching...
+                  </p>
+                  <p className="text-sm font-medium text-slate-400">
+                    {activeTab === "staff"
+                      ? "Scanning personnel accounts..."
+                      : "Scanning learner accounts..."}
+                  </p>
+                </div>
+              </div>
             ) : users.length === 0 ? (
               <div className="rounded-xl border p-6 text-center text-sm font-bold">
                 No users found matching the selected criteria.
@@ -1490,8 +1507,26 @@ export default function AdminUsers() {
               columns={columns}
               data={users}
               loading={loading}
+              forceEmptyState={shouldShowSearchingState}
               virtualize={false}
               tableClassName="table-fixed w-full"
+              emptyStateContent={
+                shouldShowSearchingState ? (
+                  <div className="h-64 flex flex-col items-center justify-center gap-3 text-center bg-background/80">
+                    <Search className="h-10 w-10 animate-pulse text-slate-400" />
+                    <div className="space-y-1">
+                      <p className="text-lg font-medium text-slate-500">
+                        Searching...
+                      </p>
+                      <p className="text-sm font-medium text-slate-400">
+                        {activeTab === "staff"
+                          ? "Scanning personnel accounts..."
+                          : "Scanning learner accounts..."}
+                      </p>
+                    </div>
+                  </div>
+                ) : undefined
+              }
               noResultsMessage="No records found matching the selected criteria."
               rowSelection={rowSelection}
               onRowSelectionChange={setRowSelection}
@@ -1519,6 +1554,7 @@ export default function AdminUsers() {
       limit,
       showSkeleton,
       activeTab,
+      shouldShowSearchingState,
       rowSelection,
       handlePageChange,
       handleLimitChange,

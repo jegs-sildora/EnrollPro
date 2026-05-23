@@ -8,11 +8,10 @@
  *   - AP   : 14 → 13  (remove 1)
  *
  * Deletion order per teacher:
- *   1. TeacherSubject records
- *   2. TeacherDesignation records
- *   3. SectionAdviser records
- *   4. Teacher record
- *   5. Linked User record (if any)
+ *   1. TeacherDesignation records
+ *   2. SectionAdviser records
+ *   3. Teacher record
+ *   4. Linked User record (if any)
  */
 
 import "dotenv/config";
@@ -37,19 +36,16 @@ async function removeTeacher(
   deptCode: string,
   teacherName: string,
 ) {
-  // 1. Remove subject assignments
-  await prisma.teacherSubject.deleteMany({ where: { teacherId } });
-
-  // 2. Remove designations
+  // 1. Remove designations
   await prisma.teacherDesignation.deleteMany({ where: { teacherId } });
 
-  // 3. Remove section adviser history
+  // 2. Remove section adviser history
   await prisma.sectionAdviser.deleteMany({ where: { teacherId } });
 
-  // 4. Delete teacher record
+  // 3. Delete teacher record
   await prisma.teacher.delete({ where: { id: teacherId } });
 
-  // 5. Delete linked user account
+  // 4. Delete linked user account
   if (userId !== null) {
     await prisma.user.delete({ where: { id: userId } });
   }
@@ -91,7 +87,6 @@ async function main() {
           select: {
             advisoryHistory: true,
             teacherDesignations: true,
-            subjects: true,
           },
         },
       },
@@ -101,17 +96,11 @@ async function main() {
       `  ${deptCode.padEnd(6)} current=${teachers.length}  removing=${removeCount}`,
     );
 
-    // Sort: prefer removing teachers with fewest total associations (advisory + designations + subjects)
+    // Sort: prefer removing teachers with fewest total associations (advisory + designations)
     // to minimise disruption. Among ties, newest first.
     const sorted = teachers.slice().sort((a, b) => {
-      const aScore =
-        a._count.advisoryHistory +
-        a._count.teacherDesignations +
-        a._count.subjects;
-      const bScore =
-        b._count.advisoryHistory +
-        b._count.teacherDesignations +
-        b._count.subjects;
+      const aScore = a._count.advisoryHistory + a._count.teacherDesignations;
+      const bScore = b._count.advisoryHistory + b._count.teacherDesignations;
       if (aScore !== bScore) return aScore - bScore; // fewer associations first
       return b.createdAt.getTime() - a.createdAt.getTime(); // newer first among ties
     });

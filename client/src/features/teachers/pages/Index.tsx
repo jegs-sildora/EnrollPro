@@ -3,7 +3,6 @@ import {
   useEffect,
   useMemo,
   useState,
-  startTransition,
 } from "react";
 import { sileo } from "sileo";
 import {
@@ -79,15 +78,59 @@ interface TeacherUpsertPayload {
   specialization: string | null;
   department: string | null;
   plantillaPosition: string | null;
-  subjects?: string[];
+}
+
+const DESIGNATION_FILTER_SUBJECT_TEACHER = "subject_teacher";
+const DESIGNATION_FILTER_CLASS_ADVISER = "class_adviser";
+const DESIGNATION_FILTER_ANCILLARY_PREFIX = "ancillary::";
+
+interface DesignationFilterOption {
+  value: string;
+  label: string;
+}
+
+function normalizeSearchText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildTeacherSearchIndex(teacher: Teacher): string {
+  const middleInitial = teacher.middleName?.trim()
+    ? `${teacher.middleName.trim().charAt(0)}.`
+    : "";
+  const fullNameWithInitial = `${teacher.lastName}, ${teacher.firstName}${middleInitial ? ` ${middleInitial}` : ""}`;
+  const fullNameWithMiddle = `${teacher.lastName}, ${teacher.firstName}${teacher.middleName ? ` ${teacher.middleName}` : ""}`;
+
+  return normalizeSearchText(
+    [
+      formatTeacherName(teacher),
+      fullNameWithInitial,
+      fullNameWithMiddle,
+      `${teacher.firstName} ${teacher.middleName ?? ""} ${teacher.lastName}`,
+      teacher.employeeId ?? "",
+      teacher.contactNumber ?? "",
+      teacher.department ?? "",
+      teacher.specialization ?? "",
+      teacher.designation?.advisorySection?.name ?? "",
+      teacher.designation?.advisorySection?.gradeLevelName ?? "",
+      ...(teacher.designation?.ancillaryRoles || []),
+    ].join(" "),
+  );
 }
 
 function normalizeTeacherFieldValue(
   field: TeacherFormField,
   value: string,
 ): string {
+  const nfcValue = value.normalize("NFC");
+
   if (field === "contactNumber") {
-    const digitsOnly = value.replace(/\D/g, "").slice(0, 11);
+    const digitsOnly = nfcValue.replace(/\D/g, "").slice(0, 11);
     if (!digitsOnly) {
       return "";
     }
@@ -107,10 +150,10 @@ function normalizeTeacherFieldValue(
     field === "specialization" ||
     field === "sex"
   ) {
-    return value;
+    return nfcValue;
   }
 
-  return value.toUpperCase();
+  return nfcValue.toUpperCase();
 }
 
 function isValidContactNumber(value: string): boolean {
@@ -194,12 +237,11 @@ export default function Teachers() {
     "designation" | "schedule-notes" | "review"
   >("designation");
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<TeacherStatusFilter>("all");
   const [designationFilter, setDesignationFilter] =
     useState<TeacherDesignationFilter>("all");
-  const [subjectFilter, setSubjectFilter] = useState<string>("all");
-  const [specializationFilter, setSpecializationFilter] = useState<string>("all");
+  const [departmentFilter, setDepartmentFilter] = useState<string>("all");
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(25);
@@ -220,29 +262,73 @@ export default function Teachers() {
     createEmptyDesignationForm,
   );
 
-  const availableSpecializations = useMemo(() => {
-    const specs = new Set<string>();
-    for (const t of teachers) {
-      if (t.specialization) specs.add(t.specialization.toUpperCase());
+  const availableDepartments = useMemo(() => {
+    const depts = new Set<string>();
+    for (const teacher of teachers) {
+      if (teacher.department) {
+        depts.add(teacher.department.toUpperCase());
+      }
     }
-    return Array.from(specs).sort();
+
+    return Array.from(depts).sort();
+  }, [teachers]);
+
+  const availableDesignationFilters = useMemo<DesignationFilterOption[]>(() => {
+    const roles = new Set<string>();
+    let hasClassAdviser = false;
+    let hasSubjectTeacher = false;
+
+    for (const teacher of teachers) {
+      const designation = teacher.designation;
+      if (designation?.isClassAdviser) {
+        hasClassAdviser = true;
+      }
+
+      if (
+        !designation ||
+        (!designation.isClassAdviser &&
+          (!designation.ancillaryRoles || designation.ancillaryRoles.length === 0))
+      ) {
+        hasSubjectTeacher = true;
+      }
+
+      for (const role of designation?.ancillaryRoles || []) {
+        roles.add(role);
+      }
+    }
+
+    const options: DesignationFilterOption[] = [];
+    if (hasClassAdviser) {
+      options.push({
+        value: DESIGNATION_FILTER_CLASS_ADVISER,
+        label: "Class Adviser",
+      });
+    }
+
+    for (const role of Array.from(roles).sort((a, b) => a.localeCompare(b))) {
+      options.push({
+        value: `${DESIGNATION_FILTER_ANCILLARY_PREFIX}${role}`,
+        label: role,
+      });
+    }
+
+    if (hasSubjectTeacher) {
+      options.push({
+        value: DESIGNATION_FILTER_SUBJECT_TEACHER,
+        label: "Subject Teacher",
+      });
+    }
+
+    return options;
   }, [teachers]);
 
   // Reset page when filters or limit change
   useEffect(() => {
     setPage(1);
-  }, [searchQuery, statusFilter, designationFilter, subjectFilter, specializationFilter, limit]);
+  }, [activeFilter, statusFilter, designationFilter, departmentFilter, limit]);
 
   const handleFieldChange = useCallback(
     (field: TeacherFormField, value: string | string[]) => {
-      if (field === "subjects") {
-        setFormData((prev) => ({
-          ...prev,
-          subjects: value as string[],
-        }));
-        return;
-      }
-
       const normalizedValue = normalizeTeacherFieldValue(
         field,
         value as string,
@@ -295,14 +381,6 @@ export default function Teachers() {
 
   const handleEditFieldChange = useCallback(
     (field: TeacherFormField, value: string | string[]) => {
-      if (field === "subjects") {
-        setEditFormData((prev) => ({
-          ...prev,
-          subjects: value as string[],
-        }));
-        return;
-      }
-
       setEditFormData((prev) => ({
         ...prev,
         [field]: normalizeTeacherFieldValue(field, value as string),
@@ -405,7 +483,6 @@ export default function Teachers() {
       specialization: normalizeOptionalInput(formData.specialization),
       department: normalizeOptionalInput(formData.department),
       plantillaPosition: normalizeOptionalInput(formData.plantillaPosition),
-      subjects: formData.subjects,
     };
 
     if (
@@ -464,7 +541,6 @@ export default function Teachers() {
       specialization: (teacher.specialization || "").toUpperCase(),
       department: (teacher.department || "").toUpperCase(),
       plantillaPosition: (teacher.plantillaPosition || "").toUpperCase(),
-      subjects: teacher.subjects || [],
     });
     setEditOpen(true);
   };
@@ -491,7 +567,6 @@ export default function Teachers() {
       specialization: normalizeOptionalInput(editFormData.specialization),
       department: normalizeOptionalInput(editFormData.department),
       plantillaPosition: normalizeOptionalInput(editFormData.plantillaPosition),
-      subjects: editFormData.subjects,
     };
 
     if (
@@ -565,23 +640,12 @@ export default function Teachers() {
   }, [teacherToDeactivate]);
 
   const filteredTeachers = useMemo(() => {
-    const normalizedSearch = searchQuery.trim().toLowerCase();
+    const normalizedSearch = normalizeSearchText(activeFilter);
 
     return teachers.filter((teacher) => {
       const matchesSearch =
         !normalizedSearch ||
-        [
-          `${teacher.lastName}, ${teacher.firstName} ${teacher.middleName ?? ""}`,
-          teacher.employeeId ?? "",
-          teacher.contactNumber ?? "",
-          teacher.specialization ?? "",
-          teacher.designation?.advisorySection?.name ?? "",
-          teacher.designation?.advisorySection?.gradeLevelName ?? "",
-          ...(teacher.subjects || []),
-        ]
-          .join(" ")
-          .toLowerCase()
-          .includes(normalizedSearch);
+        buildTeacherSearchIndex(teacher).includes(normalizedSearch);
 
       const matchesStatus =
         statusFilter === "all" ||
@@ -589,34 +653,35 @@ export default function Teachers() {
 
       const matchesDesignation =
         designationFilter === "all" ||
-        (designationFilter === "adviser"
+        (designationFilter === DESIGNATION_FILTER_CLASS_ADVISER
           ? Boolean(teacher.designation?.isClassAdviser)
-          : designationFilter === "tic"
-            ? Boolean(
-                teacher.designation?.ancillaryRoles?.includes(
-                  "Teacher-in-Charge (TIC) / Officer-in-Charge (OIC)",
-                ),
-              )
-            : !teacher.designation ||
+          : designationFilter === DESIGNATION_FILTER_SUBJECT_TEACHER
+            ? !teacher.designation ||
               (!teacher.designation.isClassAdviser &&
                 (!teacher.designation.ancillaryRoles ||
-                  teacher.designation.ancillaryRoles.length === 0)));
+                  teacher.designation.ancillaryRoles.length === 0))
+            : designationFilter.startsWith(DESIGNATION_FILTER_ANCILLARY_PREFIX)
+              ? Boolean(
+                  teacher.designation?.ancillaryRoles?.includes(
+                    designationFilter.slice(
+                      DESIGNATION_FILTER_ANCILLARY_PREFIX.length,
+                    ),
+                  ),
+                )
+              : true);
 
-      const matchesSubject =
-        subjectFilter === "all" ||
-        (teacher.subjects || []).some(
-          (s) => s.toUpperCase() === subjectFilter.toUpperCase(),
-        );
-
-      const matchesSpecialization =
-        specializationFilter === "all" ||
-        (teacher.specialization ?? "").toUpperCase() === specializationFilter.toUpperCase();
+      const matchesDepartment =
+        departmentFilter === "all" ||
+        (teacher.department ?? "").toUpperCase() === departmentFilter.toUpperCase();
 
       return (
-        matchesSearch && matchesStatus && matchesDesignation && matchesSubject && matchesSpecialization
+        matchesSearch &&
+        matchesStatus &&
+        matchesDesignation &&
+        matchesDepartment
       );
     });
-  }, [teachers, searchQuery, statusFilter, designationFilter, subjectFilter, specializationFilter]);
+  }, [teachers, activeFilter, statusFilter, designationFilter, departmentFilter]);
 
   const paginatedTeachers = useMemo(() => {
     const start = (page - 1) * limit;
@@ -625,11 +690,10 @@ export default function Teachers() {
   }, [filteredTeachers, page, limit]);
 
   const hasActiveFilters =
-    searchQuery.trim().length > 0 ||
+    activeFilter.trim().length > 0 ||
     statusFilter !== "all" ||
     designationFilter !== "all" ||
-    subjectFilter !== "all" ||
-    specializationFilter !== "all";
+    departmentFilter !== "all";
 
   const openDesignationEditor = useCallback(
     (teacher: Teacher) => {
@@ -838,35 +902,26 @@ export default function Teachers() {
         teachers={teachers}
         filteredTeachers={filteredTeachers}
         paginatedTeachers={paginatedTeachers}
-        searchQuery={searchQuery}
         statusFilter={statusFilter}
         designationFilter={designationFilter}
-        subjectFilter={subjectFilter}
-        specializationFilter={specializationFilter}
-        availableSpecializations={availableSpecializations}
+        departmentFilter={departmentFilter}
+        availableDepartments={availableDepartments}
+        availableDesignationFilters={availableDesignationFilters}
         hasActiveFilters={hasActiveFilters}
         ayId={ayId}
         page={page}
         limit={limit}
         onPageChange={setPage}
         onLimitChange={setLimit}
-        onSearchQueryChange={(val) => {
-          startTransition(() => {
-            setSearchQuery(val);
-          });
-        }}
+        onSearchQueryChange={setActiveFilter}
         onStatusFilterChange={setStatusFilter}
         onDesignationFilterChange={setDesignationFilter}
-        onSubjectFilterChange={setSubjectFilter}
-        onSpecializationFilterChange={setSpecializationFilter}
+        onDepartmentFilterChange={setDepartmentFilter}
         onClearFilters={() => {
-          startTransition(() => {
-            setSearchQuery("");
-          });
+          setActiveFilter("");
           setStatusFilter("all");
           setDesignationFilter("all");
-          setSubjectFilter("all");
-          setSpecializationFilter("all");
+          setDepartmentFilter("all");
         }}
         onRefresh={fetchTeachers}
         onOpenDesignationEditor={openDesignationEditor}
@@ -883,12 +938,12 @@ export default function Teachers() {
       teachers,
       filteredTeachers,
       paginatedTeachers,
-      searchQuery,
+      activeFilter,
       statusFilter,
       designationFilter,
-      subjectFilter,
-      specializationFilter,
-      availableSpecializations,
+      departmentFilter,
+      availableDepartments,
+      availableDesignationFilters,
       hasActiveFilters,
       ayId,
       page,

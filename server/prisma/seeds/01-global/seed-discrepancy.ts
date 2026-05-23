@@ -2,7 +2,7 @@
  * seed-discrepancy.ts
  *
  * Aligns each department's teacher count to the stakeholder-approved baseline.
- * - Delta > 0  → creates exactly `delta` new Teacher + User + TeacherSubject records
+ * - Delta > 0  → creates exactly `delta` new Teacher + User records
  * - Delta < 0  → logs a warning; DOES NOT delete or modify any existing record
  * - Delta = 0  → logs that the department is already at baseline and skips
  *
@@ -597,11 +597,6 @@ async function main() {
       await prisma.teacher.update({
         where: { id: teacher.id },
         data: { userId: user.id },
-      });
-
-      // Step 4: Register qualified subject
-      await prisma.teacherSubject.create({
-        data: { teacherId: teacher.id, subject: deptInfo.subject },
       });
 
       nameSeed++;

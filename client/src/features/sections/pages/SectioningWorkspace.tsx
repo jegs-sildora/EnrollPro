@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import api from "@/shared/api/axiosInstance";
+import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
+import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Progress } from "@/shared/ui/progress";
@@ -107,7 +109,18 @@ export default function SectioningWorkspace() {
   // Selection & Filters
   const [selectedAppIds, setSelectedAppIds] = useState<number[]>([]);
   const [filterSex, setFilterSex] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  const {
+    inputValue: searchQuery,
+    setInputValue: setSearchQuery,
+    activeFilter: activeSearchQuery,
+    isSearching,
+  } = useDebouncedSearch();
+  const {
+    inputValue: rosterSearchQuery,
+    setInputValue: setRosterSearchQuery,
+    activeFilter: activeRosterFilter,
+    isSearching: isRosterSearching,
+  } = useDebouncedSearch();
   const [targetSectionId, setTargetSectionId] = useState<number | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"workspace" | "pool" | "rosters" | "bosy">("workspace");
@@ -186,14 +199,26 @@ export default function SectioningWorkspace() {
 
   // --- Logic ---
   const filteredPool = useMemo(() => {
-    return pool.filter(l => {
-      const matchesSearch = l.firstName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                           l.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           l.lrn.includes(searchQuery);
+    return pool.filter((l) => {
+      const normalizedQuery = activeSearchQuery.toLowerCase();
+      const matchesSearch =
+        l.firstName.toLowerCase().includes(normalizedQuery) ||
+        l.lastName.toLowerCase().includes(normalizedQuery) ||
+        l.lrn.includes(activeSearchQuery);
       const matchesSex = filterSex === "all" || l.sex === filterSex;
       return matchesSearch && matchesSex;
     });
-  }, [pool, searchQuery, filterSex]);
+  }, [pool, activeSearchQuery, filterSex]);
+
+  const filteredSections = useMemo(() => {
+    if (!activeRosterFilter.trim()) return sections;
+    const q = activeRosterFilter.toLowerCase();
+    return sections.filter(s =>
+      s.name.toLowerCase().includes(q) ||
+      s.adviser.toLowerCase().includes(q) ||
+      s.gradeLevel.toLowerCase().includes(q),
+    );
+  }, [sections, activeRosterFilter]);
 
   const toggleSelect = useCallback((appId: number) => {
     setSelectedAppIds(prev => 
@@ -395,7 +420,17 @@ export default function SectioningWorkspace() {
                     </tr>
                   </thead>
                   <tbody>
+                    {isSearching && (
+                      <TableSearchIndicator colSpan={4} />
+                    )}
                     <AnimatePresence>
+                      {filteredPool.length === 0 && !isSearching ? (
+                        <tr>
+                          <td colSpan={4} className="p-6 text-center text-sm font-bold text-slate-400">
+                            No learners match the current filters.
+                          </td>
+                        </tr>
+                      ) : null}
                       {filteredPool.map((l) => (
                         <motion.tr
                           key={l.applicationId}
@@ -631,63 +666,102 @@ export default function SectioningWorkspace() {
 
         {/* ── OFFICIAL CLASS ROSTERS ── */}
         {activeTab === "rosters" && (
-          <div className="h-full overflow-auto p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {sections.map((s) => {
-                const occupancy = (s.currentCount / s.maxCapacity) * 100;
-                const isFull = s.currentCount >= s.maxCapacity;
-                return (
-                  <Card key={s.id} className="bg-white border border-slate-100 shadow-sm">
-                    <CardHeader className="p-5 pb-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-black text-primary uppercase tracking-widest">{s.gradeLevel}</span>
-                          <CardTitle className="text-lg font-black text-slate-900 uppercase">{s.name}</CardTitle>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          disabled={downloadingId === s.id}
-                          onClick={() => handleDownloadSF1(s.id, s.name)}
-                          className="h-8 w-8 rounded-lg border-slate-200 hover:bg-primary/5 shadow-sm"
-                        >
-                          {downloadingId === s.id ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+          <div className="h-full flex flex-col overflow-hidden">
+            {/* Roster search bar */}
+            <div className="px-6 py-3 border-b border-slate-100 flex-shrink-0">
+              <div className="relative max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  placeholder="Search by section, adviser, or grade..."
+                  className="pl-9 h-10 border-slate-200 focus:ring-primary/20"
+                  value={rosterSearchQuery}
+                  onChange={(e) => setRosterSearchQuery(e.target.value)}
+                />
+              </div>
+            </div>
+            {/* Roster table */}
+            <div className="flex-1 overflow-auto">
+              <table className="w-full text-left border-collapse">
+                <thead className="sticky top-0 bg-white z-10 border-b border-slate-100">
+                  <tr className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                    <th className="p-4 w-10">#</th>
+                    <th className="p-4">Section</th>
+                    <th className="p-4">Grade Level</th>
+                    <th className="p-4">Track / Program</th>
+                    <th className="p-4 text-center">Boys</th>
+                    <th className="p-4 text-center">Girls</th>
+                    <th className="p-4 text-center">Enrolled</th>
+                    <th className="p-4 text-center">Capacity</th>
+                    <th className="p-4">Fill Rate</th>
+                    <th className="p-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isRosterSearching && (
+                    <TableSearchIndicator colSpan={10} />
+                  )}
+                  {filteredSections.length === 0 && !isRosterSearching ? (
+                    <tr>
+                      <td colSpan={10} className="p-6 text-center text-sm font-bold text-slate-400">
+                        No sections match the current filter.
+                      </td>
+                    </tr>
+                  ) : null}
+                  {!isRosterSearching && filteredSections.map((s, idx) => {
+                    const occupancy = (s.currentCount / s.maxCapacity) * 100;
+                    const isFull = s.currentCount >= s.maxCapacity;
+                    return (
+                      <tr key={s.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                        <td className="p-4 text-sm text-slate-400">{idx + 1}</td>
+                        <td className="p-4">
+                          <span className="text-sm font-black text-slate-900 uppercase">{s.name}</span>
+                        </td>
+                        <td className="p-4 text-sm font-bold text-slate-600">{s.gradeLevel}</td>
+                        <td className="p-4">
+                          {s.tleProgram ? (
+                            <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest py-0 border-primary/20 text-primary">
+                              {s.tleProgram}
+                            </Badge>
                           ) : (
-                            <FileDown className="h-3.5 w-3.5 text-slate-600" />
+                            <span className="text-sm text-slate-400">—</span>
                           )}
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-5 pt-2 space-y-4">
-                      <div className="space-y-1.5">
-                        <Progress value={occupancy} className="h-1.5" />
-                        <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-tight text-slate-400">
-                          <div className="flex gap-3">
-                            <span className="flex items-center gap-1"><div className="h-1.5 w-1.5 rounded-full bg-blue-500" /> Boys: {s.boys}</span>
-                            <span className="flex items-center gap-1"><div className="h-1.5 w-1.5 rounded-full bg-pink-500" /> Girls: {s.girls}</span>
+                        </td>
+                        <td className="p-4 text-center text-sm font-bold text-blue-600">{s.boys}</td>
+                        <td className="p-4 text-center text-sm font-bold text-pink-600">{s.girls}</td>
+                        <td className="p-4 text-center text-sm font-black text-slate-900">{s.currentCount}</td>
+                        <td className="p-4 text-center text-sm font-bold text-slate-600">{s.maxCapacity}</td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-2">
+                            <Progress value={occupancy} className="h-1.5 w-16" />
+                            <span className={cn("text-xs font-black", isFull ? "text-red-500" : "text-slate-500")}>
+                              {Math.round(occupancy)}%
+                            </span>
+                            {isFull && (
+                              <Badge variant="destructive" className="font-black text-[9px] tracking-widest px-1.5 py-0 uppercase">FULL</Badge>
+                            )}
                           </div>
-                          <span>{s.currentCount}/{s.maxCapacity} ({Math.round(occupancy)}%)</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between pt-2 border-t border-slate-50">
-                        <div className="flex items-center gap-2">
-                          <UserCheck className="h-3 w-3 text-slate-400" />
-                          <span className="text-[10px] font-bold text-slate-500 uppercase">{s.adviser}</span>
-                        </div>
-                        {isFull && (
-                          <Badge variant="destructive" className="font-black text-[9px] tracking-widest px-2 py-0.5 uppercase">FULL</Badge>
-                        )}
-                        {s.tleProgram && !isFull && (
-                          <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest py-0 border-primary/20 text-primary">
-                            {s.tleProgram}
-                          </Badge>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                        </td>
+                        <td className="p-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={downloadingId === s.id}
+                            onClick={() => handleDownloadSF1(s.id, s.name)}
+                            className="h-8 gap-1.5 border-slate-200 hover:bg-primary/5"
+                          >
+                            {downloadingId === s.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                            ) : (
+                              <FileDown className="h-3.5 w-3.5 text-slate-600" />
+                            )}
+                            SF1
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
         )}

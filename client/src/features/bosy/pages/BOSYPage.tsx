@@ -8,7 +8,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
-import { useDebounce } from "@/shared/hooks/useDebounce";
+import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import type { RowSelectionState } from "@tanstack/react-table";
 
 import {
@@ -60,8 +60,12 @@ export default function BOSYPage() {
   const [readinessLoading, setReadinessLoading] = useState(false);
 
   const [activeTab, setActiveTab] = useState("pending");
-  const [queueSearch, setQueueSearch] = useState("");
-  const debouncedSearch = useDebounce(queueSearch, 300);
+  const {
+    inputValue: queueSearch,
+    setInputValue: setQueueSearch,
+    activeFilter: activeQueueSearch,
+    isSearching,
+  } = useDebouncedSearch();
 
   // Pending Confirmation state
   const [pendingItems, setPendingItems] = useState<BOSYQueueItem[]>([]);
@@ -139,7 +143,7 @@ export default function BOSYPage() {
       const data = await getBOSYQueue({
         schoolYearId: syId,
         status: "PENDING_CONFIRMATION",
-        search: debouncedSearch || undefined,
+        search: activeQueueSearch || undefined,
         page: pendingPage,
         limit: pendingLimit,
       });
@@ -150,7 +154,7 @@ export default function BOSYPage() {
     } finally {
       setPendingLoading(false);
     }
-  }, [syId, debouncedSearch, pendingPage, pendingLimit]);
+  }, [syId, activeQueueSearch, pendingPage, pendingLimit]);
 
   const fetchConfirmed = useCallback(async () => {
     if (!syId) return;
@@ -159,7 +163,7 @@ export default function BOSYPage() {
       const data = await getBOSYQueue({
         schoolYearId: syId,
         status: "READY_FOR_SECTIONING",
-        search: debouncedSearch || undefined,
+        search: activeQueueSearch || undefined,
         page: confirmedPage,
         limit: confirmedLimit,
       });
@@ -170,7 +174,7 @@ export default function BOSYPage() {
     } finally {
       setConfirmedLoading(false);
     }
-  }, [syId, debouncedSearch, confirmedPage, confirmedLimit]);
+  }, [syId, activeQueueSearch, confirmedPage, confirmedLimit]);
 
   const fetchDropped = useCallback(async () => {
     if (!syId) return;
@@ -179,7 +183,7 @@ export default function BOSYPage() {
       const data = await getBOSYQueue({
         schoolYearId: syId,
         status: "TRANSFERRED_OUT",
-        search: debouncedSearch || undefined,
+        search: activeQueueSearch || undefined,
         page: droppedPage,
         limit: droppedLimit,
       });
@@ -190,7 +194,7 @@ export default function BOSYPage() {
     } finally {
       setDroppedLoading(false);
     }
-  }, [syId, debouncedSearch, droppedPage, droppedLimit]);
+  }, [syId, activeQueueSearch, droppedPage, droppedLimit]);
 
   const fetchCompleters = useCallback(async () => {
     if (!syId) return;
@@ -198,7 +202,7 @@ export default function BOSYPage() {
     try {
       const data = await getJHSCompleters({
         schoolYearId: syId,
-        search: debouncedSearch || undefined,
+        search: activeQueueSearch || undefined,
         page: completersPage,
         limit: completersLimit,
       });
@@ -209,7 +213,7 @@ export default function BOSYPage() {
     } finally {
       setCompletersLoading(false);
     }
-  }, [syId, debouncedSearch, completersPage, completersLimit]);
+  }, [syId, activeQueueSearch, completersPage, completersLimit]);
 
   useEffect(() => {
     void fetchReadiness();
@@ -516,6 +520,7 @@ export default function BOSYPage() {
                 <QueueTable
                   items={pendingItems}
                   loading={pendingLoading}
+                  isSearching={isSearching}
                   showConfirmAction={canMutate}
                   rowSelection={rowSelection}
                   onRowSelectionChange={setRowSelection}
@@ -564,6 +569,7 @@ export default function BOSYPage() {
                 <QueueTable
                   items={confirmedItems}
                   loading={confirmedLoading}
+                  isSearching={isSearching}
                   showConfirmAction={false}
                   rowSelection={{}}
                   onRowSelectionChange={() => {}}
@@ -612,6 +618,7 @@ export default function BOSYPage() {
                 <QueueTable
                   items={droppedItems}
                   loading={droppedLoading}
+                  isSearching={isSearching}
                   showConfirmAction={false}
                   rowSelection={{}}
                   onRowSelectionChange={() => {}}
@@ -660,6 +667,7 @@ export default function BOSYPage() {
                 <JHSCompleterTable
                   items={completersItems}
                   loading={completersLoading}
+                  isSearching={isSearching}
                 />
               </div>
               <PaginationBar

@@ -76,7 +76,6 @@ export interface Teacher {
   department: string | null;
   plantillaPosition: string | null;
   photoPath: string | null;
-  subjects: string[];
   sectionCount: number;
   designation: TeacherDesignation | null;
   isActive: boolean;
@@ -100,7 +99,6 @@ export interface TeacherFormState {
   specialization: string;
   department: string;
   plantillaPosition: string;
-  subjects: string[];
 }
 
 export interface DesignationFormState {
@@ -116,4 +114,4 @@ export interface DesignationFormState {
 
 export type DesignationDrawerTab = "designation" | "schedule-notes" | "review";
 export type TeacherStatusFilter = "all" | "active" | "inactive";
-export type TeacherDesignationFilter = "all" | "adviser" | "tic" | "none";
+export type TeacherDesignationFilter = string;

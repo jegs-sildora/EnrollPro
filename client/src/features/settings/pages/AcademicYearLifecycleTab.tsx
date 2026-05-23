@@ -52,7 +52,6 @@ import {
   staggerTransition,
 } from "@/shared/lib/motion";
 import { lifecycleFeedback } from "@/shared/lib/lifecycle-feedback";
-import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 
 const UNLOCK_CATEGORIES = [
   "Division Office Mandate / Extension",
@@ -64,7 +63,6 @@ const UNLOCK_CATEGORIES = [
 export default function AcademicYearLifecycleTab() {
   const { activeSchoolYearLabel, activeSchoolYearStatus, systemStatus, bosyLockedAt, activeSchoolYearId, setSettings, setViewingSY } =
     useSettingsStore();
-  const { ayId } = useSchoolYearContext();
 
   const [isUnlockModalOpen, setIsUnlockModalOpen] = useState(false);
   const [isEosyUnlockModalOpen, setIsEosyUnlockModalOpen] = useState(false);
@@ -87,7 +85,7 @@ export default function AcademicYearLifecycleTab() {
   type LifecyclePhase = "ENROLLMENT" | "ACADEMIC" | "ROLLOVER_READY";
   const resolvedLifecycleStatus = activeSchoolYearStatus ?? systemStatus;
   const currentPhase: LifecyclePhase =
-    isEosyFinalized && resolvedLifecycleStatus !== "ARCHIVED"
+    isEosyFinalized
       ? "ROLLOVER_READY"
       : resolvedLifecycleStatus === "BOSY_LOCKED" || resolvedLifecycleStatus === "ARCHIVED"
       ? "ACADEMIC"
@@ -118,7 +116,7 @@ export default function AcademicYearLifecycleTab() {
   }, [activeSchoolYearId, setSettings]);
 
   useEffect(() => {
-    if (!ayId) {
+    if (!activeSchoolYearId) {
       setIsEosyFinalized(false);
       return;
     }
@@ -127,7 +125,7 @@ export default function AcademicYearLifecycleTab() {
 
     const refreshExportLock = async () => {
       try {
-        const res = await api.get(`/eosy/school-year/${ayId}/export-lock`);
+        const res = await api.get(`/eosy/school-year/${activeSchoolYearId}/export-lock`);
         if (!cancelled) {
           setIsEosyFinalized(Boolean(res.data?.schoolYearFinalized));
         }
@@ -143,7 +141,7 @@ export default function AcademicYearLifecycleTab() {
     return () => {
       cancelled = true;
     };
-  }, [ayId]);
+  }, [activeSchoolYearId]);
 
   // --- Rollover State ---
   const [isExecuteRolloverOpen, setIsExecuteRolloverOpen] = useState(false);

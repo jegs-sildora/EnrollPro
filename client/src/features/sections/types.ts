@@ -15,6 +15,21 @@ export interface TeacherOption {
   employeeId: string | null;
 }
 
+export interface AdviserCandidate {
+  id: number;
+  name: string;
+  employeeId: string | null;
+  department: string | null;
+  specialization: string | null;
+  isActive: boolean;
+  designationTitle: string | null;
+  assignedSection: {
+    id: number;
+    name: string;
+    gradeLevelName: string | null;
+  } | null;
+}
+
 export interface SectionItem {
   id: number;
   name: string;

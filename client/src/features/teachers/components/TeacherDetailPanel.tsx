@@ -167,20 +167,6 @@ export const TeacherDetailPanel = memo(function TeacherDetailPanel({
                   <p className="font-bold text-sm uppercase">{activeTeacher.specialization || "Generalist"}</p>
                 </div>
               </div>
-              <div className="p-4 space-y-2">
-                <p className="text-[10px] font-black uppercase text-muted-foreground leading-none">Qualified Subjects</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {activeTeacher.subjects.length > 0 ? (
-                    activeTeacher.subjects.map((sub) => (
-                      <Badge key={sub} variant="secondary" className="text-[10px] font-bold uppercase px-2 py-0.5">
-                        {sub}
-                      </Badge>
-                    ))
-                  ) : (
-                    <span className="text-sm font-medium text-slate-400 italic">N/A</span>
-                  )}
-                </div>
-              </div>
             </div>
           </section>
 

@@ -19,23 +19,23 @@ function formatTeacherName(teacher: {
 function normalizeOptionalUpperText(val: unknown): string | null {
   if (val === undefined || val === null || val === "" || val === "__NONE__")
     return null;
-  return String(val).trim().toUpperCase();
+  return String(val).normalize("NFC").trim().toUpperCase();
 }
 
 function normalizeOptionalText(val: unknown): string | null {
   if (val === undefined || val === null || val === "" || val === "__NONE__")
     return null;
-  return String(val).trim();
+  return String(val).normalize("NFC").trim();
 }
 
 function normalizeRequiredUpperText(val: unknown): string {
   if (val === undefined || val === null || val === "") return "";
-  return String(val).trim().toUpperCase();
+  return String(val).normalize("NFC").trim().toUpperCase();
 }
 
 function normalizeRequiredLowerEmail(val: unknown): string {
   if (val === undefined || val === null || val === "") return "";
-  return String(val).trim().toLowerCase();
+  return String(val).normalize("NFC").trim().toLowerCase();
 }
 
 function normalizeContactNumber(val: unknown): string | null {
@@ -110,7 +110,6 @@ export async function index(req: Request, res: Response) {
 
     const teachers = await prisma.teacher.findMany({
       include: {
-        subjects: true,
         department: true,
         user: {
           select: {
@@ -150,7 +149,7 @@ export async function index(req: Request, res: Response) {
         plantillaPosition: teacher.plantillaPosition,
         photoPath: teacher.photoPath,
         sex: teacher.sex,
-        subjects: teacher.subjects.map((s) => s.subject),
+        subjects: [],
         isActive: teacher.isActive,
         createdAt: teacher.createdAt,
         userAccount: teacher.user
@@ -220,7 +219,7 @@ export async function show(req: Request, res: Response) {
   try {
     const teacher = await prisma.teacher.findUnique({
       where: { id },
-      include: { subjects: true, department: true },
+      include: { department: true },
     });
 
     if (!teacher) {
@@ -231,7 +230,7 @@ export async function show(req: Request, res: Response) {
       teacher: {
         ...teacher,
         designationTitle: teacher.designation,
-        subjects: teacher.subjects.map((s) => s.subject),
+        subjects: [],
         department: teacher.department?.code || null,
       },
     });
@@ -252,7 +251,6 @@ interface TeacherUpsertPayload {
   specialization?: string | null;
   departmentCode?: string | null;
   plantillaPosition?: string | null;
-  subjects?: string[];
 }
 
 export async function store(req: Request, res: Response) {
@@ -268,7 +266,6 @@ export async function store(req: Request, res: Response) {
       specialization,
       department,
       plantillaPosition,
-      subjects,
     } = req.body;
 
     const normalizedFirstName = normalizeRequiredUpperText(firstName);
@@ -320,6 +317,7 @@ export async function store(req: Request, res: Response) {
           middleName: normalizeOptionalUpperText(middleName),
           email: normalizedEmail,
           sex: sex === "MALE" ? "MALE" : "FEMALE",
+          designation: "SUBJECT TEACHER",
           isActive: true, // Reactivate user if profile is recreated
         },
         create: {
@@ -333,6 +331,7 @@ export async function store(req: Request, res: Response) {
           role: "TEACHER",
           sex: sex === "MALE" ? "MALE" : "FEMALE",
           isActive: true,
+          designation: "SUBJECT TEACHER",
           mustChangePassword: true,
         },
         select: { id: true },
@@ -351,18 +350,10 @@ export async function store(req: Request, res: Response) {
           specialization: normalizeOptionalUpperText(specialization),
           department: deptCode ? { connect: { code: deptCode } } : undefined,
           plantillaPosition: normalizeOptionalUpperText(plantillaPosition),
+          designation: "SUBJECT TEACHER",
           user: { connect: { id: upsertedUser.id } },
         },
       });
-
-      if (Array.isArray(subjects) && subjects.length > 0) {
-        await tx.teacherSubject.createMany({
-          data: subjects.map((sub) => ({
-            teacherId: t.id,
-            subject: sub.trim().toUpperCase(),
-          })),
-        });
-      }
 
       return t;
     });
@@ -413,7 +404,6 @@ export async function update(req: Request, res: Response) {
       specialization,
       department,
       plantillaPosition,
-      subjects,
     } = req.body;
 
     const existing = await prisma.teacher.findUnique({ where: { id } });
@@ -481,16 +471,6 @@ export async function update(req: Request, res: Response) {
       });
 
       // Sync subjects
-      await tx.teacherSubject.deleteMany({ where: { teacherId: id } });
-      if (Array.isArray(subjects) && subjects.length > 0) {
-        await tx.teacherSubject.createMany({
-          data: subjects.map((sub) => ({
-            teacherId: id,
-            subject: sub.trim().toUpperCase(),
-          })),
-        });
-      }
-
       // Backfill userId link if missing (for teachers created before the migration)
       if (!t.userId) {
         const linkedUser = await tx.user.findFirst({

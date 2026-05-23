@@ -33,6 +33,7 @@ import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { useSchoolYearContext } from "@/shared/hooks/useSchoolYearContext";
 import { toastApiError } from "@/shared/hooks/useApiToast";
+import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import { useScpConfigs } from "@/features/admission/hooks/useScpConfigs";
 import {
   SCP_ACRONYMS,
@@ -79,6 +80,7 @@ import type {
 } from "@tanstack/react-table";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
+import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
 import { BatchSectioningWizard } from "@/features/enrollment/components/BatchSectioningWizard";
 import { BatchSectioningParamsModal } from "@/features/enrollment/components/BatchSectioningParamsModal";
 import { ApplicationDetailPanel } from "@/features/enrollment/components/ApplicationDetailPanel";
@@ -393,7 +395,12 @@ export default function Enrollment() {
   const [tabCounts, setTabCounts] = useState<Record<string, number>>({});
 
   // Filters - Moved up to prevent initialization errors
-  const [search, setSearch] = useState(() => searchParam?.trim() ?? "");
+  const {
+    inputValue: searchInputValue,
+    setInputValue: setSearchInputValue,
+    activeFilter: search,
+    isSearching,
+  } = useDebouncedSearch(searchParam?.trim() ?? "");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
   const [pendingQueueFilter, setPendingQueueFilter] =
@@ -2033,7 +2040,7 @@ export default function Enrollment() {
     }
 
     if (searchParam !== null) {
-      setSearch(searchParam.trim());
+      setSearchInputValue(searchParam.trim());
     }
 
     setPage(1);
@@ -2421,10 +2428,10 @@ export default function Enrollment() {
                   <Input
                     placeholder="Search LRN, First Name, Last Name..."
                     className="pl-10 h-11 text-sm font-bold bg-muted/30 border-2 border-transparent focus:border-primary transition-all"
-                    value={search}
+                    value={searchInputValue}
                     onChange={(e) => {
                       const val = e.target.value;
-                      setSearch(val);
+                      setSearchInputValue(val);
                       startTransition(() => {
                         setPage(1);
                       });
@@ -2496,7 +2503,7 @@ export default function Enrollment() {
                     variant="outline"
                     className="h-11 px-6 text-sm font-bold border-2 hover:bg-muted"
                     onClick={() => {
-                      setSearch("");
+                      setSearchInputValue("");
                       setGenderFilter("ALL");
                       setPendingQueueFilter("ALL");
                       setPage(1);
@@ -2513,6 +2520,7 @@ export default function Enrollment() {
                   columns={columns}
                   data={visibleApplications}
                   loading={loading}
+                  forceEmptyState={isSearching}
                   virtualize={true}
                   estimatedRowHeight={60}
                   className="border-none rounded-none h-full"
@@ -2525,6 +2533,7 @@ export default function Enrollment() {
                   onSortingChange={onSortingChange}
                   rowSelection={rowSelection}
                   onRowSelectionChange={setRowSelection}
+                  prependBodyRow={isSearching ? <TableSearchIndicator colSpan={11} /> : null}
                 />
               </div>
 
@@ -3379,7 +3388,7 @@ export default function Enrollment() {
         onClose={() => setIsBatchWizardOpen(false)}
         onSuccess={() => {
           fetchData();
-          setSearch(""); // Phase 4: Search Reset
+          setSearchInputValue(""); // Phase 4: Search Reset
         }}
         gradeLevelId={batchGradeLevelId || 0}
         gradeLevelName={batchGradeLevelName}

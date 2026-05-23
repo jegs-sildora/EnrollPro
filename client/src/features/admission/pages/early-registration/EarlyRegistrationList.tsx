@@ -61,6 +61,7 @@ export default function EarlyRegistration({
     loading,
     search,
     setSearch,
+    isSearching,
     status,
     setStatus,
     type,
@@ -185,6 +186,7 @@ export default function EarlyRegistration({
               selectedId={selectedId}
               setSelectedId={setSelectedId}
               getNextAction={getNextAction}
+              isSearching={isSearching}
             />
 
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mt-4 font-bold">

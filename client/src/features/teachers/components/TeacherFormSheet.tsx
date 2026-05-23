@@ -10,6 +10,7 @@ import {
 import {
   Check,
   ChevronsUpDown,
+  Fingerprint,
   Search,
   X,
   Mars,
@@ -72,6 +73,10 @@ interface TeacherFormSheetProps {
   onSubmit: () => void;
 }
 
+function normalizeSpecializationValue(value: string): string {
+  return value.normalize("NFC").trim().toUpperCase();
+}
+
 export const TeacherFormSheet = memo(function TeacherFormSheet({
   mode,
   open,
@@ -97,26 +102,28 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
   const [specializationSearchTerm, setSpecializationSearchTerm] = useState("");
   const [activeSpecializationIndex, setActiveSpecializationIndex] = useState(0);
 
-  const [, setSubjectSearchTerm] = useState("");
-  const [, setIsSubjectPopoverOpen] = useState(false);
-
   const allSpecializationOptions = useMemo(
     () =>
       TEACHER_SPECIALIZATION_GROUPS.flatMap((group) =>
         group.options.map((option) => ({
-          value: option.value,
+          value: normalizeSpecializationValue(option.value),
           label: option.label,
         })),
       ),
     [],
   );
 
+  const normalizedSelectedSpecializationValue = useMemo(
+    () => normalizeSpecializationValue(formData.specialization),
+    [formData.specialization],
+  );
+
   const selectedSpecializationOption = useMemo(
     () =>
       allSpecializationOptions.find(
-        (option) => option.value === formData.specialization,
+        (option) => option.value === normalizedSelectedSpecializationValue,
       ) ?? null,
-    [allSpecializationOptions, formData.specialization],
+    [allSpecializationOptions, normalizedSelectedSpecializationValue],
   );
 
   const searchableSpecializationGroups = useMemo<
@@ -143,7 +150,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
           );
         })
         .map((option) => ({
-          value: option.value,
+          value: normalizeSpecializationValue(option.value),
           label: option.label,
           flatIndex: runningFlatIndex++,
         }));
@@ -165,8 +172,6 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
       setIsSpecializationPopoverOpen(false);
       setSpecializationSearchTerm("");
       setActiveSpecializationIndex(0);
-      setIsSubjectPopoverOpen(false);
-      setSubjectSearchTerm("");
     }
   }, [open]);
 
@@ -282,6 +287,17 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
   const submitLabel = mode === "create" ? "Create Teacher" : "Save Changes";
   const submittingLabel = mode === "create" ? "Creating..." : "Saving...";
 
+  const previewName =
+    formData.firstName.trim() || formData.lastName.trim()
+      ? `${formData.lastName.trim() || "TEACHER"}, ${formData.firstName.trim() || "NEW"}`
+      : title;
+
+  const previewInitials = `${formData.firstName.trim().charAt(0)}${formData.lastName
+    .trim()
+    .charAt(0)}`
+    .replace(/\s/g, "")
+    .toUpperCase() || "NT";
+
   const selectedPlantillaPositionValue =
     formData.plantillaPosition.trim().length > 0
       ? formData.plantillaPosition
@@ -289,14 +305,16 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
 
   const selectedSpecializationValue =
     formData.specialization.trim().length > 0
-      ? formData.specialization
+      ? normalizedSelectedSpecializationValue
       : EMPTY_SPECIALIZATION_VALUE;
 
   const handleSpecializationSelect = useCallback(
     (value: string) => {
       onFieldChange(
         "specialization",
-        value === EMPTY_SPECIALIZATION_VALUE ? "" : value,
+        value === EMPTY_SPECIALIZATION_VALUE
+          ? ""
+          : normalizeSpecializationValue(value),
       );
       setIsSpecializationPopoverOpen(false);
       setSpecializationSearchTerm("");
@@ -371,13 +389,31 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
         </div>
 
         <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
-          <SheetHeader className="space-y-1 border-b bg-primary px-6 py-4 pr-14 shrink-0">
-            <SheetTitle className="text-2xl text-primary-foreground font-black uppercase">
-              {title}
-            </SheetTitle>
-            <SheetDescription className="text-primary-foreground font-bold">
-              {description}
-            </SheetDescription>
+          <SheetHeader className="bg-primary px-6 py-6 space-y-1 relative shrink-0">
+            <div className="flex items-center gap-4">
+              <div className="size-16 rounded-2xl bg-white/10 flex items-center justify-center font-black text-white text-2xl uppercase border-2 border-white/20 shadow-xl">
+                {previewInitials}
+              </div>
+              <div className="space-y-0.5">
+                <SheetTitle className="text-2xl font-black text-white uppercase leading-none">
+                  {previewName}
+                </SheetTitle>
+                <SheetDescription className="text-white/80 font-bold uppercase text-xs flex items-center gap-2">
+                  <Fingerprint className="size-3" />
+                  Employee ID: {formData.employeeId || "N/A"}
+                </SheetDescription>
+                <p className="text-white/70 text-xs font-semibold">
+                  {description}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="absolute right-4 top-4 rounded-full p-2 text-white/50 hover:bg-white/10 hover:text-white transition-colors"
+              aria-label="Close teacher form panel">
+              <X className="size-5" />
+            </button>
           </SheetHeader>
 
           <div className="flex-1 space-y-4 overflow-y-auto p-3 sm:p-4">
@@ -386,7 +422,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                 <h3 className="text-sm font-bold uppercase  text-foreground">
                   Personal Details
                 </h3>
-                <p className="text-xs text-foreground font-bold">
+                <p className="text-xs text-foreground font-semibold">
                   Basic profile details for the faculty directory.
                 </p>
               </header>
@@ -411,7 +447,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                     Middle Name
                   </Label>
                   <Input
-                    placeholder="e.g., M."
+                    placeholder="e.g., Mendoza"
                     value={formData.middleName}
                     onChange={(event) =>
                       onFieldChange("middleName", event.target.value)
@@ -511,7 +547,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                 <h3 className="text-sm font-bold uppercase  text-foreground">
                   DepEd Employment
                 </h3>
-                <p className="text-xs text-foreground">
+                <p className="text-xs text-foreground font-semibold">
                   Assignment and plantilla data aligned to the DepEd catalog.
                 </p>
               </header>
@@ -622,7 +658,8 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                           {selectedSpecializationValue ===
                           EMPTY_SPECIALIZATION_VALUE
                             ? "Not set"
-                            : selectedSpecializationOption?.label || "Not set"}
+                            : selectedSpecializationOption?.label ||
+                              formData.specialization}
                         </span>
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-60" />
                       </Button>
@@ -660,7 +697,9 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                         </div>
                       </div>
 
-                      <div className="max-h-72 overflow-y-auto p-2">
+                      <div
+                        className="max-h-72 overflow-y-auto overscroll-contain p-2"
+                        onWheel={(event) => event.stopPropagation()}>
                         <button
                           type="button"
                           onClick={() =>
@@ -700,7 +739,8 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                                     option.flatIndex ===
                                     activeSpecializationIndex;
                                   const isSelected =
-                                    formData.specialization === option.value;
+                                    normalizedSelectedSpecializationValue ===
+                                    option.value;
 
                                   return (
                                     <button

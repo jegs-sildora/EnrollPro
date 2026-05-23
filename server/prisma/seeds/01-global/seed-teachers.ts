@@ -11,7 +11,6 @@ import * as bcrypt from "bcryptjs";
 import {
   DEPED_TEACHER_DEPARTMENT_VALUES,
   DEPED_TEACHER_SPECIALIZATION_VALUES,
-  DEPED_TEACHER_SUBJECT_VALUES,
 } from "@enrollpro/shared";
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
@@ -31,10 +30,7 @@ interface Faculty {
   assignmentTarget?: TeacherAssignmentTarget;
 }
 
-type TeacherAssignmentKind =
-  | "STE"
-  | "SPA_ARTS"
-  | "SPS_SPORTS";
+type TeacherAssignmentKind = "STE" | "SPA_ARTS" | "SPS_SPORTS";
 
 interface TeacherAssignmentTarget {
   kind: TeacherAssignmentKind;
@@ -51,7 +47,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "FILIPINO",
     sex: "FEMALE",
     contactNumber: "0917-111-0001",
-    specialization: "MAJOR IN FILIPINO",
+    specialization: "BSEd Filipino",
   },
   {
     employeeId: "2000002",
@@ -62,7 +58,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "ENGLISH",
     sex: "MALE",
     contactNumber: "0917-111-0002",
-    specialization: "MAJOR IN ENGLISH / APPLIED LINGUISTICS",
+    specialization: "BSEd English - Applied Linguistics",
   },
   {
     employeeId: "2000003",
@@ -73,7 +69,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "MATHEMATICS",
     sex: "FEMALE",
     contactNumber: "0917-111-0003",
-    specialization: "MAJOR IN MATHEMATICS",
+    specialization: "BSEd Mathematics",
   },
   {
     employeeId: "2000004",
@@ -84,7 +80,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "SCIENCE",
     sex: "MALE",
     contactNumber: "0917-111-0004",
-    specialization: "MAJOR IN GENERAL SCIENCE / BIOLOGY / CHEMISTRY / PHYSICS",
+    specialization: "BSEd General Science",
   },
   {
     employeeId: "2000005",
@@ -95,7 +91,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "ARALING PANLIPUNAN",
     sex: "FEMALE",
     contactNumber: "0917-111-0005",
-    specialization: "MAJOR IN SOCIAL STUDIES / HISTORY",
+    specialization: "BSEd Social Studies",
   },
   {
     employeeId: "2000006",
@@ -106,7 +102,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "MAPEH",
     sex: "MALE",
     contactNumber: "0917-111-0006",
-    specialization: "MAJOR IN MAPEH",
+    specialization: "BPEd Physical Education",
   },
   {
     employeeId: "2000007",
@@ -117,7 +113,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "VALUES EDUCATION",
     sex: "FEMALE",
     contactNumber: "0917-111-0007",
-    specialization: "MAJOR IN VALUES EDUCATION",
+    specialization: "BSEd Values Education",
   },
   {
     employeeId: "2000008",
@@ -128,7 +124,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "ICT",
     sex: "MALE",
     contactNumber: "0917-111-0008",
-    specialization: "MAJOR IN ICT",
+    specialization: "BTVTEd Information and Communication Technology",
   },
   {
     employeeId: "2000009",
@@ -139,7 +135,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "VALUES EDUCATION",
     sex: "FEMALE",
     contactNumber: "0917-111-0009",
-    specialization: "MAJOR IN VALUES EDUCATION",
+    specialization: "BSEd Guidance and Counseling",
   },
   {
     employeeId: "2000010",
@@ -150,7 +146,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "MATHEMATICS",
     sex: "FEMALE",
     contactNumber: "0917-111-0010",
-    specialization: "MAJOR IN MATHEMATICS",
+    specialization: "BSEd Mathematics - Statistics Focus",
   },
   {
     employeeId: "2000011",
@@ -161,7 +157,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "SCIENCE",
     sex: "MALE",
     contactNumber: "0917-111-0011",
-    specialization: "MAJOR IN BIOLOGY",
+    specialization: "BSEd Biology",
   },
   {
     employeeId: "2000012",
@@ -172,7 +168,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "ENGLISH",
     sex: "FEMALE",
     contactNumber: "0917-111-0012",
-    specialization: "LITERATURE / CREATIVE WRITING",
+    specialization: "BSEd English - Literature",
   },
   {
     employeeId: "2000013",
@@ -183,7 +179,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "FILIPINO",
     sex: "MALE",
     contactNumber: "0917-111-0013",
-    specialization: "MAJOR IN FILIPINO",
+    specialization: "BSEd Panitikan at Wika",
   },
   {
     employeeId: "2000014",
@@ -194,7 +190,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "ARALING PANLIPUNAN",
     sex: "FEMALE",
     contactNumber: "0917-111-0014",
-    specialization: "MAJOR IN SOCIAL STUDIES / HISTORY",
+    specialization: "BSEd History",
   },
   {
     employeeId: "2000015",
@@ -205,7 +201,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "MAPEH",
     sex: "FEMALE",
     contactNumber: "0917-111-0015",
-    specialization: "MAJOR IN MUSIC EDUCATION",
+    specialization: "BCAEd Music Education",
   },
   {
     employeeId: "2000016",
@@ -216,7 +212,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "VALUES EDUCATION",
     sex: "MALE",
     contactNumber: "0917-111-0016",
-    specialization: "MAJOR IN VALUES EDUCATION",
+    specialization: "BS Psychology - CPE Units",
   },
   {
     employeeId: "2000017",
@@ -227,7 +223,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "HOME ECONOMICS",
     sex: "FEMALE",
     contactNumber: "0917-111-0017",
-    specialization: "MAJOR IN HOME ECONOMICS",
+    specialization: "BTVTEd Home Economics",
   },
   {
     employeeId: "2000018",
@@ -238,7 +234,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "MATHEMATICS",
     sex: "MALE",
     contactNumber: "0917-111-0018",
-    specialization: "MAJOR IN MATHEMATICS (WITH STATISTICS BACKGROUND)",
+    specialization: "BS Mathematics - CPE Units",
   },
   {
     employeeId: "2000019",
@@ -249,7 +245,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "SCIENCE",
     sex: "FEMALE",
     contactNumber: "0917-111-0019",
-    specialization: "MAJOR IN PHYSICS",
+    specialization: "BSEd Physical Sciences",
   },
   {
     employeeId: "2000020",
@@ -260,7 +256,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "ENGLISH",
     sex: "MALE",
     contactNumber: "0917-111-0020",
-    specialization: "MASS COMMUNICATION",
+    specialization: "AB Mass Communication - CPE Units",
   },
 ];
 
@@ -302,13 +298,13 @@ const PH_MIDDLE_NAMES = [
   "TAYAG", "UMALI", "VERGARA", "YAP", "ZAMORA"
 ];
 
-// Global unique name registry to ensure absolutely no repeats
+// Global unique name registry
 const GLOBAL_USED_EMAIL_KEYS = new Set<string>();
 const GLOBAL_USED_FULL_NAMES = new Set<string>();
 
 for (const f of ATLAS_FACULTY) {
   const fullNameKey = `${f.firstName}|${f.lastName}|${f.middleName ?? ""}`.toUpperCase();
-  const emailKey = `${f.firstName.toLowerCase().replace(/\\s/g, "")}.${f.lastName.toLowerCase().replace(/\\s/g, "")}`;
+  const emailKey = `${f.firstName.toLowerCase().replace(/\s/g, "")}.${f.lastName.toLowerCase().replace(/\s/g, "")}`;
   GLOBAL_USED_FULL_NAMES.add(fullNameKey);
   GLOBAL_USED_EMAIL_KEYS.add(emailKey);
 }
@@ -326,7 +322,7 @@ function generateUniqueName(seed: number, sex: Sex) {
     const middleName = PH_MIDDLE_NAMES[mnIdx];
     
     const fullNameKey = `${firstName}|${lastName}|${middleName}`.toUpperCase();
-    const emailKey = `${firstName.toLowerCase().replace(/\\s/g, "")}.${lastName.toLowerCase().replace(/\\s/g, "")}`;
+    const emailKey = `${firstName.toLowerCase().replace(/\s/g, "")}.${lastName.toLowerCase().replace(/\s/g, "")}`;
 
     if (!GLOBAL_USED_FULL_NAMES.has(fullNameKey) && !GLOBAL_USED_EMAIL_KEYS.has(emailKey)) {
       GLOBAL_USED_FULL_NAMES.add(fullNameKey);
@@ -344,78 +340,76 @@ const DEPARTMENT_DATA: Record<
   ENG: {
     subject: "ENGLISH",
     specializations: [
-      "MAJOR IN ENGLISH / APPLIED LINGUISTICS",
-      "LITERATURE / CREATIVE WRITING",
-      "MASS COMMUNICATION",
-      "JOURNALISM",
-      "MAJOR IN ENGLISH (CAMPUS JOURNALISM)",
+      "BSEd English",
+      "BSEd English - Applied Linguistics",
+      "BSEd English - Literature",
+      "AB Mass Communication - CPE Units",
+      "BSEd English - Campus Journalism",
     ],
   },
   MATH: {
     subject: "MATHEMATICS",
     specializations: [
-      "MAJOR IN MATHEMATICS",
-      "MAJOR IN MATHEMATICS (WITH STATISTICS BACKGROUND)",
+      "BSEd Mathematics",
+      "BSEd Mathematics - Statistics Focus",
+      "BS Mathematics - CPE Units",
+      "BS Accountancy - CPE Units",
     ],
   },
   SCI: {
     subject: "SCIENCE",
     specializations: [
-      "MAJOR IN GENERAL SCIENCE / BIOLOGY / CHEMISTRY / PHYSICS",
-      "MAJOR IN PHYSICS",
-      "MAJOR IN CHEMISTRY",
-      "MAJOR IN BIOLOGY",
+      "BSEd General Science",
+      "BSEd Biology",
+      "BSEd Physical Sciences",
+      "BSEd Chemistry",
+      "BS Nursing - CPE Units",
     ],
   },
   FIL: {
     subject: "FILIPINO",
     specializations: [
-      "MAJOR IN FILIPINO",
-      "MAJOR IN FILIPINO (CAMPUS JOURNALISM)",
+      "BSEd Filipino",
+      "BSEd Panitikan at Wika",
+      "BSEd Filipino - Campus Journalism",
     ],
   },
   AP: {
     subject: "ARALING PANLIPUNAN",
-    specializations: ["MAJOR IN SOCIAL STUDIES / HISTORY"],
+    specializations: [
+      "BSEd Social Studies",
+      "BSEd History",
+      "AB Political Science - CPE Units",
+    ],
   },
   MAPEH: {
     subject: "MAPEH",
     specializations: [
-      "MAJOR IN MAPEH",
-      "MAJOR IN MUSIC EDUCATION",
-      "MAJOR IN PHYSICAL EDUCATION",
-      "FINE ARTS",
-      "THEATER / PERFORMING ARTS",
-      "DANCE",
-      "SPORTS SCIENCE",
-      "CERTIFIED SPECIALIST COACH",
+      "BSEd MAPEH",
+      "BPEd Physical Education",
+      "BCAEd Culture and Arts Education",
+      "BPEd Sports Coaching",
     ],
   },
   TLE: {
     subject: "TLE",
     specializations: [
-      "MAJOR IN HOME ECONOMICS",
-      "MAJOR IN INDUSTRIAL ARTS",
-      "MAJOR IN AGRI-FISHERY ARTS",
-      "MAJOR IN ICT",
+      "BSEd Technology and Livelihood Education",
+      "BTVTEd Home Economics",
+      "BTVTEd Industrial Arts",
+      "BTVTEd Agri-Fishery Arts",
+      "BTVTEd Information and Communication Technology",
     ],
   },
   ESP: {
     subject: "VALUES EDUCATION",
-    specializations: ["MAJOR IN VALUES EDUCATION"],
+    specializations: [
+      "BSEd Values Education",
+      "BSEd Guidance and Counseling",
+      "BS Psychology - CPE Units",
+    ],
   },
 };
-
-const DEPARTMENTS_WEIGHTED = [
-  { code: "ENG", weight: 15 },
-  { code: "MATH", weight: 15 },
-  { code: "SCI", weight: 15 },
-  { code: "FIL", weight: 12 },
-  { code: "AP", weight: 12 },
-  { code: "MAPEH", weight: 12 },
-  { code: "TLE", weight: 11 },
-  { code: "ESP", weight: 8 },
-];
 
 const TARGET_DEPT_COUNTS: Record<string, number> = {
   SCI: 19,
@@ -436,37 +430,33 @@ const PLANTILLA_SEQUENCE: string[] = [
   ...Array(3).fill("MASTER TEACHER II"),
 ];
 
+// Special Curricular Program (SCP) Adviser Pools
+// Adjusted to reflect exact DepEd Specializations
 const STE_ADVISER_SPECIALIZATIONS = [
-  "ENVIRONMENTAL SCIENCE",
-  "RESEARCH I",
-  "BASIC STATISTICS",
-  "RESEARCH II",
-  "ADVANCED STATISTICS",
-  "BIOTECHNOLOGY",
-  "RESEARCH III",
-  "ADVANCED PHYSICS",
+  "BSEd General Science",
+  "BSEd Biology",
+  "BSEd Physical Sciences",
+  "BSEd Chemistry",
+  "BS Physics - CPE Units",
+  "BS Environmental Science - CPE Units",
 ];
 
 const SPA_ARTS_ADVISER_SPECIALIZATIONS = [
-  "MUSIC EDUCATION",
-  "FINE ARTS",
-  "THEATER / PERFORMING ARTS",
-  "DANCE",
-  "LITERATURE / CREATIVE WRITING",
-  "MUSIC EDUCATION",
-  "FINE ARTS",
-  "THEATER / PERFORMING ARTS",
+  "BCAEd Music Education",
+  "BCAEd Visual Arts",
+  "BCAEd Theater Arts",
+  "BCAEd Dance Education",
+  "BCAEd Media Arts",
+  "AB Literature - CPE Units (Creative Writing)",
 ];
 
 const SPS_ADVISER_SPECIALIZATIONS = [
-  "MAJOR IN PHYSICAL EDUCATION",
-  "SPORTS SCIENCE",
-  "CERTIFIED SPECIALIST COACH",
-  "SPORTS COACHING",
-  "INDIVIDUAL / DUAL SPORTS",
-  "TEAM SPORTS",
-  "SPORTS OFFICIATING",
-  "SPORTS SCIENCE",
+  "BPEd Sports Coaching",
+  "BPEd Athletics Focus",
+  "BPEd Racket Sports",
+  "BPEd Combative Sports",
+  "BPEd Team Sports",
+  "BS Sports Science - CPE Units",
 ];
 
 function buildFacultyTemplate(params: {
@@ -516,6 +506,7 @@ function buildFacultyPool(params: {
     }),
   );
 }
+
 function generateUniqueEmployeeId(usedIds: Set<string>): string {
   while (true) {
     const id = Math.floor(1000000 + Math.random() * 9000000).toString();
@@ -528,15 +519,12 @@ function generateUniqueEmployeeId(usedIds: Set<string>): string {
 
 async function main() {
   console.log(
-    "≡ƒî▒ Scaling Faculty Roster: Generating 140+ UNIQUE DepEd Teachers...",
+    "🏫 Scaling Faculty Roster: Generating 140+ UNIQUE DepEd Teachers...",
   );
 
-  // 0. CLEANUP: Remove existing teachers and their login accounts to prevent ID/Email conflicts
-  console.log("≡ƒº╣ Cleaning up existing faculty data...");
+  console.log("🧹 Cleaning up existing faculty data...");
 
   await prisma.user.deleteMany({ where: { role: "TEACHER" } });
-
-  await prisma.teacherSubject.deleteMany({});
   await prisma.teacherDesignation.deleteMany({});
   await prisma.sectionAdviser.deleteMany({});
   await prisma.teacher.deleteMany({});
@@ -550,7 +538,6 @@ async function main() {
       "Timeline failure: 2025-2026 not found. Run base seed first.",
     );
 
-  // Fetch ALL school years for persistent teacher assignments (2022-2025)
   const allSchoolYears = await prisma.schoolYear.findMany({
     where: {
       yearLabel: {
@@ -565,14 +552,8 @@ async function main() {
   }
 
   const departments = await prisma.department.findMany();
-  // Fetch sections for 2025-2026 (primary year for identifying class advisers)
-  const sections = await prisma.section.findMany({
-    where: { schoolYearId: demoStartYear.id },
-    orderBy: [{ gradeLevelId: "asc" }, { sortOrder: "asc" }],
-  });
-
-  // Fetch sections for ALL school years for persistent assignment
-  const sectionsByYear = new Map<number, typeof sections>();
+  
+  const sectionsByYear = new Map<number, any>();
   for (const schoolYear of allSchoolYears) {
     const yearSections = await prisma.section.findMany({
       where: { schoolYearId: schoolYear.id },
@@ -581,8 +562,7 @@ async function main() {
     sectionsByYear.set(schoolYear.id, yearSections);
   }
 
-
-
+  // 1. Generate SCP specific faculties (Ensuring SPA and SPS are strictly MAPEH)
   const steSpecialFaculty = buildFacultyPool({
     baseEmployeeId: 3100000,
     seedOffset: 200,
@@ -618,10 +598,8 @@ async function main() {
   ];
 
   const defaultPasswordHash = await bcrypt.hash("DepEd2026!", 10);
-
   const dynamicTleSpecializations = DEPARTMENT_DATA.TLE.specializations;
 
-  // Fetch all existing users from DB to prevent email collisions with non-teacher users (Admins, Registrars, etc.)
   const existingUsers = await prisma.user.findMany({ select: { email: true } });
   existingUsers.forEach((u) => {
     if (u.email) {
@@ -630,8 +608,7 @@ async function main() {
     }
   });
 
-  // 2. Generate remaining teachers deterministically to strictly meet exact counts
-  console.log("≡ƒöÇ Building deterministic name roster matching exact department counts...");
+  console.log("🧩 Building deterministic name roster matching exact department counts...");
 
   const currentCounts: Record<string, number> = {};
   for (const f of teachersToSeed) {
@@ -669,7 +646,7 @@ async function main() {
         localIdx++;
       }
     } else if (needed < 0) {
-      console.warn(`  ΓÜá∩╕Å Already have more ${deptCode} teachers than target (${current} > ${target}). Skipping generation.`);
+      console.warn(`  ⚠️ Already have more ${deptCode} teachers than target (${current} > ${target}). Skipping generation.`);
     }
   }
 
@@ -683,34 +660,31 @@ async function main() {
     f.employeeId = generateUniqueEmployeeId(usedEmployeeIds);
   }
 
-  console.log(`≡ƒÜÇ Provisioning ${teachersToSeed.length} Faculty accounts...`);
+  console.log(`🚀 Provisioning ${teachersToSeed.length} Faculty accounts...`);
 
   const firstAdmin = await prisma.user.findFirst({
     where: { role: "SYSTEM_ADMIN" },
   });
   const demoYearSections = sectionsByYear.get(demoStartYear.id) || [];
   const demoYearRegularSections = demoYearSections.filter(
-    (section) => section.programType === "REGULAR",
+    (section: any) => section.programType === "REGULAR",
   );
   let regularSectionCursor = 0;
 
   for (let i = 0; i < teachersToSeed.length; i++) {
     const faculty = teachersToSeed[i];
 
-    // Ensure all names are strictly UPPERCASE
     const firstNameUpper = faculty.firstName.trim().toUpperCase();
     const lastNameUpper = faculty.lastName.trim().toUpperCase();
     const middleNameUpper = faculty.middleName
       ? faculty.middleName.trim().toUpperCase()
       : null;
 
-    // Format unique email (guaranteed unique by generator logic above)
     const cleanFirst = firstNameUpper.toLowerCase().replace(/\s/g, "");
     const cleanLast = lastNameUpper.toLowerCase().replace(/\s/g, "");
     const email = `${cleanFirst}.${cleanLast}@deped.edu.ph`;
 
-    const dept =
-      departments.find((d) => d.code === faculty.deptCode) || departments[0];
+    const dept = departments.find((d) => d.code === faculty.deptCode) || departments[0];
     const assignmentTarget = faculty.assignmentTarget ?? null;
     const regularSectionIndex =
       assignmentTarget || regularSectionCursor >= demoYearRegularSections.length
@@ -726,16 +700,16 @@ async function main() {
     const resolveAdvisorySectionId = (schoolYearId: number) => {
       const yearSections = sectionsByYear.get(schoolYearId) || [];
       const regularSections = yearSections.filter(
-        (section) => section.programType === "REGULAR",
+        (section: any) => section.programType === "REGULAR" || section.programType === "BASIC_EDUCATION_CURRICULUM",
       );
       const steSections = yearSections.filter(
-        (section) => section.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+        (section: any) => section.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
       );
       const spaSections = yearSections.filter(
-        (section) => section.programType === "SPECIAL_PROGRAM_IN_THE_ARTS",
+        (section: any) => section.programType === "SPECIAL_PROGRAM_IN_THE_ARTS",
       );
       const spsSections = yearSections.filter(
-        (section) => section.programType === "SPECIAL_PROGRAM_IN_SPORTS",
+        (section: any) => section.programType === "SPECIAL_PROGRAM_IN_SPORTS",
       );
 
       if (!assignmentTarget) {
@@ -744,22 +718,23 @@ async function main() {
           : null;
       }
 
-      if (assignmentTarget.kind === "STE") {
-        return steSections[assignmentTarget.poolIndex]?.id ?? null;
+      // Safe index access utilizing modulo to loop through available sections 
+      // if the teacher pool index exceeds the number of actual SCP sections.
+      if (assignmentTarget.kind === "STE" && steSections.length > 0) {
+        return steSections[assignmentTarget.poolIndex % steSections.length]?.id ?? null;
       }
 
-      if (assignmentTarget.kind === "SPA_ARTS") {
-        return spaSections[assignmentTarget.poolIndex]?.id ?? null;
+      if (assignmentTarget.kind === "SPA_ARTS" && spaSections.length > 0) {
+        return spaSections[assignmentTarget.poolIndex % spaSections.length]?.id ?? null;
       }
 
-      if (assignmentTarget.kind === "SPS_SPORTS") {
-        return spsSections[assignmentTarget.poolIndex]?.id ?? null;
+      if (assignmentTarget.kind === "SPS_SPORTS" && spsSections.length > 0) {
+        return spsSections[assignmentTarget.poolIndex % spsSections.length]?.id ?? null;
       }
 
       return null;
     };
 
-    // STEP 1: CREATE TEACHER PROFILE
     const teacher = await prisma.teacher.upsert({
       where: { employeeId: faculty.employeeId },
       update: {
@@ -790,7 +765,6 @@ async function main() {
       },
     });
 
-    // STEP 2: PROVISION LOGIN ACCOUNT
     const user = await prisma.user.upsert({
       where: { employeeId: teacher.employeeId },
       update: {
@@ -819,21 +793,11 @@ async function main() {
       select: { id: true },
     });
 
-    // CRITICAL: Link the teacher profile to the user account
     await prisma.teacher.update({
       where: { id: teacher.id },
       data: { userId: user.id },
     });
 
-    // STEP 3: SEED QUALIFIED SUBJECTS
-    await prisma.teacherSubject.deleteMany({
-      where: { teacherId: teacher.id },
-    });
-    await prisma.teacherSubject.create({
-      data: { teacherId: teacher.id, subject: faculty.subject },
-    });
-
-    // STEP 4: SEED TEACHER DESIGNATION FOR ALL SCHOOL YEARS
     for (const schoolYear of allSchoolYears) {
       const advisorySectionId = resolveAdvisorySectionId(schoolYear.id);
 
@@ -864,7 +828,6 @@ async function main() {
         },
       });
 
-      // STEP 5: SYNC SECTION ADVISER LEDGER (create for all years if class adviser)
       if (advisorySectionId) {
         const existingAdviser = await prisma.sectionAdviser.findFirst({
           where: {
@@ -897,7 +860,6 @@ async function main() {
           });
         }
       } else if (schoolYear.id === demoStartYear.id) {
-        // Revoke adviser role in current year if not a class adviser
         await prisma.sectionAdviser.updateMany({
           where: {
             teacherId: teacher.id,
@@ -914,19 +876,13 @@ async function main() {
     }
 
     if ((i + 1) % 20 === 0 || i === teachersToSeed.length - 1) {
-      console.log(
-        `  ≡ƒôè Progress: ${i + 1}/${teachersToSeed.length} Faculty members fully provisioned.`,
-      );
+      console.log(`  📊 Progress: ${i + 1}/${teachersToSeed.length} Faculty members fully provisioned.`);
     }
   }
 
-  console.log(
-    `\n≡ƒÄë Successfully scaled and synced ${teachersToSeed.length} UNIQUE teachers.`,
-  );
-  console.log(
-    `Γ£à No repeating names or numbers in emails. Employee IDs are 7-digit numeric.`,
-  );
-  console.log(`≡ƒöæ Demo Login Password for all teachers: DepEd2026!`);
+  console.log(`\n🎉 Successfully scaled and synced ${teachersToSeed.length} UNIQUE teachers.`);
+  console.log(`✅ No repeating names or numbers in emails. Employee IDs are 7-digit numeric.`);
+  console.log(`🔑 Demo Login Password for all teachers: DepEd2026!`);
 }
 
 main()

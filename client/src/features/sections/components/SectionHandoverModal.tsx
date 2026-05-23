@@ -32,6 +32,7 @@ import { Badge } from "@/shared/ui/badge";
 import { motion, AnimatePresence } from "motion/react";
 import api from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
+import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 
 interface Teacher {
   id: number;
@@ -78,17 +79,22 @@ export function SectionHandoverModal({
     format(new Date(), "yyyy-MM-dd"),
   );
   const [submitting, setSubmitting] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const {
+    inputValue: searchQuery,
+    setInputValue: setSearchQuery,
+    activeFilter: activeSearchQuery,
+    isSearching,
+  } = useDebouncedSearch();
 
   const filteredTeachers = useMemo(() => {
-    const query = searchQuery.toLowerCase().trim();
+    const query = activeSearchQuery.toLowerCase().trim();
     return teachers.filter(
       (t) =>
         t.id !== currentAdviser?.id &&
         (t.name.toLowerCase().includes(query) ||
           t.employeeId?.toLowerCase().includes(query)),
     );
-  }, [teachers, searchQuery, currentAdviser]);
+  }, [teachers, activeSearchQuery, currentAdviser]);
 
   const handleHandover = async () => {
     if (!substituteTeacherId || !handoverReason) {
@@ -268,7 +274,19 @@ export function SectionHandoverModal({
                   />
                 </div>
                 <div className="border rounded-xl h-[180px] overflow-y-auto bg-card divide-y">
-                  {filteredTeachers.length === 0 ? (
+                  {isSearching ? (
+                    <div className="h-full flex flex-col items-center justify-center gap-3 text-center px-4">
+                      <Search className="h-10 w-10 animate-pulse text-slate-400" />
+                      <div className="space-y-1">
+                        <p className="text-lg font-medium text-slate-500">
+                          Searching...
+                        </p>
+                        <p className="text-sm font-medium text-slate-400">
+                          Scanning faculty records...
+                        </p>
+                      </div>
+                    </div>
+                  ) : filteredTeachers.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-center p-4">
                       <p className="text-xs font-bold text-foreground italic">
                         {searchQuery

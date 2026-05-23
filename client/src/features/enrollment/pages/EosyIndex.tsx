@@ -76,6 +76,7 @@ import {
   statusVariants,
 } from "@/shared/lib/motion";
 import { lifecycleFeedback } from "@/shared/lib/lifecycle-feedback";
+import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 
 interface EnrollmentRecord {
   id: number;
@@ -169,7 +170,12 @@ export default function EosyUpdating() {
   const [loadingRecords, setLoadingRecords] = useState(false);
   const [isDownloadingFinalExport, setIsDownloadingFinalExport] =
     useState(false);
-  const [sectionSearch, setSectionSearch] = useState("");
+  const {
+    inputValue: sectionSearch,
+    setInputValue: setSectionSearch,
+    activeFilter: activeSectionSearch,
+    isSearching: isSectionSearching,
+  } = useDebouncedSearch();
   const [gradeFilter, setGradeFilter] = useState<string>("ALL");
   const [incompleteOnly, setIncompleteOnly] = useState(false);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -1115,7 +1121,7 @@ export default function EosyUpdating() {
   }, [sections]);
 
   const filteredGroups = useMemo(() => {
-    const search = sectionSearch.toLowerCase().trim();
+    const search = activeSectionSearch.toLowerCase().trim();
     const filtered: Record<string, { programType: string; sections: Section[] }[]> = {};
 
     Object.entries(groupedSections).forEach(([gl, secs]) => {
@@ -1156,7 +1162,7 @@ export default function EosyUpdating() {
       filtered[gl] = ordered;
     });
     return filtered;
-  }, [groupedSections, sectionSearch, gradeFilter]);
+  }, [groupedSections, activeSectionSearch, gradeFilter]);
 
   const visibleRecords = useMemo(() => {
     if (!incompleteOnly) return records;
@@ -1440,7 +1446,24 @@ export default function EosyUpdating() {
           </CardHeader>
           <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent min-h-0">
             <div className="p-2 space-y-4">
-              {Object.entries(filteredGroups).map(([gl, programGroups]) => (
+              {isSectionSearching ? (
+                <div className="h-64 flex flex-col items-center justify-center gap-3 text-center bg-background/80 rounded-lg">
+                  <Search className="h-10 w-10 animate-pulse text-slate-400" />
+                  <div className="space-y-1">
+                    <p className="text-lg font-medium text-slate-500">Searching...</p>
+                    <p className="text-sm font-medium text-slate-400">
+                      Scanning section records...
+                    </p>
+                  </div>
+                </div>
+              ) : Object.entries(filteredGroups).length === 0 ? (
+                <div className="h-64 flex items-center justify-center text-center px-4">
+                  <p className="text-sm font-bold text-slate-500">
+                    No sections match the current search/filter.
+                  </p>
+                </div>
+              ) : (
+                Object.entries(filteredGroups).map(([gl, programGroups]) => (
                 <div key={gl}>
                   {/* Grade-level header — sticky at the top of the scroll container */}
                   <h3 className="sticky top-0 z-20 px-3 py-1 text-xs font-black uppercase text-foreground bg-card border-b border-border/40 mb-1">
@@ -1515,7 +1538,8 @@ export default function EosyUpdating() {
                     </div>
                   ))}
                 </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </Card>

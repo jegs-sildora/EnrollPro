@@ -1363,7 +1363,7 @@ export default function SchoolYearTab() {
                     <TableRow>
                       <TableHead className="text-left">School Year</TableHead>
                       <TableHead className="text-left">
-                        Start of Classes (BOSY)
+                        Beginning of School Year (BOSY)
                       </TableHead>
                       <TableHead className="text-left">
                         End of School Year (EOSY)

@@ -5,7 +5,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import type { ColumnDef, SortingState, OnChangeFn, Row, RowSelectionState } from "@tanstack/react-table";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, type ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
@@ -29,6 +29,9 @@ export interface DataTableProps<TData, TValue> {
   className?: string;
   tableClassName?: string;
   noResultsMessage?: string;
+  forceEmptyState?: boolean;
+  emptyStateContent?: ReactNode;
+  prependBodyRow?: ReactNode;
   sorting?: SortingState;
   onSortingChange?: OnChangeFn<SortingState>;
   virtualize?: boolean;
@@ -107,6 +110,9 @@ export function DataTable<TData, TValue>({
   className,
   tableClassName,
   noResultsMessage = "No results.",
+  forceEmptyState = false,
+  emptyStateContent,
+  prependBodyRow,
   sorting: externalSorting,
   onSortingChange: externalOnSortingChange,
   virtualize = true,
@@ -223,13 +229,14 @@ export function DataTable<TData, TValue>({
                   </TableRow>
                 ))}
               </MotionTableBody>
-            ) : rows.length > 0 ? (
+            ) : !forceEmptyState && rows.length > 0 ? (
               <MotionTableBody
                 key="data-body"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="relative">
+                {prependBodyRow}
                 {virtualize
                   ? [
                       virtualItems.length > 0 && (
@@ -278,6 +285,15 @@ export function DataTable<TData, TValue>({
                       />
                     ))}
               </MotionTableBody>
+            ) : prependBodyRow ? (
+              <MotionTableBody
+                key="prepend-body"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="relative">
+                {prependBodyRow}
+              </MotionTableBody>
             ) : (
               <MotionTableBody
                 key="empty-body"
@@ -288,8 +304,12 @@ export function DataTable<TData, TValue>({
                 <TableRow key="no-results">
                   <TableCell
                     colSpan={columns.length}
-                    className="h-24 text-center font-bold">
-                    {noResultsMessage}
+                    className="p-0">
+                    {emptyStateContent ?? (
+                      <div className="h-24 flex items-center justify-center text-center font-bold">
+                        {noResultsMessage}
+                      </div>
+                    )}
                   </TableCell>
                 </TableRow>
               </MotionTableBody>

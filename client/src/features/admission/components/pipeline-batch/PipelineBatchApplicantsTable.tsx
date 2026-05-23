@@ -16,12 +16,14 @@ import { Checkbox } from "@/shared/ui/checkbox";
 import { Input } from "@/shared/ui/input";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
+import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Application } from "./types";
 
 interface PipelineBatchApplicantsTableProps {
   applications: Application[];
   loading: boolean;
+  isSearching?: boolean;
   showAssessment: boolean;
   selectedIds: Set<number>;
   isBatchProcessing: boolean;
@@ -44,6 +46,7 @@ interface PipelineBatchApplicantsTableProps {
 export default function PipelineBatchApplicantsTable({
   applications,
   loading,
+  isSearching,
   showAssessment,
   selectedIds,
   isBatchProcessing,
@@ -354,7 +357,13 @@ export default function PipelineBatchApplicantsTable({
         columns={columns}
         data={applications}
         loading={loading}
+        forceEmptyState={Boolean(isSearching)}
         noResultsMessage="No applicants found."
+        prependBodyRow={
+          isSearching ? (
+            <TableSearchIndicator colSpan={showAssessment ? 10 : 7} />
+          ) : null
+        }
       />
 
       <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mt-4 font-bold">

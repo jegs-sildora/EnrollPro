@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
+import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
 import { Badge } from "@/shared/ui/badge";
 import { Loader2 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -9,9 +10,14 @@ import type { JHSCompleter } from "../types";
 interface JHSCompleterTableProps {
   items: JHSCompleter[];
   loading: boolean;
+  isSearching?: boolean;
 }
 
-export function JHSCompleterTable({ items, loading }: JHSCompleterTableProps) {
+export function JHSCompleterTable({
+  items,
+  loading,
+  isSearching,
+}: JHSCompleterTableProps) {
   const columns = useMemo<ColumnDef<JHSCompleter>[]>(
     () => [
       {
@@ -120,8 +126,10 @@ export function JHSCompleterTable({ items, loading }: JHSCompleterTableProps) {
     <DataTable
       columns={columns}
       data={items}
+      forceEmptyState={Boolean(isSearching)}
       rowSelection={{}}
       onRowSelectionChange={() => {}}
+      prependBodyRow={isSearching ? <TableSearchIndicator colSpan={5} /> : null}
     />
   );
 }

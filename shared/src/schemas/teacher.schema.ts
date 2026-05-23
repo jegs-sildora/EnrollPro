@@ -15,7 +15,7 @@ const optionalUpperText = z.preprocess((value) => {
     return value;
   }
 
-  const normalized = value.trim();
+  const normalized = value.normalize("NFC").trim();
   return normalized.length > 0 ? normalized.toUpperCase() : null;
 }, z.string().nullable());
 
@@ -44,7 +44,7 @@ const requiredUpperText = (message: string) =>
     .string()
     .trim()
     .min(1, message)
-    .transform((value) => value.toUpperCase());
+    .transform((value) => value.normalize("NFC").toUpperCase());
 
 const teacherPlantillaPositionSchema = z.enum(
   DEPED_TEACHER_PLANTILLA_POSITION_VALUES,
@@ -65,7 +65,7 @@ export const teacherSchema = z
       .trim()
       .min(1, "DepEd email address is required")
       .email("Invalid email address")
-      .transform((value) => value.toLowerCase()),
+      .transform((value) => value.normalize("NFC").toLowerCase()),
     employeeId: z
       .string()
       .regex(/^[0-9]{7}$/, "Employee ID must be exactly 7 numeric digits"),
@@ -78,7 +78,7 @@ export const teacherSchema = z
           }
 
           if (typeof value === "string") {
-            return value.trim().toUpperCase();
+            return value.normalize("NFC").trim().toUpperCase();
           }
 
           return value;
@@ -94,7 +94,7 @@ export const teacherSchema = z
           }
 
           if (typeof value === "string") {
-            return value.trim().toUpperCase();
+            return value.normalize("NFC").trim().toUpperCase();
           }
 
           return value;
@@ -110,7 +110,7 @@ export const teacherSchema = z
           }
 
           if (typeof value === "string") {
-            return value.trim().toUpperCase();
+            return value.normalize("NFC").trim().toUpperCase();
           }
 
           return value;
@@ -118,16 +118,6 @@ export const teacherSchema = z
         z.union([teacherPlantillaPositionSchema, z.null()]),
       )
       .optional(),
-    subjects: z
-      .array(
-        z
-          .string()
-          .trim()
-          .min(1)
-          .transform((v) => v.toUpperCase()),
-      )
-      .optional()
-      .default([]),
   })
   .strict();
 
@@ -151,7 +141,7 @@ export const teacherDesignationSchema = z
           .string()
           .trim()
           .min(1)
-          .transform((value) => value.toUpperCase()),
+          .transform((value) => value.normalize("NFC").toUpperCase()),
       )
       .optional()
       .default([]),

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
+import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import {
   ACTIVE_REGISTRATION_EXCLUDED_STATUSES,
   REGISTRATION_STAGE_QUICK_FILTERS,
@@ -96,7 +97,7 @@ export function useEarlyRegistrations({
   );
 
   // Filters
-  const [search, setSearch] = useState("");
+  const { inputValue: search, setInputValue: setSearch, activeFilter: activeSearch, isSearching } = useDebouncedSearch();
   const [status, setStatus] = useState(initialStatus);
   const [type, setType] = useState("ALL");
   const [page, setPage] = useState(1);
@@ -107,12 +108,12 @@ export function useEarlyRegistrations({
   const buildBaseCountParams = useCallback(() => {
     const params = new URLSearchParams();
     params.append("schoolYearId", String(ayId));
-    if (search) params.append("search", search);
+    if (activeSearch) params.append("search", activeSearch);
     if (type !== "ALL") params.append("applicantType", type);
     params.append("page", "1");
     params.append("limit", "1");
     return params;
-  }, [ayId, search, type]);
+  }, [ayId, activeSearch, type]);
 
   const fetchStageCounts = useCallback(async () => {
     if (!ayId) {
@@ -175,7 +176,7 @@ export function useEarlyRegistrations({
     try {
       const params = new URLSearchParams();
       params.append("schoolYearId", String(ayId));
-      if (search) params.append("search", search);
+      if (activeSearch) params.append("search", activeSearch);
 
       const normalizedStatus = PHASE_TWO_MONITORING_EXCLUDED_STATUS_SET.has(
         status,
@@ -202,7 +203,7 @@ export function useEarlyRegistrations({
           ? PHASE_TWO_MONITORING_EXCLUDED_STATUSES.map((excludedStatus) => {
               const excludedParams = new URLSearchParams();
               excludedParams.append("schoolYearId", String(ayId));
-              if (search) excludedParams.append("search", search);
+              if (activeSearch) excludedParams.append("search", activeSearch);
               if (type !== "ALL") excludedParams.append("applicantType", type);
               excludedParams.append("status", excludedStatus);
               excludedParams.append("page", "1");
@@ -267,7 +268,7 @@ export function useEarlyRegistrations({
     } finally {
       setLoading(false);
     }
-  }, [ayId, search, status, type, page]);
+  }, [ayId, activeSearch, status, type, page]);
 
   useEffect(() => {
     fetchData();
@@ -283,6 +284,7 @@ export function useEarlyRegistrations({
     loading,
     search,
     setSearch,
+    isSearching,
     status,
     setStatus,
     type,
