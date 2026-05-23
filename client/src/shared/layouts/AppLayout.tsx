@@ -89,7 +89,12 @@ function UserNav() {
   const navigate = useNavigate();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch {
+      // Ignore network/logout failures and clear local session regardless.
+    }
     clearAuth();
     navigate("/staff/login");
   };
@@ -454,7 +459,12 @@ function AppSidebar() {
   );
   const pathname = location.pathname;
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch {
+      // Ignore network/logout failures and clear local session regardless.
+    }
     clearAuth();
     navigate("/staff/login");
   };

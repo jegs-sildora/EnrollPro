@@ -9,7 +9,7 @@ import {
   learnerLogin,
 } from "./auth.controller.js";
 import { validate } from "../../middleware/validate.js";
-import { authenticate } from "../../middleware/authenticate.js";
+import { authenticate, authenticateFromCookies } from "../../middleware/authenticate.js";
 import {
   loginSchema,
   changePasswordSchema,
@@ -24,7 +24,7 @@ router.post("/logout-learner", logoutLearner);
 router.get("/me", authenticate, me);
 router.patch(
   "/change-password",
-  authenticate,
+  authenticateFromCookies("learner_session", process.env.AUTH_COOKIE_NAME ?? "enrollpro_session"),
   validate(changePasswordSchema),
   changePassword,
 );

@@ -11,6 +11,7 @@ export {
   toggleOverride,
   updateDates,
   updateSchoolYear,
+  updateAssessmentConfig,
 } from "./controllers/school-year.admin.controller.js";
 export {
   transitionSchoolYear,

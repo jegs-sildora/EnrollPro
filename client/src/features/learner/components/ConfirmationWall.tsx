@@ -63,8 +63,27 @@ export function ConfirmationWall({
   const [guardianName, setGuardianName] = useState(
     learner.pendingConfirmation?.guardianName || "",
   );
+  const [heightCmInput, setHeightCmInput] = useState("");
+  const [weightKgInput, setWeightKgInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const hasRedirectedRef = useRef(false);
+
+  const parseMetricValue = (raw: string): number | null => {
+    if (!raw.trim()) return null;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const heightCm = parseMetricValue(heightCmInput);
+  const weightKg = parseMetricValue(weightKgInput);
+  const isHeightValid = heightCm !== null && heightCm >= 90 && heightCm <= 220;
+  const isWeightValid = weightKg !== null && weightKg >= 20 && weightKg <= 150;
+  const canSubmit =
+    acknowledged &&
+    guardianName.trim().length > 0 &&
+    isHeightValid &&
+    isWeightValid &&
+    !isSubmitting;
 
   useEffect(() => {
     let isMounted = true;
@@ -111,10 +130,11 @@ export function ConfirmationWall({
   const isGateLocked = !isPromotedPrerequisiteMet;
 
   const handleConfirmReturn = async () => {
-    if (!acknowledged || !guardianName) {
+    if (!acknowledged || !guardianName.trim() || !isHeightValid || !isWeightValid) {
       sileo.error({
         title: "Validation Error",
-        description: "Please acknowledge and provide guardian name.",
+        description:
+          "Please complete legal acknowledgment, guardian signature, and valid baseline nutritional values.",
       });
       return;
     }
@@ -132,7 +152,9 @@ export function ConfirmationWall({
     try {
       await api.post("/learner/confirm-return", {
         applicationId,
-        guardianName,
+        guardianName: guardianName.trim(),
+        heightCm,
+        weightKg,
         confirmAction: "CONFIRM_RETURN",
       });
 
@@ -227,9 +249,6 @@ export function ConfirmationWall({
               exit={{ opacity: 0, y: -10 }}
               className="space-y-5 sm:space-y-6">
               <div className="rounded-2xl border border-primary/20 bg-white px-5 py-4 shadow-sm">
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
-                  Step 1 of 2
-                </p>
                 <h1 className="mt-1 text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
                   Confirmation of Return
                 </h1>
@@ -310,6 +329,71 @@ export function ConfirmationWall({
                     </div>
                   </div>
 
+                  <div className="bg-white border border-slate-100 rounded-xl p-6 space-y-4">
+                    <div>
+                      <p className="text-sm font-black uppercase tracking-wide text-slate-900">
+                        BASELINE NUTRITIONAL STATUS
+                      </p>
+                      <p className="mt-1 text-xs font-semibold text-slate-600">
+                        These values are required for DepEd SF8 baseline and sectioning records.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="height-cm"
+                          className="text-[10px] font-black uppercase text-foreground tracking-widest"
+                        >
+                          Height (cm)
+                        </Label>
+                        <Input
+                          id="height-cm"
+                          type="number"
+                          inputMode="decimal"
+                          min={90}
+                          max={220}
+                          step="0.1"
+                          placeholder="e.g. 145"
+                          value={heightCmInput}
+                          onChange={(e) => setHeightCmInput(e.target.value)}
+                          className="h-12 px-4 rounded-xl border-2 border-slate-200 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0 font-bold text-sm bg-white"
+                        />
+                        {heightCmInput !== "" && !isHeightValid ? (
+                          <p className="text-[11px] font-semibold text-destructive">
+                            Please enter a valid height in cm.
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="weight-kg"
+                          className="text-[10px] font-black uppercase text-foreground tracking-widest"
+                        >
+                          Weight (kg)
+                        </Label>
+                        <Input
+                          id="weight-kg"
+                          type="number"
+                          inputMode="decimal"
+                          min={20}
+                          max={150}
+                          step="0.1"
+                          placeholder="e.g. 38"
+                          value={weightKgInput}
+                          onChange={(e) => setWeightKgInput(e.target.value)}
+                          className="h-12 px-4 rounded-xl border-2 border-slate-200 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0 font-bold text-sm bg-white"
+                        />
+                        {weightKgInput !== "" && !isWeightValid ? (
+                          <p className="text-[11px] font-semibold text-destructive">
+                            Please enter a valid weight in kg.
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Declaration Section */}
                   <div className="pt-6 border-t border-slate-100 space-y-6 rounded-2xl bg-slate-50/70 p-4 sm:p-6">
                     <div className="space-y-3">
@@ -381,15 +465,14 @@ export function ConfirmationWall({
 
                     <Button
                       size="lg"
-                      disabled={!acknowledged || !guardianName || isSubmitting}
+                      disabled={!canSubmit}
                       onClick={handleConfirmReturn}
                       className="h-12 w-full rounded-xl font-black uppercase tracking-wide text-sm shadow-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
                       {isSubmitting ? (
                         <Loader2 className="h-5 w-5 animate-spin" />
                       ) : (
                         <>
-                          Confirm Return
-                          <ArrowRight className="ml-2 h-5 w-5" />
+                          {" CONFIRM RETURN ➔ "}
                         </>
                       )}
                     </Button>

@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { sileo } from "sileo";
 import {
   AlertTriangle,
+  BookOpen,
   CalendarClock,
   CalendarDays,
+  FlaskConical,
   Settings2,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
@@ -20,7 +22,9 @@ import {
 } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { Switch } from "@/shared/ui/switch";
 import { DatePicker } from "@/shared/ui/date-picker";
+import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 
 import { formatManilaDate } from "@/shared/lib/utils";
 
@@ -95,6 +99,8 @@ interface AYDates {
   enrollOpenDate: string | null;
   enrollCloseDate: string | null;
   portalControl: PortalControl;
+  requireReadingAssessmentNew: boolean;
+  requireReadingAssessmentContinuing: boolean;
 }
 
 function formatDate(dateString: string | null): string {
@@ -137,6 +143,12 @@ export default function EnrollmentGateTab() {
 
   const [saving, setSaving] = useState(false);
 
+  // Assessment config state
+  const [requireNew, setRequireNew] = useState(true);
+  const [requireContinuing, setRequireContinuing] = useState(false);
+  const [showDisableNewWarning, setShowDisableNewWarning] = useState(false);
+  const [savingAssessment, setSavingAssessment] = useState(false);
+
   // Edit mode
   const [isEditing, setIsEditing] = useState(false);
   const [earlyRegOpenDate, setEarlyRegOpenDate] = useState<Date | undefined>();
@@ -161,6 +173,8 @@ export default function EnrollmentGateTab() {
   );
 
   const resetEditableDates = useCallback((data: AYDates | null) => {
+    setRequireNew(data?.requireReadingAssessmentNew ?? true);
+    setRequireContinuing(data?.requireReadingAssessmentContinuing ?? false);
     setEarlyRegOpenDate(
       data?.earlyRegOpenDate
         ? normalizeDateToManila(new Date(data.earlyRegOpenDate))
@@ -327,6 +341,26 @@ export default function EnrollmentGateTab() {
       toastApiError(err as never);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSaveAssessmentConfig = async () => {
+    if (!ay) return;
+    setSavingAssessment(true);
+    try {
+      await api.patch(`/school-years/${ay.id}/assessment-config`, {
+        requireReadingAssessmentNew: requireNew,
+        requireReadingAssessmentContinuing: requireContinuing,
+      });
+      sileo.success({
+        title: "Assessment Configuration Saved",
+        description: "Intake assessment settings have been updated.",
+      });
+      await fetchAy();
+    } catch (err) {
+      toastApiError(err as never);
+    } finally {
+      setSavingAssessment(false);
     }
   };
 
@@ -641,6 +675,107 @@ export default function EnrollmentGateTab() {
           )}
         </CardContent>
       </Card>
+
+      {/* Intake Assessment Configuration */}
+      <Card className="shadow-md">
+        <CardHeader className="flex flex-row items-center justify-between pb-4 border-b bg-muted/20">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-background rounded-lg border shadow-sm">
+              <BookOpen className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-xl">
+                Intake Assessment Configuration
+              </CardTitle>
+              <CardDescription>S.Y. {ay.yearLabel}</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-6 pt-6">
+          <p className="text-sm text-muted-foreground">
+            Controls whether a Phil-IRI reading assessment is required before
+            learners can proceed through the admission pipeline.
+          </p>
+
+          {/* Toggle: New Admissions */}
+          <div className="flex items-start justify-between gap-6 rounded-xl border bg-muted/20 p-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <FlaskConical className="h-4 w-4 text-primary" />
+                <Label className="text-sm font-bold">
+                  Require Reading Assessment for New Admissions
+                </Label>
+              </div>
+              <p className="text-xs text-muted-foreground pl-6">
+                Applies to incoming Grade 7, transferees, and balik-aral
+                learners. Disabling removes the baseline data required for the
+                Tier 3 Sectioning Algorithm.
+              </p>
+            </div>
+            <Switch
+              checked={requireNew}
+              onCheckedChange={(checked) => {
+                if (!checked) {
+                  setShowDisableNewWarning(true);
+                } else {
+                  setRequireNew(true);
+                }
+              }}
+              disabled={savingAssessment}
+            />
+          </div>
+
+          {/* Toggle: Continuing Learners */}
+          <div className="flex items-start justify-between gap-6 rounded-xl border bg-muted/20 p-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <FlaskConical className="h-4 w-4 text-primary" />
+                <Label className="text-sm font-bold">
+                  Require Reading Assessment for Continuing Learners
+                </Label>
+              </div>
+              <p className="text-xs text-muted-foreground pl-6">
+                Applies to returning learners confirming re-enrollment for this
+                school year.
+              </p>
+            </div>
+            <Switch
+              checked={requireContinuing}
+              onCheckedChange={setRequireContinuing}
+              disabled={savingAssessment}
+            />
+          </div>
+
+          <div className="flex justify-end">
+            <Button
+              className="font-bold"
+              onClick={handleSaveAssessmentConfig}
+              disabled={
+                savingAssessment ||
+                (requireNew === ay.requireReadingAssessmentNew &&
+                  requireContinuing === ay.requireReadingAssessmentContinuing)
+              }>
+              {savingAssessment ? "Saving..." : "Save Assessment Settings"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <ConfirmationModal
+        open={showDisableNewWarning}
+        onOpenChange={setShowDisableNewWarning}
+        variant="warning"
+        icon={AlertTriangle}
+        title="Disable Assessment for New Admissions?"
+        description="Disabling this removes the baseline data required for the Tier 3 Sectioning Algorithm. The system will fall back to randomized distribution for these learners. Are you sure you want to proceed?"
+        confirmText="Yes, Disable Assessment"
+        confirmClassName="border-destructive text-destructive hover:bg-destructive/10"
+        onConfirm={() => {
+          setRequireNew(false);
+          setShowDisableNewWarning(false);
+        }}
+      />
     </div>
   );
 }

@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -12,44 +15,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { Loader2, Plus, Trash2, CheckCircle2, ClipboardList, BookOpen } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/dialog";
+import {
+  Loader2,
+  Plus,
+  Trash2,
+  CheckCircle2,
+  ClipboardList,
+  BookOpen,
+  FileCheck2,
+} from "lucide-react";
 import { useSettingsStore } from "@/store/settings.slice";
 import api from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import type { AxiosError } from "axios";
-
-// ─── Types ─────────────────────────────────────────────────────────────────────
-
-interface EnrollmentListing {
-  id: number;
-  firstName: string;
-  lastName: string;
-  gradeLevel: string;
-  status: "LISTED" | "PROCESSED";
-  dateCollected: string;
-  notes?: string | null;
-  createdBy: { firstName: string; lastName: string };
-  createdAt: string;
-}
-
-interface EnrolledLearner {
-  id: number;
-  status: string;
-  readingProfileLevel: string | null;
-  readingProfileNotes: string | null;
-  readingProfileAssessedAt: string | null;
-  isConfirmationSlipReceived: boolean;
-  learner: {
-    id: number;
-    lrn: string | null;
-    firstName: string;
-    lastName: string;
-    middleName: string | null;
-  };
-  gradeLevel: { id: number; name: string };
-  enrollmentRecords: { section: { id: number; name: string } | null }[];
-}
+import FinalizeEnrollmentModal from "@/features/intake/components/FinalizeEnrollmentModal";
 
 const READING_LEVELS = [
   { value: "INDEPENDENT", label: "Independent", color: "text-emerald-600" },
@@ -58,63 +45,205 @@ const READING_LEVELS = [
   { value: "NON_READER", label: "Non-Reader", color: "text-red-600" },
 ] as const;
 
-const GRADE_LEVELS = [
-  "Grade 7",
-  "Grade 8",
-  "Grade 9",
-  "Grade 10",
-  "Grade 11",
-  "Grade 12",
+type ReadingLevel = (typeof READING_LEVELS)[number]["value"];
+
+type LearnerType = "NEW_ENROLLEE" | "TRANSFEREE" | "RETURNING";
+
+const WALK_IN_GRADE_LEVELS = ["GRADE 7", "GRADE 8", "GRADE 9", "GRADE 10"] as const;
+
+const preListingSchema = z
+  .object({
+    learnerType: z.enum(["NEW_ENROLLEE", "TRANSFEREE", "RETURNING"]),
+    gradeLevel: z.enum(["GRADE 7", "GRADE 8", "GRADE 9", "GRADE 10"]),
+    lrn: z
+      .string()
+      .trim()
+      .refine((value) => value.length === 0 || /^\d{12}$/.test(value), {
+        message: "LRN must be exactly 12 digits.",
+      }),
+    lastName: z.string().trim().min(1, "Last name is required."),
+    firstName: z.string().trim().min(1, "First name is required."),
+    middleName: z.string().trim().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.learnerType === "TRANSFEREE" && !data.lrn) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["lrn"],
+        message: "LRN is required for transferees.",
+      });
+    }
+  });
+
+type PreListingFormValues = z.infer<typeof preListingSchema>;
+
+const LEARNER_TYPES: { value: LearnerType; label: string }[] = [
+  { value: "NEW_ENROLLEE", label: "Incoming Grade 7" },
+  { value: "TRANSFEREE", label: "Transferee" },
+  { value: "RETURNING", label: "Balik-Aral" },
 ];
 
-// ─── Pre-Listing Tab ────────────────────────────────────────────────────────────
+interface ListingEntry {
+  id: number;
+  firstName: string;
+  lastName: string;
+  middleName: string | null;
+  lrn: string | null;
+  gradeLevel: string;
+  learnerType: LearnerType | null;
+  readingLevel: ReadingLevel | null;
+  status: "LISTED" | "PROCESSED" | "CONFIRMED";
+  notes: string | null;
+  createdAt: string;
+}
 
-function PreListingTab({ schoolYearId }: { schoolYearId: number }) {
-  const [listings, setListings] = useState<EnrollmentListing[]>([]);
+interface ConfirmationApp {
+  id: number;
+  learnerType: string | null;
+  readingProfileLevel: ReadingLevel | null;
+  learner: {
+    lrn: string | null;
+    firstName: string;
+    lastName: string;
+    middleName: string | null;
+  };
+  gradeLevel: { name: string };
+}
+
+interface ReadingQueueApplication {
+  id: number;
+  learnerType: string | null;
+  learner: {
+    lrn: string | null;
+    firstName: string;
+    lastName: string;
+    middleName: string | null;
+  };
+  gradeLevel: { name: string };
+  createdAt: string;
+}
+
+type ReadingQueueRow =
+  | { source: "listing"; data: ListingEntry }
+  | { source: "application"; data: ReadingQueueApplication };
+
+type ConfirmationRow =
+  | { source: "listing"; data: ListingEntry }
+  | { source: "application"; data: ConfirmationApp };
+
+function formatName(lastName: string, firstName: string, middleName?: string | null) {
+  const mi = middleName ? ` ${middleName.charAt(0).toUpperCase()}.` : "";
+  return `${lastName}, ${firstName}${mi}`;
+}
+
+function readingLabel(level: string | null) {
+  return READING_LEVELS.find((r) => r.value === level)?.label ?? "Not assessed";
+}
+
+function readingColor(level: string | null) {
+  if (level === "NON_READER") return "text-red-600 font-black";
+  if (level === "FRUSTRATION") return "text-amber-600 font-bold";
+  if (level === "INSTRUCTIONAL") return "text-blue-600 font-bold";
+  if (level === "INDEPENDENT") return "text-emerald-600 font-bold";
+  return "text-muted-foreground italic";
+}
+
+function PreListingTab({
+  schoolYearId,
+  onCountChange,
+  onPipelineChanged,
+}: {
+  schoolYearId: number;
+  onCountChange: (count: number) => void;
+  onPipelineChanged: () => void;
+}) {
+  const [listings, setListings] = useState<ListingEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    gradeLevel: "",
-    notes: "",
+
+  const {
+    control,
+    register,
+    reset,
+    watch,
+    handleSubmit,
+    formState: { errors, isValid },
+  } = useForm<PreListingFormValues>({
+    resolver: zodResolver(preListingSchema),
+    mode: "onChange",
+    defaultValues: {
+      learnerType: "NEW_ENROLLEE",
+      gradeLevel: "GRADE 7",
+      lrn: "",
+      lastName: "",
+      firstName: "",
+      middleName: "",
+    },
   });
+
+  const selectedLearnerType = watch("learnerType");
 
   const fetchListings = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get<{ listings: EnrollmentListing[] }>(
+      const res = await api.get<{ listings: ListingEntry[] }>(
         `/enrollment-listings?schoolYearId=${schoolYearId}`,
       );
       setListings(res.data.listings);
+      onCountChange(res.data.listings.filter((l) => l.status === "LISTED").length);
     } catch (e) {
       toastApiError(e as AxiosError<{ message?: string }>);
     } finally {
       setLoading(false);
     }
-  }, [schoolYearId]);
+  }, [schoolYearId, onCountChange]);
+
+  const refreshReadingBadge = useCallback(async () => {
+    try {
+      const res = await api.get<{
+        listings: ListingEntry[];
+        applications: ReadingQueueApplication[];
+      }>(`/enrollment-listings/reading-queue?schoolYearId=${schoolYearId}`);
+      onCountChange(res.data.listings.length + res.data.applications.length);
+    } catch {
+      // Ignore badge refresh failure.
+    }
+  }, [schoolYearId, onCountChange]);
 
   useEffect(() => {
     void fetchListings();
-  }, [fetchListings]);
+    void refreshReadingBadge();
+  }, [fetchListings, refreshReadingBadge]);
 
-  const handleAdd = async () => {
-    if (!form.firstName.trim() || !form.lastName.trim() || !form.gradeLevel) {
-      sileo.error({ title: "Validation Error", description: "First name, last name, and grade level are required." });
-      return;
-    }
+  const onSubmit = async (values: PreListingFormValues) => {
     setSubmitting(true);
     try {
       await api.post("/enrollment-listings", {
-        firstName: form.firstName,
-        lastName: form.lastName,
-        gradeLevel: form.gradeLevel,
+        learnerType: values.learnerType,
+        gradeLevel: values.gradeLevel,
+        lrn: values.lrn || undefined,
+        lastName: values.lastName.toUpperCase(),
+        firstName: values.firstName.toUpperCase(),
+        middleName: values.middleName?.toUpperCase() || undefined,
         schoolYearId,
-        notes: form.notes || undefined,
+        status: "PENDING_READING",
       });
-      setForm({ firstName: "", lastName: "", gradeLevel: "", notes: "" });
-      sileo.success({ title: "Added", description: "Entry added to pre-listing." });
+
+      reset({
+        learnerType: "NEW_ENROLLEE",
+        gradeLevel: "GRADE 7",
+        lrn: "",
+        lastName: "",
+        firstName: "",
+        middleName: "",
+      });
+      sileo.success({
+        title: "Added",
+        description: "Student added to Reading Assessment queue.",
+      });
       void fetchListings();
+      void refreshReadingBadge();
+      onPipelineChanged();
     } catch (e) {
       toastApiError(e as AxiosError<{ message?: string }>);
     } finally {
@@ -122,22 +251,15 @@ function PreListingTab({ schoolYearId }: { schoolYearId: number }) {
     }
   };
 
-  const handleMarkProcessed = async (id: number) => {
-    try {
-      await api.patch(`/enrollment-listings/${id}/status`, { status: "PROCESSED" });
-      setListings((prev) =>
-        prev.map((l) => (l.id === id ? { ...l, status: "PROCESSED" } : l)),
-      );
-    } catch (e) {
-      toastApiError(e as AxiosError<{ message?: string }>);
-    }
-  };
-
   const handleDelete = async (id: number) => {
-    if (!confirm("Remove this entry?")) return;
+    if (!confirm("Remove this pre-listing entry?")) return;
     try {
       await api.delete(`/enrollment-listings/${id}`);
-      setListings((prev) => prev.filter((l) => l.id !== id));
+      setListings((prev) => {
+        const next = prev.filter((l) => l.id !== id);
+        onCountChange(next.filter((l) => l.status === "LISTED").length);
+        return next;
+      });
       sileo.success({ title: "Removed", description: "Entry deleted." });
     } catch (e) {
       toastApiError(e as AxiosError<{ message?: string }>);
@@ -146,61 +268,117 @@ function PreListingTab({ schoolYearId }: { schoolYearId: number }) {
 
   return (
     <div className="space-y-6">
-      {/* Quick Entry Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-black uppercase tracking-wide flex items-center gap-2">
-            <Plus className="h-4 w-4" /> Add Entry
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="space-y-1">
-              <Label className="text-[10px] font-black uppercase tracking-widest">Last Name</Label>
-              <Input
-                placeholder="LAST NAME"
-                value={form.lastName}
-                onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value.toUpperCase() }))}
-                className="h-10 font-bold uppercase text-sm"
+      <div className="bg-white border border-slate-200 rounded-lg p-6">
+        <div className="space-y-1 mb-5">
+          <h3 className="text-base font-black text-slate-900">Register Walk-In Applicant</h3>
+          <p className="text-sm text-slate-600">
+            Manually add incoming Grade 7 or Transferee students to the intake pipeline.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-black uppercase tracking-widest">Learner Type</Label>
+              <Controller
+                control={control}
+                name="learnerType"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger><SelectValue placeholder="Select learner type..." /></SelectTrigger>
+                    <SelectContent>
+                      {LEARNER_TYPES.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               />
+              {errors.learnerType ? (
+                <p className="text-xs text-destructive font-semibold">{errors.learnerType.message}</p>
+              ) : null}
             </div>
-            <div className="space-y-1">
-              <Label className="text-[10px] font-black uppercase tracking-widest">First Name</Label>
-              <Input
-                placeholder="FIRST NAME"
-                value={form.firstName}
-                onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value.toUpperCase() }))}
-                className="h-10 font-bold uppercase text-sm"
-              />
-            </div>
-            <div className="space-y-1">
+
+            <div className="space-y-1.5">
               <Label className="text-[10px] font-black uppercase tracking-widest">Grade Level</Label>
-              <Select value={form.gradeLevel} onValueChange={(v) => setForm((f) => ({ ...f, gradeLevel: v }))}>
-                <SelectTrigger className="h-10">
-                  <SelectValue placeholder="Select grade..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {GRADE_LEVELS.map((g) => (
-                    <SelectItem key={g} value={g.toUpperCase().replace(" ", "_")}>
-                      {g}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Controller
+                control={control}
+                name="gradeLevel"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger><SelectValue placeholder="Select grade level..." /></SelectTrigger>
+                    <SelectContent>
+                      {WALK_IN_GRADE_LEVELS.map((g) => (
+                        <SelectItem key={g} value={g}>{g.replace("GRADE ", "Grade ")}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.gradeLevel ? (
+                <p className="text-xs text-destructive font-semibold">{errors.gradeLevel.message}</p>
+              ) : null}
             </div>
-            <div className="flex items-end">
-              <Button
-                onClick={handleAdd}
-                disabled={submitting}
-                className="h-10 w-full font-black uppercase text-xs tracking-wide">
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="h-4 w-4 mr-1" /> Add</>}
-              </Button>
+
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-black uppercase tracking-widest">
+                LRN {selectedLearnerType === "TRANSFEREE" ? "(Required)" : "(Optional)"}
+              </Label>
+              <Input
+                inputMode="numeric"
+                maxLength={12}
+                placeholder={selectedLearnerType === "TRANSFEREE" ? "12-digit LRN (Required)" : "12-digit LRN (Optional)"}
+                {...register("lrn", {
+                  onChange: (e) => {
+                    e.target.value = String(e.target.value).replace(/\D/g, "").slice(0, 12);
+                  },
+                })}
+              />
+              {errors.lrn ? (
+                <p className="text-xs text-destructive font-semibold">{errors.lrn.message}</p>
+              ) : null}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-black uppercase tracking-widest">Last Name</Label>
+              <Input placeholder="LAST NAME" {...register("lastName")} />
+              {errors.lastName ? (
+                <p className="text-xs text-destructive font-semibold">{errors.lastName.message}</p>
+              ) : null}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-black uppercase tracking-widest">First Name</Label>
+              <Input placeholder="FIRST NAME" {...register("firstName")} />
+              {errors.firstName ? (
+                <p className="text-xs text-destructive font-semibold">{errors.firstName.message}</p>
+              ) : null}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-[10px] font-black uppercase tracking-widest">Middle Name (Optional)</Label>
+              <Input placeholder="MIDDLE NAME" {...register("middleName")} />
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Listing Table */}
+          <div className="flex justify-end pt-2 border-t border-slate-100">
+            <Button
+              type="submit"
+              disabled={!isValid || submitting}
+              className="font-black uppercase text-xs tracking-wide"
+            >
+              {submitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-1" /> Add to Reading Queue
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      </div>
+
       <Card>
         <CardContent className="p-0">
           {loading ? (
@@ -219,51 +397,27 @@ function PreListingTab({ schoolYearId }: { schoolYearId: number }) {
                   <tr className="border-b bg-slate-50 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                     <th className="px-4 py-3 text-left">Name</th>
                     <th className="px-4 py-3 text-left">Grade</th>
+                    <th className="px-4 py-3 text-left">Type</th>
                     <th className="px-4 py-3 text-left">Status</th>
-                    <th className="px-4 py-3 text-left">Date Collected</th>
-                    <th className="px-4 py-3 text-left">Notes</th>
-                    <th className="px-4 py-3 text-center">Actions</th>
+                    <th className="px-4 py-3 text-center">Delete</th>
                   </tr>
                 </thead>
                 <tbody>
                   {listings.map((l) => (
                     <tr key={l.id} className="border-b last:border-0 hover:bg-slate-50/50 transition-colors">
-                      <td className="px-4 py-3 font-semibold">
-                        {l.lastName}, {l.firstName}
-                      </td>
+                      <td className="px-4 py-3 font-semibold">{formatName(l.lastName, l.firstName, l.middleName)}</td>
                       <td className="px-4 py-3 text-xs">{l.gradeLevel}</td>
+                      <td className="px-4 py-3 text-xs">{LEARNER_TYPES.find((t) => t.value === l.learnerType)?.label ?? "-"}</td>
                       <td className="px-4 py-3">
-                        <Badge
-                          variant={l.status === "PROCESSED" ? "default" : "secondary"}
-                          className={`text-[10px] font-black uppercase tracking-wide ${l.status === "PROCESSED" ? "bg-emerald-100 text-emerald-700" : ""}`}>
-                          {l.status}
-                        </Badge>
+                        <Badge variant="secondary" className="text-[10px] font-black uppercase tracking-wide">{l.status}</Badge>
                       </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">
-                        {new Date(l.dateCollected).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground max-w-[200px] truncate">
-                        {l.notes ?? "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-center gap-2">
-                          {l.status === "LISTED" && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleMarkProcessed(l.id)}
-                              className="h-7 text-xs font-bold">
-                              <CheckCircle2 className="h-3 w-3 mr-1" /> Done
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDelete(l.id)}
+                      <td className="px-4 py-3 text-center">
+                        {l.status === "LISTED" && (
+                          <Button size="sm" variant="ghost" onClick={() => handleDelete(l.id)}
                             className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10">
                             <Trash2 className="h-3 w-3" />
                           </Button>
-                        </div>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -277,297 +431,295 @@ function PreListingTab({ schoolYearId }: { schoolYearId: number }) {
   );
 }
 
-// ─── Reading Assessment Tab ─────────────────────────────────────────────────────
-
-function ReadingAssessmentTab({ schoolYearId }: { schoolYearId: number }) {
-  const [learners, setLearners] = useState<EnrolledLearner[]>([]);
+function ReadingAssessmentTab({
+  schoolYearId,
+  onCountChange,
+  onPipelineChanged,
+}: {
+  schoolYearId: number;
+  onCountChange: (count: number) => void;
+  onPipelineChanged: () => void;
+}) {
+  const [queue, setQueue] = useState<ReadingQueueRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [savingIds, setSavingIds] = useState<Set<number>>(new Set());
+  const [target, setTarget] = useState<ReadingQueueRow | null>(null);
+  const [readingLevel, setReadingLevel] = useState<ReadingLevel | "">("");
+  const [saving, setSaving] = useState(false);
 
-  const fetchLearners = useCallback(async () => {
+  const fetchQueue = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get<{ applications: EnrolledLearner[] }>(
-        `/enrollment-listings/enrolled-learners?schoolYearId=${schoolYearId}`,
+      const res = await api.get<{ listings: ListingEntry[]; applications: ReadingQueueApplication[] }>(
+        `/enrollment-listings/reading-queue?schoolYearId=${schoolYearId}`,
       );
-      setLearners(res.data.applications);
+      const merged: ReadingQueueRow[] = [
+        ...res.data.listings.map((l) => ({ source: "listing" as const, data: l })),
+        ...res.data.applications.map((a) => ({ source: "application" as const, data: a })),
+      ];
+      setQueue(merged);
+      onCountChange(merged.length);
     } catch (e) {
       toastApiError(e as AxiosError<{ message?: string }>);
     } finally {
       setLoading(false);
     }
-  }, [schoolYearId]);
+  }, [schoolYearId, onCountChange]);
 
   useEffect(() => {
-    void fetchLearners();
-  }, [fetchLearners]);
+    void fetchQueue();
+  }, [fetchQueue]);
 
-  const handleReadingLevelChange = async (applicationId: number, level: string) => {
-    setSavingIds((s) => new Set(s).add(applicationId));
+  const saveAssessment = async () => {
+    if (!target || !readingLevel) return;
+    setSaving(true);
     try {
-      await api.patch(`/enrollment-listings/applications/${applicationId}/reading-profile`, {
-        readingProfileLevel: level,
-      });
-      setLearners((prev) =>
-        prev.map((l) =>
-          l.id === applicationId ? { ...l, readingProfileLevel: level } : l,
-        ),
-      );
-      sileo.success({ title: "Saved", description: "Reading profile updated." });
+      if (target.source === "listing") {
+        await api.patch(`/enrollment-listings/${target.data.id}/assess`, { readingLevel });
+      } else {
+        await api.patch(`/enrollment-listings/applications/${target.data.id}/intake-assess`, {
+          readingLevel,
+        });
+      }
+      sileo.success({ title: "Saved", description: "Reading assessment forwarded to confirmation." });
+      setTarget(null);
+      setReadingLevel("");
+      void fetchQueue();
+      onPipelineChanged();
     } catch (e) {
       toastApiError(e as AxiosError<{ message?: string }>);
     } finally {
-      setSavingIds((s) => {
-        const next = new Set(s);
-        next.delete(applicationId);
-        return next;
-      });
+      setSaving(false);
     }
   };
 
-  const levelColor = (level: string | null) => {
-    if (level === "NON_READER") return "text-red-600 font-black";
-    if (level === "FRUSTRATION") return "text-amber-600 font-bold";
-    if (level === "INSTRUCTIONAL") return "text-blue-600 font-bold";
-    if (level === "INDEPENDENT") return "text-emerald-600 font-bold";
-    return "text-muted-foreground";
-  };
+  const rowName = (row: ReadingQueueRow) =>
+    row.source === "listing"
+      ? formatName(row.data.lastName, row.data.firstName, row.data.middleName)
+      : formatName(row.data.learner.lastName, row.data.learner.firstName, row.data.learner.middleName);
+
+  const rowGrade = (row: ReadingQueueRow) =>
+    row.source === "listing" ? row.data.gradeLevel : row.data.gradeLevel.name;
+
+  const rowLearnerType = (row: ReadingQueueRow) =>
+    row.source === "listing" ? row.data.learnerType : row.data.learnerType;
 
   return (
-    <Card>
-      <CardContent className="p-0">
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : learners.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
-            <BookOpen className="h-8 w-8" />
-            <p className="text-sm font-semibold">No enrolled learners found for this school year.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-slate-50 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                  <th className="px-4 py-3 text-left">Learner</th>
-                  <th className="px-4 py-3 text-left">LRN</th>
-                  <th className="px-4 py-3 text-left">Grade / Section</th>
-                  <th className="px-4 py-3 text-left">Reading Level</th>
-                  <th className="px-4 py-3 text-left">Assessed</th>
-                </tr>
-              </thead>
-              <tbody>
-                {learners.map((l) => {
-                  const section = l.enrollmentRecords[0]?.section;
-                  const isSaving = savingIds.has(l.id);
-                  return (
-                    <tr key={l.id} className="border-b last:border-0 hover:bg-slate-50/50 transition-colors">
-                      <td className="px-4 py-3 font-semibold">
-                        {l.learner.lastName}, {l.learner.firstName}
-                        {l.learner.middleName ? ` ${l.learner.middleName.charAt(0)}.` : ""}
-                        {(l.readingProfileLevel === "NON_READER" || l.readingProfileLevel === "FRUSTRATION") && (
-                          <Badge className="ml-2 text-[9px] font-black uppercase bg-red-100 text-red-700">
-                            {l.readingProfileLevel === "NON_READER" ? "Non-Reader" : "Needs Support"}
-                          </Badge>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">
-                        {l.learner.lrn ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 text-xs">
-                        <span className="font-semibold">{l.gradeLevel.name}</span>
-                        {section && (
-                          <span className="text-muted-foreground"> · {section.name}</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 min-w-[180px]">
-                        <div className="flex items-center gap-2">
-                          <Select
-                            value={l.readingProfileLevel ?? ""}
-                            onValueChange={(v) => handleReadingLevelChange(l.id, v)}
-                            disabled={isSaving}>
-                            <SelectTrigger className="h-8 text-xs w-[160px]">
-                              <SelectValue placeholder="Not assessed" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {READING_LEVELS.map((rl) => (
-                                <SelectItem key={rl.value} value={rl.value}>
-                                  <span className={rl.color}>{rl.label}</span>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {isSaving && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
-                        </div>
-                        {l.readingProfileLevel && (
-                          <p className={`text-[10px] mt-0.5 ${levelColor(l.readingProfileLevel)}`}>
-                            {READING_LEVELS.find((r) => r.value === l.readingProfileLevel)?.label}
-                          </p>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">
-                        {l.readingProfileAssessedAt
-                          ? new Date(l.readingProfileAssessedAt).toLocaleDateString()
-                          : "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-// ─── Confirmation Status Tab ────────────────────────────────────────────────────
-
-function ConfirmationStatusTab({ schoolYearId }: { schoolYearId: number }) {
-  const [learners, setLearners] = useState<EnrolledLearner[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [savingIds, setSavingIds] = useState<Set<number>>(new Set());
-
-  const fetchLearners = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await api.get<{ applications: EnrolledLearner[] }>(
-        `/enrollment-listings/enrolled-learners?schoolYearId=${schoolYearId}`,
-      );
-      setLearners(res.data.applications);
-    } catch (e) {
-      toastApiError(e as AxiosError<{ message?: string }>);
-    } finally {
-      setLoading(false);
-    }
-  }, [schoolYearId]);
-
-  useEffect(() => {
-    void fetchLearners();
-  }, [fetchLearners]);
-
-  const handleToggleConfirmation = async (applicationId: number, current: boolean) => {
-    setSavingIds((s) => new Set(s).add(applicationId));
-    try {
-      await api.patch(`/enrollment-listings/applications/${applicationId}/confirmation-slip`, {
-        isConfirmationSlipReceived: !current,
-      });
-      setLearners((prev) =>
-        prev.map((l) =>
-          l.id === applicationId ? { ...l, isConfirmationSlipReceived: !current } : l,
-        ),
-      );
-    } catch (e) {
-      toastApiError(e as AxiosError<{ message?: string }>);
-    } finally {
-      setSavingIds((s) => {
-        const next = new Set(s);
-        next.delete(applicationId);
-        return next;
-      });
-    }
-  };
-
-  const received = learners.filter((l) => l.isConfirmationSlipReceived).length;
-
-  return (
-    <div className="space-y-4">
-      {!loading && learners.length > 0 && (
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-          <span className="font-semibold">
-            {received} / {learners.length} confirmation slips received
-          </span>
-        </div>
-      )}
+    <>
       <Card>
         <CardContent className="p-0">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ) : learners.length === 0 ? (
+          ) : queue.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
-              <ClipboardList className="h-8 w-8" />
-              <p className="text-sm font-semibold">No enrolled learners found for this school year.</p>
+              <BookOpen className="h-8 w-8" />
+              <p className="text-sm font-semibold">No learners pending reading assessment.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-slate-50 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                    <th className="px-4 py-3 text-left">Learner</th>
-                    <th className="px-4 py-3 text-left">Grade / Section</th>
-                    <th className="px-4 py-3 text-left">Reading Profile</th>
-                    <th className="px-4 py-3 text-center">Confirmation Slip</th>
+                    <th className="px-4 py-3 text-left">Name</th>
+                    <th className="px-4 py-3 text-left">Grade</th>
+                    <th className="px-4 py-3 text-left">Type</th>
+                    <th className="px-4 py-3 text-center">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {learners.map((l) => {
-                    const section = l.enrollmentRecords[0]?.section;
-                    const isSaving = savingIds.has(l.id);
-                    const readingLabel = READING_LEVELS.find((r) => r.value === l.readingProfileLevel);
-                    return (
-                      <tr key={l.id} className="border-b last:border-0 hover:bg-slate-50/50 transition-colors">
-                        <td className="px-4 py-3 font-semibold">
-                          {l.learner.lastName}, {l.learner.firstName}
-                          {l.learner.middleName ? ` ${l.learner.middleName.charAt(0)}.` : ""}
-                        </td>
-                        <td className="px-4 py-3 text-xs">
-                          <span className="font-semibold">{l.gradeLevel.name}</span>
-                          {section && (
-                            <span className="text-muted-foreground"> · {section.name}</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-xs">
-                          {readingLabel ? (
-                            <span className={`font-bold ${readingLabel.color}`}>
-                              {readingLabel.label}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground italic">Not assessed</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex justify-center">
-                            <Button
-                              size="sm"
-                              variant={l.isConfirmationSlipReceived ? "default" : "outline"}
-                              disabled={isSaving}
-                              onClick={() =>
-                                handleToggleConfirmation(l.id, l.isConfirmationSlipReceived)
-                              }
-                              className={`h-8 text-xs font-bold min-w-[110px] ${
-                                l.isConfirmationSlipReceived
-                                  ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                                  : "border-slate-300"
-                              }`}>
-                              {isSaving ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : l.isConfirmationSlipReceived ? (
-                                <><CheckCircle2 className="h-3 w-3 mr-1" /> Received</>
-                              ) : (
-                                "Mark Received"
-                              )}
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {queue.map((row) => (
+                    <tr key={`${row.source}-${row.data.id}`} className="border-b last:border-0 hover:bg-slate-50/50 transition-colors">
+                      <td className="px-4 py-3 font-semibold">{rowName(row)}</td>
+                      <td className="px-4 py-3 text-xs">{rowGrade(row)}</td>
+                      <td className="px-4 py-3 text-xs">{LEARNER_TYPES.find((t) => t.value === rowLearnerType(row))?.label ?? "-"}</td>
+                      <td className="px-4 py-3 text-center">
+                        <Button size="sm" onClick={() => { setTarget(row); setReadingLevel(""); }}
+                          className="h-8 text-xs font-bold uppercase tracking-wide">
+                          <BookOpen className="h-3 w-3 mr-1" /> Assess
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           )}
         </CardContent>
       </Card>
-    </div>
+
+      <Dialog open={!!target} onOpenChange={(o) => { if (!o) { setTarget(null); setReadingLevel(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-black uppercase tracking-wide">Phil-IRI Reading Assessment</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Label className="text-[10px] font-black uppercase tracking-widest">Reading Level</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {READING_LEVELS.map((r) => (
+                <button key={r.value} type="button" onClick={() => setReadingLevel(r.value)}
+                  className={`rounded-md border px-3 py-2 text-xs font-bold text-left ${readingLevel === r.value ? "border-primary bg-primary/10" : "border-border"} ${r.color}`}>
+                  {r.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setTarget(null)}>Cancel</Button>
+            <Button size="sm" disabled={!readingLevel || saving} onClick={saveAssessment}
+              className="font-black uppercase text-xs">
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><CheckCircle2 className="h-3 w-3 mr-1" /> Save and Forward</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
-// ─── Main IntakeDashboard ───────────────────────────────────────────────────────
+function ConfirmationTab({
+  schoolYearId,
+  onCountChange,
+  onPipelineChanged,
+}: {
+  schoolYearId: number;
+  onCountChange: (count: number) => void;
+  onPipelineChanged: () => void;
+}) {
+  const [rows, setRows] = useState<ConfirmationRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [target, setTarget] = useState<ConfirmationRow | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const fetchQueue = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get<{ listings: ListingEntry[]; applications: ConfirmationApp[] }>(
+        `/enrollment-listings/confirmation-queue?schoolYearId=${schoolYearId}`,
+      );
+      const merged: ConfirmationRow[] = [
+        ...res.data.listings.map((l) => ({ source: "listing" as const, data: l })),
+        ...res.data.applications.map((a) => ({ source: "application" as const, data: a })),
+      ];
+      setRows(merged);
+      onCountChange(merged.length);
+    } catch (e) {
+      toastApiError(e as AxiosError<{ message?: string }>);
+    } finally {
+      setLoading(false);
+    }
+  }, [schoolYearId, onCountChange]);
+
+  useEffect(() => {
+    void fetchQueue();
+  }, [fetchQueue]);
+
+  const submitOfficialize = async (payload: {
+    confirmationSlipReceived: boolean;
+    heightCm: number;
+    weightKg: number;
+  }) => {
+    if (!target) return;
+
+    setSaving(true);
+    try {
+      if (target.source === "listing") {
+        await api.patch(`/enrollment-listings/${target.data.id}/intake-confirm`, payload);
+      } else {
+        await api.patch(`/enrollment-listings/applications/${target.data.id}/officialize`, payload);
+      }
+      sileo.success({ title: "Officialized", description: "Learner moved to next stage." });
+      setTarget(null);
+      void fetchQueue();
+      onPipelineChanged();
+    } catch (e) {
+      toastApiError(e as AxiosError<{ message?: string }>);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const rowName = (row: ConfirmationRow) =>
+    row.source === "listing"
+      ? formatName(row.data.lastName, row.data.firstName, row.data.middleName)
+      : formatName(row.data.learner.lastName, row.data.learner.firstName, row.data.learner.middleName);
+
+  const rowGrade = (row: ConfirmationRow) =>
+    row.source === "listing" ? row.data.gradeLevel : row.data.gradeLevel.name;
+
+  const rowReading = (row: ConfirmationRow) =>
+    row.source === "listing" ? row.data.readingLevel : row.data.readingProfileLevel;
+
+  return (
+    <>
+      <Card>
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : rows.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
+              <FileCheck2 className="h-8 w-8" />
+              <p className="text-sm font-semibold">No learners pending confirmation.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-slate-50 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                    <th className="px-4 py-3 text-left">Name</th>
+                    <th className="px-4 py-3 text-left">Grade</th>
+                    <th className="px-4 py-3 text-left">Type</th>
+                    <th className="px-4 py-3 text-left">Reading Profile</th>
+                    <th className="px-4 py-3 text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => (
+                    <tr key={`${row.source}-${row.data.id}`} className="border-b last:border-0 hover:bg-slate-50/50 transition-colors">
+                      <td className="px-4 py-3 font-semibold">{rowName(row)}</td>
+                      <td className="px-4 py-3 text-xs">{rowGrade(row)}</td>
+                      <td className="px-4 py-3">
+                        <Badge className={`text-[10px] font-black uppercase ${row.source === "application" && row.data.learnerType === "RETURNING" ? "bg-purple-100 text-purple-700" : "bg-sky-100 text-sky-700"}`}>
+                          {row.source === "application" && row.data.learnerType === "RETURNING"
+                            ? "Continuing"
+                            : "Incoming"}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-xs">
+                        <span className={readingColor(rowReading(row))}>{readingLabel(rowReading(row))}</span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <Button size="sm" onClick={() => setTarget(row)}
+                          className="h-8 text-xs font-bold uppercase tracking-wide bg-emerald-600 hover:bg-emerald-700 text-white">
+                          <CheckCircle2 className="h-3 w-3 mr-1" /> Confirm Enrollment
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <FinalizeEnrollmentModal
+        open={!!target}
+        onOpenChange={(open) => {
+          if (!open) {
+            setTarget(null);
+          }
+        }}
+        learnerName={target ? rowName(target) : undefined}
+        title="Finalize Enrollment"
+        loading={saving}
+        onSubmit={submitOfficialize}
+      />
+    </>
+  );
+}
 
 export default function IntakeDashboard() {
   const { activeSchoolYearId, viewingSchoolYearId, activeSchoolYearLabel, viewingSchoolYearLabel } =
@@ -575,6 +727,36 @@ export default function IntakeDashboard() {
 
   const schoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
   const yearLabel = viewingSchoolYearLabel ?? activeSchoolYearLabel;
+  const [readingCount, setReadingCount] = useState(0);
+  const [confirmationCount, setConfirmationCount] = useState(0);
+
+  const refreshBadgeCounts = useCallback(async () => {
+    if (!schoolYearId) {
+      return;
+    }
+
+    try {
+      const [readingRes, confirmationRes] = await Promise.all([
+        api.get<{ listings: ListingEntry[]; applications: ReadingQueueApplication[] }>(
+          `/enrollment-listings/reading-queue?schoolYearId=${schoolYearId}`,
+        ),
+        api.get<{ listings: ListingEntry[]; applications: ConfirmationApp[] }>(
+          `/enrollment-listings/confirmation-queue?schoolYearId=${schoolYearId}`,
+        ),
+      ]);
+
+      setReadingCount(readingRes.data.listings.length + readingRes.data.applications.length);
+      setConfirmationCount(
+        confirmationRes.data.listings.length + confirmationRes.data.applications.length,
+      );
+    } catch {
+      // Ignore badge refresh errors.
+    }
+  }, [schoolYearId]);
+
+  useEffect(() => {
+    void refreshBadgeCounts();
+  }, [refreshBadgeCounts]);
 
   if (!schoolYearId) {
     return (
@@ -589,33 +771,51 @@ export default function IntakeDashboard() {
       <div>
         <h1 className="text-2xl font-black uppercase tracking-tight">Intake Dashboard</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          School Year {yearLabel} — Pre-Listing, Reading Assessment & Confirmation
+          School Year {yearLabel} - Pre-Listing, Reading Assessment, and Confirmation
         </p>
       </div>
 
       <Tabs defaultValue="pre-listing">
-        <TabsList className="grid w-full max-w-lg grid-cols-3">
+        <TabsList className="grid w-full max-w-2xl grid-cols-3">
           <TabsTrigger value="pre-listing" className="text-xs font-bold uppercase tracking-wide">
-            Pre-Listing
+            <ClipboardList className="h-3 w-3 mr-1" /> Pre-Listing
           </TabsTrigger>
           <TabsTrigger value="reading" className="text-xs font-bold uppercase tracking-wide">
-            Reading Assessment
+            <BookOpen className="h-3 w-3 mr-1" /> Reading Assessment
+            {readingCount > 0 && (
+              <Badge className="ml-1.5 h-4 min-w-4 px-1 text-[10px] bg-amber-500 text-white">{readingCount}</Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="confirmation" className="text-xs font-bold uppercase tracking-wide">
-            Confirmation
+            <FileCheck2 className="h-3 w-3 mr-1" /> Confirmation
+            {confirmationCount > 0 && (
+              <Badge className="ml-1.5 h-4 min-w-4 px-1 text-[10px] bg-emerald-600 text-white">{confirmationCount}</Badge>
+            )}
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="pre-listing" className="mt-6">
-          <PreListingTab schoolYearId={schoolYearId} />
+          <PreListingTab
+            schoolYearId={schoolYearId}
+            onCountChange={setReadingCount}
+            onPipelineChanged={refreshBadgeCounts}
+          />
         </TabsContent>
 
         <TabsContent value="reading" className="mt-6">
-          <ReadingAssessmentTab schoolYearId={schoolYearId} />
+          <ReadingAssessmentTab
+            schoolYearId={schoolYearId}
+            onCountChange={setReadingCount}
+            onPipelineChanged={refreshBadgeCounts}
+          />
         </TabsContent>
 
         <TabsContent value="confirmation" className="mt-6">
-          <ConfirmationStatusTab schoolYearId={schoolYearId} />
+          <ConfirmationTab
+            schoolYearId={schoolYearId}
+            onCountChange={setConfirmationCount}
+            onPipelineChanged={refreshBadgeCounts}
+          />
         </TabsContent>
       </Tabs>
     </div>

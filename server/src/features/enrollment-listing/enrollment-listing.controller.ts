@@ -26,15 +26,27 @@ export async function create(req: Request, res: Response) {
     return;
   }
 
-  const { firstName, lastName, gradeLevel, schoolYearId, dateCollected, notes } =
-    req.body as {
-      firstName: string;
-      lastName: string;
-      gradeLevel: string;
-      schoolYearId: number;
-      dateCollected?: string;
-      notes?: string;
-    };
+  const {
+    firstName,
+    lastName,
+    middleName,
+    lrn,
+    gradeLevel,
+    learnerType,
+    schoolYearId,
+    dateCollected,
+    notes,
+  } = req.body as {
+    firstName: string;
+    lastName: string;
+    middleName?: string;
+    lrn?: string;
+    gradeLevel: string;
+    learnerType?: string;
+    schoolYearId: number;
+    dateCollected?: string;
+    notes?: string;
+  };
 
   if (!firstName || !lastName || !gradeLevel || !schoolYearId) {
     res
@@ -47,7 +59,10 @@ export async function create(req: Request, res: Response) {
     data: {
       firstName: String(firstName).trim().toUpperCase(),
       lastName: String(lastName).trim().toUpperCase(),
+      middleName: middleName ? String(middleName).trim().toUpperCase() : null,
+      lrn: lrn ? String(lrn).trim() : null,
       gradeLevel: String(gradeLevel).trim().toUpperCase(),
+      learnerType: learnerType ? (learnerType as any) : null,
       schoolYearId: Number(schoolYearId),
       createdById: userId,
       dateCollected: dateCollected ? new Date(dateCollected) : undefined,
@@ -226,4 +241,279 @@ export async function updateConfirmationSlip(req: Request, res: Response) {
   });
 
   res.json({ application: { id: applicationId, ...updated } });
+}
+
+// ────────────────────────────────────────────────────────────────────────────────
+// Intake pipeline endpoints
+// ────────────────────────────────────────────────────────────────────────────────
+
+/** GET /reading-queue?schoolYearId=X — Walk-in listings + digital-first applications awaiting reading assessment */
+export async function getReadingQueue(req: Request, res: Response) {
+  const schoolYearId = Number(req.query.schoolYearId);
+  if (!schoolYearId || isNaN(schoolYearId)) {
+    res.status(400).json({ message: "schoolYearId query param is required." });
+    return;
+  }
+
+  const [listings, applications] = await Promise.all([
+    prisma.enrollmentListing.findMany({
+      where: { schoolYearId, status: "LISTED" },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        middleName: true,
+        lrn: true,
+        gradeLevel: true,
+        learnerType: true,
+        notes: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.enrollmentApplication.findMany({
+      where: {
+        schoolYearId,
+        status: "READY_FOR_ENROLLMENT",
+        readingProfileLevel: null,
+      },
+      select: {
+        id: true,
+        learnerType: true,
+        learner: {
+          select: {
+            lrn: true,
+            firstName: true,
+            lastName: true,
+            middleName: true,
+          },
+        },
+        gradeLevel: { select: { name: true } },
+        createdAt: true,
+      },
+      orderBy: { createdAt: "asc" },
+    }),
+  ]);
+
+  res.json({ listings, applications });
+}
+
+/** PATCH /:id/assess — Record Phil-IRI result and advance listing to PROCESSED */
+export async function assessListing(req: Request, res: Response) {
+  const userId = (req as AuthRequest).user?.id;
+  if (!userId) {
+    res.status(401).json({ message: "Unauthorized." });
+    return;
+  }
+
+  const id = Number(req.params.id);
+  const { readingLevel } = req.body as { readingLevel: string };
+
+  if (!readingLevel || !VALID_READING_LEVELS.includes(readingLevel as any)) {
+    res.status(400).json({
+      message: `readingLevel must be one of: ${VALID_READING_LEVELS.join(", ")}.`,
+    });
+    return;
+  }
+
+  const existing = await prisma.enrollmentListing.findUnique({ where: { id } });
+  if (!existing) {
+    res.status(404).json({ message: "Listing not found." });
+    return;
+  }
+  if (existing.status !== "LISTED") {
+    res.status(409).json({ message: "Listing is not in LISTED status." });
+    return;
+  }
+
+  const updated = await prisma.enrollmentListing.update({
+    where: { id },
+    data: { readingLevel: readingLevel as any, status: "PROCESSED" },
+  });
+
+  res.json({ listing: updated });
+}
+
+/** PATCH /applications/:applicationId/intake-assess — Record Phil-IRI and advance application to PENDING_CONFIRMATION */
+export async function assessApplicationForIntake(req: Request, res: Response) {
+  const userId = (req as AuthRequest).user?.id;
+  if (!userId) {
+    res.status(401).json({ message: "Unauthorized." });
+    return;
+  }
+
+  const applicationId = Number(req.params.applicationId);
+  const { readingLevel } = req.body as { readingLevel: ReadingProfileLevel };
+
+  if (!readingLevel || !VALID_READING_LEVELS.includes(readingLevel)) {
+    res.status(400).json({
+      message: `readingLevel must be one of: ${VALID_READING_LEVELS.join(", ")}.`,
+    });
+    return;
+  }
+
+  const existing = await prisma.enrollmentApplication.findUnique({
+    where: { id: applicationId },
+    select: { id: true, status: true },
+  });
+  if (!existing) {
+    res.status(404).json({ message: "Application not found." });
+    return;
+  }
+  if (existing.status !== "READY_FOR_ENROLLMENT") {
+    res.status(409).json({
+      message: "Application is not in READY_FOR_ENROLLMENT status.",
+    });
+    return;
+  }
+
+  const updated = await prisma.enrollmentApplication.update({
+    where: { id: applicationId },
+    data: {
+      readingProfileLevel: readingLevel,
+      readingProfileAssessedAt: new Date(),
+      readingProfileAssessedById: userId,
+      status: "PENDING_CONFIRMATION",
+    },
+    select: {
+      id: true,
+      status: true,
+      readingProfileLevel: true,
+      readingProfileAssessedAt: true,
+    },
+  });
+
+  res.json({ application: updated });
+}
+
+/** GET /confirmation-queue?schoolYearId=X — PROCESSED listings + PENDING_CONFIRMATION apps */
+export async function getConfirmationQueue(req: Request, res: Response) {
+  const schoolYearId = Number(req.query.schoolYearId);
+  if (!schoolYearId || isNaN(schoolYearId)) {
+    res.status(400).json({ message: "schoolYearId query param is required." });
+    return;
+  }
+
+  const [listings, applications] = await Promise.all([
+    prisma.enrollmentListing.findMany({
+      where: { schoolYearId, status: "PROCESSED" },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        middleName: true,
+        lrn: true,
+        gradeLevel: true,
+        learnerType: true,
+        readingLevel: true,
+        notes: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.enrollmentApplication.findMany({
+      where: { schoolYearId, status: "PENDING_CONFIRMATION" },
+      select: {
+        id: true,
+        status: true,
+        learnerType: true,
+        readingProfileLevel: true,
+        readingProfileAssessedAt: true,
+        checklist: { select: { isConfirmationSlipReceived: true } },
+        learner: {
+          select: {
+            id: true,
+            lrn: true,
+            firstName: true,
+            lastName: true,
+            middleName: true,
+          },
+        },
+        gradeLevel: { select: { id: true, name: true } },
+      },
+      orderBy: [
+        { learner: { lastName: "asc" } },
+        { learner: { firstName: "asc" } },
+      ],
+    }),
+  ]);
+
+  res.json({ listings, applications });
+}
+
+/** PATCH /:id/intake-confirm — Officialize walk-in listing with BMI + mark CONFIRMED */
+export async function confirmListing(req: Request, res: Response) {
+  const id = Number(req.params.id);
+  const { heightCm, weightKg, confirmationSlipReceived } = req.body as {
+    heightCm?: number;
+    weightKg?: number;
+    confirmationSlipReceived?: boolean;
+  };
+
+  const existing = await prisma.enrollmentListing.findUnique({ where: { id } });
+  if (!existing) {
+    res.status(404).json({ message: "Listing not found." });
+    return;
+  }
+  if (existing.status !== "PROCESSED") {
+    res.status(409).json({ message: "Listing is not in PROCESSED status." });
+    return;
+  }
+
+  const updated = await prisma.enrollmentListing.update({
+    where: { id },
+    data: {
+      heightCm: heightCm != null ? Number(heightCm) : undefined,
+      weightKg: weightKg != null ? Number(weightKg) : undefined,
+      confirmationSlipReceived: confirmationSlipReceived ?? false,
+      status: "CONFIRMED",
+    },
+  });
+
+  res.json({ listing: updated });
+}
+
+/** PATCH /applications/:id/officialize — Advance PENDING_CONFIRMATION app with BMI to READY_FOR_SECTIONING */
+export async function officializeApplication(req: Request, res: Response) {
+  const applicationId = Number(req.params.applicationId);
+  const { heightCm, weightKg, confirmationSlipReceived } = req.body as {
+    heightCm?: number;
+    weightKg?: number;
+    confirmationSlipReceived?: boolean;
+  };
+
+  const existing = await prisma.enrollmentApplication.findUnique({
+    where: { id: applicationId },
+    select: { id: true, status: true },
+  });
+  if (!existing) {
+    res.status(404).json({ message: "Application not found." });
+    return;
+  }
+  if (existing.status !== "PENDING_CONFIRMATION") {
+    res.status(409).json({ message: "Application is not in PENDING_CONFIRMATION status." });
+    return;
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.enrollmentApplication.update({
+      where: { id: applicationId },
+      data: {
+        status: "READY_FOR_SECTIONING",
+        intakeHeightCm: heightCm != null ? Number(heightCm) : undefined,
+        intakeWeightKg: weightKg != null ? Number(weightKg) : undefined,
+        confirmationConsent: confirmationSlipReceived ?? false,
+      },
+    });
+
+    if (confirmationSlipReceived) {
+      await tx.applicationChecklist.upsert({
+        where: { enrollmentId: applicationId },
+        create: { enrollmentId: applicationId, isConfirmationSlipReceived: true },
+        update: { isConfirmationSlipReceived: true },
+      });
+    }
+  });
+
+  res.json({ message: "Application officialized successfully." });
 }

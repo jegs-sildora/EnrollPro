@@ -16,7 +16,7 @@ export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   const user = isLearnerRoute ? learnerAuth.user : staffAuth.user;
   const hasSession = isLearnerRoute
     ? Boolean(learnerAuth.user)
-    : Boolean(staffAuth.token && staffAuth.user);
+    : Boolean(staffAuth.user);
 
   // Crucial: If we are on a learner route but only have a staff token (or vice versa),
   // we must treat it as unauthorized for this specific guard.

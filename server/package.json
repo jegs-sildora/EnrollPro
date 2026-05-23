@@ -28,6 +28,7 @@
     "db:seed-incoming-g7-ready-for-sectioning": "tsx prisma/seeds/04-sy-2026-2027/seed-incoming-g7-ready-for-sectioning.ts",
     "db:seed-other-scp": "tsx prisma/seeds/04-sy-2026-2027/seed-other-scp.ts",
     "db:seed-promoted-learners": "tsx prisma/seeds/05-test-data/seed-promoted-learners.ts",
+    "db:seed-bosy-list": "tsx prisma/seeds/05-test-data/seed-bosy-list.ts",
     "db:wipe": "tsx prisma/seeds/wipe/wipe.ts",
     "db:wipe-all": "tsx prisma/seeds/wipe/wipe-everything.ts",
     "db:wipe-users": "tsx prisma/seeds/wipe/wipe-users.ts",

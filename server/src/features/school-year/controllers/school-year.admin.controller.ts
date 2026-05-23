@@ -959,6 +959,37 @@ export function createSchoolYearAdminController(
     res.json({ year: updated });
   }
 
+  async function updateAssessmentConfig(
+    req: Request,
+    res: Response,
+  ): Promise<void> {
+    const id = parseSchoolYearId(req);
+    const { requireReadingAssessmentNew, requireReadingAssessmentContinuing } =
+      req.body;
+
+    const year = await deps.prisma.schoolYear.findUnique({ where: { id } });
+    if (!year) {
+      res.status(404).json({ message: "School year not found" });
+      return;
+    }
+
+    const updated = await deps.prisma.schoolYear.update({
+      where: { id },
+      data: { requireReadingAssessmentNew, requireReadingAssessmentContinuing },
+    });
+
+    await deps.auditLog({
+      userId: req.user!.userId,
+      actionType: "SY_UPDATED",
+      description: `Updated intake assessment configuration for "${updated.yearLabel}"`,
+      subjectType: "SchoolYear",
+      recordId: id,
+      req,
+    });
+
+    res.json({ year: updated });
+  }
+
   return {
     createSchoolYear,
     rolloverSchoolYear,
@@ -966,6 +997,7 @@ export function createSchoolYearAdminController(
     toggleOverride,
     updateDates,
     updateSchoolYear,
+    updateAssessmentConfig,
   };
 }
 
@@ -978,4 +1010,5 @@ export const {
   toggleOverride,
   updateDates,
   updateSchoolYear,
+  updateAssessmentConfig,
 } = schoolYearAdminController;

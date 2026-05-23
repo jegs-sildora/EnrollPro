@@ -1,5 +1,5 @@
 import { memo, useState, useEffect, useMemo } from "react";
-import { useNavigate, Navigate } from "react-router";
+import { Navigate, useLocation } from "react-router";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -98,27 +98,33 @@ export default function ChangePassword() {
   const staffAuth = useAuthStore();
   const learnerAuth = useLearnerAuthStore();
   const { accentForeground } = useSettingsStore();
-  const navigate = useNavigate();
+  const location = useLocation();
+
+  const origin = new URLSearchParams(location.search).get("origin");
+  const isLearnerOrigin = origin === "learner";
+  const isStaffOrigin = origin === "staff" || !isLearnerOrigin;
   
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Staff takes priority when both stores have a session (shouldn't happen in practice)
-  const isStaff = !!(staffAuth.token && staffAuth.user);
-  const user = isStaff ? staffAuth.user : learnerAuth.user;
-  const hasSession = isStaff
-    ? Boolean(staffAuth.token && staffAuth.user)
-    : Boolean(learnerAuth.user);
+  const user = isLearnerOrigin ? learnerAuth.user : staffAuth.user;
+  const hasSession = isLearnerOrigin
+    ? Boolean(learnerAuth.user)
+    : Boolean(staffAuth.user);
 
-  // Learner-like roles (LEARNER + MRF) both use the learner portal
-  const isLearnerLikeRole = (role: string | null | undefined): boolean =>
-    role === "LEARNER" || role === "MRF";
+  const isLearnerRole = (role: string | null | undefined): boolean =>
+    role === "LEARNER";
+
+  const getStaffHomeRoute = (role: string | null | undefined): string =>
+    role === "TEACHER" || role === "MRF" ? "/intake" : "/dashboard";
 
   // Fall back to any stored role when token is already gone (session expired on this page)
-  const activeRole = user?.role ?? learnerAuth.user?.role ?? null;
-  const homeRoute = isLearnerLikeRole(activeRole) ? "/learner" : "/dashboard";
-  const loginRoute = isLearnerLikeRole(activeRole) ? "/learner/login" : "/staff/login";
+  const activeRole = user?.role ?? (isLearnerOrigin ? learnerAuth.user?.role : staffAuth.user?.role) ?? null;
+  const homeRoute = isLearnerRole(activeRole)
+    ? "/learner"
+    : getStaffHomeRoute(activeRole);
+  const loginRoute = isLearnerOrigin ? "/learner/login" : "/staff/login";
 
   const {
     register,
@@ -188,10 +194,10 @@ export default function ChangePassword() {
         newPassword: data.newPassword,
       });
 
-      if (isLearnerLikeRole(res.data.user?.role)) {
+      if (isLearnerOrigin || isLearnerRole(res.data.user?.role)) {
         learnerAuth.setAuth(res.data.user);
       } else {
-        staffAuth.setAuth(res.data.token, res.data.user);
+        staffAuth.setAuth(res.data.user);
       }
       sileo.success({
         title: "Password Updated",
@@ -199,10 +205,13 @@ export default function ChangePassword() {
           "Your new password has been set. You can now access the system.",
       });
       
-      // Delay slightly for toast visibility then navigate to the correct home
-      const finalHome = isLearnerLikeRole(res.data.user?.role) ? "/learner" : "/dashboard";
+      // Delay slightly for toast visibility, then hard-replace so the target portal
+      // boots from its own cookie/session channel instead of reusing stale SPA state.
+      const finalHome = isLearnerOrigin || isLearnerRole(res.data.user?.role)
+        ? "/learner"
+        : getStaffHomeRoute(res.data.user?.role);
       setTimeout(() => {
-        navigate(finalHome, { replace: true });
+        window.location.replace(finalHome);
       }, 500);
     } catch (err: unknown) {
       const axiosError = err as {
@@ -368,12 +377,12 @@ export default function ChangePassword() {
                 variant="ghost"
                 className="w-full text-xs text-foreground hover:text-primary h-8"
                 onClick={() => {
-                  if (isStaff) {
+                  if (isStaffOrigin) {
                     staffAuth.clearAuth();
                   } else {
                     learnerAuth.clearAuth();
                   }
-                  navigate(loginRoute);
+                  window.location.replace(loginRoute);
                 }}>
                 Cancel and Return to Login
               </Button>

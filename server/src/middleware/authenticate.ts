@@ -101,3 +101,62 @@ async function performAuth(
 }
 
 export const authenticateLearner = authenticate("learner_session");
+
+export function authenticateFromCookies(
+  ...cookieNames: string[]
+): (req: Request, res: Response, next: NextFunction) => Promise<void> {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const names = cookieNames.filter(Boolean);
+    if (!names.length) {
+      return performAuth(req, res, next, AUTH_COOKIE_NAME);
+    }
+
+    const queryToken =
+      typeof req.query.token === "string" ? req.query.token : null;
+    const authHeader = req.headers.authorization;
+    const bearerToken = authHeader?.startsWith("Bearer ")
+      ? authHeader.split(" ")[1]
+      : null;
+
+    for (const cookieName of names) {
+      const cookieToken = req.cookies?.[cookieName];
+      const token = cookieToken ?? null;
+      if (!token) continue;
+
+      let decoded: AuthPayload;
+      try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET!) as AuthPayload;
+      } catch {
+        continue;
+      }
+
+      try {
+        const user = await prisma.user.findUnique({
+          where: { id: decoded.userId },
+          select: { isActive: true },
+        });
+
+        if (!user || !user.isActive) {
+          continue;
+        }
+
+        req.user = decoded;
+        next();
+        return;
+      } catch {
+        res.status(500).json({
+          code: "SERVER_ERROR",
+          message: "Authentication check failed.",
+        });
+        return;
+      }
+    }
+
+    // Fallback for compatibility with existing non-browser callers.
+    if (bearerToken || queryToken) {
+      return performAuth(req, res, next, AUTH_COOKIE_NAME);
+    }
+
+    res.status(401).json({ code: "UNAUTHORIZED", message: "Unauthorized" });
+  };
+}

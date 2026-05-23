@@ -114,6 +114,8 @@ model SchoolYear {
   bosyLockedAt                  DateTime?                      @map("bosy_locked_at") @db.Timestamptz(6)
   bosyLockedById                Int?                           @map("bosy_locked_by_id")
   portalControl                 PortalControl                  @default(AUTO) @map("portal_control")
+  requireReadingAssessmentNew   Boolean                        @default(true) @map("require_reading_assessment_new")
+  requireReadingAssessmentContinuing Boolean                   @default(false) @map("require_reading_assessment_continuing")
   earlyRegistrationApplications EarlyRegistrationApplication[]
   enrollmentApplications        EnrollmentApplication[]
   enrollmentRecords             EnrollmentRecord[]
@@ -349,6 +351,8 @@ model EnrollmentApplication {
   readingProfileAssessedById Int?                          @map("reading_profile_assessed_by_id")
   batchIntakeMethod          String?                       @map("batch_intake_method")
   confirmationConsent        Boolean?                      @map("confirmation_consent")
+  intakeHeightCm             Float?                        @map("intake_height_cm")
+  intakeWeightKg             Float?                        @map("intake_weight_kg")
   contactNumber              String?                       @map("contact_number")
   guardianName               String?                       @map("guardian_name")
   hasSf9CertificationLetter  Boolean                       @default(false) @map("has_sf9_certification_letter")
@@ -939,19 +943,26 @@ enum PortalControl {
 
 /// Pre-listing record captured by enrollment clerk / teacher before full BEEF encoding
 model EnrollmentListing {
-  id            Int                     @id @default(autoincrement())
-  firstName     String                  @map("first_name")
-  lastName      String                  @map("last_name")
-  gradeLevel    String                  @map("grade_level")
-  dateCollected DateTime                @default(now()) @map("date_collected") @db.Timestamptz(6)
-  status        EnrollmentListingStatus @default(LISTED)
-  schoolYearId  Int                     @map("school_year_id")
-  createdById   Int                     @map("created_by_id")
-  notes         String?
-  createdAt     DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
-  schoolYear    SchoolYear              @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
-  createdBy     User                    @relation("ListingCreatedBy", fields: [createdById], references: [id])
+  id                       Int                     @id @default(autoincrement())
+  firstName                String                  @map("first_name")
+  lastName                 String                  @map("last_name")
+  middleName               String?                 @map("middle_name")
+  lrn                      String?
+  gradeLevel               String                  @map("grade_level")
+  learnerType              LearnerType?            @map("learner_type")
+  readingLevel             ReadingProfileLevel?    @map("reading_level")
+  heightCm                 Float?                  @map("height_cm")
+  weightKg                 Float?                  @map("weight_kg")
+  confirmationSlipReceived Boolean                 @default(false) @map("confirmation_slip_received")
+  dateCollected            DateTime                @default(now()) @map("date_collected") @db.Timestamptz(6)
+  status                   EnrollmentListingStatus @default(LISTED)
+  schoolYearId             Int                     @map("school_year_id")
+  createdById              Int                     @map("created_by_id")
+  notes                    String?
+  createdAt                DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
+  schoolYear               SchoolYear              @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+  createdBy                User                    @relation("ListingCreatedBy", fields: [createdById], references: [id])
 
   @@index([schoolYearId], map: "idx_enrollment_listings_sy")
   @@index([createdById], map: "idx_enrollment_listings_created_by")
@@ -961,6 +972,7 @@ model EnrollmentListing {
 enum EnrollmentListingStatus {
   LISTED
   PROCESSED
+  CONFIRMED
 
   @@map("enrollment_listing_status")
 }

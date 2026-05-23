@@ -232,18 +232,41 @@ export const lookupLearner = async (req: Request, res: Response) => {
 /**
  * Learner self-confirms return for BOSY (Phase 2 only — no TLE).
  * POST /api/learner/confirm-return
- * Body: { applicationId: number, guardianName?: string }
+ * Body: { applicationId: number, guardianName?: string, heightCm: number, weightKg: number }
  */
 export const learnerConfirmReturn = async (req: Request, res: Response) => {
   try {
-    const { applicationId, guardianName } = req.body as {
+    const { applicationId, guardianName, heightCm, weightKg } = req.body as {
       applicationId: unknown;
       guardianName?: string;
+      heightCm?: unknown;
+      weightKg?: unknown;
     };
 
     const id = Number(applicationId);
     if (!Number.isInteger(id) || id <= 0) {
       return res.status(400).json({ message: "Invalid applicationId." });
+    }
+
+    const parsedHeightCm = Number(heightCm);
+    const parsedWeightKg = Number(weightKg);
+    if (
+      !Number.isFinite(parsedHeightCm) ||
+      parsedHeightCm < 90 ||
+      parsedHeightCm > 220
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Please enter a valid height in cm." });
+    }
+    if (
+      !Number.isFinite(parsedWeightKg) ||
+      parsedWeightKg < 20 ||
+      parsedWeightKg > 150
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Please enter a valid weight in kg." });
     }
 
     const app = await prisma.enrollmentApplication.findUnique({
@@ -271,6 +294,8 @@ export const learnerConfirmReturn = async (req: Request, res: Response) => {
         status: "READY_FOR_SECTIONING",
         confirmationConsent: true,
         guardianName: guardianName || undefined,
+        intakeHeightCm: parsedHeightCm,
+        intakeWeightKg: parsedWeightKg,
       },
     });
 
@@ -278,7 +303,7 @@ export const learnerConfirmReturn = async (req: Request, res: Response) => {
       await auditLog({
         userId: req.user?.userId || null,
         actionType: "LEARNER_CONFIRMATION",
-        description: `Learner ${app.learner.firstName} ${app.learner.lastName} confirmed return for BOSY${guardianName ? ` (Guardian: ${guardianName})` : ""}`,
+        description: `Learner ${app.learner.firstName} ${app.learner.lastName} confirmed return for BOSY${guardianName ? ` (Guardian: ${guardianName})` : ""}; Height: ${parsedHeightCm} cm; Weight: ${parsedWeightKg} kg`,
         subjectType: "EnrollmentApplication",
         recordId: id,
         req,

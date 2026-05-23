@@ -40,14 +40,30 @@ const api = axios.create({
   withCredentials: true,
 });
 
+function getCurrentAuthOrigin(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const path = window.location.pathname;
+  if (path.startsWith("/learner")) {
+    return "learner";
+  }
+
+  if (path === "/change-password") {
+    return new URLSearchParams(window.location.search).get("origin");
+  }
+
+  return "staff";
+}
+
 api.interceptors.request.use((config) => {
   const timedConfig = config as typeof config & TimedRequestConfig;
   timedConfig.__requestStartedAt = Date.now();
   timedConfig.__shouldDelayResponse = shouldDelayFetchRequest(config.method);
 
-  const isLearnerPath =
-    window.location.pathname.startsWith("/learner") ||
-    window.location.pathname === "/change-password";
+  const currentOrigin = getCurrentAuthOrigin();
+  const isLearnerPath = currentOrigin === "learner";
   const hasLearnerSession = !!useLearnerAuthStore.getState().user;
 
   const isLearnerApi =
@@ -57,11 +73,6 @@ api.interceptors.request.use((config) => {
 
   if (isLearnerApi) {
     // Learner auth is cookie-session based. Do not attach bearer token.
-  } else {
-    const token = useAuthStore.getState().token;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
   }
 
   const { activeSchoolYearId, viewingSchoolYearId } =
@@ -74,7 +85,7 @@ api.interceptors.request.use((config) => {
 
   const currentToken = isLearnerApi
     ? (useLearnerAuthStore.getState().user ? "learner-session" : null)
-    : useAuthStore.getState().token;
+    : (useAuthStore.getState().user ? "staff-session" : null);
 
   if (currentToken) {
     const { historicalCorrectionToken } = useSettingsStore.getState();
@@ -106,7 +117,7 @@ api.interceptors.response.use(
       const isLearnerApi =
         error.config?.url?.startsWith("/learner") ||
         error.config?.url === "/auth/logout-learner";
-      const isLearnerPath = window.location.pathname.startsWith("/learner");
+      const isLearnerPath = getCurrentAuthOrigin() === "learner";
 
       if (isLearnerApi) {
         const hadLearnerSession = !!useLearnerAuthStore.getState().user;
@@ -136,8 +147,8 @@ api.interceptors.response.use(
         }
       } else {
         // Staff API 401
-        const hadStaffToken = !!useAuthStore.getState().token;
-        if (hadStaffToken) {
+        const hadStaffSession = !!useAuthStore.getState().user;
+        if (hadStaffSession) {
           useAuthStore.getState().clearAuth();
           if (code === "TOKEN_EXPIRED" && !_sessionExpiredHandled) {
             _sessionExpiredHandled = true;
@@ -170,7 +181,7 @@ api.interceptors.response.use(
 
     if (status === 403 && code === "SY_ARCHIVED_LOCKED") {
       const hadToken =
-        useLearnerAuthStore.getState().user || useAuthStore.getState().token;
+        useLearnerAuthStore.getState().user || useAuthStore.getState().user;
       if (hadToken && !_historicalReadOnlyHandled) {
         _historicalReadOnlyHandled = true;
 

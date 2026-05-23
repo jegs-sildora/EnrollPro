@@ -12,6 +12,7 @@ import {
   getNextDefaults,
   toggleOverride,
   updateDates,
+  updateAssessmentConfig,
 } from "./school-year.controller.js";
 import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
@@ -23,6 +24,7 @@ import {
   updateSchoolYearSchema,
   transitionSchoolYearSchema,
   toggleOverrideSchema,
+  updateAssessmentConfigSchema,
 } from "@enrollpro/shared";
 
 const router: Router = Router();
@@ -95,6 +97,13 @@ router.patch(
   authorize("SYSTEM_ADMIN"),
   validate(updateSchoolYearSchema),
   updateDates,
+);
+router.patch(
+  "/:id/assessment-config",
+  authenticate,
+  authorize("SYSTEM_ADMIN"),
+  validate(updateAssessmentConfigSchema),
+  updateAssessmentConfig,
 );
 router.delete(
   "/:id",

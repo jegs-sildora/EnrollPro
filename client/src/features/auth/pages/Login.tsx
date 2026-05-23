@@ -48,7 +48,6 @@ type AuthResponseUser = {
 };
 
 type AuthResponsePayload = {
-  token: string;
   user: AuthResponseUser;
 };
 
@@ -235,7 +234,7 @@ const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
 
 export default function Login() {
   const navigate = useNavigate();
-  const { token, user, sessionExpired, setAuth, setSessionExpired } =
+  const { user, sessionExpired, setAuth, setSessionExpired } =
     useAuthStore();
 
   const settings = useSettingsStore() as SchoolMetaSettings;
@@ -330,7 +329,7 @@ export default function Login() {
         return;
       }
 
-      setAuth(payload.token, payload.user);
+      setAuth(payload.user);
 
       // Persistence logic
       if (rememberMe) {
@@ -393,7 +392,7 @@ export default function Login() {
     }
   };
 
-  if (token && user && !user.mustChangePassword) {
+  if (user && !user.mustChangePassword) {
     const homeRoute =
       user.role === "TEACHER" || user.role === "MRF" ? "/intake" : "/dashboard";
     return (
