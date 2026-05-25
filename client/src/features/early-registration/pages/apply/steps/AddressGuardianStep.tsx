@@ -8,6 +8,7 @@ import { Info, AlertCircle, User, Venus, Mars } from "lucide-react";
 import { Separator } from "@/shared/ui/separator";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { cn } from "@/shared/lib/utils";
+import { PhilippineAddressSelector } from "@/shared/components/PhilippineAddressSelector";
 
 export default function AddressGuardianStep() {
   const {
@@ -112,95 +113,28 @@ export default function AddressGuardianStep() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="barangay"
-              className="text-xs font-bold uppercase">
-              Barangay <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              autoComplete="off"
-              id="barangay"
-              {...register("barangay")}
-              className={cn(
-                "h-11 font-bold uppercase",
-                errors.barangay &&
-                  "border-destructive focus-visible:ring-destructive",
-              )}
-              placeholder="e.g. BARANGAY 1"
-              onInput={(e) => {
-                (e.target as HTMLInputElement).value = (
-                  e.target as HTMLInputElement
-                ).value.toUpperCase();
-              }}
-            />
-            {errors.barangay && (
-              <p className="text-xs text-destructive font-medium flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" />
-                {errors.barangay.message}
-              </p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="cityMunicipality"
-              className="text-xs font-bold uppercase">
-              City / Municipality <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              autoComplete="off"
-              id="cityMunicipality"
-              {...register("cityMunicipality")}
-              className={cn(
-                "h-11 font-bold uppercase",
-                errors.cityMunicipality &&
-                  "border-destructive focus-visible:ring-destructive",
-              )}
-              placeholder="e.g. QUEZON CITY"
-              onInput={(e) => {
-                (e.target as HTMLInputElement).value = (
-                  e.target as HTMLInputElement
-                ).value.toUpperCase();
-              }}
-            />
-            {errors.cityMunicipality && (
-              <p className="text-xs text-destructive font-medium flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" />
-                {errors.cityMunicipality.message}
-              </p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="province"
-              className="text-xs font-bold uppercase">
-              Province <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              autoComplete="off"
-              id="province"
-              {...register("province")}
-              className={cn(
-                "h-11 font-bold uppercase",
-                errors.province &&
-                  "border-destructive focus-visible:ring-destructive",
-              )}
-              placeholder="e.g. METRO MANILA"
-              onInput={(e) => {
-                (e.target as HTMLInputElement).value = (
-                  e.target as HTMLInputElement
-                ).value.toUpperCase();
-              }}
-            />
-            {errors.province && (
-              <p className="text-xs text-destructive font-medium flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" />
-                {errors.province.message}
-              </p>
-            )}
-          </div>
-        </div>
+        <PhilippineAddressSelector
+          value={{
+            province: data.province ?? "",
+            cityMunicipality: data.cityMunicipality ?? "",
+            barangay: data.barangay ?? "",
+          }}
+          onChange={(field, val) => {
+            setValue(field, val, { shouldValidate: true });
+            if (field === "province") {
+              setValue("cityMunicipality", "", { shouldValidate: false });
+              setValue("barangay", "", { shouldValidate: false });
+            } else if (field === "cityMunicipality") {
+              setValue("barangay", "", { shouldValidate: false });
+            }
+          }}
+          errors={{
+            province: errors.province?.message,
+            cityMunicipality: errors.cityMunicipality?.message,
+            barangay: errors.barangay?.message,
+          }}
+          required
+        />
       </div>
 
       <Separator className="opacity-50" />

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -148,18 +149,56 @@ function readingColor(level: string | null) {
   return "text-muted-foreground italic";
 }
 
+const intakeQueryKeys = {
+  preListings: (schoolYearId: number) => ["intake", "pre-listings", schoolYearId] as const,
+  readingQueue: (schoolYearId: number) => ["intake", "reading-queue", schoolYearId] as const,
+  confirmationQueue: (schoolYearId: number) =>
+    ["intake", "confirmation-queue", schoolYearId] as const,
+};
+
+async function fetchPreListings(schoolYearId: number): Promise<ListingEntry[]> {
+  const res = await api.get<{ listings: ListingEntry[] }>(
+    `/enrollment-listings?schoolYearId=${schoolYearId}`,
+  );
+  return res.data.listings;
+}
+
+async function fetchReadingQueue(schoolYearId: number): Promise<ReadingQueueRow[]> {
+  const res = await api.get<{
+    listings: ListingEntry[];
+    applications: ReadingQueueApplication[];
+  }>(`/enrollment-listings/reading-queue?schoolYearId=${schoolYearId}`);
+
+  return [
+    ...res.data.listings.map((listing) => ({ source: "listing" as const, data: listing })),
+    ...res.data.applications.map((application) => ({
+      source: "application" as const,
+      data: application,
+    })),
+  ];
+}
+
+async function fetchConfirmationQueue(schoolYearId: number): Promise<ConfirmationRow[]> {
+  const res = await api.get<{
+    listings: ListingEntry[];
+    applications: ConfirmationApp[];
+  }>(`/enrollment-listings/confirmation-queue?schoolYearId=${schoolYearId}`);
+
+  return [
+    ...res.data.listings.map((listing) => ({ source: "listing" as const, data: listing })),
+    ...res.data.applications.map((application) => ({
+      source: "application" as const,
+      data: application,
+    })),
+  ];
+}
+
 function PreListingTab({
   schoolYearId,
-  onCountChange,
-  onPipelineChanged,
 }: {
   schoolYearId: number;
-  onCountChange: (count: number) => void;
-  onPipelineChanged: () => void;
 }) {
-  const [listings, setListings] = useState<ListingEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const queryClient = useQueryClient();
 
   const {
     control,
@@ -183,42 +222,18 @@ function PreListingTab({
 
   const selectedLearnerType = watch("learnerType");
 
-  const fetchListings = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await api.get<{ listings: ListingEntry[] }>(
-        `/enrollment-listings?schoolYearId=${schoolYearId}`,
-      );
-      setListings(res.data.listings);
-      onCountChange(res.data.listings.filter((l) => l.status === "LISTED").length);
-    } catch (e) {
-      toastApiError(e as AxiosError<{ message?: string }>);
-    } finally {
-      setLoading(false);
-    }
-  }, [schoolYearId, onCountChange]);
+  const {
+    data: listings = [],
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: intakeQueryKeys.preListings(schoolYearId),
+    queryFn: () => fetchPreListings(schoolYearId),
+  });
 
-  const refreshReadingBadge = useCallback(async () => {
-    try {
-      const res = await api.get<{
-        listings: ListingEntry[];
-        applications: ReadingQueueApplication[];
-      }>(`/enrollment-listings/reading-queue?schoolYearId=${schoolYearId}`);
-      onCountChange(res.data.listings.length + res.data.applications.length);
-    } catch {
-      // Ignore badge refresh failure.
-    }
-  }, [schoolYearId, onCountChange]);
-
-  useEffect(() => {
-    void fetchListings();
-    void refreshReadingBadge();
-  }, [fetchListings, refreshReadingBadge]);
-
-  const onSubmit = async (values: PreListingFormValues) => {
-    setSubmitting(true);
-    try {
-      await api.post("/enrollment-listings", {
+  const createListingMutation = useMutation({
+    mutationFn: async (values: PreListingFormValues) =>
+      api.post("/enrollment-listings", {
         learnerType: values.learnerType,
         gradeLevel: values.gradeLevel,
         lrn: values.lrn || undefined,
@@ -227,8 +242,8 @@ function PreListingTab({
         middleName: values.middleName?.toUpperCase() || undefined,
         schoolYearId,
         status: "PENDING_READING",
-      });
-
+      }),
+    onSuccess: async () => {
       reset({
         learnerType: "NEW_ENROLLEE",
         gradeLevel: "GRADE 7",
@@ -241,29 +256,37 @@ function PreListingTab({
         title: "Added",
         description: "Student added to Reading Assessment queue.",
       });
-      void fetchListings();
-      void refreshReadingBadge();
-      onPipelineChanged();
-    } catch (e) {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: intakeQueryKeys.preListings(schoolYearId) }),
+        queryClient.invalidateQueries({ queryKey: intakeQueryKeys.readingQueue(schoolYearId) }),
+      ]);
+    },
+    onError: (e) => {
       toastApiError(e as AxiosError<{ message?: string }>);
-    } finally {
-      setSubmitting(false);
-    }
+    },
+  });
+
+  const deleteListingMutation = useMutation({
+    mutationFn: async (id: number) => api.delete(`/enrollment-listings/${id}`),
+    onSuccess: async () => {
+      sileo.success({ title: "Removed", description: "Entry deleted." });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: intakeQueryKeys.preListings(schoolYearId) }),
+        queryClient.invalidateQueries({ queryKey: intakeQueryKeys.readingQueue(schoolYearId) }),
+      ]);
+    },
+    onError: (e) => {
+      toastApiError(e as AxiosError<{ message?: string }>);
+    },
+  });
+
+  const onSubmit = (values: PreListingFormValues) => {
+    createListingMutation.mutate(values);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = (id: number) => {
     if (!confirm("Remove this pre-listing entry?")) return;
-    try {
-      await api.delete(`/enrollment-listings/${id}`);
-      setListings((prev) => {
-        const next = prev.filter((l) => l.id !== id);
-        onCountChange(next.filter((l) => l.status === "LISTED").length);
-        return next;
-      });
-      sileo.success({ title: "Removed", description: "Entry deleted." });
-    } catch (e) {
-      toastApiError(e as AxiosError<{ message?: string }>);
-    }
+    deleteListingMutation.mutate(id);
   };
 
   return (
@@ -364,10 +387,10 @@ function PreListingTab({
           <div className="flex justify-end pt-2 border-t border-slate-100">
             <Button
               type="submit"
-              disabled={!isValid || submitting}
+              disabled={!isValid || createListingMutation.isPending}
               className="font-black uppercase text-xs tracking-wide"
             >
-              {submitting ? (
+              {createListingMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
@@ -381,9 +404,13 @@ function PreListingTab({
 
       <Card>
         <CardContent className="p-0">
-          {loading ? (
+          {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : isError ? (
+            <div className="flex items-center justify-center py-12 text-sm font-semibold text-destructive">
+              Unable to load pre-listing entries.
             </div>
           ) : listings.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
@@ -433,63 +460,52 @@ function PreListingTab({
 
 function ReadingAssessmentTab({
   schoolYearId,
-  onCountChange,
-  onPipelineChanged,
+  queue,
+  isLoading,
+  isError,
 }: {
   schoolYearId: number;
-  onCountChange: (count: number) => void;
-  onPipelineChanged: () => void;
+  queue: ReadingQueueRow[];
+  isLoading: boolean;
+  isError: boolean;
 }) {
-  const [queue, setQueue] = useState<ReadingQueueRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [target, setTarget] = useState<ReadingQueueRow | null>(null);
   const [readingLevel, setReadingLevel] = useState<ReadingLevel | "">("");
-  const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
 
-  const fetchQueue = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await api.get<{ listings: ListingEntry[]; applications: ReadingQueueApplication[] }>(
-        `/enrollment-listings/reading-queue?schoolYearId=${schoolYearId}`,
-      );
-      const merged: ReadingQueueRow[] = [
-        ...res.data.listings.map((l) => ({ source: "listing" as const, data: l })),
-        ...res.data.applications.map((a) => ({ source: "application" as const, data: a })),
-      ];
-      setQueue(merged);
-      onCountChange(merged.length);
-    } catch (e) {
-      toastApiError(e as AxiosError<{ message?: string }>);
-    } finally {
-      setLoading(false);
-    }
-  }, [schoolYearId, onCountChange]);
+  const assessMutation = useMutation({
+    mutationFn: async (nextReadingLevel: ReadingLevel) => {
+      if (!target) {
+        throw new Error("No intake row selected.");
+      }
 
-  useEffect(() => {
-    void fetchQueue();
-  }, [fetchQueue]);
-
-  const saveAssessment = async () => {
-    if (!target || !readingLevel) return;
-    setSaving(true);
-    try {
       if (target.source === "listing") {
-        await api.patch(`/enrollment-listings/${target.data.id}/assess`, { readingLevel });
-      } else {
-        await api.patch(`/enrollment-listings/applications/${target.data.id}/intake-assess`, {
-          readingLevel,
+        return api.patch(`/enrollment-listings/${target.data.id}/assess`, {
+          readingLevel: nextReadingLevel,
         });
       }
+
+      return api.patch(`/enrollment-listings/applications/${target.data.id}/intake-assess`, {
+        readingLevel: nextReadingLevel,
+      });
+    },
+    onSuccess: async () => {
       sileo.success({ title: "Saved", description: "Reading assessment forwarded to confirmation." });
       setTarget(null);
       setReadingLevel("");
-      void fetchQueue();
-      onPipelineChanged();
-    } catch (e) {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: intakeQueryKeys.readingQueue(schoolYearId) }),
+        queryClient.invalidateQueries({ queryKey: intakeQueryKeys.confirmationQueue(schoolYearId) }),
+      ]);
+    },
+    onError: (e) => {
       toastApiError(e as AxiosError<{ message?: string }>);
-    } finally {
-      setSaving(false);
-    }
+    },
+  });
+
+  const saveAssessment = () => {
+    if (!readingLevel) return;
+    assessMutation.mutate(readingLevel);
   };
 
   const rowName = (row: ReadingQueueRow) =>
@@ -507,9 +523,13 @@ function ReadingAssessmentTab({
     <>
       <Card>
         <CardContent className="p-0">
-          {loading ? (
+          {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : isError ? (
+            <div className="flex items-center justify-center py-12 text-sm font-semibold text-destructive">
+              Unable to load the reading queue.
             </div>
           ) : queue.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
@@ -566,9 +586,9 @@ function ReadingAssessmentTab({
           </div>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setTarget(null)}>Cancel</Button>
-            <Button size="sm" disabled={!readingLevel || saving} onClick={saveAssessment}
+            <Button size="sm" disabled={!readingLevel || assessMutation.isPending} onClick={saveAssessment}
               className="font-black uppercase text-xs">
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><CheckCircle2 className="h-3 w-3 mr-1" /> Save and Forward</>}
+              {assessMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><CheckCircle2 className="h-3 w-3 mr-1" /> Save and Forward</>}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -579,64 +599,52 @@ function ReadingAssessmentTab({
 
 function ConfirmationTab({
   schoolYearId,
-  onCountChange,
-  onPipelineChanged,
+  rows,
+  isLoading,
+  isError,
 }: {
   schoolYearId: number;
-  onCountChange: (count: number) => void;
-  onPipelineChanged: () => void;
+  rows: ConfirmationRow[];
+  isLoading: boolean;
+  isError: boolean;
 }) {
-  const [rows, setRows] = useState<ConfirmationRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [target, setTarget] = useState<ConfirmationRow | null>(null);
-  const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
 
-  const fetchQueue = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await api.get<{ listings: ListingEntry[]; applications: ConfirmationApp[] }>(
-        `/enrollment-listings/confirmation-queue?schoolYearId=${schoolYearId}`,
-      );
-      const merged: ConfirmationRow[] = [
-        ...res.data.listings.map((l) => ({ source: "listing" as const, data: l })),
-        ...res.data.applications.map((a) => ({ source: "application" as const, data: a })),
-      ];
-      setRows(merged);
-      onCountChange(merged.length);
-    } catch (e) {
+  const officializeMutation = useMutation({
+    mutationFn: async (payload: {
+      confirmationSlipReceived: boolean;
+      heightCm: number;
+      weightKg: number;
+    }) => {
+      if (!target) {
+        throw new Error("No intake row selected.");
+      }
+
+      if (target.source === "listing") {
+        return api.patch(`/enrollment-listings/${target.data.id}/intake-confirm`, payload);
+      }
+
+      return api.patch(`/enrollment-listings/applications/${target.data.id}/officialize`, payload);
+    },
+    onSuccess: async () => {
+      sileo.success({ title: "Officialized", description: "Learner moved to next stage." });
+      setTarget(null);
+      await queryClient.invalidateQueries({
+        queryKey: intakeQueryKeys.confirmationQueue(schoolYearId),
+      });
+    },
+    onError: (e) => {
       toastApiError(e as AxiosError<{ message?: string }>);
-    } finally {
-      setLoading(false);
-    }
-  }, [schoolYearId, onCountChange]);
+    },
+  });
 
-  useEffect(() => {
-    void fetchQueue();
-  }, [fetchQueue]);
-
-  const submitOfficialize = async (payload: {
+  const submitOfficialize = (payload: {
     confirmationSlipReceived: boolean;
     heightCm: number;
     weightKg: number;
   }) => {
-    if (!target) return;
-
-    setSaving(true);
-    try {
-      if (target.source === "listing") {
-        await api.patch(`/enrollment-listings/${target.data.id}/intake-confirm`, payload);
-      } else {
-        await api.patch(`/enrollment-listings/applications/${target.data.id}/officialize`, payload);
-      }
-      sileo.success({ title: "Officialized", description: "Learner moved to next stage." });
-      setTarget(null);
-      void fetchQueue();
-      onPipelineChanged();
-    } catch (e) {
-      toastApiError(e as AxiosError<{ message?: string }>);
-    } finally {
-      setSaving(false);
-    }
+    officializeMutation.mutate(payload);
   };
 
   const rowName = (row: ConfirmationRow) =>
@@ -654,9 +662,13 @@ function ConfirmationTab({
     <>
       <Card>
         <CardContent className="p-0">
-          {loading ? (
+          {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : isError ? (
+            <div className="flex items-center justify-center py-12 text-sm font-semibold text-destructive">
+              Unable to load the confirmation queue.
             </div>
           ) : rows.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
@@ -714,7 +726,7 @@ function ConfirmationTab({
         }}
         learnerName={target ? rowName(target) : undefined}
         title="Finalize Enrollment"
-        loading={saving}
+        loading={officializeMutation.isPending}
         onSubmit={submitOfficialize}
       />
     </>
@@ -727,36 +739,37 @@ export default function IntakeDashboard() {
 
   const schoolYearId = viewingSchoolYearId ?? activeSchoolYearId;
   const yearLabel = viewingSchoolYearLabel ?? activeSchoolYearLabel;
-  const [readingCount, setReadingCount] = useState(0);
-  const [confirmationCount, setConfirmationCount] = useState(0);
 
-  const refreshBadgeCounts = useCallback(async () => {
-    if (!schoolYearId) {
-      return;
-    }
+  const {
+    data: readingQueue = [],
+    isLoading: isReadingLoading,
+    isError: isReadingError,
+  } = useQuery({
+    queryKey: schoolYearId
+      ? intakeQueryKeys.readingQueue(schoolYearId)
+      : (["intake", "reading-queue", null] as const),
+    queryFn: () => fetchReadingQueue(schoolYearId as number),
+    enabled: Boolean(schoolYearId),
+    refetchInterval: 5000,
+    refetchIntervalInBackground: false,
+  });
 
-    try {
-      const [readingRes, confirmationRes] = await Promise.all([
-        api.get<{ listings: ListingEntry[]; applications: ReadingQueueApplication[] }>(
-          `/enrollment-listings/reading-queue?schoolYearId=${schoolYearId}`,
-        ),
-        api.get<{ listings: ListingEntry[]; applications: ConfirmationApp[] }>(
-          `/enrollment-listings/confirmation-queue?schoolYearId=${schoolYearId}`,
-        ),
-      ]);
+  const {
+    data: confirmationQueue = [],
+    isLoading: isConfirmationLoading,
+    isError: isConfirmationError,
+  } = useQuery({
+    queryKey: schoolYearId
+      ? intakeQueryKeys.confirmationQueue(schoolYearId)
+      : (["intake", "confirmation-queue", null] as const),
+    queryFn: () => fetchConfirmationQueue(schoolYearId as number),
+    enabled: Boolean(schoolYearId),
+    refetchInterval: 5000,
+    refetchIntervalInBackground: false,
+  });
 
-      setReadingCount(readingRes.data.listings.length + readingRes.data.applications.length);
-      setConfirmationCount(
-        confirmationRes.data.listings.length + confirmationRes.data.applications.length,
-      );
-    } catch {
-      // Ignore badge refresh errors.
-    }
-  }, [schoolYearId]);
-
-  useEffect(() => {
-    void refreshBadgeCounts();
-  }, [refreshBadgeCounts]);
+  const readingCount = readingQueue.length;
+  const confirmationCount = confirmationQueue.length;
 
   if (!schoolYearId) {
     return (
@@ -795,26 +808,24 @@ export default function IntakeDashboard() {
         </TabsList>
 
         <TabsContent value="pre-listing" className="mt-6">
-          <PreListingTab
-            schoolYearId={schoolYearId}
-            onCountChange={setReadingCount}
-            onPipelineChanged={refreshBadgeCounts}
-          />
+          <PreListingTab schoolYearId={schoolYearId} />
         </TabsContent>
 
         <TabsContent value="reading" className="mt-6">
           <ReadingAssessmentTab
             schoolYearId={schoolYearId}
-            onCountChange={setReadingCount}
-            onPipelineChanged={refreshBadgeCounts}
+            queue={readingQueue}
+            isLoading={isReadingLoading}
+            isError={isReadingError}
           />
         </TabsContent>
 
         <TabsContent value="confirmation" className="mt-6">
           <ConfirmationTab
             schoolYearId={schoolYearId}
-            onCountChange={setConfirmationCount}
-            onPipelineChanged={refreshBadgeCounts}
+            rows={confirmationQueue}
+            isLoading={isConfirmationLoading}
+            isError={isConfirmationError}
           />
         </TabsContent>
       </Tabs>

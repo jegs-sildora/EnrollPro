@@ -740,6 +740,11 @@ enum ApplicationStatus {
   READY_FOR_SECTIONING
   OFFICIALLY_ENROLLED
   SUBMITTED_BEERF
+  PENDING_SCP_SCREENING
+  QUALIFIED_SCP
+  REGISTERED_BEC
+  PENDING_READING
+  PENDING_INTAKE_CONFIRMATION
   PENDING_BEEF
   AWAITING_VERIFICATION
   SUBMITTED_BEEF
@@ -975,5 +980,49 @@ enum EnrollmentListingStatus {
   CONFIRMED
 
   @@map("enrollment_listing_status")
+}
+
+/// Philippine Standard Geographic Code — Region
+model Region {
+  code      String     @id
+  name      String
+  provinces Province[]
+
+  @@map("regions")
+}
+
+/// Philippine Standard Geographic Code — Province
+model Province {
+  code                 String             @id
+  name                 String
+  regionCode           String             @map("region_code")
+  region               Region             @relation(fields: [regionCode], references: [code], onDelete: Cascade)
+  citiesMunicipalities CityMunicipality[]
+
+  @@index([regionCode], map: "idx_provinces_region_code")
+  @@map("provinces")
+}
+
+/// Philippine Standard Geographic Code — City or Municipality
+model CityMunicipality {
+  code         String     @id
+  name         String
+  provinceCode String     @map("province_code")
+  province     Province   @relation(fields: [provinceCode], references: [code], onDelete: Cascade)
+  barangays    Barangay[]
+
+  @@index([provinceCode], map: "idx_cities_municipalities_province_code")
+  @@map("cities_municipalities")
+}
+
+/// Philippine Standard Geographic Code — Barangay
+model Barangay {
+  code                 String           @id
+  name                 String
+  cityMunicipalityCode String           @map("city_municipality_code")
+  cityMunicipality     CityMunicipality @relation(fields: [cityMunicipalityCode], references: [code], onDelete: Cascade)
+
+  @@index([cityMunicipalityCode], map: "idx_barangays_city_municipality_code")
+  @@map("barangays")
 }
 

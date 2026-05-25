@@ -1,7 +1,12 @@
 import { Router } from "express";
 import { authenticate } from "../../middleware/authenticate.js";
 import { authorize } from "../../middleware/authorize.js";
-import { syncSmartGrades, confirmConfirmationSlip, batchConfirmConfirmationSlips } from "./enrollment.controller.js";
+import {
+  syncSmartGrades,
+  confirmConfirmationSlip,
+  batchConfirmConfirmationSlips,
+  finalizeIntake,
+} from "./enrollment.controller.js";
 
 const router: Router = Router();
 
@@ -24,6 +29,13 @@ router.post(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   batchConfirmConfirmationSlips,
+);
+
+router.post(
+  "/finalize-intake",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  finalizeIntake,
 );
 
 export default router;

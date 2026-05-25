@@ -4,6 +4,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { sileo } from "sileo";
 import {
   ChevronDown,
@@ -19,6 +20,7 @@ import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import type { AxiosError } from "axios";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
+import { queryKeys } from "@/shared/lib/queryKeys";
 import { Button } from "@/shared/ui/button";
 import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import {
@@ -201,19 +203,12 @@ export default function Teachers() {
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
   const canMutate = !isHistoricalReadOnly || hasOverride;
+  const queryClient = useQueryClient();
 
-  const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [ayLabel, setAyLabel] = useState<string | null>(null);
   const [bosyDate, setBosyDate] = useState<string | null>(null);
   const [eosyDate, setEosyDate] = useState<string | null>(null);
-
-  // Enterprise Standard: Delayed Skeleton for Initial Load (200ms delay)
-  const showSkeleton = useDelayedLoading(loading && isInitialLoad, 200);
-
-  // Enterprise Standard: Stale-While-Revalidate for Pagination/Refetch
-  const isRefetching = loading && !isInitialLoad;
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -226,10 +221,6 @@ export default function Teachers() {
     null,
   );
   const [submitting, setSubmitting] = useState(false);
-  const [advisorySections, setAdvisorySections] = useState<
-    AdvisorySectionOption[]
-  >([]);
-  const [advisorySectionsLoading, setAdvisorySectionsLoading] = useState(false);
   const [designationCollision, setDesignationCollision] =
     useState<DesignationCollision | null>(null);
   const [allowCollisionOverride, setAllowCollisionOverride] = useState(false);
@@ -261,6 +252,85 @@ export default function Teachers() {
   const [designationForm, setDesignationForm] = useState<DesignationFormState>(
     createEmptyDesignationForm,
   );
+
+  const teachersQuery = useQuery({
+    queryKey: queryKeys.teachersList(ayId),
+    queryFn: async () => {
+      const res = await api.get("/teachers", {
+        params: ayId ? { schoolYearId: ayId } : undefined,
+      });
+
+      return {
+        teachers: (res.data.teachers || []) as Teacher[],
+        scope: res.data.scope as {
+          yearLabel?: string | null;
+          classOpeningDate?: string | null;
+          classEndDate?: string | null;
+        } | null,
+      };
+    },
+    enabled: Boolean(ayId),
+  });
+
+  const teachers = teachersQuery.data?.teachers ?? [];
+  const loading = teachersQuery.isPending || teachersQuery.isFetching;
+
+  // Enterprise Standard: Delayed Skeleton for Initial Load (200ms delay)
+  const showSkeleton = useDelayedLoading(loading && isInitialLoad, 200);
+
+  // Enterprise Standard: Stale-While-Revalidate for Pagination/Refetch
+  const isRefetching = loading && !isInitialLoad;
+
+  const advisorySectionsQuery = useQuery({
+    queryKey: queryKeys.teachersSections(ayId ?? 0),
+    queryFn: async () => {
+      if (!ayId || !designationOpenFor) {
+        return [] as AdvisorySectionOption[];
+      }
+
+      const res = await api.get(`/sections/${ayId}`);
+      const gradeLevelsData = res.data.gradeLevels || [];
+
+      return gradeLevelsData
+        .flatMap(
+          (gl: {
+            gradeLevelName: string;
+            sections: Array<{
+              id: number;
+              name: string;
+              maxCapacity: number;
+              enrolledCount: number;
+              programType: string;
+              isHomogeneous: boolean;
+              tleProgramId?: number | null;
+              tleProgramName?: string | null;
+              advisingTeacher: { id: number; name: string } | null;
+            }>;
+          }) =>
+            (gl.sections || []).map((section) => ({
+              id: section.id,
+              label: `${gl.gradeLevelName} - ${section.name}`,
+              gradeLevelName: gl.gradeLevelName,
+              sectionName: section.name,
+              maxCapacity: section.maxCapacity,
+              enrolledCount: section.enrolledCount,
+              programType: section.programType,
+              isHomogeneous: section.isHomogeneous,
+              tleProgramId: section.tleProgramId ?? null,
+              tleProgramName: section.tleProgramName ?? null,
+              currentAdviserId: section.advisingTeacher?.id ?? null,
+              currentAdviserName: section.advisingTeacher?.name ?? null,
+            })),
+        )
+        .sort((a: AdvisorySectionOption, b: AdvisorySectionOption) =>
+          a.label.localeCompare(b.label),
+        ) as AdvisorySectionOption[];
+    },
+    enabled: Boolean(ayId && designationOpenFor),
+  });
+
+  const advisorySections = advisorySectionsQuery.data ?? [];
+  const advisorySectionsLoading = advisorySectionsQuery.isPending || advisorySectionsQuery.isFetching;
 
   const availableDepartments = useMemo(() => {
     const depts = new Set<string>();
@@ -321,6 +391,13 @@ export default function Teachers() {
 
     return options;
   }, [teachers]);
+
+  const invalidateTeacherQueries = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.teachersList(ayId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.teachersSections(ayId ?? 0) }),
+    ]);
+  }, [ayId, queryClient]);
 
   // Reset page when filters or limit change
   useEffect(() => {
@@ -389,87 +466,20 @@ export default function Teachers() {
     [],
   );
 
-  const fetchTeachers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await api.get("/teachers", {
-        params: ayId ? { schoolYearId: ayId } : undefined,
-      });
-      setTeachers(res.data.teachers || []);
-      setAyLabel(res.data.scope?.yearLabel || null);
-      setBosyDate(res.data.scope?.classOpeningDate || null);
-      setEosyDate(res.data.scope?.classEndDate || null);
+  useEffect(() => {
+    if (teachersQuery.data?.scope) {
+      setAyLabel(teachersQuery.data.scope.yearLabel || null);
+      setBosyDate(teachersQuery.data.scope.classOpeningDate || null);
+      setEosyDate(teachersQuery.data.scope.classEndDate || null);
       setIsInitialLoad(false);
-    } catch (err) {
-      toastApiError(err as never);
-    } finally {
-      setLoading(false);
     }
-  }, [ayId]);
+  }, [teachersQuery.data]);
 
   useEffect(() => {
-    fetchTeachers();
-  }, [fetchTeachers]);
-
-  const fetchAdvisorySections = useCallback(async () => {
-    if (!ayId) {
-      setAdvisorySections([]);
-      return;
+    if (teachersQuery.isError) {
+      toastApiError(teachersQuery.error as never);
     }
-
-    setAdvisorySectionsLoading(true);
-    try {
-      const res = await api.get(`/sections/${ayId}`);
-      const gradeLevelsData = res.data.gradeLevels || [];
-
-      const options: AdvisorySectionOption[] = gradeLevelsData
-        .flatMap(
-          (gl: {
-            gradeLevelName: string;
-            sections: Array<{
-              id: number;
-              name: string;
-              maxCapacity: number;
-              enrolledCount: number;
-              programType: string;
-              isHomogeneous: boolean;
-              tleProgramId?: number | null;
-              tleProgramName?: string | null;
-              advisingTeacher: { id: number; name: string } | null;
-            }>;
-          }) =>
-            (gl.sections || []).map((section) => ({
-              id: section.id,
-              label: `${gl.gradeLevelName} - ${section.name}`,
-              gradeLevelName: gl.gradeLevelName,
-              sectionName: section.name,
-              maxCapacity: section.maxCapacity,
-              enrolledCount: section.enrolledCount,
-              programType: section.programType,
-              isHomogeneous: section.isHomogeneous,
-              tleProgramId: section.tleProgramId ?? null,
-              tleProgramName: section.tleProgramName ?? null,
-              currentAdviserId: section.advisingTeacher?.id ?? null,
-              currentAdviserName: section.advisingTeacher?.name ?? null,
-            })),
-        )
-        .sort((a: AdvisorySectionOption, b: AdvisorySectionOption) =>
-          a.label.localeCompare(b.label),
-        );
-
-      setAdvisorySections(options);
-    } catch (err) {
-      console.error("[fetchAdvisorySections Error]", err);
-      toastApiError(err as never);
-      setAdvisorySections([]);
-    } finally {
-      setAdvisorySectionsLoading(false);
-    }
-  }, [ayId]);
-
-  useEffect(() => {
-    fetchAdvisorySections();
-  }, [fetchAdvisorySections]);
+  }, [teachersQuery.isError, teachersQuery.error]);
 
   const handleCreate = useCallback(async () => {
     const payload: TeacherUpsertPayload = {
@@ -517,13 +527,13 @@ export default function Teachers() {
       setCreateOpen(false);
       setIsCreateEmailManuallyEdited(false);
       setFormData(createEmptyTeacherForm());
-      fetchTeachers();
+      await invalidateTeacherQueries();
     } catch (err) {
       toastApiError(err as never);
     } finally {
       setSubmitting(false);
     }
-  }, [formData, fetchTeachers]);
+  }, [formData, invalidateTeacherQueries]);
 
   const startEditing = (teacher: Teacher) => {
     setEditingTeacher(teacher);
@@ -599,13 +609,13 @@ export default function Teachers() {
         description: "Changes saved successfully.",
       });
       closeEditSheet();
-      fetchTeachers();
+      await invalidateTeacherQueries();
     } catch (err) {
       toastApiError(err as never);
     } finally {
       setSubmitting(false);
     }
-  }, [editingTeacher, editFormData, fetchTeachers, closeEditSheet]);
+  }, [editingTeacher, editFormData, invalidateTeacherQueries, closeEditSheet]);
 
   const handleToggleStatus = async (
     id: number,
@@ -625,7 +635,7 @@ export default function Teachers() {
       setTeacherToDeactivate(null);
       setDeactivateReason("");
       setReactivateId(null);
-      fetchTeachers();
+      await invalidateTeacherQueries();
     } catch (err) {
       toastApiError(err as never);
     } finally {
@@ -699,7 +709,6 @@ export default function Teachers() {
     (teacher: Teacher) => {
       setDesignationOpenFor(teacher);
       setDesignationDrawerTab("designation");
-      void fetchAdvisorySections(); // Refresh sections list on open
 
       const bosy = bosyDate?.split("T")[0] || null;
       const eosy = eosyDate?.split("T")[0] || null;
@@ -727,7 +736,7 @@ export default function Teachers() {
       setDesignationCollision(null);
       setAllowCollisionOverride(false);
     },
-    [bosyDate, eosyDate, fetchAdvisorySections],
+    [bosyDate, eosyDate],
   );
 
   const closeDesignationEditor = useCallback(() => {
@@ -801,8 +810,7 @@ export default function Teachers() {
         description: `${formatTeacherName(designationOpenFor)} designation was saved.`,
       });
       closeDesignationEditor();
-      fetchTeachers();
-      void fetchAdvisorySections();
+      await invalidateTeacherQueries();
     } catch (err) {
       toastApiError(err as never);
     } finally {
@@ -813,8 +821,7 @@ export default function Teachers() {
     ayId,
     designationForm,
     allowCollisionOverride,
-    fetchTeachers,
-    fetchAdvisorySections,
+    invalidateTeacherQueries,
     closeDesignationEditor,
   ]);
 
@@ -852,7 +859,7 @@ export default function Teachers() {
           res.data.message ||
           "Faculty roster has been synchronized with the scheduling system.",
       });
-      fetchTeachers();
+      await invalidateTeacherQueries();
     } catch (err: unknown) {
       const error = err as { response?: { status?: number, data?: { code?: string } } };
       // Professional Error Handling with Reasons
@@ -923,7 +930,7 @@ export default function Teachers() {
           setDesignationFilter("all");
           setDepartmentFilter("all");
         }}
-        onRefresh={fetchTeachers}
+        onRefresh={invalidateTeacherQueries}
         onOpenDesignationEditor={openDesignationEditor}
         onEditTeacher={startEditing}
         onDeactivateTeacher={setTeacherToDeactivate}
@@ -948,7 +955,7 @@ export default function Teachers() {
       ayId,
       page,
       limit,
-      fetchTeachers,
+      invalidateTeacherQueries,
       openDesignationEditor,
     ],
   );

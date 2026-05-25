@@ -309,4 +309,36 @@ export const earlyRegistrationSubmitSchema = z
         path: ["disabilityTypes"],
       });
     }
+
+    // STE track requires Science, Mathematics, and English grades (all >= 85)
+    if (
+      data.isScpApplication &&
+      data.scpType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING"
+    ) {
+      const steSubjects: Array<{
+        key: "science" | "mathematics" | "english";
+        label: string;
+      }> = [
+        { key: "science", label: "Science" },
+        { key: "mathematics", label: "Mathematics" },
+        { key: "english", label: "English" },
+      ];
+
+      for (const { key, label } of steSubjects) {
+        const val = data.reportedGrades?.[key];
+        if (val === null || val === undefined) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `${label} grade (Q1–Q3 average) is required for the STE track.`,
+            path: ["reportedGrades", key],
+          });
+        } else if (val < 85) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Must be 85 or higher.",
+            path: ["reportedGrades", key],
+          });
+        }
+      }
+    }
   });

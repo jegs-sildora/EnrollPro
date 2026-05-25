@@ -14,6 +14,22 @@ import type { ApplicationSubmitResponse } from "@enrollpro/shared";
 const CONSENT_KEY = "enrollpro_earlyreg_consent";
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
+function toManilaDateToken(date: Date): number {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+
+  const parts = formatter.formatToParts(date);
+  const year = Number(parts.find((part) => part.type === "year")?.value ?? "0");
+  const month = Number(parts.find((part) => part.type === "month")?.value ?? "0");
+  const day = Number(parts.find((part) => part.type === "day")?.value ?? "0");
+
+  return year * 10000 + month * 100 + day;
+}
+
 type EarlyRegSuccessData = Pick<
   ApplicationSubmitResponse,
   | "trackingNumber"
@@ -47,9 +63,24 @@ export default function EarlyRegistrationApply() {
     schoolWebsite,
   } = useSettingsStore();
 
+  const isEarlyWindowOpenInManila = (() => {
+    if (!earlyRegOpenDate || !earlyRegCloseDate) return false;
+
+    const todayToken = toManilaDateToken(new Date());
+    const openToken = toManilaDateToken(new Date(earlyRegOpenDate));
+    const closeToken = toManilaDateToken(new Date(earlyRegCloseDate));
+
+    return todayToken >= openToken && todayToken <= closeToken;
+  })();
+
+  const isEarlyRegistrationOpen =
+    enrollmentPhase === "EARLY_REGISTRATION" ||
+    (enrollmentPhase === "REGULAR_ENROLLMENT" && isEarlyWindowOpenInManila);
+
   const isBosyLocked = systemStatus === "BOSY_LOCKED";
-  const isRegularEnrollment = enrollmentPhase === "REGULAR_ENROLLMENT";
-  const isClosed = enrollmentPhase !== "EARLY_REGISTRATION";
+  const isRegularEnrollment =
+    enrollmentPhase === "REGULAR_ENROLLMENT" && !isEarlyWindowOpenInManila;
+  const isClosed = !isEarlyRegistrationOpen;
   const targetYear = activeSchoolYearLabel
     ? activeSchoolYearLabel.split("-")[0]
     : new Date().getFullYear();

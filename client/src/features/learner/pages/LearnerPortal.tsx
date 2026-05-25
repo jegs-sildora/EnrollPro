@@ -2,9 +2,9 @@ import {
   useMemo,
   useState,
   useEffect,
-  useCallback,
   type ReactNode,
 } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PersonalInfoSection } from "@/features/learner/components/PersonalInfoSection";
 import { ConfirmationSlip } from "@/features/learner/components/ConfirmationSlip";
 import { LearnerPixelGridBackground } from "@/features/learner/components/LearnerPixelGridBackground";
@@ -23,7 +23,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useSettingsStore } from "@/store/settings.slice";
-import { useLearnerStore } from "@/store/learner.slice";
 import { useLearnerAuthStore } from "@/store/learner-auth.slice";
 import { motion, AnimatePresence } from "motion/react";
 import { Navigate, useNavigate } from "react-router";
@@ -46,6 +45,7 @@ import {
   formatEosyStatus,
   formatScpType,
 } from "@/shared/lib/utils";
+import { queryKeys } from "@/shared/lib/queryKeys";
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
 
@@ -78,8 +78,8 @@ export default function LearnerPortal() {
     activeSchoolYearLabel,
     setSettings,
   } = useSettingsStore();
-  const { learner, setLearner, logout: clearLearnerData } = useLearnerStore();
   const { user, clearAuth, isHydrated } = useLearnerAuthStore();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [showExitModal, setShowExitModal] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -89,33 +89,33 @@ export default function LearnerPortal() {
     confirmedAt: Date;
   } | null>(null);
   const [slipOpen, setSlipOpen] = useState(false);
-  const [academicHistory, setAcademicHistory] = useState<
-    AcademicHistoryEntry[]
-  >([]);
-  const [profileLoading, setProfileLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("journey");
 
-  const fetchData = useCallback(() => {
-    if (!isHydrated || user?.role !== "LEARNER") return;
-    setProfileLoading(true);
-    Promise.all([
-      api.get("/learner/profile"),
-      api.get("/learner/academic-history"),
-    ])
-      .then(([profileRes, historyRes]) => {
-        setLearner(profileRes.data.learner);
-        setAcademicHistory(historyRes.data.history ?? []);
-      })
-      .catch(() => {
-        clearAuth();
-        navigate("/learner/login", { replace: true });
-      })
-      .finally(() => setProfileLoading(false));
-  }, [isHydrated, user?.role, setLearner, clearAuth, navigate]);
+  const learnerProfileQuery = useQuery({
+    queryKey: queryKeys.learnerProfile,
+    queryFn: async () => {
+      const [profileRes, historyRes] = await Promise.all([
+        api.get("/learner/profile"),
+        api.get("/learner/academic-history"),
+      ]);
+
+      return {
+        learner: profileRes.data.learner,
+        academicHistory: (historyRes.data.history ?? []) as AcademicHistoryEntry[],
+      };
+    },
+    enabled: isHydrated && user?.role === "LEARNER",
+  });
+
+  const learner = learnerProfileQuery.data?.learner ?? null;
+  const academicHistory = learnerProfileQuery.data?.academicHistory ?? [];
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (learnerProfileQuery.isError) {
+      clearAuth();
+      navigate("/learner/login", { replace: true });
+    }
+  }, [learnerProfileQuery.isError, clearAuth, navigate]);
 
   useEffect(() => {
     if (logoUrl) return;
@@ -146,8 +146,8 @@ export default function LearnerPortal() {
     } catch {
       // Ignore
     }
-    clearLearnerData();
     clearAuth();
+    queryClient.removeQueries({ queryKey: queryKeys.learnerProfile });
     sileo.success({
       title: "Signed Out",
       description: "You have successfully exited the Learner Portal.",
@@ -168,7 +168,7 @@ export default function LearnerPortal() {
         description:
           "Your enrollment return has been confirmed. You are now queued for section assignment.",
       });
-      fetchData();
+      await learnerProfileQuery.refetch();
     } catch (e) {
       toastApiError(e as AxiosError<{ message?: string; errors?: Record<string, string[]> }>);
     } finally {
@@ -189,7 +189,7 @@ export default function LearnerPortal() {
     return <Navigate to="/learner/login" replace />;
   }
 
-  if (profileLoading || !learner) {
+  if (learnerProfileQuery.isPending || !learner) {
     return (
       <div className="min-h-screen relative overflow-hidden flex items-center justify-center">
         <LearnerPixelGridBackground />

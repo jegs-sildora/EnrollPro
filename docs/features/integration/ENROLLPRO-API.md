@@ -99,14 +99,80 @@ This document provides a comprehensive reference for the EnrollPro backend API. 
 
 ## 3) Settings (`/api/settings`)
 
-| Method | Path                       | Auth     | Roles | Description                                  |
-| :----- | :------------------------- | :------- | :---- | :------------------------------------------- |
-| GET    | `/api/settings/public`     | None     | -     | Public branding and active SY context.       |
-| GET    | `/api/settings/scp-config` | None     | -     | Active Special Curricular Program configs.   |
-| PUT    | `/api/settings/identity`   | Required | ADMIN | Update school name, email, and social links. |
-| POST   | `/api/settings/logo`       | Required | ADMIN | Upload school logo (extracts accent color).  |
-| DELETE | `/api/settings/logo`       | Required | ADMIN | Resets logo and theme to defaults.           |
-| PUT    | `/api/settings/accent`     | Required | ADMIN | Manually override the theme accent color.    |
+| Method | Path                       | Auth     | Roles        | Description                                  |
+| :----- | :------------------------- | :------- | :----------- | :------------------------------------------- |
+| GET    | `/api/settings/public`     | None     | -            | Public branding and active SY context.       |
+| GET    | `/api/settings/scp-config` | None     | -            | Active Special Curricular Program configs.   |
+| PUT    | `/api/settings/identity`   | Required | SYSTEM_ADMIN | Update school name, email, and social links. |
+| POST   | `/api/settings/logo`       | Required | SYSTEM_ADMIN | Upload school logo (extracts accent color).  |
+| DELETE | `/api/settings/logo`       | Required | SYSTEM_ADMIN | Resets logo and theme to defaults.           |
+| PUT    | `/api/settings/accent`     | Required | SYSTEM_ADMIN | Manually override the theme accent color.    |
+
+> **Logo path note:** `logoPath` is the absolute server-side disk path used internally to delete old files on re-upload. It is never included in any API response. Consumers should use `logoUrl` (a relative path e.g. `/uploads/logo.png`) combined with the API base URL to render the logo image.
+
+### Sample: `GET /api/settings/public`
+
+```json
+{
+  "schoolName": "Buruangan National High School",
+  "logoUrl": "/uploads/logo.png",
+  "colorScheme": {
+    "palette": [
+      { "hex": "#1a56db", "hsl": "221 83% 53%", "label": "Primary" }
+    ]
+  },
+  "selectedAccentHsl": "221 83% 53%",
+  "activeSchoolYearId": 3,
+  "viewingSchoolYearId": 3,
+  "activeSchoolYearLabel": "2026-2027",
+  "viewingSchoolYearLabel": "2026-2027",
+  "activeSchoolYearStatus": "ACTIVE",
+  "systemStatus": "ACTIVE",
+  "portalControl": "AUTO",
+  "earlyRegOpenDate": "2026-01-10T00:00:00.000Z",
+  "earlyRegCloseDate": "2026-02-28T00:00:00.000Z",
+  "classOpeningDate": "2026-06-02T00:00:00.000Z",
+  "classEndDate": "2027-03-31T00:00:00.000Z",
+  "enrollOpenDate": "2026-05-15T00:00:00.000Z",
+  "enrollCloseDate": "2026-06-30T00:00:00.000Z",
+  "facebookPageUrl": "https://facebook.com/bnhs.official",
+  "depedEmail": "bnhs@deped.gov.ph",
+  "schoolWebsite": null,
+  "enrollmentPhase": "REGULAR_ENROLLMENT",
+  "isBosyEnrollmentOpen": true
+}
+```
+
+### Sample: `POST /api/settings/logo`
+
+**Request:** `multipart/form-data` with field `logo` (PNG/JPG/WEBP, max 5 MB).
+
+**Response:**
+
+```json
+{
+  "logoUrl": "/uploads/logo.png",
+  "colorScheme": {
+    "palette": [
+      { "hex": "#1a56db", "hsl": "221 83% 53%", "label": "Primary" }
+    ],
+    "extracted_at": "2026-05-25T08:00:00.000Z"
+  },
+  "selectedAccentHsl": "221 83% 53%"
+}
+```
+
+### Sample: `DELETE /api/settings/logo`
+
+**Response:**
+
+```json
+{
+  "logoUrl": null,
+  "colorScheme": null,
+  "selectedAccentHsl": null
+}
+```
 
 ---
 

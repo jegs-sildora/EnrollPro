@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { ConfirmationWall } from "../components/ConfirmationWall";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { useLearnerAuthStore } from "@/store/learner-auth.slice";
-import { useLearnerStore } from "@/store/learner.slice";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/shared/lib/queryKeys";
 import { Navigate, useNavigate } from "react-router";
 import api from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
@@ -11,38 +12,36 @@ import { LearnerPixelGridBackground } from "@/features/learner/components/Learne
 
 export default function OnboardingConfirm() {
   const { user, clearAuth, isHydrated } = useLearnerAuthStore();
-  const { learner, setLearner, logout: clearLearnerData } = useLearnerStore();
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
   const [loadFailed, setLoadFailed] = useState(false);
   const navigate = useNavigate();
 
-  const fetchData = useCallback(async () => {
+  const learnerQuery = useQuery({
+    queryKey: queryKeys.learnerProfile,
+    queryFn: async () => {
+      const profileRes = await api.get("/learner/profile", { timeout: 10000 });
+      return profileRes.data?.learner ?? null;
+    },
+    enabled: isHydrated && user?.role === "LEARNER",
+  });
+
+  const learner = learnerQuery.data;
+
+  useEffect(() => {
     if (!isHydrated) return;
     if (user?.role !== "LEARNER") {
       setLoadFailed(true);
       return;
     }
-    setLoading(true);
-    setLoadFailed(false);
-    try {
-      const profileRes = await api.get("/learner/profile", { timeout: 10000 });
-      const fetchedLearner = profileRes.data?.learner;
-      if (!fetchedLearner) {
-        setLoadFailed(true);
-        return;
-      }
-      setLearner(fetchedLearner);
-    } catch (error) {
-      console.error("OnboardingConfirm: Failed to fetch profile", error);
+    if (learnerQuery.isError) {
+      console.error("OnboardingConfirm: Failed to fetch profile", learnerQuery.error);
       setLoadFailed(true);
-    } finally {
-      setLoading(false);
+      return;
     }
-  }, [user?.role, isHydrated, setLearner]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (learner) {
+      setLoadFailed(false);
+    }
+  }, [isHydrated, user?.role, learnerQuery.isError, learnerQuery.error, learner]);
 
   const handleLogout = async () => {
     try {
@@ -50,7 +49,7 @@ export default function OnboardingConfirm() {
     } catch {
       // Ignore
     }
-    clearLearnerData();
+    queryClient.removeQueries({ queryKey: queryKeys.learnerProfile });
     clearAuth();
     navigate("/learner/login", { replace: true });
     sileo.success({
@@ -80,15 +79,6 @@ export default function OnboardingConfirm() {
     return <Navigate to="/learner/login" replace />;
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-slate-50/50">
-        <LearnerPixelGridBackground />
-        <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
-      </div>
-    );
-  }
-
   if (!learner) {
     if (!loadFailed) {
       return (
@@ -107,7 +97,7 @@ export default function OnboardingConfirm() {
             Unable to load your confirmation details right now.
           </p>
           <div className="flex items-center justify-center gap-2">
-            <Button variant="outline" onClick={() => void fetchData()}>
+            <Button variant="outline" onClick={() => void learnerQuery.refetch()}>
               Retry
             </Button>
             <Button onClick={() => navigate("/learner", { replace: true })}>

@@ -62,15 +62,8 @@ export function getEnrollmentPhase(
 
   const todayToken = toManilaDateToken(new Date());
 
-  if (
-    year.enrollOpenDate &&
-    year.enrollCloseDate &&
-    todayToken >= toManilaDateToken(year.enrollOpenDate) &&
-    todayToken <= toManilaDateToken(year.enrollCloseDate)
-  ) {
-    return "REGULAR_ENROLLMENT";
-  }
-
+  // Keep Early Registration active through its inclusive close date,
+  // even when Phase 2 opens on the same calendar day.
   if (
     year.earlyRegOpenDate &&
     year.earlyRegCloseDate &&
@@ -78,6 +71,15 @@ export function getEnrollmentPhase(
     todayToken <= toManilaDateToken(year.earlyRegCloseDate)
   ) {
     return "EARLY_REGISTRATION";
+  }
+
+  if (
+    year.enrollOpenDate &&
+    year.enrollCloseDate &&
+    todayToken >= toManilaDateToken(year.enrollOpenDate) &&
+    todayToken <= toManilaDateToken(year.enrollCloseDate)
+  ) {
+    return "REGULAR_ENROLLMENT";
   }
 
   return "CLOSED";

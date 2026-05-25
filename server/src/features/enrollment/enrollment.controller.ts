@@ -3,6 +3,8 @@ import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../lib/AppError.js";
 import axios from "axios";
 import { ensureLearnerUserAccount } from "../learner/learner.service.js";
+import { auditLog } from "../audit-logs/audit-logs.service.js";
+import { fireIntakeReceiptNotification } from "../../lib/notificationService.js";
 
 /**
  * POST /api/enrollment/confirm-slip
@@ -332,3 +334,120 @@ export async function syncSmartGrades(req: Request, res: Response) {
     throw new AppError(500, "Failed to persist academic synchronization data.");
   }
 }
+
+// ─── Intake Finalization ─────────────────────────────────────────────────────
+
+/**
+ * POST /api/enrollment/finalize-intake
+ *
+ * Intake Desk Tab 3 — Finalizes a learner's physical document confirmation:
+ *  - Saves height (cm) and weight (kg)
+ *  - Verifies the physical document checklist
+ *  - Advances status from PENDING_INTAKE_CONFIRMATION → READY_FOR_SECTIONING
+ *  - Fires Notification Event A (Intake Receipt Confirmation)
+ */
+export async function finalizeIntake(req: Request, res: Response) {
+  const userId = (req as any).user?.id ?? (req as any).user?.userId;
+
+  const {
+    applicationId,
+    heightCm,
+    weightKg,
+    checklistVerified,
+  }: {
+    applicationId: number;
+    heightCm?: number;
+    weightKg?: number;
+    checklistVerified: boolean;
+  } = req.body;
+
+  if (!applicationId) {
+    throw new AppError(400, "applicationId is required.");
+  }
+
+  const application = await prisma.enrollmentApplication.findUnique({
+    where: { id: applicationId },
+    include: {
+      learner: { select: { firstName: true, lastName: true, lrn: true } },
+      schoolYear: { select: { yearLabel: true } },
+      gradeLevel: { select: { name: true } },
+      familyMembers: {
+        select: { relationship: true, firstName: true, lastName: true, contactNumber: true, email: true },
+      },
+    },
+  });
+
+  if (!application) {
+    throw new AppError(404, "Enrollment application not found.");
+  }
+
+  if (application.status !== "PENDING_INTAKE_CONFIRMATION") {
+    throw new AppError(
+      409,
+      `Application is in status '${application.status}'. ` +
+        `Only PENDING_INTAKE_CONFIRMATION applications can be finalized at intake.`,
+    );
+  }
+
+  // Wrap in transaction: save BMI + update status
+  await prisma.$transaction(async (tx) => {
+    await tx.enrollmentApplication.update({
+      where: { id: applicationId },
+      data: {
+        status: "READY_FOR_SECTIONING",
+        intakeHeightCm: heightCm ?? undefined,
+        intakeWeightKg: weightKg ?? undefined,
+        confirmationConsent: checklistVerified,
+      },
+    });
+
+    // Upsert checklist to mark confirmation slip received
+    await tx.applicationChecklist.upsert({
+      where: { enrollmentId: applicationId },
+      create: {
+        enrollmentId: applicationId,
+        isConfirmationSlipReceived: checklistVerified,
+        academicStatus: "PROMOTED",
+        updatedById: userId ?? undefined,
+      },
+      update: {
+        isConfirmationSlipReceived: checklistVerified,
+        updatedById: userId ?? undefined,
+      },
+    });
+  });
+
+  await auditLog({
+    userId: userId ?? null,
+    actionType: "INTAKE_FINALIZED",
+    description: `Intake finalized for application ${applicationId} — status set to READY_FOR_SECTIONING`,
+    subjectType: "EnrollmentApplication",
+    recordId: applicationId,
+    req,
+  });
+
+  // Resolve guardian contact info for notification
+  const guardian = application.familyMembers.find(
+    (m) => m.relationship === "GUARDIAN" || m.relationship === "MOTHER" || m.relationship === "FATHER",
+  );
+
+  // Fire-and-forget: Notification Event A
+  fireIntakeReceiptNotification({
+    applicationId,
+    learnerName: `${application.learner.firstName} ${application.learner.lastName}`,
+    lrn: application.learner.lrn ?? null,
+    guardianName: guardian ? `${guardian.firstName} ${guardian.lastName}` : application.guardianName ?? null,
+    contactNumber: guardian?.contactNumber ?? application.contactNumber ?? null,
+    email: guardian?.email ?? null,
+    schoolYearLabel: application.schoolYear.yearLabel,
+    finalizedAt: new Date().toISOString(),
+  }).catch((err) => console.error("[Notification Event A Error]:", err));
+
+  return res.json({
+    success: true,
+    message: "Intake finalized. Learner is now queued for batch sectioning.",
+    applicationId,
+    newStatus: "READY_FOR_SECTIONING",
+  });
+}
+

@@ -1270,6 +1270,47 @@ async function createRegistration(
           `General average of ${submittedGa}% does not meet the minimum requirement of ${gaThreshold}% for the selected SCP track.`,
         );
       }
+
+      // Additional validation for STE: core subject grades must all be >= 85
+      if (applicantType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") {
+        const STE_SUBJECT_MIN = 85;
+        const steSubjects: Array<{
+          key: "science" | "mathematics" | "english";
+          label: string;
+        }> = [
+          { key: "science", label: "Science" },
+          { key: "mathematics", label: "Mathematics" },
+          { key: "english", label: "English" },
+        ];
+        const missingSubjects: string[] = [];
+        const failingSubjects: string[] = [];
+
+        for (const { key, label } of steSubjects) {
+          const val =
+            typeof reportedGrades?.[key] === "number" &&
+            Number.isFinite(reportedGrades[key] as number)
+              ? (reportedGrades[key] as number)
+              : null;
+          if (val === null) {
+            missingSubjects.push(label);
+          } else if (val < STE_SUBJECT_MIN) {
+            failingSubjects.push(`${label} (${val}%)`);
+          }
+        }
+
+        if (missingSubjects.length > 0) {
+          throw new AppError(
+            422,
+            `The following core subject grades are required for STE: ${missingSubjects.join(", ")}.`,
+          );
+        }
+        if (failingSubjects.length > 0) {
+          throw new AppError(
+            422,
+            `The following core subject grades do not meet the minimum ${STE_SUBJECT_MIN}% for STE: ${failingSubjects.join(", ")}.`,
+          );
+        }
+      }
     }
 
     // 2. Parse and validate birthdate

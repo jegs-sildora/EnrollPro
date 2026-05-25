@@ -1,9 +1,11 @@
 import { useEffect, useLayoutEffect, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Outlet } from "react-router";
 import { useSettingsStore, type PaletteColor } from "@/store/settings.slice";
 import { usePageTitle } from "@/shared/hooks/usePageTitle";
 import { Loader2 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
+import { queryKeys } from "@/shared/lib/queryKeys";
 
 const DEFAULT_ACCENT_HSL = "221 83% 53%";
 const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
@@ -49,39 +51,47 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
   // Dynamically update document.title on every route change
   usePageTitle();
 
-  // Fetch public settings on mount
+  const publicSettingsQuery = useQuery({
+    queryKey: queryKeys.publicSettings,
+    queryFn: async () => {
+      const res = await api.get("/settings/public", { timeout: 10000 });
+      return res.data;
+    },
+  });
+
   useEffect(() => {
-    api
-      .get("/settings/public", { timeout: 10000 })
-      .then((res) => {
-        setSettings({
-          schoolName: res.data.schoolName,
-          logoUrl: res.data.logoUrl,
-          colorScheme: res.data.colorScheme,
-          selectedAccentHsl: res.data.selectedAccentHsl,
-          activeSchoolYearId: res.data.activeSchoolYearId,
-          activeSchoolYearLabel: res.data.activeSchoolYearLabel,
-          viewingSchoolYearId: res.data.viewingSchoolYearId,
-          earlyRegOpenDate: res.data.earlyRegOpenDate,
-          earlyRegCloseDate: res.data.earlyRegCloseDate,
-          classOpeningDate: res.data.classOpeningDate,
-          classEndDate: res.data.classEndDate,
-          enrollOpenDate: res.data.enrollOpenDate,
-          enrollCloseDate: res.data.enrollCloseDate,
-          enrollmentPhase: res.data.enrollmentPhase,
-          systemStatus: res.data.systemStatus,
-          bosyLockedAt: res.data.bosyLockedAt,
-          facebookPageUrl: res.data.facebookPageUrl,
-          depedEmail: res.data.depedEmail,
-          schoolWebsite: res.data.schoolWebsite,
-          isBosyEnrollmentOpen: Boolean(res.data.isBosyEnrollmentOpen),
-        });
-      })
-      .catch(() => {
-        // Fallback to initialized even on error to prevent infinite loading
-        setSettings({});
+    const data = publicSettingsQuery.data;
+
+    if (data) {
+      setSettings({
+        schoolName: data.schoolName,
+        logoUrl: data.logoUrl,
+        colorScheme: data.colorScheme,
+        selectedAccentHsl: data.selectedAccentHsl,
+        activeSchoolYearId: data.activeSchoolYearId,
+        activeSchoolYearLabel: data.activeSchoolYearLabel,
+        viewingSchoolYearId: data.viewingSchoolYearId,
+        earlyRegOpenDate: data.earlyRegOpenDate,
+        earlyRegCloseDate: data.earlyRegCloseDate,
+        classOpeningDate: data.classOpeningDate,
+        classEndDate: data.classEndDate,
+        enrollOpenDate: data.enrollOpenDate,
+        enrollCloseDate: data.enrollCloseDate,
+        enrollmentPhase: data.enrollmentPhase,
+        systemStatus: data.systemStatus,
+        bosyLockedAt: data.bosyLockedAt,
+        facebookPageUrl: data.facebookPageUrl,
+        depedEmail: data.depedEmail,
+        schoolWebsite: data.schoolWebsite,
+        isBosyEnrollmentOpen: Boolean(data.isBosyEnrollmentOpen),
       });
-  }, [setSettings]);
+      return;
+    }
+
+    if (publicSettingsQuery.isError) {
+      setSettings({});
+    }
+  }, [publicSettingsQuery.data, publicSettingsQuery.isError, setSettings]);
 
   // Update favicon dynamically based on logoUrl
   useEffect(() => {

@@ -5,6 +5,7 @@ import {
   useMemo,
   startTransition,
 } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router";
 import {
   Search,
@@ -29,6 +30,7 @@ import { useSettingsStore } from "@/store/settings.slice";
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { AnimatedNumber } from "@/shared/components/AnimatedNumber";
+import { PhilippineAddressSelector } from "@/shared/components/PhilippineAddressSelector";
 import { sileo } from "sileo";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -87,6 +89,7 @@ import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
 import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
 import { motion, AnimatePresence } from "motion/react";
 import type { EosyStatus } from "@enrollpro/shared";
+import { queryKeys } from "@/shared/lib/queryKeys";
 
 interface Student {
   id: number;
@@ -297,9 +300,7 @@ export default function Students() {
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
   const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly();
   const canMutate = !isHistoricalReadOnly || hasOverride;
-
-  const [students, setStudents] = useState<Student[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   const { panelPercentage, isDesktopViewport, startResizing } =
     useResizablePanel();
@@ -316,7 +317,6 @@ export default function Students() {
   const [sectionFilter, setSectionFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
-  const [total, setTotal] = useState(0);
   const [sortBy, setSortBy] = useState<string>("dateEnrolled");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
@@ -374,6 +374,8 @@ export default function Students() {
     emergencyContactName: "",
     emergencyContactNumber: "",
     barangay: "",
+    province: "",
+    cityMunicipality: "",
     streetSitio: "",
   });
 
@@ -387,8 +389,74 @@ export default function Students() {
     lrn: "",
   });
 
-  const [summary, setSummary] = useState<StudentsSummary | null>(null);
-  const [summaryLoading, setSummaryLoading] = useState(true);
+  const studentsQueryParams = useMemo(() => {
+    const params: Record<string, string | number> = {
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+    };
+
+    if (activeTab === "active" && ayId) {
+      params.schoolYearId = ayId;
+    } else if (activeTab === "completers") {
+      params.learnerStatus = "JHS_COMPLETER";
+    } else if (activeTab === "inactive") {
+      params.learnerStatus = "DROPPED,TRANSFERRED_OUT";
+    }
+
+    if (debouncedSearch) params.search = debouncedSearch;
+    if (gradeLevelFilter !== "all") params.gradeLevelId = gradeLevelFilter;
+    if (programFilter !== "all") params.programType = programFilter;
+    if (sectionFilter !== "all") params.sectionId = sectionFilter;
+
+    return params;
+  }, [
+    page,
+    limit,
+    sortBy,
+    sortOrder,
+    activeTab,
+    ayId,
+    debouncedSearch,
+    gradeLevelFilter,
+    programFilter,
+    sectionFilter,
+  ]);
+
+  const studentsQuery = useQuery({
+    queryKey: queryKeys.studentsList(studentsQueryParams),
+    queryFn: async () => {
+      if (!ayId && activeTab !== "completers") {
+        return { students: [] as Student[], pagination: { total: 0 } };
+      }
+
+      const res = await api.get("/students", { params: studentsQueryParams });
+      return {
+        students: (res.data.students || []) as Student[],
+        pagination: res.data.pagination as { total: number },
+      };
+    },
+    enabled: Boolean(ayId || activeTab === "completers"),
+  });
+
+  const summaryQuery = useQuery({
+    queryKey: ayId ? queryKeys.studentsSummary(ayId) : ["students", "summary", null],
+    queryFn: async () => {
+      if (!ayId) return null;
+      const res = await api.get<StudentsSummary>("/students/summary", {
+        params: { schoolYearId: ayId },
+      });
+      return res.data;
+    },
+    enabled: Boolean(ayId),
+  });
+
+  const students = studentsQuery.data?.students ?? [];
+  const total = studentsQuery.data?.pagination.total ?? 0;
+  const loading = studentsQuery.isPending || studentsQuery.isFetching;
+  const summary = summaryQuery.data ?? null;
+  const summaryLoading = summaryQuery.isPending || summaryQuery.isFetching;
 
   // Fetch grade levels and sections
   useEffect(() => {
@@ -439,78 +507,17 @@ export default function Students() {
     setSectionFilter("all");
   }, [gradeLevelFilter, programFilter, sections]);
 
-  // Fetch students
-  const fetchStudents = useCallback(async () => {
-    if (!ayId && activeTab !== "completers") return;
-    setLoading(true);
-    try {
-      const params: Record<string, string | number> = {
-        page,
-        limit,
-        sortBy,
-        sortOrder,
-      };
-
-      if (activeTab === "active" && ayId) {
-        params.schoolYearId = ayId;
-      } else if (activeTab === "completers") {
-        params.learnerStatus = "JHS_COMPLETER";
-      } else if (activeTab === "inactive") {
-        params.learnerStatus = "DROPPED,TRANSFERRED_OUT";
-      }
-
-      if (debouncedSearch) params.search = debouncedSearch;
-      if (gradeLevelFilter !== "all") params.gradeLevelId = gradeLevelFilter;
-      if (programFilter !== "all") params.programType = programFilter;
-      if (sectionFilter !== "all") params.sectionId = sectionFilter;
-
-      const res = await api.get("/students", { params });
-      setStudents(res.data.students || []);
-      setTotal(res.data.pagination.total);
-    } catch (err) {
-      toastApiError(err as never);
-      setStudents([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    ayId,
-    activeTab,
-    page,
-    limit,
-    debouncedSearch,
-    gradeLevelFilter,
-    programFilter,
-    sectionFilter,
-    sortBy,
-    sortOrder,
-  ]);
-
-  const fetchSummary = useCallback(async () => {
-    if (!ayId) return;
-    setSummaryLoading(true);
-    try {
-      const res = await api.get<StudentsSummary>("/students/summary", {
-        params: {
-          schoolYearId: ayId,
-        },
-      });
-      setSummary(res.data);
-    } catch (err) {
-      toastApiError(err as never);
-      setSummary(null);
-    } finally {
-      setSummaryLoading(false);
-    }
-  }, [ayId]);
+  useEffect(() => {
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.studentsList(studentsQueryParams),
+    });
+  }, [queryClient, studentsQueryParams]);
 
   useEffect(() => {
-    fetchStudents();
-  }, [fetchStudents]);
-
-  useEffect(() => {
-    void fetchSummary();
-  }, [fetchSummary]);
+    if (ayId) {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.studentsSummary(ayId) });
+    }
+  }, [queryClient, ayId]);
 
   const handleViewDetails = useCallback(async (studentId: number) => {
     setSelectedStudentId(studentId);
@@ -570,8 +577,13 @@ export default function Students() {
   }, []);
 
   const refreshTables = useCallback(async () => {
-    await Promise.all([fetchStudents(), fetchSummary()]);
-  }, [fetchStudents, fetchSummary]);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.studentsList(studentsQueryParams) }),
+      ayId
+        ? queryClient.invalidateQueries({ queryKey: queryKeys.studentsSummary(ayId) })
+        : Promise.resolve(),
+    ]);
+  }, [queryClient, studentsQueryParams, ayId]);
 
   const refreshDetailIfOpen = useCallback(
     async (studentId: number) => {
@@ -644,6 +656,8 @@ export default function Students() {
         const detail = res.data.student as StudentDetail & {
           currentAddress?: {
             barangay?: string | null;
+            province?: string | null;
+            cityMunicipality?: string | null;
             houseNoStreet?: string | null;
             sitio?: string | null;
           } | null;
@@ -663,6 +677,8 @@ export default function Students() {
             : "",
           emergencyContactNumber: detail.guardianInfo?.contactNumber ?? "",
           barangay: detail.currentAddress?.barangay ?? "",
+          province: detail.currentAddress?.province ?? "",
+          cityMunicipality: detail.currentAddress?.cityMunicipality ?? "",
           streetSitio:
             [detail.currentAddress?.houseNoStreet, detail.currentAddress?.sitio]
               .filter(Boolean)
@@ -678,6 +694,8 @@ export default function Students() {
           emergencyContactName: "",
           emergencyContactNumber: "",
           barangay: "",
+          province: "",
+          cityMunicipality: "",
           streetSitio: "",
         };
         setProfileForm(fallbackForm);
@@ -705,8 +723,6 @@ export default function Students() {
   );
 
   const handleTabChange = (value: string) => {
-    setLoading(true);
-    setStudents([]);
     setSearchParams({ tab: value }, { replace: true });
     setPage(1);
   };
@@ -805,6 +821,8 @@ export default function Students() {
         emailAddress: profileForm.emailAddress.trim() || null,
         currentAddress: {
           barangay: profileForm.barangay.trim() || null,
+          province: profileForm.province.trim() || null,
+          cityMunicipality: profileForm.cityMunicipality.trim() || null,
           sitio: profileForm.streetSitio.trim() || null,
         },
       };
@@ -1229,7 +1247,16 @@ export default function Students() {
                 variant="outline"
                 className="h-10 px-3 text-sm font-bold w-full md:w-auto"
                 onClick={() => {
-                  void Promise.all([fetchStudents(), fetchSummary()]);
+                  void Promise.all([
+                    queryClient.invalidateQueries({
+                      queryKey: queryKeys.studentsList(studentsQueryParams),
+                    }),
+                    ayId
+                      ? queryClient.invalidateQueries({
+                          queryKey: queryKeys.studentsSummary(ayId),
+                        })
+                      : Promise.resolve(),
+                  ]);
                 }}
                 disabled={loading || !ayId}>
                 <RefreshCw
@@ -2153,46 +2180,42 @@ export default function Students() {
               <p className="text-xs uppercase  font-black text-foreground border-b pb-1">
                 Current Location
               </p>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="profileBarangay"
-                    className="font-bold">
-                    Barangay
-                  </Label>
-                  <Input
-                    id="profileBarangay"
-                    value={profileForm.barangay}
-                    onChange={(event) =>
-                      setProfileForm((prev) => ({
-                        ...prev,
-                        barangay: event.target.value,
-                      }))
-                    }
-                    placeholder="e.g., Poblacion"
-                    className="font-medium"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="profileStreet"
-                    className="font-bold">
-                    Street / Sitio
-                  </Label>
-                  <Input
-                    id="profileStreet"
-                    value={profileForm.streetSitio}
-                    onChange={(event) =>
-                      setProfileForm((prev) => ({
-                        ...prev,
-                        streetSitio: event.target.value,
-                      }))
-                    }
-                    placeholder="e.g., Purok 1"
-                    className="font-medium"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label
+                  htmlFor="profileStreet"
+                  className="font-bold">
+                  Street / Sitio
+                </Label>
+                <Input
+                  id="profileStreet"
+                  value={profileForm.streetSitio}
+                  onChange={(event) =>
+                    setProfileForm((prev) => ({
+                      ...prev,
+                      streetSitio: event.target.value,
+                    }))
+                  }
+                  placeholder="e.g., Purok 1"
+                  className="font-medium"
+                />
               </div>
+              <PhilippineAddressSelector
+                value={{
+                  province: profileForm.province,
+                  cityMunicipality: profileForm.cityMunicipality,
+                  barangay: profileForm.barangay,
+                }}
+                onChange={(field, val) => {
+                  setProfileForm((prev) => ({
+                    ...prev,
+                    [field]: val,
+                    ...(field === "province"
+                      ? { cityMunicipality: "", barangay: "" }
+                      : {}),
+                    ...(field === "cityMunicipality" ? { barangay: "" } : {}),
+                  }));
+                }}
+              />
             </div>
           </div>
 

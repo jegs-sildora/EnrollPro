@@ -8,6 +8,7 @@ import { useScpConfigs } from "@/features/admission/hooks/useScpConfigs";
 import api from "@/shared/api/axiosInstance";
 import { SCP_ACRONYMS, SCP_LABELS } from "@/shared/lib/utils";
 import PipelineBatchView from "@/features/admission/components/PipelineBatchView";
+import ScpInlineAssessmentTable from "@/features/admission/components/ScpInlineAssessmentTable";
 import { useSettingsStore } from "@/store/settings.slice";
 import { ACTIVE_REGISTRATION_EXCLUDED_STATUSES } from "@/features/admission/constants/registrationWorkflow";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
@@ -215,11 +216,18 @@ export default function RegistrationPipelines() {
             value={tab.key}
             forceMount
             className="mt-0 focus-visible:outline-none ring-0 data-[state=inactive]:hidden">
-            <PipelineBatchView
-              applicantType={tab.key}
-              cutoffScore={tab.cutoffScore}
-              hasAssessment={tab.hasAssessment}
-            />
+            {tab.key === "REGULAR" ? (
+              <PipelineBatchView
+                applicantType={tab.key}
+                cutoffScore={tab.cutoffScore}
+                hasAssessment={tab.hasAssessment}
+              />
+            ) : (
+              <ScpInlineAssessmentTable
+                applicantType={tab.key}
+                cutoffScore={tab.cutoffScore}
+              />
+            )}
           </TabsContent>
         ))}
       </Tabs>

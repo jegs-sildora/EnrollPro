@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { motion, AnimatePresence } from "motion/react"
 import { sileo } from "sileo"
 import { ArrowRightLeft, Plus, Users } from "lucide-react"
 import api from "@/shared/api/axiosInstance"
+import { queryKeys } from "@/shared/lib/queryKeys"
 import { useSettingsStore } from "@/store/settings.slice"
 import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly"
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading"
@@ -155,14 +157,9 @@ export default function Homerooms() {
   const ayId = viewingSchoolYearId ?? activeSchoolYearId
   const { isHistoricalReadOnly, hasOverride } = useHistoricalReadOnly()
   const canMutate = !isHistoricalReadOnly || hasOverride
+  const queryClient = useQueryClient()
 
-  const [groups, setGroups] = useState<GradeLevelGroup[]>([])
-  const [loading, setLoading] = useState(true)
-  const showSkeleton = useDelayedLoading(loading)
   const [activeGradeId, setActiveGradeId] = useState("")
-  const [programOptions, setProgramOptions] = useState<{ value: string; label: string }[]>([
-    { value: "REGULAR", label: "Regular (BEC)" },
-  ])
 
   // Form sheet state
   const [isFormSheetOpen, setIsFormSheetOpen] = useState(false)
@@ -176,14 +173,9 @@ export default function Homerooms() {
     tleProgramId: null,
   })
   const [pendingIsHomogeneous, setPendingIsHomogeneous] = useState(false)
-  const [submittingForm, setSubmittingForm] = useState(false)
   const [createGlId, setCreateGlId] = useState<number | null>(null)
   const [createGlName, setCreateGlName] = useState("")
   const [editingSectionId, setEditingSectionId] = useState<number | null>(null)
-  const [availableTeachers, setAvailableTeachers] = useState<TeacherOption[]>([])
-  const [loadingTeachers, setLoadingTeachers] = useState(false)
-  const [adviserCandidates, setAdviserCandidates] = useState<AdviserCandidate[]>([])
-  const [loadingAdviserCandidates, setLoadingAdviserCandidates] = useState(false)
   const [assignTarget, setAssignTarget] = useState<{
     id: number
     name: string
@@ -195,88 +187,67 @@ export default function Homerooms() {
   // Delete state
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [deleteName, setDeleteName] = useState("")
-  const [deleting, setDeleting] = useState(false)
 
   // Roster modal state
   const [rosterSectionId, setRosterSectionId] = useState<number | null>(null)
 
-  const fetchData = useCallback(async () => {
-    if (!ayId) {
-      setLoading(false)
-      return
-    }
-    setLoading(true)
-    try {
+  const sectionsQuery = useQuery({
+    queryKey: ayId ? queryKeys.homeroomSections(ayId) : (["homerooms", "sections", null] as const),
+    queryFn: async () => {
       const res = await api.get(`/sections/${ayId}`)
-      setGroups(res.data.gradeLevels)
-      if (res.data.gradeLevels.length > 0) {
-        setActiveGradeId((prev) => prev || String(res.data.gradeLevels[0].gradeLevelId))
-      }
-    } catch {
-      sileo.error({ title: "Unable to load sections", description: "Refresh the page and try again." })
-    } finally {
-      setLoading(false)
-    }
-  }, [ayId])
-
-  useEffect(() => {
-    void fetchData()
-  }, [fetchData])
-
-  useEffect(() => {
-    if (!ayId) return
-    api
-      .get(`/curriculum/${ayId}/scp-config`)
-      .then((res) => {
-        const configs: { isOffered: boolean; scpType: string }[] =
-          res.data.scpProgramConfigs || []
-        const offered = configs
-          .filter((c) => c.isOffered)
-          .map((c) => ({ value: c.scpType, label: SCP_SHORT_LABELS[c.scpType] ?? c.scpType }))
-        setProgramOptions([{ value: "REGULAR", label: "Regular (BEC)" }, ...offered])
-      })
-      .catch(() => {})
-  }, [ayId])
-
-  const fetchTeachers = useCallback(
-    async (excludeSectionId?: number | null) => {
-      if (!ayId) return
-      setLoadingTeachers(true)
-      try {
-        const params = new URLSearchParams({
-          schoolYearId: String(ayId),
-          sectionType: "HOME_ROOM",
-        })
-        if (excludeSectionId) params.set("excludeSectionId", String(excludeSectionId))
-        const res = await api.get(`/sections/teachers?${params.toString()}`)
-        setAvailableTeachers(res.data.teachers)
-      } catch {
-        setAvailableTeachers([])
-      } finally {
-        setLoadingTeachers(false)
-      }
+      return res.data.gradeLevels as GradeLevelGroup[]
     },
-    [ayId],
-  )
+    enabled: Boolean(ayId),
+  })
 
-  const fetchAdviserCandidates = useCallback(async () => {
-    if (!ayId) {
-      setAdviserCandidates([])
-      return
-    }
+  const programOptionsQuery = useQuery({
+    queryKey: ayId ? queryKeys.homeroomPrograms(ayId) : (["homerooms", "programs", null] as const),
+    queryFn: async () => {
+      const res = await api.get(`/curriculum/${ayId}/scp-config`)
+      const configs: { isOffered: boolean; scpType: string }[] = res.data.scpProgramConfigs || []
+      const offered = configs
+        .filter((config) => config.isOffered)
+        .map((config) => ({
+          value: config.scpType,
+          label: SCP_SHORT_LABELS[config.scpType] ?? config.scpType,
+        }))
+      return [{ value: "REGULAR", label: "Regular (BEC)" }, ...offered]
+    },
+    enabled: Boolean(ayId),
+  })
 
-    setLoadingAdviserCandidates(true)
-    try {
+  const excludeSectionId = isFormSheetOpen && formSheetMode === "edit" ? editingSectionId : null
+
+  const availableTeachersQuery = useQuery({
+    queryKey:
+      ayId && isFormSheetOpen
+        ? queryKeys.homeroomTeachers(ayId, excludeSectionId)
+        : (["homerooms", "teachers", null, null] as const),
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        schoolYearId: String(ayId),
+        sectionType: "HOME_ROOM",
+      })
+      if (excludeSectionId) {
+        params.set("excludeSectionId", String(excludeSectionId))
+      }
+      const res = await api.get(`/sections/teachers?${params.toString()}`)
+      return res.data.teachers as TeacherOption[]
+    },
+    enabled: Boolean(ayId && isFormSheetOpen),
+  })
+
+  const adviserCandidatesQuery = useQuery({
+    queryKey:
+      ayId ? queryKeys.homeroomAdviserCandidates(ayId) : (["homerooms", "adviser-candidates", null] as const),
+    queryFn: async () => {
       const res = await api.get("/teachers", {
         params: { schoolYearId: ayId },
       })
 
-      const mapped: AdviserCandidate[] = (res.data.teachers || [])
+      return (res.data.teachers || [])
         .filter(
-          (teacher: {
-            isActive?: boolean
-            designationTitle?: string | null
-          }) =>
+          (teacher: { isActive?: boolean; designationTitle?: string | null }) =>
             teacher.isActive &&
             String(teacher.designationTitle ?? "").toUpperCase() === "CLASS ADVISER",
         )
@@ -316,25 +287,88 @@ export default function Homerooms() {
                   }
                 : null,
           }),
-        )
+        ) as AdviserCandidate[]
+    },
+    enabled: Boolean(ayId),
+  })
 
-      setAdviserCandidates(mapped)
-    } catch {
-      setAdviserCandidates([])
-    } finally {
-      setLoadingAdviserCandidates(false)
-    }
-  }, [ayId])
+  const groups = sectionsQuery.data ?? []
+  const loading = sectionsQuery.isPending || sectionsQuery.isFetching
+  const showSkeleton = useDelayedLoading(loading)
+  const programOptions = programOptionsQuery.data ?? [{ value: "REGULAR", label: "Regular (BEC)" }]
+  const availableTeachers = availableTeachersQuery.data ?? []
+  const loadingTeachers = availableTeachersQuery.isPending || availableTeachersQuery.isFetching
+  const adviserCandidates = adviserCandidatesQuery.data ?? []
+  const loadingAdviserCandidates =
+    adviserCandidatesQuery.isPending || adviserCandidatesQuery.isFetching
 
   useEffect(() => {
-    if (isFormSheetOpen) {
-      void fetchTeachers(formSheetMode === "edit" ? editingSectionId : null)
+    if (groups.length > 0) {
+      setActiveGradeId((prev) => prev || String(groups[0].gradeLevelId))
     }
-  }, [isFormSheetOpen]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [groups])
 
-  useEffect(() => {
-    void fetchAdviserCandidates()
-  }, [fetchAdviserCandidates])
+  const invalidateHomeroomQueries = useCallback(async () => {
+    if (!ayId) return
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.homeroomSections(ayId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.homeroomPrograms(ayId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.homeroomAdviserCandidates(ayId) }),
+    ])
+  }, [ayId, queryClient])
+
+  const saveSectionMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        name: sectionFormData.name.trim(),
+        programType: sectionFormData.programType,
+        advisingTeacherId:
+          sectionFormData.adviserId === "none" ? null : parseInt(sectionFormData.adviserId),
+        maxCapacity: sectionFormData.maxCapacity,
+        isHomogeneous: pendingIsHomogeneous,
+        tleProgramId: null,
+      }
+
+      if (formSheetMode === "create") {
+        return api.post("/sections", { ...payload, gradeLevelId: createGlId, schoolYearId: ayId })
+      }
+
+      return api.put(`/sections/${editingSectionId}`, payload)
+    },
+    onSuccess: async () => {
+      sileo.success({
+        title: formSheetMode === "create" ? "Section created" : "Section updated",
+        description:
+          formSheetMode === "create"
+            ? `${sectionFormData.name.trim()} added successfully.`
+            : `Changes to ${sectionFormData.name.trim()} saved.`,
+      })
+      setIsFormSheetOpen(false)
+      await invalidateHomeroomQueries()
+    },
+    onError: (err: unknown) => {
+      const apiErr = err as { response?: { data?: { message?: string } } }
+      sileo.error({
+        title: formSheetMode === "create" ? "Section creation failed" : "Section update failed",
+        description: apiErr.response?.data?.message ?? "Please try again.",
+      })
+    },
+  })
+
+  const deleteSectionMutation = useMutation({
+    mutationFn: async () => api.delete(`/sections/${deleteId}`),
+    onSuccess: async () => {
+      sileo.success({ title: "Section removed", description: `${deleteName} was removed.` })
+      setDeleteId(null)
+      await invalidateHomeroomQueries()
+    },
+    onError: () => {
+      sileo.error({
+        title: "Section deletion failed",
+        description: "The section was not removed. Please try again.",
+      })
+    },
+  })
 
   const handleOpenAssignAdviser = useCallback(
     (section: SectionItem, gradeLevelName: string) => {
@@ -399,53 +433,12 @@ export default function Homerooms() {
 
   const handleFormSubmit = async () => {
     if (!sectionFormData.name.trim()) return
-    setSubmittingForm(true)
-    try {
-      const payload = {
-        name: sectionFormData.name.trim(),
-        programType: sectionFormData.programType,
-        advisingTeacherId:
-          sectionFormData.adviserId === "none" ? null : parseInt(sectionFormData.adviserId),
-        maxCapacity: sectionFormData.maxCapacity,
-        isHomogeneous: pendingIsHomogeneous,
-        tleProgramId: null,
-      }
-      if (formSheetMode === "create") {
-        await api.post("/sections", { ...payload, gradeLevelId: createGlId, schoolYearId: ayId })
-        sileo.success({ title: "Section created", description: `${payload.name} added successfully.` })
-      } else {
-        await api.put(`/sections/${editingSectionId}`, payload)
-        sileo.success({ title: "Section updated", description: `Changes to ${payload.name} saved.` })
-      }
-      setIsFormSheetOpen(false)
-      void fetchData()
-    } catch (err: unknown) {
-      const apiErr = err as { response?: { data?: { message?: string } } }
-      sileo.error({
-        title: formSheetMode === "create" ? "Section creation failed" : "Section update failed",
-        description: apiErr.response?.data?.message ?? "Please try again.",
-      })
-    } finally {
-      setSubmittingForm(false)
-    }
+    await saveSectionMutation.mutateAsync()
   }
 
   const handleDelete = async () => {
     if (!deleteId) return
-    setDeleting(true)
-    try {
-      await api.delete(`/sections/${deleteId}`)
-      sileo.success({ title: "Section removed", description: `${deleteName} was removed.` })
-      setDeleteId(null)
-      void fetchData()
-    } catch {
-      sileo.error({
-        title: "Section deletion failed",
-        description: "The section was not removed. Please try again.",
-      })
-    } finally {
-      setDeleting(false)
-    }
+    await deleteSectionMutation.mutateAsync()
   }
 
   // All sections are homeroom sections (TLE labs no longer exist)
@@ -651,7 +644,7 @@ export default function Homerooms() {
             : "Update the homeroom section details."
         }
         formData={sectionFormData}
-        submitting={submittingForm}
+        submitting={saveSectionMutation.isPending}
         canSubmit={!!sectionFormData.name.trim()}
         onOpenChange={setIsFormSheetOpen}
         onFieldChange={handleFieldChange}
@@ -673,7 +666,7 @@ export default function Homerooms() {
         }}
         title="Remove Section"
         description={`Are you sure you want to remove "${deleteName}"? This cannot be undone.`}
-        confirmText={deleting ? "Removing..." : "Remove Section"}
+        confirmText={deleteSectionMutation.isPending ? "Removing..." : "Remove Section"}
         onConfirm={handleDelete}
         variant="danger"
       />
@@ -693,8 +686,7 @@ export default function Homerooms() {
         teachers={adviserCandidates}
         loadingTeachers={loadingAdviserCandidates}
         onSuccess={() => {
-          void fetchData()
-          void fetchAdviserCandidates()
+          void invalidateHomeroomQueries()
         }}
       />
     </div>

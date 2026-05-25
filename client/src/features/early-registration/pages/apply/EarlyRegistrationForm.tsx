@@ -112,6 +112,23 @@ export default function EarlyRegistrationForm({
   const currentIndex =
     steps.findIndex((s) => s.id === stepper.state.current.data.id) + 1;
 
+  // Disable Next Step on basic-info when STE is selected but subject grades are incomplete
+  const watchedScpType = watch("scpType");
+  const watchedScienceGrade = watch("reportedGrades.science");
+  const watchedMathGrade = watch("reportedGrades.mathematics");
+  const watchedEnglishGrade = watch("reportedGrades.english");
+  const isSteGradesIncomplete =
+    stepper.state.current.data.id === "basic-info" &&
+    watchedScpType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" &&
+    !(
+      typeof watchedScienceGrade === "number" &&
+      Number.isFinite(watchedScienceGrade) &&
+      typeof watchedMathGrade === "number" &&
+      Number.isFinite(watchedMathGrade) &&
+      typeof watchedEnglishGrade === "number" &&
+      Number.isFinite(watchedEnglishGrade)
+    );
+
   const validationIssues = Array.from(
     new Map(
       Object.entries(methods.formState.errors)
@@ -524,7 +541,7 @@ export default function EarlyRegistrationForm({
                     type="button"
                     size="lg"
                     onClick={nextStep}
-                    disabled={isSubmitting || isCheckingLrn}
+                    disabled={isSubmitting || isCheckingLrn || isSteGradesIncomplete}
                     className="h-12 px-8 font-semibold sm:w-auto w-full bg-primary text-primary-foreground hover:bg-primary/90">
                     {isEditing ? "Update and Review" : "Next Step"}
                     <ArrowRight className="ml-2 h-4 w-4" />

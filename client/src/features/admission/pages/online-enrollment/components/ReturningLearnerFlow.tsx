@@ -50,12 +50,6 @@ export function ReturningLearnerFlow({
 
         <CardContent className="p-10 space-y-8">
           <div className="space-y-6 text-center max-w-2xl mx-auto">
-            <div className="space-y-2">
-              <h3 className="text-xl font-black text-slate-900 uppercase">Important Privacy Update</h3>
-              <p className="text-slate-600 font-bold leading-relaxed">
-                To comply with the <span className="text-slate-900 underline decoration-emerald-500 underline-offset-4">Philippine Data Privacy Act (R.A. 10173)</span>, we have moved all student records behind a secure login.
-              </p>
-            </div>
 
             <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100 text-left space-y-4">
               <div className="flex items-start gap-4">

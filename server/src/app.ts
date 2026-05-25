@@ -28,6 +28,7 @@ import bosyRoutes from "./features/bosy/bosy.router.js";
 import remedialRoutes from "./features/remedial/remedial.router.js";
 import integrationTriggerRoutes from "./features/integration/integration-trigger.router.js";
 import integrationRoutes from "./features/integration/integration.router.js";
+import addressRoutes from "./features/address/address.router.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { historicalReadOnlyGuard } from "./middleware/historical-read-only.guard.js";
 import { schoolYearContext } from "./middleware/school-year-context.middleware.js";
@@ -174,6 +175,8 @@ apiRouter.use("/remedial", remedialRoutes);
 apiRouter.use("/integration", integrationTriggerRoutes);
 // Public read endpoints for ATLAS and other downstream services (no auth required).
 apiRouter.use("/integration/v1", integrationRoutes);
+// Public reference data — no auth; needed by unauthenticated online applicants
+apiRouter.use("/address", addressRoutes);
 
 // Catch-all for unmatched API routes (Express 5 regex)
 apiRouter.all(/(.*)/, (req, res) => {

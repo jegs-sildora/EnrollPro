@@ -2,6 +2,9 @@ import { PrismaClient } from '../generated/prisma/index.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import * as pg from 'pg';
 
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new pg.Pool({
+	connectionString: process.env.DATABASE_URL,
+	max: 50,
+});
 const adapter = new PrismaPg(pool);
 export const prisma = new PrismaClient({ adapter });

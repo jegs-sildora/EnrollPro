@@ -9,6 +9,11 @@ import { cn, SCP_LABELS } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 import api from "@/shared/api/axiosInstance";
 
+/** DepEd policy: minimum GWA for any SCP track (SPA / SPS baseline) */
+const SCP_GA_MINIMUM = 80;
+/** DepEd policy: minimum GWA required for the STE track */
+const STE_GA_THRESHOLD = 85;
+
 const LEARNER_TYPES = [
   { value: "NEW_ENROLLEE", label: "NEW ENROLLEE" },
   { value: "TRANSFEREE", label: "TRANSFEREE" },
@@ -374,6 +379,9 @@ export default function BasicInfoStep() {
   const isScpApplication = watch("isScpApplication");
   const scpType = watch("scpType");
   const reportedGa = watch("reportedGrades.generalAverage");
+  const reportedScience = watch("reportedGrades.science");
+  const reportedMath = watch("reportedGrades.mathematics");
+  const reportedEnglish = watch("reportedGrades.english");
   const isScpEligible = learnerType === "NEW_ENROLLEE" && gradeLevel === "7";
   const canDeclareNoLrn =
     learnerType === "TRANSFEREE" ||
@@ -384,6 +392,9 @@ export default function BasicInfoStep() {
     OfferedScpProgramConfig[]
   >([]);
   const [inputGaValue, setInputGaValue] = useState<string>("");
+  const [inputScienceValue, setInputScienceValue] = useState<string>("");
+  const [inputMathValue, setInputMathValue] = useState<string>("");
+  const [inputEnglishValue, setInputEnglishValue] = useState<string>("");
 
   // Sync state from form value on mount
   useEffect(() => {
@@ -391,6 +402,24 @@ export default function BasicInfoStep() {
       setInputGaValue(reportedGa.toString());
     }
   }, [reportedGa]);
+
+  useEffect(() => {
+    if (reportedScience !== undefined && reportedScience !== null) {
+      setInputScienceValue(reportedScience.toString());
+    }
+  }, [reportedScience]);
+
+  useEffect(() => {
+    if (reportedMath !== undefined && reportedMath !== null) {
+      setInputMathValue(reportedMath.toString());
+    }
+  }, [reportedMath]);
+
+  useEffect(() => {
+    if (reportedEnglish !== undefined && reportedEnglish !== null) {
+      setInputEnglishValue(reportedEnglish.toString());
+    }
+  }, [reportedEnglish]);
 
   const availableScpPrograms = useMemo(
     () =>
@@ -426,17 +455,17 @@ export default function BasicInfoStep() {
     }, [scpType, offeredScpConfigByType]);
   const hasOfferedScpPrograms = availableScpPrograms.length > 0;
 
-  // Derive the effective GA threshold from offered configs (fallback: 85)
-  const effectiveScpGaThreshold = useMemo(() => {
-    let min = 85;
-    for (const config of offeredScpConfigs) {
-      const rules = parseGradeRequirements(config.gradeRequirements);
-      const gaRule = rules.find((r) => r.ruleType === "GENERAL_AVERAGE_MIN");
-      if (gaRule?.minAverage != null && Number.isFinite(gaRule.minAverage)) {
-        min = Math.min(min, gaRule.minAverage);
-      }
+  // STE-specific GA threshold from config (fallback: STE_GA_THRESHOLD per DepEd policy)
+  const steGaThreshold = useMemo(() => {
+    const steConfig = offeredScpConfigs.find(
+      (c) => c.scpType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+    );
+    const rules = parseGradeRequirements(steConfig?.gradeRequirements);
+    const gaRule = rules.find((r) => r.ruleType === "GENERAL_AVERAGE_MIN");
+    if (gaRule?.minAverage != null && Number.isFinite(gaRule.minAverage)) {
+      return gaRule.minAverage;
     }
-    return min;
+    return STE_GA_THRESHOLD;
   }, [offeredScpConfigs]);
 
   const gaValue =
@@ -444,10 +473,11 @@ export default function BasicInfoStep() {
       ? reportedGa
       : null;
   const gaEnteredAndBelowThreshold =
-    isScpEligible && gaValue !== null && gaValue < effectiveScpGaThreshold;
-
+    isScpEligible && gaValue !== null && gaValue < SCP_GA_MINIMUM;
   const isGaMeetsThreshold =
-    gaValue !== null && gaValue >= effectiveScpGaThreshold;
+    gaValue !== null && gaValue >= SCP_GA_MINIMUM;
+  // STE requires a higher GWA threshold (default 85 per DepEd policy)
+  const isSteGaEligible = gaValue !== null && gaValue >= steGaThreshold;
 
   const canSelectScpTrack =
     isScpEligible &&
@@ -539,6 +569,28 @@ export default function BasicInfoStep() {
     setValue,
     clearErrors,
   ]);
+
+  // Clear STE subject grades when STE is deselected
+  useEffect(() => {
+    if (scpType !== "SCIENCE_TECHNOLOGY_AND_ENGINEERING") {
+      setValue("reportedGrades.science", null);
+      setValue("reportedGrades.mathematics", null);
+      setValue("reportedGrades.english", null);
+      setInputScienceValue("");
+      setInputMathValue("");
+      setInputEnglishValue("");
+    }
+  }, [scpType, setValue]);
+
+  // Deselect STE automatically if GA drops below the STE threshold
+  useEffect(() => {
+    if (
+      scpType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING" &&
+      !isSteGaEligible
+    ) {
+      setValue("scpType", null, { shouldValidate: true });
+    }
+  }, [isSteGaEligible, scpType, setValue]);
 
   useEffect(() => {
     if (isLoadingScpConfig || !isScpApplication || hasOfferedScpPrograms) {
@@ -872,7 +924,7 @@ export default function BasicInfoStep() {
                   <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
                   <p className="text-xs font-semibold text-amber-800 leading-relaxed">
                     Your general average ({gaValue}%) is below the minimum{" "}
-                    <strong>{effectiveScpGaThreshold}%</strong> required to
+                    <strong>{SCP_GA_MINIMUM}%</strong> required to
                     apply for any Special Curricular Program. You may still
                     proceed with a Regular Section.
                   </p>
@@ -933,6 +985,12 @@ export default function BasicInfoStep() {
                   )}>
                   Standard Junior High curriculum.
                 </p>
+                {isScpEligible && gaValue !== null && gaValue < SCP_GA_MINIMUM && (
+                  <p className="text-xs pl-8 mt-1 text-muted-foreground italic">
+                    Based on the GWA, the learner is eligible for the standard
+                    Junior High curriculum.
+                  </p>
+                )}
               </button>
 
               {isScpEligible && isGaMeetsThreshold && (
@@ -974,7 +1032,7 @@ export default function BasicInfoStep() {
                     {isLoadingScpConfig
                       ? "Loading available SCP tracks..."
                       : gaEnteredAndBelowThreshold
-                        ? `Requires General Average of ${effectiveScpGaThreshold}% or above.`
+                        ? `Requires General Average of ${SCP_GA_MINIMUM}% or above.`
                         : hasOfferedScpPrograms
                           ? "Choose this if the learner will apply for an SCP track."
                           : "No SCP tracks are open for this School Year."}
@@ -1025,48 +1083,280 @@ export default function BasicInfoStep() {
                 </Label>
 
                 <div className="grid grid-cols-1 gap-3">
-                  {availableScpPrograms.map((program) => (
-                    <button
-                      key={program.id}
-                      type="button"
-                      className={cn(
-                        "w-full flex flex-col p-4 rounded-xl border-2 transition-all text-left",
-                        scpType === program.id
-                          ? "border-primary bg-primary text-primary-foreground shadow-md"
-                          : "border-border bg-white text-foreground hover:bg-primary/5",
-                      )}
-                      onClick={() =>
-                        setValue("scpType", program.id, {
-                          shouldValidate: true,
-                        })
-                      }>
-                      <div className="flex items-center gap-3 mb-1">
-                        <div
+                  {availableScpPrograms.map((program) => {
+                    const isSte =
+                      program.id === "SCIENCE_TECHNOLOGY_AND_ENGINEERING";
+                    const isSteDisabled = isSte && !isSteGaEligible;
+                    const isSelected = scpType === program.id;
+                    return (
+                      <div key={program.id}>
+                        <button
+                          type="button"
+                          disabled={isSteDisabled}
                           className={cn(
-                            "w-5 h-5 rounded-full border-2 flex items-center justify-center",
-                            scpType === program.id
-                              ? "border-white"
-                              : "border-muted-foreground",
-                          )}>
-                          {scpType === program.id && (
-                            <div className="w-2.5 h-2.5 rounded-full bg-white" />
+                            "w-full flex flex-col p-4 rounded-xl border-2 transition-all text-left",
+                            isSelected
+                              ? "border-primary bg-primary text-primary-foreground shadow-md"
+                              : isSteDisabled
+                                ? "border-border bg-muted/40 text-muted-foreground cursor-not-allowed opacity-70"
+                                : "border-border bg-white text-foreground hover:bg-primary/5",
                           )}
-                        </div>
-                        <span className="font-bold">
-                          {SCP_LABELS[program.id]}
-                        </span>
+                          onClick={() => {
+                            if (!isSteDisabled) {
+                              setValue("scpType", program.id, {
+                                shouldValidate: true,
+                              });
+                            }
+                          }}>
+                          <div className="flex items-center gap-3 mb-1">
+                            <div
+                              className={cn(
+                                "w-5 h-5 rounded-full border-2 flex items-center justify-center",
+                                isSelected
+                                  ? "border-white"
+                                  : "border-muted-foreground",
+                              )}>
+                              {isSelected && (
+                                <div className="w-2.5 h-2.5 rounded-full bg-white" />
+                              )}
+                            </div>
+                            <span className="font-bold">
+                              {SCP_LABELS[program.id]}
+                            </span>
+                            {isSteDisabled && (
+                              <span className="ml-auto inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[0.625rem] font-bold text-amber-700">
+                                Requires min GWA of {steGaThreshold}%
+                              </span>
+                            )}
+                          </div>
+                          <p
+                            className={cn(
+                              "text-xs pl-8 italic",
+                              isSelected
+                                ? "text-primary-foreground/80"
+                                : "text-foreground",
+                            )}>
+                            {program.description}
+                          </p>
+                        </button>
+
+                        {/* STE Progressive Disclosure: core subject grade inputs */}
+                        {isSte && isSelected && (
+                          <div className="mt-2 rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+                            <p className="text-xs font-bold uppercase text-primary">
+                              STE Core Subject Grades (Q1–Q3 Average)
+                            </p>
+                            <p className="text-xs text-foreground/70">
+                              All three must be{" "}
+                              <strong>85 or above</strong> for STE eligibility.
+                            </p>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                              {/* Science */}
+                              <div className="space-y-1">
+                                <Label
+                                  htmlFor="ste-science"
+                                  className="text-xs font-bold text-foreground">
+                                  Science Grade{" "}
+                                  <span className="text-destructive">*</span>
+                                </Label>
+                                <Input
+                                  id="ste-science"
+                                  type="text"
+                                  inputMode="decimal"
+                                  placeholder="e.g. 88.50"
+                                  value={inputScienceValue}
+                                  className={cn(
+                                    "h-10 font-bold bg-white",
+                                    (
+                                      errors.reportedGrades as Record<
+                                        string,
+                                        { message?: string }
+                                      >
+                                    )?.science && "border-destructive",
+                                  )}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (
+                                      val === "" ||
+                                      /^(\d+)?(\.\d{0,2})?$/.test(val)
+                                    ) {
+                                      const parsed =
+                                        val === "" ? null : parseFloat(val);
+                                      if (
+                                        parsed === null ||
+                                        (!isNaN(parsed) && parsed <= 100)
+                                      ) {
+                                        setValue(
+                                          "reportedGrades.science",
+                                          parsed === null
+                                            ? null
+                                            : Number(parsed.toFixed(2)),
+                                          { shouldValidate: true },
+                                        );
+                                        setInputScienceValue(val);
+                                      }
+                                    }
+                                  }}
+                                />
+                                {(
+                                  errors.reportedGrades as Record<
+                                    string,
+                                    { message?: string }
+                                  >
+                                )?.science?.message && (
+                                  <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                                    <AlertCircle className="w-3 h-3" />
+                                    {
+                                      (
+                                        errors.reportedGrades as Record<
+                                          string,
+                                          { message?: string }
+                                        >
+                                      ).science?.message
+                                    }
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* Mathematics */}
+                              <div className="space-y-1">
+                                <Label
+                                  htmlFor="ste-math"
+                                  className="text-xs font-bold text-foreground">
+                                  Mathematics Grade{" "}
+                                  <span className="text-destructive">*</span>
+                                </Label>
+                                <Input
+                                  id="ste-math"
+                                  type="text"
+                                  inputMode="decimal"
+                                  placeholder="e.g. 88.50"
+                                  value={inputMathValue}
+                                  className={cn(
+                                    "h-10 font-bold bg-white",
+                                    (
+                                      errors.reportedGrades as Record<
+                                        string,
+                                        { message?: string }
+                                      >
+                                    )?.mathematics && "border-destructive",
+                                  )}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (
+                                      val === "" ||
+                                      /^(\d+)?(\.\d{0,2})?$/.test(val)
+                                    ) {
+                                      const parsed =
+                                        val === "" ? null : parseFloat(val);
+                                      if (
+                                        parsed === null ||
+                                        (!isNaN(parsed) && parsed <= 100)
+                                      ) {
+                                        setValue(
+                                          "reportedGrades.mathematics",
+                                          parsed === null
+                                            ? null
+                                            : Number(parsed.toFixed(2)),
+                                          { shouldValidate: true },
+                                        );
+                                        setInputMathValue(val);
+                                      }
+                                    }
+                                  }}
+                                />
+                                {(
+                                  errors.reportedGrades as Record<
+                                    string,
+                                    { message?: string }
+                                  >
+                                )?.mathematics?.message && (
+                                  <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                                    <AlertCircle className="w-3 h-3" />
+                                    {
+                                      (
+                                        errors.reportedGrades as Record<
+                                          string,
+                                          { message?: string }
+                                        >
+                                      ).mathematics?.message
+                                    }
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* English */}
+                              <div className="space-y-1">
+                                <Label
+                                  htmlFor="ste-english"
+                                  className="text-xs font-bold text-foreground">
+                                  English Grade{" "}
+                                  <span className="text-destructive">*</span>
+                                </Label>
+                                <Input
+                                  id="ste-english"
+                                  type="text"
+                                  inputMode="decimal"
+                                  placeholder="e.g. 88.50"
+                                  value={inputEnglishValue}
+                                  className={cn(
+                                    "h-10 font-bold bg-white",
+                                    (
+                                      errors.reportedGrades as Record<
+                                        string,
+                                        { message?: string }
+                                      >
+                                    )?.english && "border-destructive",
+                                  )}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (
+                                      val === "" ||
+                                      /^(\d+)?(\.\d{0,2})?$/.test(val)
+                                    ) {
+                                      const parsed =
+                                        val === "" ? null : parseFloat(val);
+                                      if (
+                                        parsed === null ||
+                                        (!isNaN(parsed) && parsed <= 100)
+                                      ) {
+                                        setValue(
+                                          "reportedGrades.english",
+                                          parsed === null
+                                            ? null
+                                            : Number(parsed.toFixed(2)),
+                                          { shouldValidate: true },
+                                        );
+                                        setInputEnglishValue(val);
+                                      }
+                                    }
+                                  }}
+                                />
+                                {(
+                                  errors.reportedGrades as Record<
+                                    string,
+                                    { message?: string }
+                                  >
+                                )?.english?.message && (
+                                  <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                                    <AlertCircle className="w-3 h-3" />
+                                    {
+                                      (
+                                        errors.reportedGrades as Record<
+                                          string,
+                                          { message?: string }
+                                        >
+                                      ).english?.message
+                                    }
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <p
-                        className={cn(
-                          "text-xs pl-8 italic",
-                          scpType === program.id
-                            ? "text-primary-foreground/80"
-                            : "text-foreground",
-                        )}>
-                        {program.description}
-                      </p>
-                    </button>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {errors.scpType?.message && (
