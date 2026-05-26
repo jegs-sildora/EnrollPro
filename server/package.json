@@ -49,8 +49,16 @@
     "db:wipe-incoming-g7-ready-for-sectioning": "tsx prisma/seeds/wipe/wipe-incoming-g7-ready-for-sectioning.ts",
     "db:backfill-teacher-users": "tsx prisma/seeds/maintenance/backfill-teacher-users.ts",
     "db:backfill-learner-users": "tsx prisma/seeds/maintenance/backfill-learner-users.ts",
+    "db:backfill-missing-learner-data": "tsx prisma/seeds/maintenance/backfill-missing-learner-data.ts",
+    "db:backfill-teacher-specializations": "tsx prisma/seeds/maintenance/backfill-teacher-specializations.ts",
+    "db:restore-teacher-specializations": "tsx prisma/seeds/maintenance/restore-teacher-specializations.ts",
+    "db:dump-sy2026": "tsx prisma/seeds/maintenance/generate-sy2026-dump.ts",
+    "db:seed-sy2026": "tsx prisma/seeds/maintenance/seed-sy2026-2027.ts",
+    "db:backfill-section-homogeneous": "tsx prisma/seeds/maintenance/backfill-section-homogeneous.ts",
     "db:seed-discrepancy": "tsx prisma/seeds/01-global/seed-discrepancy.ts",
-    "db:seed-trim-excess": "tsx prisma/seeds/01-global/seed-trim-excess.ts"
+    "db:seed-trim-excess": "tsx prisma/seeds/01-global/seed-trim-excess.ts",
+    "db:seed-demo-g7": "tsx prisma/seeds/maintenance/seed-demo-g7-learners.ts",
+    "db:wipe-demo-g7": "tsx prisma/seeds/maintenance/wipe-demo-g7-learners.ts"
   },
   "dependencies": {
     "@enrollpro/shared": "workspace:*",

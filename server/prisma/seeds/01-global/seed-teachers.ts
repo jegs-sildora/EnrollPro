@@ -47,7 +47,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "FILIPINO",
     sex: "FEMALE",
     contactNumber: "0917-111-0001",
-    specialization: "BSEd Filipino",
+    specialization: "BSED FILIPINO",
   },
   {
     employeeId: "2000002",
@@ -58,7 +58,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "ENGLISH",
     sex: "MALE",
     contactNumber: "0917-111-0002",
-    specialization: "BSEd English - Applied Linguistics",
+    specialization: "MAJOR IN ENGLISH / APPLIED LINGUISTICS",
   },
   {
     employeeId: "2000003",
@@ -69,7 +69,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "MATHEMATICS",
     sex: "FEMALE",
     contactNumber: "0917-111-0003",
-    specialization: "BSEd Mathematics",
+    specialization: "BSED MATHEMATICS",
   },
   {
     employeeId: "2000004",
@@ -80,7 +80,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "SCIENCE",
     sex: "MALE",
     contactNumber: "0917-111-0004",
-    specialization: "BSEd General Science",
+    specialization: "BSED SCIENCE",
   },
   {
     employeeId: "2000005",
@@ -91,7 +91,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "ARALING PANLIPUNAN",
     sex: "FEMALE",
     contactNumber: "0917-111-0005",
-    specialization: "BSEd Social Studies",
+    specialization: "BSED SOCIAL STUDIES",
   },
   {
     employeeId: "2000006",
@@ -102,7 +102,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "MAPEH",
     sex: "MALE",
     contactNumber: "0917-111-0006",
-    specialization: "BPEd Physical Education",
+    specialization: "MAJOR IN PHYSICAL EDUCATION",
   },
   {
     employeeId: "2000007",
@@ -113,7 +113,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "VALUES EDUCATION",
     sex: "FEMALE",
     contactNumber: "0917-111-0007",
-    specialization: "BSEd Values Education",
+    specialization: "BSED VALUES EDUCATION",
   },
   {
     employeeId: "2000008",
@@ -124,7 +124,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "ICT",
     sex: "MALE",
     contactNumber: "0917-111-0008",
-    specialization: "BTVTEd Information and Communication Technology",
+    specialization: "MAJOR IN ICT",
   },
   {
     employeeId: "2000009",
@@ -135,7 +135,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "VALUES EDUCATION",
     sex: "FEMALE",
     contactNumber: "0917-111-0009",
-    specialization: "BSEd Guidance and Counseling",
+    specialization: "MAJOR IN EDUKASYON SA PAGPAPAKATAO",
   },
   {
     employeeId: "2000010",
@@ -146,7 +146,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "MATHEMATICS",
     sex: "FEMALE",
     contactNumber: "0917-111-0010",
-    specialization: "BSEd Mathematics - Statistics Focus",
+    specialization: "MAJOR IN MATHEMATICS (WITH STATISTICS BACKGROUND)",
   },
   {
     employeeId: "2000011",
@@ -157,7 +157,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "SCIENCE",
     sex: "MALE",
     contactNumber: "0917-111-0011",
-    specialization: "BSEd Biology",
+    specialization: "MAJOR IN BIOLOGY",
   },
   {
     employeeId: "2000012",
@@ -168,7 +168,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "ENGLISH",
     sex: "FEMALE",
     contactNumber: "0917-111-0012",
-    specialization: "BSEd English - Literature",
+    specialization: "MAJOR IN ENGLISH / APPLIED LINGUISTICS",
   },
   {
     employeeId: "2000013",
@@ -179,7 +179,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "FILIPINO",
     sex: "MALE",
     contactNumber: "0917-111-0013",
-    specialization: "BSEd Panitikan at Wika",
+    specialization: "MAJOR IN FILIPINO",
   },
   {
     employeeId: "2000014",
@@ -190,7 +190,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "ARALING PANLIPUNAN",
     sex: "FEMALE",
     contactNumber: "0917-111-0014",
-    specialization: "BSEd History",
+    specialization: "MAJOR IN SOCIAL STUDIES / HISTORY",
   },
   {
     employeeId: "2000015",
@@ -201,7 +201,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "MAPEH",
     sex: "FEMALE",
     contactNumber: "0917-111-0015",
-    specialization: "BCAEd Music Education",
+    specialization: "MAJOR IN MUSIC EDUCATION",
   },
   {
     employeeId: "2000016",
@@ -212,7 +212,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "VALUES EDUCATION",
     sex: "MALE",
     contactNumber: "0917-111-0016",
-    specialization: "BS Psychology - CPE Units",
+    specialization: "MAJOR IN VALUES EDUCATION",
   },
   {
     employeeId: "2000017",
@@ -223,7 +223,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "HOME ECONOMICS",
     sex: "FEMALE",
     contactNumber: "0917-111-0017",
-    specialization: "BTVTEd Home Economics",
+    specialization: "MAJOR IN HOME ECONOMICS",
   },
   {
     employeeId: "2000018",
@@ -234,7 +234,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "MATHEMATICS",
     sex: "MALE",
     contactNumber: "0917-111-0018",
-    specialization: "BS Mathematics - CPE Units",
+    specialization: "BSED MATHEMATICS",
   },
   {
     employeeId: "2000019",
@@ -245,7 +245,7 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "SCIENCE",
     sex: "FEMALE",
     contactNumber: "0917-111-0019",
-    specialization: "BSEd Physical Sciences",
+    specialization: "MAJOR IN GENERAL SCIENCE / BIOLOGY / CHEMISTRY / PHYSICS",
   },
   {
     employeeId: "2000020",
@@ -256,46 +256,288 @@ const ATLAS_FACULTY: Faculty[] = [
     subject: "ENGLISH",
     sex: "MALE",
     contactNumber: "0917-111-0020",
-    specialization: "AB Mass Communication - CPE Units",
+    specialization: "MASS COMMUNICATION",
   },
 ];
 
 const PH_FIRST_NAMES_MALE = [
-  "JUAN", "MIGUEL", "CARLO", "RAFAEL", "ANTONIO", "GABRIEL", "MATEO", "DIEGO", "EMMANUEL", "CHRISTIAN", 
-  "JOSHUA", "ANGELO", "RICARDO", "FERDINAND", "RODRIGO", "MANUEL", "BENIGNO", "ELPIDIO", "SERGIO", "DIOSDADO", 
-  "JOSEPH", "VICENTE", "ANDRES", "EMILIO", "APOLINARIO", "MARCELO", "GREGORIO", "JUANCHO", "ALBERTO", "RENATO", 
-  "EDUARDO", "ROBERTO", "FRANCISCO", "ARTHUR", "REYNALDO", "ROMEO", "RAMON", "JULIO", "CESAR", "ERNESTO", 
-  "FELIPE", "GUILLERMO", "HOMER", "IGNACIO", "JAIME", "LEONARDO", "MARIANO", "NESTOR", "ORLANDO", "PABLO", 
-  "QUINTIN", "ROLANDO", "SALVADOR", "TOMAS", "URBANO", "VICTOR", "WILFREDO", "XAVIER", "YURI", "ZACARIAS", 
-  "ALFONSO", "BERNARDO", "CORNELIO", "DOMINGO", "EFREN", "FIDEL", "GILBERTO"
+  "JUAN",
+  "MIGUEL",
+  "CARLO",
+  "RAFAEL",
+  "ANTONIO",
+  "GABRIEL",
+  "MATEO",
+  "DIEGO",
+  "EMMANUEL",
+  "CHRISTIAN",
+  "JOSHUA",
+  "ANGELO",
+  "RICARDO",
+  "FERDINAND",
+  "RODRIGO",
+  "MANUEL",
+  "BENIGNO",
+  "ELPIDIO",
+  "SERGIO",
+  "DIOSDADO",
+  "JOSEPH",
+  "VICENTE",
+  "ANDRES",
+  "EMILIO",
+  "APOLINARIO",
+  "MARCELO",
+  "GREGORIO",
+  "JUANCHO",
+  "ALBERTO",
+  "RENATO",
+  "EDUARDO",
+  "ROBERTO",
+  "FRANCISCO",
+  "ARTHUR",
+  "REYNALDO",
+  "ROMEO",
+  "RAMON",
+  "JULIO",
+  "CESAR",
+  "ERNESTO",
+  "FELIPE",
+  "GUILLERMO",
+  "HOMER",
+  "IGNACIO",
+  "JAIME",
+  "LEONARDO",
+  "MARIANO",
+  "NESTOR",
+  "ORLANDO",
+  "PABLO",
+  "QUINTIN",
+  "ROLANDO",
+  "SALVADOR",
+  "TOMAS",
+  "URBANO",
+  "VICTOR",
+  "WILFREDO",
+  "XAVIER",
+  "YURI",
+  "ZACARIAS",
+  "ALFONSO",
+  "BERNARDO",
+  "CORNELIO",
+  "DOMINGO",
+  "EFREN",
+  "FIDEL",
+  "GILBERTO",
 ];
 const PH_FIRST_NAMES_FEMALE = [
-  "ANGELICA", "PRINCESS", "JASMINE", "NICOLE", "GABRIELA", "SOFIA", "ISABELLA", "BEA", "CRISTINA", "PATRICIA", 
-  "ELENA", "ROSA", "TERESA", "IMELDA", "GLORIA", "REMEDIOS", "CARMELA", "JOSEFINA", "PERLA", "AURORA", 
-  "ESTRELLA", "CORAZON", "LOURDES", "CRISTETA", "FELICIDAD", "LEONOR", "MARIA", "CONCEPCION", "SALVACION", "PURISIMA",
-  "ANITA", "BELEN", "CARMEN", "DOLORES", "EVANGELINE", "FLORDELIZA", "GENOVEVA", "HELEN", "IRENE", "JULIETA", 
-  "KRISTINE", "LEONILA", "MILAGROS", "NATIVIDAD", "OFELIA", "PACITA", "QUINTINA", "ROSARIO", "SOCORRO", "TRINIDAD", 
-  "URSULA", "VIRGINIA", "WENDY", "XYZA", "YOLANDA", "ZENAIDA", "ALICIA", "BEATRIZ", "CATALINA", "DINAH", 
-  "EULALIA", "FLORENCIA"
+  "ANGELICA",
+  "PRINCESS",
+  "JASMINE",
+  "NICOLE",
+  "GABRIELA",
+  "SOFIA",
+  "ISABELLA",
+  "BEA",
+  "CRISTINA",
+  "PATRICIA",
+  "ELENA",
+  "ROSA",
+  "TERESA",
+  "IMELDA",
+  "GLORIA",
+  "REMEDIOS",
+  "CARMELA",
+  "JOSEFINA",
+  "PERLA",
+  "AURORA",
+  "ESTRELLA",
+  "CORAZON",
+  "LOURDES",
+  "CRISTETA",
+  "FELICIDAD",
+  "LEONOR",
+  "MARIA",
+  "CONCEPCION",
+  "SALVACION",
+  "PURISIMA",
+  "ANITA",
+  "BELEN",
+  "CARMEN",
+  "DOLORES",
+  "EVANGELINE",
+  "FLORDELIZA",
+  "GENOVEVA",
+  "HELEN",
+  "IRENE",
+  "JULIETA",
+  "KRISTINE",
+  "LEONILA",
+  "MILAGROS",
+  "NATIVIDAD",
+  "OFELIA",
+  "PACITA",
+  "QUINTINA",
+  "ROSARIO",
+  "SOCORRO",
+  "TRINIDAD",
+  "URSULA",
+  "VIRGINIA",
+  "WENDY",
+  "XYZA",
+  "YOLANDA",
+  "ZENAIDA",
+  "ALICIA",
+  "BEATRIZ",
+  "CATALINA",
+  "DINAH",
+  "EULALIA",
+  "FLORENCIA",
 ];
 const PH_LAST_NAMES = [
-  "FERNANDEZ", "NAVARRO", "GONZALES", "VILLANUEVA", "CRUZ", "PASCUAL", "AQUINO", "MARCOS", "DUTERTE", "ESTRADA", 
-  "ARROYO", "MAGSAYSAY", "QUIRINO", "OSMEÑA", "MACAPAGAL", "QUEZON", "MAGNO", "BALTAZAR", "SANTIAGO", "DE LEON", 
-  "CASTILLO", "SORIANO", "DEL ROSARIO", "VALDEZ", "RODRIGUEZ", "PANGANIBAN", "IBARRA", "LUNA", "SILANG",
-  "GARCIA", "MENDOZA", "REYES", "BAUTISTA", "TORRES", "RAMOS", "FLORES", "DOMINGO", "TOLENTINO", "DELA CRUZ", "SANTOS", 
-  "OCAMPO", "AGUILAR", "ALVAREZ", "BERNARDO", "CABRERA", "DIAZ", "EVANGELISTA", "FAJARDO", "GOMEZ", "HERNANDEZ", 
-  "IGNACIO", "JAVIER", "LACSON", "MALLARI", "NATIVIDAD", "ORTEGA", "PEREZ", "QUIAMBAO", "RIVERA", "SALAZAR", "TAYAG", 
-  "UMALI", "VERGARA", "YAP", "ZAMORA", "ALCANTARA", "BELTRAN", "CORTEZ", "DAVID", "ENRIQUEZ", "FRANCISCO", "GUTIERREZ", 
-  "ILAGAN", "JACINTO", "LAUREL", "MACALINTAL", "NICOLAS", "PADA", "QUINTO", "ROXAS", "SALVADOR", "TUASON", "URBANO", 
-  "VALENCIA", "YAMBAO", "ZARATE"
+  "FERNANDEZ",
+  "NAVARRO",
+  "GONZALES",
+  "VILLANUEVA",
+  "CRUZ",
+  "PASCUAL",
+  "AQUINO",
+  "MARCOS",
+  "DUTERTE",
+  "ESTRADA",
+  "ARROYO",
+  "MAGSAYSAY",
+  "QUIRINO",
+  "OSMEÑA",
+  "MACAPAGAL",
+  "QUEZON",
+  "MAGNO",
+  "BALTAZAR",
+  "SANTIAGO",
+  "DE LEON",
+  "CASTILLO",
+  "SORIANO",
+  "DEL ROSARIO",
+  "VALDEZ",
+  "RODRIGUEZ",
+  "PANGANIBAN",
+  "IBARRA",
+  "LUNA",
+  "SILANG",
+  "GARCIA",
+  "MENDOZA",
+  "REYES",
+  "BAUTISTA",
+  "TORRES",
+  "RAMOS",
+  "FLORES",
+  "DOMINGO",
+  "TOLENTINO",
+  "DELA CRUZ",
+  "SANTOS",
+  "OCAMPO",
+  "AGUILAR",
+  "ALVAREZ",
+  "BERNARDO",
+  "CABRERA",
+  "DIAZ",
+  "EVANGELISTA",
+  "FAJARDO",
+  "GOMEZ",
+  "HERNANDEZ",
+  "IGNACIO",
+  "JAVIER",
+  "LACSON",
+  "MALLARI",
+  "NATIVIDAD",
+  "ORTEGA",
+  "PEREZ",
+  "QUIAMBAO",
+  "RIVERA",
+  "SALAZAR",
+  "TAYAG",
+  "UMALI",
+  "VERGARA",
+  "YAP",
+  "ZAMORA",
+  "ALCANTARA",
+  "BELTRAN",
+  "CORTEZ",
+  "DAVID",
+  "ENRIQUEZ",
+  "FRANCISCO",
+  "GUTIERREZ",
+  "ILAGAN",
+  "JACINTO",
+  "LAUREL",
+  "MACALINTAL",
+  "NICOLAS",
+  "PADA",
+  "QUINTO",
+  "ROXAS",
+  "SALVADOR",
+  "TUASON",
+  "URBANO",
+  "VALENCIA",
+  "YAMBAO",
+  "ZARATE",
 ];
 const PH_MIDDLE_NAMES = [
-  "SANTIAGO", "DE LEON", "BALTAZAR", "CASTILLO", "SORIANO", "DEL ROSARIO", "VALDEZ", "RODRIGUEZ", "PANGANIBAN", 
-  "IBARRA", "LUNA", "SILANG", "AGONCILLO", "MAGBANUA", "TECSON", "LLANES", "ESCODA", "VILLA", "GUERRERO", "HERNANDEZ", 
-  "TOLENTINO", "ABELLA", "GARCIA", "MENDOZA", "REYES", "BAUTISTA", "TORRES", "RAMOS", "FLORES", "DOMINGO", 
-  "DELA CRUZ", "SANTOS", "OCAMPO", "AGUILAR", "ALVAREZ", "BERNARDO", "CABRERA", "DIAZ", "EVANGELISTA", "FAJARDO", 
-  "GOMEZ", "IGNACIO", "JAVIER", "LACSON", "MALLARI", "NATIVIDAD", "ORTEGA", "PEREZ", "QUIAMBAO", "RIVERA", "SALAZAR", 
-  "TAYAG", "UMALI", "VERGARA", "YAP", "ZAMORA"
+  "SANTIAGO",
+  "DE LEON",
+  "BALTAZAR",
+  "CASTILLO",
+  "SORIANO",
+  "DEL ROSARIO",
+  "VALDEZ",
+  "RODRIGUEZ",
+  "PANGANIBAN",
+  "IBARRA",
+  "LUNA",
+  "SILANG",
+  "AGONCILLO",
+  "MAGBANUA",
+  "TECSON",
+  "LLANES",
+  "ESCODA",
+  "VILLA",
+  "GUERRERO",
+  "HERNANDEZ",
+  "TOLENTINO",
+  "ABELLA",
+  "GARCIA",
+  "MENDOZA",
+  "REYES",
+  "BAUTISTA",
+  "TORRES",
+  "RAMOS",
+  "FLORES",
+  "DOMINGO",
+  "DELA CRUZ",
+  "SANTOS",
+  "OCAMPO",
+  "AGUILAR",
+  "ALVAREZ",
+  "BERNARDO",
+  "CABRERA",
+  "DIAZ",
+  "EVANGELISTA",
+  "FAJARDO",
+  "GOMEZ",
+  "IGNACIO",
+  "JAVIER",
+  "LACSON",
+  "MALLARI",
+  "NATIVIDAD",
+  "ORTEGA",
+  "PEREZ",
+  "QUIAMBAO",
+  "RIVERA",
+  "SALAZAR",
+  "TAYAG",
+  "UMALI",
+  "VERGARA",
+  "YAP",
+  "ZAMORA",
 ];
 
 // Global unique name registry
@@ -303,14 +545,16 @@ const GLOBAL_USED_EMAIL_KEYS = new Set<string>();
 const GLOBAL_USED_FULL_NAMES = new Set<string>();
 
 for (const f of ATLAS_FACULTY) {
-  const fullNameKey = `${f.firstName}|${f.lastName}|${f.middleName ?? ""}`.toUpperCase();
+  const fullNameKey =
+    `${f.firstName}|${f.lastName}|${f.middleName ?? ""}`.toUpperCase();
   const emailKey = `${f.firstName.toLowerCase().replace(/\s/g, "")}.${f.lastName.toLowerCase().replace(/\s/g, "")}`;
   GLOBAL_USED_FULL_NAMES.add(fullNameKey);
   GLOBAL_USED_EMAIL_KEYS.add(emailKey);
 }
 
 function generateUniqueName(seed: number, sex: Sex) {
-  const firstNames = sex === "MALE" ? PH_FIRST_NAMES_MALE : PH_FIRST_NAMES_FEMALE;
+  const firstNames =
+    sex === "MALE" ? PH_FIRST_NAMES_MALE : PH_FIRST_NAMES_FEMALE;
   let attempts = 0;
   while (true) {
     const fnIdx = (seed + attempts * 13) % firstNames.length;
@@ -320,11 +564,14 @@ function generateUniqueName(seed: number, sex: Sex) {
     const firstName = firstNames[fnIdx];
     const lastName = PH_LAST_NAMES[lnIdx];
     const middleName = PH_MIDDLE_NAMES[mnIdx];
-    
+
     const fullNameKey = `${firstName}|${lastName}|${middleName}`.toUpperCase();
     const emailKey = `${firstName.toLowerCase().replace(/\s/g, "")}.${lastName.toLowerCase().replace(/\s/g, "")}`;
 
-    if (!GLOBAL_USED_FULL_NAMES.has(fullNameKey) && !GLOBAL_USED_EMAIL_KEYS.has(emailKey)) {
+    if (
+      !GLOBAL_USED_FULL_NAMES.has(fullNameKey) &&
+      !GLOBAL_USED_EMAIL_KEYS.has(emailKey)
+    ) {
       GLOBAL_USED_FULL_NAMES.add(fullNameKey);
       GLOBAL_USED_EMAIL_KEYS.add(emailKey);
       return { firstName, lastName, middleName };
@@ -340,73 +587,81 @@ const DEPARTMENT_DATA: Record<
   ENG: {
     subject: "ENGLISH",
     specializations: [
-      "BSEd English",
-      "BSEd English - Applied Linguistics",
-      "BSEd English - Literature",
-      "AB Mass Communication - CPE Units",
-      "BSEd English - Campus Journalism",
+      "BSED ENGLISH",
+      "MAJOR IN ENGLISH / APPLIED LINGUISTICS",
+      "MASS COMMUNICATION",
+      "JOURNALISM",
+      "MAJOR IN ENGLISH (CAMPUS JOURNALISM)",
     ],
   },
   MATH: {
     subject: "MATHEMATICS",
     specializations: [
-      "BSEd Mathematics",
-      "BSEd Mathematics - Statistics Focus",
-      "BS Mathematics - CPE Units",
-      "BS Accountancy - CPE Units",
+      "BSED MATHEMATICS",
+      "MAJOR IN MATHEMATICS",
+      "MAJOR IN MATHEMATICS (WITH STATISTICS BACKGROUND)",
     ],
   },
   SCI: {
     subject: "SCIENCE",
     specializations: [
-      "BSEd General Science",
-      "BSEd Biology",
-      "BSEd Physical Sciences",
-      "BSEd Chemistry",
-      "BS Nursing - CPE Units",
+      "BSED SCIENCE",
+      "MAJOR IN GENERAL SCIENCE / BIOLOGY / CHEMISTRY / PHYSICS",
+      "MAJOR IN PHYSICS",
+      "MAJOR IN CHEMISTRY",
+      "MAJOR IN BIOLOGY",
     ],
   },
   FIL: {
     subject: "FILIPINO",
     specializations: [
-      "BSEd Filipino",
-      "BSEd Panitikan at Wika",
-      "BSEd Filipino - Campus Journalism",
+      "BSED FILIPINO",
+      "MAJOR IN FILIPINO",
+      "MAJOR IN FILIPINO (CAMPUS JOURNALISM)",
+      "LINGUISTICS",
     ],
   },
   AP: {
     subject: "ARALING PANLIPUNAN",
     specializations: [
-      "BSEd Social Studies",
-      "BSEd History",
-      "AB Political Science - CPE Units",
+      "BSED SOCIAL STUDIES",
+      "MAJOR IN SOCIAL STUDIES / HISTORY",
+      "MAJOR IN ARALING PANLIPUNAN",
     ],
   },
   MAPEH: {
     subject: "MAPEH",
     specializations: [
-      "BSEd MAPEH",
-      "BPEd Physical Education",
-      "BCAEd Culture and Arts Education",
-      "BPEd Sports Coaching",
+      "BSED MAPEH",
+      "MAJOR IN MAPEH",
+      "MAJOR IN MUSIC EDUCATION",
+      "MAJOR IN PHYSICAL EDUCATION",
+      "MAJOR IN HEALTH EDUCATION",
+      "FINE ARTS",
+      "THEATER / PERFORMING ARTS",
+      "DANCE",
     ],
   },
   TLE: {
     subject: "TLE",
     specializations: [
-      "BSEd Technology and Livelihood Education",
-      "BTVTEd Home Economics",
-      "BTVTEd Industrial Arts",
-      "BTVTEd Agri-Fishery Arts",
-      "BTVTEd Information and Communication Technology",
+      "BSED TLE",
+      "BTVTED / TVL",
+      "MAJOR IN HOME ECONOMICS",
+      "MAJOR IN INDUSTRIAL ARTS",
+      "MAJOR IN ICT",
+      "MAJOR IN ELECTRICAL INSTALLATION AND MAINTENANCE",
+      "MAJOR IN COOKERY / FOOD AND BEVERAGE SERVICES",
+      "MAJOR IN DRESSMAKING / GARMENTS",
+      "MAJOR IN COMPUTER SYSTEMS SERVICING",
     ],
   },
   ESP: {
     subject: "VALUES EDUCATION",
     specializations: [
-      "BSEd Values Education",
-      "BSEd Guidance and Counseling",
-      "BS Psychology - CPE Units",
+      "BSED VALUES EDUCATION",
+      "MAJOR IN VALUES EDUCATION",
+      "MAJOR IN EDUKASYON SA PAGPAPAKATAO",
     ],
   },
 };
@@ -433,30 +688,30 @@ const PLANTILLA_SEQUENCE: string[] = [
 // Special Curricular Program (SCP) Adviser Pools
 // Adjusted to reflect exact DepEd Specializations
 const STE_ADVISER_SPECIALIZATIONS = [
-  "BSEd General Science",
-  "BSEd Biology",
-  "BSEd Physical Sciences",
-  "BSEd Chemistry",
-  "BS Physics - CPE Units",
-  "BS Environmental Science - CPE Units",
+  "BSED SCIENCE",
+  "MAJOR IN GENERAL SCIENCE / BIOLOGY / CHEMISTRY / PHYSICS",
+  "MAJOR IN BIOLOGY",
+  "MAJOR IN CHEMISTRY",
+  "MAJOR IN PHYSICS",
+  "MAJOR IN GENERAL SCIENCE / BIOLOGY / CHEMISTRY / PHYSICS",
 ];
 
 const SPA_ARTS_ADVISER_SPECIALIZATIONS = [
-  "BCAEd Music Education",
-  "BCAEd Visual Arts",
-  "BCAEd Theater Arts",
-  "BCAEd Dance Education",
-  "BCAEd Media Arts",
-  "AB Literature - CPE Units (Creative Writing)",
+  "MAJOR IN MUSIC EDUCATION",
+  "FINE ARTS",
+  "THEATER / PERFORMING ARTS",
+  "DANCE",
+  "LITERATURE / CREATIVE WRITING",
+  "BSED MAPEH",
 ];
 
 const SPS_ADVISER_SPECIALIZATIONS = [
-  "BPEd Sports Coaching",
-  "BPEd Athletics Focus",
-  "BPEd Racket Sports",
-  "BPEd Combative Sports",
-  "BPEd Team Sports",
-  "BS Sports Science - CPE Units",
+  "MAJOR IN PHYSICAL EDUCATION",
+  "SPORTS SCIENCE",
+  "CERTIFIED SPECIALIST COACH",
+  "MAJOR IN PHYSICAL EDUCATION",
+  "SPORTS SCIENCE",
+  "CERTIFIED SPECIALIST COACH",
 ];
 
 function buildFacultyTemplate(params: {
@@ -468,7 +723,10 @@ function buildFacultyTemplate(params: {
   assignmentTarget?: TeacherAssignmentTarget;
 }): Faculty {
   const sex: Sex = params.seedIndex % 2 === 0 ? "FEMALE" : "MALE";
-  const { firstName, lastName, middleName } = generateUniqueName(params.seedIndex, sex);
+  const { firstName, lastName, middleName } = generateUniqueName(
+    params.seedIndex,
+    sex,
+  );
 
   return {
     employeeId: params.employeeId,
@@ -552,7 +810,7 @@ async function main() {
   }
 
   const departments = await prisma.department.findMany();
-  
+
   const sectionsByYear = new Map<number, any>();
   for (const schoolYear of allSchoolYears) {
     const yearSections = await prisma.section.findMany({
@@ -608,7 +866,9 @@ async function main() {
     }
   });
 
-  console.log("🧩 Building deterministic name roster matching exact department counts...");
+  console.log(
+    "🧩 Building deterministic name roster matching exact department counts...",
+  );
 
   const currentCounts: Record<string, number> = {};
   for (const f of teachersToSeed) {
@@ -619,16 +879,24 @@ async function main() {
   for (const [deptCode, target] of Object.entries(TARGET_DEPT_COUNTS)) {
     const current = currentCounts[deptCode] || 0;
     const needed = target - current;
-    
+
     if (needed > 0) {
-      const deptInfo = DEPARTMENT_DATA[deptCode as keyof typeof DEPARTMENT_DATA];
-      const specializationPool = deptCode === "TLE" ? dynamicTleSpecializations : deptInfo.specializations;
-      
+      const deptInfo =
+        DEPARTMENT_DATA[deptCode as keyof typeof DEPARTMENT_DATA];
+      const specializationPool =
+        deptCode === "TLE"
+          ? dynamicTleSpecializations
+          : deptInfo.specializations;
+
       for (let i = 0; i < needed; i++) {
         const sex: Sex = localIdx % 2 === 0 ? "FEMALE" : "MALE";
-        const { firstName, lastName, middleName } = generateUniqueName(1000 + localIdx, sex);
+        const { firstName, lastName, middleName } = generateUniqueName(
+          1000 + localIdx,
+          sex,
+        );
 
-        const specialization = specializationPool[localIdx % specializationPool.length];
+        const specialization =
+          specializationPool[localIdx % specializationPool.length];
         const employeeId = (2000020 + localIdx + 1).toString();
         const contactNumber = `0917-${String(200 + localIdx).padStart(3, "0")}-${String(1000 + localIdx).padStart(4, "0")}`;
 
@@ -646,14 +914,22 @@ async function main() {
         localIdx++;
       }
     } else if (needed < 0) {
-      console.warn(`  ⚠️ Already have more ${deptCode} teachers than target (${current} > ${target}). Skipping generation.`);
+      console.warn(
+        `  ⚠️ Already have more ${deptCode} teachers than target (${current} > ${target}). Skipping generation.`,
+      );
     }
   }
 
   const usedEmployeeIds = new Set<string>();
-  const existingUsersForIds = await prisma.user.findMany({ select: { employeeId: true } });
-  existingUsersForIds.forEach((u) => { if (u.employeeId) usedEmployeeIds.add(u.employeeId); });
-  const existingTeachersForIds = await prisma.teacher.findMany({ select: { employeeId: true } });
+  const existingUsersForIds = await prisma.user.findMany({
+    select: { employeeId: true },
+  });
+  existingUsersForIds.forEach((u) => {
+    if (u.employeeId) usedEmployeeIds.add(u.employeeId);
+  });
+  const existingTeachersForIds = await prisma.teacher.findMany({
+    select: { employeeId: true },
+  });
   existingTeachersForIds.forEach((t) => usedEmployeeIds.add(t.employeeId));
 
   for (const f of teachersToSeed) {
@@ -684,7 +960,8 @@ async function main() {
     const cleanLast = lastNameUpper.toLowerCase().replace(/\s/g, "");
     const email = `${cleanFirst}.${cleanLast}@deped.edu.ph`;
 
-    const dept = departments.find((d) => d.code === faculty.deptCode) || departments[0];
+    const dept =
+      departments.find((d) => d.code === faculty.deptCode) || departments[0];
     const assignmentTarget = faculty.assignmentTarget ?? null;
     const regularSectionIndex =
       assignmentTarget || regularSectionCursor >= demoYearRegularSections.length
@@ -700,10 +977,13 @@ async function main() {
     const resolveAdvisorySectionId = (schoolYearId: number) => {
       const yearSections = sectionsByYear.get(schoolYearId) || [];
       const regularSections = yearSections.filter(
-        (section: any) => section.programType === "REGULAR" || section.programType === "BASIC_EDUCATION_CURRICULUM",
+        (section: any) =>
+          section.programType === "REGULAR" ||
+          section.programType === "BASIC_EDUCATION_CURRICULUM",
       );
       const steSections = yearSections.filter(
-        (section: any) => section.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+        (section: any) =>
+          section.programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
       );
       const spaSections = yearSections.filter(
         (section: any) => section.programType === "SPECIAL_PROGRAM_IN_THE_ARTS",
@@ -714,22 +994,31 @@ async function main() {
 
       if (!assignmentTarget) {
         return regularSectionIndex !== null
-          ? regularSections[regularSectionIndex]?.id ?? null
+          ? (regularSections[regularSectionIndex]?.id ?? null)
           : null;
       }
 
-      // Safe index access utilizing modulo to loop through available sections 
+      // Safe index access utilizing modulo to loop through available sections
       // if the teacher pool index exceeds the number of actual SCP sections.
       if (assignmentTarget.kind === "STE" && steSections.length > 0) {
-        return steSections[assignmentTarget.poolIndex % steSections.length]?.id ?? null;
+        return (
+          steSections[assignmentTarget.poolIndex % steSections.length]?.id ??
+          null
+        );
       }
 
       if (assignmentTarget.kind === "SPA_ARTS" && spaSections.length > 0) {
-        return spaSections[assignmentTarget.poolIndex % spaSections.length]?.id ?? null;
+        return (
+          spaSections[assignmentTarget.poolIndex % spaSections.length]?.id ??
+          null
+        );
       }
 
       if (assignmentTarget.kind === "SPS_SPORTS" && spsSections.length > 0) {
-        return spsSections[assignmentTarget.poolIndex % spsSections.length]?.id ?? null;
+        return (
+          spsSections[assignmentTarget.poolIndex % spsSections.length]?.id ??
+          null
+        );
       }
 
       return null;
@@ -876,12 +1165,18 @@ async function main() {
     }
 
     if ((i + 1) % 20 === 0 || i === teachersToSeed.length - 1) {
-      console.log(`  📊 Progress: ${i + 1}/${teachersToSeed.length} Faculty members fully provisioned.`);
+      console.log(
+        `  📊 Progress: ${i + 1}/${teachersToSeed.length} Faculty members fully provisioned.`,
+      );
     }
   }
 
-  console.log(`\n🎉 Successfully scaled and synced ${teachersToSeed.length} UNIQUE teachers.`);
-  console.log(`✅ No repeating names or numbers in emails. Employee IDs are 7-digit numeric.`);
+  console.log(
+    `\n🎉 Successfully scaled and synced ${teachersToSeed.length} UNIQUE teachers.`,
+  );
+  console.log(
+    `✅ No repeating names or numbers in emails. Employee IDs are 7-digit numeric.`,
+  );
   console.log(`🔑 Demo Login Password for all teachers: DepEd2026!`);
 }
 

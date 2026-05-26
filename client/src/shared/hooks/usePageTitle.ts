@@ -41,6 +41,7 @@ function resolvePageTitle(pathname: string, search: string): string | null {
     "/monitoring/enrollment": "Enrollment Monitoring",
     "/students": "Learner Directory",
     "/sections": "Sections",
+    "/sections/homerooms": "Homeroom Sections",
     "/audit-logs": "Audit Logs",
     "/settings": "Settings",
     "/teachers": "Teacher Directory",

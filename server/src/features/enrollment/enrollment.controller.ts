@@ -343,7 +343,7 @@ export async function syncSmartGrades(req: Request, res: Response) {
  * Intake Desk Tab 3 — Finalizes a learner's physical document confirmation:
  *  - Saves height (cm) and weight (kg)
  *  - Verifies the physical document checklist
- *  - Advances status from PENDING_INTAKE_CONFIRMATION → READY_FOR_SECTIONING
+ *  - Advances status from PENDING_CONFIRMATION → READY_FOR_SECTIONING
  *  - Fires Notification Event A (Intake Receipt Confirmation)
  */
 export async function finalizeIntake(req: Request, res: Response) {
@@ -372,7 +372,13 @@ export async function finalizeIntake(req: Request, res: Response) {
       schoolYear: { select: { yearLabel: true } },
       gradeLevel: { select: { name: true } },
       familyMembers: {
-        select: { relationship: true, firstName: true, lastName: true, contactNumber: true, email: true },
+        select: {
+          relationship: true,
+          firstName: true,
+          lastName: true,
+          contactNumber: true,
+          email: true,
+        },
       },
     },
   });
@@ -381,11 +387,11 @@ export async function finalizeIntake(req: Request, res: Response) {
     throw new AppError(404, "Enrollment application not found.");
   }
 
-  if (application.status !== "PENDING_INTAKE_CONFIRMATION") {
+  if (application.status !== "PENDING_CONFIRMATION") {
     throw new AppError(
       409,
       `Application is in status '${application.status}'. ` +
-        `Only PENDING_INTAKE_CONFIRMATION applications can be finalized at intake.`,
+        `Only PENDING_CONFIRMATION applications can be finalized at intake.`,
     );
   }
 
@@ -428,7 +434,10 @@ export async function finalizeIntake(req: Request, res: Response) {
 
   // Resolve guardian contact info for notification
   const guardian = application.familyMembers.find(
-    (m) => m.relationship === "GUARDIAN" || m.relationship === "MOTHER" || m.relationship === "FATHER",
+    (m) =>
+      m.relationship === "GUARDIAN" ||
+      m.relationship === "MOTHER" ||
+      m.relationship === "FATHER",
   );
 
   // Fire-and-forget: Notification Event A
@@ -436,12 +445,16 @@ export async function finalizeIntake(req: Request, res: Response) {
     applicationId,
     learnerName: `${application.learner.firstName} ${application.learner.lastName}`,
     lrn: application.learner.lrn ?? null,
-    guardianName: guardian ? `${guardian.firstName} ${guardian.lastName}` : application.guardianName ?? null,
+    guardianName: guardian
+      ? `${guardian.firstName} ${guardian.lastName}`
+      : (application.guardianName ?? null),
     contactNumber: guardian?.contactNumber ?? application.contactNumber ?? null,
     email: guardian?.email ?? null,
     schoolYearLabel: application.schoolYear.yearLabel,
     finalizedAt: new Date().toISOString(),
-  }).catch((err: unknown) => console.error("[Notification Event A Error]:", err));
+  }).catch((err: unknown) =>
+    console.error("[Notification Event A Error]:", err),
+  );
 
   return res.json({
     success: true,
@@ -450,4 +463,3 @@ export async function finalizeIntake(req: Request, res: Response) {
     newStatus: "READY_FOR_SECTIONING",
   });
 }
-
