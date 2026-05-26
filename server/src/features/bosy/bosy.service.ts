@@ -17,6 +17,34 @@ export interface BOSYReadiness {
   enrolledCount: number;
   jhsCompleterCount: number;
   droppedCount: number;
+  // Phase 2 BEEF intake counts
+  scpPriorityCount: number;
+  onlineBeefCount: number;
+  walkInBeefCount: number;
+  pendingBeefCount: number;
+}
+
+export interface Phase2QueueItem {
+  applicationId: number;
+  trackingNumber: string | null;
+  status: string;
+  admissionChannel: string;
+  applicantType: string;
+  learnerType: string;
+  learnerId: number;
+  lrn: string | null;
+  firstName: string;
+  lastName: string;
+  middleName: string | null;
+  gradeLevelId: number;
+  gradeLevelName: string;
+}
+
+export interface Phase2QueuePage {
+  items: Phase2QueueItem[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 export interface BOSYQueueItem {
@@ -129,6 +157,10 @@ export async function getBOSYReadiness(
     enrolledCount,
     jhsCompleterCount,
     droppedCount,
+    scpPriorityCount,
+    onlineBeefCount,
+    walkInBeefCount,
+    pendingBeefCount,
   ] = await Promise.all([
     prisma.enrollmentRecord.count({
       where: { schoolYearId, eosyStatus: "CONDITIONALLY_PROMOTED" },
@@ -164,6 +196,30 @@ export async function getBOSYReadiness(
         status: { in: ["DROPPED", "TRANSFERRED_OUT", "TRANSFERRING_OUT"] },
       },
     }),
+    // Phase 2: SCP Priority (passed screening, returning for physical BEEF)
+    prisma.enrollmentApplication.count({
+      where: { schoolYearId, status: "READY_FOR_ENROLLMENT" },
+    }),
+    // Phase 2: Online Digital BEEF (submitted via Learner Portal)
+    prisma.enrollmentApplication.count({
+      where: {
+        schoolYearId,
+        status: "SUBMITTED_BEEF",
+        admissionChannel: "ONLINE",
+      },
+    }),
+    // Phase 2: Walk-In BEEF (encoded F2F on site)
+    prisma.enrollmentApplication.count({
+      where: {
+        schoolYearId,
+        status: "SUBMITTED_BEEF",
+        admissionChannel: "F2F",
+      },
+    }),
+    // Phase 2: Pending / Incomplete (docs missing after BEEF submission)
+    prisma.enrollmentApplication.count({
+      where: { schoolYearId, status: "PENDING_BEEF" },
+    }),
   ]);
 
   return {
@@ -176,6 +232,10 @@ export async function getBOSYReadiness(
     enrolledCount,
     jhsCompleterCount,
     droppedCount,
+    scpPriorityCount,
+    onlineBeefCount,
+    walkInBeefCount,
+    pendingBeefCount,
   };
 }
 
@@ -696,4 +756,400 @@ export async function getJHSCompleters(params: {
   return { items, total, page, limit };
 }
 
+export async function getPhase2Queue(params: {
+  schoolYearId: number;
+  status: string | string[];
+  admissionChannel?: "ONLINE" | "F2F";
+  search?: string;
+  page: number;
+  limit: number;
+}): Promise<Phase2QueuePage> {
+  const { schoolYearId, status, admissionChannel, search, page, limit } = params;
+  const skip = (page - 1) * limit;
+  const statuses = (Array.isArray(status) ? status : [status]) as ApplicationStatus[];
 
+  const where: any = {
+    schoolYearId,
+    status: { in: statuses },
+    ...(admissionChannel ? { admissionChannel } : {}),
+    ...(search
+      ? search.includes(",")
+        ? {
+            learner: {
+              AND: [
+                {
+                  lastName: {
+                    contains: search.split(",")[0].trim(),
+                    mode: "insensitive" as const,
+                  },
+                },
+                {
+                  firstName: {
+                    contains: (search.split(",")[1] || "").trim(),
+                    mode: "insensitive" as const,
+                  },
+                },
+              ],
+            },
+          }
+        : {
+            learner: {
+              OR: [
+                { firstName: { contains: search, mode: "insensitive" as const } },
+                { lastName: { contains: search, mode: "insensitive" as const } },
+                { lrn: { contains: search, mode: "insensitive" as const } },
+              ],
+            },
+          }
+      : {}),
+  };
+
+  const [raw, total] = await Promise.all([
+    prisma.enrollmentApplication.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: [{ learner: { lastName: "asc" } }, { learner: { firstName: "asc" } }],
+      select: {
+        id: true,
+        trackingNumber: true,
+        status: true,
+        admissionChannel: true,
+        applicantType: true,
+        learnerType: true,
+        readingProfileLevel: true,
+        learner: {
+          select: { id: true, lrn: true, firstName: true, lastName: true, middleName: true },
+        },
+        gradeLevel: { select: { id: true, name: true } },
+      },
+    }),
+    prisma.enrollmentApplication.count({ where }),
+  ]);
+
+  const items: Phase2QueueItem[] = raw.map((a) => ({
+    applicationId: a.id,
+    trackingNumber: a.trackingNumber,
+    status: a.status,
+    admissionChannel: a.admissionChannel,
+    applicantType: a.applicantType,
+    learnerType: a.learnerType,
+    readingProfileLevel: a.readingProfileLevel ?? null,
+    learnerId: a.learner.id,
+    lrn: a.learner.lrn,
+    firstName: a.learner.firstName,
+    lastName: a.learner.lastName,
+    middleName: a.learner.middleName,
+    gradeLevelId: a.gradeLevel.id,
+    gradeLevelName: a.gradeLevel.name,
+  }));
+
+  return { items, total, page, limit };
+}
+
+export async function confirmScpSlot(
+  applicationId: number,
+  actingUserId: number,
+  pendingDocs: boolean,
+): Promise<{ applicationId: number; status: string }> {
+  const application = await prisma.enrollmentApplication.findUnique({
+    where: { id: applicationId },
+    select: { id: true, status: true, readingProfileLevel: true },
+  });
+
+  if (!application) {
+    throw Object.assign(new Error("Application not found."), { status: 404 });
+  }
+
+  if (!application.readingProfileLevel) {
+    throw Object.assign(
+      new Error(
+        "Phil-IRI assessment must be completed before confirming this application.",
+      ),
+      { status: 422 },
+    );
+  }
+
+  if (
+    application.status !== "READY_FOR_ENROLLMENT" &&
+    application.status !== "SUBMITTED_BEEF"
+  ) {
+    throw Object.assign(
+      new Error(
+        `Application status "${application.status}" is not eligible for SCP slot confirmation.`,
+      ),
+      { status: 422 },
+    );
+  }
+
+  const targetStatus: ApplicationStatus = pendingDocs ? "PENDING_BEEF" : "READY_FOR_SECTIONING";
+
+  const updated = await prisma.enrollmentApplication.update({
+    where: { id: applicationId },
+    data: { status: targetStatus, encodedById: actingUserId },
+    select: { id: true, status: true },
+  });
+
+  return { applicationId: updated.id, status: updated.status };
+}
+
+export async function verifyBeef(
+  applicationId: number,
+  actingUserId: number,
+): Promise<{ applicationId: number; status: string }> {
+  const application = await prisma.enrollmentApplication.findUnique({
+    where: { id: applicationId },
+    select: { id: true, status: true, readingProfileLevel: true },
+  });
+
+  if (!application) {
+    throw Object.assign(new Error("Application not found."), { status: 404 });
+  }
+
+  if (!application.readingProfileLevel) {
+    throw Object.assign(
+      new Error(
+        "Phil-IRI assessment must be completed before verifying this BEEF.",
+      ),
+      { status: 422 },
+    );
+  }
+
+  if (application.status !== "SUBMITTED_BEEF") {
+    throw Object.assign(
+      new Error(
+        `Expected status "SUBMITTED_BEEF", got "${application.status}".`,
+      ),
+      { status: 422 },
+    );
+  }
+
+  const updated = await prisma.enrollmentApplication.update({
+    where: { id: applicationId },
+    data: { status: "READY_FOR_SECTIONING", encodedById: actingUserId },
+    select: { id: true, status: true },
+  });
+
+  return { applicationId: updated.id, status: updated.status };
+}
+
+export async function routeToScpScreening(
+  applicationId: number,
+  actingUserId: number,
+): Promise<{ applicationId: number; status: string }> {
+  const application = await prisma.enrollmentApplication.findUnique({
+    where: { id: applicationId },
+    select: { id: true, status: true },
+  });
+
+  if (!application) {
+    throw Object.assign(new Error("Application not found."), { status: 404 });
+  }
+
+  if (application.status !== "SUBMITTED_BEEF") {
+    throw Object.assign(
+      new Error(
+        `Expected status "SUBMITTED_BEEF", got "${application.status}".`,
+      ),
+      { status: 422 },
+    );
+  }
+
+  const updated = await prisma.enrollmentApplication.update({
+    where: { id: applicationId },
+    data: { status: "UNDER_REVIEW", encodedById: actingUserId },
+    select: { id: true, status: true },
+  });
+
+  return { applicationId: updated.id, status: updated.status };
+}
+
+export async function markBeefPending(
+  applicationId: number,
+  actingUserId: number,
+): Promise<{ applicationId: number; status: string }> {
+  const application = await prisma.enrollmentApplication.findUnique({
+    where: { id: applicationId },
+    select: { id: true, status: true },
+  });
+
+  if (!application) {
+    throw Object.assign(new Error("Application not found."), { status: 404 });
+  }
+
+  if (application.status !== "SUBMITTED_BEEF") {
+    throw Object.assign(
+      new Error(
+        `Expected status "SUBMITTED_BEEF", got "${application.status}".`,
+      ),
+      { status: 422 },
+    );
+  }
+
+  const updated = await prisma.enrollmentApplication.update({
+    where: { id: applicationId },
+    data: { status: "PENDING_BEEF", encodedById: actingUserId },
+    select: { id: true, status: true },
+  });
+
+  return { applicationId: updated.id, status: updated.status };
+}
+
+export async function resolveAndConfirmBeef(
+  applicationId: number,
+  actingUserId: number,
+): Promise<{ applicationId: number; status: string }> {
+  const application = await prisma.enrollmentApplication.findUnique({
+    where: { id: applicationId },
+    select: { id: true, status: true, readingProfileLevel: true },
+  });
+
+  if (!application) {
+    throw Object.assign(new Error("Application not found."), { status: 404 });
+  }
+
+  if (!application.readingProfileLevel) {
+    throw Object.assign(
+      new Error(
+        "Phil-IRI assessment must be completed before resolving this BEEF.",
+      ),
+      { status: 422 },
+    );
+  }
+
+  if (
+    application.status !== "PENDING_BEEF" &&
+    application.status !== "SUBMITTED_BEEF"
+  ) {
+    throw Object.assign(
+      new Error(
+        `Application status "${application.status}" is not eligible for BEEF resolution.`,
+      ),
+      { status: 422 },
+    );
+  }
+
+  const updated = await prisma.enrollmentApplication.update({
+    where: { id: applicationId },
+    data: { status: "READY_FOR_SECTIONING", encodedById: actingUserId },
+    select: { id: true, status: true },
+  });
+
+  return { applicationId: updated.id, status: updated.status };
+}
+
+// ── GAP-02: Rollback READY_FOR_SECTIONING → PENDING_BEEF ──────────────────
+
+export async function revertToPendingBeef(
+  applicationId: number,
+  actingUserId: number,
+  reason: string,
+): Promise<{ applicationId: number; status: string }> {
+  if (!reason || reason.trim().length < 5) {
+    throw Object.assign(
+      new Error("A reason of at least 5 characters is required to revert."),
+      { status: 400 },
+    );
+  }
+
+  const application = await prisma.enrollmentApplication.findUnique({
+    where: { id: applicationId },
+    select: { id: true, status: true },
+  });
+
+  if (!application) {
+    throw Object.assign(new Error("Application not found."), { status: 404 });
+  }
+
+  if (application.status !== "READY_FOR_SECTIONING") {
+    throw Object.assign(
+      new Error(
+        `Only READY_FOR_SECTIONING applications can be reverted. Current status: "${application.status}".`,
+      ),
+      { status: 422 },
+    );
+  }
+
+  const updated = await prisma.enrollmentApplication.update({
+    where: { id: applicationId },
+    data: { status: "PENDING_BEEF", encodedById: actingUserId },
+    select: { id: true, status: true },
+  });
+
+  return { applicationId: updated.id, status: updated.status };
+}
+
+// ── GAP-03: Downgrade FAILED_ASSESSMENT → SUBMITTED_BEEF (BEC Track) ─────
+
+export async function downgradeToBeef(
+  applicationId: number,
+  actingUserId: number,
+): Promise<{ applicationId: number; status: string }> {
+  const application = await prisma.enrollmentApplication.findUnique({
+    where: { id: applicationId },
+    select: { id: true, status: true },
+  });
+
+  if (!application) {
+    throw Object.assign(new Error("Application not found."), { status: 404 });
+  }
+
+  if (application.status !== "FAILED_ASSESSMENT") {
+    throw Object.assign(
+      new Error(
+        `Only FAILED_ASSESSMENT applications can be downgraded to BEC track. Current status: "${application.status}".`,
+      ),
+      { status: 422 },
+    );
+  }
+
+  const updated = await prisma.enrollmentApplication.update({
+    where: { id: applicationId },
+    data: {
+      status: "SUBMITTED_BEEF",
+      admissionChannel: "F2F",
+      encodedById: actingUserId,
+    },
+    select: { id: true, status: true },
+  });
+
+  return { applicationId: updated.id, status: updated.status };
+}
+
+// ── GAP-04: Flush No-Shows (bulk READY_FOR_ENROLLMENT / PENDING_BEEF → WITHDRAWN) ─
+
+export async function flushNoShows(
+  applicationIds: number[],
+  actingUserId: number,
+): Promise<{ flushed: number; skipped: number }> {
+  if (!applicationIds.length) {
+    throw Object.assign(
+      new Error("applicationIds must be a non-empty array."),
+      { status: 400 },
+    );
+  }
+
+  const applications = await prisma.enrollmentApplication.findMany({
+    where: { id: { in: applicationIds } },
+    select: { id: true, status: true },
+  });
+
+  const eligible = applications.filter(
+    (a) =>
+      a.status === "READY_FOR_ENROLLMENT" || a.status === "PENDING_BEEF",
+  );
+
+  if (eligible.length === 0) {
+    return { flushed: 0, skipped: applicationIds.length };
+  }
+
+  await prisma.enrollmentApplication.updateMany({
+    where: { id: { in: eligible.map((a) => a.id) } },
+    data: { status: "WITHDRAWN", encodedById: actingUserId },
+  });
+
+  return {
+    flushed: eligible.length,
+    skipped: applicationIds.length - eligible.length,
+  };
+}

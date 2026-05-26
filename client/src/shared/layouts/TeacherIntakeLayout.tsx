@@ -1,0 +1,164 @@
+import { useState } from "react";
+import { useNavigate, Link, Outlet } from "react-router";
+import { ChevronDown, LogOut, Settings, School } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/shared/ui/avatar";
+import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
+import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
+import { cn, formatUserRole, getRoleColorClasses } from "@/shared/lib/utils";
+import { useAuthStore } from "@/store/auth.slice";
+import { useSettingsStore } from "@/store/settings.slice";
+import api from "@/shared/api/axiosInstance";
+
+const API_BASE = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
+
+// ── Minimal user nav (no sidebar context needed) ──────────────────────────────
+
+function TeacherUserNav() {
+  const { user, clearAuth } = useAuthStore();
+  const navigate = useNavigate();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch {
+      // Ignore network/logout failures and clear local session regardless.
+    }
+    clearAuth();
+    navigate("/staff/login");
+  };
+
+  const initials = user?.firstName
+    ? `${user.firstName.charAt(0)}${user.lastName?.charAt(0) || ""}`.toUpperCase()
+    : "U";
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className="relative h-9 w-fit gap-2 px-2 rounded-lg border border-transparent transition-all"
+          >
+            <Avatar className="h-7 w-7 border shadow-sm">
+              <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-col items-start text-left leading-tight hidden lg:flex">
+              <span className="text-[11px] font-bold truncate max-w-[120px]">
+                {user?.firstName} {user?.lastName}
+              </span>
+              <div className="flex justify-start">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "text-[8px] font-black uppercase px-1 h-3.5 border-none",
+                    getRoleColorClasses(user?.role),
+                  )}
+                >
+                  {formatUserRole(user?.role)}
+                </Badge>
+              </div>
+            </div>
+            <ChevronDown className="size-3 opacity-50 ml-0.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          className="w-56"
+          align="end"
+          forceMount
+        >
+          <DropdownMenuLabel className="font-normal">
+            <div className="flex flex-col space-y-1">
+              <p className="text-sm font-bold leading-none">
+                {user?.firstName} {user?.lastName}
+              </p>
+              <p className="text-xs leading-none text-foreground">{user?.email}</p>
+            </div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="cursor-pointer font-bold text-xs"
+            asChild
+          >
+            <Link to="/admin/users">
+              <Settings className="mr-2 h-4 w-4" />
+              Account Settings
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="cursor-pointer font-bold text-xs text-destructive focus:text-primary-foreground"
+            onClick={() => setShowLogoutConfirm(true)}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Sign Out
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <ConfirmationModal
+        open={showLogoutConfirm}
+        onOpenChange={setShowLogoutConfirm}
+        title="Sign Out"
+        description="Are you sure you want to sign out of your account?"
+        confirmText="Sign Out"
+        onConfirm={handleLogout}
+        variant="primary"
+      />
+    </>
+  );
+}
+
+// ── Layout ────────────────────────────────────────────────────────────────────
+
+export default function TeacherIntakeLayout() {
+  const { schoolName, logoUrl } = useSettingsStore();
+
+  return (
+    <div className="flex flex-col min-h-screen bg-background">
+      {/* Slim top bar — no sidebar, no SY switcher */}
+      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-4 bg-background">
+        {/* School identity */}
+        <div className="flex items-center gap-2.5 flex-1 min-w-0">
+          {logoUrl ? (
+            <div className="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden border bg-white p-0.5 shrink-0">
+              <img
+                src={`${API_BASE}${logoUrl}`}
+                alt="School Logo"
+                className="size-full object-contain"
+              />
+            </div>
+          ) : (
+            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary/10 shrink-0">
+              <School className="size-4 text-primary" />
+            </div>
+          )}
+          {schoolName && (
+            <span className="font-black text-sm uppercase text-primary truncate leading-tight">
+              {schoolName}
+            </span>
+          )}
+        </div>
+
+        {/* User nav (right) */}
+        <TeacherUserNav />
+      </header>
+
+      {/* Page content */}
+      <main className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-6 scrollbar-thin">
+        <Outlet />
+      </main>
+    </div>
+  );
+}

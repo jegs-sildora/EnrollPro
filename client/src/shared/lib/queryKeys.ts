@@ -14,4 +14,11 @@ export const queryKeys = {
     ["homerooms", "teachers", schoolYearId, excludeSectionId] as const,
   learnerProfile: ["learner", "profile"] as const,
   learnerAcademicHistory: ["learner", "academic-history"] as const,
+  // High-velocity live queues
+  adviserQueue: (schoolYearId: number, search?: string) =>
+    ["adviser", "queue", schoolYearId, search ?? ""] as const,
+  continuingQueue: (schoolYearId: number, search?: string) =>
+    ["reading-assessment", "continuing-queue", schoolYearId, search ?? ""] as const,
+  sectioningPool: () => ["sectioning", "pool"] as const,
+  sectioningSections: () => ["sectioning", "sections"] as const,
 };

@@ -5,7 +5,7 @@ import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
 import { Checkbox } from "@/shared/ui/checkbox";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2, RotateCcw } from "lucide-react";
 import type {
   ColumnDef,
   RowSelectionState,
@@ -23,6 +23,7 @@ interface QueueTableProps {
   onRowSelectionChange: OnChangeFn<RowSelectionState>;
   onConfirmSingle: (applicationId: number) => void;
   confirmingIds: Set<number>;
+  onRevertSingle?: (applicationId: number) => void;
 }
 
 function statusBadge(status: string) {
@@ -68,6 +69,7 @@ export function QueueTable({
   onRowSelectionChange,
   onConfirmSingle,
   confirmingIds,
+  onRevertSingle,
 }: QueueTableProps) {
   const columns = useMemo<ColumnDef<BOSYQueueItem>[]>(() => {
     const base: ColumnDef<BOSYQueueItem>[] = [
@@ -244,8 +246,35 @@ export function QueueTable({
       });
     }
 
+    if (onRevertSingle) {
+      base.push({
+        id: "revert",
+        header: () => (
+          <div className="text-center font-bold text-xs uppercase">Flag</div>
+        ),
+        cell: ({ row }) => {
+          const r = row.original;
+          if (r.status !== "READY_FOR_SECTIONING") return null;
+          return (
+            <div className="flex justify-center">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-6 px-2 text-[10px] font-black uppercase text-amber-700 border-amber-200 hover:bg-amber-50"
+                onClick={() => onRevertSingle!(r.applicationId)}>
+                <RotateCcw className="h-3 w-3 mr-1" />
+                Flag
+              </Button>
+            </div>
+          );
+        },
+        size: 80,
+        enableSorting: false,
+      });
+    }
+
     return base;
-  }, [showConfirmAction, onConfirmSingle, confirmingIds]);
+  }, [showConfirmAction, onConfirmSingle, confirmingIds, onRevertSingle]);
 
   if (loading) {
     return (

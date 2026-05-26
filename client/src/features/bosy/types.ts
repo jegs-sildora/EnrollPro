@@ -8,6 +8,11 @@ export interface BOSYReadiness {
   enrolledCount: number;
   jhsCompleterCount: number;
   droppedCount: number;
+  // Phase 2 BEEF intake counts
+  scpPriorityCount: number;
+  onlineBeefCount: number;
+  walkInBeefCount: number;
+  pendingBeefCount: number;
 }
 
 export interface BOSYQueueItem {
@@ -63,4 +68,28 @@ export interface TLEProgram {
   category: string;
   isActive: boolean;
   displayOrder: number;
+}
+
+export interface Phase2QueueItem {
+  applicationId: number;
+  trackingNumber: string | null;
+  status: string;
+  admissionChannel: string;
+  applicantType: string;
+  learnerType: string;
+  readingProfileLevel: string | null;
+  learnerId: number;
+  lrn: string | null;
+  firstName: string;
+  lastName: string;
+  middleName: string | null;
+  gradeLevelId: number;
+  gradeLevelName: string;
+}
+
+export interface Phase2QueuePage {
+  items: Phase2QueueItem[];
+  total: number;
+  page: number;
+  limit: number;
 }

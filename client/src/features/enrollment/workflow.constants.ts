@@ -33,10 +33,12 @@ export const ENROLLMENT_SUB_MENU_DESCRIPTIONS: Record<
     "Final readiness checks and authorization controls before BOSY lockdown.",
 };
 
+// READY_FOR_ENROLLMENT is intentionally excluded: those are SCP early-registration
+// applicants who passed screening but have not yet been formally enrolled.
+// They appear in the enrollment queue, not the sectioning pool.
 export const UNSECTIONED_POOL_STATUSES = new Set([
   "READY_FOR_SECTIONING",
   "VERIFIED",
-  "READY_FOR_ENROLLMENT",
 ]);
 
 export const BATCH_WORKSPACE_STATUSES = new Set([

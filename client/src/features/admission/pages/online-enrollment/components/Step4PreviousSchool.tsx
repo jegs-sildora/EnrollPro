@@ -42,6 +42,35 @@ export default function Step4PreviousSchool() {
   const hasSf9CertificationLetter = watch("hasSf9CertificationLetter");
   const hasUnsettledPrivateAccount = watch("hasUnsettledPrivateAccount");
   const hasExecutedAffidavit = watch("hasExecutedAffidavit");
+  const learnerType = watch("learnerType");
+  const gradeLevel = watch("gradeLevel");
+
+  // Grade progression map: target grade → expected previous grade completed
+  const GRADE_PROGRESSION: Record<string, string> = {
+    "7": "Grade 6",
+    "8": "Grade 7",
+    "9": "Grade 8",
+    "10": "Grade 9",
+  };
+
+  const isAls = selectedLastSchoolType === "ALS";
+  const isReturning = learnerType === "RETURNING";
+  const derivedGrade = GRADE_PROGRESSION[gradeLevel] ?? "";
+
+  // Auto-fill lastGradeCompleted based on context
+  useEffect(() => {
+    if (isAls) {
+      setValue("lastGradeCompleted", "A&E Test Passer", {
+        shouldValidate: false,
+        shouldDirty: false,
+      });
+    } else if (!isReturning && derivedGrade) {
+      setValue("lastGradeCompleted", derivedGrade, {
+        shouldValidate: false,
+        shouldDirty: false,
+      });
+    }
+  }, [isAls, isReturning, derivedGrade, setValue]);
 
   useEffect(() => {
     if (!lastSchoolType) {
@@ -66,7 +95,7 @@ export default function Step4PreviousSchool() {
               autoComplete="off"
               id="prev-school"
               {...register("lastSchoolName")}
-              placeholder="e.g. HNHS Elementary School"
+              placeholder="e.g. Apolinario Mabini Elementary School"
               className={cn(
                 "h-11 font-bold uppercase",
                 errors.lastSchoolName &&
@@ -102,24 +131,81 @@ export default function Step4PreviousSchool() {
             <Label
               htmlFor="prev-grade"
               className="text-sm font-bold text-foreground">
-              Last Grade Completed <span className="text-destructive">*</span>
+              {isAls ? "ALS Qualification" : "Last Grade Completed"}{" "}
+              <span className="text-destructive">*</span>
             </Label>
-            <Input
-              autoComplete="off"
-              id="prev-grade"
-              {...register("lastGradeCompleted")}
-              placeholder="e.g. GRADE 6"
-              className={cn(
-                "h-11 font-bold uppercase",
-                errors.lastGradeCompleted &&
-                  "border-destructive focus-visible:ring-destructive",
-              )}
-              onInput={(e) => {
-                (e.target as HTMLInputElement).value = (
-                  e.target as HTMLInputElement
-                ).value.toUpperCase();
-              }}
-            />
+
+            {/* ALS: read-only badge */}
+            {isAls && (
+              <Input
+                id="prev-grade"
+                readOnly
+                value="A&E Test Passer"
+                className="h-11 font-bold bg-muted text-foreground cursor-not-allowed"
+              />
+            )}
+
+            {/* New Enrollee / Transferee: auto-filled, read-only */}
+            {!isAls && !isReturning && (
+              <Select value={derivedGrade}>
+                <SelectTrigger
+                  id="prev-grade"
+                  className={cn(
+                    "h-11 font-bold text-foreground pointer-events-none uppercase",
+                    errors.lastGradeCompleted &&
+                      "border-destructive focus-visible:ring-destructive",
+                  )}>
+                  <SelectValue placeholder="Auto-filled from Grade Level" />
+                </SelectTrigger>
+                <SelectContent>
+                  {["Grade 6", "Grade 7", "Grade 8", "Grade 9"].map((g) => (
+                    <SelectItem
+                      key={g}
+                      value={g}
+                      className="font-bold">
+                      {g}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {/* Returning learner: editable dropdown */}
+            {!isAls && isReturning && (
+              <Select
+                value={watch("lastGradeCompleted") ?? ""}
+                onValueChange={(val) =>
+                  setValue("lastGradeCompleted", val, {
+                    shouldValidate: true,
+                  })
+                }>
+                <SelectTrigger
+                  id="prev-grade"
+                  className={cn(
+                    "h-11 font-bold",
+                    errors.lastGradeCompleted &&
+                      "border-destructive focus-visible:ring-destructive",
+                  )}>
+                  <SelectValue placeholder="Select last grade completed" />
+                </SelectTrigger>
+                <SelectContent>
+                  {["Grade 6", "Grade 7", "Grade 8", "Grade 9"].map((g) => (
+                    <SelectItem
+                      key={g}
+                      value={g}
+                      className="font-bold">
+                      {g}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {errors.lastGradeCompleted && (
+              <p className="text-xs font-bold text-destructive">
+                {errors.lastGradeCompleted.message}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">

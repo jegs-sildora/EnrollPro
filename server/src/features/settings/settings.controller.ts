@@ -9,7 +9,7 @@ import {
   contrastForeground,
 } from "./logo-color.service.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
-import { getEnrollmentPhase } from "./enrollment-gate.service.js";
+import { getEnrollmentPhase, isRegularEnrollmentWindowOpen } from "./enrollment-gate.service.js";
 
 async function getOrCreateSettings() {
   let settings = await prisma.schoolSetting.findFirst({
@@ -53,7 +53,9 @@ export async function getPublicSettings(
     const enrollmentPhase = contextSy
       ? getEnrollmentPhase(contextSy)
       : "CLOSED";
-    const isBosyEnrollmentOpen = enrollmentPhase === "REGULAR_ENROLLMENT";
+    const isBosyEnrollmentOpen = contextSy
+      ? isRegularEnrollmentWindowOpen(contextSy)
+      : false;
 
     res.json({
       schoolName: settings.schoolName,

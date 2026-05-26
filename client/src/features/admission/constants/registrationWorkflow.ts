@@ -125,7 +125,7 @@ export const REGISTRATION_BATCH_ACTIONS_BY_STATUS: Record<
     modalTitle: "Batch Exam Scheduling",
     modalDescription:
       "Apply one exam schedule setup to all selected eligible applicants.",
-    submitLabel: "Schedule Exam & Queue Emails",
+    submitLabel: "Schedule Exam",
   },
   ELIGIBLE: {
     id: "SCHEDULE_EXAM",
@@ -135,7 +135,7 @@ export const REGISTRATION_BATCH_ACTIONS_BY_STATUS: Record<
     modalTitle: "Batch Exam Scheduling",
     modalDescription:
       "Apply one exam schedule setup to all selected eligible applicants.",
-    submitLabel: "Schedule Exam & Queue Emails",
+    submitLabel: "Schedule Exam",
   },
   EXAM_SCHEDULED: {
     id: "RECORD_ASSESSMENT",

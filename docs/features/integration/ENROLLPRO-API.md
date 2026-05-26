@@ -114,7 +114,7 @@ This document provides a comprehensive reference for the EnrollPro backend API. 
 
 ```json
 {
-  "schoolName": "Buruangan National High School",
+  "schoolName": "BuruanganAPPLICANT National High School",
   "logoUrl": "/uploads/logo.png",
   "colorScheme": {
     "palette": [

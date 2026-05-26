@@ -214,7 +214,7 @@ export async function commitBatchSectioning(req: Request, res: Response) {
             gradeLevelName: app.gradeLevel.name,
             assignmentSlipUrl: null,
             enrolledAt: record.enrolledAt.toISOString(),
-          }).catch((err) => console.error("[Notification Event B Error]:", err));
+          }).catch((err: unknown) => console.error("[Notification Event B Error]:", err));
         }
       })
       .catch((err) => console.error("[Notification Event B Fetch Error]:", err));

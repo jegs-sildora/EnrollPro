@@ -25,6 +25,7 @@ import eosyRoutes from "./features/enrollment/eosy.router.js";
 import enrollmentRoutes from "./features/enrollment/enrollment.router.js";
 import exportRoutes from "./features/export/export.router.js";
 import bosyRoutes from "./features/bosy/bosy.router.js";
+import readingAssessmentRoutes from "./features/reading-assessment/reading-assessment.router.js";
 import remedialRoutes from "./features/remedial/remedial.router.js";
 import integrationTriggerRoutes from "./features/integration/integration-trigger.router.js";
 import integrationRoutes from "./features/integration/integration.router.js";
@@ -171,6 +172,7 @@ apiRouter.use("/eosy", eosyRoutes);
 apiRouter.use("/enrollment", enrollmentRoutes);
 apiRouter.use("/export", exportRoutes);
 apiRouter.use("/bosy", bosyRoutes);
+apiRouter.use("/reading-assessment", readingAssessmentRoutes);
 apiRouter.use("/remedial", remedialRoutes);
 apiRouter.use("/integration", integrationTriggerRoutes);
 // Public read endpoints for ATLAS and other downstream services (no auth required).

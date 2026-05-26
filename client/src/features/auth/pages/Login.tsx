@@ -359,7 +359,7 @@ export default function Login() {
 
       const destination =
         payload.user.role === "TEACHER" || payload.user.role === "MRF"
-          ? "/intake"
+          ? "/reading-assessment"
           : "/dashboard";
 
       redirectTimeoutRef.current = window.setTimeout(() => {
@@ -394,7 +394,7 @@ export default function Login() {
 
   if (user && !user.mustChangePassword) {
     const homeRoute =
-      user.role === "TEACHER" || user.role === "MRF" ? "/intake" : "/dashboard";
+      user.role === "TEACHER" || user.role === "MRF" ? "/reading-assessment" : "/dashboard";
     return (
       <Navigate
         to={homeRoute}

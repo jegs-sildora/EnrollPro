@@ -1,20 +1,11 @@
 import { useMemo } from "react";
 import { Loader2, Pencil, RefreshCw, X } from "lucide-react";
-import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Input } from "@/shared/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
 import { DataTable } from "@/shared/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import type {
-  AcademicStatusValue,
   ChecklistFieldKey,
   VerifyGridApplicant,
   VerifyGridColumn,
@@ -26,16 +17,13 @@ interface PipelineBatchVerifyGridProps {
   verifyGridColumns: VerifyGridColumn[];
   verifyGridApplicants: VerifyGridApplicant[];
   verifyGridValues: Record<number, Record<ChecklistFieldKey, boolean>>;
-  verifyAcademicStatuses: Record<number, AcademicStatusValue>;
   verifyLrnDrafts: Record<number, string>;
   lrnEditingId: number | null;
   savingLrnId: number | null;
-  verifyRowsMarked: Record<number, boolean>;
   verifyAllChecked: boolean;
   isBatchProcessing: boolean;
   onReload: () => void;
   isVerifyRowReady: (applicantId: number) => boolean;
-  setVerifyRowMarked: (applicantId: number, value: boolean) => void;
   isVerifyColumnFullyChecked: (key: ChecklistFieldKey) => boolean;
   setVerifyColumnForAll: (key: ChecklistFieldKey, value: boolean) => void;
   setVerifyAll: (value: boolean) => void;
@@ -45,10 +33,6 @@ interface PipelineBatchVerifyGridProps {
     value: boolean,
   ) => void;
   setVerifyRequiredDocsForRow: (applicantId: number, value: boolean) => void;
-  setVerifyAcademicStatus: (
-    applicantId: number,
-    status: AcademicStatusValue,
-  ) => void;
   setVerifyLrnDraft: (applicantId: number, value: string) => void;
   onStartLrnEdit: (applicantId: number) => void;
   onCancelLrnEdit: (applicantId: number) => void;
@@ -61,22 +45,18 @@ export default function PipelineBatchVerifyGrid({
   verifyGridColumns,
   verifyGridApplicants,
   verifyGridValues,
-  verifyAcademicStatuses,
   verifyLrnDrafts,
   lrnEditingId,
   savingLrnId,
-  verifyRowsMarked,
   verifyAllChecked,
   isBatchProcessing,
   onReload,
   isVerifyRowReady,
-  setVerifyRowMarked,
   isVerifyColumnFullyChecked,
   setVerifyColumnForAll,
   setVerifyAll,
   setVerifyCell,
   setVerifyRequiredDocsForRow,
-  setVerifyAcademicStatus,
   setVerifyLrnDraft,
   onStartLrnEdit,
   onCancelLrnEdit,
@@ -96,10 +76,9 @@ export default function PipelineBatchVerifyGrid({
     return labelByKey[column.key] ?? column.label;
   };
 
-  const markedCount = verifyGridApplicants.reduce(
-    (count, applicant) => count + (verifyRowsMarked[applicant.id] ? 1 : 0),
-    0,
-  );
+  const clearedCount = verifyGridApplicants.filter((applicant) =>
+    isVerifyRowReady(applicant.id),
+  ).length;
 
   const columns = useMemo<ColumnDef<VerifyGridApplicant>[]>(() => {
     const cols: ColumnDef<VerifyGridApplicant>[] = [
@@ -119,9 +98,6 @@ export default function PipelineBatchVerifyGrid({
             applicant.requiredChecklistKeys.every((requiredKey) =>
               Boolean(verifyGridValues[applicant.id]?.[requiredKey]),
             );
-          const academicStatus =
-            verifyAcademicStatuses[applicant.id] ?? "PROMOTED";
-          const isRetained = academicStatus === "RETAINED";
 
           return (
             <div className="space-y-1 text-left">
@@ -213,53 +189,16 @@ export default function PipelineBatchVerifyGrid({
                       onClick={(e) => e.stopPropagation()}
                       disabled={
                         isBatchProcessing ||
-                        isRetained ||
                         applicant.requiredChecklistKeys.length === 0
                       }
                     />
-                    <span
-                      className={`font-bold ${
-                        isRetained ? "text-foreground" : "text-foreground"
-                      }`}
-                    >
+                    <span className="font-bold text-foreground">
                       All required docs
                     </span>
                   </>
                 )}
               </div>
             </div>
-          );
-        },
-      },
-      {
-        id: "academicStatus",
-        header: "Academic Status",
-        cell: ({ row }) => {
-          const applicant = row.original;
-          const academicStatus =
-            verifyAcademicStatuses[applicant.id] ?? "PROMOTED";
-          return (
-            <Select
-              value={academicStatus}
-              onValueChange={(value) =>
-                setVerifyAcademicStatus(
-                  applicant.id,
-                  value as AcademicStatusValue,
-                )
-              }
-              disabled={isBatchProcessing}
-            >
-              <SelectTrigger className="h-8 w-full text-xs font-bold">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="PROMOTED">Promoted</SelectItem>
-                <SelectItem value="CONDITIONALLY_PROMOTED">
-                  Cond. Promoted
-                </SelectItem>
-                <SelectItem value="RETAINED">Retained</SelectItem>
-              </SelectContent>
-            </Select>
           );
         },
       },
@@ -295,30 +234,17 @@ export default function PipelineBatchVerifyGrid({
           },
           cell: ({ row }) => {
             const applicant = row.original;
-            const academicStatus =
-              verifyAcademicStatuses[applicant.id] ?? "PROMOTED";
-            const isRetained = academicStatus === "RETAINED";
-            const isConditionallyPromoted =
-              academicStatus === "CONDITIONALLY_PROMOTED";
             return (
-              <div
-                className={`flex items-center justify-center ${
-                  isRetained ? "opacity-50" : ""
-                }`}
-              >
+              <div className="flex items-center justify-center">
                 <Checkbox
-                  className={cn(
-                    verificationCheckboxClassName,
-                    isConditionallyPromoted &&
-                      "border-amber-400 data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600",
-                  )}
+                  className={verificationCheckboxClassName}
                   checked={Boolean(
                     verifyGridValues[applicant.id]?.[column.key],
                   )}
                   onCheckedChange={(checked) =>
                     setVerifyCell(applicant.id, column.key, Boolean(checked))
                   }
-                  disabled={isBatchProcessing || isRetained}
+                  disabled={isBatchProcessing}
                 />
               </div>
             );
@@ -332,69 +258,20 @@ export default function PipelineBatchVerifyGrid({
       header: "Clearance",
       cell: ({ row }) => {
         const applicant = row.original;
-        const academicStatus =
-          verifyAcademicStatuses[applicant.id] ?? "PROMOTED";
-        const isRetained = academicStatus === "RETAINED";
-        const isConditionallyPromoted =
-          academicStatus === "CONDITIONALLY_PROMOTED";
-        const rowReady = isVerifyRowReady(applicant.id);
-        const rowMarked = Boolean(verifyRowsMarked[applicant.id]);
-        const clearanceDisabled =
-          isBatchProcessing || (!isRetained && !rowReady);
+        const cleared = isVerifyRowReady(applicant.id);
 
-        let clearanceClassName: string;
-        if (isRetained) {
-          clearanceClassName = rowMarked
-            ? "border-amber-700 bg-amber-600 text-white"
-            : "border-amber-300 bg-amber-100 text-amber-800";
-        } else if (isConditionallyPromoted) {
-          clearanceClassName = rowMarked
-            ? "border-amber-700 bg-amber-600 text-white shadow-sm"
-            : rowReady
-              ? "border-amber-400 bg-amber-50 text-amber-900"
-              : "border-border bg-muted/60 text-foreground opacity-60";
-        } else {
-          clearanceClassName = rowMarked
-            ? "border-emerald-700 bg-emerald-600 text-white"
-            : rowReady
-              ? "border-primary/90 bg-primary text-primary-foreground"
-              : "border-border bg-muted/60 text-foreground opacity-60";
+        if (cleared) {
+          return (
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-800 whitespace-nowrap">
+              ✔ Cleared
+            </span>
+          );
         }
 
-        const clearanceLabel = isRetained
-          ? rowMarked
-            ? "Retained Tagged"
-            : "Mark Retained"
-          : isConditionallyPromoted
-            ? rowMarked
-              ? "Verify (Cond. P)"
-              : "Mark Verified"
-            : rowMarked
-              ? disableDocumentChecks
-                ? "Marked"
-                : "Cleared"
-              : disableDocumentChecks
-                ? "Mark Handoff"
-                : "Mark Verified";
         return (
-          <div
-            className={`inline-flex items-center gap-2 rounded-md border px-2 py-1 transition-colors mx-auto ${clearanceClassName} ${
-              clearanceDisabled ? "cursor-not-allowed" : "cursor-pointer"
-            }`}
-          >
-            <Checkbox
-              className={verificationCheckboxClassName}
-              checked={rowMarked}
-              onCheckedChange={(checked) =>
-                setVerifyRowMarked(applicant.id, Boolean(checked))
-              }
-              onClick={(e) => e.stopPropagation()}
-              disabled={clearanceDisabled}
-            />
-            <span className="text-[11px] font-bold whitespace-nowrap">
-              {clearanceLabel}
-            </span>
-          </div>
+          <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-800 whitespace-nowrap">
+            ⏳ Pending
+          </span>
         );
       },
     });
@@ -404,20 +281,16 @@ export default function PipelineBatchVerifyGrid({
     verifyGridColumns,
     verifyGridApplicants,
     verifyGridValues,
-    verifyAcademicStatuses,
     verifyLrnDrafts,
     lrnEditingId,
     savingLrnId,
-    verifyRowsMarked,
     isBatchProcessing,
     onStartLrnEdit,
     onCancelLrnEdit,
     onSaveLrn,
     setVerifyLrnDraft,
     setVerifyRequiredDocsForRow,
-    setVerifyAcademicStatus,
     setVerifyCell,
-    setVerifyRowMarked,
     isVerifyColumnFullyChecked,
     setVerifyColumnForAll,
     isVerifyRowReady,
@@ -428,8 +301,8 @@ export default function PipelineBatchVerifyGrid({
     <div className="space-y-3 min-h-0 flex flex-col">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs font-bold text-foreground">
-          {disableDocumentChecks ? "Handoff marked" : "Clearance marked"}:{" "}
-          {markedCount}/{verifyGridApplicants.length}
+          {disableDocumentChecks ? "Processed" : "Fully Verified"}:{" "}
+          {clearedCount}/{verifyGridApplicants.length}
         </p>
 
         <div className="flex flex-wrap items-center gap-2">

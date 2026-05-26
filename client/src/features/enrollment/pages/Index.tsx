@@ -954,11 +954,6 @@ export default function Enrollment() {
     setIsWalkInGateChecking(false);
   }, []);
 
-  const openWalkInGate = useCallback(() => {
-    resetWalkInGate();
-    setIsWalkInGateOpen(true);
-  }, [resetWalkInGate]);
-
   const handleProceedWalkInGate = useCallback(async () => {
     if (walkInNoLrn) {
       setIsWalkInGateOpen(false);
@@ -2128,16 +2123,6 @@ export default function Enrollment() {
               </p>
             </div>
             <div className="flex items-center w-full md:w-auto gap-2">
-              {(workflowView === "BATCH_WORKSPACE" ||
-                workflowView === "UNSECTIONED_POOL") && (
-                <Button
-                  variant="outline"
-                  className="h-10 px-3 text-sm font-bold border-red-200 text-red-700 hover:bg-red-50 shrink-0"
-                  onClick={openWalkInGate}>
-                  <UserPlus className="h-4 w-4 mr-2" />+ Walk-In BEEF
-                </Button>
-              )}
-
               {workflowView === "OFFICIAL_ROSTERS" && (
                 <Button
                   variant="default"

@@ -117,7 +117,7 @@ export default function ChangePassword() {
     role === "LEARNER";
 
   const getStaffHomeRoute = (role: string | null | undefined): string =>
-    role === "TEACHER" || role === "MRF" ? "/intake" : "/dashboard";
+    role === "TEACHER" || role === "MRF" ? "/reading-assessment" : "/dashboard";
 
   // Fall back to any stored role when token is already gone (session expired on this page)
   const activeRole = user?.role ?? (isLearnerOrigin ? learnerAuth.user?.role : staffAuth.user?.role) ?? null;

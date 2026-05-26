@@ -47,6 +47,28 @@ export function isEnrollmentOpen(year: SchoolYear): boolean {
   return Boolean(inPhase1 || inPhase2);
 }
 
+/**
+ * Returns true when the Official BOSY Enrollment (Phase 2) window is currently
+ * active, evaluated independently of phase-priority ordering.
+ *
+ * Unlike `getEnrollmentPhase`, this check is not suppressed by an overlapping
+ * Early Registration window — if the admin has both windows open at once,
+ * BOSY enrollment is considered open.
+ */
+export function isRegularEnrollmentWindowOpen(year: SchoolYear): boolean {
+  if (year.status === "BOSY_LOCKED") return false;
+  if (year.portalControl === "FORCE_OPEN_PHASE_2") return true;
+  if (year.portalControl === "FORCE_CLOSE_ALL") return false;
+
+  const todayToken = toManilaDateToken(new Date());
+  return Boolean(
+    year.enrollOpenDate &&
+    year.enrollCloseDate &&
+    todayToken >= toManilaDateToken(year.enrollOpenDate) &&
+    todayToken <= toManilaDateToken(year.enrollCloseDate),
+  );
+}
+
 export function getEnrollmentPhase(
   year: SchoolYear,
 ):

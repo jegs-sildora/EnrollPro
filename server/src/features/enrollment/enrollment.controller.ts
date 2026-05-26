@@ -441,7 +441,7 @@ export async function finalizeIntake(req: Request, res: Response) {
     email: guardian?.email ?? null,
     schoolYearLabel: application.schoolYear.yearLabel,
     finalizedAt: new Date().toISOString(),
-  }).catch((err) => console.error("[Notification Event A Error]:", err));
+  }).catch((err: unknown) => console.error("[Notification Event A Error]:", err));
 
   return res.json({
     success: true,

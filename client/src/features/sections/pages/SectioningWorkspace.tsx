@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/shared/lib/queryKeys";
 import { 
   Users, 
   Search, 
@@ -103,8 +105,73 @@ export default function SectioningWorkspace() {
   const isLockBlocked = !isLocked && totalIncomplete > 0;
   const [sections, setSections] = useState<SectionSummary[]>([]);
   const [pool, setPool] = useState<PoolLearner[]>([]);
-  const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+
+  const queryClient = useQueryClient();
+
+  // ── React Query: sections & pool with 5 s background polling ─────────────
+  const {
+    data: sectionsData,
+    isFetching: sectionsFetching,
+    isLoading: sectionsInitialLoading,
+  } = useQuery({
+    queryKey: queryKeys.sectioningSections(),
+    queryFn: () =>
+      api.get<SectionSummary[]>("/sectioning/sections-summary").then((r) => r.data),
+    enabled: !isHistoricalReadOnly,
+    refetchInterval: 5_000,
+    refetchOnWindowFocus: true,
+    staleTime: 3_000,
+  });
+
+  const {
+    data: poolData,
+    isFetching: poolFetching,
+    isLoading: poolInitialLoading,
+  } = useQuery({
+    queryKey: queryKeys.sectioningPool(),
+    queryFn: () =>
+      api.get<PoolLearner[]>("/sectioning/pool").then((r) => r.data),
+    enabled: !isHistoricalReadOnly,
+    refetchInterval: 5_000,
+    refetchOnWindowFocus: true,
+    staleTime: 3_000,
+  });
+
+  // Sync query results into legacy state (keeps downstream JSX + handlers unchanged)
+  useEffect(() => { if (sectionsData) setSections(sectionsData); }, [sectionsData]);
+  useEffect(() => { if (poolData) setPool(poolData); }, [poolData]);
+
+  const loading = (sectionsInitialLoading || poolInitialLoading) && !isHistoricalReadOnly;
+  const isSyncing = (sectionsFetching || poolFetching) && !loading;
+
+  // ── New-row highlight tracking ────────────────────────────────────────────
+  // First load: populate knownIds without marking anything as new.
+  // Subsequent polls: IDs absent from knownIds are "new" and get a flash animation.
+  const knownPoolIdsRef = useRef<Set<number>>(new Set());
+  const isFirstPoolLoad = useRef(true);
+  const [newPoolIds, setNewPoolIds] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    if (!poolData || poolData.length === 0) return;
+    if (isFirstPoolLoad.current) {
+      knownPoolIdsRef.current = new Set(poolData.map((p) => p.applicationId));
+      isFirstPoolLoad.current = false;
+      return;
+    }
+    const freshIds = poolData
+      .filter((p) => !knownPoolIdsRef.current.has(p.applicationId))
+      .map((p) => p.applicationId);
+    if (freshIds.length > 0) {
+      knownPoolIdsRef.current = new Set(poolData.map((p) => p.applicationId));
+      setNewPoolIds(new Set(freshIds));
+      // Clear highlight after 2 s
+      const t = setTimeout(() => setNewPoolIds(new Set()), 2_000);
+      return () => clearTimeout(t);
+    } else {
+      knownPoolIdsRef.current = new Set(poolData.map((p) => p.applicationId));
+    }
+  }, [poolData]);
   
   // Selection & Filters
   const [selectedAppIds, setSelectedAppIds] = useState<number[]>([]);
@@ -124,30 +191,6 @@ export default function SectioningWorkspace() {
   const [targetSectionId, setTargetSectionId] = useState<number | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"workspace" | "pool" | "rosters" | "bosy">("workspace");
-
-  const fetchData = useCallback(async () => {
-    if (isHistoricalReadOnly) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    try {
-      const [secRes, poolRes] = await Promise.all([
-        api.get<SectionSummary[]>("/sectioning/sections-summary"),
-        api.get<PoolLearner[]>("/sectioning/pool")
-      ]);
-      setSections(secRes.data);
-      setPool(poolRes.data);
-    } catch {
-      sileo.error({ title: "Sync Failed", description: "Could not refresh sectioning workspace." });
-    } finally {
-      setLoading(false);
-    }
-  }, [isHistoricalReadOnly]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   const fetchStatus = async () => {
     try {
@@ -274,7 +317,9 @@ export default function SectioningWorkspace() {
       
       setSelectedAppIds([]);
       setTargetSectionId(null);
-      await fetchData();
+      // Invalidate both queries so both pool and section counts refresh
+      await queryClient.invalidateQueries({ queryKey: queryKeys.sectioningPool() });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.sectioningSections() });
     } catch (error: unknown) {
       const axiosError = error as { response?: { data?: { message?: string } } };
       const msg = axiosError.response?.data?.message || "Internal Policy Violation";
@@ -330,8 +375,16 @@ export default function SectioningWorkspace() {
             <span className="text-xl font-black text-slate-900 leading-none">{pool.length}</span>
           </div>
           <div className="w-px h-8 bg-slate-100" />
-          <Button onClick={fetchData} variant="ghost" size="icon" className="h-10 w-10">
-            <RefreshCwIcon className="h-4 w-4" />
+          <Button
+            onClick={() => {
+              void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningPool() });
+              void queryClient.invalidateQueries({ queryKey: queryKeys.sectioningSections() });
+            }}
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10"
+          >
+            <RefreshCwIcon className={cn("h-4 w-4", isSyncing && "animate-spin")} />
           </Button>
         </div>
       </div>
@@ -625,7 +678,17 @@ export default function SectioningWorkspace() {
                   </thead>
                   <tbody>
                     {filteredPool.map((l, idx) => (
-                      <tr key={l.applicationId} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                      <motion.tr
+                        key={l.applicationId}
+                        initial={
+                          newPoolIds.has(l.applicationId)
+                            ? { backgroundColor: "hsl(var(--primary) / 0.10)" }
+                            : false
+                        }
+                        animate={{ backgroundColor: "transparent" }}
+                        transition={{ duration: 1.8, ease: "easeOut" }}
+                        className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors"
+                      >
                         <td className="p-4">
                           <span className="text-xs font-black text-slate-300">{idx + 1}</span>
                         </td>
@@ -655,7 +718,7 @@ export default function SectioningWorkspace() {
                         <td className="p-4">
                           <span className="text-xs font-black text-slate-600">{l.genAve || "--"}</span>
                         </td>
-                      </tr>
+                      </motion.tr>
                     ))}
                   </tbody>
                 </table>

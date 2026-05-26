@@ -5,6 +5,7 @@ import type {
   BulkConfirmResult,
   JHSCompleterPage,
   TLEProgram,
+  Phase2QueuePage,
 } from "../types";
 
 export async function getBOSYReadiness(
@@ -79,5 +80,104 @@ export async function getJHSCompleters(
   params: JHSCompleterParams,
 ): Promise<JHSCompleterPage> {
   const res = await api.get<JHSCompleterPage>(`/bosy/completers`, { params });
+  return res.data;
+}
+
+export interface Phase2QueueParams {
+  schoolYearId: number;
+  status?: string | string[];
+  admissionChannel?: "ONLINE" | "F2F";
+  page?: number;
+  limit?: number;
+  search?: string;
+}
+
+export async function getPhase2Queue(
+  params: Phase2QueueParams,
+): Promise<Phase2QueuePage> {
+  const res = await api.get<Phase2QueuePage>(`/bosy/phase2-queue`, { params });
+  return res.data;
+}
+
+export async function apiConfirmScpSlot(
+  applicationId: number,
+  pendingDocs = false,
+): Promise<{ applicationId: number; status: string }> {
+  const res = await api.post<{ applicationId: number; status: string }>(
+    `/bosy/confirm-scp-slot/${applicationId}`,
+    { pendingDocs },
+  );
+  return res.data;
+}
+
+export async function apiVerifyBeef(
+  applicationId: number,
+): Promise<{ applicationId: number; status: string }> {
+  const res = await api.post<{ applicationId: number; status: string }>(
+    `/bosy/verify-beef/${applicationId}`,
+    {},
+  );
+  return res.data;
+}
+
+export async function apiRouteToScpScreening(
+  applicationId: number,
+): Promise<{ applicationId: number; status: string }> {
+  const res = await api.post<{ applicationId: number; status: string }>(
+    `/bosy/route-to-scp/${applicationId}`,
+    {},
+  );
+  return res.data;
+}
+
+export async function apiMarkBeefPending(
+  applicationId: number,
+): Promise<{ applicationId: number; status: string }> {
+  const res = await api.post<{ applicationId: number; status: string }>(
+    `/bosy/mark-pending/${applicationId}`,
+    {},
+  );
+  return res.data;
+}
+
+export async function apiResolveBeef(
+  applicationId: number,
+): Promise<{ applicationId: number; status: string }> {
+  const res = await api.post<{ applicationId: number; status: string }>(
+    `/bosy/resolve-beef/${applicationId}`,
+    {},
+  );
+  return res.data;
+}
+
+export async function apiRevertToPendingBeef(
+  applicationId: number,
+  reason: string,
+): Promise<{ applicationId: number; status: string }> {
+  const res = await api.post<{ applicationId: number; status: string }>(
+    `/bosy/revert-to-pending/${applicationId}`,
+    { reason },
+  );
+  return res.data;
+}
+
+export async function apiDowngradeToBeef(
+  applicationId: number,
+): Promise<{ applicationId: number; status: string }> {
+  const res = await api.post<{ applicationId: number; status: string }>(
+    `/bosy/downgrade-to-beef/${applicationId}`,
+    {},
+  );
+  return res.data;
+}
+
+export async function apiFlushNoShows(
+  applicationIds: number[],
+  reason: string,
+): Promise<{ flushed: number; skipped: number }> {
+  const res = await api.post<{ flushed: number; skipped: number }>(
+    `/bosy/flush-no-shows`,
+    { applicationIds, reason },
+  );
   return res.data;
 }

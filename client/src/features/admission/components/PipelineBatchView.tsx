@@ -115,7 +115,7 @@ export default function PipelineBatchView({
   const [verifyLrnSavingId, setVerifyLrnSavingId] = useState<number | null>(
     null,
   );
-  const [verifyRowsMarked, setVerifyRowsMarked] = useState<
+  const [_verifyRowsMarked, setVerifyRowsMarked] = useState<
     Record<number, boolean>
   >({});
 
@@ -584,66 +584,6 @@ export default function PipelineBatchView({
     });
   }, [verifyGridColumns]);
 
-  const setVerifyRowMarked = useCallback(
-    (applicantId: number, checked: boolean) => {
-      setVerifyRowsMarked((prev) => ({
-        ...prev,
-        [applicantId]: checked,
-      }));
-    },
-    [],
-  );
-
-  const setVerifyAcademicStatus = useCallback(
-    (applicantId: number, statusValue: AcademicStatusValue) => {
-      setVerifyGridAcademicStatuses((prev) => ({
-        ...prev,
-        [applicantId]: statusValue,
-      }));
-
-      if (statusValue === "PROMOTED") {
-        const applicant = verifyGridApplicants.find(
-          (entry) => entry.id === applicantId,
-        );
-        if (!applicant) {
-          setVerifyRowsMarked((prev) => ({
-            ...prev,
-            [applicantId]: false,
-          }));
-          return;
-        }
-
-        if (isEnrollmentQueueHandoffAction) {
-          setVerifyRowsMarked((prev) => ({
-            ...prev,
-            [applicantId]: false,
-          }));
-          return;
-        }
-
-        const values = verifyGridValues[applicantId] ?? applicant.checklist;
-        const rowReady = applicant.requiredChecklistKeys.every((requiredKey) =>
-          Boolean(values[requiredKey]),
-        );
-
-        setVerifyRowsMarked((prev) => ({
-          ...prev,
-          [applicantId]: rowReady,
-        }));
-        return;
-      }
-
-      setVerifyRowsMarked((prev) => {
-        if (!prev[applicantId]) return prev;
-        return {
-          ...prev,
-          [applicantId]: false,
-        };
-      });
-    },
-    [isEnrollmentQueueHandoffAction, verifyGridApplicants, verifyGridValues],
-  );
-
   const setVerifyLrnDraft = useCallback(
     (applicantId: number, value: string) => {
       const digitsOnly = value.replace(/\D/g, "").slice(0, 12);
@@ -803,22 +743,7 @@ export default function PipelineBatchView({
         }, {}),
       );
       setVerifyLrnEditingId(null);
-      setVerifyRowsMarked(
-        applicants.reduce<Record<number, boolean>>((acc, applicant) => {
-          if (isEnrollmentQueueHandoffAction) {
-            acc[applicant.id] = false;
-            return acc;
-          }
-
-          const rowReady = applicant.requiredChecklistKeys.every(
-            (requiredKey) => Boolean(applicant.checklist[requiredKey]),
-          );
-
-          acc[applicant.id] =
-            applicant.academicStatus !== "RETAINED" && rowReady;
-          return acc;
-        }, {}),
-      );
+      setVerifyRowsMarked({});
 
       const missingIds = (res.data?.missingIds ?? []) as number[];
       if (missingIds.length > 0) {
@@ -1807,39 +1732,21 @@ export default function PipelineBatchView({
 
         const markedReadyApplicants = eligibleVerifyApplicants.filter(
           (applicant) =>
-            verifyRowsMarked[applicant.id] &&
-            (isEnrollmentQueueHandoffAction || isVerifyRowReady(applicant.id)),
+            isEnrollmentQueueHandoffAction || isVerifyRowReady(applicant.id),
         );
 
         skippedClientSide = eligibleVerifyApplicants
-          .filter((applicant) => !verifyRowsMarked[applicant.id])
+          .filter(
+            (applicant) =>
+              !isEnrollmentQueueHandoffAction && !isVerifyRowReady(applicant.id),
+          )
           .map((applicant) => ({
             id: applicant.id,
             name: applicant.name,
             trackingNumber: applicant.trackingNumber,
-            reason: isEnrollmentQueueHandoffAction
-              ? "Not marked for enrollment queue handoff. Skipped by batch submit."
-              : "Not marked as verified in the checklist table. Skipped by batch submit.",
+            reason:
+              "Required checklist items are incomplete. Skipped by batch submit.",
           }));
-
-        if (!isEnrollmentQueueHandoffAction) {
-          skippedClientSide = [
-            ...skippedClientSide,
-            ...eligibleVerifyApplicants
-              .filter(
-                (applicant) =>
-                  verifyRowsMarked[applicant.id] &&
-                  !isVerifyRowReady(applicant.id),
-              )
-              .map((applicant) => ({
-                id: applicant.id,
-                name: applicant.name,
-                trackingNumber: applicant.trackingNumber,
-                reason:
-                  "Required checklist items are incomplete. Skipped by batch submit.",
-              })),
-          ];
-        }
 
         const applicantsPayload = markedReadyApplicants.map((applicant) => ({
           id: applicant.id,
@@ -1852,8 +1759,8 @@ export default function PipelineBatchView({
         if (applicantsPayload.length === 0) {
           setActionFormError(
             isEnrollmentQueueHandoffAction
-              ? "Mark at least one student for enrollment queue handoff before submitting."
-              : "Mark at least one row for clearance before submitting.",
+              ? "No applicants are ready for enrollment queue handoff."
+              : "No applicants have all required documents verified.",
           );
           return;
         }
@@ -2362,6 +2269,27 @@ export default function PipelineBatchView({
     void fetchData();
   }, [fetchData]);
 
+  const [downgradingId, setDowngradingId] = useState<number | null>(null);
+
+  const handleDowngradeToBeef = useCallback(
+    async (app: Application) => {
+      setDowngradingId(app.id);
+      try {
+        await api.post(`/bosy/downgrade-to-beef/${app.id}`);
+        sileo.success({
+          title: "Downgraded to BEC Track",
+          description: `${app.firstName} ${app.lastName} has been moved to the Walk-In BEEF queue.`,
+        });
+        void fetchData();
+      } catch (err) {
+        toastApiError(err as never);
+      } finally {
+        setDowngradingId(null);
+      }
+    },
+    [fetchData],
+  );
+
   const getNotQualifiedReason = useCallback((app: Application) => {
     if (app.status !== "FAILED_ASSESSMENT") return null;
 
@@ -2482,14 +2410,19 @@ export default function PipelineBatchView({
   const verifyMarkedReadyApplicantIds = useMemo(
     () =>
       verifyEligibleApplicants
-        .filter(
-          (applicant) =>
-            Boolean(verifyRowsMarked[applicant.id]) &&
-            isVerifyRowReady(applicant.id),
-        )
+        .filter((applicant) => isVerifyRowReady(applicant.id))
         .map((applicant) => applicant.id),
-    [isVerifyRowReady, verifyEligibleApplicants, verifyRowsMarked],
+    [isVerifyRowReady, verifyEligibleApplicants],
   );
+
+  const verifyMetrics = useMemo(() => {
+    if (!activeBatchAction || activeBatchAction.id !== "VERIFY_DOCUMENTS") return null;
+    const total = verifyGridApplicants.length;
+    const fullyVerified = verifyGridApplicants.filter((app) =>
+      isVerifyRowReady(app.id),
+    ).length;
+    return { total, fullyVerified, pending: total - fullyVerified };
+  }, [activeBatchAction, verifyGridApplicants, isVerifyRowReady]);
 
   const buildExpectedStatuses = useCallback(
     (ids: number[]) =>
@@ -2588,8 +2521,8 @@ export default function PipelineBatchView({
     switch (activeBatchAction.id) {
       case "VERIFY_DOCUMENTS":
         return isEnrollmentQueueHandoffAction
-          ? "Mark at least one student for enrollment queue handoff."
-          : "Mark at least one row for clearance after completing required checklist items (or set retained rows as Mark Retained).";
+          ? "No applicants are ready for enrollment queue handoff."
+          : "At least one applicant must have all required documents verified.";
       case "ASSIGN_REGULAR_SECTION":
         if (hasMixedSelectedGradeLevels) {
           return "Selected applicants must belong to one grade level for section assignment.";
@@ -2645,7 +2578,6 @@ export default function PipelineBatchView({
             verifyGridColumns={orderedVerifyGridColumns}
             verifyGridApplicants={verifyGridApplicants}
             verifyGridValues={verifyGridValues}
-            verifyAcademicStatuses={verifyGridAcademicStatuses}
             verifyLrnDrafts={verifyGridLrnDrafts}
             lrnEditingId={verifyLrnEditingId}
             savingLrnId={verifyLrnSavingId}
@@ -2659,16 +2591,13 @@ export default function PipelineBatchView({
             setVerifyAll={setVerifyAll}
             setVerifyCell={setVerifyCell}
             setVerifyRequiredDocsForRow={setVerifyRequiredDocsForRow}
-            setVerifyAcademicStatus={setVerifyAcademicStatus}
             setVerifyLrnDraft={setVerifyLrnDraft}
             onStartLrnEdit={startVerifyLrnEdit}
             onCancelLrnEdit={cancelVerifyLrnEdit}
             onSaveLrn={(applicantId) => {
               void saveVerifyRowLrn(applicantId);
             }}
-            verifyRowsMarked={verifyRowsMarked}
             isVerifyRowReady={isVerifyRowReady}
-            setVerifyRowMarked={setVerifyRowMarked}
           />
         );
       case "ASSIGN_REGULAR_SECTION":
@@ -3017,6 +2946,8 @@ export default function PipelineBatchView({
             onPageChange={setPage}
             getRemarkByScore={getRemarkByScore}
             getNotQualifiedReason={getNotQualifiedReason}
+            onDowngradeToBeef={handleDowngradeToBeef}
+            downgradingId={downgradingId}
           />
         </CardContent>
       </Card>
@@ -3026,12 +2957,12 @@ export default function PipelineBatchView({
         isBatchProcessing={isBatchProcessing}
         activeBatchAction={activeBatchAction}
         selectedIdsSize={selectedIds.size}
-        selectedApplications={selectedApplications}
         preflightSummary={preflightSummary}
         actionFormError={actionFormError}
         actionReadinessHint={actionReadinessHint}
         isActionFormReady={isActionFormReady}
         actionSubmitCount={actionSubmitCount}
+        verifyMetrics={verifyMetrics}
         renderActionForm={renderActionForm}
         onOpenChange={handleActionModalOpenChange}
         onCancel={handleActionModalCancel}

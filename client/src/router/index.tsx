@@ -4,6 +4,7 @@ import { createBrowserRouter, Navigate } from "react-router";
 
 import AuthLayout from "@/shared/layouts/AuthLayout";
 import AppLayout from "@/shared/layouts/AppLayout";
+import TeacherIntakeLayout from "@/shared/layouts/TeacherIntakeLayout";
 import PublicLayout from "@/shared/layouts/PublicLayout";
 import RootLayout from "@/shared/layouts/RootLayout";
 import ProtectedRoute from "@/shared/components/ProtectedRoute";
@@ -47,6 +48,7 @@ import SampleIntegrationPage from "@/features/sample-integration/pages/Index";
 // DO 017 s.2025 — Standalone Early Registration Module (Grades 7–10)
 import EarlyRegistrationApply from "@/features/early-registration/pages/apply/Index";
 import BOSYPage from "@/features/bosy/pages/BOSYPage";
+import ReadingAssessmentPage from "@/features/reading-assessment/pages/ReadingAssessmentPage";
 
 import { lazy } from "react";
 
@@ -279,6 +281,10 @@ export const router = createBrowserRouter([
                 path: "/settings",
                 element: <Settings />,
               },
+              {
+                path: "/intake",
+                element: <IntakeDashboard />,
+              },
               // Protected routes for System Admin Only
               {
                 element: <ProtectedRoute allowedRoles={["SYSTEM_ADMIN"]} />,
@@ -310,7 +316,7 @@ export const router = createBrowserRouter([
         ],
       },
 
-      // 5. Shared routes for Admin + Teacher (Intake Dashboard)
+      // 5. Reading Assessment (Teacher + Admin access)
       {
         element: (
           <ProtectedRoute
@@ -325,11 +331,11 @@ export const router = createBrowserRouter([
         ),
         children: [
           {
-            element: <AppLayout />,
+            element: <TeacherIntakeLayout />,
             children: [
               {
-                path: "/intake",
-                element: <IntakeDashboard />,
+                path: "/reading-assessment",
+                element: <ReadingAssessmentPage />,
               },
             ],
           },

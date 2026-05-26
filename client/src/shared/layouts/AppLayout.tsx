@@ -20,7 +20,7 @@ import {
   UserPlus,
   School,
   ArrowRightLeft,
-  ClipboardList,
+  ClipboardCheck,
   Check,
 } from "lucide-react";
 
@@ -616,9 +616,9 @@ function AppSidebar() {
                   <>
                     <NavDivider label="Intake" />
                     <NavItem
-                      to="/intake"
-                      icon={ClipboardList}
-                      label="Reading & Confirmation"
+                      to="/reading-assessment"
+                      icon={ClipboardCheck}
+                      label="Adviser Intake Hub"
                       pathname={pathname}
                     />
                   </>

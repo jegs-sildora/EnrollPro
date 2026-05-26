@@ -1,5 +1,5 @@
-import { useMemo, useState, type ReactNode } from "react";
-import { ChevronDown, Loader2 } from "lucide-react";
+import type { ReactNode } from "react";
+import { Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -9,11 +9,6 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/shared/ui/collapsible";
 import type { RegistrationBatchActionConfig } from "@/features/admission/constants/registrationWorkflow";
 import type { Application } from "./types";
 
@@ -28,12 +23,13 @@ interface PipelineBatchActionDialogProps {
   isBatchProcessing: boolean;
   activeBatchAction: RegistrationBatchActionConfig | null;
   selectedIdsSize: number;
-  selectedApplications: Application[];
   preflightSummary: PipelineBatchPreflightSummary | null;
   actionFormError: string | null;
   actionReadinessHint: string | null;
   isActionFormReady: boolean;
   actionSubmitCount: number;
+  /** Task-oriented metrics shown when the action is VERIFY_DOCUMENTS */
+  verifyMetrics: { total: number; fullyVerified: number; pending: number } | null;
   renderActionForm: () => ReactNode;
   onOpenChange: (open: boolean) => void;
   onCancel: () => void;
@@ -45,47 +41,25 @@ export default function PipelineBatchActionDialog({
   isBatchProcessing,
   activeBatchAction,
   selectedIdsSize,
-  selectedApplications,
   preflightSummary,
   actionFormError,
   actionReadinessHint,
   isActionFormReady,
   actionSubmitCount,
+  verifyMetrics,
   renderActionForm,
   onOpenChange,
   onCancel,
   onConfirm,
 }: PipelineBatchActionDialogProps) {
-  const [showSelectedApplicants, setShowSelectedApplicants] = useState(false);
 
-  const selectedApplicantNames = useMemo(
-    () =>
-      selectedApplications.map((applicant) => {
-        const middleInitial = applicant.middleName?.trim()
-          ? ` ${applicant.middleName.trim().charAt(0).toUpperCase()}.`
-          : "";
-        const suffix = applicant.suffix?.trim()
-          ? ` ${applicant.suffix.trim()}`
-          : "";
-
-        return `${applicant.lastName}, ${applicant.firstName}${middleInitial}${suffix}`;
-      }),
-    [selectedApplications],
-  );
-
-  const selectedLabel =
-    selectedIdsSize === 1 ? "Selected Applicant" : "Selected Applicants";
+  const isVerifyMode = activeBatchAction?.id === "VERIFY_DOCUMENTS";
 
   return (
     <Dialog
       open={open}
-      onOpenChange={(nextOpen) => {
-        if (!nextOpen) {
-          setShowSelectedApplicants(false);
-        }
-        onOpenChange(nextOpen);
-      }}>
-      <DialogContent className="w-[94vw] max-w-[94vw] max-h-[88vh] overflow-hidden flex flex-col">
+      onOpenChange={onOpenChange}>
+      <DialogContent className="w-[80vw] max-w-[80vw] max-h-[88vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-base font-bold">
             {activeBatchAction?.modalTitle ?? "Batch Action"}
@@ -97,61 +71,42 @@ export default function PipelineBatchActionDialog({
         </DialogHeader>
 
         <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-4">
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
-              <p className="text-xs text-foreground font-bold">Selected</p>
-              <p className="text-lg font-bold">{selectedIdsSize}</p>
-            </div>
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
-              <p className="text-xs text-emerald-700 font-bold">Eligible</p>
-              <p className="text-lg font-bold text-emerald-700">
-                {preflightSummary?.eligible.length ?? 0}
-              </p>
-            </div>
-            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2">
-              <p className="text-xs text-red-700 font-bold">Blocked</p>
-              <p className="text-lg font-bold text-red-700">
-                {preflightSummary?.ineligible.length ?? 0}
-              </p>
-            </div>
-          </div>
-
-          <Collapsible
-            open={showSelectedApplicants}
-            onOpenChange={setShowSelectedApplicants}
-            className="rounded-lg border border-border bg-muted/40">
-            <CollapsibleTrigger asChild>
-              <button
-                type="button"
-                className="w-full px-3 py-2 flex items-center justify-between text-xs font-bold text-foreground hover:bg-muted/70 transition-colors">
-                <span>
-                  {showSelectedApplicants ? "Hide" : "View"} {selectedIdsSize}{" "}
-                  {selectedLabel}
-                </span>
-                <ChevronDown
-                  className={`size-4 transition-transform ${
-                    showSelectedApplicants ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-            </CollapsibleTrigger>
-
-            <CollapsibleContent>
-              <div className="border-t border-border bg-background/80 px-3 py-2">
-                <div className="max-h-32 overflow-y-auto">
-                  {selectedApplicantNames.length > 0 ? (
-                    <p className="text-xs font-bold text-foreground leading-relaxed">
-                      {selectedApplicantNames.join("; ")}
-                    </p>
-                  ) : (
-                    <p className="text-xs font-bold text-foreground">
-                      No applicants selected.
-                    </p>
-                  )}
-                </div>
+          {/* Metrics header — task-oriented for VERIFY_DOCUMENTS, preflight otherwise */}
+          {isVerifyMode && verifyMetrics ? (
+            <div className="grid grid-cols-3 gap-2">
+              <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+                <p className="text-xs text-foreground font-bold">Total Applicants</p>
+                <p className="text-lg font-bold">{verifyMetrics.total}</p>
               </div>
-            </CollapsibleContent>
-          </Collapsible>
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                <p className="text-xs text-emerald-700 font-bold">Fully Verified</p>
+                <p className="text-lg font-bold text-emerald-700">{verifyMetrics.fullyVerified}</p>
+              </div>
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+                <p className="text-xs text-amber-700 font-bold">Pending</p>
+                <p className="text-lg font-bold text-amber-700">{verifyMetrics.pending}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+                <p className="text-xs text-foreground font-bold">Selected</p>
+                <p className="text-lg font-bold">{selectedIdsSize}</p>
+              </div>
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                <p className="text-xs text-emerald-700 font-bold">Eligible</p>
+                <p className="text-lg font-bold text-emerald-700">
+                  {preflightSummary?.eligible.length ?? 0}
+                </p>
+              </div>
+              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+                <p className="text-xs text-red-700 font-bold">Blocked</p>
+                <p className="text-lg font-bold text-red-700">
+                  {preflightSummary?.ineligible.length ?? 0}
+                </p>
+              </div>
+            </div>
+          )}
 
           {actionFormError && (
             <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2">
@@ -209,8 +164,10 @@ export default function PipelineBatchActionDialog({
             {isBatchProcessing ? (
               <>
                 <Loader2 className="size-4 animate-spin mr-1.5" />
-                {activeBatchAction?.submitLabel ?? "Processing"}...
+                {isVerifyMode ? "Saving" : (activeBatchAction?.submitLabel ?? "Processing")}...
               </>
+            ) : isVerifyMode ? (
+              `Save Verifications (${actionSubmitCount})`
             ) : (
               `${activeBatchAction?.submitLabel ?? "Process"} (${actionSubmitCount})`
             )}

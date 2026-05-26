@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from "../../lib/prisma.js";
 import { auditLog } from "../audit-logs/audit-logs.service.js";
 import { verifyPin } from "./portal-pin.service.js";
-import { getEnrollmentPhase } from "../settings/enrollment-gate.service.js";
+import { getEnrollmentPhase, isRegularEnrollmentWindowOpen } from "../settings/enrollment-gate.service.js";
 
 const PORTAL_LOOKUP_ERROR = "Invalid learner credentials.";
 
@@ -397,9 +397,9 @@ export const getOnboardingStatus = async (req: Request, res: Response) => {
       return res.json({ nextStep: "COMPLETE" });
     }
 
-    // BOSY wall should only be enforced during REGULAR_ENROLLMENT.
-    const enrollmentPhase = getEnrollmentPhase(activeSy);
-    const isBosyEnrollmentOpen = enrollmentPhase === "REGULAR_ENROLLMENT";
+    // BOSY wall is open whenever the Phase 2 enrollment window is active,
+    // regardless of whether the Early Registration window is still open.
+    const isBosyEnrollmentOpen = isRegularEnrollmentWindowOpen(activeSy);
     if (!isBosyEnrollmentOpen) {
       return res.json({ nextStep: "COMPLETE" });
     }

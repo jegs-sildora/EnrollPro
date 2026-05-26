@@ -7,9 +7,9 @@ import {
   Lock,
   Save,
   Square,
+  TrendingDown,
 } from "lucide-react";
 import { StatusBadge } from "@/features/enrollment/components/StatusBadge";
-import { UserPhoto } from "@/shared/components/UserPhoto";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { Checkbox } from "@/shared/ui/checkbox";
@@ -41,6 +41,8 @@ interface PipelineBatchApplicantsTableProps {
   onPageChange: (nextPage: number) => void;
   getRemarkByScore: (appId: number) => string;
   getNotQualifiedReason: (app: Application) => string | null;
+  onDowngradeToBeef?: (app: Application) => void;
+  downgradingId?: number | null;
 }
 
 export default function PipelineBatchApplicantsTable({
@@ -64,6 +66,8 @@ export default function PipelineBatchApplicantsTable({
   onPageChange,
   getRemarkByScore,
   getNotQualifiedReason,
+  onDowngradeToBeef,
+  downgradingId,
 }: PipelineBatchApplicantsTableProps) {
   const ENROLLMENT_BRIDGE_STATUS = "READY_FOR_ENROLLMENT";
   const hasEnrollmentBridgeRows = applications.some(
@@ -74,9 +78,24 @@ export default function PipelineBatchApplicantsTable({
   ).length;
 
   const columns = useMemo<ColumnDef<Application>[]>(() => {
+    const NEXT_STEP_LABEL: Record<string, string> = {
+      SUBMITTED_BEERF: "Pending Verification",
+      SUBMITTED_BEEF: "Pending Verification",
+      UNDER_REVIEW: "Awaiting Review",
+      VERIFIED: "Awaiting Scheduling",
+      ELIGIBLE: "Schedule Assessment",
+      EXAM_SCHEDULED: "Record Results",
+      ASSESSMENT_TAKEN: "Record Decision",
+      INTERVIEW_SCHEDULED: "Record Interview",
+      PASSED: "Proceed to Enrollment",
+      FAILED_ASSESSMENT: "Does Not Qualify",
+      REJECTED: "Rejected",
+    };
+
     const cols: ColumnDef<Application>[] = [
       {
         id: "select",
+        size: 40,
         header: () => (
           <button
             type="button"
@@ -127,10 +146,6 @@ export default function PipelineBatchApplicantsTable({
           const app = row.original;
           return (
             <div className="flex items-center gap-3 text-left">
-              <UserPhoto
-                photo={app.studentPhoto}
-                className="w-8 h-8 rounded-full border border-primary/10 shadow-sm"
-              />
               <div className="flex flex-col">
                 <span className="font-bold text-sm uppercase">
                   {app.lastName}, {app.firstName}{" "}
@@ -326,7 +341,38 @@ export default function PipelineBatchApplicantsTable({
               </a>
             </Button>
           ) : (
-            <span className="text-xs font-bold text-foreground block">—</span>
+            <span className="text-xs font-bold text-muted-foreground block">
+              {NEXT_STEP_LABEL[app.status] ?? "—"}
+            </span>
+          );
+        },
+      });
+    }
+
+    if (onDowngradeToBeef) {
+      cols.push({
+        id: "becRescue",
+        header: "RESCUE",
+        cell: ({ row }) => {
+          const app = row.original;
+          if (app.status !== "FAILED_ASSESSMENT") return null;
+          return (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 px-2.5 text-[11px] font-bold border-amber-300 text-amber-700 hover:bg-amber-50"
+              disabled={downgradingId === app.id}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDowngradeToBeef(app);
+              }}>
+              {downgradingId === app.id ? (
+                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+              ) : (
+                <TrendingDown className="h-3 w-3 mr-1" />
+              )}
+              BEC Track
+            </Button>
           );
         },
       });
@@ -349,6 +395,8 @@ export default function PipelineBatchApplicantsTable({
     getNotQualifiedReason,
     showAssessment,
     hasEnrollmentBridgeRows,
+    onDowngradeToBeef,
+    downgradingId,
   ]);
 
   return (
