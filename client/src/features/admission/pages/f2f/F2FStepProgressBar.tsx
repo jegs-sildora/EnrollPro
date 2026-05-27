@@ -33,7 +33,7 @@ export default function F2FStepProgressBar({
               {currentStepData.title}
             </span>
             {description && (
-              <span className="text-xs font-medium mt-1 opacity-90">
+              <span className="text-xs font-bold mt-1 opacity-90">
                 {description}
               </span>
             )}
@@ -96,7 +96,7 @@ export default function F2FStepProgressBar({
                     <div className="flex flex-col items-center gap-0.5">
                       <span
                         className={cn(
-                          "text-[0.625rem] lg:text-[0.6875rem] font-semibold uppercase  text-center whitespace-nowrap transition-colors duration-200",
+                          "text-[0.625rem] lg:text-[0.6875rem] font-bold uppercase  text-center whitespace-nowrap transition-colors duration-200",
                           isCompleted || isActive
                             ? "text-foreground"
                             : "text-foreground",

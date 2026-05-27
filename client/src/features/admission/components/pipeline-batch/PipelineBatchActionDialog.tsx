@@ -59,7 +59,7 @@ export default function PipelineBatchActionDialog({
     <Dialog
       open={open}
       onOpenChange={onOpenChange}>
-      <DialogContent className="w-[80vw] max-w-[80vw] max-h-[88vh] overflow-hidden flex flex-col">
+      <DialogContent className="w-[85vw] max-w-[85vw] max-h-[88vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-base font-bold">
             {activeBatchAction?.modalTitle ?? "Batch Action"}

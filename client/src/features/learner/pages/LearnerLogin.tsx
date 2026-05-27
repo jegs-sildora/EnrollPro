@@ -113,7 +113,7 @@ export function LookupForm() {
                 </p>
               </div>
             </div>
-            <p className="text-xs font-semibold uppercase tracking-[0.1em] opacity-80">
+            <p className="text-xs font-bold uppercase tracking-[0.1em] opacity-80">
               Mobile-ready access for every learner
             </p>
           </div>
@@ -130,7 +130,7 @@ export function LookupForm() {
               <CardTitle className="text-2xl font-black tracking-tight text-slate-900">
                 Login to Learner Portal
               </CardTitle>
-              <CardDescription className="mt-1 text-sm text-muted-foreground">
+              <CardDescription className="mt-1 text-sm text-foreground">
                 Enter your LRN and password to continue.
               </CardDescription>
             </CardHeader>
@@ -144,7 +144,7 @@ export function LookupForm() {
                 variant="destructive"
                 className="py-3 bg-destructive/5 border-destructive/20">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="text-xs font-medium">
+                <AlertDescription className="text-xs font-bold">
                   {error}
                 </AlertDescription>
               </Alert>
@@ -153,13 +153,13 @@ export function LookupForm() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="lrn"
-                className="text-sm font-semibold text-foreground ml-1">
+                className="text-sm font-bold text-foreground ml-1">
                 Learner Reference Number (LRN)
               </Label>
               <Input
                 id="lrn"
                 placeholder="e.g., 101234567890"
-                className="h-12 text-base bg-white border-slate-300 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0 font-semibold"
+                className="h-12 text-base bg-white border-slate-300 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0 font-bold"
                 value={lrn}
                 onChange={(e) =>
                   setLrn(e.target.value.replace(/\D/g, "").slice(0, 12))
@@ -172,7 +172,7 @@ export function LookupForm() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="password"
-                className="text-sm font-semibold text-foreground ml-1">
+                className="text-sm font-bold text-foreground ml-1">
                 Password
               </Label>
               <div className="relative">
@@ -180,7 +180,7 @@ export function LookupForm() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="h-12 text-base bg-white border-slate-300 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0 pr-10 font-semibold"
+                  className="h-12 text-base bg-white border-slate-300 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0 pr-10 font-bold"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   required

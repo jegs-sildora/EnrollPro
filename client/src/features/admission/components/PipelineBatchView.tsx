@@ -40,6 +40,7 @@ import PipelineBatchScpAssessmentInterviewGrid from "./pipeline-batch/PipelineBa
 import PipelineBatchRegularSectionAssignment from "./pipeline-batch/PipelineBatchRegularSectionAssignment";
 import PipelineBatchApplicantsTable from "./pipeline-batch/PipelineBatchApplicantsTable";
 import PipelineBatchActionDialog from "./pipeline-batch/PipelineBatchActionDialog";
+import ScpSelectionBoard from "./pipeline-batch/ScpSelectionBoard";
 import {
   type AcademicStatusValue,
   DEFAULT_FINALIZE_INTERVIEW_ROW,
@@ -49,6 +50,7 @@ import {
   type FinalizeInterviewRowState,
   type PipelineBatchViewProps,
   type RankingFormulaComponent,
+  type ScpRankingResult,
   type RegularSectionBatchPreview,
   type ScheduleFormState,
   type ScoreRowState,
@@ -83,6 +85,13 @@ export default function PipelineBatchView({
   const showAssessment = hasAssessment && status === "EXAM_SCHEDULED";
   const DEFAULT_SCHEDULE_TIME = "08:00 AM";
   const ENROLLMENT_BRIDGE_STATUS = "READY_FOR_ENROLLMENT";
+
+  // Extend shared excluded statuses with READY_FOR_ENROLLMENT so pipeline
+  // view hides applicants that have already moved to the enrollment queue.
+  const PIPELINE_EXCLUDED_STATUSES = [
+    ...ACTIVE_REGISTRATION_EXCLUDED_STATUSES,
+    ENROLLMENT_BRIDGE_STATUS,
+  ] as const;
 
   // Selection
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -145,6 +154,8 @@ export default function PipelineBatchView({
   const [scoreGridRows, setScoreGridRows] = useState<
     Record<number, ScoreRowState>
   >({});
+  const [scpRankings, setScpRankings] = useState<ScpRankingResult[]>([]);
+  const [scpRankingsLoading, setScpRankingsLoading] = useState(false);
   const [scpAssessmentCutoffScore, setScpAssessmentCutoffScore] = useState<
     number | null
   >(cutoffScore ?? null);
@@ -161,6 +172,26 @@ export default function PipelineBatchView({
   // Assessment scores
   const [scores, setScores] = useState<Record<number, string>>({});
   const [savingId, setSavingId] = useState<number | null>(null);
+
+  const refreshScpRankings = useCallback(async () => {
+    if (!ayId || applicantType === "REGULAR" || applicantType === "ALL") {
+      setScpRankings([]);
+      return;
+    }
+
+    setScpRankingsLoading(true);
+    try {
+      const rankingsRes = await api.get(
+        `/early-registrations/scp-rankings?schoolYearId=${ayId}&scpType=${encodeURIComponent(applicantType)}`,
+      );
+      setScpRankings((rankingsRes.data?.rankings ?? []) as ScpRankingResult[]);
+    } catch (rankingErr) {
+      setScpRankings([]);
+      toastApiError(rankingErr as never);
+    } finally {
+      setScpRankingsLoading(false);
+    }
+  }, [applicantType, ayId]);
 
   const fetchData = useCallback(async () => {
     if (!ayId) {
@@ -185,7 +216,7 @@ export default function PipelineBatchView({
 
       const excludedCountPromises =
         status === "ALL"
-          ? ACTIVE_REGISTRATION_EXCLUDED_STATUSES.map((excludedStatus) => {
+          ? PIPELINE_EXCLUDED_STATUSES.map((excludedStatus) => {
               const excludedParams = new URLSearchParams();
               if (activeSearch) excludedParams.append("search", activeSearch);
               excludedParams.append("schoolYearId", String(ayId));
@@ -220,8 +251,8 @@ export default function PipelineBatchView({
       if (status === "ALL") {
         filteredApps = filteredApps.filter(
           (app: Application) =>
-            !ACTIVE_REGISTRATION_EXCLUDED_STATUSES.includes(
-              app.status as (typeof ACTIVE_REGISTRATION_EXCLUDED_STATUSES)[number],
+            !PIPELINE_EXCLUDED_STATUSES.includes(
+              app.status as (typeof PIPELINE_EXCLUDED_STATUSES)[number],
             ),
         );
       }
@@ -244,12 +275,25 @@ export default function PipelineBatchView({
             )
           : Number(res.data?.pagination?.total ?? 0),
       );
+
+      if (applicantType !== "REGULAR") {
+        await refreshScpRankings();
+      } else {
+        setScpRankings([]);
+      }
     } catch (err) {
       toastApiError(err as never);
     } finally {
       setLoading(false);
     }
-  }, [ayId, activeSearch, status, applicantType, page]);
+  }, [
+    ayId,
+    activeSearch,
+    status,
+    applicantType,
+    page,
+    refreshScpRankings,
+  ]);
 
   useEffect(() => {
     fetchData();
@@ -304,6 +348,21 @@ export default function PipelineBatchView({
       : (selectedApplications.find(
           (app) => Number(app.gradeLevelId) === selectedGradeLevelId,
         )?.gradeLevel?.name ?? null);
+
+  const isSteSelectionBoard =
+    applicantType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING";
+
+  if (isSteSelectionBoard) {
+    return (
+      <ScpSelectionBoard
+        scpType={applicantType}
+        rankings={scpRankings}
+        loading={loading || scpRankingsLoading}
+        cutoffSlot={70}
+        onPublishSuccess={refreshScpRankings}
+      />
+    );
+  }
 
   const hasMixedSelectedStatuses = selectedStatuses.length > 1;
   const hasMixedSelectedPrograms = selectedPrograms.length > 1;
@@ -2929,6 +2988,8 @@ export default function PipelineBatchView({
             applications={applications}
             loading={loading}
             isSearching={isSearching}
+            screeningMode={applicantType !== "REGULAR"}
+            rankings={scpRankings}
             showAssessment={showAssessment}
             selectedIds={selectedIds}
             isBatchProcessing={isBatchProcessing}

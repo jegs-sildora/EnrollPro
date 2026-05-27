@@ -213,7 +213,7 @@ const LoginDecorativeSidebar = memo(function LoginDecorativeSidebar({
               </div>
               <div>
                 <h3 className="font-bold text-white">{feature.title}</h3>
-                <p className="text-white text-sm font-semibold">
+                <p className="text-white text-sm font-bold">
                   {feature.desc}
                 </p>
               </div>
@@ -561,7 +561,7 @@ export default function Login() {
               </CardTitle>
               <CardDescription className="text-gray-600 text-sm">
                 Sign in to continue to{" "}
-                <span className="font-semibold text-primary">EnrollPro</span>
+                <span className="font-bold text-primary">EnrollPro</span>
               </CardDescription>
             </CardHeader>
 
@@ -583,7 +583,7 @@ export default function Login() {
                     <CheckCircle className="w-4 h-4 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-primary">
+                    <p className="text-sm font-bold text-primary">
                       {success}
                     </p>
                   </div>
@@ -596,7 +596,7 @@ export default function Login() {
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="accountName"
-                    className="text-gray-800 font-semibold text-sm pl-1">
+                    className="text-gray-800 font-bold text-sm pl-1">
                     Employee ID
                   </Label>
                   <div className="relative group">
@@ -626,7 +626,7 @@ export default function Login() {
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="password"
-                    className="text-gray-800 font-semibold text-sm pl-1">
+                    className="text-gray-800 font-bold text-sm pl-1">
                     Password
                   </Label>
                   <div className="relative group">
@@ -682,7 +682,7 @@ export default function Login() {
                   </label>
                   <a
                     href="#"
-                    className="font-semibold text-primary transition-colors hover:underline underline-offset-4 decoration-2 text-sm">
+                    className="font-bold text-primary transition-colors hover:underline underline-offset-4 decoration-2 text-sm">
                     Forgot password?
                   </a>
                 </div>
@@ -690,7 +690,7 @@ export default function Login() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-11 font-semibold text-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-0 disabled:opacity-70 disabled:cursor-not-allowed bg-primary text-primary-foreground hover:bg-primary/90">
+                  className="w-full h-11 font-bold text-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-0 disabled:opacity-70 disabled:cursor-not-allowed bg-primary text-primary-foreground hover:bg-primary/90">
                   {isLoading ? (
                     <span className="flex items-center gap-3">
                       <Loader2 className="animate-spin h-5 w-5" />

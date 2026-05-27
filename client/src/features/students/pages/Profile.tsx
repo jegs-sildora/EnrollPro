@@ -285,7 +285,7 @@ export default function StudentProfile() {
               </div>
             )}
 
-            <div className="flex items-center gap-4 mt-1 text-foreground text-sm font-medium">
+            <div className="flex items-center gap-4 mt-1 text-foreground text-sm font-bold">
               <span className="flex items-center gap-1">
                 <Fingerprint className="h-3.5 w-3.5" />{" "}
                 {student.lrn || "NO LRN"}
@@ -465,28 +465,28 @@ export default function StudentProfile() {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div className="space-y-1">
                       <Label className="text-foreground">Birth Date</Label>
-                      <p className="font-medium flex items-center gap-2">
+                      <p className="font-bold flex items-center gap-2">
                         <Calendar className="h-3.5 w-3.5" />
                         {format(new Date(student.birthDate), "MMMM d, yyyy")}
                       </p>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-foreground">Sex</Label>
-                      <p className="font-medium uppercase">{student.sex}</p>
+                      <p className="font-bold uppercase">{student.sex}</p>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-foreground">Place of Birth</Label>
-                      <p className="font-medium">
+                      <p className="font-bold">
                         {student.placeOfBirth || "N/A"}
                       </p>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-foreground">Religion</Label>
-                      <p className="font-medium">{student.religion || "N/A"}</p>
+                      <p className="font-bold">{student.religion || "N/A"}</p>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-foreground">Mother Tongue</Label>
-                      <p className="font-medium">
+                      <p className="font-bold">
                         {student.motherTongue || "N/A"}
                       </p>
                     </div>
@@ -499,7 +499,7 @@ export default function StudentProfile() {
                       <Label className="text-foreground flex items-center gap-2">
                         <MapPin className="h-3.5 w-3.5" /> Current Address
                       </Label>
-                      <p className="font-medium">
+                      <p className="font-bold">
                         {student?.currentAddress ? (
                           <>
                             {student.currentAddress.houseNo || ""}{" "}
@@ -518,7 +518,7 @@ export default function StudentProfile() {
                         <Label className="text-foreground flex items-center gap-2">
                           <MapPin className="h-3.5 w-3.5" /> Permanent Address
                         </Label>
-                        <p className="font-medium">
+                        <p className="font-bold">
                           {student.permanentAddress.houseNo || ""}{" "}
                           {student.permanentAddress.street || ""}{" "}
                           {student.permanentAddress.barangay || ""}{" "}
@@ -547,12 +547,12 @@ export default function StudentProfile() {
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         {student.motherName?.firstName ||
                         student.motherName?.lastName ? (
-                          <p className="font-medium">
+                          <p className="font-bold">
                             {student.motherName.firstName}{" "}
                             {student.motherName.lastName}
                           </p>
                         ) : (
-                          <p className="font-medium text-foreground/50 italic">
+                          <p className="font-bold text-foreground/50 italic">
                             Not provided
                           </p>
                         )}
@@ -575,12 +575,12 @@ export default function StudentProfile() {
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         {student.fatherName?.firstName ||
                         student.fatherName?.lastName ? (
-                          <p className="font-medium">
+                          <p className="font-bold">
                             {student.fatherName.firstName}{" "}
                             {student.fatherName.lastName}
                           </p>
                         ) : (
-                          <p className="font-medium text-foreground/50 italic">
+                          <p className="font-bold text-foreground/50 italic">
                             Not provided
                           </p>
                         )}
@@ -603,14 +603,14 @@ export default function StudentProfile() {
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         {student.guardianInfo?.firstName ||
                         student.guardianInfo?.lastName ? (
-                          <p className="font-medium">
+                          <p className="font-bold">
                             {student.guardianInfo.firstName}{" "}
                             {student.guardianInfo.lastName}{" "}
                             {student.guardianInfo.relationship &&
                               `(${student.guardianInfo.relationship})`}
                           </p>
                         ) : (
-                          <p className="font-medium text-foreground/50 italic">
+                          <p className="font-bold text-foreground/50 italic">
                             Not provided
                           </p>
                         )}
@@ -634,9 +634,9 @@ export default function StudentProfile() {
                       <Mail className="h-3.5 w-3.5" /> Learner Email Address
                     </Label>
                     {student.emailAddress ? (
-                      <p className="font-medium">{student.emailAddress}</p>
+                      <p className="font-bold">{student.emailAddress}</p>
                     ) : (
-                      <p className="font-medium text-foreground/50 italic">
+                      <p className="font-bold text-foreground/50 italic">
                         No email address provided
                       </p>
                     )}
@@ -655,7 +655,7 @@ export default function StudentProfile() {
                   <CardContent>
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div>
-                        <p className="text-sm font-medium">Reset Portal PIN</p>
+                        <p className="text-sm font-bold">Reset Portal PIN</p>
                         <p className="text-xs text-foreground mt-1">
                           Generate a new 6-digit PIN for the learner portal. The
                           current PIN will be invalidated.
@@ -700,7 +700,7 @@ export default function StudentProfile() {
                       </div>
                       <div className="space-y-1">
                         <Label className="text-foreground">School ID</Label>
-                        <p className="font-medium">
+                        <p className="font-bold">
                           {student.lastSchoolId || "N/A"}
                         </p>
                       </div>
@@ -708,7 +708,7 @@ export default function StudentProfile() {
                         <Label className="text-foreground">
                           School Address
                         </Label>
-                        <p className="font-medium">
+                        <p className="font-bold">
                           {student.lastSchoolAddress || "N/A"}
                         </p>
                       </div>
@@ -726,13 +726,13 @@ export default function StudentProfile() {
                         <Label className="text-foreground">
                           School Year Last Attended
                         </Label>
-                        <p className="font-medium">
+                        <p className="font-bold">
                           {student.schoolYearLastAttended || "N/A"}
                         </p>
                       </div>
                       <div className="space-y-1">
                         <Label className="text-foreground">School Type</Label>
-                        <p className="font-medium uppercase">
+                        <p className="font-bold uppercase">
                           {student.lastSchoolType || "N/A"}
                         </p>
                       </div>
@@ -1196,7 +1196,7 @@ export default function StudentProfile() {
                           </p>
                           <p
                             className={cn(
-                              "text-xs font-medium",
+                              "text-xs font-bold",
                               student.hasPsaBirthCertificate ||
                                 student.birthCertificateType === "PSA"
                                 ? "text-foreground"
@@ -1230,7 +1230,7 @@ export default function StudentProfile() {
                                 October 31, 2026
                               </span>
                             </p>
-                            <p className="text-xs font-medium text-amber-700 mt-1 leading-tight">
+                            <p className="text-xs font-bold text-amber-700 mt-1 leading-tight">
                               Secondary proof accepted. PSA must be submitted by
                               the deadline to finalize the permanent record.
                             </p>
@@ -1247,7 +1247,7 @@ export default function StudentProfile() {
                           )}>
                           <p
                             className={cn(
-                              "text-xs font-medium leading-relaxed italic",
+                              "text-xs font-bold leading-relaxed italic",
                               student.hasPsaBirthCertificate ||
                                 student.birthCertificateType === "PSA"
                                 ? "text-emerald-800"
@@ -1320,7 +1320,7 @@ export default function StudentProfile() {
                           </p>
                         </div>
                       </div>
-                      <p className="text-xs font-medium text-slate-500 leading-relaxed italic">
+                      <p className="text-xs font-bold text-slate-500 leading-relaxed italic">
                         "Original SF10 is held by the school until formal
                         transfer out or completion of JHS."
                       </p>
@@ -1397,13 +1397,13 @@ export default function StudentProfile() {
                               <tr
                                 key={entry.id}
                                 className="border-t align-top">
-                                <td className="px-4 py-3 font-medium whitespace-nowrap">
+                                <td className="px-4 py-3 font-bold whitespace-nowrap">
                                   {formatRecordHistoryTimestamp(
                                     entry.createdAt,
                                   )}
                                 </td>
                                 <td className="px-4 py-3">
-                                  <p className="font-semibold">
+                                  <p className="font-bold">
                                     {formatRecordHistoryAction(
                                       entry.actionType,
                                     )}
@@ -1413,7 +1413,7 @@ export default function StudentProfile() {
                                   </p>
                                 </td>
                                 <td className="px-4 py-3">
-                                  <p className="font-semibold">
+                                  <p className="font-bold">
                                     {entry.performedBy}
                                   </p>
                                   {entry.performedByRole && (

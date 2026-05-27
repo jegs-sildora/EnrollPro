@@ -240,7 +240,7 @@ export default function ExecuteRolloverModal({
                 <h3 className="text-md font-black text-foreground uppercase">
                   Processing School Year Rollover
                 </h3>
-                <p className="text-md font-semibold text-foreground">
+                <p className="text-md font-bold text-foreground">
                   Please keep this window open while records are being updated.
                 </p>
               </div>
@@ -322,7 +322,7 @@ export default function ExecuteRolloverModal({
               <p className="text-xs font-bold uppercase tracking-wide text-foreground mb-3">
                 Rollover Payload from {activeSchoolYearLabel ?? "—"}
               </p>
-              <ul className="space-y-4 font-semibold text-foreground">
+              <ul className="space-y-4 font-bold text-foreground">
                 {[
                   `Archive ${activeSchoolYearLabel ?? "current S.Y."} and lock all historical SF1/SF5 records.`,
                   "Clone Grade Levels, Sections, and SCP architecture (Adviser assignments will be wiped clean).",
@@ -342,7 +342,7 @@ export default function ExecuteRolloverModal({
                 <AlertTitle className="font-black text-red-800 uppercase">
                   Irreversible System Activation
                 </AlertTitle>
-                <AlertDescription className="text-sm font-medium text-red-700">
+                <AlertDescription className="text-sm font-bold text-red-700">
                   Once executed, this action cannot be undone. The current school year will be permanently archived.
                 </AlertDescription>
               </Alert>

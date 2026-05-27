@@ -146,7 +146,7 @@ function readingColor(level: string | null) {
   if (level === "FRUSTRATION") return "text-amber-600 font-bold";
   if (level === "INSTRUCTIONAL") return "text-blue-600 font-bold";
   if (level === "INDEPENDENT") return "text-emerald-600 font-bold";
-  return "text-muted-foreground italic";
+  return "text-foreground italic";
 }
 
 const intakeQueryKeys = {
@@ -318,7 +318,7 @@ function PreListingTab({
                 )}
               />
               {errors.learnerType ? (
-                <p className="text-xs text-destructive font-semibold">{errors.learnerType.message}</p>
+                <p className="text-xs text-destructive font-bold">{errors.learnerType.message}</p>
               ) : null}
             </div>
 
@@ -339,7 +339,7 @@ function PreListingTab({
                 )}
               />
               {errors.gradeLevel ? (
-                <p className="text-xs text-destructive font-semibold">{errors.gradeLevel.message}</p>
+                <p className="text-xs text-destructive font-bold">{errors.gradeLevel.message}</p>
               ) : null}
             </div>
 
@@ -358,7 +358,7 @@ function PreListingTab({
                 })}
               />
               {errors.lrn ? (
-                <p className="text-xs text-destructive font-semibold">{errors.lrn.message}</p>
+                <p className="text-xs text-destructive font-bold">{errors.lrn.message}</p>
               ) : null}
             </div>
 
@@ -366,7 +366,7 @@ function PreListingTab({
               <Label className="text-[10px] font-black uppercase tracking-widest">Last Name</Label>
               <Input placeholder="LAST NAME" {...register("lastName")} />
               {errors.lastName ? (
-                <p className="text-xs text-destructive font-semibold">{errors.lastName.message}</p>
+                <p className="text-xs text-destructive font-bold">{errors.lastName.message}</p>
               ) : null}
             </div>
 
@@ -374,7 +374,7 @@ function PreListingTab({
               <Label className="text-[10px] font-black uppercase tracking-widest">First Name</Label>
               <Input placeholder="FIRST NAME" {...register("firstName")} />
               {errors.firstName ? (
-                <p className="text-xs text-destructive font-semibold">{errors.firstName.message}</p>
+                <p className="text-xs text-destructive font-bold">{errors.firstName.message}</p>
               ) : null}
             </div>
 
@@ -406,22 +406,22 @@ function PreListingTab({
         <CardContent className="p-0">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <Loader2 className="h-6 w-6 animate-spin text-foreground" />
             </div>
           ) : isError ? (
-            <div className="flex items-center justify-center py-12 text-sm font-semibold text-destructive">
+            <div className="flex items-center justify-center py-12 text-sm font-bold text-destructive">
               Unable to load pre-listing entries.
             </div>
           ) : listings.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
+            <div className="flex flex-col items-center justify-center py-12 text-foreground gap-2">
               <ClipboardList className="h-8 w-8" />
-              <p className="text-sm font-semibold">No entries yet for this school year.</p>
+              <p className="text-sm font-bold">No entries yet for this school year.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-slate-50 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                  <tr className="border-b bg-slate-50 text-[10px] font-black uppercase tracking-widest text-foreground">
                     <th className="px-4 py-3 text-left">Name</th>
                     <th className="px-4 py-3 text-left">Grade</th>
                     <th className="px-4 py-3 text-left">Type</th>
@@ -432,7 +432,7 @@ function PreListingTab({
                 <tbody>
                   {listings.map((l) => (
                     <tr key={l.id} className="border-b last:border-0 hover:bg-slate-50/50 transition-colors">
-                      <td className="px-4 py-3 font-semibold">{formatName(l.lastName, l.firstName, l.middleName)}</td>
+                      <td className="px-4 py-3 font-bold">{formatName(l.lastName, l.firstName, l.middleName)}</td>
                       <td className="px-4 py-3 text-xs">{l.gradeLevel}</td>
                       <td className="px-4 py-3 text-xs">{LEARNER_TYPES.find((t) => t.value === l.learnerType)?.label ?? "-"}</td>
                       <td className="px-4 py-3">
@@ -525,22 +525,22 @@ function ReadingAssessmentTab({
         <CardContent className="p-0">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <Loader2 className="h-6 w-6 animate-spin text-foreground" />
             </div>
           ) : isError ? (
-            <div className="flex items-center justify-center py-12 text-sm font-semibold text-destructive">
+            <div className="flex items-center justify-center py-12 text-sm font-bold text-destructive">
               Unable to load the reading queue.
             </div>
           ) : queue.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
+            <div className="flex flex-col items-center justify-center py-12 text-foreground gap-2">
               <BookOpen className="h-8 w-8" />
-              <p className="text-sm font-semibold">No learners pending reading assessment.</p>
+              <p className="text-sm font-bold">No learners pending reading assessment.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-slate-50 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                  <tr className="border-b bg-slate-50 text-[10px] font-black uppercase tracking-widest text-foreground">
                     <th className="px-4 py-3 text-left">Name</th>
                     <th className="px-4 py-3 text-left">Grade</th>
                     <th className="px-4 py-3 text-left">Type</th>
@@ -550,7 +550,7 @@ function ReadingAssessmentTab({
                 <tbody>
                   {queue.map((row) => (
                     <tr key={`${row.source}-${row.data.id}`} className="border-b last:border-0 hover:bg-slate-50/50 transition-colors">
-                      <td className="px-4 py-3 font-semibold">{rowName(row)}</td>
+                      <td className="px-4 py-3 font-bold">{rowName(row)}</td>
                       <td className="px-4 py-3 text-xs">{rowGrade(row)}</td>
                       <td className="px-4 py-3 text-xs">{LEARNER_TYPES.find((t) => t.value === rowLearnerType(row))?.label ?? "-"}</td>
                       <td className="px-4 py-3 text-center">
@@ -664,22 +664,22 @@ function ConfirmationTab({
         <CardContent className="p-0">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <Loader2 className="h-6 w-6 animate-spin text-foreground" />
             </div>
           ) : isError ? (
-            <div className="flex items-center justify-center py-12 text-sm font-semibold text-destructive">
+            <div className="flex items-center justify-center py-12 text-sm font-bold text-destructive">
               Unable to load the confirmation queue.
             </div>
           ) : rows.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
+            <div className="flex flex-col items-center justify-center py-12 text-foreground gap-2">
               <FileCheck2 className="h-8 w-8" />
-              <p className="text-sm font-semibold">No learners pending confirmation.</p>
+              <p className="text-sm font-bold">No learners pending confirmation.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-slate-50 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                  <tr className="border-b bg-slate-50 text-[10px] font-black uppercase tracking-widest text-foreground">
                     <th className="px-4 py-3 text-left">Name</th>
                     <th className="px-4 py-3 text-left">Grade</th>
                     <th className="px-4 py-3 text-left">Type</th>
@@ -690,7 +690,7 @@ function ConfirmationTab({
                 <tbody>
                   {rows.map((row) => (
                     <tr key={`${row.source}-${row.data.id}`} className="border-b last:border-0 hover:bg-slate-50/50 transition-colors">
-                      <td className="px-4 py-3 font-semibold">{rowName(row)}</td>
+                      <td className="px-4 py-3 font-bold">{rowName(row)}</td>
                       <td className="px-4 py-3 text-xs">{rowGrade(row)}</td>
                       <td className="px-4 py-3">
                         <Badge className={`text-[10px] font-black uppercase ${row.source === "application" && row.data.learnerType === "RETURNING" ? "bg-purple-100 text-purple-700" : "bg-sky-100 text-sky-700"}`}>
@@ -773,8 +773,8 @@ export default function IntakeDashboard() {
 
   if (!schoolYearId) {
     return (
-      <div className="flex items-center justify-center py-20 text-muted-foreground">
-        <p className="text-sm font-semibold">No active school year configured.</p>
+      <div className="flex items-center justify-center py-20 text-foreground">
+        <p className="text-sm font-bold">No active school year configured.</p>
       </div>
     );
   }
@@ -783,7 +783,7 @@ export default function IntakeDashboard() {
     <div className="space-y-6 p-6">
       <div>
         <h1 className="text-2xl font-black uppercase tracking-tight">Intake Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-sm text-foreground mt-1">
           School Year {yearLabel} - Pre-Listing, Reading Assessment, and Confirmation
         </p>
       </div>

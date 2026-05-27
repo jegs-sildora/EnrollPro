@@ -135,7 +135,7 @@ export default function StepProgressBar({
 
         {/* Desktop and larger */}
         <div className="hidden md:block">
-          <p className="mb-3 text-center text-base font-semibold uppercase  text-foreground">
+          <p className="mb-3 text-center text-base font-bold uppercase  text-foreground">
             Step {currentStep} of {totalSteps}
           </p>
 
@@ -191,8 +191,8 @@ export default function StepProgressBar({
                         isActive
                           ? "font-bold text-foreground"
                           : isCompleted
-                            ? "font-semibold text-foreground"
-                            : "font-medium text-foreground",
+                            ? "font-bold text-foreground"
+                            : "font-bold text-foreground",
                       )}
                       title={step.title}>
                       {step.title}

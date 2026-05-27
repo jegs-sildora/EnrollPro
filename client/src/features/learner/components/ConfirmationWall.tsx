@@ -252,7 +252,7 @@ export function ConfirmationWall({
                 <h1 className="mt-1 text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
                   Confirmation of Return
                 </h1>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="mt-1 text-sm text-foreground">
                   Official BOSY intent declaration for {schoolName}.
                 </p>
               </div>
@@ -309,7 +309,7 @@ export function ConfirmationWall({
                           Enrollment Intent
                         </p>
                       </div>
-                      <p className="text-xs font-semibold text-foreground leading-relaxed">
+                      <p className="text-xs font-bold text-foreground leading-relaxed">
                         By confirming, you signal your intent to continue your studies at {schoolName} for the {learner.schoolYear?.yearLabel} school year.
                       </p>
                     </div>
@@ -323,7 +323,7 @@ export function ConfirmationWall({
                           Verification Status
                         </p>
                       </div>
-                      <p className="text-xs font-semibold text-foreground leading-relaxed">
+                      <p className="text-xs font-bold text-foreground leading-relaxed">
                         Your records have been automatically validated. No physical documents are required at this stage.
                       </p>
                     </div>
@@ -334,7 +334,7 @@ export function ConfirmationWall({
                       <p className="text-sm font-black uppercase tracking-wide text-slate-900">
                         BASELINE NUTRITIONAL STATUS
                       </p>
-                      <p className="mt-1 text-xs font-semibold text-slate-600">
+                      <p className="mt-1 text-xs font-bold text-slate-600">
                         These values are required for DepEd SF8 baseline and sectioning records.
                       </p>
                     </div>
@@ -360,7 +360,7 @@ export function ConfirmationWall({
                           className="h-12 px-4 rounded-xl border-2 border-slate-200 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0 font-bold text-sm bg-white"
                         />
                         {heightCmInput !== "" && !isHeightValid ? (
-                          <p className="text-[11px] font-semibold text-destructive">
+                          <p className="text-[11px] font-bold text-destructive">
                             Please enter a valid height in cm.
                           </p>
                         ) : null}
@@ -386,7 +386,7 @@ export function ConfirmationWall({
                           className="h-12 px-4 rounded-xl border-2 border-slate-200 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0 font-bold text-sm bg-white"
                         />
                         {weightKgInput !== "" && !isWeightValid ? (
-                          <p className="text-[11px] font-semibold text-destructive">
+                          <p className="text-[11px] font-bold text-destructive">
                             Please enter a valid weight in kg.
                           </p>
                         ) : null}
@@ -482,7 +482,7 @@ export function ConfirmationWall({
                     <Button
                       variant="ghost"
                       onClick={onLogout}
-                      className="h-10 rounded-xl font-semibold text-xs uppercase tracking-wide text-slate-600 hover:bg-slate-200">
+                      className="h-10 rounded-xl font-bold text-xs uppercase tracking-wide text-slate-600 hover:bg-slate-200">
                       <LogOut className="h-4 w-4 mr-2" />
                       Sign Out
                     </Button>
@@ -494,7 +494,7 @@ export function ConfirmationWall({
               {/* DPA Footer */}
               <div className="text-center text-slate-500 flex items-center justify-center gap-2 px-6">
                 <Info className="h-4 w-4 shrink-0" />
-                <p className="text-xs font-medium leading-relaxed max-w-lg">
+                <p className="text-xs font-bold leading-relaxed max-w-lg">
                   Strictly compliant with R.A. 10173 (Data Privacy Act of 2012).
                   Your digital signature is recorded for audit purposes.
                 </p>
@@ -575,7 +575,7 @@ function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
         variant === "default"
           ? "border-transparent bg-primary text-primary-foreground hover:bg-primary/80"
           : "text-foreground",

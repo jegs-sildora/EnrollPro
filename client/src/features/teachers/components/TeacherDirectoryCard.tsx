@@ -175,7 +175,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="end"
-          className="w-56 font-semibold">
+          className="w-56 font-bold">
           <DropdownMenuItem
             onClick={() => onOpenDesignationEditor(teacher)}
             className="cursor-pointer"
@@ -280,7 +280,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
           {row.original.employeeId ? (
             <span className="text-xs font-bold">{row.original.employeeId}</span>
           ) : (
-            <span className="text-slate-400 italic font-medium text-xs">
+            <span className="text-slate-400 italic font-bold text-xs">
               N/A
             </span>
           )}
@@ -306,7 +306,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
               {row.original.department}
             </span>
           ) : (
-            <span className="text-slate-400 italic font-medium text-xs">
+            <span className="text-slate-400 italic font-bold text-xs">
               Unassigned
             </span>
           )}
@@ -315,7 +315,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
               {row.original.specialization}
             </span>
           ) : (
-            <span className="text-slate-400 italic font-medium text-[10px]">
+            <span className="text-slate-400 italic font-bold text-[10px]">
               Generalist
             </span>
           )}
@@ -446,8 +446,8 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
       <CardHeader className="border-b bg-gradient-to-r from-muted/20 via-muted/10 to-transparent py-3 px-4 shrink-0">
         <div className="flex flex-wrap items-center gap-4 pb-3 border-b border-dashed border-border/60 mb-3">
           <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            <span className="text-[11px] font-black uppercase text-muted-foreground tracking-wider">
+            <Users className="h-4 w-4 text-foreground" />
+            <span className="text-[11px] font-black uppercase text-foreground tracking-wider">
               Total
             </span>
             <span className="text-base font-black text-primary tabular-nums">
@@ -457,7 +457,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
           <div className="h-4 w-px bg-border/50" />
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20" />
-            <span className="text-[11px] font-black uppercase text-muted-foreground tracking-wider">
+            <span className="text-[11px] font-black uppercase text-foreground tracking-wider">
               Active
             </span>
             <span className="text-base font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
@@ -467,7 +467,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
           <div className="h-4 w-px bg-border/50" />
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-slate-400 ring-2 ring-slate-400/20" />
-            <span className="text-[11px] font-black uppercase text-muted-foreground tracking-wider">
+            <span className="text-[11px] font-black uppercase text-foreground tracking-wider">
               Inactive
             </span>
             <span className="text-base font-black text-slate-400 tabular-nums">
@@ -477,7 +477,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
           <div className="h-4 w-px bg-border/50" />
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-indigo-500 ring-2 ring-indigo-500/20" />
-            <span className="text-[11px] font-black uppercase text-muted-foreground tracking-wider">
+            <span className="text-[11px] font-black uppercase text-foreground tracking-wider">
               Class Advisers
             </span>
             <span className="text-base font-black text-indigo-600 dark:text-indigo-400 tabular-nums">
@@ -500,7 +500,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative flex-1 min-w-[220px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground pointer-events-none" />
             <Input
               value={searchInputValue}
               onChange={(event) => setSearchInputValue(event.target.value)}
@@ -599,10 +599,10 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
               <div className="h-64 flex flex-col items-center justify-center gap-3 text-center bg-background/80 rounded-xl border-2 border-dashed">
                 <Search className="h-10 w-10 animate-pulse text-slate-400" />
                 <div className="space-y-1">
-                  <p className="text-lg font-medium text-slate-500">
+                  <p className="text-lg font-bold text-slate-500">
                     Searching...
                   </p>
-                  <p className="text-sm font-medium text-slate-400">
+                  <p className="text-sm font-bold text-slate-400">
                     Scanning DepEd faculty records...
                   </p>
                 </div>
@@ -628,7 +628,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                         <p className="font-black text-sm uppercase leading-tight">
                           {formatTeacherName(teacher)}
                         </p>
-                        <p className="text-xs text-foreground mt-0.5 font-medium">
+                        <p className="text-xs text-foreground mt-0.5 font-bold">
                           {teacher.email || "No email address"}
                         </p>
                       </div>
@@ -644,7 +644,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                       {teacher.employeeId ? (
                         <p className="font-bold">{teacher.employeeId}</p>
                       ) : (
-                        <p className="text-slate-400 italic font-medium">N/A</p>
+                        <p className="text-slate-400 italic font-bold">N/A</p>
                       )}
                     </div>
                     <div>
@@ -654,7 +654,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                       {teacher.specialization ? (
                         <p className="font-bold">{teacher.specialization}</p>
                       ) : (
-                        <p className="text-slate-400 italic font-medium">
+                        <p className="text-slate-400 italic font-bold">
                           Unassigned
                         </p>
                       )}
@@ -666,7 +666,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                       {teacher.contactNumber ? (
                         <p className="font-bold">{teacher.contactNumber}</p>
                       ) : (
-                        <p className="text-slate-400 italic font-medium">N/A</p>
+                        <p className="text-slate-400 italic font-bold">N/A</p>
                       )}
                     </div>
                     <div>
@@ -702,7 +702,7 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                         const ua = teacher.userAccount;
                         let accountLabel = "No Account";
                         let accountColor =
-                          "text-muted-foreground bg-muted border-muted-foreground/30";
+                          "text-foreground bg-muted border-muted-foreground/30";
 
                         if (ua) {
                           if (!ua.isActive) {
@@ -764,10 +764,10 @@ export const TeacherDirectoryCard = memo(function TeacherDirectoryCard({
                 <div className="h-64 flex flex-col items-center justify-center gap-3 text-center bg-background/80">
                   <Search className="h-10 w-10 animate-pulse text-slate-400" />
                   <div className="space-y-1">
-                    <p className="text-lg font-medium text-slate-500">
+                    <p className="text-lg font-bold text-slate-500">
                       Searching...
                     </p>
-                    <p className="text-sm font-medium text-slate-400">
+                    <p className="text-sm font-bold text-slate-400">
                       Scanning DepEd faculty records...
                     </p>
                   </div>

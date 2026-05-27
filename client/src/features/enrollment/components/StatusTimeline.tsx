@@ -63,7 +63,7 @@ export function StatusTimeline({ applicant }: Props) {
               )}
             </div>
             <div className="text-sm">
-              <p className="font-medium text-foreground">{event.label}</p>
+              <p className="font-bold text-foreground">{event.label}</p>
               <p className="text-xs text-foreground">
                 {format(event.date, "MMM d, yyyy h:mm a")}
               </p>

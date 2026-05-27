@@ -1090,7 +1090,7 @@ export default function SchoolYearTab() {
                 <h3 className="text-md font-black text-foreground uppercase">
                   Processing School Year Rollover
                 </h3>
-                <p className="text-md font-semibold text-foreground">
+                <p className="text-md font-bold text-foreground">
                   Please keep this window open while records are being updated.
                 </p>
               </div>
@@ -1125,7 +1125,7 @@ export default function SchoolYearTab() {
             <h3 className="text-2xl font-black  mb-3 text-foreground uppercase">
               Active School Year Required
             </h3>
-            <p className="text-foreground font-medium max-w-lg mb-8 leading-relaxed">
+            <p className="text-foreground font-bold max-w-lg mb-8 leading-relaxed">
               Before the system can process official enrollments, accept Early
               Registration data, or generate School Form 1 (SF1) rosters, a
               primary academic year must be established.
@@ -1234,7 +1234,7 @@ export default function SchoolYearTab() {
                       </div>
 
                       <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                        <p className="font-semibold">
+                        <p className="font-bold">
                           Adjusting these dates does not automatically change
                           your Enrollment Gate deadlines.
                         </p>
@@ -1243,7 +1243,7 @@ export default function SchoolYearTab() {
                       {editActiveClassOpening &&
                         editActiveClassEnd &&
                         !isActiveCalendarRangeValid && (
-                          <p className="text-xs font-semibold text-destructive">
+                          <p className="text-xs font-bold text-destructive">
                             EOSY must be later than BOSY and at least 240 days
                             after BOSY.
                           </p>
@@ -1272,7 +1272,7 @@ export default function SchoolYearTab() {
                 </div>
               ) : (
                 <div className="text-center space-y-4">
-                  <p className="text-foreground font-medium max-w-lg mx-auto leading-relaxed">
+                  <p className="text-foreground font-bold max-w-lg mx-auto leading-relaxed">
                     No active school year has been set for the system. Prepare a
                     draft school year below to begin.
                   </p>
@@ -1302,13 +1302,13 @@ export default function SchoolYearTab() {
                       </Badge>
                     </div>
                     <div className="space-y-1 text-left">
-                      <p className="text-sm font-medium text-foreground">
+                      <p className="text-sm font-bold text-foreground">
                         Start of Classes:{" "}
                         <span className="text-foreground font-bold">
                           {formatManilaDate(draftYear.classOpeningDate)}
                         </span>
                       </p>
-                      <p className="text-sm font-medium text-foreground">
+                      <p className="text-sm font-bold text-foreground">
                         End of School Year:{" "}
                         <span className="text-foreground font-bold">
                           {formatManilaDate(draftYear.classEndDate)}
@@ -1334,7 +1334,7 @@ export default function SchoolYearTab() {
                 </div>
               ) : (
                 <div className="text-center space-y-5">
-                  <p className="text-foreground font-medium max-w-lg mx-auto leading-relaxed">
+                  <p className="text-foreground font-bold max-w-lg mx-auto leading-relaxed">
                     No upcoming school year has been drafted yet. Prepare the
                     next academic year to allow for Early Registration setup.
                   </p>
@@ -1374,7 +1374,7 @@ export default function SchoolYearTab() {
                   <TableBody>
                     {archivedYears.map((year) => (
                       <TableRow key={year.id}>
-                        <TableCell className="font-semibold text-left">
+                        <TableCell className="font-bold text-left">
                           S.Y. {year.yearLabel}
                         </TableCell>
                         <TableCell className="text-left">
@@ -1407,7 +1407,7 @@ export default function SchoolYearTab() {
             <div className="sticky bottom-0 z-20">
               <div className="rounded-lg border border-border bg-background/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/85">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs font-semibold text-foreground">
+                  <p className="text-xs font-bold text-foreground">
                     {isActiveCalendarDirty
                       ? "You have unsaved active calendar changes."
                       : "No active calendar changes yet."}
@@ -1482,7 +1482,7 @@ export default function SchoolYearTab() {
                   />
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground opacity-50" />
                 </div>
-                <p className="text-xs text-foreground font-semibold">
+                <p className="text-xs text-foreground font-bold">
                   Auto-generated based on selected dates
                 </p>
                 {isLabelTaken && (
@@ -1518,7 +1518,7 @@ export default function SchoolYearTab() {
 
             {activeYear && (
               <div className="p-4 border rounded-lg space-y-3">
-                <p className="text-sm font-semibold">
+                <p className="text-sm font-bold">
                   Rollover options from {activeYear.yearLabel}
                 </p>
                 <p className="text-xs text-foreground">
@@ -1569,7 +1569,7 @@ export default function SchoolYearTab() {
                 <AlertTriangle className="h-4 w-4" />
                 System Activation
               </div>
-              <p className="text-sm font-medium leading-relaxed">
+              <p className="text-sm font-bold leading-relaxed">
                 {activeYear
                   ? "Executing rollover will archive the current academic cycle. This action cannot be reversed."
                   : "Activating this school year will open the enrollment lifecycle and lock these foundation dates into the database."}
@@ -1654,7 +1654,7 @@ export default function SchoolYearTab() {
               </Button>
             </div>
             {activeYear && !isRolloverReady && (
-              <div className="flex items-center justify-end gap-1 text-xs font-semibold text-amber-700">
+              <div className="flex items-center justify-end gap-1 text-xs font-bold text-amber-700">
                 <AlertTriangle className="h-3.5 w-3.5" />
                 <span>Waiting for EOSY Finalization.</span>
               </div>

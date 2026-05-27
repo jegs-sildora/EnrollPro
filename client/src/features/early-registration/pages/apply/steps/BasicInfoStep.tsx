@@ -9,9 +9,9 @@ import { cn, SCP_LABELS } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
 import api from "@/shared/api/axiosInstance";
 
-/** DepEd policy: minimum GWA for any SCP track (SPA / SPS baseline) */
+/** DepEd policy: minimum General Average for any SCP track (SPA / SPS baseline) */
 const SCP_GA_MINIMUM = 80;
-/** DepEd policy: minimum GWA required for the STE track */
+/** DepEd policy: minimum General Average required for the STE track */
 const STE_GA_THRESHOLD = 85;
 
 const LEARNER_TYPES = [
@@ -476,7 +476,7 @@ export default function BasicInfoStep() {
     isScpEligible && gaValue !== null && gaValue < SCP_GA_MINIMUM;
   const isGaMeetsThreshold =
     gaValue !== null && gaValue >= SCP_GA_MINIMUM;
-  // STE requires a higher GWA threshold (default 85 per DepEd policy)
+  // STE requires a higher General Average threshold (default 85 per DepEd policy)
   const isSteGaEligible = gaValue !== null && gaValue >= steGaThreshold;
 
   const canSelectScpTrack =
@@ -764,7 +764,7 @@ export default function BasicInfoStep() {
                 />
                 <Label
                   htmlFor="hasNoLrn"
-                  className="text-xs leading-relaxed font-semibold cursor-pointer text-foreground">
+                  className="text-xs leading-relaxed font-bold cursor-pointer text-foreground">
                   I confirm the learner currently has no LRN. This is allowed
                   for incoming Grade 7 and transferees.
                 </Label>
@@ -772,7 +772,7 @@ export default function BasicInfoStep() {
             )}
 
             {errors.lrn && (
-              <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-1">
+              <p className="text-xs text-destructive font-bold flex items-center gap-1 mt-1">
                 <AlertCircle className="w-3 h-3" />
                 {errors.lrn.message}
               </p>
@@ -824,7 +824,7 @@ export default function BasicInfoStep() {
             ))}
           </div>
           {errors.learnerType && (
-            <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-2">
+            <p className="text-xs text-destructive font-bold flex items-center gap-1 mt-2">
               <AlertCircle className="w-3 h-3" />
               {errors.learnerType.message}
             </p>
@@ -866,7 +866,7 @@ export default function BasicInfoStep() {
             ))}
           </div>
           {errors.gradeLevel && (
-            <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-2">
+            <p className="text-xs text-destructive font-bold flex items-center gap-1 mt-2">
               <AlertCircle className="w-3 h-3" />
               {errors.gradeLevel.message}
             </p>
@@ -922,7 +922,7 @@ export default function BasicInfoStep() {
               {gaEnteredAndBelowThreshold && (
                 <div className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3">
                   <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-                  <p className="text-xs font-semibold text-amber-800 leading-relaxed">
+                  <p className="text-xs font-bold text-amber-800 leading-relaxed">
                     Your general average ({gaValue}%) is below the minimum{" "}
                     <strong>{SCP_GA_MINIMUM}%</strong> required to
                     apply for any Special Curricular Program. You may still
@@ -986,8 +986,8 @@ export default function BasicInfoStep() {
                   Standard Junior High curriculum.
                 </p>
                 {isScpEligible && gaValue !== null && gaValue < SCP_GA_MINIMUM && (
-                  <p className="text-xs pl-8 mt-1 text-muted-foreground italic">
-                    Based on the GWA, the learner is eligible for the standard
+                  <p className="text-xs pl-8 mt-1 text-foreground italic">
+                    Based on the General Average, the learner is eligible for the standard
                     Junior High curriculum.
                   </p>
                 )}
@@ -1052,7 +1052,7 @@ export default function BasicInfoStep() {
               isGaMeetsThreshold &&
               !isLoadingScpConfig &&
               scpConfigError && (
-                <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-2">
+                <p className="text-xs text-destructive font-bold flex items-center gap-1 mt-2">
                   <AlertCircle className="w-3 h-3" />
                   {scpConfigError}
                 </p>
@@ -1098,7 +1098,7 @@ export default function BasicInfoStep() {
                             isSelected
                               ? "border-primary bg-primary text-primary-foreground shadow-md"
                               : isSteDisabled
-                                ? "border-border bg-muted/40 text-muted-foreground cursor-not-allowed opacity-70"
+                                ? "border-border bg-muted/40 text-foreground cursor-not-allowed opacity-70"
                                 : "border-border bg-white text-foreground hover:bg-primary/5",
                           )}
                           onClick={() => {
@@ -1124,8 +1124,8 @@ export default function BasicInfoStep() {
                               {SCP_LABELS[program.id]}
                             </span>
                             {isSteDisabled && (
-                              <span className="ml-auto inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[0.625rem] font-bold text-amber-700">
-                                Requires min GWA of {steGaThreshold}%
+                              <span className="ml-auto inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-700">
+                                Requires min General Average of {steGaThreshold}%
                               </span>
                             )}
                           </div>
@@ -1204,7 +1204,7 @@ export default function BasicInfoStep() {
                                     { message?: string }
                                   >
                                 )?.science?.message && (
-                                  <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                                  <p className="text-xs text-destructive font-bold flex items-center gap-1">
                                     <AlertCircle className="w-3 h-3" />
                                     {
                                       (
@@ -1271,7 +1271,7 @@ export default function BasicInfoStep() {
                                     { message?: string }
                                   >
                                 )?.mathematics?.message && (
-                                  <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                                  <p className="text-xs text-destructive font-bold flex items-center gap-1">
                                     <AlertCircle className="w-3 h-3" />
                                     {
                                       (
@@ -1338,7 +1338,7 @@ export default function BasicInfoStep() {
                                     { message?: string }
                                   >
                                 )?.english?.message && (
-                                  <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                                  <p className="text-xs text-destructive font-bold flex items-center gap-1">
                                     <AlertCircle className="w-3 h-3" />
                                     {
                                       (
@@ -1360,7 +1360,7 @@ export default function BasicInfoStep() {
                 </div>
 
                 {errors.scpType?.message && (
-                  <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                  <p className="text-xs text-destructive font-bold flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
                     {errors.scpType.message}
                   </p>
@@ -1421,7 +1421,7 @@ export default function BasicInfoStep() {
                                 key={`${scpType}-document-${requirement.label}-${index}`}
                                 className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
                                 <div className="flex items-start justify-between gap-2">
-                                  <p className="text-xs font-medium text-foreground">
+                                  <p className="text-xs font-bold text-foreground">
                                     {requirement.label}
                                   </p>
                                   <span

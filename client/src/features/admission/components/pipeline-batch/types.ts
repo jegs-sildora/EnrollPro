@@ -45,6 +45,15 @@ export interface EarlyRegistrationApiRow extends Application {
   } | null;
 }
 
+export interface ScpRankingResult {
+  applicationId: number;
+  firstName: string;
+  lastName: string;
+  lrn: string | null;
+  compositeScore: number;
+  breakdown: Record<string, number>;
+}
+
 export interface PipelineBatchViewProps {
   applicantType: string;
   cutoffScore?: number | null;

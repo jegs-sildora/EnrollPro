@@ -363,7 +363,7 @@ export default function Step5Enrollment() {
           ))}
         </div>
         {errors.learnerType?.message && (
-          <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-2">
+          <p className="text-xs text-destructive font-bold flex items-center gap-1 mt-2">
             <AlertCircle className="w-3 h-3" /> {errors.learnerType.message}
           </p>
         )}
@@ -403,7 +403,7 @@ export default function Step5Enrollment() {
           ))}
         </div>
         {errors.gradeLevel?.message && (
-          <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-2">
+          <p className="text-xs text-destructive font-bold flex items-center gap-1 mt-2">
             <AlertCircle className="w-3 h-3" /> {errors.gradeLevel.message}
           </p>
         )}
@@ -451,7 +451,7 @@ export default function Step5Enrollment() {
           </div>
         </div>
         {errors.generalAverage?.message && (
-          <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-1">
+          <p className="text-xs text-destructive font-bold flex items-center gap-1 mt-1">
             <AlertCircle className="w-3 h-3" /> {errors.generalAverage.message}
           </p>
         )}
@@ -577,7 +577,7 @@ export default function Step5Enrollment() {
           )}
 
           {shouldShowScpCard && !isLoadingScpConfig && scpConfigError && (
-            <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-2">
+            <p className="text-xs text-destructive font-bold flex items-center gap-1 mt-2">
               <AlertCircle className="w-3 h-3" />
               {scpConfigError}
             </p>
@@ -724,7 +724,7 @@ export default function Step5Enrollment() {
                                           />
                                           <Label
                                             htmlFor={`sport-${sport}`}
-                                            className="text-xs font-medium cursor-pointer">
+                                            className="text-xs font-bold cursor-pointer">
                                             {sport}
                                           </Label>
                                         </div>
@@ -771,7 +771,7 @@ export default function Step5Enrollment() {
                     ))}
                   </div>
                   {errors.scpType?.message && (
-                    <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-2">
+                    <p className="text-xs text-destructive font-bold flex items-center gap-1 mt-2">
                       <AlertCircle className="w-3 h-3" />{" "}
                       {errors.scpType.message}
                     </p>
@@ -814,7 +814,7 @@ export default function Step5Enrollment() {
                 />
                 <Label
                   htmlFor={`modality-${modality}`}
-                  className="text-sm font-medium cursor-pointer">
+                  className="text-sm font-bold cursor-pointer">
                   {modality}
                 </Label>
               </div>

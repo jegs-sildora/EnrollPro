@@ -37,7 +37,7 @@ export const IntegrationLogTable = memo(function IntegrationLogTable({
       header: "Timestamp",
       size: 180,
       cell: ({ row }) => (
-        <div className="flex items-center gap-2 text-muted-foreground font-bold">
+        <div className="flex items-center gap-2 text-foreground font-bold">
           <Clock3 className="h-3 w-3" />
           {new Date(row.original.timestamp).toLocaleString()}
         </div>
@@ -86,7 +86,7 @@ export const IntegrationLogTable = memo(function IntegrationLogTable({
               {status === "pending" ? "Awaiting Sync" : "Sync Failed"}
             </div>
             {error && (
-              <p className="text-[10px] font-bold text-muted-foreground/80 leading-tight line-clamp-2">
+              <p className="text-[10px] font-bold text-foreground/80 leading-tight line-clamp-2">
                 {error}
               </p>
             )}

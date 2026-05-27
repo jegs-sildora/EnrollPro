@@ -175,7 +175,7 @@ export default function EarlyRegSuccessView({
             </h2>
             <p
               style={{ color: "#4b5563" }}
-              className="text-xl font-medium">
+              className="text-xl font-bold">
               Your early registration for{" "}
               <span
                 style={{ color: "#061E29" }}
@@ -337,7 +337,7 @@ export default function EarlyRegSuccessView({
           </div>
 
           <div className="space-y-4">
-            <h3 className="font-semibold text-lg flex items-center gap-2">
+            <h3 className="font-bold text-lg flex items-center gap-2">
               <FileText className="w-5 h-5" />
               Next Steps
             </h3>

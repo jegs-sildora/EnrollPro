@@ -89,7 +89,7 @@ function SectionCard({
         )}
       </div>
 
-      <div className="text-xs text-muted-foreground font-bold space-y-1">
+      <div className="text-xs text-foreground font-bold space-y-1">
         {canMutate ? (
           section.advisingTeacher ? (
             <button
@@ -544,7 +544,7 @@ export default function Homerooms() {
                                   {canMutate && (
                                     <button
                                       onClick={() => handleOpenCreate(g.gradeLevelId, g.gradeLevelName, programType, true)}
-                                      className="flex min-h-[100px] items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 p-6 text-sm font-bold text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary">
+                                      className="flex min-h-[100px] items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 p-6 text-sm font-bold text-foreground transition-colors hover:border-primary/50 hover:text-primary">
                                       <Plus className="size-4" />
                                       Add {label} Section
                                     </button>
@@ -567,7 +567,7 @@ export default function Homerooms() {
                       {/* Homogeneous / Pilot */}
                       <div className="space-y-3">
                         <h3 className="text-sm font-black uppercase text-foreground tracking-wide">
-                          BEC <span className="font-medium normal-case text-foreground/60">(Homogeneous / Pilot Section)</span>
+                          BEC <span className="font-bold normal-case text-foreground/60">(Homogeneous / Pilot Section)</span>
                         </h3>
                         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                           {homoBecSections.map((s) => (
@@ -584,7 +584,7 @@ export default function Homerooms() {
                           {canMutate && (
                             <button
                               onClick={() => handleOpenCreate(g.gradeLevelId, g.gradeLevelName, "REGULAR", true)}
-                              className="flex min-h-[100px] items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 p-6 text-sm font-bold text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary">
+                              className="flex min-h-[100px] items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 p-6 text-sm font-bold text-foreground transition-colors hover:border-primary/50 hover:text-primary">
                               <Plus className="size-4" />
                               Add Homogeneous Section
                             </button>
@@ -595,7 +595,7 @@ export default function Homerooms() {
                       {/* Heterogeneous */}
                       <div className="space-y-3">
                         <h3 className="text-sm font-black uppercase text-foreground tracking-wide">
-                          BEC <span className="font-medium normal-case text-foreground/60">(Heterogeneous Section)</span>
+                          BEC <span className="font-bold normal-case text-foreground/60">(Heterogeneous Section)</span>
                         </h3>
                         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                           {heteroBecSections.map((s) => (
@@ -612,7 +612,7 @@ export default function Homerooms() {
                           {canMutate && (
                             <button
                               onClick={() => handleOpenCreate(g.gradeLevelId, g.gradeLevelName, "REGULAR", false)}
-                              className="flex min-h-[100px] items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 p-6 text-sm font-bold text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary">
+                              className="flex min-h-[100px] items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 p-6 text-sm font-bold text-foreground transition-colors hover:border-primary/50 hover:text-primary">
                               <Plus className="size-4" />
                               Add Heterogeneous Section
                             </button>
@@ -621,7 +621,7 @@ export default function Homerooms() {
                       </div>
 
                       {homoBecSections.length === 0 && heteroBecSections.length === 0 && !canMutate && (
-                        <p className="py-8 text-center text-sm font-bold text-muted-foreground">
+                        <p className="py-8 text-center text-sm font-bold text-foreground">
                           No homeroom sections for this grade level.
                         </p>
                       )}

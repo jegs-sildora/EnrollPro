@@ -123,15 +123,8 @@ export default function EarlyRegistration({
       <div className="flex-1 flex flex-col space-y-4 sm:space-y-6 overflow-auto px-2 sm:px-4 lg:px-0">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold ">
-              Early Registration Monitoring Dashboard
-            </h1>
-            <p className="text-sm font-bold text-foreground">
-              Applicant screening and assessment workflow
-            </p>
-            {isHistoricalReadOnly && (
-              <p className="text-xs font-bold text-amber-600 mt-0.5">Viewing archived data — intake actions are disabled.</p>
-            )}
+            <h1 className="text-3xl font-bold text-foreground">Early Registration</h1>
+            <p className="text-xs text-foreground font-bold">New Learner Intake &amp; Screening Workflow</p>
           </div>
 
           <div className="flex w-full md:w-auto gap-2">

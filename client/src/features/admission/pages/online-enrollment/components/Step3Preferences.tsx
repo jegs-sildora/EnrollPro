@@ -34,7 +34,7 @@ export default function Step3Preferences() {
     <div className="space-y-8">
       {/* Section 2: Grade Level & Program */}
       <div className="space-y-6">
-        <h3 className="text-lg font-semibold">
+        <h3 className="text-lg font-bold">
           Section 2: Grade Level & Program
         </h3>
 
@@ -195,7 +195,7 @@ export default function Step3Preferences() {
 
       {/* Section 7: Previous School Information */}
       <div className="space-y-6">
-        <h3 className="text-lg font-semibold">
+        <h3 className="text-lg font-bold">
           Section 7: Previous School Information
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -211,7 +211,7 @@ export default function Step3Preferences() {
               {...register("lastSchoolName")}
             />
             {errors.lastSchoolName && (
-              <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-1">
+              <p className="text-xs text-destructive font-bold flex items-center gap-1 mt-1">
                 <AlertCircle className="w-3 h-3" />
                 <span>
                   Incomplete Information: {errors.lastSchoolName.message}
@@ -284,7 +284,7 @@ export default function Step3Preferences() {
 
       {/* Section 9: Learner Type */}
       <div className="space-y-6">
-        <h3 className="text-lg font-semibold">Section 9: Learner Type</h3>
+        <h3 className="text-lg font-bold">Section 9: Learner Type</h3>
         <div className="space-y-2">
           <Label>
             Type of Learner <span className="text-destructive">*</span>
@@ -312,7 +312,7 @@ export default function Step3Preferences() {
 
       {/* Section 10: Certification */}
       <div className="space-y-4 bg-primary/5 p-6 rounded-lg border border-primary/20">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
+        <h3 className="text-lg font-bold flex items-center gap-2">
           <InfoIcon className="w-5 h-5 text-primary" />
           Section 10: Certification & Consent
         </h3>
@@ -333,7 +333,7 @@ export default function Step3Preferences() {
           />
           <Label
             htmlFor="certify"
-            className="text-sm font-medium leading-tight">
+            className="text-sm font-bold leading-tight">
             I certify the accuracy of the information provided above.{" "}
             <span className="text-destructive">*</span>
           </Label>
@@ -353,7 +353,7 @@ export default function Step3Preferences() {
               placeholder="Type your full name"
             />
             {errors.parentGuardianSignature && (
-              <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-1">
+              <p className="text-xs text-destructive font-bold flex items-center gap-1 mt-1">
                 <AlertCircle className="w-3 h-3" />
                 <span>
                   Incomplete Information:{" "}

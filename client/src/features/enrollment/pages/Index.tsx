@@ -2393,7 +2393,7 @@ export default function Enrollment() {
                       <Lock className="h-4 w-4 mr-2" />
                       Initiate BOSY Lockdown
                     </Button>
-                    <p className="text-xs text-foreground/60 font-semibold">
+                    <p className="text-xs text-foreground/60 font-bold">
                       Locking BOSY finalizes class rosters, enables SF1 generation, and transitions operations to post-lock workflows.
                     </p>
                   </div>
@@ -2569,7 +2569,7 @@ export default function Enrollment() {
                             <DialogTitle className="text-sm font-bold uppercase ">
                               Bulk Section Assignment
                             </DialogTitle>
-                            <DialogDescription className="text-sm font-semibold">
+                            <DialogDescription className="text-sm font-bold">
                               Assign {selectedRows.length} learners to a
                               specific section.
                             </DialogDescription>
@@ -2880,14 +2880,14 @@ export default function Enrollment() {
             <DialogTitle className="text-sm font-bold uppercase ">
               Official Enrollment Confirmation
             </DialogTitle>
-            <DialogDescription className="text-sm font-semibold">
+            <DialogDescription className="text-sm font-bold">
               Confirming enrollment for {selectedApp?.lastName},{" "}
               {selectedApp?.firstName}
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-4">
-            <p className="text-sm font-medium">
+            <p className="text-sm font-bold">
               This action confirms the{" "}
               <span className="font-bold text-green-700">
                 OFFICIAL ENROLLMENT
@@ -2915,7 +2915,7 @@ export default function Enrollment() {
                 Official enrollment is locked until a section is assigned.
               </p>
             )}
-            <p className="text-sm mt-4 italic text-foreground font-medium">
+            <p className="text-sm mt-4 italic text-foreground font-bold">
               Ensure all physical documents (PSA, SF9) have been verified in
               person before proceeding.
             </p>
@@ -2963,7 +2963,7 @@ export default function Enrollment() {
             <DialogTitle className="text-sm font-bold uppercase">
               Authorize BOSY Lockdown
             </DialogTitle>
-            <DialogDescription className="text-sm font-semibold">
+            <DialogDescription className="text-sm font-bold">
               Confirm official lock for S.Y. {ayLabel}. This action requires a
               valid System Admin PIN.
             </DialogDescription>
@@ -3047,7 +3047,7 @@ export default function Enrollment() {
             <DialogTitle className="text-sm font-bold uppercase ">
               Verify LRN / Existing Record
             </DialogTitle>
-            <DialogDescription className="text-sm font-semibold">
+            <DialogDescription className="text-sm font-bold">
               Check the learner first before opening Direct Intake to avoid
               duplicate BOSY records.
             </DialogDescription>
@@ -3095,7 +3095,7 @@ export default function Enrollment() {
                   className="text-sm font-bold ">
                   Learner has no LRN yet
                 </Label>
-                <p className="text-[11px] font-semibold text-foreground">
+                <p className="text-[11px] font-bold text-foreground">
                   Use only for incoming Grade 7 or transferee walk-ins.
                 </p>
               </div>
@@ -3134,7 +3134,7 @@ export default function Enrollment() {
             <DialogTitle className="text-sm font-bold uppercase ">
               Encode Reading Profile
             </DialogTitle>
-            <DialogDescription className="text-sm font-semibold">
+            <DialogDescription className="text-sm font-bold">
               Reading Profile is required before section assignment and official
               enrollment.
             </DialogDescription>
@@ -3143,7 +3143,7 @@ export default function Enrollment() {
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label className="text-sm font-bold uppercase ">Learner</Label>
-              <p className="text-sm font-semibold">
+              <p className="text-sm font-bold">
                 {readingProfileDialog.application
                   ? `${readingProfileDialog.application.lastName}, ${readingProfileDialog.application.firstName}`
                   : "N/A"}
@@ -3197,7 +3197,7 @@ export default function Enrollment() {
                   }));
                 }}
                 placeholder="Record assessment notes or remarks"
-                className="min-h-24 text-sm font-semibold"
+                className="min-h-24 text-sm font-bold"
                 maxLength={500}
               />
             </div>
@@ -3251,13 +3251,13 @@ export default function Enrollment() {
             </DialogTitle>
           </DialogHeader>
           <div className="py-2 space-y-3">
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className="text-sm text-foreground leading-relaxed">
               You are about to reverse this learner's exit. This will clear
               their exit date and reason, returning them to the active Official
               Class Roster and resuming their inclusion in DepEd SF4 and grading
               reports.
             </p>
-            <p className="text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-300 rounded-md px-3 py-2">
+            <p className="text-sm font-bold text-amber-700 bg-amber-50 border border-amber-300 rounded-md px-3 py-2">
               Only do this to correct an administrative error.
             </p>
           </div>
@@ -3290,7 +3290,7 @@ export default function Enrollment() {
             <DialogTitle className="text-sm font-bold uppercase ">
               Select Grade Level for Batch Sectioning
             </DialogTitle>
-            <DialogDescription className="text-sm font-semibold">
+            <DialogDescription className="text-sm font-bold">
               The Batch Wizard will run on the entire unassigned pool of
               learners for the selected grade level.
             </DialogDescription>
@@ -3407,7 +3407,7 @@ export default function Enrollment() {
                 Export LIS Batch / SF1
               </DialogTitle>
             </div>
-            <DialogDescription className="text-sm font-semibold">
+            <DialogDescription className="text-sm font-bold">
               Select an export format. School Form 1 (SF1) requires selecting a
               specific section.
             </DialogDescription>
@@ -3421,7 +3421,7 @@ export default function Enrollment() {
                   <h4 className="font-bold text-sm text-emerald-800">
                     LIS Master Extract (XLSX)
                   </h4>
-                  <p className="text-xs font-semibold text-emerald-700 mt-0.5">
+                  <p className="text-xs font-bold text-emerald-700 mt-0.5">
                     Official BOSY/EOSY data extract for all sections in{" "}
                     {ayLabel}.
                   </p>

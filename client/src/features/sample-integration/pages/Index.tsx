@@ -338,7 +338,7 @@ export default function SampleIntegrationPage() {
             <div
               key={feed.system}
               className="rounded-md border bg-card p-3 text-sm">
-              <div className="font-semibold">{feed.system}</div>
+              <div className="font-bold">{feed.system}</div>
               <div className="text-foreground">{feed.purpose}</div>
               <div className="mt-1 overflow-x-auto rounded bg-muted px-2 py-1  text-xs">
                 {feed.endpoint}
@@ -376,7 +376,7 @@ export default function SampleIntegrationPage() {
                     <div
                       key={teacher.id}
                       className="rounded border p-2">
-                      <p className="font-semibold">
+                      <p className="font-bold">
                         {formatTeacherName(teacher)}
                       </p>
                       <p className="text-xs text-foreground">
@@ -436,7 +436,7 @@ export default function SampleIntegrationPage() {
                     <div
                       key={member.id}
                       className="rounded border p-2">
-                      <p className="font-semibold">{formatUserName(member)}</p>
+                      <p className="font-bold">{formatUserName(member)}</p>
                       <p className="text-xs text-foreground">
                         User ID: {member.id} | Role: {member.role}
                       </p>
@@ -491,7 +491,7 @@ export default function SampleIntegrationPage() {
                     <div
                       key={learnerRow.id}
                       className="rounded border p-2">
-                      <p className="font-semibold">{learnerRow.fullName}</p>
+                      <p className="font-bold">{learnerRow.fullName}</p>
                       <p className="text-xs text-foreground">
                         Application ID: {learnerRow.id} | Tracking:{" "}
                         {learnerRow.trackingNumber}

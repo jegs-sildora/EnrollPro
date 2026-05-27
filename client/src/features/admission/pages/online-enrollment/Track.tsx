@@ -12,6 +12,7 @@ import {
 import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
 import { Label } from "@/shared/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
 import {
   Search,
   Loader2,
@@ -26,6 +27,7 @@ import {
   MapPin,
   ClipboardList,
   LogOut,
+  ArrowLeft,
 } from "lucide-react";
 import api from "@/shared/api/axiosInstance";
 import {
@@ -37,7 +39,7 @@ import {
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "motion/react";
 import { useSettingsStore } from "@/store/settings.slice";
-import html2canvas from "html2canvas";
+import { toJpeg } from "html-to-image";
 import jsPDF from "jspdf";
 import TrackingNextSteps from "@/features/admission/components/TrackingNextSteps";
 import { normalizeTrackingStatus } from "@/features/admission/components/trackingState";
@@ -60,6 +62,11 @@ interface ApplicationStatus extends ApplicationTrackResponse {
   firstName: string;
   middleName?: string;
   lastName: string;
+  applicantName?: string;
+  program?: string;
+  rank?: number;
+  isPassed?: boolean;
+  compositeScore?: number;
   trackingStatus?: string;
   learningProgram?: string;
   createdAt: string;
@@ -74,6 +81,7 @@ interface ApplicationStatus extends ApplicationTrackResponse {
   }[];
   rejectionReason?: string;
   scpDetail?: { scpType: string };
+  earlyRegistrationId?: number | null;
 }
 
 const statusConfig: Record<
@@ -253,10 +261,18 @@ export default function TrackApplication({
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<TrackFormData>({
     resolver: zodResolver(trackSchema),
   });
+
+  const handleBackToSearch = () => {
+    setStatus(null);
+    setError("");
+    onResultsFetched?.(false);
+    reset({ trackingNumber: "" });
+  };
 
   const downloadPDF = async () => {
     if (!pdfRef.current || !status) return;
@@ -264,27 +280,18 @@ export default function TrackApplication({
 
     try {
       const element = pdfRef.current;
-      element.style.visibility = "visible";
-      element.style.position = "fixed";
-      element.style.left = "-9999px";
-      element.style.top = "0";
-      element.style.height = "auto";
-      element.style.overflow = "visible";
 
       await new Promise((resolve) => setTimeout(resolve, 800));
 
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
+      const dataUrl = await toJpeg(element, {
+        quality: 0.98,
         backgroundColor: "#ffffff",
-        windowWidth: 800,
+        pixelRatio: 2,
       });
 
-      const imgData = canvas.toDataURL("image/jpeg", 0.98);
       const imgWidth = 595.28;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const imgHeight = (element.offsetHeight * imgWidth) / element.offsetWidth;
+      const pageHeight = 841.89; // A4 height in pt
 
       const pdf = new jsPDF({
         orientation: "portrait",
@@ -292,13 +299,12 @@ export default function TrackApplication({
         format: "a4",
       });
 
-      pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight);
-      pdf.save(`Early_Registration_Confirmation_${status.trackingNumber}.pdf`);
-
-      element.style.visibility = "hidden";
-      element.style.position = "fixed";
-      element.style.height = "0";
-      element.style.overflow = "hidden";
+      const pageCount = Math.ceil(imgHeight / pageHeight);
+      for (let i = 0; i < pageCount; i++) {
+        if (i > 0) pdf.addPage();
+        pdf.addImage(dataUrl, "JPEG", 0, -(i * pageHeight), imgWidth, imgHeight);
+      }
+      pdf.save(`Confirmation_Slip_${status.trackingNumber}.pdf`);
     } catch (error) {
       console.error("PDF Generation failed:", error);
       alert("Failed to generate PDF. Please try again.");
@@ -384,6 +390,39 @@ export default function TrackApplication({
     status?.trackingStatus ||
     normalizedStatus ||
     undefined;
+
+  const applicantName =
+    status?.applicantName?.trim() ||
+    [status?.firstName, status?.middleName, status?.lastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
+  const monitorProgram =
+    status?.program || status?.scpDetail?.scpType || status?.learningProgram || status?.programType;
+  const monitorStatus = String(
+    status?.status || status?.trackingStatus || status?.rawStatus || "",
+  )
+    .trim()
+    .toUpperCase();
+  const isSteProgram = ["STE", "SCIENCE_TECHNOLOGY_AND_ENGINEERING"].includes(
+    String(monitorProgram || "").trim().toUpperCase(),
+  );
+  const isEvaluatedMonitorState = monitorStatus === "EVALUATED";
+  const hasCompassionateMonitorState =
+    Boolean(status) &&
+    isSteProgram &&
+    isEvaluatedMonitorState &&
+    typeof status?.isPassed === "boolean" &&
+    typeof status?.rank === "number";
+
+  const compassionateView = !hasCompassionateMonitorState
+    ? null
+    : status?.isPassed && (status.rank ?? 0) <= 70
+      ? "priority-success"
+      : status?.isPassed && (status.rank ?? 0) > 70
+        ? "capacity-redirect"
+        : "standard-redirect";
 
   return (
     <div
@@ -477,26 +516,115 @@ export default function TrackApplication({
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="mt-10 space-y-8">
-                <div
-                  className={cn(
-                    "p-8 rounded-lg border-2 flex flex-col items-center text-center gap-4",
-                    config.color,
-                  )}>
-                  <div className="p-4 rounded-full bg-white shadow-sm border border-current/20">
-                    {Icon && <Icon className="w-10 h-10" />}
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-black uppercase  opacity-70">
-                      Current Status
-                    </h3>
-                    <p className="text-3xl font-black uppercase  mt-1">
-                      {config.label}
+                {compassionateView ? (
+                  <Card className="border-2 border-primary/10 shadow-sm">
+                    <CardContent className="p-4 sm:p-6 space-y-4">
+                      <div
+                        className={cn(
+                          "rounded-2xl border-2 p-4 sm:p-5 space-y-3",
+                          compassionateView === "priority-success"
+                            ? "border-emerald-300 bg-emerald-50"
+                            : compassionateView === "capacity-redirect"
+                              ? "border-blue-300 bg-blue-50"
+                              : "border-amber-300 bg-amber-50",
+                        )}>
+                        <h3
+                          className={cn(
+                            "text-base sm:text-lg font-black uppercase leading-tight",
+                            compassionateView === "priority-success"
+                              ? "text-emerald-800"
+                              : compassionateView === "capacity-redirect"
+                                ? "text-blue-800"
+                                : "text-amber-800",
+                          )}>
+                          {compassionateView === "priority-success"
+                            ? "🎉 QUALIFIED: Ready for STE Enrollment"
+                            : compassionateView === "capacity-redirect"
+                              ? "ℹ️ REDIRECTED: Regular BEC Track"
+                              : "🔄 REDIRECTED: Regular BEC Track"}
+                        </h3>
+
+                        <p className="text-sm sm:text-base font-bold leading-relaxed text-foreground">
+                          {compassionateView === "priority-success"
+                            ? `Congratulations, ${applicantName || "Applicant"}! You have officially qualified for the Top 70 slots of the ${String(monitorProgram || "STE")} program.`
+                            : compassionateView === "capacity-redirect"
+                              ? `Hello, ${applicantName || "Applicant"}. You successfully passed the academic assessments for the ${String(monitorProgram || "STE")} program. However, due to strict DepEd capacity limits, only the Top 70 applicants can be accommodated this school year. Based on the composite ranking, you are currently waitlisted.`
+                              : `Hello, ${applicantName || "Applicant"}. Your screening results have been processed. While you did not meet the cutoff score for the ${String(monitorProgram || "STE")} program, you are fully cleared to proceed with standard high school enrollment.`}
+                        </p>
+
+                        <Alert
+                          className={cn(
+                            "border text-sm sm:text-base",
+                            compassionateView === "priority-success"
+                              ? "border-emerald-300 bg-white text-emerald-900"
+                              : compassionateView === "capacity-redirect"
+                                ? "border-blue-300 bg-white text-blue-900"
+                                : "border-amber-300 bg-white text-amber-900",
+                          )}>
+                          <AlertTitle className="font-black uppercase text-xs sm:text-sm">
+                            Next Step
+                          </AlertTitle>
+                          <AlertDescription className="font-bold leading-relaxed">
+                            {compassionateView === "priority-success"
+                              ? "Please proceed to the school gymnasium on your scheduled date and present this tracking number at the SCP Priority Lane for your BOSY Confirmation."
+                              : compassionateView === "capacity-redirect"
+                                ? "You are officially cleared to enroll in the Regular Basic Education Curriculum (BEC). Please proceed to the standard enrollment lane during BOSY Confirmation."
+                                : "Please proceed to the standard BEC enrollment lane during BOSY Confirmation."}
+                          </AlertDescription>
+                        </Alert>
+                      </div>
+
+                      <div className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-4 text-center">
+                        <p className="text-[0.625rem] font-black uppercase tracking-wider text-primary/70">
+                          Tracking Number
+                        </p>
+                        <p className="mt-1 text-lg sm:text-2xl font-black text-primary break-all">
+                          {status.trackingNumber}
+                        </p>
+                        {typeof status.rank === "number" ? (
+                          <p className="mt-2 text-xs sm:text-sm font-bold text-primary/80">
+                            Rank #{status.rank}
+                            {typeof status.compositeScore === "number"
+                              ? ` • Composite Score: ${status.compositeScore.toFixed(2)}`
+                              : ""}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <div className="flex justify-center">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full sm:w-auto h-11 px-5 font-black"
+                          onClick={handleBackToSearch}>
+                          <ArrowLeft className="h-4 w-4 mr-2" />
+                          Back to Search
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div
+                    className={cn(
+                      "p-8 rounded-lg border-2 flex flex-col items-center text-center gap-4",
+                      config.color,
+                    )}>
+                    <div className="p-4 rounded-full bg-white shadow-sm border border-current/20">
+                      {Icon && <Icon className="w-10 h-10" />}
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-black uppercase  opacity-70">
+                        Current Status
+                      </h3>
+                      <p className="text-3xl font-black uppercase  mt-1">
+                        {config.label}
+                      </p>
+                    </div>
+                    <p className="text-sm font-bold leading-relaxed max-w-sm opacity-90">
+                      {config.desc}
                     </p>
                   </div>
-                  <p className="text-sm font-bold leading-relaxed max-w-sm opacity-90">
-                    {config.desc}
-                  </p>
-                </div>
+                )}
 
                 <div className="grid gap-4 text-center grid-cols-1 md:grid-cols-3">
                   <div className="p-5 bg-primary/5 border border-primary/10 rounded-2xl space-y-1">
@@ -590,10 +718,8 @@ export default function TrackApplication({
                     status={nextStepsStatus}
                     currentStep={status.currentStep}
                     assessmentData={status.assessmentData}
+                    hasBeerf={Boolean(status.earlyRegistrationId)}
                   />
-                </div>
-
-                <div className="flex flex-col items-center justify-center ">
                   <div className="mt-8 pt-6 border-t border-dashed text-center">
                     <p className="text-md font-bold text-foreground uppercase ">
                       Lost or missing confirmation slip?
@@ -618,6 +744,18 @@ export default function TrackApplication({
                         : "Retrieve Confirmation Slip (PDF)"}
                     </Button>
                   </div>
+                  {!compassionateView ? (
+                    <div className="flex items-center justify-center mt-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-11 px-5 font-black w-full sm:w-auto"
+                        onClick={handleBackToSearch}>
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Back to Search
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="pt-4 text-center">
@@ -632,21 +770,23 @@ export default function TrackApplication({
           {/* ── PDF Container (Hidden) ── */}
           {status && (
             <div
-              ref={pdfRef}
+              aria-hidden="true"
               style={{
-                visibility: "hidden",
                 position: "fixed",
-                left: "-9999px",
                 top: "0",
-                width: "800px",
-                height: "0",
-                overflow: "hidden",
-                padding: "60px",
-                backgroundColor: "#ffffff",
-                color: "#061E29",
+                left: "-9999px",
+                overflow: "visible",
                 pointerEvents: "none",
-              }}
-              className="font-sans">
+              }}>
+              <div
+                ref={pdfRef}
+                style={{
+                  width: "800px",
+                  padding: "60px",
+                  backgroundColor: "#ffffff",
+                  color: "#061E29",
+                }}
+                className="font-sans">
               <div
                 style={{ borderColor: "#061E29" }}
                 className="flex flex-col items-center justify-center gap-6 mb-4 border-b-2 pb-10">
@@ -697,7 +837,7 @@ export default function TrackApplication({
                   </h2>
                   <p
                     style={{ color: "#4b5563" }}
-                    className="text-xl font-medium">
+                    className="text-xl font-bold">
                     Your application has been successfully submitted to{" "}
                     <span
                       style={{ color: "#061E29" }}
@@ -771,6 +911,7 @@ export default function TrackApplication({
                     status={nextStepsStatus}
                     currentStep={status.currentStep}
                     assessmentData={status.assessmentData}
+                    hasBeerf={Boolean(status.earlyRegistrationId)}
                   />
                 </div>
 
@@ -804,6 +945,7 @@ export default function TrackApplication({
                     </p>
                   </div>
                 </div>
+              </div>
               </div>
             </div>
           )}

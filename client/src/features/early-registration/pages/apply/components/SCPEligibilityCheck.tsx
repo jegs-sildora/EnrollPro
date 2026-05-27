@@ -45,7 +45,7 @@ function evaluateSTE(grades: GradeInputs): EligibilityResult {
   const unmet: string[] = [];
 
   if (gwa !== null && gwa < 85) {
-    unmet.push(`GWA must be ≥ 85 (you entered ${gwa})`);
+    unmet.push(`General Average must be ≥ 85 (you entered ${gwa})`);
   }
   if (science !== null && science < 85) {
     const prefix = science < 80 ? "⚠ Critically low — " : "";
@@ -79,11 +79,11 @@ function evaluateSPA(grades: GradeInputs): EligibilityResult {
   if (gwa >= 80) return { status: "eligible", unmetCriteria: [] };
   return {
     status: "ineligible",
-    unmetCriteria: [`GWA must be ≥ 80 (you entered ${gwa})`],
+    unmetCriteria: [`General Average must be ≥ 80 (you entered ${gwa})`],
   };
 }
 
-// SPS uses the same grade rule as SPA (GWA ≥ 80).
+// SPS uses the same grade rule as SPA (General Average ≥ 80).
 function evaluateSPS(grades: GradeInputs): EligibilityResult {
   return evaluateSPA(grades);
 }
@@ -158,7 +158,7 @@ function EligibilityCard({
               "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
               isEligible && "bg-emerald-100 text-emerald-700",
               isIneligible && "bg-red-100 text-red-600",
-              isPending && "bg-muted/60 text-muted-foreground",
+              isPending && "bg-muted/60 text-foreground",
             )}>
             {icon}
           </span>
@@ -168,16 +168,16 @@ function EligibilityCard({
                 "text-xs font-black uppercase tracking-widest",
                 isEligible && "text-emerald-700",
                 isIneligible && "text-red-700",
-                isPending && "text-muted-foreground",
+                isPending && "text-foreground",
               )}>
               {acronym}
             </p>
             <p
               className={cn(
-                "text-[11px] font-semibold leading-tight",
+                "text-[11px] font-bold leading-tight",
                 isEligible && "text-emerald-800",
                 isIneligible && "text-red-800",
-                isPending && "text-muted-foreground",
+                isPending && "text-foreground",
               )}>
               {title}
             </p>
@@ -198,7 +198,7 @@ function EligibilityCard({
           </div>
         )}
         {isPending && (
-          <div className="flex items-center gap-1 rounded-full bg-muted border border-border px-2 py-0.5 text-[10px] font-black uppercase text-muted-foreground tracking-wide shrink-0">
+          <div className="flex items-center gap-1 rounded-full bg-muted border border-border px-2 py-0.5 text-[10px] font-black uppercase text-foreground tracking-wide shrink-0">
             <Clock3 className="w-3 h-3" />
             Awaiting
           </div>
@@ -208,10 +208,10 @@ function EligibilityCard({
       {/* Requirement summary */}
       <p
         className={cn(
-          "text-[11px] font-medium leading-relaxed",
+          "text-[11px] font-bold leading-relaxed",
           isEligible && "text-emerald-700",
           isIneligible && "text-red-700/80",
-          isPending && "text-muted-foreground",
+          isPending && "text-foreground",
         )}>
         {requirement}
       </p>
@@ -222,7 +222,7 @@ function EligibilityCard({
           {result.unmetCriteria.map((criterion, idx) => (
             <li
               key={idx}
-              className="flex items-start gap-1.5 text-[11px] font-semibold text-red-800">
+              className="flex items-start gap-1.5 text-[11px] font-bold text-red-800">
               <AlertTriangle className="w-3 h-3 shrink-0 mt-[1px] text-red-500" />
               <span>{criterion}</span>
             </li>
@@ -315,7 +315,7 @@ export default function SCPEligibilityCheck({
           <p className="text-sm font-black uppercase tracking-wide text-primary">
             Grade-Based SCP Eligibility Check
           </p>
-          <p className="text-xs text-muted-foreground font-medium leading-relaxed mt-0.5">
+          <p className="text-xs text-foreground font-bold leading-relaxed mt-0.5">
             Enter your Grade 6 grades below to simulate baseline eligibility.
             This is a guide — the school will verify official records.
           </p>
@@ -325,7 +325,7 @@ export default function SCPEligibilityCheck({
       {/* HNHS Policy Disclaimer */}
       <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3.5">
         <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-        <p className="text-[11px] font-medium text-amber-900 leading-relaxed italic">
+        <p className="text-[11px] font-bold text-amber-900 leading-relaxed italic">
           Prerequisites and Documentary Requirements follow the HNHS policy of
           SCP application. Please note that full eligibility for programs like
           SPA and SPS also involves non-grade evaluations such as auditions,
@@ -365,7 +365,7 @@ export default function SCPEligibilityCheck({
             onChange={(v) => handleGradeChange("english", v)}
           />
         </div>
-        <p className="text-[10px] text-muted-foreground font-medium mt-2 italic">
+        <p className="text-[10px] text-foreground font-bold mt-2 italic">
           Input range: 75 – 100. Leave a field blank if the grade is not yet
           available.
         </p>
@@ -382,26 +382,26 @@ export default function SCPEligibilityCheck({
             title="Science, Technology & Engineering"
             result={ste}
             icon={<FlaskConical className="w-4 h-4" />}
-            requirement="GWA ≥ 85, Science ≥ 85, Math ≥ 85, English ≥ 85 (all four required)"
+            requirement="General Average ≥ 85, Science ≥ 85, Math ≥ 85, English ≥ 85 (all four required)"
           />
           <EligibilityCard
             acronym="SPA"
             title="Special Program in the Arts"
             result={spa}
             icon={<Music className="w-4 h-4" />}
-            requirement="GWA ≥ 80 (plus audition / portfolio evaluation by the school)"
+            requirement="General Average ≥ 80 (plus audition / portfolio evaluation by the school)"
           />
           <EligibilityCard
             acronym="SPS"
             title="Special Program in Sports"
             result={sps}
             icon={<Trophy className="w-4 h-4" />}
-            requirement="GWA ≥ 80 (plus physical tryout / sports screening by the school)"
+            requirement="General Average ≥ 80 (plus physical tryout / sports screening by the school)"
           />
         </div>
       </div>
 
-      <p className="text-[10px] text-muted-foreground italic leading-relaxed">
+      <p className="text-[10px] text-foreground italic leading-relaxed">
         This simulation is for reference only and does not constitute an
         official eligibility determination. Final acceptance is subject to
         school evaluation and DepEd guidelines.

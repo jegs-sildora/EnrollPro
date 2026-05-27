@@ -199,7 +199,7 @@ export function TeacherDesignationSheet({
                 <Fingerprint className="size-3" />
                 Employee ID: {designationOpenFor?.employeeId || "N/A"}
               </SheetDescription>
-              <p className="text-white/70 text-xs font-semibold">
+              <p className="text-white/70 text-xs font-bold">
                 {ayLabel ? `S.Y. ${ayLabel}` : "No Active School Year"}
               </p>
             </div>
@@ -462,7 +462,7 @@ export function TeacherDesignationSheet({
                         className="text-xs uppercase font-black">
                         Custom Designation Period
                       </Label>
-                      <p className="text-xs text-foreground font-medium uppercase">
+                      <p className="text-xs text-foreground font-bold uppercase">
                         Enable for mid-year replacements or leave of absence
                       </p>
                     </div>
@@ -633,7 +633,7 @@ export function TeacherDesignationSheet({
                         <p className="font-black uppercase">
                           Adviser conflict detected
                         </p>
-                        <p className="text-xs font-medium">
+                        <p className="text-xs font-bold">
                           {designationCollision.gradeLevelName ?? "Grade"} -{" "}
                           {designationCollision.sectionName} is currently
                           assigned to {designationCollision.currentAdviserName}.

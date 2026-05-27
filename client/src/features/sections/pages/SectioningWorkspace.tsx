@@ -957,7 +957,7 @@ export default function SectioningWorkspace() {
                           <div className="space-y-6 py-4">
                             <div className="bg-primary/5 border border-primary/20 p-4 rounded-lg space-y-2">
                               <p className="text-sm font-bold text-primary underline uppercase">Critical Impacts:</p>
-                              <ul className="text-xs font-medium space-y-1 list-disc pl-4 text-primary/80">
+                              <ul className="text-xs font-bold space-y-1 list-disc pl-4 text-primary/80">
                                 <li>Mass batch sectioning will be disabled immediately.</li>
                                 <li>Registrars will transition to Late Enrollment workflow.</li>
                                 <li>This action is recorded in the permanent System Audit Log.</li>

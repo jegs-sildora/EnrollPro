@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { ArrowLeft, RefreshCw, Calendar as CalendarIcon, AlertTriangle } from "lucide-react";
+import { ArrowLeft, RefreshCw, Calendar as CalendarIcon, AlertTriangle, Search, Loader2, CheckCircle2, Zap } from "lucide-react";
+import { isAxiosError } from "axios";
 import { format, isValid, parse, isAfter, isBefore } from "date-fns";
 import { sileo } from "sileo";
 import api from "@/shared/api/axiosInstance";
@@ -29,6 +30,7 @@ import {
 } from "@/shared/ui/dialog";
 import { cn } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
+import { PhilippineAddressSelector } from "@/shared/components/PhilippineAddressSelector";
 
 type LearnerType = "NEW_ENROLLEE" | "TRANSFEREE" | "RETURNING" | "ALS";
 type AcademicStatus = "PROMOTED" | "RETAINED";
@@ -229,6 +231,12 @@ export default function WalkInEncoder() {
   const [processOutcome, setProcessOutcome] =
     useState<ProcessOutcome>("ENCODE_AND_VERIFY");
 
+  // --- Quick Fill via LRN state ---
+  const [hasFilledEarlyReg, setHasFilledEarlyReg] = useState(false);
+  const [isQuickFilling, setIsQuickFilling] = useState(false);
+  const [quickFillSuccess, setQuickFillSuccess] = useState(false);
+  const [lastQuickFilledLrn, setLastQuickFilledLrn] = useState<string | null>(null);
+
   // --- Late Enrollment (Post-BOSY) state ---
   const [lateEnrollmentDate, setLateEnrollmentDate] = useState(
     () => format(new Date(), "yyyy-MM-dd"),
@@ -300,6 +308,131 @@ export default function WalkInEncoder() {
   useEffect(() => {
     void fetchGradeLevels();
   }, []);
+
+  // Quick Fill via LRN: watch formData.lrn changes when checkbox is active
+  useEffect(() => {
+    if (!hasFilledEarlyReg) {
+      setIsQuickFilling(false);
+      setQuickFillSuccess(false);
+      setLastQuickFilledLrn(null);
+      return;
+    }
+
+    const lrnValue = formData.lrn.trim();
+
+    if (!lrnValue || lrnValue.length !== 12) {
+      setQuickFillSuccess(false);
+      setLastQuickFilledLrn(null);
+      return;
+    }
+
+    if (lrnValue === lastQuickFilledLrn || isQuickFilling) {
+      return;
+    }
+
+    setQuickFillSuccess(false);
+
+    const timer = window.setTimeout(async () => {
+      setLastQuickFilledLrn(lrnValue);
+      setIsQuickFilling(true);
+      try {
+        const response = await api.get(`/applications/lookup-lrn/${lrnValue}`);
+        const payload = response.data as Record<string, unknown>;
+
+        const normalizedBirthdate = payload.birthdate
+          ? new Date(String(payload.birthdate)).toISOString().slice(0, 10)
+          : "";
+
+        setFormData((prev) => {
+          const motherPayload = (payload.mother as Partial<ContactPersonState> | undefined) ?? EMPTY_CONTACT;
+          const fatherPayload = (payload.father as Partial<ContactPersonState> | undefined) ?? EMPTY_CONTACT;
+          const guardianPayload = (payload.guardian as Partial<ContactPersonState> | undefined) ?? EMPTY_CONTACT;
+          const currentAddressPayload = (payload.currentAddress as {
+            houseNo?: string; street?: string; barangay?: string;
+            cityMunicipality?: string; province?: string;
+          } | undefined) ?? undefined;
+
+          return {
+            ...prev,
+            hasNoLrn: false,
+            lrn: String(payload.lrn ?? prev.lrn),
+            learnerType: String(payload.learnerType || prev.learnerType) as LearnerType,
+            firstName: String(payload.firstName ?? prev.firstName),
+            lastName: String(payload.lastName ?? prev.lastName),
+            middleName: String(payload.middleName ?? prev.middleName),
+            extensionName: String(payload.extensionName ?? prev.extensionName),
+            birthdate: normalizedBirthdate || prev.birthdate,
+            sex: String(payload.sex || prev.sex) as Sex | "",
+            placeOfBirth: String(payload.placeOfBirth ?? prev.placeOfBirth),
+            contactNumber: String(payload.contactNumber ?? prev.contactNumber),
+            email: String(payload.email ?? prev.email),
+            originSchoolName: String(payload.lastSchoolName ?? prev.originSchoolName),
+            lastSchoolId: String(payload.lastSchoolId ?? prev.lastSchoolId),
+            schoolYearLastAttended: String(payload.schoolYearLastAttended ?? prev.schoolYearLastAttended),
+            lastGradeCompleted: String(payload.lastGradeCompleted ?? prev.lastGradeCompleted),
+            lastSchoolAddress: String(payload.lastSchoolAddress ?? prev.lastSchoolAddress),
+            guardianRelationship: String(payload.guardianRelationship ?? prev.guardianRelationship),
+            mother: {
+              firstName: String(motherPayload.firstName ?? prev.mother.firstName),
+              lastName: String(motherPayload.lastName ?? prev.mother.lastName),
+              middleName: String(motherPayload.middleName ?? prev.mother.middleName),
+              contactNumber: String(motherPayload.contactNumber ?? prev.mother.contactNumber),
+            },
+            father: {
+              firstName: String(fatherPayload.firstName ?? prev.father.firstName),
+              lastName: String(fatherPayload.lastName ?? prev.father.lastName),
+              middleName: String(fatherPayload.middleName ?? prev.father.middleName),
+              contactNumber: String(fatherPayload.contactNumber ?? prev.father.contactNumber),
+            },
+            guardian: {
+              firstName: String(guardianPayload.firstName ?? prev.guardian.firstName),
+              lastName: String(guardianPayload.lastName ?? prev.guardian.lastName),
+              middleName: String(guardianPayload.middleName ?? prev.guardian.middleName),
+              contactNumber: String(guardianPayload.contactNumber ?? prev.guardian.contactNumber),
+            },
+            currentAddressHouseNoStreet: String(currentAddressPayload?.houseNo ?? prev.currentAddressHouseNoStreet) || prev.currentAddressHouseNoStreet,
+            currentAddressBarangay: String(currentAddressPayload?.barangay ?? prev.currentAddressBarangay) || prev.currentAddressBarangay,
+            currentAddressCityMunicipality: String(currentAddressPayload?.cityMunicipality ?? prev.currentAddressCityMunicipality) || prev.currentAddressCityMunicipality,
+            currentAddressProvince: String(currentAddressPayload?.province ?? prev.currentAddressProvince) || prev.currentAddressProvince,
+          };
+        });
+
+        setHydratedGradeToken(String(payload.gradeLevel ?? ""));
+        setHydrationContext({
+          source: String(payload.source) === "ENROLLMENT" ? "ENROLLMENT" : "EARLY_REGISTRATION",
+          status: String(payload.status ?? ""),
+          enrollmentApplicationId: typeof payload.enrollmentApplicationId === "number" ? payload.enrollmentApplicationId : null,
+          earlyRegistrationId: typeof payload.earlyRegistrationId === "number" ? payload.earlyRegistrationId : null,
+          applicantType: typeof payload.applicantType === "string" ? payload.applicantType : null,
+        });
+
+        setQuickFillSuccess(true);
+        sileo.info({
+          title: "Quick Fill Applied",
+          description: `Fetched data for ${String(payload.firstName ?? "")} ${String(payload.lastName ?? "")}.`,
+        });
+      } catch (error) {
+        if (isAxiosError(error) && error.response?.status === 404) {
+          sileo.error({
+            title: "Early Registration Not Found",
+            description: "No eligible early registration found for this LRN in the current School Year.",
+          });
+        } else {
+          sileo.error({
+            title: "Lookup Failed",
+            description: "Could not fetch early registration data.",
+          });
+        }
+      } finally {
+        setIsQuickFilling(false);
+      }
+    }, 800);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasFilledEarlyReg, formData.lrn, lastQuickFilledLrn, isQuickFilling]);
 
   useEffect(() => {
     if (!initialLrn || initialNoLrn) {
@@ -828,22 +961,20 @@ export default function WalkInEncoder() {
           `${formData.lastName.trim()} ${formData.firstName.trim()}`,
       ).trim();
 
-      sileo.success({
-        title: "Walk-In Saved",
-        description:
-          processOutcome === "ENCODE_ONLY"
-            ? "BEEF encoded. Learner routed to Awaiting Verification queue."
-            : "Learner routed to Section Assignment queue.",
-      });
-
       if (processOutcome === "ENCODE_ONLY") {
+        sileo.success({
+          title: "Walk-In Saved",
+          description: "BEEF encoded. Learner routed to Awaiting Verification queue.",
+        });
         navigate(
           `/monitoring/enrollment?workflow=PENDING_VERIFICATION&search=${encodeURIComponent(trackingHint)}`,
         );
       } else {
-        navigate(
-          `/monitoring/enrollment?workflow=SECTION_ASSIGNMENT&search=${encodeURIComponent(trackingHint)}`,
-        );
+        sileo.success({
+          title: "Walk-In Saved",
+          description: "BEEF encoded. Learner routed to Phil-IRI Assessment queue.",
+        });
+        navigate(`/reading-assessment`);
       }
     } catch (error) {
       toastApiError(error as never);
@@ -893,7 +1024,7 @@ export default function WalkInEncoder() {
     <div className="mx-auto w-full max-w-6xl px-2 py-6 sm:px-4 md:px-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <Button
-          variant="outline"
+          variant="default"
           className="h-9 text-xs font-bold"
           onClick={() => navigate("/monitoring/enrollment")}>
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -903,7 +1034,7 @@ export default function WalkInEncoder() {
           <Badge
             variant="secondary"
             className="text-[11px] font-bold">
-            Direct Intake: {activeSchoolYearLabel}
+            Direct Intake: S.Y. {activeSchoolYearLabel}
           </Badge>
           {isBosyLocked && (
             <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 text-[11px] font-black uppercase  border-none px-3">
@@ -920,7 +1051,7 @@ export default function WalkInEncoder() {
               ? "Late Enrollee Intake (BEEF)"
               : "Direct Intake: Basic Education Enrollment Form"}
           </CardTitle>
-          <p className="text-xs font-semibold text-foreground">
+          <p className="text-xs font-bold text-foreground">
             {isBosyLocked
               ? "BOSY is locked. New students will be processed as Late Enrollees and routed directly to Inline Slotting."
               : "Encode paper BEEF in one pass. This lane skips pending verification and routes directly to sectioning after document confirmation."}
@@ -950,6 +1081,119 @@ export default function WalkInEncoder() {
                 )}
             </section>
           )}
+
+          {/* ─── Quick Fill via LRN ─── */}
+          <section
+            className={cn(
+              "space-y-3 rounded-xl border p-4 transition-colors",
+              hasFilledEarlyReg
+                ? "border-primary/30 bg-primary/5"
+                : "border-border bg-muted/20",
+            )}>
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="hasFilledEarlyRegWalkIn"
+                checked={hasFilledEarlyReg}
+                onCheckedChange={(checked) => {
+                  const next = checked === true;
+                  setHasFilledEarlyReg(next);
+                  if (!next) {
+                    setQuickFillSuccess(false);
+                    setIsQuickFilling(false);
+                    setLastQuickFilledLrn(null);
+                    setHydrationContext(null);
+                    setHydratedGradeToken(null);
+                  }
+                }}
+              />
+              <Label
+                htmlFor="hasFilledEarlyRegWalkIn"
+                className="text-xs font-bold leading-relaxed cursor-pointer">
+                The learner has already filled out the Basic Education Early Registration Form.
+              </Label>
+            </div>
+
+            <div
+              className={cn(
+                "space-y-3 rounded-xl border p-4 transition-colors",
+                hasFilledEarlyReg
+                  ? "border-primary/20 bg-background"
+                  : "border-border/50 bg-muted/10",
+              )}>
+              <div className="flex items-center gap-3">
+                <div
+                  className={cn(
+                    "w-9 h-9 rounded-full flex items-center justify-center shrink-0",
+                    hasFilledEarlyReg
+                      ? "bg-primary/10 text-primary"
+                      : "bg-muted text-foreground",
+                  )}>
+                  {hasFilledEarlyReg ? (
+                    <Zap className="w-4 h-4" />
+                  ) : (
+                    <Search className="w-4 h-4" />
+                  )}
+                </div>
+                <div>
+                  <p
+                    className={cn(
+                      "text-xs font-bold uppercase",
+                      hasFilledEarlyReg ? "text-primary" : "text-foreground",
+                    )}>
+                    {hasFilledEarlyReg ? "Quick Fill via LRN" : "Learner Reference Number (LRN)"}
+                  </p>
+                  <p className="text-[11px] text-foreground font-bold">
+                    {hasFilledEarlyReg
+                      ? "Type your 12-digit LRN to automatically fetch your Early Registration information."
+                      : "Enter the learner's 12-digit LRN below to continue."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="relative max-w-full">
+                <Input
+                  id="quickFillLrn"
+                  value={formData.lrn}
+                  maxLength={12}
+                  disabled={formData.hasNoLrn}
+                  placeholder="ENTER 12-DIGIT LRN"
+                  className={cn(
+                    "h-12 text-base font-black text-center border-2 pr-10",
+                    formData.hasNoLrn && "bg-muted cursor-not-allowed",
+                    hasFilledEarlyReg && quickFillSuccess
+                      ? "border-green-500 bg-green-50/30"
+                      : hasFilledEarlyReg
+                        ? "border-primary/40 focus:border-primary"
+                        : "border-border",
+                  )}
+                  onChange={(e) => {
+                    const normalized = e.target.value.replace(/[^\d]/g, "").slice(0, 12);
+                    setField("lrn", normalized);
+                    if (normalized !== lastQuickFilledLrn) {
+                      setQuickFillSuccess(false);
+                    }
+                  }}
+                />
+                {hasFilledEarlyReg && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {isQuickFilling && (
+                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                    )}
+                    {!isQuickFilling && quickFillSuccess && (
+                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {hasFilledEarlyReg && quickFillSuccess && (
+                <p className="text-[11px] font-bold text-green-700 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Early Registration data applied. Review and confirm the fields below.
+                </p>
+              )}
+            </div>
+          </section>
 
           <section className="space-y-3 rounded-lg border border-border p-4">
             <p className="text-xs font-bold uppercase  text-primary">
@@ -989,7 +1233,8 @@ export default function WalkInEncoder() {
                     {LEARNER_TYPE_OPTIONS.map((option) => (
                       <SelectItem
                         key={option.value}
-                        value={option.value}>
+                        value={option.value}
+                        className="font-bold">
                         {option.label}
                       </SelectItem>
                     ))}
@@ -1020,7 +1265,8 @@ export default function WalkInEncoder() {
                     {gradeLevels.map((gradeLevel) => (
                       <SelectItem
                         key={gradeLevel.id}
-                        value={String(gradeLevel.id)}>
+                        value={String(gradeLevel.id)}
+                        className="font-bold">
                         {gradeLevel.name}
                       </SelectItem>
                     ))}
@@ -1041,8 +1287,8 @@ export default function WalkInEncoder() {
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="PROMOTED">Promoted</SelectItem>
-                    <SelectItem value="RETAINED">Retained</SelectItem>
+                    <SelectItem value="PROMOTED" className="font-bold">Promoted</SelectItem>
+                    <SelectItem value="RETAINED" className="font-bold">Retained</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1066,7 +1312,7 @@ export default function WalkInEncoder() {
                   className="text-xs font-bold">
                   Learner has no LRN yet
                 </Label>
-                <p className="text-[11px] font-semibold text-foreground">
+                <p className="text-[11px] font-bold text-foreground">
                   Allowed only for incoming Grade 7 or transferee learners.
                 </p>
               </div>
@@ -1222,8 +1468,8 @@ export default function WalkInEncoder() {
                     <SelectValue placeholder="Select sex" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="MALE">Male</SelectItem>
-                    <SelectItem value="FEMALE">Female</SelectItem>
+                    <SelectItem value="MALE" className="font-bold">Male</SelectItem>
+                    <SelectItem value="FEMALE" className="font-bold">Female</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1302,7 +1548,8 @@ export default function WalkInEncoder() {
                       return (
                         <SelectItem
                           key={label}
-                          value={label}>
+                          value={label}
+                          className="font-bold">
                           {label}
                         </SelectItem>
                       );
@@ -1326,7 +1573,8 @@ export default function WalkInEncoder() {
                     {["6", "7", "8", "9"].map((g) => (
                       <SelectItem
                         key={g}
-                        value={g}>
+                        value={g}
+                        className="font-bold">
                         GRADE {g}
                       </SelectItem>
                     ))}
@@ -1346,10 +1594,10 @@ export default function WalkInEncoder() {
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="PUBLIC">PUBLIC</SelectItem>
-                    <SelectItem value="PRIVATE">PRIVATE</SelectItem>
-                    <SelectItem value="INTERNATIONAL">INTERNATIONAL</SelectItem>
-                    <SelectItem value="ALS">ALS</SelectItem>
+                    <SelectItem value="PUBLIC" className="font-bold">PUBLIC</SelectItem>
+                    <SelectItem value="PRIVATE" className="font-bold">PRIVATE</SelectItem>
+                    <SelectItem value="INTERNATIONAL" className="font-bold">INTERNATIONAL</SelectItem>
+                    <SelectItem value="ALS" className="font-bold">ALS</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1440,50 +1688,35 @@ export default function WalkInEncoder() {
               </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase ">
-                  Barangay *
-                </Label>
-                <Input
-                  value={formData.currentAddressBarangay}
-                  placeholder="BARANGAY"
-                  className="h-10 font-bold uppercase"
-                  onChange={(event) => {
-                    setUpperField("currentAddressBarangay", event.target.value);
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase ">
-                  City / Municipality *
-                </Label>
-                <Input
-                  value={formData.currentAddressCityMunicipality}
-                  placeholder="CITY / MUNICIPALITY"
-                  className="h-10 font-bold uppercase"
-                  onChange={(event) => {
-                    setUpperField(
-                      "currentAddressCityMunicipality",
-                      event.target.value,
-                    );
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[11px] font-bold uppercase ">
-                  Province *
-                </Label>
-                <Input
-                  value={formData.currentAddressProvince}
-                  placeholder="PROVINCE"
-                  className="h-10 font-bold uppercase"
-                  onChange={(event) => {
-                    setUpperField("currentAddressProvince", event.target.value);
-                  }}
-                />
-              </div>
-            </div>
+            <PhilippineAddressSelector
+              value={{
+                province: formData.currentAddressProvince,
+                cityMunicipality: formData.currentAddressCityMunicipality,
+                barangay: formData.currentAddressBarangay,
+              }}
+              onChange={(field, val) => {
+                if (field === "province") {
+                  setFormData((prev) => ({
+                    ...prev,
+                    currentAddressProvince: val,
+                    currentAddressCityMunicipality: "",
+                    currentAddressBarangay: "",
+                  }));
+                } else if (field === "cityMunicipality") {
+                  setFormData((prev) => ({
+                    ...prev,
+                    currentAddressCityMunicipality: val,
+                    currentAddressBarangay: "",
+                  }));
+                } else {
+                  setFormData((prev) => ({
+                    ...prev,
+                    currentAddressBarangay: val,
+                  }));
+                }
+              }}
+              required
+            />
           </section>
 
           <section className="space-y-3 rounded-lg border border-border p-4">
@@ -1788,7 +2021,7 @@ export default function WalkInEncoder() {
                   BOSY LOCKED
                 </Badge>
               </div>
-              <p className="text-[11px] font-semibold text-amber-700">
+              <p className="text-[11px] font-bold text-amber-700">
                 BOSY is locked. This learner will be directly assigned to the selected section. The official enrollment date is required for accurate SF10 and DepEd records.
               </p>
               <div className="grid gap-4 md:grid-cols-2">
@@ -1803,7 +2036,7 @@ export default function WalkInEncoder() {
                     className="h-10 font-bold"
                     onChange={(e) => setLateEnrollmentDate(e.target.value)}
                   />
-                  <p className="text-[10px] text-amber-600 font-semibold">
+                  <p className="text-[10px] text-amber-600 font-bold">
                     Backdating allowed for SF10 compliance.
                   </p>
                 </div>
@@ -1841,7 +2074,7 @@ export default function WalkInEncoder() {
                     </SelectContent>
                   </Select>
                   {lateSections.length === 0 && !loadingLateSections && formData.gradeLevelId && (
-                    <p className="text-[10px] text-amber-600 font-semibold">
+                    <p className="text-[10px] text-amber-600 font-bold">
                       No sections found for this grade level.
                     </p>
                   )}
@@ -1866,7 +2099,7 @@ export default function WalkInEncoder() {
                   <p className="text-xs font-black uppercase ">
                     Encode Only
                   </p>
-                  <p className="text-xs font-semibold text-foreground">
+                  <p className="text-xs font-bold text-foreground">
                     Save BEEF then return learner to Awaiting Verification.
                   </p>
                 </button>
@@ -1882,7 +2115,7 @@ export default function WalkInEncoder() {
                   <p className="text-xs font-black uppercase ">
                     Encode + Verify
                   </p>
-                  <p className="text-xs font-semibold text-foreground">
+                  <p className="text-xs font-bold text-foreground">
                     Save BEEF and immediately progress to verification outcome.
                   </p>
                 </button>
@@ -1940,7 +2173,7 @@ export default function WalkInEncoder() {
             </div>
           </DialogHeader>
           <div className="px-6 py-5 bg-background space-y-3">
-            <p className="text-sm font-semibold text-foreground">
+            <p className="text-sm font-bold text-foreground">
               The selected section has reached its maximum DepEd capacity. Are you sure you want to proceed with this assignment?
             </p>
             <p className="text-xs text-amber-700 font-bold">

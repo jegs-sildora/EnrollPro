@@ -354,7 +354,7 @@ export default function ChangePassword() {
                     exit={{ opacity: 0, y: -10 }}
                     className="w-full p-3 rounded-lg bg-red-50 border border-red-100 flex items-center gap-2 text-red-600 shadow-sm mb-2">
                     <AlertCircle className="size-4 shrink-0" />
-                    <p className="text-sm font-semibold ">{error}</p>
+                    <p className="text-sm font-bold ">{error}</p>
                   </motion.div>
                 )}
               </AnimatePresence>

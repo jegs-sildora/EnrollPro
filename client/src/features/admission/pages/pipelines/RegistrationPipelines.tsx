@@ -12,7 +12,11 @@ import { useSettingsStore } from "@/store/settings.slice";
 import { ACTIVE_REGISTRATION_EXCLUDED_STATUSES } from "@/features/admission/constants/registrationWorkflow";
 import { useDelayedLoading } from "@/shared/hooks/useDelayedLoading";
 
-export default function RegistrationPipelines() {
+export default function RegistrationPipelines({
+  onRegisterRefresh,
+}: {
+  onRegisterRefresh?: (fn: () => Promise<void>) => void;
+}) {
   const { configs, loading: rawLoading, error } = useScpConfigs();
   const loading = useDelayedLoading(rawLoading);
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
@@ -20,30 +24,53 @@ export default function RegistrationPipelines() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Use "program" instead of "tab" to avoid collision with Workspace tabs
-  const activeProgram = searchParams.get("program") || "REGULAR";
+  const activeProgram = searchParams.get("program") || "SCIENCE_TECHNOLOGY_AND_ENGINEERING";
   const [tabCounts, setTabCounts] = useState<Record<string, number>>({});
+
+  const steConfig = configs.find(
+    (config) => config.scpType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+  );
+  const spaConfig = configs.find(
+    (config) => config.scpType === "SPECIAL_PROGRAM_IN_THE_ARTS",
+  );
+  const spsConfig = configs.find(
+    (config) => config.scpType === "SPECIAL_PROGRAM_IN_SPORTS",
+  );
 
   const tabs = useMemo(
     () => [
       {
-        key: "REGULAR",
-        label: "Regular",
-        fullLabel: SCP_LABELS.REGULAR ?? "Regular",
-        cutoffScore: null as number | null,
-        hasAssessment: false,
-      },
-      ...configs.map((c) => ({
-        key: c.scpType,
-        label: SCP_ACRONYMS[c.scpType] || c.scpType,
-        fullLabel: SCP_LABELS[c.scpType] || c.scpType,
+        key: "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
+        label: SCP_ACRONYMS.SCIENCE_TECHNOLOGY_AND_ENGINEERING || "STE",
+        fullLabel: SCP_LABELS.SCIENCE_TECHNOLOGY_AND_ENGINEERING || "Science, Technology & Engineering",
         cutoffScore:
-          c.cutoffScore ??
-          c.steps.find((s) => s.cutoffScore != null)?.cutoffScore ??
+          steConfig?.cutoffScore ??
+          steConfig?.steps.find((s) => s.cutoffScore != null)?.cutoffScore ??
           null,
-        hasAssessment: c.steps.length > 0,
-      })),
+        hasAssessment: (steConfig?.steps?.length ?? 0) > 0,
+      },
+      {
+        key: "SPECIAL_PROGRAM_IN_THE_ARTS",
+        label: SCP_ACRONYMS.SPECIAL_PROGRAM_IN_THE_ARTS || "SPA",
+        fullLabel: SCP_LABELS.SPECIAL_PROGRAM_IN_THE_ARTS || "Special Program in the Arts",
+        cutoffScore:
+          spaConfig?.cutoffScore ??
+          spaConfig?.steps.find((s) => s.cutoffScore != null)?.cutoffScore ??
+          null,
+        hasAssessment: (spaConfig?.steps?.length ?? 0) > 0,
+      },
+      {
+        key: "SPECIAL_PROGRAM_IN_SPORTS",
+        label: SCP_ACRONYMS.SPECIAL_PROGRAM_IN_SPORTS || "SPS",
+        fullLabel: SCP_LABELS.SPECIAL_PROGRAM_IN_SPORTS || "Special Program in Sports",
+        cutoffScore:
+          spsConfig?.cutoffScore ??
+          spsConfig?.steps.find((s) => s.cutoffScore != null)?.cutoffScore ??
+          null,
+        hasAssessment: (spsConfig?.steps?.length ?? 0) > 0,
+      },
     ],
-    [configs],
+    [spaConfig, spsConfig, steConfig],
   );
 
   const fetchCount = useCallback(
@@ -64,9 +91,13 @@ export default function RegistrationPipelines() {
 
   const fetchActiveCount = useCallback(
     async (applicantType: string) => {
+      const PIPELINE_EXCLUDED = [
+        ...ACTIVE_REGISTRATION_EXCLUDED_STATUSES,
+        "READY_FOR_ENROLLMENT",
+      ] as const;
       const [allCount, ...excludedCounts] = await Promise.all([
         fetchCount(applicantType),
-        ...ACTIVE_REGISTRATION_EXCLUDED_STATUSES.map((status) =>
+        ...PIPELINE_EXCLUDED.map((status) =>
           fetchCount(applicantType, status),
         ),
       ]);
@@ -127,13 +158,17 @@ export default function RegistrationPipelines() {
       setSearchParams(
         (previousParams) => {
           const nextParams = new URLSearchParams(previousParams);
-          nextParams.set("program", "REGULAR");
+          nextParams.set("program", "SCIENCE_TECHNOLOGY_AND_ENGINEERING");
           return nextParams;
         },
         { replace: true },
       );
     }
   }, [activeProgram, tabs, setSearchParams]);
+
+  useEffect(() => {
+    onRegisterRefresh?.(refreshTabCounts);
+  }, [onRegisterRefresh, refreshTabCounts]);
 
   useEffect(() => {
     const run = async () => {
@@ -162,7 +197,7 @@ export default function RegistrationPipelines() {
   if (error) {
     return (
       <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-6 text-center">
-        <p className="text-sm text-destructive font-medium">{error}</p>
+        <p className="text-sm text-destructive font-bold">{error}</p>
       </div>
     );
   }

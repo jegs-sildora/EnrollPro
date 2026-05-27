@@ -29,7 +29,7 @@ export default function Step3Background() {
           <p className="text-sm font-bold text-primary">
             Sensitive Information
           </p>
-          <p className="text-[0.6875rem] text-primary font-medium uppercase ">
+          <p className="text-[0.6875rem] text-primary font-bold uppercase ">
             All details are kept strictly confidential.
           </p>
         </div>
@@ -60,7 +60,7 @@ export default function Step3Background() {
               />
               <Label
                 htmlFor="ip-no"
-                className="font-semibold cursor-pointer">
+                className="font-bold cursor-pointer">
                 No
               </Label>
             </div>
@@ -72,7 +72,7 @@ export default function Step3Background() {
               />
               <Label
                 htmlFor="ip-yes"
-                className="font-semibold cursor-pointer">
+                className="font-bold cursor-pointer">
                 Yes
               </Label>
             </div>
@@ -128,7 +128,7 @@ export default function Step3Background() {
               />
               <Label
                 htmlFor="4ps-no"
-                className="font-semibold cursor-pointer">
+                className="font-bold cursor-pointer">
                 No
               </Label>
             </div>
@@ -140,7 +140,7 @@ export default function Step3Background() {
               />
               <Label
                 htmlFor="4ps-yes"
-                className="font-semibold cursor-pointer">
+                className="font-bold cursor-pointer">
                 Yes
               </Label>
             </div>
@@ -198,7 +198,7 @@ export default function Step3Background() {
               />
               <Label
                 htmlFor="ba-no"
-                className="font-semibold cursor-pointer">
+                className="font-bold cursor-pointer">
                 No
               </Label>
             </div>
@@ -210,7 +210,7 @@ export default function Step3Background() {
               />
               <Label
                 htmlFor="ba-yes"
-                className="font-semibold cursor-pointer">
+                className="font-bold cursor-pointer">
                 Yes
               </Label>
             </div>
@@ -248,7 +248,7 @@ export default function Step3Background() {
               />
               <Label
                 htmlFor="lwd-no"
-                className="font-semibold cursor-pointer">
+                className="font-bold cursor-pointer">
                 No
               </Label>
             </div>
@@ -260,7 +260,7 @@ export default function Step3Background() {
               />
               <Label
                 htmlFor="lwd-yes"
-                className="font-semibold cursor-pointer">
+                className="font-bold cursor-pointer">
                 Yes
               </Label>
             </div>
@@ -330,7 +330,7 @@ export default function Step3Background() {
                                 />
                                 <Label
                                   htmlFor={`disability-${type}`}
-                                  className="text-sm font-medium cursor-pointer">
+                                  className="text-sm font-bold cursor-pointer">
                                   {type}
                                 </Label>
                               </div>
@@ -393,7 +393,7 @@ export default function Step3Background() {
                                 />
                                 <Label
                                   htmlFor={`disability-${type}`}
-                                  className="text-sm font-medium cursor-pointer">
+                                  className="text-sm font-bold cursor-pointer">
                                   {type}
                                 </Label>
                               </div>
@@ -423,7 +423,7 @@ export default function Step3Background() {
                         />
                         <Label
                           htmlFor="pwd-no"
-                          className="font-semibold cursor-pointer">
+                          className="font-bold cursor-pointer">
                           No
                         </Label>
                       </div>
@@ -435,7 +435,7 @@ export default function Step3Background() {
                         />
                         <Label
                           htmlFor="pwd-yes"
-                          className="font-semibold cursor-pointer">
+                          className="font-bold cursor-pointer">
                           Yes
                         </Label>
                       </div>

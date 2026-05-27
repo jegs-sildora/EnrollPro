@@ -461,7 +461,7 @@ export default function EarlyRegistrationForm({
           </div>
 
           {submitError && (
-            <div className="p-4 mb-6 bg-destructive/10 border border-destructive/30 rounded-xl text-destructive text-sm font-medium flex items-center gap-2">
+            <div className="p-4 mb-6 bg-destructive/10 border border-destructive/30 rounded-xl text-destructive text-sm font-bold flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               {submitError}
             </div>
@@ -531,7 +531,7 @@ export default function EarlyRegistrationForm({
                   size="lg"
                   onClick={prevStep}
                   disabled={stepper.state.isFirst || isSubmitting}
-                  className="h-12 px-8 font-semibold sm:w-auto w-full">
+                  className="h-12 px-8 font-bold sm:w-auto w-full">
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Back
                 </Button>
@@ -542,7 +542,7 @@ export default function EarlyRegistrationForm({
                     size="lg"
                     onClick={nextStep}
                     disabled={isSubmitting || isCheckingLrn || isSteGradesIncomplete}
-                    className="h-12 px-8 font-semibold sm:w-auto w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                    className="h-12 px-8 font-bold sm:w-auto w-full bg-primary text-primary-foreground hover:bg-primary/90">
                     {isEditing ? "Update and Review" : "Next Step"}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>

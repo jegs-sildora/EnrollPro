@@ -135,7 +135,7 @@ export function HandoverConfirmationModal({
                 value={customReason}
                 onChange={(event) => setCustomReason(event.target.value)}
                 placeholder="Describe the reason for handover..."
-                className="min-h-24 font-semibold"
+                className="min-h-24 font-bold"
               />
             </div>
           )}

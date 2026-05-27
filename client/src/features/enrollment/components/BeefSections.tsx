@@ -91,7 +91,7 @@ function DataItem({
       <span className="text-foreground">{label}:</span>
       <span
         className={
-          !valid ? "text-foreground/50 italic font-medium" : "uppercase"
+          !valid ? "text-foreground/50 italic font-bold" : "uppercase"
         }>
         {valid ? String(value) : "Not provided"}
       </span>
@@ -291,12 +291,12 @@ export function GuardianContact({ applicant }: { applicant: ApplicantDetail }) {
           {c.fullName ? (
             <span className="uppercase">{c.fullName}</span>
           ) : (
-            <span className="text-foreground/50 italic font-medium">
+            <span className="text-foreground/50 italic font-bold">
               Not provided
             </span>
           )}
           <span
-            className={`text-xs font-medium ${c.details ? "text-foreground" : "text-foreground/50 italic"}`}>
+            className={`text-xs font-bold ${c.details ? "text-foreground" : "text-foreground/50 italic"}`}>
             {c.details || "No contact info"}
             {c.relationship && ` (${c.relationship})`}
           </span>

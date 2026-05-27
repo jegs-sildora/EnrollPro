@@ -278,7 +278,7 @@ export function AssignAdviserModal({
                       Employee ID: {currentAdviserFull?.employeeId ?? "N/A"}
                     </p>
                     {currentAdviserFull?.specialization && (
-                      <p className="text-xs font-semibold text-slate-400 truncate">
+                      <p className="text-xs font-bold text-slate-400 truncate">
                         {currentAdviserFull.specialization}
                       </p>
                     )}
@@ -297,14 +297,14 @@ export function AssignAdviserModal({
             )}
 
             {/* Section label (TASK 2) */}
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+            <p className="text-[10px] font-black uppercase tracking-widest text-foreground">
               Available Replacements
             </p>
 
             {/* Search + Show Assigned toggle */}
             <div className="flex items-center gap-3">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
                 <Input
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
@@ -327,7 +327,7 @@ export function AssignAdviserModal({
                     )}
                   />
                 </div>
-                <span className="text-[11px] font-bold text-muted-foreground whitespace-nowrap group-hover:text-foreground transition-colors">
+                <span className="text-[11px] font-bold text-foreground whitespace-nowrap group-hover:text-foreground transition-colors">
                   Show assigned
                   {lockedCount > 0 && (
                     <span className="ml-1 text-[10px] text-slate-400">({lockedCount})</span>
@@ -341,14 +341,14 @@ export function AssignAdviserModal({
               <div className="max-h-64 overflow-y-auto divide-y bg-card">
                 {loadingTeachers ? (
                   <div className="h-44 flex items-center justify-center">
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    <Loader2 className="h-5 w-5 animate-spin text-foreground" />
                   </div>
                 ) : isSearching ? (
                   <div className="h-44 flex flex-col items-center justify-center gap-3 text-center">
                     <Search className="h-10 w-10 animate-pulse text-slate-400" />
                     <div className="space-y-1">
-                      <p className="text-lg font-medium text-slate-500">Searching...</p>
-                      <p className="text-sm font-medium text-slate-400">
+                      <p className="text-lg font-bold text-slate-500">Searching...</p>
+                      <p className="text-sm font-bold text-slate-400">
                         Scanning adviser directory...
                       </p>
                     </div>
@@ -357,11 +357,11 @@ export function AssignAdviserModal({
                   /* TASK 3 — Empty state */
                   <div className="h-36 flex flex-col items-center justify-center gap-2 text-center px-4">
                     <SearchX className="h-8 w-8 text-slate-300" />
-                    <p className="text-sm font-bold text-muted-foreground">
+                    <p className="text-sm font-bold text-foreground">
                       No available personnel match this search criteria.
                     </p>
                     {!showAssigned && lockedCount > 0 && !normalizedSearch && (
-                      <p className="text-xs font-semibold text-slate-400">
+                      <p className="text-xs font-bold text-slate-400">
                         Toggle &quot;Show assigned&quot; to view locked personnel.
                       </p>
                     )}
@@ -393,10 +393,10 @@ export function AssignAdviserModal({
                                 <p className="text-sm font-black uppercase leading-none truncate">
                                   {teacher.name}
                                 </p>
-                                <p className="text-xs font-bold text-muted-foreground">
+                                <p className="text-xs font-bold text-foreground">
                                   Employee ID: {teacher.employeeId || "N/A"}
                                 </p>
-                                <p className="text-xs font-semibold text-foreground/80 truncate">
+                                <p className="text-xs font-bold text-foreground/80 truncate">
                                   {(teacher.department || "NO DEPT").toUpperCase()} —{" "}
                                   {teacher.specialization || "No specialization"}
                                 </p>
@@ -449,10 +449,10 @@ export function AssignAdviserModal({
                               >
                                 {teacher.name}
                               </p>
-                              <p className="text-xs font-bold text-muted-foreground">
+                              <p className="text-xs font-bold text-foreground">
                                 Employee ID: {teacher.employeeId || "N/A"}
                               </p>
-                              <p className="text-xs font-semibold text-foreground/80 truncate">
+                              <p className="text-xs font-bold text-foreground/80 truncate">
                                 {(teacher.department || "NO DEPT").toUpperCase()} —{" "}
                                 {teacher.specialization || "No specialization"}
                               </p>
@@ -485,7 +485,7 @@ export function AssignAdviserModal({
             <button
               type="button"
               onClick={handleBack}
-              className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors group"
+              className="flex items-center gap-1.5 text-xs font-bold text-foreground hover:text-foreground transition-colors group"
             >
               <ChevronLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
               Back to Selection
@@ -531,7 +531,7 @@ export function AssignAdviserModal({
             <div className="space-y-4">
               {/* Reason Category */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                <label className="text-[10px] font-black uppercase tracking-widest text-foreground">
                   Reason Category <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -541,7 +541,7 @@ export function AssignAdviserModal({
                     "w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-bold",
                     "ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
                     "disabled:cursor-not-allowed disabled:opacity-50",
-                    !reasonCategory && "text-muted-foreground",
+                    !reasonCategory && "text-foreground",
                   )}
                 >
                   <option value="" disabled>
@@ -557,7 +557,7 @@ export function AssignAdviserModal({
 
               {/* Specific Justification */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                <label className="text-[10px] font-black uppercase tracking-widest text-foreground">
                   Specific Justification <span className="text-red-500">*</span>
                 </label>
                 <textarea
@@ -566,13 +566,13 @@ export function AssignAdviserModal({
                   placeholder="Provide a detailed justification for this adviser transfer for audit and record purposes..."
                   rows={4}
                   className={cn(
-                    "w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-semibold resize-none",
-                    "placeholder:text-muted-foreground placeholder:font-normal ring-offset-background",
+                    "w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-bold resize-none",
+                    "placeholder:text-foreground placeholder:font-normal ring-offset-background",
                     "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
                     "disabled:cursor-not-allowed disabled:opacity-50",
                   )}
                 />
-                <p className="text-[10px] font-semibold text-muted-foreground text-right">
+                <p className="text-[10px] font-bold text-foreground text-right">
                   {justification.trim().length} characters
                 </p>
               </div>

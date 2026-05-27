@@ -367,14 +367,14 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                         "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-sm font-bold uppercase",
                         formData.sex === s.val
                           ? "border-primary bg-primary/5 text-primary"
-                          : "border-border hover:bg-muted/50 text-muted-foreground",
+                          : "border-border hover:bg-muted/50 text-foreground",
                       )}>
                       <s.icon
                         className={cn(
                           "w-4 h-4",
                           formData.sex === s.val
                             ? "text-primary"
-                            : "text-muted-foreground",
+                            : "text-foreground",
                         )}
                       />
                       {s.val}
@@ -453,7 +453,7 @@ export const UserAccountFormSheet = memo(function UserAccountFormSheet({
                     aria-readonly={formData.role === "MRF"}
                   />
                   {formData.role === "MRF" && (
-                    <p className="text-[10px] text-muted-foreground mt-1.5 leading-snug">
+                    <p className="text-[10px] text-foreground mt-1.5 leading-snug">
                       <strong className="text-foreground">Note:</strong> Designation is tied to the selected role for MRF accounts and cannot be edited here.
                     </p>
                   )}

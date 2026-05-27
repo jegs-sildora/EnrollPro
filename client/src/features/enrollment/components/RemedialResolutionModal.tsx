@@ -97,7 +97,7 @@ export function RemedialResolutionModal({
             </Label>
             <p className="font-bold text-sm">{learnerName}</p>
             {lrn && (
-              <p className="text-xs text-muted-foreground font-mono">
+              <p className="text-xs text-foreground font-bold">
                 LRN: {lrn}
               </p>
             )}
@@ -118,7 +118,7 @@ export function RemedialResolutionModal({
               value={remedialGrade}
               onChange={(e) => setRemedialGrade(e.target.value)}
               placeholder="e.g. 75.00"
-              className="font-mono"
+              className="font-bold"
             />
           </div>
 

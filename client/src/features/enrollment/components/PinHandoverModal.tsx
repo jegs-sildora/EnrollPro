@@ -72,7 +72,7 @@ export function PinHandoverModal({
             </p>
             
             <div className="flex items-center justify-center gap-4">
-              <span className="text-4xl font-black  text-slate-900 font-mono">
+              <span className="text-4xl font-black  text-slate-900 font-bold">
                 {pin.split("").join(" ")}
               </span>
               <Button

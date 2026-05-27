@@ -144,7 +144,7 @@ export default function AuditLogs() {
         header: "Timestamp",
         cell: ({ row }) => (
           <div className="text-center">
-            <span className="whitespace-nowrap text-xs font-semibold text-foreground">
+            <span className="whitespace-nowrap text-xs font-bold text-foreground">
               {formatTimestamp(row.original.createdAt)}
             </span>
           </div>
@@ -215,11 +215,11 @@ export default function AuditLogs() {
                 {type}
               </span>
               {log.resolvedSubject ? (
-                <p className="text-sm font-semibold text-foreground">
+                <p className="text-sm font-bold text-foreground">
                   {log.resolvedSubject}
                 </p>
               ) : log.recordId ? (
-                <p className="text-xs font-mono text-foreground">
+                <p className="text-xs font-bold text-foreground">
                   Record #{log.recordId}
                 </p>
               ) : null}
@@ -241,7 +241,7 @@ export default function AuditLogs() {
         header: "IP Address",
         cell: ({ row }) => (
           <div className="text-center">
-            <span className="text-xs font-mono font-bold text-foreground bg-muted/30 px-1.5 py-0.5 rounded">
+            <span className="text-xs font-bold text-foreground bg-muted/30 px-1.5 py-0.5 rounded">
               {row.original.ipAddress}
             </span>
           </div>
@@ -347,7 +347,7 @@ export default function AuditLogs() {
         <div className="flex gap-2">
           <Button
             variant="outline"
-            className="font-semibold text-xs"
+            className="font-bold text-xs"
             onClick={() => fetchLogs(page)}
             disabled={loading}>
             <RefreshCw
@@ -357,7 +357,7 @@ export default function AuditLogs() {
           </Button>
           {isSystemAdmin && (
             <Button
-              className="font-semibold text-xs"
+              className="font-bold text-xs"
               onClick={handleExport}
               disabled={exporting}>
               <Download className="h-4 w-4 mr-2" />
@@ -397,13 +397,13 @@ export default function AuditLogs() {
                     Action Category
                   </Label>
                   <Select value={actionType} onValueChange={(val) => { setActionType(val); setPage(1); }}>
-                    <SelectTrigger className="font-semibold text-xs">
+                    <SelectTrigger className="font-bold text-xs">
                       <SelectValue placeholder="All Actions" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all" className="font-semibold text-xs">All Actions</SelectItem>
+                      <SelectItem value="all" className="font-bold text-xs">All Actions</SelectItem>
                       {filterMeta.actionTypes.map((at) => (
-                        <SelectItem key={at} value={at} className="font-semibold text-xs">
+                        <SelectItem key={at} value={at} className="font-bold text-xs">
                           {actionLabel(at)}
                         </SelectItem>
                       ))}
@@ -416,13 +416,13 @@ export default function AuditLogs() {
                       Actor Filter
                     </Label>
                     <Select value={actorId} onValueChange={(val) => { setActorId(val); setPage(1); }}>
-                      <SelectTrigger className="font-semibold text-xs">
+                      <SelectTrigger className="font-bold text-xs">
                         <SelectValue placeholder="All Staff Members" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all" className="font-semibold text-xs">All Staff Members</SelectItem>
+                        <SelectItem value="all" className="font-bold text-xs">All Staff Members</SelectItem>
                         {filterMeta.actors.map((actor) => (
-                          <SelectItem key={actor.id} value={actor.id.toString()} className="font-semibold text-xs">
+                          <SelectItem key={actor.id} value={actor.id.toString()} className="font-bold text-xs">
                             {actor.name} ({formatUserRole(actor.role)})
                           </SelectItem>
                         ))}
@@ -437,7 +437,7 @@ export default function AuditLogs() {
                   <Input
                     type="date"
                     value={dateFrom}
-                    className="font-semibold text-xs"
+                    className="font-bold text-xs"
                     onChange={(e) => {
                       setDateFrom(e.target.value);
                       setPage(1);
@@ -451,7 +451,7 @@ export default function AuditLogs() {
                   <Input
                     type="date"
                     value={dateTo}
-                    className="font-semibold text-xs"
+                    className="font-bold text-xs"
                     onChange={(e) => {
                       setDateTo(e.target.value);
                       setPage(1);

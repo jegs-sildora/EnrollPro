@@ -39,7 +39,7 @@ export default function CurriculumTabPage() {
             </div>
             <div className="space-y-1">
               <p className="font-bold text-foreground">No Active School Year</p>
-              <p className="text-sm leading-relaxed px-4 font-semibold">
+              <p className="text-sm leading-relaxed px-4 font-bold">
                 Select an active school year from Settings or the header
                 switcher to configure curriculum programs.
               </p>
@@ -86,7 +86,7 @@ export default function CurriculumTabPage() {
           <div className="sticky bottom-0 z-20">
             <div className="rounded-lg border border-border bg-background/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/85">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs font-semibold text-foreground">
+                <p className="text-xs font-bold text-foreground">
                   {hasUnsavedChanges
                     ? "You have unsaved curriculum configuration changes."
                     : "All curriculum configurations are saved."}

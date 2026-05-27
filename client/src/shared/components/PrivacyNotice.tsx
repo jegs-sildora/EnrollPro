@@ -48,7 +48,7 @@ export default function PrivacyNotice({
             <CardTitle className="text-2xl font-bold ">
               Data Privacy Notice
             </CardTitle>
-            <p className="text-sm text-foreground font-medium">
+            <p className="text-sm text-foreground font-bold">
               Republic Act No. 10173
             </p>
           </div>
@@ -224,7 +224,7 @@ export default function PrivacyNotice({
             />
             <Label
               htmlFor="privacy-consent"
-              className="text-sm font-medium leading-relaxed cursor-pointer select-none">
+              className="text-sm font-bold leading-relaxed cursor-pointer select-none">
               I have read and understood the Data Privacy Notice above. I agree
               to the collection and processing of my child's information by{" "}
               {schoolName} and DepEd for the purpose of{" "}
@@ -235,7 +235,7 @@ export default function PrivacyNotice({
           <Button
             onClick={onAccept}
             disabled={!agreed}
-            className="w-full h-12 text-base font-semibold transition-all bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-foreground">
+            className="w-full h-12 text-base font-bold transition-all bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-foreground">
             Continue to {isBeerf ? "Registration" : "Enrollment"} Form
           </Button>
         </CardFooter>

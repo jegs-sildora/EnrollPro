@@ -90,13 +90,13 @@ const HealthCard = memo(({ system }: { system: EcosystemSystem }) => {
               {system.status === "connected" ? "Connected" : system.status === "degraded" ? "Degraded" : "Failed"}
             </span>
           </div>
-          <span className="text-[9px] font-bold text-muted-foreground">{system.latency}</span>
+          <span className="text-[9px] font-bold text-foreground">{system.latency}</span>
         </div>
       </CardHeader>
       <CardContent className="pt-4 space-y-4">
         <div className="space-y-1.5">
           <div className="flex justify-between items-end">
-            <p className="text-[10px] font-black uppercase text-muted-foreground">Data Parity</p>
+            <p className="text-[10px] font-black uppercase text-foreground">Data Parity</p>
             <Badge variant={isMismatched ? "outline" : "success"} className={cn("h-4.5 text-[9px] font-black uppercase px-1.5", isMismatched ? "border-amber-200 bg-amber-50 text-amber-700 dark:bg-amber-950/30" : "")}>
               {isMismatched ? `${parityPercent}% Synced` : "100% Parity"}
             </Badge>
@@ -111,7 +111,7 @@ const HealthCard = memo(({ system }: { system: EcosystemSystem }) => {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground/60 border-t pt-3">
+        <div className="flex items-center gap-1.5 text-[10px] font-bold text-foreground/60 border-t pt-3">
           <History className="h-3 w-3" />
           {system.lastSync}
         </div>
@@ -265,7 +265,7 @@ function IntegrationHub() {
         <h1 className="text-4xl font-black uppercase tracking-tight text-foreground">
           Integration <span className="text-primary">Command Center</span>
         </h1>
-        <p className="text-muted-foreground font-bold text-sm">
+        <p className="text-foreground font-bold text-sm">
           Real-time visibility and synchronization control for connected DepEd modules.
         </p>
       </header>

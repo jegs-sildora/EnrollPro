@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { FileSpreadsheet, Loader2, Users } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table";
 import {
   Dialog,
   DialogContent,
@@ -9,8 +10,24 @@ import {
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { DataTable } from "@/shared/ui/data-table";
+import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import api from "@/shared/api/axiosInstance";
 import { sileo } from "sileo";
+import { useHistoricalReadOnly } from "@/shared/hooks/useHistoricalReadOnly";
+import { useSettingsStore } from "@/store/settings.slice";
+
+// ── Program-type short labels (matches Homerooms.tsx) ───────────────────────
+
+const SCP_SHORT_LABELS: Record<string, string> = {
+  REGULAR: "BEC",
+  SCIENCE_TECHNOLOGY_AND_ENGINEERING: "STE",
+  SPECIAL_PROGRAM_IN_THE_ARTS: "SPA",
+  SPECIAL_PROGRAM_IN_SPORTS: "SPS",
+  SPECIAL_PROGRAM_IN_JOURNALISM: "SPJ",
+  SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: "SPFL",
+  SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_EDUCATION: "SPTVE",
+};
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -40,6 +57,21 @@ interface RosterResponse {
   learners: RosterLearner[];
 }
 
+// Flat row union for DataTable (divider group headers + learner rows share ColumnDef[])
+type DividerRow = {
+  _kind: "divider";
+  id: number; // -1 = male group header, -2 = female group header
+  label: string;
+  count: number;
+};
+
+type LearnerRow = RosterLearner & {
+  _kind: "learner";
+  rowIndex: number; // SF1-compliant continuous row number
+};
+
+type TableRow = DividerRow | LearnerRow;
+
 // ── Status badge helper ───────────────────────────────────────────────────────
 
 function EnrollmentBadge({ status }: { status: string }) {
@@ -59,7 +91,7 @@ function EnrollmentBadge({ status }: { status: string }) {
   };
   const cfg = map[status] ?? {
     label: status.replace(/_/g, " "),
-    className: "bg-muted text-muted-foreground border-border",
+    className: "bg-muted text--foreground border-border",
   };
   return (
     <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${cfg.className}`}>
@@ -67,6 +99,82 @@ function EnrollmentBadge({ status }: { status: string }) {
     </Badge>
   );
 }
+
+// ── Column definitions ─────────────────────────────────────────────────────────
+
+const ROSTER_COLUMNS: ColumnDef<TableRow>[] = [
+  {
+    id: "num",
+    size: 40,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="#" />,
+    cell: ({ row }) => {
+      const r = row.original;
+      if (r._kind === "divider") return null;
+      return <span className="text--foreground">{r.rowIndex}</span>;
+    },
+  },
+  {
+    id: "lrn",
+    size: 128,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="LRN" />,
+    cell: ({ row }) => {
+      const r = row.original;
+      if (r._kind === "divider") return null;
+      return r.lrn ? (
+        <span className="text-[11px] font-bold">{r.lrn}</span>
+      ) : (
+        <span className="italic  -foreground text-[10px]">Pending</span>
+      );
+    },
+  },
+  {
+    id: "name",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="NAME" className="justify-start" />
+    ),
+    cell: ({ row }) => {
+      const r = row.original;
+      if (r._kind === "divider") {
+        return (
+          <span className="text-[10px] font-black uppercase tracking-widest text-foreground/80">
+            {r.label}{" "}
+            <span className="font-normal normal-case">({r.count})</span>
+          </span>
+        );
+      }
+      return (
+        <div className="text-left font-bold">
+          {r.lastName.toUpperCase()}, {r.firstName}
+          {r.middleName ? ` ${r.middleName.charAt(0)}.` : ""}
+        </div>
+      );
+    },
+  },
+  {
+    id: "sex",
+    size: 48,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="SEX" />,
+    cell: ({ row }) => {
+      const r = row.original;
+      if (r._kind === "divider") return null;
+      return (
+        <span className="font-bold text--foreground">
+          {r.sex === "MALE" ? "M" : "F"}
+        </span>
+      );
+    },
+  },
+  {
+    id: "status",
+    size: 112,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="STATUS" />,
+    cell: ({ row }) => {
+      const r = row.original;
+      if (r._kind === "divider") return null;
+      return <EnrollmentBadge status={r.status} />;
+    },
+  },
+];
 
 // ── Props ────────────────────────────────────────────────────────────────────
 
@@ -86,6 +194,9 @@ export default function SectionRosterModal({
   const [data, setData] = useState<RosterResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [generatingSf1, setGeneratingSf1] = useState(false);
+
+  const { isHistoricalReadOnly, isArchivedYear } = useHistoricalReadOnly();
+  const { viewingSchoolYearLabel } = useSettingsStore();
 
   const fetchRoster = useCallback(async (id: number) => {
     setLoading(true);
@@ -141,15 +252,50 @@ export default function SectionRosterModal({
   };
 
   const section = data?.section ?? null;
-  const learners = data?.learners ?? [];
-  const males = learners.filter((l) => l.sex === "MALE").length;
-  const females = learners.filter((l) => l.sex !== "MALE").length;
+  const allLearners = data?.learners ?? [];
+
+  // ── SF1 ordering: Males first, then Females — each group sorted by last name
+  const sortByLastName = (a: RosterLearner, b: RosterLearner) =>
+    a.lastName.localeCompare(b.lastName);
+  const sortedMales = allLearners.filter((l) => l.sex === "MALE").sort(sortByLastName);
+  const sortedFemales = allLearners.filter((l) => l.sex !== "MALE").sort(sortByLastName);
+  const totalLearners = allLearners.length;
+
+  // ── Program track label (e.g. "STE", "SPA"; omitted for plain BEC) ─────────
+  const programTrack =
+    section && section.programType !== "REGULAR"
+      ? (SCP_SHORT_LABELS[section.programType] ?? section.programType)
+      : null;
+
+  // ── Build flat rows array with sex-group dividers (SF1 order) ────────────────
+  const rows: TableRow[] = [];
+  if (sortedMales.length > 0) {
+    rows.push({ _kind: "divider", id: -1, label: "Male", count: sortedMales.length });
+    sortedMales.forEach((l, i) =>
+      rows.push({ ...l, _kind: "learner", rowIndex: i + 1 }),
+    );
+  }
+  if (sortedFemales.length > 0) {
+    rows.push({ _kind: "divider", id: -2, label: "Female", count: sortedFemales.length });
+    sortedFemales.forEach((l, i) =>
+      rows.push({ ...l, _kind: "learner", rowIndex: sortedMales.length + i + 1 }),
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl w-full p-0 gap-0 overflow-hidden">
+      <DialogContent className="max-w-3xl w-full p-0 gap-0 overflow-hidden flex flex-col max-h-[90vh]">
         {/* ── Header ── */}
-        <DialogHeader className="px-6 pt-5 pb-4 border-b border-border">
+        <DialogHeader className="px-6 pt-5 pb-4 border-b border-border shrink-0">
+          {/* Historical / Archived year badge */}
+          {isHistoricalReadOnly && (
+            <div className="mb-2.5">
+              <Badge variant="secondary" className="text-[10px]">
+                {isArchivedYear ? "Archived" : "Historical"} SY {viewingSchoolYearLabel ?? "–"}
+              </Badge>
+            </div>
+          )}
+
           <div className="flex items-start justify-between gap-4">
             <div>
               <DialogTitle className="text-base font-black uppercase tracking-wide">
@@ -162,8 +308,9 @@ export default function SectionRosterModal({
               {loading || !section ? (
                 <Skeleton className="h-3.5 w-64 mt-1.5" />
               ) : (
-                <p className="text-xs text-muted-foreground mt-1 font-medium">
+                <p className="text-xs text--foreground mt-1 font-bold">
                   {section.gradeLevel}
+                  {programTrack ? ` — ${programTrack}` : ""}
                   {section.advisingTeacher
                     ? ` · Adviser: ${section.advisingTeacher.name}`
                     : ""}
@@ -172,80 +319,42 @@ export default function SectionRosterModal({
             </div>
 
             {!loading && section && (
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
-                  <Users className="size-3.5" />
-                  <span>{learners.length}/{section.maxCapacity}</span>
-                </div>
-                <Badge variant="outline" className="text-[10px]">
-                  M: {males}
-                </Badge>
-                <Badge variant="outline" className="text-[10px]">
-                  F: {females}
-                </Badge>
+              <div className="flex items-center gap-1 text-xs text--foreground font-bold shrink-0">
+                <Users className="size-3.5" />
+                <span>{totalLearners}/{section.maxCapacity}</span>
               </div>
             )}
           </div>
         </DialogHeader>
 
         {/* ── Body ── */}
-        <div className="overflow-y-auto max-h-[60vh]">
-          {loading ? (
-            <div className="p-6 space-y-2">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <Skeleton key={i} className="h-9 w-full rounded" />
-              ))}
-            </div>
-          ) : learners.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-              <Users className="size-10 opacity-30 mb-3" />
-              <p className="text-sm font-bold">No enrolled learners</p>
-              <p className="text-xs mt-1">This section has no active enrollment records.</p>
-            </div>
-          ) : (
-            <table className="w-full text-xs">
-              <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm border-b border-border">
-                <tr>
-                  <th className="px-3 py-2 text-left font-black uppercase tracking-wider text-[10px] w-8">#</th>
-                  <th className="px-3 py-2 text-left font-black uppercase tracking-wider text-[10px] w-32">LRN</th>
-                  <th className="px-3 py-2 text-left font-black uppercase tracking-wider text-[10px]">NAME</th>
-                  <th className="px-3 py-2 text-center font-black uppercase tracking-wider text-[10px] w-10">SEX</th>
-                  <th className="px-3 py-2 text-left font-black uppercase tracking-wider text-[10px] w-28">STATUS</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {learners.map((l, i) => (
-                  <tr key={l.id} className="hover:bg-muted/40 transition-colors">
-                    <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
-                    <td className="px-3 py-2 font-mono text-[11px]">
-                      {l.lrn ?? (
-                        <span className="italic text-muted-foreground text-[10px]">Pending</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 font-medium">
-                      {l.lastName.toUpperCase()},{" "}
-                      {l.firstName}
-                      {l.middleName ? ` ${l.middleName.charAt(0)}.` : ""}
-                    </td>
-                    <td className="px-3 py-2 text-center text-muted-foreground font-bold">
-                      {l.sex === "MALE" ? "M" : "F"}
-                    </td>
-                    <td className="px-3 py-2">
-                      <EnrollmentBadge status={l.status} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <DataTable
+            columns={ROSTER_COLUMNS}
+            data={rows}
+            loading={loading}
+            virtualize={false}
+            getRowId={(row) => String(row.id)}
+            getRowClassName={(row) =>
+              row._kind === "divider" ? "bg-muted/50 pointer-events-none" : ""
+            }
+            emptyStateContent={
+              <div className="flex flex-col items-center justify-center py-16 text--foreground">
+                <Users className="size-10 opacity-30 mb-3" />
+                <p className="text-sm font-bold">No enrolled learners</p>
+                <p className="text-xs mt-1">This section has no active enrollment records.</p>
+              </div>
+            }
+            className="h-auto rounded-none border-0"
+          />
         </div>
 
         {/* ── Footer ── */}
-        <div className="px-6 py-4 border-t border-border flex items-center justify-between gap-3">
-          <p className="text-[11px] text-muted-foreground font-medium">
+        <div className="px-6 py-4 border-t border-border flex items-center justify-between gap-3 shrink-0">
+          <p className="text-[11px] text--foreground font-bold">
             {loading
               ? "Loading roster…"
-              : `${learners.length} learner${learners.length !== 1 ? "s" : ""} · ${males} male, ${females} female`}
+              : `${totalLearners} learner${totalLearners !== 1 ? "s" : ""} · ${sortedMales.length} male, ${sortedFemales.length} female`}
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -257,7 +366,7 @@ export default function SectionRosterModal({
             </Button>
             <Button
               size="sm"
-              disabled={loading || learners.length === 0 || generatingSf1}
+              disabled={loading || totalLearners === 0 || generatingSf1}
               onClick={() => void handleGenerateSf1()}
               className="text-xs font-bold gap-1.5">
               {generatingSf1 ? (

@@ -113,9 +113,9 @@ export default function DocumentaryRequirements() {
     {
       feature: "Document Handling",
       phase1: "Presented for verification only (not collected)",
-      phase1Class: "font-medium text-blue-600",
+      phase1Class: "font-bold text-blue-600",
       phase2: "Original documents submitted and filed",
-      phase2Class: "font-medium text-emerald-600",
+      phase2Class: "font-bold text-emerald-600",
     },
     {
       feature: "System Status",
@@ -159,7 +159,7 @@ export default function DocumentaryRequirements() {
           <div className="bg-emerald-50/30 p-1">Phase 2: Actual Enrollment</div>
         ),
         cell: ({ row }) => (
-          <span className="text-xs font-medium">{row.original.phase2}</span>
+          <span className="text-xs font-bold">{row.original.phase2}</span>
         ),
       },
     ],
@@ -224,7 +224,7 @@ export default function DocumentaryRequirements() {
           <div className="bg-emerald-50/30 p-1">Phase 2: Actual Enrollment</div>
         ),
         cell: ({ row }) => (
-          <span className="text-xs font-medium">{row.original.phase2}</span>
+          <span className="text-xs font-bold">{row.original.phase2}</span>
         ),
       },
     ],
@@ -482,7 +482,7 @@ export default function DocumentaryRequirements() {
                     key={doc}
                     className="flex items-center gap-2 text-xs p-2.5 rounded border bg-muted/20">
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                    <span className="font-medium">{doc}</span>
+                    <span className="font-bold">{doc}</span>
                   </div>
                 ))}
               </div>
@@ -548,7 +548,7 @@ export default function DocumentaryRequirements() {
             <strong>not refused entry</strong>. They are marked as "Temporarily
             Enrolled" and may attend classes normally.
           </p>
-          <ul className="list-disc pl-5 space-y-1 font-medium">
+          <ul className="list-disc pl-5 space-y-1 font-bold">
             <li>
               Cannot be promoted to the next grade level until requirements are
               complete.

@@ -346,7 +346,7 @@ export function ApplicationDetailPanel({
         <div className="py-2 border-t mt-4 flex justify-center">
           <Link
             to={`/monitoring/early-registration/${applicant.id}`}
-            className="text-[hsl(var(--accent-link))] hover:underline flex items-center gap-1.5 text-xs sm:text-sm font-medium"
+            className="text-[hsl(var(--accent-link))] hover:underline flex items-center gap-1.5 text-xs sm:text-sm font-bold"
             onClick={onClose}>
             View Full Details <ExternalLink className="h-3 w-3" />
           </Link>

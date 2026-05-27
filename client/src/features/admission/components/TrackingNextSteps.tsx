@@ -1,4 +1,5 @@
 import { cn } from "@/shared/lib/utils";
+import { format } from "date-fns";
 import { CheckCircle2, CircleAlert, CircleDashed, Clock3 } from "lucide-react";
 import {
   deriveProgramTypeFromApplicantType,
@@ -31,6 +32,7 @@ interface TrackingNextStepsProps extends Omit<
 > {
   status?: TrackingNextStepsPayload["status"] | string | null;
   currentStep?: TrackingNextStepsPayload["currentStep"] | string | null;
+  hasBeerf?: boolean;
   className?: string;
 }
 
@@ -215,8 +217,45 @@ function computeSteps(
   programType: TrackingProgramType,
   status: TrackingStatus,
   assessmentData?: TrackingAssessmentData,
+  hasBeerf?: boolean,
 ): RenderStep[] {
   const steps: RenderStep[] = [];
+
+  // BEERF process steps (prepended as completed when applicant came through early registration)
+  if (hasBeerf) {
+    const beerfPreSteps: Array<{ id: string; title: string; description: string }> = [
+      {
+        id: "BEERF_SUBMITTED",
+        title: "Early Registration Submitted",
+        description:
+          "Your Basic Education Early Registration Form (BEERF) was received and queued for registrar review.",
+      },
+      {
+        id: "BEERF_REVIEW",
+        title: "Registrar Review (Early Registration)",
+        description:
+          "Your early registration records were validated and confirmed by the registrar.",
+      },
+    ];
+    if (programType === "SCP") {
+      beerfPreSteps.push({
+        id: "BEERF_ASSESSMENT",
+        title: "Assessment Phase (Early Registration)",
+        description:
+          "Required SCP assessments during early registration were completed.",
+      });
+    }
+    beerfPreSteps.push({
+      id: "BEERF_QUALIFIED",
+      title: "Qualified for Enrollment",
+      description:
+        "Your early registration was approved and you were cleared to submit your enrollment form.",
+    });
+    for (const s of beerfPreSteps) {
+      steps.push({ ...s, isCompleted: true, isActive: false });
+    }
+  }
+
   const orderedBaseSteps = STEP_ORDER[programType];
   const currentIndex = orderedBaseSteps.indexOf(currentStep);
 
@@ -234,10 +273,19 @@ function computeSteps(
       (status === "ENROLLED" && stepKey === "ENROLLED");
     const isActive = stepIdx === currentIndex && status !== "ENROLLED";
 
+    const title =
+      hasBeerf && stepKey === "APPLICATION_SUBMITTED"
+        ? "Enrollment Form Submitted"
+        : metadata.title;
+    const description =
+      hasBeerf && stepKey === "APPLICATION_SUBMITTED"
+        ? "Your Basic Education Enrollment Form (BEEF) has been submitted and is queued for processing."
+        : metadata.description[programType];
+
     steps.push({
       id: stepKey,
-      title: metadata.title,
-      description: metadata.description[programType],
+      title,
+      description,
       isCompleted,
       isActive,
     });
@@ -270,7 +318,7 @@ function computeSteps(
         }
 
         let desc = s.scheduledDate
-          ? `Scheduled: ${s.scheduledDate}${s.scheduledTime ? ` at ${s.scheduledTime}` : ""}${s.venue ? ` (${s.venue})` : ""}`
+          ? `Scheduled: ${format(new Date(s.scheduledDate), "MMMM d, yyyy")}${s.scheduledTime ? ` at ${s.scheduledTime}` : ""}${s.venue ? ` (${s.venue})` : ""}`
           : "Scheduling in progress...";
 
         if (s.result) {
@@ -334,6 +382,7 @@ export default function TrackingNextSteps({
   status,
   currentStep,
   assessmentData,
+  hasBeerf,
   className,
 }: TrackingNextStepsProps) {
   const resolvedProgramType =
@@ -361,6 +410,7 @@ export default function TrackingNextSteps({
     resolvedProgramType,
     resolvedStatus,
     assessmentData,
+    hasBeerf,
   );
 
   return (
@@ -368,7 +418,7 @@ export default function TrackingNextSteps({
       {terminalNotice && (
         <div
           className={cn(
-            "rounded-xl border px-4 py-3 text-sm font-semibold",
+            "rounded-xl border px-4 py-3 text-sm font-bold",
             terminalNotice.tone,
           )}>
           <div className="flex items-start gap-2">

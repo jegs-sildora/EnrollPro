@@ -263,7 +263,7 @@ export default function AcademicYearLifecycleTab() {
           {currentPhase === "ENROLLMENT" ? (
             <Alert className="bg-amber-100/50 border-amber-200 text-primary">
               <AlertTitle className="font-bold">Enrollment Phase Active</AlertTitle>
-              <AlertDescription className="text-sm font-medium">
+              <AlertDescription className="text-sm font-bold">
                 The system is currently in the Enrollment Phase. Registrars can
                 perform batch sectioning and mass verifications. Locking BOSY
                 will finalize the official learner rosters (SF1).
@@ -275,7 +275,7 @@ export default function AcademicYearLifecycleTab() {
               <AlertTitle className="font-bold text-slate-600">
                 BOSY was finalized. Intake is closed.
               </AlertTitle>
-              <AlertDescription className="text-sm font-medium text-slate-500">
+              <AlertDescription className="text-sm font-bold text-slate-500">
                 Official learner rosters (SF1) have been generated. New
                 registrations are now closed for this academic year.
                 {bosyLockedAt && (
@@ -476,7 +476,7 @@ export default function AcademicYearLifecycleTab() {
             <Alert className="bg-emerald-100/50 border-emerald-200 text-emerald-900">
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
               <AlertTitle className="font-bold">EOSY Finalized — Ready for Rollover</AlertTitle>
-              <AlertDescription className="text-sm font-medium">
+              <AlertDescription className="text-sm font-bold">
                 All sections have been finalized and EOSY is complete. Initiating rollover will archive
                 the current school year and create the next one with the carried-over learner population.
               </AlertDescription>
@@ -485,7 +485,7 @@ export default function AcademicYearLifecycleTab() {
             <Alert className="bg-amber-50 border-amber-200 text-amber-900">
               <AlertCircle className="h-4 w-4 text-amber-600" />
               <AlertTitle className="font-bold">Rollover Locked</AlertTitle>
-              <AlertDescription className="text-sm font-medium">
+              <AlertDescription className="text-sm font-bold">
                 All class sections must complete End of School Year (EOSY) finalization before
                 rollover can be initiated.
               </AlertDescription>

@@ -27,7 +27,7 @@ export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
         <h2 className="text-3xl font-black text-foreground uppercase">
           Welcome to Online Enrollment
         </h2>
-        <h3 className="text-foreground font-semibold">
+        <h3 className="text-foreground font-bold">
           To begin, please select the appropriate learner category.
         </h3>
       </div>
@@ -46,7 +46,7 @@ export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
             <CardTitle className="text-2xl font-bold">
               Incoming Grade 7, Transferees & Balik-Aral
             </CardTitle>
-            <CardDescription className="text-foreground font-medium leading-relaxed">
+            <CardDescription className="text-foreground font-bold leading-relaxed">
               For new entrants to HNHS or learners resuming their studies after
               a gap year.
             </CardDescription>
@@ -90,7 +90,7 @@ export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
             <CardTitle className="text-2xl font-bold">
               Continuing Learners (Grades 8-10)
             </CardTitle>
-            <CardDescription className="text-foreground font-medium leading-relaxed">
+            <CardDescription className="text-foreground font-bold leading-relaxed">
               For continuous HNHS learners moving up to the next grade level. No
               long forms required.
             </CardDescription>
@@ -131,7 +131,7 @@ export function IntakeChoice({ onChoice }: IntakeChoiceProps) {
                       <h4 className="font-black text-sm uppercase ">
                         Where to find the LRN?
                       </h4>
-                      <p className="text-sm text-foreground leading-relaxed font-medium">
+                      <p className="text-sm text-foreground leading-relaxed font-bold">
                         You can find the 12-digit LRN on your child's{" "}
                         <span className="text-primary font-bold">
                           previous Report Card (SF9)

@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { format } from "date-fns";
 import {
-  ArrowRight,
   CheckSquare,
   Loader2,
   Lock,
@@ -18,12 +17,15 @@ import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { Application } from "./types";
+import type { ChangeEvent, MouseEvent } from "react";
+import type { Application, ScpRankingResult } from "./types";
 
 interface PipelineBatchApplicantsTableProps {
   applications: Application[];
   loading: boolean;
   isSearching?: boolean;
+  screeningMode?: boolean;
+  rankings?: ScpRankingResult[];
   showAssessment: boolean;
   selectedIds: Set<number>;
   isBatchProcessing: boolean;
@@ -49,6 +51,8 @@ export default function PipelineBatchApplicantsTable({
   applications,
   loading,
   isSearching,
+  screeningMode = false,
+  rankings = [],
   showAssessment,
   selectedIds,
   isBatchProcessing,
@@ -76,8 +80,184 @@ export default function PipelineBatchApplicantsTable({
   const selectableRowsCount = applications.filter(
     (application) => application.status !== ENROLLMENT_BRIDGE_STATUS,
   ).length;
+  const rankingsByApplicationId = useMemo(
+    () =>
+      rankings.reduce<Record<number, ScpRankingResult>>((acc, item) => {
+        acc[item.applicationId] = item;
+        return acc;
+      }, {}),
+    [rankings],
+  );
+
+  const getAssessmentScore = (
+    app: Application,
+    kind: "EXAM" | "INTERVIEW",
+  ): number | null => {
+    if (kind === "EXAM") {
+      if (app.examScore != null && Number.isFinite(app.examScore)) {
+        return app.examScore;
+      }
+
+      const fallbackScore = app.assessments.find(
+        (assessment) => assessment.type !== "INTERVIEW",
+      )?.score;
+      return fallbackScore ?? null;
+    }
+
+    const interviewScore = app.assessments.find(
+      (assessment) => assessment.type === "INTERVIEW",
+    )?.score;
+    if (interviewScore != null && Number.isFinite(interviewScore)) {
+      return interviewScore;
+    }
+
+    const fallbackScore = app.assessments.find(
+      (assessment) => assessment.type !== "INTERVIEW",
+    )?.score;
+    return fallbackScore ?? null;
+  };
+
+  const getCompositeScore = (app: Application): number | null => {
+    const ranking = rankingsByApplicationId[app.id];
+    if (ranking) return ranking.compositeScore;
+
+    const exam = getAssessmentScore(app, "EXAM");
+    const interview = getAssessmentScore(app, "INTERVIEW");
+    if (exam == null && interview == null && app.generalAverage == null) {
+      return null;
+    }
+
+    const weightedExam = (exam ?? 0) * 0.6;
+    const weightedInterview = (interview ?? 0) * 0.2;
+    const weightedAverage = (app.generalAverage ?? 0) * 0.2;
+    return Math.round((weightedExam + weightedInterview + weightedAverage) * 100) / 100;
+  };
 
   const columns = useMemo<ColumnDef<Application>[]>(() => {
+    if (screeningMode) {
+      return [
+        {
+          id: "select",
+          size: 40,
+          header: () => (
+            <button
+              type="button"
+              onClick={onToggleSelectAll}
+              className="flex items-center justify-center mx-auto"
+              disabled={isBatchProcessing || selectableRowsCount === 0}>
+              {allSelected ? (
+                <CheckSquare className="size-4 text-primary-foreground" />
+              ) : selectableRowsCount === 0 ? (
+                <Lock className="size-4 text-primary-foreground/70" />
+              ) : (
+                <Square className="size-4 text-primary-foreground/70" />
+              )}
+            </button>
+          ),
+          cell: ({ row }) => {
+            const app = row.original;
+            const isEnrollmentBridgeRow = app.status === ENROLLMENT_BRIDGE_STATUS;
+            return isEnrollmentBridgeRow ? (
+              <div className="flex items-center justify-center">
+                <Lock className="size-3.5 text-foreground" aria-label="Moved to enrollment" />
+              </div>
+            ) : (
+              <div className="flex items-center justify-center">
+                <Checkbox
+                  checked={selectedIds.has(app.id)}
+                  onCheckedChange={() => onToggleSelect(app.id)}
+                  onClick={(e) => e.stopPropagation()}
+                  disabled={isBatchProcessing}
+                />
+              </div>
+            );
+          },
+        },
+        {
+          id: "applicant",
+          accessorKey: "lastName",
+          header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="APPLICANT" />
+          ),
+          cell: ({ row }) => {
+            const app = row.original;
+            return (
+              <div className="flex items-center gap-3 text-left">
+                <div className="flex flex-col">
+                  <span className="font-bold text-sm uppercase">
+                    {app.lastName}, {app.firstName} {app.middleName ? `${app.middleName.charAt(0)}.` : ""}
+                    {app.suffix ? ` ${app.suffix}` : ""}
+                  </span>
+                  <span className="text-sm font-bold">{app.trackingNumber}</span>
+                </div>
+              </div>
+            );
+          },
+        },
+        {
+          id: "lrn",
+          accessorKey: "lrn",
+          header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="LRN" />
+          ),
+          cell: ({ row }) => (
+            <span className="font-bold text-sm block">{row.original.lrn || "—"}</span>
+          ),
+        },
+        {
+          id: "examScore",
+          header: "EXAM SCORE",
+          cell: ({ row }) => {
+            const score = getAssessmentScore(row.original, "EXAM");
+            return (
+              <span className="font-bold text-sm block text-center">
+                {score != null ? formatNumber(score) : "—"}
+              </span>
+            );
+          },
+        },
+        {
+          id: "interviewScore",
+          header: "INTERVIEW/AUDITION SCORE",
+          cell: ({ row }) => {
+            const score = getAssessmentScore(row.original, "INTERVIEW");
+            return (
+              <span className="font-bold text-sm block text-center">
+                {score != null ? formatNumber(score) : "—"}
+              </span>
+            );
+          },
+        },
+        {
+          id: "compositeScore",
+          header: "COMPOSITE SCORE",
+          cell: ({ row }) => {
+            const compositeScore = getCompositeScore(row.original);
+            return (
+              <span className="font-black text-sm block text-center text-foreground">
+                {compositeScore != null ? formatNumber(compositeScore) : "—"}
+              </span>
+            );
+          },
+        },
+        {
+          id: "status",
+          accessorKey: "status",
+          header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="STATUS" />
+          ),
+          cell: ({ row }) => {
+            const app = row.original;
+            return (
+              <div className="flex flex-col items-center gap-1">
+                <StatusBadge status={app.status} className="text-sm font-bold" />
+              </div>
+            );
+          },
+        },
+      ];
+    }
+
     const NEXT_STEP_LABEL: Record<string, string> = {
       SUBMITTED_BEERF: "Pending Verification",
       SUBMITTED_BEEF: "Pending Verification",
@@ -174,36 +354,6 @@ export default function PipelineBatchApplicantsTable({
         ),
       },
       {
-        id: "generalAverage",
-        accessorKey: "generalAverage",
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="GENERAL AVERAGE"
-          />
-        ),
-        cell: ({ row }) => (
-          <span className="font-bold text-sm block text-center">
-            {row.original.generalAverage?.toFixed(2) ?? "—"}
-          </span>
-        ),
-      },
-      {
-        id: "gradeLevel",
-        accessorKey: "gradeLevel.name",
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="GRADE LEVEL"
-          />
-        ),
-        cell: ({ row }) => (
-          <span className="font-bold text-sm block">
-            {row.original.gradeLevel?.name ?? "—"}
-          </span>
-        ),
-      },
-      {
         id: "status",
         accessorKey: "status",
         header: ({ column }) => (
@@ -261,8 +411,10 @@ export default function PipelineBatchApplicantsTable({
                   placeholder="0"
                   className="h-8 w-20 text-center text-sm font-bold"
                   value={scores[app.id] ?? ""}
-                  onChange={(e) => onScoreChange(app.id, e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                    onScoreChange(app.id, e.target.value)
+                  }
+                  onClick={(e: MouseEvent<HTMLInputElement>) => e.stopPropagation()}
                 />
                 <span className="text-xs font-bold mt-1">
                   Cut-off score: {cutoffScore ?? "N/A"}
@@ -330,18 +482,11 @@ export default function PipelineBatchApplicantsTable({
           const app = row.original;
           const isEnrollmentBridgeRow = app.status === ENROLLMENT_BRIDGE_STATUS;
           return isEnrollmentBridgeRow ? (
-            <Button
-              asChild
-              variant="link"
-              size="sm"
-              className="h-8 px-0 text-xs font-bold text-primary">
-              <a href="/monitoring/enrollment">
-                <ArrowRight className="h-3.5 w-3.5 mr-1" />
-                View in Enrollment
-              </a>
-            </Button>
+            <span className="inline-flex items-center text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+              Awaiting BEEF
+            </span>
           ) : (
-            <span className="text-xs font-bold text-muted-foreground block">
+            <span className="text-xs font-bold text-foreground block">
               {NEXT_STEP_LABEL[app.status] ?? "—"}
             </span>
           );
@@ -351,8 +496,8 @@ export default function PipelineBatchApplicantsTable({
 
     if (onDowngradeToBeef) {
       cols.push({
-        id: "becRescue",
-        header: "RESCUE",
+        id: "becRedirect",
+        header: "BEC REDIRECT",
         cell: ({ row }) => {
           const app = row.original;
           if (app.status !== "FAILED_ASSESSMENT") return null;
@@ -371,7 +516,7 @@ export default function PipelineBatchApplicantsTable({
               ) : (
                 <TrendingDown className="h-3 w-3 mr-1" />
               )}
-              BEC Track
+              Route to BEC
             </Button>
           );
         },
@@ -380,6 +525,8 @@ export default function PipelineBatchApplicantsTable({
 
     return cols;
   }, [
+    screeningMode,
+    rankingsByApplicationId,
     allSelected,
     selectedIds,
     isBatchProcessing,
@@ -409,7 +556,7 @@ export default function PipelineBatchApplicantsTable({
         noResultsMessage="No applicants found."
         prependBodyRow={
           isSearching ? (
-            <TableSearchIndicator colSpan={showAssessment ? 10 : 7} />
+            <TableSearchIndicator colSpan={screeningMode ? 7 : showAssessment ? 10 : 7} />
           ) : null
         }
       />
@@ -444,4 +591,8 @@ export default function PipelineBatchApplicantsTable({
       </div>
     </>
   );
+}
+
+function formatNumber(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }

@@ -29,6 +29,7 @@ import type {
   scpRankingFormulaSchema,
   scpProgramConfigUpdateSchema,
   updateScpProgramConfigsSchema,
+  publishScpRankingsSchema,
 } from "../schemas/application.schema.js";
 import type {
   teacherSchema,
@@ -115,6 +116,7 @@ export type ScpProgramConfigUpdateInput = z.infer<
 export type UpdateScpProgramConfigsInput = z.infer<
   typeof updateScpProgramConfigsSchema
 >;
+export type PublishScpRankingsInput = z.infer<typeof publishScpRankingsSchema>;
 
 // ─── Teacher Types ─────────────────────────────────────
 export type TeacherInput = z.infer<typeof teacherSchema>;

@@ -31,8 +31,7 @@ export function ReturningLearnerFlow({
     <div className="max-w-4xl mx-auto p-4 md:p-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-400">
       <Button
         onClick={onBack}
-        variant="ghost"
-        className="group font-black uppercase text-slate-500 hover:text-foreground px-6">
+        className="group font-black uppercase text-primary-foreground px-6 bg-emerald-600">
         <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
         Back to Selection
       </Button>
@@ -54,15 +53,11 @@ export function ReturningLearnerFlow({
             <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100 text-left space-y-4">
               <div className="flex items-start gap-4">
                  <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 text-emerald-700 font-black text-xs">1</div>
-                 <p className="text-sm font-bold text-slate-700">Log in to the **Learner Portal** using your LRN and password.</p>
+                 <p className="text-sm font-bold text-slate-700">Log in to the Learner Portal using your LRN and password.</p>
               </div>
               <div className="flex items-start gap-4">
                  <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 text-emerald-700 font-black text-xs">2</div>
                  <p className="text-sm font-bold text-slate-700">Confirm your intent to return for the upcoming school year.</p>
-              </div>
-              <div className="flex items-start gap-4">
-                 <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 text-emerald-700 font-black text-xs">3</div>
-                 <p className="text-sm font-bold text-slate-700">Update your specialization track (for incoming Grade 9).</p>
               </div>
             </div>
 

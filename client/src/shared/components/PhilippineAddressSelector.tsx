@@ -178,7 +178,7 @@ export function PhilippineAddressSelector({
           error={!!errors?.province}
         />
         {errors?.province && (
-          <p className="text-xs text-destructive font-medium flex items-center gap-1">
+          <p className="text-xs text-destructive font-bold flex items-center gap-1">
             <AlertCircle className="w-3 h-3" />
             {errors.province}
           </p>
@@ -206,7 +206,7 @@ export function PhilippineAddressSelector({
           error={!!errors?.cityMunicipality}
         />
         {errors?.cityMunicipality && (
-          <p className="text-xs text-destructive font-medium flex items-center gap-1">
+          <p className="text-xs text-destructive font-bold flex items-center gap-1">
             <AlertCircle className="w-3 h-3" />
             {errors.cityMunicipality}
           </p>
@@ -234,7 +234,7 @@ export function PhilippineAddressSelector({
           error={!!errors?.barangay}
         />
         {errors?.barangay && (
-          <p className="text-xs text-destructive font-medium flex items-center gap-1">
+          <p className="text-xs text-destructive font-bold flex items-center gap-1">
             <AlertCircle className="w-3 h-3" />
             {errors.barangay}
           </p>

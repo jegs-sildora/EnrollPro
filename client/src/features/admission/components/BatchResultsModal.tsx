@@ -86,7 +86,7 @@ export default function BatchResultsModal({ results, onClose }: Props) {
                   <p className="text-sm font-bold">
                     {item.name}
                     {item.trackingNumber && (
-                      <span className="ml-1 text-xs font-medium text-foreground">
+                      <span className="ml-1 text-xs font-bold text-foreground">
                         (#{item.trackingNumber})
                       </span>
                     )}

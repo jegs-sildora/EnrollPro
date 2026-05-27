@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useSettingsStore } from "@/store/settings.slice";
 import { cn, formatManilaDate, getManilaNow } from "@/shared/lib/utils";
-import html2canvas from "html2canvas";
+import { toJpeg } from "html-to-image";
 import jsPDF from "jspdf";
 import { useNavigate } from "react-router";
 import TrackingNextSteps from "@/features/admission/components/TrackingNextSteps";
@@ -64,25 +64,18 @@ export default function EnrollmentSuccess({
 
     try {
       const element = pdfRef.current;
-      element.style.visibility = "visible";
-      element.style.position = "fixed";
-      element.style.left = "-9999px";
-      element.style.top = "0";
 
       await new Promise((resolve) => setTimeout(resolve, 800));
 
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
+      const dataUrl = await toJpeg(element, {
+        quality: 0.98,
         backgroundColor: "#ffffff",
-        windowWidth: 800,
+        pixelRatio: 2,
       });
 
-      const imgData = canvas.toDataURL("image/jpeg", 0.98);
       const imgWidth = 595.28;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const imgHeight = (element.offsetHeight * imgWidth) / element.offsetWidth;
+      const pageHeight = 841.89; // A4 height in pt
 
       const pdf = new jsPDF({
         orientation: "portrait",
@@ -90,11 +83,12 @@ export default function EnrollmentSuccess({
         format: "a4",
       });
 
-      pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight);
-      pdf.save(`Early_Registration_Confirmation_${trackingNumber}.pdf`);
-
-      element.style.visibility = "hidden";
-      element.style.position = "absolute";
+      const pageCount = Math.ceil(imgHeight / pageHeight);
+      for (let i = 0; i < pageCount; i++) {
+        if (i > 0) pdf.addPage();
+        pdf.addImage(dataUrl, "JPEG", 0, -(i * pageHeight), imgWidth, imgHeight);
+      }
+      pdf.save(`Confirmation_Slip_${trackingNumber}.pdf`);
     } catch (error) {
       console.error("PDF Generation failed:", error);
       alert("Failed to generate PDF. Please try printing the page instead.");
@@ -107,21 +101,23 @@ export default function EnrollmentSuccess({
     <div className="max-w-3xl mx-auto p-4 md:p-8">
       {/* PDF Container */}
       <div
-        ref={pdfRef}
+        aria-hidden="true"
         style={{
-          visibility: "hidden",
           position: "fixed",
-          left: "-9999px",
           top: "0",
-          width: "800px",
-          height: "auto",
-          overflow: "hidden",
-          padding: "60px",
-          backgroundColor: "#ffffff",
-          color: "#061E29",
+          left: "-9999px",
+          overflow: "visible",
           pointerEvents: "none",
-        }}
-        className="font-sans">
+        }}>
+        <div
+          ref={pdfRef}
+          style={{
+            width: "800px",
+            padding: "60px",
+            backgroundColor: "#ffffff",
+            color: "#061E29",
+          }}
+          className="font-sans">
         <div
           style={{ borderColor: "#061E29" }}
           className="flex flex-col items-center justify-center gap-6 mb-4 border-b-2 pb-10">
@@ -171,7 +167,7 @@ export default function EnrollmentSuccess({
             </h2>
             <p
               style={{ color: "#4b5563" }}
-              className="text-xl font-medium">
+              className="text-xl font-bold">
               Your application has been successfully submitted to{" "}
               <span
                 style={{ color: "#061E29" }}
@@ -280,6 +276,7 @@ export default function EnrollmentSuccess({
             </div>
           </div>
         </div>
+        </div>
       </div>
 
       {/* Regular Web UI */}
@@ -324,7 +321,7 @@ export default function EnrollmentSuccess({
           </div>
 
           <div className="space-y-4">
-            <h3 className="font-semibold text-lg flex items-center gap-2">
+            <h3 className="font-bold text-lg flex items-center gap-2">
               <FileText className="w-5 h-5" />
               Next Steps
             </h3>

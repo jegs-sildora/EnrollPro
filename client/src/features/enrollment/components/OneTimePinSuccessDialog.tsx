@@ -90,7 +90,7 @@ export function OneTimePinSuccessDialog({
               <DialogTitle className="text-base leading-tight text-emerald-900 sm:text-lg font-black uppercase ">
                 Official Enrollment Confirmed
               </DialogTitle>
-              <DialogDescription className="text-xs text-emerald-800/90 sm:text-sm font-semibold">
+              <DialogDescription className="text-xs text-emerald-800/90 sm:text-sm font-bold">
                 One-time learner portal PIN captured for{" "}
                 <span className="font-black text-emerald-900">
                   {learnerName}
@@ -136,7 +136,7 @@ export function OneTimePinSuccessDialog({
                 <p className="text-xs text-amber-800 font-black uppercase ">
                   Volatile Data Warning
                 </p>
-                <p className="text-xs text-amber-900/90 font-semibold leading-relaxed">
+                <p className="text-xs text-amber-900/90 font-bold leading-relaxed">
                   This PIN is shown only once. After this dialog closes, it
                   cannot be retrieved from this screen.
                 </p>
@@ -167,7 +167,7 @@ export function OneTimePinSuccessDialog({
           <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
             <div className="flex items-center gap-2 text-xs text-slate-700">
               <Timer className="h-3.5 w-3.5" />
-              <span className="font-semibold">
+              <span className="font-bold">
                 Required review pause:{" "}
                 {secondsLeft > 0 ? `${secondsLeft}s` : "Complete"}
               </span>
@@ -184,7 +184,7 @@ export function OneTimePinSuccessDialog({
               />
               <label
                 htmlFor="one-time-pin-acknowledgement"
-                className="cursor-pointer text-xs text-slate-800 sm:text-sm font-semibold leading-relaxed">
+                className="cursor-pointer text-xs text-slate-800 sm:text-sm font-bold leading-relaxed">
                 I confirm the PIN has been written on the enrollment slip and/or
                 copied to the registrar secure handoff record.
               </label>

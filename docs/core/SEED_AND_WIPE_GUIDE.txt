@@ -242,3 +242,9 @@ seed-eosy-grades
 wipe-2026-2027
 seed-2026-2027
 seed-promoted-
+
+
+
+
+pnpm --filter server run db:seed-g7-batch-sectioning
+pnpm --filter server run db:wipe-incoming-non-pending-confirmationQueue is empty

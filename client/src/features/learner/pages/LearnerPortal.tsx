@@ -592,7 +592,7 @@ function JhsCompletionCard({
             <p className="font-black uppercase text-sm text-primary">
               Junior High School Completed
             </p>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm text-foreground mt-1">
               Congratulations. Your Grade 10 record for S.Y. {schoolYearLabel ?? "current school year"} is marked as promoted, and your learner profile is now classified as a JHS completer.
             </p>
           </div>
@@ -615,8 +615,8 @@ function AcademicJourneyTimeline({ grades, getStatus }: { grades: {level: number
   if (grades.length === 0) {
     return (
       <AnimatedCard className="shadow-xl border-primary/5 bg-card/90 backdrop-blur-xl rounded-lg p-12 text-center">
-        <BookOpen className="h-12 w-12 mx-auto text-muted-foreground opacity-20 mb-4" />
-        <p className="text-sm font-bold text-muted-foreground">No Academic Records Available</p>
+        <BookOpen className="h-12 w-12 mx-auto text-foreground opacity-20 mb-4" />
+        <p className="text-sm font-bold text-foreground">No Academic Records Available</p>
       </AnimatedCard>
     );
   }
@@ -643,13 +643,13 @@ function AcademicJourneyTimeline({ grades, getStatus }: { grades: {level: number
                         "w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-black text-sm transition-transform group-hover:scale-110",
                         status.type === "ACTIVE" ? "bg-primary text-primary-foreground" : 
                         status.type === "COMPLETED" ? "bg-primary/10 text-primary" :
-                        status.type === "UPCOMING" ? "bg-secondary text-secondary-foreground" : "bg-muted text-muted-foreground"
+                        status.type === "UPCOMING" ? "bg-secondary text-secondary-foreground" : "bg-muted text-foreground"
                       )}>
                         {g.level}
                       </div>
                       <div>
                         <h3 className="font-black uppercase text-sm text-foreground">{g.name}</h3>
-                        <p className="text-[10px] font-bold uppercase text-muted-foreground mt-0.5 tracking-wider">
+                        <p className="text-[10px] font-bold uppercase text-foreground mt-0.5 tracking-wider">
                           {status.type === "ACTIVE" ? `S.Y. ${status.data.schoolYear?.yearLabel} (Active)` :
                            status.type === "COMPLETED" ? `S.Y. ${status.data.schoolYear?.yearLabel} (Completed)` :
                            status.type === "UPCOMING" ? "Upcoming School Year" : "No record for this year"}
@@ -686,7 +686,7 @@ function AcademicJourneyTimeline({ grades, getStatus }: { grades: {level: number
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                           <Detail label="Section" value={status.data.enrollmentRecord?.section?.name || "N/A"} />
                           <div className="flex flex-col gap-2">
-                            <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">
+                            <span className="text-[10px] font-bold uppercase text-foreground tracking-widest">
                               Year-End Status
                             </span>
                             <EosyStatusBadge status={status.data.enrollmentRecord?.eosyStatus || null} />
@@ -702,7 +702,7 @@ function AcademicJourneyTimeline({ grades, getStatus }: { grades: {level: number
                     ) : status.type === "UPCOMING" ? (
                         <div className="p-8 text-center bg-primary/5 rounded-lg border border-dashed border-primary/20">
                           <p className="text-sm font-bold text-primary uppercase">Pending Confirmation</p>
-                          <p className="text-xs text-muted-foreground mt-1 font-bold">Please confirm your intent to return in the action banner above.</p>
+                          <p className="text-xs text-foreground mt-1 font-bold">Please confirm your intent to return in the action banner above.</p>
                        </div>
                     ) : null}
                   </div>
@@ -719,7 +719,7 @@ function AcademicJourneyTimeline({ grades, getStatus }: { grades: {level: number
 function EosyStatusBadge({ status }: { status: string | null }) {
   if (!status) {
     return (
-      <span className="inline-flex items-center justify-center rounded-full bg-muted px-3 py-1 text-[10px] font-black uppercase text-muted-foreground">
+      <span className="inline-flex items-center justify-center rounded-full bg-muted px-3 py-1 text-[10px] font-black uppercase text-foreground">
         N/A
       </span>
     );
@@ -732,7 +732,7 @@ function EosyStatusBadge({ status }: { status: string | null }) {
         ? "bg-secondary text-secondary-foreground ring-1 ring-border"
         : status === "RETAINED"
           ? "bg-destructive/10 text-destructive ring-1 ring-destructive/20"
-          : "bg-muted text-muted-foreground ring-1 ring-border";
+          : "bg-muted text-foreground ring-1 ring-border";
 
   return (
     <span className={cn("inline-flex items-center justify-center rounded-full px-3 py-1 text-[10px] font-black uppercase", badgeClass)}>
@@ -744,7 +744,7 @@ function EosyStatusBadge({ status }: { status: string | null }) {
 function Detail({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
     <div className="flex flex-col">
-      <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{label}</span>
+      <span className="text-[10px] font-bold uppercase text-foreground tracking-widest">{label}</span>
       <span className={cn("text-sm font-black uppercase mt-1", highlight ? "text-primary" : "text-foreground")}>{value}</span>
     </div>
   );
@@ -782,7 +782,7 @@ function HonorBadge({ average }: { average: number }) {
     </CardTitle>
   </CardHeader>
   <CardContent>
-    <p className="text-sm text-center font-medium">
+    <p className="text-sm text-center font-bold">
       Step 1: Confirmation of Return
     </p>
   </CardContent>

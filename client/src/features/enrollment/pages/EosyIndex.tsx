@@ -1037,7 +1037,7 @@ export default function EosyUpdating() {
                   {statusLabel}
                 </Badge>
                 {isFalloutStatus && isPromoted && (
-                  <span className="block mt-1 text-[11px] font-medium leading-none text-amber-600">
+                  <span className="block mt-1 text-[11px] font-bold leading-none text-amber-600">
                     Shifted to Regular
                   </span>
                 )}
@@ -1085,7 +1085,7 @@ export default function EosyUpdating() {
                 </button>
               )}
               {isFalloutStatus && isPromoted && (
-                <span className="block mt-1 text-[11px] font-medium leading-none text-amber-600">
+                <span className="block mt-1 text-[11px] font-bold leading-none text-amber-600">
                   Shifted to Regular
                 </span>
               )}
@@ -1450,8 +1450,8 @@ export default function EosyUpdating() {
                 <div className="h-64 flex flex-col items-center justify-center gap-3 text-center bg-background/80 rounded-lg">
                   <Search className="h-10 w-10 animate-pulse text-slate-400" />
                   <div className="space-y-1">
-                    <p className="text-lg font-medium text-slate-500">Searching...</p>
-                    <p className="text-sm font-medium text-slate-400">
+                    <p className="text-lg font-bold text-slate-500">Searching...</p>
+                    <p className="text-sm font-bold text-slate-400">
                       Scanning section records...
                     </p>
                   </div>
@@ -1777,7 +1777,7 @@ export default function EosyUpdating() {
                       className={cn(
                         "h-9 px-4 font-black uppercase text-xs transition-all shrink-0",
                         !isSectionCompliant
-                          ? "bg-muted text-muted-foreground cursor-not-allowed shadow-none border border-muted-foreground/20"
+                          ? "bg-muted text-foreground cursor-not-allowed shadow-none border border-muted-foreground/20"
                           : "bg-red-700 hover:bg-red-800 text-white shadow-md shadow-red-900/20",
                       )}
                       onClick={handleFinalizeClass}
@@ -1812,7 +1812,7 @@ export default function EosyUpdating() {
               </div>
               Emergency Archive Unlock
             </DialogTitle>
-            <DialogDescription className="font-semibold text-sm">
+            <DialogDescription className="font-bold text-sm">
               This action will breach the terminal lock for the entire school
               year. This is only permitted for critical record corrections.
             </DialogDescription>
@@ -1890,7 +1890,7 @@ export default function EosyUpdating() {
             <DialogTitle className="font-bold uppercase ">
               Reason for Drop Out
             </DialogTitle>
-            <DialogDescription className="font-semibold">
+            <DialogDescription className="font-bold">
               DepEd requires a specific reason for learners who dropped out.
             </DialogDescription>
           </DialogHeader>
@@ -1953,7 +1953,7 @@ export default function EosyUpdating() {
             <DialogTitle className="font-bold uppercase ">
               Effective Date of Transfer
             </DialogTitle>
-            <DialogDescription className="font-semibold">
+            <DialogDescription className="font-bold">
               Specify the date when the student officially transferred out.
             </DialogDescription>
           </DialogHeader>
@@ -2005,7 +2005,7 @@ export default function EosyUpdating() {
               </div>
               Finalize Class: {finalizeModal.section?.name}
             </DialogTitle>
-            <DialogDescription className="font-semibold text-sm">
+            <DialogDescription className="font-bold text-sm">
               Are you sure you want to finalize{" "}
               <strong>{finalizeModal.section?.name}</strong>? This will lock the
               EOSY records and generate the SF5. This action cannot be easily
@@ -2108,7 +2108,7 @@ export default function EosyUpdating() {
                 finalizeModal.confirmText.toUpperCase().trim() ===
                   (finalizeModal.section?.name ?? "").toUpperCase()
                   ? "bg-red-700 hover:bg-red-800 text-white"
-                  : "bg-muted text-muted-foreground cursor-not-allowed",
+                  : "bg-muted text-foreground cursor-not-allowed",
               )}>
               <Lock className="h-4 w-4 mr-1.5" />
               Finalize & Lock Section
@@ -2149,7 +2149,7 @@ export default function EosyUpdating() {
                   S.Y. {activeSchoolYearLabel} — Irreversible Action
                 </p>
               </div>
-              <DialogDescription className="text-sm font-semibold text-foreground/80 leading-relaxed max-w-sm pt-1">
+              <DialogDescription className="text-sm font-bold text-foreground/80 leading-relaxed max-w-sm pt-1">
                 This will permanently lock all sections for the current school year. No further EOSY status changes will be permitted.
               </DialogDescription>
             </DialogHeader>
@@ -2170,7 +2170,7 @@ export default function EosyUpdating() {
                     <span className="flex-shrink-0 h-5 w-5 rounded-full bg-red-700 text-white text-[10px] font-black flex items-center justify-center mt-0.5">
                       {i + 1}
                     </span>
-                    <p className="text-sm font-semibold text-red-900 leading-snug">
+                    <p className="text-sm font-bold text-red-900 leading-snug">
                       {item}
                     </p>
                   </div>

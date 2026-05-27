@@ -492,7 +492,7 @@ export default function Step4PreviousSchool() {
                           </Label>
                           <p
                             className={cn(
-                              "text-xs italic font-medium",
+                              "text-xs italic font-bold",
                               errors.hasExecutedAffidavit
                                 ? "text-destructive/60"
                                 : "text-foreground",

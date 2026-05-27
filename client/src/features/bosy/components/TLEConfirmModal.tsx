@@ -71,7 +71,7 @@ export function TLEConfirmModal({
         </DialogHeader>
 
         <div className="flex flex-col gap-2 py-2">
-          <p className="text-xs font-bold uppercase text-muted-foreground">
+          <p className="text-xs font-bold uppercase text-foreground">
             TLE Specialization
           </p>
           <Select

@@ -15,9 +15,11 @@ import {
   rejectSchema,
   scheduleAssessmentStepSchema,
   updateChecklistSchema,
+  publishScpRankingsSchema,
 } from "@enrollpro/shared";
 import * as ctrl from "./early-reg.controller.js";
 import { secureUpload } from "../../lib/multer.js";
+import { getRankings, publishScpRankings } from "../admission/early-registration.controller.js";
 
 const router: Router = Router();
 
@@ -44,6 +46,22 @@ router.get(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN", "TEACHER"),
   ctrl.index,
+);
+
+// SCP Rankings routes — must be before the catch-all /:id route
+router.get(
+  "/scp-rankings",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  getRankings,
+);
+
+router.patch(
+  "/scp-rankings/publish",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  validate(publishScpRankingsSchema),
+  publishScpRankings,
 );
 
 router.get(

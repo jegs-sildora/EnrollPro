@@ -192,7 +192,7 @@ export function EnrollmentSection({ learner }: Props) {
           </div>
         ) : (
           <div className="p-6 rounded-xl bg-muted/50 border border-dashed border-border text-center">
-            <p className="text-sm text-foreground font-medium italic">
+            <p className="text-sm text-foreground font-bold italic">
               No active enrollment record found for the current school year.
             </p>
           </div>

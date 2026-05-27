@@ -927,7 +927,7 @@ export default function Students() {
               {row.original.fullName}
             </span>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs font-semibold text-foreground leading-snug opacity-80">
+              <span className="text-xs font-bold text-foreground leading-snug opacity-80">
                 {formatLearningProgramLabel(row.original.learningProgram)}
               </span>
               {row.original.applicantType === "LATE_ENROLLEE" && (
@@ -1061,7 +1061,7 @@ export default function Students() {
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="w-56 font-semibold">
+                className="w-56 font-bold">
                 <DropdownMenuItem
                   onClick={() => handleOpenProfilePage(row.original.id)}
                   className="cursor-pointer">
@@ -1296,7 +1296,7 @@ export default function Students() {
                 ? "JHS Completer Records"
                 : "Inactive / Transferred Records"}
           </CardTitle>
-          <CardDescription className="text-xs sm:text-sm font-semibold">
+          <CardDescription className="text-xs sm:text-sm font-bold">
             Showing {students.length} of {total} learners
           </CardDescription>
         </CardHeader>
@@ -1388,7 +1388,7 @@ export default function Students() {
                               {student.fullName}
                             </p>
                             <div className="flex items-center gap-2 mt-0.5">
-                              <p className="text-xs font-semibold text-foreground leading-snug">
+                              <p className="text-xs font-bold text-foreground leading-snug">
                                 {formatLearningProgramLabel(
                                   student.learningProgram,
                                 )}
@@ -1467,7 +1467,7 @@ export default function Students() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                               align="end"
-                              className="w-56 font-semibold">
+                              className="w-56 font-bold">
                               <DropdownMenuItem
                                 onClick={() =>
                                   handleOpenProfilePage(student.id)
@@ -1609,7 +1609,7 @@ export default function Students() {
               {GRADE_DISPLAY.map(({ key, label }) => (
                 <div
                   key={key}
-                  className="rounded-md border bg-muted/40 px-2 py-1 flex items-center justify-between gap-2 text-xs font-medium">
+                  className="rounded-md border bg-muted/40 px-2 py-1 flex items-center justify-between gap-2 text-xs font-bold">
                   <span>{label}</span>
                   <span className="font-extrabold">
                     {summaryLoading ? "…" : <AnimatedNumber value={summary?.gradeBreakdown[key] ?? 0} />}
@@ -1632,7 +1632,7 @@ export default function Students() {
             {summaryLoading ? (
               <div className="text-sm font-bold text-foreground">…</div>
             ) : !summary ? (
-              <p className="text-xs font-semibold text-foreground">
+              <p className="text-xs font-bold text-foreground">
                 No enrolled learners yet.
               </p>
             ) : (
@@ -1671,7 +1671,7 @@ export default function Students() {
                         }}
                       />
                     </div>
-                    <p className="text-[10px] text-muted-foreground font-medium text-right">
+                    <p className="text-[10px] text-foreground font-bold text-right">
                       <AnimatedNumber
                         value={(summary.genderBreakdown.male / summary.totalEnrolled) * 100}
                         decimals={1}
@@ -1708,7 +1708,7 @@ export default function Students() {
             {summaryLoading ? (
               <div className="text-sm font-bold text-foreground">…</div>
             ) : programBreakdownItems.length === 0 ? (
-              <p className="text-xs font-semibold text-foreground">
+              <p className="text-xs font-bold text-foreground">
                 No enrolled learners yet.
               </p>
             ) : (
@@ -1741,7 +1741,7 @@ export default function Students() {
               <Flag className="h-3.5 w-3.5 text-amber-600" />
               Special Demographics
             </CardDescription>
-            <p className="text-[10px] text-muted-foreground font-medium leading-tight">
+            <p className="text-[10px] text-foreground font-bold leading-tight">
               DepEd funding &amp; intervention flags — not additional totals.
             </p>
           </CardHeader>
@@ -1749,7 +1749,7 @@ export default function Students() {
             {summaryLoading ? (
               <div className="text-sm font-bold text-foreground">…</div>
             ) : !summary ? (
-              <p className="text-xs font-semibold text-foreground">
+              <p className="text-xs font-bold text-foreground">
                 No enrolled learners yet.
               </p>
             ) : (
@@ -1761,8 +1761,8 @@ export default function Students() {
                 ].map(({ label, value }) => (
                   <div
                     key={label}
-                    className="flex items-center justify-between text-xs font-medium">
-                    <span className="text-muted-foreground">{label}</span>
+                    className="flex items-center justify-between text-xs font-bold">
+                    <span className="text-foreground">{label}</span>
                     <AnimatedNumber value={value} className="font-extrabold text-foreground" />
                   </div>
                 ))}
@@ -2102,7 +2102,7 @@ export default function Students() {
                       }))
                     }
                     placeholder="e.g., 0917 123 4567"
-                    className="font-medium"
+                    className="font-bold"
                   />
                 </div>
                 <div className="space-y-2">
@@ -2122,7 +2122,7 @@ export default function Students() {
                       }))
                     }
                     placeholder="learner@email.com"
-                    className="font-medium"
+                    className="font-bold"
                   />
                 </div>
               </div>
@@ -2150,7 +2150,7 @@ export default function Students() {
                       }))
                     }
                     placeholder="Full Name"
-                    className="font-medium"
+                    className="font-bold"
                   />
                 </div>
                 <div className="space-y-2">
@@ -2169,7 +2169,7 @@ export default function Students() {
                       }))
                     }
                     placeholder="09XXXXXXXXX"
-                    className="font-medium"
+                    className="font-bold"
                   />
                 </div>
               </div>
@@ -2196,7 +2196,7 @@ export default function Students() {
                     }))
                   }
                   placeholder="e.g., Purok 1"
-                  className="font-medium"
+                  className="font-bold"
                 />
               </div>
               <PhilippineAddressSelector
@@ -2269,7 +2269,7 @@ export default function Students() {
                 inputMode="numeric"
                 maxLength={12}
               />
-              <p className="text-[11px] text-foreground font-medium text-center">
+              <p className="text-[11px] text-foreground font-bold text-center">
                 Must be exactly 12 digits as found in the DepEd LIS portal.
               </p>
             </div>

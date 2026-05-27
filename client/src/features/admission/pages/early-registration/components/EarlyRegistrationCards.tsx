@@ -1,6 +1,5 @@
-import { ArrowRight, Eye, Lock } from "lucide-react";
+import { Eye, Lock } from "lucide-react";
 import { useMemo } from "react";
-import { useNavigate } from "react-router";
 import { format } from "date-fns";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
@@ -15,6 +14,7 @@ interface CardsProps {
   selectedId: number | null;
   setSelectedId: (id: number | null) => void;
   getNextAction: (status: string, applicantType?: string) => string;
+  hideActions?: boolean;
 }
 
 function isLockedEnrollmentHandoff(application: Application): boolean {
@@ -25,22 +25,14 @@ function isLockedEnrollmentHandoff(application: Application): boolean {
   );
 }
 
-function resolveHandoffSearchToken(application: Application): string {
-  const normalizedLrn = application.lrn?.trim();
-  return normalizedLrn && normalizedLrn.length > 0
-    ? normalizedLrn
-    : application.trackingNumber;
-}
-
 export function EarlyRegistrationCards({
   applications,
   showSkeleton,
   selectedId,
   setSelectedId,
   getNextAction,
+  hideActions = false,
 }: CardsProps) {
-  const navigate = useNavigate();
-
   const orderedApplications = useMemo(() => {
     const unlocked: Application[] = [];
     const locked: Application[] = [];
@@ -55,16 +47,6 @@ export function EarlyRegistrationCards({
 
     return [...unlocked, ...locked];
   }, [applications]);
-
-  const handleNavigateToEnrollment = (application: Application) => {
-    const query = new URLSearchParams({
-      workflow: "PENDING_VERIFICATION",
-      search: resolveHandoffSearchToken(application),
-      source: "early-registration",
-    });
-
-    navigate(`/monitoring/enrollment?${query.toString()}`);
-  };
 
   return (
     <div className="md:hidden space-y-3">
@@ -158,19 +140,11 @@ export function EarlyRegistrationCards({
                   : "N/A"}
               </p>
 
-              {isLockedHandoff ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-3 h-9 w-full border-primary/40 text-xs font-bold text-primary hover:bg-primary/10"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleNavigateToEnrollment(app);
-                  }}>
-                  View in Enrollment
-                  <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-                </Button>
-              ) : (
+              {!hideActions && isLockedHandoff ? (
+                <div className="mt-3 h-9 w-full flex items-center justify-center border border-amber-200 bg-amber-50 rounded text-xs font-bold text-amber-700">
+                  Awaiting BEEF
+                </div>
+              ) : !hideActions ? (
                 <Button
                   variant="secondary"
                   size="sm"
@@ -182,7 +156,7 @@ export function EarlyRegistrationCards({
                   <Eye className="h-3.5 w-3.5 mr-1.5" />
                   View Applicant
                 </Button>
-              )}
+              ) : null}
             </div>
           );
         })

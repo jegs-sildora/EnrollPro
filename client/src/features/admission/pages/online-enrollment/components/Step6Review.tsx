@@ -323,7 +323,7 @@ export default function Step6Review({
                     />
                     <Label
                       htmlFor="certify-check"
-                      className="text-sm font-medium leading-relaxed cursor-pointer select-none space-y-3 block">
+                      className="text-sm font-bold leading-relaxed cursor-pointer select-none space-y-3 block">
                       <p>
                         I certify that all information in this enrollment form
                         is true, correct, and complete to the best of my
@@ -389,7 +389,7 @@ export default function Step6Review({
             onClick={() => setIsConfirmDialogOpen(true)}>
             Submit Application
           </Button>
-          <p className="text-xs text-foreground flex items-center gap-1.5 font-medium italic">
+          <p className="text-xs text-foreground flex items-center gap-1.5 font-bold italic">
             <Info className="w-3.5 h-3.5" />
             Privacy consent was recorded before this submission.
           </p>

@@ -113,7 +113,7 @@ export function QueueTable({
                 {r.lastName}, {r.firstName}
                 {r.middleName ? ` ${r.middleName.charAt(0)}.` : ""}
               </span>
-              <span className="text-xs text-muted-foreground font-mono">
+              <span className="text-xs text-foreground font-bold">
                 LRN: {r.lrn ?? "NO LRN"}
               </span>
             </div>
@@ -152,11 +152,11 @@ export function QueueTable({
         ),
         cell: ({ row }) => (
           <div className="text-xs">
-            <span className="font-semibold">
+            <span className="font-bold">
               {row.original.priorSectionName ?? "—"}
             </span>
             {row.original.priorAdviserName && (
-              <span className="block text-muted-foreground text-[10px]">
+              <span className="block text-foreground text-[10px]">
                 {row.original.priorAdviserName}
               </span>
             )}
@@ -177,7 +177,7 @@ export function QueueTable({
           const s = row.original.academicStatus;
           if (!s)
             return (
-              <div className="text-center text-muted-foreground text-xs">—</div>
+              <div className="text-center text-foreground text-xs">—</div>
             );
           return (
             <div className="text-center">
@@ -279,7 +279,7 @@ export function QueueTable({
   if (loading) {
     return (
       <div className="flex items-center justify-center h-48">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <Loader2 className="h-6 w-6 animate-spin text-foreground" />
       </div>
     );
   }

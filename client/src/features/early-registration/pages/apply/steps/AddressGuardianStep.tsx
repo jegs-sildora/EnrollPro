@@ -203,7 +203,7 @@ export default function AddressGuardianStep() {
                 }}
               />
               {errors.mother?.maidenName && (
-                <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                <p className="text-xs text-destructive font-bold flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {errors.mother.maidenName.message}
                 </p>
@@ -234,7 +234,7 @@ export default function AddressGuardianStep() {
                 }}
               />
               {errors.mother?.firstName && (
-                <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                <p className="text-xs text-destructive font-bold flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {errors.mother.firstName.message}
                 </p>
@@ -325,7 +325,7 @@ export default function AddressGuardianStep() {
                 }}
               />
               {errors.father?.lastName && (
-                <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                <p className="text-xs text-destructive font-bold flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {errors.father.lastName.message}
                 </p>
@@ -356,7 +356,7 @@ export default function AddressGuardianStep() {
                 }}
               />
               {errors.father?.firstName && (
-                <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                <p className="text-xs text-destructive font-bold flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {errors.father.firstName.message}
                 </p>
@@ -422,7 +422,7 @@ export default function AddressGuardianStep() {
               }}
             />
             {errors.guardian?.lastName && (
-              <p className="text-xs text-destructive font-medium flex items-center gap-1">
+              <p className="text-xs text-destructive font-bold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 {errors.guardian.lastName.message}
               </p>
@@ -454,7 +454,7 @@ export default function AddressGuardianStep() {
               }}
             />
             {errors.guardian?.firstName && (
-              <p className="text-xs text-destructive font-medium flex items-center gap-1">
+              <p className="text-xs text-destructive font-bold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 {errors.guardian.firstName.message}
               </p>
@@ -486,7 +486,7 @@ export default function AddressGuardianStep() {
               }}
             />
             {errors.guardianRelationship && (
-              <p className="text-xs text-destructive font-medium flex items-center gap-1">
+              <p className="text-xs text-destructive font-bold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 {errors.guardianRelationship.message}
               </p>
@@ -586,7 +586,7 @@ export default function AddressGuardianStep() {
             })}
         </div>
         {errors.primaryContact && (
-          <p className="text-xs text-destructive font-medium flex items-center gap-1">
+          <p className="text-xs text-destructive font-bold flex items-center gap-1">
             <AlertCircle className="w-3 h-3" />
             {errors.primaryContact.message}
           </p>

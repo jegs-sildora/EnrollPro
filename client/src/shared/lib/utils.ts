@@ -274,7 +274,7 @@ export function getAcademicDesignationColorClasses(
     return "bg-emerald-600 text-white border-emerald-700 shadow-sm";
   }
   if (d.includes("DEPARTMENT HEAD")) {
-    return "bg-amber-500 text-slate-900 border-amber-600 shadow-sm font-semibold";
+    return "bg-amber-500 text-slate-900 border-amber-600 shadow-sm font-bold";
   }
   if (d.includes("SUBJECT TEACHER")) {
     return "bg-slate-100 text-slate-600 border-slate-200";
@@ -296,11 +296,11 @@ export function getLearnerStatusColorClasses(
 
   switch (s) {
     case "ACTIVE":
-      return "bg-emerald-600 text-white font-semibold shadow-sm border-none";
+      return "bg-emerald-600 text-white font-bold shadow-sm border-none";
     case "JHS_COMPLETER":
       return "bg-primary text-primary-foreground font-bold shadow-sm border-none";
     case "DROPPED":
-      return "bg-red-800 text-white font-semibold shadow-sm border-none";
+      return "bg-red-800 text-white font-bold shadow-sm border-none";
     case "TRANSFERRED_OUT":
       return "bg-slate-100 text-slate-600 border-slate-300";
     default:
@@ -357,7 +357,7 @@ export function getApplicationStatusColorClasses(
 
   // 3. Warning State (High-Visibility Amber)
   if (s === "TEMPORARILY_ENROLLED" || s === "PENDING_CONFIRMATION") {
-    return "bg-amber-100 text-amber-800 border-amber-400 font-medium";
+    return "bg-amber-100 text-amber-800 border-amber-400 font-bold";
   }
 
   // 4. The Finish Line (Solid DepEd Royal Blue)
@@ -385,10 +385,10 @@ export function getApplicationStatusColorClasses(
     return "bg-violet-50 text-violet-700 border-violet-200";
   }
   if (s === "DROPPED_OUT") {
-    return "bg-red-100 text-red-700 border-red-300 font-medium";
+    return "bg-red-100 text-red-700 border-red-300 font-bold";
   }
   if (s === "NO_LONGER_PARTICIPATING") {
-    return "bg-amber-100 text-amber-800 border-amber-400 font-medium";
+    return "bg-amber-100 text-amber-800 border-amber-400 font-bold";
   }
   if (
     s === "TRANSFERRING_OUT" ||
@@ -396,7 +396,7 @@ export function getApplicationStatusColorClasses(
     s === "DROPPED" ||
     s === "TRANSFERRED"
   ) {
-    return "bg-slate-200 text-slate-700 border-slate-300 font-medium";
+    return "bg-slate-200 text-slate-700 border-slate-300 font-bold";
   }
 
   return "bg-slate-50 text-slate-500 border-slate-200";

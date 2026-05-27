@@ -995,7 +995,9 @@ export function createEarlyRegistrationLifecycleController(
           ? "AWAITING_VERIFICATION"
           : shouldTemporarilyEnroll
             ? "TEMPORARILY_ENROLLED"
-            : "VERIFIED";
+            : applicantType === "LATE_ENROLLEE"
+              ? "VERIFIED" // Late enrollees skip Phil-IRI — inline-slot handles direct enrollment
+              : "SUBMITTED_BEEF"; // Regular ENCODE_AND_VERIFY → Phil-IRI assessment queue
 
       console.log(`[specialEnrollment] Resolved Status:`, resolvedStatus);
       console.log(

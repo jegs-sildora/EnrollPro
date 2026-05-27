@@ -170,7 +170,7 @@ export default function LearnerProfileStep() {
       {/* Name Fields */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
         <div className="md:col-span-1 flex flex-col items-center justify-center space-y-3">
-          <Label className="text-sm font-semibold self-start md:self-center">
+          <Label className="text-sm font-bold self-start md:self-center">
             Learner Photo
           </Label>
           <div className="relative group">
@@ -213,7 +213,7 @@ export default function LearnerProfileStep() {
           <div className="space-y-1.5">
             <Label
               htmlFor="lastName"
-              className="text-sm font-semibold">
+              className="text-sm font-bold">
               Last Name <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -231,7 +231,7 @@ export default function LearnerProfileStep() {
               }}
             />
             {errors.lastName && (
-              <p className="text-xs text-destructive font-medium flex items-center gap-1">
+              <p className="text-xs text-destructive font-bold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 {errors.lastName.message}
               </p>
@@ -241,7 +241,7 @@ export default function LearnerProfileStep() {
           <div className="space-y-1.5">
             <Label
               htmlFor="firstName"
-              className="text-sm font-semibold">
+              className="text-sm font-bold">
               First Name <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -259,7 +259,7 @@ export default function LearnerProfileStep() {
               }}
             />
             {errors.firstName && (
-              <p className="text-xs text-destructive font-medium flex items-center gap-1">
+              <p className="text-xs text-destructive font-bold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 {errors.firstName.message}
               </p>
@@ -269,7 +269,7 @@ export default function LearnerProfileStep() {
           <div className="space-y-1.5">
             <Label
               htmlFor="middleName"
-              className="text-sm font-semibold">
+              className="text-sm font-bold">
               Middle Name
             </Label>
             <Input
@@ -287,7 +287,7 @@ export default function LearnerProfileStep() {
           <div className="space-y-1.5">
             <Label
               htmlFor="extensionName"
-              className="text-sm font-semibold">
+              className="text-sm font-bold">
               Suffix (Extension)
             </Label>
             <Input
@@ -307,7 +307,7 @@ export default function LearnerProfileStep() {
       {/* Birthdate + Age + Sex + Place of Birth */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6 items-start">
         <div className="space-y-1.5">
-          <Label className="text-sm font-semibold">
+          <Label className="text-sm font-bold">
             Date of Birth <span className="text-destructive">*</span>
           </Label>
           <Controller
@@ -380,7 +380,7 @@ export default function LearnerProfileStep() {
             )}
           />
           {errors.birthdate && (
-            <p className="text-xs text-destructive font-medium flex items-center gap-1">
+            <p className="text-xs text-destructive font-bold flex items-center gap-1">
               <AlertCircle className="w-3 h-3" />
               {errors.birthdate.message}
             </p>
@@ -388,7 +388,7 @@ export default function LearnerProfileStep() {
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-sm font-semibold">Age</Label>
+          <Label className="text-sm font-bold">Age</Label>
           <div className="h-11 flex items-center px-3 rounded-md border bg-muted text-sm font-bold">
             {age !== null ? `${age}` : "—"}
           </div>
@@ -398,7 +398,7 @@ export default function LearnerProfileStep() {
         </div>
 
         <div className="space-y-3">
-          <Label className="text-sm font-semibold">
+          <Label className="text-sm font-bold">
             Sex at Birth <span className="text-destructive">*</span>
           </Label>
           <div className="flex gap-4 pt-1">
@@ -437,7 +437,7 @@ export default function LearnerProfileStep() {
             ))}
           </div>
           {errors.sex && (
-            <p className="text-xs text-destructive font-medium flex items-center gap-1">
+            <p className="text-xs text-destructive font-bold flex items-center gap-1">
               <AlertCircle className="w-3 h-3" />
               {errors.sex.message}
             </p>
@@ -448,7 +448,7 @@ export default function LearnerProfileStep() {
           <div className="space-y-1.5">
             <Label
               htmlFor="placeOfBirth"
-              className="text-sm font-semibold">
+              className="text-sm font-bold">
               Place of Birth <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -466,7 +466,7 @@ export default function LearnerProfileStep() {
               }}
             />
             {errors.placeOfBirth && (
-              <p className="text-xs text-destructive font-medium flex items-center gap-1">
+              <p className="text-xs text-destructive font-bold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 {errors.placeOfBirth.message}
               </p>
@@ -476,7 +476,7 @@ export default function LearnerProfileStep() {
           <div className="space-y-1.5">
             <Label
               htmlFor="religion"
-              className="text-sm font-semibold">
+              className="text-sm font-bold">
               Religion
             </Label>
             <Input
@@ -502,7 +502,7 @@ export default function LearnerProfileStep() {
             <p className="text-sm font-bold text-primary">
               Sensitive Information
             </p>
-            <p className="text-[0.6875rem] text-primary font-medium uppercase ">
+            <p className="text-[0.6875rem] text-primary font-bold uppercase ">
               Kept strictly confidential for enrollment processing.
             </p>
           </div>
@@ -535,7 +535,7 @@ export default function LearnerProfileStep() {
               />
               <Label
                 htmlFor="is-ip"
-                className="text-sm font-semibold cursor-pointer">
+                className="text-sm font-bold cursor-pointer">
                 Learner belongs to an IP community.
               </Label>
             </div>
@@ -561,7 +561,7 @@ export default function LearnerProfileStep() {
                   }}
                 />
                 {errors.ipGroupName && (
-                  <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                  <p className="text-xs text-destructive font-bold flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
                     {errors.ipGroupName.message}
                   </p>
@@ -596,7 +596,7 @@ export default function LearnerProfileStep() {
               />
               <Label
                 htmlFor="is-pwd"
-                className="text-sm font-semibold cursor-pointer">
+                className="text-sm font-bold cursor-pointer">
                 Learner is a person with disability.
               </Label>
             </div>
@@ -646,7 +646,7 @@ export default function LearnerProfileStep() {
                   })}
                 </div>
                 {disabilityErrorMessage && (
-                  <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                  <p className="text-xs text-destructive font-bold flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
                     {disabilityErrorMessage}
                   </p>

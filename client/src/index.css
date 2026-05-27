@@ -183,7 +183,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply font-medium bg-background text-foreground;
+    @apply font-bold bg-background text-foreground;
   }
   html {
     @apply font-sans;
@@ -193,7 +193,7 @@
 @layer utilities {
   /* Global remap: treat all `font-normal` usage as medium app-wide. */
   .font-normal {
-    @apply font-medium;
+    @apply font-bold;
   }
 
   /* Selected calendar day: lock bg/text to accent, suppress any hover change */

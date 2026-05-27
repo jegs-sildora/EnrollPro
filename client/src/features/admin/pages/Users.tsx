@@ -868,11 +868,11 @@ export default function AdminUsers() {
                     const statusClasses = (() => {
                       switch (s) {
                         case "ACTIVE":
-                          return "bg-emerald-600 text-white font-semibold shadow-sm border-none";
+                          return "bg-emerald-600 text-white font-bold shadow-sm border-none";
                         case "JHS_COMPLETER":
                           return "bg-primary text-primary-foreground font-bold shadow-sm border-none";
                         case "DROPPED":
-                          return "bg-red-800 text-white font-semibold shadow-sm border-none";
+                          return "bg-red-800 text-white font-bold shadow-sm border-none";
                         case "TRANSFERRED_OUT":
                           return "bg-slate-100 text-slate-600 border-slate-300";
                         default:
@@ -1328,7 +1328,7 @@ export default function AdminUsers() {
           <CardTitle className="text-base sm:text-lg font-extrabold">
             {activeTab === "staff" ? "Personnel Accounts" : "Learner Accounts"}
           </CardTitle>
-          <p className="text-xs sm:text-sm font-semibold text-foreground">
+          <p className="text-xs sm:text-sm font-bold text-foreground">
             Showing {users.length} of {total} records
           </p>
         </CardHeader>
@@ -1348,10 +1348,10 @@ export default function AdminUsers() {
               <div className="h-64 flex flex-col items-center justify-center gap-3 text-center bg-background/80 rounded-xl border-2 border-dashed">
                 <Search className="h-10 w-10 animate-pulse text-slate-400" />
                 <div className="space-y-1">
-                  <p className="text-lg font-medium text-slate-500">
+                  <p className="text-lg font-bold text-slate-500">
                     Searching...
                   </p>
-                  <p className="text-sm font-medium text-slate-400">
+                  <p className="text-sm font-bold text-slate-400">
                     {activeTab === "staff"
                       ? "Scanning personnel accounts..."
                       : "Scanning learner accounts..."}
@@ -1515,10 +1515,10 @@ export default function AdminUsers() {
                   <div className="h-64 flex flex-col items-center justify-center gap-3 text-center bg-background/80">
                     <Search className="h-10 w-10 animate-pulse text-slate-400" />
                     <div className="space-y-1">
-                      <p className="text-lg font-medium text-slate-500">
+                      <p className="text-lg font-bold text-slate-500">
                         Searching...
                       </p>
-                      <p className="text-sm font-medium text-slate-400">
+                      <p className="text-sm font-bold text-slate-400">
                         {activeTab === "staff"
                           ? "Scanning personnel accounts..."
                           : "Scanning learner accounts..."}

@@ -125,7 +125,7 @@ export function HistoricalCorrectionModal({
               htmlFor="hc-reason"
               className="text-xs font-bold">
               Reason for Correction{" "}
-              <span className="font-normal text-muted-foreground">
+              <span className="font-normal text-foreground">
                 (min. 20 characters)
               </span>
             </Label>
@@ -138,7 +138,7 @@ export function HistoricalCorrectionModal({
               disabled={loading}
             />
             {reasonTooShort && (
-              <p className="text-[0.7rem] text-destructive font-semibold">
+              <p className="text-[0.7rem] text-destructive font-bold">
                 Reason must be at least 20 characters ({reason.trim().length}
                 /20)
               </p>

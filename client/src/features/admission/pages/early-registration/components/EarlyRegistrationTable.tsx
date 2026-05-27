@@ -1,4 +1,4 @@
-import { ArrowRight, Eye, Lock } from "lucide-react";
+import { Eye, Lock } from "lucide-react";
 import { useMemo } from "react";
 import { format } from "date-fns";
 import { Button } from "@/shared/ui/button";
@@ -18,6 +18,7 @@ interface TableProps {
   setSelectedId: (id: number | null) => void;
   getNextAction: (status: string, applicantType?: string) => string;
   isSearching?: boolean;
+  hideActions?: boolean;
 }
 
 function isLockedEnrollmentHandoff(application: Application): boolean {
@@ -28,26 +29,13 @@ function isLockedEnrollmentHandoff(application: Application): boolean {
   );
 }
 
-function buildEnrollmentHandoffHref(application: Application): string {
-  const normalizedLrn = application.lrn.trim();
-  const searchToken =
-    normalizedLrn.length > 0 ? normalizedLrn : application.trackingNumber;
-
-  const query = new URLSearchParams({
-    workflow: "PENDING_VERIFICATION",
-    search: searchToken,
-    source: "early-registration",
-  });
-
-  return `/monitoring/enrollment?${query.toString()}`;
-}
-
 export function EarlyRegistrationTable({
   applications,
   loading,
   setSelectedId,
   getNextAction,
   isSearching,
+  hideActions = false,
 }: TableProps) {
   const orderedApplications = useMemo(() => {
     const unlocked: Application[] = [];
@@ -65,7 +53,7 @@ export function EarlyRegistrationTable({
   }, [applications]);
 
   const columns = useMemo<ColumnDef<Application>[]>(() => {
-    return [
+    const cols: ColumnDef<Application>[] = [
       {
         id: "name",
         accessorKey: "lastName",
@@ -217,16 +205,9 @@ export function EarlyRegistrationTable({
           return (
             <div className="flex justify-center">
               {isLockedHandoff ? (
-                <Button
-                  asChild
-                  variant="link"
-                  size="sm"
-                  className="h-8 px-0 text-xs font-bold text-primary">
-                  <a href={buildEnrollmentHandoffHref(app)}>
-                    <ArrowRight className="h-3.5 w-3.5 mr-1" />
-                    View in Enrollment
-                  </a>
-                </Button>
+                <span className="inline-flex items-center text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+                  Awaiting BEEF
+                </span>
               ) : (
                 <Button
                   variant="secondary"
@@ -244,7 +225,8 @@ export function EarlyRegistrationTable({
         },
       },
     ];
-  }, [getNextAction, setSelectedId]);
+    return hideActions ? cols.filter((c) => c.id !== "actions") : cols;
+  }, [getNextAction, setSelectedId, hideActions]);
 
   return (
     <div className="hidden md:block">

@@ -1044,7 +1044,7 @@ export default function Sections() {
                   </div>
                   <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-foreground font-semibold">
+                      <span className="text-foreground font-bold">
                         Adviser:
                       </span>
                       {s.advisingTeacher ? (
@@ -1059,7 +1059,7 @@ export default function Sections() {
                     </div>
                     <span className="hidden sm:inline text-border">|</span>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-foreground font-semibold">
+                      <span className="text-foreground font-bold">
                         Capacity:
                       </span>
                       <span
@@ -1550,7 +1550,7 @@ export default function Sections() {
                           <CardTitle className="text-xl font-black uppercase">
                             {g.gradeLevelName}
                           </CardTitle>
-                          <CardDescription className="font-semibold text-xs mt-1">
+                          <CardDescription className="font-bold text-xs mt-1">
                             {g.sections.length} total sections configured for
                             this level.
                           </CardDescription>
@@ -1578,7 +1578,7 @@ export default function Sections() {
                             <p className="text-sm font-bold uppercase ">
                               No Sections Configured
                             </p>
-                            <p className="text-xs mt-1 font-semibold">
+                            <p className="text-xs mt-1 font-bold">
                               Click the "Add Section" button to begin
                               structuring this grade level.
                             </p>
@@ -1813,7 +1813,7 @@ export default function Sections() {
                 <p className="text-base font-bold text-foreground">
                   No Official Enrollees Yet
                 </p>
-                <p className="text-xs font-medium text-foreground max-w-sm leading-relaxed">
+                <p className="text-xs font-bold text-foreground max-w-sm leading-relaxed">
                   Learners routed to this section will automatically populate
                   this School Form 1 register once the batch is finalized.
                 </p>

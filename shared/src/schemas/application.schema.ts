@@ -747,6 +747,21 @@ export const batchProcessSchema = z.object({
   targetStatus: batchTargetStatusSchema,
 });
 
+export const publishScpRankingsSchema = z.object({
+  scpType: ApplicantTypeEnum,
+  schoolYearId: z.number().int().positive().optional(),
+  cutoffSlot: z
+    .number()
+    .int()
+    .positive()
+    .max(500, "Cutoff slot cannot exceed 500")
+    .default(70),
+  rankedApplicationIds: z
+    .array(z.number().int().positive())
+    .min(1, "At least one ranked application ID is required")
+    .max(500, "Cannot publish more than 500 ranked applications at once"),
+});
+
 const CHECKLIST_FIELD_KEYS = [
   "isPsaBirthCertPresented",
   "isSecondaryBirthDocPresented",

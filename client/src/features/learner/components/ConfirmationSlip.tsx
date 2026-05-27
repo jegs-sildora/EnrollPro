@@ -86,7 +86,7 @@ export function ConfirmationSlip({
 
         {/* Action bar — hidden during print */}
         <div className="flex items-center justify-between px-5 py-3 border-b bg-muted/40 print:hidden">
-          <span className="text-xs font-black uppercase text-muted-foreground tracking-widest">
+          <span className="text-xs font-black uppercase text-foreground tracking-widest">
             Confirmation Slip
           </span>
           <div className="flex items-center gap-2">
@@ -165,7 +165,7 @@ export function ConfirmationSlip({
                 label="LRN"
                 value={
                   learner.lrn ? (
-                    <span className="font-mono tracking-wider">
+                    <span className="font-bold tracking-wider">
                       {learner.lrn}
                     </span>
                   ) : (
@@ -192,7 +192,7 @@ export function ConfirmationSlip({
               <SlipRow
                 label="DATE &amp; TIME CONFIRMED"
                 value={
-                  <span className="font-mono">
+                  <span className="font-bold">
                     {formatDateTime(confirmedAt)}
                   </span>
                 }
@@ -200,7 +200,7 @@ export function ConfirmationSlip({
               <SlipRow
                 label="SYSTEM REFERENCE NO."
                 value={
-                  <span className="font-mono tracking-wider font-bold">
+                  <span className="tracking-wider font-bold">
                     BOSY-{String(applicationId).padStart(6, "0")}
                   </span>
                 }

@@ -325,7 +325,7 @@ export default function LegalConsentStep({
                     />
                     <Label
                       htmlFor="certify-check"
-                      className="text-sm font-medium leading-relaxed cursor-pointer select-none space-y-3 block">
+                      className="text-sm font-bold leading-relaxed cursor-pointer select-none space-y-3 block">
                       <p>
                         I confirm that all information in this form is true,
                         correct, and complete to the best of my knowledge. I
@@ -352,7 +352,7 @@ export default function LegalConsentStep({
             onClick={() => setIsConfirmDialogOpen(true)}>
             Submit Registration
           </Button>
-          <p className="text-xs text-foreground flex items-center gap-1.5 font-medium">
+          <p className="text-xs text-foreground flex items-center gap-1.5 font-bold">
             <Info className="w-3.5 h-3.5" />
             Data Privacy consent was recorded before this form.
           </p>

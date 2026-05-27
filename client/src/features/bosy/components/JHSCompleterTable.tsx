@@ -34,7 +34,7 @@ export function JHSCompleterTable({
                 {r.lastName}, {r.firstName}
                 {r.middleName ? ` ${r.middleName.charAt(0)}.` : ""}
               </span>
-              <span className="text-xs text-muted-foreground font-mono">
+              <span className="text-xs text-foreground font-bold">
                 LRN: {r.lrn ?? "NO LRN"}
               </span>
             </div>
@@ -73,7 +73,7 @@ export function JHSCompleterTable({
           />
         ),
         cell: ({ row }) => (
-          <div className="text-center text-xs text-muted-foreground font-mono">
+          <div className="text-center text-xs text-foreground font-bold">
             {row.original.lastYearEnrolled ?? "—"}
           </div>
         ),
@@ -86,9 +86,9 @@ export function JHSCompleterTable({
           <DataTableColumnHeader column={column} title="LAST SECTION" />
         ),
         cell: ({ row }) => (
-          <div className="text-xs font-semibold">
+          <div className="text-xs font-bold">
             {row.original.lastSectionName ?? (
-              <span className="text-muted-foreground">—</span>
+              <span className="text-foreground">—</span>
             )}
           </div>
         ),
@@ -117,7 +117,7 @@ export function JHSCompleterTable({
   if (loading) {
     return (
       <div className="flex items-center justify-center h-48">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <Loader2 className="h-6 w-6 animate-spin text-foreground" />
       </div>
     );
   }

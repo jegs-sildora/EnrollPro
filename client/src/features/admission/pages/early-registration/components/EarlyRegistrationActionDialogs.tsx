@@ -83,7 +83,7 @@ export function EarlyRegistrationActionDialogs({
 
         {actionType === "APPROVE" && (
           <div className="space-y-4 py-4">
-            <p className="text-xs sm:text-sm text-emerald-700 font-medium">
+            <p className="text-xs sm:text-sm text-emerald-700 font-bold">
               This candidate will be moved to the Enrollment phase and assigned
               to a section.
             </p>

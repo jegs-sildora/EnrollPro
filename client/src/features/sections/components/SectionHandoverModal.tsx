@@ -278,10 +278,10 @@ export function SectionHandoverModal({
                     <div className="h-full flex flex-col items-center justify-center gap-3 text-center px-4">
                       <Search className="h-10 w-10 animate-pulse text-slate-400" />
                       <div className="space-y-1">
-                        <p className="text-lg font-medium text-slate-500">
+                        <p className="text-lg font-bold text-slate-500">
                           Searching...
                         </p>
-                        <p className="text-sm font-medium text-slate-400">
+                        <p className="text-sm font-bold text-slate-400">
                           Scanning faculty records...
                         </p>
                       </div>

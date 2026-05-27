@@ -374,7 +374,7 @@ export default function EnrollmentGateTab() {
             </div>
             <div className="space-y-1">
               <p className="font-bold text-foreground">No Active School Year</p>
-              <p className="text-sm text-foreground leading-relaxed px-4 font-semibold">
+              <p className="text-sm text-foreground leading-relaxed px-4 font-bold">
                 Activate a school year to configure the enrollment schedule.
               </p>
             </div>
@@ -496,7 +496,7 @@ export default function EnrollmentGateTab() {
                 {earlyRegOpenToken !== null &&
                   earlyRegCloseToken !== null &&
                   earlyRegCloseToken < earlyRegOpenToken && (
-                    <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs font-semibold text-destructive">
+                    <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs font-bold text-destructive">
                       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                       <p>
                         Phase 1 Closes On date cannot be earlier than Opens On.
@@ -596,7 +596,7 @@ export default function EnrollmentGateTab() {
                   enrollOpenToken !== null &&
                   enrollCloseToken !== null &&
                   enrollCloseToken < enrollOpenToken && (
-                    <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs font-semibold text-destructive">
+                    <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs font-bold text-destructive">
                       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                       <p>
                         Phase 2 Closes On date cannot be earlier than Opens On.
@@ -608,7 +608,7 @@ export default function EnrollmentGateTab() {
                   earlyRegCloseToken !== null &&
                   enrollOpenToken !== null &&
                   enrollOpenToken < earlyRegCloseToken && (
-                    <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs font-semibold text-destructive">
+                    <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs font-bold text-destructive">
                       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                       <p>
                         Phase 2 Opens On cannot be earlier than Phase 1 Closes
@@ -643,7 +643,7 @@ export default function EnrollmentGateTab() {
             <div className="sticky bottom-0 z-20">
               <div className="rounded-lg border border-border bg-background/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/85">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs font-semibold text-foreground">
+                  <p className="text-xs font-bold text-foreground">
                     {isTimelineDirty
                       ? "You have unsaved schedule changes."
                       : "No schedule changes yet."}
@@ -693,7 +693,7 @@ export default function EnrollmentGateTab() {
         </CardHeader>
 
         <CardContent className="space-y-6 pt-6">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-foreground">
             Controls whether a Phil-IRI reading assessment is required before
             learners can proceed through the admission pipeline.
           </p>
@@ -707,7 +707,7 @@ export default function EnrollmentGateTab() {
                   Require Reading Assessment for New Admissions
                 </Label>
               </div>
-              <p className="text-xs text-muted-foreground pl-6">
+              <p className="text-xs text-foreground pl-6">
                 Applies to incoming Grade 7, transferees, and balik-aral
                 learners. Disabling removes the baseline data required for the
                 Tier 3 Sectioning Algorithm.
@@ -735,7 +735,7 @@ export default function EnrollmentGateTab() {
                   Require Reading Assessment for Continuing Learners
                 </Label>
               </div>
-              <p className="text-xs text-muted-foreground pl-6">
+              <p className="text-xs text-foreground pl-6">
                 Applies to returning learners confirming re-enrollment for this
                 school year.
               </p>

@@ -87,7 +87,7 @@ function ParamField({
         disabled={disabled}
       />
       {hint && (
-        <p className="text-xs text-foreground font-medium leading-tight">
+        <p className="text-xs text-foreground font-bold leading-tight">
           {hint}
         </p>
       )}
@@ -269,7 +269,7 @@ export function BatchSectioningParamsModal({
                   )}
                 </div>
                 <div className="p-4 space-y-4">
-                  <p className="text-[11px] text-foreground font-medium">
+                  <p className="text-[11px] text-foreground font-bold">
                     System will sort by Early Registration assessment scores.
                   </p>
                   <div className="flex flex-wrap gap-6">
@@ -313,7 +313,7 @@ export function BatchSectioningParamsModal({
                         <div className="space-y-1.5 flex-1">
                           <p
                             className={cn(
-                              "text-[11px] font-medium leading-relaxed",
+                              "text-[11px] font-bold leading-relaxed",
                               steClassSizeError
                                 ? "text-destructive font-bold"
                                 : "text-foreground",
@@ -359,7 +359,7 @@ export function BatchSectioningParamsModal({
                   )}
                 </div>
                 <div className="p-4 space-y-4">
-                  <p className="text-[11px] text-foreground font-medium">
+                  <p className="text-[11px] text-foreground font-bold">
                     System will allocate the top{" "}
                     <span className="font-black text-foreground">
                       {params.pilotSectionCount * params.sectionCapacity}
@@ -399,7 +399,7 @@ export function BatchSectioningParamsModal({
                 </div>
                 <div className="p-4 flex items-center gap-4">
                   <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
-                  <p className="text-[11px] text-foreground font-medium">
+                  <p className="text-[11px] text-foreground font-bold">
                     The remaining{" "}
                     <span className="font-black text-foreground">
                       {remainingAfterSteAndPilot}

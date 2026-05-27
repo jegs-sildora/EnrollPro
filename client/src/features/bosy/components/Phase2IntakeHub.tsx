@@ -104,6 +104,31 @@ const PHASE2_TABS = [
 
 type Phase2TabKey = (typeof PHASE2_TABS)[number]["key"];
 
+// ── Formatters ──────────────────────────────────────────────────────────────
+
+function formatApplicantType(type: string): string {
+  const map: Record<string, string> = {
+    REGULAR: "BEC / Regular",
+    SCIENCE_TECHNOLOGY_AND_ENGINEERING: "STE",
+    SPECIAL_PROGRAM_IN_THE_ARTS: "SPA",
+    SPECIAL_PROGRAM_IN_SPORTS: "SPS",
+    SPECIAL_PROGRAM_IN_JOURNALISM: "SPJ",
+    SPECIAL_PROGRAM_IN_FOREIGN_LANGUAGE: "SPFL",
+    SPECIAL_PROGRAM_IN_TECHNICAL_VOCATIONAL_LIVELIHOOD: "SPTVL",
+  };
+  return map[type] ?? type.replace(/_/g, " ");
+}
+
+function formatReadingLevel(level: string): string {
+  const map: Record<string, string> = {
+    INDEPENDENT: "Independent",
+    INSTRUCTIONAL: "Instructional",
+    FRUSTRATION: "Frustration",
+    NON_READER: "Non-Reader",
+  };
+  return map[level] ?? level.replace(/_/g, " ");
+}
+
 // ── Column builder (per-tab) ────────────────────────────────────────────────
 
 function buildColumns(
@@ -118,7 +143,7 @@ function buildColumns(
         <DataTableColumnHeader column={column} title="LRN" />
       ),
       cell: ({ row }) => (
-        <span className="font-mono text-xs text-muted-foreground">
+        <span className="font-bold text-xs text-foreground">
           {row.original.lrn ?? (
             <em className="opacity-50 not-italic">No LRN</em>
           )}
@@ -137,7 +162,7 @@ function buildColumns(
           <div>
             <p className="font-bold text-sm">{display}</p>
             {middleName && (
-              <p className="text-xs text-muted-foreground">{middleName}</p>
+              <p className="text-xs text-foreground">{middleName}</p>
             )}
           </div>
         );
@@ -149,7 +174,7 @@ function buildColumns(
         <DataTableColumnHeader column={column} title="Grade" />
       ),
       cell: ({ row }) => (
-        <Badge variant="secondary" className="text-xs font-semibold">
+        <Badge variant="secondary" className="text-xs font-bold">
           {row.original.gradeLevelName}
         </Badge>
       ),
@@ -163,7 +188,7 @@ function buildColumns(
         <DataTableColumnHeader column={column} title="Program" />
       ),
       cell: ({ row }) => (
-        <Badge className="text-xs font-bold">{row.original.applicantType}</Badge>
+        <Badge className="text-xs font-bold">{formatApplicantType(row.original.applicantType)}</Badge>
       ),
     });
   }
@@ -232,7 +257,7 @@ function buildColumns(
           </Button>
         </div>
       ) : (
-        <span className="text-xs text-muted-foreground italic text-right block pr-2">
+        <span className="text-xs text-foreground italic text-right block pr-2">
           Read-only
         </span>
       );
@@ -304,16 +329,16 @@ function IntakeActionDrawer({
               {item.gradeLevelName}
             </Badge>
             {item.lrn && (
-              <span className="font-mono text-xs text-muted-foreground">
+              <span className="font-bold text-xs text-foreground">
                 {item.lrn}
               </span>
             )}
             {item.applicantType && (
-              <Badge className="text-xs">{item.applicantType}</Badge>
+              <Badge className="text-xs">{formatApplicantType(item.applicantType)}</Badge>
             )}
             {item.readingProfileLevel && (
-              <Badge variant="outline" className="text-xs font-semibold">
-                {item.readingProfileLevel.replace(/_/g, " ")}
+              <Badge variant="outline" className="text-xs font-bold">
+                {formatReadingLevel(item.readingProfileLevel)}
               </Badge>
             )}
           </div>
@@ -339,9 +364,9 @@ function IntakeActionDrawer({
           <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3">
             <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
             <div className="text-xs text-amber-700">
-              <p className="font-bold">NON_READER Assigned to SCP Track</p>
+              <p className="font-bold">Non-Reader Assigned to SCP Track</p>
               <p className="mt-0.5 opacity-80">
-                This learner is classified as NON_READER. Confirming will place
+                This learner is classified as Non-Reader. Confirming will place
                 them in the SCP queue. Ensure the program coordinator has
                 approved this assignment.
               </p>
@@ -361,7 +386,7 @@ function IntakeActionDrawer({
                 <div className="space-y-1.5">
                   <label
                     htmlFor="height-input"
-                    className="text-xs font-semibold uppercase text-muted-foreground"
+                    className="text-xs font-bold uppercase text-foreground"
                   >
                     Height (cm)
                   </label>
@@ -378,7 +403,7 @@ function IntakeActionDrawer({
                 <div className="space-y-1.5">
                   <label
                     htmlFor="weight-input"
-                    className="text-xs font-semibold uppercase text-muted-foreground"
+                    className="text-xs font-bold uppercase text-foreground"
                   >
                     Weight (kg)
                   </label>
@@ -424,7 +449,7 @@ function IntakeActionDrawer({
                         />
                         <span
                           className={cn(
-                            "text-sm font-medium flex-1",
+                            "text-sm font-bold flex-1",
                             checked && "text-primary/90",
                           )}
                         >
@@ -474,7 +499,7 @@ function IntakeActionDrawer({
                       />
                       <span
                         className={cn(
-                          "text-sm font-medium flex-1",
+                          "text-sm font-bold flex-1",
                           checked && "text-primary/90",
                         )}
                       >
@@ -494,8 +519,8 @@ function IntakeActionDrawer({
         {/* Walk-In BEEF: confirmation note */}
         {tabKey === "walkin_beef" && (
           <div className="rounded-md border p-3 bg-muted/30 space-y-1">
-            <p className="text-sm font-semibold">Walk-In Admission</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm font-bold">Walk-In Admission</p>
+            <p className="text-xs text-foreground">
               Review the paper BEEF form and confirm BEC enrollment.
             </p>
           </div>
@@ -508,7 +533,7 @@ function IntakeActionDrawer({
               <FileClock className="h-4 w-4 text-amber-600" />
               <h4 className="text-sm font-bold">Required Documents</h4>
             </header>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-foreground">
               Check off each document as the parent / guardian presents it.
             </p>
             <ul className="space-y-1.5">
@@ -536,7 +561,7 @@ function IntakeActionDrawer({
                       />
                       <span
                         className={cn(
-                          "text-sm font-medium flex-1",
+                          "text-sm font-bold flex-1",
                           checked && "text-primary/90",
                         )}
                       >
@@ -926,7 +951,7 @@ export function Phase2IntakeHub({
                         onChange={(e) => setSearchInput(e.target.value)}
                       />
                     </div>
-                    <p className="text-xs text-muted-foreground font-semibold ml-auto">
+                    <p className="text-xs text-foreground font-bold ml-auto">
                       {total} result{total !== 1 ? "s" : ""}
                     </p>
                   </div>
@@ -938,9 +963,9 @@ export function Phase2IntakeHub({
                     loading={loading}
                     getRowId={(row) => String(row.applicationId)}
                     emptyStateContent={
-                      <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                      <div className="flex flex-col items-center justify-center py-12 text-center text-foreground">
                         <CheckCircle2 className="h-8 w-8 mb-2 opacity-30" />
-                        <p className="text-sm font-semibold">Queue is empty.</p>
+                        <p className="text-sm font-bold">Queue is empty.</p>
                         <p className="text-xs mt-1 opacity-70">
                           {tab.description}
                         </p>
@@ -1000,7 +1025,7 @@ export function Phase2IntakeHub({
                       <SheetDescription className="text-white/80 font-bold uppercase text-xs">
                         {selectedItem.lrn ?? "No LRN"} · {selectedItem.gradeLevelName}
                       </SheetDescription>
-                      <p className="text-white/70 text-xs font-semibold">
+                      <p className="text-white/70 text-xs font-bold">
                         {drawerTabTitle}
                       </p>
                     </div>

@@ -284,7 +284,7 @@ export default function EarlyRegistrationApply() {
                         <h3 className="text-xl sm:text-2xl font-black text-black">
                           Early Registration has concluded.
                         </h3>
-                        <p className="text-sm sm:text-base text-black/70 font-medium leading-relaxed">
+                        <p className="text-sm sm:text-base text-black/70 font-bold leading-relaxed">
                           The system is now in the Official Enrollment Phase.
                         </p>
                       </div>
@@ -292,14 +292,14 @@ export default function EarlyRegistrationApply() {
                       <div className="p-6 rounded-xl bg-blue-50/50 border border-blue-100 text-left space-y-4">
                         <div className="space-y-3">
                           <div className="flex items-start gap-2 text-blue-900/80 text-xs leading-relaxed">
-                            <p className="font-medium">
+                            <p className="font-bold">
                               If you previously completed Early Registration,
                               your data is saved! You only need to submit your
                               physical requirements to the Registrar.
                             </p>
                           </div>
                           <div className="flex items-start gap-2 text-blue-900/80 text-xs leading-relaxed border-t border-blue-100 pt-3">
-                            <p className="font-medium">
+                            <p className="font-bold">
                               If you are a New Learner/Transferee who missed
                               Early Registration, you may now fill out the
                               Official Basic Education Enrollment Form (BEEF).
@@ -323,7 +323,7 @@ export default function EarlyRegistrationApply() {
                           Early Registration for S.Y. {activeSchoolYearLabel} is
                           not yet active.
                         </h3>
-                        <p className="text-sm sm:text-base text-black/70 font-medium leading-relaxed">
+                        <p className="text-sm sm:text-base text-black/70 font-bold leading-relaxed">
                           Please return during the official DepEd Early
                           Registration period. The system portal will
                           automatically open based on the administration's
@@ -337,7 +337,7 @@ export default function EarlyRegistrationApply() {
                             Target Schedule: {formattedSchedule}
                           </div>
                           <div className="flex items-start gap-2 text-blue-900/80 text-xs leading-relaxed">
-                            <p className="font-medium">
+                            <p className="font-bold">
                               <span className="font-black uppercase text-xs  mr-1">
                                 Note:
                               </span>

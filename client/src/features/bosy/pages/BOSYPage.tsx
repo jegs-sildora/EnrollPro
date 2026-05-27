@@ -13,7 +13,7 @@ import {
 import { motion, useReducedMotion } from "motion/react";
 import { useNavigate } from "react-router";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
-import type { RowSelectionState } from "@tanstack/react-table";
+import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 
 import {
   getBOSYReadiness,
@@ -35,6 +35,8 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Badge } from "@/shared/ui/badge";
+import { DataTable } from "@/shared/ui/data-table";
+import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import {
   Dialog,
   DialogContent,
@@ -58,6 +60,62 @@ import {
   staggerTransition,
 } from "@/shared/lib/motion";
 import { lifecycleFeedback } from "@/shared/lib/lifecycle-feedback";
+
+function formatNoShowStatus(status: string): string {
+  const map: Record<string, string> = {
+    READY_FOR_ENROLLMENT: "Ready for Enrollment",
+    PENDING_BEEF: "Pending (Incomplete)",
+  };
+  return map[status] ?? status.replace(/_/g, " ");
+}
+
+const FLUSH_NO_SHOW_COLUMNS: ColumnDef<BOSYQueueItem>[] = [
+  {
+    accessorKey: "lrn",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="LRN" />,
+    cell: ({ row }) => (
+      <span className="font-mono font-bold text-xs text-foreground">
+        {row.original.lrn ?? <em className="opacity-50 not-italic">No LRN</em>}
+      </span>
+    ),
+    size: 140,
+  },
+  {
+    id: "name",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Learner" />,
+    cell: ({ row }) => {
+      const { lastName, firstName } = row.original;
+      return (
+        <span className="font-bold text-sm">
+          {[lastName, firstName].filter(Boolean).join(", ")}
+        </span>
+      );
+    },
+  },
+  {
+    accessorKey: "gradeLevelName",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Grade" />,
+    cell: ({ row }) => (
+      <Badge variant="secondary" className="text-xs font-bold">
+        {row.original.gradeLevelName}
+      </Badge>
+    ),
+    size: 100,
+  },
+  {
+    accessorKey: "status",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+    cell: ({ row }) => (
+      <Badge
+        variant="outline"
+        className="text-xs font-bold border-amber-300 text-amber-700 bg-amber-50"
+      >
+        {formatNoShowStatus(row.original.status)}
+      </Badge>
+    ),
+    size: 160,
+  },
+];
 
 export default function BOSYPage() {
   const navigate = useNavigate();
@@ -129,6 +187,11 @@ export default function BOSYPage() {
   // Flush no-shows state
   const [flushDialogOpen, setFlushDialogOpen] = useState(false);
   const [flushBusy, setFlushBusy] = useState(false);
+  const [noShowItems, setNoShowItems] = useState<BOSYQueueItem[]>([]);
+  const [noShowLoading, setNoShowLoading] = useState(false);
+  // Confirm single return state
+  const [confirmSingleTarget, setConfirmSingleTarget] = useState<BOSYQueueItem | null>(null);
+  const [confirmSingleBusy, setConfirmSingleBusy] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isTableHovered, setIsTableHovered] = useState(false);
   const isUserInteracting = isSearchFocused || isTableHovered;
@@ -308,11 +371,20 @@ export default function BOSYPage() {
     else if (activeTab === "completers") void fetchCompleters();
   };
 
-  const handleConfirmSingle = async (applicationId: number) => {
+  const handleConfirmSingle = (applicationId: number) => {
+    const item = pendingItems.find((i) => i.applicationId === applicationId);
+    if (!item) return;
+    setConfirmSingleTarget(item);
+  };
+
+  const executeConfirmSingle = async () => {
+    if (!confirmSingleTarget) return;
+    const { applicationId } = confirmSingleTarget;
     lifecycleFeedback.progress(
       "Confirming Learner Return",
       "Submitting the learner record for BOSY sectioning readiness.",
     );
+    setConfirmSingleBusy(true);
     setConfirmingIds((prev) => new Set(prev).add(applicationId));
     try {
       await confirmReturn(applicationId);
@@ -324,6 +396,7 @@ export default function BOSYPage() {
         prev.filter((item) => item.applicationId !== applicationId),
       );
       setPendingTotal((prev) => Math.max(0, prev - 1));
+      setConfirmSingleTarget(null);
       void fetchReadiness();
     } catch (e) {
       toastApiError(e as never);
@@ -333,6 +406,7 @@ export default function BOSYPage() {
         next.delete(applicationId);
         return next;
       });
+      setConfirmSingleBusy(false);
     }
   };
 
@@ -399,36 +473,38 @@ export default function BOSYPage() {
     }
   };
 
+  // Load no-show applicants when the flush dialog opens
+  useEffect(() => {
+    if (!flushDialogOpen || !syId) {
+      if (!flushDialogOpen) setNoShowItems([]);
+      return;
+    }
+    setNoShowLoading(true);
+    Promise.all([
+      getBOSYQueue({ schoolYearId: syId, status: "READY_FOR_ENROLLMENT", page: 1, limit: 500 }),
+      getBOSYQueue({ schoolYearId: syId, status: "PENDING_BEEF", page: 1, limit: 500 }),
+    ])
+      .then(([rfe, pb]) => setNoShowItems([...rfe.items, ...pb.items]))
+      .catch((e) => toastApiError(e as never))
+      .finally(() => setNoShowLoading(false));
+  }, [flushDialogOpen, syId]);
+
   const handleFlushNoShows = async () => {
     if (!syId) return;
+    const ids = noShowItems.map((i) => i.applicationId);
+    if (ids.length === 0) {
+      lifecycleFeedback.success("No No-Shows", "No eligible records to flush.");
+      setFlushDialogOpen(false);
+      return;
+    }
     setFlushBusy(true);
     try {
-      const queueData = await getBOSYQueue({
-        schoolYearId: syId,
-        status: "READY_FOR_ENROLLMENT",
-        page: 1,
-        limit: 500,
-      });
-      const pendingBeefData = await getBOSYQueue({
-        schoolYearId: syId,
-        status: "PENDING_BEEF",
-        page: 1,
-        limit: 500,
-      });
-      const ids = [
-        ...queueData.items.map((i) => i.applicationId),
-        ...pendingBeefData.items.map((i) => i.applicationId),
-      ];
-      if (ids.length === 0) {
-        lifecycleFeedback.success("No No-Shows", "No eligible records to flush.");
-        setFlushDialogOpen(false);
-        return;
-      }
       const result = await apiFlushNoShows(ids, "Admin flush of no-show SCP applicants");
       lifecycleFeedback.success(
         "No-Shows Flushed",
         `${result.flushed} record(s) withdrawn. ${result.skipped} skipped.`,
       );
+      setNoShowItems([]);
       setFlushDialogOpen(false);
       void fetchReadiness();
     } catch (e) {
@@ -525,7 +601,7 @@ export default function BOSYPage() {
             className={cn(
               "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold",
               isUserInteracting
-                ? "border-muted-foreground/30 text-muted-foreground"
+                ? "border-muted-foreground/30 text-foreground"
                 : "border-emerald-200 text-emerald-700",
             )}
           >
@@ -603,7 +679,7 @@ export default function BOSYPage() {
               "relative flex-1 px-5 py-3 text-sm font-bold rounded-lg transition-colors",
               workspaceView === view.key
                 ? "text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground",
+                : "text-foreground hover:text-foreground",
             )}>
             {workspaceView === view.key && (
               <motion.div
@@ -656,13 +732,13 @@ export default function BOSYPage() {
               <div className="p-1.5 rounded-lg bg-muted shrink-0">
                 <Icon className="h-3.5 w-3.5 text-foreground" />
               </div>
-              <p className="text-[10px] font-black uppercase text-muted-foreground leading-tight">
+              <p className="text-[10px] font-black uppercase text-foreground leading-tight">
                 {label}
               </p>
             </CardHeader>
             <CardContent className="p-3 pt-0">
               {readinessLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <Loader2 className="h-5 w-5 animate-spin text-foreground" />
               ) : (
                 <p className="text-2xl font-black">{value}</p>
               )}
@@ -939,7 +1015,7 @@ export default function BOSYPage() {
       {workspaceView === "phase2" && (
         <>
           {/* SCP no-shows stat card + SYSTEM_ADMIN flush */}
-          {isSystemAdmin && (
+          {isSystemAdmin && ((readiness?.scpPriorityCount ?? 0) + (readiness?.pendingBeefCount ?? 0)) > 0 && (
             <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 gap-3">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="p-1.5 rounded-lg bg-amber-100 shrink-0">
@@ -947,7 +1023,7 @@ export default function BOSYPage() {
                 </div>
                 <div>
                   <p className="text-[10px] font-black uppercase text-amber-700">
-                    SCP No-Shows (READY_FOR_ENROLLMENT + PENDING_BEEF)
+                    SCP No-Shows (Ready for Enrollment + Pending Docs)
                   </p>
                   {readinessLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin text-amber-600 mt-0.5" />
@@ -978,6 +1054,63 @@ export default function BOSYPage() {
         </>
       )}
 
+      {/* Confirm Single Return Dialog */}
+      <Dialog
+        open={confirmSingleTarget !== null}
+        onOpenChange={(open) => { if (!open) setConfirmSingleTarget(null); }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              Confirm Learner Return
+            </DialogTitle>
+            <DialogDescription>
+              The following learner will be marked as{" "}
+              <strong>Ready for Sectioning</strong>. This will complete their
+              BOSY confirmation.
+            </DialogDescription>
+          </DialogHeader>
+          {confirmSingleTarget && (
+            <div className="rounded-md border bg-muted/40 px-4 py-3 space-y-1.5">
+              <p className="text-sm font-bold uppercase">
+                {confirmSingleTarget.lastName}, {confirmSingleTarget.firstName}
+                {confirmSingleTarget.middleName
+                  ? ` ${confirmSingleTarget.middleName.charAt(0)}.`
+                  : ""}
+              </p>
+              <p className="text-xs text-foreground font-bold">
+                LRN: {confirmSingleTarget.lrn ?? "No LRN"}
+              </p>
+              <Badge
+                variant="outline"
+                className="text-[10px] font-black uppercase">
+                {confirmSingleTarget.gradeLevelName}
+              </Badge>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmSingleTarget(null)}
+              disabled={confirmSingleBusy}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              disabled={confirmSingleBusy}
+              onClick={() => void executeConfirmSingle()}>
+              {confirmSingleBusy ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4 mr-1.5" />
+              )}
+              Confirm Return
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Revert to Pending Dialog */}
       <Dialog
         open={revertTargetId !== null}
@@ -999,7 +1132,7 @@ export default function BOSYPage() {
               value={revertReason}
               onChange={(e) => setRevertReason(e.target.value)}
               rows={3}
-              className="resize-none font-medium text-sm"
+              className="resize-none font-bold text-sm"
             />
             {revertReason.length > 0 && revertReason.trim().length < 5 && (
               <p className="text-xs text-destructive font-bold">
@@ -1030,32 +1163,69 @@ export default function BOSYPage() {
       </Dialog>
 
       {/* Flush No-Shows Dialog */}
-      <Dialog open={flushDialogOpen} onOpenChange={setFlushDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
+      <Dialog
+        open={flushDialogOpen}
+        onOpenChange={(open) => {
+          setFlushDialogOpen(open);
+          if (!open) setNoShowItems([]);
+        }}
+      >
+        <DialogContent className="sm:max-w-2xl gap-0 p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b">
             <DialogTitle className="flex items-center gap-2 text-destructive">
               <Trash2 className="h-4 w-4" />
               Flush No-Shows
             </DialogTitle>
             <DialogDescription>
-              All SCP applicants in READY_FOR_ENROLLMENT and PENDING_BEEF status
-              will be set to WITHDRAWN. This action cannot be undone.
+              {noShowLoading
+                ? "Loading no-show applicants…"
+                : noShowItems.length > 0
+                  ? `${noShowItems.length} SCP applicant${
+                      noShowItems.length !== 1 ? "s" : ""
+                    } in Ready for Enrollment or Pending (Incomplete) status have not reported. Confirming will withdraw all of them. This cannot be undone.`
+                  : "No eligible no-show applicants found for this school year."
+              }
             </DialogDescription>
           </DialogHeader>
-          <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive font-bold">
-            This is a destructive bulk operation. Only proceed if these learners
-            have confirmed they will not be attending.
+
+          <div className="px-6 py-4 space-y-3">
+            {noShowLoading ? (
+              <div className="flex items-center justify-center h-32">
+                <Loader2 className="h-6 w-6 animate-spin text-foreground" />
+              </div>
+            ) : noShowItems.length > 0 ? (
+              <>
+                <DataTable
+                  columns={FLUSH_NO_SHOW_COLUMNS}
+                  data={noShowItems}
+                  dense
+                  getRowId={(row) => String(row.applicationId)}
+                  containerHeight="14rem"
+                  estimatedRowHeight={32}
+                />
+                <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive font-bold">
+                  This is a destructive bulk operation. Only proceed if these
+                  learners have confirmed they will not be attending.
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-16 text-sm text-foreground font-bold gap-2">
+                <CheckCircle2 className="h-4 w-4 opacity-50" />
+                No no-show applicants found.
+              </div>
+            )}
           </div>
-          <DialogFooter>
+
+          <DialogFooter className="px-6 pb-6 pt-4 border-t gap-2">
             <Button
               variant="outline"
-              onClick={() => setFlushDialogOpen(false)}
+              onClick={() => { setFlushDialogOpen(false); setNoShowItems([]); }}
               disabled={flushBusy}>
               Cancel
             </Button>
             <Button
               variant="destructive"
-              disabled={flushBusy}
+              disabled={flushBusy || noShowLoading || noShowItems.length === 0}
               onClick={() => void handleFlushNoShows()}>
               {flushBusy ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-1.5" />

@@ -679,7 +679,7 @@ export function BatchSectioningWizard({
                         <h3 className="text-xl font-bold text-destructive">
                           Pre-check Failed
                         </h3>
-                        <p className="text-destructive/80 mt-1 font-medium">
+                        <p className="text-destructive/80 mt-1 font-bold">
                           {error}
                         </p>
                       </div>
@@ -712,7 +712,7 @@ export function BatchSectioningWizard({
                             <CardTitle className="text-base font-black uppercase ">
                               {step.title}
                             </CardTitle>
-                            <p className="text-xs text-foreground font-medium leading-relaxed">
+                            <p className="text-xs text-foreground font-bold leading-relaxed">
                               {step.description}
                             </p>
                           </CardHeader>
@@ -842,7 +842,7 @@ export function BatchSectioningWizard({
                                 <SelectItem
                                   key={prog}
                                   value={prog}
-                                  className="font-medium">
+                                  className="font-bold">
                                   {formatScpType(prog)}
                                 </SelectItem>
                               ))}
@@ -877,7 +877,7 @@ export function BatchSectioningWizard({
                                         <SelectItem
                                           key={section}
                                           value={section}
-                                          className="font-medium">
+                                          className="font-bold">
                                           {section}
                                         </SelectItem>
                                       ))}
@@ -901,7 +901,7 @@ export function BatchSectioningWizard({
                                         <SelectItem
                                           key={section}
                                           value={section}
-                                          className="font-medium">
+                                          className="font-bold">
                                           {section}
                                         </SelectItem>
                                       ))}
@@ -929,7 +929,7 @@ export function BatchSectioningWizard({
                                       <SelectItem
                                         key={section}
                                         value={section}
-                                        className="font-medium">
+                                        className="font-bold">
                                         {section}
                                       </SelectItem>
                                     ))}
@@ -1090,7 +1090,7 @@ export function BatchSectioningWizard({
                       <AlertTriangle className="h-5 w-5 fill-primary text-primary-foreground" />{" "}
                       Final Commitment Required
                     </p>
-                    <p className="text-[11px] text-foreground font-semibold mt-1">
+                    <p className="text-[11px] text-foreground font-bold mt-1">
                       Clicking the button will write all assignments to the
                       database, mark learners as
                       <span className="font-black text-green-700 mx-1 uppercase">
@@ -1145,7 +1145,7 @@ export function BatchSectioningWizard({
                     Unsaved Batch Roster
                   </DialogTitle>
                 </div>
-                <DialogDescription className="text-sm font-medium leading-relaxed">
+                <DialogDescription className="text-sm font-bold leading-relaxed">
                   You are about to leave the Sectioning Wizard. The generated
                   rosters for S.Y. 2026-2027 have not been finalized.
                   <br />
@@ -1193,7 +1193,7 @@ export function BatchSectioningWizard({
                     Unsaved Batch Roster
                   </DialogTitle>
                 </div>
-                <DialogDescription className="text-sm font-medium leading-relaxed">
+                <DialogDescription className="text-sm font-bold leading-relaxed">
                   You are about to leave the Sectioning Wizard. The generated
                   rosters for S.Y. 2026-2027 have not been finalized.
                   <br />
@@ -1238,7 +1238,7 @@ export function BatchSectioningWizard({
                 <DialogTitle className="text-xl font-bold uppercase ">
                   Reclassified Learners — {viewingReclassified?.title}
                 </DialogTitle>
-                <DialogDescription className="text-sm font-medium">
+                <DialogDescription className="text-sm font-bold">
                   These learners did not meet the threshold for this phase and
                   have been moved to the next available pool for re-assignment.
                 </DialogDescription>

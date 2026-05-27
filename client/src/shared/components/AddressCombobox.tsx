@@ -73,7 +73,7 @@ export function AddressCombobox({
           disabled={disabled}
           className={cn(
             "w-full justify-between h-11 font-bold text-left",
-            !value && "text-muted-foreground font-normal",
+            !value && "text-foreground",
             error && "border-destructive focus-visible:ring-destructive",
             className,
           )}
@@ -89,12 +89,12 @@ export function AddressCombobox({
       >
         {/* Search input */}
         <div className="flex items-center gap-2 px-3 py-2 border-b">
-          <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <Search className="h-3.5 w-3.5 text-foreground shrink-0" />
           <Input
             placeholder={searchPlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-8 border-0 shadow-none focus-visible:ring-0 p-0 text-sm font-normal"
+            className="h-8 border-0 shadow-none focus-visible:ring-0 p-0 text-sm font-bold"
             autoFocus
           />
         </div>
@@ -102,7 +102,7 @@ export function AddressCombobox({
         {/* List */}
         <ul className="max-h-60 overflow-y-auto py-1">
           {filtered.length === 0 ? (
-            <li className="px-3 py-4 text-sm text-muted-foreground text-center">
+            <li className="px-3 py-4 text-sm text-foreground text-center">
               No results found
             </li>
           ) : (
@@ -112,7 +112,7 @@ export function AddressCombobox({
                   type="button"
                   onClick={() => handleSelect(item)}
                   className={cn(
-                    "w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-accent hover:text-accent-foreground transition-colors",
+                    "w-full flex items-center gap-2 px-3 py-2 text-sm font-bold text-left hover:bg-accent hover:text-accent-foreground transition-colors",
                     item.name === value && "bg-accent text-accent-foreground",
                   )}
                 >

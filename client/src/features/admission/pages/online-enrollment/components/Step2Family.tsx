@@ -123,7 +123,7 @@ export default function Step2Family() {
       {isLinkedFromEarlyRegistration && (
         <Alert className="bg-amber-50 border-amber-200">
           <Info className="h-4 w-4 stroke-amber-600" />
-          <AlertDescription className="text-amber-900 font-semibold">
+          <AlertDescription className="text-amber-900 font-bold">
             You are submitting from a linked Early Registration record. Please
             review and confirm the contact details below before final
             submission.
@@ -201,7 +201,7 @@ export default function Step2Family() {
               }}
             />
             {errors.currentAddress?.barangay && (
-              <p className="text-xs text-destructive font-medium flex items-center gap-1">
+              <p className="text-xs text-destructive font-bold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 {errors.currentAddress.barangay.message}
               </p>
@@ -230,7 +230,7 @@ export default function Step2Family() {
               }}
             />
             {errors.currentAddress?.cityMunicipality && (
-              <p className="text-xs text-destructive font-medium flex items-center gap-1">
+              <p className="text-xs text-destructive font-bold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 {errors.currentAddress.cityMunicipality.message}
               </p>
@@ -259,7 +259,7 @@ export default function Step2Family() {
               }}
             />
             {errors.currentAddress?.province && (
-              <p className="text-xs text-destructive font-medium flex items-center gap-1">
+              <p className="text-xs text-destructive font-bold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 {errors.currentAddress.province.message}
               </p>
@@ -281,7 +281,7 @@ export default function Step2Family() {
           />
           <Label
             htmlFor="same-address"
-            className="text-sm font-semibold cursor-pointer select-none">
+            className="text-sm font-bold cursor-pointer select-none">
             Permanent Address is same as Current Address
           </Label>
         </div>
@@ -483,7 +483,7 @@ export default function Step2Family() {
                 }}
               />
               {errors.mother?.lastName && (
-                <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                <p className="text-xs text-destructive font-bold flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {errors.mother.lastName.message}
                 </p>
@@ -515,7 +515,7 @@ export default function Step2Family() {
                 }}
               />
               {errors.mother?.firstName && (
-                <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                <p className="text-xs text-destructive font-bold flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {errors.mother.firstName.message}
                 </p>
@@ -619,7 +619,7 @@ export default function Step2Family() {
                 }}
               />
               {errors.father?.lastName && (
-                <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                <p className="text-xs text-destructive font-bold flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {errors.father.lastName.message}
                 </p>
@@ -651,7 +651,7 @@ export default function Step2Family() {
                 }}
               />
               {errors.father?.firstName && (
-                <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                <p className="text-xs text-destructive font-bold flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {errors.father.firstName.message}
                 </p>
@@ -715,7 +715,7 @@ export default function Step2Family() {
               }}
             />
             {errors.guardian?.lastName && (
-              <p className="text-xs text-destructive font-medium flex items-center gap-1">
+              <p className="text-xs text-destructive font-bold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 {errors.guardian.lastName.message}
               </p>
@@ -748,7 +748,7 @@ export default function Step2Family() {
               }}
             />
             {errors.guardian?.firstName && (
-              <p className="text-xs text-destructive font-medium flex items-center gap-1">
+              <p className="text-xs text-destructive font-bold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 {errors.guardian.firstName.message}
               </p>
@@ -781,7 +781,7 @@ export default function Step2Family() {
               }}
             />
             {errors.guardianRelationship && (
-              <p className="text-xs text-destructive font-medium flex items-center gap-1">
+              <p className="text-xs text-destructive font-bold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 {errors.guardianRelationship.message}
               </p>
@@ -892,7 +892,7 @@ export default function Step2Family() {
         </div>
 
         {errors.primaryContact && (
-          <p className="text-xs text-destructive font-medium flex items-center gap-1">
+          <p className="text-xs text-destructive font-bold flex items-center gap-1">
             <AlertCircle className="w-3 h-3" />
             {errors.primaryContact.message}
           </p>
@@ -937,7 +937,7 @@ export default function Step2Family() {
               <Label
                 htmlFor="isContactInfoConfirmed"
                 className={cn(
-                  "text-xs font-semibold leading-relaxed cursor-pointer",
+                  "text-xs font-bold leading-relaxed cursor-pointer",
                   errors.isContactInfoConfirmed
                     ? "text-destructive"
                     : "text-blue-900",

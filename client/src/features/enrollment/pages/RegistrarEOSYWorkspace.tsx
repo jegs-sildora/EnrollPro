@@ -229,7 +229,7 @@ export default function RegistrarEOSYWorkspace() {
              </div>
              <div>
                 <h1 className="text-2xl font-black tracking-tight uppercase">{section.gradeLevel.name} - {section.name}</h1>
-                <p className="text-sm text-slate-500 font-medium">EOSY Status Batch Updating Workspace</p>
+                <p className="text-sm text-slate-500 font-bold">EOSY Status Batch Updating Workspace</p>
              </div>
           </div>
         </div>
@@ -272,7 +272,7 @@ export default function RegistrarEOSYWorkspace() {
             </div>
             <div>
                <p className="font-black uppercase tracking-tight">🔒 SECTION IS FINALIZED AND LOCKED FOR THE SUMMER</p>
-               <p className="text-sm opacity-90 font-medium text-red-600">This section has been officially promoted. No further changes can be made without administrator override.</p>
+               <p className="text-sm opacity-90 font-bold text-red-600">This section has been officially promoted. No further changes can be made without administrator override.</p>
             </div>
           </motion.div>
         )}
@@ -284,7 +284,7 @@ export default function RegistrarEOSYWorkspace() {
            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <CardTitle className="text-lg font-black uppercase text-slate-800">Section Roster (SF5 Flow)</CardTitle>
-                <CardDescription className="font-medium">Direct promotion entry based on Teacher SF5 submissions</CardDescription>
+                <CardDescription className="font-bold">Direct promotion entry based on Teacher SF5 submissions</CardDescription>
               </div>
               <div className="relative w-full md:w-72">
                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -317,10 +317,10 @@ export default function RegistrarEOSYWorkspace() {
                         <div className="h-64 flex flex-col items-center justify-center gap-3 text-center bg-background/80">
                           <Search className="h-10 w-10 animate-pulse text-slate-400" />
                           <div className="space-y-1">
-                            <p className="text-lg font-medium text-slate-500">
+                            <p className="text-lg font-bold text-slate-500">
                               Searching...
                             </p>
-                            <p className="text-sm font-medium text-slate-400">
+                            <p className="text-sm font-bold text-slate-400">
                               Scanning EOSY records...
                             </p>
                           </div>
@@ -336,7 +336,7 @@ export default function RegistrarEOSYWorkspace() {
                         isLocked && "opacity-60 grayscale"
                       )}>
                         <TableCell className="text-center font-bold text-slate-400">{index + 1}</TableCell>
-                        <TableCell className="font-mono text-sm font-bold text-slate-600">
+                        <TableCell className="text-sm font-bold text-slate-600">
                           {record.enrollmentApplication.learner.lrn || "NO LRN"}
                         </TableCell>
                         <TableCell>
@@ -398,7 +398,7 @@ export default function RegistrarEOSYWorkspace() {
          <DialogContent className="max-w-md rounded-2xl">
             <DialogHeader>
                <DialogTitle className="text-xl font-black uppercase tracking-tight">Confirm Batch Submission</DialogTitle>
-               <DialogDescription className="font-medium text-slate-600 pt-2">
+               <DialogDescription className="font-bold text-slate-600 pt-2">
                  You are about to finalize the EOSY statuses for <span className="text-primary font-bold">{records.length} learners</span> in section <span className="text-primary font-bold">{section.name}</span>.
                </DialogDescription>
             </DialogHeader>

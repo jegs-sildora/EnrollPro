@@ -154,7 +154,7 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
                 variant="destructive"
                 className="py-3 bg-destructive/5 border-destructive/20">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="text-xs font-medium">
+                <AlertDescription className="text-xs font-bold">
                   {error}
                 </AlertDescription>
               </Alert>
@@ -163,7 +163,7 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
             <div className="space-y-1.5">
               <Label
                 htmlFor="lrn"
-                className="text-sm font-medium text-foreground ml-1">
+                className="text-sm font-bold text-foreground ml-1">
                 Learner Reference Number (LRN)
               </Label>
               <Input
@@ -182,7 +182,7 @@ export function LookupForm({ onLookup, loading, error }: LookupFormProps) {
             <div className="space-y-1.5">
               <Label
                 htmlFor="password"
-                className="text-sm font-medium text-foreground ml-1">
+                className="text-sm font-bold text-foreground ml-1">
                 Password
               </Label>
               <div className="relative">

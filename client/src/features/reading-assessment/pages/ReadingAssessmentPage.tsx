@@ -384,7 +384,7 @@ export default function ReadingAssessmentPage() {
             className={cn(
               "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold",
               isUserInteracting
-                ? "border-muted-foreground/30 text-muted-foreground"
+                ? "border-muted-foreground/30 text-foreground"
                 : "border-emerald-200 text-emerald-700",
             )}
           >
@@ -426,13 +426,13 @@ export default function ReadingAssessmentPage() {
               <div className="p-1.5 rounded-lg bg-muted shrink-0">
                 <Icon className="h-3.5 w-3.5 text-foreground" />
               </div>
-              <p className="text-[10px] font-black uppercase text-muted-foreground leading-tight">
+              <p className="text-[10px] font-black uppercase text-foreground leading-tight">
                 {label}
               </p>
             </CardHeader>
             <CardContent className="p-3 pt-0">
               {isLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <Loader2 className="h-5 w-5 animate-spin text-foreground" />
               ) : (
                 <p className="text-2xl font-black">{value}</p>
               )}
@@ -558,7 +558,7 @@ export default function ReadingAssessmentPage() {
                   <span className="block font-bold text-foreground text-base">
                     {selectedFullName}
                   </span>
-                  <span className="block text-xs font-mono text-muted-foreground">
+                  <span className="block text-xs font-bold text-foreground">
                     LRN: {selected.learner.lrn ?? "None"} &middot;{" "}
                     {selected.gradeLevel.name}
                   </span>
@@ -602,7 +602,7 @@ export default function ReadingAssessmentPage() {
               </div>
             ) : (
               <div className="flex flex-col gap-2.5">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-foreground">
                   Select the learner&apos;s Phil-IRI reading proficiency level.
                 </p>
                 {READING_LEVELS.map((level) => (
@@ -624,7 +624,7 @@ export default function ReadingAssessmentPage() {
                   </button>
                 ))}
                 {philIriSaving && (
-                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <div className="flex items-center justify-center gap-2 text-sm text-foreground">
                     <Loader2 className="size-4 animate-spin" />
                     <span>Saving…</span>
                   </div>
@@ -648,7 +648,7 @@ export default function ReadingAssessmentPage() {
                 </div>
                 <p className="font-bold text-sm">Document Verification</p>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-foreground">
                 Physically verify the following DepEd-required documents before confirming
                 enrollment.
               </p>
@@ -686,12 +686,12 @@ export default function ReadingAssessmentPage() {
                         >
                           {doc.label}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{doc.note}</p>
+                        <p className="text-xs text-foreground mt-0.5">{doc.note}</p>
                       </div>
                       <doc.Icon
                         className={cn(
                           "size-4 shrink-0 mt-0.5",
-                          checked ? "text-emerald-500" : "text-muted-foreground",
+                          checked ? "text-emerald-500" : "text-foreground",
                         )}
                       />
                     </button>
@@ -718,7 +718,7 @@ export default function ReadingAssessmentPage() {
               </Button>
 
               {!allDocsChecked && (
-                <p className="text-xs text-muted-foreground text-center">
+                <p className="text-xs text-foreground text-center">
                   Check off all documents above to enable confirmation.
                 </p>
               )}
@@ -730,12 +730,12 @@ export default function ReadingAssessmentPage() {
             <div className="mt-3">
               <Separator className="mb-3" />
               <div className="flex items-center gap-3 rounded-xl border border-dashed bg-muted/40 px-4 py-3">
-                <Lock className="size-4 text-muted-foreground shrink-0" />
+                <Lock className="size-4 text-foreground shrink-0" />
                 <div>
-                  <p className="text-sm font-bold text-muted-foreground">
+                  <p className="text-sm font-bold text-foreground">
                     Document Verification (Step 2)
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-foreground">
                     Complete Phil-IRI assessment above to unlock.
                   </p>
                 </div>
@@ -800,7 +800,7 @@ function QueueCard({
                 {a.learner.lastName}, {a.learner.firstName}
                 {a.learner.middleName ? ` ${a.learner.middleName[0]}.` : ""}
               </span>
-              <span className="text-[10px] text-muted-foreground font-mono">
+              <span className="text-[10px] text-foreground font-bold">
                 LRN: {a.learner.lrn ?? "NO LRN"}
               </span>
             </div>
@@ -953,7 +953,7 @@ function QueueCard({
                 <div className="flex flex-col items-center justify-center py-16 text-center gap-3 px-6">
                   <CheckCircle2 className="size-10 text-emerald-500" />
                   <p className="font-bold text-base">{emptyTitle}</p>
-                  <p className="text-sm text-muted-foreground max-w-xs">{emptyDescription}</p>
+                  <p className="text-sm text-foreground max-w-xs">{emptyDescription}</p>
                 </div>
               ) : undefined
             }
@@ -1029,7 +1029,7 @@ function ContinuingQueueCard({
                 {a.lastName}, {a.firstName}
                 {a.middleName ? ` ${a.middleName[0]}.` : ""}
               </span>
-              <span className="text-[10px] text-muted-foreground font-mono">
+              <span className="text-[10px] text-foreground font-bold">
                 LRN: {a.lrn ?? "NO LRN"}
               </span>
             </div>
@@ -1103,7 +1103,7 @@ function ContinuingQueueCard({
                 className={cn(
                   "h-8 text-xs font-bold transition-opacity",
                   isConfirmed
-                    ? "text-muted-foreground cursor-not-allowed opacity-50"
+                    ? "text-foreground cursor-not-allowed opacity-50"
                     : "text-primary hover:text-primary hover:bg-primary/10",
                 )}
                 disabled={isConfirmed || confirming}
@@ -1171,7 +1171,7 @@ function ContinuingQueueCard({
                 <div className="flex flex-col items-center justify-center py-16 text-center gap-3 px-6">
                   <UserCheck className="size-10 text-emerald-500" />
                   <p className="font-bold text-base">{emptyTitle}</p>
-                  <p className="text-sm text-muted-foreground max-w-xs">{emptyDescription}</p>
+                  <p className="text-sm text-foreground max-w-xs">{emptyDescription}</p>
                 </div>
               ) : undefined
             }

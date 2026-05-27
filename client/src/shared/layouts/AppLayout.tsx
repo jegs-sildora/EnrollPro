@@ -356,7 +356,7 @@ function SYSwitcher() {
 
               <div className="border-b border-slate-100 my-2" />
 
-              <div className="text-xs font-semibold text-slate-500 mb-2 px-2 uppercase tracking-wide">
+              <div className="text-xs font-bold text-slate-500 mb-2 px-2 uppercase tracking-wide">
                 Archived Records
               </div>
               {archivedYears.length > 0 ? (
@@ -367,7 +367,7 @@ function SYSwitcher() {
                     className={cn(
                       "flex w-full items-center gap-2 px-3 py-2 text-xs transition-colors",
                       y.id === currentId
-                        ? "bg-slate-50 font-semibold text-slate-900"
+                        ? "bg-slate-50 font-bold text-slate-900"
                         : "hover:bg-slate-50 text-slate-700",
                     )}>
                     <span className="w-4 text-slate-600">
@@ -773,7 +773,7 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
             {isHistoricalReadOnly ? (
               <Badge
                 variant="outline"
-                className="uppercase text-muted-foreground border-border">
+                className="uppercase text-foreground border-border">
                 Historical View
               </Badge>
             ) : null}

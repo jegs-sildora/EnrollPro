@@ -99,7 +99,7 @@ export function PersonalInfoSection({ learner, profileBadge }: Props) {
                   </span>
                 )}
              </div>
-             <p className="text-sm font-bold text-muted-foreground flex items-center justify-center lg:justify-start gap-2">
+             <p className="text-sm font-bold text-foreground flex items-center justify-center lg:justify-start gap-2">
                <Fingerprint className="h-4 w-4" />
                LRN: <span className="text-foreground">{learner.lrn}</span>
              </p>
@@ -154,7 +154,7 @@ function HeroDetail({
         <Icon className="h-4 w-4 text-slate-400" />
       </div>
       <div className="flex flex-col min-w-0">
-        <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest leading-none mb-1.5">
+        <span className="text-[10px] font-black uppercase text-foreground tracking-widest leading-none mb-1.5">
           {label}
         </span>
         <span className={cn(

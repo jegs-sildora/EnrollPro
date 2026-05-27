@@ -365,7 +365,7 @@ export function DocumentManagement({
         id: "lastModified",
         header: "Last Modified",
         cell: ({ row }) => (
-          <span className="text-xs font-medium min-w-[150px] block text-center">
+          <span className="text-xs font-bold min-w-[150px] block text-center">
             {row.original.lastModified
               ? format(
                   new Date(row.original.lastModified),

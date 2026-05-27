@@ -428,7 +428,7 @@ export default function SchoolProfileTab() {
 
           {/* Current Accent */}
           <div className="space-y-3">
-            <h4 className="text-sm font-medium">Current Accent Color</h4>
+            <h4 className="text-sm font-bold">Current Accent Color</h4>
             <div className="flex items-center gap-4">
               <div
                 className="h-10 w-10 rounded-lg shadow-sm border border-border"
@@ -451,7 +451,7 @@ export default function SchoolProfileTab() {
 
           {/* Live Preview */}
           <div className="rounded-lg border border-border p-4 space-y-3">
-            <p className="text-sm font-medium">Live Preview</p>
+            <p className="text-sm font-bold">Live Preview</p>
             <div className="flex flex-wrap gap-3">
               <Button size="sm">Primary Button</Button>
               <Button

@@ -198,7 +198,7 @@ export default function Apply() {
           isClosed={isClosed}
           logoUrl={logoUrl}
           schoolName={schoolName}
-          title={`S.Y. ${activeSchoolYearLabel} ADMISSIONS`}
+          title={`S.Y. ${activeSchoolYearLabel} ENROLLMENT FORM`}
         />
 
         <main
@@ -341,7 +341,7 @@ export default function Apply() {
                           </a>
                         </div>
                       ) : (
-                        <p className="text-sm text-black font-medium pt-4 border-t border-border/50">
+                        <p className="text-sm text-black font-bold pt-4 border-t border-border/50">
                           Please stay tuned to our official school social media
                           pages or visit the school campus for announcements
                           regarding the next registration schedule.

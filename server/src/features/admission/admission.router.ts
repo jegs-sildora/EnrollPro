@@ -19,6 +19,7 @@ import {
   recordStepResultSchema,
   rescheduleAssessmentStepSchema,
   batchProcessSchema,
+  publishScpRankingsSchema,
   specialEnrollmentSchema,
   readingProfileUpdateSchema,
 } from "@enrollpro/shared";
@@ -66,6 +67,14 @@ router.get(
   authenticate,
   authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
   ctrl.getRankings,
+);
+
+router.patch(
+  "/scp-rankings/publish",
+  authenticate,
+  authorize("HEAD_REGISTRAR", "SYSTEM_ADMIN"),
+  validate(publishScpRankingsSchema),
+  ctrl.publishScpRankings,
 );
 
 router.get(

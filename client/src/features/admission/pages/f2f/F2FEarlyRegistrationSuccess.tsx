@@ -132,13 +132,13 @@ export default function F2FEarlyRegistrationSuccess({
                 <p className="text-[0.625rem] text-foreground uppercase  font-bold mb-1">
                   Encoded By
                 </p>
-                <p className="font-semibold">{encodedBy}</p>
+                <p className="font-bold">{encodedBy}</p>
               </div>
               <div>
                 <p className="text-[0.625rem] text-foreground uppercase  font-bold mb-1">
                   Date & Time
                 </p>
-                <p className="font-semibold">
+                <p className="font-bold">
                   {format(new Date(), "MMM dd, yyyy 'at' h:mm a")}
                 </p>
               </div>
@@ -147,7 +147,7 @@ export default function F2FEarlyRegistrationSuccess({
 
           {/* Next Steps */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-lg flex items-center gap-2">
+            <h3 className="font-bold text-lg flex items-center gap-2">
               <FileText className="w-5 h-5" />
               What's Next
             </h3>

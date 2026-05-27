@@ -161,7 +161,7 @@ export function ConfirmationSlipModal({
                 Process Confirmation Slip
               </DialogTitle>
             </div>
-            <DialogDescription className="text-emerald-100 text-xs font-medium">
+            <DialogDescription className="text-emerald-100 text-xs font-bold">
               Rapid enrollment for promoted returning learners (DO 017, s. 2025)
             </DialogDescription>
           </DialogHeader>

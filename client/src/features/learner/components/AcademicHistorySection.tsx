@@ -52,7 +52,7 @@ export function AcademicHistorySection({ history }: Props) {
     return (
       <div>
         <SectionHeader />
-        <p className="text-sm text-muted-foreground mt-4">
+        <p className="text-sm text-foreground mt-4">
           No academic history records found.
         </p>
       </div>
@@ -68,13 +68,13 @@ export function AcademicHistorySection({ history }: Props) {
 
       {/* School Year Selector */}
       <div className="mt-4 mb-6 flex items-center gap-3">
-        <label className="text-xs font-bold uppercase text-muted-foreground whitespace-nowrap">
+        <label className="text-xs font-bold uppercase text-foreground whitespace-nowrap">
           School Year
         </label>
         <Select
           value={selectedId}
           onValueChange={setSelectedId}>
-          <SelectTrigger className="w-64 text-sm font-semibold">
+          <SelectTrigger className="w-64 text-sm font-bold">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -105,7 +105,7 @@ function SectionHeader() {
         <h2 className="text-base font-black uppercase text-foreground tracking-wide">
           Academic History
         </h2>
-        <p className="text-xs text-muted-foreground font-medium">
+        <p className="text-xs text-foreground font-bold">
           Enrollment records per school year
         </p>
       </div>
@@ -126,7 +126,7 @@ function HistoryCard({ entry }: { entry: AcademicHistoryEntry }) {
           <span className="font-black uppercase text-sm text-foreground">
             {entry.gradeLevel.name}
           </span>
-          <span className="text-xs text-muted-foreground font-semibold">
+          <span className="text-xs text-foreground font-bold">
             · {entry.schoolYear.yearLabel}
           </span>
         </div>
@@ -151,10 +151,10 @@ function HistoryCard({ entry }: { entry: AcademicHistoryEntry }) {
         />
       ) : (
         <div className="flex justify-between items-center py-0.5">
-          <span className="text-xs font-bold uppercase text-muted-foreground">
+          <span className="text-xs font-bold uppercase text-foreground">
             Section
           </span>
-          <span className="text-xs text-muted-foreground italic flex items-center gap-1">
+          <span className="text-xs text-foreground italic flex items-center gap-1">
             <Minus className="h-3 w-3" />
             No section record
           </span>
@@ -173,7 +173,7 @@ function HistoryCard({ entry }: { entry: AcademicHistoryEntry }) {
       {/* EOSY Status */}
       {entry.enrollmentRecord?.eosyStatus ? (
         <div className="flex justify-between items-center py-0.5">
-          <span className="text-xs font-bold uppercase text-muted-foreground">
+          <span className="text-xs font-bold uppercase text-foreground">
             Year-End Status
           </span>
           <div className="flex items-center gap-1.5">
@@ -200,14 +200,14 @@ function Row({
 }) {
   return (
     <div className="flex justify-between items-center py-0.5">
-      <span className="text-xs font-bold uppercase text-muted-foreground">
+      <span className="text-xs font-bold uppercase text-foreground">
         {label}
       </span>
       <span
         className={
           highlight
             ? "text-sm font-black text-primary"
-            : "text-xs font-semibold text-foreground"
+            : "text-xs font-bold text-foreground"
         }>
         {value}
       </span>

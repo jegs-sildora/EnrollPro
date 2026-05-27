@@ -40,6 +40,7 @@ export interface DataTableProps<TData, TValue> {
   rowSelection?: Record<string, boolean>;
   onRowSelectionChange?: OnChangeFn<Record<string, boolean>>;
   getRowClassName?: (row: TData) => string;
+  renderRowAfter?: (row: TData, index: number) => ReactNode;
   dense?: boolean;
 }
 
@@ -121,6 +122,7 @@ export function DataTable<TData, TValue>({
   rowSelection: externalRowSelection,
   onRowSelectionChange: externalOnRowSelectionChange,
   getRowClassName,
+  renderRowAfter,
   dense = false,
 }: DataTableProps<TData, TValue>) {
   const [internalSorting, setInternalSorting] = useState<SortingState>([]);
@@ -276,13 +278,15 @@ export function DataTable<TData, TValue>({
                       ),
                     ]
                   : rows.map((row) => (
-                      <TableRowComponent
-                        key={row.id}
-                        row={row}
-                        onRowClick={onRowClick}
-                        getRowClassName={getRowClassName}
-                        dense={dense}
-                      />
+                      <React.Fragment key={row.id}>
+                        <TableRowComponent
+                          row={row}
+                          onRowClick={onRowClick}
+                          getRowClassName={getRowClassName}
+                          dense={dense}
+                        />
+                        {renderRowAfter?.(row.original, row.index)}
+                      </React.Fragment>
                     ))}
               </MotionTableBody>
             ) : prependBodyRow ? (

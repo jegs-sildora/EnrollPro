@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { AppError } from "../../../lib/AppError.js";
 import { saveBase64Image } from "../../../lib/fileUploader.js";
 import type {
+  ApplicantType,
   ApplicationStatus,
   Prisma,
 } from "../../../generated/prisma/index.js";
@@ -1374,6 +1375,215 @@ export function createEarlyRegistrationOperationsController(
       next(error);
     }
   }
+
+  async function publishScpRankings(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const {
+        scpType,
+        schoolYearId,
+        rankedApplicationIds,
+        cutoffSlot,
+      } = (req.body ?? {}) as {
+        scpType?: string;
+        schoolYearId?: number;
+        rankedApplicationIds?: number[];
+        cutoffSlot?: number;
+      };
+
+      const normalizedScpType = String(scpType ?? "")
+        .trim()
+        .toUpperCase();
+
+      if (!normalizedScpType) {
+        throw new AppError(422, "scpType is required.");
+      }
+
+      if (normalizedScpType === "REGULAR") {
+        throw new AppError(
+          422,
+          "Publishing rankings is only available for SCP applicant types.",
+        );
+      }
+
+      const syId = Number(schoolYearId ?? req.schoolYearId);
+      if (!Number.isInteger(syId) || syId <= 0) {
+        throw new AppError(422, "A valid schoolYearId is required.");
+      }
+
+      const dedupedRankedIds = Array.from(
+        new Set(
+          (rankedApplicationIds ?? [])
+            .map((id) => Number(id))
+            .filter((id) => Number.isInteger(id) && id > 0),
+        ),
+      );
+
+      if (dedupedRankedIds.length === 0) {
+        throw new AppError(422, "rankedApplicationIds must contain at least one application id.");
+      }
+
+      const normalizedCutoff =
+        Number.isInteger(cutoffSlot) && Number(cutoffSlot) > 0
+          ? Number(cutoffSlot)
+          : 70;
+
+      const resolvedCutoff = Math.min(normalizedCutoff, dedupedRankedIds.length);
+      const rankingOrder = new Map(
+        dedupedRankedIds.map((applicationId, index) => [applicationId, index]),
+      );
+
+      const cohortApplications = await prisma.enrollmentApplication.findMany({
+        where: {
+          id: { in: dedupedRankedIds },
+          schoolYearId: syId,
+        },
+        select: {
+          id: true,
+          applicantType: true,
+          status: true,
+          trackingNumber: true,
+          earlyRegistrationId: true,
+          learner: {
+            select: { firstName: true, lastName: true },
+          },
+        },
+      });
+
+      if (cohortApplications.length !== dedupedRankedIds.length) {
+        const foundIds = new Set(cohortApplications.map((candidate) => candidate.id));
+        const missingIds = dedupedRankedIds.filter((id) => !foundIds.has(id));
+
+        throw new AppError(
+          404,
+          `Some ranked applications were not found for ${normalizedScpType} in school year ${syId}: ${missingIds.join(", ")}`,
+        );
+      }
+
+      const isFinalPriority = (
+        candidate: (typeof cohortApplications)[number],
+      ): boolean =>
+        candidate.applicantType === normalizedScpType &&
+        candidate.status === "READY_FOR_SECTIONING";
+
+      const isFinalRedirect = (
+        candidate: (typeof cohortApplications)[number],
+      ): boolean =>
+        candidate.applicantType === "REGULAR" &&
+        candidate.status === "PENDING_CONFIRMATION";
+
+      const alreadyPublished = cohortApplications.every(
+        (candidate) => isFinalPriority(candidate) || isFinalRedirect(candidate),
+      );
+
+      if (alreadyPublished) {
+        throw new AppError(
+          409,
+          `Publish already executed for ${normalizedScpType} rankings in school year ${syId}. No changes were applied.`,
+        );
+      }
+
+      const invalidApplicantTypeIds = cohortApplications
+        .filter((candidate) => candidate.applicantType !== normalizedScpType)
+        .map((candidate) => candidate.id);
+
+      if (invalidApplicantTypeIds.length > 0) {
+        throw new AppError(
+          409,
+          `Cannot publish ${normalizedScpType} rankings because some applications are no longer ${normalizedScpType}: ${invalidApplicantTypeIds.join(", ")}`,
+        );
+      }
+
+      const candidates = cohortApplications;
+
+      const orderedCandidates = [...candidates].sort(
+        (a, b) =>
+          (rankingOrder.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+          (rankingOrder.get(b.id) ?? Number.MAX_SAFE_INTEGER),
+      );
+
+      const priorityIds = orderedCandidates.slice(0, resolvedCutoff).map((candidate) => candidate.id);
+      const redirectIds = orderedCandidates.slice(resolvedCutoff).map((candidate) => candidate.id);
+
+      await prisma.$transaction(async (tx) => {
+        for (const candidate of orderedCandidates) {
+          const isPriorityLane = priorityIds.includes(candidate.id);
+
+          if (isPriorityLane) {
+            await tx.enrollmentApplication.update({
+              where: { id: candidate.id },
+              data: {
+                status: "READY_FOR_SECTIONING",
+              },
+            });
+
+            if (candidate.earlyRegistrationId) {
+              await tx.earlyRegistrationApplication.updateMany({
+                where: { id: candidate.earlyRegistrationId },
+                data: {
+                  status: "READY_FOR_SECTIONING",
+                },
+              });
+            }
+
+            continue;
+          }
+
+          await tx.enrollmentProgramDetail.deleteMany({
+            where: { applicationId: candidate.id },
+          });
+
+          await tx.enrollmentApplication.update({
+            where: { id: candidate.id },
+            data: {
+              applicantType: "REGULAR",
+              status: "PENDING_CONFIRMATION",
+            },
+          });
+
+          if (candidate.earlyRegistrationId) {
+            await tx.earlyRegistrationApplication.updateMany({
+              where: { id: candidate.earlyRegistrationId },
+              data: {
+                applicantType: "REGULAR",
+                status: "SUBMITTED_BEERF",
+              },
+            });
+          }
+        }
+      });
+
+      await auditLog({
+        userId: req.user!.userId,
+        actionType: "SCP_RANKINGS_PUBLISHED",
+        description:
+          `Published ${normalizedScpType} selection board for SY#${syId}: ` +
+          `${priorityIds.length} routed to READY_FOR_SECTIONING, ` +
+          `${redirectIds.length} redirected to REGULAR/PENDING_CONFIRMATION.`,
+        subjectType: "EnrollmentApplication",
+        recordId: null,
+        req,
+      }).catch(() => {});
+
+      res.json({
+        schoolYearId: syId,
+        scpType: normalizedScpType,
+        cutoffSlot: resolvedCutoff,
+        published: {
+          priorityCount: priorityIds.length,
+          redirectedCount: redirectIds.length,
+        },
+        priorityIds,
+        redirectedIds: redirectIds,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   return {
     pass,
     fail,
@@ -1389,6 +1599,7 @@ export function createEarlyRegistrationOperationsController(
     rescheduleAssessmentStep,
     rescheduleExam,
     batchProcess,
+    publishScpRankings,
   };
 }
 
@@ -1410,3 +1621,4 @@ export const rescheduleAssessmentStep =
   operationsController.rescheduleAssessmentStep;
 export const rescheduleExam = operationsController.rescheduleExam;
 export const batchProcess = operationsController.batchProcess;
+export const publishScpRankings = operationsController.publishScpRankings;

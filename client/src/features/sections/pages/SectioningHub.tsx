@@ -39,7 +39,7 @@ export default function SectioningHub() {
           className="mb-12 text-center"
         >
           <h1 className="text-4xl font-bold text-foreground mb-3">Sectioning Hub</h1>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-lg text-foreground">
             Select a pathway to manage student assignments
           </p>
         </motion.div>
@@ -83,7 +83,7 @@ export default function SectioningHub() {
                         <CardTitle className="text-xl text-foreground">
                           {pathway.title}
                         </CardTitle>
-                        <CardDescription className="text-muted-foreground mt-1">
+                        <CardDescription className="text-foreground mt-1">
                           {pathway.description}
                         </CardDescription>
                       </div>

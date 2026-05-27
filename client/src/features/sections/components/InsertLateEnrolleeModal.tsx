@@ -215,10 +215,10 @@ export function InsertLateEnrolleeModal({
                   <div className="py-16 flex flex-col items-center justify-center gap-3 text-center px-6">
                     <Search className="h-10 w-10 animate-pulse text-slate-400" />
                     <div className="space-y-1">
-                      <p className="text-lg font-medium text-slate-500">
+                      <p className="text-lg font-bold text-slate-500">
                         Searching...
                       </p>
-                      <p className="text-sm font-medium text-slate-400">
+                      <p className="text-sm font-bold text-slate-400">
                         Scanning unsectioned records...
                       </p>
                     </div>
@@ -349,7 +349,7 @@ export function InsertLateEnrolleeModal({
                     <p className="text-xs font-black text-red-900 uppercase">
                       Attendance Risk
                     </p>
-                    <p className="text-[11px] leading-relaxed text-red-800 font-medium">
+                    <p className="text-[11px] leading-relaxed text-red-800 font-bold">
                       {elapsedSchoolDays} school days have already passed.
                       Learner may struggle to meet the 80% DepEd attendance
                       requirement. Ensure catch-up interventions are planned.
@@ -364,7 +364,7 @@ export function InsertLateEnrolleeModal({
                   <p className="text-xs font-black text-amber-900 uppercase">
                     Inline Slotting Protection
                   </p>
-                  <p className="text-[11px] leading-relaxed text-amber-800 font-medium">
+                  <p className="text-[11px] leading-relaxed text-amber-800 font-bold">
                     This action will bypass the Batch Algorithm. The learner
                     will be added directly to the SF1 roster and synced to the
                     grading microservice.
@@ -384,7 +384,7 @@ export function InsertLateEnrolleeModal({
                   onChange={(e) => setOfficialEnrollmentDate(e.target.value)}
                   className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm font-bold shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
                 />
-                <p className="text-[10px] text-amber-700 font-semibold">
+                <p className="text-[10px] text-amber-700 font-bold">
                   Used for SF10 dateSectioned. Backdating allowed for DepEd compliance.
                 </p>
               </div>

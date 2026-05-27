@@ -413,7 +413,7 @@ export default function Step1Personal() {
         />
         <Label
           htmlFor="hasFilledEarlyRegistrationForm"
-          className="text-xs font-semibold leading-relaxed cursor-pointer">
+          className="text-xs font-bold leading-relaxed cursor-pointer">
           I already filled out the Basic Education Early Registration Form.
         </Label>
       </div>
@@ -493,7 +493,7 @@ export default function Step1Personal() {
           )}
         </div>
 
-        <p className="text-xs font-semibold text-foreground">
+        <p className="text-xs font-bold text-foreground">
           {hasNoLrn
             ? "No LRN declared. Registrar will process this learner under pending LRN creation."
             : canDeclareNoLrn
@@ -524,7 +524,7 @@ export default function Step1Personal() {
             />
             <Label
               htmlFor="hasNoLrn"
-              className="text-xs font-semibold leading-relaxed cursor-pointer">
+              className="text-xs font-bold leading-relaxed cursor-pointer">
               I confirm the learner currently has no LRN.
             </Label>
           </div>
@@ -541,7 +541,7 @@ export default function Step1Personal() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
         {/* PHOTO UPLOADER COLUMN */}
         <div className="md:col-span-1 flex flex-col items-center justify-center space-y-3">
-          <Label className="text-sm font-semibold self-start md:self-center">
+          <Label className="text-sm font-bold self-start md:self-center">
             Student Photo
           </Label>
           <div className="relative group">
@@ -585,7 +585,7 @@ export default function Step1Personal() {
           <div className="space-y-1.5">
             <Label
               htmlFor="lastName"
-              className="text-sm font-semibold">
+              className="text-sm font-bold">
               Last Name <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -600,7 +600,7 @@ export default function Step1Personal() {
               )}
             />
             {errors.lastName && (
-              <p className="text-xs text-destructive font-medium flex items-center gap-1">
+              <p className="text-xs text-destructive font-bold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" /> {errors.lastName.message}
               </p>
             )}
@@ -609,7 +609,7 @@ export default function Step1Personal() {
           <div className="space-y-1.5">
             <Label
               htmlFor="firstName"
-              className="text-sm font-semibold">
+              className="text-sm font-bold">
               First Name <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -624,7 +624,7 @@ export default function Step1Personal() {
               )}
             />
             {errors.firstName && (
-              <p className="text-xs text-destructive font-medium flex items-center gap-1">
+              <p className="text-xs text-destructive font-bold flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" /> {errors.firstName.message}
               </p>
             )}
@@ -633,7 +633,7 @@ export default function Step1Personal() {
           <div className="space-y-1.5">
             <Label
               htmlFor="middleName"
-              className="text-sm font-semibold">
+              className="text-sm font-bold">
               Middle Name
             </Label>
             <Input
@@ -648,7 +648,7 @@ export default function Step1Personal() {
           <div className="space-y-1.5">
             <Label
               htmlFor="extensionName"
-              className="text-sm font-semibold">
+              className="text-sm font-bold">
               Suffix (Extension)
             </Label>
             <Select
@@ -674,7 +674,7 @@ export default function Step1Personal() {
       {/* ─── DOB, Age, Sex Row ─── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
         <div className="space-y-1.5">
-          <Label className="text-sm font-semibold">
+          <Label className="text-sm font-bold">
             Date of Birth <span className="text-destructive">*</span>
           </Label>
           <Controller
@@ -747,7 +747,7 @@ export default function Step1Personal() {
             )}
           />
           {errors.birthdate && (
-            <p className="text-xs text-destructive font-medium flex items-center gap-1">
+            <p className="text-xs text-destructive font-bold flex items-center gap-1">
               <AlertCircle className="w-3 h-3" /> {errors.birthdate.message}
             </p>
           )}
@@ -756,7 +756,7 @@ export default function Step1Personal() {
         <div className="space-y-1.5">
           <Label
             htmlFor="age"
-            className="text-sm font-semibold">
+            className="text-sm font-bold">
             Age
           </Label>
           <Input
@@ -769,7 +769,7 @@ export default function Step1Personal() {
         </div>
 
         <div className="space-y-3">
-          <Label className="text-sm font-semibold">
+          <Label className="text-sm font-bold">
             Sex <span className="text-destructive">*</span>
           </Label>
           <div className="flex gap-4 pt-1">
@@ -809,7 +809,7 @@ export default function Step1Personal() {
             ))}
           </div>
           {errors.sex && (
-            <p className="text-xs text-destructive font-medium flex items-center gap-1">
+            <p className="text-xs text-destructive font-bold flex items-center gap-1">
               <AlertCircle className="w-3 h-3" /> {errors.sex.message}
             </p>
           )}
@@ -820,7 +820,7 @@ export default function Step1Personal() {
         <div className="space-y-1.5">
           <Label
             htmlFor="placeOfBirth"
-            className="text-sm font-semibold">
+            className="text-sm font-bold">
             Place of Birth <span className="text-destructive">*</span>
           </Label>
           <Input
@@ -834,7 +834,7 @@ export default function Step1Personal() {
             )}
           />
           {errors.placeOfBirth && (
-            <p className="text-xs text-destructive font-medium flex items-center gap-1">
+            <p className="text-xs text-destructive font-bold flex items-center gap-1">
               <AlertCircle className="w-3 h-3" /> {errors.placeOfBirth.message}
             </p>
           )}
@@ -843,7 +843,7 @@ export default function Step1Personal() {
         <div className="space-y-1.5">
           <Label
             htmlFor="motherTongue"
-            className="text-sm font-semibold">
+            className="text-sm font-bold">
             Mother Tongue
           </Label>
           <Input
@@ -861,7 +861,7 @@ export default function Step1Personal() {
           <div className="space-y-1.5">
             <Label
               htmlFor="religion"
-              className="text-sm font-semibold">
+              className="text-sm font-bold">
               Religion
             </Label>
             <Input
@@ -876,7 +876,7 @@ export default function Step1Personal() {
           <div className="space-y-2">
             <Label
               htmlFor="psaBirthCertNumber"
-              className="text-sm font-semibold">
+              className="text-sm font-bold">
               PSA Birth Certificate Number
             </Label>
             <Input

@@ -402,7 +402,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                   <Fingerprint className="size-3" />
                   Employee ID: {formData.employeeId || "N/A"}
                 </SheetDescription>
-                <p className="text-white/70 text-xs font-semibold">
+                <p className="text-white/70 text-xs font-bold">
                   {description}
                 </p>
               </div>
@@ -422,7 +422,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                 <h3 className="text-sm font-bold uppercase  text-foreground">
                   Personal Details
                 </h3>
-                <p className="text-xs text-foreground font-semibold">
+                <p className="text-xs text-foreground font-bold">
                   Basic profile details for the faculty directory.
                 </p>
               </header>
@@ -525,14 +525,14 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                         "flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 transition-colors text-sm font-bold uppercase",
                         formData.sex === s.val
                           ? "border-primary bg-primary/5 text-primary"
-                          : "border-border hover:bg-muted/50 text-muted-foreground",
+                          : "border-border hover:bg-muted/50 text-foreground",
                       )}>
                       <s.icon
                         className={cn(
                           "w-4 h-4",
                           formData.sex === s.val
                             ? "text-primary"
-                            : "text-muted-foreground",
+                            : "text-foreground",
                         )}
                       />
                       {s.val}
@@ -547,7 +547,7 @@ export const TeacherFormSheet = memo(function TeacherFormSheet({
                 <h3 className="text-sm font-bold uppercase  text-foreground">
                   DepEd Employment
                 </h3>
-                <p className="text-xs text-foreground font-semibold">
+                <p className="text-xs text-foreground font-bold">
                   Assignment and plantilla data aligned to the DepEd catalog.
                 </p>
               </header>

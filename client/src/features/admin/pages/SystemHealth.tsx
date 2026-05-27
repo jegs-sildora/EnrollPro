@@ -149,7 +149,7 @@ export default function SystemHealth() {
         accessorKey: "metric",
         header: "Metric",
         cell: ({ row }) => (
-          <span className="font-medium text-left block">
+          <span className="font-bold text-left block">
             {row.original.metric}
           </span>
         ),
@@ -172,7 +172,7 @@ export default function SystemHealth() {
           <h1 className="text-3xl font-bold">
             System Health
           </h1>
-          <p className="text-sm font-medium text-foreground">
+          <p className="text-sm font-bold text-foreground">
             Monitor runtime status, resource usage, and key operational counts.
           </p>
           {lastUpdated && (
@@ -338,46 +338,46 @@ export default function SystemHealth() {
                   <span className="text-foreground flex items-center gap-1">
                     <Clock3 className="h-4 w-4" /> Uptime
                   </span>
-                  <span className="font-semibold">
+                  <span className="font-bold">
                     {formatUptime(health.server.uptime)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-foreground">RSS Memory</span>
-                  <span className="font-semibold">
+                  <span className="font-bold">
                     {formatBytes(health.server.memory.rss)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-foreground">Heap Used</span>
-                  <span className="font-semibold">
+                  <span className="font-bold">
                     {formatBytes(health.server.memory.heapUsed)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-foreground">Total System Memory</span>
-                  <span className="font-semibold">
+                  <span className="font-bold">
                     {formatBytes(health.server.totalMemory)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-foreground">Free System Memory</span>
-                  <span className="font-semibold">
+                  <span className="font-bold">
                     {formatBytes(health.server.freeMemory)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-foreground">CPU Cores</span>
-                  <span className="font-semibold">{health.server.cpus}</span>
+                  <span className="font-bold">{health.server.cpus}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-foreground">Timezone</span>
-                  <span className="font-semibold">{health.timezone}</span>
+                  <span className="font-bold">{health.timezone}</span>
                 </div>
 
                 {userRoles.length > 0 && (
                   <div className="pt-2 border-t space-y-2">
-                    <p className="font-semibold">Active Users by Role</p>
+                    <p className="font-bold">Active Users by Role</p>
                     <div className="flex flex-wrap gap-2">
                       {userRoles.map(([role, count]) => (
                         <Badge

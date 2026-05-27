@@ -65,7 +65,7 @@ export default function FinalizeEnrollmentModal({
         <DialogHeader>
           <DialogTitle className="text-sm font-black uppercase tracking-wide">{title}</DialogTitle>
           {learnerName ? (
-            <p className="text-xs text-muted-foreground font-semibold">{learnerName}</p>
+            <p className="text-xs text-foreground font-bold">{learnerName}</p>
           ) : null}
         </DialogHeader>
 
@@ -75,7 +75,7 @@ export default function FinalizeEnrollmentModal({
               checked={confirmationSlipReceived}
               onCheckedChange={(checked) => setConfirmationSlipReceived(Boolean(checked))}
             />
-            <span className="text-xs font-semibold">
+            <span className="text-xs font-bold">
               Physical Enrollment Form / Confirmation Slip Received
             </span>
           </label>
@@ -93,7 +93,7 @@ export default function FinalizeEnrollmentModal({
                 placeholder="e.g. 150"
               />
               {!isHeightValid && heightCm ? (
-                <p className="text-xs text-destructive font-semibold">Height must be 90 to 220 cm.</p>
+                <p className="text-xs text-destructive font-bold">Height must be 90 to 220 cm.</p>
               ) : null}
             </div>
             <div className="space-y-1">
@@ -108,7 +108,7 @@ export default function FinalizeEnrollmentModal({
                 placeholder="e.g. 45"
               />
               {!isWeightValid && weightKg ? (
-                <p className="text-xs text-destructive font-semibold">Weight must be 20 to 150 kg.</p>
+                <p className="text-xs text-destructive font-bold">Weight must be 20 to 150 kg.</p>
               ) : null}
             </div>
           </div>

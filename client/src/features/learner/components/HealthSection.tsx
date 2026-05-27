@@ -63,7 +63,7 @@ export function HealthSection({ learner }: Props) {
         accessorKey: "weightKg",
         header: () => <div className="text-center">Weight</div>,
         cell: ({ row }) => (
-          <span className="text-xs font-semibold text-center block">
+          <span className="text-xs font-bold text-center block">
             {row.original.weightKg.toFixed(1)} kg
           </span>
         ),
@@ -72,7 +72,7 @@ export function HealthSection({ learner }: Props) {
         accessorKey: "heightCm",
         header: () => <div className="text-center">Height</div>,
         cell: ({ row }) => (
-          <span className="text-xs font-semibold text-center block">
+          <span className="text-xs font-bold text-center block">
             {row.original.heightCm.toFixed(1)} cm
           </span>
         ),
@@ -193,7 +193,7 @@ export function HealthSection({ learner }: Props) {
         </div>
       ) : (
         <div className="p-12 rounded-lg bg-muted/20 border border-dashed border-border text-center">
-          <p className="text-sm text-foreground font-medium italic">
+          <p className="text-sm text-foreground font-bold italic">
             No health records have been entered for your account yet.
           </p>
           <p className="text-xs text-foreground mt-2 font-bold italic">
@@ -207,7 +207,7 @@ export function HealthSection({ learner }: Props) {
         <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center shrink-0">
           <Info className="h-5 w-5 text-foreground" />
         </div>
-        <p className="text-xs leading-relaxed text-foreground font-medium">
+        <p className="text-xs leading-relaxed text-foreground font-bold">
           <span className="font-bold text-foreground">Important Disclaimer:</span> BMI and nutritional status are computed using WHO 2007 Growth
           Reference for school-age children (5–19 years). This information is
           for reference only. Section assignments and academic records are based on verified official school forms. Consult the school clinic or a qualified health

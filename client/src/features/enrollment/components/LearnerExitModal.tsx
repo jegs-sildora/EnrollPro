@@ -187,16 +187,16 @@ export function LearnerExitModal({
               <p className="truncate text-base font-bold leading-snug text-slate-900">
                 {fullName}
               </p>
-              <p className="mt-0.5 text-sm text-muted-foreground">
+              <p className="mt-0.5 text-sm text-foreground">
                 LRN:{" "}
-                <span className="font-semibold text-slate-700">
+                <span className="font-bold text-slate-700">
                   {lrnDisplay}
                 </span>
               </p>
               {sectionName && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-foreground">
                   Section:{" "}
-                  <span className="font-semibold text-slate-700">
+                  <span className="font-bold text-slate-700">
                     {sectionName}
                   </span>
                 </p>
@@ -219,7 +219,7 @@ export function LearnerExitModal({
               disabled={isViewMode}>
               <SelectTrigger
                 id="exitType"
-                className="h-10 text-sm font-semibold">
+                className="h-10 text-sm font-bold">
                 <SelectValue placeholder="Select exit type" />
               </SelectTrigger>
               <SelectContent>
@@ -227,7 +227,7 @@ export function LearnerExitModal({
                   <SelectItem
                     key={opt.value}
                     value={opt.value}
-                    className="text-sm font-semibold">
+                    className="text-sm font-bold">
                     {opt.label}
                   </SelectItem>
                 ))}
@@ -265,11 +265,11 @@ export function LearnerExitModal({
                   ? "No reason recorded"
                   : "Provide a clear reason for this exit action (required)"
               }
-              className="min-h-24 text-sm font-semibold"
+              className="min-h-24 text-sm font-bold"
               maxLength={isViewMode ? undefined : 500}
             />
             {!isViewMode && (
-              <p className="text-right text-xs text-muted-foreground">
+              <p className="text-right text-xs text-foreground">
                 {reason.length}/500
               </p>
             )}

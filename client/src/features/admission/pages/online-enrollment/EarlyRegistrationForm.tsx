@@ -693,7 +693,7 @@ export default function EnrollmentForm({
           </div>
 
           {submitError && (
-            <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-xl text-destructive text-sm font-medium">
+            <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-xl text-destructive text-sm font-bold">
               {submitError}
             </div>
           )}
@@ -764,7 +764,7 @@ export default function EnrollmentForm({
                   size="lg"
                   onClick={prevStep}
                   disabled={stepper.state.isFirst || isSubmitting}
-                  className="h-12 px-8 font-semibold sm:w-auto w-full">
+                  className="h-12 px-8 font-bold sm:w-auto w-full">
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Back
                 </Button>
@@ -774,7 +774,7 @@ export default function EnrollmentForm({
                     type="button"
                     size="lg"
                     onClick={nextStep}
-                    className="h-12 px-8 font-semibold sm:w-auto w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                    className="h-12 px-8 font-bold sm:w-auto w-full bg-primary text-primary-foreground hover:bg-primary/90">
                     {isEditing ? "Update & Review" : "Next Step"}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>

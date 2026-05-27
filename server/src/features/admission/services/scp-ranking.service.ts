@@ -5,6 +5,11 @@ interface RankingWeights {
   weights: Record<string, number>;
 }
 
+interface RankingFormulaComponent {
+  key: string;
+  weight: number;
+}
+
 export interface RankingResult {
   applicationId: number;
   firstName: string;
@@ -14,16 +19,86 @@ export interface RankingResult {
   breakdown: Record<string, number>;
 }
 
+function resolveFormulaWeights(
+  rankingFormula: unknown,
+): Record<string, number> {
+  if (!rankingFormula || typeof rankingFormula !== "object") {
+    return {};
+  }
+
+  const formulaRecord = rankingFormula as Record<string, unknown>;
+
+  // Backward-compatible support for legacy { weights: { EXAM: 0.5, ... } } shape.
+  const legacyWeights = formulaRecord.weights;
+  if (legacyWeights && typeof legacyWeights === "object" && !Array.isArray(legacyWeights)) {
+    const parsed = Object.fromEntries(
+      Object.entries(legacyWeights as Record<string, unknown>)
+        .map(([key, value]) => [key.trim().toUpperCase(), Number(value)] as const)
+        .filter(([, value]) => Number.isFinite(value) && value > 0),
+    );
+    if (Object.keys(parsed).length > 0) {
+      return parsed;
+    }
+  }
+
+  // Current shape: { components: [{ key, weight, label? }, ...] }.
+  const components = formulaRecord.components;
+  if (!Array.isArray(components)) {
+    return {};
+  }
+
+  const parsedFromComponents: RankingFormulaComponent[] = [];
+  for (const component of components) {
+    if (!component || typeof component !== "object" || Array.isArray(component)) {
+      continue;
+    }
+
+    const row = component as Record<string, unknown>;
+    const key = String(row.key ?? "").trim().toUpperCase();
+    const weight = Number(row.weight ?? NaN);
+
+    if (!key || !Number.isFinite(weight) || weight <= 0) {
+      continue;
+    }
+
+    parsedFromComponents.push({ key, weight });
+  }
+
+  if (parsedFromComponents.length === 0) {
+    return {};
+  }
+
+  const totalWeight = parsedFromComponents.reduce(
+    (sum, component) => sum + component.weight,
+    0,
+  );
+  const useFractionalWeights = totalWeight <= 1.0001;
+
+  return Object.fromEntries(
+    parsedFromComponents.map((component) => [
+      component.key,
+      useFractionalWeights ? component.weight : component.weight / 100,
+    ]),
+  );
+}
+
 /**
  * Compute a weighted composite ranking score for a single SCP enrollment application.
  * Uses `ScpProgramConfig.rankingFormula` weights × assessment scores + generalAverage.
  */
 export async function computeRanking(
   applicationId: number,
-  rankingFormula: RankingWeights,
+  rankingFormula: RankingWeights | Record<string, number>,
   prisma: typeof defaultPrisma = defaultPrisma,
 ): Promise<{ compositeScore: number; breakdown: Record<string, number> }> {
-  const { weights } = rankingFormula;
+  const weights =
+    "weights" in rankingFormula
+      ? resolveFormulaWeights(rankingFormula)
+      : rankingFormula;
+
+  if (Object.keys(weights).length === 0) {
+    return { compositeScore: 0, breakdown: {} };
+  }
 
   const application = await prisma.enrollmentApplication.findUnique({
     where: { id: applicationId },
@@ -85,7 +160,11 @@ export async function getSCPRankings(
     return [];
   }
 
-  const formula = scpConfig.rankingFormula as unknown as RankingWeights;
+  const formulaWeights = resolveFormulaWeights(scpConfig.rankingFormula);
+
+  if (Object.keys(formulaWeights).length === 0) {
+    return [];
+  }
 
   // Fetch applications with completed assessments or later status
   const applications = await prisma.enrollmentApplication.findMany({
@@ -113,7 +192,7 @@ export async function getSCPRankings(
   for (const application of applications) {
     const { compositeScore, breakdown } = await computeRanking(
       application.id,
-      formula,
+      formulaWeights,
       prisma,
     );
     results.push({

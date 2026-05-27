@@ -325,7 +325,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                   }
                   className="font-black uppercase text-base placeholder:text-foreground/30"
                 />
-                <p className="text-[10px] text-muted-foreground font-bold italic">
+                <p className="text-[10px] text-foreground font-bold italic">
                   {isTleLaboratory
                     ? `* Specialization is pre-filled. Append a letter to complete the name (e.g., ${selectedTleProgramName || "[Program]"} - A).`
                     : '* Avoid using grade level prefix (e.g., use "Rizal" instead of "Grade 7 Rizal").'}
@@ -372,7 +372,7 @@ export const SectionFormSheet = memo(function SectionFormSheet({
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-[10px] text-muted-foreground font-bold italic">
+                <p className="text-[10px] text-foreground font-bold italic">
                   - Showing available teachers eligible for section assignment.
                 </p>
               </div>

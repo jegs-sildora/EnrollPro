@@ -203,7 +203,7 @@ function RubricBuilder({
                     <div className="col-span-4">
                       <Input
                         placeholder="Criterion"
-                        className="h-8 text-sm font-semibold"
+                        className="h-8 text-sm font-bold"
                         value={crit.name || ""}
                         onChange={(e) =>
                           updateCriterion(
@@ -218,7 +218,7 @@ function RubricBuilder({
                     <div className="col-span-6">
                       <Input
                         placeholder="Guideline/Description"
-                        className="h-8 text-sm font-medium text-foreground"
+                        className="h-8 text-sm font-bold text-foreground"
                         value={crit.description || ""}
                         onChange={(e) =>
                           updateCriterion(
@@ -558,7 +558,7 @@ export function AdmissionStepsSection({
                       </Label>
                       <Textarea
                         placeholder="Additional requirements..."
-                        className="min-h-[72px] text-sm font-semibold"
+                        className="min-h-[72px] text-sm font-bold"
                         value={step.notes || ""}
                         onChange={(event) =>
                           onUpdateStep(

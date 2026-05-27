@@ -60,15 +60,6 @@ export default function EarlyRegistrationWorkspace() {
 
   return (
     <div className="flex flex-col space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">
-          Early Registration
-        </h1>
-        <p className="text-xs text-foreground font-bold">
-          New Learner Intake & Screening Workflow
-        </p>
-      </div>
-
       <Tabs value={activeView} onValueChange={handleViewChange} className="w-full">
         <TabsList className="grid w-full h-auto grid-cols-3 gap-1 p-1 bg-white border border-border relative">
           {tabs.map((tab) => (
