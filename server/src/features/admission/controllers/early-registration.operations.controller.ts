@@ -1431,6 +1431,14 @@ export function createEarlyRegistrationOperationsController(
           ? Number(cutoffSlot)
           : 70;
 
+      if (dedupedRankedIds.length < normalizedCutoff) {
+        throw new AppError(
+          422,
+          `Cannot publish ${normalizedScpType} rankings yet. ` +
+            `Only ${dedupedRankedIds.length} ranked PASSED applicants are available (minimum required: ${normalizedCutoff}).`,
+        );
+      }
+
       const resolvedCutoff = Math.min(normalizedCutoff, dedupedRankedIds.length);
       const rankingOrder = new Map(
         dedupedRankedIds.map((applicationId, index) => [applicationId, index]),
@@ -1467,13 +1475,13 @@ export function createEarlyRegistrationOperationsController(
         candidate: (typeof cohortApplications)[number],
       ): boolean =>
         candidate.applicantType === normalizedScpType &&
-        candidate.status === "READY_FOR_SECTIONING";
+        candidate.status === "READY_FOR_ENROLLMENT";
 
       const isFinalRedirect = (
         candidate: (typeof cohortApplications)[number],
       ): boolean =>
         candidate.applicantType === "REGULAR" &&
-        candidate.status === "PENDING_CONFIRMATION";
+        candidate.status === "READY_FOR_ENROLLMENT";
 
       const alreadyPublished = cohortApplications.every(
         (candidate) => isFinalPriority(candidate) || isFinalRedirect(candidate),
@@ -1497,6 +1505,21 @@ export function createEarlyRegistrationOperationsController(
         );
       }
 
+      const invalidStatusIds = cohortApplications
+        .filter(
+          (candidate) =>
+            candidate.status !== "PASSED" &&
+            candidate.status !== "READY_FOR_ENROLLMENT",
+        )
+        .map((candidate) => candidate.id);
+
+      if (invalidStatusIds.length > 0) {
+        throw new AppError(
+          409,
+          `Cannot publish ${normalizedScpType} rankings because some applications are not finalized. Expected PASSED (or READY_FOR_ENROLLMENT), got: ${invalidStatusIds.join(", ")}`,
+        );
+      }
+
       const candidates = cohortApplications;
 
       const orderedCandidates = [...candidates].sort(
@@ -1516,7 +1539,7 @@ export function createEarlyRegistrationOperationsController(
             await tx.enrollmentApplication.update({
               where: { id: candidate.id },
               data: {
-                status: "READY_FOR_SECTIONING",
+                status: "READY_FOR_ENROLLMENT",
               },
             });
 
@@ -1524,7 +1547,7 @@ export function createEarlyRegistrationOperationsController(
               await tx.earlyRegistrationApplication.updateMany({
                 where: { id: candidate.earlyRegistrationId },
                 data: {
-                  status: "READY_FOR_SECTIONING",
+                  status: "READY_FOR_ENROLLMENT",
                 },
               });
             }
@@ -1540,7 +1563,7 @@ export function createEarlyRegistrationOperationsController(
             where: { id: candidate.id },
             data: {
               applicantType: "REGULAR",
-              status: "PENDING_CONFIRMATION",
+              status: "READY_FOR_ENROLLMENT",
             },
           });
 
@@ -1549,7 +1572,7 @@ export function createEarlyRegistrationOperationsController(
               where: { id: candidate.earlyRegistrationId },
               data: {
                 applicantType: "REGULAR",
-                status: "SUBMITTED_BEERF",
+                status: "READY_FOR_ENROLLMENT",
               },
             });
           }
@@ -1561,8 +1584,8 @@ export function createEarlyRegistrationOperationsController(
         actionType: "SCP_RANKINGS_PUBLISHED",
         description:
           `Published ${normalizedScpType} selection board for SY#${syId}: ` +
-          `${priorityIds.length} routed to READY_FOR_SECTIONING, ` +
-          `${redirectIds.length} redirected to REGULAR/PENDING_CONFIRMATION.`,
+          `${priorityIds.length} routed to READY_FOR_ENROLLMENT, ` +
+          `${redirectIds.length} redirected to REGULAR/READY_FOR_ENROLLMENT.`,
         subjectType: "EnrollmentApplication",
         recordId: null,
         req,

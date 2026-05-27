@@ -24,7 +24,8 @@ export default function RegistrationPipelines({
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Use "program" instead of "tab" to avoid collision with Workspace tabs
-  const activeProgram = searchParams.get("program") || "SCIENCE_TECHNOLOGY_AND_ENGINEERING";
+  const activeProgram =
+    searchParams.get("program") || "SCIENCE_TECHNOLOGY_AND_ENGINEERING";
   const [tabCounts, setTabCounts] = useState<Record<string, number>>({});
 
   const steConfig = configs.find(
@@ -40,9 +41,18 @@ export default function RegistrationPipelines({
   const tabs = useMemo(
     () => [
       {
+        key: "REGULAR",
+        label: "REGULAR",
+        fullLabel: "Regular Track",
+        cutoffScore: null,
+        hasAssessment: false,
+      },
+      {
         key: "SCIENCE_TECHNOLOGY_AND_ENGINEERING",
         label: SCP_ACRONYMS.SCIENCE_TECHNOLOGY_AND_ENGINEERING || "STE",
-        fullLabel: SCP_LABELS.SCIENCE_TECHNOLOGY_AND_ENGINEERING || "Science, Technology & Engineering",
+        fullLabel:
+          SCP_LABELS.SCIENCE_TECHNOLOGY_AND_ENGINEERING ||
+          "Science, Technology & Engineering",
         cutoffScore:
           steConfig?.cutoffScore ??
           steConfig?.steps.find((s) => s.cutoffScore != null)?.cutoffScore ??
@@ -52,7 +62,8 @@ export default function RegistrationPipelines({
       {
         key: "SPECIAL_PROGRAM_IN_THE_ARTS",
         label: SCP_ACRONYMS.SPECIAL_PROGRAM_IN_THE_ARTS || "SPA",
-        fullLabel: SCP_LABELS.SPECIAL_PROGRAM_IN_THE_ARTS || "Special Program in the Arts",
+        fullLabel:
+          SCP_LABELS.SPECIAL_PROGRAM_IN_THE_ARTS || "Special Program in the Arts",
         cutoffScore:
           spaConfig?.cutoffScore ??
           spaConfig?.steps.find((s) => s.cutoffScore != null)?.cutoffScore ??
@@ -62,7 +73,8 @@ export default function RegistrationPipelines({
       {
         key: "SPECIAL_PROGRAM_IN_SPORTS",
         label: SCP_ACRONYMS.SPECIAL_PROGRAM_IN_SPORTS || "SPS",
-        fullLabel: SCP_LABELS.SPECIAL_PROGRAM_IN_SPORTS || "Special Program in Sports",
+        fullLabel:
+          SCP_LABELS.SPECIAL_PROGRAM_IN_SPORTS || "Special Program in Sports",
         cutoffScore:
           spsConfig?.cutoffScore ??
           spsConfig?.steps.find((s) => s.cutoffScore != null)?.cutoffScore ??

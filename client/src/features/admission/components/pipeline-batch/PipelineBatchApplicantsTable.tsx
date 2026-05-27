@@ -16,6 +16,7 @@ import { Input } from "@/shared/ui/input";
 import { DataTable } from "@/shared/ui/data-table";
 import { DataTableColumnHeader } from "@/shared/ui/data-table-column-header";
 import { TableSearchIndicator } from "@/shared/ui/TableSearchIndicator";
+import { cn, getApplicationStatusColorClasses } from "@/shared/lib/utils";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ChangeEvent, MouseEvent } from "react";
 import type { Application, ScpRankingResult } from "./types";
@@ -26,6 +27,7 @@ interface PipelineBatchApplicantsTableProps {
   isSearching?: boolean;
   screeningMode?: boolean;
   rankings?: ScpRankingResult[];
+  lockedApplicantIds?: Set<number>;
   showAssessment: boolean;
   selectedIds: Set<number>;
   isBatchProcessing: boolean;
@@ -53,6 +55,7 @@ export default function PipelineBatchApplicantsTable({
   isSearching,
   screeningMode = false,
   rankings = [],
+  lockedApplicantIds,
   showAssessment,
   selectedIds,
   isBatchProcessing,
@@ -74,11 +77,15 @@ export default function PipelineBatchApplicantsTable({
   downgradingId,
 }: PipelineBatchApplicantsTableProps) {
   const ENROLLMENT_BRIDGE_STATUS = "READY_FOR_ENROLLMENT";
+  const isRowLockedForBatch = (app: Application) => {
+    if (app.status === ENROLLMENT_BRIDGE_STATUS) return true;
+    return lockedApplicantIds?.has(app.id) ?? false;
+  };
   const hasEnrollmentBridgeRows = applications.some(
-    (application) => application.status === ENROLLMENT_BRIDGE_STATUS,
+    (application) => isRowLockedForBatch(application),
   );
   const selectableRowsCount = applications.filter(
-    (application) => application.status !== ENROLLMENT_BRIDGE_STATUS,
+    (application) => !isRowLockedForBatch(application),
   ).length;
   const rankingsByApplicationId = useMemo(
     () =>
@@ -88,6 +95,40 @@ export default function PipelineBatchApplicantsTable({
       }, {}),
     [rankings],
   );
+
+  const isInterviewLikeType = (type: string | null | undefined): boolean => {
+    const normalizedType = String(type ?? "")
+      .trim()
+      .toUpperCase();
+
+    return normalizedType === "INTERVIEW" || normalizedType === "AUDITION";
+  };
+
+  const getRankingComponentScore = (
+    app: Application,
+    kind: "EXAM" | "INTERVIEW",
+  ): number | null => {
+    const ranking = rankingsByApplicationId[app.id];
+    if (!ranking) return null;
+
+    const matchedEntry = Object.entries(ranking.breakdown ?? {}).find(
+      ([componentKey, componentValue]) => {
+        if (!Number.isFinite(componentValue)) return false;
+        const normalizedKey = componentKey.toUpperCase();
+
+        if (kind === "EXAM") {
+          return normalizedKey.includes("EXAM") || normalizedKey.includes("WRITTEN");
+        }
+
+        return (
+          normalizedKey.includes("INTERVIEW") ||
+          normalizedKey.includes("AUDITION")
+        );
+      },
+    );
+
+    return matchedEntry ? matchedEntry[1] : null;
+  };
 
   const getAssessmentScore = (
     app: Application,
@@ -99,22 +140,59 @@ export default function PipelineBatchApplicantsTable({
       }
 
       const fallbackScore = app.assessments.find(
-        (assessment) => assessment.type !== "INTERVIEW",
+        (assessment) => !isInterviewLikeType(assessment.type),
       )?.score;
-      return fallbackScore ?? null;
+
+      if (fallbackScore != null && Number.isFinite(fallbackScore)) {
+        return fallbackScore;
+      }
+
+      return getRankingComponentScore(app, "EXAM");
     }
 
-    const interviewScore = app.assessments.find(
-      (assessment) => assessment.type === "INTERVIEW",
+    if (app.interviewScore != null && Number.isFinite(app.interviewScore)) {
+      return app.interviewScore;
+    }
+
+    const interviewScore = app.assessments.find((assessment) =>
+      isInterviewLikeType(assessment.type),
     )?.score;
+
     if (interviewScore != null && Number.isFinite(interviewScore)) {
       return interviewScore;
     }
 
-    const fallbackScore = app.assessments.find(
-      (assessment) => assessment.type !== "INTERVIEW",
-    )?.score;
-    return fallbackScore ?? null;
+    return getRankingComponentScore(app, "INTERVIEW");
+  };
+
+  const getPassedStatusLabel = (app: Application): string => {
+    const passedAssessmentTypes = new Set(
+      (app.assessments ?? [])
+        .filter((assessment) => {
+          const normalizedResult = String(assessment.result ?? "")
+            .trim()
+            .toUpperCase();
+          return normalizedResult === "PASSED";
+        })
+        .map((assessment) =>
+          String(assessment.type ?? "")
+            .trim()
+            .toUpperCase(),
+        ),
+    );
+
+    const interviewPassed = [...passedAssessmentTypes].some((assessmentType) =>
+      isInterviewLikeType(assessmentType),
+    );
+    const examPassed = [...passedAssessmentTypes].some(
+      (assessmentType) => !isInterviewLikeType(assessmentType),
+    );
+
+    if (examPassed && interviewPassed) return "ASSESSMENTS PASSED";
+    if (interviewPassed) return "INTERVIEW PASSED";
+    if (examPassed) return "EXAM PASSED";
+
+    return "EXAM PASSED";
   };
 
   const getCompositeScore = (app: Application): number | null => {
@@ -156,10 +234,10 @@ export default function PipelineBatchApplicantsTable({
           ),
           cell: ({ row }) => {
             const app = row.original;
-            const isEnrollmentBridgeRow = app.status === ENROLLMENT_BRIDGE_STATUS;
-            return isEnrollmentBridgeRow ? (
+            const isLockedForBatch = isRowLockedForBatch(app);
+            return isLockedForBatch ? (
               <div className="flex items-center justify-center">
-                <Lock className="size-3.5 text-foreground" aria-label="Moved to enrollment" />
+                <Lock className="size-3.5 text-foreground" aria-label="Batch processing completed" />
               </div>
             ) : (
               <div className="flex items-center justify-center">
@@ -248,6 +326,24 @@ export default function PipelineBatchApplicantsTable({
           ),
           cell: ({ row }) => {
             const app = row.original;
+
+            if (app.status === "PASSED") {
+              const passedStatusLabel = getPassedStatusLabel(app);
+              return (
+                <div className="flex flex-col items-center gap-1">
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "h-auto py-0.5 px-2.5 whitespace-nowrap text-center leading-tight justify-center border-none text-sm font-bold",
+                      getApplicationStatusColorClasses(app.status),
+                    )}
+                    aria-label={`Status: ${passedStatusLabel}`}>
+                    {passedStatusLabel}
+                  </Badge>
+                </div>
+              );
+            }
+
             return (
               <div className="flex flex-col items-center gap-1">
                 <StatusBadge status={app.status} className="text-sm font-bold" />

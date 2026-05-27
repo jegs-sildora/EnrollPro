@@ -164,7 +164,6 @@ const EARLY_REG_TRANSITIONS: Record<string, ApplicationStatus[]> = {
   ],
   INTERVIEW_SCHEDULED: [
     "PASSED",
-    "READY_FOR_ENROLLMENT",
     "SUBMITTED_BEERF",
     "WITHDRAWN",
   ],
@@ -609,6 +608,7 @@ interface BatchSuccessItem {
   id: number;
   name: string;
   trackingNumber: string;
+  status?: ApplicationStatus;
 }
 
 interface BatchFailureItem extends BatchSuccessItem {
@@ -4269,7 +4269,7 @@ export async function batchFinalizeInterview(
 
       const targetStatus: ApplicationStatus =
         row.decision === "PASS"
-          ? "READY_FOR_ENROLLMENT"
+          ? "PASSED"
           : (row.rejectOutcome ?? "SUBMITTED_BEERF");
 
       try {
@@ -4329,6 +4329,7 @@ export async function batchFinalizeInterview(
           id: registration.id,
           name,
           trackingNumber: registration.trackingNumber,
+          status: targetStatus,
         });
       } catch (error) {
         failed.push({
@@ -4490,7 +4491,7 @@ export async function approve(req: Request, res: Response, next: NextFunction) {
     assertEarlyRegTransition(
       reg.status,
       ApplicationStatus.READY_FOR_ENROLLMENT,
-      `Cannot approve an early registration with status "${reg.status}". Only PASSED or INTERVIEW_SCHEDULED applications can be approved.`,
+      `Cannot approve an early registration with status "${reg.status}". Only PASSED applications can be approved.`,
       reg.applicantType,
     );
 
@@ -4849,7 +4850,7 @@ export async function markInterviewPassed(
 
     assertEarlyRegTransition(
       reg.status,
-      ApplicationStatus.READY_FOR_ENROLLMENT,
+      ApplicationStatus.PASSED,
       `Cannot mark interview passed. Current status: "${reg.status}".`,
       reg.applicantType,
     );
@@ -4882,14 +4883,14 @@ export async function markInterviewPassed(
 
       return tx.earlyRegistrationApplication.update({
         where: { id },
-        data: { status: "READY_FOR_ENROLLMENT" },
+        data: { status: "PASSED" },
       });
     });
 
     await auditLog({
       userId: req.user!.userId,
       actionType: "STATUS_CHANGE",
-      description: `Early registration #${id} marked ready for enrollment (READY_FOR_ENROLLMENT) after interview pass`,
+      description: `Early registration #${id} marked PASSED after interview pass`,
       subjectType: "EarlyRegistrationApplication",
       recordId: id,
       req,

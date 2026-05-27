@@ -18,11 +18,12 @@ import { ConfirmationModal } from "@/shared/ui/confirmation-modal";
 import api from "@/shared/api/axiosInstance";
 import { formatScpType } from "@/shared/lib/utils";
 import { useSettingsStore } from "@/store/settings.slice";
-import type { ScpRankingResult } from "./types";
+import type { PassedApplicantForBoard, ScpRankingResult } from "./types";
 
 interface ScpSelectionBoardProps {
   scpType: string;
   rankings: ScpRankingResult[];
+  passedApplicants?: PassedApplicantForBoard[];
   loading: boolean;
   cutoffSlot?: number;
   onPublishSuccess?: () => Promise<void> | void;
@@ -44,9 +45,29 @@ interface BoardRow extends ScpRankingResult {
   isManualWinner: boolean;
 }
 
+interface BoardCandidate extends ScpRankingResult {
+  examScoreOverride: number | null;
+  interviewScoreOverride: number | null;
+}
+
+function buildLearnerIdentityKey(
+  firstName: string,
+  lastName: string,
+  lrn: string | null | undefined,
+): string {
+  const normalizedLrn = String(lrn ?? "").trim();
+  if (normalizedLrn.length > 0) {
+    return `LRN:${normalizedLrn}`;
+  }
+
+  return `NAME:${String(lastName).trim().toUpperCase()}|${String(firstName)
+    .trim()
+    .toUpperCase()}`;
+}
+
 function formatScore(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) return "—";
-  return Number.isInteger(value) ? String(value) : value.toFixed(2);
+  return value.toFixed(4);
 }
 
 function formatWeight(weight: number, useFractionalWeights: boolean): string {
@@ -90,7 +111,7 @@ function normalizeKey(value: string): string {
 
 function normalizeScore(value: number | null | undefined): number | null {
   if (value == null || !Number.isFinite(value)) return null;
-  return Number(value.toFixed(2));
+  return Number(value.toFixed(4));
 }
 
 function resolveRawScoreFromBreakdown(
@@ -113,12 +134,13 @@ function resolveRawScoreFromBreakdown(
     return null;
   }
 
-  return Number((weightedValue / normalizedWeight).toFixed(2));
+  return Number((weightedValue / normalizedWeight).toFixed(4));
 }
 
 export function ScpSelectionBoard({
   scpType,
   rankings,
+  passedApplicants = [],
   loading,
   cutoffSlot = 70,
   onPublishSuccess,
@@ -184,9 +206,62 @@ export function ScpSelectionBoard({
     [rankingComponents, useFractionalWeights],
   );
 
+  const mergedCandidates = useMemo<BoardCandidate[]>(() => {
+    const candidateByIdentity = new Map<string, BoardCandidate>();
+
+    for (const ranking of rankings) {
+      const identityKey = buildLearnerIdentityKey(
+        ranking.firstName,
+        ranking.lastName,
+        ranking.lrn,
+      );
+
+      candidateByIdentity.set(identityKey, {
+        ...ranking,
+        breakdown: ranking.breakdown ?? {},
+        examScoreOverride: null,
+        interviewScoreOverride: null,
+      });
+    }
+
+    for (const passed of passedApplicants) {
+      const identityKey = buildLearnerIdentityKey(
+        passed.firstName,
+        passed.lastName,
+        passed.lrn,
+      );
+      const existing = candidateByIdentity.get(identityKey);
+      if (!existing) {
+        candidateByIdentity.set(identityKey, {
+          applicationId: passed.applicationId,
+          firstName: passed.firstName,
+          lastName: passed.lastName,
+          lrn: passed.lrn,
+          compositeScore: passed.compositeScore,
+          breakdown: {},
+          examScoreOverride: passed.examScore,
+          interviewScoreOverride: passed.interviewScore,
+        });
+        continue;
+      }
+
+      candidateByIdentity.set(identityKey, {
+        ...existing,
+        firstName: existing.firstName || passed.firstName,
+        lastName: existing.lastName || passed.lastName,
+        lrn: existing.lrn ?? passed.lrn,
+        examScoreOverride: existing.examScoreOverride ?? passed.examScore,
+        interviewScoreOverride:
+          existing.interviewScoreOverride ?? passed.interviewScore,
+      });
+    }
+
+    return Array.from(candidateByIdentity.values());
+  }, [rankings, passedApplicants]);
+
   const rankingRows = useMemo<BoardRow[]>(() => {
-    const rows = rankings.map((row) => {
-      const examScore = getRawScoreFromBreakdown(row, [
+    const rows = mergedCandidates.map((row) => {
+      const examScore = row.examScoreOverride ?? getRawScoreFromBreakdown(row, [
         "EXAM",
         "QUALIFYING_EXAMINATION",
         "WRITTEN_EXAM",
@@ -194,12 +269,14 @@ export function ScpSelectionBoard({
         "TALENT_AUDITION",
         "SPORTS_SKILLS_TRYOUT",
       ]);
-      const interviewScore = getRawScoreFromBreakdown(row, [
+      const interviewScore =
+        row.interviewScoreOverride ??
+        getRawScoreFromBreakdown(row, [
         "INTERVIEW",
         "AUDITION",
       ]);
       const adjustment = scoreAdjustments[row.applicationId] ?? 0;
-      const effectiveCompositeScore = Number((row.compositeScore + adjustment).toFixed(2));
+      const effectiveCompositeScore = Number((row.compositeScore + adjustment).toFixed(4));
 
       return {
         ...row,
@@ -242,24 +319,21 @@ export function ScpSelectionBoard({
       return a.applicationId - b.applicationId;
     });
 
-    let lastDisplayedRank = 0;
-    let previousCompositeScore: number | null = null;
-
     return rows.map((row, index) => {
-      const currentCompositeScore = normalizeScore(row.effectiveCompositeScore);
-      if (previousCompositeScore == null || currentCompositeScore !== previousCompositeScore) {
-        lastDisplayedRank = index + 1;
-      }
-      previousCompositeScore = currentCompositeScore;
-
       return {
         ...row,
-        rank: lastDisplayedRank,
+        rank: index + 1,
         qualified: index < cutoffSlot,
         statusLabel: index < cutoffSlot ? "Qualified" : "Waitlisted / BEC Redirect",
       };
     });
-  }, [cutoffSlot, getRawScoreFromBreakdown, manualWinnerId, rankings, scoreAdjustments]);
+  }, [
+    cutoffSlot,
+    getRawScoreFromBreakdown,
+    manualWinnerId,
+    mergedCandidates,
+    scoreAdjustments,
+  ]);
 
   const cutoffWinner = rankingRows[cutoffSlot - 1] ?? null;
   const cutoffWaitlist = rankingRows[cutoffSlot] ?? null;
@@ -275,6 +349,14 @@ export function ScpSelectionBoard({
       [cutoffWinner?.applicationId, cutoffWaitlist?.applicationId].includes(manualWinnerId));
 
   const hasActiveCutoffConflict = hasExactCutoffConflict && !cutoffConflictResolved;
+  const hasInsufficientRankedRows = rankingRows.length < cutoffSlot;
+  const publishBlocked = hasInsufficientRankedRows || hasActiveCutoffConflict || isPublishing;
+
+  const publishGateMessage = hasInsufficientRankedRows
+    ? `At least ${cutoffSlot} ASSESSMENTS PASSED learners are required before publishing. Current ranked learners: ${rankingRows.length}.`
+    : hasActiveCutoffConflict
+      ? `Tie-breaker required at the Rank ${cutoffSlot} cutoff. Resolve the tie overrides to enable publishing.`
+      : null;
 
   const cutoffConflictIds = useMemo(
     () =>
@@ -540,6 +622,13 @@ export function ScpSelectionBoard({
               : "Applicants above the line are in the current selection band; students below it are waitlisted."}
           </p>
         </div>
+
+        {publishGateMessage ? (
+          <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+            <p className="text-xs font-black uppercase text-amber-700">Publish gate</p>
+            <p className="text-sm font-bold text-amber-950">{publishGateMessage}</p>
+          </div>
+        ) : null}
       </CardHeader>
 
       <CardContent className="space-y-0 p-0">
@@ -596,7 +685,7 @@ export function ScpSelectionBoard({
             </div>
             <Button
               className="h-11 px-5 text-sm font-black"
-              disabled={hasActiveCutoffConflict || isPublishing}
+              disabled={publishBlocked}
               onClick={() => setPublishModalOpen(true)}>
               Finalize & Publish Top {cutoffSlot}
             </Button>
@@ -698,7 +787,7 @@ export function ScpSelectionBoard({
         title="Finalize STE Top 70"
         description={
           <span>
-            This action will lock the STE roster. Ranks 1-70 will be pushed to the BOSY Priority Lane. Ranks 71+ will be routed to the Regular BEC track.
+            This action will lock the STE roster. Ranks 1-70 will be pushed to the BOSY Priority Lane, and ranks 71+ will be routed to the Regular BEC track. After publish, both lanes become READY FOR ENROLLMENT.
           </span>
         }
         confirmText="Finalize & Publish"

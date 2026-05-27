@@ -170,12 +170,12 @@ export const REGISTRATION_BATCH_ACTIONS_BY_STATUS: Record<
   INTERVIEW_SCHEDULED: {
     id: "FINALIZE_PHASE_ONE",
     triggerStatus: "INTERVIEW_SCHEDULED",
-    targetStatus: "READY_FOR_ENROLLMENT",
+    targetStatus: "PASSED",
     buttonLabel: "Batch Faculty Interview Result",
     modalTitle: "Batch Interview Finalization",
     modalDescription:
       "Finalize post-interview outcomes for selected applicants.",
-    submitLabel: "Finalize Phase 1 Results",
+    submitLabel: "Save Interview Results",
   },
   FAILED_ASSESSMENT: {
     id: "ENDORSE_REGULAR_TRACK",

@@ -5,8 +5,9 @@
  * sectioning algorithm test (SY 2026-2027).
  *
  *   BEC (REGULAR) sections  -> 44 learners each (leaves 1 demo slot, capped at section maxCapacity)
- *   STE sections             -> 69 learners each (leaves 1 demo slot, capped at section maxCapacity)
- *   SCP sections             -> 70 learners each (capped at section maxCapacity)
+ *   STE sections             -> SKIPPED (seeded via seed-ste-top70-incoming-demo + ready via
+ *                              seed-scp-ready-for-sectioning instead)
+ *   SPA / SPS sections       -> 70 learners each (capped at section maxCapacity)
  *
  * Every learner includes:
  *   - Full demographics (name, sex, birthdate, religion, mother tongue, etc.)
@@ -137,8 +138,10 @@ function getGenAve(isSCP: boolean, seq: number): number {
 
 function getSectionSeedTarget(programType: ApplicantType): number {
   if (programType === "REGULAR") return 44;
-  if (programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") return 69;
-  return 70;
+  // STE is seeded separately via seed-ste-top70-incoming-demo +
+  // promoted to READY_FOR_SECTIONING by seed-scp-ready-for-sectioning
+  if (programType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING") return 0;
+  return 70; // SPA / SPS
 }
 
 function getProgramPrefix(pt: ApplicantType): string {
@@ -488,10 +491,19 @@ async function main(): Promise<void> {
   for (let i = 0; i < sections.length; i++) {
     const section = sections[i];
     const sIdx = i + 1;
-    const isSCP = section.programType !== ("REGULAR" as ApplicantType);
+    const prefix = getProgramPrefix(section.programType);
+
+    // STE sections are handled by seed-ste-top70-incoming-demo
+    if (section.programType === ("SCIENCE_TECHNOLOGY_AND_ENGINEERING" as ApplicantType)) {
+      console.log(
+        `Section [${sIdx}/${sections.length}] "${section.name}" ` +
+        `(${prefix} | cap: ${section.maxCapacity}) -> SKIPPED (use seed-ste-top70-incoming-demo)`,
+      );
+      continue;
+    }
+
     const target = getSectionSeedTarget(section.programType as ApplicantType);
     const actualTarget = Math.min(target, section.maxCapacity);
-    const prefix = getProgramPrefix(section.programType);
 
     console.log(
       `Section [${sIdx}/${sections.length}] "${section.name}" ` +

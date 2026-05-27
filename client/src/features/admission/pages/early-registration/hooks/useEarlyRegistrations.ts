@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import api from "@/shared/api/axiosInstance";
 import { toastApiError } from "@/shared/hooks/useApiToast";
 import { useDebouncedSearch } from "@/shared/hooks/useDebouncedSearch";
@@ -30,6 +30,13 @@ export interface Application {
   gradeLevelId: number;
   gradeLevel: { name: string };
   createdAt: string;
+}
+
+interface UseEarlyRegistrationsParams {
+  schoolYearId: number | null;
+  initialStatus?: string;
+  allowedStatusesInAllMode?: string[];
+  statusSelectionOverrides?: Record<string, string[]>;
 }
 
 interface EarlyRegistrationApiRow {
@@ -85,10 +92,9 @@ function normalizeLrnValue(value: string | undefined): string {
 export function useEarlyRegistrations({
   schoolYearId,
   initialStatus = "ALL",
-}: {
-  schoolYearId: number | null;
-  initialStatus?: string;
-}) {
+  allowedStatusesInAllMode,
+  statusSelectionOverrides,
+}: UseEarlyRegistrationsParams) {
   const [applications, setApplications] = useState<Application[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -104,6 +110,10 @@ export function useEarlyRegistrations({
   const [limit, setLimit] = useState(50);
 
   const ayId = schoolYearId;
+  const allowedStatusesInAllModeSet = useMemo(
+    () => new Set(allowedStatusesInAllMode ?? []),
+    [allowedStatusesInAllMode],
+  );
 
   const buildBaseCountParams = useCallback(() => {
     const params = new URLSearchParams();
@@ -140,32 +150,94 @@ export function useEarlyRegistrations({
         );
         return {
           key: stage.value,
+          status: stage.value,
           total: Number(response?.data?.pagination?.total ?? 0),
         };
       });
 
+      const additionalStatusesForCounts = Array.from(
+        allowedStatusesInAllModeSet,
+      ).filter(
+        (statusValue) =>
+          statusValue !== "WITHOUT_LRN" &&
+          !REGISTRATION_STAGE_QUICK_FILTERS.some(
+            (stage) => stage.value === statusValue,
+          ),
+      );
+
+      const additionalCountPromises = additionalStatusesForCounts.map(
+        async (statusValue) => {
+          const params = new URLSearchParams(baseParams.toString());
+          params.append("status", statusValue);
+
+          const response = await api.get(
+            `/early-registrations?${params.toString()}`,
+          );
+
+          return {
+            key: statusValue,
+            status: statusValue,
+            total: Number(response?.data?.pagination?.total ?? 0),
+          };
+        },
+      );
+
       const [allResponse, ...stageResponses] = await Promise.all([
         api.get(`/early-registrations?${baseParams.toString()}`),
         ...stageCountPromises,
+        ...additionalCountPromises,
       ]);
 
       const nextCounts = createEmptyStageCounts();
+      const countsByStatus: Record<string, number> = {};
       for (const entry of stageResponses) {
-        nextCounts[entry.key] = entry.total;
+        countsByStatus[entry.status] = entry.total;
+
+        if (entry.key in nextCounts) {
+          nextCounts[entry.key] = entry.total;
+        }
+      }
+
+      if (statusSelectionOverrides) {
+        for (const [stageValue, mappedStatuses] of Object.entries(
+          statusSelectionOverrides,
+        )) {
+          if (!(stageValue in nextCounts) || mappedStatuses.length === 0) {
+            continue;
+          }
+
+          nextCounts[stageValue] = mappedStatuses.reduce(
+            (sum, mappedStatus) => sum + (countsByStatus[mappedStatus] ?? 0),
+            0,
+          );
+        }
       }
 
       const allTotal = Number(allResponse?.data?.pagination?.total ?? 0);
-      const excludedTotal = PHASE_TWO_MONITORING_EXCLUDED_STATUSES.reduce(
-        (sum, excludedStatus) => sum + (nextCounts[excludedStatus] ?? 0),
-        0,
-      );
-      nextCounts.ALL = Math.max(0, allTotal - excludedTotal);
+
+      if (allowedStatusesInAllModeSet.size > 0) {
+        nextCounts.ALL = Array.from(allowedStatusesInAllModeSet).reduce(
+          (sum, allowedStatus) => sum + (countsByStatus[allowedStatus] ?? 0),
+          0,
+        );
+      } else {
+        const excludedTotal = PHASE_TWO_MONITORING_EXCLUDED_STATUSES.reduce(
+          (sum, excludedStatus) => sum + (nextCounts[excludedStatus] ?? 0),
+          0,
+        );
+        nextCounts.ALL = Math.max(0, allTotal - excludedTotal);
+      }
 
       setStageCounts(nextCounts);
     } catch (err) {
       toastApiError(err as never);
     }
-  }, [ayId, buildBaseCountParams]);
+  }, [
+    ayId,
+    buildBaseCountParams,
+    allowedStatusesInAllModeSet,
+    statusSelectionOverrides,
+  ]);
 
   const fetchData = useCallback(async () => {
     if (!ayId) {
@@ -178,11 +250,13 @@ export function useEarlyRegistrations({
       params.append("schoolYearId", String(ayId));
       if (activeSearch) params.append("search", activeSearch);
 
-      const normalizedStatus = PHASE_TWO_MONITORING_EXCLUDED_STATUS_SET.has(
-        status,
-      )
-        ? "ALL"
-        : status;
+      const statusOverrideForSelection = statusSelectionOverrides?.[status] ?? [];
+      const hasStatusOverride = statusOverrideForSelection.length > 0;
+
+      const normalizedStatus =
+        PHASE_TWO_MONITORING_EXCLUDED_STATUS_SET.has(status) || hasStatusOverride
+          ? "ALL"
+          : status;
 
       if (normalizedStatus === "WITHOUT_LRN") {
         params.append("withoutLrn", "true");
@@ -198,8 +272,15 @@ export function useEarlyRegistrations({
         `/early-registrations?${params.toString()}`,
       );
 
-      const excludedCountPromises =
+      const scopedStatusesForAllMode =
         normalizedStatus === "ALL"
+          ? hasStatusOverride
+            ? statusOverrideForSelection
+            : Array.from(allowedStatusesInAllModeSet)
+          : [];
+
+      const excludedCountPromises =
+        normalizedStatus === "ALL" && scopedStatusesForAllMode.length === 0
           ? PHASE_TWO_MONITORING_EXCLUDED_STATUSES.map((excludedStatus) => {
               const excludedParams = new URLSearchParams();
               excludedParams.append("schoolYearId", String(ayId));
@@ -215,10 +296,31 @@ export function useEarlyRegistrations({
             })
           : [];
 
-      const [res, ...excludedResponses] = await Promise.all([
+      const scopedCountPromises =
+        normalizedStatus === "ALL" && scopedStatusesForAllMode.length > 0
+          ? scopedStatusesForAllMode.map((scopedStatus) => {
+              const scopedParams = new URLSearchParams();
+              scopedParams.append("schoolYearId", String(ayId));
+              if (activeSearch) scopedParams.append("search", activeSearch);
+              if (type !== "ALL") scopedParams.append("applicantType", type);
+              scopedParams.append("status", scopedStatus);
+              scopedParams.append("page", "1");
+              scopedParams.append("limit", "1");
+
+              return api.get(
+                `/early-registrations?${scopedParams.toString()}`,
+              );
+            })
+          : [];
+
+      const [res, ...countResponses] = await Promise.all([
         allStatusPromise,
         ...excludedCountPromises,
+        ...scopedCountPromises,
       ]);
+
+      const excludedResponses = countResponses.slice(0, excludedCountPromises.length);
+      const scopedCountResponses = countResponses.slice(excludedCountPromises.length);
 
       let filteredApps = (res.data.data as EarlyRegistrationApiRow[]).map(
         (app): Application => {
@@ -245,22 +347,38 @@ export function useEarlyRegistrations({
         (app) => !PHASE_TWO_MONITORING_EXCLUDED_STATUS_SET.has(app.status),
       );
 
-      const excludedTotals =
-        normalizedStatus === "ALL"
-          ? excludedResponses.reduce(
+      if (normalizedStatus === "ALL") {
+        if (hasStatusOverride) {
+          const overrideSet = new Set(statusOverrideForSelection);
+          filteredApps = filteredApps.filter((app) => overrideSet.has(app.status));
+        } else if (allowedStatusesInAllModeSet.size > 0) {
+          filteredApps = filteredApps.filter((app) =>
+            allowedStatusesInAllModeSet.has(app.status),
+          );
+        }
+      }
+
+      const computedAllModeTotal =
+        scopedStatusesForAllMode.length > 0
+          ? scopedCountResponses.reduce(
               (sum, response) =>
                 sum + Number(response?.data?.pagination?.total ?? 0),
               0,
             )
-          : 0;
+          : Math.max(
+              0,
+              Number(res.data?.pagination?.total ?? 0) -
+                excludedResponses.reduce(
+                  (sum, response) =>
+                    sum + Number(response?.data?.pagination?.total ?? 0),
+                  0,
+                ),
+            );
 
       setApplications(filteredApps);
       setTotal(
         normalizedStatus === "ALL"
-          ? Math.max(
-              0,
-              Number(res.data?.pagination?.total ?? 0) - excludedTotals,
-            )
+          ? computedAllModeTotal
           : Number(res.data?.pagination?.total ?? 0),
       );
     } catch (err) {
@@ -268,7 +386,15 @@ export function useEarlyRegistrations({
     } finally {
       setLoading(false);
     }
-  }, [ayId, activeSearch, status, type, page]);
+  }, [
+    ayId,
+    activeSearch,
+    status,
+    type,
+    page,
+    allowedStatusesInAllModeSet,
+    statusSelectionOverrides,
+  ]);
 
   useEffect(() => {
     fetchData();

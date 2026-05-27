@@ -49,6 +49,7 @@ import {
   type EarlyRegistrationApiRow,
   type FinalizeInterviewRowState,
   type PipelineBatchViewProps,
+  type PassedApplicantForBoard,
   type RankingFormulaComponent,
   type ScpRankingResult,
   type RegularSectionBatchPreview,
@@ -58,6 +59,22 @@ import {
   type VerifyGridApplicant,
   type VerifyGridColumn,
 } from "./pipeline-batch/types";
+
+const ENROLLMENT_BRIDGE_STATUS = "READY_FOR_ENROLLMENT";
+
+const PIPELINE_EXCLUDED_STATUSES = [
+  ...ACTIVE_REGISTRATION_EXCLUDED_STATUSES,
+  ENROLLMENT_BRIDGE_STATUS,
+] as const;
+
+const createEmptyStageCounts = () =>
+  REGISTRATION_STAGE_QUICK_FILTERS.reduce<Record<string, number>>(
+    (acc, stage) => {
+      acc[stage.value] = 0;
+      return acc;
+    },
+    {},
+  );
 
 export default function PipelineBatchView({
   applicantType,
@@ -84,17 +101,12 @@ export default function PipelineBatchView({
 
   const showAssessment = hasAssessment && status === "EXAM_SCHEDULED";
   const DEFAULT_SCHEDULE_TIME = "08:00 AM";
-  const ENROLLMENT_BRIDGE_STATUS = "READY_FOR_ENROLLMENT";
-
-  // Extend shared excluded statuses with READY_FOR_ENROLLMENT so pipeline
-  // view hides applicants that have already moved to the enrollment queue.
-  const PIPELINE_EXCLUDED_STATUSES = [
-    ...ACTIVE_REGISTRATION_EXCLUDED_STATUSES,
-    ENROLLMENT_BRIDGE_STATUS,
-  ] as const;
 
   // Selection
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [stageCounts, setStageCounts] = useState<Record<string, number>>(() =>
+    createEmptyStageCounts(),
+  );
 
   // Batch processing
   const [isBatchProcessing, setIsBatchProcessing] = useState(false);
@@ -156,6 +168,11 @@ export default function PipelineBatchView({
   >({});
   const [scpRankings, setScpRankings] = useState<ScpRankingResult[]>([]);
   const [scpRankingsLoading, setScpRankingsLoading] = useState(false);
+  const [selectionBoardPassedBase, setSelectionBoardPassedBase] = useState<
+    Application[]
+  >([]);
+  const [selectionBoardPassedLoading, setSelectionBoardPassedLoading] =
+    useState(false);
   const [scpAssessmentCutoffScore, setScpAssessmentCutoffScore] = useState<
     number | null
   >(cutoffScore ?? null);
@@ -192,6 +209,115 @@ export default function PipelineBatchView({
       setScpRankingsLoading(false);
     }
   }, [applicantType, ayId]);
+
+  const refreshSelectionBoardPassedBase = useCallback(async () => {
+    if (!ayId || applicantType === "REGULAR" || applicantType === "ALL") {
+      setSelectionBoardPassedBase([]);
+      return;
+    }
+
+    setSelectionBoardPassedLoading(true);
+    try {
+      const limitPerPage = 500;
+      let pageCursor = 1;
+      let totalExpected = Number.POSITIVE_INFINITY;
+      const collected: Application[] = [];
+
+      while (collected.length < totalExpected) {
+        const params = new URLSearchParams();
+        params.append("schoolYearId", String(ayId));
+        params.append("applicantType", applicantType);
+        params.append("status", "PASSED");
+        params.append("page", String(pageCursor));
+        params.append("limit", String(limitPerPage));
+
+        const res = await api.get(`/early-registrations?${params.toString()}`);
+        const rows = (res.data?.data ?? []) as EarlyRegistrationApiRow[];
+
+        collected.push(
+          ...rows.map((app) => ({
+            ...app,
+            firstName: app.learner?.firstName || app.firstName,
+            lastName: app.learner?.lastName || app.lastName,
+            middleName: app.learner?.middleName || app.middleName,
+            suffix: app.learner?.extensionName || app.suffix,
+            lrn: app.learner?.lrn || app.lrn,
+          })),
+        );
+
+        totalExpected = Number(res.data?.pagination?.total ?? collected.length);
+        if (rows.length === 0) break;
+        pageCursor += 1;
+      }
+
+      setSelectionBoardPassedBase(collected);
+    } catch (err) {
+      setSelectionBoardPassedBase([]);
+      toastApiError(err as never);
+    } finally {
+      setSelectionBoardPassedLoading(false);
+    }
+  }, [applicantType, ayId]);
+
+  const fetchStageCounts = useCallback(async () => {
+    if (!ayId) {
+      setStageCounts(createEmptyStageCounts());
+      return;
+    }
+
+    try {
+      const baseParams = new URLSearchParams();
+      baseParams.append("schoolYearId", String(ayId));
+      if (activeSearch) baseParams.append("search", activeSearch);
+      if (applicantType !== "ALL") {
+        baseParams.append("applicantType", applicantType);
+      }
+      baseParams.append("page", "1");
+      baseParams.append("limit", "1");
+
+      const stageCountPromises = REGISTRATION_STAGE_QUICK_FILTERS.filter(
+        (stage) => stage.value !== "ALL",
+      ).map(async (stage) => {
+        const params = new URLSearchParams(baseParams.toString());
+
+        if (stage.value === "WITHOUT_LRN") {
+          params.append("withoutLrn", "true");
+        } else {
+          params.append("status", stage.value);
+        }
+
+        const response = await api.get(
+          `/early-registrations?${params.toString()}`,
+        );
+
+        return {
+          key: stage.value,
+          total: Number(response?.data?.pagination?.total ?? 0),
+        };
+      });
+
+      const [allResponse, ...stageResponses] = await Promise.all([
+        api.get(`/early-registrations?${baseParams.toString()}`),
+        ...stageCountPromises,
+      ]);
+
+      const nextCounts = createEmptyStageCounts();
+      for (const entry of stageResponses) {
+        nextCounts[entry.key] = entry.total;
+      }
+
+      const allTotal = Number(allResponse?.data?.pagination?.total ?? 0);
+      const excludedTotal = PIPELINE_EXCLUDED_STATUSES.reduce(
+        (sum, excludedStatus) => sum + (nextCounts[excludedStatus] ?? 0),
+        0,
+      );
+      nextCounts.ALL = Math.max(0, allTotal - excludedTotal);
+
+      setStageCounts(nextCounts);
+    } catch (err) {
+      toastApiError(err as never);
+    }
+  }, [activeSearch, applicantType, ayId]);
 
   const fetchData = useCallback(async () => {
     if (!ayId) {
@@ -277,9 +403,13 @@ export default function PipelineBatchView({
       );
 
       if (applicantType !== "REGULAR") {
-        await refreshScpRankings();
+        await Promise.all([
+          refreshScpRankings(),
+          refreshSelectionBoardPassedBase(),
+        ]);
       } else {
         setScpRankings([]);
+        setSelectionBoardPassedBase([]);
       }
     } catch (err) {
       toastApiError(err as never);
@@ -293,11 +423,16 @@ export default function PipelineBatchView({
     applicantType,
     page,
     refreshScpRankings,
+    refreshSelectionBoardPassedBase,
   ]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    fetchStageCounts();
+  }, [fetchStageCounts]);
 
   // Reset selection when filters change
   useEffect(() => {
@@ -308,6 +443,114 @@ export default function PipelineBatchView({
     () => applications.filter((app) => selectedIds.has(app.id)),
     [applications, selectedIds],
   );
+
+  const isInterviewLikeAssessment = useCallback((type: string | null | undefined) => {
+    const normalizedType = String(type ?? "").trim().toUpperCase();
+    return normalizedType === "INTERVIEW" || normalizedType === "AUDITION";
+  }, []);
+
+  const hasAssessmentsPassedTerminalState = useCallback(
+    (app: Application) => {
+      const passedKinds = new Set(
+        (app.assessments ?? [])
+          .filter((assessment) => String(assessment.result ?? "").trim().toUpperCase() === "PASSED")
+          .map((assessment) => String(assessment.type ?? "").trim().toUpperCase()),
+      );
+
+      const examPassed = Array.from(passedKinds).some(
+        (kind) => !isInterviewLikeAssessment(kind),
+      );
+      const interviewPassed = Array.from(passedKinds).some((kind) =>
+        isInterviewLikeAssessment(kind),
+      );
+
+      return examPassed && interviewPassed;
+    },
+    [isInterviewLikeAssessment],
+  );
+
+  const lockedApplicantIdSet = useMemo(() => {
+    return new Set(
+      applications
+        .filter(
+          (application) =>
+            application.status === ENROLLMENT_BRIDGE_STATUS ||
+            hasAssessmentsPassedTerminalState(application),
+        )
+        .map((application) => application.id),
+    );
+  }, [applications, hasAssessmentsPassedTerminalState]);
+
+  const rankingByApplicationId = useMemo(
+    () =>
+      scpRankings.reduce<Record<number, ScpRankingResult>>((acc, ranking) => {
+        acc[ranking.applicationId] = ranking;
+        return acc;
+      }, {}),
+    [scpRankings],
+  );
+
+  const getAssessmentScoreForBoard = useCallback(
+    (app: Application, kind: "EXAM" | "INTERVIEW"): number | null => {
+      if (kind === "EXAM") {
+        if (app.examScore != null && Number.isFinite(app.examScore)) {
+          return app.examScore;
+        }
+
+        const fallbackExam = app.assessments.find(
+          (assessment) => !isInterviewLikeAssessment(assessment.type),
+        )?.score;
+
+        return fallbackExam != null && Number.isFinite(fallbackExam)
+          ? fallbackExam
+          : null;
+      }
+
+      if (app.interviewScore != null && Number.isFinite(app.interviewScore)) {
+        return app.interviewScore;
+      }
+
+      const fallbackInterview = app.assessments.find((assessment) =>
+        isInterviewLikeAssessment(assessment.type),
+      )?.score;
+
+      return fallbackInterview != null && Number.isFinite(fallbackInterview)
+        ? fallbackInterview
+        : null;
+    },
+    [isInterviewLikeAssessment],
+  );
+
+  const passedApplicantsForBoard = useMemo<PassedApplicantForBoard[]>(() => {
+    return selectionBoardPassedBase
+      .filter((app) => app.status === "PASSED")
+      .map((app) => {
+        const examScore = getAssessmentScoreForBoard(app, "EXAM");
+        const interviewScore = getAssessmentScoreForBoard(app, "INTERVIEW");
+        const fallbackComposite =
+          (examScore ?? 0) * 0.6 +
+          (interviewScore ?? 0) * 0.2 +
+          (app.generalAverage ?? 0) * 0.2;
+        const rankedComposite = rankingByApplicationId[app.id]?.compositeScore;
+
+        return {
+          applicationId: app.id,
+          firstName: app.firstName,
+          lastName: app.lastName,
+          lrn: app.lrn ?? null,
+          examScore,
+          interviewScore,
+          compositeScore:
+            rankedComposite != null && Number.isFinite(rankedComposite)
+              ? rankedComposite
+              : Number(fallbackComposite.toFixed(4)),
+        };
+      });
+  }, [
+    selectionBoardPassedBase,
+    getAssessmentScoreForBoard,
+    rankingByApplicationId,
+  ]);
 
   const selectedApplicationsById = useMemo(
     () =>
@@ -351,18 +594,6 @@ export default function PipelineBatchView({
 
   const isSteSelectionBoard =
     applicantType === "SCIENCE_TECHNOLOGY_AND_ENGINEERING";
-
-  if (isSteSelectionBoard) {
-    return (
-      <ScpSelectionBoard
-        scpType={applicantType}
-        rankings={scpRankings}
-        loading={loading || scpRankingsLoading}
-        cutoffSlot={70}
-        onPublishSuccess={refreshScpRankings}
-      />
-    );
-  }
 
   const hasMixedSelectedStatuses = selectedStatuses.length > 1;
   const hasMixedSelectedPrograms = selectedPrograms.length > 1;
@@ -1636,10 +1867,10 @@ export default function PipelineBatchView({
     () =>
       applications
         .filter(
-          (application) => application.status !== ENROLLMENT_BRIDGE_STATUS,
+          (application) => !lockedApplicantIdSet.has(application.id),
         )
         .map((application) => application.id),
-    [applications],
+    [applications, lockedApplicantIdSet],
   );
 
   const selectableApplicationIdSet = useMemo(
@@ -2137,7 +2368,7 @@ export default function PipelineBatchView({
           nextStatus =
             interviewRow?.decision === "REJECT"
               ? (interviewRow.rejectOutcome ?? "SUBMITTED_BEERF")
-              : "READY_FOR_ENROLLMENT";
+              : "PASSED";
         } else if (activeBatchAction.targetStatus) {
           nextStatus = activeBatchAction.targetStatus;
         }
@@ -2394,16 +2625,6 @@ export default function PipelineBatchView({
   const allSelected =
     selectableApplicationIds.length > 0 &&
     selectableApplicationIds.every((id) => selectedIds.has(id));
-
-  const stageCounts = REGISTRATION_STAGE_QUICK_FILTERS.reduce<
-    Record<string, number>
-  >((acc, stage) => {
-    acc[stage.value] =
-      stage.value === "ALL"
-        ? applications.length
-        : applications.filter((app) => app.status === stage.value).length;
-    return acc;
-  }, {});
 
   const visibleStageFilters = useMemo(
     () =>
@@ -2990,6 +3211,7 @@ export default function PipelineBatchView({
             isSearching={isSearching}
             screeningMode={applicantType !== "REGULAR"}
             rankings={scpRankings}
+            lockedApplicantIds={lockedApplicantIdSet}
             showAssessment={showAssessment}
             selectedIds={selectedIds}
             isBatchProcessing={isBatchProcessing}
@@ -3010,6 +3232,24 @@ export default function PipelineBatchView({
             onDowngradeToBeef={handleDowngradeToBeef}
             downgradingId={downgradingId}
           />
+
+          {isSteSelectionBoard && (
+            <div className="mt-4">
+              <ScpSelectionBoard
+                scpType={applicantType}
+                rankings={scpRankings}
+                passedApplicants={passedApplicantsForBoard}
+                loading={
+                  loading || scpRankingsLoading || selectionBoardPassedLoading
+                }
+                cutoffSlot={70}
+                onPublishSuccess={async () => {
+                  await fetchData();
+                  await fetchStageCounts();
+                }}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -60,9 +60,13 @@
     "db:seed-discrepancy": "tsx prisma/seeds/01-global/seed-discrepancy.ts",
     "db:seed-trim-excess": "tsx prisma/seeds/01-global/seed-trim-excess.ts",
     "db:seed-demo-g7": "tsx prisma/seeds/maintenance/seed-demo-g7-learners.ts",
+    "db:seed-ste-top70-incoming-demo": "tsx prisma/seeds/maintenance/seed-ste-top70-incoming-demo.ts",
     "db:wipe-demo-g7": "tsx prisma/seeds/maintenance/wipe-demo-g7-learners.ts",
+    "db:wipe-ste-top70-incoming-demo": "tsx prisma/seeds/maintenance/wipe-ste-top70-incoming-demo.ts",
     "db:wipe-incoming-non-pending-confirmation": "tsx prisma/seeds/wipe/wipe-incoming-non-pending-confirmation.ts",
-    "db:seed-g7-batch-sectioning": "tsx prisma/seeds/04-sy-2026-2027/seed-g7-incoming-batch-sectioning.ts"
+    "db:seed-g7-batch-sectioning": "tsx prisma/seeds/04-sy-2026-2027/seed-g7-incoming-batch-sectioning.ts",
+    "db:seed-scp-ready-for-sectioning": "tsx prisma/seeds/maintenance/seed-scp-ready-for-sectioning.ts",
+    "db:wipe-scp-ready-for-sectioning": "tsx prisma/seeds/maintenance/wipe-scp-ready-for-sectioning.ts"
   },
   "dependencies": {
     "@enrollpro/shared": "workspace:*",

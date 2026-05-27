@@ -330,6 +330,7 @@ export function createEarlyRegistrationSharedService(
       result: string | null;
       notes: string | null;
       conductedAt: string | null;
+      createdAt?: string | null;
     }>;
 
     const scpDetail = application.programDetail ?? null;
@@ -413,8 +414,45 @@ export function createEarlyRegistrationSharedService(
       };
     });
 
-    const primary = assessments[0] ?? null;
-    const interview = assessments.find((a) => a.type === "INTERVIEW") ?? null;
+    const toSortableTimestamp = (
+      value: string | null | undefined,
+      fallback: number,
+    ): number => {
+      if (!value) return fallback;
+      const parsed = Date.parse(value);
+      return Number.isNaN(parsed) ? fallback : parsed;
+    };
+
+    const sortedAssessments = [...assessments].sort((a, b) => {
+      const left = toSortableTimestamp(
+        a.conductedAt ?? a.scheduledDate ?? a.createdAt,
+        a.id,
+      );
+      const right = toSortableTimestamp(
+        b.conductedAt ?? b.scheduledDate ?? b.createdAt,
+        b.id,
+      );
+
+      if (left !== right) return right - left;
+      return b.id - a.id;
+    });
+
+    const isInterviewLikeAssessment = (type: string | null | undefined) => {
+      const normalizedType = String(type ?? "")
+        .trim()
+        .toUpperCase();
+
+      return normalizedType === "INTERVIEW" || normalizedType === "AUDITION";
+    };
+
+    const examAssessment =
+      sortedAssessments.find(
+        (assessment) => !isInterviewLikeAssessment(assessment.type),
+      ) ?? null;
+    const interviewAssessment =
+      sortedAssessments.find((assessment) =>
+        isInterviewLikeAssessment(assessment.type),
+      ) ?? null;
 
     const programType = deriveProgramType(application.applicantType);
     const trackingStatus = normalizeTrackingStatus(application.status);
@@ -626,15 +664,16 @@ export function createEarlyRegistrationSharedService(
       foreignLanguage: scpDetail?.foreignLanguage ?? null,
       sportsList: scpDetail?.sportsList ?? [],
       assessmentSteps: steps,
-      assessmentType: primary?.type ?? null,
-      examDate: primary?.scheduledDate ?? null,
-      examVenue: primary?.venue ?? null,
-      examScore: primary?.score ?? null,
-      examResult: primary?.result ?? null,
-      examNotes: primary?.notes ?? null,
-      interviewDate: interview?.scheduledDate ?? null,
-      interviewResult: interview?.result ?? null,
-      interviewNotes: interview?.notes ?? null,
+      assessmentType: examAssessment?.type ?? null,
+      examDate: examAssessment?.scheduledDate ?? null,
+      examVenue: examAssessment?.venue ?? null,
+      examScore: examAssessment?.score ?? null,
+      examResult: examAssessment?.result ?? null,
+      examNotes: examAssessment?.notes ?? null,
+      interviewDate: interviewAssessment?.scheduledDate ?? null,
+      interviewScore: interviewAssessment?.score ?? null,
+      interviewResult: interviewAssessment?.result ?? null,
+      interviewNotes: interviewAssessment?.notes ?? null,
     };
   }
 

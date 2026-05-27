@@ -10,6 +10,27 @@ interface RankingFormulaComponent {
   weight: number;
 }
 
+const DEFAULT_RANKING_WEIGHTS: Record<string, number> = {
+  QUALIFYING_EXAMINATION: 0.6,
+  INTERVIEW: 0.2,
+  GRADE_AVERAGE: 0.2,
+};
+
+const LEGACY_RANKING_KEY_MAP: Record<string, string> = {
+  QUALIFYINGEXAM: "QUALIFYING_EXAMINATION",
+  QUALIFYINGEXAMINATION: "QUALIFYING_EXAMINATION",
+  EXAM: "QUALIFYING_EXAMINATION",
+  INTERVIEW: "INTERVIEW",
+  PREVIOUSGENAVE: "GRADE_AVERAGE",
+  GENERALAVERAGE: "GRADE_AVERAGE",
+  GRADEAVERAGE: "GRADE_AVERAGE",
+};
+
+function normalizeFormulaKey(key: string): string {
+  const compactKey = key.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return LEGACY_RANKING_KEY_MAP[compactKey] ?? key.trim().toUpperCase();
+}
+
 export interface RankingResult {
   applicationId: number;
   firstName: string;
@@ -33,12 +54,23 @@ function resolveFormulaWeights(
   if (legacyWeights && typeof legacyWeights === "object" && !Array.isArray(legacyWeights)) {
     const parsed = Object.fromEntries(
       Object.entries(legacyWeights as Record<string, unknown>)
-        .map(([key, value]) => [key.trim().toUpperCase(), Number(value)] as const)
+        .map(([key, value]) => [normalizeFormulaKey(key), Number(value)] as const)
         .filter(([, value]) => Number.isFinite(value) && value > 0),
     );
     if (Object.keys(parsed).length > 0) {
       return parsed;
     }
+  }
+
+  const parsedFromFlatRecord = Object.fromEntries(
+    Object.entries(formulaRecord)
+      .filter(([key]) => key !== "components" && key !== "weights" && key !== "maxSlots")
+      .map(([key, value]) => [normalizeFormulaKey(key), Number(value)] as const)
+      .filter(([, value]) => Number.isFinite(value) && value > 0),
+  );
+
+  if (Object.keys(parsedFromFlatRecord).length > 0) {
+    return parsedFromFlatRecord;
   }
 
   // Current shape: { components: [{ key, weight, label? }, ...] }.
@@ -54,7 +86,7 @@ function resolveFormulaWeights(
     }
 
     const row = component as Record<string, unknown>;
-    const key = String(row.key ?? "").trim().toUpperCase();
+    const key = normalizeFormulaKey(String(row.key ?? ""));
     const weight = Number(row.weight ?? NaN);
 
     if (!key || !Number.isFinite(weight) || weight <= 0) {
@@ -140,7 +172,7 @@ export async function computeRanking(
     }
   }
 
-  return { compositeScore: Math.round(compositeScore * 100) / 100, breakdown };
+  return { compositeScore: Math.round(compositeScore * 10000) / 10000, breakdown };
 }
 
 /**
@@ -156,34 +188,34 @@ export async function getSCPRankings(
     select: { rankingFormula: true },
   });
 
-  if (!scpConfig?.rankingFormula) {
-    return [];
-  }
-
-  const formulaWeights = resolveFormulaWeights(scpConfig.rankingFormula);
+  const formulaWeights = scpConfig?.rankingFormula
+    ? resolveFormulaWeights(scpConfig.rankingFormula)
+    : { ...DEFAULT_RANKING_WEIGHTS };
 
   if (Object.keys(formulaWeights).length === 0) {
-    return [];
+    Object.assign(formulaWeights, DEFAULT_RANKING_WEIGHTS);
   }
 
-  // Fetch applications with completed assessments or later status
+  // Selection Board should include PASSED learners, even when only one status surface
+  // has been updated (legacy early-registration + enrollment synchronization lag).
   const applications = await prisma.enrollmentApplication.findMany({
     where: {
       schoolYearId,
-      applicantType: scpType,
-      status: {
-        in: [
-          "ASSESSMENT_TAKEN",
-          "PASSED",
-          "ELIGIBLE",
-          "PRE_REGISTERED",
-          "READY_FOR_SECTIONING",
-          "OFFICIALLY_ENROLLED",
-          "READY_FOR_ENROLLMENT",
-          "ENROLLED",
-          "TEMPORARILY_ENROLLED",
-        ],
-      },
+      OR: [
+        {
+          applicantType: scpType,
+          status: "PASSED",
+        },
+        {
+          earlyRegistration: {
+            is: {
+              schoolYearId,
+              applicantType: scpType,
+              status: "PASSED",
+            },
+          },
+        },
+      ],
     },
     include: { learner: true },
   });

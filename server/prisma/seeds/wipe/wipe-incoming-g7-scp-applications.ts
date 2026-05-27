@@ -7,6 +7,7 @@
  * - school year: 2026-2027
  * - grade level: Grade 7
  * - learner type: NEW_ENROLLEE, TRANSFEREE
+ * - status: PENDING_CONFIRMATION, READY_FOR_ENROLLMENT
  * - applicant type (SCP):
  *   - SCIENCE_TECHNOLOGY_AND_ENGINEERING
  *   - SPECIAL_PROGRAM_IN_THE_ARTS
@@ -20,7 +21,12 @@
  */
 
 import "dotenv/config";
-import { PrismaClient, ApplicantType, LearnerType } from "../../../src/generated/prisma/index.js";
+import {
+  PrismaClient,
+  ApplicantType,
+  LearnerType,
+  EnrollmentStatus,
+} from "../../../src/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import * as pg from "pg";
 
@@ -38,6 +44,7 @@ const SCP_APPLICANT_TYPES: ApplicantType[] = [
 ];
 
 const INCOMING_LEARNER_TYPES: LearnerType[] = ["NEW_ENROLLEE", "TRANSFEREE"];
+const TARGET_STATUSES: EnrollmentStatus[] = ["PENDING_CONFIRMATION", "READY_FOR_ENROLLMENT"];
 
 async function main() {
   console.log("Wiping incoming Grade 7 SCP applications for SY 2026-2027...");
@@ -62,12 +69,13 @@ async function main() {
     return;
   }
 
-  const applications = await prisma.enrollmentApplication.findMany({
+  const enrollmentApplications = await prisma.enrollmentApplication.findMany({
     where: {
       schoolYearId: targetYear.id,
       gradeLevelId: grade7.id,
       learnerType: { in: INCOMING_LEARNER_TYPES },
       applicantType: { in: SCP_APPLICANT_TYPES },
+      status: { in: TARGET_STATUSES },
     },
     select: {
       id: true,
@@ -81,20 +89,79 @@ async function main() {
     },
   });
 
-  if (applications.length === 0) {
+  const earlyRegistrationApplications = await prisma.earlyRegistrationApplication.findMany({
+    where: {
+      schoolYearId: targetYear.id,
+      gradeLevelId: grade7.id,
+      learnerType: { in: INCOMING_LEARNER_TYPES },
+      applicantType: { in: SCP_APPLICANT_TYPES },
+      status: { in: TARGET_STATUSES },
+    },
+    select: {
+      id: true,
+      learnerId: true,
+      trackingNumber: true,
+      applicantType: true,
+      learnerType: true,
+      status: true,
+      learner: { select: { lrn: true, firstName: true, lastName: true } },
+    },
+  });
+
+  const directEarlyRegIds = earlyRegistrationApplications.map((a) => a.id);
+  const linkedEnrollmentApplications = directEarlyRegIds.length
+    ? await prisma.enrollmentApplication.findMany({
+        where: {
+          earlyRegistrationId: { in: directEarlyRegIds },
+        },
+        select: {
+          id: true,
+          learnerId: true,
+          earlyRegistrationId: true,
+          trackingNumber: true,
+          applicantType: true,
+          learnerType: true,
+          status: true,
+          learner: { select: { lrn: true, firstName: true, lastName: true } },
+        },
+      })
+    : [];
+
+  const applicationsById = new Map<number, (typeof enrollmentApplications)[number]>();
+  for (const app of enrollmentApplications) {
+    applicationsById.set(app.id, app);
+  }
+  for (const app of linkedEnrollmentApplications) {
+    applicationsById.set(app.id, app);
+  }
+
+  const applications = Array.from(applicationsById.values());
+
+  if (applications.length === 0 && earlyRegistrationApplications.length === 0) {
     console.log("No incoming Grade 7 SCP applications found. Nothing to wipe.");
     return;
   }
 
-  console.log(`Found ${applications.length} application(s) to remove.`);
+  console.log(`Found ${applications.length} enrollment application(s) to remove.`);
+  console.log(
+    `Found ${earlyRegistrationApplications.length} early registration application(s) to remove.`,
+  );
 
   const appIds = applications.map((a) => a.id);
-  const candidateLearnerIds = Array.from(new Set(applications.map((a) => a.learnerId)));
+  const candidateLearnerIds = Array.from(
+    new Set([
+      ...applications.map((a) => a.learnerId),
+      ...earlyRegistrationApplications.map((a) => a.learnerId),
+    ]),
+  );
   const earlyRegIds = Array.from(
     new Set(
-      applications
-        .map((a) => a.earlyRegistrationId)
-        .filter((id): id is number => id !== null),
+      [
+        ...applications
+          .map((a) => a.earlyRegistrationId)
+          .filter((id): id is number => id !== null),
+        ...directEarlyRegIds,
+      ],
     ),
   );
 

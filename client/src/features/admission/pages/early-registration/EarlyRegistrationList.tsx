@@ -1,6 +1,4 @@
-import { useState } from "react";
-import { Link } from "react-router";
-import { RefreshCw, UserPlus } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useSettingsStore } from "@/store/settings.slice";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
@@ -46,8 +44,16 @@ const NEXT_ACTION_BY_STATUS: Record<string, string> = {
 
 export default function EarlyRegistration({
   initialStatus = "ALL",
+  allowedStatusesInAllMode,
+  allowedStageValues,
+  statusSelectionOverrides,
+  onRegisterRefresh,
 }: {
   initialStatus?: string;
+  allowedStatusesInAllMode?: string[];
+  allowedStageValues?: string[];
+  statusSelectionOverrides?: Record<string, string[]>;
+  onRegisterRefresh?: (fn: () => Promise<void>) => void;
 }) {
   const { activeSchoolYearId, viewingSchoolYearId } = useSettingsStore();
   const ayId = viewingSchoolYearId ?? activeSchoolYearId;
@@ -73,6 +79,8 @@ export default function EarlyRegistration({
   } = useEarlyRegistrations({
     schoolYearId: ayId,
     initialStatus,
+    allowedStatusesInAllMode,
+    statusSelectionOverrides,
   });
 
   const {
@@ -103,6 +111,10 @@ export default function EarlyRegistration({
   // Derived State
   const showSkeleton = useDelayedLoading(loading);
 
+  useEffect(() => {
+    onRegisterRefresh?.(refresh);
+  }, [onRegisterRefresh, refresh]);
+
   const getNextAction = (currentStatus: string, applicantType?: string) => {
     const normalizedApplicantType = String(applicantType ?? "")
       .trim()
@@ -121,37 +133,6 @@ export default function EarlyRegistration({
   return (
     <div className="flex h-[calc(100vh-2rem)] overflow-hidden">
       <div className="flex-1 flex flex-col space-y-4 sm:space-y-6 overflow-auto px-2 sm:px-4 lg:px-0">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Early Registration</h1>
-            <p className="text-xs text-foreground font-bold">New Learner Intake &amp; Screening Workflow</p>
-          </div>
-
-          <div className="flex w-full md:w-auto gap-2">
-            {canMutate && (
-              <Button
-                asChild
-                className="h-10 px-3 flex-1 md:flex-none text-sm font-bold bg-primary hover:bg-primary/90">
-                <Link to="/monitoring/f2f-early-registration">
-                  <UserPlus className="h-4 w-4 mr-2" />+ Walk-In BEERF
-                </Link>
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              className="h-10 px-3 flex-1 md:flex-none text-sm font-bold"
-              onClick={() => {
-                void refresh();
-              }}
-              disabled={loading}>
-              <RefreshCw
-                className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
-              />
-              Refresh
-            </Button>
-          </div>
-        </div>
-
         <Card className="border-none shadow-sm bg-[hsl(var(--card))]">
           <EarlyRegistrationFilters
             status={status}
@@ -162,6 +143,7 @@ export default function EarlyRegistration({
             setType={setType}
             setPage={setPage}
             stageCounts={stageCounts}
+            allowedStageValues={allowedStageValues}
           />
 
           <CardContent className="px-3 sm:px-6">

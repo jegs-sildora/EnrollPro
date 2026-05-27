@@ -16,6 +16,10 @@ export interface Application {
   examScore: number | null;
   examResult: string | null;
   examNotes: string | null;
+  interviewDate?: string | null;
+  interviewScore?: number | null;
+  interviewResult?: string | null;
+  interviewNotes?: string | null;
   assessments: EarlyRegistrationAssessment[];
   generalAverage: number | null;
   createdAt: string;
@@ -52,6 +56,16 @@ export interface ScpRankingResult {
   lrn: string | null;
   compositeScore: number;
   breakdown: Record<string, number>;
+}
+
+export interface PassedApplicantForBoard {
+  applicationId: number;
+  firstName: string;
+  lastName: string;
+  lrn: string | null;
+  examScore: number | null;
+  interviewScore: number | null;
+  compositeScore: number;
 }
 
 export interface PipelineBatchViewProps {

@@ -36,6 +36,7 @@ interface FiltersProps {
   setType: (type: string) => void;
   setPage: (page: number) => void;
   stageCounts: Record<string, number>;
+  allowedStageValues?: string[];
 }
 
 export function EarlyRegistrationFilters({
@@ -47,6 +48,7 @@ export function EarlyRegistrationFilters({
   setType,
   setPage,
   stageCounts,
+  allowedStageValues,
 }: FiltersProps) {
   const { configs } = useScpConfigs();
 
@@ -84,19 +86,28 @@ export function EarlyRegistrationFilters({
     );
   }, [type]);
 
+  const scopedStageQuickFilters = useMemo(() => {
+    if (!allowedStageValues || allowedStageValues.length === 0) {
+      return stageQuickFilters;
+    }
+
+    const allowedSet = new Set(allowedStageValues);
+    return stageQuickFilters.filter((stage) => allowedSet.has(stage.value));
+  }, [allowedStageValues, stageQuickFilters]);
+
   const visibleStageQuickFilters = useMemo(
     () =>
-      stageQuickFilters.filter(
+      scopedStageQuickFilters.filter(
         (stage) =>
           stage.value === "ALL" ||
           stage.value === status ||
           (stageCounts[stage.value] ?? 0) > 0,
       ),
-    [stageQuickFilters, stageCounts, status],
+    [scopedStageQuickFilters, stageCounts, status],
   );
 
   useEffect(() => {
-    const isCurrentStatusVisible = stageQuickFilters.some(
+    const isCurrentStatusVisible = scopedStageQuickFilters.some(
       (stage) => stage.value === status,
     );
 
@@ -104,7 +115,7 @@ export function EarlyRegistrationFilters({
       setStatus("ALL");
       setPage(1);
     }
-  }, [status, stageQuickFilters, setStatus, setPage]);
+  }, [status, scopedStageQuickFilters, setStatus, setPage]);
 
   return (
     <CardHeader className="px-3 sm:px-6 pb-3">
