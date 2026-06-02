@@ -12,12 +12,14 @@ async function main() {
   const admin = await prisma.user.upsert({
     where: { employeeId },
     update: {
+      accountName: employeeId,
       password: hashedPassword,
       isActive: true,
       role: 'SYSTEM_ADMIN',
     },
     create: {
       employeeId,
+      accountName: employeeId,
       firstName: 'System',
       lastName: 'Administrator',
       email: 'admin@deped.gov.ph',
